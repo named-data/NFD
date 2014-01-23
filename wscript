@@ -63,9 +63,9 @@ def build (bld):
       unittests = bld.program (
           target="unit-tests",
           features = "cxx cxxprogram",
-          source = bld.path.ant_glob(['tests/*.cpp']),
+          source = bld.path.ant_glob(['tests/**/*.cpp']),
           use = 'BOOST NDN_CPP',
-          includes = ".",
+          includes = [".", "daemon"],
           install_prefix = None,
           )
 
