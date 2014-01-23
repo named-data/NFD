@@ -1,12 +1,11 @@
 
-Prerequisites
--------------
+## Prerequisites
 
-- Boost libraries >= 1.42
-- NDN-CPP-dev library (https://github.com/cawka/ndn-cpp)
+* Boost libraries >= 1.42
+* [NDN-CPP-dev library](https://github.com/cawka/ndn-cpp)
+* `pkg-config`
 
-Build
------
+## Build
 
 The following commands should be used to build NFD:
 
