@@ -52,10 +52,16 @@ def configure(conf):
         return
 
 def build (bld):
+    bld(target = "nfd-objects",
+        features = "cxx",
+        source = bld.path.ant_glob(['daemon/**/*.cpp'], excl=['daemon/main.cpp']),
+        use = 'BOOST NDN_CPP',
+        )
+
     bld(target = "nfd",
         features = "cxx cxxprogram",
-        source = bld.path.ant_glob(['daemon/**/*.cpp']),
-        use = 'BOOST NDN_CPP',
+        source = 'daemon/main.cpp',
+        use = 'nfd-objects',
         )        
     
     # Unit tests
@@ -64,7 +70,7 @@ def build (bld):
           target="unit-tests",
           features = "cxx cxxprogram",
           source = bld.path.ant_glob(['tests/**/*.cpp']),
-          use = 'BOOST NDN_CPP',
+          use = 'nfd-objects',
           includes = [".", "daemon"],
           install_prefix = None,
           )
