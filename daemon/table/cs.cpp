@@ -7,6 +7,7 @@
 // XXX This is a fake CS that does not cache anything.
 
 #include "cs.hpp"
+
 namespace ndn {
 
 Cs::Cs()
@@ -18,16 +19,16 @@ Cs::~Cs()
 }
 
 bool
-Cs::insert(boost::shared_ptr<Data> data)
+Cs::insert(shared_ptr<Data> data)
 {
   return false;
 }
   
-boost::shared_ptr<cs::Entry>
+shared_ptr<Data>
 Cs::find(const Interest& interest)
 {
-  return boost::shared_ptr<cs::Entry>();
+  return shared_ptr<Data>();
 }
 
 
-};//namespace ndn
+} //namespace ndn

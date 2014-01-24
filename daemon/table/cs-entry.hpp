@@ -4,9 +4,11 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_TABLE_CS_ENTRY_H
-#define NFD_TABLE_CS_ENTRY_H
-#include <boost/utility.hpp>
+#ifndef NFD_TABLE_CS_ENTRY_HPP
+#define NFD_TABLE_CS_ENTRY_HPP
+
+#include "common.hpp"
+
 namespace ndn {
 namespace cs {
 
@@ -14,10 +16,11 @@ namespace cs {
  *  \brief represents a CS entry
  */
 
-class Entry : boost::noncopyable
+class Entry : noncopyable
 {
 };
 
-};//namespace cs
-};//namespace ndn
-#endif//NFD_TABLE_CS_ENTRY_H
+} // namespace cs
+} // namespace ndn
+
+#endif // NFD_TABLE_CS_ENTRY_HPP

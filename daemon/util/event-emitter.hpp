@@ -4,11 +4,11 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_UTIL_EVENT_EMITTER_H
-#define NFD_UTIL_EVENT_EMITTER_H
-#include <vector>
-#include <boost/utility.hpp>
-#include <boost/function.hpp>
+#ifndef NFD_UTIL_EVENT_EMITTER_HPP
+#define NFD_UTIL_EVENT_EMITTER_HPP
+
+#include "common.hpp"
+
 namespace ndn {
 
 struct empty {};
@@ -30,11 +30,11 @@ struct empty {};
 // four arguments
 template<typename T1 = empty, typename T2 = empty,
     typename T3 = empty, typename T4 = empty>
-class EventEmitter : boost::noncopyable
+class EventEmitter : noncopyable
 {
 public:
   /// represents a handler that can subscribe to the event
-  typedef boost::function<void(const T1&, const T2&,
+  typedef function<void(const T1&, const T2&,
                                const T3&, const T4&)> Handler;
   
   /// adds an subscription
@@ -61,10 +61,10 @@ private:
 
 // zero argument
 template<>
-class EventEmitter<empty, empty, empty, empty> : boost::noncopyable
+class EventEmitter<empty, empty, empty, empty> : noncopyable
 {
 public:
-  typedef boost::function<void()> Handler;
+  typedef function<void()> Handler;
   
   void
   operator+=(Handler handler);
@@ -85,10 +85,10 @@ private:
 
 // one argument
 template<typename T1>
-class EventEmitter<T1, empty, empty, empty> : boost::noncopyable
+class EventEmitter<T1, empty, empty, empty> : noncopyable
 {
 public:
-  typedef boost::function<void(const T1&)> Handler;
+  typedef function<void(const T1&)> Handler;
   
   void
   operator+=(Handler handler);
@@ -109,10 +109,10 @@ private:
 
 // two arguments
 template<typename T1, typename T2>
-class EventEmitter<T1, T2, empty, empty> : boost::noncopyable
+class EventEmitter<T1, T2, empty, empty> : noncopyable
 {
 public:
-  typedef boost::function<void(const T1&, const T2&)> Handler;
+  typedef function<void(const T1&, const T2&)> Handler;
   
   void
   operator+=(Handler handler);
@@ -133,11 +133,10 @@ private:
 
 // three arguments
 template<typename T1, typename T2, typename T3>
-class EventEmitter<T1, T2, T3, empty> : boost::noncopyable
+class EventEmitter<T1, T2, T3, empty> : noncopyable
 {
 public:
-  typedef boost::function<void(const T1&, const T2&,
-                               const T3&)> Handler;
+  typedef function<void(const T1&, const T2&, const T3&)> Handler;
   
   void
   operator+=(Handler handler);
@@ -321,5 +320,6 @@ EventEmitter<T1, T2, T3, T4>::operator()
 }
 
 
-};//namespace ndn
-#endif//NFD_UTIL_EVENT_EMITTER_H
+} // namespace ndn
+
+#endif // NFD_UTIL_EVENT_EMITTER_HPP

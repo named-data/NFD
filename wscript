@@ -56,6 +56,7 @@ def build (bld):
         features = "cxx",
         source = bld.path.ant_glob(['daemon/**/*.cpp'], excl=['daemon/main.cpp']),
         use = 'BOOST NDN_CPP',
+        includes = [".", "daemon"],
         )
 
     bld(target = "nfd",

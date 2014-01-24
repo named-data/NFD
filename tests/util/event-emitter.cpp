@@ -4,12 +4,13 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include <util/event-emitter.hpp>
-#include <boost/bind.hpp>
 #include <boost/test/unit_test.hpp>
+
+#include "util/event-emitter.hpp"
+
 namespace ndn {
 
-class EventEmitterTester : boost::noncopyable
+class EventEmitterTester : noncopyable
 {
 public:
   EventEmitterTester();
@@ -129,8 +130,8 @@ BOOST_AUTO_TEST_CASE(TwoListeners)
   EventEmitterTester eet1;
   EventEmitterTester eet2;
   EventEmitter<> ee;
-  ee += boost::bind(&EventEmitterTester::f0, &eet1);
-  ee += boost::bind(&EventEmitterTester::f0, &eet2);
+  ee += bind(&EventEmitterTester::f0, &eet1);
+  ee += bind(&EventEmitterTester::f0, &eet2);
   ee();
   
   BOOST_CHECK_EQUAL(eet1.m_hit, 1);
@@ -141,7 +142,7 @@ BOOST_AUTO_TEST_CASE(ZeroArgument)
 {
   EventEmitterTester eet;
   EventEmitter<> ee;
-  ee += boost::bind(&EventEmitterTester::f0, &eet);
+  ee += bind(&EventEmitterTester::f0, &eet);
   ee();
   
   BOOST_CHECK_EQUAL(eet.m_hit, 1);
@@ -151,7 +152,7 @@ BOOST_AUTO_TEST_CASE(OneArgument)
 {
   EventEmitterTester eet;
   EventEmitter<int> ee;
-  ee += boost::bind(&EventEmitterTester::f1, &eet, _1);
+  ee += bind(&EventEmitterTester::f1, &eet, _1);
   ee(11);
   
   BOOST_CHECK_EQUAL(eet.m_hit, 1);
@@ -162,7 +163,7 @@ BOOST_AUTO_TEST_CASE(TwoArguments)
 {
   EventEmitterTester eet;
   EventEmitter<int,int> ee;
-  ee += boost::bind(&EventEmitterTester::f2, &eet, _1, _2);
+  ee += bind(&EventEmitterTester::f2, &eet, _1, _2);
   ee(21, 22);
   
   BOOST_CHECK_EQUAL(eet.m_hit, 1);
@@ -174,7 +175,7 @@ BOOST_AUTO_TEST_CASE(ThreeArguments)
 {
   EventEmitterTester eet;
   EventEmitter<int,int,int> ee;
-  ee += boost::bind(&EventEmitterTester::f3, &eet, _1, _2, _3);
+  ee += bind(&EventEmitterTester::f3, &eet, _1, _2, _3);
   ee(31, 32, 33);
   
   BOOST_CHECK_EQUAL(eet.m_hit, 1);
@@ -187,7 +188,7 @@ BOOST_AUTO_TEST_CASE(FourArguments)
 {
   EventEmitterTester eet;
   EventEmitter<int,int,int,int> ee;
-  ee += boost::bind(&EventEmitterTester::f4, &eet, _1, _2, _3, _4);
+  ee += bind(&EventEmitterTester::f4, &eet, _1, _2, _3, _4);
   ee(41, 42, 43, 44);
   
   BOOST_CHECK_EQUAL(eet.m_hit, 1);
@@ -226,4 +227,5 @@ BOOST_AUTO_TEST_CASE(HandlerByRef)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-};//namespace ndn
+
+} // namespace ndn
