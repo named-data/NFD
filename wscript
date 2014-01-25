@@ -50,12 +50,16 @@ def configure(conf):
     if int(boost_version[0]) < 1 or int(boost_version[1]) < 42:
         Logs.error ("Minumum required boost version is 1.42")
         return
+    
+    conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
+
+    conf.write_config_header('daemon/config.hpp')
 
 def build (bld):
     bld(target = "nfd-objects",
         features = "cxx",
         source = bld.path.ant_glob(['daemon/**/*.cpp'], excl=['daemon/main.cpp']),
-        use = 'BOOST NDN_CPP',
+        use = 'BOOST NDN_CPP RT',
         includes = [".", "daemon"],
         )
 

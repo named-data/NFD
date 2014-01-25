@@ -7,6 +7,8 @@
 #ifndef NFD_COMMON_HPP
 #define NFD_COMMON_HPP
 
+#include "config.hpp"
+
 #include <ndn-cpp-dev/interest.hpp>
 #include <ndn-cpp-dev/data.hpp>
 
