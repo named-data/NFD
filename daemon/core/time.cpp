@@ -24,7 +24,7 @@ now()
     throw std::runtime_error("clock_gettime");
   }
   
-  return t.tv_sec * 1000000000 + t.tv_nsec;
+  return Point(time::seconds(t.tv_sec) + time::nanoseconds(t.tv_nsec));
 
 #else
   // fallback to wall clock time
@@ -36,7 +36,7 @@ now()
     throw std::runtime_error("gettimeofday");
   }
   
-  return tv.tv_sec * 1000000000 + tv.tv_usec * 1000;
+  return Point(time::seconds(tv.tv_sec) + time::microseconds(tv.tv_usec));
   
 #endif
 }

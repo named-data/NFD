@@ -17,9 +17,12 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
+#include <boost/asio.hpp>
+#include <boost/assert.hpp>
 
 #include <vector>
 #include <list>
+#include <set>
 
 namespace ndn {
 
