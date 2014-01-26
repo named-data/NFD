@@ -19,15 +19,15 @@ Cs::~Cs()
 }
 
 bool
-Cs::insert(shared_ptr<Data> data)
+Cs::insert(const Data &data)
 {
   return false;
 }
   
-shared_ptr<Data>
+const Data*
 Cs::find(const Interest& interest)
 {
-  return shared_ptr<Data>();
+  return 0;
 }
 
 

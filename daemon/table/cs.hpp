@@ -30,12 +30,12 @@ public:
    *  \return{ whether the Data is added }
    */
   bool
-  insert(shared_ptr<Data> data);
+  insert(const Data &data);
   
   /** \brief finds the best match Data for an Interest
-   *  \return{ the best match, if any; otherwise null }
+   *  \return{ the best match, if any; otherwise 0 }
    */
-  shared_ptr<Data>
+  const Data*
   find(const Interest& interest);
 };
 

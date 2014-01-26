@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(FakeInsertFind)
 {
   Cs cs;
   
-  shared_ptr<Data> data = make_shared<Data>();
+  Data data;
   BOOST_CHECK_EQUAL(cs.insert(data), false);
   
   Interest interest;
