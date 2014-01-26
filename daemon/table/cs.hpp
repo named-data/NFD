@@ -30,7 +30,7 @@ public:
    *  \return{ whether the Data is added }
    */
   bool
-  insert(const Data &data);
+  insert(const Data& data);
   
   /** \brief finds the best match Data for an Interest
    *  \return{ the best match, if any; otherwise 0 }

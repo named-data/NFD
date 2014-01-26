@@ -19,7 +19,7 @@ Cs::~Cs()
 }
 
 bool
-Cs::insert(const Data &data)
+Cs::insert(const Data& data)
 {
   return false;
 }
