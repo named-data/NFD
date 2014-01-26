@@ -5,6 +5,7 @@
  */
 
 #include "face/face.hpp"
+#include "dummy-face.hpp"
 
 #include <boost/test/unit_test.hpp>
 
@@ -12,28 +13,9 @@ namespace ndn {
 
 BOOST_AUTO_TEST_SUITE(FaceFace)
 
-class FaceTestFace : public Face
-{
-public:
-  FaceTestFace()
-    : Face(1)
-  {
-  }
-  
-  virtual void
-  sendInterest(const Interest &interest)
-  {
-  }
-  
-  virtual void
-  sendData(const Data &data)
-  {
-  }
-};
-
 BOOST_AUTO_TEST_CASE(Description)
 {
-  FaceTestFace face;
+  DummyFace face(1);
   face.setDescription("3pFsKrvWr");
   BOOST_CHECK_EQUAL(face.getDescription(), "3pFsKrvWr");
 }
