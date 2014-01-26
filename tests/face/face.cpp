@@ -12,7 +12,31 @@ namespace ndn {
 
 BOOST_AUTO_TEST_SUITE(FaceFace)
 
-// no unit test here: this ensures face.hpp can compile on its own
+class FaceTestFace : public Face
+{
+public:
+  FaceTestFace()
+    : Face(1)
+  {
+  }
+  
+  virtual void
+  sendInterest(const Interest &interest)
+  {
+  }
+  
+  virtual void
+  sendData(const Data &data)
+  {
+  }
+};
+
+BOOST_AUTO_TEST_CASE(Description)
+{
+  FaceTestFace face;
+  face.setDescription("3pFsKrvWr");
+  BOOST_CHECK_EQUAL(face.getDescription(), "3pFsKrvWr");
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
