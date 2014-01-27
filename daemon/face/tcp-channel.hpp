@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "core/monotonic_deadline_timer.hpp"
+#include "tcp-face.hpp"
 
 namespace tcp {
 typedef boost::asio::ip::tcp::endpoint Endpoint;
@@ -55,20 +56,24 @@ public:
    *        connections
    */
   void
-  listen(int backlog = boost::asio::ip::tcp::acceptor::max_connections);
+  listen(const FaceCreatedCallback& onFaceCreated,
+         const ConnectFailedCallback& onAcceptFailed,
+         int backlog = boost::asio::ip::tcp::acceptor::max_connections);
 
   /**
    * \brief Create a face by establishing connection to remote endpoint
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
+          const FaceCreatedCallback& onFaceCreated,
+          const ConnectFailedCallback& onConnectFailed,
           const time::Duration& timeout = time::seconds(4));
 
   /**
    * \brief Create a face by establishing connection to the specified
    *        remote host and remote port
    *
-   * This method will never blocks and will return immediately. All
+   * This method will never block and will return immediately. All
    * necessary hostname and port resolution and connection will happen
    * in asynchronous mode.
    *
@@ -77,28 +82,37 @@ public:
    */
   void
   connect(const std::string& remoteHost, const std::string& remotePort,
+          const FaceCreatedCallback& onFaceCreated,
+          const ConnectFailedCallback& onConnectFailed,
           const time::Duration& timeout = time::seconds(4));
   
 private:
   void
   handleConnection(const boost::system::error_code& error,
-                   const shared_ptr<boost::asio::ip::tcp::socket>& socket);
+                   const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                   const FaceCreatedCallback& onFaceCreated,
+                   const ConnectFailedCallback& onConnectFailed);
 
   void
   handleSuccessfulConnect(const boost::system::error_code& error,
                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer);
+                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                          const FaceCreatedCallback& onFaceCreated,
+                          const ConnectFailedCallback& onConnectFailed);
   
   void
   handleFailedConnect(const boost::system::error_code& error,
                       const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                      const shared_ptr<boost::asio::monotonic_deadline_timer>& timer);
+                      const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                      const ConnectFailedCallback& onConnectFailed);
 
   void
   handleEndpointResoution(const boost::system::error_code& error,
                           boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer);
+                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                          const FaceCreatedCallback& onFaceCreated,
+                          const ConnectFailedCallback& onConnectFailed);
   
 private:
   boost::asio::io_service& m_ioService;
