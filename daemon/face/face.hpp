@@ -36,11 +36,11 @@ public:
   
   /// send an Interest
   virtual void
-  sendInterest(const Interest &interest) =0;
+  sendInterest(const Interest& interest) = 0;
   
   /// send a Data
   virtual void
-  sendData(const Data &data) =0;
+  sendData(const Data& data) = 0;
   
   /** \brief Get whether underlying communicate is up
    *  In this base class this property is always true.
