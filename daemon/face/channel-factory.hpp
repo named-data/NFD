@@ -30,7 +30,7 @@ public:
   };
 
 protected:
-  typedef std::map<Endpoint, Channel> ChannelMap;
+  typedef std::map< Endpoint, shared_ptr<Channel> > ChannelMap;
   ChannelMap m_channels;  
 };
 

@@ -14,4 +14,14 @@ TcpFace::TcpFace(FaceId id, const shared_ptr<TcpFace::protocol::socket>& socket)
 {
 }
 
+void
+TcpFace::sendInterest(const Interest& interest)
+{
+}
+
+void
+TcpFace::sendData(const Data& data)
+{
+}
+
 } // namespace ndn

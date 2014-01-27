@@ -23,6 +23,8 @@ public:
     Error(const std::string& what) : ChannelFactory::Error(what) {}
   };
 
+  TcpChannelFactory(boost::asio::io_service& ioService);
+
   /**
    * \brief Create TCP-based channel using tcp::Endpoint
    *
@@ -66,6 +68,9 @@ public:
    */
   shared_ptr<TcpChannel>
   find(const tcp::Endpoint& localEndpoint);
+  
+private:
+  boost::asio::io_service& m_ioService;
 };
 
 } // namespace ndn
