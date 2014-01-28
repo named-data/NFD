@@ -19,7 +19,10 @@ namespace ndn
 class TcpFace : public StreamFace<boost::asio::ip::tcp>
 {
 public:
-  TcpFace(FaceId id, const shared_ptr<protocol::socket>& socket);
+  typedef boost::asio::ip::tcp protocol;
+
+  TcpFace(FaceId id,
+          const shared_ptr<protocol::socket>& socket);
 
   // from Face
   virtual void
@@ -27,9 +30,6 @@ public:
 
   virtual void
   sendData(const Data& data);
-  
-private:
-  shared_ptr<protocol::socket> m_socket;
 };
 
 } // namespace ndn

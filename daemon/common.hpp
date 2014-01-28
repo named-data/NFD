@@ -14,6 +14,7 @@
 
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/ref.hpp>
@@ -28,6 +29,7 @@ namespace ndn {
 
 using boost::noncopyable;
 using boost::shared_ptr;
+using boost::enable_shared_from_this;
 using boost::make_shared;
 using boost::function;
 using boost::bind;
