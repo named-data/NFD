@@ -25,6 +25,8 @@
 #include <list>
 #include <set>
 
+#include "core/logger.hpp"
+
 namespace nfd {
 
 using boost::noncopyable;
