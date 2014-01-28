@@ -42,6 +42,12 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
                     const TcpChannel::ConnectFailedCallback& onConnectFailed,
                     const time::Duration& timeout/* = time::seconds(4)*/)
 {
+  ChannelFaceMap::iterator i = m_channelFaces.find(remoteEndpoint);
+  if (i != m_channelFaces.end()) {
+    onFaceCreated(i->second);
+    return;
+  }
+
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(boost::ref(m_ioService));
 
@@ -116,6 +122,9 @@ TcpChannel::handleConnection(const boost::system::error_code& error,
    */
   shared_ptr<TcpFace> face = make_shared<TcpFace>(1, boost::cref(socket));
   onFaceCreated(face);
+
+  tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
+  m_channelFaces[remoteEndpoint] = face;
 }
 
 void

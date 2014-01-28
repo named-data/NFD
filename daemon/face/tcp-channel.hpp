@@ -118,6 +118,9 @@ private:
   boost::asio::io_service& m_ioService;
   tcp::Endpoint m_localEndpoint;
 
+  typedef std::map< tcp::Endpoint, shared_ptr<TcpFace> > ChannelFaceMap;
+  ChannelFaceMap m_channelFaces;
+
   bool isListening;
   shared_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 };
