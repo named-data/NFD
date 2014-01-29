@@ -17,10 +17,12 @@ namespace ndn {
  */
 typedef int FaceId;
 
+const std::size_t MAX_NDN_PACKET_SIZE = 8800;
+
 /** \class Face
  *  \brief represents a face
  */
-class Face : noncopyable
+class Face : noncopyable, public enable_shared_from_this<Face>
 {
 public:
   Face(FaceId id);
@@ -33,14 +35,17 @@ public:
   
   /// fires when a Data is received
   EventEmitter<const Data&> onReceiveData;
+
+  /// fires when face disconnects or fails to perform properly
+  EventEmitter<const std::string& /*reason*/> onFail;
   
   /// send an Interest
   virtual void
-  sendInterest(const Interest &interest) =0;
+  sendInterest(const Interest& interest) = 0;
   
   /// send a Data
   virtual void
-  sendData(const Data &data) =0;
+  sendData(const Data& data) = 0;
   
   /** \brief Get whether underlying communicate is up
    *  In this base class this property is always true.
