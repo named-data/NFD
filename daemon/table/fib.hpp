@@ -8,7 +8,7 @@
 #define NFD_TABLE_FIB_HPP
 
 #include "fib-entry.hpp"
-namespace ndn {
+namespace nfd {
 
 /** \class Fib
  *  \brief represents the FIB
@@ -43,6 +43,6 @@ private:
   std::list<shared_ptr<fib::Entry> > m_table;
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_FIB_HPP

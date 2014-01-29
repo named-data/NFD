@@ -10,7 +10,7 @@
 #include "face/face.hpp"
 #include "core/time.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 /** \class FaceRecord
@@ -78,6 +78,6 @@ FaceRecord::getExpiry() const
 }
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_PIT_FACE_RECORD_HPP

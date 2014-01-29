@@ -6,7 +6,7 @@
 
 #include "face.hpp"
 
-namespace ndn {
+namespace nfd {
 
 Face::Face(FaceId id)
   : m_id(id)
@@ -49,4 +49,4 @@ Face::isLocalControlHeaderEnabled() const
 }
 
 
-} //namespace ndn
+} //namespace nfd

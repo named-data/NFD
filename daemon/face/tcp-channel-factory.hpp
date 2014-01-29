@@ -10,7 +10,7 @@
 #include "channel-factory.hpp"
 #include "tcp-channel.hpp"
 
-namespace ndn {
+namespace nfd {
 
 class TcpChannelFactory : public ChannelFactory<tcp::Endpoint, TcpChannel>
 {
@@ -73,6 +73,6 @@ private:
   boost::asio::io_service& m_ioService;
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_FACE_TCP_CHANNEL_FACTORY_HPP

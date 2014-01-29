@@ -9,7 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-namespace ndn {
+namespace nfd {
 
 BOOST_AUTO_TEST_SUITE(TablePit)
 
@@ -19,13 +19,13 @@ BOOST_AUTO_TEST_CASE(Entry)
   shared_ptr<Face> face2 = make_shared<DummyFace>(2);
   Name name("ndn:/KuYfjtRq");
   Interest interest(name);
-  Interest interest1(name, static_cast<Milliseconds>(2528));
+  Interest interest1(name, static_cast<ndn::Milliseconds>(2528));
   interest1.setNonce(25559);
-  Interest interest2(name, static_cast<Milliseconds>(6464));
+  Interest interest2(name, static_cast<ndn::Milliseconds>(6464));
   interest2.setNonce(19004);
-  Interest interest3(name, static_cast<Milliseconds>(3585));
+  Interest interest3(name, static_cast<ndn::Milliseconds>(3585));
   interest3.setNonce(24216);
-  Interest interest4(name, static_cast<Milliseconds>(8795));
+  Interest interest4(name, static_cast<ndn::Milliseconds>(8795));
   interest4.setNonce(17365);
   
   pit::Entry entry(interest);
@@ -274,4 +274,4 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace ndn
+} // namespace nfd

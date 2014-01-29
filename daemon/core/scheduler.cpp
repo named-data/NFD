@@ -6,7 +6,7 @@
 
 #include "scheduler.hpp"
 
-namespace ndn {
+namespace nfd {
 
 struct EventIdImpl
 {
@@ -173,4 +173,4 @@ Scheduler::onEvent(const boost::system::error_code& error)
 }
 
 
-} // namespace ndn
+} // namespace nfd

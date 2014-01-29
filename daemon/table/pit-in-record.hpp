@@ -9,7 +9,7 @@
 
 #include "pit-face-record.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 /** \class InRecord
@@ -25,6 +25,6 @@ public:
 };
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_PIT_IN_RECORD_HPP

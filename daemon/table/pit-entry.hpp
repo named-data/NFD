@@ -10,7 +10,7 @@
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 /** \class InRecordCollection
@@ -88,6 +88,6 @@ Entry::getInterest() const
 }
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_PIT_ENTRY_HPP

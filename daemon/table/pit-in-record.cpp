@@ -6,7 +6,7 @@
 
 #include "pit-in-record.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 InRecord::InRecord(shared_ptr<Face> face)
@@ -21,4 +21,4 @@ InRecord::InRecord(const InRecord& other)
 
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd

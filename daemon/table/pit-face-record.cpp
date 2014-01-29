@@ -6,7 +6,7 @@
 
 #include "pit-face-record.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 FaceRecord::FaceRecord(shared_ptr<Face> face)
@@ -35,4 +35,4 @@ FaceRecord::update(const Interest& interest)
 
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd

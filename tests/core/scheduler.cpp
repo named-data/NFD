@@ -8,7 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-namespace ndn {
+namespace nfd {
 
 BOOST_AUTO_TEST_SUITE(CoreScheduler)
 
@@ -82,4 +82,4 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace ndn
+} // namespace nfd

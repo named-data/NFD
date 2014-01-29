@@ -6,7 +6,7 @@
 
 #include "tcp-channel-factory.hpp"
 
-namespace ndn {
+namespace nfd {
 
 TcpChannelFactory::TcpChannelFactory(boost::asio::io_service& ioService)
   : m_ioService(ioService)
@@ -38,7 +38,7 @@ TcpChannelFactory::create(const std::string& localHost, const std::string& local
   tcp::resolver::iterator end;
   tcp::resolver::iterator i = resolver.resolve(query);
   if (i == end)
-    return shared_ptr<ndn::TcpChannel>();
+    return shared_ptr<TcpChannel>();
 
   return create(*i);
 }
@@ -50,7 +50,7 @@ TcpChannelFactory::find(const tcp::Endpoint& localEndpoint)
   if (i != m_channels.end())
     return i->second;
   else
-    return shared_ptr<ndn::TcpChannel>();
+    return shared_ptr<TcpChannel>();
 }
 
-} // namespace ndn
+} // namespace nfd

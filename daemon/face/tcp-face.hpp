@@ -9,7 +9,7 @@
 
 #include "stream-face.hpp"
 
-namespace ndn
+namespace nfd
 {
 
 /**
@@ -32,6 +32,6 @@ public:
   sendData(const Data& data);
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_FACE_TCP_FACE_HPP

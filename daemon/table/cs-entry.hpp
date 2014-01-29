@@ -9,7 +9,7 @@
 
 #include "common.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace cs {
 
 /** \class Entry
@@ -21,6 +21,6 @@ class Entry : noncopyable
 };
 
 } // namespace cs
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_CS_ENTRY_HPP

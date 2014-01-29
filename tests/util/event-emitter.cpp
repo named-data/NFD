@@ -8,7 +8,7 @@
 
 #include "util/event-emitter.hpp"
 
-namespace ndn {
+namespace nfd {
 
 class EventEmitterTester : noncopyable
 {
@@ -228,4 +228,4 @@ BOOST_AUTO_TEST_CASE(HandlerByRef)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace ndn
+} // namespace nfd

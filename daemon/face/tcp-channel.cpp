@@ -6,7 +6,7 @@
 
 #include "tcp-channel.hpp"
 
-namespace ndn {
+namespace nfd {
 
 using namespace boost::asio;
 
@@ -193,4 +193,4 @@ TcpChannel::handleEndpointResoution(const boost::system::error_code& error,
 }
 
 
-} // namespace ndn
+} // namespace nfd

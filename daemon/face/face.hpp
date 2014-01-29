@@ -10,7 +10,7 @@
 #include "common.hpp"
 #include "util/event-emitter.hpp"
 
-namespace ndn {
+namespace nfd {
 
 /** \class FaceId
  *  \brief identifies a face
@@ -85,6 +85,6 @@ private:
   std::string m_description;
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_FACE_FACE_H

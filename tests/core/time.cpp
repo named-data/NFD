@@ -8,7 +8,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-namespace ndn {
+namespace nfd {
 
 BOOST_AUTO_TEST_SUITE(CoreTime)
 
@@ -44,4 +44,4 @@ BOOST_AUTO_TEST_CASE(Operations)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace ndn
+} // namespace nfd

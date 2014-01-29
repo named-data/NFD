@@ -7,7 +7,7 @@
 #include "pit-entry.hpp"
 #include <algorithm>
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 Entry::Entry(const Interest& interest)
@@ -93,4 +93,4 @@ Entry::deleteOutRecord(shared_ptr<Face> face)
 
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd

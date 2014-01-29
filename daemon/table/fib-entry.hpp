@@ -9,7 +9,7 @@
 
 #include "fib-nexthop.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace fib {
 
 /** \class NextHopList
@@ -71,6 +71,6 @@ Entry::getNextHops() const
 
 
 } // namespace fib
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_FIB_ENTRY_HPP

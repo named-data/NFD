@@ -9,7 +9,7 @@
 
 #include "face/face.hpp"
 
-namespace ndn {
+namespace nfd {
 
 /** \class DummyFace
  *  \brief provides a Face that cannot communicate
@@ -34,6 +34,6 @@ public:
   }
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // TEST_FACE_DUMMY_FACE_HPP

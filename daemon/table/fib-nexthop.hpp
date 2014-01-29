@@ -10,7 +10,7 @@
 #include "common.hpp"
 #include "face/face.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace fib {
 
 /** \class NextHop
@@ -38,6 +38,6 @@ private:
 };
 
 } // namespace fib
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_FIB_NEXTHOP_HPP

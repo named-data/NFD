@@ -8,7 +8,7 @@
 
 #include "cs.hpp"
 
-namespace ndn {
+namespace nfd {
 
 Cs::Cs()
 {
@@ -31,4 +31,4 @@ Cs::find(const Interest& interest)
 }
 
 
-} //namespace ndn
+} //namespace nfd

@@ -17,15 +17,15 @@ namespace boost {
 namespace asio {
 
 template <> 
-struct time_traits<ndn::time::monotonic_clock>
+struct time_traits<nfd::time::monotonic_clock>
 {
-  typedef ndn::time::Point time_type;
-  typedef ndn::time::Duration duration_type;
+  typedef nfd::time::Point time_type;
+  typedef nfd::time::Duration duration_type;
 
   static time_type
   now()
   {
-    return ndn::time::now();
+    return nfd::time::now();
   }
 
   static time_type
@@ -53,7 +53,7 @@ struct time_traits<ndn::time::monotonic_clock>
   }
 };
 
-typedef basic_deadline_timer<ndn::time::monotonic_clock> monotonic_deadline_timer; 
+typedef basic_deadline_timer<nfd::time::monotonic_clock> monotonic_deadline_timer; 
 
 } // namespace asio
 } // namespace boost

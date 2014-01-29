@@ -9,7 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-namespace ndn {
+namespace nfd {
 
 BOOST_AUTO_TEST_SUITE(TableFib)
 
@@ -203,4 +203,4 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace ndn
+} // namespace nfd

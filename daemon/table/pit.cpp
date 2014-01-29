@@ -7,7 +7,7 @@
 #include "pit.hpp"
 #include <algorithm>
 
-namespace ndn {
+namespace nfd {
 
 Pit::Pit()
 {
@@ -73,4 +73,4 @@ Pit::remove(shared_ptr<pit::Entry> pitEntry)
   m_table.remove(pitEntry);
 }
 
-} // namespace ndn
+} // namespace nfd

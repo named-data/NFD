@@ -9,7 +9,7 @@
 
 #include "common.hpp"
 
-namespace ndn {
+namespace nfd {
 
 struct empty {};
 
@@ -320,6 +320,6 @@ EventEmitter<T1, T2, T3, T4>::operator()
 }
 
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_UTIL_EVENT_EMITTER_HPP

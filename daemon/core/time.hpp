@@ -9,7 +9,7 @@
 
 #include "common.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace time {
 
 class monotonic_clock;
@@ -156,6 +156,6 @@ nanoseconds(int64_t value)
 
 
 } // namespace time
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_CORE_TIME_H

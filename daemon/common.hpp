@@ -25,7 +25,7 @@
 #include <list>
 #include <set>
 
-namespace ndn {
+namespace nfd {
 
 using boost::noncopyable;
 using boost::shared_ptr;
@@ -34,6 +34,15 @@ using boost::make_shared;
 using boost::function;
 using boost::bind;
 
-} // namespace ndn
+using ndn::Interest;
+using ndn::Data;
+using ndn::Name;
+using ndn::Exclude;
+using ndn::Block;
+namespace tlv {
+using namespace ndn::Tlv;
+}
+
+} // namespace nfd
 
 #endif // NFD_COMMON_HPP

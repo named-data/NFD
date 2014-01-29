@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <numeric>
 
-namespace ndn {
+namespace nfd {
 
 Fib::Fib()
 {
@@ -75,4 +75,4 @@ Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 }
 
 
-} // namespace ndn
+} // namespace nfd

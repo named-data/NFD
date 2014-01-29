@@ -7,7 +7,7 @@
 #include "fib-entry.hpp"
 #include <algorithm>
 
-namespace ndn {
+namespace nfd {
 namespace fib {
 
 Entry::Entry(const Name& prefix)
@@ -64,4 +64,4 @@ Entry::sortNextHops()
 
 
 } // namespace fib
-} // namespace ndn
+} // namespace nfd

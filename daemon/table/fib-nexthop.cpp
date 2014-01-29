@@ -6,7 +6,7 @@
 
 #include "fib-nexthop.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace fib {
 
 NextHop::NextHop(shared_ptr<Face> face)
@@ -38,4 +38,4 @@ NextHop::getCost() const
 }
 
 } // namespace fib
-} // namespace ndn
+} // namespace nfd

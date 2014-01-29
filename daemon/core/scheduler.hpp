@@ -10,7 +10,7 @@
 #include "common.hpp"
 #include "monotonic_deadline_timer.hpp"
 
-namespace ndn {
+namespace nfd {
 
 struct EventIdImpl; ///< \brief Private storage of information about the event
 /**
@@ -94,6 +94,6 @@ private:
   boost::asio::monotonic_deadline_timer m_deadlineTimer;
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_CORE_SCHEDULER_HPP

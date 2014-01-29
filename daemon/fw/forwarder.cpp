@@ -6,7 +6,7 @@
 
 #include "forwarder.hpp"
 
-namespace ndn {
+namespace nfd {
 
 Forwarder::Forwarder(boost::asio::io_service& ioService)
 {
@@ -33,4 +33,4 @@ Forwarder::onData(const Face& face, const Data& data)
 {
 }
 
-} // namespace ndn
+} // namespace nfd

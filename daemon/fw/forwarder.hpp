@@ -10,7 +10,7 @@
 #include "common.hpp"
 #include "face/face.hpp"
 
-namespace ndn {
+namespace nfd {
 
 /**
  * Forwarder is the main class of NFD.

@@ -15,7 +15,7 @@ namespace tcp {
 typedef boost::asio::ip::tcp::endpoint Endpoint;
 } // namespace tcp
 
-namespace ndn {
+namespace nfd {
 
 /**
  * \brief Class implementing TCP-based channel to create faces
@@ -125,6 +125,6 @@ private:
   shared_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 };
 
-} // namespace ndn
+} // namespace nfd
  
 #endif // NFD_FACE_TCP_CHANNEL_HPP

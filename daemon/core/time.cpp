@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <sys/time.h>
 
-namespace ndn {
+namespace nfd {
 namespace time {
 
 Point
@@ -42,4 +42,4 @@ now()
 }
 
 } // namespace time
-} // namespace ndn
+} // namespace nfd

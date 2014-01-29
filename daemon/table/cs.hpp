@@ -10,7 +10,7 @@
 #include "common.hpp"
 #include "cs-entry.hpp"
 
-namespace ndn {
+namespace nfd {
 
 /** \class Cs
  *  \brief represents the ContentStore
@@ -39,6 +39,6 @@ public:
   find(const Interest& interest);
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_CS_HPP

@@ -9,7 +9,7 @@
 
 #include "common.hpp"
 
-namespace ndn {
+namespace nfd {
 
 /**
  * \brief Base class for all channel factories
@@ -34,6 +34,6 @@ protected:
   ChannelMap m_channels;  
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_FACE_CHANNEL_FACTORY_HPP

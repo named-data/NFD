@@ -6,7 +6,7 @@
 
 #include "pit-out-record.hpp"
 
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 OutRecord::OutRecord(shared_ptr<Face> face)
@@ -20,4 +20,4 @@ OutRecord::OutRecord(const OutRecord& other)
 }
 
 } // namespace pit
-} // namespace ndn
+} // namespace nfd

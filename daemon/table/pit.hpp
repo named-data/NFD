@@ -8,7 +8,7 @@
 #define NFD_TABLE_PIT_HPP
 
 #include "pit-entry.hpp"
-namespace ndn {
+namespace nfd {
 namespace pit {
 
 /** \class DataMatchResult
@@ -52,6 +52,6 @@ private:
   std::list<shared_ptr<pit::Entry> > m_table;
 };
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_TABLE_PIT_HPP

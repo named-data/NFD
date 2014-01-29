@@ -6,7 +6,7 @@
 
 #include "tcp-face.hpp"
 
-namespace ndn {
+namespace nfd {
 
 TcpFace::TcpFace(FaceId id,
                  const shared_ptr<TcpFace::protocol::socket>& socket)
@@ -34,4 +34,4 @@ TcpFace::sendData(const Data& data)
   // anything else should be done here?
 }
 
-} // namespace ndn
+} // namespace nfd

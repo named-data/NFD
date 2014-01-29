@@ -9,7 +9,7 @@
 
 #include "face.hpp"
 
-namespace ndn {
+namespace nfd {
 
 template <class T>
 class StreamFace : public Face
@@ -90,20 +90,20 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
     offset += element.size();
 
     /// @todo Ensure lazy field decoding process
-    if (element.type() == Tlv::Interest)
+    if (element.type() == tlv::Interest)
       {
         shared_ptr<Interest> i = make_shared<Interest>();
         i->wireDecode(element);
         onReceiveInterest(*i);
       }
-    else if (element.type() == Tlv::Data)
+    else if (element.type() == tlv::Data)
       {
         shared_ptr<Data> d = make_shared<Data>();
         d->wireDecode(element);
         onReceiveData(*d);
       }
     // @todo Add local header support
-    // else if (element.type() == Tlv::LocalHeader)
+    // else if (element.type() == tlv::LocalHeader)
     //   {
     //     shared_ptr<Interest> i = make_shared<Interest>();
     //     i->wireDecode(element);
@@ -115,7 +115,7 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
         // ignore unknown packet and proceed
       }
   }
-  catch(const Tlv::Error&) {
+  catch(const tlv::Error&) {
     if (m_inputBufferSize == MAX_NDN_PACKET_SIZE && offset == 0)
       {
         onFail("Received input is invalid or too large to process, closing down the face");
@@ -144,6 +144,6 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
 }
 
 
-} // namespace ndn
+} // namespace nfd
 
 #endif // NFD_FACE_STREAM_FACE_HPP
