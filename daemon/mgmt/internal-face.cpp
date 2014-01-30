@@ -5,10 +5,12 @@
  */
 
 #include "internal-face.hpp"
+#include "fib-manager.hpp"
 
 namespace nfd {
 
-InternalFace::InternalFace()
+InternalFace::InternalFace(FibManager& manager)
+  : m_fibManager(manager)
 {
 
 }
@@ -16,12 +18,11 @@ InternalFace::InternalFace()
 void
 InternalFace::sendInterest(const Interest& interest)
 {
-  static const Name prefixRegPrefix("/localhost/nfd/prefixreg");
   const Name& interestName = interest.getName();
 
-  if (prefixRegPrefix.isPrefixOf(interestName))
+  if (m_fibManager.getRequestPrefix().isPrefixOf(interestName))
     {
-      //invoke FibManager
+      m_fibManager.onFibRequest(interest);
     }
   //Drop Interest
 }
