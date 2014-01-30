@@ -4,8 +4,8 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_UTIL_EVENT_EMITTER_HPP
-#define NFD_UTIL_EVENT_EMITTER_HPP
+#ifndef NFD_CORE_EVENT_EMITTER_HPP
+#define NFD_CORE_EVENT_EMITTER_HPP
 
 #include "common.hpp"
 
@@ -322,4 +322,4 @@ EventEmitter<T1, T2, T3, T4>::operator()
 
 } // namespace nfd
 
-#endif // NFD_UTIL_EVENT_EMITTER_HPP
+#endif // NFD_CORE_EVENT_EMITTER_HPP

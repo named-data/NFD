@@ -4,9 +4,9 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include <boost/test/unit_test.hpp>
+#include "core/event-emitter.hpp"
 
-#include "util/event-emitter.hpp"
+#include <boost/test/unit_test.hpp>
 
 namespace nfd {
 

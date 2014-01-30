@@ -8,7 +8,7 @@
 #define NFD_FACE_FACE_H
 
 #include "common.hpp"
-#include "util/event-emitter.hpp"
+#include "core/event-emitter.hpp"
 
 namespace nfd {
 
