@@ -1,0 +1,44 @@
+# For Ubuntu only
+language: cpp
+os:
+  - linux
+compiler:
+  - gcc
+notifications:
+  email:
+    on_success: always
+    on_failure: always
+before_install:
+  - travis_retry sudo add-apt-repository -y ppa:named-data/ppa
+  - travis_retry sudo apt-get update
+  - travis_retry sudo apt-get install -qq ndnx-dev
+  - travis_retry sudo apt-get install -qq libboost-all-dev
+  - travis_retry sudo apt-get install -qq libcrypto++-dev
+  - travis_retry sudo apt-get install -qq libsqlite3-dev
+  - travis_retry git clone git://github.com/cawka/ndn-cpp ndn-cpp
+  - cd ndn-cpp
+  - ./waf configure
+  - ./waf -j1
+  - sudo ./waf install
+  - sudo ldconfig
+  - cd ..
+script:
+  - ./waf configure --with-tests
+  - ./waf -j1
+  - sudo ./waf install
+  - ./build/unit-tests
+# Tutorial for setting up notifications:
+# http://docs.travis-ci.com/user/notifications/
+# Here's a simple example for email notifications:
+#
+# notifications:
+#   email:
+#     recipients:
+#       - one@example.com
+#       - other@example.com
+#     on_success: [always|never|change] # default: change
+#     on_failure: [always|never|change] # default: always
+#
+# There are also other types of notifications available, including:
+# IRC, Campfire, Flowdock, HipChat, and Webhook.
+# For more infomation about notifications, please visit the link above.
