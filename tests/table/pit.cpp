@@ -13,7 +13,7 @@ namespace nfd {
 
 BOOST_AUTO_TEST_SUITE(TablePit)
 
-BOOST_AUTO_TEST_CASE(Entry)
+BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>(1);
   shared_ptr<Face> face2 = make_shared<DummyFace>(2);
@@ -32,10 +32,6 @@ BOOST_AUTO_TEST_CASE(Entry)
   
   BOOST_CHECK(entry.getInterest().getName().equals(name));
   BOOST_CHECK(entry.getName().equals(name));
-  
-  // isNonceSeen should not record the Nonce
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), false);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), false);
   
   const pit::InRecordCollection& inRecords1 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords1.size(), 0);
@@ -74,9 +70,6 @@ BOOST_AUTO_TEST_CASE(Entry)
     - time::milliseconds(interest1.getInterestLifetime())),
     (after2 - before2));
   
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), false);
-  
   // update InRecord
   time::Point before3 = time::now();
   pit::InRecordCollection::iterator in2 =
@@ -91,10 +84,6 @@ BOOST_AUTO_TEST_CASE(Entry)
     - time::milliseconds(interest2.getInterestLifetime())),
     (after3 - before3));
 
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest3.getNonce()), false);
-  
   // insert another InRecord
   pit::InRecordCollection::iterator in3 =
     entry.insertOrUpdateInRecord(face2, interest3);
@@ -102,20 +91,11 @@ BOOST_AUTO_TEST_CASE(Entry)
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(in3->getFace(), face2);
   
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest3.getNonce()), true);
-
   // delete all InRecords
   entry.deleteInRecords();
   const pit::InRecordCollection& inRecords5 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords5.size(), 0);
 
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest3.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest4.getNonce()), false);
-  
   // insert another OutRecord
   pit::OutRecordCollection::iterator out2 =
     entry.insertOrUpdateOutRecord(face2, interest4);
@@ -123,21 +103,25 @@ BOOST_AUTO_TEST_CASE(Entry)
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(out2->getFace(), face2);
   
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest3.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest4.getNonce()), true);
-  
   // delete OutRecord
   entry.deleteOutRecord(face2);
   const pit::OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
   BOOST_CHECK_EQUAL(outRecords4.begin()->getFace(), face1);
   
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest1.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest2.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest3.getNonce()), true);
-  BOOST_CHECK_EQUAL(entry.isNonceSeen(interest4.getNonce()), true);
+}
+
+BOOST_AUTO_TEST_CASE(EntryNonce)
+{
+  Name name("ndn:/qtCQ7I1c");
+  Interest interest(name);
+  
+  pit::Entry entry(interest);
+  
+  BOOST_CHECK_EQUAL(entry.addNonce(25559), true);
+  BOOST_CHECK_EQUAL(entry.addNonce(25559), false);
+  BOOST_CHECK_EQUAL(entry.addNonce(19004), true);
+  BOOST_CHECK_EQUAL(entry.addNonce(19004), false);
 }
 
 BOOST_AUTO_TEST_CASE(Insert)

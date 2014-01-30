@@ -9,6 +9,7 @@
 
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace pit {
@@ -46,14 +47,17 @@ public:
   const OutRecordCollection&
   getOutRecords() const;
   
-  /** \brief determines whether nonce is seen before
-   *         in an incoming or outgoing Interest
+  /** \brief records a nonce
+   *
+   *  \return{ true if nonce is new; false if nonce is seen before }
    */
   bool
-  isNonceSeen(uint32_t nonce) const;
+  addNonce(uint32_t nonce);
   
   /** \brief inserts a InRecord for face, and updates it with interest
+   *
    *  If InRecord for face exists, the existing one is updated.
+   *  This method does not add the Nonce as a seen Nonce.
    *  \return{ an iterator to the InRecord }
    */
   InRecordCollection::iterator
@@ -64,6 +68,7 @@ public:
   deleteInRecords();
   
   /** \brief inserts a OutRecord for face, and updates it with interest
+   *
    *  If OutRecord for face exists, the existing one is updated.
    *  \return{ an iterator to the OutRecord }
    */
@@ -73,6 +78,10 @@ public:
   /// deletes one OutRecord for face if exists
   void
   deleteOutRecord(shared_ptr<Face> face);
+  
+public:
+  EventId m_unsatisfyTimer;
+  EventId m_stragglerTimer;
 
 private:
   std::set<uint32_t> m_nonces;

@@ -34,9 +34,12 @@ Entry::getOutRecords() const
 }
 
 bool
-Entry::isNonceSeen(uint32_t nonce) const
+Entry::addNonce(uint32_t nonce)
 {
-  return m_nonces.count(nonce) > 0;
+  std::pair<std::set<uint32_t>::iterator, bool> insertResult =
+    m_nonces.insert(nonce);
+
+  return insertResult.second;
 }
 
 static inline bool
@@ -56,7 +59,6 @@ Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
   }
   
   it->update(interest);
-  m_nonces.insert(interest.getNonce());
   return it;
 }
 
