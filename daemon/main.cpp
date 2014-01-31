@@ -4,8 +4,199 @@
  * See COPYING for copyright and distribution information.
  */
 
-int
-main(int argc, char **argv)
+#include <getopt.h>
+#include "core/logger.hpp"
+#include "fw/forwarder.hpp"
+#include "mgmt/internal-face.hpp"
+#include "face/tcp-channel-factory.hpp"
+
+namespace nfd {
+
+NFD_LOG_INIT("Main");
+
+struct ProgramOptions
 {
+  struct TcpOutgoing
+  {
+    TcpOutgoing(std::pair<std::string, std::string> endpoint)
+      : m_endpoint(endpoint)
+    {
+    }
+    
+    std::pair<std::string, std::string> m_endpoint;
+    std::vector<Name> m_prefixes;
+  };
+
+  bool m_showUsage;
+  std::pair<std::string, std::string> m_tcpListen;
+  std::vector<TcpOutgoing> m_tcpOutgoings;
+};
+
+static boost::asio::io_service g_ioService;
+static ProgramOptions g_options;
+static Forwarder* g_forwarder;
+static TcpChannelFactory* g_tcpFactory;
+static shared_ptr<TcpChannel> g_tcpChannel;
+static shared_ptr<InternalFace> g_internalFace;
+
+void
+usage(char* programName)
+{
+  printf(
+    "%s --help\n\tshow this help and exit\n"
+    "%s [--tcp-listen <0.0.0.0:6363>] "
+        "[--tcp-connect <192.0.2.1:6363> [--prefix </example>]]\n"
+      "\trun forwarding daemon\n"
+      "\t--tcp-listen: listen on IP and port\n"
+      "\t--tcp-connect: connect to IP and port (can occur multiple times)\n"
+      "\t--prefix: add this face as nexthop to FIB entry "
+        "(must appear after --tcp-connect, can occur multiple times)\n"
+    "\n",
+    programName, programName
+  );
+}
+
+inline std::pair<std::string, std::string>
+parseIpPortPair(const std::string& s)
+{
+  size_t pos = s.rfind(":");
+  if (pos == std::string::npos) {
+    throw std::invalid_argument("ip:port");
+  }
+  
+  return std::make_pair(s.substr(0, pos), s.substr(pos+1));
+}
+
+bool
+parseCommandLine(int argc, char** argv)
+{
+  g_options.m_showUsage = false;
+  g_options.m_tcpListen = std::make_pair("0.0.0.0", "6363");
+  g_options.m_tcpOutgoings.clear();
+  
+  while (1) {
+    int option_index = 0;
+    static ::option long_options[] = {
+      { "help"          , no_argument      , 0, 0 },
+      { "tcp-listen"    , required_argument, 0, 0 },
+      { "tcp-connect"   , required_argument, 0, 0 },
+      { "prefix"        , required_argument, 0, 0 },
+      { 0               , 0                , 0, 0 }
+    };
+    int c = getopt_long_only(argc, argv, "", long_options, &option_index);
+    if (c == -1) break;
+    
+    switch (c) {
+      case 0:
+        switch (option_index) {
+          case 0://help
+            g_options.m_showUsage = true;
+            break;
+          case 1://tcp-listen
+            g_options.m_tcpListen = parseIpPortPair(::optarg);
+            break;
+          case 2://tcp-connect
+            g_options.m_tcpOutgoings.push_back(parseIpPortPair(::optarg));
+            break;
+          case 3://prefix
+            if (g_options.m_tcpOutgoings.empty()) {
+              return false;
+            }
+            g_options.m_tcpOutgoings.back().m_prefixes.push_back(Name(::optarg));
+        }
+        break;
+    }
+  }
+  return true;
+}
+
+void
+onFaceFail(shared_ptr<Face> face, const std::string& reason)
+{
+  g_forwarder->removeFace(face);
+}
+
+void
+onFaceEstablish(shared_ptr<Face> newFace, std::vector<Name>* prefixes)
+{
+  g_forwarder->addFace(newFace);
+  newFace->onFail += bind(&onFaceFail, newFace, _1);
+  
+  // add nexthop on prefixes
+  if (prefixes != 0) {
+    Fib& fib = g_forwarder->getFib();
+    for (std::vector<Name>::iterator it = prefixes->begin();
+        it != prefixes->end(); ++it) {
+      std::pair<shared_ptr<fib::Entry>, bool> fibInsertResult =
+        fib.insert(*it);
+      shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
+      fibEntry->addNextHop(newFace, 0);
+    }
+  }
+}
+
+void
+onFaceError(const std::string& reason)
+{
+  throw std::runtime_error(reason);
+}
+
+void
+initializeTcp()
+{
+  g_tcpFactory = new TcpChannelFactory(g_ioService);
+  g_tcpChannel = g_tcpFactory->create(g_options.m_tcpListen.first,
+                                      g_options.m_tcpListen.second);
+  g_tcpChannel->listen(
+    bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),
+    &onFaceError);
+  
+  for (std::vector<ProgramOptions::TcpOutgoing>::iterator it =
+      g_options.m_tcpOutgoings.begin();
+      it != g_options.m_tcpOutgoings.end(); ++it) {
+    g_tcpChannel->connect(it->m_endpoint.first, it->m_endpoint.second, 
+      bind(&onFaceEstablish, _1, &(it->m_prefixes)), &onFaceError);
+  }
+}
+
+void
+initializeMgmt()
+{
+  g_internalFace = make_shared<InternalFace>();
+  g_forwarder->addFace(g_internalFace);
+}
+
+int
+main(int argc, char** argv)
+{
+  bool isCommandLineValid = parseCommandLine(argc, argv);
+  if (!isCommandLineValid) {
+    usage(argv[0]);
+    return 1;
+  }
+  if (g_options.m_showUsage) {
+    usage(argv[0]);
+    return 0;
+  }
+  
+  g_forwarder = new Forwarder(g_ioService);
+  initializeTcp();
+  initializeMgmt();
+  
+  try {
+    g_ioService.run();
+  } catch(std::exception& ex) {
+    NFD_LOG_ERROR(ex.what());
+    return 1;
+  }
+  
   return 0;
+}
+
+} // namespace nfd
+
+int
+main(int argc, char** argv)
+{
+  return nfd::main(argc, argv);
 }

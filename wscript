@@ -55,7 +55,7 @@ def configure(conf):
 
     conf.write_config_header('daemon/config.hpp')
 
-def build (bld):
+def build(bld):
     bld(target = "nfd-objects",
         features = "cxx",
         source = bld.path.ant_glob(['daemon/**/*.cpp'], excl=['daemon/main.cpp']),
@@ -67,6 +67,7 @@ def build (bld):
         features = "cxx cxxprogram",
         source = 'daemon/main.cpp',
         use = 'nfd-objects',
+        includes = [".", "daemon"],
         )        
     
     # Unit tests
