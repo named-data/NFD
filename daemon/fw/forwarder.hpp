@@ -13,6 +13,7 @@
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
+#include "strategy.hpp"
 
 namespace nfd {
 
@@ -26,18 +27,28 @@ class Forwarder
 public:
   Forwarder(boost::asio::io_service& ioService);
 
-  uint64_t
-  addFace(const shared_ptr<Face>& face);
+  void
+  addFace(shared_ptr<Face> face);
 
   void
-  removeFace(const shared_ptr<Face>& face);
+  removeFace(shared_ptr<Face> face);
 
   void
-  onInterest(const Face& face, const Interest& interest);
+  onInterest(Face& face, const Interest& interest);
 
   void
-  onData(const Face& face, const Data& data);
+  onData(Face& face, const Data& data);
   
+public:
+  Fib&
+  getFib();
+  
+  Pit&
+  getPit();
+  
+  Cs&
+  getCs();
+
 private: // pipelines
   /** \brief incoming Interest pipeline
    */
@@ -92,14 +103,38 @@ private:
 
 private:
   Scheduler m_scheduler;
+  
+  FaceId m_lastFaceId;
+  std::map<FaceId, shared_ptr<Face> > m_faces;
+  
   Fib m_fib;
   Pit m_pit;
   Cs  m_cs;
-  // container< shared_ptr<Face> > m_faces;
+  /// the active strategy (only one strategy in mock)
+  shared_ptr<fw::Strategy> m_strategy;
   
   // allow Strategy (base class) to enter pipelines
-  friend class Strategy;
+  friend class fw::Strategy;
 };
+
+inline Fib&
+Forwarder::getFib()
+{
+  return m_fib;
+}
+
+inline Pit&
+Forwarder::getPit()
+{
+  return m_pit;
+}
+
+inline Cs&
+Forwarder::getCs()
+{
+  return m_cs;
+}
+
 
 } // namespace nfd
 

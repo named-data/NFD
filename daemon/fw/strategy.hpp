@@ -7,9 +7,19 @@
 #ifndef NFD_FW_STRATEGY_HPP
 #define NFD_FW_STRATEGY_HPP
 
-#include "forwarder.hpp"
+#include "face/face.hpp"
 
 namespace nfd {
+
+class Forwarder;
+namespace fib {
+class Entry;
+}
+namespace pit {
+class Entry;
+}
+
+namespace fw {
 
 /** \class Strategy
  *  \brief represents a forwarding strategy
@@ -18,7 +28,7 @@ class Strategy
 {
 public:
   explicit
-  Strategy(Forwarder& fw);
+  Strategy(Forwarder& forwarder);
   
   virtual
   ~Strategy();
@@ -27,9 +37,7 @@ public:
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry,
-                       pit::InRecordCollection::iterator pitInRecord
-                       ) =0;
+                       shared_ptr<pit::Entry> pitEntry) =0;
   
   //virtual void
   //beforeExpirePendingInterest() =0;
@@ -57,9 +65,10 @@ protected: // actions
   rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry);
   
 private:
-  Forwarder& m_fw;
+  Forwarder& m_forwarder;
 };
 
+} // namespace fw
 } // namespace nfd
 
 #endif // NFD_FW_STRATEGY_HPP

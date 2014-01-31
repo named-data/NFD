@@ -5,41 +5,67 @@
  */
 
 #include "forwarder.hpp"
+#include "core/logger.hpp"
+#include "best-route-strategy.hpp"
 
 namespace nfd {
 
+NFD_LOG_INIT("Forwarder");
+
 Forwarder::Forwarder(boost::asio::io_service& ioService)
   : m_scheduler(ioService)
+  , m_lastFaceId(0)
 {
-}
-
-uint64_t
-Forwarder::addFace(const shared_ptr<Face>& face)
-{
-  return -1;
+  m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }
 
 void
-Forwarder::removeFace(const shared_ptr<Face>& face)
+Forwarder::addFace(shared_ptr<Face> face)
 {
+  FaceId faceId = ++m_lastFaceId;
+  face->setId(faceId);
+  m_faces[faceId] = face;
+  NFD_LOG_INFO("addFace id=" << faceId);
+
+  face->onReceiveInterest += bind(&Forwarder::onInterest,
+                             this, boost::ref(*face), _1);
+  face->onReceiveData     += bind(&Forwarder::onData,
+                             this, boost::ref(*face), _1);
 }
 
 void
-Forwarder::onInterest(const Face& face, const Interest& interest)
+Forwarder::removeFace(shared_ptr<Face> face)
 {
-  this->onIncomingInterest(const_cast<Face&>(face), interest);
+  FaceId faceId = face->getId();
+  m_faces.erase(faceId);
+  face->setId(INVALID_FACEID);
+  NFD_LOG_INFO("removeFace id=" << faceId);
+  
+  // XXX This clears all subscriptions, because EventEmitter
+  //     does not support only removing Forwarder's subscription
+  face->onReceiveInterest.clear();
+  face->onReceiveData    .clear();
+  
+  m_fib.removeNextHopFromAllEntries(face);
 }
 
 void
-Forwarder::onData(const Face& face, const Data& data)
+Forwarder::onInterest(Face& face, const Interest& interest)
 {
-  this->onIncomingData(const_cast<Face&>(face), data);
+  this->onIncomingInterest(face, interest);
+}
+
+void
+Forwarder::onData(Face& face, const Data& data)
+{
+  this->onIncomingData(face, data);
 }
 
 void
 Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 {
   // receive Interest
+  NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() << " interest=" << interest.getName());
   
   // PIT insert
   std::pair<shared_ptr<pit::Entry>, bool>
@@ -89,19 +115,24 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // TODO use Fib::findParent(pitEntry)
   
   // dispatch to strategy
-  // TODO
+  m_strategy->afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
+  // TODO dispatch according to fibEntry
 }
 
 void
 Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
                           shared_ptr<pit::Entry> pitEntry)
 {
+  NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() << " interest=" << interest.getName());
+
   // do nothing, which means Interest is dropped
 }
 
 void
 Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
 {
+  NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() << " interest=" << pitEntry->getName());
+
   // pick Interest
   const Interest& interest = pitEntry->getInterest();
   // TODO pick the last incoming Interest
@@ -120,6 +151,8 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
 void
 Forwarder::onInterestRebuff(shared_ptr<pit::Entry> pitEntry)
 {
+  NFD_LOG_DEBUG("onInterestRebuff interest=" << pitEntry->getName());
+
   // set PIT straggler timer
   this->setStragglerTimer(pitEntry);
 }
@@ -127,6 +160,8 @@ Forwarder::onInterestRebuff(shared_ptr<pit::Entry> pitEntry)
 void
 Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
 {
+  NFD_LOG_DEBUG("onInterestUnsatisfied interest=" << pitEntry->getName());
+
   // invoke PIT unsatisfied callback
   // TODO
   
@@ -138,6 +173,7 @@ void
 Forwarder::onIncomingData(Face& inFace, const Data& data)
 {
   // receive Data
+  NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
   
   // PIT match
   shared_ptr<pit::DataMatchResult> pitMatches = m_pit.findAllDataMatches(data);
@@ -155,6 +191,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   for (pit::DataMatchResult::iterator it = pitMatches->begin();
        it != pitMatches->end(); ++it) {
     shared_ptr<pit::Entry> pitEntry = *it;
+    NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
     
     // cancel unsatisfy & straggler timer
     this->cancelUnsatisfyAndStragglerTimer(pitEntry);
@@ -196,11 +233,15 @@ Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
     // CS insert
     m_cs.insert(data);
   }
+
+  NFD_LOG_DEBUG("onDataUnsolicited face=" << inFace.getId() << " data=" << data.getName() << " acceptToCache=" << acceptToCache);
 }
 
 void
 Forwarder::onOutgoingData(const Data& data, Face& outFace)
 {
+  NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << data.getName());
+
   // traffic manager
   // pass through
   

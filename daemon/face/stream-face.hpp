@@ -17,8 +17,7 @@ class StreamFace : public Face
 public:
   typedef T protocol;
 
-  StreamFace(FaceId id,
-             const shared_ptr<typename protocol::socket>& socket);
+  StreamFace(const shared_ptr<typename protocol::socket>& socket);
 
 protected:
   void
@@ -39,10 +38,8 @@ private:
 
 template <class T>
 inline
-StreamFace<T>::StreamFace(FaceId id,
-                          const shared_ptr<typename StreamFace::protocol::socket>& socket)
-  : Face(id)
-  , m_socket(socket)
+StreamFace<T>::StreamFace(const shared_ptr<typename StreamFace::protocol::socket>& socket)
+  : m_socket(socket)
 {
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&StreamFace<T>::handleReceive, this, _1, _2));

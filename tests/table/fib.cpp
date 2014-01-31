@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_SUITE(TableFib)
 BOOST_AUTO_TEST_CASE(Entry)
 {
   Name prefix("ndn:/pxWhfFza");
-  shared_ptr<Face> face1 = make_shared<DummyFace>(1);
-  shared_ptr<Face> face2 = make_shared<DummyFace>(2);
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
   
   fib::Entry entry(prefix);
   BOOST_CHECK(entry.getPrefix().equals(prefix));
@@ -166,8 +166,8 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
 {
-  shared_ptr<Face> face1 = make_shared<DummyFace>(1);
-  shared_ptr<Face> face2 = make_shared<DummyFace>(2);
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
   Name nameA("ndn:/A");
   Name nameB("ndn:/B");
   

@@ -8,9 +8,8 @@
 
 namespace nfd {
 
-TcpFace::TcpFace(FaceId id,
-                 const shared_ptr<TcpFace::protocol::socket>& socket)
-  : StreamFace<protocol>(id, socket)
+TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
+  : StreamFace<protocol>(socket)
 {
 }
 

@@ -117,10 +117,7 @@ TcpChannel::handleConnection(const boost::system::error_code& error,
     return;
   }
 
-  /**
-   * \todo Remove FaceId from here
-   */
-  shared_ptr<TcpFace> face = make_shared<TcpFace>(1, boost::cref(socket));
+  shared_ptr<TcpFace> face = make_shared<TcpFace>(boost::cref(socket));
   onFaceCreated(face);
 
   tcp::Endpoint remoteEndpoint = socket->remote_endpoint();

@@ -8,13 +8,25 @@
 
 namespace nfd {
 
-Face::Face(FaceId id)
-  : m_id(id)
+Face::Face()
+  : m_id(INVALID_FACEID)
 {
 }
 
 Face::~Face()
 {
+}
+
+FaceId
+Face::getId() const
+{
+  return m_id;
+}
+
+FaceId
+Face::setId(FaceId faceId)
+{
+  m_id = faceId;
 }
 
 bool

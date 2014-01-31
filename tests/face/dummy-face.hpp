@@ -18,18 +18,17 @@ namespace nfd {
 class DummyFace : public Face
 {
 public:
-  DummyFace(FaceId id)
-    : Face(id)
+  DummyFace()
   {
   }
   
   virtual void
-  sendInterest(const Interest &interest)
+  sendInterest(const Interest& interest)
   {
   }
   
   virtual void
-  sendData(const Data &data)
+  sendData(const Data& data)
   {
   }
 };

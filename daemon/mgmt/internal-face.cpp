@@ -8,10 +8,7 @@
 
 namespace nfd {
 
-const FaceId INTERNAL_FACE_FACEID = 0;
-
 InternalFace::InternalFace()
-  : Face(INTERNAL_FACE_FACEID)
 {
 
 }

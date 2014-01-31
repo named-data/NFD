@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_SUITE(FaceFace)
 
 BOOST_AUTO_TEST_CASE(Description)
 {
-  DummyFace face(1);
+  DummyFace face;
   face.setDescription("3pFsKrvWr");
   BOOST_CHECK_EQUAL(face.getDescription(), "3pFsKrvWr");
 }

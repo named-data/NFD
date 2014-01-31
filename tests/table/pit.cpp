@@ -15,8 +15,8 @@ BOOST_AUTO_TEST_SUITE(TablePit)
 
 BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
-  shared_ptr<Face> face1 = make_shared<DummyFace>(1);
-  shared_ptr<Face> face2 = make_shared<DummyFace>(2);
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
   Name name("ndn:/KuYfjtRq");
   Interest interest(name);
   Interest interest1(name, static_cast<ndn::Milliseconds>(2528));

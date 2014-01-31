@@ -21,8 +21,7 @@ class TcpFace : public StreamFace<boost::asio::ip::tcp>
 public:
   typedef boost::asio::ip::tcp protocol;
 
-  TcpFace(FaceId id,
-          const shared_ptr<protocol::socket>& socket);
+  TcpFace(const shared_ptr<protocol::socket>& socket);
 
   // from Face
   virtual void

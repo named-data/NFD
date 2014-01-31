@@ -17,6 +17,8 @@ namespace nfd {
  */
 typedef int FaceId;
 
+const FaceId INVALID_FACEID = -1;
+
 const std::size_t MAX_NDN_PACKET_SIZE = 8800;
 
 /** \class Face
@@ -25,10 +27,13 @@ const std::size_t MAX_NDN_PACKET_SIZE = 8800;
 class Face : noncopyable, public enable_shared_from_this<Face>
 {
 public:
-  Face(FaceId id);
+  Face();
   
   virtual
   ~Face();
+  
+  FaceId
+  getId() const;
 
   /// fires when an Interest is received
   EventEmitter<const Interest&> onReceiveInterest;
@@ -81,8 +86,15 @@ protected:
   // receiveData();
   
 private:
+  FaceId
+  setId(FaceId faceId);
+
+private:
   FaceId m_id;
   std::string m_description;
+  
+  // allow setting FaceId
+  friend class Forwarder;
 };
 
 } // namespace nfd

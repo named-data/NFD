@@ -5,11 +5,13 @@
  */
 
 #include "strategy.hpp"
+#include "forwarder.hpp"
 
 namespace nfd {
+namespace fw {
 
-Strategy::Strategy(Forwarder& fw)
-  : m_fw(fw)
+Strategy::Strategy(Forwarder& forwarder)
+  : m_forwarder(forwarder)
 {
 }
 
@@ -22,13 +24,14 @@ void
 Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
                        shared_ptr<Face> outFace)
 {
-  m_fw.onOutgoingInterest(pitEntry, *outFace);
+  m_forwarder.onOutgoingInterest(pitEntry, *outFace);
 }
 
 void
 Strategy::rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
-  m_fw.onInterestRebuff(pitEntry);
+  m_forwarder.onInterestRebuff(pitEntry);
 }
 
+} // namespace fw
 } // namespace nfd
