@@ -50,9 +50,23 @@ private:
 std::ostream&
 operator<<(std::ostream& output, const Logger& obj);
 
-#define NFD_LOG_INIT(name)    \
+#define NFD_LOG_INIT(name) \
   static nfd::Logger \
   g_logger = nfd::Logger(name);
+
+#define NFD_LOG_INCLASS_DECLARE()        \
+  static nfd::Logger g_logger;
+
+#define NFD_LOG_INCLASS_DEFINE(cls, name)        \
+  nfd::Logger cls::g_logger = nfd::Logger(name);
+
+#define NFD_LOG_INCLASS_TEMPLATE_DEFINE(cls, name)   \
+  template<class T> \
+  nfd::Logger cls<T>::g_logger = nfd::Logger(name);
+
+#define NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(cls, specialization, name)    \
+  template<> \
+  nfd::Logger cls<specialization>::g_logger = nfd::Logger(name);
 
 #define NFD_LOG_TRACE(expression) \
     if(g_logger.isEnabled(nfd::LOG_TRACE)) \
