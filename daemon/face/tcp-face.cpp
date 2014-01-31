@@ -8,6 +8,8 @@
 
 namespace nfd {
 
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, TcpFace::protocol, "TcpFace");
+
 TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
   : StreamFace<protocol>(socket)
 {

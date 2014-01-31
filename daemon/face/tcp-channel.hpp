@@ -91,7 +91,8 @@ private:
   handleConnection(const boost::system::error_code& error,
                    const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                    const FaceCreatedCallback& onFaceCreated,
-                   const ConnectFailedCallback& onConnectFailed);
+                   const ConnectFailedCallback& onConnectFailed,
+                   bool remoteConnection);
 
   void
   handleSuccessfulConnect(const boost::system::error_code& error,
@@ -112,7 +113,8 @@ private:
                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                           const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
                           const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onConnectFailed);
+                          const ConnectFailedCallback& onConnectFailed,
+                          const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
   
 private:
   boost::asio::io_service& m_ioService;

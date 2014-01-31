@@ -8,6 +8,8 @@
 
 namespace nfd {
 
+NFD_LOG_INIT("TcpChannel");
+
 using namespace boost::asio;
 
 TcpChannel::TcpChannel(io_service& ioService,
@@ -33,7 +35,8 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor->async_accept(*clientSocket,
                            bind(&TcpChannel::handleConnection, this, _1,
                                 clientSocket,
-                                onFaceCreated, onAcceptFailed));
+                                onFaceCreated, onAcceptFailed,
+                                true));
 }
 
 void
@@ -54,9 +57,13 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
     make_shared<monotonic_deadline_timer>(boost::ref(m_ioService));
 
-  // not sure if it works. This will bind to something...
-  // Do we need reuse here too?
-  clientSocket->bind(m_localEndpoint);
+  clientSocket->open(m_localEndpoint.protocol());
+
+  // The following does not work and CCNx does not bind the local
+  // socket to a fixed port number for TCP connections
+
+  // clientSocket->set_option(ip::tcp::socket::reuse_address(true));
+  // clientSocket->bind(m_localEndpoint);
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
@@ -81,9 +88,13 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
     make_shared<monotonic_deadline_timer>(boost::ref(m_ioService));
 
-  // not sure if it works. This will bind to something...
-  // Do we need reuse here too?
-  clientSocket->bind(m_localEndpoint);
+  clientSocket->open(m_localEndpoint.protocol());
+
+  // The following does not work and CCNx does not bind the local
+  // socket to a fixed port number for TCP connections
+
+  // clientSocket->set_option(ip::tcp::socket::reuse_address(true));
+  // clientSocket->bind(m_localEndpoint);
 
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
@@ -92,7 +103,8 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
   resolver->async_resolve(query,
                           bind(&TcpChannel::handleEndpointResoution, this, _1, _2,
                                clientSocket, connectTimeoutTimer,
-                               onFaceCreated, onConnectFailed));
+                               onFaceCreated, onConnectFailed,
+                               resolver));
 
   connectTimeoutTimer->expires_from_now(timeout);
   connectTimeoutTimer->async_wait(bind(&TcpChannel::handleFailedConnect, this, _1,
@@ -105,18 +117,35 @@ void
 TcpChannel::handleConnection(const boost::system::error_code& error,
                              const shared_ptr<ip::tcp::socket>& socket,
                              const FaceCreatedCallback& onFaceCreated,
-                             const ConnectFailedCallback& onConnectFailed)
+                             const ConnectFailedCallback& onConnectFailed,
+                             bool remoteConnection)
 {
   if (error) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
 
-    /// \todo Log the error
+    NFD_LOG_DEBUG("Connect to remote endpoint failed: "
+                  << error.category().message(error.value()));
+    
     onConnectFailed("Connect to remote endpoint failed: " +
                     error.category().message(error.value()));
     return;
   }
 
+  if (remoteConnection)
+    {
+      NFD_LOG_DEBUG("[" << socket->local_endpoint() << "] "
+                    "<< Connection from " << socket->remote_endpoint());
+    }
+  else
+    {
+      NFD_LOG_DEBUG("[" << socket->local_endpoint() << "] "
+                    ">> Connection to " << socket->remote_endpoint());
+    }
+  
+  /**
+   * \todo Remove FaceId from here
+   */
   shared_ptr<TcpFace> face = make_shared<TcpFace>(boost::cref(socket));
   onFaceCreated(face);
 
@@ -138,12 +167,16 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
       return;
 
     socket->close();
+    
+    NFD_LOG_DEBUG("Connect to remote endpoint failed: "
+                  << error.category().message(error.value()));
+    
     onConnectFailed("Connect to remote endpoint failed: " +
                     error.category().message(error.value()));
     return;
   }
 
-  handleConnection(error, socket, onFaceCreated, onConnectFailed);
+  handleConnection(error, socket, onFaceCreated, onConnectFailed, false);
 }
 
 void
@@ -156,6 +189,9 @@ TcpChannel::handleFailedConnect(const boost::system::error_code& error,
     return;
   }
 
+  NFD_LOG_DEBUG("Connect to remote endpoint timed out: "
+                << error.category().message(error.value()));
+  
   onConnectFailed("Connect to remote endpoint timed out: " +
                   error.category().message(error.value()));
   socket->close(); // abort the connection
@@ -167,7 +203,8 @@ TcpChannel::handleEndpointResoution(const boost::system::error_code& error,
                                     const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                                     const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
                                     const FaceCreatedCallback& onFaceCreated,
-                                    const ConnectFailedCallback& onConnectFailed)
+                                    const ConnectFailedCallback& onConnectFailed,
+                                    const shared_ptr<ip::tcp::resolver>& resolver)
 {
   if (error ||
       remoteEndpoint == ip::tcp::resolver::iterator())
@@ -177,6 +214,10 @@ TcpChannel::handleEndpointResoution(const boost::system::error_code& error,
 
       socket->close();
       timer->cancel();
+
+      NFD_LOG_DEBUG("Remote endpoint hostname or port cannot be resolved: "
+                    << error.category().message(error.value()));
+      
       onConnectFailed("Remote endpoint hostname or port cannot be resolved: " +
                       error.category().message(error.value()));
       return;
