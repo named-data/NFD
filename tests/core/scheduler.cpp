@@ -80,6 +80,15 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
   BOOST_CHECK_EQUAL(count4, 4);
 }
 
+BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
+{
+  boost::asio::io_service io; 
+  Scheduler scheduler(io);
+  
+  EventId i;
+  scheduler.cancelEvent(i);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace nfd

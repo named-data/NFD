@@ -109,8 +109,8 @@ Scheduler::schedulePeriodicEvent(const time::Duration& after,
 void
 Scheduler::cancelEvent(const EventId& eventId)
 {
-  if (!eventId->isValid())
-    return; // event already fired or cancelled
+  if (!static_cast<bool>(eventId) || !eventId->isValid())
+    return; // event empty, already fired, or cancelled
   
   if (static_cast<EventQueue::iterator>(*eventId) != m_scheduledEvent) {
     m_events.erase(*eventId);
