@@ -23,7 +23,8 @@ Face::getId() const
   return m_id;
 }
 
-FaceId
+// this method is private and should be used only by the Forwarder
+void
 Face::setId(FaceId faceId)
 {
   m_id = faceId;

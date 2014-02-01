@@ -86,7 +86,7 @@ protected:
   // receiveData();
   
 private:
-  FaceId
+  void
   setId(FaceId faceId);
 
 private:
