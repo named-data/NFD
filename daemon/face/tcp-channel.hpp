@@ -88,11 +88,14 @@ public:
   
 private:
   void
-  handleConnection(const boost::system::error_code& error,
-                   const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                   const FaceCreatedCallback& onFaceCreated,
-                   const ConnectFailedCallback& onConnectFailed,
-                   bool remoteConnection);
+  createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+             const FaceCreatedCallback& onFaceCreated);
+
+  void
+  handleSuccessfulAccept(const boost::system::error_code& error,
+                         const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                         const FaceCreatedCallback& onFaceCreated,
+                         const ConnectFailedCallback& onConnectFailed);
 
   void
   handleSuccessfulConnect(const boost::system::error_code& error,
