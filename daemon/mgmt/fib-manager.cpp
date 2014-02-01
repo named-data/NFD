@@ -69,8 +69,9 @@ const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_REQUEST_VERBS[] =
   };
 
 FibManager::FibManager(Fib& fib,
-                       function<shared_ptr<Face>(FaceId)> getFace)
-  : ManagerBase(shared_ptr<AppFace>(new InternalFace(*this))),
+                       function<shared_ptr<Face>(FaceId)> getFace,
+                       shared_ptr<AppFace> face)
+  : ManagerBase(face),
     m_managedFib(fib),
     m_getFace(getFace),
     m_verbDispatch(FIB_MANAGER_REQUEST_VERBS,
@@ -131,7 +132,7 @@ FibManager::fibAddNextHop(const Interest& request)
   const size_t optionCompIndex =
     FIB_MANAGER_REQUEST_PREFIX.size() + 1;
 
-  const ndn::Buffer &optionBuffer =
+  const ndn::Buffer& optionBuffer =
     request.getName()[optionCompIndex].getValue();
   shared_ptr<const ndn::Buffer> tmpOptionBuffer(new ndn::Buffer(optionBuffer));
   Block rawOptions(tmpOptionBuffer);

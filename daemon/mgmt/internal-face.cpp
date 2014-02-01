@@ -5,12 +5,12 @@
  */
 
 #include "internal-face.hpp"
-#include "fib-manager.hpp"
 
 namespace nfd {
 
-InternalFace::InternalFace(FibManager& manager)
-  : m_fibManager(manager)
+NFD_LOG_INIT("InternalFace");
+
+InternalFace::InternalFace()
 {
 
 }
@@ -18,11 +18,25 @@ InternalFace::InternalFace(FibManager& manager)
 void
 InternalFace::sendInterest(const Interest& interest)
 {
-  const Name& interestName = interest.getName();
+  const Name& interestName(interest.getName());
+  NFD_LOG_DEBUG("received Interest: " << interestName);
 
-  if (m_fibManager.getRequestPrefix().isPrefixOf(interestName))
+  size_t nComps = interestName.size();
+  for (size_t i = 0; i < nComps; i++)
     {
-      m_fibManager.onFibRequest(interest);
+      Name prefix(interestName.getPrefix(nComps - i));
+      std::map<Name, OnInterest>::const_iterator filter =
+        m_interestFilters.find(prefix);
+
+      if (filter != m_interestFilters.end())
+        {
+          NFD_LOG_DEBUG("found Interest filter for " << prefix);
+          filter->second(interestName, interest);
+        }
+      else
+        {
+          NFD_LOG_DEBUG("no Interest filter found for " << prefix);
+        }
     }
   //Drop Interest
 }
@@ -37,7 +51,8 @@ void
 InternalFace::setInterestFilter(const Name& filter,
                                 OnInterest onInterest)
 {
-
+  NFD_LOG_INFO("registering callback for " << filter);
+  m_interestFilters[filter] = onInterest;
 }
 
 void

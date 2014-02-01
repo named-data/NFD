@@ -23,7 +23,9 @@ class FibManager : public ManagerBase
 {
 public:
 
-  FibManager(Fib& fib, function<shared_ptr<Face>(FaceId)> getFace);
+  FibManager(Fib& fib,
+             function<shared_ptr<Face>(FaceId)> getFace,
+             shared_ptr<AppFace> face);
 
   void
   onFibRequest(const Interest& request);

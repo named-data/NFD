@@ -11,6 +11,8 @@
 
 namespace nfd {
 
+NFD_LOG_INIT("ManagerBase");
+
 ManagerBase::ManagerBase(shared_ptr<AppFace> face)
   : m_face(face)
 {
@@ -27,10 +29,47 @@ ManagerBase::sendResponse(const Name& name,
                             uint32_t code,
                             const std::string& text)
 {
-  Data response(name);
+  // Path 1 - runtime exception on receive's wireDecode.
+  // Set Data response's content payload to the
+  // encoded Block.
+  {
+    ndn::ControlResponse control(code, text);
+    const Block& encodedControl = control.wireEncode();
 
-  response.setContent(ndn::ControlResponse(code, text).wireEncode());
-  m_face->put(response);
+    NFD_LOG_DEBUG("sending control response (Path 1)"
+                  << " Name: " << name
+                  << " code: " << code
+                  << " text: " << text);
+
+    NFD_LOG_DEBUG("sending raw control block size = " << encodedControl.size());
+
+    Data response(name);
+    response.setContent(encodedControl);
+
+    m_face->put(response);
+  }
+
+  // Path 2 - works, but not conformant to protocol.
+  // Encode ControlResponse and append Block as
+  // the last component of the name.
+  // {
+  //   ndn::ControlResponse control(code, text);
+  //   const Block& encodedControl = control.wireEncode();
+
+  //   NFD_LOG_DEBUG("sending control response (Path 2)"
+  //                 << " Name: " << name
+  //                 << " code: " << code
+  //                 << " text: " << text);
+
+  //   NFD_LOG_DEBUG("sending raw control block size = " << encodedControl.size());
+
+  //   Name responseName(name);
+  //   responseName.append(encodedControl);
+
+  //   Data response(responseName);
+  //   m_face->put(response);
+  // }
+
 }
 
 

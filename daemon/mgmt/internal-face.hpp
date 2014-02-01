@@ -18,8 +18,7 @@ class InternalFace : public Face, public AppFace
 {
 public:
 
-  explicit
-  InternalFace(FibManager& manager);
+  InternalFace();
 
   // Overridden Face methods for forwarder
 
@@ -47,8 +46,6 @@ private:
   // onConfig(ConfigFile::Node section, bool isDryRun);
 
   std::map<Name, OnInterest> m_interestFilters;
-  FibManager& m_fibManager; // for mock only
-
 };
 
 } // namespace nfd

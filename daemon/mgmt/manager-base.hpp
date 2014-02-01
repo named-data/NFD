@@ -23,7 +23,7 @@ public:
 
 protected:
 
-  virtual void
+  void
   sendResponse(const Name& name,
                  uint32_t code,
                  const std::string& text);
