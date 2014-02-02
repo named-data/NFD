@@ -35,7 +35,7 @@ protected:
 };
 
 
-} // namespace ndf
+} // namespace nfd
 
 #endif // NFD_MGMT_MANAGER_BASE_HPP
 

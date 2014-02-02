@@ -76,10 +76,6 @@ BOOST_AUTO_TEST_CASE(ValidAddNextHop)
                           &fixture, _1),
                           face);
 
-  face->setInterestFilter("/localhost/nfd/fib",
-                          bind(&FibManager::onFibRequest,
-                               &manager, _2));
-
   face->onReceiveData +=
     bind(&validateControlResponse, _1, 200, "OK");
 
@@ -122,10 +118,6 @@ BOOST_AUTO_TEST_CASE(InvalidPrefixRegistration)
                      bind(&InternalFaceFixture::getFace,
                           &fixture, _1),
                      face);
-
-  face->setInterestFilter("/localhost/nfd/fib",
-                          bind(&FibManager::onFibRequest,
-                               &manager, _2));
 
   face->onReceiveData +=
     bind(&validateControlResponse, _1, 404, "MALFORMED");

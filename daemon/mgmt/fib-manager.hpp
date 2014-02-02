@@ -67,17 +67,23 @@ private:
 
   const VerbDispatchTable m_verbDispatch;
 
-  static const Name FIB_MANAGER_REQUEST_PREFIX;
-  static const size_t FIB_MANAGER_REQUEST_COMMAND_MIN_NCOMPS;
-  static const size_t FIB_MANAGER_REQUEST_SIGNED_INTEREST_NCOMPS;
+  static const Name FIB_MANAGER_COMMAND_PREFIX; // /localhost/nfd/fib
 
-  static const Name::Component FIB_MANAGER_REQUEST_VERB_INSERT;
-  static const Name::Component FIB_MANAGER_REQUEST_VERB_DELETE;
-  static const Name::Component FIB_MANAGER_REQUEST_VERB_ADD_NEXTHOP;
-  static const Name::Component FIB_MANAGER_REQUEST_VERB_REMOVE_NEXTHOP;
-  static const Name::Component FIB_MANAGER_REQUEST_VERB_STRATEGY;
+  // number of components in an invalid, but not malformed, unsigned command.
+  // (/localhost/nfd/fib + verb + options) = 5
+  static const size_t FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS;
 
-  static const VerbAndProcessor FIB_MANAGER_REQUEST_VERBS[];
+  // number of components in a valid signed Interest.
+  // 5 in mock (see UNSIGNED_NCOMPS), 8 with signed Interest support.
+  static const size_t FIB_MANAGER_COMMAND_SIGNED_NCOMPS;
+
+  static const Name::Component FIB_MANAGER_COMMAND_VERB_INSERT;
+  static const Name::Component FIB_MANAGER_COMMAND_VERB_DELETE;
+  static const Name::Component FIB_MANAGER_COMMAND_VERB_ADD_NEXTHOP;
+  static const Name::Component FIB_MANAGER_COMMAND_VERB_REMOVE_NEXTHOP;
+  static const Name::Component FIB_MANAGER_COMMAND_VERB_STRATEGY;
+
+  static const VerbAndProcessor FIB_MANAGER_COMMAND_VERBS[];
 
 };
 
