@@ -9,13 +9,12 @@
 
 #include "common.hpp"
 #include "face/face.hpp"
+#include "mgmt/app-face.hpp"
+#include "fw/strategy.hpp"
 #include "mgmt/manager-base.hpp"
 
 namespace nfd {
 
-class AppFace;
-class Face;
-class Strategy;
 class Forwarder;
 class Fib;
 
@@ -29,9 +28,6 @@ public:
 
   void
   onFibRequest(const Interest& request);
-
-  const Name&
-  getRequestPrefix() const { return FIB_MANAGER_REQUEST_PREFIX; }
 
 private:
 
@@ -57,7 +53,7 @@ private:
 
   Fib& m_managedFib;
   function<shared_ptr<Face>(FaceId)> m_getFace;
-  std::map<Name, shared_ptr<Strategy> > m_namespaceToStrategyMap;
+  std::map<Name, shared_ptr<fw::Strategy> > m_namespaceToStrategyMap;
 
 
 

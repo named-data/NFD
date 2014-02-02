@@ -11,128 +11,78 @@
 
 #include <ndn-cpp-dev/management/fib-management-options.hpp>
 #include <ndn-cpp-dev/management/control-response.hpp>
+#include <ndn-cpp-dev/encoding/block.hpp>
 
 #include <boost/test/unit_test.hpp>
-
-static nfd::FaceId g_faceCount = 1;
-static std::vector<nfd::shared_ptr<nfd::Face> > g_faces;
-
-static nfd::shared_ptr<nfd::Face>
-getFace(nfd::FaceId id)
-{
-  if (g_faces.size() < id)
-    {
-      BOOST_FAIL("Attempted to access invalid FaceId: " << id);
-    }
-  return g_faces[id-1];
-}
-
-
 
 namespace nfd {
 
 NFD_LOG_INIT("InternalFaceTest");
 
-void
-receiveValidNextHopControlResponse(const ndn::Data& response)
+class InternalFaceFixture
 {
-  // Path 1 - runtime exception on wireDecode.
-  // Extract Block from response's payload and attempt
-  // to decode.
-  // {
-  //   ndn::ControlResponse control;
-  //   Block controlRaw(response.getContent());
+public:
 
-  //   NFD_LOG_DEBUG("received raw control block size = " << controlRaw.size());
-
-  //   control.wireDecode(controlRaw);
-
-  //   NFD_LOG_DEBUG("received control response (Path 1)"
-  //                 << " Name: " << response.getName()
-  //                 << " code: " << control.getCode()
-  //                 << " text: " << control.getText());
-
-  //   BOOST_REQUIRE(control.getCode() == 200);
-  //   BOOST_REQUIRE(control.getText() == "OK");
-  // }
-
-  // Path 1.5 - same as Path 1, but offset the payload's
-  // encoded block by 2 bytes before decoding. 2 bytes
-  // is the measured Block size difference between
-  // ManagerBase's sendResponse and above Path 1's
-  // received size.
+  shared_ptr<Face>
+  getFace(FaceId id)
   {
-    ndn::ControlResponse control;
-    Block controlRaw(response.getContent());
-
-    NFD_LOG_DEBUG("received raw control block size = " << controlRaw.size());
-    // controlRaw is currently 2 bytes larger than what was sent
-    // try to offset it manually and create a new block
-
-    BOOST_REQUIRE(controlRaw.hasWire());
-    const uint8_t* buf = controlRaw.wire() + 2;
-    size_t bufSize = controlRaw.size() - 2;
-
-    Block alt(buf, bufSize);
-    control.wireDecode(alt);
-
-    NFD_LOG_DEBUG("received control response (Path 1)"
-                  << " Name: " << response.getName()
-                  << " code: " << control.getCode()
-                  << " text: " << control.getText());
-
-    BOOST_REQUIRE(control.getCode() == 200);
-    BOOST_REQUIRE(control.getText() == "OK");
+    if (m_faces.size() < id)
+      {
+        BOOST_FAIL("Attempted to access invalid FaceId: " << id);
+      }
+    return m_faces[id-1];
   }
 
-  // Path 2 - works, but not conformant to protocol.
-  // Extract decode and ControlResponse from last
-  // component of response's name.
-  // {
-  //   const Name& responseName = response.getName();
-  //   const ndn::Buffer& controlBuffer =
-  //     responseName[responseName.size()-1].getValue();
+  void
+  addFace(shared_ptr<Face> face)
+  {
+    m_faces.push_back(face);
+  }
 
-  //   shared_ptr<const ndn::Buffer> tmpBuffer(new ndn::Buffer(controlBuffer));
-  //   Block controlRaw(tmpBuffer);
-
-  //   NFD_LOG_DEBUG("received raw control block size = " << controlRaw.size());
-
-  //   ndn::ControlResponse control;
-  //   control.wireDecode(controlRaw);
-
-  //   NFD_LOG_DEBUG("received control response (Path 2)"
-  //                 << " Name: " << response.getName()
-  //                 << " code: " << control.getCode()
-  //                 << " text: " << control.getText());
-
-  //   BOOST_REQUIRE(control.getCode() == 200);
-  //   BOOST_REQUIRE(control.getText() == "OK");
-  // }
-
-
-}
+private:
+  std::vector<shared_ptr<Face> > m_faces;
+};
 
 BOOST_AUTO_TEST_SUITE(MgmtInternalFace)
 
+void
+validateControlResponse(const Data& response,
+                        uint32_t expectedCode,
+                        const std::string& expectedText)
+{
+  Block controlRaw = response.getContent().blockFromValue();
+
+  ndn::ControlResponse control;
+  control.wireDecode(controlRaw);
+
+  NFD_LOG_DEBUG("received control response"
+                << " Name: " << response.getName()
+                << " code: " << control.getCode()
+                << " text: " << control.getText());
+
+  BOOST_REQUIRE(control.getCode() == expectedCode);
+  BOOST_REQUIRE(control.getText() == expectedText);
+}
+
 BOOST_AUTO_TEST_CASE(ValidAddNextHop)
 {
-  g_faceCount = 1;
-  g_faces.clear();
-  g_faces.push_back(make_shared<DummyFace>());
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
-  FibManager manager(fib, &getFace, face);
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                          face);
 
-  face->setInterestFilter(manager.getRequestPrefix(),
+  face->setInterestFilter("/localhost/nfd/fib",
                           bind(&FibManager::onFibRequest,
                                &manager, _2));
 
   face->onReceiveData +=
-    bind(&receiveValidNextHopControlResponse, _1);
+    bind(&validateControlResponse, _1, 200, "OK");
 
-  Name regName(manager.getRequestPrefix());
   ndn::FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
@@ -140,7 +90,7 @@ BOOST_AUTO_TEST_CASE(ValidAddNextHop)
 
   Block encodedOptions(options.wireEncode());
 
-  Name commandName(manager.getRequestPrefix());
+  Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
   commandName.append(encodedOptions);
 
@@ -163,17 +113,22 @@ BOOST_AUTO_TEST_CASE(ValidAddNextHop)
 
 BOOST_AUTO_TEST_CASE(InvalidPrefixRegistration)
 {
-  g_faceCount = 1;
-  g_faces.clear();
-  g_faces.push_back(make_shared<DummyFace>());
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
-  FibManager manager(fib, &getFace, face);
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                     face);
 
-  face->setInterestFilter(manager.getRequestPrefix(),
+  face->setInterestFilter("/localhost/nfd/fib",
                           bind(&FibManager::onFibRequest,
                                &manager, _2));
+
+  face->onReceiveData +=
+    bind(&validateControlResponse, _1, 404, "MALFORMED");
 
   Interest nonRegInterest("/hello");
   face->sendInterest(nonRegInterest);
@@ -185,6 +140,127 @@ BOOST_AUTO_TEST_CASE(InvalidPrefixRegistration)
       const fib::NextHopList& hops = entry->getNextHops();
       BOOST_REQUIRE(hops.size() == 0);
     }
+}
+
+void
+validateOnInterestCallback(const Name& name, const Interest& interest)
+{
+  NFD_LOG_DEBUG("Reached correct callback");
+}
+
+void
+validateNoOnInterestCallback(const Name& name, const Interest& interest)
+{
+  BOOST_FAIL("Reached wrong callback");
+}
+
+BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
+{
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face(new InternalFace);
+  Fib fib;
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                          face);
+
+  face->setInterestFilter("/localhost/nfd/fib",
+                          &validateOnInterestCallback);
+
+  // generate command whose name is canonically
+  // ordered after /localhost/nfd/fib so that
+  // we hit the end of the std::map
+
+  Name commandName("/localhost/nfd/fib/end");
+  Interest command(commandName);
+  face->sendInterest(command);
+}
+
+
+
+BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
+{
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face(new InternalFace);
+  Fib fib;
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                          face);
+
+  face->setInterestFilter("/localhost/nfd/fib",
+                          &validateNoOnInterestCallback);
+
+  // generate command whose name is canonically
+  // ordered before /localhost/nfd/fib so that
+  // we hit the beginning of the std::map
+
+  Name commandName("/localhost/nfd");
+  Interest command(commandName);
+  face->sendInterest(command);
+}
+
+
+
+BOOST_AUTO_TEST_CASE(SendInterestHitExact)
+{
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face(new InternalFace);
+  Fib fib;
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                          face);
+
+  face->setInterestFilter("/localhost/nfd/eib",
+                          &validateNoOnInterestCallback);
+
+  face->setInterestFilter("/localhost/nfd/fib",
+                          &validateOnInterestCallback);
+
+  face->setInterestFilter("/localhost/nfd/gib",
+                          &validateNoOnInterestCallback);
+
+  // generate command whose name exactly matches
+  // /localhost/nfd/fib
+
+  Name commandName("/localhost/nfd/fib");
+  Interest command(commandName);
+  face->sendInterest(command);
+}
+
+
+
+BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
+{
+  InternalFaceFixture fixture;
+  fixture.addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face(new InternalFace);
+  Fib fib;
+  FibManager manager(fib,
+                     bind(&InternalFaceFixture::getFace,
+                          &fixture, _1),
+                          face);
+
+  face->setInterestFilter("/localhost/nfd/fib",
+                          &validateOnInterestCallback);
+
+  face->setInterestFilter("/localhost/nfd/fib/zzzzzzzzzzzzz/",
+                          &validateNoOnInterestCallback);
+
+  // generate command whose name exactly matches
+  // an Interest filter
+
+  Name commandName("/localhost/nfd/fib/previous");
+  Interest command(commandName);
+  face->sendInterest(command);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

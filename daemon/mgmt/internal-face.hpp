@@ -12,8 +12,6 @@
 
 namespace nfd {
 
-class FibManager;
-
 class InternalFace : public Face, public AppFace
 {
 public:
