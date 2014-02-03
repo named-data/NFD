@@ -77,6 +77,7 @@ Scheduler::Scheduler(boost::asio::io_service& ioService)
   : m_ioService(ioService)
   , m_scheduledEvent(m_events.end())
   , m_deadlineTimer(ioService)
+  , m_isEventExecuting(false)
 {
 }
 
@@ -94,13 +95,16 @@ Scheduler::schedulePeriodicEvent(const time::Duration& after,
 {
   EventQueue::iterator i = m_events.insert(EventInfo(after, period, event));
   i->m_eventId = make_shared<EventIdImpl>(boost::cref(i));
-  
-  if (m_scheduledEvent == m_events.end() ||
-      *i < *m_scheduledEvent)
+
+  if (!m_isEventExecuting)
     {
-      m_deadlineTimer.expires_from_now(after);
-      m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
-      m_scheduledEvent = i;
+      if (m_scheduledEvent == m_events.end() ||
+          *i < *m_scheduledEvent)
+        {
+          m_deadlineTimer.expires_from_now(after);
+          m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
+          m_scheduledEvent = i;
+        }
     }
 
   return i->m_eventId;
@@ -122,16 +126,19 @@ Scheduler::cancelEvent(const EventId& eventId)
   m_events.erase(static_cast<EventQueue::iterator>(*eventId));
   eventId->invalidate();
 
-  if (!m_events.empty())
+  if (!m_isEventExecuting)
     {
-      m_deadlineTimer.expires_from_now(m_events.begin()->expiresFromNow());
-      m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
-      m_scheduledEvent = m_events.begin();
-    }
-  else
-    {
-      m_deadlineTimer.cancel();
-      m_scheduledEvent = m_events.end();
+      if (!m_events.empty())
+        {
+          m_deadlineTimer.expires_from_now(m_events.begin()->expiresFromNow());
+          m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
+          m_scheduledEvent = m_events.begin();
+        }
+      else
+        {
+          m_deadlineTimer.cancel();
+          m_scheduledEvent = m_events.end();
+        }
     }
 }
 
@@ -142,6 +149,8 @@ Scheduler::onEvent(const boost::system::error_code& error)
     {
       return;
     }
+
+  m_isEventExecuting = true;
   
   // process all expired events
   time::Point now = time::now();
@@ -149,7 +158,7 @@ Scheduler::onEvent(const boost::system::error_code& error)
     {
       EventQueue::iterator head = m_events.begin();
       
-      head->m_event();
+      Event event = head->m_event;
       if (head->m_period < 0)
         {
           head->m_eventId->invalidate();
@@ -163,13 +172,38 @@ Scheduler::onEvent(const boost::system::error_code& error)
           i->m_eventId->reset(i);
           m_events.erase(head);
         }
+
+      try
+        {
+          event();
+        }
+      catch(...)
+        {
+          m_isEventExecuting = false;
+          for (EventQueue::iterator i = m_events.begin();
+               i != m_events.end();
+               ++i)
+            {
+              i->m_eventId->invalidate();
+            }
+          m_events.clear();
+          
+          throw;
+        }
     }
 
   if (!m_events.empty())
     {
       m_deadlineTimer.expires_from_now(m_events.begin()->m_scheduledTime - now);
       m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
+      m_scheduledEvent = m_events.begin();
     }
+  else
+    {
+      m_scheduledEvent = m_events.end();
+    }
+
+  m_isEventExecuting = false;
 }
 
 

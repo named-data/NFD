@@ -92,6 +92,8 @@ private:
   EventQueue m_events;
   EventQueue::iterator m_scheduledEvent;
   boost::asio::monotonic_deadline_timer m_deadlineTimer;
+
+  bool m_isEventExecuting;
 };
 
 } // namespace nfd

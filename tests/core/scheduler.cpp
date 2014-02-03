@@ -89,6 +89,32 @@ BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
   scheduler.cancelEvent(i);
 }
 
+struct SelfCancelFixture
+{
+  SelfCancelFixture()
+    : m_scheduler(m_io)
+  {
+  }
+  
+  void
+  cancelSelf()
+  {
+    m_scheduler.cancelEvent(m_selfEventId);
+  }
+  
+  boost::asio::io_service m_io; 
+  Scheduler m_scheduler;
+  EventId m_selfEventId;
+};
+
+BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
+{
+  m_selfEventId = m_scheduler.scheduleEvent(time::seconds(0.1),
+                                            bind(&SelfCancelFixture::cancelSelf, this));
+  
+  BOOST_REQUIRE_NO_THROW(m_io.run());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace nfd
