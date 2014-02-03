@@ -33,41 +33,34 @@ const size_t FibManager::FIB_MANAGER_COMMAND_SIGNED_NCOMPS =
   FibManager::FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS +
   0; // No signed Interest support in mock, otherwise 3 (timestamp, signed info tlv, signature tlv)
 
-const Name::Component FibManager::FIB_MANAGER_COMMAND_VERB_INSERT = "insert";
-const Name::Component FibManager::FIB_MANAGER_COMMAND_VERB_DELETE = "delete";
-const Name::Component FibManager::FIB_MANAGER_COMMAND_VERB_ADD_NEXTHOP = "add-nexthop";
-const Name::Component FibManager::FIB_MANAGER_COMMAND_VERB_REMOVE_NEXTHOP = "remove-nexthop";
-const Name::Component FibManager::FIB_MANAGER_COMMAND_VERB_STRATEGY = "strategy";
-
-
 const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
   {
     // Unsupported
 
     // VerbAndProcessor(
-    //                  FibManager::FIB_MANAGER_COMMAND_VERB_INSERT,
+    //                  "insert",
     //                  &FibManager::fibInsert
     //                  ),
 
     // VerbAndProcessor(
-    //                  FibManager::FIB_MANAGER_COMMAND_VERB_DELETE,
+    //                  "delete",
     //                  &FibManager::fibDelete
     //                  ),
 
     VerbAndProcessor(
-                     FibManager::FIB_MANAGER_COMMAND_VERB_ADD_NEXTHOP,
+                     "add-nexthop",
                      &FibManager::fibAddNextHop
                      ),
 
     // Unsupported
 
     // VerbAndProcessor(
-    //                  FibManager::FIB_MANAGER_COMMAND_VERB_REMOVE_NEXTHOP,
+    //                  "remove-nexthop",
     //                  &FibManager::fibRemoveNextHop
     //                  ),
 
     // VerbAndProcessor(
-    //                  FibManager::FIB_MANAGER_COMMAND_VERB_STRATEGY,
+    //                  "strategy",
     //                  &FibManager::fibStrategy
     //                  )
 
@@ -99,7 +92,7 @@ FibManager::onFibRequest(const Interest& request)
       commandNComps < FIB_MANAGER_COMMAND_SIGNED_NCOMPS)
     {
       NFD_LOG_INFO("Unsigned command: " << command);
-      sendResponse(command, 401, "SIGREQ");
+      sendResponse(command, 401, "Signature required");
 
       return;
     }
@@ -107,7 +100,7 @@ FibManager::onFibRequest(const Interest& request)
       !FIB_MANAGER_COMMAND_PREFIX.isPrefixOf(command))
     {
       NFD_LOG_INFO("Malformed command: " << command);
-      sendResponse(command, 400, "MALFORMED");
+      sendResponse(command, 400, "Malformed command");
       return;
     }
 
@@ -123,7 +116,7 @@ FibManager::onFibRequest(const Interest& request)
   else
     {
       NFD_LOG_INFO("Unsupported command verb: " << verb);
-      sendResponse(request.getName(), 404, "UNSUPPORTED");
+      sendResponse(request.getName(), 501, "Unsupported command");
     }
 
 }
@@ -160,7 +153,7 @@ FibManager::fibAddNextHop(const Interest& request)
   catch (const ndn::Tlv::Error& e)
     {
       NFD_LOG_INFO("Bad command option parse: " << command);
-      sendResponse(request.getName(), 400, "MALFORMED");
+      sendResponse(request.getName(), 400, "Malformed command");
       return;
     }
 
@@ -168,7 +161,7 @@ FibManager::fibAddNextHop(const Interest& request)
   if (false)
     {
       NFD_LOG_INFO("Unauthorized command attempt: " << command);
-      sendResponse(request.getName(), 403, "UNAUTHORIZED");
+      sendResponse(request.getName(), 403, "Unauthorized command");
       return;
     }
 
@@ -177,7 +170,7 @@ FibManager::fibAddNextHop(const Interest& request)
                << " Cost: " << options.getCost());
 
   shared_ptr<Face> nextHopFace = m_getFace(options.getFaceId());
-  if (nextHopFace != 0)
+  if (static_cast<bool>(nextHopFace))
     {
       std::pair<shared_ptr<fib::Entry>, bool> insertResult = m_managedFib.insert(options.getName());
       insertResult.first->addNextHop(nextHopFace, options.getCost());
@@ -186,7 +179,7 @@ FibManager::fibAddNextHop(const Interest& request)
   else
     {
       NFD_LOG_INFO("Unknown FaceId: " << command);
-      sendResponse(request.getName(), 400, "MALFORMED");
+      sendResponse(request.getName(), 400, "Malformed command");
     }
 }
 

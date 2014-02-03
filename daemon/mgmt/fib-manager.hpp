@@ -55,8 +55,6 @@ private:
   function<shared_ptr<Face>(FaceId)> m_getFace;
   std::map<Name, shared_ptr<fw::Strategy> > m_namespaceToStrategyMap;
 
-
-
   typedef function<void(FibManager*,
                         const Interest&)> VerbProcessor;
 
@@ -76,12 +74,6 @@ private:
   // number of components in a valid signed Interest.
   // 5 in mock (see UNSIGNED_NCOMPS), 8 with signed Interest support.
   static const size_t FIB_MANAGER_COMMAND_SIGNED_NCOMPS;
-
-  static const Name::Component FIB_MANAGER_COMMAND_VERB_INSERT;
-  static const Name::Component FIB_MANAGER_COMMAND_VERB_DELETE;
-  static const Name::Component FIB_MANAGER_COMMAND_VERB_ADD_NEXTHOP;
-  static const Name::Component FIB_MANAGER_COMMAND_VERB_REMOVE_NEXTHOP;
-  static const Name::Component FIB_MANAGER_COMMAND_VERB_STRATEGY;
 
   static const VerbAndProcessor FIB_MANAGER_COMMAND_VERBS[];
 

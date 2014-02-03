@@ -23,6 +23,13 @@ class InternalFaceFixture
 {
 public:
 
+  InternalFaceFixture()
+    : m_onInterestFired(false),
+      m_noOnInterestFired(false)
+  {
+
+  }
+
   shared_ptr<Face>
   getFace(FaceId id)
   {
@@ -34,132 +41,98 @@ public:
   }
 
   void
+  validateOnInterestCallback(const Name& name, const Interest& interest)
+  {
+    m_onInterestFired = true;
+  }
+
+  void
+  validateNoOnInterestCallback(const Name& name, const Interest& interest)
+  {
+    m_noOnInterestFired = true;
+  }
+
+  void
   addFace(shared_ptr<Face> face)
   {
     m_faces.push_back(face);
   }
 
+  bool
+  didOnInterestFire()
+  {
+    return m_onInterestFired;
+  }
+
+  bool
+  didNoOnInterestFire()
+  {
+    return m_noOnInterestFired;
+  }
+
+  void
+  resetOnInterestFired()
+  {
+    m_onInterestFired = false;
+  }
+
+  void
+  resetNoOnInterestFired()
+  {
+    m_noOnInterestFired = false;
+  }
+
 private:
   std::vector<shared_ptr<Face> > m_faces;
+  bool m_onInterestFired;
+  bool m_noOnInterestFired;
 };
 
 BOOST_AUTO_TEST_SUITE(MgmtInternalFace)
 
 void
-validateControlResponse(const Data& response,
-                        uint32_t expectedCode,
-                        const std::string& expectedText)
+validatePutData(bool& called, const Name& expectedName, const Data& data)
 {
-  Block controlRaw = response.getContent().blockFromValue();
-
-  ndn::ControlResponse control;
-  control.wireDecode(controlRaw);
-
-  NFD_LOG_DEBUG("received control response"
-                << " Name: " << response.getName()
-                << " code: " << control.getCode()
-                << " text: " << control.getText());
-
-  BOOST_REQUIRE(control.getCode() == expectedCode);
-  BOOST_REQUIRE(control.getText() == expectedText);
+  called = true;
+  BOOST_CHECK_EQUAL(expectedName, data.getName());
 }
 
-BOOST_AUTO_TEST_CASE(ValidAddNextHop)
+BOOST_FIXTURE_TEST_CASE(PutData, InternalFaceFixture)
 {
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
+  addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
   FibManager manager(fib,
                      bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
+                          this, _1),
                           face);
 
-  face->onReceiveData +=
-    bind(&validateControlResponse, _1, 200, "OK");
+  bool didPutData = false;
+  Name dataName("/hello");
+  face->onReceiveData += bind(&validatePutData, boost::ref(didPutData), dataName, _1);
 
-  ndn::FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
-  options.setCost(1);
+  Data testData(dataName);
+  face->sign(testData);
+  face->put(testData);
 
-  Block encodedOptions(options.wireEncode());
-
-  Name commandName("/localhost/nfd/fib");
-  commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
-
-  Interest command(commandName);
-  face->sendInterest(command);
-
-  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch("/hello");
-
-  if (entry)
-    {
-      const fib::NextHopList& hops = entry->getNextHops();
-      BOOST_REQUIRE(hops.size() == 1);
-      BOOST_CHECK(hops[0].getCost() == 1);
-    }
-  else
-    {
-      BOOST_FAIL("Failed to find expected fib entry");
-    }
+  BOOST_REQUIRE(didPutData);
 }
 
-BOOST_AUTO_TEST_CASE(InvalidPrefixRegistration)
+BOOST_FIXTURE_TEST_CASE(SendInterestHitEnd, InternalFaceFixture)
 {
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
+  addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
   FibManager manager(fib,
                      bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
-                     face);
-
-  face->onReceiveData +=
-    bind(&validateControlResponse, _1, 404, "MALFORMED");
-
-  Interest nonRegInterest("/hello");
-  face->sendInterest(nonRegInterest);
-
-  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch("/hello");
-
-  if (entry)
-    {
-      const fib::NextHopList& hops = entry->getNextHops();
-      BOOST_REQUIRE(hops.size() == 0);
-    }
-}
-
-void
-validateOnInterestCallback(const Name& name, const Interest& interest)
-{
-  NFD_LOG_DEBUG("Reached correct callback");
-}
-
-void
-validateNoOnInterestCallback(const Name& name, const Interest& interest)
-{
-  BOOST_FAIL("Reached wrong callback");
-}
-
-BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
-{
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
-
-  shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
+                          this, _1),
                           face);
 
   face->setInterestFilter("/localhost/nfd/fib",
-                          &validateOnInterestCallback);
+                          bind(&InternalFaceFixture::validateOnInterestCallback,
+                               this, _1, _2));
 
   // generate command whose name is canonically
   // ordered after /localhost/nfd/fib so that
@@ -168,24 +141,27 @@ BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
   Name commandName("/localhost/nfd/fib/end");
   Interest command(commandName);
   face->sendInterest(command);
+
+  BOOST_REQUIRE(didOnInterestFire());
+  BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
 
 
-BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
+BOOST_FIXTURE_TEST_CASE(SendInterestHitBegin, InternalFaceFixture)
 {
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
+  addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
   FibManager manager(fib,
                      bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
+                          this, _1),
                           face);
 
   face->setInterestFilter("/localhost/nfd/fib",
-                          &validateNoOnInterestCallback);
+                          bind(&InternalFaceFixture::validateNoOnInterestCallback,
+                               this, _1, _2));
 
   // generate command whose name is canonically
   // ordered before /localhost/nfd/fib so that
@@ -194,30 +170,34 @@ BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
   Name commandName("/localhost/nfd");
   Interest command(commandName);
   face->sendInterest(command);
+
+  BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
 
 
-BOOST_AUTO_TEST_CASE(SendInterestHitExact)
+BOOST_FIXTURE_TEST_CASE(SendInterestHitExact, InternalFaceFixture)
 {
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
+  addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
   FibManager manager(fib,
                      bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
+                          this, _1),
                           face);
 
   face->setInterestFilter("/localhost/nfd/eib",
-                          &validateNoOnInterestCallback);
+                          bind(&InternalFaceFixture::validateNoOnInterestCallback,
+                               this, _1, _2));
 
   face->setInterestFilter("/localhost/nfd/fib",
-                          &validateOnInterestCallback);
+                          bind(&InternalFaceFixture::validateOnInterestCallback,
+                           this, _1, _2));
 
   face->setInterestFilter("/localhost/nfd/gib",
-                          &validateNoOnInterestCallback);
+                          bind(&InternalFaceFixture::validateNoOnInterestCallback,
+                               this, _1, _2));
 
   // generate command whose name exactly matches
   // /localhost/nfd/fib
@@ -225,27 +205,31 @@ BOOST_AUTO_TEST_CASE(SendInterestHitExact)
   Name commandName("/localhost/nfd/fib");
   Interest command(commandName);
   face->sendInterest(command);
+
+  BOOST_REQUIRE(didOnInterestFire());
+  BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
 
 
-BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
+BOOST_FIXTURE_TEST_CASE(SendInterestHitPrevious, InternalFaceFixture)
 {
-  InternalFaceFixture fixture;
-  fixture.addFace(make_shared<DummyFace>());
+  addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
   Fib fib;
   FibManager manager(fib,
                      bind(&InternalFaceFixture::getFace,
-                          &fixture, _1),
+                          this, _1),
                           face);
 
   face->setInterestFilter("/localhost/nfd/fib",
-                          &validateOnInterestCallback);
+                          bind(&InternalFaceFixture::validateOnInterestCallback,
+                               this, _1, _2));
 
   face->setInterestFilter("/localhost/nfd/fib/zzzzzzzzzzzzz/",
-                          &validateNoOnInterestCallback);
+                          bind(&InternalFaceFixture::validateNoOnInterestCallback,
+                               this, _1, _2));
 
   // generate command whose name exactly matches
   // an Interest filter
@@ -253,6 +237,9 @@ BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
   Name commandName("/localhost/nfd/fib/previous");
   Interest command(commandName);
   face->sendInterest(command);
+
+  BOOST_REQUIRE(didOnInterestFire());
+  BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

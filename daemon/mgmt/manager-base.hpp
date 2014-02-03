@@ -8,7 +8,7 @@
 #define NFD_MGMT_MANAGER_BASE_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/security/key-chain.hpp>
+
 
 namespace nfd {
 
@@ -31,7 +31,6 @@ protected:
 
 protected:
   shared_ptr<AppFace> m_face;
-   ndn::KeyChain m_keyChain;
 };
 
 

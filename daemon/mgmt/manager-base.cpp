@@ -40,7 +40,7 @@ ManagerBase::sendResponse(const Name& name,
   Data response(name);
   response.setContent(encodedControl);
 
-  m_keyChain.sign(response);
+  m_face->sign(response);
   m_face->put(response);
 }
 

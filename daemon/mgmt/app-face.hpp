@@ -9,9 +9,11 @@
 
 #include "common.hpp"
 
+#include <ndn-cpp-dev/security/key-chain.hpp>
+
 namespace nfd {
 
-typedef ndn::func_lib::function<void(const Name&, const Interest&)> OnInterest;
+typedef function<void(const Name&, const Interest&)> OnInterest;
 
 class AppFace
 {
@@ -21,10 +23,16 @@ public:
                     OnInterest onInterest) = 0;
 
   virtual void
+  sign(Data& data);
+
+  virtual void
   put(const Data& data) = 0;
 
   virtual
   ~AppFace() { }
+
+protected:
+  ndn::KeyChain m_keyChain;
 };
 
 } // namespace nfd

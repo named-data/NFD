@@ -44,7 +44,7 @@ InternalFace::sendInterest(const Interest& interest)
   // match or there is no matching prefix in the map.
 
 
-  if (filter == m_interestFilters.end())
+  if (filter == m_interestFilters.end() && filter != m_interestFilters.begin())
     {
       // We hit the end, check if the previous element
       // is a match
@@ -59,7 +59,7 @@ InternalFace::sendInterest(const Interest& interest)
           NFD_LOG_DEBUG("no Interest filter found for " << interestName << " (before end)");
         }
     }
-  else if (filter->first.isPrefixOf(interestName))
+  else if (filter->first == interestName)
     {
       NFD_LOG_DEBUG("found Interest filter for " << filter->first << " (exact match)");
       filter->second(interestName, interest);
