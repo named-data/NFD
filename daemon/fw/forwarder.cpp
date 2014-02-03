@@ -49,6 +49,13 @@ Forwarder::removeFace(shared_ptr<Face> face)
   m_fib.removeNextHopFromAllEntries(face);
 }
 
+shared_ptr<Face>
+Forwarder::getFace(FaceId id)
+{
+  std::map<FaceId, shared_ptr<Face> >::iterator i = m_faces.find(id);
+  return (i == m_faces.end()) ? (shared_ptr<Face>()) : (i->second);
+}
+
 void
 Forwarder::onInterest(Face& face, const Interest& interest)
 {

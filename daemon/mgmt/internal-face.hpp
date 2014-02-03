@@ -44,7 +44,6 @@ private:
   // onConfig(ConfigFile::Node section, bool isDryRun);
 
   std::map<Name, OnInterest> m_interestFilters;
-
 };
 
 } // namespace nfd
