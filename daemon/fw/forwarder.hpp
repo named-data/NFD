@@ -49,6 +49,9 @@ public:
   Cs&
   getCs();
 
+  shared_ptr<Face>
+  getFace(FaceId id);
+
 private: // pipelines
   /** \brief incoming Interest pipeline
    */
@@ -134,7 +137,6 @@ Forwarder::getCs()
 {
   return m_cs;
 }
-
 
 } // namespace nfd
 
