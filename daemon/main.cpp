@@ -8,6 +8,7 @@
 #include "core/logger.hpp"
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"
+#include "mgmt/fib-manager.hpp"
 #include "face/tcp-channel-factory.hpp"
 
 namespace nfd {
@@ -35,6 +36,7 @@ struct ProgramOptions
 static boost::asio::io_service g_ioService;
 static ProgramOptions g_options;
 static Forwarder* g_forwarder;
+static FibManager* g_fibManager;
 static TcpChannelFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
@@ -164,6 +166,13 @@ initializeMgmt()
 {
   g_internalFace = make_shared<InternalFace>();
   g_forwarder->addFace(g_internalFace);
+
+  g_fibManager = new FibManager(g_forwarder->getFib(),
+                                bind(&Forwarder::getFace, g_forwarder, _1),
+                                g_internalFace);
+
+  shared_ptr<fib::Entry> entry = g_forwarder->getFib().insert("/localhost/nfd/fib").first;
+  entry->addNextHop(g_internalFace, 0);
 }
 
 int
