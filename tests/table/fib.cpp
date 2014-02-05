@@ -201,6 +201,105 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   BOOST_CHECK_EQUAL(nexthopsB.size(), 0);
 }
 
+void
+validateFindExactMatch(const Fib& fib, const Name& target)
+{
+  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
+  if (static_cast<bool>(entry))
+    {
+      BOOST_CHECK_EQUAL(entry->getPrefix(), target);
+    }
+  else
+    {
+      BOOST_FAIL("No entry found for " << target);
+    }
+}
+
+void
+validateNoExactMatch(const Fib& fib, const Name& target)
+{
+  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
+  if (static_cast<bool>(entry))
+    {
+      BOOST_FAIL("Found unexpected entry for " << target);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FindExactMatch)
+{
+  Fib fib;
+  fib.insert("/A");
+  fib.insert("/A/B");
+  fib.insert("/A/B/C");
+
+  validateFindExactMatch(fib, "/A");
+  validateFindExactMatch(fib, "/A/B");
+  validateFindExactMatch(fib, "/A/B/C");
+  validateFindExactMatch(fib, "/");
+
+  validateNoExactMatch(fib, "/does/not/exist");
+
+  Fib gapFib;
+  fib.insert("/X");
+  fib.insert("/X/Y/Z");
+
+  validateNoExactMatch(gapFib, "/X/Y");
+
+  Fib emptyFib;
+  validateNoExactMatch(emptyFib, "/nothing/here");
+}
+
+void
+validateRemove(Fib& fib, const Name& target)
+{
+  fib.remove(target);
+
+  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
+  if (static_cast<bool>(entry))
+    {
+      BOOST_FAIL("Found \"removed\" entry for " << target);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Remove)
+{
+  Fib emptyFib;
+
+  emptyFib.remove("/does/not/exist"); // crash test
+
+  validateRemove(emptyFib, "/");
+
+  emptyFib.remove("/still/does/not/exist"); // crash test
+
+  Fib fib;
+  fib.insert("/A");
+  fib.insert("/A/B");
+  fib.insert("/A/B/C");
+
+  // check if we remove the right thing and leave
+  // everything else alone
+
+  validateRemove(fib, "/A/B");
+  validateFindExactMatch(fib, "/A");
+  validateFindExactMatch(fib, "/A/B/C");
+  validateFindExactMatch(fib, "/");
+
+  validateRemove(fib, "/A/B/C");
+  validateFindExactMatch(fib, "/A");
+  validateFindExactMatch(fib, "/");
+
+  validateRemove(fib, "/A");
+  validateFindExactMatch(fib, "/");
+
+  Fib gapFib;
+  gapFib.insert("/X");
+  gapFib.insert("/X/Y/Z");
+
+  gapFib.remove("/X/Y"); //should do nothing
+  validateFindExactMatch(gapFib, "/X");
+  validateFindExactMatch(gapFib, "/X/Y/Z");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace nfd

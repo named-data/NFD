@@ -17,20 +17,26 @@ class Fib : noncopyable
 {
 public:
   Fib();
-  
+
   ~Fib();
-  
+
   /** \brief inserts a FIB entry for prefix
    *  If an entry for exact same prefix exists, that entry is returned.
    *  \return{ the entry, and true for new entry, false for existing entry }
    */
   std::pair<shared_ptr<fib::Entry>, bool>
   insert(const Name& prefix);
-  
+
   /// performs a longest prefix match
   shared_ptr<fib::Entry>
   findLongestPrefixMatch(const Name& prefix) const;
-  
+
+  shared_ptr<fib::Entry>
+  findExactMatch(const Name& prefix) const;
+
+  void
+  remove(const Name& prefix);
+
   /** \brief removes the NextHop record for face in all entrites
    *  This is usually invoked when face goes away.
    *  Removing all NextHops in a FIB entry will not remove the FIB entry.

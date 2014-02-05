@@ -35,7 +35,7 @@ Fib::insert(const Name& prefix)
     m_table.begin(), m_table.end(),
     bind(&predicate_FibEntry_eq_Name, _1, prefix));
   if (it != m_table.end()) return std::make_pair(*it, false);
-  
+
   shared_ptr<fib::Entry> entry = make_shared<fib::Entry>(prefix);
   m_table.push_back(entry);
   return std::make_pair(entry, true);
@@ -54,10 +54,30 @@ accumulate_FibEntry_longestPrefixMatch(
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  shared_ptr<fib::Entry> bestMatch = 
+  shared_ptr<fib::Entry> bestMatch =
     std::accumulate(m_table.begin(), m_table.end(), m_rootEntry,
     bind(&accumulate_FibEntry_longestPrefixMatch, _1, _2, prefix));
   return bestMatch;
+}
+
+shared_ptr<fib::Entry>
+Fib::findExactMatch(const Name& prefix) const
+{
+  std::list<shared_ptr<fib::Entry> >::const_iterator it =
+    std::find_if(m_table.begin(), m_table.end(),
+                 bind(&predicate_FibEntry_eq_Name, _1, prefix));
+
+  if (it != m_table.end())
+    {
+      return *it;
+    }
+  return shared_ptr<fib::Entry>();
+}
+
+void
+Fib::remove(const Name& prefix)
+{
+  m_table.remove_if(bind(&predicate_FibEntry_eq_Name, _1, prefix));
 }
 
 static inline void
