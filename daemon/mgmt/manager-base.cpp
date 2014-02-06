@@ -7,8 +7,6 @@
 #include "manager-base.hpp"
 #include "mgmt/app-face.hpp"
 
-#include <ndn-cpp-dev/management/control-response.hpp>
-
 namespace nfd {
 
 NFD_LOG_INIT("ManagerBase");
@@ -26,22 +24,29 @@ ManagerBase::~ManagerBase()
 
 void
 ManagerBase::sendResponse(const Name& name,
-                            uint32_t code,
-                            const std::string& text)
+                          uint32_t code,
+                          const std::string& text)
 {
-  ndn::ControlResponse control(code, text);
-  const Block& encodedControl = control.wireEncode();
+  ndn::ControlResponse response(code, text);
+  sendResponse(name, response);
+}
 
-  NFD_LOG_DEBUG("sending control response"
-                << " Name: " << name
-                << " code: " << code
-                << " text: " << text);
+void
+ManagerBase::sendResponse(const Name& name,
+                          const ndn::ControlResponse& response)
+{
+  NFD_LOG_DEBUG("responding"
+                << " name: " << name
+                << " code: " << response.getCode()
+                << " text: " << response.getText());
 
-  Data response(name);
-  response.setContent(encodedControl);
+  const Block& encodedControl = response.wireEncode();
 
-  m_face->sign(response);
-  m_face->put(response);
+  Data responseData(name);
+  responseData.setContent(encodedControl);
+
+  m_face->sign(responseData);
+  m_face->put(responseData);
 }
 
 

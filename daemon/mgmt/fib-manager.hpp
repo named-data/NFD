@@ -13,6 +13,9 @@
 #include "fw/strategy.hpp"
 #include "mgmt/manager-base.hpp"
 
+#include <ndn-cpp-dev/management/fib-management-options.hpp>
+#include <ndn-cpp-dev/management/control-response.hpp>
+
 namespace nfd {
 
 class Forwarder;
@@ -32,19 +35,28 @@ public:
 private:
 
   void
-  fibInsert(const Interest& request);
+  insertEntry(const ndn::FibManagementOptions& options,
+                ndn::ControlResponse& response);
 
   void
-  fibDelete(const Interest& request);
+  deleteEntry(const ndn::FibManagementOptions& options,
+                ndn::ControlResponse& response);
 
   void
-  fibAddNextHop(const Interest& request);
+  addNextHop(const ndn::FibManagementOptions& options,
+               ndn::ControlResponse& response);
 
   void
-  fibRemoveNextHop(const Interest& request);
+  removeNextHop(const ndn::FibManagementOptions& options,
+                  ndn::ControlResponse& response);
 
   void
-  fibStrategy(const Interest& request);
+  strategy(const ndn::FibManagementOptions& options,
+             ndn::ControlResponse& response);
+
+  bool
+  extractOptions(const Interest& request,
+                   ndn::FibManagementOptions& extractedOptions);
 
   // void
   // onConfig(ConfigFile::Node section, bool isDryRun);
@@ -56,7 +68,8 @@ private:
   std::map<Name, shared_ptr<fw::Strategy> > m_namespaceToStrategyMap;
 
   typedef function<void(FibManager*,
-                        const Interest&)> VerbProcessor;
+                          const ndn::FibManagementOptions&,
+                          ndn::ControlResponse&)> VerbProcessor;
 
   typedef std::map<Name::Component, VerbProcessor> VerbDispatchTable;
 
