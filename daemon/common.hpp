@@ -24,6 +24,9 @@
 #include <vector>
 #include <list>
 #include <set>
+#include <sstream>
+#include <istream>
+#include <fstream>
 
 #include "core/logger.hpp"
 
