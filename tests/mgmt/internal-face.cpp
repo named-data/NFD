@@ -5,13 +5,7 @@
  */
 
 #include "mgmt/internal-face.hpp"
-#include "mgmt/fib-manager.hpp"
-#include "table/fib.hpp"
 #include "../face/dummy-face.hpp"
-
-#include <ndn-cpp-dev/management/fib-management-options.hpp>
-#include <ndn-cpp-dev/management/control-response.hpp>
-#include <ndn-cpp-dev/encoding/block.hpp>
 
 #include <boost/test/unit_test.hpp>
 
@@ -28,16 +22,6 @@ public:
       m_noOnInterestFired(false)
   {
 
-  }
-
-  shared_ptr<Face>
-  getFace(FaceId id)
-  {
-    if (m_faces.size() < id)
-      {
-        BOOST_FAIL("Attempted to access invalid FaceId: " << id);
-      }
-    return m_faces[id-1];
   }
 
   void
@@ -102,11 +86,6 @@ BOOST_FIXTURE_TEST_CASE(PutData, InternalFaceFixture)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          this, _1),
-                          face);
 
   bool didPutData = false;
   Name dataName("/hello");
@@ -124,11 +103,6 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitEnd, InternalFaceFixture)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          this, _1),
-                          face);
 
   face->setInterestFilter("/localhost/nfd/fib",
                           bind(&InternalFaceFixture::validateOnInterestCallback,
@@ -153,11 +127,6 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitBegin, InternalFaceFixture)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          this, _1),
-                          face);
 
   face->setInterestFilter("/localhost/nfd/fib",
                           bind(&InternalFaceFixture::validateNoOnInterestCallback,
@@ -181,11 +150,6 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitExact, InternalFaceFixture)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          this, _1),
-                          face);
 
   face->setInterestFilter("/localhost/nfd/eib",
                           bind(&InternalFaceFixture::validateNoOnInterestCallback,
@@ -217,11 +181,6 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitPrevious, InternalFaceFixture)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(new InternalFace);
-  Fib fib;
-  FibManager manager(fib,
-                     bind(&InternalFaceFixture::getFace,
-                          this, _1),
-                          face);
 
   face->setInterestFilter("/localhost/nfd/fib",
                           bind(&InternalFaceFixture::validateOnInterestCallback,
