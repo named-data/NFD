@@ -33,30 +33,30 @@ const size_t FibManager::FIB_MANAGER_COMMAND_SIGNED_NCOMPS =
 const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
   {
     VerbAndProcessor(
-                     "insert",
+                     Name::Component("insert"),
                      &FibManager::insertEntry
                      ),
 
     VerbAndProcessor(
-                     "delete",
+                     Name::Component("delete"),
                      &FibManager::deleteEntry
                      ),
 
     VerbAndProcessor(
-                     "add-nexthop",
+                     Name::Component("add-nexthop"),
                      &FibManager::addNextHop
                      ),
 
 
 
     VerbAndProcessor(
-                     "remove-nexthop",
+                     Name::Component("remove-nexthop"),
                      &FibManager::removeNextHop
                      ),
 
     // Unsupported
     // VerbAndProcessor(
-    //                  "strategy",
+    //                  Name::Component("strategy"),
     //                  &FibManager::strategy
     //                  )
 
@@ -141,13 +141,9 @@ FibManager::extractOptions(const Interest& request,
   const size_t optionCompIndex =
     FIB_MANAGER_COMMAND_PREFIX.size() + 1;
 
-  const ndn::Buffer& optionBuffer =
-    request.getName()[optionCompIndex].getValue();
-  shared_ptr<const ndn::Buffer> tmpOptionBuffer(make_shared<ndn::Buffer>(optionBuffer));
-
   try
     {
-      Block rawOptions(tmpOptionBuffer);
+      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
       extractedOptions.wireDecode(rawOptions);
     }
   catch (const ndn::Tlv::Error& e)
