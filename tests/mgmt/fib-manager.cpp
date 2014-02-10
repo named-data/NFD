@@ -47,15 +47,15 @@ public:
   }
 
   void
-  validateControlResponse(const Data& response,
-                          const Name& expectedName,
-                          uint32_t expectedCode,
-                          const std::string& expectedText)
+  validateControlResponseCommon(const Data& response,
+                                const Name& expectedName,
+                                uint32_t expectedCode,
+                                const std::string& expectedText,
+                                ControlResponse& control)
   {
     m_callbackFired = true;
     Block controlRaw = response.getContent().blockFromValue();
 
-    ControlResponse control;
     control.wireDecode(controlRaw);
 
     NFD_LOG_DEBUG("received control response"
@@ -66,6 +66,41 @@ public:
     BOOST_CHECK_EQUAL(response.getName(), expectedName);
     BOOST_CHECK_EQUAL(control.getCode(), expectedCode);
     BOOST_CHECK_EQUAL(control.getText(), expectedText);
+  }
+
+  void
+  validateControlResponse(const Data& response,
+                          const Name& expectedName,
+                          uint32_t expectedCode,
+                          const std::string& expectedText)
+  {
+    ControlResponse control;
+    validateControlResponseCommon(response, expectedName,
+                                  expectedCode, expectedText, control);
+
+    if (!control.getBody().empty())
+      {
+        BOOST_FAIL("found unexpected control response body");
+      }
+  }
+
+  void
+  validateControlResponse(const Data& response,
+                          const Name& expectedName,
+                          uint32_t expectedCode,
+                          const std::string& expectedText,
+                          const Block& expectedBody)
+  {
+    ControlResponse control;
+    validateControlResponseCommon(response, expectedName,
+                                  expectedCode, expectedText, control);
+
+    BOOST_REQUIRE(!control.getBody().empty());
+    BOOST_REQUIRE(control.getBody().value_size() == expectedBody.value_size());
+
+    BOOST_CHECK(memcmp(control.getBody().value(), expectedBody.value(),
+                       expectedBody.value_size()) == 0);
+
   }
 
   bool
@@ -98,6 +133,28 @@ foundNextHop(FaceId id, uint32_t cost, const fib::NextHop& next)
 
 bool
 addedNextHopWithCost(const Fib& fib, const Name& prefix, size_t oldSize, uint32_t cost)
+{
+  shared_ptr<fib::Entry> entry = fib.findExactMatch(prefix);
+
+  if (static_cast<bool>(entry))
+    {
+      const fib::NextHopList& hops = entry->getNextHops();
+      return hops.size() == oldSize + 1 &&
+        std::find_if(hops.begin(), hops.end(), bind(&foundNextHop, -1, cost, _1)) != hops.end();
+    }
+  return false;
+}
+
+bool
+foundNextHopWithFace(FaceId id, uint32_t cost,
+                     shared_ptr<Face> face, const fib::NextHop& next)
+{
+  return id == next.getFace()->getId() && next.getCost() == cost && face == next.getFace();
+}
+
+bool
+addedNextHopWithFace(const Fib& fib, const Name& prefix, size_t oldSize,
+                     uint32_t cost, shared_ptr<Face> face)
 {
   shared_ptr<fib::Entry> entry = fib.findExactMatch(prefix);
 
@@ -303,6 +360,48 @@ BOOST_FIXTURE_TEST_CASE(UnknownFaceId, FibManagerFixture)
   BOOST_REQUIRE(addedNextHopWithCost(fib, "/hello", 0, 101) == false);
 }
 
+BOOST_FIXTURE_TEST_CASE(TestImplicitFaceId, FibManagerFixture)
+{
+  addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face(make_shared<InternalFace>());
+  Fib fib;
+  FibManager manager(fib,
+                     bind(&FibManagerFixture::getFace, this, _1),
+                          face);
+
+  FibManagementOptions options;
+  options.setName("/hello");
+  options.setFaceId(0);
+  options.setCost(101);
+
+  Block encodedOptions(options.wireEncode());
+
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("add-nexthop");
+  commandName.append(encodedOptions);
+
+  FibManagementOptions expectedOptions;
+  expectedOptions.setName("/hello");
+  expectedOptions.setFaceId(1);
+  expectedOptions.setCost(101);
+
+  Block encodedExpectedOptions(expectedOptions.wireEncode());
+
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         commandName, 200, "Success", encodedExpectedOptions);
+
+  fib.insert("/hello");
+
+  Interest command(commandName);
+  command.setIncomingFaceId(1);
+  manager.onFibRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(addedNextHopWithFace(fib, "/hello", 0, 101, getFace(1)));
+}
+
 BOOST_FIXTURE_TEST_CASE(AddNextHopVerbInitialAdd, FibManagerFixture)
 {
   addFace(make_shared<DummyFace>());
@@ -326,7 +425,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbInitialAdd, FibManagerFixture)
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 200, "OK");
+         commandName, 200, "Success", encodedOptions);
 
   fib.insert("/hello");
 
@@ -365,7 +464,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbAddToExisting, FibManagerFixture)
 
       face->onReceiveData +=
         bind(&FibManagerFixture::validateControlResponse, this, _1,
-             commandName, 200, "OK");
+             commandName, 200, "Success", encodedOptions);
 
       Interest command(commandName);
       manager.onFibRequest(command);
@@ -420,7 +519,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbUpdateFaceCost, FibManagerFixture)
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "OK");
+           commandName, 200, "Success", encodedOptions);
 
     Interest command(commandName);
     manager.onFibRequest(command);
@@ -442,7 +541,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbUpdateFaceCost, FibManagerFixture)
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "OK");
+           commandName, 200, "Success", encodedOptions);
 
     Interest command(commandName);
     manager.onFibRequest(command);
@@ -489,7 +588,7 @@ BOOST_FIXTURE_TEST_CASE(Insert, FibManagerFixture)
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "OK");
+           commandName, 200, "Success", encodedOptions);
 
     Interest command(commandName);
     manager.onFibRequest(command);
@@ -518,7 +617,7 @@ BOOST_FIXTURE_TEST_CASE(Insert, FibManagerFixture)
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "OK");
+           commandName, 200, "Success", encodedOptions);
 
     Interest command(commandName);
     manager.onFibRequest(command);
@@ -553,7 +652,7 @@ testRemove(FibManagerFixture* fixture,
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         commandName, 200, "OK");
+         commandName, 200, "Success", encodedOptions);
 
   Interest command(commandName);
   manager.onFibRequest(command);
@@ -642,7 +741,7 @@ testRemoveNextHop(FibManagerFixture* fixture,
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         commandName, 200, "OK");
+         commandName, 200, "Success", encodedOptions);
 
   Interest command(commandName);
   manager.onFibRequest(command);

@@ -30,6 +30,11 @@ protected:
   setResponse(ControlResponse& response,
               uint32_t code,
               const std::string& text);
+  void
+  setResponse(ControlResponse& response,
+              uint32_t code,
+              const std::string& text,
+              const Block& body);
 
   void
   sendResponse(const Name& name,
@@ -51,6 +56,16 @@ ManagerBase::setResponse(ControlResponse& response,
 {
   response.setCode(code);
   response.setText(text);
+}
+
+inline void
+ManagerBase::setResponse(ControlResponse& response,
+                         uint32_t code,
+                         const std::string& text,
+                         const Block& body)
+{
+  setResponse(response, code, text);
+  response.setBody(body);
 }
 
 

@@ -80,6 +80,8 @@ FibManager::onFibRequest(const Interest& request)
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
 
+
+
   if (FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
       commandNComps < FIB_MANAGER_COMMAND_SIGNED_NCOMPS)
     {
@@ -117,7 +119,6 @@ FibManager::onFibRequest(const Interest& request)
         }
 
       NFD_LOG_INFO("command result: processing verb: " << verb);
-
       ControlResponse response;
       (verbProcessor->second)(this, options, response);
 
@@ -149,6 +150,12 @@ FibManager::extractOptions(const Interest& request,
       NFD_LOG_INFO("Bad command option parse: " << command);
       return false;
     }
+
+  if (extractedOptions.getFaceId() == 0)
+    {
+      extractedOptions.setFaceId(request.getIncomingFaceId());
+    }
+
   NFD_LOG_DEBUG("Options parsed OK");
   return true;
 }
@@ -161,7 +168,7 @@ FibManager::insertEntry(const FibManagementOptions& options,
   NFD_LOG_INFO("insert result: OK"
                << " prefix: " << options.getName());
   std::pair<shared_ptr<fib::Entry>, bool> insertResult = m_managedFib.insert(options.getName());
-  setResponse(response, 200, "OK");
+  setResponse(response, 200, "Success", options.wireEncode());
 }
 
 void
@@ -173,7 +180,7 @@ FibManager::deleteEntry(const FibManagementOptions& options,
                << " prefix: " << options.getName());
 
   m_managedFib.remove(options.getName());
-  setResponse(response, 200, "OK");
+  setResponse(response, 200, "Success", options.wireEncode());
 }
 
 static inline bool
@@ -202,7 +209,7 @@ FibManager::addNextHop(const FibManagementOptions& options,
                        << " prefix:" << options.getName()
                        << " faceid: " << options.getFaceId()
                        << " cost: " << options.getCost());
-          setResponse(response, 200, "OK");
+          setResponse(response, 200, "Success", options.wireEncode());
         }
       else
         {
@@ -234,7 +241,7 @@ FibManager::removeNextHop(const FibManagementOptions& options,
           NFD_LOG_INFO("remove-nexthop result: OK prefix: " << options.getName()
                        << " faceid: " << options.getFaceId());
 
-          setResponse(response, 200, "OK");
+          setResponse(response, 200, "Success", options.wireEncode());
         }
       else
         {
