@@ -27,13 +27,13 @@ ManagerBase::sendResponse(const Name& name,
                           uint32_t code,
                           const std::string& text)
 {
-  ndn::ControlResponse response(code, text);
+  ControlResponse response(code, text);
   sendResponse(name, response);
 }
 
 void
 ManagerBase::sendResponse(const Name& name,
-                          const ndn::ControlResponse& response)
+                          const ControlResponse& response)
 {
   NFD_LOG_DEBUG("responding"
                 << " name: " << name

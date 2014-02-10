@@ -11,9 +11,7 @@
 #include "mgmt/internal-face.hpp"
 #include "mgmt/app-face.hpp"
 
-#include <ndn-cpp-dev/management/fib-management-options.hpp>
 #include <ndn-cpp-dev/encoding/tlv.hpp>
-
 
 namespace nfd {
 
@@ -103,7 +101,7 @@ FibManager::onFibRequest(const Interest& request)
   VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find (verb);
   if (verbProcessor != m_verbDispatch.end())
     {
-      ndn::FibManagementOptions options;
+      FibManagementOptions options;
       if (!extractOptions(request, options))
         {
           sendResponse(command, 400, "Malformed command");
@@ -120,7 +118,7 @@ FibManager::onFibRequest(const Interest& request)
 
       NFD_LOG_INFO("command result: processing verb: " << verb);
 
-      ndn::ControlResponse response;
+      ControlResponse response;
       (verbProcessor->second)(this, options, response);
 
       sendResponse(command, response);
@@ -135,7 +133,7 @@ FibManager::onFibRequest(const Interest& request)
 
 bool
 FibManager::extractOptions(const Interest& request,
-                           ndn::FibManagementOptions& extractedOptions)
+                           FibManagementOptions& extractedOptions)
 {
   const Name& command = request.getName();
   const size_t optionCompIndex =
@@ -156,8 +154,8 @@ FibManager::extractOptions(const Interest& request,
 }
 
 void
-FibManager::insertEntry(const ndn::FibManagementOptions& options,
-                        ndn::ControlResponse& response)
+FibManager::insertEntry(const FibManagementOptions& options,
+                        ControlResponse& response)
 {
   NFD_LOG_DEBUG("insert prefix: " << options.getName());
   NFD_LOG_INFO("insert result: OK"
@@ -167,8 +165,8 @@ FibManager::insertEntry(const ndn::FibManagementOptions& options,
 }
 
 void
-FibManager::deleteEntry(const ndn::FibManagementOptions& options,
-                        ndn::ControlResponse& response)
+FibManager::deleteEntry(const FibManagementOptions& options,
+                        ControlResponse& response)
 {
   NFD_LOG_DEBUG("delete prefix: " << options.getName());
   NFD_LOG_INFO("delete result: OK"
@@ -185,8 +183,8 @@ nextHopEqPredicate(const fib::NextHop& target, const fib::NextHop& hop)
 }
 
 void
-FibManager::addNextHop(const ndn::FibManagementOptions& options,
-                          ndn::ControlResponse& response)
+FibManager::addNextHop(const FibManagementOptions& options,
+                       ControlResponse& response)
 {
   NFD_LOG_DEBUG("add-nexthop prefix: " << options.getName()
                 << " faceid: " << options.getFaceId()
@@ -220,8 +218,8 @@ FibManager::addNextHop(const ndn::FibManagementOptions& options,
 }
 
 void
-FibManager::removeNextHop(const ndn::FibManagementOptions& options,
-                             ndn::ControlResponse &response)
+FibManager::removeNextHop(const FibManagementOptions& options,
+                          ControlResponse &response)
 {
   NFD_LOG_DEBUG("remove-nexthop prefix: " << options.getName()
                 << " faceid: " << options.getFaceId());
@@ -254,7 +252,7 @@ FibManager::removeNextHop(const ndn::FibManagementOptions& options,
 }
 
 void
-FibManager::strategy(const ndn::FibManagementOptions& options, ndn::ControlResponse& response)
+FibManager::strategy(const FibManagementOptions& options, ControlResponse& response)
 {
 
 }

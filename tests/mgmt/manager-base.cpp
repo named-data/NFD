@@ -7,8 +7,6 @@
 #include "mgmt/manager-base.hpp"
 #include "mgmt/internal-face.hpp"
 
-#include <ndn-cpp-dev/management/control-response.hpp>
-
 #include <boost/test/unit_test.hpp>
 
 namespace nfd {
@@ -30,7 +28,7 @@ public:
   }
 
   void
-  testSetResponse(ndn::ControlResponse& response,
+  testSetResponse(ControlResponse& response,
                   uint32_t code,
                   const std::string& text)
   {
@@ -47,7 +45,7 @@ public:
 
   void
   testSendResponse(const Name& name,
-                   const ndn::ControlResponse& response)
+                   const ControlResponse& response)
   {
     sendResponse(name, response);
   }
@@ -67,7 +65,7 @@ public:
     m_callbackFired = true;
     Block controlRaw = response.getContent().blockFromValue();
 
-    ndn::ControlResponse control;
+    ControlResponse control;
     control.wireDecode(controlRaw);
 
     NFD_LOG_DEBUG("received control response"
@@ -94,7 +92,7 @@ private:
 
 BOOST_FIXTURE_TEST_CASE(SetResponse, ManagerBaseTest)
 {
-  ndn::ControlResponse response(200, "OK");
+  ControlResponse response(200, "OK");
 
   BOOST_CHECK_EQUAL(response.getCode(), 200);
   BOOST_CHECK_EQUAL(response.getText(), "OK");
@@ -123,7 +121,7 @@ BOOST_FIXTURE_TEST_CASE(SendResponse2Arg, ManagerBaseTest)
     bind(&ManagerBaseTest::validateControlResponse, this, _1,
          "/response", 100, "test");
 
-  ndn::ControlResponse response(100, "test");
+  ControlResponse response(100, "test");
 
   testSendResponse("/response", 100, "test");
   BOOST_REQUIRE(didCallbackFire());

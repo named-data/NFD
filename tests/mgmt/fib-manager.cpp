@@ -13,9 +13,6 @@
 
 #include <algorithm>
 
-#include <ndn-cpp-dev/management/fib-management-options.hpp>
-#include <ndn-cpp-dev/management/control-response.hpp>
-
 #include <boost/test/unit_test.hpp>
 
 namespace nfd {
@@ -58,7 +55,7 @@ public:
     m_callbackFired = true;
     Block controlRaw = response.getContent().blockFromValue();
 
-    ndn::ControlResponse control;
+    ControlResponse control;
     control.wireDecode(controlRaw);
 
     NFD_LOG_DEBUG("received control response"
@@ -161,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE(UnsupportedVerb, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
   options.setCost(1);
@@ -192,7 +189,7 @@ BOOST_FIXTURE_TEST_CASE(UnsignedCommand, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
   options.setCost(101);
@@ -226,7 +223,7 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
   options.setCost(101);
@@ -284,7 +281,7 @@ BOOST_FIXTURE_TEST_CASE(UnknownFaceId, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1000);
   options.setCost(101);
@@ -316,7 +313,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbInitialAdd, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
   options.setCost(101);
@@ -355,7 +352,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbAddToExisting, FibManagerFixture)
   for (int i = 1; i <= 2; i++)
     {
 
-      ndn::FibManagementOptions options;
+      FibManagementOptions options;
       options.setName("/hello");
       options.setFaceId(1);
       options.setCost(100 + i);
@@ -408,7 +405,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbUpdateFaceCost, FibManagerFixture)
 
   fib.insert("/hello");
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
 
@@ -481,7 +478,7 @@ BOOST_FIXTURE_TEST_CASE(Insert, FibManagerFixture)
                      face);
 
   {
-    ndn::FibManagementOptions options;
+    FibManagementOptions options;
     options.setName("/hello");
 
     Block encodedOptions(options.wireEncode());
@@ -510,7 +507,7 @@ BOOST_FIXTURE_TEST_CASE(Insert, FibManagerFixture)
   resetCallbackFired();
 
   {
-    ndn::FibManagementOptions options;
+    FibManagementOptions options;
     options.setName("/hello");
 
     Block encodedOptions(options.wireEncode());
@@ -545,7 +542,7 @@ testRemove(FibManagerFixture* fixture,
            shared_ptr<Face> face,
            const Name& target)
 {
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName(target);
 
   Block encodedOptions(options.wireEncode());
@@ -633,7 +630,7 @@ testRemoveNextHop(FibManagerFixture* fixture,
                   const Name& targetName,
                   FaceId targetFace)
 {
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName(targetName);
   options.setFaceId(targetFace);
 
@@ -702,7 +699,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveNoFace, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
 
@@ -732,7 +729,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveNoPrefix, FibManagerFixture)
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
 
-  ndn::FibManagementOptions options;
+  FibManagementOptions options;
   options.setName("/hello");
   options.setFaceId(1);
 

@@ -13,10 +13,11 @@
 #include "fw/strategy.hpp"
 #include "mgmt/manager-base.hpp"
 
-#include <ndn-cpp-dev/management/fib-management-options.hpp>
-#include <ndn-cpp-dev/management/control-response.hpp>
+#include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
 
 namespace nfd {
+
+using ndn::nfd::FibManagementOptions;
 
 class Forwarder;
 class Fib;
@@ -35,28 +36,28 @@ public:
 private:
 
   void
-  insertEntry(const ndn::FibManagementOptions& options,
-                ndn::ControlResponse& response);
+  insertEntry(const FibManagementOptions& options,
+              ControlResponse& response);
 
   void
-  deleteEntry(const ndn::FibManagementOptions& options,
-                ndn::ControlResponse& response);
+  deleteEntry(const FibManagementOptions& options,
+              ControlResponse& response);
 
   void
-  addNextHop(const ndn::FibManagementOptions& options,
-               ndn::ControlResponse& response);
+  addNextHop(const FibManagementOptions& options,
+             ControlResponse& response);
 
   void
-  removeNextHop(const ndn::FibManagementOptions& options,
-                  ndn::ControlResponse& response);
+  removeNextHop(const FibManagementOptions& options,
+                ControlResponse& response);
 
   void
-  strategy(const ndn::FibManagementOptions& options,
-             ndn::ControlResponse& response);
+  strategy(const FibManagementOptions& options,
+           ControlResponse& response);
 
   bool
   extractOptions(const Interest& request,
-                   ndn::FibManagementOptions& extractedOptions);
+                 FibManagementOptions& extractedOptions);
 
   // void
   // onConfig(ConfigFile::Node section, bool isDryRun);
@@ -68,8 +69,8 @@ private:
   std::map<Name, shared_ptr<fw::Strategy> > m_namespaceToStrategyMap;
 
   typedef function<void(FibManager*,
-                          const ndn::FibManagementOptions&,
-                          ndn::ControlResponse&)> VerbProcessor;
+                        const FibManagementOptions&,
+                        ControlResponse&)> VerbProcessor;
 
   typedef std::map<Name::Component, VerbProcessor> VerbDispatchTable;
 

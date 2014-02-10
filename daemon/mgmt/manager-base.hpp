@@ -8,9 +8,11 @@
 #define NFD_MGMT_MANAGER_BASE_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/management/control-response.hpp>
+#include <ndn-cpp-dev/management/nfd-control-response.hpp>
 
 namespace nfd {
+
+using ndn::nfd::ControlResponse;
 
 class AppFace;
 
@@ -25,13 +27,13 @@ public:
 protected:
 
   void
-  setResponse(ndn::ControlResponse& response,
+  setResponse(ControlResponse& response,
               uint32_t code,
               const std::string& text);
 
   void
   sendResponse(const Name& name,
-               const ndn::ControlResponse& response);
+               const ControlResponse& response);
 
   void
   sendResponse(const Name& name,
@@ -43,7 +45,7 @@ protected:
 };
 
 inline void
-ManagerBase::setResponse(ndn::ControlResponse& response,
+ManagerBase::setResponse(ControlResponse& response,
                          uint32_t code,
                          const std::string& text)
 {
