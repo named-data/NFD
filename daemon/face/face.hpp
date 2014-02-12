@@ -36,13 +36,13 @@ public:
   getId() const;
 
   /// fires when an Interest is received
-  EventEmitter<const Interest&> onReceiveInterest;
+  EventEmitter<Interest> onReceiveInterest;
   
   /// fires when a Data is received
-  EventEmitter<const Data&> onReceiveData;
+  EventEmitter<Data> onReceiveData;
 
   /// fires when face disconnects or fails to perform properly
-  EventEmitter<const std::string& /*reason*/> onFail;
+  EventEmitter<std::string/*reason*/> onFail;
   
   /// send an Interest
   virtual void
