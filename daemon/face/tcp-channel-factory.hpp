@@ -18,9 +18,9 @@ public:
   /**
    * \brief Exception of TcpChannelFactory
    */
-  struct Error : public ChannelFactory::Error
+  struct Error : public ChannelFactory<tcp::Endpoint, TcpChannel>::Error
   {
-    Error(const std::string& what) : ChannelFactory::Error(what) {}
+    Error(const std::string& what) : ChannelFactory<tcp::Endpoint, TcpChannel>::Error(what) {}
   };
 
   TcpChannelFactory(boost::asio::io_service& ioService);
