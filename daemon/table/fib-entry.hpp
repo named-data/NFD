@@ -24,9 +24,10 @@ typedef std::vector<fib::NextHop> NextHopList;
 /** \class Entry
  *  \brief represents a FIB entry
  */
-class Entry : noncopyable
+class Entry : public StrategyInfoHost, noncopyable
 {
 public:
+  explicit
   Entry(const Name& prefix);
   
   const Name&

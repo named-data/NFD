@@ -27,7 +27,7 @@ typedef std::list<OutRecord> OutRecordCollection;
 /** \class Entry
  *  \brief represents a PIT entry
  */
-class Entry : noncopyable
+class Entry : public StrategyInfoHost, noncopyable
 {
 public:
   explicit

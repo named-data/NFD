@@ -9,6 +9,7 @@
 
 #include "face/face.hpp"
 #include "core/time.hpp"
+#include "strategy-info-host.hpp"
 
 namespace nfd {
 namespace pit {
@@ -19,7 +20,7 @@ namespace pit {
  *  \note This is an implementation detail to extract common functionality
  *        of InRecord and OutRecord
  */
-class FaceRecord
+class FaceRecord : public StrategyInfoHost
 {
 public:
   explicit

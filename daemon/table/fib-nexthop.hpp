@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "face/face.hpp"
+#include "strategy-info-host.hpp"
 
 namespace nfd {
 namespace fib {
@@ -16,9 +17,10 @@ namespace fib {
 /** \class NextHop
  *  \brief represents a nexthop record in FIB entry
  */
-class NextHop
+class NextHop : public StrategyInfoHost
 {
 public:
+  explicit
   NextHop(shared_ptr<Face> face);
   
   NextHop(const NextHop& other);
