@@ -107,12 +107,14 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   io.reset();
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
+  BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
   
   face2->receiveData(dataABC);
   io.run();
   io.reset();
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   BOOST_CHECK(face1->m_sentDatas[0].getName().equals(nameABC));
+  BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

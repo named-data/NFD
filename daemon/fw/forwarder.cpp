@@ -73,6 +73,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 {
   // receive Interest
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() << " interest=" << interest.getName());
+  const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
   
   // PIT insert
   std::pair<shared_ptr<pit::Entry>, bool>
@@ -181,6 +182,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 {
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
+  const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
   
   // PIT match
   shared_ptr<pit::DataMatchResult> pitMatches = m_pit.findAllDataMatches(data);
