@@ -4,18 +4,24 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "tcp-face.hpp"
+#include "unix-stream-face.hpp"
 
 namespace nfd {
 
 // The whole purpose of this file is to specialize the logger,
 // otherwise, everything could be put into the header file.
 
-NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, TcpFace::protocol, "TcpFace");
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, UnixStreamFace::protocol, "UnixStreamFace");
 
-TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
+UnixStreamFace::UnixStreamFace(const shared_ptr<UnixStreamFace::protocol::socket>& socket)
   : StreamFace<protocol>(socket)
 {
+}
+
+bool
+UnixStreamFace::isLocal() const
+{
+  return true;
 }
 
 } // namespace nfd

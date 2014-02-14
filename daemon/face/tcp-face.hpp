@@ -21,6 +21,7 @@ class TcpFace : public StreamFace<boost::asio::ip::tcp>
 public:
   typedef boost::asio::ip::tcp protocol;
 
+  explicit
   TcpFace(const shared_ptr<protocol::socket>& socket);
 };
 

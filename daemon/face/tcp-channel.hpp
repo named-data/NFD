@@ -11,11 +11,11 @@
 #include "core/monotonic_deadline_timer.hpp"
 #include "tcp-face.hpp"
 
-namespace tcp {
-typedef boost::asio::ip::tcp::endpoint Endpoint;
-} // namespace tcp
-
 namespace nfd {
+
+namespace tcp {
+  typedef boost::asio::ip::tcp::endpoint Endpoint;
+} // namespace tcp
 
 /**
  * \brief Class implementing TCP-based channel to create faces

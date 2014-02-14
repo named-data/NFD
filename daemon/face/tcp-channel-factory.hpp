@@ -20,9 +20,13 @@ public:
    */
   struct Error : public ChannelFactory<tcp::Endpoint, TcpChannel>::Error
   {
-    Error(const std::string& what) : ChannelFactory<tcp::Endpoint, TcpChannel>::Error(what) {}
+    Error(const std::string& what)
+      : ChannelFactory<tcp::Endpoint, TcpChannel>::Error(what)
+    {
+    }
   };
 
+  explicit
   TcpChannelFactory(boost::asio::io_service& ioService);
 
   /**
@@ -58,6 +62,7 @@ public:
   shared_ptr<TcpChannel>
   create(const std::string& localHost, const std::string& localPort);
 
+private:
   /**
    * \brief Look up TcpChannel using specified local endpoint
    *
@@ -68,7 +73,7 @@ public:
    */
   shared_ptr<TcpChannel>
   find(const tcp::Endpoint& localEndpoint);
-  
+
 private:
   boost::asio::io_service& m_ioService;
 };
