@@ -5,7 +5,7 @@ from waflib import Build, Logs, Utils, Task, TaskGen, Configure
 
 def options(opt):
     opt.load('compiler_cxx')
-    opt.load('boost', tooldir=['.waf-tools'])
+    opt.load('boost doxygen', tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
     nfdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
@@ -15,6 +15,10 @@ def options(opt):
     
 def configure(conf):
     conf.load("compiler_cxx boost")
+    try:
+        conf.load("doxygen")
+    except:
+        pass
 
     if conf.options.debug:
         conf.define ('_DEBUG', 1)
@@ -90,8 +94,20 @@ def add_supported_cxxflags(self, cxxflags):
 
     supportedFlags = []
     for flag in cxxflags:
-        if self.check_cxx (cxxflags=[flag], mandatory=False):
+        if self.check_cxx(cxxflags=[flag], mandatory=False):
             supportedFlags += [flag]
 
-    self.end_msg (' '.join (supportedFlags))
+    self.end_msg(' '.join (supportedFlags))
     self.env.CXXFLAGS += supportedFlags
+
+# doxygen docs
+from waflib.Build import BuildContext
+class doxy(BuildContext):
+    cmd = "doxygen"
+    fun = "doxygen"
+
+def doxygen(bld):
+    if not bld.env.DOXYGEN:
+        bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
+    bld(features="doxygen",
+        doxyfile='docs/doxygen.conf')
