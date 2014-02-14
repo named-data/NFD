@@ -111,16 +111,30 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
                                        onConnectFailed));
 }
 
+size_t
+TcpChannel::size() const
+{
+  return m_channelFaces.size();
+}
 
 void
 TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
                        const FaceCreatedCallback& onFaceCreated)
 {
-  shared_ptr<TcpFace> face = make_shared<TcpFace>(boost::cref(socket));
-  onFaceCreated(face);
-
   tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
+
+  shared_ptr<TcpFace> face = make_shared<TcpFace>(boost::cref(socket));
+  face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
+
+  onFaceCreated(face);
   m_channelFaces[remoteEndpoint] = face;
+}
+
+void
+TcpChannel::afterFaceFailed(tcp::Endpoint &remoteEndpoint)
+{
+  NFD_LOG_DEBUG("afterFaceFailed: " << remoteEndpoint);
+  m_channelFaces.erase(remoteEndpoint);
 }
 
 void

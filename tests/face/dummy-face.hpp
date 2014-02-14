@@ -31,6 +31,11 @@ public:
   sendData(const Data& data)
   {
   }
+
+  virtual void
+  close()
+  {
+  }
 };
 
 } // namespace nfd

@@ -90,8 +90,14 @@ InternalFace::sendInterest(const Interest& interest)
 void
 InternalFace::sendData(const Data& data)
 {
-
 }
+
+void
+InternalFace::close()
+{
+  throw Error("Internal face cannot be closed");
+}
+
 
 void
 InternalFace::setInterestFilter(const Name& filter,

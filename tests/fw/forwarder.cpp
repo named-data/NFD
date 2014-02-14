@@ -32,6 +32,11 @@ public:
     m_ioService.stop();
   }
 
+  virtual void
+  close()
+  {
+  }
+
   void
   receiveInterest(const Interest& interest)
   {

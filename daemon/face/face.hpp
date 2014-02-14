@@ -27,6 +27,14 @@ const std::size_t MAX_NDN_PACKET_SIZE = 8800;
 class Face : noncopyable, public enable_shared_from_this<Face>
 {
 public:
+  /**
+   * \brief Face-related error
+   */
+  struct Error : public std::runtime_error
+  {
+    Error(const std::string& what) : std::runtime_error(what) {}
+  };
+
   Face();
   
   virtual
@@ -51,6 +59,15 @@ public:
   /// send a Data
   virtual void
   sendData(const Data& data) = 0;
+
+  /**
+   * \brief Close the face
+   *
+   * This terminates all communication on the face and cause
+   * onFail() method event to be invoked
+   */
+  virtual void
+  close() = 0;
   
   /** \brief Get whether underlying communicate is up
    *  In this base class this property is always true.

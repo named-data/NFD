@@ -52,8 +52,11 @@ public:
   /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
-   * \param backlog The maximum length of the queue of pending incoming
-   *        connections
+   * \param onFaceCreated  Callback to notify successful creation of the face
+   * \param onAcceptFailed Callback to notify when channel fails (accept call
+   *                       returns an error)
+   * \param backlog        The maximum length of the queue of pending incoming
+   *                       connections
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
@@ -85,11 +88,20 @@ public:
           const FaceCreatedCallback& onFaceCreated,
           const ConnectFailedCallback& onConnectFailed,
           const time::Duration& timeout = time::seconds(4));
+
+  /**
+   * \brief Get number of faces in the channel
+   */
+  size_t
+  size() const;  
   
 private:
   void
   createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
              const FaceCreatedCallback& onFaceCreated);
+
+  void
+  afterFaceFailed(tcp::Endpoint &endpoint);
 
   void
   handleSuccessfulAccept(const boost::system::error_code& error,
@@ -118,7 +130,7 @@ private:
                           const FaceCreatedCallback& onFaceCreated,
                           const ConnectFailedCallback& onConnectFailed,
                           const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
-  
+
 private:
   boost::asio::io_service& m_ioService;
   tcp::Endpoint m_localEndpoint;

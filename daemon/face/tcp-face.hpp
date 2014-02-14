@@ -22,13 +22,6 @@ public:
   typedef boost::asio::ip::tcp protocol;
 
   TcpFace(const shared_ptr<protocol::socket>& socket);
-
-  // from Face
-  virtual void
-  sendInterest(const Interest& interest);
-
-  virtual void
-  sendData(const Data& data);
 };
 
 } // namespace nfd

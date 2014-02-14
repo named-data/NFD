@@ -17,8 +17,24 @@ class StreamFace : public Face
 public:
   typedef T protocol;
 
+  /**
+   * \brief Create instance of StreamFace
+   */
   StreamFace(const shared_ptr<typename protocol::socket>& socket);
 
+  virtual
+  ~StreamFace();
+
+  // from Face
+  virtual void
+  sendInterest(const Interest& interest);
+
+  virtual void
+  sendData(const Data& data);
+
+  virtual void
+  close();
+  
 protected:
   void
   handleSend(const boost::system::error_code& error,
@@ -28,17 +44,25 @@ protected:
   handleReceive(const boost::system::error_code& error,
                 std::size_t bytes_recvd);
 
+  void
+  keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);
+  
 protected:
   shared_ptr<typename protocol::socket> m_socket;
-
+  
 private:
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
   std::size_t m_inputBufferSize;
 
+#ifdef _DEBUG
+  typename protocol::endpoint m_localEndpoint;
+#endif
+  
   NFD_LOG_INCLASS_DECLARE();
 };
 
-NFD_LOG_INCLASS_TEMPLATE_DEFINE(StreamFace, "StreamFace");
+// All inherited classes must use
+// NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, <specialization-parameter>, "Name");
 
 template <class T>
 inline
@@ -49,6 +73,58 @@ StreamFace<T>::StreamFace(const shared_ptr<typename StreamFace::protocol::socket
                           bind(&StreamFace<T>::handleReceive, this, _1, _2));
 }
 
+template <class T>
+inline
+StreamFace<T>::~StreamFace()
+{
+}
+
+
+template <class T>
+inline void
+StreamFace<T>::sendInterest(const Interest& interest)
+{
+  m_socket->async_send(boost::asio::buffer(interest.wireEncode().wire(),
+                                           interest.wireEncode().size()),
+                       bind(&StreamFace<T>::handleSend, this, _1, interest.wireEncode()));
+  
+  // anything else should be done here?
+}
+
+template <class T>
+inline void
+StreamFace<T>::sendData(const Data& data)
+{
+  m_socket->async_send(boost::asio::buffer(data.wireEncode().wire(),
+                                           data.wireEncode().size()),
+                       bind(&StreamFace<T>::handleSend, this, _1, data.wireEncode()));
+  
+  // anything else should be done here?
+}
+
+template <class T>
+inline void
+StreamFace<T>::close()
+{
+  if (!m_socket->is_open())
+    return;
+  
+  NFD_LOG_INFO("[id:" << this->getId()
+               << ",endpoint:" << m_socket->local_endpoint()
+               << "] Close connection");
+  
+  
+  boost::asio::io_service& io = m_socket->get_io_service();
+  m_socket->close();
+  // after this, handleSend/handleReceive will be called with set error code
+
+  // ensure that if that Face object is alive at least until all pending
+  // methods are dispatched
+  io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+               this, this->shared_from_this()));
+
+  onFail("Close connection");
+}
 
 template <class T>
 inline void
@@ -59,14 +135,43 @@ StreamFace<T>::handleSend(const boost::system::error_code& error,
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
 
-    NFD_LOG_WARN("[id:" << this->getId()
-                 << ",endpoint:" << m_socket->local_endpoint()
-                 << "] Send operation failed, closing socket: "
-                 << error.category().message(error.value()));
+    if (!m_socket->is_open())
+      {
+        onFail("Connection closed");
+        return;
+      }
 
-    onFail("Send operation failed, closing socket: " +
-           error.category().message(error.value()));
+    if (error == boost::asio::error::eof)
+      {
+        NFD_LOG_INFO("[id:" << this->getId()
+                     << ",endpoint:" << m_socket->local_endpoint()
+                     << "] Connection closed");
+      }
+    else
+      {
+        NFD_LOG_WARN("[id:" << this->getId()
+                     << ",endpoint:" << m_socket->local_endpoint()
+                     << "] Send operation failed, closing socket: "
+                     << error.category().message(error.value()));
+      }
+
+    boost::asio::io_service& io = m_socket->get_io_service();
     m_socket->close();
+    
+    // ensure that if that Face object is alive at least until all pending
+    // methods are dispatched
+    io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+                 this, this->shared_from_this()));
+    
+    if (error == boost::asio::error::eof)
+      {
+        onFail("Connection closed");
+      }
+    else
+      {
+        onFail("Send operation failed, closing socket: " +
+               error.category().message(error.value()));
+      }
     return;
   }
 
@@ -81,24 +186,54 @@ inline void
 StreamFace<T>::handleReceive(const boost::system::error_code& error,
                              std::size_t bytes_recvd)
 {
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
-                << "] Received: " << bytes_recvd << " bytes");
-
   if (error || bytes_recvd == 0) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
 
-    NFD_LOG_WARN("[id:" << this->getId()
-                 << ",endpoint:" << m_socket->local_endpoint()
-                 << "] Receive operation failed: "
-                 << error.category().message(error.value()));
+    // this should be unnecessary, but just in case
+    if (!m_socket->is_open())
+      {
+        onFail("Connection closed");
+        return;
+      }
+
+    if (error == boost::asio::error::eof)
+      {
+        NFD_LOG_INFO("[id:" << this->getId()
+                     << ",endpoint:" << m_socket->local_endpoint()
+                     << "] Connection closed");
+      }
+    else
+      {
+        NFD_LOG_WARN("[id:" << this->getId()
+                     << ",endpoint:" << m_socket->local_endpoint()
+                     << "] Receive operation failed: "
+                     << error.category().message(error.value()));
+      }
     
-    onFail("Receive operation failed, closing socket: " +
-           error.category().message(error.value()));
+    boost::asio::io_service& io = m_socket->get_io_service();
     m_socket->close();
+    
+    // ensure that if that Face object is alive at least until all pending
+    // methods are dispatched
+    io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+                 this, this->shared_from_this()));
+
+    if (error == boost::asio::error::eof)
+      {
+        onFail("Connection closed");
+      }
+    else
+      {
+        onFail("Receive operation failed, closing socket: " +
+               error.category().message(error.value()));
+      }
     return;
   }
+
+  NFD_LOG_TRACE("[id:" << this->getId()
+                << ",endpoint:" << m_socket->local_endpoint()
+                << "] Received: " << bytes_recvd << " bytes");
 
   m_inputBufferSize += bytes_recvd;
   // do magic
@@ -150,8 +285,15 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
                      << "] Received input is invalid or too large to process, "
                      << "closing down the face");
         
-        onFail("Received input is invalid or too large to process, closing down the face");
+        boost::asio::io_service& io = m_socket->get_io_service();
         m_socket->close();
+    
+        // ensure that if that Face object is alive at least until all pending
+        // methods are dispatched
+        io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+                     this, this->shared_from_this()));
+        
+        onFail("Received input is invalid or too large to process, closing down the face");
         return;
       }
   }
@@ -173,6 +315,12 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer + m_inputBufferSize,
                                               MAX_NDN_PACKET_SIZE - m_inputBufferSize), 0,
                           bind(&StreamFace<T>::handleReceive, this, _1, _2));
+}
+
+template <class T>
+inline void
+StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face)
+{
 }
 
 

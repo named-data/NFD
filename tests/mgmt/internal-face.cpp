@@ -96,6 +96,8 @@ BOOST_FIXTURE_TEST_CASE(PutData, InternalFaceFixture)
   face->put(testData);
 
   BOOST_REQUIRE(didPutData);
+
+  BOOST_CHECK_THROW(face->close(), InternalFace::Error);
 }
 
 BOOST_FIXTURE_TEST_CASE(SendInterestHitEnd, InternalFaceFixture)
