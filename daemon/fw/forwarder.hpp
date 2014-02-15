@@ -25,6 +25,7 @@ namespace nfd {
 class Forwarder
 {
 public:
+  explicit
   Forwarder(boost::asio::io_service& ioService);
 
   void
@@ -52,57 +53,63 @@ public:
   shared_ptr<Face>
   getFace(FaceId id);
 
-private: // pipelines
+PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onIncomingInterest(Face& inFace, const Interest& interest);
 
   /** \brief Interest loop pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onInterestLoop(Face& inFace, const Interest& interest,
                  shared_ptr<pit::Entry> pitEntry);
   
   /** \brief outgoing Interest pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace);
   
   /** \brief Interest rebuff pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onInterestRebuff(shared_ptr<pit::Entry> pitEntry);
   
   /** \brief Interest unsatisfied pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry);
   
   /** \brief incoming Data pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onIncomingData(Face& inFace, const Data& data);
   
   /** \brief Data unsolicited pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onDataUnsolicited(Face& inFace, const Data& data);
   
   /** \brief outgoing Data pipeline
    */
-  void
+  VIRTUAL_WITH_TESTS void
   onOutgoingData(const Data& data, Face& outFace);
 
-private:
-  void
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+  VIRTUAL_WITH_TESTS void
   setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry);
   
-  void
+  VIRTUAL_WITH_TESTS void
   setStragglerTimer(shared_ptr<pit::Entry> pitEntry);
   
-  void
+  VIRTUAL_WITH_TESTS void
   cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
+  
+  VIRTUAL_WITH_TESTS void
+  dispatchToStrategy(const Face& inFace,
+                     const Interest& interest,
+                     shared_ptr<fib::Entry> fibEntry,
+                     shared_ptr<pit::Entry> pitEntry);
 
 private:
   Scheduler m_scheduler;
@@ -115,6 +122,8 @@ private:
   Cs  m_cs;
   /// the active strategy (only one strategy in mock)
   shared_ptr<fw::Strategy> m_strategy;
+  
+  static const Name s_localhostName;
   
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;

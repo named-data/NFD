@@ -49,6 +49,12 @@ Face::getDescription() const
 }
 
 bool
+Face::isLocal() const
+{
+  return false;
+}
+
+bool
 Face::isMultiAccess() const
 {
   return false;

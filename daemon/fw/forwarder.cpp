@@ -12,6 +12,8 @@ namespace nfd {
 
 NFD_LOG_INIT("Forwarder");
 
+const Name Forwarder::s_localhostName("ndn:/localhost");
+
 Forwarder::Forwarder(boost::asio::io_service& ioService)
   : m_scheduler(ioService)
   , m_lastFaceId(0)
@@ -75,6 +77,15 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() << " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
   
+  // /localhost scope control
+  bool violatesLocalhost = !inFace.isLocal() &&
+                           s_localhostName.isPrefixOf(interest.getName());
+  if (violatesLocalhost) {
+    NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId()
+      << " interest=" << interest.getName() << " violates /localhost");
+    return;
+  }
+  
   // PIT insert
   std::pair<shared_ptr<pit::Entry>, bool>
     pitInsertResult = m_pit.insert(interest);
@@ -123,8 +134,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // TODO use Fib::findParent(pitEntry)
   
   // dispatch to strategy
-  m_strategy->afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
-  // TODO dispatch according to fibEntry
+  this->dispatchToStrategy(inFace, interest, fibEntry, pitEntry);
 }
 
 void
@@ -183,6 +193,15 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
   const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
+  
+  // /localhost scope control
+  bool violatesLocalhost = !inFace.isLocal() &&
+                           s_localhostName.isPrefixOf(data.getName());
+  if (violatesLocalhost) {
+    NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId()
+      << " interest=" << data.getName() << " violates /localhost");
+    return;
+  }
   
   // PIT match
   shared_ptr<pit::DataMatchResult> pitMatches = m_pit.findAllDataMatches(data);
@@ -298,6 +317,14 @@ Forwarder::cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry)
   m_scheduler.cancelEvent(pitEntry->m_stragglerTimer);
 }
 
-
+void
+Forwarder::dispatchToStrategy(const Face& inFace,
+                              const Interest& interest,
+                              shared_ptr<fib::Entry> fibEntry,
+                              shared_ptr<pit::Entry> pitEntry)
+{
+  m_strategy->afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
+  // TODO dispatch according to fibEntry
+}
 
 } // namespace nfd

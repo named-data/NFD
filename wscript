@@ -46,6 +46,7 @@ def configure(conf):
     boost_libs='system'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
+        conf.define('WITH_TESTS', 1);
         boost_libs+=' unit_test_framework'
 
     conf.check_boost(lib=boost_libs)

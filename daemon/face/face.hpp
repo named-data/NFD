@@ -69,13 +69,15 @@ public:
   virtual void
   close() = 0;
   
-  /** \brief Get whether underlying communicate is up
+  /** \brief Get whether underlying communication is up
+   *
    *  In this base class this property is always true.
    */
   virtual bool
   isUp() const;
   
   /** \brief Set the description
+   *
    *  This is typically invoked by mgmt on set description command
    */
   virtual void
@@ -84,8 +86,16 @@ public:
   /// Get the description
   virtual const std::string&
   getDescription() const;
+
+  /** \brief Get whether face is connected to a local app
+   *
+   *  In this base class this property is always false.
+   */
+  virtual bool
+  isLocal() const;
   
   /** \brief Get whether packets sent this Face may reach multiple peers
+   *
    *  In this base class this property is always false.
    */
   virtual bool
@@ -95,13 +105,6 @@ public:
   virtual bool
   isLocalControlHeaderEnabled() const;
 
-protected:
-  // void
-  // receiveInterest();
-
-  // void
-  // receiveData();
-  
 private:
   void
   setId(FaceId faceId);
