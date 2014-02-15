@@ -53,10 +53,6 @@ protected:
 private:
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
   std::size_t m_inputBufferSize;
-
-#ifdef _DEBUG
-  typename protocol::endpoint m_localEndpoint;
-#endif
   
   NFD_LOG_INCLASS_DECLARE();
 };
@@ -68,6 +64,7 @@ template <class T>
 inline
 StreamFace<T>::StreamFace(const shared_ptr<typename StreamFace::protocol::socket>& socket)
   : m_socket(socket)
+  , m_inputBufferSize(0)
 {
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&StreamFace<T>::handleReceive, this, _1, _2));
