@@ -21,8 +21,7 @@ const FaceId INVALID_FACEID = -1;
 
 const std::size_t MAX_NDN_PACKET_SIZE = 8800;
 
-/** \class Face
- *  \brief represents a face
+/** \brief represents a face
  */
 class Face : noncopyable, public enable_shared_from_this<Face>
 {
