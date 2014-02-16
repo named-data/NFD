@@ -6,6 +6,7 @@
 
 #include "face/ndnlp-sequence-generator.hpp"
 #include "face/ndnlp-slicer.hpp"
+#include "face/ndnlp-partial-message-store.hpp"
 
 #include <boost/test/unit_test.hpp>
 
@@ -76,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Slice1)
 }
 
 // slice a Block to four NDNLP packets
-BOOST_AUTO_TEST_CASE(SliceData4)
+BOOST_AUTO_TEST_CASE(Slice4)
 {
   uint8_t blockValue[5050];
   memset(blockValue, 0xcc, sizeof(blockValue));
@@ -130,6 +131,85 @@ BOOST_AUTO_TEST_CASE(SliceData4)
   }
   
   BOOST_CHECK_EQUAL(totalPayloadSize, block.size());
+}
+
+class ReassembleFixture
+{
+protected:
+  ReassembleFixture()
+    : m_slicer(1500)
+    , m_scheduler(m_io)
+    , m_partialMessageStore(m_scheduler)
+  {
+    m_partialMessageStore.onReceive += bind(&std::vector<Block>::push_back,
+                                            &m_received, _1);
+  }
+
+  Block
+  makeBlock(size_t valueLength)
+  {
+    uint8_t blockValue[valueLength];
+    memset(blockValue, 0xcc, sizeof(blockValue));
+    return ndn::dataBlock(0x01, blockValue, sizeof(blockValue));
+  }
+  
+protected:
+  boost::asio::io_service m_io;
+  Scheduler m_scheduler;
+  
+  ndnlp::Slicer m_slicer;
+  ndnlp::PartialMessageStore m_partialMessageStore;
+
+  // received network layer packets
+  std::vector<Block> m_received;
+};
+
+// reassemble one NDNLP packets into one Block
+BOOST_FIXTURE_TEST_CASE(Reassemble1, ReassembleFixture)
+{
+  Block block = makeBlock(60);
+  ndnlp::PacketArray pa = m_slicer.slice(block);
+  BOOST_REQUIRE_EQUAL(pa->size(), 1);
+  
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa->at(0));
+  
+  BOOST_REQUIRE_EQUAL(m_received.size(), 1);
+  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(0).begin(), m_received.at(0).end(),
+                                block.begin(),            block.end());
+}
+
+// reassemble four and two NDNLP packets into two Blocks
+BOOST_FIXTURE_TEST_CASE(Reassemble4and2, ReassembleFixture)
+{
+  Block block = makeBlock(5050);
+  ndnlp::PacketArray pa = m_slicer.slice(block);
+  BOOST_REQUIRE_EQUAL(pa->size(), 4);
+  
+  Block block2 = makeBlock(2000);
+  ndnlp::PacketArray pa2 = m_slicer.slice(block2);
+  BOOST_REQUIRE_EQUAL(pa2->size(), 2);
+  
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa->at(0));
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa2->at(1));
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(m_received.size(), 0);
+  m_partialMessageStore.receiveNdnlpData(pa2->at(0));
+  BOOST_CHECK_EQUAL(m_received.size(), 1);
+  m_partialMessageStore.receiveNdnlpData(pa->at(3));
+  BOOST_CHECK_EQUAL(m_received.size(), 1);
+  m_partialMessageStore.receiveNdnlpData(pa->at(2));
+  
+  BOOST_REQUIRE_EQUAL(m_received.size(), 2);
+  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(1).begin(), m_received.at(1).end(),
+                                block.begin(),            block.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(0).begin(), m_received.at(0).end(),
+                                block2.begin(),           block2.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
