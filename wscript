@@ -2,6 +2,7 @@
 VERSION='0.1'
 
 from waflib import Build, Logs, Utils, Task, TaskGen, Configure
+import os
 
 def options(opt):
     opt.load('compiler_cxx')
@@ -83,8 +84,15 @@ def build(bld):
         source = 'daemon/main.cpp',
         use = 'nfd-objects',
         includes = [".", "daemon"],
-        )        
-    
+        )
+        
+    for app in bld.path.ant_glob('tools/*.cpp'):
+        bld(features=['cxx', 'cxxprogram'],
+            target = 'bin/%s' % (str(app.change_ext(''))),
+            source = ['tools/%s' % (str(app))],
+            use = 'BOOST NDN_CPP RT',
+            )
+                
     # Unit tests
     if bld.env['WITH_TESTS']:
         unit_tests = unittests = bld.program (
@@ -126,3 +134,4 @@ def doxygen(bld):
         bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
     bld(features="doxygen",
         doxyfile='docs/doxygen.conf')
+
