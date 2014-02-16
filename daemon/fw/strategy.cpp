@@ -6,9 +6,12 @@
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
+
+NFD_LOG_INIT("Strategy");
 
 Strategy::Strategy(Forwarder& forwarder)
   : m_forwarder(forwarder)
@@ -19,6 +22,29 @@ Strategy::~Strategy()
 {
 }
 
+void
+Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
+{
+  NFD_LOG_DEBUG("beforeExpirePendingInterest pitEntry=" << pitEntry->getName());
+}
+
+void
+Strategy::afterAddFibEntry(shared_ptr<fib::Entry> fibEntry)
+{
+  NFD_LOG_DEBUG("afterAddFibEntry fibEntry=" << fibEntry->getPrefix());
+}
+
+void
+Strategy::afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry)
+{
+  NFD_LOG_DEBUG("afterUpdateFibEntry fibEntry=" << fibEntry->getPrefix());
+}
+
+void
+Strategy::beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry)
+{
+  NFD_LOG_DEBUG("beforeRemoveFibEntry fibEntry=" << fibEntry->getPrefix());
+}
 
 void
 Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
