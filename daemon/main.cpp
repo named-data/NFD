@@ -10,6 +10,7 @@
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "face/tcp-channel-factory.hpp"
+#include "face/unix-stream-channel-factory.hpp"
 
 namespace nfd {
 
@@ -31,6 +32,7 @@ struct ProgramOptions
   bool m_showUsage;
   std::pair<std::string, std::string> m_tcpListen;
   std::vector<TcpOutgoing> m_tcpOutgoings;
+  std::string m_unixListen;
 };
 
 static boost::asio::io_service g_ioService;
@@ -40,18 +42,23 @@ static FibManager* g_fibManager;
 static TcpChannelFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
+static UnixStreamChannelFactory* g_unixFactory;
+static shared_ptr<UnixStreamChannel> g_unixChannel;
 
 void
 usage(char* programName)
 {
   printf(
     "%s --help\n\tshow this help and exit\n"
-    "%s [--tcp-listen <0.0.0.0:6363>] "
-        "[--tcp-connect <192.0.2.1:6363> [--prefix </example>]]\n"
+    "%s [--tcp-listen \"0.0.0.0:6363\"] "
+        "[--unix-listen \"/var/run/nfd.sock\"] "
+        "[--tcp-connect \"192.0.2.1:6363\" "
+            "[--prefix </example>]]\n"
       "\trun forwarding daemon\n"
-      "\t--tcp-listen: listen on IP and port\n"
-      "\t--tcp-connect: connect to IP and port (can occur multiple times)\n"
-      "\t--prefix: add this face as nexthop to FIB entry "
+      "\t--tcp-listen <ip:port>: listen on IP and port\n"
+      "\t--unix-listen <unix-socket-path>: listen on Unix socket\n"
+      "\t--tcp-connect <ip:port>: connect to IP and port (can occur multiple times)\n"
+      "\t--prefix <NDN name>: add this face as nexthop to FIB entry "
         "(must appear after --tcp-connect, can occur multiple times)\n"
     "\n",
     programName, programName
@@ -74,6 +81,7 @@ parseCommandLine(int argc, char** argv)
 {
   g_options.m_showUsage = false;
   g_options.m_tcpListen = std::make_pair("0.0.0.0", "6363");
+  g_options.m_unixListen = "/var/run/nfd.sock";
   g_options.m_tcpOutgoings.clear();
   
   while (1) {
@@ -83,6 +91,7 @@ parseCommandLine(int argc, char** argv)
       { "tcp-listen"    , required_argument, 0, 0 },
       { "tcp-connect"   , required_argument, 0, 0 },
       { "prefix"        , required_argument, 0, 0 },
+      { "unix-listen"   , required_argument, 0, 0 },
       { 0               , 0                , 0, 0 }
     };
     int c = getopt_long_only(argc, argv, "", long_options, &option_index);
@@ -105,6 +114,10 @@ parseCommandLine(int argc, char** argv)
               return false;
             }
             g_options.m_tcpOutgoings.back().m_prefixes.push_back(Name(::optarg));
+            break;
+          case 4://unix-listen
+            g_options.m_unixListen = ::optarg;
+            break;
         }
         break;
     }
@@ -162,6 +175,17 @@ initializeTcp()
 }
 
 void
+initializeUnix()
+{
+  g_unixFactory = new UnixStreamChannelFactory(g_ioService);
+  g_unixChannel = g_unixFactory->create(g_options.m_unixListen);
+
+  g_unixChannel->listen(
+    bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),
+    &onFaceError);
+}
+
+void
 initializeMgmt()
 {
   g_internalFace = make_shared<InternalFace>();
@@ -190,7 +214,10 @@ main(int argc, char** argv)
   
   g_forwarder = new Forwarder(g_ioService);
   initializeTcp();
+  initializeUnix();
   initializeMgmt();
+
+  /// \todo Add signal processing to gracefully terminate the app
   
   try {
     g_ioService.run();
