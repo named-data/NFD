@@ -46,10 +46,13 @@ protected:
 
   void
   keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);
-  
+
+  void
+  closeSocket();
+
 protected:
   shared_ptr<typename protocol::socket> m_socket;
-  
+
 private:
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
   std::size_t m_inputBufferSize;
@@ -109,17 +112,8 @@ StreamFace<T>::close()
   NFD_LOG_INFO("[id:" << this->getId()
                << ",endpoint:" << m_socket->local_endpoint()
                << "] Close connection");
-  
-  
-  boost::asio::io_service& io = m_socket->get_io_service();
-  m_socket->close();
-  // after this, handleSend/handleReceive will be called with set error code
 
-  // ensure that if that Face object is alive at least until all pending
-  // methods are dispatched
-  io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
-               this, this->shared_from_this()));
-
+  closeSocket();
   onFail("Close connection");
 }
 
@@ -152,14 +146,8 @@ StreamFace<T>::handleSend(const boost::system::error_code& error,
                      << error.category().message(error.value()));
       }
 
-    boost::asio::io_service& io = m_socket->get_io_service();
-    m_socket->close();
-    
-    // ensure that if that Face object is alive at least until all pending
-    // methods are dispatched
-    io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
-                 this, this->shared_from_this()));
-    
+    closeSocket();
+
     if (error == boost::asio::error::eof)
       {
         onFail("Connection closed");
@@ -207,14 +195,8 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
                      << "] Receive operation failed: "
                      << error.category().message(error.value()));
       }
-    
-    boost::asio::io_service& io = m_socket->get_io_service();
-    m_socket->close();
-    
-    // ensure that if that Face object is alive at least until all pending
-    // methods are dispatched
-    io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
-                 this, this->shared_from_this()));
+
+    closeSocket();
 
     if (error == boost::asio::error::eof)
       {
@@ -281,15 +263,8 @@ StreamFace<T>::handleReceive(const boost::system::error_code& error,
                      << ",endpoint:" << m_socket->local_endpoint()
                      << "] Received input is invalid or too large to process, "
                      << "closing down the face");
-        
-        boost::asio::io_service& io = m_socket->get_io_service();
-        m_socket->close();
-    
-        // ensure that if that Face object is alive at least until all pending
-        // methods are dispatched
-        io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
-                     this, this->shared_from_this()));
-        
+
+        closeSocket();
         onFail("Received input is invalid or too large to process, closing down the face");
         return;
       }
@@ -320,6 +295,23 @@ StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& fac
 {
 }
 
+template <class T>
+inline void
+StreamFace<T>::closeSocket()
+{
+  boost::asio::io_service& io = m_socket->get_io_service();
+
+  // use the non-throwing variants and ignore errors, if any
+  boost::system::error_code error;
+  m_socket->shutdown(protocol::socket::shutdown_both, error);
+  m_socket->close(error);
+  // after this, handlers will be called with an error code
+
+  // ensure that the Face object is alive at least until all pending
+  // handlers are dispatched
+  io.post(bind(&StreamFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+               this, this->shared_from_this()));
+}
 
 } // namespace nfd
 
