@@ -5,7 +5,7 @@ from waflib import Build, Logs, Utils, Task, TaskGen, Configure
 
 def options(opt):
     opt.load('compiler_cxx')
-    opt.load('boost doxygen', tooldir=['.waf-tools'])
+    opt.load('boost doxygen coverage', tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
     nfdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
@@ -57,6 +57,8 @@ def configure(conf):
         return
     
     conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
+
+    conf.load('coverage')
 
     conf.write_config_header('daemon/config.hpp')
 
