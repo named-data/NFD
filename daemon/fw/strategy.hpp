@@ -54,6 +54,14 @@ public: // triggers
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) =0;
   
+  /** \brief trigger before PIT entry is satisfied
+   *
+   *  In this base class this method does nothing.
+   */
+  virtual void
+  beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
+                               const Face& inFace, const Data& data);
+  
   /** \brief trigger before PIT entry expires
    *
    *  PIT entry expires when InterestLifetime has elapsed for all InRecords,
@@ -66,28 +74,28 @@ public: // triggers
   virtual void
   beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry);
   
-  /** \brief trigger after FIB entry is being inserted
-   *         and becomes managed by this strategy
-   *
-   *  In this base class this method does nothing.
-   */
-  virtual void
-  afterAddFibEntry(shared_ptr<fib::Entry> fibEntry);
-  
-  /** \brief trigger after FIB entry being managed by this strategy is updated
-   *
-   *  In this base class this method does nothing.
-   */
-  virtual void
-  afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry);
-  
-  /** \brief trigger before FIB entry ceises to be managed by this strategy
-   *         or is being deleted
-   *
-   *  In this base class this method does nothing.
-   */
-  virtual void
-  beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry);
+//  /** \brief trigger after FIB entry is being inserted
+//   *         and becomes managed by this strategy
+//   *
+//   *  In this base class this method does nothing.
+//   */
+//  virtual void
+//  afterAddFibEntry(shared_ptr<fib::Entry> fibEntry);
+//  
+//  /** \brief trigger after FIB entry being managed by this strategy is updated
+//   *
+//   *  In this base class this method does nothing.
+//   */
+//  virtual void
+//  afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry);
+//  
+//  /** \brief trigger before FIB entry ceises to be managed by this strategy
+//   *         or is being deleted
+//   *
+//   *  In this base class this method does nothing.
+//   */
+//  virtual void
+//  beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry);
   
 protected: // actions
   /// send Interest to outFace

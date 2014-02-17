@@ -23,28 +23,36 @@ Strategy::~Strategy()
 }
 
 void
+Strategy::beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
+                                       const Face& inFace, const Data& data)
+{
+  NFD_LOG_DEBUG("beforeSatisfyPendingInterest pitEntry=" << pitEntry->getName() <<
+    " inFace=" << inFace.getId() << " data=" << data.getName());
+}
+
+void
 Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
   NFD_LOG_DEBUG("beforeExpirePendingInterest pitEntry=" << pitEntry->getName());
 }
 
-void
-Strategy::afterAddFibEntry(shared_ptr<fib::Entry> fibEntry)
-{
-  NFD_LOG_DEBUG("afterAddFibEntry fibEntry=" << fibEntry->getPrefix());
-}
-
-void
-Strategy::afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry)
-{
-  NFD_LOG_DEBUG("afterUpdateFibEntry fibEntry=" << fibEntry->getPrefix());
-}
-
-void
-Strategy::beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry)
-{
-  NFD_LOG_DEBUG("beforeRemoveFibEntry fibEntry=" << fibEntry->getPrefix());
-}
+//void
+//Strategy::afterAddFibEntry(shared_ptr<fib::Entry> fibEntry)
+//{
+//  NFD_LOG_DEBUG("afterAddFibEntry fibEntry=" << fibEntry->getPrefix());
+//}
+//
+//void
+//Strategy::afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry)
+//{
+//  NFD_LOG_DEBUG("afterUpdateFibEntry fibEntry=" << fibEntry->getPrefix());
+//}
+//
+//void
+//Strategy::beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry)
+//{
+//  NFD_LOG_DEBUG("beforeRemoveFibEntry fibEntry=" << fibEntry->getPrefix());
+//}
 
 void
 Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
