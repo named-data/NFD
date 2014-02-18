@@ -76,8 +76,9 @@ Face::setLocalControlHeaderFeature(LocalControlHeaderFeature feature, bool enabl
   BOOST_STATIC_ASSERT(LOCAL_CONTROL_HEADER_FEATURE_ANY == 0);
   m_localControlHeaderFeatures[LOCAL_CONTROL_HEADER_FEATURE_ANY] =
     std::find(m_localControlHeaderFeatures.begin() + 1,
-              m_localControlHeaderFeatures.end(), true) !=
+              m_localControlHeaderFeatures.end(), true) <
               m_localControlHeaderFeatures.end();
+  // 'find(..) < .end()' instead of 'find(..) != .end()' due to LLVM Bug 16816
 }
 
 } //namespace nfd
