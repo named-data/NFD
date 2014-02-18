@@ -35,6 +35,7 @@ PartialMessage::add(uint16_t fragIndex, uint16_t fragCount, const Block& payload
   m_payloads[fragIndex] = payload;
   ++m_received;
   m_totalLength += payload.value_size();
+  return true;
 }
 
 bool

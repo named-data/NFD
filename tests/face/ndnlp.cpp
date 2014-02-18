@@ -137,8 +137,8 @@ class ReassembleFixture
 {
 protected:
   ReassembleFixture()
-    : m_slicer(1500)
-    , m_scheduler(m_io)
+    : m_scheduler(m_io)
+    , m_slicer(1500)
     , m_partialMessageStore(m_scheduler)
   {
     m_partialMessageStore.onReceive += bind(&std::vector<Block>::push_back,
