@@ -5,11 +5,15 @@
  */
 
 #include "face.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 
+NFD_LOG_INIT("Face");
+
 Face::Face()
   : m_id(INVALID_FACEID)
+  , m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
 {
 }
 
@@ -60,12 +64,20 @@ Face::isMultiAccess() const
   return false;
 }
 
-bool
-Face::isLocalControlHeaderEnabled() const
+void
+Face::setLocalControlHeaderFeature(LocalControlHeaderFeature feature, bool enabled)
 {
-  // TODO add local control header functionality
-  return false;
-}
+  BOOST_ASSERT(feature > LOCAL_CONTROL_HEADER_FEATURE_ANY &&
+               feature < m_localControlHeaderFeatures.size());
+  m_localControlHeaderFeatures[feature] = enabled;
+  NFD_LOG_DEBUG("face" << this->getId() << " setLocalControlHeaderFeature " <<
+                (enabled ? "enable" : "disable") << " feature " << feature);
 
+  BOOST_STATIC_ASSERT(LOCAL_CONTROL_HEADER_FEATURE_ANY == 0);
+  m_localControlHeaderFeatures[LOCAL_CONTROL_HEADER_FEATURE_ANY] =
+    std::find(m_localControlHeaderFeatures.begin() + 1,
+              m_localControlHeaderFeatures.end(), true) !=
+              m_localControlHeaderFeatures.end();
+}
 
 } //namespace nfd
