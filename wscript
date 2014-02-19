@@ -44,7 +44,7 @@ def configure(conf):
                        cxxflags="-I%s/include" % conf.options.ndn_cpp_dir,
                        linkflags="-L%s/lib" % conf.options.ndn_cpp_dir,
                        mandatory=True)
-        
+
     boost_libs='system'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
@@ -60,8 +60,10 @@ def configure(conf):
         return
 
     conf.load('unix-socket')
-    
+
     conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
+    if conf.check_cxx(lib='pcap', uselib_store='PCAP', define_name='HAVE_PCAP', mandatory=False):
+        conf.env['HAVE_PCAP'] = True
 
     conf.load('coverage')
 
@@ -72,14 +74,19 @@ def build(bld):
         target = "nfd-objects",
         features = "cxx",
         source = bld.path.ant_glob(['daemon/**/*.cpp'],
-                                   excl=['daemon/**/unix-*.cpp', 'daemon/main.cpp']),
+                                   excl=['daemon/face/ethernet-*.cpp',
+                                         'daemon/face/unix-*.cpp',
+                                         'daemon/main.cpp']),
         use = 'BOOST NDN_CPP RT',
         includes = [".", "daemon"],
         )
 
+    if bld.env['HAVE_PCAP']:
+        nfd_objects.source += bld.path.ant_glob('daemon/face/ethernet-*.cpp')
+        nfd_objects.use += ' PCAP'
+
     if bld.env['HAVE_UNIX_SOCKETS']:
-        nfd_objects.source += bld.path.ant_glob(['daemon/**/unix-*.cpp'],
-                                                excl=['daemon/main.cpp'])
+        nfd_objects.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
 
     bld(target = "nfd",
         features = "cxx cxxprogram",
@@ -94,21 +101,25 @@ def build(bld):
             source = ['tools/%s' % (str(app))],
             use = 'BOOST NDN_CPP RT',
             )
-                
+
     # Unit tests
     if bld.env['WITH_TESTS']:
-        unit_tests = unittests = bld.program (
+        unit_tests = unittests = bld.program(
             target="unit-tests",
             features = "cxx cxxprogram",
             source = bld.path.ant_glob(['tests/**/*.cpp'],
-                                       excl=['tests/**/unix-*.cpp']),
+                                       excl=['tests/face/ethernet.cpp',
+                                             'tests/face/unix-*.cpp']),
             use = 'nfd-objects',
             includes = [".", "daemon"],
             install_prefix = None,
           )
 
+        if bld.env['HAVE_PCAP']:
+            unit_tests.source += bld.path.ant_glob('tests/face/ethernet.cpp')
+
         if bld.env['HAVE_UNIX_SOCKETS']:
-            unit_tests.source += bld.path.ant_glob(['tests/**/unix-*.cpp'])
+            unit_tests.source += bld.path.ant_glob('tests/face/unix-*.cpp')
 
 @Configure.conf
 def add_supported_cxxflags(self, cxxflags):
@@ -136,4 +147,3 @@ def doxygen(bld):
         bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
     bld(features="doxygen",
         doxyfile='docs/doxygen.conf')
-
