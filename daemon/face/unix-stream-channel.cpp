@@ -7,6 +7,7 @@
 #include "unix-stream-channel.hpp"
 
 #include <boost/filesystem.hpp>
+#include <sys/stat.h> // for chmod()
 
 namespace nfd {
 
@@ -53,6 +54,11 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor->open(m_endpoint.protocol());
   m_acceptor->bind(m_endpoint);
   m_acceptor->listen(backlog);
+
+  if (::chmod(m_endpoint.path().c_str(), 0666) < 0)
+    {
+      throw Error("Failed to chmod() socket file at " + m_endpoint.path());
+    }
 
   shared_ptr<stream_protocol::socket> clientSocket =
     make_shared<stream_protocol::socket>(boost::ref(m_ioService));

@@ -38,6 +38,14 @@ public:
   typedef function<void(const std::string& reason)> ConnectFailedCallback;
 
   /**
+   * \brief UnixStreamChannel-related error
+   */
+  struct Error : public std::runtime_error
+  {
+    Error(const std::string& what) : std::runtime_error(what) {}
+  };
+
+  /**
    * \brief Create UnixStream channel for the specified endpoint
    *
    * To enable creation of faces upon incoming connections, one
