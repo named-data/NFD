@@ -23,6 +23,9 @@ public:
 
   explicit
   TcpFace(const shared_ptr<protocol::socket>& socket);
+
+  virtual bool
+  isLocal() const;
 };
 
 } // namespace nfd

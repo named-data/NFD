@@ -98,6 +98,11 @@ InternalFace::close()
   throw Error("Internal face cannot be closed");
 }
 
+bool
+InternalFace::isLocal() const
+{
+  return true;
+}
 
 void
 InternalFace::setInterestFilter(const Name& filter,

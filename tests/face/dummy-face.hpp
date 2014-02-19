@@ -18,7 +18,9 @@ namespace nfd {
 class DummyFace : public Face
 {
 public:
-  DummyFace()
+  explicit
+  DummyFace(bool isLocal = false)
+    : m_isLocal(isLocal)
   {
   }
   
@@ -36,6 +38,15 @@ public:
   close()
   {
   }
+
+  virtual bool
+  isLocal() const
+  {
+    return m_isLocal;
+  }
+
+private:
+  bool m_isLocal;
 };
 
 } // namespace nfd

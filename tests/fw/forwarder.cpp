@@ -38,6 +38,12 @@ public:
   {
   }
 
+  virtual bool
+  isLocal() const
+  {
+    return false;
+  }
+
   void
   receiveInterest(const Interest& interest)
   {

@@ -18,4 +18,11 @@ TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
 {
 }
 
+bool
+TcpFace::isLocal() const
+{
+  return false;
+}
+
+
 } // namespace nfd

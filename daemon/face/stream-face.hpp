@@ -34,7 +34,7 @@ public:
 
   virtual void
   close();
-  
+
 protected:
   void
   handleSend(const boost::system::error_code& error,

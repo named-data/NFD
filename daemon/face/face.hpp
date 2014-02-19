@@ -84,6 +84,13 @@ public:
   virtual void
   close() = 0;
 
+  /** \brief Get whether face is connected to a local app
+   *
+   *  In this base class this property is always false.
+   */
+  virtual bool
+  isLocal() const = 0;
+  
   /** \brief Get whether underlying communication is up
    *
    *  In this base class this property is always true.
@@ -101,13 +108,6 @@ public:
   /// Get the description
   virtual const std::string&
   getDescription() const;
-
-  /** \brief Get whether face is connected to a local app
-   *
-   *  In this base class this property is always false.
-   */
-  virtual bool
-  isLocal() const;
 
   /** \brief Get whether packets sent this Face may reach multiple peers
    *
