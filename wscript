@@ -5,7 +5,7 @@ from waflib import Build, Logs, Utils, Task, TaskGen, Configure
 
 def options(opt):
     opt.load('compiler_cxx')
-    opt.load('boost doxygen coverage', tooldir=['.waf-tools'])
+    opt.load('boost doxygen coverage unix-socket', tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
     nfdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
@@ -55,6 +55,8 @@ def configure(conf):
     if int(boost_version[0]) < 1 or int(boost_version[1]) < 42:
         Logs.error ("Minumum required boost version is 1.42")
         return
+
+    conf.load('unix-socket')
     
     conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
 
@@ -63,12 +65,18 @@ def configure(conf):
     conf.write_config_header('daemon/config.hpp')
 
 def build(bld):
-    bld(target = "nfd-objects",
+    nfd_objects = bld(
+        target = "nfd-objects",
         features = "cxx",
-        source = bld.path.ant_glob(['daemon/**/*.cpp'], excl=['daemon/main.cpp']),
+        source = bld.path.ant_glob(['daemon/**/*.cpp'],
+                                   excl=['daemon/**/unix-*.cpp', 'daemon/main.cpp']),
         use = 'BOOST NDN_CPP RT',
         includes = [".", "daemon"],
         )
+
+    if bld.env['HAVE_UNIX_SOCKETS']:
+        nfd_objects.source += bld.path.ant_glob(['daemon/**/unix-*.cpp'],
+                                                excl=['daemon/main.cpp'])
 
     bld(target = "nfd",
         features = "cxx cxxprogram",
@@ -79,14 +87,18 @@ def build(bld):
     
     # Unit tests
     if bld.env['WITH_TESTS']:
-      unittests = bld.program (
-          target="unit-tests",
-          features = "cxx cxxprogram",
-          source = bld.path.ant_glob(['tests/**/*.cpp']),
-          use = 'nfd-objects',
-          includes = [".", "daemon"],
-          install_prefix = None,
+        unit_tests = unittests = bld.program (
+            target="unit-tests",
+            features = "cxx cxxprogram",
+            source = bld.path.ant_glob(['tests/**/*.cpp'],
+                                       excl=['tests/**/unix-*.cpp']),
+            use = 'nfd-objects',
+            includes = [".", "daemon"],
+            install_prefix = None,
           )
+
+        if bld.env['HAVE_UNIX_SOCKETS']:
+            unit_tests.source += bld.path.ant_glob(['tests/**/unix-*.cpp'])
 
 @Configure.conf
 def add_supported_cxxflags(self, cxxflags):

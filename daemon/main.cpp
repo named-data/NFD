@@ -10,7 +10,10 @@
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "face/tcp-channel-factory.hpp"
+
+#ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-channel-factory.hpp"
+#endif
 
 namespace nfd {
 
@@ -42,8 +45,12 @@ static FibManager* g_fibManager;
 static TcpChannelFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
+
+#ifdef HAVE_UNIX_SOCKETS
 static UnixStreamChannelFactory* g_unixFactory;
 static shared_ptr<UnixStreamChannel> g_unixChannel;
+#endif
+
 
 void
 usage(char* programName)
@@ -51,12 +58,16 @@ usage(char* programName)
   printf(
     "%s --help\n\tshow this help and exit\n"
     "%s [--tcp-listen \"0.0.0.0:6363\"] "
-        "[--unix-listen \"/var/run/nfd.sock\"] "
-        "[--tcp-connect \"192.0.2.1:6363\" "
+#ifdef HAVE_UNIX_SOCKETS
+       "[--unix-listen \"/var/run/nfd.sock\"] "
+#endif
+       "[--tcp-connect \"192.0.2.1:6363\" "
             "[--prefix </example>]]\n"
       "\trun forwarding daemon\n"
       "\t--tcp-listen <ip:port>: listen on IP and port\n"
+#ifdef HAVE_UNIX_SOCKETS
       "\t--unix-listen <unix-socket-path>: listen on Unix socket\n"
+#endif
       "\t--tcp-connect <ip:port>: connect to IP and port (can occur multiple times)\n"
       "\t--prefix <NDN name>: add this face as nexthop to FIB entry "
         "(must appear after --tcp-connect, can occur multiple times)\n"
@@ -174,6 +185,7 @@ initializeTcp()
   }
 }
 
+#ifdef HAVE_UNIX_SOCKETS
 void
 initializeUnix()
 {
@@ -184,6 +196,7 @@ initializeUnix()
     bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),
     &onFaceError);
 }
+#endif
 
 void
 initializeMgmt()
@@ -214,7 +227,9 @@ main(int argc, char** argv)
   
   g_forwarder = new Forwarder(g_ioService);
   initializeTcp();
+#ifdef HAVE_UNIX_SOCKETS
   initializeUnix();
+#endif
   initializeMgmt();
 
   /// \todo Add signal processing to gracefully terminate the app

@@ -9,6 +9,10 @@
 
 #include "stream-face.hpp"
 
+#ifndef HAVE_UNIX_SOCKETS
+#error "Cannot include this file when UNIX sockets are not available"
+#endif
+
 namespace nfd
 {
 
