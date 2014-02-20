@@ -1,0 +1,538 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (C) 2014 Named Data Networking Project
+ * See COPYING for copyright and distribution information.
+ */
+
+#include "face-manager.hpp"
+
+#include "core/face-uri.hpp"
+#include "fw/face-table.hpp"
+
+#include "face/tcp-factory.hpp"
+#include "face/udp-factory.hpp"
+#include "face/unix-stream-factory.hpp"
+#include "face/ethernet-factory.hpp"
+
+#ifdef __linux__
+#include <netinet/ether.h>
+#else
+#include <net/ethernet.h>
+#endif
+
+
+namespace nfd {
+
+NFD_LOG_INIT("FaceManager");
+
+const Name FaceManager::COMMAND_PREFIX = "/localhost/nfd/faces";
+
+const size_t FaceManager::COMMAND_UNSIGNED_NCOMPS =
+  FaceManager::COMMAND_PREFIX.size() +
+  1 + // verb
+  1;  // verb options
+
+const size_t FaceManager::COMMAND_SIGNED_NCOMPS =
+  FaceManager::COMMAND_UNSIGNED_NCOMPS +
+  0; // No signed Interest support in mock, otherwise 4 (timestamp, nonce, signed info tlv, signature tlv)
+
+const FaceManager::VerbAndProcessor FaceManager::COMMAND_VERBS[] =
+  {
+    VerbAndProcessor(
+                     Name::Component("create"),
+                     &FaceManager::createFace
+                     ),
+
+    VerbAndProcessor(
+                     Name::Component("destroy"),
+                     &FaceManager::destroyFace
+                     ),
+  };
+
+
+
+FaceManager::FaceManager(FaceTable& faceTable,
+                         shared_ptr<AppFace> face)
+  : ManagerBase(face)
+  , m_faceTable(faceTable)
+  , m_verbDispatch(COMMAND_VERBS,
+                   COMMAND_VERBS +
+                   (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
+{
+  face->setInterestFilter("/localhost/nfd/faces",
+                          bind(&FaceManager::onFaceRequest, this, _2));
+}
+
+void
+FaceManager::setConfigFile(ConfigFile& configFile)
+{
+  configFile.addSectionHandler("face_system",
+                               bind(&FaceManager::onConfig, this, _1, _2));
+}
+
+
+void
+FaceManager::onConfig(const ConfigSection& configSection, bool isDryRun)
+{
+  bool hasSeenUnix = false;
+  bool hasSeenTcp = false;
+  bool hasSeenUdp = false;
+  bool hasSeenEther = false;
+
+  for (ConfigSection::const_iterator item = configSection.begin();
+       item != configSection.end();
+       ++item)
+    {
+      if (item->first == "unix")
+        {
+          if (hasSeenUnix)
+            throw Error("Duplicate \"unix\" section");
+          hasSeenUnix = true;
+
+          processSectionUnix(item->second, isDryRun);
+        }
+      else if (item->first == "tcp")
+        {
+          if (hasSeenTcp)
+            throw Error("Duplicate \"tcp\" section");
+          hasSeenTcp = true;
+
+          processSectionTcp(item->second, isDryRun);
+        }
+      else if (item->first == "udp")
+        {
+          if (hasSeenUdp)
+            throw Error("Duplicate \"udp\" section");
+          hasSeenUdp = true;
+
+          processSectionUdp(item->second, isDryRun);
+        }
+      else if (item->first == "ether")
+        {
+          if (hasSeenEther)
+            throw Error("Duplicate \"ether\" section");
+          hasSeenEther = true;
+
+          processSectionEther(item->second, isDryRun);
+        }
+      else
+        {
+          throw Error("Unrecognized option \"" + item->first + "\"");
+        }
+    }
+}
+
+void
+FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRun)
+{
+  // ; the unix section contains settings of UNIX stream faces and channels
+  // unix
+  // {
+  //   listen yes ; set to 'no' to disable UNIX stream listener, default 'yes'
+  //   path /var/run/nfd.sock ; UNIX stream listener path
+  // }
+
+  bool needToListen = true;
+  std::string path = "/var/run/nfd.sock";
+
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end();
+       ++i)
+    {
+      if (i->first == "path")
+        {
+          path = i->second.get_value<std::string>();
+        }
+      else if (i->first == "listen")
+        {
+          needToListen = parseYesNo(i, i->first, "unix");
+        }
+      else
+        {
+          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"unix\" section");
+        }
+    }
+
+  if (!isDryRun)
+    {
+      shared_ptr<UnixStreamFactory> factory = make_shared<UnixStreamFactory>();
+      shared_ptr<UnixStreamChannel> unixChannel = factory->createChannel(path);
+
+      if (needToListen)
+        {
+          // Should acceptFailed callback be used somehow?
+          unixChannel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                              UnixStreamChannel::ConnectFailedCallback());
+        }
+
+      m_factories.insert(std::make_pair("unix", factory));
+    }
+}
+
+void
+FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun)
+{
+  // ; the tcp section contains settings of TCP faces and channels
+  // tcp
+  // {
+  //   listen yes ; set to 'no' to disable TCP listener, default 'yes'
+  //   port 6363 ; TCP listener port number
+  // }
+
+  std::string port = "6363";
+  bool needToListen = true;
+
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end();
+       ++i)
+    {
+      if (i->first == "port")
+        {
+          port = i->second.get_value<std::string>();
+        }
+      else if (i->first == "listen")
+        {
+          needToListen = parseYesNo(i, i->first, "tcp");
+        }
+      else
+        {
+          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"tcp\" section");
+        }
+    }
+
+  if (!isDryRun)
+    {
+      shared_ptr<TcpFactory> factory = make_shared<TcpFactory>(boost::cref(port));
+
+      using namespace boost::asio::ip;
+
+      shared_ptr<TcpChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
+      shared_ptr<TcpChannel> ipv6Channel = factory->createChannel("::", port);
+
+      if (needToListen)
+        {
+          // Should acceptFailed callback be used somehow?
+
+          ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                              TcpChannel::ConnectFailedCallback());
+          ipv6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                              TcpChannel::ConnectFailedCallback());
+        }
+
+      m_factories.insert(std::make_pair("tcp", factory));
+      m_factories.insert(std::make_pair("tcp4", factory));
+      m_factories.insert(std::make_pair("tcp6", factory));
+    }
+}
+
+void
+FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun)
+{
+  // ; the udp section contains settings of UDP faces and channels
+  // udp
+  // {
+  //   port 6363 ; UDP unicast port number
+  //   idle_timeout 30 ; idle time (seconds) before closing a UDP unicast face
+  //   keep_alive_interval 25; interval (seconds) between keep-alive refreshes
+
+  //   ; NFD creates one UDP multicast face per NIC
+  //   mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
+  //   mcast_port 56363 ; UDP multicast port number
+  //   mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
+  // }
+
+  std::string port = "6363";
+  size_t timeout = 30;
+  size_t keepAliveInterval = 25;
+  bool useMcast = true;
+  std::string mcastPort = "56363";
+  std::string mcastGroup;
+
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end();
+       ++i)
+    {
+      if (i->first == "port")
+        {
+          port = i->second.get_value<std::string>();
+        }
+      else if (i->first == "idle_timeout")
+        {
+          try
+            {
+              timeout = i->second.get_value<size_t>();
+            }
+          catch (const std::exception& e)
+            {
+              throw ConfigFile::Error("Invalid value for option \"" +
+                                      i->first + "\" in \"udp\" section");
+            }
+        }
+      else if (i->first == "keep_alive_interval")
+        {
+          try
+            {
+              keepAliveInterval = i->second.get_value<size_t>();
+            }
+          catch (const std::exception& e)
+            {
+              throw ConfigFile::Error("Invalid value for option \"" +
+                                      i->first + "\" in \"udp\" section");
+            }
+        }
+      else if (i->first == "mcast")
+        {
+          useMcast = parseYesNo(i, i->first, "udp");
+        }
+      else if (i->first == "mcast_port")
+        {
+          mcastPort = i->second.get_value<std::string>();
+        }
+      else if (i->first == "mcast_group")
+        {
+          using namespace boost::asio::ip;
+          mcastGroup = i->second.get_value<std::string>();
+          try
+            {
+              address mcastGroupTest = address::from_string(mcastGroup);
+              if (!mcastGroupTest.is_v4())
+                {
+                  throw ConfigFile::Error("Invalid value for option \"" +
+                                          i->first + "\" in \"udp\" section");
+                }
+            }
+          catch(const std::runtime_error& e)
+            {
+              throw ConfigFile::Error("Invalid value for option \"" +
+                                      i->first + "\" in \"udp\" section");
+            }
+        }
+      else
+        {
+          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"udp\" section");
+        }
+    }
+
+  /// \todo what is keep alive interval used for?
+
+  if (!isDryRun)
+    {
+      shared_ptr<UdpFactory> factory = make_shared<UdpFactory>(boost::cref(port));
+
+      shared_ptr<UdpChannel> ipv4Channel =
+        factory->createChannel("0.0.0.0", port, time::seconds(timeout));
+      shared_ptr<UdpChannel> ipv6Channel =
+        factory->createChannel("::", port, time::seconds(timeout));
+
+      m_factories.insert(std::make_pair("udp", factory));
+      m_factories.insert(std::make_pair("udp4", factory));
+      m_factories.insert(std::make_pair("udp6", factory));
+
+      if (useMcast)
+        {
+          /// \todo create one multicast face per NIC
+          NFD_LOG_WARN("multicast faces are not implemented");
+        }
+    }
+}
+
+void
+FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryRun)
+{
+  // ; the ether section contains settings of Ethernet faces and channels
+  // ether
+  // {
+  //   ; NFD creates one Ethernet multicast face per NIC
+  //   mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
+  //   mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
+  // }
+
+  bool useMcast = true;
+  std::string mcastGroup;
+
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end();
+       ++i)
+    {
+      if (i->first == "mcast")
+        {
+          useMcast = parseYesNo(i, i->first, "ether");
+        }
+
+      else if (i->first == "mcast_group")
+        {
+          const std::string mcastGroup = i->second.get_value<std::string>();
+          /// \todo change to use ethernet::Address::fromString
+          if (!ether_aton(mcastGroup.c_str()))
+            {
+              throw ConfigFile::Error("Invalid value for option \"" +
+                                      i->first + "\" in \"ether\" section");
+            }
+        }
+      else
+        {
+          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"ether\" section");
+        }
+    }
+
+  if (!isDryRun)
+    {
+      shared_ptr<EthernetFactory> factory = make_shared<EthernetFactory>();
+      m_factories.insert(std::make_pair("ether", factory));
+
+      if (useMcast)
+        {
+          /// \todo create one multicast face per NIC
+          NFD_LOG_WARN("multicast faces are not implemented");
+        }
+    }
+}
+
+
+void
+FaceManager::onFaceRequest(const Interest& request)
+{
+  const Name& command = request.getName();
+  const size_t commandNComps = command.size();
+
+  if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
+      commandNComps < COMMAND_SIGNED_NCOMPS)
+    {
+      NFD_LOG_INFO("command result: unsigned verb: " << command);
+      sendResponse(command, 401, "Signature required");
+
+      return;
+    }
+  else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
+           !COMMAND_PREFIX.isPrefixOf(command))
+    {
+      NFD_LOG_INFO("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  onValidatedFaceRequest(request.shared_from_this());
+}
+
+void
+FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
+{
+  const Name& command = request->getName();
+  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+
+  VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find (verb);
+  if (verbProcessor != m_verbDispatch.end())
+    {
+      ndn::nfd::FaceManagementOptions options;
+      if (!extractOptions(*request, options))
+        {
+          sendResponse(command, 400, "Malformed command");
+          return;
+        }
+
+      /// \todo authorize command
+      if (false)
+        {
+          NFD_LOG_INFO("command result: unauthorized verb: " << command);
+          sendResponse(command, 403, "Unauthorized command");
+          return;
+        }
+
+      NFD_LOG_INFO("command result: processing verb: " << verb);
+      (verbProcessor->second)(this, command, options);
+    }
+  else
+    {
+      NFD_LOG_INFO("command result: unsupported verb: " << verb);
+      sendResponse(command, 501, "Unsupported command");
+    }
+
+}
+
+bool
+FaceManager::extractOptions(const Interest& request,
+                            ndn::nfd::FaceManagementOptions& extractedOptions)
+{
+  const Name& command = request.getName();
+  const size_t optionCompIndex =
+    COMMAND_PREFIX.size() + 1;
+
+  try
+    {
+      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
+      extractedOptions.wireDecode(rawOptions);
+    }
+  catch (const ndn::Tlv::Error& e)
+    {
+      NFD_LOG_INFO("Bad command option parse: " << command);
+      return false;
+    }
+  NFD_LOG_DEBUG("Options parsed OK");
+  return true;
+}
+
+void
+FaceManager::onCreated(const Name& requestName,
+                       ndn::nfd::FaceManagementOptions& options,
+                       const shared_ptr<Face>& newFace)
+{
+  m_faceTable.add(newFace);
+  options.setFaceId(newFace->getId());
+
+  NFD_LOG_INFO("Created Face ID " << newFace->getId());
+
+  ndn::nfd::ControlResponse response;
+  setResponse(response, 200, "Success", options.wireEncode());
+  sendResponse(requestName, response);
+}
+
+void
+FaceManager::onConnectFailed(const Name& requestName, const std::string& reason)
+{
+  NFD_LOG_INFO("Failed to create face: " << reason);
+  sendResponse(requestName, 400, "Failed to create face");
+}
+
+void
+FaceManager::createFace(const Name& requestName,
+                        ndn::nfd::FaceManagementOptions& options)
+{
+  FaceUri uri;
+  if (!uri.parse(options.getUri()))
+    {
+      sendResponse(requestName, 400, "Malformed command");
+      return;
+    }
+
+  FactoryMap::iterator factory = m_factories.find(uri.getScheme());
+  if (factory == m_factories.end())
+    {
+      sendResponse(requestName, 501, "Unsupported protocol");
+      return;
+    }
+
+  factory->second->createFace(uri,
+                              bind(&FaceManager::onCreated, this, requestName, options, _1),
+                              bind(&FaceManager::onConnectFailed, this, requestName, _1));
+}
+
+
+void
+FaceManager::destroyFace(const Name& requestName,
+                         ndn::nfd::FaceManagementOptions& options)
+{
+  shared_ptr<Face> target = m_faceTable.get(options.getFaceId());
+  if (target)
+    {
+      m_faceTable.remove(target);
+      target->close();
+    }
+  sendResponse(requestName, 200, "Success");
+}
+
+FaceManager::~FaceManager()
+{
+
+}
+
+} // namespace nfd

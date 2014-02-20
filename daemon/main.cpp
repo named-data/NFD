@@ -9,6 +9,7 @@
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
+#include "mgmt/face-manager.hpp"
 #include "mgmt/local-control-header-manager.hpp"
 #include "face/tcp-factory.hpp"
 
@@ -42,6 +43,7 @@ struct ProgramOptions
 static ProgramOptions g_options;
 static Forwarder* g_forwarder;
 static FibManager* g_fibManager;
+static FaceManager* g_faceManager;
 static LocalControlHeaderManager* g_localControlHeaderManager;
 static TcpFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
@@ -208,6 +210,8 @@ initializeMgmt()
   g_fibManager = new FibManager(g_forwarder->getFib(),
                                 bind(&Forwarder::getFace, g_forwarder, _1),
                                 g_internalFace);
+
+  g_faceManager = new FaceManager(g_forwarder->getFaceTable(), g_internalFace);
 
   g_localControlHeaderManager =
     new LocalControlHeaderManager(bind(&Forwarder::getFace, g_forwarder, _1),

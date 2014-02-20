@@ -23,13 +23,16 @@ public:
   explicit
   FaceTable(Forwarder& forwarder);
 
-  void
+  VIRTUAL_WITH_TESTS
+  ~FaceTable();
+
+  VIRTUAL_WITH_TESTS void
   add(shared_ptr<Face> face);
 
-  void
+  VIRTUAL_WITH_TESTS void
   remove(shared_ptr<Face> face);
 
-  shared_ptr<Face>
+  VIRTUAL_WITH_TESTS shared_ptr<Face>
   get(FaceId id) const;
 
   size_t

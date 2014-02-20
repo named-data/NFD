@@ -17,6 +17,11 @@ FaceTable::FaceTable(Forwarder& forwarder)
 {
 }
 
+FaceTable::~FaceTable()
+{
+
+}
+
 void
 FaceTable::add(shared_ptr<Face> face)
 {
@@ -46,5 +51,7 @@ FaceTable::remove(shared_ptr<Face> face)
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 }
+
+
 
 } // namespace nfd
