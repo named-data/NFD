@@ -26,6 +26,9 @@ public:
     : S(forwarder)
   {
   }
+  
+  /// fires after each Action
+  EventEmitter<> onAction;
 
 protected:
   virtual void
@@ -49,6 +52,8 @@ StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
                                 shared_ptr<Face> outFace)
 {
   m_sendInterestHistory.push_back(SendInterestArgs(pitEntry, outFace));
+  pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
+  onAction();
 }
 
 template<typename S>
@@ -56,6 +61,7 @@ inline void
 StrategyTester<S>::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
   m_rejectPendingInterestHistory.push_back(RejectPendingInterestArgs(pitEntry));
+  onAction();
 }
 
 

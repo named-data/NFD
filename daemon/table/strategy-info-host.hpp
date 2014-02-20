@@ -25,6 +25,14 @@ public:
   shared_ptr<T>
   getStrategyInfo();
   
+  template<typename T>
+  shared_ptr<T>
+  getOrCreateStrategyInfo();
+  
+  template<typename T, typename T1>
+  shared_ptr<T>
+  getOrCreateStrategyInfo(T1& a1);
+  
   void
   clearStrategyInfo();
 
@@ -45,6 +53,30 @@ shared_ptr<T>
 StrategyInfoHost::getStrategyInfo()
 {
   return static_pointer_cast<T, fw::StrategyInfo>(m_strategyInfo);
+}
+
+template<typename T>
+shared_ptr<T>
+StrategyInfoHost::getOrCreateStrategyInfo()
+{
+  shared_ptr<T> info = this->getStrategyInfo<T>();
+  if (!static_cast<bool>(info)) {
+    info = make_shared<T>();
+    this->setStrategyInfo(info);
+  }
+  return info;
+}
+
+template<typename T, typename T1>
+shared_ptr<T>
+StrategyInfoHost::getOrCreateStrategyInfo(T1& a1)
+{
+  shared_ptr<T> info = this->getStrategyInfo<T>();
+  if (!static_cast<bool>(info)) {
+    info = make_shared<T>(boost::ref(a1));
+    this->setStrategyInfo(info);
+  }
+  return info;
 }
 
 } // namespace nfd

@@ -32,6 +32,7 @@ def configure(conf):
                                                  '-Qunused-arguments',        # only clang supports
                                                  '-Wno-tautological-compare', # suppress warnings from CryptoPP
                                                  '-Wno-unused-function',      # suppress warnings from CryptoPP
+                                                 '-fno-inline',
                                                  ])
     else:
         conf.add_supported_cxxflags (cxxflags = ['-O3', '-g', '-Wno-tautological-compare', '-Wno-unused-function'])

@@ -19,6 +19,11 @@ Measurements::Measurements()
 
 Measurements::~Measurements()
 {
+  for (std::map<Name, shared_ptr<measurements::Entry> >::iterator it = m_table.begin();
+       it != m_table.end(); ++it) {
+    shared_ptr<measurements::Entry> entry = it->second;
+    scheduler::cancel(entry->m_cleanup);
+  }
 }
 
 shared_ptr<measurements::Entry>

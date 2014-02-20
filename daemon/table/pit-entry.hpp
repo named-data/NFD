@@ -24,61 +24,68 @@ typedef std::list< InRecord>  InRecordCollection;
  */
 typedef std::list<OutRecord> OutRecordCollection;
 
-/** \class Entry
- *  \brief represents a PIT entry
+/** \brief represents a PIT entry
  */
 class Entry : public StrategyInfoHost, noncopyable
 {
 public:
   explicit
   Entry(const Interest& interest);
-  
+
   const Interest&
   getInterest() const;
-  
-  /** \return{ Interest Name }
+
+  /** \return Interest Name
    */
   const Name&
   getName() const;
-  
+
   const InRecordCollection&
   getInRecords() const;
-  
+
   const OutRecordCollection&
   getOutRecords() const;
-  
+
+  /** \brief decides whether Interest can be forwarded to face
+   *
+   *  \return true if OutRecord of this face does not exist or has expired,
+   *          and there is an InRecord not of this face
+   */
+  bool
+  canForwardTo(shared_ptr<Face> face) const;
+
   /** \brief records a nonce
    *
-   *  \return{ true if nonce is new; false if nonce is seen before }
+   *  \return true if nonce is new; false if nonce is seen before
    */
   bool
   addNonce(uint32_t nonce);
-  
+
   /** \brief inserts a InRecord for face, and updates it with interest
    *
    *  If InRecord for face exists, the existing one is updated.
    *  This method does not add the Nonce as a seen Nonce.
-   *  \return{ an iterator to the InRecord }
+   *  \return an iterator to the InRecord
    */
   InRecordCollection::iterator
   insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest);
-  
+
   /// deletes all InRecords
   void
   deleteInRecords();
-  
+
   /** \brief inserts a OutRecord for face, and updates it with interest
    *
    *  If OutRecord for face exists, the existing one is updated.
-   *  \return{ an iterator to the OutRecord }
+   *  \return an iterator to the OutRecord
    */
   OutRecordCollection::iterator
   insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest);
-  
+
   /// deletes one OutRecord for face if exists
   void
   deleteOutRecord(shared_ptr<Face> face);
-  
+
 public:
   EventId m_unsatisfyTimer;
   EventId m_stragglerTimer;

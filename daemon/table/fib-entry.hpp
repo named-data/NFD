@@ -38,11 +38,11 @@ public:
   const Name&
   getPrefix() const;
   
-  /** \brief gives the nexthops explicitly defined on this entry
-   *  This list does not include inherited nexthops.
-   */
   const NextHopList&
   getNextHops() const;
+  
+  bool
+  hasNextHop(shared_ptr<Face> face) const;
   
   /// adds a nexthop
   void

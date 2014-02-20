@@ -33,6 +33,38 @@ Entry::getOutRecords() const
   return m_outRecords;
 }
 
+static inline bool
+predicate_FaceRecord_Face(const FaceRecord& faceRecord, shared_ptr<Face> face)
+{
+  return faceRecord.getFace() == face;
+}
+
+static inline bool
+predicate_FaceRecord_ne_Face_and_unexpired(const FaceRecord& faceRecord,
+  shared_ptr<Face> face, time::Point now)
+{
+  return faceRecord.getFace() != face && faceRecord.getExpiry() >= now;
+}
+
+bool
+Entry::canForwardTo(shared_ptr<Face> face) const
+{
+  OutRecordCollection::const_iterator outIt = std::find_if(
+    m_outRecords.begin(), m_outRecords.end(),
+    bind(&predicate_FaceRecord_Face, _1, face));
+  bool hasUnexpiredOutRecord = outIt != m_outRecords.end() &&
+                               outIt->getExpiry() >= time::now();
+  if (hasUnexpiredOutRecord) {
+    return false;
+  }
+  
+  InRecordCollection::const_iterator inIt = std::find_if(
+    m_inRecords.begin(), m_inRecords.end(),
+    bind(&predicate_FaceRecord_ne_Face_and_unexpired, _1, face, time::now()));
+  bool hasUnexpiredOtherInRecord = inIt != m_inRecords.end();
+  return hasUnexpiredOtherInRecord;
+}
+
 bool
 Entry::addNonce(uint32_t nonce)
 {
@@ -40,12 +72,6 @@ Entry::addNonce(uint32_t nonce)
     m_nonces.insert(nonce);
 
   return insertResult.second;
-}
-
-static inline bool
-predicate_FaceRecord_Face(const FaceRecord& faceRecord, shared_ptr<Face> face)
-{
-  return faceRecord.getFace() == face;
 }
 
 InRecordCollection::iterator

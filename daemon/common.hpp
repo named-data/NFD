@@ -53,6 +53,7 @@ using boost::enable_shared_from_this;
 using boost::make_shared;
 using boost::static_pointer_cast;
 using boost::dynamic_pointer_cast;
+using boost::weak_ptr;
 using boost::function;
 using boost::bind;
 

@@ -20,6 +20,14 @@ predicate_NextHop_eq_Face(const NextHop& nexthop, shared_ptr<Face> face)
   return nexthop.getFace() == face;
 }
 
+bool
+Entry::hasNextHop(shared_ptr<Face> face) const
+{
+  NextHopList::const_iterator it = std::find_if(m_nextHops.begin(), m_nextHops.end(),
+    bind(&predicate_NextHop_eq_Face, _1, face));
+  return it != m_nextHops.end();
+}
+
 void
 Entry::addNextHop(shared_ptr<Face> face, int32_t cost)
 {
