@@ -99,7 +99,7 @@ public: // triggers
   
 protected: // actions
   /// send Interest to outFace
-  void
+  VIRTUAL_WITH_TESTS void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
                     shared_ptr<Face> outFace);
   
@@ -108,7 +108,7 @@ protected: // actions
    *  This shall not be called if the pending Interest has been
    *  forwarded earlier, and does not need to be resent now.
    */
-  void
+  VIRTUAL_WITH_TESTS void
   rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry);
   
 private:
