@@ -68,6 +68,10 @@ operator<<(std::ostream& output, const Logger& obj);
   template<> \
   nfd::Logger cls<specialization>::g_logger = nfd::Logger(name);
 
+#define NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(cls, s1, s2, name) \
+  template<> \
+  nfd::Logger cls<s1, s2>::g_logger = nfd::Logger(name);
+
 #define NFD_LOG_TRACE(expression) \
     if(g_logger.isEnabled(nfd::LOG_TRACE)) \
        std::cerr<<"TRACE: "<<"["<<g_logger<<"] " << expression << "\n"

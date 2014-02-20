@@ -13,7 +13,6 @@ NFD_LOG_INIT("Face");
 
 Face::Face()
   : m_id(INVALID_FACEID)
-  , m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
 {
 }
 
@@ -32,6 +31,20 @@ void
 Face::setId(FaceId faceId)
 {
   m_id = faceId;
+}
+
+bool
+Face::isLocal() const
+{
+  return m_isLocal;
+}
+
+// this method is protected and can be used only in derived class
+// to set localhost scope
+void
+Face::setLocal(bool isLocal)
+{
+  m_isLocal = isLocal;
 }
 
 bool
@@ -58,21 +71,27 @@ Face::isMultiAccess() const
   return false;
 }
 
-void
-Face::setLocalControlHeaderFeature(LocalControlHeaderFeature feature, bool enabled)
+bool
+Face::decodeAndDispatchInput(const Block& element)
 {
-  BOOST_ASSERT(feature > LOCAL_CONTROL_HEADER_FEATURE_ANY &&
-               feature < m_localControlHeaderFeatures.size());
-  m_localControlHeaderFeatures[feature] = enabled;
-  NFD_LOG_DEBUG("face" << this->getId() << " setLocalControlHeaderFeature " <<
-                (enabled ? "enable" : "disable") << " feature " << feature);
-
-  BOOST_STATIC_ASSERT(LOCAL_CONTROL_HEADER_FEATURE_ANY == 0);
-  m_localControlHeaderFeatures[LOCAL_CONTROL_HEADER_FEATURE_ANY] =
-    std::find(m_localControlHeaderFeatures.begin() + 1,
-              m_localControlHeaderFeatures.end(), true) <
-              m_localControlHeaderFeatures.end();
-  // 'find(..) < .end()' instead of 'find(..) != .end()' due to LLVM Bug 16816
+  /// \todo Ensure lazy field decoding process
+  
+  if (element.type() == tlv::Interest)
+    {
+      shared_ptr<Interest> i = make_shared<Interest>();
+      i->wireDecode(element);
+      this->onReceiveInterest(*i);
+    }
+  else if (element.type() == tlv::Data)
+    {
+      shared_ptr<Data> d = make_shared<Data>();
+      d->wireDecode(element);
+      this->onReceiveData(*d);
+    }
+  else
+    return false;
+  
+  return true;
 }
 
 } //namespace nfd

@@ -8,6 +8,7 @@
 #define NFD_TEST_FACE_DUMMY_FACE_HPP
 
 #include "face/face.hpp"
+#include "face/local-face.hpp"
 
 namespace nfd {
 
@@ -15,15 +16,10 @@ namespace nfd {
  *  \brief provides a Face that cannot communicate
  *  for unit testing only
  */
-class DummyFace : public Face
+template<class FaceBase>
+class DummyFaceImpl : public FaceBase
 {
 public:
-  explicit
-  DummyFace(bool isLocal = false)
-    : m_isLocal(isLocal)
-  {
-  }
-  
   virtual void
   sendInterest(const Interest& interest)
   {
@@ -39,15 +35,11 @@ public:
   {
   }
 
-  virtual bool
-  isLocal() const
-  {
-    return m_isLocal;
-  }
-
 private:
-  bool m_isLocal;
 };
+
+typedef DummyFaceImpl<Face> DummyFace;
+typedef DummyFaceImpl<LocalFace> DummyLocalFace;
 
 } // namespace nfd
 

@@ -36,13 +36,6 @@ public:
   virtual void
   close();
 
-  /** \brief Get whether face is connected to a local app
-   *
-   *  Always true for a InternalFace.
-   */
-  virtual bool
-  isLocal() const;
-
   // Methods implementing AppFace interface. Do not invoke from forwarder.
 
   virtual void

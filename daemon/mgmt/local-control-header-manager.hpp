@@ -23,7 +23,6 @@ public:
   void
   onLocalControlHeaderRequest(const Interest& request);
 
-
 private:
   function<shared_ptr<Face>(FaceId)> m_getFace;
 

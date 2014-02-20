@@ -13,15 +13,19 @@ namespace nfd {
 
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, TcpFace::protocol, "TcpFace");
 
+NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
+                                                TcpLocalFace::protocol, LocalFace, "TcpLocalFace");
+
 TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
   : StreamFace<protocol>(socket)
 {
 }
 
-bool
-TcpFace::isLocal() const
+//
+
+TcpLocalFace::TcpLocalFace(const shared_ptr<TcpLocalFace::protocol::socket>& socket)
+  : StreamFace<protocol, LocalFace>(socket)
 {
-  return false;
 }
 
 

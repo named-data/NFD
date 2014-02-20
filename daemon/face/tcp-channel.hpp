@@ -32,7 +32,7 @@ public:
    *        (as a response to incoming connection or after connection
    *        is established)
    */
-  typedef function<void(const shared_ptr<TcpFace>& newFace)> FaceCreatedCallback;
+  typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
 
   /**
    * \brief Prototype for the callback that is called when face is failed to
@@ -135,7 +135,7 @@ private:
   boost::asio::io_service& m_ioService;
   tcp::Endpoint m_localEndpoint;
 
-  typedef std::map< tcp::Endpoint, shared_ptr<TcpFace> > ChannelFaceMap;
+  typedef std::map< tcp::Endpoint, shared_ptr<Face> > ChannelFaceMap;
   ChannelFaceMap m_channelFaces;
 
   bool isListening;

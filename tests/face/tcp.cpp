@@ -32,7 +32,7 @@ class EndToEndFixture
 {
 public:
   void
-  channel1_onFaceCreated(const shared_ptr<TcpFace>& newFace)
+  channel1_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK(!static_cast<bool>(m_face1));
     m_face1 = newFace;
@@ -78,7 +78,7 @@ public:
   }
 
   void
-  channel2_onFaceCreated(const shared_ptr<TcpFace>& newFace)
+  channel2_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK(!static_cast<bool>(m_face2));
     m_face2 = newFace;
@@ -124,7 +124,7 @@ public:
   }
 
   void
-  channel_onFaceCreated(const shared_ptr<TcpFace>& newFace)
+  channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     m_faces.push_back(newFace);
     this->afterIo();
@@ -163,14 +163,14 @@ public:
 
   int m_ioRemaining;
 
-  shared_ptr<TcpFace> m_face1;
+  shared_ptr<Face> m_face1;
   std::vector<Interest> m_face1_receivedInterests;
   std::vector<Data> m_face1_receivedDatas;
-  shared_ptr<TcpFace> m_face2;
+  shared_ptr<Face> m_face2;
   std::vector<Interest> m_face2_receivedInterests;
   std::vector<Data> m_face2_receivedDatas;
 
-  std::list< shared_ptr<TcpFace> > m_faces;
+  std::list< shared_ptr<Face> > m_faces;
 };
 
 
@@ -202,7 +202,15 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
   BOOST_REQUIRE(static_cast<bool>(m_face2));
-    
+
+  BOOST_CHECK_EQUAL(m_face1->isLocal(), true);
+  BOOST_CHECK_EQUAL(m_face2->isLocal(), true);
+
+  BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(m_face1)), true);
+  BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(m_face2)), true);
+
+  // integrated tests needs to check that TcpFace for non-loopback fails these tests...
+  
   abortEvent =
     scheduler.scheduleEvent(time::seconds(1),
                             bind(&EndToEndFixture::abortTestCase, this,

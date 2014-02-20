@@ -12,7 +12,7 @@ NFD_LOG_INIT("InternalFace");
 
 InternalFace::InternalFace()
 {
-
+  setLocal(true);
 }
 
 void
@@ -96,12 +96,6 @@ void
 InternalFace::close()
 {
   throw Error("Internal face cannot be closed");
-}
-
-bool
-InternalFace::isLocal() const
-{
-  return true;
 }
 
 void

@@ -5,6 +5,7 @@
  */
 
 #include "face/face.hpp"
+#include "face/local-face.hpp"
 #include "dummy-face.hpp"
 
 #include <boost/test/unit_test.hpp>
@@ -22,7 +23,7 @@ BOOST_AUTO_TEST_CASE(Description)
 
 BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
 {
-  DummyFace face;
+  DummyLocalFace face;
   
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
   

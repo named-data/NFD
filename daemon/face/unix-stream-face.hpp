@@ -20,20 +20,13 @@ namespace nfd
  * \brief Implementation of Face abstraction that uses stream-oriented
  *        Unix domain sockets as underlying transport mechanism
  */
-class UnixStreamFace : public StreamFace<boost::asio::local::stream_protocol>
+class UnixStreamFace : public StreamFace<boost::asio::local::stream_protocol, LocalFace>
 {
 public:
   typedef boost::asio::local::stream_protocol protocol;
 
   explicit
   UnixStreamFace(const shared_ptr<protocol::socket>& socket);
-
-  /** \brief Get whether face is connected to a local app
-   *
-   *  Always true for a UnixStreamFace.
-   */
-  virtual bool
-  isLocal() const;
 };
 
 } // namespace nfd

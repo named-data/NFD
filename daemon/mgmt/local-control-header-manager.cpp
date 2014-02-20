@@ -5,6 +5,7 @@
  */
 
 #include "local-control-header-manager.hpp"
+#include "face/local-face.hpp"
 
 namespace nfd {
 
@@ -58,7 +59,15 @@ LocalControlHeaderManager::onLocalControlHeaderRequest(const Interest& request)
       return;
     }
 
-  shared_ptr<Face> face = m_getFace(request.getIncomingFaceId());
+  shared_ptr<LocalFace> face =
+    dynamic_pointer_cast<LocalFace>(m_getFace(request.getIncomingFaceId()));
+
+  if (!static_cast<bool>(face))
+    {
+      NFD_LOG_INFO("command result: request to enable control header on non-local face");
+      sendResponse(command, 400, "Command not supported on the requested face");
+      return;
+    }
 
   const Name::Component& module = command.get(COMMAND_PREFIX.size());
   const Name::Component& verb = command.get(COMMAND_PREFIX.size() + 1);

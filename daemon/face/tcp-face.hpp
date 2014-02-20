@@ -23,10 +23,44 @@ public:
 
   explicit
   TcpFace(const shared_ptr<protocol::socket>& socket);
-
-  virtual bool
-  isLocal() const;
 };
+
+//
+
+/** \brief Class validating use of TcpLocalFace
+ */
+template<>
+struct StreamFaceValidator<boost::asio::ip::tcp, LocalFace>
+{
+  /** Check that local endpoint is loopback
+   *
+   *  @throws Face::Error if validation failed
+   */
+  static void
+  validateSocket(boost::asio::ip::tcp::socket& socket)
+  {
+    if (!socket.local_endpoint().address().is_loopback() ||
+        !socket.remote_endpoint().address().is_loopback())
+      {
+        throw Face::Error("TcpLocalFace can be created only on loopback interface");
+      }
+  }
+};
+
+/**
+ * \brief Implementation of Face abstraction that uses TCP
+ *        as underlying transport mechanism and is used for
+ *        local communication (can enable LocalControlHeader)
+ */
+class TcpLocalFace : public StreamFace<boost::asio::ip::tcp, LocalFace>
+{
+public:
+  typedef boost::asio::ip::tcp protocol;
+
+  explicit
+  TcpLocalFace(const shared_ptr<protocol::socket>& socket);
+};
+
 
 } // namespace nfd
 

@@ -38,12 +38,6 @@ public:
   {
   }
 
-  virtual bool
-  isLocal() const
-  {
-    return false;
-  }
-
   void
   receiveInterest(const Interest& interest)
   {
@@ -129,25 +123,6 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
 }
 
-
-class ForwarderTestLocalFace : public DummyFace {
-public:
-  explicit
-  ForwarderTestLocalFace(bool isLocal)
-    : m_isLocal(isLocal)
-  {
-  }
-
-  virtual bool
-  isLocal() const
-  {
-    return m_isLocal;
-  }
-
-private:
-  bool m_isLocal;
-};
-
 class ScopeLocalhostTestForwarder : public Forwarder
 {
 public:
@@ -182,8 +157,8 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhost)
 {
   boost::asio::io_service io;
   ScopeLocalhostTestForwarder forwarder(io);
-  shared_ptr<ForwarderTestLocalFace> face1 = make_shared<ForwarderTestLocalFace>(true);
-  shared_ptr<ForwarderTestLocalFace> face2 = make_shared<ForwarderTestLocalFace>(false);
+  shared_ptr<DummyLocalFace> face1 = make_shared<DummyLocalFace>();
+  shared_ptr<DummyFace>      face2 = make_shared<DummyFace>();
   forwarder.addFace(face1);
   forwarder.addFace(face2);
   

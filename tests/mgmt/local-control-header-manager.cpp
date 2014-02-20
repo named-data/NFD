@@ -6,6 +6,7 @@
 
 #include "mgmt/local-control-header-manager.hpp"
 #include "face/face.hpp"
+#include "face/local-face.hpp"
 #include "mgmt/internal-face.hpp"
 #include "../face/dummy-face.hpp"
 
@@ -94,7 +95,7 @@ BOOST_AUTO_TEST_SUITE(MgmtLocalControlHeaderManager)
 
 BOOST_FIXTURE_TEST_CASE(InFaceId, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -136,7 +137,7 @@ BOOST_FIXTURE_TEST_CASE(InFaceId, LocalControlHeaderManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(NextHopFaceId, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -179,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE(NextHopFaceId, LocalControlHeaderManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(ShortCommand, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -204,7 +205,7 @@ BOOST_FIXTURE_TEST_CASE(ShortCommand, LocalControlHeaderManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(ShortCommandModule, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -229,7 +230,7 @@ BOOST_FIXTURE_TEST_CASE(ShortCommandModule, LocalControlHeaderManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(UnsupportedModule, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -254,7 +255,7 @@ BOOST_FIXTURE_TEST_CASE(UnsupportedModule, LocalControlHeaderManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(InFaceIdUnsupportedVerb, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -279,7 +280,7 @@ BOOST_FIXTURE_TEST_CASE(InFaceIdUnsupportedVerb, LocalControlHeaderManagerFixtur
 
 BOOST_FIXTURE_TEST_CASE(NextHopFaceIdUnsupportedVerb, LocalControlHeaderManagerFixture)
 {
-  shared_ptr<Face> dummy = make_shared<DummyFace>();
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
