@@ -40,6 +40,16 @@ BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
                          LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID), false);
 }
 
+BOOST_AUTO_TEST_CASE(Counters)
+{
+  DummyFace face;
+  const FaceCounters& counters = face.getCounters();
+  BOOST_CHECK_EQUAL(counters.getInInterest() , 0);
+  BOOST_CHECK_EQUAL(counters.getInData()     , 0);
+  BOOST_CHECK_EQUAL(counters.getOutInterest(), 0);
+  BOOST_CHECK_EQUAL(counters.getOutData()    , 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace nfd

@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "core/event-emitter.hpp"
+#include "face-counter.hpp"
 
 namespace nfd {
 
@@ -82,7 +83,7 @@ public:
    */
   bool
   isLocal() const;
-  
+
   /** \brief Set the description
    *
    *  This is typically invoked by mgmt on set description command
@@ -101,6 +102,9 @@ public:
   virtual bool
   isMultiAccess() const;
 
+  const FaceCounters&
+  getCounters() const;
+
 protected:
   void
   setLocal(bool isLocal);
@@ -108,6 +112,9 @@ protected:
   // this is a non-virtual method
   bool
   decodeAndDispatchInput(const Block& element);
+
+  FaceCounters&
+  getMutableCounters();
 
 private:
   void
@@ -117,10 +124,24 @@ private:
   FaceId m_id;
   std::string m_description;
   bool m_isLocal; // for scoping purposes
-  
+  FaceCounters m_counters;
+
   // allow setting FaceId
   friend class Forwarder;
 };
+
+
+inline const FaceCounters&
+Face::getCounters() const
+{
+  return m_counters;
+}
+
+inline FaceCounters&
+Face::getMutableCounters()
+{
+  return m_counters;
+}
 
 } // namespace nfd
 
