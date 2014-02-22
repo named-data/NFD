@@ -5,8 +5,8 @@
  */
 
 #include "fib.hpp"
-#include <algorithm>
-#include <numeric>
+#include "pit-entry.hpp"
+#include "measurements-entry.hpp"
 
 namespace nfd {
 
@@ -58,6 +58,18 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
     std::accumulate(m_table.begin(), m_table.end(), m_rootEntry,
     bind(&accumulate_FibEntry_longestPrefixMatch, _1, _2, prefix));
   return bestMatch;
+}
+
+shared_ptr<fib::Entry>
+Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
+{
+  return this->findLongestPrefixMatch(pitEntry.getName());
+}
+
+shared_ptr<fib::Entry>
+Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
+{
+  return this->findLongestPrefixMatch(measurementsEntry.getName());
 }
 
 shared_ptr<fib::Entry>

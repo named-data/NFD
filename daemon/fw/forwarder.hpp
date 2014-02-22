@@ -13,6 +13,7 @@
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
+#include "table/measurements.hpp"
 #include "strategy.hpp"
 
 namespace nfd {
@@ -49,6 +50,9 @@ public:
   
   Cs&
   getCs();
+  
+  Measurements&
+  getMeasurements();
 
   shared_ptr<Face>
   getFace(FaceId id);
@@ -117,9 +121,10 @@ private:
   FaceId m_lastFaceId;
   std::map<FaceId, shared_ptr<Face> > m_faces;
   
-  Fib m_fib;
-  Pit m_pit;
-  Cs  m_cs;
+  Fib          m_fib;
+  Pit          m_pit;
+  Cs           m_cs;
+  Measurements m_measurements;
   /// the active strategy (only one strategy in mock)
   shared_ptr<fw::Strategy> m_strategy;
   
@@ -145,6 +150,12 @@ inline Cs&
 Forwarder::getCs()
 {
   return m_cs;
+}
+
+inline Measurements&
+Forwarder::getMeasurements()
+{
+  return m_measurements;
 }
 
 } // namespace nfd

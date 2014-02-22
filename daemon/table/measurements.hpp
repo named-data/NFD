@@ -8,16 +8,11 @@
 #define NFD_TABLE_MEASUREMENTS_HPP
 
 #include "measurements-entry.hpp"
+#include "fib-entry.hpp"
+#include "pit-entry.hpp"
 #include "core/time.hpp"
 
 namespace nfd {
-
-namespace fib {
-class Entry;
-}
-namespace pit {
-class Entry;
-}
 
 /** \class Measurement
  *  \brief represents the Measurements table
@@ -62,13 +57,13 @@ public:
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, time::Duration lifetime);
+  extendLifetime(measurements::Entry& entry, const time::Duration& lifetime);
 
 private:
   void
   extendLifetimeInternal(
     std::map<Name, shared_ptr<measurements::Entry> >::iterator it,
-    time::Duration lifetime);
+    const time::Duration& lifetime);
 
   void
   cleanup(std::map<Name, shared_ptr<measurements::Entry> >::iterator it);

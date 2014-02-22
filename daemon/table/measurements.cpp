@@ -71,7 +71,7 @@ Measurements::getParent(shared_ptr<measurements::Entry> child)
 //}
 
 void
-Measurements::extendLifetime(measurements::Entry& entry, time::Duration lifetime)
+Measurements::extendLifetime(measurements::Entry& entry, const time::Duration& lifetime)
 {
   std::map<Name, shared_ptr<measurements::Entry> >::iterator it =
       m_table.find(entry.getName());
@@ -83,7 +83,7 @@ Measurements::extendLifetime(measurements::Entry& entry, time::Duration lifetime
 void
 Measurements::extendLifetimeInternal(
     std::map<Name, shared_ptr<measurements::Entry> >::iterator it,
-    time::Duration lifetime)
+    const time::Duration& lifetime)
 {
   shared_ptr<measurements::Entry>& entry = it->second;
 

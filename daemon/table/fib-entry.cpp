@@ -5,7 +5,6 @@
  */
 
 #include "fib-entry.hpp"
-#include <algorithm>
 
 namespace nfd {
 namespace fib {
@@ -60,6 +59,12 @@ void
 Entry::sortNextHops()
 {
   std::sort(m_nextHops.begin(), m_nextHops.end(), &compare_NextHop_cost);
+}
+
+void
+Entry::setStrategy(shared_ptr<fw::Strategy> strategy)
+{
+  m_strategy = strategy;
 }
 
 

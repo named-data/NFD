@@ -8,16 +8,13 @@
 #define NFD_FW_STRATEGY_HPP
 
 #include "face/face.hpp"
+#include "table/fib-entry.hpp"
+#include "table/pit-entry.hpp"
+#include "table/measurements-accessor.hpp"
 
 namespace nfd {
 
 class Forwarder;
-namespace fib {
-class Entry;
-}
-namespace pit {
-class Entry;
-}
 
 namespace fw {
 
@@ -29,10 +26,10 @@ class Strategy
 public:
   explicit
   Strategy(Forwarder& forwarder);
-  
+
   virtual
   ~Strategy();
-  
+
 public: // triggers
   /** \brief trigger after Interest is received
    *
@@ -53,7 +50,7 @@ public: // triggers
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) =0;
-  
+
   /** \brief trigger before PIT entry is satisfied
    *
    *  In this base class this method does nothing.
@@ -61,7 +58,7 @@ public: // triggers
   virtual void
   beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
                                const Face& inFace, const Data& data);
-  
+
   /** \brief trigger before PIT entry expires
    *
    *  PIT entry expires when InterestLifetime has elapsed for all InRecords,
@@ -73,7 +70,7 @@ public: // triggers
    */
   virtual void
   beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry);
-  
+
 //  /** \brief trigger after FIB entry is being inserted
 //   *         and becomes managed by this strategy
 //   *
@@ -81,14 +78,14 @@ public: // triggers
 //   */
 //  virtual void
 //  afterAddFibEntry(shared_ptr<fib::Entry> fibEntry);
-//  
+//
 //  /** \brief trigger after FIB entry being managed by this strategy is updated
 //   *
 //   *  In this base class this method does nothing.
 //   */
 //  virtual void
 //  afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry);
-//  
+//
 //  /** \brief trigger before FIB entry ceises to be managed by this strategy
 //   *         or is being deleted
 //   *
@@ -96,13 +93,13 @@ public: // triggers
 //   */
 //  virtual void
 //  beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry);
-  
+
 protected: // actions
   /// send Interest to outFace
   VIRTUAL_WITH_TESTS void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
                     shared_ptr<Face> outFace);
-  
+
   /** \brief decide that a pending Interest cannot be forwarded
    *
    *  This shall not be called if the pending Interest has been
@@ -110,14 +107,26 @@ protected: // actions
    */
   VIRTUAL_WITH_TESTS void
   rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry);
-  
+
+protected: // accessors
+  MeasurementsAccessor&
+  getMeasurements();
+
 private:
   /** \brief reference to the forwarder
    *
    *  Triggers can access forwarder indirectly via actions.
    */
   Forwarder& m_forwarder;
+
+  MeasurementsAccessor m_measurements;
 };
+
+inline MeasurementsAccessor&
+Strategy::getMeasurements()
+{
+  return m_measurements;
+}
 
 } // namespace fw
 } // namespace nfd

@@ -8,6 +8,9 @@
 #define NFD_TABLE_FIB_HPP
 
 #include "fib-entry.hpp"
+#include "pit-entry.hpp"
+#include "measurements-entry.hpp"
+
 namespace nfd {
 
 /** \class Fib
@@ -30,6 +33,14 @@ public:
   /// performs a longest prefix match
   shared_ptr<fib::Entry>
   findLongestPrefixMatch(const Name& prefix) const;
+
+  /// performs a longest prefix match
+  shared_ptr<fib::Entry>
+  findLongestPrefixMatch(const pit::Entry& pitEntry) const;
+
+  /// performs a longest prefix match
+  shared_ptr<fib::Entry>
+  findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const;
 
   shared_ptr<fib::Entry>
   findExactMatch(const Name& prefix) const;

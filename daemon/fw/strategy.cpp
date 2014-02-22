@@ -15,6 +15,7 @@ NFD_LOG_INIT("Strategy");
 
 Strategy::Strategy(Forwarder& forwarder)
   : m_forwarder(forwarder)
+  , m_measurements(m_forwarder.getMeasurements(), m_forwarder.getFib(), this)
 {
 }
 

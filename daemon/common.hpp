@@ -39,6 +39,8 @@
 #include <sstream>
 #include <istream>
 #include <fstream>
+#include <algorithm>
+#include <numeric>
 
 #include "core/logger.hpp"
 

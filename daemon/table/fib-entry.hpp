@@ -10,6 +10,11 @@
 #include "fib-nexthop.hpp"
 
 namespace nfd {
+
+namespace fw {
+class Strategy;
+}
+
 namespace fib {
 
 /** \class NextHopList
@@ -46,6 +51,12 @@ public:
   /// removes a nexthop
   void
   removeNextHop(shared_ptr<Face> face);
+  
+  const fw::Strategy&
+  getStrategy() const;
+  
+  void
+  setStrategy(shared_ptr<fw::Strategy> strategy);
 
 private:
   /// sorts the nexthop list
@@ -55,6 +66,7 @@ private:
 private:
   Name m_prefix;
   NextHopList m_nextHops;
+  shared_ptr<fw::Strategy> m_strategy;
 };
 
 
@@ -70,6 +82,12 @@ Entry::getNextHops() const
   return m_nextHops;
 }
 
+inline const fw::Strategy&
+Entry::getStrategy() const
+{
+  BOOST_ASSERT(static_cast<bool>(m_strategy));
+  return *m_strategy;
+}
 
 } // namespace fib
 } // namespace nfd

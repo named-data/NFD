@@ -17,6 +17,7 @@ const Name Forwarder::s_localhostName("ndn:/localhost");
 Forwarder::Forwarder(boost::asio::io_service& ioService)
   : m_scheduler(ioService)
   , m_lastFaceId(0)
+  , m_measurements(ioService)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }
