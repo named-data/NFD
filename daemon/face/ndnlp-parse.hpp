@@ -22,7 +22,7 @@ struct ParseError : public std::runtime_error
 };
 
 /** \brief represents a NdnlpData packet
- *  
+ *
  *  NdnlpData ::= NDNLP-DATA-TYPE TLV-LENGTH
  *                  NdnlpSequence
  *                  NdnlpFragIndex?
@@ -33,12 +33,12 @@ class NdnlpData
 {
 public:
   /** \brief parse a NdnlpData packet
-   *  
+   *
    *  \exception ParseError packet is malformated
    */
   void
   wireDecode(const Block& wire);
-  
+
 public:
   uint64_t m_seq;
   uint16_t m_fragIndex;

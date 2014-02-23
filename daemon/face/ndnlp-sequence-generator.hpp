@@ -18,15 +18,15 @@ class SequenceBlock
 {
 public:
   SequenceBlock(uint64_t start, size_t count);
-  
+
   /** \return{ the pos-th sequence number }
    */
   uint64_t
   operator[](size_t pos) const;
-  
+
   size_t
   count() const;
-  
+
 private:
   uint64_t m_start;
   size_t m_count;
@@ -53,7 +53,7 @@ class SequenceGenerator : noncopyable
 {
 public:
   SequenceGenerator();
-  
+
   /** \brief generates a block of consecutive sequence numbers
    *
    *  This block must not overlap with a recent block.

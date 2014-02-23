@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(SequenceBlockWrap)
 BOOST_AUTO_TEST_CASE(SequenceGenerator)
 {
   ndnlp::SequenceGenerator seqgen;
-  
+
   ndnlp::SequenceBlock sb1 = seqgen.nextBlock(2);
   BOOST_CHECK_EQUAL(sb1.count(), 2);
 
@@ -50,28 +50,28 @@ BOOST_AUTO_TEST_CASE(Slice1)
   uint8_t blockValue[60];
   memset(blockValue, 0xcc, sizeof(blockValue));
   Block block = ndn::dataBlock(0x01, blockValue, sizeof(blockValue));
-  
+
   ndnlp::Slicer slicer(9000);
   ndnlp::PacketArray pa = slicer.slice(block);
-  
+
   BOOST_REQUIRE_EQUAL(pa->size(), 1);
-  
+
   const Block& pkt = pa->at(0);
   BOOST_CHECK_EQUAL(pkt.type(), static_cast<uint32_t>(tlv::NdnlpData));
   pkt.parse();
-  
+
   const Block::element_container& elements = pkt.elements();
   BOOST_REQUIRE_EQUAL(elements.size(), 2);
-  
+
   const Block& sequenceElement = elements[0];
   BOOST_CHECK_EQUAL(sequenceElement.type(), static_cast<uint32_t>(tlv::NdnlpSequence));
   BOOST_REQUIRE_EQUAL(sequenceElement.value_size(), sizeof(uint64_t));
-  
+
   const Block& payloadElement = elements[1];
   BOOST_CHECK_EQUAL(payloadElement.type(), static_cast<uint32_t>(tlv::NdnlpPayload));
   size_t payloadSize = payloadElement.value_size();
   BOOST_CHECK_EQUAL(payloadSize, block.size());
-  
+
   BOOST_CHECK_EQUAL_COLLECTIONS(payloadElement.value_begin(), payloadElement.value_end(),
                                 block.begin(),                block.end());
 }
@@ -82,24 +82,24 @@ BOOST_AUTO_TEST_CASE(Slice4)
   uint8_t blockValue[5050];
   memset(blockValue, 0xcc, sizeof(blockValue));
   Block block = ndn::dataBlock(0x01, blockValue, sizeof(blockValue));
-  
+
   ndnlp::Slicer slicer(1500);
   ndnlp::PacketArray pa = slicer.slice(block);
-  
+
   BOOST_REQUIRE_EQUAL(pa->size(), 4);
-  
+
   uint64_t seq0 = 0xdddd;
-  
+
   size_t totalPayloadSize = 0;
-  
+
   for (size_t i = 0; i < 4; ++i) {
     const Block& pkt = pa->at(i);
     BOOST_CHECK_EQUAL(pkt.type(), static_cast<uint32_t>(tlv::NdnlpData));
     pkt.parse();
-    
+
     const Block::element_container& elements = pkt.elements();
     BOOST_REQUIRE_EQUAL(elements.size(), 4);
-    
+
     const Block& sequenceElement = elements[0];
     BOOST_CHECK_EQUAL(sequenceElement.type(), static_cast<uint32_t>(tlv::NdnlpSequence));
     BOOST_REQUIRE_EQUAL(sequenceElement.value_size(), sizeof(uint64_t));
@@ -109,27 +109,23 @@ BOOST_AUTO_TEST_CASE(Slice4)
       seq0 = seq;
     }
     BOOST_CHECK_EQUAL(seq, seq0 + i);
-    
+
     const Block& fragIndexElement = elements[1];
     BOOST_CHECK_EQUAL(fragIndexElement.type(), static_cast<uint32_t>(tlv::NdnlpFragIndex));
-    BOOST_REQUIRE_EQUAL(fragIndexElement.value_size(), sizeof(uint16_t));
-    uint16_t fragIndex = be16toh(*reinterpret_cast<const uint16_t*>(
-                                   &*fragIndexElement.value_begin()));
+    uint64_t fragIndex = ndn::readNonNegativeInteger(fragIndexElement);
     BOOST_CHECK_EQUAL(fragIndex, i);
-    
+
     const Block& fragCountElement = elements[2];
     BOOST_CHECK_EQUAL(fragCountElement.type(), static_cast<uint32_t>(tlv::NdnlpFragCount));
-    BOOST_REQUIRE_EQUAL(fragCountElement.value_size(), sizeof(uint16_t));
-    uint16_t fragCount = be16toh(*reinterpret_cast<const uint16_t*>(
-                                   &*fragCountElement.value_begin()));
+    uint64_t fragCount = ndn::readNonNegativeInteger(fragCountElement);
     BOOST_CHECK_EQUAL(fragCount, 4);
-    
+
     const Block& payloadElement = elements[3];
     BOOST_CHECK_EQUAL(payloadElement.type(), static_cast<uint32_t>(tlv::NdnlpPayload));
     size_t payloadSize = payloadElement.value_size();
     totalPayloadSize += payloadSize;
   }
-  
+
   BOOST_CHECK_EQUAL(totalPayloadSize, block.size());
 }
 
@@ -152,11 +148,11 @@ protected:
     memset(blockValue, 0xcc, sizeof(blockValue));
     return ndn::dataBlock(0x01, blockValue, sizeof(blockValue));
   }
-  
+
 protected:
   boost::asio::io_service m_io;
   Scheduler m_scheduler;
-  
+
   ndnlp::Slicer m_slicer;
   ndnlp::PartialMessageStore m_partialMessageStore;
 
@@ -170,10 +166,10 @@ BOOST_FIXTURE_TEST_CASE(Reassemble1, ReassembleFixture)
   Block block = makeBlock(60);
   ndnlp::PacketArray pa = m_slicer.slice(block);
   BOOST_REQUIRE_EQUAL(pa->size(), 1);
-  
+
   BOOST_CHECK_EQUAL(m_received.size(), 0);
   m_partialMessageStore.receiveNdnlpData(pa->at(0));
-  
+
   BOOST_REQUIRE_EQUAL(m_received.size(), 1);
   BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(0).begin(), m_received.at(0).end(),
                                 block.begin(),            block.end());
@@ -185,11 +181,11 @@ BOOST_FIXTURE_TEST_CASE(Reassemble4and2, ReassembleFixture)
   Block block = makeBlock(5050);
   ndnlp::PacketArray pa = m_slicer.slice(block);
   BOOST_REQUIRE_EQUAL(pa->size(), 4);
-  
+
   Block block2 = makeBlock(2000);
   ndnlp::PacketArray pa2 = m_slicer.slice(block2);
   BOOST_REQUIRE_EQUAL(pa2->size(), 2);
-  
+
   BOOST_CHECK_EQUAL(m_received.size(), 0);
   m_partialMessageStore.receiveNdnlpData(pa->at(0));
   BOOST_CHECK_EQUAL(m_received.size(), 0);
@@ -204,7 +200,7 @@ BOOST_FIXTURE_TEST_CASE(Reassemble4and2, ReassembleFixture)
   m_partialMessageStore.receiveNdnlpData(pa->at(3));
   BOOST_CHECK_EQUAL(m_received.size(), 1);
   m_partialMessageStore.receiveNdnlpData(pa->at(2));
-  
+
   BOOST_REQUIRE_EQUAL(m_received.size(), 2);
   BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(1).begin(), m_received.at(1).end(),
                                 block.begin(),            block.end());

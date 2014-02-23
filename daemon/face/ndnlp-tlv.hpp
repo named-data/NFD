@@ -10,7 +10,8 @@
 namespace nfd {
 namespace tlv {
 
-enum {
+enum
+{
   NdnlpData      = 80,
   NdnlpSequence  = 81,
   NdnlpFragIndex = 82,

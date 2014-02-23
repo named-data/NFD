@@ -20,7 +20,7 @@ NdnlpData::wireDecode(const Block& wire)
   if (elements.size() < 2) {
     throw ParseError("NdnlpData element has incorrect number of children");
   }
-  
+
   const Block& sequenceElement = elements.front();
   if (sequenceElement.type() != tlv::NdnlpSequence) {
     throw ParseError("NdnlpSequence element is missing");
@@ -29,7 +29,7 @@ NdnlpData::wireDecode(const Block& wire)
     throw ParseError("NdnlpSequence element has incorrect length");
   }
   m_seq = be64toh(*reinterpret_cast<const uint64_t*>(&*sequenceElement.value_begin()));
-  
+
   const Block& payloadElement = elements.back();
   if (payloadElement.type() != tlv::NdnlpPayload) {
     throw ParseError("NdnlpPayload element is missing");
@@ -44,24 +44,30 @@ NdnlpData::wireDecode(const Block& wire)
   if (elements.size() != 4) {
     throw ParseError("NdnlpData element has incorrect number of children");
   }
-  
+
   const Block& fragIndexElement = elements.at(1);
   if (fragIndexElement.type() != tlv::NdnlpFragIndex) {
     throw ParseError("NdnlpFragIndex element is missing");
   }
-  if (fragIndexElement.value_size() != sizeof(uint16_t)) {
-    throw ParseError("NdnlpFragIndex element has incorrect length");
+  uint64_t fragIndex = ndn::readNonNegativeInteger(fragIndexElement);
+  if (fragIndex > std::numeric_limits<uint16_t>::max()) {
+    throw ParseError("NdnlpFragIndex is too large");
   }
-  m_fragIndex = be16toh(*reinterpret_cast<const uint16_t*>(&*fragIndexElement.value_begin()));
-  
+  m_fragIndex = static_cast<uint16_t>(fragIndex);
+
   const Block& fragCountElement = elements.at(2);
   if (fragCountElement.type() != tlv::NdnlpFragCount) {
     throw ParseError("NdnlpFragCount element is missing");
   }
-  if (fragCountElement.value_size() != sizeof(uint16_t)) {
-    throw ParseError("NdnlpFragCount element has incorrect length");
+  uint64_t fragCount = ndn::readNonNegativeInteger(fragCountElement);
+  if (fragCount > std::numeric_limits<uint16_t>::max()) {
+    throw ParseError("NdnlpFragCount is too large");
   }
-  m_fragCount = be16toh(*reinterpret_cast<const uint16_t*>(&*fragCountElement.value_begin()));
+  m_fragCount = static_cast<uint16_t>(fragCount);
+
+  if (m_fragIndex >= m_fragCount) {
+    throw ParseError("NdnlpFragIndex must be less than NdnlpFragCount");
+  }
 }
 
 } // namespace ndnlp

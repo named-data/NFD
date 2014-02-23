@@ -20,26 +20,26 @@ class PartialMessage : noncopyable
 {
 public:
   PartialMessage();
-  
+
   bool
   add(uint16_t fragIndex, uint16_t fragCount, const Block& payload);
-  
+
   bool
   isComplete() const;
-  
+
   /** \brief reassemble network layer packet
-   *  
+   *
    *  isComplete() must be true before calling this method
-   *  
+   *
    *  \exception ndn::Block::Error packet is malformated
    *  \return network layer packet
    */
   Block
   reassemble();
-  
+
 public:
   EventId m_expiry;
-  
+
 private:
   size_t m_fragCount;
   size_t m_received;
@@ -54,28 +54,28 @@ class PartialMessageStore : noncopyable
 public:
   PartialMessageStore(Scheduler& scheduler,
     time::Duration idleDuration = time::milliseconds(100));
-  
+
   virtual
   ~PartialMessageStore();
-  
+
   /** \brief receive a NdnlpData packet
-   *  
+   *
    *  \exception ParseError NDNLP packet is malformated
    *  \exception ndn::Block::Error network layer packet is malformated
    */
   void
   receiveNdnlpData(const Block& pkt);
-  
+
   /// fires when network layer packet is received
   EventEmitter<Block> onReceive;
-  
+
 private:
   void
   scheduleCleanup(uint64_t messageIdentifier, shared_ptr<PartialMessage> partialMessage);
-  
+
   void
   cleanup(uint64_t messageIdentifier);
-  
+
 private:
   std::map<uint64_t, shared_ptr<PartialMessage> > m_partialMessages;
 

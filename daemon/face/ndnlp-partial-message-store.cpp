@@ -23,15 +23,15 @@ PartialMessage::add(uint16_t fragIndex, uint16_t fragCount, const Block& payload
     m_fragCount = fragCount;
     m_payloads.resize(fragCount);
   }
-  
+
   if (m_fragCount != fragCount || fragIndex >= m_fragCount) {
     return false;
   }
-  
+
   if (!m_payloads[fragIndex].empty()) { // duplicate
     return false;
   }
-  
+
   m_payloads[fragIndex] = payload;
   ++m_received;
   m_totalLength += payload.value_size();
@@ -48,7 +48,7 @@ Block
 PartialMessage::reassemble()
 {
   BOOST_ASSERT(this->isComplete());
-  
+
   ndn::BufferPtr buffer = make_shared<ndn::Buffer>(m_totalLength);
   uint8_t* buf = buffer->get();
   for (std::vector<Block>::const_iterator it = m_payloads.begin();
@@ -57,7 +57,7 @@ PartialMessage::reassemble()
     memcpy(buf, payload.value(), payload.value_size());
     buf += payload.value_size();
   }
-  
+
   return Block(buffer);
 }
 
@@ -80,14 +80,14 @@ PartialMessageStore::receiveNdnlpData(const Block& pkt)
     this->onReceive(parsed.m_payload.blockFromValue());
     return;
   }
-  
+
   uint64_t messageIdentifier = parsed.m_seq - parsed.m_fragIndex;
   shared_ptr<PartialMessage> pm = m_partialMessages[messageIdentifier];
   if (!static_cast<bool>(pm)) {
     m_partialMessages[messageIdentifier] = pm = make_shared<PartialMessage>();
   }
   this->scheduleCleanup(messageIdentifier, pm);
-  
+
   pm->add(parsed.m_fragIndex, parsed.m_fragCount, parsed.m_payload);
   if (pm->isComplete()) {
     this->onReceive(pm->reassemble());
@@ -111,7 +111,7 @@ PartialMessageStore::cleanup(uint64_t messageIdentifier)
   if (it == m_partialMessages.end()) {
     return;
   }
-  
+
   m_scheduler.cancelEvent(it->second->m_expiry);
   m_partialMessages.erase(it);
 }
