@@ -235,7 +235,7 @@ main(int argc, char** argv)
 {
   ndn::Face face;
   nfdc::Controller p(face);
-  
+
   p.m_programName = argv[0];
   int opt;
   while ((opt = getopt(argc, argv, "h")) != -1) {
@@ -249,6 +249,12 @@ main(int argc, char** argv)
         return 1;
     }
   }
+
+  if (argc == optind) {
+    usage(p.m_programName);
+    return 1;
+  }
+
   try {
     bool hasSucceeded = p.dispatch(argv[optind],
                                    const_cast<const char**>(argv + optind + 1),
