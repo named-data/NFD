@@ -154,21 +154,24 @@ Controller::fibRemoveNextHop(const char* commandOptions[])
                   bind(&Controller::onFibSuccess, this, _1, "Nexthop Removal succeeded"),
                   bind(&Controller::onError, this, _1, "Nexthop Removal failed"));
 }
-
+  
 void
 Controller::fibSetStrategy(const char* commandOptions[])
 {
-    
-  // std::string name      = commandOptions[0];
-  // std::string strategy  = commandOptions[1];
-  // startFibCommand("set-strategy",
-  //                  ndn::nfd::FibManagementOptions()
-  //                  .setName(name)
-  //                  .setStrategy(strategy),
-  //                  bind(&Controller::onFibSuccess,this, _1),
-  //                  bind(&Controller::onError,this, _1));
+  const std::string& name = commandOptions[0];
+  const std::string& strategy = commandOptions[1];
+  ndn::nfd::FibManagementOptions fibOptions;
+  
+  fibOptions.setName(name);
+  fibOptions.setStrategy(strategy);
+  
+  startFibCommand("set-strategy",
+                  fibOptions,
+                  bind(&Controller::onFibSuccess,this, _1, "Successfully set forwarding strategy"),
+                  bind(&Controller::onError,this, _1, "Failed to set forwarding strategy"));
+
 }
- 
+
 namespace {
 bool
 isValidUri(const std::string& input)
