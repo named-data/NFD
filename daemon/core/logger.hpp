@@ -18,22 +18,29 @@ enum LogLevel {
   LOG_NONE           = 0, // no messages
   LOG_ERROR          = 1, // serious error messages
   LOG_WARN           = 2, // warning messages
-  LOG_TRACE          = 3, // trace messages
+  LOG_INFO           = 3, // informational messages
   LOG_DEBUG          = 4, // debug messages
-  LOG_INFO           = 5, // informational messages
-  LOG_FATAL          = 6, // fatal error messages
-  LOG_ALL            = 0x0fffffff, // all messages
+  LOG_TRACE          = 5, // trace messages (most verbose)
+  // LOG_FATAL is not a level and is logged unconditionally
+  LOG_ALL            = 255, // all messages
 };
 
 class Logger
 {
 public:
+  explicit
   Logger(const std::string& name);
   
   bool
   isEnabled(LogLevel level)
   {
-    return m_isEnabled;
+    return (m_enabledLogLevel >= level);
+  }
+
+  void
+  setLogLevel(uint32_t level)
+  {
+    m_enabledLogLevel = static_cast<LogLevel>(level);
   }
   
   const std::string&
@@ -44,7 +51,7 @@ public:
   
 private:
   std::string m_moduleName;
-  bool m_isEnabled;
+  uint32_t    m_enabledLogLevel;
 };
 
 std::ostream&
@@ -93,8 +100,7 @@ operator<<(std::ostream& output, const Logger& obj);
        std::cerr<<"ERROR: "<<"["<<g_logger<<"] " << expression <<"\n"
   
 #define NFD_LOG_FATAL(expression)\
-    if(g_logger.isEnabled(nfd::LOG_FATAL)) \
-       std::cerr<<"FATAL: "<<"["<<g_logger<<"] " << expression <<"\n"
+    std::cerr<<"FATAL: "<<"["<<g_logger<<"] " << expression <<"\n"
   
 } //namespace nfd
 

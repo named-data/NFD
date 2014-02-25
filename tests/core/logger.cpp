@@ -27,7 +27,7 @@ struct LoggerFixture
   {
     std::cerr.rdbuf(m_savedBuf);
   }
-  
+
   std::stringstream m_buffer;
   std::streambuf* m_savedBuf;
 };
@@ -35,14 +35,15 @@ struct LoggerFixture
 BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
 {
   NFD_LOG_INIT("BasicTests");
-  
+  g_logger.setLogLevel(LOG_ALL);
+
   NFD_LOG_TRACE("trace message JHGFDSR^1");
   NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
   NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-  NFD_LOG_INFO("info message Jjxjshj13"); 
+  NFD_LOG_INFO("info message Jjxjshj13");
   NFD_LOG_ERROR("error message !#$&^%$#@");
   NFD_LOG_FATAL("fatal message JJSjaamcng");
-  
+
   BOOST_CHECK_EQUAL(m_buffer.str(),
                     "TRACE: [BasicTests] trace message JHGFDSR^1\n"
                     "DEBUG: [BasicTests] debug message IGg2474fdksd fo 151617\n"
@@ -56,17 +57,22 @@ BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
 class InClassLogger : public LoggerFixture
 {
 public:
+  InClassLogger()
+  {
+    g_logger.setLogLevel(LOG_ALL);
+  }
+
   void
   writeLogs()
   {
     NFD_LOG_TRACE("trace message JHGFDSR^1");
     NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
     NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-    NFD_LOG_INFO("info message Jjxjshj13"); 
+    NFD_LOG_INFO("info message Jjxjshj13");
     NFD_LOG_ERROR("error message !#$&^%$#@");
     NFD_LOG_FATAL("fatal message JJSjaamcng");
   }
-    
+
 private:
   NFD_LOG_INCLASS_DECLARE();
 };
@@ -76,7 +82,7 @@ NFD_LOG_INCLASS_DEFINE(InClassLogger, "InClassLogger");
 BOOST_FIXTURE_TEST_CASE(InClass, InClassLogger)
 {
   writeLogs();
-  
+
   BOOST_CHECK_EQUAL(m_buffer.str(),
                     "TRACE: [InClassLogger] trace message JHGFDSR^1\n"
                     "DEBUG: [InClassLogger] debug message IGg2474fdksd fo 151617\n"
@@ -92,17 +98,22 @@ template<class T>
 class InClassTemplateLogger : public LoggerFixture
 {
 public:
+  InClassTemplateLogger()
+  {
+    g_logger.setLogLevel(LOG_ALL);
+  }
+
   void
   writeLogs()
   {
     NFD_LOG_TRACE("trace message JHGFDSR^1");
     NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
     NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-    NFD_LOG_INFO("info message Jjxjshj13"); 
+    NFD_LOG_INFO("info message Jjxjshj13");
     NFD_LOG_ERROR("error message !#$&^%$#@");
     NFD_LOG_FATAL("fatal message JJSjaamcng");
   }
-    
+
 private:
   NFD_LOG_INCLASS_DECLARE();
 };
@@ -113,7 +124,7 @@ NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(InClassTemplateLogger, int, "IntI
 BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
 {
   writeLogs();
-  
+
   BOOST_CHECK_EQUAL(m_buffer.str(),
                     "TRACE: [GenericInClassTemplateLogger] trace message JHGFDSR^1\n"
                     "DEBUG: [GenericInClassTemplateLogger] debug message IGg2474fdksd fo 151617\n"
@@ -127,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
 BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
 {
   writeLogs();
-  
+
   BOOST_CHECK_EQUAL(m_buffer.str(),
                     "TRACE: [IntInClassLogger] trace message JHGFDSR^1\n"
                     "DEBUG: [IntInClassLogger] debug message IGg2474fdksd fo 151617\n"
