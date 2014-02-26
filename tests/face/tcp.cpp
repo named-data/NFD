@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "TcpChannel error: cannot connect or cannot accept connection"));
   
@@ -193,7 +193,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   channel2->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
-                    time::milliseconds(100)); // very short timeout
+                    time::seconds(4));
 
   m_ioRemaining = 2;
   m_ioService.run();
@@ -212,7 +212,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   // integrated tests needs to check that TcpFace for non-loopback fails these tests...
   
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "TcpChannel error: cannot send or receive Interest/Data packets"));
 
@@ -256,7 +256,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(4),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "TcpChannel error: cannot connect or cannot accept connection"));
   
@@ -269,7 +269,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   channel2->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
-                    time::milliseconds(100)); // very short timeout
+                    time::seconds(4)); // very short timeout
 
   m_ioRemaining = 2;
   m_ioService.run();
@@ -282,7 +282,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   channel3->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
-                    time::milliseconds(100)); // very short timeout
+                    time::seconds(4)); // very short timeout
 
 
   shared_ptr<TcpChannel> channel4 = factory.create("127.0.0.1", "20073");
@@ -291,7 +291,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   
   scheduler
     .scheduleEvent
-    (time::seconds(0.5),
+    (time::seconds(1),
      bind(&TcpChannel::connect, channel4,
           "127.0.0.1", "20070",
           // does not work without static_cast
@@ -299,15 +299,15 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                                                             channel_onFaceCreated, this, _1)),
           static_cast<TcpChannel::ConnectFailedCallback>(bind(&EndToEndFixture::
                                                               channel_onConnectFailed, this, _1)),
-          time::milliseconds(100)));
+          time::seconds(4)));
   
   m_ioRemaining = 4; // 2 connects and 2 accepts
   abortEvent = 
-    scheduler.scheduleEvent(time::seconds(4),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "TcpChannel error: cannot connect or cannot accept multiple connections"));
 
-  scheduler.scheduleEvent(time::seconds(0.4),
+  scheduler.scheduleEvent(time::seconds(0.5),
                           bind(&EndToEndFixture::checkFaceList, this, 4));
   
   m_ioService.run();
@@ -323,7 +323,7 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(4),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "TcpChannel error: cannot connect or cannot accept connection"));
   
@@ -336,7 +336,7 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   channel2->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
-                    time::milliseconds(100)); // very short timeout
+                    time::seconds(4)); // very short timeout
 
   m_ioRemaining = 2;
   BOOST_REQUIRE_NO_THROW(m_ioService.run());
@@ -347,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel2->size(), 1);
 
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(4),
+    scheduler.scheduleEvent(time::seconds(10),
                             bind(&EndToEndFixture::abortTestCase, this,
                                  "FaceClosing error: cannot properly close faces"));
 
