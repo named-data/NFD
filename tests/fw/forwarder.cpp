@@ -18,14 +18,14 @@ public:
     : m_ioService(ioService)
   {
   }
-  
+
   virtual void
   sendInterest(const Interest& interest)
   {
     m_sentInterests.push_back(interest);
     m_ioService.stop();
   }
-  
+
   virtual void
   sendData(const Data& data)
   {
@@ -43,7 +43,7 @@ public:
   {
     onReceiveInterest(interest);
   }
-  
+
   void
   receiveData(const Data& data)
   {
@@ -62,15 +62,15 @@ BOOST_AUTO_TEST_SUITE(FwForwarder)
 
 BOOST_AUTO_TEST_CASE(AddRemoveFace)
 {
-  boost::asio::io_service io;
-  Forwarder forwarder(io);
-  
+  resetGlobalIoService();
+  Forwarder forwarder;
+
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
-  
+
   BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
   BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
-  
+
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
@@ -87,34 +87,35 @@ BOOST_AUTO_TEST_CASE(AddRemoveFace)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
+  resetGlobalIoService();
+  boost::asio::io_service& io = getGlobalIoService();
+  Forwarder forwarder;
+
   Name nameA  ("ndn:/A");
   Name nameAB ("ndn:/A/B");
   Name nameABC("ndn:/A/B/C");
   Interest interestAB(nameAB);
   interestAB.setInterestLifetime(4000);
   Data dataABC(nameABC);
-  
-  boost::asio::io_service io;
-  Forwarder forwarder(io);
 
   shared_ptr<ForwarderTestFace> face1 = make_shared<ForwarderTestFace>(boost::ref(io));
   shared_ptr<ForwarderTestFace> face2 = make_shared<ForwarderTestFace>(boost::ref(io));
   forwarder.addFace(face1);
   forwarder.addFace(face2);
-  
+
   Fib& fib = forwarder.getFib();
   std::pair<shared_ptr<fib::Entry>, bool> fibInsertResult =
     fib.insert(Name("ndn:/A"));
   shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
   fibEntry->addNextHop(face2, 0);
-  
+
   face1->receiveInterest(interestAB);
   io.run();
   io.reset();
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
-  
+
   face2->receiveData(dataABC);
   io.run();
   io.reset();
@@ -126,9 +127,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 class ScopeLocalhostTestForwarder : public Forwarder
 {
 public:
-  explicit
-  ScopeLocalhostTestForwarder(boost::asio::io_service& ioService)
-    : Forwarder(ioService)
+  ScopeLocalhostTestForwarder()
   {
   }
 
@@ -155,33 +154,33 @@ public:
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhost)
 {
-  boost::asio::io_service io;
-  ScopeLocalhostTestForwarder forwarder(io);
+  resetGlobalIoService();
+  ScopeLocalhostTestForwarder forwarder;
   shared_ptr<DummyLocalFace> face1 = make_shared<DummyLocalFace>();
   shared_ptr<DummyFace>      face2 = make_shared<DummyFace>();
   forwarder.addFace(face1);
   forwarder.addFace(face2);
-  
+
   // local face, /localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
   forwarder.onIncomingInterest(*face1, Interest(Name("/localhost/A1")));
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
-  
+
   // non-local face, /localhost: violate
   forwarder.m_dispatchToStrategy_count = 0;
   forwarder.onIncomingInterest(*face2, Interest(Name("/localhost/A2")));
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 0);
-  
+
   // local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
   forwarder.onIncomingInterest(*face1, Interest(Name("/A3")));
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
-  
+
   // non-local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
   forwarder.onIncomingInterest(*face2, Interest(Name("/A4")));
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
-  
+
   // local face, /localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
   forwarder.onIncomingData(*face1, Data(Name("/localhost/B1")));
@@ -191,7 +190,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhost)
   forwarder.m_onDataUnsolicited_count = 0;
   forwarder.onIncomingData(*face2, Data(Name("/localhost/B2")));
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 0);
-  
+
   // local face, non-/localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
   forwarder.onIncomingData(*face1, Data(Name("/B3")));

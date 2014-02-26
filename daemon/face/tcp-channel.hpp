@@ -8,7 +8,8 @@
 #define NFD_FACE_TCP_CHANNEL_HPP
 
 #include "common.hpp"
-#include "core/monotonic_deadline_timer.hpp"
+#include "core/time.hpp"
+#include <ndn-cpp-dev/util/monotonic_deadline_timer.hpp>
 #include "tcp-face.hpp"
 
 namespace nfd {

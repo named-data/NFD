@@ -20,8 +20,7 @@ namespace nfd {
 class Measurements : noncopyable
 {
 public:
-  explicit
-  Measurements(boost::asio::io_service& ioService);
+  Measurements();
 
   ~Measurements();
 
@@ -71,7 +70,6 @@ private:
 private:
   std::map<Name, shared_ptr<measurements::Entry> > m_table;
 
-  Scheduler m_scheduler;
   static const time::Duration s_defaultLifetime;
 };
 

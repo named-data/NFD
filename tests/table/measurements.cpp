@@ -14,12 +14,12 @@ BOOST_AUTO_TEST_SUITE(TableMeasurements)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
+  resetGlobalIoService();
+  Measurements measurements;
+
   Name name0;
   Name nameA ("ndn:/A");
   Name nameAB("ndn:/A/B");
-
-  boost::asio::io_service ioService;
-  Measurements measurements(ioService);
 
   shared_ptr<measurements::Entry> entryAB = measurements.get(nameAB);
   BOOST_REQUIRE(static_cast<bool>(entryAB));

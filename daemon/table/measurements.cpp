@@ -13,8 +13,7 @@ namespace nfd {
 
 const time::Duration Measurements::s_defaultLifetime = time::seconds(4);
 
-Measurements::Measurements(boost::asio::io_service& ioService)
-  : m_scheduler(ioService)
+Measurements::Measurements()
 {
 }
 
@@ -92,9 +91,9 @@ Measurements::extendLifetimeInternal(
     return;
   }
 
-  m_scheduler.cancelEvent(entry->m_cleanup);
+  scheduler::cancel(entry->m_cleanup);
   entry->m_expiry = expiry;
-  entry->m_cleanup = m_scheduler.scheduleEvent(lifetime,
+  entry->m_cleanup = scheduler::schedule(lifetime,
                          bind(&Measurements::cleanup, this, it));
 }
 

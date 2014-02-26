@@ -21,10 +21,10 @@ public:
     : Strategy(forwarder)
   {
   }
-  
+
   virtual
   ~MeasurementsAccessorTestStrategy()
-  
+
   {
   }
 
@@ -36,7 +36,7 @@ public:
   {
     BOOST_ASSERT(false);
   }
-  
+
 public: // accessors
   MeasurementsAccessor&
   getMeasurements_accessor()
@@ -47,36 +47,37 @@ public: // accessors
 
 BOOST_AUTO_TEST_CASE(Access)
 {
-  boost::asio::io_service ioService;
-  Forwarder forwarder(ioService);
+  resetGlobalIoService();
+  Forwarder forwarder;
+
   shared_ptr<MeasurementsAccessorTestStrategy> strategy1 =
     make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder));
   shared_ptr<MeasurementsAccessorTestStrategy> strategy2 =
     make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder));
-  
+
   Name nameRoot("ndn:/");
   Name nameA   ("ndn:/A");
   Name nameAB  ("ndn:/A/B");
   Name nameABC ("ndn:/A/B/C");
   Name nameAD  ("ndn:/A/D");
-  
+
   Fib& fib = forwarder.getFib();
   fib.insert(nameRoot).first->setStrategy(strategy1);
   fib.insert(nameA   ).first->setStrategy(strategy2);
   fib.insert(nameAB  ).first->setStrategy(strategy1);
-  
+
   MeasurementsAccessor& accessor1 = strategy1->getMeasurements_accessor();
   MeasurementsAccessor& accessor2 = strategy2->getMeasurements_accessor();
-  
+
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameRoot)), true);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameA   )), false);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameAB  )), true);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameABC )), true);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameAD  )), false);
-  
+
   shared_ptr<measurements::Entry> entryRoot = forwarder.getMeasurements().get(nameRoot);
   BOOST_CHECK_NO_THROW(accessor1.getParent(entryRoot));
-  
+
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor2.get(nameRoot)), false);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor2.get(nameA   )), true);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor2.get(nameAB  )), false);

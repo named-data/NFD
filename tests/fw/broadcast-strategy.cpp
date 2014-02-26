@@ -16,8 +16,8 @@ BOOST_AUTO_TEST_SUITE(FwBroadcastStrategy)
 
 BOOST_AUTO_TEST_CASE(ForwardTwo)
 {
-  boost::asio::io_service io;
-  Forwarder forwarder(io);
+  resetGlobalIoService();
+  Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
   BroadcastStrategyTester strategy(forwarder);
 
@@ -60,8 +60,8 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
 
 BOOST_AUTO_TEST_CASE(Rebuff)
 {
-  boost::asio::io_service io;
-  Forwarder forwarder(io);
+  resetGlobalIoService();
+  Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
   BroadcastStrategyTester strategy(forwarder);
 

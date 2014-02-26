@@ -27,7 +27,7 @@ struct ProgramOptions
       : m_endpoint(endpoint)
     {
     }
-    
+
     std::pair<std::string, std::string> m_endpoint;
     std::vector<Name> m_prefixes;
   };
@@ -38,7 +38,6 @@ struct ProgramOptions
   std::string m_unixListen;
 };
 
-static boost::asio::io_service g_ioService;
 static ProgramOptions g_options;
 static Forwarder* g_forwarder;
 static FibManager* g_fibManager;
@@ -83,7 +82,7 @@ parseIpPortPair(const std::string& s)
   if (pos == std::string::npos) {
     throw std::invalid_argument("ip:port");
   }
-  
+
   return std::make_pair(s.substr(0, pos), s.substr(pos+1));
 }
 
@@ -94,7 +93,7 @@ parseCommandLine(int argc, char** argv)
   g_options.m_tcpListen = std::make_pair("0.0.0.0", "6363");
   g_options.m_unixListen = "/var/run/nfd.sock";
   g_options.m_tcpOutgoings.clear();
-  
+
   while (1) {
     int option_index = 0;
     static ::option long_options[] = {
@@ -107,7 +106,7 @@ parseCommandLine(int argc, char** argv)
     };
     int c = getopt_long_only(argc, argv, "", long_options, &option_index);
     if (c == -1) break;
-    
+
     switch (c) {
       case 0:
         switch (option_index) {
@@ -147,7 +146,7 @@ onFaceEstablish(shared_ptr<Face> newFace, std::vector<Name>* prefixes)
 {
   g_forwarder->addFace(newFace);
   newFace->onFail += bind(&onFaceFail, newFace, _1);
-  
+
   // add nexthop on prefixes
   if (prefixes != 0) {
     Fib& fib = g_forwarder->getFib();
@@ -170,17 +169,17 @@ onFaceError(const std::string& reason)
 void
 initializeTcp()
 {
-  g_tcpFactory = new TcpChannelFactory(g_ioService);
+  g_tcpFactory = new TcpChannelFactory(getGlobalIoService());
   g_tcpChannel = g_tcpFactory->create(g_options.m_tcpListen.first,
                                       g_options.m_tcpListen.second);
   g_tcpChannel->listen(
     bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),
     &onFaceError);
-  
+
   for (std::vector<ProgramOptions::TcpOutgoing>::iterator it =
       g_options.m_tcpOutgoings.begin();
       it != g_options.m_tcpOutgoings.end(); ++it) {
-    g_tcpChannel->connect(it->m_endpoint.first, it->m_endpoint.second, 
+    g_tcpChannel->connect(it->m_endpoint.first, it->m_endpoint.second,
       bind(&onFaceEstablish, _1, &(it->m_prefixes)), &onFaceError);
   }
 }
@@ -189,7 +188,7 @@ initializeTcp()
 void
 initializeUnix()
 {
-  g_unixFactory = new UnixStreamChannelFactory(g_ioService);
+  g_unixFactory = new UnixStreamChannelFactory(getGlobalIoService());
   g_unixChannel = g_unixFactory->create(g_options.m_unixListen);
 
   g_unixChannel->listen(
@@ -224,8 +223,8 @@ main(int argc, char** argv)
     usage(argv[0]);
     return 0;
   }
-  
-  g_forwarder = new Forwarder(g_ioService);
+
+  g_forwarder = new Forwarder();
   initializeTcp();
 #ifdef HAVE_UNIX_SOCKETS
   initializeUnix();
@@ -233,14 +232,14 @@ main(int argc, char** argv)
   initializeMgmt();
 
   /// \todo Add signal processing to gracefully terminate the app
-  
+
   try {
-    g_ioService.run();
+    getGlobalIoService().run();
   } catch(std::exception& ex) {
     NFD_LOG_ERROR(ex.what());
     return 1;
   }
-  
+
   return 0;
 }
 

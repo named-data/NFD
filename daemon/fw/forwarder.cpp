@@ -14,10 +14,8 @@ NFD_LOG_INIT("Forwarder");
 
 const Name Forwarder::s_localhostName("ndn:/localhost");
 
-Forwarder::Forwarder(boost::asio::io_service& ioService)
-  : m_scheduler(ioService)
-  , m_lastFaceId(0)
-  , m_measurements(ioService)
+Forwarder::Forwarder()
+  : m_lastFaceId(0)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }
@@ -43,12 +41,12 @@ Forwarder::removeFace(shared_ptr<Face> face)
   m_faces.erase(faceId);
   face->setId(INVALID_FACEID);
   NFD_LOG_INFO("removeFace id=" << faceId);
-  
+
   // XXX This clears all subscriptions, because EventEmitter
   //     does not support only removing Forwarder's subscription
   face->onReceiveInterest.clear();
   face->onReceiveData    .clear();
-  
+
   m_fib.removeNextHopFromAllEntries(face);
 }
 
@@ -77,7 +75,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // receive Interest
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() << " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
-  
+
   // /localhost scope control
   bool violatesLocalhost = !inFace.isLocal() &&
                            s_localhostName.isPrefixOf(interest.getName());
@@ -86,12 +84,12 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
       << " interest=" << interest.getName() << " violates /localhost");
     return;
   }
-  
+
   // PIT insert
   std::pair<shared_ptr<pit::Entry>, bool>
     pitInsertResult = m_pit.insert(interest);
   shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
-  
+
   // detect loop and record Nonce
   bool isLoop = ! pitEntry->addNonce(interest.getNonce());
   if (isLoop) {
@@ -99,13 +97,13 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
     this->onInterestLoop(inFace, interest, pitEntry);
     return;
   }
-  
+
   // cancel unsatisfy & straggler timer
   this->cancelUnsatisfyAndStragglerTimer(pitEntry);
-  
+
   const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
   bool isPending = inRecords.begin() == inRecords.end();
-  
+
   if (!isPending) {
     // CS lookup
     const Data* csMatch = m_cs.find(interest);
@@ -117,23 +115,23 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
       return;
     }
   }
-  
+
   // insert InRecord
   pit::InRecordCollection::iterator inRecordIt =
     pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
-  
+
   // app chosen nexthops
   bool isAppChosenNexthops = false; // TODO get from local control header
   if (isAppChosenNexthops) {
     // TODO foreach chosen nexthop: goto outgoing Interest pipeline
     return;
   }
-  
+
   // FIB lookup
   shared_ptr<fib::Entry> fibEntry
     = m_fib.findLongestPrefixMatch(interest.getName());
   // TODO use Fib::findParent(pitEntry)
-  
+
   // dispatch to strategy
   this->dispatchToStrategy(inFace, interest, fibEntry, pitEntry);
 }
@@ -155,14 +153,14 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
   // pick Interest
   const Interest& interest = pitEntry->getInterest();
   // TODO pick the last incoming Interest
-  
+
   // insert OutRecord
   pit::OutRecordCollection::iterator outRecordIt =
     pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), interest);
-  
+
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
-  
+
   // send Interest
   outFace.sendInterest(interest);
 }
@@ -183,7 +181,7 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
 
   // invoke PIT unsatisfied callback
   // TODO
-  
+
   // PIT delete
   m_pit.remove(pitEntry);
 }
@@ -194,7 +192,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
   const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
-  
+
   // /localhost scope control
   bool violatesLocalhost = !inFace.isLocal() &&
                            s_localhostName.isPrefixOf(data.getName());
@@ -203,7 +201,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
       << " interest=" << data.getName() << " violates /localhost");
     return;
   }
-  
+
   // PIT match
   shared_ptr<pit::DataMatchResult> pitMatches = m_pit.findAllDataMatches(data);
   if (pitMatches->begin() == pitMatches->end()) {
@@ -211,20 +209,20 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->onDataUnsolicited(inFace, data);
     return;
   }
-  
+
   // CS insert
   m_cs.insert(data);
-  
+
   std::set<shared_ptr<Face> > pendingDownstreams;
   // foreach PitEntry
   for (pit::DataMatchResult::iterator it = pitMatches->begin();
        it != pitMatches->end(); ++it) {
     shared_ptr<pit::Entry> pitEntry = *it;
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
-    
+
     // cancel unsatisfy & straggler timer
     this->cancelUnsatisfyAndStragglerTimer(pitEntry);
-    
+
     // remember pending downstreams
     const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
     for (pit::InRecordCollection::const_iterator it = inRecords.begin();
@@ -233,18 +231,18 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
         pendingDownstreams.insert(it->getFace());
       }
     }
-    
+
     // mark PIT satisfied
     pitEntry->deleteInRecords();
     pitEntry->deleteOutRecord(inFace.shared_from_this());
-    
+
     // set PIT straggler timer
     this->setStragglerTimer(pitEntry);
-    
+
     // invoke PIT satisfy callback
     // TODO
   }
-  
+
   // foreach pending downstream
   for (std::set<shared_ptr<Face> >::iterator it = pendingDownstreams.begin();
       it != pendingDownstreams.end(); ++it) {
@@ -273,7 +271,7 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 
   // traffic manager
   // pass through
-  
+
   // send Data
   outFace.sendData(data);
 }
@@ -297,8 +295,8 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
   if (lastExpiryFromNow <= time::seconds(0)) {
     // TODO all InRecords are already expired; will this happen?
   }
-  
-  pitEntry->m_unsatisfyTimer = m_scheduler.scheduleEvent(lastExpiryFromNow,
+
+  pitEntry->m_unsatisfyTimer = scheduler::schedule(lastExpiryFromNow,
     bind(&Forwarder::onInterestUnsatisfied, this, pitEntry));
 }
 
@@ -306,16 +304,16 @@ void
 Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
   time::Duration stragglerTime = time::milliseconds(100);
-  
-  pitEntry->m_stragglerTimer = m_scheduler.scheduleEvent(stragglerTime,
+
+  pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
     bind(&Pit::remove, &m_pit, pitEntry));
 }
 
 void
 Forwarder::cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
-  m_scheduler.cancelEvent(pitEntry->m_unsatisfyTimer);
-  m_scheduler.cancelEvent(pitEntry->m_stragglerTimer);
+  scheduler::cancel(pitEntry->m_unsatisfyTimer);
+  scheduler::cancel(pitEntry->m_stragglerTimer);
 }
 
 void

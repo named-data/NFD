@@ -21,7 +21,7 @@ struct SchedulerFixture
     , count4(0)
   {
   }
-    
+
   void
   event1()
   {
@@ -47,7 +47,7 @@ struct SchedulerFixture
   {
     ++count4;
   }
-  
+
   int count1;
   int count2;
   int count3;
@@ -56,23 +56,23 @@ struct SchedulerFixture
 
 BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
 {
-  boost::asio::io_service io; 
+  resetGlobalIoService();
 
-  Scheduler scheduler(io);
-  scheduler.scheduleEvent(time::seconds(0.5), bind(&SchedulerFixture::event1, this));
-  
-  EventId i = scheduler.scheduleEvent(time::seconds(1.0), bind(&SchedulerFixture::event2, this));
-  scheduler.cancelEvent(i);
+  scheduler::schedule(time::seconds(0.5), bind(&SchedulerFixture::event1, this));
 
-  scheduler.scheduleEvent(time::seconds(0.25), bind(&SchedulerFixture::event3, this));
+  EventId i = scheduler::schedule(time::seconds(1.0), bind(&SchedulerFixture::event2, this));
+  scheduler::cancel(i);
 
-  i = scheduler.scheduleEvent(time::seconds(0.05), bind(&SchedulerFixture::event2, this));
-  scheduler.cancelEvent(i);
+  scheduler::schedule(time::seconds(0.25), bind(&SchedulerFixture::event3, this));
 
-  i = scheduler.schedulePeriodicEvent(time::seconds(0.3), time::seconds(0.1), bind(&SchedulerFixture::event4, this));
-  scheduler.scheduleEvent(time::seconds(1), bind(&Scheduler::cancelEvent, &scheduler, i));
-  
-  io.run();
+  i = scheduler::schedule(time::seconds(0.05), bind(&SchedulerFixture::event2, this));
+  scheduler::cancel(i);
+
+  // TODO deprecate periodic event
+  i = scheduler::getGlobalScheduler().schedulePeriodicEvent(time::seconds(0.3), time::seconds(0.1), bind(&SchedulerFixture::event4, this));
+  scheduler::schedule(time::seconds(1), bind(&scheduler::cancel, i));
+
+  getGlobalIoService().run();
 
   BOOST_CHECK_EQUAL(count1, 1);
   BOOST_CHECK_EQUAL(count2, 0);
@@ -82,37 +82,29 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
 
 BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
 {
-  boost::asio::io_service io; 
-  Scheduler scheduler(io);
-  
   EventId i;
-  scheduler.cancelEvent(i);
+  scheduler::cancel(i);
 }
 
 struct SelfCancelFixture
 {
-  SelfCancelFixture()
-    : m_scheduler(m_io)
-  {
-  }
-  
   void
   cancelSelf()
   {
-    m_scheduler.cancelEvent(m_selfEventId);
+    scheduler::cancel(m_selfEventId);
   }
-  
-  boost::asio::io_service m_io; 
-  Scheduler m_scheduler;
+
   EventId m_selfEventId;
 };
 
 BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
 {
-  m_selfEventId = m_scheduler.scheduleEvent(time::seconds(0.1),
-                                            bind(&SelfCancelFixture::cancelSelf, this));
-  
-  BOOST_REQUIRE_NO_THROW(m_io.run());
+  resetGlobalIoService();
+
+  m_selfEventId = scheduler::schedule(time::seconds(0.1),
+                                      bind(&SelfCancelFixture::cancelSelf, this));
+
+  BOOST_REQUIRE_NO_THROW(getGlobalIoService().run());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

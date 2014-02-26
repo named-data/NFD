@@ -7,204 +7,24 @@
 #include "scheduler.hpp"
 
 namespace nfd {
+namespace scheduler {
 
-struct EventIdImpl
+static shared_ptr<Scheduler> g_scheduler;
+
+Scheduler&
+getGlobalScheduler()
 {
-  EventIdImpl(const Scheduler::EventQueue::iterator& event)
-    : m_event(event)
-    , m_isValid(true)
-  {
+  if (!static_cast<bool>(g_scheduler)) {
+    g_scheduler = make_shared<Scheduler>(boost::ref(getGlobalIoService()));
   }
-
-  void
-  invalidate()
-  {
-    m_isValid = false;
-  }
-
-  bool
-  isValid() const
-  {
-    return m_isValid;
-  }
-
-  operator const Scheduler::EventQueue::iterator&() const
-  {
-    return m_event;
-  }
-
-  void
-  reset(const Scheduler::EventQueue::iterator& newIterator)
-  {
-    m_event = newIterator;
-    m_isValid = true;
-  }
-
-private:
-  Scheduler::EventQueue::iterator m_event;
-  bool m_isValid;
-};
-
-Scheduler::EventInfo::EventInfo(const time::Duration& after,
-                        const time::Duration& period,
-                        const Event& event)
-  : m_scheduledTime(time::now() + after)
-  , m_period(period)
-  , m_event(event)
-{
-}
-
-Scheduler::EventInfo::EventInfo(const time::Point& when, const EventInfo& previousEvent)
-  : m_scheduledTime(when)
-  , m_period(previousEvent.m_period)
-  , m_event(previousEvent.m_event)
-  , m_eventId(previousEvent.m_eventId)
-{
-}
-
-time::Duration
-Scheduler::EventInfo::expiresFromNow() const
-{
-  time::Point now = time::now();
-  if (now > m_scheduledTime)
-    return time::seconds(0); // event should be scheduled ASAP
-  else
-    return m_scheduledTime - now;
-}
-
-
-Scheduler::Scheduler(boost::asio::io_service& ioService)
-  : m_ioService(ioService)
-  , m_scheduledEvent(m_events.end())
-  , m_deadlineTimer(ioService)
-  , m_isEventExecuting(false)
-{
-}
-
-EventId
-Scheduler::scheduleEvent(const time::Duration& after,
-                         const Event& event)
-{
-  return schedulePeriodicEvent(after, time::nanoseconds(-1), event);
-}
-
-EventId
-Scheduler::schedulePeriodicEvent(const time::Duration& after,
-                                 const time::Duration& period,
-                                 const Event& event)
-{
-  EventQueue::iterator i = m_events.insert(EventInfo(after, period, event));
-  i->m_eventId = make_shared<EventIdImpl>(boost::cref(i));
-
-  if (!m_isEventExecuting)
-    {
-      if (m_scheduledEvent == m_events.end() ||
-          *i < *m_scheduledEvent)
-        {
-          m_deadlineTimer.expires_from_now(after);
-          m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
-          m_scheduledEvent = i;
-        }
-    }
-
-  return i->m_eventId;
-}
-  
-void
-Scheduler::cancelEvent(const EventId& eventId)
-{
-  if (!static_cast<bool>(eventId) || !eventId->isValid())
-    return; // event empty, already fired, or cancelled
-  
-  if (static_cast<EventQueue::iterator>(*eventId) != m_scheduledEvent) {
-    m_events.erase(*eventId);
-    eventId->invalidate();
-    return;
-  }
-  
-  m_deadlineTimer.cancel();
-  m_events.erase(static_cast<EventQueue::iterator>(*eventId));
-  eventId->invalidate();
-
-  if (!m_isEventExecuting)
-    {
-      if (!m_events.empty())
-        {
-          m_deadlineTimer.expires_from_now(m_events.begin()->expiresFromNow());
-          m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
-          m_scheduledEvent = m_events.begin();
-        }
-      else
-        {
-          m_deadlineTimer.cancel();
-          m_scheduledEvent = m_events.end();
-        }
-    }
+  return *g_scheduler;
 }
 
 void
-Scheduler::onEvent(const boost::system::error_code& error)
+resetGlobalScheduler()
 {
-  if (error) // e.g., cancelled
-    {
-      return;
-    }
-
-  m_isEventExecuting = true;
-  
-  // process all expired events
-  time::Point now = time::now();
-  while(!m_events.empty() && m_events.begin()->m_scheduledTime <= now)
-    {
-      EventQueue::iterator head = m_events.begin();
-      
-      Event event = head->m_event;
-      if (head->m_period < 0)
-        {
-          head->m_eventId->invalidate();
-          m_events.erase(head);
-        }
-      else
-        {
-          // "reschedule" and update EventId data of the event
-          EventInfo event(now + head->m_period, *head);
-          EventQueue::iterator i = m_events.insert(event);
-          i->m_eventId->reset(i);
-          m_events.erase(head);
-        }
-
-      try
-        {
-          event();
-        }
-      catch(...)
-        {
-          m_isEventExecuting = false;
-          for (EventQueue::iterator i = m_events.begin();
-               i != m_events.end();
-               ++i)
-            {
-              i->m_eventId->invalidate();
-            }
-          m_events.clear();
-          
-          throw;
-        }
-    }
-
-  if (!m_events.empty())
-    {
-      m_deadlineTimer.expires_from_now(m_events.begin()->m_scheduledTime - now);
-      m_deadlineTimer.async_wait(bind(&Scheduler::onEvent, this, _1));
-      m_scheduledEvent = m_events.begin();
-    }
-  else
-    {
-      m_scheduledEvent = m_events.end();
-    }
-
-  m_isEventExecuting = false;
+  g_scheduler.reset();
 }
 
-
+} // namespace scheduler
 } // namespace nfd

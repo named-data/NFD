@@ -20,14 +20,13 @@ namespace nfd {
 
 /**
  * Forwarder is the main class of NFD.
- * 
+ *
  * It creates and owns a set of Face listeners
  */
 class Forwarder
 {
 public:
-  explicit
-  Forwarder(boost::asio::io_service& ioService);
+  Forwarder();
 
   void
   addFace(shared_ptr<Face> face);
@@ -40,17 +39,17 @@ public:
 
   void
   onData(Face& face, const Data& data);
-  
+
 public:
   Fib&
   getFib();
-  
+
   Pit&
   getPit();
-  
+
   Cs&
   getCs();
-  
+
   Measurements&
   getMeasurements();
 
@@ -68,32 +67,32 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onInterestLoop(Face& inFace, const Interest& interest,
                  shared_ptr<pit::Entry> pitEntry);
-  
+
   /** \brief outgoing Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
   onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace);
-  
+
   /** \brief Interest rebuff pipeline
    */
   VIRTUAL_WITH_TESTS void
   onInterestRebuff(shared_ptr<pit::Entry> pitEntry);
-  
+
   /** \brief Interest unsatisfied pipeline
    */
   VIRTUAL_WITH_TESTS void
   onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry);
-  
+
   /** \brief incoming Data pipeline
    */
   VIRTUAL_WITH_TESTS void
   onIncomingData(Face& inFace, const Data& data);
-  
+
   /** \brief Data unsolicited pipeline
    */
   VIRTUAL_WITH_TESTS void
   onDataUnsolicited(Face& inFace, const Data& data);
-  
+
   /** \brief outgoing Data pipeline
    */
   VIRTUAL_WITH_TESTS void
@@ -102,13 +101,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
   setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry);
-  
+
   VIRTUAL_WITH_TESTS void
   setStragglerTimer(shared_ptr<pit::Entry> pitEntry);
-  
+
   VIRTUAL_WITH_TESTS void
   cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
-  
+
   VIRTUAL_WITH_TESTS void
   dispatchToStrategy(const Face& inFace,
                      const Interest& interest,
@@ -116,20 +115,18 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
                      shared_ptr<pit::Entry> pitEntry);
 
 private:
-  Scheduler m_scheduler;
-  
   FaceId m_lastFaceId;
   std::map<FaceId, shared_ptr<Face> > m_faces;
-  
+
   Fib          m_fib;
   Pit          m_pit;
   Cs           m_cs;
   Measurements m_measurements;
   /// the active strategy (only one strategy in mock)
   shared_ptr<fw::Strategy> m_strategy;
-  
+
   static const Name s_localhostName;
-  
+
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
 };
