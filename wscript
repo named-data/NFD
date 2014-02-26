@@ -53,8 +53,10 @@ def configure(conf):
     conf.check_boost(lib=boost_libs)
         
     boost_version = conf.env.BOOST_VERSION.split('_')
-    if int(boost_version[0]) < 1 or int(boost_version[1]) < 42:
-        Logs.error ("Minumum required boost version is 1.42")
+    if int(boost_version[0]) < 1 or int(boost_version[1]) < 48:
+        Logs.error ("Minimum required boost version is 1.48")
+        Logs.error ("Please upgrade your distribution or install custom boost libraries" +
+                    " (http://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
         return
 
     conf.load('unix-socket')

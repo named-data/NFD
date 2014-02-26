@@ -124,7 +124,7 @@ TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
   tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
   shared_ptr<Face> face;
-  if (is_loopback(socket->local_endpoint().address()))
+  if (socket->local_endpoint().address().is_loopback())
     face = make_shared<TcpLocalFace>(boost::cref(socket));
   else
     face = make_shared<TcpFace>(boost::cref(socket));

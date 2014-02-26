@@ -6,9 +6,7 @@
 
 #include "unix-stream-channel-factory.hpp"
 
-#if BOOST_VERSION >= 104800
 #include <boost/filesystem.hpp> // for canonical()
-#endif
 
 namespace nfd {
 
@@ -20,13 +18,9 @@ UnixStreamChannelFactory::UnixStreamChannelFactory(boost::asio::io_service& ioSe
 shared_ptr<UnixStreamChannel>
 UnixStreamChannelFactory::create(const std::string& unixSocketPath)
 {
-#if BOOST_VERSION >= 104800
   boost::filesystem::path p(unixSocketPath);
   p = boost::filesystem::canonical(p.parent_path()) / p.filename();
   unix_stream::Endpoint endpoint(p.string());
-#else
-  unix_stream::Endpoint endpoint(unixSocketPath);
-#endif
 
   shared_ptr<UnixStreamChannel> channel = find(endpoint);
   if (channel)
