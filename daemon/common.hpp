@@ -32,6 +32,7 @@
 #include <boost/ref.hpp>
 #include <boost/asio.hpp>
 #include <boost/assert.hpp>
+#include <boost/functional/hash.hpp>
 
 #include <vector>
 #include <list>
