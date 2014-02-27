@@ -70,6 +70,9 @@ EthernetChannelFactory::findAllInterfaces()
           boost::starts_with(interface, "nfqueue"))
         // ignore Linux netfilter devices
         continue;
+      if (boost::starts_with(interface, "fw"))
+        // ignore OSX firewire interface
+        continue;
 
       // maybe add interface addresses too
       // interface.addAddress ...

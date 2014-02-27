@@ -21,16 +21,19 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
   std::vector<ethernet::Endpoint> interfaces = EthernetChannelFactory::findAllInterfaces();
   if (interfaces.size() > 0)
     {
-      shared_ptr<EthernetFace> face1 = factory.createMulticast(interfaces[0],
-                                                               ethernet::getBroadcastAddress());
-      shared_ptr<EthernetFace> face1bis = factory.createMulticast(interfaces[0],
-                                                                  ethernet::getBroadcastAddress());
+      shared_ptr<EthernetFace> face1;
+      BOOST_REQUIRE_NO_THROW(face1 = factory.createMulticast(interfaces[0],
+                                                             ethernet::getBroadcastAddress()));
+      shared_ptr<EthernetFace> face1bis;
+      BOOST_REQUIRE_NO_THROW(face1bis = factory.createMulticast(interfaces[0],
+                                                                ethernet::getBroadcastAddress()));
       BOOST_CHECK_EQUAL(face1, face1bis);
 
       if (interfaces.size() > 1)
         {
-          shared_ptr<EthernetFace> face2 = factory.createMulticast(interfaces[1],
-                                                                   ethernet::getBroadcastAddress());
+          shared_ptr<EthernetFace> face2;
+          BOOST_REQUIRE_NO_THROW(face2 = factory.createMulticast(interfaces[1],
+                                                                 ethernet::getBroadcastAddress()));
           BOOST_CHECK_NE(face1, face2);
         }
       else
@@ -39,8 +42,9 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
                              "only one interface available for pcap");
         }
 
-      shared_ptr<EthernetFace> face3 = factory.createMulticast(interfaces[0],
-                                                               ethernet::getDefaultMulticastAddress());
+      shared_ptr<EthernetFace> face3;
+      BOOST_REQUIRE_NO_THROW(face3 = factory.createMulticast(interfaces[0],
+                                                             ethernet::getDefaultMulticastAddress()));
       BOOST_CHECK_NE(face1, face3);
     }
   else
