@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
   shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
 
   strategy.afterReceiveInterest(*face3, interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rebuffPendingInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 2);
   bool hasFace1 = false;
   bool hasFace2 = false;
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
   BOOST_CHECK(hasFace1 && hasFace2);
 }
 
-BOOST_AUTO_TEST_CASE(Rebuff)
+BOOST_AUTO_TEST_CASE(Reject)
 {
   resetGlobalIoService();
   Forwarder forwarder;
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(Rebuff)
   shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
 
   strategy.afterReceiveInterest(*face1, interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rebuffPendingInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
 }
 

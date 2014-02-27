@@ -166,9 +166,9 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
 }
 
 void
-Forwarder::onInterestRebuff(shared_ptr<pit::Entry> pitEntry)
+Forwarder::onInterestReject(shared_ptr<pit::Entry> pitEntry)
 {
-  NFD_LOG_DEBUG("onInterestRebuff interest=" << pitEntry->getName());
+  NFD_LOG_DEBUG("onInterestReject interest=" << pitEntry->getName());
 
   // set PIT straggler timer
   this->setStragglerTimer(pitEntry);

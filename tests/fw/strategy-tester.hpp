@@ -32,14 +32,14 @@ protected:
   sendInterest(shared_ptr<pit::Entry> pitEntry,shared_ptr<Face> outFace);
 
   virtual void
-  rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry);
+  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
 
 public:
   typedef boost::tuple<shared_ptr<pit::Entry>, shared_ptr<Face> > SendInterestArgs;
   std::vector<SendInterestArgs> m_sendInterestHistory;
 
-  typedef boost::tuple<shared_ptr<pit::Entry> > RebuffPendingInterestArgs;
-  std::vector<RebuffPendingInterestArgs> m_rebuffPendingInterestHistory;
+  typedef boost::tuple<shared_ptr<pit::Entry> > RejectPendingInterestArgs;
+  std::vector<RejectPendingInterestArgs> m_rejectPendingInterestHistory;
 };
 
 
@@ -53,9 +53,9 @@ StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
 
 template<typename S>
 inline void
-StrategyTester<S>::rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry)
+StrategyTester<S>::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
-  m_rebuffPendingInterestHistory.push_back(RebuffPendingInterestArgs(pitEntry));
+  m_rejectPendingInterestHistory.push_back(RejectPendingInterestArgs(pitEntry));
 }
 
 

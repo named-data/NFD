@@ -73,10 +73,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace);
 
-  /** \brief Interest rebuff pipeline
+  /** \brief Interest reject pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onInterestRebuff(shared_ptr<pit::Entry> pitEntry);
+  onInterestReject(shared_ptr<pit::Entry> pitEntry);
 
   /** \brief Interest unsatisfied pipeline
    */

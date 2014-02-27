@@ -36,7 +36,7 @@ BroadcastStrategy::afterReceiveInterest(const Face& inFace,
   }
 
   if (!isPropagated) {
-    this->rebuffPendingInterest(pitEntry);
+    this->rejectPendingInterest(pitEntry);
   }
 }
 

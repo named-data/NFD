@@ -26,7 +26,7 @@ BestRouteStrategy::afterReceiveInterest(const Face& inFace,
 {
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
   if (nexthops.size() == 0) {
-    this->rebuffPendingInterest(pitEntry);
+    this->rejectPendingInterest(pitEntry);
     return;
   }
   

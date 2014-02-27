@@ -63,9 +63,9 @@ Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
 }
 
 void
-Strategy::rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry)
+Strategy::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
-  m_forwarder.onInterestRebuff(pitEntry);
+  m_forwarder.onInterestReject(pitEntry);
 }
 
 } // namespace fw

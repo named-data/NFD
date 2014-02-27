@@ -43,7 +43,7 @@ public: // triggers
    *  - If the strategy decides to forward this Interest,
    *    invoke this->sendInterest one or more times, either now or shortly after
    *  - If strategy concludes that this Interest cannot be forwarded,
-   *    invoke this->rebuffPendingInterest so that PIT entry will be deleted shortly
+   *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
    */
   virtual void
   afterReceiveInterest(const Face& inFace,
@@ -106,7 +106,7 @@ protected: // actions
    *  forwarded earlier, and does not need to be resent now.
    */
   VIRTUAL_WITH_TESTS void
-  rebuffPendingInterest(shared_ptr<pit::Entry> pitEntry);
+  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
 
 protected: // accessors
   MeasurementsAccessor&
