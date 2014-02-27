@@ -21,11 +21,11 @@ const size_t StrategyChoiceManager::COMMAND_UNSIGNED_NCOMPS =
 
 const size_t StrategyChoiceManager::COMMAND_SIGNED_NCOMPS =
   StrategyChoiceManager::COMMAND_UNSIGNED_NCOMPS +
-  0; // No signed Interest support in mock, otherwise 4 (timestamp, nonce, signed info tlv, signature tlv)
+  4; // (timestamp, nonce, signed info tlv, signature tlv)
 
 StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
-                                             shared_ptr<AppFace> face)
-  : ManagerBase(face)
+                                             shared_ptr<InternalFace> face)
+  : ManagerBase(face, STRATEGY_CHOICE_PRIVILEGE)
   , m_strategyChoice(strategyChoice)
 {
   face->setInterestFilter("/localhost/nfd/strategy-choice",
@@ -59,7 +59,9 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
       return;
     }
 
-  onValidatedStrategyChoiceRequest(request.shared_from_this());
+  validate(request,
+           bind(&StrategyChoiceManager::onValidatedStrategyChoiceRequest, this, _1),
+           bind(&ManagerBase::onCommandValidationFailed, this, _1, _2));
 }
 
 void

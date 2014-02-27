@@ -5,16 +5,15 @@
  */
 
 #include "manager-base.hpp"
-#include "mgmt/app-face.hpp"
 
 namespace nfd {
 
 NFD_LOG_INIT("ManagerBase");
 
-ManagerBase::ManagerBase(shared_ptr<AppFace> face)
+ManagerBase::ManagerBase(shared_ptr<InternalFace> face, const std::string& privilege)
   : m_face(face)
 {
-
+  face->getValidator().addSupportedPrivilege(privilege);
 }
 
 ManagerBase::~ManagerBase()
@@ -47,6 +46,14 @@ ManagerBase::sendResponse(const Name& name,
 
   m_face->sign(*responseData);
   m_face->put(*responseData);
+}
+
+void
+ManagerBase::onCommandValidationFailed(const shared_ptr<const Interest>& command,
+                                       const std::string& error)
+{
+  NFD_LOG_INFO("command result: unauthorized verb: " << command);
+  sendResponse(command->getName(), 403, "Unauthorized command");
 }
 
 

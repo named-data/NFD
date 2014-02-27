@@ -10,24 +10,33 @@
 #include "common.hpp"
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
 
+#include "mgmt/command-validator.hpp"
+#include "mgmt/internal-face.hpp"
+
+
 namespace nfd {
 
 using ndn::nfd::ControlResponse;
 
-class AppFace;
+class InternalFace;
 
 class ManagerBase
 {
 public:
+
   struct Error : public std::runtime_error
   {
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-  ManagerBase(shared_ptr<AppFace> face);
+  ManagerBase(shared_ptr<InternalFace> face, const std::string& privilege);
 
   virtual
   ~ManagerBase();
+
+  void
+  onCommandValidationFailed(const shared_ptr<const Interest>& command,
+                            const std::string& error);
 
 protected:
 
@@ -50,8 +59,23 @@ protected:
                uint32_t code,
                const std::string& text);
 
+PUBLIC_WITH_TESTS_ELSE_PROTECTED:
+  void
+  addInterestRule(const std::string& regex,
+                  const ndn::IdentityCertificate& certificate);
+
+  void
+  addInterestRule(const std::string& regex,
+                  const Name& keyName,
+                  const ndn::PublicKey& publicKey);
+
+  void
+  validate(const Interest& interest,
+           const ndn::OnInterestValidated& onValidated,
+           const ndn::OnInterestValidationFailed& onValidationFailed);
+
 protected:
-  shared_ptr<AppFace> m_face;
+  shared_ptr<InternalFace> m_face;
 };
 
 inline void
@@ -71,6 +95,29 @@ ManagerBase::setResponse(ControlResponse& response,
 {
   setResponse(response, code, text);
   response.setBody(body);
+}
+
+inline void
+ManagerBase::addInterestRule(const std::string& regex,
+                             const ndn::IdentityCertificate& certificate)
+{
+  m_face->getValidator().addInterestRule(regex, certificate);
+}
+
+inline void
+ManagerBase::addInterestRule(const std::string& regex,
+                             const Name& keyName,
+                             const ndn::PublicKey& publicKey)
+{
+  m_face->getValidator().addInterestRule(regex, keyName, publicKey);
+}
+
+inline void
+ManagerBase::validate(const Interest& interest,
+                      const ndn::OnInterestValidated& onValidated,
+                      const ndn::OnInterestValidationFailed& onValidationFailed)
+{
+  m_face->getValidator().validate(interest, onValidated, onValidationFailed);
 }
 
 

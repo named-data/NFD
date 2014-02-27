@@ -11,6 +11,7 @@
 #include "mgmt/internal-face.hpp"
 #include "tests/face/dummy-face.hpp"
 
+#include "validation-common.hpp"
 #include "tests/test-common.hpp"
 
 namespace nfd {
@@ -22,10 +23,9 @@ class FibManagerFixture : protected BaseFixture
 {
 public:
 
-  FibManagerFixture()
-    : m_callbackFired(false)
+  virtual
+  ~FibManagerFixture()
   {
-
   }
 
   shared_ptr<Face>
@@ -57,10 +57,10 @@ public:
 
     control.wireDecode(controlRaw);
 
-    NFD_LOG_DEBUG("received control response"
-                  << " Name: " << response.getName()
-                  << " code: " << control.getCode()
-                  << " text: " << control.getText());
+    // NFD_LOG_DEBUG("received control response"
+    //               << " Name: " << response.getName()
+    //               << " code: " << control.getCode()
+    //               << " text: " << control.getText());
 
     BOOST_CHECK_EQUAL(response.getName(), expectedName);
     BOOST_CHECK_EQUAL(control.getCode(), expectedCode);
@@ -114,12 +114,70 @@ public:
     m_callbackFired = false;
   }
 
+  shared_ptr<InternalFace>
+  getInternalFace()
+  {
+    return m_face;
+  }
+
+  FibManager&
+  getFibManager()
+  {
+    return m_manager;
+  }
+
+  Fib&
+  getFib()
+  {
+    return m_fib;
+  }
+
+  void
+  addInterestRule(const std::string& regex,
+                  ndn::IdentityCertificate& certificate)
+  {
+    m_manager.addInterestRule(regex, certificate);
+  }
+
+protected:
+    FibManagerFixture()
+    : m_face(make_shared<InternalFace>())
+    , m_nameTree(1024)
+    , m_fib(m_nameTree)
+    , m_manager(boost::ref(m_fib),
+                bind(&FibManagerFixture::getFace, this, _1),
+                m_face)
+    , m_callbackFired(false)
+  {
+  }
+
 private:
+  shared_ptr<InternalFace> m_face;
+  NameTree m_nameTree;
+  Fib m_fib;
+  FibManager m_manager;
+
   std::vector<shared_ptr<Face> > m_faces;
   bool m_callbackFired;
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtFibManager, FibManagerFixture)
+template <typename T> class AuthorizedCommandFixture:
+    public CommandFixture<T>
+{
+public:
+  AuthorizedCommandFixture()
+  {
+    const std::string regex = "^<localhost><nfd><fib>";
+    T::addInterestRule(regex, *CommandFixture<T>::m_certificate);
+  }
+
+  virtual
+  ~AuthorizedCommandFixture()
+  {
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(MgmtFibManager, AuthorizedCommandFixture<FibManagerFixture>)
 
 bool
 foundNextHop(FaceId id, uint32_t cost, const fib::NextHop& next)
@@ -165,12 +223,7 @@ addedNextHopWithFace(const Fib& fib, const Name& prefix, size_t oldSize,
 
 BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   Interest command("/localhost/nfd/fib");
 
@@ -185,12 +238,7 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 
 BOOST_AUTO_TEST_CASE(MalformedCommmand)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   BOOST_REQUIRE(didCallbackFire() == false);
 
@@ -200,19 +248,14 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
     bind(&FibManagerFixture::validateControlResponse, this, _1,
          command.getName(), 400, "Malformed command");
 
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(command);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -225,12 +268,14 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   commandName.append("unsupported");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 501, "Unsupported command");
+         command->getName(), 501, "Unsupported command");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
 }
@@ -239,12 +284,7 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -257,29 +297,24 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
   commandName.append("add-nexthop");
   commandName.append(encodedOptions);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 404, "Prefix not found");
-  /// \todo enable once sig checking implemented
-    // bind(&FibManagerFixture::validateControlResponse, this, _1, 401, "Signature required");
-
   Interest command(commandName);
-  manager.onFibRequest(command);
+
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse,
+         this, _1, command.getName(), 401, "Signature required");
+
+
+  getFibManager().onFibRequest(command);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_REQUIRE(!addedNextHopWithCost(fib, "/hello", 0, 101));
+  BOOST_REQUIRE(!addedNextHopWithCost(getFib(), "/hello", 0, 101));
 }
 
-BOOST_AUTO_TEST_CASE(UnauthorizedCommand)
+BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FibManagerFixture>)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -292,40 +327,37 @@ BOOST_AUTO_TEST_CASE(UnauthorizedCommand)
   commandName.append("add-nexthop");
   commandName.append(encodedOptions);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 404, "Prefix not found");
-  /// \todo enable once sig checking implemented
-    // bind(&FibManagerFixture::validateControlResponse, this, _1, 403, "Unauthorized command");
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse,
+         this, _1, command->getName(), 403, "Unauthorized command");
+
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_REQUIRE(!addedNextHopWithCost(fib, "/hello", 0, 101));
+  BOOST_REQUIRE(!addedNextHopWithCost(getFib(), "/hello", 0, 101));
 }
 
 BOOST_AUTO_TEST_CASE(BadOptionParse)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
   commandName.append("NotReallyOptions");
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 400, "Malformed command");
+         command->getName(), 400, "Malformed command");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
 }
@@ -334,12 +366,7 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -352,27 +379,24 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
   commandName.append("add-nexthop");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 404, "Face not found");
+         command->getName(), 404, "Face not found");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_REQUIRE(addedNextHopWithCost(fib, "/hello", 0, 101) == false);
+  BOOST_REQUIRE(addedNextHopWithCost(getFib(), "/hello", 0, 101) == false);
 }
 
 BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -392,30 +416,27 @@ BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
 
   Block encodedExpectedOptions(expectedOptions.wireEncode());
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  command->setIncomingFaceId(1);
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 200, "Success", encodedExpectedOptions);
+         command->getName(), 200, "Success", encodedExpectedOptions);
 
-  fib.insert("/hello");
+  getFib().insert("/hello");
 
-  Interest command(commandName);
-  command.setIncomingFaceId(1);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_REQUIRE(addedNextHopWithFace(fib, "/hello", 0, 101, getFace(1)));
+  BOOST_REQUIRE(addedNextHopWithFace(getFib(), "/hello", 0, 101, getFace(1)));
 }
 
 BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -428,31 +449,27 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
   commandName.append("add-nexthop");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedOptions);
 
-  fib.insert("/hello");
+  getFib().insert("/hello");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_REQUIRE(addedNextHopWithCost(fib, "/hello", 0, 101));
+  BOOST_REQUIRE(addedNextHopWithCost(getFib(), "/hello", 0, 101));
 }
 
 BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
 {
   addFace(make_shared<DummyFace>());
+  shared_ptr<InternalFace> face = getInternalFace();
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
-
-  fib.insert("/hello");
+  getFib().insert("/hello");
 
   for (int i = 1; i <= 2; i++)
     {
@@ -468,16 +485,18 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
       commandName.append("add-nexthop");
       commandName.append(encodedOptions);
 
+      shared_ptr<Interest> command(make_shared<Interest>(commandName));
+      generateCommand(*command);
+
       face->onReceiveData +=
         bind(&FibManagerFixture::validateControlResponse, this, _1,
-             commandName, 200, "Success", encodedOptions);
+             command->getName(), 200, "Success", encodedOptions);
 
-      Interest command(commandName);
-      manager.onFibRequest(command);
+      getFibManager().onFibRequest(*command);
       BOOST_REQUIRE(didCallbackFire());
       resetCallbackFired();
 
-      shared_ptr<fib::Entry> entry = fib.findExactMatch("/hello");
+      shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
 
       if (static_cast<bool>(entry))
         {
@@ -499,16 +518,9 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
 BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
 {
   addFace(make_shared<DummyFace>());
+  shared_ptr<InternalFace> face = getInternalFace();
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace,
-                          this, _1),
-                          face);
-
-  fib.insert("/hello");
+  getFib().insert("/hello");
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -523,12 +535,14 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     commandName.append("add-nexthop");
     commandName.append(encodedOptions);
 
+    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    generateCommand(*command);
+
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedOptions);
 
-    Interest command(commandName);
-    manager.onFibRequest(command);
+    getFibManager().onFibRequest(*command);
 
     BOOST_REQUIRE(didCallbackFire());
   }
@@ -545,17 +559,19 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     commandName.append("add-nexthop");
     commandName.append(encodedOptions);
 
+    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    generateCommand(*command);
+
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedOptions);
 
-    Interest command(commandName);
-    manager.onFibRequest(command);
+    getFibManager().onFibRequest(*command);
 
     BOOST_REQUIRE(didCallbackFire());
   }
 
-  shared_ptr<fib::Entry> entry = fib.findExactMatch("/hello");
+  shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
 
   // Add faces with cost == FaceID for the name /hello
   // This test assumes:
@@ -576,12 +592,7 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
 
 BOOST_AUTO_TEST_CASE(Insert)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   {
     FibManagementOptions options;
@@ -593,17 +604,19 @@ BOOST_AUTO_TEST_CASE(Insert)
     commandName.append("insert");
     commandName.append(encodedOptions);
 
+    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    generateCommand(*command);
+
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedOptions);
 
-    Interest command(commandName);
-    manager.onFibRequest(command);
+    getFibManager().onFibRequest(*command);
   }
 
   BOOST_REQUIRE(didCallbackFire());
 
-  shared_ptr<fib::Entry> entry = fib.findExactMatch("/hello");
+  shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
   if (static_cast<bool>(entry))
     {
       const fib::NextHopList& hops = entry->getNextHops();
@@ -611,6 +624,7 @@ BOOST_AUTO_TEST_CASE(Insert)
     }
 
   resetCallbackFired();
+  face->onReceiveData.clear();
 
   {
     FibManagementOptions options;
@@ -622,17 +636,19 @@ BOOST_AUTO_TEST_CASE(Insert)
     commandName.append("insert");
     commandName.append(encodedOptions);
 
+    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    generateCommand(*command);
+
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           commandName, 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedOptions);
 
-    Interest command(commandName);
-    manager.onFibRequest(command);
+    getFibManager().onFibRequest(*command);
   }
 
   BOOST_REQUIRE(didCallbackFire());
 
-  entry = fib.findExactMatch("/hello");
+  entry = getFib().findExactMatch("/hello");
   if (static_cast<bool>(entry))
     {
       const fib::NextHopList& hops = entry->getNextHops();
@@ -642,7 +658,7 @@ BOOST_AUTO_TEST_CASE(Insert)
 }
 
 void
-testRemove(FibManagerFixture* fixture,
+testRemove(CommandFixture<FibManagerFixture>* fixture,
            FibManager& manager,
            Fib& fib,
            shared_ptr<Face> face,
@@ -657,12 +673,14 @@ testRemove(FibManagerFixture* fixture,
   commandName.append("delete");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  fixture->generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         commandName, 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedOptions);
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  manager.onFibRequest(*command);
 
   BOOST_REQUIRE(fixture->didCallbackFire());
 
@@ -675,12 +693,9 @@ testRemove(FibManagerFixture* fixture,
 
 BOOST_AUTO_TEST_CASE(Delete)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
+  FibManager& manager = getFibManager();
+  Fib& fib = getFib();
 
   fib.insert("/a");
   fib.insert("/a/b");
@@ -730,7 +745,7 @@ removedNextHopWithCost(const Fib& fib, const Name& prefix, size_t oldSize, uint3
 }
 
 void
-testRemoveNextHop(FibManagerFixture* fixture,
+testRemoveNextHop(CommandFixture<FibManagerFixture>* fixture,
                   FibManager& manager,
                   Fib& fib,
                   shared_ptr<Face> face,
@@ -747,12 +762,14 @@ testRemoveNextHop(FibManagerFixture* fixture,
   commandName.append("remove-nexthop");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  fixture->generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         commandName, 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedOptions);
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  manager.onFibRequest(*command);
 
   BOOST_REQUIRE(fixture->didCallbackFire());
 
@@ -770,12 +787,9 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
   addFace(face2);
   addFace(face3);
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
+  FibManager& manager = getFibManager();
+  Fib& fib = getFib();
 
   shared_ptr<fib::Entry> entry = fib.insert("/hello").first;
 
@@ -792,7 +806,7 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
   testRemoveNextHop(this, manager, fib, face, "/hello", 1);
   BOOST_REQUIRE(removedNextHopWithCost(fib, "/hello", 1, 101));
 
-  if (!static_cast<bool>(fib.findExactMatch("/hello")))
+  if (!static_cast<bool>(getFib().findExactMatch("/hello")))
     {
       BOOST_FAIL("removed entry after removing all next hops");
     }
@@ -801,12 +815,7 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
 
 BOOST_AUTO_TEST_CASE(RemoveNoFace)
 {
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                          face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -818,12 +827,14 @@ BOOST_AUTO_TEST_CASE(RemoveNoFace)
   commandName.append("remove-nexthop");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 404, "Face not found");
+         command->getName(), 404, "Face not found");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
 }
@@ -832,12 +843,7 @@ BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
 {
   addFace(make_shared<DummyFace>());
 
-  shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NameTree nameTree(1024);
-  Fib fib(nameTree);
-  FibManager manager(fib,
-                     bind(&FibManagerFixture::getFace, this, _1),
-                     face);
+  shared_ptr<InternalFace> face = getInternalFace();
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -849,12 +855,14 @@ BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
   commandName.append("remove-nexthop");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         commandName, 404, "Prefix not found");
+         command->getName(), 404, "Prefix not found");
 
-  Interest command(commandName);
-  manager.onFibRequest(command);
+  getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
 }

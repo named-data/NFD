@@ -15,6 +15,7 @@
 
 
 #include "tests/test-common.hpp"
+#include "validation-common.hpp"
 
 namespace nfd {
 namespace tests {
@@ -86,6 +87,12 @@ public:
     , m_face(make_shared<InternalFace>())
     , m_manager(m_strategyChoice, m_face)
     , m_callbackFired(false)
+  {
+
+  }
+
+  virtual
+  ~StrategyChoiceManagerFixture()
   {
 
   }
@@ -177,6 +184,13 @@ public:
     return m_strategyChoice;
   }
 
+  void
+  addInterestRule(const std::string& regex,
+                  ndn::IdentityCertificate& certificate)
+  {
+    m_manager.addInterestRule(regex, certificate);
+  }
+
 protected:
   Forwarder m_forwarder;
   NameTree m_nameTree;
@@ -203,9 +217,26 @@ public:
   }
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtStrategyChoiceManager, AllStrategiesFixture)
+template <typename T> class AuthorizedCommandFixture : public CommandFixture<T>
+{
+public:
+  AuthorizedCommandFixture()
+  {
+    const std::string regex = "^<localhost><nfd><strategy-choice>";
+    T::addInterestRule(regex, *CommandFixture<T>::m_certificate);
+  }
 
-BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
+  virtual
+  ~AuthorizedCommandFixture()
+  {
+
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(MgmtStrategyChoiceManager,
+                         AuthorizedCommandFixture<AllStrategiesFixture>)
+
+BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, AllStrategiesFixture)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/strategy-choice"));
 
@@ -218,13 +249,61 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_AUTO_TEST_CASE(MalformedCommmand)
+BOOST_FIXTURE_TEST_CASE(MalformedCommmand, AllStrategiesFixture)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/strategy-choice"));
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
          command->getName(), 400, "Malformed command");
+
+  getManager().onStrategyChoiceRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
+{
+  ndn::nfd::FibManagementOptions options;
+  options.setName("/test");
+  options.setStrategy("/localhost/nfd/strategy/best-route");
+
+  Block encodedOptions(options.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedOptions);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 401, "Signature required");
+
+  getManager().onStrategyChoiceRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
+                        UnauthorizedCommandFixture<StrategyChoiceManagerFixture>)
+{
+  ndn::nfd::FibManagementOptions options;
+  options.setName("/test");
+  options.setStrategy("/localhost/nfd/strategy/best-route");
+
+  Block encodedOptions(options.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedOptions);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 403, "Unauthorized command");
 
   getManager().onStrategyChoiceRequest(*command);
 
@@ -243,6 +322,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
@@ -260,6 +340,7 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
   commandName.append("NotReallyOptions");
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
@@ -311,6 +392,7 @@ BOOST_AUTO_TEST_CASE(SetUnsupportedStrategy)
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
@@ -355,6 +437,7 @@ public:
 //   commandName.append(encodedOptions);
 
 //   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+//   generateCommand(*command);
 
 //   getFace()->onReceiveData +=
 //     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
@@ -383,6 +466,7 @@ BOOST_AUTO_TEST_CASE(Unset)
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
@@ -408,6 +492,7 @@ BOOST_AUTO_TEST_CASE(UnsetRoot)
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,

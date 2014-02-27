@@ -21,7 +21,7 @@ class StrategyChoiceManager : public ManagerBase
 {
 public:
   StrategyChoiceManager(StrategyChoice& strategyChoice,
-                        shared_ptr<AppFace> face);
+                        shared_ptr<InternalFace> face);
 
   virtual
   ~StrategyChoiceManager();

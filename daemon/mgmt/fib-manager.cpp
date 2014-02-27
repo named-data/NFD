@@ -17,18 +17,18 @@ namespace nfd {
 
 NFD_LOG_INIT("FibManager");
 
-const Name FibManager::FIB_MANAGER_COMMAND_PREFIX = "/localhost/nfd/fib";
+const Name FibManager::COMMAND_PREFIX = "/localhost/nfd/fib";
 
-const size_t FibManager::FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS =
-  FibManager::FIB_MANAGER_COMMAND_PREFIX.size() +
+const size_t FibManager::COMMAND_UNSIGNED_NCOMPS =
+  FibManager::COMMAND_PREFIX.size() +
   1 + // verb
   1;  // verb options
 
-const size_t FibManager::FIB_MANAGER_COMMAND_SIGNED_NCOMPS =
-  FibManager::FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS +
-  0; // No signed Interest support in mock, otherwise 3 (timestamp, signed info tlv, signature tlv)
+const size_t FibManager::COMMAND_SIGNED_NCOMPS =
+  FibManager::COMMAND_UNSIGNED_NCOMPS +
+  4; // (timestamp, nonce, signed info tlv, signature tlv)
 
-const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
+const FibManager::VerbAndProcessor FibManager::COMMAND_VERBS[] =
   {
     VerbAndProcessor(
                      Name::Component("insert"),
@@ -45,8 +45,6 @@ const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
                      &FibManager::addNextHop
                      ),
 
-
-
     VerbAndProcessor(
                      Name::Component("remove-nexthop"),
                      &FibManager::removeNextHop
@@ -56,13 +54,13 @@ const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
 
 FibManager::FibManager(Fib& fib,
                        function<shared_ptr<Face>(FaceId)> getFace,
-                       shared_ptr<AppFace> face)
-  : ManagerBase(face),
+                       shared_ptr<InternalFace> face)
+  : ManagerBase(face, FIB_PRIVILEGE),
     m_managedFib(fib),
     m_getFace(getFace),
-    m_verbDispatch(FIB_MANAGER_COMMAND_VERBS,
-                   FIB_MANAGER_COMMAND_VERBS +
-                   (sizeof(FIB_MANAGER_COMMAND_VERBS) / sizeof(VerbAndProcessor)))
+    m_verbDispatch(COMMAND_VERBS,
+                   COMMAND_VERBS +
+                   (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
   face->setInterestFilter("/localhost/nfd/fib",
                           bind(&FibManager::onFibRequest, this, _2));
@@ -74,56 +72,56 @@ FibManager::onFibRequest(const Interest& request)
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
 
-
-
-  if (FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
-      commandNComps < FIB_MANAGER_COMMAND_SIGNED_NCOMPS)
+  if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
+      commandNComps < COMMAND_SIGNED_NCOMPS)
     {
       NFD_LOG_INFO("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
 
       return;
     }
-  else if (commandNComps < FIB_MANAGER_COMMAND_SIGNED_NCOMPS ||
-      !FIB_MANAGER_COMMAND_PREFIX.isPrefixOf(command))
+  else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
+      !COMMAND_PREFIX.isPrefixOf(command))
     {
       NFD_LOG_INFO("command result: malformed");
       sendResponse(command, 400, "Malformed command");
       return;
     }
 
-  const Name::Component& verb = command.get(FIB_MANAGER_COMMAND_PREFIX.size());
+  validate(request,
+           bind(&FibManager::onValidatedFibRequest,
+                this, _1),
+           bind(&ManagerBase::onCommandValidationFailed,
+                this, _1, _2));
+}
+
+void
+FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
+{
+  const Name& command = request->getName();
+  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
   VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find (verb);
   if (verbProcessor != m_verbDispatch.end())
     {
       FibManagementOptions options;
-      if (!extractOptions(request, options))
+      if (!extractOptions(*request, options))
         {
+          NFD_LOG_INFO("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
-          return;
-        }
-
-      /// \todo authorize command
-      if (false)
-        {
-          NFD_LOG_INFO("command result: unauthorized verb: " << command);
-          sendResponse(request.getName(), 403, "Unauthorized command");
           return;
         }
 
       NFD_LOG_INFO("command result: processing verb: " << verb);
       ControlResponse response;
       (verbProcessor->second)(this, options, response);
-
       sendResponse(command, response);
     }
   else
     {
       NFD_LOG_INFO("command result: unsupported verb: " << verb);
-      sendResponse(request.getName(), 501, "Unsupported command");
+      sendResponse(command, 501, "Unsupported command");
     }
-
 }
 
 bool
@@ -131,8 +129,7 @@ FibManager::extractOptions(const Interest& request,
                            FibManagementOptions& extractedOptions)
 {
   const Name& command = request.getName();
-  const size_t optionCompIndex =
-    FIB_MANAGER_COMMAND_PREFIX.size() + 1;
+  const size_t optionCompIndex = COMMAND_PREFIX.size() + 1;
 
   try
     {
@@ -220,7 +217,7 @@ FibManager::addNextHop(const FibManagementOptions& options,
 
 void
 FibManager::removeNextHop(const FibManagementOptions& options,
-                          ControlResponse &response)
+                          ControlResponse& response)
 {
   NFD_LOG_DEBUG("remove-nexthop prefix: " << options.getName()
                 << " faceid: " << options.getFaceId());

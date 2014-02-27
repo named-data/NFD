@@ -34,7 +34,7 @@ ConfigFile::parse(const char* filename, bool isDryRun)
     {
       std::string msg = "Failed to read configuration file: ";
       msg += filename;
-      throw Error(filename);
+      throw Error(msg);
     }
   parse(inputFile, isDryRun, filename);
   inputFile.close();

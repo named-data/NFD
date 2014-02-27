@@ -34,7 +34,7 @@ const size_t FaceManager::COMMAND_UNSIGNED_NCOMPS =
 
 const size_t FaceManager::COMMAND_SIGNED_NCOMPS =
   FaceManager::COMMAND_UNSIGNED_NCOMPS +
-  0; // No signed Interest support in mock, otherwise 4 (timestamp, nonce, signed info tlv, signature tlv)
+  4; // (timestamp, nonce, signed info tlv, signature tlv)
 
 const FaceManager::VerbAndProcessor FaceManager::COMMAND_VERBS[] =
   {
@@ -52,8 +52,8 @@ const FaceManager::VerbAndProcessor FaceManager::COMMAND_VERBS[] =
 
 
 FaceManager::FaceManager(FaceTable& faceTable,
-                         shared_ptr<AppFace> face)
-  : ManagerBase(face)
+                         shared_ptr<InternalFace> face)
+  : ManagerBase(face, FACE_MANAGER_PRIVILEGE)
   , m_faceTable(faceTable)
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS +
@@ -411,7 +411,9 @@ FaceManager::onFaceRequest(const Interest& request)
       return;
     }
 
-  onValidatedFaceRequest(request.shared_from_this());
+  validate(request,
+           bind(&FaceManager::onValidatedFaceRequest, this, _1),
+           bind(&ManagerBase::onCommandValidationFailed, this, _1, _2));
 }
 
 void
@@ -427,14 +429,6 @@ FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
       if (!extractOptions(*request, options))
         {
           sendResponse(command, 400, "Malformed command");
-          return;
-        }
-
-      /// \todo authorize command
-      if (false)
-        {
-          NFD_LOG_INFO("command result: unauthorized verb: " << command);
-          sendResponse(command, 403, "Unauthorized command");
           return;
         }
 

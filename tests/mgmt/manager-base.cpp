@@ -20,7 +20,7 @@ class ManagerBaseTest : public ManagerBase, protected BaseFixture
 public:
 
   ManagerBaseTest()
-    : ManagerBase(make_shared<InternalFace>()),
+    : ManagerBase(make_shared<InternalFace>(), "TEST-PRIVILEGE"),
       m_callbackFired(false)
   {
 

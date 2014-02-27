@@ -10,6 +10,8 @@
 #include "face/face.hpp"
 #include "app-face.hpp"
 
+#include "command-validator.hpp"
+
 namespace nfd {
 
 class InternalFace : public Face, public AppFace
@@ -24,6 +26,12 @@ public:
   };
 
   InternalFace();
+
+  CommandValidator&
+  getValidator();
+
+  virtual
+  ~InternalFace();
 
   // Overridden Face methods for forwarder
 
@@ -45,16 +53,18 @@ public:
   virtual void
   put(const Data& data);
 
-  virtual
-  ~InternalFace();
-
 private:
 
-  // void
-  // onConfig(ConfigFile::Node section, bool isDryRun);
-
   std::map<Name, OnInterest> m_interestFilters;
+  CommandValidator m_validator;
 };
+
+inline CommandValidator&
+InternalFace::getValidator()
+{
+  return m_validator;
+}
+
 
 } // namespace nfd
 

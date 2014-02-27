@@ -22,13 +22,15 @@ using ndn::nfd::FibManagementOptions;
 class Forwarder;
 class Fib;
 
+const std::string FIB_PRIVILEGE = "fib"; // config file privilege name
+
 class FibManager : public ManagerBase
 {
 public:
 
   FibManager(Fib& fib,
              function<shared_ptr<Face>(FaceId)> getFace,
-             shared_ptr<AppFace> face);
+             shared_ptr<InternalFace> face);
 
   void
   onFibRequest(const Interest& request);
@@ -36,8 +38,12 @@ public:
 private:
 
   void
+  onValidatedFibRequest(const shared_ptr<const Interest>& request);
+
+  void
   insertEntry(const FibManagementOptions& options,
               ControlResponse& response);
+
 
   void
   deleteEntry(const FibManagementOptions& options,
@@ -54,9 +60,6 @@ private:
   bool
   extractOptions(const Interest& request,
                  FibManagementOptions& extractedOptions);
-
-  // void
-  // onConfig(ConfigFile::Node section, bool isDryRun);
 
 private:
 
@@ -75,17 +78,17 @@ private:
 
   const VerbDispatchTable m_verbDispatch;
 
-  static const Name FIB_MANAGER_COMMAND_PREFIX; // /localhost/nfd/fib
+  static const Name COMMAND_PREFIX; // /localhost/nfd/fib
 
   // number of components in an invalid, but not malformed, unsigned command.
   // (/localhost/nfd/fib + verb + options) = 5
-  static const size_t FIB_MANAGER_COMMAND_UNSIGNED_NCOMPS;
+  static const size_t COMMAND_UNSIGNED_NCOMPS;
 
   // number of components in a valid signed Interest.
-  // 5 in mock (see UNSIGNED_NCOMPS), 8 with signed Interest support.
-  static const size_t FIB_MANAGER_COMMAND_SIGNED_NCOMPS;
+  // UNSIGNED_NCOMPS + 4 command Interest components = 9
+  static const size_t COMMAND_SIGNED_NCOMPS;
 
-  static const VerbAndProcessor FIB_MANAGER_COMMAND_VERBS[];
+  static const VerbAndProcessor COMMAND_VERBS[];
 
 };
 

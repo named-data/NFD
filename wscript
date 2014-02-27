@@ -5,7 +5,7 @@ from waflib import Build, Logs, Utils, Task, TaskGen, Configure
 import os
 
 def options(opt):
-    opt.load('compiler_cxx')
+    opt.load('compiler_cxx gnu_dirs')
     opt.load('boost doxygen coverage unix-socket', tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
@@ -15,7 +15,7 @@ def options(opt):
                       help='''Use NDN-CPP library from the specified path''')
     
 def configure(conf):
-    conf.load("compiler_cxx boost")
+    conf.load("compiler_cxx boost gnu_dirs")
     try:
         conf.load("doxygen")
     except:
@@ -66,6 +66,8 @@ def configure(conf):
         conf.env['HAVE_PCAP'] = True
 
     conf.load('coverage')
+
+    conf.define('DEFAULT_CONFIG_FILE', '%s/nfd/nfd.conf' % conf.env['SYSCONFDIR'])
 
     conf.write_config_header('daemon/config.hpp')
 

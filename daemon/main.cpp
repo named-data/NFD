@@ -12,6 +12,7 @@
 #include "mgmt/face-manager.hpp"
 #include "mgmt/local-control-header-manager.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
+#include "mgmt/config-file.hpp"
 #include "face/tcp-factory.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -39,6 +40,7 @@ struct ProgramOptions
   std::pair<std::string, std::string> m_tcpListen;
   std::vector<TcpOutgoing> m_tcpOutgoings;
   std::string m_unixListen;
+  std::string m_config;
 };
 
 static ProgramOptions g_options;
@@ -67,7 +69,8 @@ usage(char* programName)
        "[--unix-listen \"/var/run/nfd.sock\"] "
 #endif
        "[--tcp-connect \"192.0.2.1:6363\" "
-            "[--prefix </example>]]\n"
+            "[--prefix </example>]] "
+       "[--config /path/to/nfd.conf]\n"
       "\trun forwarding daemon\n"
       "\t--tcp-listen <ip:port>: listen on IP and port\n"
 #ifdef HAVE_UNIX_SOCKETS
@@ -76,6 +79,7 @@ usage(char* programName)
       "\t--tcp-connect <ip:port>: connect to IP and port (can occur multiple times)\n"
       "\t--prefix <NDN name>: add this face as nexthop to FIB entry "
         "(must appear after --tcp-connect, can occur multiple times)\n"
+       "\t--config <configuration file>]: path to configuration file\n"
     "\n",
     programName, programName
   );
@@ -99,6 +103,7 @@ parseCommandLine(int argc, char** argv)
   g_options.m_tcpListen = std::make_pair("0.0.0.0", "6363");
   g_options.m_unixListen = "/var/run/nfd.sock";
   g_options.m_tcpOutgoings.clear();
+  g_options.m_config = DEFAULT_CONFIG_FILE;
 
   while (1) {
     int option_index = 0;
@@ -108,6 +113,7 @@ parseCommandLine(int argc, char** argv)
       { "tcp-connect"   , required_argument, 0, 0 },
       { "prefix"        , required_argument, 0, 0 },
       { "unix-listen"   , required_argument, 0, 0 },
+      { "config"        , required_argument, 0, 0 },
       { 0               , 0                , 0, 0 }
     };
     int c = getopt_long_only(argc, argv, "", long_options, &option_index);
@@ -134,10 +140,14 @@ parseCommandLine(int argc, char** argv)
           case 4://unix-listen
             g_options.m_unixListen = ::optarg;
             break;
+          case 5://config
+            g_options.m_config = ::optarg;
+            break;
         }
         break;
     }
   }
+
   return true;
 }
 
@@ -206,8 +216,13 @@ initializeUnix()
 void
 initializeMgmt()
 {
+  ConfigFile config;
+
   g_internalFace = make_shared<InternalFace>();
   g_forwarder->addFace(g_internalFace);
+
+  g_internalFace->getValidator().setConfigFile(config);
+
 
   g_fibManager = new FibManager(g_forwarder->getFib(),
                                 bind(&Forwarder::getFace, g_forwarder, _1),
@@ -221,6 +236,11 @@ initializeMgmt()
 
   g_strategyChoiceManager = new StrategyChoiceManager(g_forwarder->getStrategyChoice(),
                                                       g_internalFace);
+
+  /// \todo add face manager section handler
+
+  /// \todo add parsing back when there is an official default config file
+  // config.parse(g_options.m_config);
 
   shared_ptr<fib::Entry> entry = g_forwarder->getFib().insert("/localhost/nfd").first;
   entry->addNextHop(g_internalFace, 0);

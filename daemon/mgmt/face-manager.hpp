@@ -35,7 +35,7 @@ public:
    */
 
   FaceManager(FaceTable& faceTable,
-              shared_ptr<AppFace> face);
+              shared_ptr<InternalFace> face);
 
   /** \brief Subscribe to a face management section(s) for the config file
    */

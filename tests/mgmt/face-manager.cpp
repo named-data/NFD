@@ -13,6 +13,7 @@
 
 #include "common.hpp"
 #include "tests/test-common.hpp"
+#include "validation-common.hpp"
 
 namespace nfd {
 namespace tests {
@@ -272,6 +273,13 @@ public:
   getManager()
   {
     return m_manager;
+  }
+
+  void
+  addInterestRule(const std::string& regex,
+                  ndn::IdentityCertificate& certificate)
+  {
+    m_manager.addInterestRule(regex, certificate);
   }
 
   bool
@@ -669,9 +677,85 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-/// \todo add tests for unsigned and unauthorized commands
+BOOST_AUTO_TEST_CASE(UnsignedCommand)
+{
+  ndn::nfd::FaceManagementOptions options;
+  options.setUri("tcp://127.0.0.1");
 
-BOOST_AUTO_TEST_CASE(UnsupportedVerb)
+  Block encodedOptions(options.wireEncode());
+
+  Name commandName("/localhost/nfd/faces");
+  commandName.append("create");
+  commandName.append(encodedOptions);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  getFace()->onReceiveData +=
+    bind(&FaceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 401, "Signature required");
+
+  getManager().onFaceRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FaceManagerFixture>)
+{
+  ndn::nfd::FaceManagementOptions options;
+  options.setUri("tcp://127.0.0.1");
+
+  Block encodedOptions(options.wireEncode());
+
+  Name commandName("/localhost/nfd/faces");
+  commandName.append("create");
+  commandName.append(encodedOptions);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  getFace()->onReceiveData +=
+    bind(&FaceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 403, "Unauthorized command");
+
+  getManager().onFaceRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+template <typename T> class AuthorizedCommandFixture : public CommandFixture<T>
+{
+public:
+  AuthorizedCommandFixture()
+  {
+    const std::string regex = "^<localhost><nfd><faces>";
+    T::addInterestRule(regex, *CommandFixture<T>::m_certificate);
+  }
+
+  virtual
+  ~AuthorizedCommandFixture()
+  {
+
+  }
+};
+
+// template <> class AuthorizedCommandFixture<FaceManagerFixture> :
+//     public CommandFixture<FaceManagerFixture>
+// {
+// public:
+//   AuthorizedCommandFixture()
+//   {
+//     const std::string regex = "^<localhost><nfd><faces>";
+//     FaceManagerFixture::ManagerBase::addInterestRule(regex, *CommandFixture<FaceManagerFixture>::m_certificate);
+//   }
+
+//   virtual
+//   ~AuthorizedCommandFixture()
+//   {
+
+//   }
+// };
+
+BOOST_FIXTURE_TEST_CASE(UnsupportedCommand, AuthorizedCommandFixture<FaceManagerFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
 
@@ -682,6 +766,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&FaceManagerFixture::validateControlResponse, this, _1,
@@ -743,13 +828,15 @@ private:
   bool m_destroyFaceFired;
 };
 
-BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse, ValidatedFaceRequestFixture)
+BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse,
+                        AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
   commandName.append("NotReallyOptions");
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&ValidatedFaceRequestFixture::validateControlResponse, this, _1,
@@ -760,7 +847,8 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse, ValidatedFaceRequest
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace, ValidatedFaceRequestFixture)
+BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace,
+                        AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
@@ -772,12 +860,14 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace, ValidatedFaceRequestFixt
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   onValidatedFaceRequest(command);
   BOOST_CHECK(didCreateFaceFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace, ValidatedFaceRequestFixture)
+BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace,
+                        AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
@@ -789,6 +879,7 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace, ValidatedFaceRequestFix
   commandName.append(encodedOptions);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
   onValidatedFaceRequest(command);
   BOOST_CHECK(didDestroyFaceFire());
@@ -812,7 +903,7 @@ public:
   }
 };
 
-BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, FaceFixture)
+BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp:/127.0.0.1");
@@ -823,16 +914,19 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, FaceFixture)
   commandName.append("create");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         commandName, 400, "Malformed command");
+         command->getName(), 400, "Malformed command");
 
-  createFace(commandName, options);
+  createFace(command->getName(), options);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, FaceFixture)
+BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   // this will be an unsupported protocol because no factories have been
@@ -845,16 +939,19 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, FaceFixture)
   commandName.append("create");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         commandName, 501, "Unsupported protocol");
+         command->getName(), 501, "Unsupported protocol");
 
-  createFace(commandName, options);
+  createFace(command->getName(), options);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(OnCreated, FaceFixture)
+BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
@@ -865,6 +962,9 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, FaceFixture)
   commandName.append("create");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   ndn::nfd::FaceManagementOptions resultOptions;
   resultOptions.setUri("tcp://127.0.0.1");
   resultOptions.setFaceId(-1);
@@ -873,17 +973,17 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, FaceFixture)
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         commandName, 200, "Success", encodedResultOptions);
+         command->getName(), 200, "Success", encodedResultOptions);
 
-  onCreated(commandName, options, make_shared<DummyFace>());
+  onCreated(command->getName(), options, make_shared<DummyFace>());
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_CHECK(TestFaceTableFixture::m_faceTable.didAddFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(OnConnectFailed, FaceFixture)
+BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
 {
-    ndn::nfd::FaceManagementOptions options;
+  ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
 
   Block encodedOptions(options.wireEncode());
@@ -892,18 +992,21 @@ BOOST_FIXTURE_TEST_CASE(OnConnectFailed, FaceFixture)
   commandName.append("create");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         commandName, 400, "Failed to create face");
+         command->getName(), 400, "Failed to create face");
 
-  onConnectFailed(commandName, "unit-test-reason");
+  onConnectFailed(command->getName(), "unit-test-reason");
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_CHECK_EQUAL(TestFaceTableFixture::m_faceTable.didAddFire(), false);
 }
 
 
-BOOST_FIXTURE_TEST_CASE(DestroyFace, FaceFixture)
+BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
 {
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
@@ -914,11 +1017,14 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, FaceFixture)
   commandName.append("destroy");
   commandName.append(encodedOptions);
 
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         commandName, 200, "Success");
+         command->getName(), 200, "Success");
 
-  destroyFace(commandName, options);
+  destroyFace(command->getName(), options);
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_CHECK(TestFaceTableFixture::m_faceTable.didRemoveFire());
