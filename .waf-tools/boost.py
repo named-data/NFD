@@ -39,9 +39,9 @@ When using MSVC, a lot of compilation flags need to match your BOOST build confi
  - boost libraries will try to be smart and use the (pretty but often not useful) auto-linking feature of MSVC
    So before calling `conf.check_boost` you might want to disabling by adding:
    	conf.env.DEFINES_BOOST += ['BOOST_ALL_NO_LIB']
-   Errors: 
+   Errors:
  - boost might also be compiled with /MT, which links the runtime statically.
-   If you have problems with redefined symbols, 
+   If you have problems with redefined symbols,
 		self.env['DEFINES_%s' % var] += ['BOOST_ALL_NO_LIB']
 		self.env['CXXFLAGS_%s' % var] += ['/MD', '/EHsc']
 Passing `--boost-linkage_autodetect` might help ensuring having a correct linkage in some basic cases.
@@ -59,7 +59,7 @@ BOOST_VERSION_FILE = 'boost/version.hpp'
 BOOST_VERSION_CODE = '''
 #include <iostream>
 #include <boost/version.hpp>
-int main() { std::cout << BOOST_LIB_VERSION << std::endl; }
+int main() { std::cout << BOOST_LIB_VERSION << ":" << BOOST_VERSION << std::endl; }
 '''
 
 # toolsets from {boost_dir}/tools/build/v2/tools/common.jam
@@ -93,7 +93,7 @@ BOOST_TOOLSETS = {
 
 def options(opt):
 	opt = opt.add_option_group('Boost Options')
-    
+
 	opt.add_option('--boost-includes', type='string',
 				   default='', dest='boost_includes',
 				   help='''path to the directory where the boost includes are, e.g., /path/to/boost_1_47_0/stage/include''')
@@ -136,11 +136,16 @@ def boost_get_version(self, d):
 		except (OSError, IOError):
 			Logs.error("Could not read the file %r" % node.abspath())
 		else:
-			re_but = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
-			m = re_but.search(txt)
-			if m:
-				return m.group(1)
-	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True)
+			re_but1 = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
+			m1 = re_but1.search(txt)
+
+			re_but2 = re.compile('^#define\\s+BOOST_VERSION\\s+"(.*)"', re.M)
+			m2 = re_but2.search(txt)
+
+			if m1 and m2:
+				return (m1.group(1), m2.group(1))
+
+	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True).split(":")
 
 @conf
 def boost_get_includes(self, *k, **kw):
@@ -280,8 +285,12 @@ def check_boost(self, *k, **kw):
 
 	self.start_msg('Checking boost includes')
 	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
-	self.env.BOOST_VERSION = self.boost_get_version(inc)
-	self.end_msg(self.env.BOOST_VERSION)
+	versions = self.boost_get_version(inc)
+	self.env.BOOST_VERSION = versions[0]
+	self.env.BOOST_VERSION_NUMBER = int(versions[1])
+	self.end_msg("%d.%d.%d" % (int(versions[1]) / 100000,
+				   int(versions[1]) / 100 % 1000,
+				   int(versions[1]) % 100))
 	if Logs.verbose:
 		Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
 
@@ -365,4 +374,3 @@ def check_boost(self, *k, **kw):
 			self.end_msg("Could not link against boost libraries using supplied options")
 			self.fatal('The configuration failed')
 		self.end_msg('ok')
-
