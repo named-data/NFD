@@ -124,13 +124,13 @@ private:
                       const ConnectFailedCallback& onConnectFailed);
 
   void
-  handleEndpointResoution(const boost::system::error_code& error,
-                          boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
-                          const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
-                          const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onConnectFailed,
-                          const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
+  handleEndpointResolution(const boost::system::error_code& error,
+                           boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
+                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                           const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                           const FaceCreatedCallback& onFaceCreated,
+                           const ConnectFailedCallback& onConnectFailed,
+                           const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
 
 private:
   boost::asio::io_service& m_ioService;

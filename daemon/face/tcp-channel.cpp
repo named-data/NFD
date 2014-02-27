@@ -100,7 +100,7 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
     make_shared<ip::tcp::resolver>(boost::ref(m_ioService));
 
   resolver->async_resolve(query,
-                          bind(&TcpChannel::handleEndpointResoution, this, _1, _2,
+                          bind(&TcpChannel::handleEndpointResolution, this, _1, _2,
                                clientSocket, connectTimeoutTimer,
                                onFaceCreated, onConnectFailed,
                                resolver));
@@ -221,13 +221,13 @@ TcpChannel::handleFailedConnect(const boost::system::error_code& error,
 }
 
 void
-TcpChannel::handleEndpointResoution(const boost::system::error_code& error,
-                                    ip::tcp::resolver::iterator remoteEndpoint,
-                                    const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                                    const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
-                                    const FaceCreatedCallback& onFaceCreated,
-                                    const ConnectFailedCallback& onConnectFailed,
-                                    const shared_ptr<ip::tcp::resolver>& resolver)
+TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
+                                     ip::tcp::resolver::iterator remoteEndpoint,
+                                     const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                                     const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                                     const FaceCreatedCallback& onFaceCreated,
+                                     const ConnectFailedCallback& onConnectFailed,
+                                     const shared_ptr<ip::tcp::resolver>& resolver)
 {
   if (error ||
       remoteEndpoint == ip::tcp::resolver::iterator())
@@ -252,6 +252,5 @@ TcpChannel::handleEndpointResoution(const boost::system::error_code& error,
                              socket, timer,
                              onFaceCreated, onConnectFailed));
 }
-
 
 } // namespace nfd
