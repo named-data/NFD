@@ -5,13 +5,14 @@
  */
 
 #include "table/fib.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(TableFib)
+BOOST_FIXTURE_TEST_SUITE(TableFib, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Entry)
 {
@@ -302,4 +303,5 @@ BOOST_AUTO_TEST_CASE(Remove)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

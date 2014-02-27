@@ -29,14 +29,14 @@ public:
   getFace() const;
   
   void
-  setCost(int32_t cost);
+  setCost(uint32_t cost);
   
-  int32_t
+  uint32_t
   getCost() const;
 
 private:
   shared_ptr<Face> m_face;
-  int32_t m_cost;
+  uint32_t m_cost;
 };
 
 } // namespace fib

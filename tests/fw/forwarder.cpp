@@ -5,17 +5,17 @@
  */
 
 #include "fw/forwarder.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FwForwarder)
+BOOST_FIXTURE_TEST_SUITE(FwForwarder, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(AddRemoveFace)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
@@ -38,18 +38,8 @@ BOOST_AUTO_TEST_CASE(AddRemoveFace)
   BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
 }
 
-class ForwarderTestFace : public DummyFace {
-public:
-  virtual void
-  afterSend()
-  {
-    getGlobalIoService().stop();
-  }
-};
-
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
 
   Name nameA  ("ndn:/A");
@@ -59,8 +49,10 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   interestAB.setInterestLifetime(4000);
   Data dataABC(nameABC);
 
-  shared_ptr<ForwarderTestFace> face1 = make_shared<ForwarderTestFace>();
-  shared_ptr<ForwarderTestFace> face2 = make_shared<ForwarderTestFace>();
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  face1->afterSend += bind(&boost::asio::io_service::stop, &g_io);
+  face2->afterSend += bind(&boost::asio::io_service::stop, &g_io);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
@@ -71,15 +63,15 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   fibEntry->addNextHop(face2, 0);
 
   face1->receiveInterest(interestAB);
-  getGlobalIoService().run();
-  getGlobalIoService().reset();
+  g_io.run();
+  g_io.reset();
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
 
   face2->receiveData(dataABC);
-  getGlobalIoService().run();
-  getGlobalIoService().reset();
+  g_io.run();
+  g_io.reset();
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   BOOST_CHECK(face1->m_sentDatas[0].getName().equals(nameABC));
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
@@ -115,7 +107,6 @@ public:
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 {
-  resetGlobalIoService();
   ScopeLocalhostIncomingTestForwarder forwarder;
   shared_ptr<Face> face1 = make_shared<DummyLocalFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
@@ -165,7 +156,6 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
   shared_ptr<DummyLocalFace> face1 = make_shared<DummyLocalFace>();
   shared_ptr<DummyFace>      face2 = make_shared<DummyFace>();
@@ -230,4 +220,5 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

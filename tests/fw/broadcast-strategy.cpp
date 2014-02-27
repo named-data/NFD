@@ -6,17 +6,17 @@
 
 #include "fw/broadcast-strategy.hpp"
 #include "strategy-tester.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FwBroadcastStrategy)
+BOOST_FIXTURE_TEST_SUITE(FwBroadcastStrategy, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ForwardTwo)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
   BroadcastStrategyTester strategy(forwarder);
@@ -60,7 +60,6 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
 
 BOOST_AUTO_TEST_CASE(Reject)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
   BroadcastStrategyTester strategy(forwarder);
@@ -85,4 +84,5 @@ BOOST_AUTO_TEST_CASE(Reject)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

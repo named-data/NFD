@@ -6,9 +6,12 @@
 
 #include "core/event-emitter.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
+
+BOOST_FIXTURE_TEST_SUITE(UtilEventEmitter, BaseFixture)
 
 class EventEmitterTester : noncopyable
 {
@@ -116,8 +119,6 @@ EventEmitterTest_RefObject_byVal(EventEmitterTest_RefObject a1) {}
 void
 EventEmitterTest_RefObject_byRef(const EventEmitterTest_RefObject& a1) {}
 
-
-BOOST_AUTO_TEST_SUITE(UtilEventEmitter)
 
 BOOST_AUTO_TEST_CASE(ZeroListener)
 {
@@ -228,4 +229,5 @@ BOOST_AUTO_TEST_CASE(HandlerByRef)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

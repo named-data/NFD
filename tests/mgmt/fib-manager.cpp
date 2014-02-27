@@ -9,17 +9,16 @@
 #include "table/fib-nexthop.hpp"
 #include "face/face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <algorithm>
-
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 NFD_LOG_INIT("FibManagerTest");
 
-class FibManagerFixture
+class FibManagerFixture : protected BaseFixture
 {
 public:
 
@@ -32,9 +31,9 @@ public:
   shared_ptr<Face>
   getFace(FaceId id)
   {
-    if (id > 0 && id <= m_faces.size())
+    if (id > 0 && static_cast<size_t>(id) <= m_faces.size())
       {
-        return m_faces[id-1];
+        return m_faces[id - 1];
       }
     NFD_LOG_DEBUG("No face found returning NULL");
     return shared_ptr<DummyFace>();
@@ -120,10 +119,7 @@ private:
   bool m_callbackFired;
 };
 
-
-BOOST_AUTO_TEST_SUITE(MgmtFibManager)
-
-
+BOOST_FIXTURE_TEST_SUITE(MgmtFibManager, FibManagerFixture)
 
 bool
 foundNextHop(FaceId id, uint32_t cost, const fib::NextHop& next)
@@ -167,7 +163,7 @@ addedNextHopWithFace(const Fib& fib, const Name& prefix, size_t oldSize,
   return false;
 }
 
-BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -186,7 +182,7 @@ BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, FibManagerFixture)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(MalformedCommmand, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(MalformedCommmand)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -207,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE(MalformedCommmand, FibManagerFixture)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(UnsupportedVerb, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -236,7 +232,7 @@ BOOST_FIXTURE_TEST_CASE(UnsupportedVerb, FibManagerFixture)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(UnsignedCommand, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(UnsignedCommand)
 {
   addFace(make_shared<DummyFace>());
 
@@ -270,7 +266,7 @@ BOOST_FIXTURE_TEST_CASE(UnsignedCommand, FibManagerFixture)
   BOOST_REQUIRE(!addedNextHopWithCost(fib, "/hello", 0, 101));
 }
 
-BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(UnauthorizedCommand)
 {
   addFace(make_shared<DummyFace>());
 
@@ -304,7 +300,7 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, FibManagerFixture)
   BOOST_REQUIRE(!addedNextHopWithCost(fib, "/hello", 0, 101));
 }
 
-BOOST_FIXTURE_TEST_CASE(BadOptionParse, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(BadOptionParse)
 {
   addFace(make_shared<DummyFace>());
 
@@ -328,7 +324,7 @@ BOOST_FIXTURE_TEST_CASE(BadOptionParse, FibManagerFixture)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(UnknownFaceId, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(UnknownFaceId)
 {
   addFace(make_shared<DummyFace>());
 
@@ -360,7 +356,7 @@ BOOST_FIXTURE_TEST_CASE(UnknownFaceId, FibManagerFixture)
   BOOST_REQUIRE(addedNextHopWithCost(fib, "/hello", 0, 101) == false);
 }
 
-BOOST_FIXTURE_TEST_CASE(TestImplicitFaceId, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
 {
   addFace(make_shared<DummyFace>());
 
@@ -402,7 +398,7 @@ BOOST_FIXTURE_TEST_CASE(TestImplicitFaceId, FibManagerFixture)
   BOOST_REQUIRE(addedNextHopWithFace(fib, "/hello", 0, 101, getFace(1)));
 }
 
-BOOST_FIXTURE_TEST_CASE(AddNextHopVerbInitialAdd, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
 {
   addFace(make_shared<DummyFace>());
 
@@ -436,7 +432,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbInitialAdd, FibManagerFixture)
   BOOST_REQUIRE(addedNextHopWithCost(fib, "/hello", 0, 101));
 }
 
-BOOST_FIXTURE_TEST_CASE(AddNextHopVerbAddToExisting, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
 {
   addFace(make_shared<DummyFace>());
 
@@ -490,9 +486,8 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbAddToExisting, FibManagerFixture)
     }
 }
 
-BOOST_FIXTURE_TEST_CASE(AddNextHopVerbUpdateFaceCost, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
 {
-  FibManagerFixture fixture;
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
@@ -568,7 +563,7 @@ BOOST_FIXTURE_TEST_CASE(AddNextHopVerbUpdateFaceCost, FibManagerFixture)
     }
 }
 
-BOOST_FIXTURE_TEST_CASE(Insert, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(Insert)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -666,7 +661,7 @@ testRemove(FibManagerFixture* fixture,
   face->onReceiveData.clear();
 }
 
-BOOST_FIXTURE_TEST_CASE(Delete, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(Delete)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -752,7 +747,7 @@ testRemoveNextHop(FibManagerFixture* fixture,
   face->onReceiveData.clear();
 }
 
-BOOST_FIXTURE_TEST_CASE(RemoveNextHop, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(RemoveNextHop)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
@@ -790,7 +785,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveNextHop, FibManagerFixture)
 
 }
 
-BOOST_FIXTURE_TEST_CASE(RemoveNoFace, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(RemoveNoFace)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
   Fib fib;
@@ -818,7 +813,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveNoFace, FibManagerFixture)
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_FIXTURE_TEST_CASE(RemoveNoPrefix, FibManagerFixture)
+BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
 {
   addFace(make_shared<DummyFace>());
 
@@ -850,4 +845,5 @@ BOOST_FIXTURE_TEST_CASE(RemoveNoPrefix, FibManagerFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

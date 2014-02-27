@@ -10,12 +10,14 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(CoreLogger)
+BOOST_FIXTURE_TEST_SUITE(CoreLogger, BaseFixture)
 
-struct LoggerFixture
+struct LoggerFixture : protected BaseFixture
 {
   LoggerFixture()
     : m_savedBuf(std::cerr.rdbuf())
@@ -151,4 +153,5 @@ BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

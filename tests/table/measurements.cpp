@@ -6,15 +6,15 @@
 
 #include "table/measurements.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(TableMeasurements)
+BOOST_FIXTURE_TEST_SUITE(TableMeasurements, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
-  resetGlobalIoService();
   Measurements measurements;
 
   Name name0;
@@ -38,4 +38,5 @@ BOOST_AUTO_TEST_CASE(Get_Parent)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

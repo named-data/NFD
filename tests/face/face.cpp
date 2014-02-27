@@ -8,11 +8,12 @@
 #include "face/local-face.hpp"
 #include "dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FaceFace)
+BOOST_FIXTURE_TEST_SUITE(FaceFace, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Description)
 {
@@ -52,4 +53,5 @@ BOOST_AUTO_TEST_CASE(Counters)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

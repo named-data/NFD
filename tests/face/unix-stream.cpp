@@ -6,16 +6,16 @@
 
 #include "face/unix-stream-channel-factory.hpp"
 #include "core/scheduler.hpp"
-
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
+
+namespace nfd {
+namespace tests {
 
 using namespace boost::asio::local;
 
-namespace nfd {
-
-BOOST_AUTO_TEST_SUITE(FaceUnixStream)
+BOOST_FIXTURE_TEST_SUITE(FaceUnixStream, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
   BOOST_CHECK_NE(channel1, channel2);
 }
 
-class EndToEndFixture
+class EndToEndFixture : protected BaseFixture
 {
 public:
   void
@@ -444,4 +444,5 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

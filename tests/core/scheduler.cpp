@@ -6,13 +6,14 @@
 
 #include "core/scheduler.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(CoreScheduler)
+BOOST_FIXTURE_TEST_SUITE(CoreScheduler, BaseFixture)
 
-struct SchedulerFixture
+struct SchedulerFixture : protected BaseFixture
 {
   SchedulerFixture()
     : count1(0)
@@ -56,8 +57,6 @@ struct SchedulerFixture
 
 BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
 {
-  resetGlobalIoService();
-
   scheduler::schedule(time::seconds(0.5), bind(&SchedulerFixture::event1, this));
 
   EventId i = scheduler::schedule(time::seconds(1.0), bind(&SchedulerFixture::event2, this));
@@ -72,7 +71,7 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
   i = scheduler::getGlobalScheduler().schedulePeriodicEvent(time::seconds(0.3), time::seconds(0.1), bind(&SchedulerFixture::event4, this));
   scheduler::schedule(time::seconds(1), bind(&scheduler::cancel, i));
 
-  getGlobalIoService().run();
+  g_io.run();
 
   BOOST_CHECK_EQUAL(count1, 1);
   BOOST_CHECK_EQUAL(count2, 0);
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
   scheduler::cancel(i);
 }
 
-struct SelfCancelFixture
+struct SelfCancelFixture : protected BaseFixture
 {
   void
   cancelSelf()
@@ -99,14 +98,13 @@ struct SelfCancelFixture
 
 BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
 {
-  resetGlobalIoService();
-
   m_selfEventId = scheduler::schedule(time::seconds(0.1),
                                       bind(&SelfCancelFixture::cancelSelf, this));
 
-  BOOST_REQUIRE_NO_THROW(getGlobalIoService().run());
+  BOOST_REQUIRE_NO_THROW(g_io.run());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

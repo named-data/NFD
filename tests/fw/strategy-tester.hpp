@@ -11,6 +11,7 @@
 #include "fw/strategy.hpp"
 
 namespace nfd {
+namespace tests {
 
 /** \class StrategyTester
  *  \brief extends strategy S for unit testing
@@ -64,7 +65,7 @@ StrategyTester<S>::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
   onAction();
 }
 
-
+} // namespace tests
 } // namespace nfd
 
 #endif // TEST_FW_STRATEGY_TESTER_HPP

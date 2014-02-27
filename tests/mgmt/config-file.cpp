@@ -7,13 +7,14 @@
 
 #include "mgmt/config-file.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 NFD_LOG_INIT("ConfigFileTest");
 
-BOOST_AUTO_TEST_SUITE(MgmtConfigFile)
+BOOST_FIXTURE_TEST_SUITE(MgmtConfigFile, BaseFixture)
 
 // a
 // {
@@ -342,6 +343,7 @@ BOOST_AUTO_TEST_CASE(OnConfigCoveredByPartialSubscribers)
   BOOST_CHECK(subB.allCallbacksFired());
 }
 
-} // namespace nfd
-
 BOOST_AUTO_TEST_SUITE_END()
+
+} // namespace tests
+} // namespace nfd

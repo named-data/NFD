@@ -10,6 +10,7 @@
 #include "core/scheduler.hpp"
 
 namespace nfd {
+namespace tests {
 
 class LimitedIo
 {
@@ -44,6 +45,7 @@ private:
   StopReason m_reason;
 };
 
+} // namespace tests
 } // namespace nfd
 
 #endif // NFD_TEST_CORE_LIMITED_IO_HPP

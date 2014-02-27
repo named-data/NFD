@@ -8,11 +8,12 @@
 #include "face/ndnlp-slicer.hpp"
 #include "face/ndnlp-partial-message-store.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FaceNdnlp)
+BOOST_FIXTURE_TEST_SUITE(FaceNdnlp, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(SequenceBlock)
 {
@@ -129,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Slice4)
   BOOST_CHECK_EQUAL(totalPayloadSize, block.size());
 }
 
-class ReassembleFixture
+class ReassembleFixture : protected BaseFixture
 {
 protected:
   ReassembleFixture()
@@ -210,4 +211,5 @@ BOOST_FIXTURE_TEST_CASE(Reassemble4and2, ReassembleFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

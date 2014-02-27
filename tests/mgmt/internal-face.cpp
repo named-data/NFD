@@ -5,15 +5,16 @@
  */
 
 #include "mgmt/internal-face.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 NFD_LOG_INIT("InternalFaceTest");
 
-class InternalFaceFixture
+class InternalFaceFixture : protected BaseFixture
 {
 public:
 
@@ -72,7 +73,7 @@ private:
   bool m_noOnInterestFired;
 };
 
-BOOST_AUTO_TEST_SUITE(MgmtInternalFace)
+BOOST_FIXTURE_TEST_SUITE(MgmtInternalFace, InternalFaceFixture)
 
 void
 validatePutData(bool& called, const Name& expectedName, const Data& data)
@@ -81,7 +82,7 @@ validatePutData(bool& called, const Name& expectedName, const Data& data)
   BOOST_CHECK_EQUAL(expectedName, data.getName());
 }
 
-BOOST_FIXTURE_TEST_CASE(PutData, InternalFaceFixture)
+BOOST_AUTO_TEST_CASE(PutData)
 {
   addFace(make_shared<DummyFace>());
 
@@ -100,7 +101,7 @@ BOOST_FIXTURE_TEST_CASE(PutData, InternalFaceFixture)
   BOOST_CHECK_THROW(face->close(), InternalFace::Error);
 }
 
-BOOST_FIXTURE_TEST_CASE(SendInterestHitEnd, InternalFaceFixture)
+BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
 {
   addFace(make_shared<DummyFace>());
 
@@ -122,9 +123,7 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitEnd, InternalFaceFixture)
   BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
-
-
-BOOST_FIXTURE_TEST_CASE(SendInterestHitBegin, InternalFaceFixture)
+BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
 {
   addFace(make_shared<DummyFace>());
 
@@ -145,9 +144,7 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitBegin, InternalFaceFixture)
   BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
-
-
-BOOST_FIXTURE_TEST_CASE(SendInterestHitExact, InternalFaceFixture)
+BOOST_AUTO_TEST_CASE(SendInterestHitExact)
 {
   addFace(make_shared<DummyFace>());
 
@@ -176,9 +173,7 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitExact, InternalFaceFixture)
   BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
 
-
-
-BOOST_FIXTURE_TEST_CASE(SendInterestHitPrevious, InternalFaceFixture)
+BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
 {
   addFace(make_shared<DummyFace>());
 
@@ -205,4 +200,5 @@ BOOST_FIXTURE_TEST_CASE(SendInterestHitPrevious, InternalFaceFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

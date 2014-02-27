@@ -5,20 +5,17 @@
  */
 
 #include "mgmt/local-control-header-manager.hpp"
-#include "face/face.hpp"
-#include "face/local-face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <algorithm>
-
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 NFD_LOG_INIT("LocalControlHeaderManagerTest");
 
-class LocalControlHeaderManagerFixture
+class LocalControlHeaderManagerFixture : protected BaseFixture
 {
 public:
 
@@ -31,9 +28,9 @@ public:
   shared_ptr<Face>
   getFace(FaceId id)
   {
-    if (id > 0 && id <= m_faces.size())
+    if (id > 0 && static_cast<size_t>(id) <= m_faces.size())
       {
-        return m_faces[id-1];
+        return m_faces[id - 1];
       }
     NFD_LOG_DEBUG("No face found returning NULL");
     return shared_ptr<DummyFace>();
@@ -90,10 +87,9 @@ private:
   bool m_callbackFired;
 };
 
+BOOST_FIXTURE_TEST_SUITE(MgmtLocalControlHeaderManager, LocalControlHeaderManagerFixture)
 
-BOOST_AUTO_TEST_SUITE(MgmtLocalControlHeaderManager)
-
-BOOST_FIXTURE_TEST_CASE(InFaceId, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(InFaceId)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -135,7 +131,7 @@ BOOST_FIXTURE_TEST_CASE(InFaceId, LocalControlHeaderManagerFixture)
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(NextHopFaceId, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(NextHopFaceId)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -178,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE(NextHopFaceId, LocalControlHeaderManagerFixture)
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(ShortCommand, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(ShortCommand)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -203,7 +199,7 @@ BOOST_FIXTURE_TEST_CASE(ShortCommand, LocalControlHeaderManagerFixture)
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(ShortCommandModule, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(ShortCommandModule)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -228,7 +224,7 @@ BOOST_FIXTURE_TEST_CASE(ShortCommandModule, LocalControlHeaderManagerFixture)
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(UnsupportedModule, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(UnsupportedModule)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -253,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE(UnsupportedModule, LocalControlHeaderManagerFixture)
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(InFaceIdUnsupportedVerb, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(InFaceIdUnsupportedVerb)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -278,7 +274,7 @@ BOOST_FIXTURE_TEST_CASE(InFaceIdUnsupportedVerb, LocalControlHeaderManagerFixtur
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
 }
 
-BOOST_FIXTURE_TEST_CASE(NextHopFaceIdUnsupportedVerb, LocalControlHeaderManagerFixture)
+BOOST_AUTO_TEST_CASE(NextHopFaceIdUnsupportedVerb)
 {
   shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
   addFace(dummy);
@@ -305,4 +301,5 @@ BOOST_FIXTURE_TEST_CASE(NextHopFaceIdUnsupportedVerb, LocalControlHeaderManagerF
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

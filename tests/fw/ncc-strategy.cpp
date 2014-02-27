@@ -6,14 +6,15 @@
 
 #include "fw/ncc-strategy.hpp"
 #include "strategy-tester.hpp"
-#include "../face/dummy-face.hpp"
-#include "../core/limited-io.hpp"
+#include "tests/face/dummy-face.hpp"
+#include "tests/core/limited-io.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FwNccStrategy)
+BOOST_FIXTURE_TEST_SUITE(FwNccStrategy, BaseFixture)
 
 // NccStrategy is fairly complex.
 // The most important property is:
@@ -84,4 +85,5 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

@@ -7,15 +7,14 @@
 #include "mgmt/manager-base.hpp"
 #include "mgmt/internal-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 NFD_LOG_INIT("ManagerBaseTest");
 
-BOOST_AUTO_TEST_SUITE(MgmtManagerBase)
-
-class ManagerBaseTest : public ManagerBase
+class ManagerBaseTest : public ManagerBase, protected BaseFixture
 {
 
 public:
@@ -90,7 +89,9 @@ private:
 
 };
 
-BOOST_FIXTURE_TEST_CASE(SetResponse, ManagerBaseTest)
+BOOST_FIXTURE_TEST_SUITE(MgmtManagerBase, ManagerBaseTest)
+
+BOOST_AUTO_TEST_CASE(SetResponse)
 {
   ControlResponse response(200, "OK");
 
@@ -104,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE(SetResponse, ManagerBaseTest)
 }
 
 
-BOOST_FIXTURE_TEST_CASE(SendResponse3Arg, ManagerBaseTest)
+BOOST_AUTO_TEST_CASE(SendResponse3Arg)
 {
   getInternalFace()->onReceiveData +=
     bind(&ManagerBaseTest::validateControlResponse, this, _1,
@@ -115,7 +116,7 @@ BOOST_FIXTURE_TEST_CASE(SendResponse3Arg, ManagerBaseTest)
 }
 
 
-BOOST_FIXTURE_TEST_CASE(SendResponse2Arg, ManagerBaseTest)
+BOOST_AUTO_TEST_CASE(SendResponse2Arg)
 {
   getInternalFace()->onReceiveData +=
     bind(&ManagerBaseTest::validateControlResponse, this, _1,
@@ -129,11 +130,5 @@ BOOST_FIXTURE_TEST_CASE(SendResponse2Arg, ManagerBaseTest)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd
-
-
-
-
-
-
-

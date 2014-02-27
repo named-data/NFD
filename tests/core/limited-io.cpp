@@ -7,6 +7,7 @@
 #include "limited-io.hpp"
 
 namespace nfd {
+namespace tests {
 
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::Duration LimitedIo::UNLIMITED_TIME = time::nanoseconds(-1);
@@ -15,7 +16,6 @@ LimitedIo::LimitedIo()
   : m_isRunning(false)
   , m_nOpsRemaining(0)
 {
-  resetGlobalIoService();
 }
 
 LimitedIo::StopReason
@@ -55,4 +55,5 @@ LimitedIo::afterTimeout()
   getGlobalIoService().stop();
 }
 
+} // namespace tests
 } // namespace nfd

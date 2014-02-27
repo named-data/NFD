@@ -6,9 +6,10 @@
 
 #include "table/strategy-info-host.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 static int g_DummyStrategyInfo_count = 0;
 
@@ -29,7 +30,7 @@ public:
   int m_id;
 };
 
-BOOST_AUTO_TEST_SUITE(TableStrategyInfoHost)
+BOOST_FIXTURE_TEST_SUITE(TableStrategyInfoHost, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(SetGetClear)
 {
@@ -56,4 +57,5 @@ BOOST_AUTO_TEST_CASE(SetGetClear)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

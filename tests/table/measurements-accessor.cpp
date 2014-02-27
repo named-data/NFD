@@ -7,11 +7,12 @@
 #include "table/measurements-accessor.hpp"
 #include "fw/forwarder.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(TableMeasurementsAccessor)
+BOOST_FIXTURE_TEST_SUITE(TableMeasurementsAccessor, BaseFixture)
 
 class MeasurementsAccessorTestStrategy : public fw::Strategy
 {
@@ -47,7 +48,6 @@ public: // accessors
 
 BOOST_AUTO_TEST_CASE(Access)
 {
-  resetGlobalIoService();
   Forwarder forwarder;
 
   shared_ptr<MeasurementsAccessorTestStrategy> strategy1 =
@@ -87,4 +87,5 @@ BOOST_AUTO_TEST_CASE(Access)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

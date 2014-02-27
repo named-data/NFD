@@ -6,14 +6,14 @@
 
 #include "face/tcp-channel-factory.hpp"
 #include "core/scheduler.hpp"
-
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(FaceTcp)
+BOOST_FIXTURE_TEST_SUITE(FaceTcp, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
   BOOST_CHECK_NE(channel1, channel2);
 }
 
-class EndToEndFixture
+class EndToEndFixture : protected BaseFixture
 {
 public:
   void
@@ -373,4 +373,5 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

@@ -26,12 +26,12 @@ NextHop::getFace() const
 }
 
 void
-NextHop::setCost(int32_t cost)
+NextHop::setCost(uint32_t cost)
 {
   m_cost = cost;
 }
 
-int32_t
+uint32_t
 NextHop::getCost() const
 {
   return m_cost;

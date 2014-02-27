@@ -5,13 +5,14 @@
  */
 
 #include "table/pit.hpp"
-#include "../face/dummy-face.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-BOOST_AUTO_TEST_SUITE(TablePit)
+BOOST_FIXTURE_TEST_SUITE(TablePit, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
@@ -288,4 +289,5 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd

@@ -11,6 +11,7 @@
 #include "face/local-face.hpp"
 
 namespace nfd {
+namespace tests {
 
 /** \class DummyFace
  *  \brief a Face for unit testing
@@ -50,11 +51,7 @@ public:
     this->onReceiveData(data);
   }
 
-protected:
-  virtual void
-  afterSend()
-  {
-  }
+  EventEmitter<> afterSend;
 
 public:
   std::vector<Interest> m_sentInterests;
@@ -64,6 +61,7 @@ public:
 typedef DummyFaceImpl<Face> DummyFace;
 typedef DummyFaceImpl<LocalFace> DummyLocalFace;
 
+} // namespace tests
 } // namespace nfd
 
 #endif // TEST_FACE_DUMMY_FACE_HPP

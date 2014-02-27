@@ -5,15 +5,17 @@
  */
 
 #include "table/name-tree.hpp"
-#include <boost/test/unit_test.hpp>
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
 using name_tree::Entry;
 
-BOOST_AUTO_TEST_SUITE(TableNameTree)
+BOOST_FIXTURE_TEST_SUITE(TableNameTree, BaseFixture)
 
-BOOST_AUTO_TEST_CASE (Entry)
+BOOST_AUTO_TEST_CASE(Entry)
 {
   Name prefix("ndn:/named-data/research/abc/def/ghi");
 
@@ -99,7 +101,7 @@ BOOST_AUTO_TEST_CASE (Entry)
   erasePitEntry(PitEntry2), false);
 }
 
-BOOST_AUTO_TEST_CASE (NameTreeBasic)
+BOOST_AUTO_TEST_CASE(NameTreeBasic)
 {
   size_t nBuckets = 16;
   NameTree nt(nBuckets);
@@ -266,6 +268,5 @@ BOOST_AUTO_TEST_CASE (NameTreeBasic)
 
 BOOST_AUTO_TEST_SUITE_END()
 
+} // namespace tests
 } // namespace nfd
-
-

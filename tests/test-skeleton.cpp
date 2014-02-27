@@ -4,11 +4,19 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include <boost/test/unit_test.hpp>
+// #include "unit-under-test.hpp"
+// Unit being tested MUST be included first, to ensure header compiles on its own.
 
-BOOST_AUTO_TEST_SUITE(TestSkeleton)
+#include "tests/test-common.hpp"
 
-BOOST_AUTO_TEST_CASE (Test1)
+namespace nfd {
+namespace tests {
+// Unit tests SHOULD go inside nfd::tests namespace.
+
+// Test suite SHOULD use BaseFixture or a subclass of it.
+BOOST_FIXTURE_TEST_SUITE(TestSkeleton, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(Test1)
 {
   int i = 0;
   /**
@@ -19,4 +27,19 @@ BOOST_AUTO_TEST_CASE (Test1)
   BOOST_REQUIRE_EQUAL(i, 1);
 }
 
+// Custom fixture SHOULD derive from BaseFixture.
+class Test2Fixture : protected BaseFixture
+{
+};
+
+BOOST_FIXTURE_TEST_CASE(Test2, Test2Fixture)
+{
+  // g_io is a shorthand of getGlobalIoService()
+  // resetGlobalIoService() is automatically called after each test case
+  g_io.run();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
+
+} // namespace tests
+} // namespace nfd
