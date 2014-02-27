@@ -171,7 +171,7 @@ onFaceError(const std::string& reason)
 void
 initializeTcp()
 {
-  g_tcpFactory = new TcpChannelFactory(getGlobalIoService());
+  g_tcpFactory = new TcpChannelFactory();
   g_tcpChannel = g_tcpFactory->create(g_options.m_tcpListen.first,
                                       g_options.m_tcpListen.second);
   g_tcpChannel->listen(
@@ -190,7 +190,7 @@ initializeTcp()
 void
 initializeUnix()
 {
-  g_unixFactory = new UnixStreamChannelFactory(getGlobalIoService());
+  g_unixFactory = new UnixStreamChannelFactory();
   g_unixChannel = g_unixFactory->create(g_options.m_unixListen);
 
   g_unixChannel->listen(

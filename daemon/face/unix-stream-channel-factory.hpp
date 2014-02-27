@@ -12,22 +12,19 @@
 
 namespace nfd {
 
-class UnixStreamChannelFactory : public ChannelFactory<unix_stream::Endpoint, UnixStreamChannel>
+class UnixStreamChannelFactory : public ChannelFactory
 {
 public:
   /**
    * \brief Exception of UnixStreamChannelFactory
    */
-  struct Error : public ChannelFactory<unix_stream::Endpoint, UnixStreamChannel>::Error
+  struct Error : public ChannelFactory::Error
   {
-    Error(const std::string& what)
-      : ChannelFactory<unix_stream::Endpoint, UnixStreamChannel>::Error(what)
-    {
-    }
+    Error(const std::string& what) : ChannelFactory::Error(what) {}
   };
 
   explicit
-  UnixStreamChannelFactory(boost::asio::io_service& ioService);
+  UnixStreamChannelFactory();
 
   /**
    * \brief Create stream-oriented Unix channel using specified socket path
@@ -57,7 +54,8 @@ private:
   find(const unix_stream::Endpoint& endpoint);
 
 private:
-  boost::asio::io_service& m_ioService;
+  typedef std::map< unix_stream::Endpoint, shared_ptr<UnixStreamChannel> > ChannelMap;
+  ChannelMap m_channels;
 };
 
 } // namespace nfd

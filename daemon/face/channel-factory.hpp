@@ -11,16 +11,9 @@
 
 namespace nfd {
 
-/**
- * \brief Base class for all channel factories
- */
-template<class E, class C>
 class ChannelFactory
 {
 public:
-  typedef E Endpoint;
-  typedef C Channel;
-  
   /**
    * \brief Base class for all exceptions thrown by channel factories
    */
@@ -29,9 +22,6 @@ public:
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-protected:
-  typedef std::map< Endpoint, shared_ptr<Channel> > ChannelMap;
-  ChannelMap m_channels;  
 };
 
 } // namespace nfd

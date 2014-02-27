@@ -12,22 +12,16 @@
 
 namespace nfd {
 
-class TcpChannelFactory : public ChannelFactory<tcp::Endpoint, TcpChannel>
+class TcpChannelFactory : public ChannelFactory
 {
 public:
   /**
    * \brief Exception of TcpChannelFactory
    */
-  struct Error : public ChannelFactory<tcp::Endpoint, TcpChannel>::Error
+  struct Error : public ChannelFactory::Error
   {
-    Error(const std::string& what)
-      : ChannelFactory<tcp::Endpoint, TcpChannel>::Error(what)
-    {
-    }
+    Error(const std::string& what) : ChannelFactory::Error(what) {}
   };
-
-  explicit
-  TcpChannelFactory(boost::asio::io_service& ioService);
 
   /**
    * \brief Create TCP-based channel using tcp::Endpoint
@@ -67,7 +61,7 @@ private:
    * \brief Look up TcpChannel using specified local endpoint
    *
    * \returns shared pointer to the existing TcpChannel object
-   *          or empty shared pointer when such channel does not exist 
+   *          or empty shared pointer when such channel does not exist
    *
    * \throws never
    */
@@ -75,7 +69,8 @@ private:
   find(const tcp::Endpoint& localEndpoint);
 
 private:
-  boost::asio::io_service& m_ioService;
+  typedef std::map< tcp::Endpoint, shared_ptr<TcpChannel> > ChannelMap;
+  ChannelMap m_channels;
 };
 
 } // namespace nfd

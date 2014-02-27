@@ -8,18 +8,19 @@
 #define NFD_FACE_ETHERNET_CHANNEL_FACTORY_HPP
 
 #include "ethernet-face.hpp"
+#include "channel-factory.hpp"
 
 namespace nfd {
 
-class EthernetChannelFactory
+class EthernetChannelFactory : public ChannelFactory
 {
 public:
   /**
    * \brief Exception of EthernetChannelFactory
    */
-  struct Error : public std::runtime_error
+  struct Error : public ChannelFactory::Error
   {
-    Error(const std::string& what) : std::runtime_error(what) {}
+    Error(const std::string& what) : ChannelFactory::Error(what) {}
   };
 
   /**

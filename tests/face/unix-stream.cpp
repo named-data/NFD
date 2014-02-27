@@ -19,8 +19,7 @@ BOOST_FIXTURE_TEST_SUITE(FaceUnixStream, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
-  boost::asio::io_service io;
-  UnixStreamChannelFactory factory(io);
+  UnixStreamChannelFactory factory;
 
   shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
   shared_ptr<UnixStreamChannel> channel1a = factory.create("foo");
@@ -113,7 +112,7 @@ public:
   void
   abortTestCase(const std::string& message)
   {
-    m_ioService.stop();
+    g_io.stop();
     BOOST_FAIL(message);
   }
 
@@ -122,12 +121,10 @@ private:
   afterIo()
   {
     if (--m_ioRemaining <= 0)
-      m_ioService.stop();
+      g_io.stop();
   }
 
 protected:
-  boost::asio::io_service m_ioService;
-
   int m_ioRemaining;
 
   shared_ptr<UnixStreamFace> m_face1;
@@ -143,34 +140,33 @@ protected:
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory(m_ioService);
-  Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
+  UnixStreamChannelFactory factory;
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot connect or cannot accept connection"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
   shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client =
-      make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+      make_shared<stream_protocol::socket>(boost::ref(g_io));
   client->async_connect(stream_protocol::endpoint("foo"),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
-  scheduler.cancelEvent(abortEvent);
+  g_io.run();
+  g_io.reset();
+  scheduler::cancel(abortEvent);
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
 
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
 
   m_face2 = make_shared<UnixStreamFace>(client);
   m_face2->onReceiveInterest +=
@@ -198,8 +194,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   m_face2->sendData    (data2    );
 
   m_ioRemaining = 4;
-  m_ioService.run();
-  m_ioService.reset();
+  g_io.run();
+  g_io.reset();
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
@@ -214,44 +210,43 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory(m_ioService);
-  Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
+  UnixStreamChannelFactory factory;
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot connect or cannot accept connection"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
   shared_ptr<UnixStreamChannel> channel = factory.create("foo");
   channel->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client1 =
-      make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+      make_shared<stream_protocol::socket>(boost::ref(g_io));
   client1->async_connect(stream_protocol::endpoint("foo"),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
-  scheduler.cancelEvent(abortEvent);
+  g_io.run();
+  g_io.reset();
+  scheduler::cancel(abortEvent);
 
   BOOST_CHECK_EQUAL(m_faces.size(), 1);
 
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot accept multiple connections"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot accept multiple connections"));
 
   shared_ptr<stream_protocol::socket> client2 =
-      make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+      make_shared<stream_protocol::socket>(boost::ref(g_io));
   client2->async_connect(stream_protocol::endpoint("foo"),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
-  scheduler.cancelEvent(abortEvent);
+  g_io.run();
+  g_io.reset();
+  scheduler::cancel(abortEvent);
 
   BOOST_CHECK_EQUAL(m_faces.size(), 2);
 
@@ -272,9 +267,9 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
       bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");
@@ -296,8 +291,8 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   m_face2->sendData    (data2    );
 
   m_ioRemaining = 4;
-  m_ioService.run();
-  m_ioService.reset();
+  g_io.run();
+  g_io.reset();
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
@@ -317,34 +312,33 @@ noOp()
 
 BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory(m_ioService);
-  Scheduler scheduler(m_ioService); // to limit the amount of time the test may take
+  UnixStreamChannelFactory factory;
 
   EventId abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot connect or cannot accept connection"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
   shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client =
-      make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+      make_shared<stream_protocol::socket>(boost::ref(g_io));
   client->async_connect(stream_protocol::endpoint("foo"),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
-  scheduler.cancelEvent(abortEvent);
+  g_io.run();
+  g_io.reset();
+  scheduler::cancel(abortEvent);
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
 
   abortEvent =
-    scheduler.scheduleEvent(time::seconds(1),
-                            bind(&EndToEndFixture::abortTestCase, this,
-                                 "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
+    scheduler::schedule(time::seconds(1),
+                        bind(&EndToEndFixture::abortTestCase, this,
+                             "UnixStreamChannel error: cannot send or receive Interest/Data packets"));
 
   m_face2 = make_shared<UnixStreamFace>(client);
   m_face2->onReceiveInterest +=
@@ -393,8 +387,8 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   //
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
+  g_io.run();
+  g_io.reset();
 
   BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
@@ -428,8 +422,8 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   client->async_send(dataWithHeader, bind(&noOp));
 
   m_ioRemaining = 2;
-  m_ioService.run();
-  m_ioService.reset();
+  g_io.run();
+  g_io.reset();
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);

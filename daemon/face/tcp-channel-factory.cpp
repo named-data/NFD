@@ -5,13 +5,9 @@
  */
 
 #include "tcp-channel-factory.hpp"
+#include "core/global-io.hpp"
 
 namespace nfd {
-
-TcpChannelFactory::TcpChannelFactory(boost::asio::io_service& ioService)
-  : m_ioService(ioService)
-{
-}
 
 shared_ptr<TcpChannel>
 TcpChannelFactory::create(const tcp::Endpoint& endpoint)
@@ -20,7 +16,7 @@ TcpChannelFactory::create(const tcp::Endpoint& endpoint)
   if(static_cast<bool>(channel))
     return channel;
 
-  channel = make_shared<TcpChannel>(boost::ref(m_ioService), boost::cref(endpoint));
+  channel = make_shared<TcpChannel>(boost::ref(getGlobalIoService()), boost::cref(endpoint));
   m_channels[endpoint] = channel;
   return channel;
 }
@@ -29,11 +25,9 @@ shared_ptr<TcpChannel>
 TcpChannelFactory::create(const std::string& localHost, const std::string& localPort)
 {
   using boost::asio::ip::tcp;
-  
+
   tcp::resolver::query query(localHost, localPort);
-  // shared_ptr<tcp::resolver> resolver =
-  //   make_shared<tcp::resolver>(boost::ref(m_ioService));
-  tcp::resolver resolver(m_ioService);
+  tcp::resolver resolver(getGlobalIoService());
 
   tcp::resolver::iterator end;
   tcp::resolver::iterator i = resolver.resolve(query);
