@@ -9,6 +9,7 @@
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
+#include "mgmt/local-control-header-manager.hpp"
 #include "face/tcp-channel-factory.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -41,6 +42,7 @@ struct ProgramOptions
 static ProgramOptions g_options;
 static Forwarder* g_forwarder;
 static FibManager* g_fibManager;
+static LocalControlHeaderManager* g_localControlHeaderManager;
 static TcpChannelFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
@@ -207,7 +209,11 @@ initializeMgmt()
                                 bind(&Forwarder::getFace, g_forwarder, _1),
                                 g_internalFace);
 
-  shared_ptr<fib::Entry> entry = g_forwarder->getFib().insert("/localhost/nfd/fib").first;
+  g_localControlHeaderManager =
+    new LocalControlHeaderManager(bind(&Forwarder::getFace, g_forwarder, _1),
+                                  g_internalFace);
+
+  shared_ptr<fib::Entry> entry = g_forwarder->getFib().insert("/localhost/nfd").first;
   entry->addNextHop(g_internalFace, 0);
 }
 
