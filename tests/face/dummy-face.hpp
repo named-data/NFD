@@ -13,8 +13,7 @@
 namespace nfd {
 
 /** \class DummyFace
- *  \brief provides a Face that cannot communicate
- *  for unit testing only
+ *  \brief a Face for unit testing
  */
 template<class FaceBase>
 class DummyFaceImpl : public FaceBase
@@ -23,11 +22,15 @@ public:
   virtual void
   sendInterest(const Interest& interest)
   {
+    m_sentInterests.push_back(interest);
+    this->afterSend();
   }
-  
+
   virtual void
   sendData(const Data& data)
   {
+    m_sentDatas.push_back(data);
+    this->afterSend();
   }
 
   virtual void
@@ -35,7 +38,27 @@ public:
   {
   }
 
-private:
+  void
+  receiveInterest(const Interest& interest)
+  {
+    this->onReceiveInterest(interest);
+  }
+
+  void
+  receiveData(const Data& data)
+  {
+    this->onReceiveData(data);
+  }
+
+protected:
+  virtual void
+  afterSend()
+  {
+  }
+
+public:
+  std::vector<Interest> m_sentInterests;
+  std::vector<Data> m_sentDatas;
 };
 
 typedef DummyFaceImpl<Face> DummyFace;

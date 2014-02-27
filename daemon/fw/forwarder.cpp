@@ -117,8 +117,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   }
 
   // insert InRecord
-  pit::InRecordCollection::iterator inRecordIt =
-    pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
+  pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
 
   // app chosen nexthops
   bool isAppChosenNexthops = false; // TODO get from local control header
@@ -150,13 +149,21 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
 {
   NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() << " interest=" << pitEntry->getName());
 
+  // /localhost scope control
+  bool violatesLocalhost = !outFace.isLocal() &&
+                           s_localhostName.isPrefixOf(pitEntry->getName());
+  if (violatesLocalhost) {
+    NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId()
+      << " interest=" << pitEntry->getName() << " violates /localhost");
+    return;
+  }
+
   // pick Interest
   const Interest& interest = pitEntry->getInterest();
   // TODO pick the last incoming Interest
 
   // insert OutRecord
-  pit::OutRecordCollection::iterator outRecordIt =
-    pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), interest);
+  pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), interest);
 
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
@@ -198,7 +205,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
                            s_localhostName.isPrefixOf(data.getName());
   if (violatesLocalhost) {
     NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId()
-      << " interest=" << data.getName() << " violates /localhost");
+      << " data=" << data.getName() << " violates /localhost");
     return;
   }
 
@@ -268,6 +275,15 @@ void
 Forwarder::onOutgoingData(const Data& data, Face& outFace)
 {
   NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << data.getName());
+
+  // /localhost scope control
+  bool violatesLocalhost = !outFace.isLocal() &&
+                           s_localhostName.isPrefixOf(data.getName());
+  if (violatesLocalhost) {
+    NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId()
+      << " data=" << data.getName() << " violates /localhost");
+    return;
+  }
 
   // traffic manager
   // pass through
