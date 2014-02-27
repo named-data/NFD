@@ -7,7 +7,9 @@
 #ifndef NFD_TABLE_PIT_HPP
 #define NFD_TABLE_PIT_HPP
 
+#include "name-tree.hpp"
 #include "pit-entry.hpp"
+
 namespace nfd {
 namespace pit {
 
@@ -27,9 +29,16 @@ typedef std::vector<shared_ptr<pit::Entry> > DataMatchResult;
 class Pit : noncopyable
 {
 public:
-  Pit();
-  
+  explicit
+  Pit(NameTree& nameTree);
+   
   ~Pit();
+
+  /** 
+   *  \brief Get the number of items stored in the PIT.
+   */
+  size_t 
+  size() const;
   
   /** \brief inserts a FIB entry for prefix
    *  If an entry for exact same prefix exists, that entry is returned.
@@ -43,14 +52,23 @@ public:
    */
   shared_ptr<pit::DataMatchResult>
   findAllDataMatches(const Data& data) const;
-  
-  /// removes a PIT entry
+    
+  /**
+   *  \brief Erase a PIT Entry
+   */  
   void
-  remove(shared_ptr<pit::Entry> pitEntry);
+  erase(shared_ptr<pit::Entry> pitEntry);
 
 private:
-  std::list<shared_ptr<pit::Entry> > m_table;
+  NameTree& m_nameTree;
+  size_t m_nItems;
 };
+
+inline size_t
+Pit::size() const
+{
+  return m_nItems;
+}
 
 } // namespace nfd
 

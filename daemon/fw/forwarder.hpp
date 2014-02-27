@@ -117,7 +117,8 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 private:
   FaceId m_lastFaceId;
   std::map<FaceId, shared_ptr<Face> > m_faces;
-
+  
+  NameTree     m_nameTree;
   Fib          m_fib;
   Pit          m_pit;
   Cs           m_cs;

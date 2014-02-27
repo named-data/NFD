@@ -16,6 +16,8 @@ const Name Forwarder::s_localhostName("ndn:/localhost");
 
 Forwarder::Forwarder()
   : m_lastFaceId(0)
+  , m_nameTree(1024) // "1024" could be made as one configurable parameter of the forwarder.
+  , m_pit(m_nameTree)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }
@@ -189,8 +191,8 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
   // invoke PIT unsatisfied callback
   // TODO
 
-  // PIT delete
-  m_pit.remove(pitEntry);
+  // PIT erase
+  m_pit.erase(pitEntry);
 }
 
 void
@@ -322,7 +324,7 @@ Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
   time::Duration stragglerTime = time::milliseconds(100);
 
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
-    bind(&Pit::remove, &m_pit, pitEntry));
+    bind(&Pit::erase, &m_pit, pitEntry));
 }
 
 void

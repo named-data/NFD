@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   
   BOOST_CHECK(entry.getInterest().getName().equals(name));
   BOOST_CHECK(entry.getName().equals(name));
-  
+
   const pit::InRecordCollection& inRecords1 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords1.size(), 0);
   const pit::OutRecordCollection& outRecords1 = entry.getOutRecords();
@@ -157,62 +157,86 @@ BOOST_AUTO_TEST_CASE(Insert)
   // different Name+exclude1
   Interest interestK(name2, -1, -1, exclude1, -1, false, -1, -1.0, 0);
   
-  Pit pit;
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
   std::pair<shared_ptr<pit::Entry>, bool> insertResult;
   
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
   insertResult = pit.insert(interestA);
   BOOST_CHECK_EQUAL(insertResult.second, true);
-  
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+
   insertResult = pit.insert(interestB);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 2);
   
   insertResult = pit.insert(interestC);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 3);
   
   insertResult = pit.insert(interestD);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 4);
   
   insertResult = pit.insert(interestE);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 5);
   
   insertResult = pit.insert(interestF);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 6);
   
   insertResult = pit.insert(interestG);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 7);
+
   
   insertResult = pit.insert(interestH);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
-  
+  BOOST_CHECK_EQUAL(pit.size(), 7);
+
   insertResult = pit.insert(interestI);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
+  BOOST_CHECK_EQUAL(pit.size(), 7);
   
   insertResult = pit.insert(interestJ);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
+  BOOST_CHECK_EQUAL(pit.size(), 7);
   
   insertResult = pit.insert(interestK);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 8);
 }
 
-BOOST_AUTO_TEST_CASE(Remove)
+BOOST_AUTO_TEST_CASE(Erase)
 {
   Interest interest(Name("ndn:/z88Admz6A2"));
 
-  Pit pit;
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
   std::pair<shared_ptr<pit::Entry>, bool> insertResult;
   
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
   insertResult = pit.insert(interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
 
   insertResult = pit.insert(interest);
   BOOST_CHECK_EQUAL(insertResult.second, false);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
   
-  pit.remove(insertResult.first);
+  pit.erase(insertResult.first);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
 
   insertResult = pit.insert(interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
-}
+  BOOST_CHECK_EQUAL(pit.size(), 1);
 
+}
 
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 {
@@ -224,11 +248,17 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   Interest interestAB(nameAB);
   Interest interestD (nameD );
 
-  Pit pit;
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+  
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
   pit.insert(interestA );
   pit.insert(interestAB);
   pit.insert(interestD );
   
+  BOOST_CHECK_EQUAL(pit.size(), 3);
+
   Data data(nameABC);
   
   shared_ptr<pit::DataMatchResult> matches = pit.findAllDataMatches(data);
