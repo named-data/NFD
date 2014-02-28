@@ -15,8 +15,8 @@ namespace nfd {
 NFD_LOG_INIT("EthernetFactory")
 
 shared_ptr<EthernetFace>
-EthernetFactory::createMulticast(const ethernet::Endpoint& interface,
-                                 const ethernet::Address& address)
+EthernetFactory::createMulticastFace(const ethernet::Endpoint& interface,
+                                     const ethernet::Address& address)
 {
   std::vector<ethernet::Endpoint> ifs = findAllInterfaces();
   if (std::find(ifs.begin(), ifs.end(), interface) == ifs.end())
@@ -25,7 +25,7 @@ EthernetFactory::createMulticast(const ethernet::Endpoint& interface,
   if (!address.isMulticast())
     throw Error(address.toString() + " is not a multicast address");
 
-  shared_ptr<EthernetFace> face = findMulticast(interface, address);
+  shared_ptr<EthernetFace> face = findMulticastFace(interface, address);
   if (face)
     return face;
 
@@ -92,14 +92,22 @@ EthernetFactory::afterFaceFailed(const ethernet::Endpoint& interface,
 }
 
 shared_ptr<EthernetFace>
-EthernetFactory::findMulticast(const ethernet::Endpoint& interface,
-                               const ethernet::Address& address) const
+EthernetFactory::findMulticastFace(const ethernet::Endpoint& interface,
+                                   const ethernet::Address& address) const
 {
   MulticastFacesMap::const_iterator i = m_multicastFaces.find(std::make_pair(interface, address));
   if (i != m_multicastFaces.end())
     return i->second;
   else
     return shared_ptr<EthernetFace>();
+}
+
+void
+EthernetFactory::createFace(const FaceUri& uri,
+                            const FaceCreatedCallback& onCreated,
+                            const FaceConnectFailedCallback& onConnectFailed)
+{
+  throw Error("EthernetFactory does not support 'createFace' operation");
 }
 
 } // namespace nfd

@@ -39,8 +39,8 @@ public:
    * \throws EthernetFactory::Error or EthernetFace::Error
    */
   shared_ptr<EthernetFace>
-  createMulticast(const ethernet::Endpoint& interface,
-                  const ethernet::Address& address);
+  createMulticastFace(const ethernet::Endpoint& interface,
+                      const ethernet::Address& address);
 
   /**
    * \brief Get a list of devices that can be opened for a live capture
@@ -49,6 +49,13 @@ public:
    */
   static std::vector<ethernet::Endpoint>
   findAllInterfaces();
+
+  // from Factory
+
+  virtual void
+  createFace(const FaceUri& uri,
+             const FaceCreatedCallback& onCreated,
+             const FaceConnectFailedCallback& onConnectFailed);
 
 private:
   void
@@ -64,8 +71,8 @@ private:
    * \throws never
    */
   shared_ptr<EthernetFace>
-  findMulticast(const ethernet::Endpoint& interface,
-                const ethernet::Address& address) const;
+  findMulticastFace(const ethernet::Endpoint& interface,
+                    const ethernet::Address& address) const;
 
 private:
   typedef std::map< std::pair<ethernet::Endpoint, ethernet::Address>,

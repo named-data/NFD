@@ -36,7 +36,14 @@ public:
    * \throws UnixStreamFactory::Error
    */
   shared_ptr<UnixStreamChannel>
-  create(const std::string& unixSocketPath);
+  createChannel(const std::string& unixSocketPath);
+
+  // from Factory
+
+  virtual void
+  createFace(const FaceUri& uri,
+             const FaceCreatedCallback& onCreated,
+             const FaceConnectFailedCallback& onConnectFailed);
 
 private:
   /**
@@ -48,7 +55,7 @@ private:
    * \throws never
    */
   shared_ptr<UnixStreamChannel>
-  find(const unix_stream::Endpoint& endpoint);
+  findChannel(const unix_stream::Endpoint& endpoint);
 
 private:
   typedef std::map< unix_stream::Endpoint, shared_ptr<UnixStreamChannel> > ChannelMap;

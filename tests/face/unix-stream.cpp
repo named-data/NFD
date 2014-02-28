@@ -21,11 +21,11 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
 {
   UnixStreamFactory factory;
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
-  shared_ptr<UnixStreamChannel> channel1a = factory.create("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
+  shared_ptr<UnixStreamChannel> channel1a = factory.createChannel("foo");
   BOOST_CHECK_EQUAL(channel1, channel1a);
 
-  shared_ptr<UnixStreamChannel> channel2 = factory.create("bar");
+  shared_ptr<UnixStreamChannel> channel2 = factory.createChannel("bar");
   BOOST_CHECK_NE(channel1, channel2);
 }
 
@@ -147,7 +147,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
-  shared_ptr<UnixStreamChannel> channel = factory.create("foo");
+  shared_ptr<UnixStreamChannel> channel = factory.createChannel("foo");
   channel->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
 
@@ -319,7 +319,7 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "UnixStreamChannel error: cannot connect or cannot accept connection"));
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 

@@ -172,8 +172,8 @@ void
 initializeTcp()
 {
   g_tcpFactory = new TcpFactory();
-  g_tcpChannel = g_tcpFactory->create(g_options.m_tcpListen.first,
-                                      g_options.m_tcpListen.second);
+  g_tcpChannel = g_tcpFactory->createChannel(g_options.m_tcpListen.first,
+                                             g_options.m_tcpListen.second);
   g_tcpChannel->listen(
     bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),
     &onFaceError);
@@ -191,7 +191,7 @@ void
 initializeUnix()
 {
   g_unixFactory = new UnixStreamFactory();
-  g_unixChannel = g_unixFactory->create(g_options.m_unixListen);
+  g_unixChannel = g_unixFactory->createChannel(g_options.m_unixListen);
 
   g_unixChannel->listen(
     bind(&onFaceEstablish, _1, static_cast<std::vector<Name>*>(0)),

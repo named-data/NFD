@@ -23,6 +23,9 @@ public:
     Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
 
+  explicit
+  TcpFactory(const std::string& defaultPort = "6363");
+
   /**
    * \brief Create TCP-based channel using tcp::Endpoint
    *
@@ -41,7 +44,7 @@ public:
    *      for details on ways to create tcp::Endpoint
    */
   shared_ptr<TcpChannel>
-  create(const tcp::Endpoint& localEndpoint);
+  createChannel(const tcp::Endpoint& localEndpoint);
 
   /**
    * \brief Create TCP-based channel using specified host and port number
@@ -54,7 +57,14 @@ public:
    * \throws TcpFactory::Error
    */
   shared_ptr<TcpChannel>
-  create(const std::string& localHost, const std::string& localPort);
+  createChannel(const std::string& localHost, const std::string& localPort);
+
+  // from Factory
+
+  virtual void
+  createFace(const FaceUri& uri,
+             const FaceCreatedCallback& onCreated,
+             const FaceConnectFailedCallback& onConnectFailed);
 
 private:
   /**
@@ -66,11 +76,18 @@ private:
    * \throws never
    */
   shared_ptr<TcpChannel>
-  find(const tcp::Endpoint& localEndpoint);
+  findChannel(const tcp::Endpoint& localEndpoint);
+
+  void
+  continueCreateFaceAfterResolve(const tcp::Endpoint& endpoint,
+                                 const FaceCreatedCallback& onCreated,
+                                 const FaceConnectFailedCallback& onConnectFailed);
 
 private:
   typedef std::map< tcp::Endpoint, shared_ptr<TcpChannel> > ChannelMap;
   ChannelMap m_channels;
+
+  std::string m_defaultPort;
 };
 
 } // namespace nfd

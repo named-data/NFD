@@ -19,11 +19,11 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
 {
   TcpFactory factory;
   
-  shared_ptr<TcpChannel> channel1 = factory.create("127.0.0.1", "20070");
-  shared_ptr<TcpChannel> channel1a = factory.create("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
   
-  shared_ptr<TcpChannel> channel2 = factory.create("127.0.0.1", "20071");
+  shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
 }
 
@@ -181,8 +181,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "TcpChannel error: cannot connect or cannot accept connection"));
   
-  shared_ptr<TcpChannel> channel1 = factory.create("127.0.0.1", "20070");
-  shared_ptr<TcpChannel> channel2 = factory.create("127.0.0.1", "20071");
+  shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
@@ -257,8 +257,8 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "TcpChannel error: cannot connect or cannot accept connection"));
   
-  shared_ptr<TcpChannel> channel1 = factory.create("127.0.0.1", "20070");
-  shared_ptr<TcpChannel> channel2 = factory.create("127.0.0.1", "20071");
+  shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   
   channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
@@ -275,14 +275,14 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(m_faces.size(), 2);
   
-  shared_ptr<TcpChannel> channel3 = factory.create("127.0.0.1", "20072");
+  shared_ptr<TcpChannel> channel3 = factory.createChannel("127.0.0.1", "20072");
   channel3->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout
 
 
-  shared_ptr<TcpChannel> channel4 = factory.create("127.0.0.1", "20073");
+  shared_ptr<TcpChannel> channel4 = factory.createChannel("127.0.0.1", "20073");
 
   BOOST_CHECK_NE(channel3, channel4);
   
@@ -324,8 +324,8 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
                         bind(&EndToEndFixture::abortTestCase, this,
                              "TcpChannel error: cannot connect or cannot accept connection"));
   
-  shared_ptr<TcpChannel> channel1 = factory.create("127.0.0.1", "20070");
-  shared_ptr<TcpChannel> channel2 = factory.create("127.0.0.1", "20071");
+  shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));

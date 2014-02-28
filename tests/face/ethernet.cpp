@@ -22,18 +22,21 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
   if (interfaces.size() > 0)
     {
       shared_ptr<EthernetFace> face1;
-      BOOST_REQUIRE_NO_THROW(face1 = factory.createMulticast(interfaces[0],
-                                                             ethernet::getBroadcastAddress()));
+      BOOST_REQUIRE_NO_THROW(face1 =
+                             factory.createMulticastFace(interfaces[0],
+                                                     ethernet::getBroadcastAddress()));
       shared_ptr<EthernetFace> face1bis;
-      BOOST_REQUIRE_NO_THROW(face1bis = factory.createMulticast(interfaces[0],
-                                                                ethernet::getBroadcastAddress()));
+      BOOST_REQUIRE_NO_THROW(face1bis =
+                             factory.createMulticastFace(interfaces[0],
+                                                         ethernet::getBroadcastAddress()));
       BOOST_CHECK_EQUAL(face1, face1bis);
 
       if (interfaces.size() > 1)
         {
           shared_ptr<EthernetFace> face2;
-          BOOST_REQUIRE_NO_THROW(face2 = factory.createMulticast(interfaces[1],
-                                                                 ethernet::getBroadcastAddress()));
+          BOOST_REQUIRE_NO_THROW(face2 =
+                                 factory.createMulticastFace(interfaces[1],
+                                                             ethernet::getBroadcastAddress()));
           BOOST_CHECK_NE(face1, face2);
         }
       else
@@ -43,8 +46,9 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
         }
 
       shared_ptr<EthernetFace> face3;
-      BOOST_REQUIRE_NO_THROW(face3 = factory.createMulticast(interfaces[0],
-                                                             ethernet::getDefaultMulticastAddress()));
+      BOOST_REQUIRE_NO_THROW(face3 =
+                             factory.createMulticastFace(interfaces[0],
+                                                         ethernet::getDefaultMulticastAddress()));
       BOOST_CHECK_NE(face1, face3);
     }
   else
@@ -67,7 +71,7 @@ BOOST_AUTO_TEST_CASE(SendPacket)
     }
 
   shared_ptr<EthernetFace> face =
-    factory.createMulticast(interfaces[0], ethernet::getDefaultMulticastAddress());
+    factory.createMulticastFace(interfaces[0], ethernet::getDefaultMulticastAddress());
 
   BOOST_REQUIRE(static_cast<bool>(face));
   BOOST_CHECK_EQUAL(face->isLocal(), false);
