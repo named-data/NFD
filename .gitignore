@@ -1,0 +1,6 @@
+.DS*
+.waf-1*
+.lock*
+**/*.pyc
+build/
+
