@@ -82,9 +82,9 @@ private:
 
 inline
 LocalFace::LocalFace()
-  : m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
+  : Face(true)
+  , m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
 {
-  setLocal(true);
 }
 
 inline bool

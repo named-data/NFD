@@ -9,10 +9,11 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("Face");
+NFD_LOG_INIT("Face")
 
-Face::Face()
+Face::Face(bool isLocal)
   : m_id(INVALID_FACEID)
+  , m_isLocal(isLocal)
 {
 }
 
@@ -33,26 +34,6 @@ Face::setId(FaceId faceId)
   m_id = faceId;
 }
 
-bool
-Face::isLocal() const
-{
-  return m_isLocal;
-}
-
-// this method is protected and can be used only in derived class
-// to set localhost scope
-void
-Face::setLocal(bool isLocal)
-{
-  m_isLocal = isLocal;
-}
-
-bool
-Face::isUp() const
-{
-  return true;
-}
-
 void
 Face::setDescription(const std::string& description)
 {
@@ -69,6 +50,12 @@ bool
 Face::isMultiAccess() const
 {
   return false;
+}
+
+bool
+Face::isUp() const
+{
+  return true;
 }
 
 bool

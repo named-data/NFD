@@ -24,6 +24,7 @@ public:
   /**
    * \brief Create instance of StreamFace
    */
+  explicit
   StreamFace(const shared_ptr<typename protocol::socket>& socket);
 
   virtual

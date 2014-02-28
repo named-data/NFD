@@ -20,7 +20,7 @@ typedef int FaceId;
 
 const FaceId INVALID_FACEID = -1;
 
-const std::size_t MAX_NDN_PACKET_SIZE = 8800;
+const size_t MAX_NDN_PACKET_SIZE = 8800;
 
 
 /** \brief represents a face
@@ -36,7 +36,8 @@ public:
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-  Face();
+  explicit
+  Face(bool isLocal = false);
 
   virtual
   ~Face();
@@ -69,21 +70,6 @@ public:
   virtual void
   close() = 0;
 
-  /** \brief Get whether underlying communication is up
-   *
-   *  In this base class this property is always true.
-   */
-  virtual bool
-  isUp() const;
-
-  /** \brief Get whether face is connected to a local app
-   *
-   *  False by default and can become true if a derived class, implementing
-   *  one of the local face types, explicitly calls Face::setLocal(true)
-   */
-  bool
-  isLocal() const;
-
   /** \brief Set the description
    *
    *  This is typically invoked by mgmt on set description command
@@ -95,6 +81,11 @@ public:
   virtual const std::string&
   getDescription() const;
 
+  /** \brief Get whether face is connected to a local app
+   */
+  bool
+  isLocal() const;
+
   /** \brief Get whether packets sent this Face may reach multiple peers
    *
    *  In this base class this property is always false.
@@ -102,13 +93,17 @@ public:
   virtual bool
   isMultiAccess() const;
 
+  /** \brief Get whether underlying communication is up
+   *
+   *  In this base class this property is always true.
+   */
+  virtual bool
+  isUp() const;
+
   const FaceCounters&
   getCounters() const;
 
 protected:
-  void
-  setLocal(bool isLocal);
-
   // this is a non-virtual method
   bool
   decodeAndDispatchInput(const Block& element);
@@ -130,6 +125,12 @@ private:
   friend class Forwarder;
 };
 
+
+inline bool
+Face::isLocal() const
+{
+  return m_isLocal;
+}
 
 inline const FaceCounters&
 Face::getCounters() const

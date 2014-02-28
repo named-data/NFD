@@ -38,7 +38,6 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   , m_interface(interface)
   , m_destAddress(address)
 {
-  setLocal(false);
   pcapInit();
 
   int fd = pcap_get_selectable_fd(m_pcap);

@@ -11,8 +11,8 @@ namespace nfd {
 NFD_LOG_INIT("InternalFace");
 
 InternalFace::InternalFace()
+  : Face(true)
 {
-  setLocal(true);
 }
 
 void
