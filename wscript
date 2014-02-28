@@ -6,7 +6,7 @@ import os
 def options(opt):
     opt.load('compiler_cxx gnu_dirs')
     opt.load('flags boost doxygen coverage', tooldir=['.waf-tools'])
-    
+
     nrdopt = opt.add_option_group('NRD Options')
     nrdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
     nrdopt.add_option('--with-tests', action='store_true',default=False,dest='with_tests',help='''Build unit tests''')
@@ -36,13 +36,29 @@ def configure(conf):
     # except:
     #     pass
 
-    conf.write_config_header('config.hpp')
+    conf.write_config_header('src/config.hpp')
 
 def build (bld):
-    bld (
-        features=['cxx', 'cxxprogram'],
-        target="nrd",
-        source = bld.path.ant_glob('*.cpp'),
+    bld(
+        features=['cxx'],
+        name="nrd-objects",
+        source = bld.path.ant_glob('src/*.cpp', excl='src/main.cpp'),
         use = 'NDN_CPP BOOST',
         )
 
+    bld.program(
+        target = 'nrd',
+        source = 'src/main.cpp',
+        use = 'nrd-objects'
+        )
+
+    # Unit tests
+    if bld.env['WITH_TESTS']:
+        unit_tests = unittests = bld.program(
+            target='unit-tests',
+            features = 'cxx cxxprogram',
+            source = bld.path.ant_glob(['tests/**/*.cpp']),
+            use = 'nrd-objects',
+            includes = ['.', 'src'],
+            install_prefix = None,
+          )
