@@ -13,7 +13,7 @@ Rib::Rib()
 {
 }
 
-//
+
 Rib::~Rib()
 {
 }
@@ -24,7 +24,7 @@ ribEntryNameCompare(const PrefixRegOptions& opt1, const PrefixRegOptions& opt2)
   return opt1.getName() == opt2.getName();
 }
 
-//
+
 Rib::const_iterator
 Rib::find(const PrefixRegOptions& options) const
 {
@@ -38,7 +38,7 @@ Rib::find(const PrefixRegOptions& options) const
     return it;
 }
 
-//
+
 void
 Rib::insert(const PrefixRegOptions& options)
 {
@@ -50,7 +50,7 @@ Rib::insert(const PrefixRegOptions& options)
     }
 }
 
-//
+
 void
 Rib::erase(const PrefixRegOptions& options)
 {
