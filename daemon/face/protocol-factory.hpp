@@ -4,14 +4,14 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_FACE_CHANNEL_FACTORY_HPP
-#define NFD_FACE_CHANNEL_FACTORY_HPP
+#ifndef NFD_FACE_PROTOCOL_FACTORY_HPP
+#define NFD_FACE_PROTOCOL_FACTORY_HPP
 
 #include "common.hpp"
 
 namespace nfd {
 
-class ChannelFactory
+class ProtocolFactory
 {
 public:
   /**
@@ -21,9 +21,8 @@ public:
   {
     Error(const std::string& what) : std::runtime_error(what) {}
   };
-
 };
 
 } // namespace nfd
 
-#endif // NFD_FACE_CHANNEL_FACTORY_HPP
+#endif // NFD_FACE_PROTOCOL_FACTORY_HPP

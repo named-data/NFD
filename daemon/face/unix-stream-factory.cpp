@@ -4,19 +4,15 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "unix-stream-channel-factory.hpp"
+#include "unix-stream-factory.hpp"
 #include "core/global-io.hpp"
 
 #include <boost/filesystem.hpp> // for canonical()
 
 namespace nfd {
 
-UnixStreamChannelFactory::UnixStreamChannelFactory()
-{
-}
-
 shared_ptr<UnixStreamChannel>
-UnixStreamChannelFactory::create(const std::string& unixSocketPath)
+UnixStreamFactory::create(const std::string& unixSocketPath)
 {
   boost::filesystem::path p(unixSocketPath);
   p = boost::filesystem::canonical(p.parent_path()) / p.filename();
@@ -33,7 +29,7 @@ UnixStreamChannelFactory::create(const std::string& unixSocketPath)
 }
 
 shared_ptr<UnixStreamChannel>
-UnixStreamChannelFactory::find(const unix_stream::Endpoint& endpoint)
+UnixStreamFactory::find(const unix_stream::Endpoint& endpoint)
 {
   ChannelMap::iterator i = m_channels.find(endpoint);
   if (i != m_channels.end())

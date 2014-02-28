@@ -4,7 +4,7 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "face/tcp-channel-factory.hpp"
+#include "face/tcp-factory.hpp"
 #include "core/scheduler.hpp"
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
@@ -17,7 +17,7 @@ BOOST_FIXTURE_TEST_SUITE(FaceTcp, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
-  TcpChannelFactory factory;
+  TcpFactory factory;
   
   shared_ptr<TcpChannel> channel1 = factory.create("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel1a = factory.create("127.0.0.1", "20070");
@@ -174,7 +174,7 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 {
-  TcpChannelFactory factory;
+  TcpFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(10),
@@ -250,7 +250,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
-  TcpChannelFactory factory;
+  TcpFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(10),
@@ -317,7 +317,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
 BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
 {
-  TcpChannelFactory factory;
+  TcpFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(10),

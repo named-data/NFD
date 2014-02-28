@@ -4,23 +4,23 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_FACE_ETHERNET_CHANNEL_FACTORY_HPP
-#define NFD_FACE_ETHERNET_CHANNEL_FACTORY_HPP
+#ifndef NFD_FACE_ETHERNET_FACTORY_HPP
+#define NFD_FACE_ETHERNET_FACTORY_HPP
 
 #include "ethernet-face.hpp"
-#include "channel-factory.hpp"
+#include "protocol-factory.hpp"
 
 namespace nfd {
 
-class EthernetChannelFactory : public ChannelFactory
+class EthernetFactory : public ProtocolFactory
 {
 public:
   /**
-   * \brief Exception of EthernetChannelFactory
+   * \brief Exception of EthernetFactory
    */
-  struct Error : public ChannelFactory::Error
+  struct Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ChannelFactory::Error(what) {}
+    Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
 
   /**
@@ -36,7 +36,7 @@ public:
    * \returns always a valid shared pointer to an EthernetFace object,
    *          an exception will be thrown if the creation fails
    *
-   * \throws EthernetChannelFactory::Error or EthernetFace::Error
+   * \throws EthernetFactory::Error or EthernetFace::Error
    */
   shared_ptr<EthernetFace>
   createMulticast(const ethernet::Endpoint& interface,
@@ -75,4 +75,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_FACE_ETHERNET_CHANNEL_FACTORY_HPP
+#endif // NFD_FACE_ETHERNET_FACTORY_HPP

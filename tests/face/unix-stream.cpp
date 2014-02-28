@@ -4,7 +4,7 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "face/unix-stream-channel-factory.hpp"
+#include "face/unix-stream-factory.hpp"
 #include "core/scheduler.hpp"
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
@@ -19,7 +19,7 @@ BOOST_FIXTURE_TEST_SUITE(FaceUnixStream, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
-  UnixStreamChannelFactory factory;
+  UnixStreamFactory factory;
 
   shared_ptr<UnixStreamChannel> channel1 = factory.create("foo");
   shared_ptr<UnixStreamChannel> channel1a = factory.create("foo");
@@ -140,7 +140,7 @@ protected:
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory;
+  UnixStreamFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(1),
@@ -210,7 +210,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory;
+  UnixStreamFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(1),
@@ -312,7 +312,7 @@ noOp()
 
 BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
 {
-  UnixStreamChannelFactory factory;
+  UnixStreamFactory factory;
 
   EventId abortEvent =
     scheduler::schedule(time::seconds(1),

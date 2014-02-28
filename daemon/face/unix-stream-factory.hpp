@@ -4,27 +4,24 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_FACE_UNIX_STREAM_CHANNEL_FACTORY_HPP
-#define NFD_FACE_UNIX_STREAM_CHANNEL_FACTORY_HPP
+#ifndef NFD_FACE_UNIX_STREAM_FACTORY_HPP
+#define NFD_FACE_UNIX_STREAM_FACTORY_HPP
 
-#include "channel-factory.hpp"
+#include "protocol-factory.hpp"
 #include "unix-stream-channel.hpp"
 
 namespace nfd {
 
-class UnixStreamChannelFactory : public ChannelFactory
+class UnixStreamFactory : public ProtocolFactory
 {
 public:
   /**
-   * \brief Exception of UnixStreamChannelFactory
+   * \brief Exception of UnixStreamFactory
    */
-  struct Error : public ChannelFactory::Error
+  struct Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ChannelFactory::Error(what) {}
+    Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
-
-  explicit
-  UnixStreamChannelFactory();
 
   /**
    * \brief Create stream-oriented Unix channel using specified socket path
@@ -36,7 +33,7 @@ public:
    * \returns always a valid pointer to a UnixStreamChannel object,
    *          an exception will be thrown if the channel cannot be created.
    *
-   * \throws UnixStreamChannelFactory::Error
+   * \throws UnixStreamFactory::Error
    */
   shared_ptr<UnixStreamChannel>
   create(const std::string& unixSocketPath);
@@ -60,4 +57,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_FACE_UNIX_STREAM_CHANNEL_FACTORY_HPP
+#endif // NFD_FACE_UNIX_STREAM_FACTORY_HPP

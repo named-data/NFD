@@ -4,23 +4,23 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_FACE_TCP_CHANNEL_FACTORY_HPP
-#define NFD_FACE_TCP_CHANNEL_FACTORY_HPP
+#ifndef NFD_FACE_TCP_FACTORY_HPP
+#define NFD_FACE_TCP_FACTORY_HPP
 
-#include "channel-factory.hpp"
+#include "protocol-factory.hpp"
 #include "tcp-channel.hpp"
 
 namespace nfd {
 
-class TcpChannelFactory : public ChannelFactory
+class TcpFactory : public ProtocolFactory
 {
 public:
   /**
-   * \brief Exception of TcpChannelFactory
+   * \brief Exception of TcpFactory
    */
-  struct Error : public ChannelFactory::Error
+  struct Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ChannelFactory::Error(what) {}
+    Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
 
   /**
@@ -35,7 +35,7 @@ public:
    * \returns always a valid pointer to a TcpChannel object, an exception
    *          is thrown if it cannot be created.
    *
-   * \throws TcpChannelFactory::Error
+   * \throws TcpFactory::Error
    *
    * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__tcp/endpoint.html
    *      for details on ways to create tcp::Endpoint
@@ -47,11 +47,11 @@ public:
    * \brief Create TCP-based channel using specified host and port number
    *
    * This method will attempt to resolve the provided host and port numbers
-   * and will throw TcpChannelFactory::Error when channel cannot be created.
+   * and will throw TcpFactory::Error when channel cannot be created.
    *
    * Note that this call will **BLOCK** until resolution is done or failed.
    *
-   * \throws TcpChannelFactory::Error
+   * \throws TcpFactory::Error
    */
   shared_ptr<TcpChannel>
   create(const std::string& localHost, const std::string& localPort);
@@ -75,4 +75,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_FACE_TCP_CHANNEL_FACTORY_HPP
+#endif // NFD_FACE_TCP_FACTORY_HPP

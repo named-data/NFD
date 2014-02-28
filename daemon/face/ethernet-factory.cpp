@@ -4,7 +4,7 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "ethernet-channel-factory.hpp"
+#include "ethernet-factory.hpp"
 #include "core/global-io.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
@@ -12,11 +12,11 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("EthernetChannelFactory")
+NFD_LOG_INIT("EthernetFactory")
 
 shared_ptr<EthernetFace>
-EthernetChannelFactory::createMulticast(const ethernet::Endpoint& interface,
-                                        const ethernet::Address& address)
+EthernetFactory::createMulticast(const ethernet::Endpoint& interface,
+                                 const ethernet::Address& address)
 {
   std::vector<ethernet::Endpoint> ifs = findAllInterfaces();
   if (std::find(ifs.begin(), ifs.end(), interface) == ifs.end())
@@ -35,7 +35,7 @@ EthernetChannelFactory::createMulticast(const ethernet::Endpoint& interface,
   face = make_shared<EthernetFace>(boost::cref(socket),
                                    boost::cref(interface),
                                    boost::cref(address));
-  face->onFail += bind(&EthernetChannelFactory::afterFaceFailed,
+  face->onFail += bind(&EthernetFactory::afterFaceFailed,
                        this, interface, address);
   m_multicastFaces[std::make_pair(interface, address)] = face;
 
@@ -43,7 +43,7 @@ EthernetChannelFactory::createMulticast(const ethernet::Endpoint& interface,
 }
 
 std::vector<ethernet::Endpoint>
-EthernetChannelFactory::findAllInterfaces()
+EthernetFactory::findAllInterfaces()
 {
   std::vector<ethernet::Endpoint> interfaces;
   char errbuf[PCAP_ERRBUF_SIZE];
@@ -84,16 +84,16 @@ EthernetChannelFactory::findAllInterfaces()
 }
 
 void
-EthernetChannelFactory::afterFaceFailed(const ethernet::Endpoint& interface,
-                                        const ethernet::Address& address)
+EthernetFactory::afterFaceFailed(const ethernet::Endpoint& interface,
+                                 const ethernet::Address& address)
 {
   NFD_LOG_DEBUG("afterFaceFailed: " << interface << "/" << address);
   m_multicastFaces.erase(std::make_pair(interface, address));
 }
 
 shared_ptr<EthernetFace>
-EthernetChannelFactory::findMulticast(const ethernet::Endpoint& interface,
-                                      const ethernet::Address& address) const
+EthernetFactory::findMulticast(const ethernet::Endpoint& interface,
+                               const ethernet::Address& address) const
 {
   MulticastFacesMap::const_iterator i = m_multicastFaces.find(std::make_pair(interface, address));
   if (i != m_multicastFaces.end())

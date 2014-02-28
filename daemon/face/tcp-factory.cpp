@@ -4,13 +4,13 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "tcp-channel-factory.hpp"
+#include "tcp-factory.hpp"
 #include "core/global-io.hpp"
 
 namespace nfd {
 
 shared_ptr<TcpChannel>
-TcpChannelFactory::create(const tcp::Endpoint& endpoint)
+TcpFactory::create(const tcp::Endpoint& endpoint)
 {
   shared_ptr<TcpChannel> channel = find(endpoint);
   if(static_cast<bool>(channel))
@@ -22,7 +22,7 @@ TcpChannelFactory::create(const tcp::Endpoint& endpoint)
 }
 
 shared_ptr<TcpChannel>
-TcpChannelFactory::create(const std::string& localHost, const std::string& localPort)
+TcpFactory::create(const std::string& localHost, const std::string& localPort)
 {
   using boost::asio::ip::tcp;
 
@@ -38,7 +38,7 @@ TcpChannelFactory::create(const std::string& localHost, const std::string& local
 }
 
 shared_ptr<TcpChannel>
-TcpChannelFactory::find(const tcp::Endpoint& localEndpoint)
+TcpFactory::find(const tcp::Endpoint& localEndpoint)
 {
   ChannelMap::iterator i = m_channels.find(localEndpoint);
   if (i != m_channels.end())

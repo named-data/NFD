@@ -4,7 +4,7 @@
  * See COPYING for copyright and distribution information.
  */
 
-#include "face/ethernet-channel-factory.hpp"
+#include "face/ethernet-factory.hpp"
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
@@ -16,9 +16,9 @@ BOOST_FIXTURE_TEST_SUITE(FaceEthernet, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(MulticastFacesMap)
 {
-  EthernetChannelFactory factory;
+  EthernetFactory factory;
 
-  std::vector<ethernet::Endpoint> interfaces = EthernetChannelFactory::findAllInterfaces();
+  std::vector<ethernet::Endpoint> interfaces = EthernetFactory::findAllInterfaces();
   if (interfaces.size() > 0)
     {
       shared_ptr<EthernetFace> face1;
@@ -56,9 +56,9 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
 
 BOOST_AUTO_TEST_CASE(SendPacket)
 {
-  EthernetChannelFactory factory;
+  EthernetFactory factory;
 
-  std::vector<ethernet::Endpoint> interfaces = EthernetChannelFactory::findAllInterfaces();
+  std::vector<ethernet::Endpoint> interfaces = EthernetFactory::findAllInterfaces();
   if (interfaces.empty())
     {
       BOOST_WARN_MESSAGE(interfaces.empty(),

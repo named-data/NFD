@@ -10,10 +10,10 @@
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/local-control-header-manager.hpp"
-#include "face/tcp-channel-factory.hpp"
+#include "face/tcp-factory.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
-#include "face/unix-stream-channel-factory.hpp"
+#include "face/unix-stream-factory.hpp"
 #endif
 
 namespace nfd {
@@ -43,12 +43,12 @@ static ProgramOptions g_options;
 static Forwarder* g_forwarder;
 static FibManager* g_fibManager;
 static LocalControlHeaderManager* g_localControlHeaderManager;
-static TcpChannelFactory* g_tcpFactory;
+static TcpFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
 
 #ifdef HAVE_UNIX_SOCKETS
-static UnixStreamChannelFactory* g_unixFactory;
+static UnixStreamFactory* g_unixFactory;
 static shared_ptr<UnixStreamChannel> g_unixChannel;
 #endif
 
@@ -171,7 +171,7 @@ onFaceError(const std::string& reason)
 void
 initializeTcp()
 {
-  g_tcpFactory = new TcpChannelFactory();
+  g_tcpFactory = new TcpFactory();
   g_tcpChannel = g_tcpFactory->create(g_options.m_tcpListen.first,
                                       g_options.m_tcpListen.second);
   g_tcpChannel->listen(
@@ -190,7 +190,7 @@ initializeTcp()
 void
 initializeUnix()
 {
-  g_unixFactory = new UnixStreamChannelFactory();
+  g_unixFactory = new UnixStreamFactory();
   g_unixChannel = g_unixFactory->create(g_options.m_unixListen);
 
   g_unixChannel->listen(
