@@ -7,6 +7,9 @@
 #include "tcp-factory.hpp"
 #include "core/global-io.hpp"
 #include "core/resolver.hpp"
+#include "core/logger.hpp"
+
+NFD_LOG_INIT("TcpFactory");
 
 namespace nfd {
 
@@ -24,23 +27,14 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 
   channel = make_shared<TcpChannel>(boost::ref(getGlobalIoService()), boost::cref(endpoint));
   m_channels[endpoint] = channel;
+  NFD_LOG_DEBUG("Channel [" << endpoint << "] created");
   return channel;
 }
 
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const std::string& localHost, const std::string& localPort)
 {
-  using boost::asio::ip::tcp;
-
-  tcp::resolver::query query(localHost, localPort);
-  tcp::resolver resolver(getGlobalIoService());
-
-  tcp::resolver::iterator end;
-  tcp::resolver::iterator i = resolver.resolve(query);
-  if (i == end)
-    return shared_ptr<TcpChannel>();
-
-  return createChannel(*i);
+  return createChannel(TcpResolver::syncResolve(localHost, localPort));
 }
 
 shared_ptr<TcpChannel>
@@ -64,13 +58,12 @@ TcpFactory::createFace(const FaceUri& uri,
   else if (uri.getScheme() == "tcp6")
     addressSelector = resolver::Ipv6Address();
 
-  using boost::asio::ip::tcp;
-  Resolver<tcp>::asyncResolve(uri.getDomain(),
-                              uri.getPort().empty() ? m_defaultPort : uri.getPort(),
-                              bind(&TcpFactory::continueCreateFaceAfterResolve, this, _1,
-                                   onCreated, onConnectFailed),
-                              onConnectFailed,
-                              addressSelector);
+  TcpResolver::asyncResolve(uri.getDomain(),
+                            uri.getPort().empty() ? m_defaultPort : uri.getPort(),
+                            bind(&TcpFactory::continueCreateFaceAfterResolve, this, _1,
+                                 onCreated, onConnectFailed),
+                            onConnectFailed,
+                            addressSelector);
 }
 
 void
@@ -94,6 +87,5 @@ TcpFactory::continueCreateFaceAfterResolve(const tcp::Endpoint& endpoint,
   onConnectFailed("No channels available to connect to "
                   + boost::lexical_cast<std::string>(endpoint));
 }
-
 
 } // namespace nfd

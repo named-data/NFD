@@ -54,7 +54,7 @@ public:
    *
    * Note that this call will **BLOCK** until resolution is done or failed.
    *
-   * \throws TcpFactory::Error
+   * \throws TcpFactory::Error or std::runtime_error
    */
   shared_ptr<TcpChannel>
   createChannel(const std::string& localHost, const std::string& localPort);

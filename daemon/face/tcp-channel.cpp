@@ -154,9 +154,10 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 
     NFD_LOG_DEBUG("Connect to remote endpoint failed: "
                   << error.category().message(error.value()));
-    
-    onAcceptFailed("Connect to remote endpoint failed: " +
-                   error.category().message(error.value()));
+
+    if (static_cast<bool>(onAcceptFailed))
+      onAcceptFailed("Connect to remote endpoint failed: " +
+                     error.category().message(error.value()));
     return;
   }
 
