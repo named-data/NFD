@@ -179,7 +179,7 @@ FibManager::deleteEntry(const FibManagementOptions& options,
   NFD_LOG_INFO("delete result: OK"
                << " prefix: " << options.getName());
 
-  m_managedFib.remove(options.getName());
+  m_managedFib.erase(options.getName());
   setResponse(response, 200, "Success", options.wireEncode());
 }
 

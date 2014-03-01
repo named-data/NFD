@@ -17,6 +17,7 @@ const Name Forwarder::s_localhostName("ndn:/localhost");
 Forwarder::Forwarder()
   : m_lastFaceId(0)
   , m_nameTree(1024) // "1024" could be made as one configurable parameter of the forwarder.
+  , m_fib(m_nameTree)
   , m_pit(m_nameTree)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));

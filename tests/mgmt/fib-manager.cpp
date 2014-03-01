@@ -166,7 +166,8 @@ addedNextHopWithFace(const Fib& fib, const Name& prefix, size_t oldSize,
 BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -185,7 +186,8 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 BOOST_AUTO_TEST_CASE(MalformedCommmand)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -206,7 +208,8 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -237,7 +240,8 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -271,7 +275,8 @@ BOOST_AUTO_TEST_CASE(UnauthorizedCommand)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -305,7 +310,8 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -329,7 +335,8 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -361,7 +368,8 @@ BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -403,7 +411,8 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -437,7 +446,8 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -491,7 +501,8 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace,
                           this, _1),
@@ -566,7 +577,8 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
 BOOST_AUTO_TEST_CASE(Insert)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -664,7 +676,8 @@ testRemove(FibManagerFixture* fixture,
 BOOST_AUTO_TEST_CASE(Delete)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);
@@ -758,7 +771,8 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
   addFace(face3);
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -788,7 +802,8 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
 BOOST_AUTO_TEST_CASE(RemoveNoFace)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                           face);
@@ -818,7 +833,8 @@ BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   FibManager manager(fib,
                      bind(&FibManagerFixture::getFace, this, _1),
                      face);

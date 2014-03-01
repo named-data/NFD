@@ -8,10 +8,16 @@
 #define NFD_TABLE_FIB_HPP
 
 #include "fib-entry.hpp"
-#include "pit-entry.hpp"
-#include "measurements-entry.hpp"
+#include "name-tree.hpp"
 
 namespace nfd {
+
+namespace measurements {
+class Entry;
+}
+namespace pit {
+class Entry;
+}
 
 /** \class Fib
  *  \brief represents the FIB
@@ -19,7 +25,8 @@ namespace nfd {
 class Fib : noncopyable
 {
 public:
-  Fib();
+  explicit
+  Fib(NameTree& nameTree);
 
   ~Fib();
 
@@ -46,7 +53,7 @@ public:
   findExactMatch(const Name& prefix) const;
 
   void
-  remove(const Name& prefix);
+  erase(const Name& prefix);
 
   /** \brief removes the NextHop record for face in all entrites
    *  This is usually invoked when face goes away.
@@ -55,10 +62,20 @@ public:
   void
   removeNextHopFromAllEntries(shared_ptr<Face> face);
 
+  size_t
+  size() const;
+
 private:
   shared_ptr<fib::Entry> m_rootEntry;
-  std::list<shared_ptr<fib::Entry> > m_table;
+  NameTree& m_nameTree;
+  size_t m_nItems; // Number of items being stored
 };
+
+inline size_t
+Fib::size() const
+{
+  return m_nItems;
+}
 
 } // namespace nfd
 

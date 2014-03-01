@@ -9,55 +9,42 @@
 #include "measurements-entry.hpp"
 
 namespace nfd {
-
-Fib::Fib()
+Fib::Fib(NameTree& nameTree)
+  : m_nameTree(nameTree)
+  , m_nItems(0)
 {
-  std::pair<shared_ptr<fib::Entry>, bool> pair_rootEntry_dummy =
-    this->insert(Name());
-  m_rootEntry = pair_rootEntry_dummy.first;
+  m_rootEntry = (this->insert(Name())).first;
 }
 
 Fib::~Fib()
 {
 }
 
-static inline bool
-predicate_FibEntry_eq_Name(const shared_ptr<fib::Entry>& entry,
-  const Name& name)
-{
-  return entry->getPrefix().equals(name);
-}
-
 std::pair<shared_ptr<fib::Entry>, bool>
 Fib::insert(const Name& prefix)
 {
-  std::list<shared_ptr<fib::Entry> >::iterator it = std::find_if(
-    m_table.begin(), m_table.end(),
-    bind(&predicate_FibEntry_eq_Name, _1, prefix));
-  if (it != m_table.end()) return std::make_pair(*it, false);
-
-  shared_ptr<fib::Entry> entry = make_shared<fib::Entry>(prefix);
-  m_table.push_back(entry);
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
+  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
+  if (static_cast<bool>(entry))
+    return std::make_pair(entry, false);
+  entry = make_shared<fib::Entry>(prefix);
+  nameTreeEntry->setFibEntry(entry);
+  m_nItems++;
   return std::make_pair(entry, true);
-}
-
-static inline const shared_ptr<fib::Entry>&
-accumulate_FibEntry_longestPrefixMatch(
-  const shared_ptr<fib::Entry>& bestMatch,
-  const shared_ptr<fib::Entry>& entry, const Name& name)
-{
-  if (!entry->getPrefix().isPrefixOf(name)) return bestMatch;
-  if (bestMatch->getPrefix().size() < entry->getPrefix().size()) return entry;
-  return bestMatch;
 }
 
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  shared_ptr<fib::Entry> bestMatch =
-    std::accumulate(m_table.begin(), m_table.end(), m_rootEntry,
-    bind(&accumulate_FibEntry_longestPrefixMatch, _1, _2, prefix));
-  return bestMatch;
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findLongestPrefixMatch(prefix);
+  while (static_cast<bool>(nameTreeEntry))
+  {
+    if (static_cast<bool>(nameTreeEntry->getFibEntry()))
+      return nameTreeEntry->getFibEntry();
+    else
+      nameTreeEntry = nameTreeEntry->getParent();
+  }
+  return m_rootEntry;
 }
 
 shared_ptr<fib::Entry>
@@ -75,35 +62,34 @@ Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 shared_ptr<fib::Entry>
 Fib::findExactMatch(const Name& prefix) const
 {
-  std::list<shared_ptr<fib::Entry> >::const_iterator it =
-    std::find_if(m_table.begin(), m_table.end(),
-                 bind(&predicate_FibEntry_eq_Name, _1, prefix));
-
-  if (it != m_table.end())
-    {
-      return *it;
-    }
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
+  if (static_cast<bool>(nameTreeEntry))
+    return nameTreeEntry->getFibEntry();
   return shared_ptr<fib::Entry>();
 }
 
 void
-Fib::remove(const Name& prefix)
+Fib::erase(const Name& prefix)
 {
-  m_table.remove_if(bind(&predicate_FibEntry_eq_Name, _1, prefix));
-}
-
-static inline void
-FibEntry_removeNextHop(shared_ptr<fib::Entry> entry,
-  shared_ptr<Face> face)
-{
-  entry->removeNextHop(face);
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
+  if (static_cast<bool>(nameTreeEntry))
+  {
+    nameTreeEntry->eraseFibEntry(nameTreeEntry->getFibEntry());
+    m_nItems--;
+  }
 }
 
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  std::for_each(m_table.begin(), m_table.end(),
-    bind(&FibEntry_removeNextHop, _1, face));
+  shared_ptr<fib::Entry> entry;
+  shared_ptr<std::vector<shared_ptr<name_tree::Entry > > > res = m_nameTree.fullEnumerate();
+  for (int i = 0; i < res->size(); i++)
+  {
+    entry = (*res)[i]->getFibEntry();
+    if (static_cast<bool>(entry))
+      entry->removeNextHop(face);
+  }
 }
 
 

@@ -118,7 +118,8 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
 
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   // ['/']
   
   entry = fib.findLongestPrefixMatch(nameA);
@@ -175,7 +176,8 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
   
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   // {'/':[]}
   
   insertRes = fib.insert(nameA);
@@ -228,7 +230,8 @@ validateNoExactMatch(const Fib& fib, const Name& target)
 
 BOOST_AUTO_TEST_CASE(FindExactMatch)
 {
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   fib.insert("/A");
   fib.insert("/A/B");
   fib.insert("/A/B/C");
@@ -240,20 +243,22 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
 
   validateNoExactMatch(fib, "/does/not/exist");
 
-  Fib gapFib;
+  NameTree gapNameTree(1024);
+  Fib gapFib(nameTree);
   fib.insert("/X");
   fib.insert("/X/Y/Z");
 
   validateNoExactMatch(gapFib, "/X/Y");
 
-  Fib emptyFib;
+  NameTree emptyNameTree(1024);
+  Fib emptyFib(emptyNameTree);
   validateNoExactMatch(emptyFib, "/nothing/here");
 }
 
 void
 validateRemove(Fib& fib, const Name& target)
 {
-  fib.remove(target);
+  fib.erase(target);
 
   shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
   if (static_cast<bool>(entry))
@@ -264,15 +269,17 @@ validateRemove(Fib& fib, const Name& target)
 
 BOOST_AUTO_TEST_CASE(Remove)
 {
-  Fib emptyFib;
+  NameTree emptyNameTree(1024);
+  Fib emptyFib(emptyNameTree);
 
-  emptyFib.remove("/does/not/exist"); // crash test
+  emptyFib.erase("/does/not/exist"); // crash test
 
   validateRemove(emptyFib, "/");
 
-  emptyFib.remove("/still/does/not/exist"); // crash test
+  emptyFib.erase("/still/does/not/exist"); // crash test
 
-  Fib fib;
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
   fib.insert("/A");
   fib.insert("/A/B");
   fib.insert("/A/B/C");
@@ -292,11 +299,12 @@ BOOST_AUTO_TEST_CASE(Remove)
   validateRemove(fib, "/A");
   validateFindExactMatch(fib, "/");
 
-  Fib gapFib;
+  NameTree gapNameTree(1024);
+  Fib gapFib(gapNameTree);
   gapFib.insert("/X");
   gapFib.insert("/X/Y/Z");
 
-  gapFib.remove("/X/Y"); //should do nothing
+  gapFib.erase("/X/Y"); //should do nothing
   validateFindExactMatch(gapFib, "/X");
   validateFindExactMatch(gapFib, "/X/Y/Z");
 }
