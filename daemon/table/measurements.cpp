@@ -5,40 +5,34 @@
  */
 
 #include "measurements.hpp"
-#include <algorithm>
-#include "fib-entry.hpp"
+#include "name-tree.hpp"
 #include "pit-entry.hpp"
+#include "fib-entry.hpp"
 
 namespace nfd {
 
 const time::Duration Measurements::s_defaultLifetime = time::seconds(4);
 
-Measurements::Measurements()
+Measurements::Measurements(NameTree& nameTree)
+  : m_nameTree(nameTree)
+  , m_nItems(0)
 {
 }
 
 Measurements::~Measurements()
 {
-  for (std::map<Name, shared_ptr<measurements::Entry> >::iterator it = m_table.begin();
-       it != m_table.end(); ++it) {
-    shared_ptr<measurements::Entry> entry = it->second;
-    scheduler::cancel(entry->m_cleanup);
-  }
 }
 
 shared_ptr<measurements::Entry>
 Measurements::get(const Name& name)
 {
-  std::map<Name, shared_ptr<measurements::Entry> >::iterator it = m_table.find(name);
-  if (it != m_table.end()) {
-    return it->second;
-  }
-
-  shared_ptr<measurements::Entry> entry = make_shared<measurements::Entry>(name);
-  std::pair<std::map<Name, shared_ptr<measurements::Entry> >::iterator, bool> pair =
-    m_table.insert(std::make_pair(name, entry));
-  this->extendLifetimeInternal(pair.first, s_defaultLifetime);
-
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
+  shared_ptr<measurements::Entry> entry = nameTreeEntry->getMeasurementsEntry();
+  if (static_cast<bool>(entry))
+    return entry;
+  entry = make_shared<measurements::Entry>(name);
+  nameTreeEntry->setMeasurementsEntry(entry);
+  m_nItems++;
   return entry;
 }
 
@@ -57,6 +51,8 @@ Measurements::get(const pit::Entry& pitEntry)
 shared_ptr<measurements::Entry>
 Measurements::getParent(shared_ptr<measurements::Entry> child)
 {
+  BOOST_ASSERT(child);
+
   if (child->getName().size() == 0) {
     return shared_ptr<measurements::Entry>();
   }
@@ -64,48 +60,57 @@ Measurements::getParent(shared_ptr<measurements::Entry> child)
   return this->get(child->getName().getPrefix(-1));
 }
 
-//shared_ptr<fib::Entry>
-//Measurements::findLongestPrefixMatch(const Name& name) const
-//{
-//}
-//
-//shared_ptr<fib::Entry>
-//Measurements::findExactMatch(const Name& name) const
-//{
-//}
-
-void
-Measurements::extendLifetime(measurements::Entry& entry, const time::Duration& lifetime)
+shared_ptr<measurements::Entry>
+Measurements::findLongestPrefixMatch(const Name& name) const
 {
-  std::map<Name, shared_ptr<measurements::Entry> >::iterator it =
-      m_table.find(entry.getName());
-  BOOST_ASSERT(it != m_table.end());
-
-  this->extendLifetimeInternal(it, lifetime);
-}
-
-void
-Measurements::extendLifetimeInternal(
-    std::map<Name, shared_ptr<measurements::Entry> >::iterator it,
-    const time::Duration& lifetime)
-{
-  shared_ptr<measurements::Entry>& entry = it->second;
-
-  time::Point expiry = time::now() + lifetime;
-  if (entry->m_expiry >= expiry) { // has longer lifetime, not extending
-    return;
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findLongestPrefixMatch(name);
+  while (static_cast<bool>(nameTreeEntry))
+  {
+    if (static_cast<bool>(nameTreeEntry->getMeasurementsEntry()))
+      return nameTreeEntry->getMeasurementsEntry();
+    nameTreeEntry = nameTreeEntry->getParent();
   }
+  return shared_ptr<measurements::Entry>();
+}
 
-  scheduler::cancel(entry->m_cleanup);
-  entry->m_expiry = expiry;
-  entry->m_cleanup = scheduler::schedule(lifetime,
-                         bind(&Measurements::cleanup, this, it));
+shared_ptr<measurements::Entry>
+Measurements::findExactMatch(const Name& name) const
+{
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
+  if (static_cast<bool>(nameTreeEntry))
+    return nameTreeEntry->getMeasurementsEntry();
+  return shared_ptr<measurements::Entry>();
 }
 
 void
-Measurements::cleanup(std::map<Name, shared_ptr<measurements::Entry> >::iterator it)
+Measurements::extendLifetime(measurements::Entry& entry, const time::Duration lifetime)
 {
-  m_table.erase(it);
+  shared_ptr<measurements::Entry> ret = this->findExactMatch(entry.getName());
+  if (static_cast<bool>(ret))
+  {
+    time::Point expiry = time::now() + lifetime;
+    if (ret->m_expiry >= expiry) // has longer lifetime, not extending
+      return;
+    scheduler::cancel(entry.m_cleanup);
+    entry.m_expiry = expiry;
+    entry.m_cleanup = scheduler::schedule(lifetime,
+                         bind(&Measurements::cleanup, this, ret));
+  }
+}
+
+void
+Measurements::cleanup(shared_ptr<measurements::Entry> entry)
+{
+  BOOST_ASSERT(entry);
+
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(entry->getName());
+  if (static_cast<bool>(nameTreeEntry))
+  {
+    nameTreeEntry->eraseMeasurementsEntry(
+      nameTreeEntry->getMeasurementsEntry());
+    m_nItems--;
+  }
+    
 }
 
 } // namespace nfd

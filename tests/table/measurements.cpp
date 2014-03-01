@@ -15,7 +15,8 @@ BOOST_FIXTURE_TEST_SUITE(TableMeasurements, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
-  Measurements measurements;
+  NameTree nameTree(1024);
+  Measurements measurements(nameTree);
 
   Name name0;
   Name nameA ("ndn:/A");

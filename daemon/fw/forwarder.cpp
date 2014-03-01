@@ -19,6 +19,7 @@ Forwarder::Forwarder()
   , m_nameTree(1024) // "1024" could be made as one configurable parameter of the forwarder.
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
+  , m_measurements(m_nameTree)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }

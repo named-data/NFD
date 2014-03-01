@@ -8,11 +8,19 @@
 #define NFD_TABLE_MEASUREMENTS_HPP
 
 #include "measurements-entry.hpp"
-#include "fib-entry.hpp"
-#include "pit-entry.hpp"
 #include "core/time.hpp"
+#include "name-tree.hpp"
 
 namespace nfd {
+
+namespace fib {
+class Entry;
+}
+
+namespace pit {
+class Entry;
+}
+
 
 /** \class Measurement
  *  \brief represents the Measurements table
@@ -20,7 +28,8 @@ namespace nfd {
 class Measurements : noncopyable
 {
 public:
-  Measurements();
+  explicit
+  Measurements(NameTree& nametree);
 
   ~Measurements();
 
@@ -36,42 +45,46 @@ public:
   shared_ptr<measurements::Entry>
   get(const pit::Entry& pitEntry);
 
-  /** \brief find or insert a Measurements entry for child's parent
+  /** find or insert a Measurements entry for child's parent
    *
    *  If child is the root entry, returns null.
    */
   shared_ptr<measurements::Entry>
   getParent(shared_ptr<measurements::Entry> child);
 
-//  /// perform a longest prefix match
-//  shared_ptr<fib::Entry>
-//  findLongestPrefixMatch(const Name& name) const;
-//
-//  /// perform an exact match
-//  shared_ptr<fib::Entry>
-//  findExactMatch(const Name& name) const;
+  /// perform a longest prefix match
+  shared_ptr<measurements::Entry>
+  findLongestPrefixMatch(const Name& name) const;
 
-  /** \brief extend lifetime of an entry
+  /// perform an exact match
+  shared_ptr<measurements::Entry>
+  findExactMatch(const Name& name) const;
+
+  /** extend lifetime of an entry
    *
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, const time::Duration& lifetime);
+  extendLifetime(measurements::Entry& entry, const time::Duration lifetime);
+
+  size_t
+  size() const;
 
 private:
   void
-  extendLifetimeInternal(
-    std::map<Name, shared_ptr<measurements::Entry> >::iterator it,
-    const time::Duration& lifetime);
-
-  void
-  cleanup(std::map<Name, shared_ptr<measurements::Entry> >::iterator it);
+  cleanup(shared_ptr<measurements::Entry> entry);
 
 private:
-  std::map<Name, shared_ptr<measurements::Entry> > m_table;
-
+  NameTree& m_nameTree;
+  size_t m_nItems;
   static const time::Duration s_defaultLifetime;
 };
+
+inline size_t
+Measurements::size() const
+{
+  return m_nItems;
+}
 
 } // namespace nfd
 
