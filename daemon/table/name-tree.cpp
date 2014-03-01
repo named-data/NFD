@@ -186,7 +186,7 @@ NameTree::findExactMatch(const Name& prefix) const
 // Return the longest matching Entry address
 // start from the full name, and then remove 1 name comp each time
 shared_ptr<name_tree::Entry>
-NameTree::findLongestPrefixMatch(const Name& prefix)
+NameTree::findLongestPrefixMatch(const Name& prefix, const name_tree::EntrySelector& entrySelector)
 {
   NFD_LOG_DEBUG("findLongestPrefixMatch " << prefix);
 
@@ -195,11 +195,11 @@ NameTree::findLongestPrefixMatch(const Name& prefix)
   for (int i = prefix.size(); i >= 0; i--)
     {
       entry = findExactMatch(prefix.getPrefix(i));
-      if (static_cast<bool>(entry))
+      if (static_cast<bool>(entry) && entrySelector(*entry))
         return entry;
     }
 
-  return entry;
+  return shared_ptr<name_tree::Entry>();
 }
 
 // return {false: this entry is not empty, true: this entry is empty and erased}
@@ -211,9 +211,7 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
   NFD_LOG_DEBUG("eraseEntryIfEmpty " << entry->getPrefix());
 
   // first check if this Entry can be erased
-  if (entry->getChildren().empty() &&
-      !(entry->getFibEntry()) &&
-      entry->getPitEntries().empty())
+  if (entry->isEmpty())
     {
       // update child-related info in the parent
       shared_ptr<name_tree::Entry> parent = entry->getParent();
@@ -277,68 +275,62 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
 }
 
 shared_ptr<std::vector<shared_ptr<name_tree::Entry> > >
-NameTree::fullEnumerate()
+NameTree::fullEnumerate(const name_tree::EntrySelector& entrySelector)
 {
   NFD_LOG_DEBUG("fullEnumerate");
 
-  shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > ret =
+  shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > results =
     make_shared<std::vector<shared_ptr<name_tree::Entry> > >();
 
-  for (int i = 0; i < m_nBuckets; i++)
-    {
-      for (name_tree::Node* node = m_buckets[i]; node != 0; node = node->m_next)
-        {
-          if (static_cast<bool>(node->m_entry))
-            {
-              ret->push_back(node->m_entry);
-            }
-        }
+  for (size_t i = 0; i < m_nBuckets; i++) {
+    for (name_tree::Node* node = m_buckets[i]; node != 0; node = node->m_next) {
+      if (static_cast<bool>(node->m_entry) && entrySelector(*node->m_entry)) {
+        results->push_back(node->m_entry);
+      }
     }
+  }
 
-  return ret;
+  return results;
 }
 
 // Helper function for partialEnumerate()
 void
 NameTree::partialEnumerateAddChildren(shared_ptr<name_tree::Entry> entry,
-                                      shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > ret)
+                                      const name_tree::EntrySelector& entrySelector,
+                                      std::vector<shared_ptr<name_tree::Entry> >& results)
 {
   BOOST_ASSERT(static_cast<bool>(entry));
+  
+  if (!entrySelector(*entry)) {
+    return;
+  }
 
-  ret->push_back(entry);
+  results.push_back(entry);
   for (size_t i = 0; i < entry->m_children.size(); i++)
     {
-      shared_ptr<name_tree::Entry> temp = entry->m_children[i];
-      partialEnumerateAddChildren(temp, ret);
+      shared_ptr<name_tree::Entry> child = entry->m_children[i];
+      partialEnumerateAddChildren(child, entrySelector, results);
     }
 }
 
 shared_ptr<std::vector<shared_ptr<name_tree::Entry> > >
-NameTree::partialEnumerate(const Name& prefix)
+NameTree::partialEnumerate(const Name& prefix,
+                           const name_tree::EntrySelector& entrySelector)
 {
   NFD_LOG_DEBUG("partialEnumerate" << prefix);
 
-  shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > ret =
+  shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > results =
     make_shared<std::vector<shared_ptr<name_tree::Entry> > >();
 
   // find the hash bucket corresponding to that prefix
   shared_ptr<name_tree::Entry> entry = findExactMatch(prefix);
 
-  if (!static_cast<bool>(entry))
-    {
-      return ret;
-    }
-  else
-    {
-      // go through its children list via depth-first-search
-      ret->push_back(entry);
-      for (size_t i = 0; i < entry->m_children.size(); i++)
-        {
-          partialEnumerateAddChildren(entry->m_children[i], ret);
-        }
-    }
+  if (static_cast<bool>(entry)) {
+    // go through its children list via depth-first-search
+    partialEnumerateAddChildren(entry, entrySelector, *results);
+  }
 
-  return ret;
+  return results;
 }
 
 // Hash Table Resize
@@ -348,14 +340,14 @@ NameTree::resize(size_t newNBuckets)
   NFD_LOG_DEBUG("resize");
 
   name_tree::Node** newBuckets = new name_tree::Node*[newNBuckets];
-  int count = 0;
+  size_t count = 0;
 
   // referenced ccnx hashtb.c hashtb_rehash()
   name_tree::Node** pp = 0;
   name_tree::Node* p = 0;
   name_tree::Node* pre = 0;
   name_tree::Node* q = 0; // record p->m_next
-  int i;
+  size_t i;
   uint32_t h;
   uint32_t b;
 

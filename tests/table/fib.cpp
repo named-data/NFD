@@ -120,50 +120,58 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
 
   NameTree nameTree(1024);
   Fib fib(nameTree);
+  // []
+
+  entry = fib.findLongestPrefixMatch(nameA);
+  BOOST_REQUIRE(static_cast<bool>(entry)); // the empty entry
+  
+  insertRes = fib.insert(nameEmpty);
+  BOOST_CHECK_EQUAL(insertRes.second, true);
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameEmpty);
   // ['/']
   
   entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameEmpty));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
   
   insertRes = fib.insert(nameA);
   BOOST_CHECK_EQUAL(insertRes.second, true);
-  BOOST_CHECK(insertRes.first->getPrefix().equals(nameA));
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
   // ['/', '/A']
   
   insertRes = fib.insert(nameA);
   BOOST_CHECK_EQUAL(insertRes.second, false);
-  BOOST_CHECK(insertRes.first->getPrefix().equals(nameA));
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
   // ['/', '/A']
 
   entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameA));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   
   entry = fib.findLongestPrefixMatch(nameABCD);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameA));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   
   insertRes = fib.insert(nameABC);
   BOOST_CHECK_EQUAL(insertRes.second, true);
-  BOOST_CHECK(insertRes.first->getPrefix().equals(nameABC));
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameABC);
   // ['/', '/A', '/A/B/C']
 
   entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameA));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   
   entry = fib.findLongestPrefixMatch(nameAB);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameA));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   
   entry = fib.findLongestPrefixMatch(nameABCD);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameABC));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameABC);
   
   entry = fib.findLongestPrefixMatch(nameE);
-  BOOST_CHECK_NE(entry.get(), static_cast<fib::Entry*>(0));
-  BOOST_CHECK(entry->getPrefix().equals(nameEmpty));
+  BOOST_REQUIRE(static_cast<bool>(entry));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
@@ -193,13 +201,13 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   // {'/':[], '/A':[2], '/B':[]}
   
   entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_CHECK(entry->getPrefix().equals(nameA));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   const fib::NextHopList& nexthopsA = entry->getNextHops();
   BOOST_CHECK_EQUAL(nexthopsA.size(), 1);
   BOOST_CHECK_EQUAL(nexthopsA.begin()->getFace(), face2);
   
   entry = fib.findLongestPrefixMatch(nameB);
-  BOOST_CHECK(entry->getPrefix().equals(nameB));
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameB);
   const fib::NextHopList& nexthopsB = entry->getNextHops();
   BOOST_CHECK_EQUAL(nexthopsB.size(), 0);
 }
@@ -239,7 +247,7 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
   validateFindExactMatch(fib, "/A");
   validateFindExactMatch(fib, "/A/B");
   validateFindExactMatch(fib, "/A/B/C");
-  validateFindExactMatch(fib, "/");
+  validateNoExactMatch(fib, "/");
 
   validateNoExactMatch(fib, "/does/not/exist");
 
@@ -280,6 +288,7 @@ BOOST_AUTO_TEST_CASE(Remove)
 
   NameTree nameTree(1024);
   Fib fib(nameTree);
+  fib.insert("/");
   fib.insert("/A");
   fib.insert("/A/B");
   fib.insert("/A/B/C");
@@ -298,6 +307,9 @@ BOOST_AUTO_TEST_CASE(Remove)
 
   validateRemove(fib, "/A");
   validateFindExactMatch(fib, "/");
+
+  validateRemove(fib, "/");
+  validateNoExactMatch(fib, "/");
 
   NameTree gapNameTree(1024);
   Fib gapFib(gapNameTree);

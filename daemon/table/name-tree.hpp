@@ -25,6 +25,17 @@ namespace name_tree {
 uint32_t
 hashName(const Name& prefix);
 
+/// a predicate to accept or reject an Entry in find operations
+typedef function<bool (const Entry& entry)> EntrySelector;
+
+struct AnyEntry {
+  bool
+  operator()(const Entry& entry)
+  {
+    return true;
+  }
+};
+
 } // namespace name_tree
 
 /**
@@ -90,7 +101,8 @@ public:
    * by one each time, until an Entry is found.
    */
   shared_ptr<name_tree::Entry>
-  findLongestPrefixMatch(const Name& prefix);
+  findLongestPrefixMatch(const Name& prefix,
+                         const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry());
 
   /**
    * @brief Resize the hash table size when its load factor reaches a threshold.
@@ -106,7 +118,7 @@ public:
    * @brief Enumerate all the name prefixes stored in the Name Tree.
    */
   shared_ptr<std::vector<shared_ptr<name_tree::Entry> > >
-  fullEnumerate();
+  fullEnumerate(const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry());
 
   /**
    * @brief Enumerate all the name prefixes under a specific name prefix
@@ -114,7 +126,8 @@ public:
    * number of entries stored in the vector.
    */
   shared_ptr<std::vector<shared_ptr<name_tree::Entry> > >
-  partialEnumerate(const Name& prefix);
+  partialEnumerate(const Name& prefix,
+                   const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry());
 
   /**
    * @brief Dump all the information stored in the Name Tree for debugging.
@@ -146,7 +159,8 @@ private:
    */
   void
   partialEnumerateAddChildren(shared_ptr<name_tree::Entry> entry,
-                              shared_ptr<std::vector<shared_ptr<name_tree::Entry> > > ret);
+                              const name_tree::EntrySelector& entrySelector,
+                              std::vector<shared_ptr<name_tree::Entry> >& results);
 
 };
 

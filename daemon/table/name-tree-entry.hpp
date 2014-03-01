@@ -71,6 +71,9 @@ public:
 
   std::vector<shared_ptr<Entry> >&
   getChildren();
+  
+  bool
+  isEmpty() const;
 
   void
   setFibEntry(shared_ptr<fib::Entry> fib);
@@ -138,6 +141,15 @@ inline std::vector<shared_ptr<name_tree::Entry> >&
 Entry::getChildren()
 {
   return m_children;
+}
+
+inline bool
+Entry::isEmpty() const
+{
+  return m_children.empty() &&
+         !static_cast<bool>(m_fibEntry) &&
+         m_pitEntries.empty() &&
+         !static_cast<bool>(m_measurementsEntry);
 }
 
 inline shared_ptr<fib::Entry>

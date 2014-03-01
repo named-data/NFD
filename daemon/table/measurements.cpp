@@ -23,6 +23,12 @@ Measurements::~Measurements()
 {
 }
 
+static inline bool
+predicate_NameTreeEntry_hasMeasurementsEntry(const name_tree::Entry& entry)
+{
+  return static_cast<bool>(entry.getMeasurementsEntry());
+}
+
 shared_ptr<measurements::Entry>
 Measurements::get(const Name& name)
 {
@@ -63,12 +69,10 @@ Measurements::getParent(shared_ptr<measurements::Entry> child)
 shared_ptr<measurements::Entry>
 Measurements::findLongestPrefixMatch(const Name& name) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findLongestPrefixMatch(name);
-  while (static_cast<bool>(nameTreeEntry))
-  {
-    if (static_cast<bool>(nameTreeEntry->getMeasurementsEntry()))
-      return nameTreeEntry->getMeasurementsEntry();
-    nameTreeEntry = nameTreeEntry->getParent();
+  shared_ptr<name_tree::Entry> nameTreeEntry =
+    m_nameTree.findLongestPrefixMatch(name, &predicate_NameTreeEntry_hasMeasurementsEntry);
+  if (static_cast<bool>(nameTreeEntry)) {
+    return nameTreeEntry->getMeasurementsEntry();
   }
   return shared_ptr<measurements::Entry>();
 }

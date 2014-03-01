@@ -90,9 +90,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   }
 
   // PIT insert
-  std::pair<shared_ptr<pit::Entry>, bool>
-    pitInsertResult = m_pit.insert(interest);
-  shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
+  shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
 
   // detect loop and record Nonce
   bool isLoop = ! pitEntry->addNonce(interest.getNonce());
@@ -131,9 +129,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   }
 
   // FIB lookup
-  shared_ptr<fib::Entry> fibEntry
-    = m_fib.findLongestPrefixMatch(interest.getName());
-  // TODO use Fib::findParent(pitEntry)
+  shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
 
   // dispatch to strategy
   this->dispatchToStrategy(inFace, interest, fibEntry, pitEntry);

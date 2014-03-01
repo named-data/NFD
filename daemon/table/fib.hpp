@@ -66,9 +66,16 @@ public:
   size() const;
 
 private:
-  shared_ptr<fib::Entry> m_rootEntry;
   NameTree& m_nameTree;
-  size_t m_nItems; // Number of items being stored
+  size_t m_nItems;
+  
+  /** \brief The empty FIB entry.
+   *
+   *  This entry has no nexthops.
+   *  It is returned by findLongestPrefixMatch if nothing is matched.
+   */
+  // Returning empty entry instead of nullptr makes forwarding and strategy implementation easier.
+  static const shared_ptr<fib::Entry> m_emptyEntry;
 };
 
 inline size_t

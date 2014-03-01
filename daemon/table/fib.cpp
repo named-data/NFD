@@ -9,15 +9,23 @@
 #include "measurements-entry.hpp"
 
 namespace nfd {
+
+const shared_ptr<fib::Entry> Fib::m_emptyEntry = make_shared<fib::Entry>(Name());
+
 Fib::Fib(NameTree& nameTree)
   : m_nameTree(nameTree)
   , m_nItems(0)
 {
-  m_rootEntry = (this->insert(Name())).first;
 }
 
 Fib::~Fib()
 {
+}
+
+static inline bool
+predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& entry)
+{
+  return static_cast<bool>(entry.getFibEntry());
 }
 
 std::pair<shared_ptr<fib::Entry>, bool>
@@ -36,15 +44,12 @@ Fib::insert(const Name& prefix)
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findLongestPrefixMatch(prefix);
-  while (static_cast<bool>(nameTreeEntry))
-  {
-    if (static_cast<bool>(nameTreeEntry->getFibEntry()))
-      return nameTreeEntry->getFibEntry();
-    else
-      nameTreeEntry = nameTreeEntry->getParent();
+  shared_ptr<name_tree::Entry> nameTreeEntry =
+    m_nameTree.findLongestPrefixMatch(prefix, &predicate_NameTreeEntry_hasFibEntry);
+  if (static_cast<bool>(nameTreeEntry)) {
+    return nameTreeEntry->getFibEntry();
   }
-  return m_rootEntry;
+  return m_emptyEntry;
 }
 
 shared_ptr<fib::Entry>
@@ -82,13 +87,11 @@ Fib::erase(const Name& prefix)
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  shared_ptr<fib::Entry> entry;
-  shared_ptr<std::vector<shared_ptr<name_tree::Entry > > > res = m_nameTree.fullEnumerate();
-  for (int i = 0; i < res->size(); i++)
-  {
-    entry = (*res)[i]->getFibEntry();
-    if (static_cast<bool>(entry))
-      entry->removeNextHop(face);
+  shared_ptr<std::vector<shared_ptr<name_tree::Entry > > > nameTreeEntries =
+    m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
+  for (size_t i = 0; i < nameTreeEntries->size(); ++i) {
+    shared_ptr<fib::Entry> entry = nameTreeEntries->at(i)->getFibEntry();
+    entry->removeNextHop(face);
   }
 }
 
