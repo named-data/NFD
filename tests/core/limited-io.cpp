@@ -5,9 +5,12 @@
  */
 
 #include "limited-io.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace tests {
+
+NFD_LOG_INIT("LimitedIo");
 
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::Duration LimitedIo::UNLIMITED_TIME = time::nanoseconds(-1);
@@ -30,7 +33,14 @@ LimitedIo::run(int nOpsLimit, time::Duration nTimeLimit)
     m_timeout = scheduler::schedule(nTimeLimit, bind(&LimitedIo::afterTimeout, this));
   }
   
-  getGlobalIoService().run();
+  try {
+    getGlobalIoService().run();
+  }
+  catch (std::exception& ex) {
+    m_reason = EXCEPTION;
+    NFD_LOG_ERROR("g_io.run() exception: " << ex.what());
+    m_lastException = ex;
+  }
   
   getGlobalIoService().reset();
   scheduler::cancel(m_timeout);
@@ -53,6 +63,12 @@ LimitedIo::afterTimeout()
 {
   m_reason = EXCEED_TIME;
   getGlobalIoService().stop();
+}
+
+const std::exception&
+LimitedIo::getLastException() const
+{
+  return m_lastException;
 }
 
 } // namespace tests

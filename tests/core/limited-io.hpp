@@ -12,23 +12,40 @@
 namespace nfd {
 namespace tests {
 
+/** \brief provides IO operations limit and/or time limit for unit testing
+ */
 class LimitedIo
 {
 public:
   LimitedIo();
   
+  /// indicates why .run returns
   enum StopReason
   {
+    /// g_io.run() runs normally because there's no work to do
     NO_WORK,
+    /// .afterOp() has been invoked nOpsLimit times
     EXCEED_OPS,
-    EXCEED_TIME
+    /// nTimeLimit has elapsed
+    EXCEED_TIME,
+    /// an exception is thrown
+    EXCEPTION
   };
   
+  /** \brief g_io.run() with operation count and/or time limit
+   *
+   *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
+   *  \param nTimeLimit time limit, pass UNLIMITED_TIME for no limit
+   */
   StopReason
   run(int nOpsLimit, time::Duration nTimeLimit);
   
+  /// count an operation
   void
   afterOp();
+  
+  const std::exception&
+  getLastException() const;
   
 private:
   void
@@ -43,6 +60,7 @@ private:
   int m_nOpsRemaining;
   EventId m_timeout;
   StopReason m_reason;
+  std::exception m_lastException;
 };
 
 } // namespace tests

@@ -5,10 +5,10 @@
  */
 
 #include "face/tcp-factory.hpp"
-#include "core/scheduler.hpp"
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
+#include "tests/core/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
@@ -42,7 +42,7 @@ public:
     m_face1->onFail +=
       bind(&EndToEndFixture::face1_onFail, this);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -50,7 +50,7 @@ public:
   {
     BOOST_CHECK_MESSAGE(false, reason);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -58,7 +58,7 @@ public:
   {
     m_face1_receivedInterests.push_back(interest);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -66,14 +66,14 @@ public:
   {
     m_face1_receivedDatas.push_back(data);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
   face1_onFail()
   {
     m_face1.reset();
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -88,7 +88,7 @@ public:
     m_face2->onFail +=
       bind(&EndToEndFixture::face2_onFail, this);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -96,7 +96,7 @@ public:
   {
     BOOST_CHECK_MESSAGE(false, reason);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -104,7 +104,7 @@ public:
   {
     m_face2_receivedInterests.push_back(interest);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -112,21 +112,21 @@ public:
   {
     m_face2_receivedDatas.push_back(data);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
   face2_onFail()
   {
     m_face2.reset();
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
   channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     m_faces.push_back(newFace);
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -134,7 +134,7 @@ public:
   {
     BOOST_CHECK_MESSAGE(false, reason);
 
-    this->afterIo();
+    m_limitedIo.afterOp();
   }
 
   void
@@ -143,23 +143,8 @@ public:
     BOOST_CHECK_EQUAL(m_faces.size(), shouldBe);
   }
 
-  void
-  abortTestCase(const std::string& message)
-  {
-    g_io.stop();
-    BOOST_FAIL(message);
-  }
-
-private:
-  void
-  afterIo()
-  {
-    if (--m_ioRemaining <= 0)
-      g_io.stop();
-  }
-
 public:
-  int m_ioRemaining;
+  LimitedIo m_limitedIo;
 
   shared_ptr<Face> m_face1;
   std::vector<Interest> m_face1_receivedInterests;
@@ -176,11 +161,6 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 {
   TcpFactory factory;
 
-  EventId abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "TcpChannel error: cannot connect or cannot accept connection"));
-
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
 
@@ -192,10 +172,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
                     time::seconds(4));
 
-  m_ioRemaining = 2;
-  g_io.run();
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
   BOOST_REQUIRE(static_cast<bool>(m_face2));
@@ -207,11 +185,6 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(m_face2)), true);
 
   // integrated tests needs to check that TcpFace for non-loopback fails these tests...
-
-  abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "TcpChannel error: cannot send or receive Interest/Data packets"));
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");
@@ -232,10 +205,9 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   m_face2->sendInterest(interest2);
   m_face2->sendData    (data2    );
 
-  m_ioRemaining = 4;
-  g_io.run();
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(4, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot send or receive Interest/Data packets");
+
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
@@ -252,11 +224,6 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
   TcpFactory factory;
 
-  EventId abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "TcpChannel error: cannot connect or cannot accept connection"));
-
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
 
@@ -268,10 +235,9 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout
 
-  m_ioRemaining = 2;
-  g_io.run();
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
+
 
   BOOST_CHECK_EQUAL(m_faces.size(), 2);
 
@@ -286,30 +252,21 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   BOOST_CHECK_NE(channel3, channel4);
 
-  scheduler
-    ::schedule
-    (time::seconds(1),
-     bind(&TcpChannel::connect, channel4,
-          "127.0.0.1", "20070",
+  scheduler::schedule(time::seconds(1),
+      bind(&TcpChannel::connect, channel4, "127.0.0.1", "20070",
           // does not work without static_cast
-          static_cast<TcpChannel::FaceCreatedCallback>(bind(&EndToEndFixture::
-                                                            channel_onFaceCreated, this, _1)),
-          static_cast<TcpChannel::ConnectFailedCallback>(bind(&EndToEndFixture::
-                                                              channel_onConnectFailed, this, _1)),
-          time::seconds(4)));
-
-  m_ioRemaining = 4; // 2 connects and 2 accepts
-  abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "TcpChannel error: cannot connect or cannot accept multiple connections"));
+           static_cast<TcpChannel::FaceCreatedCallback>(
+               bind(&EndToEndFixture::channel_onFaceCreated, this, _1)),
+           static_cast<TcpChannel::ConnectFailedCallback>(
+               bind(&EndToEndFixture::channel_onConnectFailed, this, _1)),
+           time::seconds(4)));
 
   scheduler::schedule(time::seconds(0.5),
                       bind(&EndToEndFixture::checkFaceList, this, 4));
 
-  g_io.run();
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(4,// 2 connects and 2 accepts
+                      time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept multiple connections");
 
   BOOST_CHECK_EQUAL(m_faces.size(), 6);
 }
@@ -318,11 +275,6 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
 {
   TcpFactory factory;
-
-  EventId abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "TcpChannel error: cannot connect or cannot accept connection"));
 
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
@@ -335,30 +287,20 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout
 
-  m_ioRemaining = 2;
-  g_io.run();
-  // BOOST_REQUIRE_NO_THROW(g_io.run());
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
 
   BOOST_CHECK_EQUAL(channel1->size(), 1);
   BOOST_CHECK_EQUAL(channel2->size(), 1);
 
-  abortEvent =
-    scheduler::schedule(time::seconds(10),
-                        bind(&EndToEndFixture::abortTestCase, this,
-                             "FaceClosing error: cannot properly close faces"));
-
   BOOST_REQUIRE(static_cast<bool>(m_face1));
   BOOST_CHECK(static_cast<bool>(m_face2));
 
-  m_ioRemaining = 2;
-  // just double check that we are calling the virtual method
-  static_pointer_cast<Face>(m_face1)->close();
+  // Face::close must be invoked during io run to be counted as an op
+  scheduler::schedule(time::seconds(0.1), bind(&Face::close, m_face1));
 
-  BOOST_REQUIRE_NO_THROW(g_io.run());
-  g_io.reset();
-  scheduler::cancel(abortEvent);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "FaceClosing error: cannot properly close faces");
 
   // both faces should get closed
   BOOST_CHECK(!static_cast<bool>(m_face1));
