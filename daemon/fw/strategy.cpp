@@ -56,18 +56,5 @@ Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
 //  NFD_LOG_DEBUG("beforeRemoveFibEntry fibEntry=" << fibEntry->getPrefix());
 //}
 
-void
-Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                       shared_ptr<Face> outFace)
-{
-  m_forwarder.onOutgoingInterest(pitEntry, *outFace);
-}
-
-void
-Strategy::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
-{
-  m_forwarder.onInterestReject(pitEntry);
-}
-
 } // namespace fw
 } // namespace nfd

@@ -15,14 +15,16 @@
 #include "table/cs.hpp"
 #include "table/measurements.hpp"
 #include "table/strategy-choice.hpp"
-#include "strategy.hpp"
 
 namespace nfd {
 
-/**
- * Forwarder is the main class of NFD.
+namespace fw {
+class Strategy;
+} // namespace fw
+
+/** \brief main class of NFD
  *
- * It creates and owns a set of Face listeners
+ *  Forwarder owns all faces and tables, and implements forwarding pipelines.
  */
 class Forwarder
 {

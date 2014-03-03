@@ -5,6 +5,7 @@
  */
 
 #include "measurements-accessor.hpp"
+#include "fw/strategy.hpp"
 
 namespace nfd {
 

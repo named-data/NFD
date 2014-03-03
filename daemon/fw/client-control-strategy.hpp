@@ -4,27 +4,26 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef NFD_FW_BROADCAST_STRATEGY_HPP
-#define NFD_FW_BROADCAST_STRATEGY_HPP
+#ifndef NFD_FW_CLIENT_CONTROL_STRATEGY_HPP
+#define NFD_FW_CLIENT_CONTROL_STRATEGY_HPP
 
-#include "strategy.hpp"
+#include "best-route-strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \class BroadcastStrategy
- *  \brief a forwarding strategy that forwards Interest
- *         to all nexthops
+/** \brief a forwarding strategy that forwards Interests
+ *         according to NextHopFaceId field in LocalControlHeader
  */
-class BroadcastStrategy : public Strategy
+class ClientControlStrategy : public BestRouteStrategy
 {
 public:
   explicit
-  BroadcastStrategy(Forwarder& forwarder);
-  
+  ClientControlStrategy(Forwarder& forwarder);
+
   virtual
-  ~BroadcastStrategy();
-  
+  ~ClientControlStrategy();
+
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
@@ -35,4 +34,4 @@ public:
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_FW_BROADCAST_STRATEGY_HPP
+#endif // NFD_FW_CLIENT_CONTROL_STRATEGY_HPP

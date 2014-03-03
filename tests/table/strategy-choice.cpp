@@ -5,7 +5,7 @@
  */
 
 #include "table/strategy-choice.hpp"
-#include "fw/forwarder.hpp"
+#include "fw/strategy.hpp"
 
 #include "tests/test-common.hpp"
 

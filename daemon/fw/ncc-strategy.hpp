@@ -8,8 +8,6 @@
 #define NFD_FW_NCC_STRATEGY_HPP
 
 #include "strategy.hpp"
-#include "forwarder.hpp"
-#include "strategy-info.hpp"
 
 namespace nfd {
 namespace fw {

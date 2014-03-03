@@ -7,15 +7,10 @@
 #ifndef NFD_FW_STRATEGY_HPP
 #define NFD_FW_STRATEGY_HPP
 
-#include "face/face.hpp"
-#include "table/fib-entry.hpp"
-#include "table/pit-entry.hpp"
+#include "forwarder.hpp"
 #include "table/measurements-accessor.hpp"
 
 namespace nfd {
-
-class Forwarder;
-
 namespace fw {
 
 /** \brief represents a forwarding strategy
@@ -114,6 +109,9 @@ protected: // accessors
   MeasurementsAccessor&
   getMeasurements();
 
+  shared_ptr<Face>
+  getFace(FaceId id);
+
 private:
   Name m_name;
 
@@ -132,10 +130,29 @@ Strategy::getName() const
   return m_name;
 }
 
+inline void
+Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
+                       shared_ptr<Face> outFace)
+{
+  m_forwarder.onOutgoingInterest(pitEntry, *outFace);
+}
+
+inline void
+Strategy::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
+{
+  m_forwarder.onInterestReject(pitEntry);
+}
+
 inline MeasurementsAccessor&
 Strategy::getMeasurements()
 {
   return m_measurements;
+}
+
+inline shared_ptr<Face>
+Strategy::getFace(FaceId id)
+{
+  return m_forwarder.getFace(id);
 }
 
 } // namespace fw

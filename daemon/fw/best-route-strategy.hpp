@@ -8,7 +8,6 @@
 #define NFD_FW_BEST_ROUTE_STRATEGY_HPP
 
 #include "strategy.hpp"
-#include "forwarder.hpp"
 
 namespace nfd {
 namespace fw {
