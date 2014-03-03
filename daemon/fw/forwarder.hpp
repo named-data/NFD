@@ -9,7 +9,7 @@
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
-#include "face/face.hpp"
+#include "face-table.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
@@ -28,19 +28,38 @@ class Forwarder
 public:
   Forwarder();
 
+public: // faces
+  FaceTable&
+  getFaceTable();
+
+  /** \brief get existing Face
+   *
+   *  shortcut to .getFaceTable().get(face)
+   */
+  shared_ptr<Face>
+  getFace(FaceId id) const;
+
+  /** \brief add new Face
+   *
+   *  shortcut to .getFaceTable().add(face)
+   */
   void
   addFace(shared_ptr<Face> face);
 
+  /** \brief remove existing Face
+   *
+   *  shortcut to .getFaceTable().remove(face)
+   */
   void
   removeFace(shared_ptr<Face> face);
 
+public: // forwarding entrypoints and tables
   void
   onInterest(Face& face, const Interest& interest);
 
   void
   onData(Face& face, const Data& data);
 
-public:
   Fib&
   getFib();
 
@@ -52,9 +71,6 @@ public:
 
   Measurements&
   getMeasurements();
-
-  shared_ptr<Face>
-  getFace(FaceId id);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
@@ -115,8 +131,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
                      shared_ptr<pit::Entry> pitEntry);
 
 private:
-  FaceId m_lastFaceId;
-  std::map<FaceId, shared_ptr<Face> > m_faces;
+  FaceTable m_faceTable;
 
   NameTree     m_nameTree;
   Fib          m_fib;
@@ -131,6 +146,42 @@ private:
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
 };
+
+inline FaceTable&
+Forwarder::getFaceTable()
+{
+  return m_faceTable;
+}
+
+inline shared_ptr<Face>
+Forwarder::getFace(FaceId id) const
+{
+  return m_faceTable.get(id);
+}
+
+inline void
+Forwarder::addFace(shared_ptr<Face> face)
+{
+  m_faceTable.add(face);
+}
+
+inline void
+Forwarder::removeFace(shared_ptr<Face> face)
+{
+  m_faceTable.remove(face);
+}
+
+inline void
+Forwarder::onInterest(Face& face, const Interest& interest)
+{
+  this->onIncomingInterest(face, interest);
+}
+
+inline void
+Forwarder::onData(Face& face, const Data& data)
+{
+  this->onIncomingData(face, data);
+}
 
 inline Fib&
 Forwarder::getFib()
@@ -155,6 +206,7 @@ Forwarder::getMeasurements()
 {
   return m_measurements;
 }
+
 
 } // namespace nfd
 

@@ -15,62 +15,13 @@ NFD_LOG_INIT("Forwarder");
 const Name Forwarder::s_localhostName("ndn:/localhost");
 
 Forwarder::Forwarder()
-  : m_lastFaceId(0)
+  : m_faceTable(*this)
   , m_nameTree(1024) // "1024" could be made as one configurable parameter of the forwarder.
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
-}
-
-void
-Forwarder::addFace(shared_ptr<Face> face)
-{
-  FaceId faceId = ++m_lastFaceId;
-  face->setId(faceId);
-  m_faces[faceId] = face;
-  NFD_LOG_INFO("addFace id=" << faceId);
-
-  face->onReceiveInterest += bind(&Forwarder::onInterest,
-                             this, boost::ref(*face), _1);
-  face->onReceiveData     += bind(&Forwarder::onData,
-                             this, boost::ref(*face), _1);
-}
-
-void
-Forwarder::removeFace(shared_ptr<Face> face)
-{
-  FaceId faceId = face->getId();
-  m_faces.erase(faceId);
-  face->setId(INVALID_FACEID);
-  NFD_LOG_INFO("removeFace id=" << faceId);
-
-  // XXX This clears all subscriptions, because EventEmitter
-  //     does not support only removing Forwarder's subscription
-  face->onReceiveInterest.clear();
-  face->onReceiveData    .clear();
-
-  m_fib.removeNextHopFromAllEntries(face);
-}
-
-shared_ptr<Face>
-Forwarder::getFace(FaceId id)
-{
-  std::map<FaceId, shared_ptr<Face> >::iterator i = m_faces.find(id);
-  return (i == m_faces.end()) ? (shared_ptr<Face>()) : (i->second);
-}
-
-void
-Forwarder::onInterest(Face& face, const Interest& interest)
-{
-  this->onIncomingInterest(face, interest);
-}
-
-void
-Forwarder::onData(Face& face, const Data& data)
-{
-  this->onIncomingData(face, data);
 }
 
 void

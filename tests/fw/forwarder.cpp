@@ -14,30 +14,6 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(FwForwarder, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(AddRemoveFace)
-{
-  Forwarder forwarder;
-
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  shared_ptr<Face> face2 = make_shared<DummyFace>();
-
-  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
-
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-
-  BOOST_CHECK_NE(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
-  BOOST_CHECK_NE(face1->getId(), face2->getId());
-
-  forwarder.removeFace(face1);
-  forwarder.removeFace(face2);
-
-  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
-}
-
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
   Forwarder forwarder;

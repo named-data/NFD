@@ -122,7 +122,7 @@ private:
   FaceCounters m_counters;
 
   // allow setting FaceId
-  friend class Forwarder;
+  friend class FaceTable;
 };
 
 
