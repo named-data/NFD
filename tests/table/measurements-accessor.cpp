@@ -19,7 +19,7 @@ class MeasurementsAccessorTestStrategy : public fw::Strategy
 public:
   explicit
   MeasurementsAccessorTestStrategy(Forwarder& forwarder)
-    : Strategy(forwarder)
+    : Strategy(forwarder, "ndn:/MeasurementsAccessorTestStrategy")
   {
   }
 

@@ -14,6 +14,7 @@
 #include "table/pit.hpp"
 #include "table/cs.hpp"
 #include "table/measurements.hpp"
+#include "table/strategy-choice.hpp"
 #include "strategy.hpp"
 
 namespace nfd {
@@ -71,6 +72,9 @@ public: // forwarding entrypoints and tables
 
   Measurements&
   getMeasurements();
+
+  StrategyChoice&
+  getStrategyChoice();
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
@@ -133,11 +137,14 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 private:
   FaceTable m_faceTable;
 
-  NameTree     m_nameTree;
-  Fib          m_fib;
-  Pit          m_pit;
-  Cs           m_cs;
-  Measurements m_measurements;
+  // tables
+  NameTree       m_nameTree;
+  Fib            m_fib;
+  Pit            m_pit;
+  Cs             m_cs;
+  Measurements   m_measurements;
+  StrategyChoice m_strategyChoice;
+
   /// the active strategy (only one strategy in mock)
   shared_ptr<fw::Strategy> m_strategy;
 
@@ -207,6 +214,11 @@ Forwarder::getMeasurements()
   return m_measurements;
 }
 
+inline StrategyChoice&
+Forwarder::getStrategyChoice()
+{
+  return m_strategyChoice;
+}
 
 } // namespace nfd
 

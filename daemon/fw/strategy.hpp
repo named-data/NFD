@@ -18,17 +18,19 @@ class Forwarder;
 
 namespace fw {
 
-/** \class Strategy
- *  \brief represents a forwarding strategy
+/** \brief represents a forwarding strategy
  */
-class Strategy
+class Strategy : public enable_shared_from_this<Strategy>, noncopyable
 {
 public:
-  explicit
-  Strategy(Forwarder& forwarder);
+  Strategy(Forwarder& forwarder, const Name& name);
 
   virtual
   ~Strategy();
+
+  /// a Name that represent the Strategy program
+  const Name&
+  getName() const;
 
 public: // triggers
   /** \brief trigger after Interest is received
@@ -113,6 +115,8 @@ protected: // accessors
   getMeasurements();
 
 private:
+  Name m_name;
+
   /** \brief reference to the forwarder
    *
    *  Triggers can access forwarder indirectly via actions.
@@ -121,6 +125,12 @@ private:
 
   MeasurementsAccessor m_measurements;
 };
+
+inline const Name&
+Strategy::getName() const
+{
+  return m_name;
+}
 
 inline MeasurementsAccessor&
 Strategy::getMeasurements()

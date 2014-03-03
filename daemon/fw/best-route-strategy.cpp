@@ -10,7 +10,7 @@ namespace nfd {
 namespace fw {
 
 BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder)
-  : Strategy(forwarder)
+  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/best-route")
 {
 }
 

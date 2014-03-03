@@ -13,6 +13,7 @@
 #include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 #include "table/measurements-entry.hpp"
+#include "table/strategy-choice-entry.hpp"
 
 namespace nfd {
 
@@ -106,6 +107,12 @@ public:
   bool
   eraseMeasurementsEntry(shared_ptr<measurements::Entry> measurements);
 
+  void
+  setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry);
+
+  shared_ptr<strategy_choice::Entry>
+  getStrategyChoiceEntry() const;
+
 private:
   uint32_t m_hash;
   Name m_prefix;
@@ -114,6 +121,7 @@ private:
   shared_ptr<fib::Entry> m_fibEntry;
   std::vector<shared_ptr<pit::Entry> > m_pitEntries;
   shared_ptr<measurements::Entry> m_measurementsEntry;
+  shared_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
 
   // get the Name Tree Node that is associated with this Name Tree Entry
   Node* m_node;
@@ -168,6 +176,12 @@ inline shared_ptr<measurements::Entry>
 Entry::getMeasurementsEntry() const
 {
   return m_measurementsEntry;
+}
+
+inline shared_ptr<strategy_choice::Entry>
+Entry::getStrategyChoiceEntry() const
+{
+  return m_strategyChoiceEntry;
 }
 
 } // namespace name_tree

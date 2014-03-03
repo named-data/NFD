@@ -20,6 +20,7 @@ Forwarder::Forwarder()
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
+  , m_strategyChoice(m_nameTree, make_shared<fw::BestRouteStrategy>(boost::ref(*this)))
 {
   m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
 }

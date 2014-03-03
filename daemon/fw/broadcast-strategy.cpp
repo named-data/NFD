@@ -10,7 +10,7 @@ namespace nfd {
 namespace fw {
 
 BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder)
-  : Strategy(forwarder)
+  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/broadcast")
 {
 }
 

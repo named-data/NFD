@@ -99,5 +99,11 @@ Entry::eraseMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
   return true;
 }
 
+void
+Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
+{
+  m_strategyChoiceEntry = strategyChoiceEntry;
+}
+
 } // namespace name_tree
 } // namespace nfd

@@ -10,7 +10,7 @@ namespace nfd {
 namespace fw {
 
 NccStrategy::NccStrategy(Forwarder& forwarder)
-  : Strategy(forwarder)
+  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/ncc")
 {
 }
 
