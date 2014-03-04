@@ -6,6 +6,7 @@
 
 #include "udp-channel.hpp"
 #include "core/global-io.hpp"
+#include "core/face-uri.hpp"
 
 namespace nfd {
 
@@ -35,6 +36,12 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
     throw Error("Failed to properly configure the socket. "
                 "UdpChannel creation aborted, check the address (" + std::string(e.what()) + ")");
   }
+  
+  this->setUri(FaceUri(localEndpoint));
+}
+
+UdpChannel::~UdpChannel()
+{
 }
 
 void

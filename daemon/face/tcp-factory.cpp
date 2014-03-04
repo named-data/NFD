@@ -5,7 +5,6 @@
  */
 
 #include "tcp-factory.hpp"
-#include "core/global-io.hpp"
 #include "core/resolver.hpp"
 #include "core/logger.hpp"
 
@@ -25,7 +24,7 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
   if(static_cast<bool>(channel))
     return channel;
 
-  channel = make_shared<TcpChannel>(boost::ref(getGlobalIoService()), boost::cref(endpoint));
+  channel = make_shared<TcpChannel>(boost::cref(endpoint));
   m_channels[endpoint] = channel;
   NFD_LOG_DEBUG("Channel [" << endpoint << "] created");
   return channel;
@@ -58,7 +57,7 @@ TcpFactory::createFace(const FaceUri& uri,
   else if (uri.getScheme() == "tcp6")
     addressSelector = resolver::Ipv6Address();
 
-  TcpResolver::asyncResolve(uri.getDomain(),
+  TcpResolver::asyncResolve(uri.getHost(),
                             uri.getPort().empty() ? m_defaultPort : uri.getPort(),
                             bind(&TcpFactory::continueCreateFaceAfterResolve, this, _1,
                                  onCreated, onConnectFailed),

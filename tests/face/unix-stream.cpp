@@ -15,17 +15,24 @@ namespace tests {
 
 using namespace boost::asio::local;
 
+#define CHANNEL_PATH1 "unix-stream-test.1.sock"
+#define CHANNEL_PATH2 "unix-stream-test.2.sock"
+
 BOOST_FIXTURE_TEST_SUITE(FaceUnixStream, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
   UnixStreamFactory factory;
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
-  shared_ptr<UnixStreamChannel> channel1a = factory.createChannel("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel(CHANNEL_PATH1);
+  shared_ptr<UnixStreamChannel> channel1a = factory.createChannel(CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
+  std::string channel1uri = channel1->getUri().toString();
+  BOOST_CHECK_EQUAL(channel1uri.find("unix:///"), 0); // third '/' is the path separator
+  BOOST_CHECK_EQUAL(channel1uri.rfind(CHANNEL_PATH1),
+                    channel1uri.size() - std::string(CHANNEL_PATH1).size());
 
-  shared_ptr<UnixStreamChannel> channel2 = factory.createChannel("bar");
+  shared_ptr<UnixStreamChannel> channel2 = factory.createChannel(CHANNEL_PATH2);
   BOOST_CHECK_NE(channel1, channel2);
 }
 
@@ -41,10 +48,10 @@ public:
   }
 
   void
-  channel1_onFaceCreated(const shared_ptr<UnixStreamFace>& newFace)
+  channel1_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK(!static_cast<bool>(m_face1));
-    m_face1 = newFace;
+    m_face1 = static_pointer_cast<UnixStreamFace>(newFace);
     m_face1->onReceiveInterest +=
       bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
     m_face1->onReceiveData +=
@@ -94,9 +101,9 @@ public:
   }
 
   void
-  channel_onFaceCreated(const shared_ptr<UnixStreamFace>& newFace)
+  channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
-    m_faces.push_back(newFace);
+    m_faces.push_back(static_pointer_cast<UnixStreamFace>(newFace));
 
     m_limitedIo.afterOp();
   }
@@ -127,13 +134,13 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 {
   UnixStreamFactory factory;
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel(CHANNEL_PATH1);
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client =
       make_shared<stream_protocol::socket>(boost::ref(g_io));
-  client->async_connect(stream_protocol::endpoint("foo"),
+  client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
@@ -184,13 +191,13 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
   UnixStreamFactory factory;
 
-  shared_ptr<UnixStreamChannel> channel = factory.createChannel("foo");
+  shared_ptr<UnixStreamChannel> channel = factory.createChannel(CHANNEL_PATH1);
   channel->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client1 =
       make_shared<stream_protocol::socket>(boost::ref(g_io));
-  client1->async_connect(stream_protocol::endpoint("foo"),
+  client1->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
@@ -200,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   shared_ptr<stream_protocol::socket> client2 =
       make_shared<stream_protocol::socket>(boost::ref(g_io));
-  client2->async_connect(stream_protocol::endpoint("foo"),
+  client2->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
@@ -266,13 +273,13 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
 {
   UnixStreamFactory factory;
 
-  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel("foo");
+  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel(CHANNEL_PATH1);
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
   shared_ptr<stream_protocol::socket> client =
       make_shared<stream_protocol::socket>(boost::ref(g_io));
-  client->async_connect(stream_protocol::endpoint("foo"),
+  client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,

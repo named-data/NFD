@@ -5,6 +5,7 @@
  */
 
 #include "unix-stream-channel.hpp"
+#include "core/global-io.hpp"
 
 #include <boost/filesystem.hpp>
 #include <sys/stat.h> // for chmod()
@@ -15,11 +16,10 @@ NFD_LOG_INIT("UnixStreamChannel");
 
 using namespace boost::asio::local;
 
-UnixStreamChannel::UnixStreamChannel(boost::asio::io_service& ioService,
-                                     const unix_stream::Endpoint& endpoint)
-  : m_ioService(ioService)
-  , m_endpoint(endpoint)
+UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint)
+  : m_endpoint(endpoint)
 {
+  this->setUri(FaceUri(endpoint));
 }
 
 UnixStreamChannel::~UnixStreamChannel()
@@ -50,7 +50,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
       fs::remove(p);
     }
 
-  m_acceptor = make_shared<stream_protocol::acceptor>(boost::ref(m_ioService));
+  m_acceptor = make_shared<stream_protocol::acceptor>(boost::ref(getGlobalIoService()));
   m_acceptor->open(m_endpoint.protocol());
   m_acceptor->bind(m_endpoint);
   m_acceptor->listen(backlog);
@@ -61,7 +61,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     }
 
   shared_ptr<stream_protocol::socket> clientSocket =
-    make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+    make_shared<stream_protocol::socket>(boost::ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&UnixStreamChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket, onFaceCreated, onAcceptFailed));
@@ -95,7 +95,7 @@ UnixStreamChannel::handleSuccessfulAccept(const boost::system::error_code& error
 
   // prepare accepting the next connection
   shared_ptr<stream_protocol::socket> clientSocket =
-    make_shared<stream_protocol::socket>(boost::ref(m_ioService));
+    make_shared<stream_protocol::socket>(boost::ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&UnixStreamChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket, onFaceCreated, onAcceptFailed));

@@ -57,11 +57,16 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
   shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<UdpChannel> channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
+  BOOST_CHECK_EQUAL(channel1->getUri().toString(), "udp4://127.0.0.1:20070");
 
   shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
 
   shared_ptr<UdpChannel> channel3 = factory.createChannel(interfaceIp, "20070");
+
+  shared_ptr<UdpChannel> channel4 = factory.createChannel("::1", "20071");
+  BOOST_CHECK_NE(channel2, channel4);
+  BOOST_CHECK_EQUAL(channel4->getUri().toString(), "udp6://[::1]:20071");
 
   //same endpoint of a unicast channel
   BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp,
@@ -162,7 +167,7 @@ class EndToEndFixture : protected BaseFixture
 {
 public:
   void
-  channel1_onFaceCreated(const shared_ptr<UdpFace>& newFace)
+  channel1_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK(!static_cast<bool>(m_face1));
     m_face1 = newFace;
@@ -271,7 +276,7 @@ public:
 
 
   void
-  channel_onFaceCreated(const shared_ptr<UdpFace>& newFace)
+  channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     m_faces.push_back(newFace);
     m_limitedIo.afterOp();

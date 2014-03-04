@@ -5,6 +5,8 @@
  */
 
 #include "tcp-channel.hpp"
+#include "core/global-io.hpp"
+#include "core/face-uri.hpp"
 
 namespace nfd {
 
@@ -12,10 +14,13 @@ NFD_LOG_INIT("TcpChannel");
 
 using namespace boost::asio;
 
-TcpChannel::TcpChannel(io_service& ioService,
-                       const tcp::Endpoint& localEndpoint)
-  : m_ioService(ioService)
-  , m_localEndpoint(localEndpoint)
+TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint)
+  : m_localEndpoint(localEndpoint)
+{
+  this->setUri(FaceUri(localEndpoint));
+}
+
+TcpChannel::~TcpChannel()
 {
 }
 
@@ -24,14 +29,14 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
                    const ConnectFailedCallback& onAcceptFailed,
                    int backlog/* = tcp::acceptor::max_connections*/)
 {
-  m_acceptor = make_shared<ip::tcp::acceptor>(boost::ref(m_ioService));
+  m_acceptor = make_shared<ip::tcp::acceptor>(boost::ref(getGlobalIoService()));
   m_acceptor->open(m_localEndpoint.protocol());
   m_acceptor->set_option(ip::tcp::acceptor::reuse_address(true));
   m_acceptor->bind(m_localEndpoint);
   m_acceptor->listen(backlog);
 
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(m_ioService));
+    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&TcpChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket,
@@ -51,10 +56,10 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   }
 
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(m_ioService));
+    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
 
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<monotonic_deadline_timer>(boost::ref(m_ioService));
+    make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
 
   clientSocket->open(m_localEndpoint.protocol());
 
@@ -82,10 +87,10 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
                     const time::Duration& timeout/* = time::seconds(4)*/)
 {
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(m_ioService));
+    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
 
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<monotonic_deadline_timer>(boost::ref(m_ioService));
+    make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
 
   clientSocket->open(m_localEndpoint.protocol());
 
@@ -97,7 +102,7 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
 
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
-    make_shared<ip::tcp::resolver>(boost::ref(m_ioService));
+    make_shared<ip::tcp::resolver>(boost::ref(getGlobalIoService()));
 
   resolver->async_resolve(query,
                           bind(&TcpChannel::handleEndpointResolution, this, _1, _2,
@@ -128,7 +133,7 @@ TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
     face = make_shared<TcpLocalFace>(boost::cref(socket));
   else
     face = make_shared<TcpFace>(boost::cref(socket));
-  
+
   face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
 
   onFaceCreated(face);
@@ -163,7 +168,7 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 
   // prepare accepting the next connection
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(m_ioService));
+    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&TcpChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket,
@@ -188,10 +193,10 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
       return;
 
     socket->close();
-    
+
     NFD_LOG_DEBUG("Connect to remote endpoint failed: "
                   << error.category().message(error.value()));
-    
+
     onConnectFailed("Connect to remote endpoint failed: " +
                     error.category().message(error.value()));
     return;
@@ -199,7 +204,7 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] "
                 ">> Connection to " << socket->remote_endpoint());
-  
+
   createFace(socket, onFaceCreated);
 }
 
@@ -215,7 +220,7 @@ TcpChannel::handleFailedConnect(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("Connect to remote endpoint timed out: "
                 << error.category().message(error.value()));
-  
+
   onConnectFailed("Connect to remote endpoint timed out: " +
                   error.category().message(error.value()));
   socket->close(); // abort the connection
@@ -241,7 +246,7 @@ TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
 
       NFD_LOG_DEBUG("Remote endpoint hostname or port cannot be resolved: "
                     << error.category().message(error.value()));
-      
+
       onConnectFailed("Remote endpoint hostname or port cannot be resolved: " +
                       error.category().message(error.value()));
       return;

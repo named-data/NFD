@@ -7,7 +7,7 @@
 #ifndef NFD_FACE_TCP_CHANNEL_HPP
 #define NFD_FACE_TCP_CHANNEL_HPP
 
-#include "common.hpp"
+#include "channel.hpp"
 #include "core/time.hpp"
 #include <ndn-cpp-dev/util/monotonic_deadline_timer.hpp>
 #include "tcp-face.hpp"
@@ -15,7 +15,7 @@
 namespace nfd {
 
 namespace tcp {
-  typedef boost::asio::ip::tcp::endpoint Endpoint;
+typedef boost::asio::ip::tcp::endpoint Endpoint;
 } // namespace tcp
 
 /**
@@ -25,30 +25,20 @@ namespace tcp {
  * connections (TcpChannel::listen needs to be called for that
  * to work) or explicitly after using TcpChannel::connect method.
  */
-class TcpChannel // : protected SessionBasedChannel
+class TcpChannel : public Channel
 {
 public:
-  /**
-   * \brief Prototype for the callback called when face is created
-   *        (as a response to incoming connection or after connection
-   *        is established)
-   */
-  typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
-
-  /**
-   * \brief Prototype for the callback that is called when face is failed to
-   *        get created
-   */
-  typedef function<void(const std::string& reason)> ConnectFailedCallback;
-  
   /**
    * \brief Create TCP channel for the local endpoint
    *
    * To enable creation faces upon incoming connections,
    * one needs to explicitly call TcpChannel::listen method.
    */
-  TcpChannel(boost::asio::io_service& ioService,
-             const tcp::Endpoint& localEndpoint);
+  explicit
+  TcpChannel(const tcp::Endpoint& localEndpoint);
+
+  virtual
+  ~TcpChannel();
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -94,8 +84,8 @@ public:
    * \brief Get number of faces in the channel
    */
   size_t
-  size() const;  
-  
+  size() const;
+
 private:
   void
   createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
@@ -116,7 +106,7 @@ private:
                           const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
                           const FaceCreatedCallback& onFaceCreated,
                           const ConnectFailedCallback& onConnectFailed);
-  
+
   void
   handleFailedConnect(const boost::system::error_code& error,
                       const shared_ptr<boost::asio::ip::tcp::socket>& socket,
@@ -133,7 +123,6 @@ private:
                            const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
 
 private:
-  boost::asio::io_service& m_ioService;
   tcp::Endpoint m_localEndpoint;
 
   typedef std::map< tcp::Endpoint, shared_ptr<Face> > ChannelFaceMap;
@@ -144,5 +133,5 @@ private:
 };
 
 } // namespace nfd
- 
+
 #endif // NFD_FACE_TCP_CHANNEL_HPP

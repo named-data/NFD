@@ -11,6 +11,7 @@
 
 namespace nfd {
 
+/// represents a URI in Face Management protocol
 class FaceUri
 {
 public:
@@ -21,44 +22,62 @@ public:
   };
 
   FaceUri();
-  
-  /** \brief Construct URI object
+
+  /** \brief construct by parsing
    *
-   * Expected format: scheme://domain:port/path?query_string#fragment_id
-   *
+   * \param uri scheme://domain[:port]/path
    * \throw FaceUri::Error if URI cannot be parsed
    */
   explicit
   FaceUri(const std::string& uri);
 
-  /** \brief Exception-safe parsing of URI
-   */
+  // This overload is needed so that calls with string literal won't be
+  // resolved to boost::asio::local::stream_protocol::endpoint overload.
+  explicit
+  FaceUri(const char* uri);
+
+  explicit
+  FaceUri(const boost::asio::ip::tcp::endpoint& endpoint);
+
+  explicit
+  FaceUri(const boost::asio::ip::udp::endpoint& endpoint);
+
+  explicit
+  FaceUri(const boost::asio::local::stream_protocol::endpoint& endpoint);
+
+  /// exception-safe parsing
   bool
   parse(const std::string& uri);
 
-  /** \brief Get scheme (protocol) extracted from URI
-   */
+  /// get scheme (protocol)
   const std::string&
   getScheme() const;
 
-  /** \brief Get domain extracted from URI
-   */
+  /// get host (domain)
   const std::string&
-  getDomain() const;
+  getHost() const;
 
-  /** \brief Get port extracted from URI
-   *
-   *  \return Extracted port or empty string if port wasn't present
-   */
+  /// get port
   const std::string&
   getPort() const;
 
-  // other getters should be added, when necessary
+  /// get path
+  const std::string&
+  getPath() const;
+
+  /// write as a string
+  std::string
+  toString() const;
 
 private:
   std::string m_scheme;
-  std::string m_domain;
+  std::string m_host;
+  /// whether to add [] around host when writing string
+  bool m_isV6;
   std::string m_port;
+  std::string m_path;
+  
+  friend std::ostream& operator<<(std::ostream& os, const FaceUri& uri);
 };
 
 inline
@@ -73,15 +92,46 @@ FaceUri::getScheme() const
 }
 
 inline const std::string&
-FaceUri::getDomain() const
+FaceUri::getHost() const
 {
-  return m_domain;
+  return m_host;
 }
 
 inline const std::string&
 FaceUri::getPort() const
 {
   return m_port;
+}
+
+inline const std::string&
+FaceUri::getPath() const
+{
+  return m_path;
+}
+
+inline std::string
+FaceUri::toString() const
+{
+  std::ostringstream os;
+  os << *this;
+  return os.str();
+}
+
+inline std::ostream&
+operator<<(std::ostream& os, const FaceUri& uri)
+{
+  os << uri.m_scheme << "://";
+  if (uri.m_isV6) {
+    os << "[" << uri.m_host << "]";
+  }
+  else {
+    os << uri.m_host;
+  }
+  if (!uri.m_port.empty()) {
+    os << ":" << uri.m_port;
+  }
+  os << uri.m_path;
+  return os;
 }
 
 } // namespace nfd

@@ -5,7 +5,6 @@
  */
 
 #include "unix-stream-factory.hpp"
-#include "core/global-io.hpp"
 
 #include <boost/filesystem.hpp> // for canonical()
 
@@ -22,8 +21,7 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   if (channel)
     return channel;
 
-  channel = make_shared<UnixStreamChannel>(boost::ref(getGlobalIoService()),
-                                           boost::cref(endpoint));
+  channel = make_shared<UnixStreamChannel>(boost::cref(endpoint));
   m_channels[endpoint] = channel;
   return channel;
 }

@@ -149,7 +149,7 @@ UdpFactory::createFace(const FaceUri& uri,
   else if (uri.getScheme() == "udp6")
     addressSelector = resolver::Ipv6Address();
   
-  UdpResolver::asyncResolve(uri.getDomain(),
+  UdpResolver::asyncResolve(uri.getHost(),
                             uri.getPort().empty() ? m_defaultPort : uri.getPort(),
                             bind(&UdpFactory::continueCreateFaceAfterResolve, this, _1,
                                  onCreated, onConnectFailed),

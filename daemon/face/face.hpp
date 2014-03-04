@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "core/event-emitter.hpp"
+#include "core/face-uri.hpp"
 #include "face-counter.hpp"
 
 namespace nfd {

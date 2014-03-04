@@ -7,14 +7,15 @@
 #ifndef NFD_FACE_UDP_CHANNEL_HPP
 #define NFD_FACE_UDP_CHANNEL_HPP
 
-#include "common.hpp"
+#include "channel.hpp"
 #include "core/time.hpp"
+#include "core/global-io.hpp"
 #include "udp-face.hpp"
 
 namespace nfd {
 
 namespace udp {
-  typedef boost::asio::ip::udp::endpoint Endpoint;
+typedef boost::asio::ip::udp::endpoint Endpoint;
 } // namespace udp
 
 /**
@@ -22,10 +23,9 @@ namespace udp {
  *
  *
  */
-class UdpChannel
+class UdpChannel : public Channel
 {
 public:
-  
   /**
    * \brief Exception of UdpChannel
    */
@@ -33,19 +33,6 @@ public:
   {
     Error(const std::string& what) : runtime_error(what) {}
   };
-  
-  /**
-   * \brief Prototype for the callback called when face is created
-   *        (as a response to new incoming communication not managed
-   *        by any faces yet or after the connect function is created)
-   */
-  typedef function<void(const shared_ptr<UdpFace>& newFace)> FaceCreatedCallback;
-
-  /**
-   * \brief Prototype for the callback that is called when face is failed to
-   *        get created
-   */
-  typedef function<void(const std::string& reason)> ConnectFailedCallback;
 
   /**
    * \brief Create UDP channel for the local endpoint
@@ -59,6 +46,9 @@ public:
    */
   UdpChannel(const udp::Endpoint& localEndpoint,
              const time::Duration& timeout);
+
+  virtual
+  ~UdpChannel();
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -110,7 +100,7 @@ private:
   afterFaceFailed(udp::Endpoint& endpoint);
 
   /**
-   * \brief The UdpChannel has received a new pkt from a remote endpoint not yet 
+   * \brief The UdpChannel has received a new pkt from a remote endpoint not yet
    *        associated with any UdpFace
    */
   void
@@ -138,7 +128,7 @@ private:
    * Its handler has a fixed signature. No space for the face callback
    */
   FaceCreatedCallback onFaceCreatedNewPeerCallback;
-  
+
   // @todo remove the onConnectFailedNewPeerCallback if it remains unused
   ConnectFailedCallback onConnectFailedNewPeerCallback;
 

@@ -7,13 +7,13 @@
 #ifndef NFD_FACE_UNIX_STREAM_CHANNEL_HPP
 #define NFD_FACE_UNIX_STREAM_CHANNEL_HPP
 
-#include "common.hpp"
+#include "channel.hpp"
 #include "unix-stream-face.hpp"
 
 namespace nfd {
 
 namespace unix_stream {
-  typedef boost::asio::local::stream_protocol::endpoint Endpoint;
+typedef boost::asio::local::stream_protocol::endpoint Endpoint;
 } // namespace unix_stream
 
 /**
@@ -22,21 +22,9 @@ namespace unix_stream {
  * Channel can create faces as a response to incoming IPC connections
  * (UnixStreamChannel::listen needs to be called for that to work).
  */
-class UnixStreamChannel // : protected SessionBasedChannel
+class UnixStreamChannel : public Channel
 {
 public:
-  /**
-   * \brief Prototype for the callback called when a face is created
-   *        (as a response to an incoming connection)
-   */
-  typedef function<void(const shared_ptr<UnixStreamFace>& newFace)> FaceCreatedCallback;
-
-  /**
-   * \brief Prototype for the callback that is called when a face
-   *        fails to be created
-   */
-  typedef function<void(const std::string& reason)> ConnectFailedCallback;
-
   /**
    * \brief UnixStreamChannel-related error
    */
@@ -51,9 +39,10 @@ public:
    * To enable creation of faces upon incoming connections, one
    * needs to explicitly call UnixStreamChannel::listen method.
    */
-  UnixStreamChannel(boost::asio::io_service& ioService,
-                    const unix_stream::Endpoint& endpoint);
+  explicit
+  UnixStreamChannel(const unix_stream::Endpoint& endpoint);
 
+  virtual
   ~UnixStreamChannel();
 
   /**
@@ -82,7 +71,6 @@ private:
                          const ConnectFailedCallback& onConnectFailed);
 
 private:
-  boost::asio::io_service& m_ioService;
   unix_stream::Endpoint m_endpoint;
   shared_ptr<boost::asio::local::stream_protocol::acceptor> m_acceptor;
 };

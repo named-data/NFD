@@ -22,9 +22,14 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
+  BOOST_CHECK_EQUAL(channel1->getUri().toString(), "tcp4://127.0.0.1:20070");
 
   shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
+
+  shared_ptr<TcpChannel> channel3 = factory.createChannel("::1", "20071");
+  BOOST_CHECK_NE(channel2, channel3);
+  BOOST_CHECK_EQUAL(channel3->getUri().toString(), "tcp6://[::1]:20071");
 }
 
 class EndToEndFixture : protected BaseFixture
