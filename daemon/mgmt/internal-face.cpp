@@ -11,7 +11,7 @@ namespace nfd {
 NFD_LOG_INIT("InternalFace");
 
 InternalFace::InternalFace()
-  : Face(true)
+  : Face(FaceUri("internal://"), true)
 {
 }
 

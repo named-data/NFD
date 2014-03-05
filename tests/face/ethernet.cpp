@@ -75,6 +75,9 @@ BOOST_AUTO_TEST_CASE(SendPacket)
 
   BOOST_REQUIRE(static_cast<bool>(face));
   BOOST_CHECK_EQUAL(face->isLocal(), false);
+  BOOST_CHECK_EQUAL(face->getUri().toString(),
+                    "ether://" + interfaces[0] + "/" +
+                    ethernet::getDefaultMulticastAddress().toString(':'));
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");

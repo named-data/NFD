@@ -17,14 +17,14 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 TcpLocalFace::protocol, LocalFace, "TcpLocalFace");
 
 TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket)
-  : StreamFace<protocol>(socket)
+  : StreamFace<protocol>(FaceUri(socket->remote_endpoint()), socket)
 {
 }
 
 //
 
 TcpLocalFace::TcpLocalFace(const shared_ptr<TcpLocalFace::protocol::socket>& socket)
-  : StreamFace<protocol, LocalFace>(socket)
+  : StreamFace<protocol, LocalFace>(FaceUri(socket->remote_endpoint()), socket)
 {
 }
 

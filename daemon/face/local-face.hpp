@@ -31,7 +31,8 @@ enum LocalControlHeaderFeature
 class LocalFace : public Face
 {
 public:
-  LocalFace();
+  explicit
+  LocalFace(const FaceUri& uri);
 
   /** \brief get whether a LocalControlHeader feature is enabled
    *
@@ -81,8 +82,8 @@ private:
 };
 
 inline
-LocalFace::LocalFace()
-  : Face(true)
+LocalFace::LocalFace(const FaceUri& uri)
+  : Face(uri, true)
   , m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
 {
 }

@@ -320,16 +320,11 @@ public:
 };
 
 
-BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
+BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 {
   UdpFactory factory;
 
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
-
-
-  //channel2->connect("127.0.0.1", "20070",
-  //                  bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-  //                  bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+  factory.createChannel("127.0.0.1", "20071");
 
   factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
                      bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
@@ -340,11 +335,13 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                       "UdpChannel error: cannot connect or cannot accept connection");
 
   BOOST_REQUIRE(static_cast<bool>(m_face2));
+  BOOST_CHECK_EQUAL(m_face2->getUri().toString(), "udp4://127.0.0.1:20070");
+  BOOST_CHECK_EQUAL(m_face2->isLocal(), false);
+  // m_face1 is not created yet
 
   shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
-
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");
@@ -375,6 +372,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                       "UdpChannel error: cannot send or receive Interest/Data packets");
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_CHECK_EQUAL(m_face1->getUri().toString(), "udp4://127.0.0.1:20071");
+  BOOST_CHECK_EQUAL(m_face1->isLocal(), false);
 
   m_face1->sendInterest(interest1);
   m_face1->sendData    (data1    );
@@ -408,7 +407,95 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(m_face1_receivedInterests[1].getName(), interest3.getName());
   BOOST_CHECK_EQUAL(m_face1_receivedDatas    [1].getName(), data3.getName());
+}
 
+BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
+{
+  UdpFactory factory;
+
+  factory.createChannel("::1", "20071");
+
+  factory.createFace(FaceUri("udp://[::1]:20070"),
+                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot connect or cannot accept connection");
+
+  BOOST_REQUIRE(static_cast<bool>(m_face2));
+  BOOST_CHECK_EQUAL(m_face2->getUri().toString(), "udp6://[::1]:20070");
+  BOOST_CHECK_EQUAL(m_face2->isLocal(), false);
+  // m_face1 is not created yet
+
+  shared_ptr<UdpChannel> channel1 = factory.createChannel("::1", "20070");
+  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
+                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  Interest interest1("ndn:/TpnzGvW9R");
+  Data     data1    ("ndn:/KfczhUqVix");
+  data1.setContent(0, 0);
+  Interest interest2("ndn:/QWiIMfj5sL");
+  Data     data2    ("ndn:/XNBV796f");
+  data2.setContent(0, 0);
+  Interest interest3("ndn:/QWiIhjgkj5sL");
+  Data     data3    ("ndn:/XNBV794f");
+  data3.setContent(0, 0);
+
+
+  ndn::SignatureSha256WithRsa fakeSignature;
+  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
+                                        reinterpret_cast<const uint8_t*>(0),
+                                        0));
+
+  // set fake signature on data1 and data2
+  data1.setSignature(fakeSignature);
+  data2.setSignature(fakeSignature);
+  data3.setSignature(fakeSignature);
+
+  m_face2->sendInterest(interest2);
+  m_face2->sendData    (data2    );
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(3,//2 send + 1 listen return
+                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot send or receive Interest/Data packets");
+
+  BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_CHECK_EQUAL(m_face1->getUri().toString(), "udp6://[::1]:20071");
+  BOOST_CHECK_EQUAL(m_face1->isLocal(), false);
+
+  m_face1->sendInterest(interest1);
+  m_face1->sendData    (data1    );
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot send or receive Interest/Data packets");
+
+
+  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
+
+  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
+  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
+  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
+  BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+
+
+
+  //checking if the connection accepting mechanism works properly.
+
+  m_face2->sendData    (data3    );
+  m_face2->sendInterest(interest3);
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot send or receive Interest/Data packets");
+
+  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 2);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 2);
+
+  BOOST_CHECK_EQUAL(m_face1_receivedInterests[1].getName(), interest3.getName());
+  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [1].getName(), data3.getName());
 }
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)

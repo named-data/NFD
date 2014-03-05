@@ -25,7 +25,8 @@ public:
    * \brief Create instance of StreamFace
    */
   explicit
-  StreamFace(const shared_ptr<typename protocol::socket>& socket);
+  StreamFace(const FaceUri& uri,
+             const shared_ptr<typename protocol::socket>& socket);
 
   virtual
   ~StreamFace();
@@ -95,15 +96,17 @@ struct StreamFaceValidator
 };
 
 
-template<class T, class U>
+template<class T, class FaceBase>
 inline
-StreamFace<T, U>::StreamFace(const shared_ptr<typename StreamFace::protocol::socket>& socket)
-  : m_socket(socket)
+StreamFace<T, FaceBase>::StreamFace(const FaceUri& uri,
+                                    const shared_ptr<typename StreamFace::protocol::socket>& socket)
+  : FaceBase(uri)
+  , m_socket(socket)
   , m_inputBufferSize(0)
 {
-  StreamFaceValidator<T, U>::validateSocket(*socket);
+  StreamFaceValidator<T, FaceBase>::validateSocket(*socket);
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
-                          bind(&StreamFace<T, U>::handleReceive, this, _1, _2));
+                          bind(&StreamFace<T, FaceBase>::handleReceive, this, _1, _2));
 }
 
 template<class T, class U>

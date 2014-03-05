@@ -18,7 +18,8 @@ public:
   typedef T protocol;
   
   explicit
-  DatagramFace(const shared_ptr<typename protocol::socket>& socket);
+  DatagramFace(const FaceUri& uri,
+               const shared_ptr<typename protocol::socket>& socket);
 
   virtual
   ~DatagramFace();
@@ -64,8 +65,10 @@ protected:
 
 template <class T>
 inline
-DatagramFace<T>::DatagramFace(const shared_ptr<typename DatagramFace::protocol::socket>& socket)
-  : m_socket(socket)
+DatagramFace<T>::DatagramFace(const FaceUri& uri,
+                              const shared_ptr<typename DatagramFace::protocol::socket>& socket)
+  : Face(uri)
+  , m_socket(socket)
 {
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T>::handleReceive, this, _1, _2));

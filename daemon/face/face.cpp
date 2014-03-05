@@ -11,9 +11,10 @@ namespace nfd {
 
 NFD_LOG_INIT("Face")
 
-Face::Face(bool isLocal)
+Face::Face(const FaceUri& uri, bool isLocal)
   : m_id(INVALID_FACEID)
   , m_isLocal(isLocal)
+  , m_uri(uri)
 {
 }
 

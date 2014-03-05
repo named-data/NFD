@@ -12,7 +12,7 @@ NFD_LOG_INIT("MulticastUdpFace");
 
 
 MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& socket)
-  : UdpFace(socket)
+  : DatagramFace<protocol>(FaceUri(socket->local_endpoint()), socket)
 {
   NFD_LOG_DEBUG("Face creation. Multicast group: "
                 << m_socket->local_endpoint());

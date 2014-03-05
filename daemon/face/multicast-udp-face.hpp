@@ -7,7 +7,7 @@
 #ifndef NFD_FACE_MULTICAST_UDP_FACE_HPP
 #define NFD_FACE_MULTICAST_UDP_FACE_HPP
 
-#include "udp-face.hpp"
+#include "datagram-face.hpp"
 
 namespace nfd
 {
@@ -16,7 +16,7 @@ namespace nfd
  * \brief Implementation of Face abstraction that uses 
  *        multicast UDP as underlying transport mechanism
  */
-class MulticastUdpFace : public UdpFace
+class MulticastUdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
   typedef boost::asio::ip::udp protocol;

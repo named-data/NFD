@@ -20,6 +20,11 @@ template<class FaceBase>
 class DummyFaceImpl : public FaceBase
 {
 public:
+  DummyFaceImpl()
+    : FaceBase(FaceUri("dummy://"))
+  {
+  }
+
   virtual void
   sendInterest(const Interest& interest)
   {

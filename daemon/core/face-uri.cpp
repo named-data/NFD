@@ -47,7 +47,7 @@ FaceUri::parse(const std::string& uri)
 
   boost::regex v6Exp("^\\[(([a-fA-F0-9:]+))\\](:(\\d+))?$"); // [host]:port
   boost::regex v4Exp("^((\\d+\\.){3}\\d+)(:(\\d+))?$");
-  boost::regex hostExp("^(([^:]+))(:(\\d+))?$"); // host:port
+  boost::regex hostExp("^(([^:]*))(:(\\d+))?$"); // host:port
 
   boost::smatch match;
   m_isV6 = boost::regex_match(authority, match, v6Exp);

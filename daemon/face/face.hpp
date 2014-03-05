@@ -37,8 +37,7 @@ public:
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-  explicit
-  Face(bool isLocal = false);
+  Face(const FaceUri& uri, bool isLocal = false);
 
   virtual
   ~Face();
@@ -104,6 +103,9 @@ public:
   const FaceCounters&
   getCounters() const;
 
+  const FaceUri&
+  getUri() const;
+
 protected:
   // this is a non-virtual method
   bool
@@ -121,6 +123,7 @@ private:
   std::string m_description;
   bool m_isLocal; // for scoping purposes
   FaceCounters m_counters;
+  FaceUri m_uri;
 
   // allow setting FaceId
   friend class FaceTable;
@@ -143,6 +146,12 @@ inline FaceCounters&
 Face::getMutableCounters()
 {
   return m_counters;
+}
+
+inline const FaceUri&
+Face::getUri() const
+{
+  return m_uri;
 }
 
 } // namespace nfd

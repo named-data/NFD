@@ -34,7 +34,8 @@ static const uint8_t MAX_PADDING[ethernet::MIN_DATA_LEN] = {
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
                            const ethernet::Endpoint& interface,
                            const ethernet::Address& address)
-  : m_socket(socket)
+  : Face(FaceUri("ether://" + interface + "/" + address.toString(':')))
+  , m_socket(socket)
   , m_interface(interface)
   , m_destAddress(address)
 {

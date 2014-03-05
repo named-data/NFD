@@ -16,7 +16,7 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 "UnixStreamFace");
 
 UnixStreamFace::UnixStreamFace(const shared_ptr<UnixStreamFace::protocol::socket>& socket)
-  : StreamFace<protocol, LocalFace>(socket)
+  : StreamFace<protocol, LocalFace>(FaceUri(socket->local_endpoint()), socket)
 {
 }
 

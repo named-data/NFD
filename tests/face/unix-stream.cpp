@@ -148,6 +148,11 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
 
+  std::string face1uri = m_face1->getUri().toString();
+  BOOST_CHECK_EQUAL(face1uri.find("unix:///"), 0); // third '/' is the path separator
+  BOOST_CHECK_EQUAL(face1uri.rfind(CHANNEL_PATH1),
+                    face1uri.size() - std::string(CHANNEL_PATH1).size());
+
   m_face2 = make_shared<UnixStreamFace>(client);
   m_face2->onReceiveInterest +=
     bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);

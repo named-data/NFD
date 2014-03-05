@@ -162,26 +162,93 @@ public:
 };
 
 
-BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
+BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 {
   TcpFactory factory;
 
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  shared_ptr<TcpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
+  factory.createChannel("127.0.0.1", "20071");
 
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
-  channel2->connect("127.0.0.1", "20070",
-                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                    bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
-                    time::seconds(4));
+  factory.createFace(FaceUri("tcp://127.0.0.1:20070"),
+                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot connect or cannot accept connection");
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
   BOOST_REQUIRE(static_cast<bool>(m_face2));
+
+  BOOST_CHECK_EQUAL(m_face2->getUri().toString(), "tcp4://127.0.0.1:20070");
+  // face1 has an unknown URI, since the source port is automatically chosen by OS
+
+  BOOST_CHECK_EQUAL(m_face1->isLocal(), true);
+  BOOST_CHECK_EQUAL(m_face2->isLocal(), true);
+
+  BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(m_face1)), true);
+  BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(m_face2)), true);
+
+  // integrated tests needs to check that TcpFace for non-loopback fails these tests...
+
+  Interest interest1("ndn:/TpnzGvW9R");
+  Data     data1    ("ndn:/KfczhUqVix");
+  data1.setContent(0, 0);
+  Interest interest2("ndn:/QWiIMfj5sL");
+  Data     data2    ("ndn:/XNBV796f");
+  data2.setContent(0, 0);
+
+  ndn::SignatureSha256WithRsa fakeSignature;
+  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
+
+  // set fake signature on data1 and data2
+  data1.setSignature(fakeSignature);
+  data2.setSignature(fakeSignature);
+
+  m_face1->sendInterest(interest1);
+  m_face1->sendData    (data1    );
+  m_face2->sendInterest(interest2);
+  m_face2->sendData    (data2    );
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(4, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot send or receive Interest/Data packets");
+
+
+  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
+
+  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
+  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
+  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
+  BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+}
+
+BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
+{
+  TcpFactory factory;
+
+  shared_ptr<TcpChannel> channel1 = factory.createChannel("::1", "20070");
+  shared_ptr<TcpChannel> channel2 = factory.createChannel("::1", "20071");
+
+  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
+                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  factory.createFace(FaceUri("tcp://[::1]:20070"),
+                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
+
+  BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_REQUIRE(static_cast<bool>(m_face2));
+
+  BOOST_CHECK_EQUAL(m_face2->getUri().toString(), "tcp6://[::1]:20070");
+  // face1 has an unknown URI, since the source port is automatically chosen by OS
 
   BOOST_CHECK_EQUAL(m_face1->isLocal(), true);
   BOOST_CHECK_EQUAL(m_face2->isLocal(), true);
