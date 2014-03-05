@@ -36,6 +36,7 @@
 
 #include <vector>
 #include <list>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <istream>

@@ -6,6 +6,7 @@
 
 #include "fw/forwarder.hpp"
 #include "tests/face/dummy-face.hpp"
+#include <ndn-cpp-dev/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
 
@@ -23,7 +24,10 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   Name nameABC("ndn:/A/B/C");
   Interest interestAB(nameAB);
   interestAB.setInterestLifetime(4000);
-  Data dataABC(nameABC);
+  shared_ptr<Data> dataABC = make_shared<Data>(nameABC);
+  ndn::SignatureSha256WithRsa fakeSignature;
+  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
+  dataABC->setSignature(fakeSignature);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -45,7 +49,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
 
-  face2->receiveData(dataABC);
+  face2->receiveData(*dataABC);
   g_io.run();
   g_io.reset();
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
@@ -89,44 +93,62 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
+  shared_ptr<Data> d1, d2, d3, d4;
+  shared_ptr<Interest> i1, i2, i3, i4;
+  
+  ndn::SignatureSha256WithRsa fakeSignature;
+  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
+
   // local face, /localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  forwarder.onIncomingInterest(*face1, Interest("/localhost/A1"));
+  i1 = make_shared<Interest>(Name("/localhost/A1"));
+  forwarder.onIncomingInterest(*face1, *i1);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // non-local face, /localhost: violate
   forwarder.m_dispatchToStrategy_count = 0;
-  forwarder.onIncomingInterest(*face2, Interest("/localhost/A2"));
+  i2 = make_shared<Interest>(Name("/localhost/A2"));
+  forwarder.onIncomingInterest(*face2, *i2);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  forwarder.onIncomingInterest(*face1, Interest("/A3"));
+  i3 = make_shared<Interest>(Name("/A3"));
+  forwarder.onIncomingInterest(*face1, *i3);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  forwarder.onIncomingInterest(*face2, Interest("/A4"));
+  i4 = make_shared<Interest>(Name("/A4"));
+  forwarder.onIncomingInterest(*face2, *i4);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // local face, /localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  forwarder.onIncomingData(*face1, Data("/localhost/B1"));
+  d1 = make_shared<Data>(Name("/localhost/B1"));
+  d1->setSignature(fakeSignature);
+  forwarder.onIncomingData(*face1, *d1);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 
   // non-local face, /localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  forwarder.onIncomingData(*face2, Data("/localhost/B2"));
+  d2 = make_shared<Data>(Name("/localhost/B2"));
+  d2->setSignature(fakeSignature);
+  forwarder.onIncomingData(*face2, *d2);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  forwarder.onIncomingData(*face1, Data("/B3"));
+  d3 = make_shared<Data>(Name("/B3"));
+  d3->setSignature(fakeSignature);
+  forwarder.onIncomingData(*face1, *d3);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  forwarder.onIncomingData(*face2, Data("/B4"));
+  d4 = make_shared<Data>(Name("/B4"));
+  d4->setSignature(fakeSignature);
+  forwarder.onIncomingData(*face2, *d4);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 }
 
