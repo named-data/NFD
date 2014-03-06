@@ -11,6 +11,7 @@
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
 #include "mgmt/local-control-header-manager.hpp"
+#include "mgmt/strategy-choice-manager.hpp"
 #include "face/tcp-factory.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -45,6 +46,7 @@ static Forwarder* g_forwarder;
 static FibManager* g_fibManager;
 static FaceManager* g_faceManager;
 static LocalControlHeaderManager* g_localControlHeaderManager;
+static StrategyChoiceManager* g_strategyChoiceManager;
 static TcpFactory* g_tcpFactory;
 static shared_ptr<TcpChannel> g_tcpChannel;
 static shared_ptr<InternalFace> g_internalFace;
@@ -216,6 +218,9 @@ initializeMgmt()
   g_localControlHeaderManager =
     new LocalControlHeaderManager(bind(&Forwarder::getFace, g_forwarder, _1),
                                   g_internalFace);
+
+  g_strategyChoiceManager = new StrategyChoiceManager(g_forwarder->getStrategyChoice(),
+                                                      g_internalFace);
 
   shared_ptr<fib::Entry> entry = g_forwarder->getFib().insert("/localhost/nfd").first;
   entry->addNextHop(g_internalFace, 0);

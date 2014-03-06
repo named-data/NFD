@@ -52,12 +52,6 @@ const FibManager::VerbAndProcessor FibManager::FIB_MANAGER_COMMAND_VERBS[] =
                      &FibManager::removeNextHop
                      ),
 
-    // Unsupported
-    // VerbAndProcessor(
-    //                  Name::Component("strategy"),
-    //                  &FibManager::strategy
-    //                  )
-
   };
 
 FibManager::FibManager(Fib& fib,
@@ -256,12 +250,6 @@ FibManager::removeNextHop(const FibManagementOptions& options,
                    << options.getFaceId());
       setResponse(response, 404, "Face not found");
     }
-}
-
-void
-FibManager::strategy(const FibManagementOptions& options, ControlResponse& response)
-{
-
 }
 
 // void

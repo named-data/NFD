@@ -51,10 +51,6 @@ private:
   removeNextHop(const FibManagementOptions& options,
                 ControlResponse& response);
 
-  void
-  strategy(const FibManagementOptions& options,
-           ControlResponse& response);
-
   bool
   extractOptions(const Interest& request,
                  FibManagementOptions& extractedOptions);
