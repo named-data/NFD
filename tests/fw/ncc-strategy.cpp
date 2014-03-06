@@ -37,9 +37,12 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
   Fib& fib = forwarder.getFib();
   shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->setStrategy(strategy);
   fibEntry->addNextHop(face1, 10);
   fibEntry->addNextHop(face2, 20);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  strategyChoice.install(strategy);
+  strategyChoice.insert(Name(), strategy->getName());
 
   Pit& pit = forwarder.getPit();
 

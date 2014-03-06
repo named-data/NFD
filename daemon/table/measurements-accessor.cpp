@@ -5,14 +5,16 @@
  */
 
 #include "measurements-accessor.hpp"
-#include "fw/strategy.hpp"
 
 namespace nfd {
 
+using fw::Strategy;
+
 MeasurementsAccessor::MeasurementsAccessor(Measurements& measurements,
-                                           Fib& fib, fw::Strategy* strategy)
+                                           StrategyChoice& strategyChoice,
+                                           Strategy* strategy)
   : m_measurements(measurements)
-  , m_fib(fib)
+  , m_strategyChoice(strategyChoice)
   , m_strategy(strategy)
 {
 }
@@ -28,9 +30,8 @@ MeasurementsAccessor::filter(const shared_ptr<measurements::Entry>& entry)
     return entry;
   }
 
-  shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*entry);
-  BOOST_ASSERT(static_cast<bool>(fibEntry));
-  if (&fibEntry->getStrategy() == m_strategy) {
+  Strategy& effectiveStrategy = m_strategyChoice.findEffectiveStrategy(*entry);
+  if (&effectiveStrategy == m_strategy) {
     return entry;
   }
   return shared_ptr<measurements::Entry>();

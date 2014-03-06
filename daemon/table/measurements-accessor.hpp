@@ -8,7 +8,7 @@
 #define NFD_TABLE_MEASUREMENTS_ACCESSOR_HPP
 
 #include "measurements.hpp"
-#include "fib.hpp"
+#include "strategy-choice.hpp"
 
 namespace nfd {
 
@@ -21,7 +21,8 @@ class Strategy;
 class MeasurementsAccessor : noncopyable
 {
 public:
-  MeasurementsAccessor(Measurements& measurements, Fib& fib, fw::Strategy* strategy);
+  MeasurementsAccessor(Measurements& measurements, StrategyChoice& strategyChoice,
+                       fw::Strategy* strategy);
 
   ~MeasurementsAccessor();
 
@@ -44,14 +45,6 @@ public:
   shared_ptr<measurements::Entry>
   getParent(shared_ptr<measurements::Entry> child);
 
-//  /// perform a longest prefix match
-//  shared_ptr<fib::Entry>
-//  findLongestPrefixMatch(const Name& name) const;
-//
-//  /// perform an exact match
-//  shared_ptr<fib::Entry>
-//  findExactMatch(const Name& name) const;
-
   /** \brief extend lifetime of an entry
    *
    *  The entry will be kept until at least now()+lifetime.
@@ -69,7 +62,7 @@ private:
 
 private:
   Measurements& m_measurements;
-  Fib& m_fib;
+  StrategyChoice& m_strategyChoice;
   fw::Strategy* m_strategy;
 };
 
@@ -82,10 +75,7 @@ MeasurementsAccessor::get(const Name& name)
 inline shared_ptr<measurements::Entry>
 MeasurementsAccessor::get(const fib::Entry& fibEntry)
 {
-  if (&fibEntry.getStrategy() == m_strategy) {
-    return m_measurements.get(fibEntry);
-  }
-  return shared_ptr<measurements::Entry>();
+  return this->filter(m_measurements.get(fibEntry));
 }
 
 inline shared_ptr<measurements::Entry>
@@ -99,18 +89,6 @@ MeasurementsAccessor::getParent(shared_ptr<measurements::Entry> child)
 {
   return this->filter(m_measurements.getParent(child));
 }
-
-//inline shared_ptr<fib::Entry>
-//MeasurementsAccessor::findLongestPrefixMatch(const Name& name) const
-//{
-//  return this->filter(m_measurements.findLongestPrefixMatch(name));
-//}
-//
-//inline shared_ptr<fib::Entry>
-//MeasurementsAccessor::findExactMatch(const Name& name) const
-//{
-//  return this->filter(m_measurements.findExactMatch(name));
-//}
 
 inline void
 MeasurementsAccessor::extendLifetime(measurements::Entry& entry, const time::Duration& lifetime)

@@ -11,10 +11,6 @@
 
 namespace nfd {
 
-namespace fw {
-class Strategy;
-}
-
 namespace fib {
 
 /** \class NextHopList
@@ -34,29 +30,23 @@ class Entry : public StrategyInfoHost, noncopyable
 public:
   explicit
   Entry(const Name& prefix);
-  
+
   const Name&
   getPrefix() const;
-  
+
   const NextHopList&
   getNextHops() const;
-  
+
   bool
   hasNextHop(shared_ptr<Face> face) const;
-  
+
   /// adds a nexthop
   void
   addNextHop(shared_ptr<Face> face, int32_t cost);
-  
+
   /// removes a nexthop
   void
   removeNextHop(shared_ptr<Face> face);
-  
-  const fw::Strategy&
-  getStrategy() const;
-  
-  void
-  setStrategy(shared_ptr<fw::Strategy> strategy);
 
 private:
   /// sorts the nexthop list
@@ -66,7 +56,6 @@ private:
 private:
   Name m_prefix;
   NextHopList m_nextHops;
-  shared_ptr<fw::Strategy> m_strategy;
 };
 
 
@@ -80,13 +69,6 @@ inline const NextHopList&
 Entry::getNextHops() const
 {
   return m_nextHops;
-}
-
-inline const fw::Strategy&
-Entry::getStrategy() const
-{
-  BOOST_ASSERT(static_cast<bool>(m_strategy));
-  return *m_strategy;
 }
 
 } // namespace fib

@@ -59,6 +59,10 @@ public: // effect strategy
   fw::Strategy&
   findEffectiveStrategy(const pit::Entry& pitEntry) const;
 
+  /// get effective strategy for measurementsEntry
+  fw::Strategy&
+  findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
+
   /// number of entries stored
   size_t
   size() const;

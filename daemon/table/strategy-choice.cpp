@@ -7,6 +7,7 @@
 #include "strategy-choice.hpp"
 #include "fw/strategy.hpp"
 #include "pit-entry.hpp"
+#include "measurements-entry.hpp"
 
 namespace nfd {
 
@@ -135,6 +136,12 @@ Strategy&
 StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 {
   return this->findEffectiveStrategy(pitEntry.getName());
+}
+
+Strategy&
+StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
+{
+  return this->findEffectiveStrategy(measurementsEntry.getName());
 }
 
 shared_ptr<fw::Strategy>

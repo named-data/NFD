@@ -6,7 +6,6 @@
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
@@ -16,7 +15,8 @@ NFD_LOG_INIT("Strategy");
 Strategy::Strategy(Forwarder& forwarder, const Name& name)
   : m_name(name)
   , m_forwarder(forwarder)
-  , m_measurements(m_forwarder.getMeasurements(), m_forwarder.getFib(), this)
+  , m_measurements(m_forwarder.getMeasurements(),
+                   m_forwarder.getStrategyChoice(), this)
 {
 }
 

@@ -38,9 +38,9 @@ Entry::addNextHop(shared_ptr<Face> face, int32_t cost)
     it = m_nextHops.end() - 1;
   }
   // now it refers to the NextHop for face
-  
+
   it->setCost(cost);
-  
+
   this->sortNextHops();
 
 }
@@ -53,7 +53,7 @@ Entry::removeNextHop(shared_ptr<Face> face)
   if (it == m_nextHops.end()) {
     return;
   }
-  
+
   m_nextHops.erase(it);
 }
 
@@ -67,12 +67,6 @@ void
 Entry::sortNextHops()
 {
   std::sort(m_nextHops.begin(), m_nextHops.end(), &compare_NextHop_cost);
-}
-
-void
-Entry::setStrategy(shared_ptr<fw::Strategy> strategy)
-{
-  m_strategy = strategy;
 }
 
 

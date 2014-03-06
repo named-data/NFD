@@ -17,9 +17,8 @@ BOOST_FIXTURE_TEST_SUITE(TableMeasurementsAccessor, BaseFixture)
 class MeasurementsAccessorTestStrategy : public fw::Strategy
 {
 public:
-  explicit
-  MeasurementsAccessorTestStrategy(Forwarder& forwarder)
-    : Strategy(forwarder, "ndn:/MeasurementsAccessorTestStrategy")
+  MeasurementsAccessorTestStrategy(Forwarder& forwarder, const Name& name)
+    : Strategy(forwarder, name)
   {
   }
 
@@ -51,9 +50,9 @@ BOOST_AUTO_TEST_CASE(Access)
   Forwarder forwarder;
 
   shared_ptr<MeasurementsAccessorTestStrategy> strategy1 =
-    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder));
+    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder), "ndn:/strategy1");
   shared_ptr<MeasurementsAccessorTestStrategy> strategy2 =
-    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder));
+    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder), "ndn:/strategy2");
 
   Name nameRoot("ndn:/");
   Name nameA   ("ndn:/A");
@@ -61,10 +60,12 @@ BOOST_AUTO_TEST_CASE(Access)
   Name nameABC ("ndn:/A/B/C");
   Name nameAD  ("ndn:/A/D");
 
-  Fib& fib = forwarder.getFib();
-  fib.insert(nameRoot).first->setStrategy(strategy1);
-  fib.insert(nameA   ).first->setStrategy(strategy2);
-  fib.insert(nameAB  ).first->setStrategy(strategy1);
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  strategyChoice.install(strategy1);
+  strategyChoice.install(strategy2);
+  strategyChoice.insert(nameRoot, strategy1->getName());
+  strategyChoice.insert(nameA   , strategy2->getName());
+  strategyChoice.insert(nameAB  , strategy1->getName());
 
   MeasurementsAccessor& accessor1 = strategy1->getMeasurements_accessor();
   MeasurementsAccessor& accessor2 = strategy2->getMeasurements_accessor();
