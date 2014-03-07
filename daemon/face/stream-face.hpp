@@ -166,6 +166,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::sendInterest(const Interest& interest)
 {
+  this->onSendInterest(interest);
   StreamFaceSenderImpl<T, U, Interest>::send(*this, interest);
 }
 
@@ -173,6 +174,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::sendData(const Data& data)
 {
+  this->onSendData(data);
   StreamFaceSenderImpl<T, U, Data>::send(*this, data);
 }
 

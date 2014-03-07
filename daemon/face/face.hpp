@@ -51,6 +51,12 @@ public:
   /// fires when a Data is received
   EventEmitter<Data> onReceiveData;
 
+  /// fires when an Interest is sent out
+  EventEmitter<Interest> onSendInterest;
+
+  /// fires when a Data is sent out
+  EventEmitter<Data> onSendData;
+
   /// fires when face disconnects or fails to perform properly
   EventEmitter<std::string/*reason*/> onFail;
 

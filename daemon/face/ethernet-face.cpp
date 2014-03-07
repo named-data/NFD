@@ -79,12 +79,14 @@ EthernetFace::~EthernetFace()
 void
 EthernetFace::sendInterest(const Interest& interest)
 {
+  onSendInterest(interest);
   sendPacket(interest.wireEncode());
 }
 
 void
 EthernetFace::sendData(const Data& data)
 {
+  onSendData(data);
   sendPacket(data.wireEncode());
 }
 

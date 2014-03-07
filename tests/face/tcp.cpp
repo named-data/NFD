@@ -208,23 +208,39 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   data2.setSignature(fakeSignature);
 
   m_face1->sendInterest(interest1);
+  m_face1->sendInterest(interest1);
+  m_face1->sendInterest(interest1);
   m_face1->sendData    (data1    );
   m_face2->sendInterest(interest2);
   m_face2->sendData    (data2    );
+  m_face2->sendData    (data2    );
+  m_face2->sendData    (data2    );
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(4, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(8, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot send or receive Interest/Data packets");
 
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 3);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 3);
   BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
 
   BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
   BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
   BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
   BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+
+  const FaceCounters& counters1 = m_face1->getCounters();
+  BOOST_CHECK_EQUAL(counters1.getInInterest() , 1);
+  BOOST_CHECK_EQUAL(counters1.getInData()     , 3);
+  BOOST_CHECK_EQUAL(counters1.getOutInterest(), 3);
+  BOOST_CHECK_EQUAL(counters1.getOutData()    , 1);
+
+  const FaceCounters& counters2 = m_face2->getCounters();
+  BOOST_CHECK_EQUAL(counters2.getInInterest() , 3);
+  BOOST_CHECK_EQUAL(counters2.getInData()     , 1);
+  BOOST_CHECK_EQUAL(counters2.getOutInterest(), 1);
+  BOOST_CHECK_EQUAL(counters2.getOutData()    , 3);
 }
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)

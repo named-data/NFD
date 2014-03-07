@@ -13,13 +13,15 @@ namespace nfd {
 
 /** \class FaceCounter
  *  \brief represents a counter on face
+ *
+ *  \todo This class should be noncopyable
  */
 typedef uint64_t FaceCounter;
 
 
 /** \brief contains counters on face
  */
-class FaceCounters
+class FaceCounters : noncopyable
 {
 public:
   FaceCounters();
@@ -59,6 +61,14 @@ private:
   FaceCounter m_outData;
 };
 
+inline
+FaceCounters::FaceCounters()
+  : m_inInterest(0)
+  , m_inData(0)
+  , m_outInterest(0)
+  , m_outData(0)
+{
+}
 
 inline const FaceCounter&
 FaceCounters::getInInterest() const

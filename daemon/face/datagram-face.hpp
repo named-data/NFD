@@ -84,6 +84,7 @@ template <class T>
 inline void
 DatagramFace<T>::sendInterest(const Interest& interest)
 {
+  this->onSendInterest(interest);
   m_socket->async_send(boost::asio::buffer(interest.wireEncode().wire(),
                                            interest.wireEncode().size()),
                        bind(&DatagramFace<T>::handleSend, this, _1, interest.wireEncode()));
@@ -95,6 +96,7 @@ template <class T>
 inline void
 DatagramFace<T>::sendData(const Data& data)
 {
+  this->onSendData(data);
   m_socket->async_send(boost::asio::buffer(data.wireEncode().wire(),
                                            data.wireEncode().size()),
                        bind(&DatagramFace<T>::handleSend, this, _1, data.wireEncode()));
@@ -162,6 +164,7 @@ inline void
 DatagramFace<T>::handleReceive(const boost::system::error_code& error,
                                size_t nBytesReceived)
 {
+  NFD_LOG_DEBUG("handleReceive: " << nBytesReceived);
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T>::handleReceive, this, _1, _2));

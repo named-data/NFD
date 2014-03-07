@@ -28,6 +28,7 @@ public:
   virtual void
   sendInterest(const Interest& interest)
   {
+    this->onSendInterest(interest);
     m_sentInterests.push_back(interest);
     this->afterSend();
   }
@@ -35,6 +36,7 @@ public:
   virtual void
   sendData(const Data& data)
   {
+    this->onSendData(data);
     m_sentDatas.push_back(data);
     this->afterSend();
   }

@@ -28,6 +28,8 @@ MulticastUdpFace::getMulticastGroup() const
 void
 MulticastUdpFace::sendInterest(const Interest& interest)
 {
+  onSendInterest(interest);
+
   NFD_LOG_DEBUG("Sending interest");
   m_socket->async_send_to(boost::asio::buffer(interest.wireEncode().wire(),
                                               interest.wireEncode().size()),
@@ -40,6 +42,10 @@ MulticastUdpFace::sendInterest(const Interest& interest)
 void
 MulticastUdpFace::sendData(const Data& data)
 {
+  /// \todo After this method implements duplicate suppression, onSendData event should
+  ///       be triggered only when data is actually sent out
+  onSendData(data);
+
   NFD_LOG_DEBUG("Sending data");
   m_socket->async_send_to(boost::asio::buffer(data.wireEncode().wire(),
                                            data.wireEncode().size()),

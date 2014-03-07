@@ -18,6 +18,8 @@ InternalFace::InternalFace()
 void
 InternalFace::sendInterest(const Interest& interest)
 {
+  onSendInterest(interest);
+
   if (m_interestFilters.size() == 0)
     {
       NFD_LOG_DEBUG("no Interest filters to match against");
@@ -90,6 +92,7 @@ InternalFace::sendInterest(const Interest& interest)
 void
 InternalFace::sendData(const Data& data)
 {
+  onSendData(data);
 }
 
 void

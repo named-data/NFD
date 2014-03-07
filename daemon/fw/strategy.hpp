@@ -95,7 +95,7 @@ protected: // actions
   /// send Interest to outFace
   VIRTUAL_WITH_TESTS void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
-                    shared_ptr<Face> outFace);
+               shared_ptr<Face> outFace);
 
   /** \brief decide that a pending Interest cannot be forwarded
    *

@@ -20,6 +20,7 @@ UdpFace::handleFirstReceive(const uint8_t* buffer,
                             std::size_t nBytesReceived,
                             const boost::system::error_code& error)
 {
+  NFD_LOG_DEBUG("handleFirstReceive");
   //checking if the received message size is too big.
   //This check is redundant, since in the actual implementation a packet
   //cannot be bigger than MAX_NDN_PACKET_SIZE
