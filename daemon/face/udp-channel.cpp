@@ -162,6 +162,9 @@ UdpChannel::newPeer(const boost::system::error_code& error,
                     std::size_t nBytesReceived)
 {
   NFD_LOG_DEBUG("UdpChannel::newPeer from " << m_newRemoteEndpoint);
+
+  shared_ptr<UdpFace> face;
+
   ChannelFaceMap::iterator i = m_channelFaces.find(m_newRemoteEndpoint);
   if (i != m_channelFaces.end()) {
     //The face already exists.
@@ -172,25 +175,26 @@ UdpChannel::newPeer(const boost::system::error_code& error,
     //"at the same time", while the channel is creating the face the kernel
     //could dispatch the other pkts to the channel because the face is not yet
     //ready. In this case, the channel has to pass the pkt to the face
+
     NFD_LOG_DEBUG("The creation of the face for the remote endpoint "
                   << m_newRemoteEndpoint
                   << " is in progress");
-    //Passing the message to the correspondent face
-    i->second->handleFirstReceive(m_inputBuffer, nBytesReceived, error);
-    return;
+
+    face = i->second;
+  }
+  else {
+    shared_ptr<ip::udp::socket> clientSocket =
+      make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
+    clientSocket->open(m_localEndpoint.protocol());
+    clientSocket->set_option(ip::udp::socket::reuse_address(true));
+    clientSocket->bind(m_localEndpoint);
+    clientSocket->connect(m_newRemoteEndpoint);
+
+    face = createFace(clientSocket, onFaceCreatedNewPeerCallback);
   }
 
-  shared_ptr<ip::udp::socket> clientSocket =
-    make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
-  clientSocket->open(m_localEndpoint.protocol());
-  clientSocket->set_option(ip::udp::socket::reuse_address(true));
-  clientSocket->bind(m_localEndpoint);
-  clientSocket->connect(m_newRemoteEndpoint);
-
-  shared_ptr<UdpFace> newFace = createFace(clientSocket, onFaceCreatedNewPeerCallback);
-
   //Passing the message to the correspondent face
-  newFace->handleFirstReceive(m_inputBuffer, nBytesReceived, error);
+  face->handleFirstReceive(m_inputBuffer, nBytesReceived, error);
 
   m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE),
                                m_newRemoteEndpoint,

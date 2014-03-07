@@ -366,9 +366,11 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   m_face2->sendInterest(interest2);
   m_face2->sendData    (data2    );
+  m_face2->sendData    (data2    );
+  m_face2->sendData    (data2    );
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(3,//2 send + 1 listen return
-                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(5,//4 send + 1 listen return
+                      time::seconds(4)) == LimitedIo::EXCEED_OPS,
                       "UdpChannel error: cannot send or receive Interest/Data packets");
 
   BOOST_REQUIRE(static_cast<bool>(m_face1));
@@ -376,15 +378,17 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(m_face1->isLocal(), false);
 
   m_face1->sendInterest(interest1);
+  m_face1->sendInterest(interest1);
+  m_face1->sendInterest(interest1);
   m_face1->sendData    (data1    );
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(4, time::seconds(4)) == LimitedIo::EXCEED_OPS,
                       "UdpChannel error: cannot send or receive Interest/Data packets");
 
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 3);
+  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 3);
   BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
 
   BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
@@ -403,10 +407,10 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
                       "UdpChannel error: cannot send or receive Interest/Data packets");
 
   BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 2);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 2);
+  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 4);
 
   BOOST_CHECK_EQUAL(m_face1_receivedInterests[1].getName(), interest3.getName());
-  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [1].getName(), data3.getName());
+  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [3].getName(), data3.getName());
 }
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
