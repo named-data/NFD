@@ -241,50 +241,63 @@ BOOST_AUTO_TEST_CASE(Erase)
 
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 {
-  Name nameA  ("ndn:/A");
-  Name nameAB ("ndn:/A/B");
-  Name nameABC("ndn:/A/B/C");
-  Name nameD  ("ndn:/D");
-  Interest interestA (nameA );
-  Interest interestAB(nameAB);
-  Interest interestD (nameD );
+  Name nameA   ("ndn:/A");
+  Name nameAB  ("ndn:/A/B");
+  Name nameABC ("ndn:/A/B/C");
+  Name nameABCD("ndn:/A/B/C/D");
+  Name nameD   ("ndn:/D");
+
+  Interest interestA  (nameA  );
+  Interest interestABC(nameABC);
+  Interest interestD  (nameD  );
 
   NameTree nameTree(16);
   Pit pit(nameTree);
+  int count = 0;
   
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  pit.insert(interestA );
-  pit.insert(interestAB);
-  pit.insert(interestD );
+  pit.insert(interestA  );
+  pit.insert(interestABC);
+  pit.insert(interestD  );
+
+  nameTree.lookup(nameABCD); // make sure /A/B/C/D is in nameTree
   
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
-  Data data(nameABC);
+  Data data(nameABCD);
   
   shared_ptr<pit::DataMatchResult> matches = pit.findAllDataMatches(data);
-  int count = 0;
-  bool hasA  = false;
-  bool hasAB = false;
-  bool hasD  = false;
+  
+  bool hasA   = false;
+  bool hasAB  = false;
+  bool hasABC = false;
+  bool hasD   = false;
+
   for (pit::DataMatchResult::iterator it = matches->begin();
        it != matches->end(); ++it) {
     ++count;
     shared_ptr<pit::Entry> entry = *it;
-    if (entry->getName().equals(nameA )) {
-      hasA  = true;
-    }
-    if (entry->getName().equals(nameAB)) {
-      hasAB = true;
-    }
-    if (entry->getName().equals(nameD )) {
-      hasD  = true;
-    }
+
+    if (entry->getName().equals(nameA ))
+      hasA   = true;
+
+    if (entry->getName().equals(nameAB))
+      hasAB  = true;
+  
+    if (entry->getName().equals(nameABC))
+      hasABC = true;
+    
+    if (entry->getName().equals(nameD))
+      hasD   = true;
   }
+  BOOST_CHECK_EQUAL(hasA  , true);
+  BOOST_CHECK_EQUAL(hasAB , false);
+  BOOST_CHECK_EQUAL(hasABC, true);
+  BOOST_CHECK_EQUAL(hasD  , false);
+
   BOOST_CHECK_EQUAL(count, 2);
-  BOOST_CHECK_EQUAL(hasA , true);
-  BOOST_CHECK_EQUAL(hasAB, true);
-  BOOST_CHECK_EQUAL(hasD , false);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -87,13 +87,12 @@ Fib::erase(const Name& prefix)
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  shared_ptr<std::vector<shared_ptr<name_tree::Entry > > > nameTreeEntries =
-    m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
-  for (size_t i = 0; i < nameTreeEntries->size(); ++i) {
-    shared_ptr<fib::Entry> entry = nameTreeEntries->at(i)->getFibEntry();
+  for (NameTree::const_iterator it = 
+    m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end(); it++)
+  {
+    shared_ptr<fib::Entry> entry = it->getFibEntry();
     entry->removeNextHop(face);
   }
 }
-
 
 } // namespace nfd

@@ -4,19 +4,6 @@
  * See COPYING for copyright and distribution information.
  */
 
-/**
- *  KNOWN ISSUES
- *  
- *  - To remove a PIT entry, we need to first perform a lookup on NameTree
- *  to locate its NameTree Entry, and then call NameTreeEntry->deletePitEntry()
- *  function. Alternatively, we could store a pointer at each PIT-Entry, which
- *  would speed up this procedure with the cost of additional memory space. Maybe
- *  this could also be part of the PIT/FIB/Measurement shortcut, where all of these
- *  entries have pointers to their NameTreeEntry. Which could be part of task
- *  #1202, shortcuts between FIB, PIT, Measurements.
- *  
- */
-
 #include "pit.hpp"
 
 namespace nfd {
@@ -27,6 +14,12 @@ Pit::Pit(NameTree& nameTree) : m_nameTree(nameTree), m_nItems(0)
 
 Pit::~Pit()
 {
+}
+
+static inline bool
+predicate_NameTreeEntry_hasPitEntry(const name_tree::Entry& entry)
+{
+  return entry.hasPitEntries();
 }
 
 static inline bool
@@ -57,10 +50,10 @@ Pit::insert(const Interest& interest)
 {
   // - first lookup() the Interest Name in the NameTree, which will creates all
   // the intermedia nodes, starting from the shortest prefix.
-  // - if it is guaranteed that this Interest already has a NameTree Entry, we 
+  // - if it is guaranteed that this Interest already has a NameTree Entry, we
   // could use findExactMatch() instead.
-  // - Alternatively, we could try to do findExactMatch() first, if not found, then 
-  // do lookup().
+  // - Alternatively, we could try to do findExactMatch() first, if not found,
+  // then do lookup().
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(interest.getName());
 
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
@@ -91,19 +84,11 @@ Pit::findAllDataMatches(const Data& data) const
 {
   shared_ptr<pit::DataMatchResult> result = make_shared<pit::DataMatchResult>();
 
-  shared_ptr<name_tree::Entry> nameTreeEntry;
-
-  // NOTE: We are using findLongestPrefixMatch() here.
-  // The reason is that findLongestPrefixMatch() starts with the full name
-  // and then remove one component each time, which is the type of behavior we would like
-  // to use here.
-  // If it could be guranteed that the quering Data packet always has a Name Tree
-  // Entry, we could also use findExactMatch(). 
-  for (nameTreeEntry = m_nameTree.findLongestPrefixMatch(data.getName()); 
-                                   static_cast<bool>(nameTreeEntry);
-                                   nameTreeEntry = nameTreeEntry->getParent())
+  for (NameTree::const_iterator it =
+       m_nameTree.findAllMatches(data.getName(), &predicate_NameTreeEntry_hasPitEntry);
+       it != m_nameTree.end(); it++)
     {
-      std::vector<shared_ptr<pit::Entry> >& pitEntries = nameTreeEntry->getPitEntries();
+      std::vector<shared_ptr<pit::Entry> >& pitEntries = it->getPitEntries();
       for (size_t i = 0; i < pitEntries.size(); i++)
         {
           if (pitEntries[i]->getInterest().matchesName(data.getName()))
@@ -125,7 +110,7 @@ Pit::erase(shared_ptr<pit::Entry> pitEntry)
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
 
   // erase this PIT entry
-  if (static_cast<bool>(nameTreeEntry)) 
+  if (static_cast<bool>(nameTreeEntry))
     {
       nameTreeEntry->erasePitEntry(pitEntry);
       m_nameTree.eraseEntryIfEmpty(nameTreeEntry);

@@ -31,31 +31,31 @@ class Pit : noncopyable
 public:
   explicit
   Pit(NameTree& nameTree);
-   
+
   ~Pit();
 
-  /** 
+  /**
    *  \brief Get the number of items stored in the PIT.
    */
-  size_t 
+  size_t
   size() const;
-  
+
   /** \brief inserts a FIB entry for prefix
    *  If an entry for exact same prefix exists, that entry is returned.
    *  \return{ the entry, and true for new entry, false for existing entry }
    */
   std::pair<shared_ptr<pit::Entry>, bool>
   insert(const Interest& interest);
-  
+
   /** \brief performs a Data match
    *  \return{ an iterable of all PIT entries matching data }
    */
   shared_ptr<pit::DataMatchResult>
   findAllDataMatches(const Data& data) const;
-    
+
   /**
    *  \brief Erase a PIT Entry
-   */  
+   */
   void
   erase(shared_ptr<pit::Entry> pitEntry);
 

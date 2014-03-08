@@ -21,12 +21,12 @@ class NameTree;
 
 namespace name_tree {
 
-// Forward declaration
+// Forward declarations
 class Node;
 class Entry;
 
 /**
- * @brief Name Tree Node Class
+ * \brief Name Tree Node Class
  */
 class Node
 {
@@ -43,9 +43,9 @@ public:
 };
 
 /**
- * @brief Name Tree Entry Class
+ * \brief Name Tree Entry Class
  */
-class Entry
+class Entry : noncopyable
 {
   // Make private members accessible by Name Tree
   friend class nfd::NameTree;
@@ -72,7 +72,10 @@ public:
 
   std::vector<shared_ptr<Entry> >&
   getChildren();
-  
+
+  bool
+  hasChildren() const;
+
   bool
   isEmpty() const;
 
@@ -88,12 +91,15 @@ public:
   void
   insertPitEntry(shared_ptr<pit::Entry> pit);
 
+  bool
+  hasPitEntries() const;
+
   std::vector<shared_ptr<pit::Entry> >&
   getPitEntries();
 
   /**
-   * @brief Erase a PIT Entry
-   * @details The address of this PIT Entry is required
+   * \brief Erase a PIT Entry
+   * \details The address of this PIT Entry is required
    */
   bool
   erasePitEntry(shared_ptr<pit::Entry> pit);
@@ -152,6 +158,12 @@ Entry::getChildren()
 }
 
 inline bool
+Entry::hasChildren() const
+{
+  return !m_children.empty();
+}
+
+inline bool
 Entry::isEmpty() const
 {
   return m_children.empty() &&
@@ -164,6 +176,12 @@ inline shared_ptr<fib::Entry>
 Entry::getFibEntry() const
 {
   return m_fibEntry;
+}
+
+inline bool
+Entry::hasPitEntries() const
+{
+  return !m_pitEntries.empty();
 }
 
 inline std::vector<shared_ptr<pit::Entry> >&
