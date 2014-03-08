@@ -61,14 +61,6 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
     make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
 
-  clientSocket->open(m_localEndpoint.protocol());
-
-  // The following does not work and CCNx does not bind the local
-  // socket to a fixed port number for TCP connections
-
-  // clientSocket->set_option(ip::tcp::socket::reuse_address(true));
-  // clientSocket->bind(m_localEndpoint);
-
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
                                    clientSocket, connectTimeoutTimer,
@@ -91,14 +83,6 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
 
   shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
     make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
-
-  clientSocket->open(m_localEndpoint.protocol());
-
-  // The following does not work and CCNx does not bind the local
-  // socket to a fixed port number for TCP connections
-
-  // clientSocket->set_option(ip::tcp::socket::reuse_address(true));
-  // clientSocket->bind(m_localEndpoint);
 
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
