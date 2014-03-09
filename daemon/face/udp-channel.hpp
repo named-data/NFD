@@ -10,6 +10,7 @@
 #include "channel.hpp"
 #include "core/time.hpp"
 #include "core/global-io.hpp"
+#include "core/scheduler.hpp"
 #include "udp-face.hpp"
 
 namespace nfd {
@@ -95,7 +96,8 @@ public:
 private:
   shared_ptr<UdpFace>
   createFace(const shared_ptr<boost::asio::ip::udp::socket>& socket,
-             const FaceCreatedCallback& onFaceCreated);
+             const FaceCreatedCallback& onFaceCreated,
+             bool isPermanent);
   void
   afterFaceFailed(udp::Endpoint& endpoint);
 
@@ -113,6 +115,9 @@ private:
                            const FaceCreatedCallback& onFaceCreated,
                            const ConnectFailedCallback& onConnectFailed,
                            const shared_ptr<boost::asio::ip::udp::resolver>& resolver);
+
+  void
+  closeIdleFaces();
 
 private:
   udp::Endpoint m_localEndpoint;
@@ -146,6 +151,14 @@ private:
    * \brief If true, it means the function listen has already been called
    */
   bool m_isListening;
+  
+  /**
+   * \brief every time m_idleFaceTimeout expires all the idle (and not permanent)
+   *        faces will be removed
+   */
+  time::Duration m_idleFaceTimeout;
+
+  EventId m_closeIdleFaceEvent;
 
 };
 

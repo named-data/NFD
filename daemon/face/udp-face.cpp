@@ -10,8 +10,11 @@ namespace nfd {
 
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
 
-UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket)
-  : DatagramFace<protocol>(FaceUri(socket->remote_endpoint()), socket)
+UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
+                 bool isPermanent)
+  : DatagramFace<protocol>(FaceUri(socket->remote_endpoint()),
+                           socket,
+                           isPermanent)
 {
 }
 

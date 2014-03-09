@@ -17,9 +17,9 @@ class DatagramFace : public Face
 public:
   typedef T protocol;
   
-  explicit
   DatagramFace(const FaceUri& uri,
-               const shared_ptr<typename protocol::socket>& socket);
+               const shared_ptr<typename protocol::socket>& socket,
+               bool isPermanent);
 
   virtual
   ~DatagramFace();
@@ -42,6 +42,21 @@ public:
   handleReceive(const boost::system::error_code& error,
                 size_t nBytesReceived);
 
+  void
+  setPermanent(bool isPermanent);
+  
+  bool
+  isPermanent() const;
+
+  /**
+   * \brief Set m_hasBeenUsedRecently to false
+   */
+  void
+  resetRecentUsage();
+  
+  bool
+  hasBeenUsedRecently() const;
+  
 protected:
 
   void
@@ -59,6 +74,14 @@ protected:
   shared_ptr<typename protocol::socket> m_socket;
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
 
+  /**
+   * If false, the face can be closed after it remains unused for a certain
+   * amount of time
+   */
+  bool m_isPermanent;
+  
+  bool m_hasBeenUsedRecently;
+
   NFD_LOG_INCLASS_DECLARE();
 
 };
@@ -66,9 +89,11 @@ protected:
 template <class T>
 inline
 DatagramFace<T>::DatagramFace(const FaceUri& uri,
-                              const shared_ptr<typename DatagramFace::protocol::socket>& socket)
+                              const shared_ptr<typename DatagramFace::protocol::socket>& socket,
+                              bool isPermanent)
   : Face(uri)
   , m_socket(socket)
+  , m_isPermanent(isPermanent)
 {
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T>::handleReceive, this, _1, _2));
@@ -166,8 +191,9 @@ DatagramFace<T>::handleReceive(const boost::system::error_code& error,
 {
   NFD_LOG_DEBUG("handleReceive: " << nBytesReceived);
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
-                          bind(&DatagramFace<T>::handleReceive, this, _1, _2));
+  if (m_socket->is_open())
+    m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
+                            bind(&DatagramFace<T>::handleReceive, this, _1, _2));
 }
 
 template <class T>
@@ -220,7 +246,7 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
                      << ",endpoint:" << m_socket->local_endpoint()
                      << "] Received datagram size and decoded "
                      << "element size don't match");
-        /// @todo this message should not extend the face lifetime
+        // This message won't extend the face lifetime
         return;
       }
     if (!this->decodeAndDispatchInput(element))
@@ -230,7 +256,7 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
                      << "] Received unrecognized block of type ["
                      << element.type() << "]");
         // ignore unknown packet and proceed
-        /// @todo this message should not extend the face lifetime
+        // This message won't extend the face lifetime
         return;
       }
   }
@@ -238,9 +264,10 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
     NFD_LOG_WARN("[id:" << this->getId()
                  << ",endpoint:" << m_socket->local_endpoint()
                  << "] Received input is invalid");
-    /// @todo this message should not extend the face lifetime
+    // This message won't extend the face lifetime
     return;
   }
+  m_hasBeenUsedRecently = true;
 }
 
 
@@ -254,6 +281,7 @@ template <class T>
 inline void
 DatagramFace<T>::closeSocket()
 {
+  NFD_LOG_DEBUG("closeSocket  " << m_socket->local_endpoint());
   boost::asio::io_service& io = m_socket->get_io_service();
     
   // use the non-throwing variants and ignore errors, if any
@@ -266,6 +294,34 @@ DatagramFace<T>::closeSocket()
   // handlers are dispatched
   io.post(bind(&DatagramFace<T>::keepFaceAliveUntilAllHandlersExecuted,
                this, this->shared_from_this()));
+}
+
+template <class T>
+inline void
+DatagramFace<T>::setPermanent(bool isPermanent)
+{
+  m_isPermanent = isPermanent;
+}
+
+template <class T>
+inline bool
+DatagramFace<T>::isPermanent() const
+{
+  return m_isPermanent;
+}
+
+template <class T>
+inline void
+DatagramFace<T>::resetRecentUsage()
+{
+  m_hasBeenUsedRecently = false;
+}
+
+template <class T>
+inline bool
+DatagramFace<T>::hasBeenUsedRecently() const
+{
+  return m_hasBeenUsedRecently;
 }
 
 } // namespace nfd

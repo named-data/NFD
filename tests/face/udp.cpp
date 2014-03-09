@@ -170,6 +170,12 @@ public:
   channel1_onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK(!static_cast<bool>(m_face1));
+    channel1_onFaceCreatedNoCheck(newFace);
+  }
+  
+  void
+  channel1_onFaceCreatedNoCheck(const shared_ptr<Face>& newFace)
+  {
     m_face1 = newFace;
     m_face1->onReceiveInterest +=
       bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
@@ -823,6 +829,78 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(channel2->size(), 0);
 }
+  
+BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
+{
+  Interest interest1("ndn:/TpnzGvW9R");
+  Interest interest2("ndn:/QWiIMfj5sL");
+  
+  UdpFactory factory;
+  time::Duration idleTimeout = time::seconds(2);
+  
+  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1",
+                                                          "20070",
+                                                          time::seconds(2));
+  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1",
+                                                          "20071",
+                                                          time::seconds(2));
+  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
+                  bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  channel2->connect("127.0.0.1", "20070",
+                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                    bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+  
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot connect or cannot accept connection");
+
+  m_face2->sendInterest(interest1);
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2,//1 send + 1 listen return
+                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot send or receive Interest/Data packets");
+  
+  BOOST_CHECK_EQUAL(m_faces.size(), 2);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(2)) == LimitedIo::EXCEED_TIME,
+                      "Idle face should be still open because has been used recently");
+  BOOST_CHECK_EQUAL(m_faces.size(), 2);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
+                      "Closing idle face error: face should be closed by now");
+  
+  //the face on listen should be closed now
+  BOOST_CHECK_EQUAL(channel1->size(), 0);
+  //checking that m_face2 has not been closed
+  BOOST_CHECK_EQUAL(channel2->size(), 1);
+  BOOST_REQUIRE(static_cast<bool>(m_face2));
+  
+  m_face2->sendInterest(interest2);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(2,//1 send + 1 listen return
+                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot send or receive Interest/Data packets");
+  //channel1 should have created a new face by now
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
+  BOOST_CHECK_EQUAL(channel2->size(), 1);
+  BOOST_REQUIRE(static_cast<bool>(m_face1));
+  
+  channel1->connect("127.0.0.1", "20071",
+                    bind(&EndToEndFixture::channel1_onFaceCreatedNoCheck, this, _1),
+                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1,//1 connect
+                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
+                      "UdpChannel error: cannot connect");
+  
+  //the connect should have set m_face1 as permanent face,
+  //but it shouln't have created any additional faces
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
+  BOOST_CHECK_EQUAL(channel2->size(), 1);
+  BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_TIME,
+                      "Idle face should be still open because it's permanent now");
+  //both faces are permanent, nothing should have changed
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
+  BOOST_CHECK_EQUAL(channel2->size(), 1);
+}
+
 
 //BOOST_FIXTURE_TEST_CASE(MulticastFace, EndToEndFixture)
 //{

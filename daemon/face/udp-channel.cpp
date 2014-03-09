@@ -18,6 +18,7 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
                        const time::Duration& timeout)
   : m_localEndpoint(localEndpoint)
   , m_isListening(false)
+  , m_idleFaceTimeout(timeout)
 {
   /// \todo the reuse_address works as we want in Linux, but in other system could be different.
   ///       We need to check this
@@ -38,10 +39,15 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   }
   
   this->setUri(FaceUri(localEndpoint));
+  
+  //setting the timeout to close the idle faces
+  m_closeIdleFaceEvent = scheduler::schedule(m_idleFaceTimeout,
+                                bind(&UdpChannel::closeIdleFaces, this));
 }
 
 UdpChannel::~UdpChannel()
 {
+  scheduler::cancel(m_closeIdleFaceEvent);
 }
 
 void
@@ -70,6 +76,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
 {
   ChannelFaceMap::iterator i = m_channelFaces.find(remoteEndpoint);
   if (i != m_channelFaces.end()) {
+    i->second->setPermanent(true);
     onFaceCreated(i->second);
     return;
   }
@@ -93,7 +100,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
     throw Error("Failed to properly configure the socket. Check the address ("
                 + std::string(e.what()) + ")");
   }
-  createFace(clientSocket, onFaceCreated);
+  createFace(clientSocket, onFaceCreated, true);
 }
 
 void
@@ -145,11 +152,12 @@ UdpChannel::size() const
 
 shared_ptr<UdpFace>
 UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
-                       const FaceCreatedCallback& onFaceCreated)
+                       const FaceCreatedCallback& onFaceCreated,
+                       bool isPermanent)
 {
   udp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
-  shared_ptr<UdpFace> face = make_shared<UdpFace>(boost::cref(socket));
+  shared_ptr<UdpFace> face = make_shared<UdpFace>(boost::cref(socket), isPermanent);
   face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
 
   onFaceCreated(face);
@@ -190,7 +198,9 @@ UdpChannel::newPeer(const boost::system::error_code& error,
     clientSocket->bind(m_localEndpoint);
     clientSocket->connect(m_newRemoteEndpoint);
 
-    face = createFace(clientSocket, onFaceCreatedNewPeerCallback);
+    face = createFace(clientSocket,
+                      onFaceCreatedNewPeerCallback,
+                      false);
   }
 
   //Passing the message to the correspondent face
@@ -204,10 +214,33 @@ UdpChannel::newPeer(const boost::system::error_code& error,
 }
 
 
-void UdpChannel::afterFaceFailed(udp::Endpoint &endpoint)
+void
+UdpChannel::afterFaceFailed(udp::Endpoint &endpoint)
 {
   NFD_LOG_DEBUG("afterFaceFailed: " << endpoint);
   m_channelFaces.erase(endpoint);
+}
+
+void
+UdpChannel::closeIdleFaces()
+{
+  ChannelFaceMap::iterator next =  m_channelFaces.begin();
+  
+  while (next != m_channelFaces.end()) {
+    ChannelFaceMap::iterator it = next;
+    next++;
+    if (!it->second->isPermanent() &&
+        !it->second->hasBeenUsedRecently()) {
+      //face has been idle since the last time closeIdleFaces
+      //has been called. Going to close it
+      NFD_LOG_DEBUG("Found idle face id: " << it->second->getId());
+      it->second->close();
+    } else {
+      it->second->resetRecentUsage();
+    }
+  }
+  m_closeIdleFaceEvent = scheduler::schedule(m_idleFaceTimeout,
+                                             bind(&UdpChannel::closeIdleFaces, this));
 }
 
 } // namespace nfd

@@ -21,8 +21,8 @@ class UdpFace : public DatagramFace<boost::asio::ip::udp>
 public:
   typedef boost::asio::ip::udp protocol;
 
-  explicit
-  UdpFace(const shared_ptr<protocol::socket>& socket);
+  UdpFace(const shared_ptr<protocol::socket>& socket,
+          bool isPermanent);
 
   //@todo if needed by other datagramFaces, it could be moved to datagram-face.hpp
   /**
