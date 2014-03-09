@@ -52,6 +52,10 @@ public:
   bool
   isMulticast() const;
 
+  /// True if this is a null address (00-00-00-00-00-00)
+  bool
+  isNull() const;
+
   std::string
   toString(char sep = '-') const;
 };
@@ -112,6 +116,13 @@ inline bool
 Address::isMulticast() const
 {
   return (elems[0] & 1) != 0;
+}
+
+inline bool
+Address::isNull() const
+{
+  return elems[0] == 0x0 && elems[1] == 0x0 && elems[2] == 0x0 &&
+         elems[3] == 0x0 && elems[4] == 0x0 && elems[5] == 0x0;
 }
 
 inline std::string
