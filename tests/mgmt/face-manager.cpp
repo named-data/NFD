@@ -6,6 +6,7 @@
 
 #include "mgmt/face-manager.hpp"
 #include "mgmt/internal-face.hpp"
+#include "mgmt/face-status-publisher.hpp"
 #include "face/face.hpp"
 #include "../face/dummy-face.hpp"
 #include "fw/face-table.hpp"
@@ -14,24 +15,27 @@
 #include "common.hpp"
 #include "tests/test-common.hpp"
 #include "validation-common.hpp"
+#include "face-status-publisher-common.hpp"
+
+#include <ndn-cpp-dev/encoding/tlv.hpp>
 
 namespace nfd {
 namespace tests {
 
 NFD_LOG_INIT("FaceManagerTest");
 
-class TestDummyFace : public DummyFace
+class FaceManagerTestFace : public DummyFace
 {
 public:
 
-  TestDummyFace()
+  FaceManagerTestFace()
     : m_closeFired(false)
   {
 
   }
 
   virtual
-  ~TestDummyFace()
+  ~FaceManagerTestFace()
   {
 
   }
@@ -60,7 +64,7 @@ public:
       m_addFired(false),
       m_removeFired(false),
       m_getFired(false),
-      m_dummy(make_shared<TestDummyFace>())
+      m_dummy(make_shared<FaceManagerTestFace>())
   {
 
   }
@@ -116,7 +120,7 @@ public:
     m_getFired = false;
   }
 
-  shared_ptr<TestDummyFace>&
+  shared_ptr<FaceManagerTestFace>&
   getDummyFace()
   {
     return m_dummy;
@@ -126,7 +130,7 @@ private:
   bool m_addFired;
   bool m_removeFired;
   mutable bool m_getFired;
-  shared_ptr<TestDummyFace> m_dummy;
+  shared_ptr<FaceManagerTestFace> m_dummy;
 };
 
 
@@ -257,16 +261,16 @@ public:
     m_manager.setConfigFile(m_config);
   }
 
-  void
-  parseConfig(const std::string configuration, bool isDryRun)
-  {
-    m_config.parse(configuration, isDryRun, "dummy-config");
-  }
-
   virtual
   ~FaceManagerFixture()
   {
 
+  }
+
+  void
+  parseConfig(const std::string configuration, bool isDryRun)
+  {
+    m_config.parse(configuration, isDryRun, "dummy-config");
   }
 
   FaceManager&
@@ -1022,8 +1026,72 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   BOOST_CHECK(TestFaceTableFixture::m_faceTable.getDummyFace()->didCloseFire());
 }
 
+class FaceListFixture : public FaceStatusPublisherFixture
+{
+public:
+  FaceListFixture()
+    : m_manager(m_table, m_face)
+  {
+
+  }
+
+  virtual
+  ~FaceListFixture()
+  {
+
+  }
+
+protected:
+  FaceManager m_manager;
+};
+
+BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
+
+{
+  Name commandName("/localhost/nfd/faces/list");
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 55
+  // 55 divides 4400 (== 80), so only use 79 FaceStatuses and then two smaller ones
+  // to force a FaceStatus to span Data packets
+  for (int i = 0; i < 79; i++)
+    {
+      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
+
+      uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
+      dummy->setCounters(filler, filler, filler, filler);
+
+      m_referenceFaces.push_front(dummy);
+
+      add(dummy);
+    }
+
+  for (int i = 0; i < 2; i++)
+    {
+      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
+      uint64_t filler = std::numeric_limits<uint32_t>::max() - 1;
+      dummy->setCounters(filler, filler, filler, filler);
+
+      m_referenceFaces.push_front(dummy);
+
+      add(dummy);
+    }
+
+  ndn::EncodingBuffer buffer;
+
+  m_face->onReceiveData +=
+    bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1);
+
+  m_manager.listFaces(*command);
+  BOOST_REQUIRE(m_finished);
+}
+
+
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
 } // namespace nfd
+
 

@@ -12,6 +12,8 @@
 #include "mgmt/app-face.hpp"
 #include "mgmt/manager-base.hpp"
 #include "mgmt/config-file.hpp"
+#include "mgmt/face-status-publisher.hpp"
+#include "fw/face-table.hpp"
 
 #include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
@@ -19,15 +21,16 @@
 namespace nfd {
 
 const std::string FACE_MANAGER_PRIVILEGE = "faces";
-class FaceTable;
+
 class ProtocolFactory;
 class NetworkInterfaceInfo;
 
 class FaceManager : public ManagerBase
 {
 public:
-  struct Error : public ManagerBase::Error
+  class Error : public ManagerBase::Error
   {
+  public:
     Error(const std::string& what) : ManagerBase::Error(what) {}
   };
 
@@ -48,6 +51,10 @@ public:
 
   void
   onFaceRequest(const Interest& request);
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  void
+  listFaces(const Interest& request);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
@@ -107,28 +114,39 @@ private:
   typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
   FactoryMap m_factories;
   FaceTable& m_faceTable;
+  FaceStatusPublisher m_statusPublisher;
 
   typedef function<void(FaceManager*,
                         const Name&,
-                        ndn::nfd::FaceManagementOptions&)> VerbProcessor;
+                        ndn::nfd::FaceManagementOptions&)> SignedVerbProcessor;
 
-  typedef std::map<Name::Component, VerbProcessor> VerbDispatchTable;
+  typedef std::map<Name::Component, SignedVerbProcessor> SignedVerbDispatchTable;
+  typedef std::pair<Name::Component, SignedVerbProcessor> SignedVerbAndProcessor;
 
-  typedef std::pair<Name::Component, VerbProcessor> VerbAndProcessor;
+  typedef function<void(FaceManager*, const Interest&)> UnsignedVerbProcessor;
 
-  const VerbDispatchTable m_verbDispatch;
+  typedef std::map<Name::Component, UnsignedVerbProcessor> UnsignedVerbDispatchTable;
+  typedef std::pair<Name::Component, UnsignedVerbProcessor> UnsignedVerbAndProcessor;
 
-  static const Name COMMAND_PREFIX; // /localhost/nfd/fib
 
-  // number of components in an invalid, but not malformed, unsigned command.
-  // (/localhost/nfd/fib + verb + options) = 5
+  const SignedVerbDispatchTable m_signedVerbDispatch;
+  const UnsignedVerbDispatchTable m_unsignedVerbDispatch;
+
+  static const Name COMMAND_PREFIX; // /localhost/nfd/faces
+
+  // number of components in an invalid signed command (i.e. should be signed, but isn't)
+  // (/localhost/nfd/faces + verb + options) = 5
   static const size_t COMMAND_UNSIGNED_NCOMPS;
 
-  // number of components in a valid signed Interest.
+  // number of components in a valid signed command.
   // (see UNSIGNED_NCOMPS), 9 with signed Interest support.
   static const size_t COMMAND_SIGNED_NCOMPS;
 
-  static const VerbAndProcessor COMMAND_VERBS[];
+  static const SignedVerbAndProcessor SIGNED_COMMAND_VERBS[];
+  static const UnsignedVerbAndProcessor UNSIGNED_COMMAND_VERBS[];
+
+  static const Name LIST_COMMAND_PREFIX;
+  static const size_t LIST_COMMAND_NCOMPS;
 };
 
 inline bool

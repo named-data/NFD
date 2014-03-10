@@ -9,7 +9,6 @@
 #include "core/face-uri.hpp"
 #include "core/network-interface.hpp"
 #include "fw/face-table.hpp"
-
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 
@@ -25,7 +24,7 @@ namespace nfd {
 
 NFD_LOG_INIT("FaceManager");
 
-const Name FaceManager::COMMAND_PREFIX = "/localhost/nfd/faces";
+const Name FaceManager::COMMAND_PREFIX("/localhost/nfd/faces");
 
 const size_t FaceManager::COMMAND_UNSIGNED_NCOMPS =
   FaceManager::COMMAND_PREFIX.size() +
@@ -36,18 +35,29 @@ const size_t FaceManager::COMMAND_SIGNED_NCOMPS =
   FaceManager::COMMAND_UNSIGNED_NCOMPS +
   4; // (timestamp, nonce, signed info tlv, signature tlv)
 
-const FaceManager::VerbAndProcessor FaceManager::COMMAND_VERBS[] =
+const FaceManager::SignedVerbAndProcessor FaceManager::SIGNED_COMMAND_VERBS[] =
   {
-    VerbAndProcessor(
+    SignedVerbAndProcessor(
                      Name::Component("create"),
                      &FaceManager::createFace
                      ),
 
-    VerbAndProcessor(
+    SignedVerbAndProcessor(
                      Name::Component("destroy"),
                      &FaceManager::destroyFace
                      ),
   };
+
+const FaceManager::UnsignedVerbAndProcessor FaceManager::UNSIGNED_COMMAND_VERBS[] =
+  {
+    UnsignedVerbAndProcessor(
+                             Name::Component("list"),
+                             &FaceManager::listFaces
+                             ),
+  };
+
+const Name FaceManager::LIST_COMMAND_PREFIX("/localhost/nfd/faces/list");
+const size_t FaceManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
 
 
 
@@ -55,9 +65,14 @@ FaceManager::FaceManager(FaceTable& faceTable,
                          shared_ptr<InternalFace> face)
   : ManagerBase(face, FACE_MANAGER_PRIVILEGE)
   , m_faceTable(faceTable)
-  , m_verbDispatch(COMMAND_VERBS,
-                   COMMAND_VERBS +
-                   (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
+  , m_statusPublisher(m_faceTable, m_face, LIST_COMMAND_PREFIX)
+  , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
+                   SIGNED_COMMAND_VERBS +
+                   (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
+  , m_unsignedVerbDispatch(UNSIGNED_COMMAND_VERBS,
+                   UNSIGNED_COMMAND_VERBS +
+                   (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
+
 {
   face->setInterestFilter("/localhost/nfd/faces",
                           bind(&FaceManager::onFaceRequest, this, _2));
@@ -487,26 +502,32 @@ FaceManager::onFaceRequest(const Interest& request)
 {
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
+  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
-  if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
+  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
+  if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
+    {
+      NFD_LOG_INFO("command result: processing verb: " << verb);
+      (unsignedVerbProcessor->second)(this, boost::cref(request));
+    }
+  else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
       commandNComps < COMMAND_SIGNED_NCOMPS)
     {
       NFD_LOG_INFO("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
-
-      return;
     }
   else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
            !COMMAND_PREFIX.isPrefixOf(command))
     {
       NFD_LOG_INFO("command result: malformed");
       sendResponse(command, 400, "Malformed command");
-      return;
     }
-
-  validate(request,
-           bind(&FaceManager::onValidatedFaceRequest, this, _1),
-           bind(&ManagerBase::onCommandValidationFailed, this, _1, _2));
+  else
+    {
+      validate(request,
+               bind(&FaceManager::onValidatedFaceRequest, this, _1),
+               bind(&ManagerBase::onCommandValidationFailed, this, _1, _2));
+    }
 }
 
 void
@@ -515,8 +536,8 @@ FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
   const Name& command = request->getName();
   const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
-  VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find (verb);
-  if (verbProcessor != m_verbDispatch.end())
+  SignedVerbDispatchTable::const_iterator signedVerbProcessor = m_signedVerbDispatch.find(verb);
+  if (signedVerbProcessor != m_signedVerbDispatch.end())
     {
       ndn::nfd::FaceManagementOptions options;
       if (!extractOptions(*request, options))
@@ -526,7 +547,7 @@ FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
         }
 
       NFD_LOG_INFO("command result: processing verb: " << verb);
-      (verbProcessor->second)(this, command, options);
+      (signedVerbProcessor->second)(this, command, options);
     }
   else
     {
@@ -617,6 +638,21 @@ FaceManager::destroyFace(const Name& requestName,
   sendResponse(requestName, 200, "Success");
 }
 
+void
+FaceManager::listFaces(const Interest& request)
+{
+  const Name& command = request.getName();
+  const size_t commandNComps = command.size();
 
+  if (commandNComps < LIST_COMMAND_NCOMPS ||
+      !LIST_COMMAND_PREFIX.isPrefixOf(command))
+    {
+      NFD_LOG_INFO("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  m_statusPublisher.publish();
+}
 
 } // namespace nfd
