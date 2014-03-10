@@ -66,9 +66,13 @@ public:
   size() const;
 
 private:
+  void
+  erase(const fib::Entry& entry);
+
+private:
   NameTree& m_nameTree;
   size_t m_nItems;
-  
+
   /** \brief The empty FIB entry.
    *
    *  This entry has no nexthops.

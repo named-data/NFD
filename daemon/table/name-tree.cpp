@@ -498,8 +498,10 @@ NameTree::const_iterator::operator++()
         }
 
       // process other buckets
-      int newLocation = m_entry->m_hash % m_nameTree.m_nBuckets + 1;
-      for (newLocation = newLocation; newLocation < m_nameTree.m_nBuckets; newLocation++)
+
+      for (int newLocation = m_entry->m_hash % m_nameTree.m_nBuckets + 1;
+           newLocation < static_cast<int>(m_nameTree.m_nBuckets);
+           ++newLocation)
         {
           // process each bucket
           name_tree::Node* node = m_nameTree.m_buckets[newLocation];
@@ -637,6 +639,9 @@ NameTree::const_iterator::operator++()
       m_entry = m_nameTree.m_end;
       return *this;
     }
+
+  BOOST_ASSERT(false); // unknown type
+  return *this;
 }
 
 } // namespace nfd

@@ -11,6 +11,11 @@
 
 namespace nfd {
 
+class NameTree;
+namespace name_tree {
+class Entry;
+}
+
 namespace fib {
 
 /** \class NextHopList
@@ -37,6 +42,10 @@ public:
   const NextHopList&
   getNextHops() const;
 
+  /// whether this Entry has any nexthop
+  bool
+  hasNextHops() const;
+
   bool
   hasNextHop(shared_ptr<Face> face) const;
 
@@ -56,6 +65,10 @@ private:
 private:
   Name m_prefix;
   NextHopList m_nextHops;
+
+  shared_ptr<name_tree::Entry> m_nameTreeEntry;
+  friend class nfd::NameTree;
+  friend class nfd::name_tree::Entry;
 };
 
 
@@ -69,6 +82,12 @@ inline const NextHopList&
 Entry::getNextHops() const
 {
   return m_nextHops;
+}
+
+inline bool
+Entry::hasNextHops() const
+{
+  return !m_nextHops.empty();
 }
 
 } // namespace fib

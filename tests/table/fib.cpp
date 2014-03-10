@@ -19,21 +19,21 @@ BOOST_AUTO_TEST_CASE(Entry)
   Name prefix("ndn:/pxWhfFza");
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
-  
+
   fib::Entry entry(prefix);
-  BOOST_CHECK(entry.getPrefix().equals(prefix));
-  
+  BOOST_CHECK_EQUAL(entry.getPrefix(), prefix);
+
   const fib::NextHopList& nexthops1 = entry.getNextHops();
   // []
   BOOST_CHECK_EQUAL(nexthops1.size(), 0);
-  
+
   entry.addNextHop(face1, 20);
   const fib::NextHopList& nexthops2 = entry.getNextHops();
   // [(face1,20)]
   BOOST_CHECK_EQUAL(nexthops2.size(), 1);
   BOOST_CHECK_EQUAL(nexthops2.begin()->getFace(), face1);
   BOOST_CHECK_EQUAL(nexthops2.begin()->getCost(), 20);
-  
+
   entry.addNextHop(face1, 30);
   const fib::NextHopList& nexthops3 = entry.getNextHops();
   // [(face1,30)]
@@ -80,26 +80,26 @@ BOOST_AUTO_TEST_CASE(Entry)
         break;
     }
   }
-  
+
   entry.removeNextHop(face1);
   const fib::NextHopList& nexthops6 = entry.getNextHops();
   // [(face2,10)]
   BOOST_CHECK_EQUAL(nexthops6.size(), 1);
   BOOST_CHECK_EQUAL(nexthops6.begin()->getFace(), face2);
   BOOST_CHECK_EQUAL(nexthops6.begin()->getCost(), 10);
-  
+
   entry.removeNextHop(face1);
   const fib::NextHopList& nexthops7 = entry.getNextHops();
   // [(face2,10)]
   BOOST_CHECK_EQUAL(nexthops7.size(), 1);
   BOOST_CHECK_EQUAL(nexthops7.begin()->getFace(), face2);
   BOOST_CHECK_EQUAL(nexthops7.begin()->getCost(), 10);
-  
+
   entry.removeNextHop(face2);
   const fib::NextHopList& nexthops8 = entry.getNextHops();
   // []
   BOOST_CHECK_EQUAL(nexthops8.size(), 0);
-  
+
   entry.removeNextHop(face2);
   const fib::NextHopList& nexthops9 = entry.getNextHops();
   // []
@@ -114,61 +114,66 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
   Name nameABC ("ndn:/A/B/C");
   Name nameABCD("ndn:/A/B/C/D");
   Name nameE   ("ndn:/E");
-  
+
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
 
   NameTree nameTree(1024);
   Fib fib(nameTree);
   // []
+  BOOST_CHECK_EQUAL(fib.size(), 0);
 
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_REQUIRE(static_cast<bool>(entry)); // the empty entry
-  
+
   insertRes = fib.insert(nameEmpty);
   BOOST_CHECK_EQUAL(insertRes.second, true);
   BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameEmpty);
   // ['/']
-  
+  BOOST_CHECK_EQUAL(fib.size(), 1);
+
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
-  
+
   insertRes = fib.insert(nameA);
   BOOST_CHECK_EQUAL(insertRes.second, true);
   BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
   // ['/', '/A']
-  
+  BOOST_CHECK_EQUAL(fib.size(), 2);
+
   insertRes = fib.insert(nameA);
   BOOST_CHECK_EQUAL(insertRes.second, false);
   BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
   // ['/', '/A']
+  BOOST_CHECK_EQUAL(fib.size(), 2);
 
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-  
+
   entry = fib.findLongestPrefixMatch(nameABCD);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-  
+
   insertRes = fib.insert(nameABC);
   BOOST_CHECK_EQUAL(insertRes.second, true);
   BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameABC);
   // ['/', '/A', '/A/B/C']
+  BOOST_CHECK_EQUAL(fib.size(), 3);
 
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-  
+
   entry = fib.findLongestPrefixMatch(nameAB);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-  
+
   entry = fib.findLongestPrefixMatch(nameABCD);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameABC);
-  
+
   entry = fib.findLongestPrefixMatch(nameE);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
@@ -178,38 +183,39 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
+  Name nameEmpty("ndn:/");
   Name nameA("ndn:/A");
   Name nameB("ndn:/B");
-  
+
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
-  
+
   NameTree nameTree(1024);
   Fib fib(nameTree);
-  // {'/':[]}
-  
+  // {}
+
   insertRes = fib.insert(nameA);
   insertRes.first->addNextHop(face1, 0);
   insertRes.first->addNextHop(face2, 0);
-  // {'/':[], '/A':[1,2]}
+  // {'/A':[1,2]}
 
   insertRes = fib.insert(nameB);
   insertRes.first->addNextHop(face1, 0);
-  // {'/':[], '/A':[1,2], '/B':[1]}
-  
+  // {'/A':[1,2], '/B':[1]}
+  BOOST_CHECK_EQUAL(fib.size(), 2);
+
   fib.removeNextHopFromAllEntries(face1);
-  // {'/':[], '/A':[2], '/B':[]}
-  
+  // {'/A':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 1);
+
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
   const fib::NextHopList& nexthopsA = entry->getNextHops();
   BOOST_CHECK_EQUAL(nexthopsA.size(), 1);
   BOOST_CHECK_EQUAL(nexthopsA.begin()->getFace(), face2);
-  
+
   entry = fib.findLongestPrefixMatch(nameB);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameB);
-  const fib::NextHopList& nexthopsB = entry->getNextHops();
-  BOOST_CHECK_EQUAL(nexthopsB.size(), 0);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
 }
 
 void

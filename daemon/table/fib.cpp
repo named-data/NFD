@@ -37,7 +37,7 @@ Fib::insert(const Name& prefix)
     return std::make_pair(entry, false);
   entry = make_shared<fib::Entry>(prefix);
   nameTreeEntry->setFibEntry(entry);
-  m_nItems++;
+  ++m_nItems;
   return std::make_pair(entry, true);
 }
 
@@ -79,19 +79,32 @@ Fib::erase(const Name& prefix)
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
   if (static_cast<bool>(nameTreeEntry))
   {
-    nameTreeEntry->eraseFibEntry(nameTreeEntry->getFibEntry());
-    m_nItems--;
+    nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
+    --m_nItems;
+  }
+}
+
+void
+Fib::erase(const fib::Entry& entry)
+{
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(entry);
+  if (static_cast<bool>(nameTreeEntry))
+  {
+    nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
+    --m_nItems;
   }
 }
 
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  for (NameTree::const_iterator it = 
-    m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end(); it++)
-  {
+  for (NameTree::const_iterator it = m_nameTree.fullEnumerate(
+       &predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end(); ++it) {
     shared_ptr<fib::Entry> entry = it->getFibEntry();
     entry->removeNextHop(face);
+    if (!entry->hasNextHops()) {
+      this->erase(*entry);
+    }
   }
 }
 

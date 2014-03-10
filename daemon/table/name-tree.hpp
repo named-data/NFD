@@ -100,6 +100,9 @@ public:
   shared_ptr<name_tree::Entry>
   findExactMatch(const Name& prefix) const;
 
+  shared_ptr<name_tree::Entry>
+  findExactMatch(const fib::Entry& fibEntry) const;
+
   /**
    * \brief Erase a Name Tree Entry if this entry is empty.
    * \details If a Name Tree Entry contains no Children, no FIB, no PIT, and
@@ -143,7 +146,8 @@ public:
   */
   const_iterator
   partialEnumerate(const Name& prefix,
-                   const name_tree::EntrySubTreeSelector& entrySubTreeSelector = name_tree::AnyEntrySubTree()) const;
+                   const name_tree::EntrySubTreeSelector& entrySubTreeSelector =
+                         name_tree::AnyEntrySubTree()) const;
 
   /**
    * \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
@@ -203,13 +207,13 @@ public:
     operator!=(const const_iterator& other) const;
 
   private:
-    bool                                        m_shouldVisitChildren;
     const NameTree&                             m_nameTree;
     shared_ptr<name_tree::Entry>                m_entry;
     shared_ptr<name_tree::Entry>                m_subTreeRoot;
     shared_ptr<name_tree::EntrySelector>        m_entrySelector;
     shared_ptr<name_tree::EntrySubTreeSelector> m_entrySubTreeSelector;
     NameTree::IteratorType                      m_type;
+    bool                                        m_shouldVisitChildren;
   };
 
 private:
@@ -248,6 +252,12 @@ inline size_t
 NameTree::getNBuckets() const
 {
   return m_nBuckets;
+}
+
+inline shared_ptr<name_tree::Entry>
+NameTree::findExactMatch(const fib::Entry& fibEntry) const
+{
+  return fibEntry.m_nameTreeEntry;
 }
 
 inline NameTree::const_iterator

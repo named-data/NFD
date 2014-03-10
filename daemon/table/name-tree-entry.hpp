@@ -45,7 +45,7 @@ public:
 /**
  * \brief Name Tree Entry Class
  */
-class Entry : noncopyable
+class Entry : public enable_shared_from_this<Entry>, noncopyable
 {
   // Make private members accessible by Name Tree
   friend class nfd::NameTree;
@@ -80,13 +80,10 @@ public:
   isEmpty() const;
 
   void
-  setFibEntry(shared_ptr<fib::Entry> fib);
+  setFibEntry(shared_ptr<fib::Entry> fibEntry);
 
   shared_ptr<fib::Entry>
   getFibEntry() const;
-
-  bool
-  eraseFibEntry(shared_ptr<fib::Entry> fib);
 
   void
   insertPitEntry(shared_ptr<pit::Entry> pit);

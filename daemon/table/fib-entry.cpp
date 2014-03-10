@@ -42,7 +42,6 @@ Entry::addNextHop(shared_ptr<Face> face, int32_t cost)
   it->setCost(cost);
 
   this->sortNextHops();
-
 }
 
 void

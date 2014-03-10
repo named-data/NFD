@@ -46,18 +46,15 @@ Entry::setParent(shared_ptr<Entry> parent)
 }
 
 void
-Entry::setFibEntry(shared_ptr<fib::Entry> fib)
+Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 {
-  m_fibEntry = fib;
-}
-
-bool
-Entry::eraseFibEntry(shared_ptr<fib::Entry> fib)
-{
-  if (m_fibEntry != fib)
-    return false;
-  m_fibEntry.reset();
-  return true;
+  if (static_cast<bool>(m_fibEntry)) {
+    m_fibEntry->m_nameTreeEntry.reset();
+  }
+  m_fibEntry = fibEntry;
+  if (static_cast<bool>(m_fibEntry)) {
+    m_fibEntry->m_nameTreeEntry = this->shared_from_this();
+  }
 }
 
 void
@@ -102,7 +99,13 @@ Entry::eraseMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
 void
 Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
 {
+  if (static_cast<bool>(m_strategyChoiceEntry)) {
+    m_strategyChoiceEntry->m_nameTreeEntry.reset();
+  }
   m_strategyChoiceEntry = strategyChoiceEntry;
+  if (static_cast<bool>(m_strategyChoiceEntry)) {
+    m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
+  }
 }
 
 } // namespace name_tree

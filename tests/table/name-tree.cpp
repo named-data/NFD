@@ -18,53 +18,46 @@ BOOST_AUTO_TEST_CASE(Entry)
 {
   Name prefix("ndn:/named-data/research/abc/def/ghi");
 
-  name_tree::Entry npe(prefix);
-  BOOST_CHECK_EQUAL(npe.getPrefix(), prefix);
+  shared_ptr<name_tree::Entry> npe = make_shared<name_tree::Entry>(prefix);
+  BOOST_CHECK_EQUAL(npe->getPrefix(), prefix);
 
   // examine all the get methods
 
-  uint32_t hash = npe.getHash();
+  uint32_t hash = npe->getHash();
   BOOST_CHECK_EQUAL(hash, 0);
 
-  shared_ptr<name_tree::Entry> parent = npe.getParent();
+  shared_ptr<name_tree::Entry> parent = npe->getParent();
   BOOST_CHECK(!static_cast<bool>(parent));
 
-  std::vector<shared_ptr<name_tree::Entry> >& childList = npe.getChildren();
+  std::vector<shared_ptr<name_tree::Entry> >& childList = npe->getChildren();
   BOOST_CHECK_EQUAL(childList.size(), 0);
 
-  shared_ptr<fib::Entry> fib = npe.getFibEntry();
+  shared_ptr<fib::Entry> fib = npe->getFibEntry();
   BOOST_CHECK(!static_cast<bool>(fib));
 
-  std::vector< shared_ptr<pit::Entry> >& pitList = npe.getPitEntries();
+  std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
   BOOST_CHECK_EQUAL(pitList.size(), 0);
 
   // examine all the set method
 
-  npe.setHash(12345);
-  BOOST_CHECK_EQUAL(npe.getHash(), 12345);
+  npe->setHash(12345);
+  BOOST_CHECK_EQUAL(npe->getHash(), 12345);
 
   Name parentName("ndn:/named-data/research/abc/def");
   parent = make_shared<name_tree::Entry>(parentName);
-  npe.setParent(parent);
-  BOOST_CHECK_EQUAL(npe.getParent(), parent);
+  npe->setParent(parent);
+  BOOST_CHECK_EQUAL(npe->getParent(), parent);
 
   // Insert FIB
 
   shared_ptr<fib::Entry> fibEntry(new fib::Entry(prefix));
   shared_ptr<fib::Entry> fibEntryParent(new fib::Entry(parentName));
 
-  npe.setFibEntry(fibEntry);
-  BOOST_CHECK_EQUAL(npe.getFibEntry(), fibEntry);
+  npe->setFibEntry(fibEntry);
+  BOOST_CHECK_EQUAL(npe->getFibEntry(), fibEntry);
 
-  // Erase a FIB that does not exist
-  BOOST_CHECK_EQUAL(npe.
-  eraseFibEntry(fibEntryParent), false);
-  BOOST_CHECK_EQUAL(npe.getFibEntry(), fibEntry);
-
-  // Erase the FIB that exists
-  BOOST_CHECK_EQUAL(npe.
-  eraseFibEntry(fibEntry), true);
-  BOOST_CHECK(!static_cast<bool>(npe.getFibEntry()));
+  npe->setFibEntry(shared_ptr<fib::Entry>());
+  BOOST_CHECK(!static_cast<bool>(npe->getFibEntry()));
 
   // Insert a PIT
 
@@ -74,29 +67,29 @@ BOOST_AUTO_TEST_CASE(Entry)
   Name prefix3("ndn:/named-data/research/abc/def");
   shared_ptr<pit::Entry> PitEntry3(make_shared<pit::Entry>(prefix3));
 
-  npe.insertPitEntry(PitEntry);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 1);
+  npe->insertPitEntry(PitEntry);
+  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
-  npe.insertPitEntry(PitEntry2);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 2);
+  npe->insertPitEntry(PitEntry2);
+  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 2);
 
-  BOOST_CHECK_EQUAL(npe.
+  BOOST_CHECK_EQUAL(npe->
   erasePitEntry(PitEntry), true);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 1);
+  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
   // erase a PIT Entry that does not exist
 
-  BOOST_CHECK_EQUAL(npe.
+  BOOST_CHECK_EQUAL(npe->
   erasePitEntry(PitEntry3), false);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 1);
+  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
-  BOOST_CHECK_EQUAL(npe.
+  BOOST_CHECK_EQUAL(npe->
   erasePitEntry(PitEntry2), true);
-  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 0);
+  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 0);
 
   // erase a PIT Entry that does not exist any more
 
-  BOOST_CHECK_EQUAL(npe.
+  BOOST_CHECK_EQUAL(npe->
   erasePitEntry(PitEntry2), false);
 }
 
