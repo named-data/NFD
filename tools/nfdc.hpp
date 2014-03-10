@@ -34,7 +34,9 @@ public:
            const char* cmdOptions[],
            int nOptions);
   /**
-   * \brief Create a new FIB entry if it doesn't exist
+   * \brief Adds a nexthop to a FIB entry. 
+   *
+   * If the FIB entry does not exist, it is inserted automatically
    *
    * cmd format:
    *   name
@@ -42,35 +44,11 @@ public:
    * @param cmdOptions           add command without leading 'insert' component
    */
   void
-  fibInsert(const char* cmdOptions[]);
-  /**
-   * \brief Delete a FIB entry if it exists
-   *
-   * cmd format:
-   *   name
-   *
-   * @param cmdOptions          del command without leading 'delete' component
-   */
-  void
-  fibDelete(const char* cmdOptions[]);
-  /**
-   * \brief Adds a nexthop to an existing FIB entry
-   *
-   *  If a nexthop of same FaceId exists on the FIB entry, its cost is updated.
-   *  FaceId is the FaceId returned in NFD Face Management protocol.
-   *  If FaceId is set to zero, it is implied as the face of the entity sending this command.
-   * cmd format:
-   *   name faceId cost
-   *
-   * @param cmdOptions          addNextHop command without leading 'add-nexthop' component
-   */
-  void
   fibAddNextHop(const char* cmdOptions[], bool hasCost);
   /**
-   * \brief Remove a nexthop from an existing FIB entry
+   * \brief Removes a nexthop from an existing FIB entry
    *
-   *  This command removes a nexthop from a FIB entry. 
-   *  Removing the last nexthop in a FIB entry will not automatically delete the FIB entry.
+   * If the last nexthop record in a FIB entry is removed, the FIB entry is also deleted
    *
    * cmd format:
    *   name faceId
@@ -82,7 +60,7 @@ public:
   /**
    * \brief Sets a forwarding strategy for a namespace
    *
-   *  This command sets a forwarding strategy for a namespace.
+   * This command sets a forwarding strategy for a namespace.
    *
    * cmd format:
    *   name strategy
@@ -95,7 +73,7 @@ public:
   /**
    * \brief create new face
    *
-   *  This command allows creation of UDP unicast and TCP faces only.
+   * This command allows creation of UDP unicast and TCP faces only.
    *
    * cmd format:
    *   uri

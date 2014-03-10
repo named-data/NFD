@@ -16,12 +16,8 @@ usage(const char* programName)
   "       -h print usage and exit\n"
   "\n"
   "   COMMAND can be one of following:\n"
-  "       insert <name> \n"
-  "           Insert a FIB entry \n"
-  "       delete <name> \n"
-  "           Delete a FIB entry\n"
   "       add-nexthop <name> <faceId> [<cost>]\n"
-  "           Add a nexthop to an existing FIB entry\n"
+  "           Add a nexthop to a FIB entry\n"
   "       remove-nexthop <name> <faceId> \n"
   "           Remove a nexthop from a FIB entry\n"
   "       set-strategy <name> <stratgy>\n"
@@ -48,17 +44,7 @@ Controller::~Controller()
 bool
 Controller::dispatch(const std::string& command, const char* commandOptions[], int nOptions)
 {
-  if (command == "insert") {
-    if (nOptions != 1)
-      return false;
-    fibInsert(commandOptions);
-  }
-  else if (command == "delete") {
-    if (nOptions != 1)
-      return false;
-    fibDelete(commandOptions);
-  }
-  else if (command == "add-nexthop") {
+  if (command == "add-nexthop") {
     if (nOptions == 2)
       fibAddNextHop(commandOptions, false);
     else if (nOptions == 3)
@@ -91,32 +77,6 @@ Controller::dispatch(const std::string& command, const char* commandOptions[], i
 
   return true;
 }
-  
-void
-Controller::fibInsert(const char* commandOptions[])
-{
-  const std::string& name = commandOptions[0];
-
-  ndn::nfd::FibManagementOptions fibOptions;
-  fibOptions.setName(name);
-  startFibCommand("insert",
-                  fibOptions,
-                  bind(&Controller::onFibSuccess, this, _1, "Fib insertion succeeded"),
-                  bind(&Controller::onError, this, _1, "Fib insertion failed"));
-}
-    
-void
-Controller::fibDelete(const char* commandOptions[])
-{
-  const std::string& name = commandOptions[0];
-  ndn::nfd::FibManagementOptions fibOptions;
-  fibOptions.setName(name);
-  startFibCommand("delete",
-                  fibOptions,
-                  bind(&Controller::onFibSuccess, this, _1, "Fib deletion succeeded"),
-                  bind(&Controller::onError, this, _1, "Fib deletion failed" ));
-}
-
 
 void
 Controller::fibAddNextHop(const char* commandOptions[], bool hasCost)
