@@ -203,6 +203,19 @@ NameTree::findLongestPrefixMatch(const Name& prefix, const name_tree::EntrySelec
   return shared_ptr<name_tree::Entry>();
 }
 
+shared_ptr<name_tree::Entry>
+NameTree::findLongestPrefixMatch(shared_ptr<name_tree::Entry> entry,
+                                 const name_tree::EntrySelector& entrySelector) const
+{
+  while (static_cast<bool>(entry))
+    {
+      if (entrySelector(*entry))
+        return entry;
+      entry = entry->getParent();
+    }
+  return shared_ptr<name_tree::Entry>();
+}
+
 // return {false: this entry is not empty, true: this entry is empty and erased}
 bool
 NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)

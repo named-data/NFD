@@ -10,7 +10,7 @@
 
 namespace nfd {
 
-const shared_ptr<fib::Entry> Fib::m_emptyEntry = make_shared<fib::Entry>(Name());
+const shared_ptr<fib::Entry> Fib::s_emptyEntry = make_shared<fib::Entry>(Name());
 
 Fib::Fib(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -49,19 +49,41 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
   if (static_cast<bool>(nameTreeEntry)) {
     return nameTreeEntry->getFibEntry();
   }
-  return m_emptyEntry;
+  return s_emptyEntry;
+}
+
+shared_ptr<fib::Entry>
+Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const
+{
+  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
+  if (static_cast<bool>(entry))
+    return entry;
+  nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry,
+                                                    &predicate_NameTreeEntry_hasFibEntry);
+  if (static_cast<bool>(nameTreeEntry)) {
+    return nameTreeEntry->getFibEntry();
+  }
+  return s_emptyEntry;
 }
 
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  return this->findLongestPrefixMatch(pitEntry.getName());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(pitEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return findLongestPrefixMatch(nameTreeEntry);
 }
 
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  return this->findLongestPrefixMatch(measurementsEntry.getName());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(measurementsEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return findLongestPrefixMatch(nameTreeEntry);
 }
 
 shared_ptr<fib::Entry>

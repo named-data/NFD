@@ -125,6 +125,11 @@ public:
                          const name_tree::EntrySelector& entrySelector =
                          name_tree::AnyEntry()) const;
 
+  shared_ptr<name_tree::Entry>
+  findLongestPrefixMatch(shared_ptr<name_tree::Entry> entry,
+                         const name_tree::EntrySelector& entrySelector =
+                         name_tree::AnyEntry()) const;
+
   /**
    * \brief Resize the hash table size when its load factor reaches a threshold.
    * \details As we are currently using a hand-written hash table implementation
@@ -161,6 +166,18 @@ public:
    */
   void
   dump(std::ostream& output) const;
+
+  shared_ptr<name_tree::Entry>
+  get(const fib::Entry& fibEntry) const;
+
+  shared_ptr<name_tree::Entry>
+  get(const pit::Entry& pitEntry) const;
+
+  shared_ptr<name_tree::Entry>
+  get(const measurements::Entry& measurementsEntry) const;
+
+  shared_ptr<name_tree::Entry>
+  get(const strategy_choice::Entry& strategeChoiceEntry) const;
 
   const_iterator
   begin() const;
@@ -258,6 +275,30 @@ inline shared_ptr<name_tree::Entry>
 NameTree::findExactMatch(const fib::Entry& fibEntry) const
 {
   return fibEntry.m_nameTreeEntry;
+}
+
+inline shared_ptr<name_tree::Entry>
+NameTree::get(const fib::Entry& fibEntry) const
+{
+  return fibEntry.m_nameTreeEntry;
+}
+
+inline shared_ptr<name_tree::Entry>
+NameTree::get(const pit::Entry& pitEntry) const
+{
+  return pitEntry.m_nameTreeEntry;
+}
+
+inline shared_ptr<name_tree::Entry>
+NameTree::get(const measurements::Entry& measurementsEntry) const
+{
+  return measurementsEntry.m_nameTreeEntry;
+}
+
+inline shared_ptr<name_tree::Entry>
+NameTree::get(const strategy_choice::Entry& strategeChoiceEntry) const
+{
+  return strategeChoiceEntry.m_nameTreeEntry;
 }
 
 inline NameTree::const_iterator

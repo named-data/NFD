@@ -69,6 +69,9 @@ private:
   void
   erase(const fib::Entry& entry);
 
+  shared_ptr<fib::Entry>
+  findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const;
+
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
@@ -79,7 +82,7 @@ private:
    *  It is returned by findLongestPrefixMatch if nothing is matched.
    */
   // Returning empty entry instead of nullptr makes forwarding and strategy implementation easier.
-  static const shared_ptr<fib::Entry> m_emptyEntry;
+  static const shared_ptr<fib::Entry> s_emptyEntry;
 };
 
 inline size_t

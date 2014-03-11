@@ -74,6 +74,9 @@ private:
   void
   cleanup(shared_ptr<measurements::Entry> entry);
 
+  shared_ptr<measurements::Entry>
+  get(shared_ptr<name_tree::Entry> nameTreeEntry);
+
 private:
   NameTree& m_nameTree;
   size_t m_nItems;

@@ -13,6 +13,12 @@
 
 namespace nfd {
 
+class NameTree;
+
+namespace name_tree {
+class Entry;
+}
+
 class Measurements;
 
 namespace measurements {
@@ -35,8 +41,11 @@ private:
 private: // lifetime
   time::Point m_expiry;
   EventId m_cleanup;
+  shared_ptr<name_tree::Entry> m_nameTreeEntry;
 
-  friend class ::nfd::Measurements;
+  friend class nfd::NameTree;
+  friend class nfd::name_tree::Entry;
+  friend class nfd::Measurements;
 };
 
 inline const Name&

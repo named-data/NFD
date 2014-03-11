@@ -12,6 +12,13 @@
 #include "core/scheduler.hpp"
 
 namespace nfd {
+
+class NameTree;
+
+namespace name_tree {
+class Entry;
+}
+
 namespace pit {
 
 /** \class InRecordCollection
@@ -95,6 +102,10 @@ private:
   const Interest m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;
+  shared_ptr<name_tree::Entry> m_nameTreeEntry;
+
+  friend class nfd::NameTree;
+  friend class nfd::name_tree::Entry;
 };
 
 inline const Interest&

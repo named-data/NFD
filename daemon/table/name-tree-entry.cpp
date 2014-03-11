@@ -60,23 +60,27 @@ Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 void
 Entry::insertPitEntry(shared_ptr<pit::Entry> pit)
 {
-  m_pitEntries.push_back(pit);
+  if (static_cast<bool>(pit)) {
+    pit->m_nameTreeEntry = this->shared_from_this();
+    m_pitEntries.push_back(pit);
+  }
 }
 
 bool
 Entry::erasePitEntry(shared_ptr<pit::Entry> pit)
 {
-  for (size_t i = 0; i < m_pitEntries.size(); i++)
-    {
-      if (m_pitEntries[i] == pit)
-        {
+  for (size_t i = 0; i < m_pitEntries.size(); i++) {
+      if (m_pitEntries[i] == pit) {
+          BOOST_ASSERT(pit->m_nameTreeEntry);
+
+          pit->m_nameTreeEntry.reset();
           // copy the last item to the current position
           m_pitEntries[i] = m_pitEntries[m_pitEntries.size() - 1];
           // then erase the last item
           m_pitEntries.pop_back();
           return true; // success
-        }
-    }
+      }
+  }
   // not found this entry
   return false; // failure
 }
@@ -84,16 +88,13 @@ Entry::erasePitEntry(shared_ptr<pit::Entry> pit)
 void
 Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
 {
+  if (static_cast<bool>(m_measurementsEntry)) {
+    m_measurementsEntry->m_nameTreeEntry.reset();
+  }
   m_measurementsEntry = measurements;
-}
-
-bool
-Entry::eraseMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
-{
-  if (m_measurementsEntry != measurements)
-    return false;
-  m_measurementsEntry.reset();
-  return true;
+  if (static_cast<bool>(m_measurementsEntry)) {
+    m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
+  }
 }
 
 void

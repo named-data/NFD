@@ -133,15 +133,35 @@ StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 }
 
 Strategy&
+StrategyChoice::findEffectiveStrategy(shared_ptr<name_tree::Entry> nameTreeEntry) const
+{
+  shared_ptr<strategy_choice::Entry> entry = nameTreeEntry->getStrategyChoiceEntry();
+  if (static_cast<bool>(entry))
+    return entry->getStrategy();
+  nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry, 
+                               &predicate_NameTreeEntry_hasStrategyChoiceEntry);
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+  return nameTreeEntry->getStrategyChoiceEntry()->getStrategy();
+}
+
+Strategy&
 StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 {
-  return this->findEffectiveStrategy(pitEntry.getName());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(pitEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return findEffectiveStrategy(nameTreeEntry);
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
 {
-  return this->findEffectiveStrategy(measurementsEntry.getName());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(measurementsEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return findEffectiveStrategy(nameTreeEntry);
 }
 
 shared_ptr<fw::Strategy>

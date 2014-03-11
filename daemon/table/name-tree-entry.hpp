@@ -107,9 +107,6 @@ public:
   shared_ptr<measurements::Entry>
   getMeasurementsEntry() const;
 
-  bool
-  eraseMeasurementsEntry(shared_ptr<measurements::Entry> measurements);
-
   void
   setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry);
 

@@ -30,28 +30,42 @@ predicate_NameTreeEntry_hasMeasurementsEntry(const name_tree::Entry& entry)
 }
 
 shared_ptr<measurements::Entry>
-Measurements::get(const Name& name)
+Measurements::get(shared_ptr<name_tree::Entry> nameTreeEntry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
   shared_ptr<measurements::Entry> entry = nameTreeEntry->getMeasurementsEntry();
   if (static_cast<bool>(entry))
     return entry;
-  entry = make_shared<measurements::Entry>(name);
+  entry = make_shared<measurements::Entry>(nameTreeEntry->getPrefix());
   nameTreeEntry->setMeasurementsEntry(entry);
   m_nItems++;
   return entry;
 }
 
 shared_ptr<measurements::Entry>
+Measurements::get(const Name& name)
+{
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
+  return get(nameTreeEntry);
+}
+
+shared_ptr<measurements::Entry>
 Measurements::get(const fib::Entry& fibEntry)
 {
-  return this->get(fibEntry.getPrefix());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(fibEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return get(nameTreeEntry);
 }
 
 shared_ptr<measurements::Entry>
 Measurements::get(const pit::Entry& pitEntry)
 {
-  return this->get(pitEntry.getName());
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(pitEntry);
+
+  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+
+  return get(nameTreeEntry);
 }
 
 shared_ptr<measurements::Entry>
@@ -110,11 +124,10 @@ Measurements::cleanup(shared_ptr<measurements::Entry> entry)
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(entry->getName());
   if (static_cast<bool>(nameTreeEntry))
   {
-    nameTreeEntry->eraseMeasurementsEntry(
-      nameTreeEntry->getMeasurementsEntry());
+    nameTreeEntry->setMeasurementsEntry(shared_ptr<measurements::Entry>());
     m_nItems--;
   }
-    
+
 }
 
 } // namespace nfd

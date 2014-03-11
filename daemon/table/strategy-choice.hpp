@@ -79,6 +79,9 @@ private:
                  shared_ptr<fw::Strategy> oldStrategy,
                  shared_ptr<fw::Strategy> newStrategy);
 
+  fw::Strategy&
+  findEffectiveStrategy(shared_ptr<name_tree::Entry> nameTreeEntry) const;
+
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
