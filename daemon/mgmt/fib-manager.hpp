@@ -32,6 +32,9 @@ public:
              function<shared_ptr<Face>(FaceId)> getFace,
              shared_ptr<InternalFace> face);
 
+  virtual
+  ~FibManager();
+
   void
   onFibRequest(const Interest& request);
 

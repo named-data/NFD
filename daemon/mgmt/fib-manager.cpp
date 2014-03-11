@@ -30,15 +30,6 @@ const size_t FibManager::COMMAND_SIGNED_NCOMPS =
 
 const FibManager::VerbAndProcessor FibManager::COMMAND_VERBS[] =
   {
-    VerbAndProcessor(
-                     Name::Component("insert"),
-                     &FibManager::insertEntry
-                     ),
-
-    VerbAndProcessor(
-                     Name::Component("delete"),
-                     &FibManager::deleteEntry
-                     ),
 
     VerbAndProcessor(
                      Name::Component("add-nexthop"),
@@ -64,6 +55,11 @@ FibManager::FibManager(Fib& fib,
 {
   face->setInterestFilter("/localhost/nfd/fib",
                           bind(&FibManager::onFibRequest, this, _2));
+}
+
+FibManager::~FibManager()
+{
+
 }
 
 void
@@ -152,35 +148,6 @@ FibManager::extractOptions(const Interest& request,
 }
 
 void
-FibManager::insertEntry(const FibManagementOptions& options,
-                        ControlResponse& response)
-{
-  NFD_LOG_DEBUG("insert prefix: " << options.getName());
-  NFD_LOG_INFO("insert result: OK"
-               << " prefix: " << options.getName());
-  std::pair<shared_ptr<fib::Entry>, bool> insertResult = m_managedFib.insert(options.getName());
-  setResponse(response, 200, "Success", options.wireEncode());
-}
-
-void
-FibManager::deleteEntry(const FibManagementOptions& options,
-                        ControlResponse& response)
-{
-  NFD_LOG_DEBUG("delete prefix: " << options.getName());
-  NFD_LOG_INFO("delete result: OK"
-               << " prefix: " << options.getName());
-
-  m_managedFib.erase(options.getName());
-  setResponse(response, 200, "Success", options.wireEncode());
-}
-
-static inline bool
-nextHopEqPredicate(const fib::NextHop& target, const fib::NextHop& hop)
-{
-  return target.getFace()->getId() == hop.getFace()->getId();
-}
-
-void
 FibManager::addNextHop(const FibManagementOptions& options,
                        ControlResponse& response)
 {
@@ -191,22 +158,15 @@ FibManager::addNextHop(const FibManagementOptions& options,
   shared_ptr<Face> nextHopFace = m_getFace(options.getFaceId());
   if (static_cast<bool>(nextHopFace))
     {
-      shared_ptr<fib::Entry> entry = m_managedFib.findExactMatch(options.getName());
-      if (static_cast<bool>(entry))
-        {
-          entry->addNextHop(nextHopFace, options.getCost());
+      shared_ptr<fib::Entry> entry = m_managedFib.insert(options.getName()).first;
 
-          NFD_LOG_INFO("add-nexthop result: OK"
-                       << " prefix:" << options.getName()
-                       << " faceid: " << options.getFaceId()
-                       << " cost: " << options.getCost());
-          setResponse(response, 200, "Success", options.wireEncode());
-        }
-      else
-        {
-          NFD_LOG_INFO("add-nexthop result: FAIL reason: unknown-prefix: " << options.getName());
-          setResponse(response, 404, "Prefix not found");
-        }
+      entry->addNextHop(nextHopFace, options.getCost());
+
+      NFD_LOG_INFO("add-nexthop result: OK"
+                   << " prefix:" << options.getName()
+                   << " faceid: " << options.getFaceId()
+                   << " cost: " << options.getCost());
+      setResponse(response, 200, "Success", options.wireEncode());
     }
   else
     {
@@ -231,6 +191,11 @@ FibManager::removeNextHop(const FibManagementOptions& options,
           entry->removeNextHop(faceToRemove);
           NFD_LOG_INFO("remove-nexthop result: OK prefix: " << options.getName()
                        << " faceid: " << options.getFaceId());
+
+          if (!entry->hasNextHops())
+            {
+              m_managedFib.erase(*entry);
+            }
 
           setResponse(response, 200, "Success", options.wireEncode());
         }

@@ -424,8 +424,6 @@ BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
     bind(&FibManagerFixture::validateControlResponse, this, _1,
          command->getName(), 200, "Success", encodedExpectedOptions);
 
-  getFib().insert("/hello");
-
   getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
@@ -456,8 +454,6 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
     bind(&FibManagerFixture::validateControlResponse, this, _1,
          command->getName(), 200, "Success", encodedOptions);
 
-  getFib().insert("/hello");
-
   getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
@@ -468,8 +464,6 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
 {
   addFace(make_shared<DummyFace>());
   shared_ptr<InternalFace> face = getInternalFace();
-
-  getFib().insert("/hello");
 
   for (int i = 1; i <= 2; i++)
     {
@@ -519,8 +513,6 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
 {
   addFace(make_shared<DummyFace>());
   shared_ptr<InternalFace> face = getInternalFace();
-
-  getFib().insert("/hello");
 
   FibManagementOptions options;
   options.setName("/hello");
@@ -590,145 +582,151 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     }
 }
 
-BOOST_AUTO_TEST_CASE(Insert)
-{
-  shared_ptr<InternalFace> face = getInternalFace();
+// BOOST_AUTO_TEST_CASE(Insert)
+// {
+//   addFace(make_shared<DummyFace>());
+//   addFace(make_shared<DummyFace>());
+//   shared_ptr<InternalFace> face = getInternalFace();
 
-  {
-    FibManagementOptions options;
-    options.setName("/hello");
+//   {
+//     FibManagementOptions options;
+//     options.setName("/hello");
+//     options.setFaceId(1);
+//     options.setCost(101);
 
-    Block encodedOptions(options.wireEncode());
+//     Block encodedOptions(options.wireEncode());
 
-    Name commandName("/localhost/nfd/fib");
-    commandName.append("insert");
-    commandName.append(encodedOptions);
+//     Name commandName("/localhost/nfd/fib");
+//     commandName.append("add-nexthop");
+//     commandName.append(encodedOptions);
 
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    generateCommand(*command);
+//     shared_ptr<Interest> command(make_shared<Interest>(commandName));
+//     generateCommand(*command);
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedOptions);
+//     face->onReceiveData +=
+//       bind(&FibManagerFixture::validateControlResponse, this, _1,
+//            command->getName(), 200, "Success", encodedOptions);
 
-    getFibManager().onFibRequest(*command);
-  }
+//     getFibManager().onFibRequest(*command);
+//   }
 
-  BOOST_REQUIRE(didCallbackFire());
+//   BOOST_REQUIRE(didCallbackFire());
 
-  shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
-  if (static_cast<bool>(entry))
-    {
-      const fib::NextHopList& hops = entry->getNextHops();
-      BOOST_CHECK_EQUAL(hops.size(), 0);
-    }
+//   shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
+//   if (static_cast<bool>(entry))
+//     {
+//       const fib::NextHopList& hops = entry->getNextHops();
+//       BOOST_CHECK_EQUAL(hops.size(), 1);
+//     }
 
-  resetCallbackFired();
-  face->onReceiveData.clear();
+//   resetCallbackFired();
+//   face->onReceiveData.clear();
 
-  {
-    FibManagementOptions options;
-    options.setName("/hello");
+//   {
+//     FibManagementOptions options;
+//     options.setName("/hello");
+//     options.setFaceId(2);
+//     options.setCost(102);
 
-    Block encodedOptions(options.wireEncode());
+//     Block encodedOptions(options.wireEncode());
 
-    Name commandName("/localhost/nfd/fib");
-    commandName.append("insert");
-    commandName.append(encodedOptions);
+//     Name commandName("/localhost/nfd/fib");
+//     commandName.append("add-nexthop");
+//     commandName.append(encodedOptions);
 
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    generateCommand(*command);
+//     shared_ptr<Interest> command(make_shared<Interest>(commandName));
+//     generateCommand(*command);
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedOptions);
+//     face->onReceiveData +=
+//       bind(&FibManagerFixture::validateControlResponse, this, _1,
+//            command->getName(), 200, "Success", encodedOptions);
 
-    getFibManager().onFibRequest(*command);
-  }
+//     getFibManager().onFibRequest(*command);
+//   }
 
-  BOOST_REQUIRE(didCallbackFire());
+//   BOOST_REQUIRE(didCallbackFire());
 
-  entry = getFib().findExactMatch("/hello");
-  if (static_cast<bool>(entry))
-    {
-      const fib::NextHopList& hops = entry->getNextHops();
-      BOOST_CHECK_EQUAL(hops.size(), 0);
-    }
+//   entry = getFib().findExactMatch("/hello");
+//   if (static_cast<bool>(entry))
+//     {
+//       const fib::NextHopList& hops = entry->getNextHops();
+//       BOOST_CHECK_EQUAL(hops.size(), 2);
+//     }
 
-}
+// }
 
-void
-testRemove(CommandFixture<FibManagerFixture>* fixture,
-           FibManager& manager,
-           Fib& fib,
-           shared_ptr<Face> face,
-           const Name& target)
-{
-  FibManagementOptions options;
-  options.setName(target);
+// void
+// testRemove(CommandFixture<FibManagerFixture>* fixture,
+//            FibManager& manager,
+//            Fib& fib,
+//            shared_ptr<Face> face,
+//            const Name& target)
+// {
+//   FibManagementOptions options;
+//   options.setName(target);
 
-  Block encodedOptions(options.wireEncode());
+//   Block encodedOptions(options.wireEncode());
 
-  Name commandName("/localhost/nfd/fib");
-  commandName.append("delete");
-  commandName.append(encodedOptions);
+//   Name commandName("/localhost/nfd/fib");
+//   commandName.append("delete");
+//   commandName.append(encodedOptions);
 
-  shared_ptr<Interest> command(make_shared<Interest>(commandName));
-  fixture->generateCommand(*command);
+//   shared_ptr<Interest> command(make_shared<Interest>(commandName));
+//   fixture->generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         command->getName(), 200, "Success", encodedOptions);
+//   face->onReceiveData +=
+//     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
+//          command->getName(), 200, "Success", encodedOptions);
 
-  manager.onFibRequest(*command);
+//   manager.onFibRequest(*command);
 
-  BOOST_REQUIRE(fixture->didCallbackFire());
+//   BOOST_REQUIRE(fixture->didCallbackFire());
 
-  if (static_cast<bool>(fib.findExactMatch(target)))
-    {
-      BOOST_FAIL("Found \"removed\" prefix");
-    }
-  face->onReceiveData.clear();
-}
+//   if (static_cast<bool>(fib.findExactMatch(target)))
+//     {
+//       BOOST_FAIL("Found \"removed\" prefix");
+//     }
+//   face->onReceiveData.clear();
+// }
 
-BOOST_AUTO_TEST_CASE(Delete)
-{
-  shared_ptr<InternalFace> face = getInternalFace();
-  FibManager& manager = getFibManager();
-  Fib& fib = getFib();
+// BOOST_AUTO_TEST_CASE(Delete)
+// {
+//   shared_ptr<InternalFace> face = getInternalFace();
+//   FibManager& manager = getFibManager();
+//   Fib& fib = getFib();
 
-  fib.insert("/a");
-  fib.insert("/a/b");
-  fib.insert("/a/b/c");
+//   fib.insert("/a");
+//   fib.insert("/a/b");
+//   fib.insert("/a/b/c");
 
-  testRemove(this, manager, fib, face, "/");
+//   testRemove(this, manager, fib, face, "/");
 
-  if (!static_cast<bool>(fib.findExactMatch("/a")) ||
-      !static_cast<bool>(fib.findExactMatch("/a/b")) ||
-      !static_cast<bool>(fib.findExactMatch("/a/b/c")))
-    {
-      BOOST_FAIL("Removed incorrect entry");
-    }
+//   if (!static_cast<bool>(fib.findExactMatch("/a")) ||
+//       !static_cast<bool>(fib.findExactMatch("/a/b")) ||
+//       !static_cast<bool>(fib.findExactMatch("/a/b/c")))
+//     {
+//       BOOST_FAIL("Removed incorrect entry");
+//     }
 
-  testRemove(this, manager, fib, face, "/a/b");
+//   testRemove(this, manager, fib, face, "/a/b");
 
-  if (!static_cast<bool>(fib.findExactMatch("/a")) ||
-      !static_cast<bool>(fib.findExactMatch("/a/b/c")))
-    {
-      BOOST_FAIL("Removed incorrect entry");
-    }
+//   if (!static_cast<bool>(fib.findExactMatch("/a")) ||
+//       !static_cast<bool>(fib.findExactMatch("/a/b/c")))
+//     {
+//       BOOST_FAIL("Removed incorrect entry");
+//     }
 
-  testRemove(this, manager, fib, face, "/a/b/c");
+//   testRemove(this, manager, fib, face, "/a/b/c");
 
-  if (!static_cast<bool>(fib.findExactMatch("/a")))
-    {
-      BOOST_FAIL("Removed incorrect entry");
-    }
+//   if (!static_cast<bool>(fib.findExactMatch("/a")))
+//     {
+//       BOOST_FAIL("Removed incorrect entry");
+//     }
 
-  testRemove(this, manager, fib, face, "/a");
+//   testRemove(this, manager, fib, face, "/a");
 
-  testRemove(this, manager, fib, face, "/does/not/exist");
-}
+//   testRemove(this, manager, fib, face, "/does/not/exist");
+// }
 
 bool
 removedNextHopWithCost(const Fib& fib, const Name& prefix, size_t oldSize, uint32_t cost)
@@ -804,13 +802,9 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
   BOOST_REQUIRE(removedNextHopWithCost(fib, "/hello", 2, 303));
 
   testRemoveNextHop(this, manager, fib, face, "/hello", 1);
-  BOOST_REQUIRE(removedNextHopWithCost(fib, "/hello", 1, 101));
+  // BOOST_REQUIRE(removedNextHopWithCost(fib, "/hello", 1, 101));
 
-  if (!static_cast<bool>(getFib().findExactMatch("/hello")))
-    {
-      BOOST_FAIL("removed entry after removing all next hops");
-    }
-
+  BOOST_CHECK(!static_cast<bool>(getFib().findExactMatch("/hello")));
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNoFace)

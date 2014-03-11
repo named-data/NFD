@@ -55,6 +55,9 @@ public:
   void
   erase(const Name& prefix);
 
+  void
+  erase(const fib::Entry& entry);
+
   /** \brief removes the NextHop record for face in all entrites
    *  This is usually invoked when face goes away.
    *  Removing all NextHops in a FIB entry will not remove the FIB entry.
@@ -66,9 +69,6 @@ public:
   size() const;
 
 private:
-  void
-  erase(const fib::Entry& entry);
-
   shared_ptr<fib::Entry>
   findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const;
 
