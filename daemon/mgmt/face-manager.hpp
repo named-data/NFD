@@ -21,6 +21,7 @@ namespace nfd {
 const std::string FACE_MANAGER_PRIVILEGE = "faces";
 class FaceTable;
 class ProtocolFactory;
+class NetworkInterfaceInfo;
 
 class FaceManager : public ManagerBase
 {
@@ -37,6 +38,9 @@ public:
   FaceManager(FaceTable& faceTable,
               shared_ptr<InternalFace> face);
 
+  virtual
+  ~FaceManager();
+
   /** \brief Subscribe to a face management section(s) for the config file
    */
   void
@@ -44,9 +48,6 @@ public:
 
   void
   onFaceRequest(const Interest& request);
-
-  VIRTUAL_WITH_TESTS
-  ~FaceManager();
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
@@ -84,10 +85,14 @@ private:
   processSectionTcp(const ConfigSection& configSection, bool isDryRun);
 
   void
-  processSectionUdp(const ConfigSection& configSection, bool isDryRun);
+  processSectionUdp(const ConfigSection& configSection,
+                    bool isDryRun,
+                    const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList);
 
   void
-  processSectionEther(const ConfigSection& configSection, bool isDryRun);
+  processSectionEther(const ConfigSection& configSection,
+                      bool isDryRun,
+                      const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList);
 
   /** \brief parse a config option that can be either "yes" or "no"
    *  \throw ConfigFile::Error value is neither "yes" nor "no"
@@ -102,7 +107,6 @@ private:
   typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
   FactoryMap m_factories;
   FaceTable& m_faceTable;
-  //
 
   typedef function<void(FaceManager*,
                         const Name&,

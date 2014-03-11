@@ -229,6 +229,7 @@ initializeMgmt()
                                 g_internalFace);
 
   g_faceManager = new FaceManager(g_forwarder->getFaceTable(), g_internalFace);
+  g_faceManager->setConfigFile(config);
 
   g_localControlHeaderManager =
     new LocalControlHeaderManager(bind(&Forwarder::getFace, g_forwarder, _1),
@@ -236,8 +237,6 @@ initializeMgmt()
 
   g_strategyChoiceManager = new StrategyChoiceManager(g_forwarder->getStrategyChoice(),
                                                       g_internalFace);
-
-  /// \todo add face manager section handler
 
   /// \todo add parsing back when there is an official default config file
   // config.parse(g_options.m_config);

@@ -7,19 +7,19 @@
 #include "face-manager.hpp"
 
 #include "core/face-uri.hpp"
+#include "core/network-interface.hpp"
 #include "fw/face-table.hpp"
 
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
+
+#ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"
+#endif // HAVE_UNIX_SOCKETS
+
+#ifdef HAVE_PCAP
 #include "face/ethernet-factory.hpp"
-
-#ifdef __linux__
-#include <netinet/ether.h>
-#else
-#include <net/ethernet.h>
-#endif
-
+#endif // HAVE_PCAP
 
 namespace nfd {
 
@@ -63,6 +63,11 @@ FaceManager::FaceManager(FaceTable& faceTable,
                           bind(&FaceManager::onFaceRequest, this, _2));
 }
 
+FaceManager::~FaceManager()
+{
+
+}
+
 void
 FaceManager::setConfigFile(ConfigFile& configFile)
 {
@@ -78,6 +83,8 @@ FaceManager::onConfig(const ConfigSection& configSection, bool isDryRun)
   bool hasSeenTcp = false;
   bool hasSeenUdp = false;
   bool hasSeenEther = false;
+
+  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
 
   for (ConfigSection::const_iterator item = configSection.begin();
        item != configSection.end();
@@ -105,7 +112,7 @@ FaceManager::onConfig(const ConfigSection& configSection, bool isDryRun)
             throw Error("Duplicate \"udp\" section");
           hasSeenUdp = true;
 
-          processSectionUdp(item->second, isDryRun);
+          processSectionUdp(item->second, isDryRun, nicList);
         }
       else if (item->first == "ether")
         {
@@ -113,7 +120,7 @@ FaceManager::onConfig(const ConfigSection& configSection, bool isDryRun)
             throw Error("Duplicate \"ether\" section");
           hasSeenEther = true;
 
-          processSectionEther(item->second, isDryRun);
+          processSectionEther(item->second, isDryRun, nicList);
         }
       else
         {
@@ -131,6 +138,8 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
   //   listen yes ; set to 'no' to disable UNIX stream listener, default 'yes'
   //   path /var/run/nfd.sock ; UNIX stream listener path
   // }
+
+#if defined(HAVE_UNIX_SOCKETS)
 
   bool needToListen = true;
   std::string path = "/var/run/nfd.sock";
@@ -167,6 +176,10 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
 
       m_factories.insert(std::make_pair("unix", factory));
     }
+#else
+  throw ConfigFile::Error("NFD was compiled without UNIX sockets support, cannot process \"unix\" section");
+#endif // HAVE_UNIX_SOCKETS
+
 }
 
 void
@@ -226,7 +239,9 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 }
 
 void
-FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun)
+FaceManager::processSectionUdp(const ConfigSection& configSection,
+                               bool isDryRun,
+                               const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList)
 {
   // ; the udp section contains settings of UDP faces and channels
   // udp
@@ -245,8 +260,9 @@ FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun
   size_t timeout = 30;
   size_t keepAliveInterval = 25;
   bool useMcast = true;
+  std::string mcastGroup = "224.0.23.170";
   std::string mcastPort = "56363";
-  std::string mcastGroup;
+
 
   for (ConfigSection::const_iterator i = configSection.begin();
        i != configSection.end();
@@ -319,10 +335,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun
     {
       shared_ptr<UdpFactory> factory = make_shared<UdpFactory>(boost::cref(port));
 
-      shared_ptr<UdpChannel> ipv4Channel =
-        factory->createChannel("0.0.0.0", port, time::seconds(timeout));
-      shared_ptr<UdpChannel> ipv6Channel =
-        factory->createChannel("::", port, time::seconds(timeout));
+      factory->createChannel("::", port, time::seconds(timeout));
 
       m_factories.insert(std::make_pair("udp", factory));
       m_factories.insert(std::make_pair("udp4", factory));
@@ -330,14 +343,67 @@ FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun
 
       if (useMcast)
         {
-          /// \todo create one multicast face per NIC
-          NFD_LOG_WARN("multicast faces are not implemented");
+          bool useEndpoint = false;
+          udp::Endpoint localEndpoint;
+
+          try
+            {
+              localEndpoint.port(boost::lexical_cast<uint16_t>(port));
+              useEndpoint = true;
+            }
+          catch (const boost::bad_lexical_cast& error)
+            {
+              NFD_LOG_DEBUG("Treating UDP port \"" << port << "\" as a service name");
+            }
+
+          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
+               i != nicList.end();
+               ++i)
+            {
+              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
+              if (nic->isUp() && nic->isMulticastCapable() && !nic->ipv4Addresses.empty())
+                {
+                  shared_ptr<MulticastUdpFace> newFace =
+                    factory->createMulticastFace(nic->ipv4Addresses[0].to_string(),
+                                                 mcastGroup, mcastPort);
+
+                  NFD_LOG_INFO("Created multicast Face ID " << newFace->getId());
+
+                  if (useEndpoint)
+                    {
+                      for (std::vector<boost::asio::ip::address_v4>::const_iterator j =
+                             nic->ipv4Addresses.begin();
+                           j != nic->ipv4Addresses.end();
+                           ++j)
+                        {
+                          localEndpoint.address(*j);
+                          factory->createChannel(localEndpoint, time::seconds(timeout));
+                        }
+                    }
+                  else
+                    {
+                      for (std::vector<boost::asio::ip::address_v4>::const_iterator j =
+                             nic->ipv4Addresses.begin();
+                           j != nic->ipv4Addresses.end();
+                           ++j)
+                        {
+                          factory->createChannel(j->to_string(), port, time::seconds(timeout));
+                        }
+                    }
+                }
+            }
+        }
+      else
+        {
+          factory->createChannel("0.0.0.0", port, time::seconds(timeout));
         }
     }
 }
 
 void
-FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryRun)
+FaceManager::processSectionEther(const ConfigSection& configSection,
+                                 bool isDryRun,
+                                 const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList)
 {
   // ; the ether section contains settings of Ethernet faces and channels
   // ether
@@ -347,8 +413,12 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
   //   mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
   // }
 
+#if defined(HAVE_PCAP)
+
+  using ethernet::Address;
+
   bool useMcast = true;
-  std::string mcastGroup;
+  Address mcastGroup(ethernet::getDefaultMulticastAddress());
 
   for (ConfigSection::const_iterator i = configSection.begin();
        i != configSection.end();
@@ -361,9 +431,8 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
 
       else if (i->first == "mcast_group")
         {
-          const std::string mcastGroup = i->second.get_value<std::string>();
-          /// \todo change to use ethernet::Address::fromString
-          if (!ether_aton(mcastGroup.c_str()))
+          mcastGroup = Address::fromString(i->second.get_value<std::string>());
+          if (mcastGroup.isNull())
             {
               throw ConfigFile::Error("Invalid value for option \"" +
                                       i->first + "\" in \"ether\" section");
@@ -382,10 +451,34 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
 
       if (useMcast)
         {
-          /// \todo create one multicast face per NIC
-          NFD_LOG_WARN("multicast faces are not implemented");
+          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
+               i != nicList.end();
+               ++i)
+            {
+              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
+              if (nic->isUp() && nic->isMulticastCapable())
+                {
+                  try
+                    {
+                      shared_ptr<EthernetFace> newFace =
+                        factory->createMulticastFace(nic->name, mcastGroup);
+                      NFD_LOG_INFO("Created multicast Face ID " << newFace->getId());
+                    }
+                  catch (const EthernetFactory::Error& factoryError)
+                    {
+                      NFD_LOG_ERROR(factoryError.what() << ", continuing");
+                    }
+                  catch (const EthernetFace::Error& faceError)
+                    {
+                      NFD_LOG_ERROR(faceError.what() << ", continuing");
+                    }
+                }
+            }
         }
     }
+#else
+  throw ConfigFile::Error("NFD was compiled without libpcap, cannot process \"ether\" section");
+#endif // HAVE_PCAP
 }
 
 
@@ -524,9 +617,6 @@ FaceManager::destroyFace(const Name& requestName,
   sendResponse(requestName, 200, "Success");
 }
 
-FaceManager::~FaceManager()
-{
 
-}
 
 } // namespace nfd

@@ -323,6 +323,8 @@ isExpectedException(const ConfigFile::Error& error, const std::string& expectedM
   return error.what() == expectedMessage;
 }
 
+#ifdef HAVE_UNIX_SOCKETS
+
 BOOST_AUTO_TEST_CASE(TestProcessSectionUnix)
 {
   const std::string CONFIG =
@@ -383,6 +385,7 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUnixUnknownOption)
                              "Unrecognized option \"hello\" in \"unix\" section"));
 }
 
+#endif // HAVE_UNIX_SOCKETS
 
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionTcp)
@@ -573,8 +576,11 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdpUnknownOption)
                              "Unrecognized option \"hello\" in \"udp\" section"));
 }
 
+#ifdef HAVE_PCAP
+
 BOOST_AUTO_TEST_CASE(TestProcessSectionEther)
 {
+
   const std::string CONFIG =
     "face_system\n"
     "{\n"
@@ -650,6 +656,8 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionEtherUnknownOption)
                         bind(&isExpectedException, _1,
                              "Unrecognized option \"hello\" in \"ether\" section"));
 }
+
+#endif
 
 BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {
@@ -737,23 +745,6 @@ public:
 
   }
 };
-
-// template <> class AuthorizedCommandFixture<FaceManagerFixture> :
-//     public CommandFixture<FaceManagerFixture>
-// {
-// public:
-//   AuthorizedCommandFixture()
-//   {
-//     const std::string regex = "^<localhost><nfd><faces>";
-//     FaceManagerFixture::ManagerBase::addInterestRule(regex, *CommandFixture<FaceManagerFixture>::m_certificate);
-//   }
-
-//   virtual
-//   ~AuthorizedCommandFixture()
-//   {
-
-//   }
-// };
 
 BOOST_FIXTURE_TEST_CASE(UnsupportedCommand, AuthorizedCommandFixture<FaceManagerFixture>)
 {
