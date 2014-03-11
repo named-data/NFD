@@ -13,7 +13,7 @@ def options(opt):
     nfdopt.add_option('--with-tests', action='store_true',default=False,dest='with_tests',help='''Build unit tests''')
     nfdopt.add_option('--with-ndn-cpp',action='store',type='string',default=None,dest='ndn_cpp_dir',
                       help='''Use NDN-CPP library from the specified path''')
-    
+
 def configure(conf):
     conf.load("compiler_cxx boost gnu_dirs")
     try:
@@ -40,7 +40,7 @@ def configure(conf):
     if not conf.options.ndn_cpp_dir:
         conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'], uselib_store='NDN_CPP', mandatory=True)
     else:
-        conf.check_cxx(lib='ndn-cpp-dev', uselib_store='NDN_CPP', 
+        conf.check_cxx(lib='ndn-cpp-dev', uselib_store='NDN_CPP',
                        cxxflags="-I%s/include" % conf.options.ndn_cpp_dir,
                        linkflags="-L%s/lib" % conf.options.ndn_cpp_dir,
                        mandatory=True)
@@ -52,7 +52,7 @@ def configure(conf):
         boost_libs+=' unit_test_framework'
 
     conf.check_boost(lib=boost_libs)
-        
+
     if conf.env.BOOST_VERSION_NUMBER < 104800:
         Logs.error ("Minimum required boost version is 1.48.0")
         Logs.error ("Please upgrade your distribution or install custom boost libraries" +
@@ -96,7 +96,7 @@ def build(bld):
         use = 'nfd-objects',
         includes = [".", "daemon"],
         )
-        
+
     for app in bld.path.ant_glob('tools/*.cpp'):
         bld(features=['cxx', 'cxxprogram'],
             target = 'bin/%s' % (str(app.change_ext(''))),
@@ -122,6 +122,11 @@ def build(bld):
 
         if bld.env['HAVE_UNIX_SOCKETS']:
             unit_tests.source += bld.path.ant_glob('tests/face/unix-*.cpp')
+
+    bld(features = "subst",
+        source = 'nfd.conf.sample.in',
+        target = 'nfd.conf.sample',
+        install_path = "${SYSCONFDIR}/ndn")
 
 @Configure.conf
 def add_supported_cxxflags(self, cxxflags):

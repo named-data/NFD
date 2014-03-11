@@ -207,7 +207,7 @@ BOOST_FIXTURE_TEST_CASE(TwoKeys, TwoValidatorFixture)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  config.parse(CONFIG, false);
+  config.parse(CONFIG, false, "dummy-config");
 
   validator.validate(*fibCommand,
                      bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
@@ -267,7 +267,7 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  config.parse(CONFIG, true);
+  config.parse(CONFIG, true, "dummy-config");
 
   validator.validate(*fibCommand,
                      bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(NoAuthorizeSections)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_AUTHORIZE_CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(config.parse(NO_AUTHORIZE_CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(NoPrivilegesSections)
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(NoPrivilegesSections)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_PRIVILEGES_CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(config.parse(NO_PRIVILEGES_CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(InvalidKeyFile)
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(InvalidKeyFile)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(INVALID_KEY_CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(config.parse(INVALID_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(NoKeyFile)
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(NoKeyFile)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_KEY_CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(config.parse(NO_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(MalformedKey)
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE(MalformedKey)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(MALFORMED_KEY_CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(config.parse(MALFORMED_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 bool
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(NoAuthorizeSectionsDryRun)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(NO_AUTHORIZE_CONFIG, true),
+  BOOST_CHECK_EXCEPTION(config.parse(NO_AUTHORIZE_CONFIG, true, "dummy-config"),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
                              "No authorize sections found", _1));
@@ -472,7 +472,7 @@ BOOST_FIXTURE_TEST_CASE(NoPrivilegesSectionsDryRun, TwoValidatorFixture)
                 << "No privileges section found for key file tests/mgmt/key2.pub "
                 << "(" << m_tester2.getPublicKeyName().toUri() << ")";
 
-  BOOST_CHECK_EXCEPTION(config.parse(NO_PRIVILEGES_CONFIG, true),
+  BOOST_CHECK_EXCEPTION(config.parse(NO_PRIVILEGES_CONFIG, true, "dummy-config"),
                         ConfigFile::Error,
                         bind(&validateErrorMessage, expectedError.str(), _1));
 }
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(InvalidKeyFileDryRun)
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
 
-  BOOST_CHECK_EXCEPTION(config.parse(INVALID_KEY_CONFIG, true),
+  BOOST_CHECK_EXCEPTION(config.parse(INVALID_KEY_CONFIG, true, "dummy-config"),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
                              "Unable to open key file tests/mgmt/notakeyfile.pub\n"
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(NoKeyFileDryRun)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(NO_KEY_CONFIG, true),
+  BOOST_CHECK_EXCEPTION(config.parse(NO_KEY_CONFIG, true, "dummy-config"),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
                              "No keyfile specified\n"
@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE(MalformedKeyDryRun)
 
   config.addSectionHandler("authorizations",
                            bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(MALFORMED_KEY_CONFIG, true),
+  BOOST_CHECK_EXCEPTION(config.parse(MALFORMED_KEY_CONFIG, true, "dummy-config"),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
                              "Malformed key file tests/mgmt/malformedkey.pub\n"

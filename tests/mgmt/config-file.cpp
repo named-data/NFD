@@ -202,8 +202,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStream)
   input.open("tests/mgmt/config_example.info");
   BOOST_REQUIRE(input.is_open());
 
-  file.parse(input);
-
+  file.parse(input, false, "config_example.info");
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
@@ -214,7 +213,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStreamEmptyStream)
 
   std::ifstream input;
 
-  BOOST_CHECK_THROW(file.parse(input), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse(input, false, "unknown"), ConfigFile::Error);
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
@@ -224,7 +223,7 @@ BOOST_AUTO_TEST_CASE(OnConfigString)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  file.parse(CONFIG);
+  file.parse(CONFIG, false, "dummy-config");
 
   BOOST_CHECK(sub.allCallbacksFired());
 }
@@ -234,7 +233,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStringEmpty)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse(std::string()), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse(std::string(), false, "dummy-config"), ConfigFile::Error);
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
@@ -243,7 +242,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStringMalformed)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse(MALFORMED_CONFIG), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse(MALFORMED_CONFIG, false, "dummy-config"), ConfigFile::Error);
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
@@ -252,7 +251,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStringDryRun)
   ConfigFile file;
   DummyAllSubscriber sub(file, true);
 
-  file.parse(CONFIG, true);
+  file.parse(CONFIG, true, "dummy-config");
 
   BOOST_CHECK(sub.allCallbacksFired());
 }
@@ -262,7 +261,7 @@ BOOST_AUTO_TEST_CASE(OnConfigFilename)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  file.parse("tests/mgmt/config_example.info");
+  file.parse("tests/mgmt/config_example.info", false);
 
   BOOST_CHECK(sub.allCallbacksFired());
 }
@@ -272,7 +271,7 @@ BOOST_AUTO_TEST_CASE(OnConfigFilenameNoFile)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse("i_made_this_up.info"), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse("i_made_this_up.info", false), ConfigFile::Error);
 
   BOOST_CHECK(sub.noCallbacksFired());
 }
@@ -282,7 +281,7 @@ BOOST_AUTO_TEST_CASE(OnConfigFilenameMalformed)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse("tests/mgmt/config_malformed.info"), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse("tests/mgmt/config_malformed.info", false), ConfigFile::Error);
 
   BOOST_CHECK(sub.noCallbacksFired());
 }
@@ -296,7 +295,7 @@ BOOST_AUTO_TEST_CASE(OnConfigStreamDryRun)
   input.open("tests/mgmt/config_example.info");
   BOOST_REQUIRE(input.is_open());
 
-  file.parse(input, true);
+  file.parse(input, true, "tests/mgmt/config_example.info");
 
   BOOST_CHECK(sub.allCallbacksFired());
 
@@ -318,7 +317,7 @@ BOOST_AUTO_TEST_CASE(OnConfigReplaceSubscriber)
   DummyAllSubscriber sub1(file);
   DummyAllSubscriber sub2(file);
 
-  file.parse(CONFIG);
+  file.parse(CONFIG, false, "dummy-config");
 
   BOOST_CHECK(sub1.noCallbacksFired());
   BOOST_CHECK(sub2.allCallbacksFired());
@@ -328,7 +327,7 @@ BOOST_AUTO_TEST_CASE(OnConfigUncoveredSections)
 {
   ConfigFile file;
 
-  BOOST_CHECK_THROW(file.parse(CONFIG), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse(CONFIG, false, "dummy-config"), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(OnConfigCoveredByPartialSubscribers)
@@ -337,7 +336,7 @@ BOOST_AUTO_TEST_CASE(OnConfigCoveredByPartialSubscribers)
   DummyOneSubscriber subA(file, "a");
   DummyOneSubscriber subB(file, "b");
 
-  file.parse(CONFIG);
+  file.parse(CONFIG, false, "dummy-config");
 
   BOOST_CHECK(subA.allCallbacksFired());
   BOOST_CHECK(subB.allCallbacksFired());

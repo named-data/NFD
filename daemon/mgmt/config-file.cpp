@@ -26,11 +26,11 @@ ConfigFile::addSectionHandler(const std::string& sectionName,
 }
 
 void
-ConfigFile::parse(const char* filename, bool isDryRun)
+ConfigFile::parse(const std::string& filename, bool isDryRun)
 {
   std::ifstream inputFile;
-  inputFile.open(filename);
-  if (!inputFile.is_open())
+  inputFile.open(filename.c_str());
+  if (!inputFile.good() || !inputFile.is_open())
     {
       std::string msg = "Failed to read configuration file: ";
       msg += filename;
@@ -41,7 +41,7 @@ ConfigFile::parse(const char* filename, bool isDryRun)
 }
 
 void
-ConfigFile::parse(const std::string& input, bool isDryRun, const char* filename)
+ConfigFile::parse(const std::string& input, bool isDryRun, const std::string& filename)
 {
   std::istringstream inputStream(input);
   parse(inputStream, isDryRun, filename);
@@ -49,7 +49,7 @@ ConfigFile::parse(const std::string& input, bool isDryRun, const char* filename)
 
 
 void
-ConfigFile::parse(std::istream& input, bool isDryRun, const char* filename)
+ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filename)
 {
   try
     {
@@ -59,10 +59,7 @@ ConfigFile::parse(std::istream& input, bool isDryRun, const char* filename)
     {
       std::stringstream msg;
       msg << "Failed to parse configuration file";
-      if (filename != 0)
-        {
-          msg << " " << filename;
-        }
+      msg << " " << filename;
       msg << " " << error.message() << " line " << error.line();
       throw Error(msg.str());
     }
@@ -71,18 +68,16 @@ ConfigFile::parse(std::istream& input, bool isDryRun, const char* filename)
 }
 
 void
-ConfigFile::process(bool isDryRun, const char* filename)
+ConfigFile::process(bool isDryRun, const std::string& filename)
 {
+  BOOST_ASSERT(!filename.empty());
   // NFD_LOG_DEBUG("processing..." << ((isDryRun)?("dry run"):("")));
 
   if (m_global.begin() == m_global.end())
     {
       std::string msg = "Error processing configuration file";
-      if (filename != 0)
-        {
-          msg += ": ";
-          msg += filename;
-        }
+      msg += ": ";
+      msg += filename;
       msg += " no data";
       throw Error(msg);
     }
@@ -101,11 +96,8 @@ ConfigFile::process(bool isDryRun, const char* filename)
       else
         {
           std::string msg = "Error processing configuration file";
-          if (filename != 0)
-            {
-              msg += " ";
-              msg += filename;
-            }
+          msg += " ";
+          msg += filename;
           msg += " no module subscribed for section: " + sectionName;
           throw Error(msg);
         }

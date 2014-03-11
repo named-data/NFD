@@ -260,7 +260,7 @@ public:
   void
   parseConfig(const std::string configuration, bool isDryRun)
   {
-    m_config.parse(configuration, isDryRun);
+    m_config.parse(configuration, isDryRun, "dummy-config");
   }
 
   virtual

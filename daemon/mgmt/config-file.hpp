@@ -47,31 +47,31 @@ public:
    * \throws ConfigFile::Error if parse error
    */
   void
-  parse(const char* filename, bool isDryRun=false);
+  parse(const std::string& filename, bool isDryRun);
 
   /**
    * \param input configuration (as a string) to parse
    * \param isDryRun true if performing a dry run of configuration, false otherwise
-   * \param filename optional convenience argument to provide more detailed error messages (if available)
+   * \param filename optional convenience argument to provide more detailed error messages
    * \throws ConfigFile::Error if file not found
    * \throws ConfigFile::Error if parse error
    */
   void
-  parse(const std::string& input, bool isDryRun=false, const char* filename=0);
+  parse(const std::string& input, bool isDryRun, const std::string& filename);
 
   /**
    * \param input stream to parse
    * \param isDryRun true if performing a dry run of configuration, false otherwise
-   * \param filename optional convenience argument to provide more detailed error messages (if available)
+   * \param filename optional convenience argument to provide more detailed error messages
    * \throws ConfigFile::Error if parse error
    */
   void
-  parse(std::istream& input, bool isDryRun=false, const char* filename=0);
+  parse(std::istream& input, bool isDryRun, const std::string& filename);
 
 private:
 
   void
-  process(bool isDryRun, const char* filename);
+  process(bool isDryRun, const std::string& filename);
 
 private:
 

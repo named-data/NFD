@@ -1,0 +1,66 @@
+; the general section contains settings of nfd process
+; general
+; {
+; }
+
+; the face_system section defines what faces and channels are created
+face_system
+{
+  ; the unix section contains settings of UNIX stream faces and channels
+  unix
+  {
+    listen yes ; set to 'no' to disable UNIX stream listener, default 'yes'
+    path /var/run/nfd.sock ; UNIX stream listener path
+  }
+
+  ; the tcp section contains settings of TCP faces and channels
+  tcp
+  {
+    listen yes ; set to 'no' to disable TCP listener, default 'yes'
+    port 6363 ; TCP listener port number
+  }
+
+  ; the udp section contains settings of UDP faces and channels
+  udp
+  {
+    port 6363 ; UDP unicast port number
+    idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
+    keep_alive_interval 25; interval (seconds) between keep-alive refreshes
+
+    mcast no
+
+    ; Example multicast settings
+    ; NFD creates one UDP multicast face per NIC
+    ; mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
+    ; mcast_port 56363 ; UDP multicast port number
+    ; mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
+  }
+
+  ; the ether section contains settings of Ethernet faces and channels
+  ether
+  {
+    mcast no
+    ; Example multicast settings
+    ; NFD creates one Ethernet multicast face per NIC
+    ; mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
+    ; mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
+  }
+}
+
+; the authorizations section grants privileges to authorized keys
+authorizations
+{
+  ; an authorize section grants privileges to a key
+  authorize
+  {
+    keyfile @SYSCONFDIR@/ndn/keys/default.pub ; public key file
+    privileges ; set of privileges granted to this public key
+    {
+      control-header
+      faces
+      fib
+      ; stats
+      strategy-choice
+    }
+  }
+}
