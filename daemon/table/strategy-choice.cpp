@@ -94,11 +94,12 @@ StrategyChoice::erase(const Name& prefix)
   }
 
   Strategy& oldStrategy = entry->getStrategy();
+
+  Strategy& parentStrategy = this->findEffectiveStrategy(prefix.getPrefix(-1));
+  this->changeStrategy(entry, oldStrategy.shared_from_this(), parentStrategy.shared_from_this());
+
   nameTreeEntry->setStrategyChoiceEntry(shared_ptr<Entry>());
   --m_nItems;
-
-  Strategy& parentStrategy = this->findEffectiveStrategy(prefix);
-  this->changeStrategy(entry, oldStrategy.shared_from_this(), parentStrategy.shared_from_this());
 }
 
 shared_ptr<const Name>
@@ -138,7 +139,7 @@ StrategyChoice::findEffectiveStrategy(shared_ptr<name_tree::Entry> nameTreeEntry
   shared_ptr<strategy_choice::Entry> entry = nameTreeEntry->getStrategyChoiceEntry();
   if (static_cast<bool>(entry))
     return entry->getStrategy();
-  nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry, 
+  nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry,
                                &predicate_NameTreeEntry_hasStrategyChoiceEntry);
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
   return nameTreeEntry->getStrategyChoiceEntry()->getStrategy();
@@ -187,6 +188,52 @@ StrategyChoice::setDefaultStrategy(shared_ptr<Strategy> strategy)
   entry->setStrategy(strategy);
 }
 
+/** \brief a predicate that decides whether StrategyInfo should be reset
+ *
+ *  StrategyInfo on a NameTree entry needs to be reset,
+ *  if its effective strategy is covered by the changing StrategyChoice entry.
+ */
+static inline std::pair<bool,bool>
+predicate_nameTreeEntry_needResetStrategyChoice(const name_tree::Entry& nameTreeEntry,
+                                            const name_tree::Entry& rootEntry)
+{
+  if (&nameTreeEntry == &rootEntry) {
+    return std::make_pair(true, true);
+  }
+  if (static_cast<bool>(nameTreeEntry.getStrategyChoiceEntry())) {
+    return std::make_pair(false, false);
+  }
+  return std::make_pair(true, true);
+}
+
+static inline void
+clearStrategyInfo_pitFaceRecord(const pit::FaceRecord& pitFaceRecord)
+{
+  const_cast<pit::FaceRecord&>(pitFaceRecord).clearStrategyInfo();
+}
+
+static inline void
+clearStrategyInfo_pitEntry(shared_ptr<pit::Entry> pitEntry)
+{
+  pitEntry->clearStrategyInfo();
+  std::for_each(pitEntry->getInRecords().begin(), pitEntry->getInRecords().end(),
+                &clearStrategyInfo_pitFaceRecord);
+  std::for_each(pitEntry->getOutRecords().begin(), pitEntry->getOutRecords().end(),
+                &clearStrategyInfo_pitFaceRecord);
+}
+
+static inline void
+clearStrategyInfo(const name_tree::Entry& nameTreeEntry)
+{
+  NFD_LOG_TRACE("clearStrategyInfo " << nameTreeEntry.getPrefix());
+
+  std::for_each(nameTreeEntry.getPitEntries().begin(), nameTreeEntry.getPitEntries().end(),
+                &clearStrategyInfo_pitEntry);
+  if (static_cast<bool>(nameTreeEntry.getMeasurementsEntry())) {
+    nameTreeEntry.getMeasurementsEntry()->clearStrategyInfo();
+  }
+}
+
 void
 StrategyChoice::changeStrategy(shared_ptr<strategy_choice::Entry> entry,
                                shared_ptr<fw::Strategy> oldStrategy,
@@ -197,9 +244,11 @@ StrategyChoice::changeStrategy(shared_ptr<strategy_choice::Entry> entry,
     return;
   }
 
-  // TODO delete incompatible StrategyInfo
-  NFD_LOG_WARN("changeStrategy(" << entry->getPrefix() << ") " <<
-               "runtime strategy change not implemented");
+  std::for_each(m_nameTree.partialEnumerate(entry->getPrefix(),
+                           bind(&predicate_nameTreeEntry_needResetStrategyChoice,
+                                _1, boost::cref(*m_nameTree.get(*entry)))),
+                m_nameTree.end(),
+                &clearStrategyInfo);
 }
 
 } // namespace nfd

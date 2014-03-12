@@ -94,6 +94,9 @@ public:
   std::vector<shared_ptr<pit::Entry> >&
   getPitEntries();
 
+  const std::vector<shared_ptr<pit::Entry> >&
+  getPitEntries() const;
+
   /**
    * \brief Erase a PIT Entry
    * \details The address of this PIT Entry is required
@@ -180,6 +183,12 @@ Entry::hasPitEntries() const
 
 inline std::vector<shared_ptr<pit::Entry> >&
 Entry::getPitEntries()
+{
+  return m_pitEntries;
+}
+
+inline const std::vector<shared_ptr<pit::Entry> >&
+Entry::getPitEntries() const
 {
   return m_pitEntries;
 }
