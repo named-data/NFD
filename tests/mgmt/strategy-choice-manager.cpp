@@ -12,7 +12,7 @@
 #include "fw/forwarder.hpp"
 #include "fw/strategy.hpp"
 #include "tests/face/dummy-face.hpp"
-
+#include "tests/fw/dummy-strategy.hpp"
 
 #include "tests/test-common.hpp"
 #include "validation-common.hpp"
@@ -22,73 +22,18 @@ namespace tests {
 
 NFD_LOG_INIT("StrategyChoiceManagerTest");
 
-class DummyStrategy : public fw::Strategy
-{
-public:
-  DummyStrategy(Forwarder& forwarder, const Name& strategyName)
-    : fw::Strategy(forwarder, strategyName)
-  {
-
-  }
-
-  virtual
-  ~DummyStrategy()
-  {
-
-  }
-
-  virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry)
-  {
-
-  }
-};
-
-class TestStrategyA : public DummyStrategy
-{
-public:
-  TestStrategyA(Forwarder& forwarder)
-    : DummyStrategy(forwarder, "/localhost/nfd/strategy/test-strategy-a")
-  {
-  }
-
-  virtual
-  ~TestStrategyA()
-  {
-
-  }
-};
-
-class TestStrategyB : public DummyStrategy
-{
-public:
-  TestStrategyB(Forwarder& forwarder)
-    : DummyStrategy(forwarder, "/localhost/nfd/strategy/test-strategy-b")
-  {
-  }
-
-  virtual
-  ~TestStrategyB()
-  {
-
-  }
-};
-
 class StrategyChoiceManagerFixture : protected BaseFixture
 {
 public:
 
   StrategyChoiceManagerFixture()
-    : m_nameTree(1024)
-    , m_strategyChoice(m_nameTree, make_shared<TestStrategyA>(boost::ref(m_forwarder)))
+    : m_strategyChoice(m_forwarder.getStrategyChoice())
     , m_face(make_shared<InternalFace>())
     , m_manager(m_strategyChoice, m_face)
     , m_callbackFired(false)
   {
-
+    m_strategyChoice.install(make_shared<DummyStrategy>(boost::ref(m_forwarder), "/localhost/nfd/strategy/test-strategy-a"));
+    m_strategyChoice.insert("ndn:/", "/localhost/nfd/strategy/test-strategy-a");
   }
 
   virtual
@@ -193,8 +138,7 @@ public:
 
 protected:
   Forwarder m_forwarder;
-  NameTree m_nameTree;
-  StrategyChoice m_strategyChoice;
+  StrategyChoice& m_strategyChoice;
   shared_ptr<InternalFace> m_face;
   StrategyChoiceManager m_manager;
 
@@ -207,7 +151,7 @@ class AllStrategiesFixture : public StrategyChoiceManagerFixture
 public:
   AllStrategiesFixture()
   {
-    m_strategyChoice.install(make_shared<TestStrategyB>(boost::ref(m_forwarder)));
+    m_strategyChoice.install(make_shared<DummyStrategy>(boost::ref(m_forwarder), "/localhost/nfd/strategy/test-strategy-b"));
   }
 
   virtual

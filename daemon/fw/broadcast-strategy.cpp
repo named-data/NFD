@@ -9,8 +9,10 @@
 namespace nfd {
 namespace fw {
 
-BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder)
-  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/broadcast")
+const Name BroadcastStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/broadcast");
+
+BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder, const Name& name)
+  : Strategy(forwarder, name)
 {
 }
 

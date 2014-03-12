@@ -19,20 +19,24 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
   Name name("ndn:/KuYfjtRq");
-  Interest interest(name);
-  Interest interest1(name, static_cast<ndn::Milliseconds>(2528));
-  interest1.setNonce(25559);
-  Interest interest2(name, static_cast<ndn::Milliseconds>(6464));
-  interest2.setNonce(19004);
-  Interest interest3(name, static_cast<ndn::Milliseconds>(3585));
-  interest3.setNonce(24216);
-  Interest interest4(name, static_cast<ndn::Milliseconds>(8795));
-  interest4.setNonce(17365);
+  shared_ptr<Interest> interest  = makeInterest(name);
+  shared_ptr<Interest> interest1 = makeInterest(name);
+  interest1->setInterestLifetime(static_cast<ndn::Milliseconds>(2528));
+  interest1->setNonce(25559);
+  shared_ptr<Interest> interest2 = makeInterest(name);
+  interest2->setInterestLifetime(static_cast<ndn::Milliseconds>(6464));
+  interest2->setNonce(19004);
+  shared_ptr<Interest> interest3 = makeInterest(name);
+  interest3->setInterestLifetime(static_cast<ndn::Milliseconds>(3585));
+  interest3->setNonce(24216);
+  shared_ptr<Interest> interest4 = makeInterest(name);
+  interest4->setInterestLifetime(static_cast<ndn::Milliseconds>(8795));
+  interest4->setNonce(17365);
   
-  pit::Entry entry(interest);
+  pit::Entry entry(*interest);
   
-  BOOST_CHECK(entry.getInterest().getName().equals(name));
-  BOOST_CHECK(entry.getName().equals(name));
+  BOOST_CHECK_EQUAL(entry.getInterest().getName(), name);
+  BOOST_CHECK_EQUAL(entry.getName(), name);
 
   const pit::InRecordCollection& inRecords1 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords1.size(), 0);
@@ -42,52 +46,52 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   // insert InRecord
   time::Point before1 = time::now();
   pit::InRecordCollection::iterator in1 =
-    entry.insertOrUpdateInRecord(face1, interest1);
+    entry.insertOrUpdateInRecord(face1, *interest1);
   time::Point after1 = time::now();
   const pit::InRecordCollection& inRecords2 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords2.size(), 1);
   BOOST_CHECK(in1 == inRecords2.begin());
   BOOST_CHECK_EQUAL(in1->getFace(), face1);
-  BOOST_CHECK_EQUAL(in1->getLastNonce(), interest1.getNonce());
+  BOOST_CHECK_EQUAL(in1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(in1->getLastRenewed(), before1);
   BOOST_CHECK_LE(in1->getLastRenewed(), after1);
   BOOST_CHECK_LE(std::abs(in1->getExpiry() - in1->getLastRenewed()
-    - time::milliseconds(interest1.getInterestLifetime())),
+    - time::milliseconds(interest1->getInterestLifetime())),
     (after1 - before1));
   
   // insert OutRecord
   time::Point before2 = time::now();
   pit::OutRecordCollection::iterator out1 =
-    entry.insertOrUpdateOutRecord(face1, interest1);
+    entry.insertOrUpdateOutRecord(face1, *interest1);
   time::Point after2 = time::now();
   const pit::OutRecordCollection& outRecords2 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords2.size(), 1);
   BOOST_CHECK(out1 == outRecords2.begin());
   BOOST_CHECK_EQUAL(out1->getFace(), face1);
-  BOOST_CHECK_EQUAL(out1->getLastNonce(), interest1.getNonce());
+  BOOST_CHECK_EQUAL(out1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(out1->getLastRenewed(), before2);
   BOOST_CHECK_LE(out1->getLastRenewed(), after2);
   BOOST_CHECK_LE(std::abs(out1->getExpiry() - out1->getLastRenewed()
-    - time::milliseconds(interest1.getInterestLifetime())),
+    - time::milliseconds(interest1->getInterestLifetime())),
     (after2 - before2));
   
   // update InRecord
   time::Point before3 = time::now();
   pit::InRecordCollection::iterator in2 =
-    entry.insertOrUpdateInRecord(face1, interest2);
+    entry.insertOrUpdateInRecord(face1, *interest2);
   time::Point after3 = time::now();
   const pit::InRecordCollection& inRecords3 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords3.size(), 1);
   BOOST_CHECK(in2 == inRecords3.begin());
   BOOST_CHECK_EQUAL(in2->getFace(), face1);
-  BOOST_CHECK_EQUAL(in2->getLastNonce(), interest2.getNonce());
+  BOOST_CHECK_EQUAL(in2->getLastNonce(), interest2->getNonce());
   BOOST_CHECK_LE(std::abs(in2->getExpiry() - in2->getLastRenewed()
-    - time::milliseconds(interest2.getInterestLifetime())),
+    - time::milliseconds(interest2->getInterestLifetime())),
     (after3 - before3));
 
   // insert another InRecord
   pit::InRecordCollection::iterator in3 =
-    entry.insertOrUpdateInRecord(face2, interest3);
+    entry.insertOrUpdateInRecord(face2, *interest3);
   const pit::InRecordCollection& inRecords4 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(in3->getFace(), face2);
@@ -99,7 +103,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 
   // insert another OutRecord
   pit::OutRecordCollection::iterator out2 =
-    entry.insertOrUpdateOutRecord(face2, interest4);
+    entry.insertOrUpdateOutRecord(face2, *interest4);
   const pit::OutRecordCollection& outRecords3 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(out2->getFace(), face2);

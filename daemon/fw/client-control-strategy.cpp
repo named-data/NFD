@@ -11,8 +11,10 @@ namespace fw {
 
 NFD_LOG_INIT("ClientControlStrategy");
 
-ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder)
-  : BestRouteStrategy(forwarder)
+const Name ClientControlStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/client-control");
+
+ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& name)
+  : BestRouteStrategy(forwarder, name)
 {
 }
 

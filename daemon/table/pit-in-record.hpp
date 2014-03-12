@@ -20,9 +20,25 @@ class InRecord : public FaceRecord
 public:
   explicit
   InRecord(shared_ptr<Face> face);
-  
+
   InRecord(const InRecord& other);
+
+  void
+  update(const Interest& interest);
+
+  const Interest&
+  getInterest() const;
+
+private:
+  shared_ptr<Interest> m_interest;
 };
+
+inline const Interest&
+InRecord::getInterest() const
+{
+  BOOST_ASSERT(static_cast<bool>(m_interest));
+  return *m_interest;
+}
 
 } // namespace pit
 } // namespace nfd

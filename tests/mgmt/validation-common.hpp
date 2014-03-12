@@ -4,9 +4,10 @@
  * See COPYING for copyright and distribution information.
  */
 
-#ifndef VALIDATION_COMMON_HPP
-#define VALIDATION_COMMON_HPP
+#ifndef NFD_TEST_MGMT_VALIDATION_COMMON_HPP
+#define NFD_TEST_MGMT_VALIDATION_COMMON_HPP
 
+#include "common.hpp"
 #include <ndn-cpp-dev/util/command-interest-generator.hpp>
 
 namespace nfd {
@@ -29,6 +30,30 @@ namespace tests {
 //   shared_ptr<ndn::CommandInterestValidator> m_validator;
 // };
 
+/// a global fixture that holds the identity for CommandFixture
+class CommandIdentityGlobalFixture
+{
+public:
+  CommandIdentityGlobalFixture();
+
+  ~CommandIdentityGlobalFixture();
+  
+  static const Name& getIdentityName()
+  {
+    return s_identityName;
+  }
+  
+  static shared_ptr<ndn::IdentityCertificate> getCertificate()
+  {
+    BOOST_ASSERT(static_cast<bool>(s_certificate));
+    return s_certificate;
+  }
+
+private:
+  ndn::KeyChain m_keys;
+  static const Name s_identityName;
+  static shared_ptr<ndn::IdentityCertificate> s_certificate;
+};
 
 template<typename T>
 class CommandFixture : public T
@@ -37,33 +62,27 @@ public:
   virtual
   ~CommandFixture()
   {
-    m_keys.deleteIdentity(m_identityName);
-
   }
 
   void
   generateCommand(Interest& interest)
   {
-    m_generator.generateWithIdentity(interest, m_identityName);
+    m_generator.generateWithIdentity(interest, getIdentityName());
   }
 
   const Name&
   getIdentityName() const
   {
-    return m_identityName;
+    return CommandIdentityGlobalFixture::getIdentityName();
   }
 
 protected:
   CommandFixture()
-    : m_identityName("/unit-test/CommandFixture/id"),
-      m_certificate(m_keys.getCertificate(m_keys.createIdentity(m_identityName)))
+    : m_certificate(CommandIdentityGlobalFixture::getCertificate())
   {
-
   }
 
 protected:
-  ndn::KeyChain m_keys;
-  const Name m_identityName;
   shared_ptr<ndn::IdentityCertificate> m_certificate;
   ndn::CommandInterestGenerator m_generator;
 };
@@ -82,7 +101,7 @@ public:
   }
 };
 
-} //namespace tests
+} // namespace tests
 } // namespace nfd
 
-#endif // VALIDATION_COMMON_HPP
+#endif // NFD_TEST_MGMT_VALIDATION_COMMON_HPP

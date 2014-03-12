@@ -38,7 +38,7 @@ public:
   getLastRenewed() const;
   
   /** \brief gives the time point this record expires
-   *  \return{ getLastRenewed() + InterestLifetime }
+   *  \return getLastRenewed() + InterestLifetime
    */
   time::Point
   getExpiry() const;

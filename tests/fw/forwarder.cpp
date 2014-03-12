@@ -6,9 +6,10 @@
 
 #include "fw/forwarder.hpp"
 #include "tests/face/dummy-face.hpp"
-#include <ndn-cpp-dev/security/key-chain.hpp>
+#include "dummy-strategy.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/core/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
@@ -22,12 +23,9 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   Name nameA  ("ndn:/A");
   Name nameAB ("ndn:/A/B");
   Name nameABC("ndn:/A/B/C");
-  Interest interestAB(nameAB);
-  interestAB.setInterestLifetime(4000);
-  shared_ptr<Data> dataABC = make_shared<Data>(nameABC);
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-  dataABC->setSignature(fakeSignature);
+  shared_ptr<Interest> interestAB = makeInterest(nameAB);
+  interestAB->setInterestLifetime(4000);
+  shared_ptr<Data> dataABC = makeData(nameABC);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -42,7 +40,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
   fibEntry->addNextHop(face2, 0);
 
-  face1->receiveInterest(interestAB);
+  face1->receiveInterest(*interestAB);
   g_io.run();
   g_io.reset();
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
@@ -72,10 +70,7 @@ public:
 
 protected:
   virtual void
-  dispatchToStrategy(const Face& inFace,
-                     const Interest& interest,
-                     shared_ptr<fib::Entry> fibEntry,
-                     shared_ptr<pit::Entry> pitEntry)
+  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f)
   {
     ++m_dispatchToStrategy_count;
   }
@@ -93,61 +88,51 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
-  shared_ptr<Data> d1, d2, d3, d4;
-  shared_ptr<Interest> i1, i2, i3, i4;
-  
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   // local face, /localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  i1 = make_shared<Interest>(Name("/localhost/A1"));
+  shared_ptr<Interest> i1 = makeInterest("/localhost/A1");
   forwarder.onIncomingInterest(*face1, *i1);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // non-local face, /localhost: violate
   forwarder.m_dispatchToStrategy_count = 0;
-  i2 = make_shared<Interest>(Name("/localhost/A2"));
+  shared_ptr<Interest> i2 = makeInterest("/localhost/A2");
   forwarder.onIncomingInterest(*face2, *i2);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  i3 = make_shared<Interest>(Name("/A3"));
+  shared_ptr<Interest> i3 = makeInterest("/A3");
   forwarder.onIncomingInterest(*face1, *i3);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.m_dispatchToStrategy_count = 0;
-  i4 = make_shared<Interest>(Name("/A4"));
+  shared_ptr<Interest> i4 = makeInterest("/A4");
   forwarder.onIncomingInterest(*face2, *i4);
   BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
 
   // local face, /localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  d1 = make_shared<Data>(Name("/localhost/B1"));
-  d1->setSignature(fakeSignature);
+  shared_ptr<Data> d1 = makeData("/localhost/B1");
   forwarder.onIncomingData(*face1, *d1);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 
   // non-local face, /localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  d2 = make_shared<Data>(Name("/localhost/B2"));
-  d2->setSignature(fakeSignature);
+  shared_ptr<Data> d2 = makeData("/localhost/B2");
   forwarder.onIncomingData(*face2, *d2);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 0);
 
   // local face, non-/localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  d3 = make_shared<Data>(Name("/B3"));
-  d3->setSignature(fakeSignature);
+  shared_ptr<Data> d3 = makeData("/B3");
   forwarder.onIncomingData(*face1, *d3);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 
   // non-local face, non-/localhost: OK
   forwarder.m_onDataUnsolicited_count = 0;
-  d4 = make_shared<Data>(Name("/B4"));
-  d4->setSignature(fakeSignature);
+  shared_ptr<Data> d4 = makeData("/B4");
   forwarder.onIncomingData(*face2, *d4);
   BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
 }
@@ -164,33 +149,33 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   Pit& pit = forwarder.getPit();
 
   // local face, /localhost: OK
-  Interest interestA1 = Interest("/localhost/A1");
-  shared_ptr<pit::Entry> pitA1 = pit.insert(interestA1).first;
-  pitA1->insertOrUpdateInRecord(face3, interestA1);
+  shared_ptr<Interest> interestA1 = makeInterest("/localhost/A1");
+  shared_ptr<pit::Entry> pitA1 = pit.insert(*interestA1).first;
+  pitA1->insertOrUpdateInRecord(face3, *interestA1);
   face1->m_sentInterests.clear();
   forwarder.onOutgoingInterest(pitA1, *face1);
   BOOST_CHECK_EQUAL(face1->m_sentInterests.size(), 1);
 
   // non-local face, /localhost: violate
-  Interest interestA2 = Interest("/localhost/A2");
-  shared_ptr<pit::Entry> pitA2 = pit.insert(interestA2).first;
-  pitA2->insertOrUpdateInRecord(face3, interestA1);
+  shared_ptr<Interest> interestA2 = makeInterest("/localhost/A2");
+  shared_ptr<pit::Entry> pitA2 = pit.insert(*interestA2).first;
+  pitA2->insertOrUpdateInRecord(face3, *interestA2);
   face2->m_sentInterests.clear();
   forwarder.onOutgoingInterest(pitA2, *face2);
   BOOST_CHECK_EQUAL(face2->m_sentInterests.size(), 0);
 
   // local face, non-/localhost: OK
-  Interest interestA3 = Interest("/A3");
-  shared_ptr<pit::Entry> pitA3 = pit.insert(interestA3).first;
-  pitA3->insertOrUpdateInRecord(face3, interestA3);
+  shared_ptr<Interest> interestA3 = makeInterest("/A3");
+  shared_ptr<pit::Entry> pitA3 = pit.insert(*interestA3).first;
+  pitA3->insertOrUpdateInRecord(face3, *interestA3);
   face1->m_sentInterests.clear();
   forwarder.onOutgoingInterest(pitA3, *face1);
   BOOST_CHECK_EQUAL(face1->m_sentInterests.size(), 1);
 
   // non-local face, non-/localhost: OK
-  Interest interestA4 = Interest("/A4");
-  shared_ptr<pit::Entry> pitA4 = pit.insert(interestA4).first;
-  pitA4->insertOrUpdateInRecord(face3, interestA4);
+  shared_ptr<Interest> interestA4 = makeInterest("/A4");
+  shared_ptr<pit::Entry> pitA4 = pit.insert(*interestA4).first;
+  pitA4->insertOrUpdateInRecord(face3, *interestA4);
   face2->m_sentInterests.clear();
   forwarder.onOutgoingInterest(pitA4, *face2);
   BOOST_CHECK_EQUAL(face2->m_sentInterests.size(), 1);
@@ -214,6 +199,63 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   face2->m_sentDatas.clear();
   forwarder.onOutgoingData(Data("/B4"), *face2);
   BOOST_CHECK_EQUAL(face2->m_sentDatas.size(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(StrategyDispatch)
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  shared_ptr<DummyStrategy> strategyP = make_shared<DummyStrategy>(
+                                        boost::ref(forwarder), "ndn:/strategyP");
+  shared_ptr<DummyStrategy> strategyQ = make_shared<DummyStrategy>(
+                                        boost::ref(forwarder), "ndn:/strategyQ");
+  strategyChoice.install(strategyP);
+  strategyChoice.install(strategyQ);
+  strategyChoice.insert("ndn:/" , strategyP->getName());
+  strategyChoice.insert("ndn:/B", strategyQ->getName());
+
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/A/1");
+  strategyP->m_afterReceiveInterest_count = 0;
+  strategyP->m_interestOutFace = face2;
+  forwarder.onInterest(*face1, *interest1);
+  BOOST_CHECK_EQUAL(strategyP->m_afterReceiveInterest_count, 1);
+
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/B/2");
+  strategyQ->m_afterReceiveInterest_count = 0;
+  strategyQ->m_interestOutFace = face2;
+  forwarder.onInterest(*face1, *interest2);
+  BOOST_CHECK_EQUAL(strategyQ->m_afterReceiveInterest_count, 1);
+
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+
+  shared_ptr<Data> data1 = makeData("ndn:/A/1/a");
+  strategyP->m_beforeSatisfyPendingInterest_count = 0;
+  forwarder.onData(*face2, *data1);
+  BOOST_CHECK_EQUAL(strategyP->m_beforeSatisfyPendingInterest_count, 1);
+
+  shared_ptr<Data> data2 = makeData("ndn:/B/2/b");
+  strategyQ->m_beforeSatisfyPendingInterest_count = 0;
+  forwarder.onData(*face2, *data2);
+  BOOST_CHECK_EQUAL(strategyQ->m_beforeSatisfyPendingInterest_count, 1);
+
+  shared_ptr<Interest> interest3 = makeInterest("ndn:/A/3");
+  interest3->setInterestLifetime(30);
+  forwarder.onInterest(*face1, *interest3);
+  shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
+  interest4->setInterestLifetime(5000);
+  forwarder.onInterest(*face1, *interest4);
+
+  strategyP->m_beforeExpirePendingInterest_count = 0;
+  strategyQ->m_beforeExpirePendingInterest_count = 0;
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(100));
+  BOOST_CHECK_EQUAL(strategyP->m_beforeExpirePendingInterest_count, 1);
+  BOOST_CHECK_EQUAL(strategyQ->m_beforeExpirePendingInterest_count, 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

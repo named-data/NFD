@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   Pit& pit = forwarder.getPit();
 
   // first Interest: strategy knows nothing and follows routing
-  shared_ptr<Interest> interest1p = make_shared<Interest>("ndn:/0Jm1ajrW/%00");
+  shared_ptr<Interest> interest1p = makeInterest("ndn:/0Jm1ajrW/%00");
   Interest& interest1 = *interest1p;
   interest1.setInterestLifetime(8000);
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(interest1).first;
@@ -66,13 +66,13 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
 
   // face2 responds
-  shared_ptr<Data> data1p = make_shared<Data>("ndn:/0Jm1ajrW/%00");
+  shared_ptr<Data> data1p = makeData("ndn:/0Jm1ajrW/%00");
   Data& data1 = *data1p;
   strategy->beforeSatisfyPendingInterest(pitEntry1, *face2, data1);
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
 
   // second Interest: strategy knows face2 is best
-  shared_ptr<Interest> interest2p = make_shared<Interest>("ndn:/0Jm1ajrW/%00%01");
+  shared_ptr<Interest> interest2p = makeInterest("ndn:/0Jm1ajrW/%00%01");
   Interest& interest2 = *interest2p;
   interest2.setInterestLifetime(8000);
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(interest2).first;

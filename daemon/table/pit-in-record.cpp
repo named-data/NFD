@@ -19,6 +19,12 @@ InRecord::InRecord(const InRecord& other)
 {
 }
 
+void
+InRecord::update(const Interest& interest)
+{
+  this->FaceRecord::update(interest);
+  m_interest = const_cast<Interest&>(interest).shared_from_this();
+}
 
 } // namespace pit
 } // namespace nfd

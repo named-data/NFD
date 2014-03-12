@@ -18,8 +18,7 @@ namespace fw {
 class ClientControlStrategy : public BestRouteStrategy
 {
 public:
-  explicit
-  ClientControlStrategy(Forwarder& forwarder);
+  ClientControlStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
   virtual
   ~ClientControlStrategy();
@@ -29,6 +28,9 @@ public:
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry);
+
+public:
+  static const Name STRATEGY_NAME;
 };
 
 } // namespace fw

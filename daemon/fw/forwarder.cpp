@@ -5,14 +5,16 @@
  */
 
 #include "forwarder.hpp"
-#include "core/logger.hpp"
-#include "best-route-strategy.hpp"
+#include "available-strategies.hpp"
 
 namespace nfd {
 
 NFD_LOG_INIT("Forwarder");
 
-const Name Forwarder::s_localhostName("ndn:/localhost");
+using fw::Strategy;
+
+const ndn::Milliseconds Forwarder::DEFAULT_INTEREST_LIFETIME(static_cast<ndn::Milliseconds>(4000));
+const Name Forwarder::LOCALHOST_NAME("ndn:/localhost");
 
 Forwarder::Forwarder()
   : m_faceTable(*this)
@@ -20,24 +22,29 @@ Forwarder::Forwarder()
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
-  , m_strategyChoice(m_nameTree, make_shared<fw::BestRouteStrategy>(boost::ref(*this)))
+  , m_strategyChoice(m_nameTree, fw::makeDefaultStrategy(*this))
 {
-  m_strategy = make_shared<fw::BestRouteStrategy>(boost::ref(*this));
+  fw::installStrategies(*this);
 }
 
 void
 Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 {
   // receive Interest
-  NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() << " interest=" << interest.getName());
+  NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
+                " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
+  if (interest.getInterestLifetime() < 0) {
+    const_cast<Interest&>(interest).setInterestLifetime(DEFAULT_INTEREST_LIFETIME);
+  }
 
   // /localhost scope control
-  bool violatesLocalhost = !inFace.isLocal() &&
-                           s_localhostName.isPrefixOf(interest.getName());
-  if (violatesLocalhost) {
-    NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId()
-      << " interest=" << interest.getName() << " violates /localhost");
+  bool isViolatingLocalhost = !inFace.isLocal() &&
+                              LOCALHOST_NAME.isPrefixOf(interest.getName());
+  if (isViolatingLocalhost) {
+    NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
+                  " interest=" << interest.getName() << " violates /localhost");
+    // (drop)
     return;
   }
 
@@ -55,9 +62,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // cancel unsatisfy & straggler timer
   this->cancelUnsatisfyAndStragglerTimer(pitEntry);
 
+  // is pending?
   const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
   bool isPending = inRecords.begin() == inRecords.end();
-
   if (!isPending) {
     // CS lookup
     const Data* csMatch = m_cs.find(interest);
@@ -73,46 +80,71 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // insert InRecord
   pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
 
-  // app chosen nexthops
-  bool isAppChosenNexthops = false; // TODO get from local control header
-  if (isAppChosenNexthops) {
-    // TODO foreach chosen nexthop: goto outgoing Interest pipeline
-    return;
-  }
-
   // FIB lookup
   shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
 
   // dispatch to strategy
-  this->dispatchToStrategy(inFace, interest, fibEntry, pitEntry);
+  this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveInterest, _1,
+    boost::cref(inFace), boost::cref(interest), fibEntry, pitEntry));
 }
 
 void
 Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
                           shared_ptr<pit::Entry> pitEntry)
 {
-  NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() << " interest=" << interest.getName());
+  NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() <<
+                " interest=" << interest.getName());
 
-  // do nothing, which means Interest is dropped
+  // (drop)
+}
+
+/** \brief compare two InRecords for picking outgoing Interest
+ *  \return true if b is preferred over a
+ *
+ *  This function should be passed to std::max_element over InRecordCollection.
+ *  The outgoing Interest picked is the last incoming Interest
+ *  that does not come from outFace.
+ *  If all InRecords come from outFace, it's fine to pick that. This happens when
+ *  there's only one InRecord that comes from outFace. The legit use is for
+ *  vehicular network; otherwise, strategy shouldn't send to the sole inFace.
+ */
+static inline bool
+compare_pickInterest(const pit::InRecord& a, const pit::InRecord& b, const Face* outFace)
+{
+  bool isOutFaceA = a.getFace().get() == outFace;
+  bool isOutFaceB = b.getFace().get() == outFace;
+
+  if (!isOutFaceA && isOutFaceB) {
+    return false;
+  }
+  if (isOutFaceA && !isOutFaceB) {
+    return true;
+  }
+
+  return a.getLastRenewed() > b.getLastRenewed();
 }
 
 void
 Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
 {
-  NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() << " interest=" << pitEntry->getName());
+  NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
+                " interest=" << pitEntry->getName());
 
   // /localhost scope control
-  bool violatesLocalhost = !outFace.isLocal() &&
-                           s_localhostName.isPrefixOf(pitEntry->getName());
-  if (violatesLocalhost) {
-    NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId()
-      << " interest=" << pitEntry->getName() << " violates /localhost");
+  bool isViolatingLocalhost = !outFace.isLocal() &&
+                              LOCALHOST_NAME.isPrefixOf(pitEntry->getName());
+  if (isViolatingLocalhost) {
+    NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
+                  " interest=" << pitEntry->getName() << " violates /localhost");
     return;
   }
 
   // pick Interest
-  const Interest& interest = pitEntry->getInterest();
-  // TODO pick the last incoming Interest
+  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
+  pit::InRecordCollection::const_iterator pickedInRecord = std::max_element(
+    inRecords.begin(), inRecords.end(), bind(&compare_pickInterest, _1, _2, &outFace));
+  BOOST_ASSERT(pickedInRecord != inRecords.end());
+  const Interest& interest = pickedInRecord->getInterest();
 
   // insert OutRecord
   pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), interest);
@@ -139,9 +171,10 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
   NFD_LOG_DEBUG("onInterestUnsatisfied interest=" << pitEntry->getName());
 
   // invoke PIT unsatisfied callback
-  // TODO
+  this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeExpirePendingInterest, _1,
+    pitEntry));
 
-  // PIT erase
+  // PIT delete
   m_pit.erase(pitEntry);
 }
 
@@ -153,11 +186,12 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
 
   // /localhost scope control
-  bool violatesLocalhost = !inFace.isLocal() &&
-                           s_localhostName.isPrefixOf(data.getName());
-  if (violatesLocalhost) {
-    NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId()
-      << " data=" << data.getName() << " violates /localhost");
+  bool isViolatingLocalhost = !inFace.isLocal() &&
+                              LOCALHOST_NAME.isPrefixOf(data.getName());
+  if (isViolatingLocalhost) {
+    NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() <<
+                  " data=" << data.getName() << " violates /localhost");
+    // (drop)
     return;
   }
 
@@ -199,7 +233,8 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->setStragglerTimer(pitEntry);
 
     // invoke PIT satisfy callback
-    // TODO
+    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyPendingInterest, _1,
+      pitEntry, boost::cref(inFace), boost::cref(data)));
   }
 
   // foreach pending downstream
@@ -214,13 +249,15 @@ void
 Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
 {
   // accept to cache?
-  bool acceptToCache = false;// TODO decision
+  bool acceptToCache = inFace.isLocal();
   if (acceptToCache) {
     // CS insert
-    m_cs.insert(data);
+    m_cs.insert(data, true);
   }
 
-  NFD_LOG_DEBUG("onDataUnsolicited face=" << inFace.getId() << " data=" << data.getName() << " acceptToCache=" << acceptToCache);
+  NFD_LOG_DEBUG("onDataUnsolicited face=" << inFace.getId() <<
+                " data=" << data.getName() <<
+                (acceptToCache ? " cached" : " not cached"));
 }
 
 void
@@ -229,16 +266,16 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
   NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << data.getName());
 
   // /localhost scope control
-  bool violatesLocalhost = !outFace.isLocal() &&
-                           s_localhostName.isPrefixOf(data.getName());
-  if (violatesLocalhost) {
-    NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId()
-      << " data=" << data.getName() << " violates /localhost");
+  bool isViolatingLocalhost = !outFace.isLocal() &&
+                              LOCALHOST_NAME.isPrefixOf(data.getName());
+  if (isViolatingLocalhost) {
+    NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() <<
+                  " data=" << data.getName() << " violates /localhost");
+    // (drop)
     return;
   }
 
-  // traffic manager
-  // pass through
+  // TODO traffic manager
 
   // send Data
   outFace.sendData(data);
@@ -282,16 +319,6 @@ Forwarder::cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
   scheduler::cancel(pitEntry->m_unsatisfyTimer);
   scheduler::cancel(pitEntry->m_stragglerTimer);
-}
-
-void
-Forwarder::dispatchToStrategy(const Face& inFace,
-                              const Interest& interest,
-                              shared_ptr<fib::Entry> fibEntry,
-                              shared_ptr<pit::Entry> pitEntry)
-{
-  m_strategy->afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
-  // TODO dispatch according to fibEntry
 }
 
 } // namespace nfd

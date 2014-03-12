@@ -19,8 +19,7 @@ namespace fw {
 class BroadcastStrategy : public Strategy
 {
 public:
-  explicit
-  BroadcastStrategy(Forwarder& forwarder);
+  BroadcastStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
   
   virtual
   ~BroadcastStrategy();
@@ -30,6 +29,9 @@ public:
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry);
+
+public:
+  static const Name STRATEGY_NAME;
 };
 
 } // namespace fw

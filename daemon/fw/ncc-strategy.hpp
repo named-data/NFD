@@ -17,8 +17,7 @@ namespace fw {
 class NccStrategy : public Strategy
 {
 public:
-  explicit
-  NccStrategy(Forwarder& forwarder);
+  NccStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
   virtual
   ~NccStrategy();
@@ -101,6 +100,9 @@ protected:
   /// best face did not reply within prediction
   void
   timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak);
+
+public:
+  static const Name STRATEGY_NAME;
 
 protected:
   static const time::Duration DEFER_FIRST_WITHOUT_BEST_FACE;

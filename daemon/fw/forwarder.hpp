@@ -130,11 +130,15 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
   cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
 
-  VIRTUAL_WITH_TESTS void
-  dispatchToStrategy(const Face& inFace,
-                     const Interest& interest,
-                     shared_ptr<fib::Entry> fibEntry,
-                     shared_ptr<pit::Entry> pitEntry);
+  /// call trigger (method) on the effective strategy of pitEntry
+#ifdef WITH_TESTS
+  virtual void
+  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> trigger);
+#else
+  template<class Function>
+  void
+  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, Function trigger);
+#endif
 
 private:
   FaceTable m_faceTable;
@@ -147,10 +151,8 @@ private:
   Measurements   m_measurements;
   StrategyChoice m_strategyChoice;
 
-  /// the active strategy (only one strategy in mock)
-  shared_ptr<fw::Strategy> m_strategy;
-
-  static const Name s_localhostName;
+  static const ndn::Milliseconds DEFAULT_INTEREST_LIFETIME;
+  static const Name LOCALHOST_NAME;
 
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
@@ -220,6 +222,19 @@ inline StrategyChoice&
 Forwarder::getStrategyChoice()
 {
   return m_strategyChoice;
+}
+
+#ifdef WITH_TESTS
+inline void
+Forwarder::dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> trigger)
+#else
+template<class Function>
+inline void
+Forwarder::dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, Function trigger)
+#endif
+{
+  fw::Strategy& strategy = m_strategyChoice.findEffectiveStrategy(*pitEntry);
+  trigger(&strategy);
 }
 
 } // namespace nfd

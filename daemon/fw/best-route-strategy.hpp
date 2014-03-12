@@ -19,8 +19,7 @@ namespace fw {
 class BestRouteStrategy : public Strategy
 {
 public:
-  explicit
-  BestRouteStrategy(Forwarder& forwarder);
+  BestRouteStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
   
   virtual
   ~BestRouteStrategy();
@@ -30,6 +29,9 @@ public:
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry);
+
+public:
+  static const Name STRATEGY_NAME;
 };
 
 } // namespace fw

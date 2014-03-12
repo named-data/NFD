@@ -9,8 +9,10 @@
 namespace nfd {
 namespace fw {
 
-BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder)
-  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/best-route")
+const Name BestRouteStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route");
+
+BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
+  : Strategy(forwarder, name)
 {
 }
 

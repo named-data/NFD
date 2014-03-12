@@ -9,8 +9,10 @@
 namespace nfd {
 namespace fw {
 
-NccStrategy::NccStrategy(Forwarder& forwarder)
-  : Strategy(forwarder, "ndn:/localhost/nfd/strategy/ncc")
+const Name NccStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/ncc");
+
+NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
+  : Strategy(forwarder, name)
 {
 }
 
