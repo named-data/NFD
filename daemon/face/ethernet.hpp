@@ -56,8 +56,25 @@ public:
   bool
   isNull() const;
 
+  /**
+   * @brief Converts the address to a human-readable string
+   *
+   * @param sep A character used to visually separate the octets,
+   *            usually a dash (the default value) or a colon
+   */
   std::string
   toString(char sep = '-') const;
+
+  /**
+   * @brief Creates an Address from a string containing an Ethernet address
+   *        in hexadecimal notation, with colons or dashes as separators
+   *
+   * @param str The string to be parsed
+   * @return Always an instance of Address, which will be null
+   *         if the parsing fails
+   */
+  static Address
+  fromString(const std::string& str);
 };
 
 /// Returns the Ethernet broadcast address (FF-FF-FF-FF-FF-FF)
@@ -125,21 +142,8 @@ Address::isNull() const
          elems[3] == 0x0 && elems[4] == 0x0 && elems[5] == 0x0;
 }
 
-inline std::string
-Address::toString(char sep) const
-{
-  char s[18]; // 12 digits + 5 separators + null terminator
-  ::snprintf(s, sizeof(s), "%02x%c%02x%c%02x%c%02x%c%02x%c%02x",
-             elems[0], sep, elems[1], sep, elems[2], sep,
-             elems[3], sep, elems[4], sep, elems[5]);
-  return std::string(s);
-}
-
-static std::ostream&
-operator<<(std::ostream& o, const Address& a)
-{
-  return o << a.toString();
-}
+std::ostream&
+operator<<(std::ostream& o, const Address& a);
 
 } // namespace ethernet
 } // namespace nfd
