@@ -25,6 +25,8 @@ class Entry;
 class Fib : noncopyable
 {
 public:
+  class const_iterator;
+
   explicit
   Fib(NameTree& nameTree);
 
@@ -68,6 +70,42 @@ public:
   size_t
   size() const;
 
+  const_iterator
+  begin() const;
+
+  const_iterator
+  end() const;
+
+  class const_iterator : public std::iterator<std::forward_iterator_tag, fib::Entry>
+  {
+  public:
+    explicit
+    const_iterator(const NameTree::const_iterator& it);
+
+    ~const_iterator();
+
+    const fib::Entry&
+    operator*() const;
+
+    shared_ptr<fib::Entry>
+    operator->() const;
+
+    const_iterator&
+    operator++();
+
+    const_iterator
+    operator++(int);
+
+    bool
+    operator==(const const_iterator& other) const;
+
+    bool
+    operator!=(const const_iterator& other) const;
+
+  private:
+    NameTree::const_iterator m_nameTreeIterator;
+  };
+
 private:
   shared_ptr<fib::Entry>
   findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const;
@@ -89,6 +127,63 @@ inline size_t
 Fib::size() const
 {
   return m_nItems;
+}
+
+inline Fib::const_iterator
+Fib::end() const
+{
+  return const_iterator(m_nameTree.end());
+}
+
+inline
+Fib::const_iterator::const_iterator(const NameTree::const_iterator& it)
+  : m_nameTreeIterator(it)
+{
+}
+
+inline
+Fib::const_iterator::~const_iterator()
+{
+}
+
+inline
+Fib::const_iterator
+Fib::const_iterator::operator++(int)
+{
+  Fib::const_iterator temp(*this);
+  ++(*this);
+  return temp;
+}
+
+inline Fib::const_iterator&
+Fib::const_iterator::operator++()
+{
+  ++m_nameTreeIterator;
+  return *this;
+}
+
+inline const fib::Entry&
+Fib::const_iterator::operator*() const
+{
+  return *(m_nameTreeIterator->getFibEntry());
+}
+
+inline shared_ptr<fib::Entry>
+Fib::const_iterator::operator->() const
+{
+  return m_nameTreeIterator->getFibEntry();
+}
+
+inline bool
+Fib::const_iterator::operator==(const Fib::const_iterator& other) const
+{
+  return m_nameTreeIterator == other.m_nameTreeIterator;
+}
+
+inline bool
+Fib::const_iterator::operator!=(const Fib::const_iterator& other) const
+{
+  return m_nameTreeIterator != other.m_nameTreeIterator;
 }
 
 } // namespace nfd

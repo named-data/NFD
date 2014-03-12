@@ -327,6 +327,36 @@ BOOST_AUTO_TEST_CASE(Remove)
   validateFindExactMatch(gapFib, "/X/Y/Z");
 }
 
+BOOST_AUTO_TEST_CASE(Iterator)
+{
+  NameTree nameTree(1024);
+  Fib fib(nameTree);
+  Name nameA("/A");
+  Name nameAB("/A/B");
+  Name nameABC("/A/B/C");
+  Name nameRoot("/");
+
+  fib.insert(nameA);
+  fib.insert(nameAB);
+  fib.insert(nameABC);
+  fib.insert(nameRoot);
+
+  std::set<Name> expected;
+  expected.insert(nameA);
+  expected.insert(nameAB);
+  expected.insert(nameABC);
+  expected.insert(nameRoot);
+
+  for (Fib::const_iterator it = fib.begin(); it != fib.end(); it++)
+  {
+    bool isInSet = expected.find(it->getPrefix()) != expected.end();
+    BOOST_CHECK(isInSet);
+    expected.erase(it->getPrefix());
+  }
+
+  BOOST_CHECK_EQUAL(expected.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

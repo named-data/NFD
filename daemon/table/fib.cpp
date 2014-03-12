@@ -130,4 +130,10 @@ Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
   }
 }
 
+Fib::const_iterator
+Fib::begin() const
+{
+  return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry));
+}
+
 } // namespace nfd
