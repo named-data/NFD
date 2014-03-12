@@ -1,12 +1,13 @@
-// /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-// /**
-//  * Copyright (C) 2014 Named Data Networking Project
-//  * See COPYING for copyright and distribution information.
-//  */
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (C) 2014 Named Data Networking Project
+ * See COPYING for copyright and distribution information.
+ */
 
 #include "mgmt/face-manager.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/face-status-publisher.hpp"
+
 #include "face/face.hpp"
 #include "../face/dummy-face.hpp"
 #include "fw/face-table.hpp"
@@ -18,6 +19,7 @@
 #include "face-status-publisher-common.hpp"
 
 #include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
 namespace tests {
@@ -62,7 +64,6 @@ public:
   TestFaceTable(Forwarder& forwarder)
     : FaceTable(forwarder),
       m_addFired(false),
-      m_removeFired(false),
       m_getFired(false),
       m_dummy(make_shared<FaceManagerTestFace>())
   {
@@ -81,12 +82,6 @@ public:
     m_addFired = true;
   }
 
-//  virtual void
-//  remove(shared_ptr<Face> face)
-//  {
-//    m_removeFired = true;
-//  }
-
   virtual shared_ptr<Face>
   get(FaceId id) const
   {
@@ -100,12 +95,6 @@ public:
     return m_addFired;
   }
 
-//  bool
-//  didRemoveFire() const
-//  {
-//    return m_removeFired;
-//  }
-
   bool
   didGetFire() const
   {
@@ -116,7 +105,6 @@ public:
   reset()
   {
     m_addFired = false;
-    m_removeFired = false;
     m_getFired = false;
   }
 
@@ -128,7 +116,6 @@ public:
 
 private:
   bool m_addFired;
-  bool m_removeFired;
   mutable bool m_getFired;
   shared_ptr<FaceManagerTestFace> m_dummy;
 };
@@ -291,12 +278,6 @@ public:
   {
     return m_faceTable.didAddFire();
   }
-
-//  bool
-//  didFaceTableRemoveFire() const
-//  {
-//    return m_faceTable.didRemoveFire();
-//  }
 
   bool
   didFaceTableGetFire() const
@@ -880,13 +861,33 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace,
   BOOST_CHECK(didDestroyFaceFire());
 }
 
-class FaceFixture : public TestFaceTableFixture,
-                          public TestFaceManagerCommon,
-                          public FaceManager
+class FaceTableFixture
+{
+public:
+  FaceTableFixture()
+    : m_faceTable(m_forwarder)
+  {
+  }
+
+  virtual
+  ~FaceTableFixture()
+  {
+  }
+
+protected:
+  Forwarder m_forwarder;
+  FaceTable m_faceTable;
+};
+
+class FaceFixture : public FaceTableFixture,
+                    public TestFaceManagerCommon,
+                    public FaceManager
 {
 public:
   FaceFixture()
-    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face)
+    : FaceManager(FaceTableFixture::m_faceTable,
+                  TestFaceManagerCommon::m_face)
+    , m_receivedNotification(false)
   {
 
   }
@@ -896,6 +897,76 @@ public:
   {
 
   }
+
+  void
+  callbackDispatch(const Data& response,
+                   const Name& expectedName,
+                   uint32_t expectedCode,
+                   const std::string& expectedText,
+                   const Block& expectedBody,
+                   const ndn::nfd::FaceEventNotification& expectedFaceEvent)
+  {
+    Block payload = response.getContent().blockFromValue();
+    if (payload.type() == ndn::tlv::nfd::ControlResponse)
+      {
+        validateControlResponse(response, expectedName, expectedCode,
+                                expectedText, expectedBody);
+      }
+    else if (payload.type() == ndn::tlv::nfd::FaceEventNotification)
+      {
+        validateFaceEvent(payload, expectedFaceEvent);
+      }
+    else
+      {
+        BOOST_FAIL("Received unknown message type: #" << payload.type());
+      }
+  }
+
+  void
+  callbackDispatch(const Data& response,
+                   const Name& expectedName,
+                   uint32_t expectedCode,
+                   const std::string& expectedText,
+                   const ndn::nfd::FaceEventNotification& expectedFaceEvent)
+  {
+    Block payload = response.getContent().blockFromValue();
+    if (payload.type() == ndn::tlv::nfd::ControlResponse)
+      {
+        validateControlResponse(response, expectedName,
+                                expectedCode, expectedText);
+      }
+    else if (payload.type() == ndn::tlv::nfd::FaceEventNotification)
+      {
+        validateFaceEvent(payload, expectedFaceEvent);
+      }
+    else
+      {
+        BOOST_FAIL("Received unknown message type: #" << payload.type());
+      }
+  }
+
+  void
+  validateFaceEvent(const Block& wire,
+                    const ndn::nfd::FaceEventNotification& expectedFaceEvent)
+  {
+
+    m_receivedNotification = true;
+
+    ndn::nfd::FaceEventNotification notification(wire);
+
+    BOOST_CHECK_EQUAL(notification.getFaceId(), expectedFaceEvent.getFaceId());
+    BOOST_CHECK_EQUAL(notification.getUri(), expectedFaceEvent.getUri());
+    BOOST_CHECK_EQUAL(notification.getEventKind(), expectedFaceEvent.getEventKind());
+  }
+
+  bool
+  didReceiveNotication() const
+  {
+    return m_receivedNotification;
+  }
+
+protected:
+  bool m_receivedNotification;
 };
 
 BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
@@ -962,18 +1033,25 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   ndn::nfd::FaceManagementOptions resultOptions;
   resultOptions.setUri("tcp://127.0.0.1");
-  resultOptions.setFaceId(-1);
+  resultOptions.setFaceId(1);
+
+  shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
+
+  ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_CREATED,
+                                                    1,
+                                                    dummy->getUri().toString());
 
   Block encodedResultOptions(resultOptions.wireEncode());
 
   getFace()->onReceiveData +=
-    bind(&FaceFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedResultOptions);
+    bind(&FaceFixture::callbackDispatch, this, _1,
+                                        command->getName(), 200, "Success",
+                                        encodedResultOptions, expectedFaceEvent);
 
-  onCreated(command->getName(), options, make_shared<DummyFace>());
+  onCreated(command->getName(), options, dummy);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_CHECK(TestFaceTableFixture::m_faceTable.didAddFire());
+  BOOST_REQUIRE(didReceiveNotication());
 }
 
 BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
@@ -997,14 +1075,18 @@ BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
   onConnectFailed(command->getName(), "unit-test-reason");
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_CHECK_EQUAL(TestFaceTableFixture::m_faceTable.didAddFire(), false);
+  BOOST_CHECK_EQUAL(didReceiveNotication(), false);
 }
 
 
 BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
 {
+  shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
+  FaceTableFixture::m_faceTable.add(dummy);
+
   ndn::nfd::FaceManagementOptions options;
   options.setUri("tcp://127.0.0.1");
+  options.setFaceId(dummy->getId());
 
   Block encodedOptions(options.wireEncode());
 
@@ -1015,15 +1097,18 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
+  ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_DESTROYED,
+                                                    dummy->getId(),
+                                                    dummy->getUri().toString());
+
   getFace()->onReceiveData +=
-    bind(&FaceFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success");
+    bind(&FaceFixture::callbackDispatch, this, _1,
+         command->getName(), 200, "Success", expectedFaceEvent);
 
   destroyFace(command->getName(), options);
 
   BOOST_REQUIRE(didCallbackFire());
-//  BOOST_CHECK(TestFaceTableFixture::m_faceTable.didRemoveFire());
-  BOOST_CHECK(TestFaceTableFixture::m_faceTable.getDummyFace()->didCloseFire());
+  BOOST_REQUIRE(didReceiveNotication());
 }
 
 class FaceListFixture : public FaceStatusPublisherFixture
@@ -1085,9 +1170,6 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
   m_manager.listFaces(*command);
   BOOST_REQUIRE(m_finished);
 }
-
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

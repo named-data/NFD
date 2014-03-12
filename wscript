@@ -69,7 +69,7 @@ def configure(conf):
     
     conf.load('coverage')
 
-    conf.define('DEFAULT_CONFIG_FILE', '%s/nfd/nfd.conf' % conf.env['SYSCONFDIR'])
+    conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 
     conf.write_config_header('daemon/config.hpp')
 

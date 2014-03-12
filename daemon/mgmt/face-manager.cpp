@@ -12,6 +12,8 @@
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 
+#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
+
 #ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"
 #endif // HAVE_UNIX_SOCKETS
@@ -54,18 +56,24 @@ const FaceManager::UnsignedVerbAndProcessor FaceManager::UNSIGNED_COMMAND_VERBS[
                              Name::Component("list"),
                              &FaceManager::listFaces
                              ),
+
+    UnsignedVerbAndProcessor(
+                             Name::Component("events"),
+                             &FaceManager::ignoreUnsignedVerb
+                             ),
   };
 
 const Name FaceManager::LIST_COMMAND_PREFIX("/localhost/nfd/faces/list");
 const size_t FaceManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
 
-
+const Name FaceManager::EVENTS_COMMAND_PREFIX("/localhost/nfd/faces/events");
 
 FaceManager::FaceManager(FaceTable& faceTable,
                          shared_ptr<InternalFace> face)
   : ManagerBase(face, FACE_MANAGER_PRIVILEGE)
   , m_faceTable(faceTable)
   , m_statusPublisher(m_faceTable, m_face, LIST_COMMAND_PREFIX)
+  , m_notificationStream(m_face, EVENTS_COMMAND_PREFIX)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
                    SIGNED_COMMAND_VERBS +
                    (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
@@ -76,6 +84,9 @@ FaceManager::FaceManager(FaceTable& faceTable,
 {
   face->setInterestFilter("/localhost/nfd/faces",
                           bind(&FaceManager::onFaceRequest, this, _2));
+
+  m_faceTable.onAdd    += bind(&FaceManager::onAddFace, this, _1);
+  m_faceTable.onRemove += bind(&FaceManager::onRemoveFace, this, _1);
 }
 
 FaceManager::~FaceManager()
@@ -632,13 +643,33 @@ FaceManager::destroyFace(const Name& requestName,
                          ndn::nfd::FaceManagementOptions& options)
 {
   shared_ptr<Face> target = m_faceTable.get(options.getFaceId());
-  if (target)
+  if (static_cast<bool>(target))
     {
-      // don't call m_faceTable.remove(target): it's called by target->close() via onFail
       target->close();
     }
   sendResponse(requestName, 200, "Success");
 }
+
+void
+FaceManager::onAddFace(shared_ptr<Face> face)
+{
+  ndn::nfd::FaceEventNotification faceCreated(ndn::nfd::FACE_EVENT_CREATED,
+                                              face->getId(),
+                                              face->getUri().toString());
+
+  m_notificationStream.postNotification(faceCreated);
+}
+
+void
+FaceManager::onRemoveFace(shared_ptr<Face> face)
+{
+  ndn::nfd::FaceEventNotification faceDestroyed(ndn::nfd::FACE_EVENT_DESTROYED,
+                                                face->getId(),
+                                                face->getUri().toString());
+
+  m_notificationStream.postNotification(faceDestroyed);
+}
+
 
 void
 FaceManager::listFaces(const Interest& request)

@@ -13,6 +13,7 @@
 #include "mgmt/manager-base.hpp"
 #include "mgmt/config-file.hpp"
 #include "mgmt/face-status-publisher.hpp"
+#include "mgmt/notification-stream.hpp"
 #include "fw/face-table.hpp"
 
 #include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
@@ -69,6 +70,9 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   destroyFace(const Name& requestName,
               ndn::nfd::FaceManagementOptions& options);
 
+  void
+  ignoreUnsignedVerb(const Interest& request);
+
   bool
   extractOptions(const Interest& request,
                  ndn::nfd::FaceManagementOptions& extractedOptions);
@@ -80,6 +84,12 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
   void
   onConnectFailed(const Name& requestName, const std::string& reason);
+
+  void
+  onAddFace(shared_ptr<Face> face);
+
+  void
+  onRemoveFace(shared_ptr<Face> face);
 
 private:
   void
@@ -115,6 +125,7 @@ private:
   FactoryMap m_factories;
   FaceTable& m_faceTable;
   FaceStatusPublisher m_statusPublisher;
+  NotificationStream m_notificationStream;
 
   typedef function<void(FaceManager*,
                         const Name&,
@@ -147,6 +158,8 @@ private:
 
   static const Name LIST_COMMAND_PREFIX;
   static const size_t LIST_COMMAND_NCOMPS;
+
+  static const Name EVENTS_COMMAND_PREFIX;
 };
 
 inline bool
@@ -168,6 +181,12 @@ FaceManager::parseYesNo(const ConfigSection::const_iterator& i,
                           optionName + "\" in \"" +
                           sectionName + "\" section");
 
+}
+
+inline void
+FaceManager::ignoreUnsignedVerb(const Interest& request)
+{
+  // do nothing
 }
 
 } // namespace nfd
