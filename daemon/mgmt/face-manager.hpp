@@ -83,7 +83,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   void
-  onConfig(const ConfigSection& configSection, bool isDryRun);
+  onConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename);
 
   void
   processSectionUnix(const ConfigSection& configSection, bool isDryRun);

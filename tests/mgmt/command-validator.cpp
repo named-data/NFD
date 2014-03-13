@@ -24,11 +24,10 @@ BOOST_FIXTURE_TEST_SUITE(MgmtCommandValidator, BaseFixture)
 
 // authorizations
 // {
-//   ; an authorize section grants privileges to a key
 //   authorize
 //   {
-//     keyfile "tests/mgmt/key1.pub" ; public key file
-//     privileges ; set of privileges granted to this public key
+//     certfile "tests/mgmt/cert1.ndncert"
+//     privileges
 //     {
 //       fib
 //       stats
@@ -37,8 +36,8 @@ BOOST_FIXTURE_TEST_SUITE(MgmtCommandValidator, BaseFixture)
 
 //   authorize
 //   {
-//     keyfile "tests/mgmt/key2.pub" ; public key file
-//     privileges ; set of privileges granted to this public key
+//     certfile "tests/mgmt/cert2.ndncert"
+//     privileges
 //     {
 //       faces
 //     }
@@ -50,7 +49,7 @@ const std::string CONFIG =
 "{\n"
 "  authorize\n"
 "  {\n"
-"    keyfile \"tests/mgmt/key1.pub\"\n"
+"    certfile \"tests/mgmt/cert1.ndncert\"\n"
 "    privileges\n"
 "    {\n"
 "      fib\n"
@@ -59,13 +58,16 @@ const std::string CONFIG =
 "  }\n"
 "  authorize\n"
 "  {\n"
-"    keyfile \"tests/mgmt/key2.pub\"\n"
+"    certfile \"tests/mgmt/cert2.ndncert\"\n"
 "    privileges\n"
 "    {\n"
 "      faces\n"
 "    }\n"
 "  }\n"
   "}\n";
+
+const boost::filesystem::path CONFIG_PATH =
+  boost::filesystem::current_path() /= std::string("unit-test-nfd.conf");
 
 class CommandValidatorTester
 {
@@ -170,17 +172,17 @@ public:
   TwoValidatorFixture()
   {
     m_tester1.generateIdentity("/test/CommandValidator/TwoKeys/id1");
-    m_tester1.saveIdentityToFile("tests/mgmt/key1.pub");
+    m_tester1.saveIdentityToFile("tests/mgmt/cert1.ndncert");
 
     m_tester2.generateIdentity("/test/CommandValidator/TwoKeys/id2");
-    m_tester2.saveIdentityToFile("tests/mgmt/key2.pub");
+    m_tester2.saveIdentityToFile("tests/mgmt/cert2.ndncert");
   }
 
   ~TwoValidatorFixture()
   {
     boost::system::error_code error;
-    boost::filesystem::remove("tests/mgmt/key1.pub", error);
-    boost::filesystem::remove("tests/mgmt/key2.pub", error);
+    boost::filesystem::remove("tests/mgmt/cert1.ndncert", error);
+    boost::filesystem::remove("tests/mgmt/cert2.ndncert", error);
   }
 
 protected:
@@ -205,9 +207,9 @@ BOOST_FIXTURE_TEST_CASE(TwoKeys, TwoValidatorFixture)
   validator.addSupportedPrivilege("fib");
   validator.addSupportedPrivilege("stats");
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  config.parse(CONFIG, false, "dummy-config");
+  validator.setConfigFile(config);
+
+  config.parse(CONFIG, false, CONFIG_PATH.native());
 
   validator.validate(*fibCommand,
                      bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
@@ -229,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE(TwoKeys, TwoValidatorFixture)
   BOOST_REQUIRE(m_tester2.commandValidated());
   m_tester2.resetValidation();
 
-  // use key2 for fib command (authorized for key1 only)
+  // use cert2 for fib command (authorized for cert1 only)
   shared_ptr<Interest> unauthorizedFibCommand = make_shared<Interest>("/localhost/nfd/fib/insert");
   generator.generateWithIdentity(*unauthorizedFibCommand, m_tester2.getIdentityName());
 
@@ -244,11 +246,11 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
 {
   CommandValidatorTester tester1;
   tester1.generateIdentity("/test/CommandValidator/TwoKeys/id1");
-  tester1.saveIdentityToFile("tests/mgmt/key1.pub");
+  tester1.saveIdentityToFile("tests/mgmt/cert1.ndncert");
 
   CommandValidatorTester tester2;
   tester2.generateIdentity("/test/CommandValidator/TwoKeys/id2");
-  tester2.saveIdentityToFile("tests/mgmt/key2.pub");
+  tester2.saveIdentityToFile("tests/mgmt/cert2.ndncert");
 
   shared_ptr<Interest> fibCommand = make_shared<Interest>("/localhost/nfd/fib/insert");
   shared_ptr<Interest> statsCommand = make_shared<Interest>("/localhost/nfd/stats/dosomething");
@@ -265,9 +267,9 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
   validator.addSupportedPrivilege("fib");
   validator.addSupportedPrivilege("stats");
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  config.parse(CONFIG, true, "dummy-config");
+  validator.setConfigFile(config);
+
+  config.parse(CONFIG, true, CONFIG_PATH.native());
 
   validator.validate(*fibCommand,
                      bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
@@ -289,7 +291,7 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
   BOOST_REQUIRE(m_tester2.commandValidationFailed());
   m_tester2.resetValidation();
 
-  // use key2 for fib command (authorized for key1 only)
+  // use cert2 for fib command (authorized for cert1 only)
   shared_ptr<Interest> unauthorizedFibCommand = make_shared<Interest>("/localhost/nfd/fib/insert");
   generator.generateWithIdentity(*unauthorizedFibCommand, m_tester2.getIdentityName());
 
@@ -310,9 +312,8 @@ BOOST_AUTO_TEST_CASE(NoAuthorizeSections)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_AUTHORIZE_CONFIG, false, "dummy-config"), ConfigFile::Error);
+  validator.setConfigFile(config);
+  BOOST_CHECK_THROW(config.parse(NO_AUTHORIZE_CONFIG, false, CONFIG_PATH.native()), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(NoPrivilegesSections)
@@ -322,26 +323,26 @@ BOOST_AUTO_TEST_CASE(NoPrivilegesSections)
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/key1.pub\"\n"
+    "    certfile \"tests/mgmt/cert1.ndncert\"\n"
     "  }\n"
     "}\n";
 
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_PRIVILEGES_CONFIG, false, "dummy-config"), ConfigFile::Error);
+  validator.setConfigFile(config);
+
+  BOOST_CHECK_THROW(config.parse(NO_PRIVILEGES_CONFIG, false, CONFIG_PATH.native()), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(InvalidKeyFile)
+BOOST_AUTO_TEST_CASE(InvalidCertfile)
 {
-  const std::string INVALID_KEY_CONFIG =
+  const std::string INVALID_CERT_CONFIG =
     "authorizations\n"
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/notakeyfile.pub\"\n"
+    "    certfile \"tests/mgmt/notacertfile.ndncert\"\n"
     "    privileges\n"
     "    {\n"
     "      fib\n"
@@ -353,43 +354,17 @@ BOOST_AUTO_TEST_CASE(InvalidKeyFile)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(INVALID_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
+  validator.setConfigFile(config);
+  BOOST_CHECK_THROW(config.parse(INVALID_CERT_CONFIG, false, CONFIG_PATH.native()), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(NoKeyFile)
+BOOST_AUTO_TEST_CASE(NoCertfile)
 {
-  const std::string NO_KEY_CONFIG =
+  const std::string NO_CERT_CONFIG =
     "authorizations\n"
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    privileges\n"
-    "    {\n"
-    "      fib\n"
-    "      stats\n"
-    "    }\n"
-    "  }\n"
-    "}\n";
-
-
-  ConfigFile config;
-  CommandValidator validator;
-
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(NO_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(MalformedKey)
-{
-    const std::string MALFORMED_KEY_CONFIG =
-    "authorizations\n"
-    "{\n"
-    "  authorize\n"
-    "  {\n"
-    "    keyfile \"tests/mgmt/malformedkey.pub\"\n"
     "    privileges\n"
     "    {\n"
     "      fib\n"
@@ -402,9 +377,32 @@ BOOST_AUTO_TEST_CASE(MalformedKey)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_THROW(config.parse(MALFORMED_KEY_CONFIG, false, "dummy-config"), ConfigFile::Error);
+  validator.setConfigFile(config);
+  BOOST_CHECK_THROW(config.parse(NO_CERT_CONFIG, false, CONFIG_PATH.native()), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(MalformedCert)
+{
+    const std::string MALFORMED_CERT_CONFIG =
+    "authorizations\n"
+    "{\n"
+    "  authorize\n"
+    "  {\n"
+    "    certfile \"tests/mgmt/malformed.ndncert\"\n"
+    "    privileges\n"
+    "    {\n"
+    "      fib\n"
+    "      stats\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+
+  ConfigFile config;
+  CommandValidator validator;
+
+  validator.setConfigFile(config);
+  BOOST_CHECK_THROW(config.parse(MALFORMED_CERT_CONFIG, false, CONFIG_PATH.native()), ConfigFile::Error);
 }
 
 bool
@@ -429,9 +427,8 @@ BOOST_AUTO_TEST_CASE(NoAuthorizeSectionsDryRun)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(NO_AUTHORIZE_CONFIG, true, "dummy-config"),
+  validator.setConfigFile(config);
+  BOOST_CHECK_EXCEPTION(config.parse(NO_AUTHORIZE_CONFIG, true, CONFIG_PATH.native()),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
                              "No authorize sections found", _1));
@@ -444,47 +441,40 @@ BOOST_FIXTURE_TEST_CASE(NoPrivilegesSectionsDryRun, TwoValidatorFixture)
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/key1.pub\"\n"
+    "    certfile \"tests/mgmt/cert1.ndncert\"\n"
     "  }\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/key2.pub\"\n"
+    "    certfile \"tests/mgmt/cert2.ndncert\"\n"
     "  }\n"
     "}\n";
-
-  // CommandValidatorTester tester1;
-  // tester1.generateIdentity("/tests/CommandValidator/TwoKeys/id1");
-  // tester1.saveIdentityToFile("tests/mgmt/key1.pub");
-
-  // CommandValidatorTester tester2;
-  // tester2.generateIdentity("/tests/CommandValidator/TwoKeys/id2");
-  // tester2.saveIdentityToFile("tests/mgmt/key2.pub");
 
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
+  validator.setConfigFile(config);
 
   std::stringstream expectedError;
-  expectedError << "No privileges section found for key file tests/mgmt/key1.pub "
+  expectedError << "No privileges section found for certificate file tests/mgmt/cert1.ndncert "
                 << "(" << m_tester1.getPublicKeyName().toUri() << ")\n"
-                << "No privileges section found for key file tests/mgmt/key2.pub "
+                << "No privileges section found for certificate file tests/mgmt/cert2.ndncert "
                 << "(" << m_tester2.getPublicKeyName().toUri() << ")";
 
-  BOOST_CHECK_EXCEPTION(config.parse(NO_PRIVILEGES_CONFIG, true, "dummy-config"),
+  BOOST_CHECK_EXCEPTION(config.parse(NO_PRIVILEGES_CONFIG, true, CONFIG_PATH.native()),
                         ConfigFile::Error,
                         bind(&validateErrorMessage, expectedError.str(), _1));
 }
 
-BOOST_AUTO_TEST_CASE(InvalidKeyFileDryRun)
+BOOST_AUTO_TEST_CASE(InvalidCertfileDryRun)
 {
+  using namespace boost::filesystem;
+
   const std::string INVALID_KEY_CONFIG =
     "authorizations\n"
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/notakeyfile.pub\"\n"
+    "    certfile \"tests/mgmt/notacertfile.ndncert\"\n"
     "    privileges\n"
     "    {\n"
     "      fib\n"
@@ -493,7 +483,7 @@ BOOST_AUTO_TEST_CASE(InvalidKeyFileDryRun)
     "  }\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/stillnotakeyfile.pub\"\n"
+    "    certfile \"tests/mgmt/stillnotacertfile.ndncert\"\n"
     "    privileges\n"
     "    {\n"
     "    }\n"
@@ -503,19 +493,22 @@ BOOST_AUTO_TEST_CASE(InvalidKeyFileDryRun)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
+  validator.setConfigFile(config);
 
-  BOOST_CHECK_EXCEPTION(config.parse(INVALID_KEY_CONFIG, true, "dummy-config"),
+  std::stringstream error;
+  error << "Unable to open certificate file "
+        << absolute("tests/mgmt/notacertfile.ndncert").native() << "\n"
+        << "Unable to open certificate file "
+        << absolute("tests/mgmt/stillnotacertfile.ndncert").native();
+
+  BOOST_CHECK_EXCEPTION(config.parse(INVALID_KEY_CONFIG, true, CONFIG_PATH.native()),
                         ConfigFile::Error,
-                        bind(&validateErrorMessage,
-                             "Unable to open key file tests/mgmt/notakeyfile.pub\n"
-                             "Unable to open key file tests/mgmt/stillnotakeyfile.pub", _1));
+                        bind(&validateErrorMessage, error.str(), _1));
 }
 
-BOOST_AUTO_TEST_CASE(NoKeyFileDryRun)
+BOOST_AUTO_TEST_CASE(NoCertfileDryRun)
 {
-  const std::string NO_KEY_CONFIG =
+  const std::string NO_CERT_CONFIG =
     "authorizations\n"
     "{\n"
     "  authorize\n"
@@ -535,23 +528,24 @@ BOOST_AUTO_TEST_CASE(NoKeyFileDryRun)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(NO_KEY_CONFIG, true, "dummy-config"),
+  validator.setConfigFile(config);
+  BOOST_CHECK_EXCEPTION(config.parse(NO_CERT_CONFIG, true, CONFIG_PATH.native()),
                         ConfigFile::Error,
                         bind(&validateErrorMessage,
-                             "No keyfile specified\n"
-                             "No keyfile specified", _1));
+                             "No certfile specified\n"
+                             "No certfile specified", _1));
 }
 
-BOOST_AUTO_TEST_CASE(MalformedKeyDryRun)
+BOOST_AUTO_TEST_CASE(MalformedCertDryRun)
 {
-    const std::string MALFORMED_KEY_CONFIG =
+  using namespace boost::filesystem;
+
+  const std::string MALFORMED_CERT_CONFIG =
     "authorizations\n"
     "{\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/malformedkey.pub\"\n"
+    "    certfile \"tests/mgmt/malformed.ndncert\"\n"
     "    privileges\n"
     "    {\n"
     "      fib\n"
@@ -560,7 +554,7 @@ BOOST_AUTO_TEST_CASE(MalformedKeyDryRun)
     "  }\n"
     "  authorize\n"
     "  {\n"
-    "    keyfile \"tests/mgmt/malformedkey.pub\"\n"
+    "    certfile \"tests/mgmt/malformed.ndncert\"\n"
     "  }\n"
     "}\n";
 
@@ -568,13 +562,17 @@ BOOST_AUTO_TEST_CASE(MalformedKeyDryRun)
   ConfigFile config;
   CommandValidator validator;
 
-  config.addSectionHandler("authorizations",
-                           bind(&CommandValidator::onConfig, boost::ref(validator), _1, _2));
-  BOOST_CHECK_EXCEPTION(config.parse(MALFORMED_KEY_CONFIG, true, "dummy-config"),
+  validator.setConfigFile(config);
+
+  std::stringstream error;
+  error << "Malformed certificate file "
+        << absolute("tests/mgmt/malformed.ndncert").native() << "\n"
+        << "Malformed certificate file "
+        << absolute("tests/mgmt/malformed.ndncert").native();
+
+  BOOST_CHECK_EXCEPTION(config.parse(MALFORMED_CERT_CONFIG, true, CONFIG_PATH.native()),
                         ConfigFile::Error,
-                        bind(&validateErrorMessage,
-                             "Malformed key file tests/mgmt/malformedkey.pub\n"
-                             "Malformed key file tests/mgmt/malformedkey.pub", _1));
+                        bind(&validateErrorMessage, error.str(), _1));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

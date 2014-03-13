@@ -214,10 +214,4 @@ FibManager::removeNextHop(const FibManagementOptions& options,
     }
 }
 
-// void
-// FibManager::onConfig(ConfigFile::Node section, bool isDryRun)
-// {
-
-// }
-
 } // namespace nfd

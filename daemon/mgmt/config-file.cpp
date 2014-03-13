@@ -20,7 +20,7 @@ ConfigFile::ConfigFile()
 
 void
 ConfigFile::addSectionHandler(const std::string& sectionName,
-                              OnConfig subscriber)
+                              ConfigSectionHandler subscriber)
 {
   m_subscriptions[sectionName] = subscriber;
 }
@@ -90,8 +90,8 @@ ConfigFile::process(bool isDryRun, const std::string& filename)
       SubscriptionTable::iterator subscriberIt = m_subscriptions.find(sectionName);
       if (subscriberIt != m_subscriptions.end())
         {
-          OnConfig subscriber = subscriberIt->second;
-          subscriber(section, isDryRun);
+          ConfigSectionHandler subscriber = subscriberIt->second;
+          subscriber(section, isDryRun, filename);
         }
       else
         {

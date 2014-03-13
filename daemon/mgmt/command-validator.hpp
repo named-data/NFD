@@ -39,7 +39,7 @@ public:
    * \throws ConfigFile::Error on parse error
    */
   void
-  onConfig(const ConfigSection& section, bool isDryRun);
+  onConfig(const ConfigSection& section, bool isDryRun, const std::string& filename);
 
   /**
    * \param privilege name of privilege to add

@@ -87,12 +87,14 @@ void
 FaceManager::setConfigFile(ConfigFile& configFile)
 {
   configFile.addSectionHandler("face_system",
-                               bind(&FaceManager::onConfig, this, _1, _2));
+                               bind(&FaceManager::onConfig, this, _1, _2, _3));
 }
 
 
 void
-FaceManager::onConfig(const ConfigSection& configSection, bool isDryRun)
+FaceManager::onConfig(const ConfigSection& configSection,
+                      bool isDryRun,
+                      const std::string& filename)
 {
   bool hasSeenUnix = false;
   bool hasSeenTcp = false;

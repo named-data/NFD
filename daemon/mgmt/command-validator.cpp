@@ -8,6 +8,8 @@
 #include <ndn-cpp-dev/util/io.hpp>
 #include <ndn-cpp-dev/security/identity-certificate.hpp>
 
+#include <boost/filesystem.hpp>
+
 namespace nfd {
 
 NFD_LOG_INIT("CommandValidator");
@@ -26,7 +28,7 @@ void
 CommandValidator::setConfigFile(ConfigFile& configFile)
 {
   configFile.addSectionHandler("authorizations",
-                               bind(&CommandValidator::onConfig, this, _1, _2));
+                               bind(&CommandValidator::onConfig, this, _1, _2, _3));
 }
 
 static inline void
@@ -41,8 +43,11 @@ aggregateErrors(std::stringstream& ss, const std::string& msg)
 
 void
 CommandValidator::onConfig(const ConfigSection& section,
-                           bool isDryRun)
+                           bool isDryRun,
+                           const std::string& filename)
 {
+  using namespace boost::filesystem;
+
   const ConfigSection EMPTY_SECTION;
 
   if (section.begin() == section.end())
@@ -54,14 +59,14 @@ CommandValidator::onConfig(const ConfigSection& section,
   ConfigSection::const_iterator authIt;
   for (authIt = section.begin(); authIt != section.end(); authIt++)
     {
-      std::string keyfile;
+      std::string certfile;
       try
         {
-          keyfile = authIt->second.get<std::string>("keyfile");
+          certfile = authIt->second.get<std::string>("certfile");
         }
       catch (const std::runtime_error& e)
         {
-          std::string msg = "No keyfile specified";
+          std::string msg = "No certfile specified";
           if (!isDryRun)
             {
               throw ConfigFile::Error(msg);
@@ -70,11 +75,14 @@ CommandValidator::onConfig(const ConfigSection& section,
           continue;
         }
 
+      path certfilePath = absolute(certfile, path(filename).parent_path());
+      NFD_LOG_DEBUG("generated certfile path: " << certfilePath.native());
+
       std::ifstream in;
-      in.open(keyfile.c_str());
+      in.open(certfilePath.c_str());
       if (!in.is_open())
         {
-          std::string msg = "Unable to open key file " + keyfile;
+          std::string msg = "Unable to open certificate file " + certfilePath.native();
           if (!isDryRun)
             {
               throw ConfigFile::Error(msg);
@@ -90,7 +98,7 @@ CommandValidator::onConfig(const ConfigSection& section,
         }
       catch(const std::runtime_error& error)
         {
-          std::string msg = "Malformed key file " + keyfile;
+          std::string msg = "Malformed certificate file " + certfilePath.native();
           if (!isDryRun)
             {
               throw ConfigFile::Error(msg);
@@ -109,8 +117,8 @@ CommandValidator::onConfig(const ConfigSection& section,
         }
       catch (const std::runtime_error& error)
         {
-          std::string msg = "No privileges section found for key file " +
-            keyfile + " (" + id->getPublicKeyName().toUri() + ")";
+          std::string msg = "No privileges section found for certificate file " +
+            certfile + " (" + id->getPublicKeyName().toUri() + ")";
           if (!isDryRun)
             {
               throw ConfigFile::Error(msg);
@@ -121,7 +129,8 @@ CommandValidator::onConfig(const ConfigSection& section,
 
       if (privileges->begin() == privileges->end())
         {
-          NFD_LOG_WARN("No privileges specified for key file " << keyfile + " (" << id->getPublicKeyName().toUri() << ")");
+          NFD_LOG_WARN("No privileges specified for certificate file " << certfile
+                       << " (" << id->getPublicKeyName().toUri() << ")");
         }
 
       ConfigSection::const_iterator privIt;
@@ -131,7 +140,7 @@ CommandValidator::onConfig(const ConfigSection& section,
           if (m_supportedPrivileges.find(privilegeName) != m_supportedPrivileges.end())
             {
               NFD_LOG_INFO("Giving privilege \"" << privilegeName
-                           << "\" to key " << id->getPublicKeyName());
+                           << "\" to identity " << id->getPublicKeyName());
               if (!isDryRun)
                 {
                   const std::string regex = "^<localhost><nfd><" + privilegeName + ">";
@@ -141,8 +150,8 @@ CommandValidator::onConfig(const ConfigSection& section,
           else
             {
               // Invalid configuration
-              std::string msg = "Invalid privilege \"" + privilegeName + "\" for key file " +
-                keyfile + " (" + id->getPublicKeyName().toUri() + ")";
+              std::string msg = "Invalid privilege \"" + privilegeName + "\" for certificate file " +
+                certfile + " (" + id->getPublicKeyName().toUri() + ")";
               if (!isDryRun)
                 {
                   throw ConfigFile::Error(msg);
@@ -163,7 +172,7 @@ CommandValidator::addSupportedPrivilege(const std::string& privilege)
 {
   if (m_supportedPrivileges.find(privilege) != m_supportedPrivileges.end())
     {
-      throw CommandValidator::Error("Duplicated privivilege: " + privilege);
+      throw CommandValidator::Error("Duplicated privilege: " + privilege);
     }
   m_supportedPrivileges.insert(privilege);
 }

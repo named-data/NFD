@@ -16,9 +16,9 @@ namespace nfd {
 typedef boost::property_tree::ptree ConfigSection;
 
 /// \brief callback for config file sections
-typedef function<void(const ConfigSection&, bool)> OnConfig;
+typedef function<void(const ConfigSection&, bool, const std::string&)> ConfigSectionHandler;
 
-class ConfigFile
+class ConfigFile : noncopyable
 {
 public:
 
@@ -37,7 +37,7 @@ public:
   /// \brief setup notification of configuration file sections
   void
   addSectionHandler(const std::string& sectionName,
-                    OnConfig subscriber);
+                    ConfigSectionHandler subscriber);
 
 
   /**
@@ -75,7 +75,7 @@ private:
 
 private:
 
-  typedef std::map<std::string, OnConfig> SubscriptionTable;
+  typedef std::map<std::string, ConfigSectionHandler> SubscriptionTable;
 
   SubscriptionTable m_subscriptions;
 
