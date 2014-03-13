@@ -104,7 +104,6 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
                         isNotMulticastAddress);
 
 
-
 //  //Test commented because it required to be run in a machine that can resolve ipv6 query
 //  shared_ptr<UdpChannel> channel1v6 = factory.createChannel(//"::1",
 //                                                     "fe80::5e96:9dff:fe7d:9c8d%en1",
@@ -158,9 +157,6 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
 //                                                "A112:0:0:0:0:0:0:2",
 //                                                "20075"),
 //                    UdpFactory::Error);
-
-
-
 }
 
 class EndToEndFixture : protected BaseFixture
@@ -280,7 +276,6 @@ public:
     m_limitedIo.afterOp();
   }
 
-
   void
   channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
@@ -318,9 +313,7 @@ public:
   shared_ptr<Face> m_face2;
   std::vector<Interest> m_face2_receivedInterests;
   std::vector<Data> m_face2_receivedDatas;
-
   shared_ptr<Face> m_face3;
-
 
   std::list< shared_ptr<Face> > m_faces;
 };
@@ -524,14 +517,11 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 {
   Interest interest1("ndn:/TpnzGvW9R");
   Interest interest2("ndn:/QWiIMfj5sL");
-  Interest interest3("ndn:/QWiIhjgkj5sL");
 
   UdpFactory factory;
 
   shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
-
-
 
   channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
@@ -584,12 +574,8 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   //channel1 should have created 2 faces, one when m_face2 sent an interest, one when m_face3 sent an interest
   BOOST_CHECK_EQUAL(m_faces.size(), 5);
-  BOOST_CHECK_THROW(channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,
-                                          this,
-                                          _1),
-                                    bind(&EndToEndFixture::channel_onConnectFailedOk,
-                                         this,
-                                         _1)),
+  BOOST_CHECK_THROW(channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,     this, _1),
+                                     bind(&EndToEndFixture::channel_onConnectFailedOk, this, _1)),
                     UdpChannel::Error);
 }
 
@@ -834,18 +820,16 @@ BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
 {
   Interest interest1("ndn:/TpnzGvW9R");
   Interest interest2("ndn:/QWiIMfj5sL");
-  
+
   UdpFactory factory;
-  time::Duration idleTimeout = time::seconds(2);
-  
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1",
-                                                          "20070",
+
+  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070",
                                                           time::seconds(2));
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1",
-                                                          "20071",
+  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071",
                                                           time::seconds(2));
+
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-                  bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
   channel2->connect("127.0.0.1", "20070",
                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
@@ -900,65 +884,6 @@ BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
   BOOST_CHECK_EQUAL(channel2->size(), 1);
 }
-
-
-//BOOST_FIXTURE_TEST_CASE(MulticastFace, EndToEndFixture)
-//{
-//  //to instantiate multicast face on a specific ip address, change interfaceIp
-//  std::string interfaceIp = "0.0.0.0";
-//
-//  UdpFactory factory = UdpFactory();
-//  Scheduler scheduler(g_io); // to limit the amount of time the test may take
-//
-//  shared_ptr<MulticastUdpFace> multicastFace1 =
-//    factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
-//
-//  BOOST_REQUIRE(static_cast<bool>(multicastFace1));
-//
-//  channel1_onFaceCreated(multicastFace1);
-//
-//
-//  EventId abortEvent =
-//  scheduler.scheduleEvent(time::seconds(10),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "MulticastFace error: cannot send or receive Interest/Data packets"));
-//
-//  Interest interest1("ndn:/TpnzGvW9R");
-//  Data     data1    ("ndn:/KfczhUqVix");
-//  data1.setContent(0, 0);
-//  Interest interest2("ndn:/QWiIMfj5sL");
-//  Data     data2    ("ndn:/XNBV796f");
-//  data2.setContent(0, 0);
-//  Interest interest3("ndn:/QWiIhjgkj5sL");
-//  Data     data3    ("ndn:/XNBV794f");
-//  data3.setContent(0, 0);
-//
-//
-//  ndn::SignatureSha256WithRsa fakeSignature;
-//  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-//
-//  // set fake signature on data1 and data2
-//  data1.setSignature(fakeSignature);
-//  data2.setSignature(fakeSignature);
-//  data3.setSignature(fakeSignature);
-//
-//  multicastFace1->sendInterest(interest1);
-//  multicastFace1->sendData    (data1    );
-//
-//  g_io.reset();
-//  m_limitedIoRemaining = 2;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-//  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
-//
-//  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest1.getName());
-//  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data1.getName());
-//}
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
