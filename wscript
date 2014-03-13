@@ -64,7 +64,9 @@ def configure(conf):
     conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
     if conf.check_cxx(lib='pcap', uselib_store='PCAP', define_name='HAVE_PCAP', mandatory=False):
         conf.env['HAVE_PCAP'] = True
-
+    
+    conf.check_cxx(lib='resolv', uselib_store='RESOLV', mandatory=True)
+    
     conf.load('coverage')
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/nfd/nfd.conf' % conf.env['SYSCONFDIR'])
@@ -101,7 +103,7 @@ def build(bld):
         bld(features=['cxx', 'cxxprogram'],
             target = 'bin/%s' % (str(app.change_ext(''))),
             source = ['tools/%s' % (str(app))],
-            use = 'BOOST NDN_CPP RT',
+            use = 'BOOST NDN_CPP RT RESOLV',
             )
 
     # Unit tests
