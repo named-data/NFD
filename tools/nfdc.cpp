@@ -20,14 +20,16 @@ usage(const char* programName)
   "           Add a nexthop to a FIB entry\n"
   "       remove-nexthop <name> <faceId> \n"
   "           Remove a nexthop from a FIB entry\n"
-  "       set-strategy <name> <stratgy>\n"
-  "           Set a forwarding strategy for a namespace\n"
   "       create <uri> \n"
   "           Create a face in one of the following formats:\n"
   "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
   "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
   "       destroy <faceId> \n"
   "           Destroy a face\n"
+  "       set-strategy <name> <strategy> \n"
+  "           Set the strategy for a namespace \n"
+  "       unset-strategy <name> \n"
+  "           Unset the strategy for a namespace \n"
   << std::endl;
 }
 
@@ -57,11 +59,6 @@ Controller::dispatch(const std::string& command, const char* commandOptions[], i
       return false;
     fibRemoveNextHop(commandOptions);
   }
-  else if (command == "set-strategy") {
-    if (nOptions != 2)
-      return false;
-    fibSetStrategy(commandOptions);
-  }
   else if (command == "create") {
     if (nOptions != 1)
       return false;
@@ -71,6 +68,16 @@ Controller::dispatch(const std::string& command, const char* commandOptions[], i
     if (nOptions != 1)
       return false;
     faceDestroy(commandOptions);
+  }
+  else if (command == "set-strategy") {
+    if (nOptions != 2)
+      return false;
+    strategyChoiceSet(commandOptions);
+  }
+  else if (command == "unset-strategy") {
+    if (nOptions != 1)
+      return false;
+    strategyChoiceUnset(commandOptions);
   }
   else
     usage(m_programName);
@@ -114,23 +121,6 @@ Controller::fibRemoveNextHop(const char* commandOptions[])
                   bind(&Controller::onFibSuccess, this, _1, "Nexthop Removal succeeded"),
                   bind(&Controller::onError, this, _1, "Nexthop Removal failed"));
 }
-  
-void
-Controller::fibSetStrategy(const char* commandOptions[])
-{
-  const std::string& name = commandOptions[0];
-  const std::string& strategy = commandOptions[1];
-  ndn::nfd::FibManagementOptions fibOptions;
-  
-  fibOptions.setName(name);
-  fibOptions.setStrategy(strategy);
-  
-  startFibCommand("set-strategy",
-                  fibOptions,
-                  bind(&Controller::onFibSuccess,this, _1, "Successfully set forwarding strategy"),
-                  bind(&Controller::onError,this, _1, "Failed to set forwarding strategy"));
-
-}
 
 namespace {
 bool
@@ -173,17 +163,59 @@ Controller::faceDestroy(const char* commandOptions[])
                    bind(&Controller::onFaceSuccess, this, _1, "Face destroy succeeded"),
                    bind(&Controller::onError, this, _1, "Face destroy failed"));
 }
-
+  
+void
+Controller::strategyChoiceSet(const char* commandOptions[])
+{
+  const std::string& name = commandOptions[0];
+  const std::string& strategy = commandOptions[1];
+  ndn::nfd::StrategyChoiceOptions strategyChoiceOptions;
+  
+  strategyChoiceOptions.setName(name);
+  strategyChoiceOptions.setStrategy(strategy);
+  
+  startStrategyChoiceCommand("set",
+                             strategyChoiceOptions,
+                             bind(&Controller::onSetStrategySuccess,
+                                  this,
+                                  _1,
+                                  "Successfully set strategy choice"),
+                             bind(&Controller::onError, this, _1, "Failed to set strategy choice"));
+  
+}
+  
+void
+Controller::strategyChoiceUnset(const char* commandOptions[])
+{
+  const std::string& name = commandOptions[0];
+  ndn::nfd::StrategyChoiceOptions strategyChoiceOptions;
+  
+  strategyChoiceOptions.setName(name);
+  startStrategyChoiceCommand("unset",
+                             strategyChoiceOptions,
+                             bind(&Controller::onSetStrategySuccess,
+                                  this,
+                                  _1,
+                                  "Successfully unset strategy choice"),
+                             bind(&Controller::onError, this, _1, "Failed to unset strategy choice"));
+}
+  
 void
 Controller::onFibSuccess(const ndn::nfd::FibManagementOptions& resp, const std::string& message)
 {
-  std::cout << resp << std::endl;
+  std::cout << message << ": " << resp << std::endl;
 }
   
 void
 Controller::onFaceSuccess(const ndn::nfd::FaceManagementOptions& resp, const std::string& message)
 {
-  std::cout << resp << std::endl;
+  std::cout << message << ": " << resp << std::endl;
+}
+void
+Controller::onSetStrategySuccess(const ndn::nfd::StrategyChoiceOptions& resp,
+                                 const std::string& message)
+{
+  std::cout << message << ": " << resp << std::endl;
 }
   
 void
@@ -191,7 +223,7 @@ Controller::onError(const std::string& error, const std::string& message)
 {
   throw Error(message + ": " + error);
 }
-}// namespace nfdc
+} // namespace nfdc
 
 int
 main(int argc, char** argv)

@@ -12,6 +12,7 @@
 #include <ndn-cpp-dev/management/nfd-controller.hpp>
 #include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
 #include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
+#include <ndn-cpp-dev/management/nfd-strategy-choice-options.hpp>
 #include <vector>
 
 namespace nfdc {
@@ -56,20 +57,7 @@ public:
    * @param cmdOptions          delNext command without leading 'remove-nexthop' component
    */
   void
-  fibRemoveNextHop(const char* cmdOptions[]);
-  /**
-   * \brief Sets a forwarding strategy for a namespace
-   *
-   * This command sets a forwarding strategy for a namespace.
-   *
-   * cmd format:
-   *   name strategy
-   *
-   * @param cmdOptions          setStrategy command without leading 'setStrategy' component
-   */
-  void
-  fibSetStrategy(const char* cmdOptions[]);
-  
+  fibRemoveNextHop(const char* cmdOptions[]);  
   /**
    * \brief create new face
    *
@@ -92,14 +80,41 @@ public:
    */
   void
   faceDestroy(const char* cmdOptions[]);
-
+  /**
+   * \brief Set the strategy for a namespace
+   *
+   *
+   * cmd format:
+   *   name strategy
+   *
+   * @param cmdOptions          Set command without leading 'Unset' component
+   */
+  void
+  strategyChoiceSet(const char* cmdOptions[]);
+  /**
+   * \brief Unset the strategy for a namespace
+   *
+   *
+   * cmd format:
+   *   name strategy
+   *
+   * @param cmdOptions          Unset command without leading 'Unset' component
+   */
+  void
+  strategyChoiceUnset(const char* cmdOptions[]);
+  
 private:
   void
-  onFibSuccess(const ndn::nfd::FibManagementOptions& fibOptions, const std::string& message);
+  onFibSuccess(const ndn::nfd::FibManagementOptions& fibOptions,
+               const std::string& message);
 
   void
-  onFaceSuccess(const ndn::nfd::FaceManagementOptions& faceOptions, const std::string& message);
+  onFaceSuccess(const ndn::nfd::FaceManagementOptions& faceOptions,
+                const std::string& message);
   
+  void
+  onSetStrategySuccess(const ndn::nfd::StrategyChoiceOptions& resp,
+                       const std::string& message);
   void
   onError(const std::string& error, const std::string& message);
   
@@ -107,7 +122,7 @@ public:
   const char* m_programName;
 };
 
-}// namespace nfdc
+} // namespace nfdc
 
 #endif // NFD_TOOLS_NFDC_HPP
 
