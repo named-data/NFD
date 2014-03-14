@@ -53,6 +53,14 @@ public:
   const OutRecordCollection&
   getOutRecords() const;
 
+  /** \brief determines whether any InRecord is a local Face
+   *
+   *  \return true if any InRecord is a local Face,
+   *          false if all InRecords are non-local Faces
+   */
+  bool
+  hasLocalInRecord() const;
+
   /** \brief decides whether Interest can be forwarded to face
    *
    *  \return true if OutRecord of this face does not exist or has expired,

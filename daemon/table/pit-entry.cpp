@@ -34,6 +34,20 @@ Entry::getOutRecords() const
 }
 
 static inline bool
+predicate_InRecord_isLocal(const InRecord& inRecord)
+{
+  return inRecord.getFace()->isLocal();
+}
+
+bool
+Entry::hasLocalInRecord() const
+{
+  InRecordCollection::const_iterator it = std::find_if(
+    m_inRecords.begin(), m_inRecords.end(), &predicate_InRecord_isLocal);
+  return it != m_inRecords.end();
+}
+
+static inline bool
 predicate_FaceRecord_Face(const FaceRecord& faceRecord, shared_ptr<Face> face)
 {
   return faceRecord.getFace() == face;
@@ -57,7 +71,7 @@ Entry::canForwardTo(shared_ptr<Face> face) const
   if (hasUnexpiredOutRecord) {
     return false;
   }
-  
+
   InRecordCollection::const_iterator inIt = std::find_if(
     m_inRecords.begin(), m_inRecords.end(),
     bind(&predicate_FaceRecord_ne_Face_and_unexpired, _1, face, time::now()));
@@ -83,7 +97,7 @@ Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
     m_inRecords.push_front(InRecord(face));
     it = m_inRecords.begin();
   }
-  
+
   it->update(interest);
   return it;
 }
@@ -103,7 +117,7 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
     m_outRecords.push_front(OutRecord(face));
     it = m_outRecords.begin();
   }
-  
+
   it->update(interest);
   m_nonces.insert(interest.getNonce());
   return it;

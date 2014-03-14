@@ -209,6 +209,70 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   BOOST_CHECK_EQUAL(face2->m_sentDatas.size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
+{
+  Forwarder forwarder;
+  shared_ptr<DummyLocalFace> face1 = make_shared<DummyLocalFace>();
+  shared_ptr<DummyFace>      face2 = make_shared<DummyFace>();
+  shared_ptr<DummyLocalFace> face3 = make_shared<DummyLocalFace>();
+  shared_ptr<DummyFace>      face4 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+  forwarder.addFace(face4);
+  Pit& pit = forwarder.getPit();
+
+  // from local face, to local face: OK
+  shared_ptr<Interest> interest1 = makeInterest("/localhop/1");
+  shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateInRecord(face1, *interest1);
+  face3->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit1, *face3);
+  BOOST_CHECK_EQUAL(face3->m_sentInterests.size(), 1);
+
+  // from non-local face, to local face: OK
+  shared_ptr<Interest> interest2 = makeInterest("/localhop/2");
+  shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
+  pit2->insertOrUpdateInRecord(face2, *interest2);
+  face3->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit2, *face3);
+  BOOST_CHECK_EQUAL(face3->m_sentInterests.size(), 1);
+
+  // from local face, to non-local face: OK
+  shared_ptr<Interest> interest3 = makeInterest("/localhop/3");
+  shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
+  pit3->insertOrUpdateInRecord(face1, *interest3);
+  face4->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit3, *face4);
+  BOOST_CHECK_EQUAL(face4->m_sentInterests.size(), 1);
+
+  // from non-local face, to non-local face: violate
+  shared_ptr<Interest> interest4 = makeInterest("/localhop/4");
+  shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
+  pit4->insertOrUpdateInRecord(face2, *interest4);
+  face4->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit4, *face4);
+  BOOST_CHECK_EQUAL(face4->m_sentInterests.size(), 0);
+
+  // from local face and non-local face, to local face: OK
+  shared_ptr<Interest> interest5 = makeInterest("/localhop/5");
+  shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
+  pit5->insertOrUpdateInRecord(face1, *interest5);
+  pit5->insertOrUpdateInRecord(face2, *interest5);
+  face3->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit5, *face3);
+  BOOST_CHECK_EQUAL(face3->m_sentInterests.size(), 1);
+
+  // from local face and non-local face, to non-local face: OK
+  shared_ptr<Interest> interest6 = makeInterest("/localhop/6");
+  shared_ptr<pit::Entry> pit6 = pit.insert(*interest6).first;
+  pit6->insertOrUpdateInRecord(face1, *interest6);
+  pit6->insertOrUpdateInRecord(face2, *interest6);
+  face4->m_sentInterests.clear();
+  forwarder.onOutgoingInterest(pit6, *face4);
+  BOOST_CHECK_EQUAL(face4->m_sentInterests.size(), 1);
+}
+
 BOOST_AUTO_TEST_CASE(StrategyDispatch)
 {
   LimitedIo limitedIo;

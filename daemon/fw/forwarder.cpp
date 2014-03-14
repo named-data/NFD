@@ -15,6 +15,7 @@ using fw::Strategy;
 
 const ndn::Milliseconds Forwarder::DEFAULT_INTEREST_LIFETIME(static_cast<ndn::Milliseconds>(4000));
 const Name Forwarder::LOCALHOST_NAME("ndn:/localhost");
+const Name Forwarder::LOCALHOP_NAME("ndn:/localhop");
 
 Forwarder::Forwarder()
   : m_faceTable(*this)
@@ -137,6 +138,16 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
                   " interest=" << pitEntry->getName() << " violates /localhost");
+    return;
+  }
+
+  // /localhop scope control
+  bool isViolatingLocalhop = !outFace.isLocal() &&
+                             LOCALHOP_NAME.isPrefixOf(pitEntry->getName()) &&
+                             !pitEntry->hasLocalInRecord();
+  if (isViolatingLocalhop) {
+    NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
+                  " interest=" << pitEntry->getName() << " violates /localhop");
     return;
   }
 
