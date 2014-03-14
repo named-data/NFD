@@ -27,6 +27,10 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   m_socket = make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
   m_socket->open(m_localEndpoint.protocol());
   m_socket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
+  if (m_localEndpoint.address().is_v6())
+    {
+      m_socket->set_option(ip::v6_only(true));
+    }
   
   try {
     m_socket->bind(m_localEndpoint);

@@ -32,6 +32,10 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor = make_shared<ip::tcp::acceptor>(boost::ref(getGlobalIoService()));
   m_acceptor->open(m_localEndpoint.protocol());
   m_acceptor->set_option(ip::tcp::acceptor::reuse_address(true));
+  if (m_localEndpoint.address().is_v6())
+    {
+      m_acceptor->set_option(ip::v6_only(true));
+    }
   m_acceptor->bind(m_localEndpoint);
   m_acceptor->listen(backlog);
 
