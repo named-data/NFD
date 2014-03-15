@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
+#include "forwarder-counter.hpp"
 #include "face-table.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
@@ -30,6 +31,9 @@ class Forwarder
 {
 public:
   Forwarder();
+
+  const ForwarderCounters&
+  getCounters() const;
 
 public: // faces
   FaceTable&
@@ -141,6 +145,8 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 #endif
 
 private:
+  ForwarderCounters m_counters;
+
   FaceTable m_faceTable;
 
   // tables
@@ -157,6 +163,12 @@ private:
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
 };
+
+inline const ForwarderCounters&
+Forwarder::getCounters() const
+{
+  return m_counters;
+}
 
 inline FaceTable&
 Forwarder::getFaceTable()
