@@ -114,18 +114,19 @@ EthernetFace::pcapInit()
   if (!m_pcap)
     throw Error("pcap_create(): " + std::string(errbuf));
 
+  /// \todo Do not rely on promisc mode, see task #1278
+  if (!m_destAddress.isBroadcast())
+    pcap_set_promisc(m_pcap, 1);
+
   if (pcap_activate(m_pcap) < 0)
     throw Error("pcap_activate() failed");
 
-  errbuf[0] = '\0';
-  if (pcap_setnonblock(m_pcap, 1, errbuf) < 0)
-    throw Error("pcap_setnonblock(): " + std::string(errbuf));
-
-  if (pcap_setdirection(m_pcap, PCAP_D_IN) < 0)
-    throw Error("pcap_setdirection(): " + std::string(pcap_geterr(m_pcap)));
-
   if (pcap_set_datalink(m_pcap, DLT_EN10MB) < 0)
     throw Error("pcap_set_datalink(): " + std::string(pcap_geterr(m_pcap)));
+
+  if (pcap_setdirection(m_pcap, PCAP_D_IN) < 0)
+    // no need to throw on failure, BPF will filter unwanted packets anyway
+    NFD_LOG_WARN("pcap_setdirection(): " << pcap_geterr(m_pcap));
 }
 
 void
@@ -152,9 +153,12 @@ EthernetFace::sendPacket(const ndn::Block& block)
       return;
     }
 
-  /// @todo Fragmentation
+  /// \todo Fragmentation
   if (block.size() > m_interfaceMtu)
-    throw Error("Fragmentation not implemented");
+    {
+      NFD_LOG_ERROR("Fragmentation not implemented: dropping packet larger than MTU");
+      return;
+    }
 
   /// \todo Right now there is no reserve when packet is received, but
   ///       we should reserve some space at the beginning and at the end
