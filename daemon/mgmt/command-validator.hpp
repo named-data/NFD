@@ -36,6 +36,7 @@ public:
   /**
    * \param section "authorizations" section to parse
    * \param isDryRun true if performing a dry run of configuration, false otherwise
+   * \param filename filename of configuration file
    * \throws ConfigFile::Error on parse error
    */
   void

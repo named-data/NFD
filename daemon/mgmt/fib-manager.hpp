@@ -12,6 +12,7 @@
 #include "mgmt/app-face.hpp"
 #include "fw/strategy.hpp"
 #include "mgmt/manager-base.hpp"
+#include "mgmt/fib-enumeration-publisher.hpp"
 
 #include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
 
@@ -60,6 +61,9 @@ private:
   removeNextHop(const FibManagementOptions& options,
                 ControlResponse& response);
 
+  void
+  listEntries(const Interest& request);
+
   bool
   extractOptions(const Interest& request,
                  FibManagementOptions& extractedOptions);
@@ -68,18 +72,24 @@ private:
 
   Fib& m_managedFib;
   function<shared_ptr<Face>(FaceId)> m_getFace;
-  std::map<Name, shared_ptr<fw::Strategy> > m_namespaceToStrategyMap;
+  FibEnumerationPublisher m_fibEnumerationPublisher;
 
   typedef function<void(FibManager*,
                         const FibManagementOptions&,
-                        ControlResponse&)> VerbProcessor;
+                        ControlResponse&)> SignedVerbProcessor;
 
-  typedef std::map<Name::Component, VerbProcessor> VerbDispatchTable;
+  typedef std::map<Name::Component, SignedVerbProcessor> SignedVerbDispatchTable;
 
-  typedef std::pair<Name::Component, VerbProcessor> VerbAndProcessor;
+  typedef std::pair<Name::Component, SignedVerbProcessor> SignedVerbAndProcessor;
+
+  typedef function<void(FibManager*, const Interest&)> UnsignedVerbProcessor;
+
+  typedef std::map<Name::Component, UnsignedVerbProcessor> UnsignedVerbDispatchTable;
+  typedef std::pair<Name::Component, UnsignedVerbProcessor> UnsignedVerbAndProcessor;
 
 
-  const VerbDispatchTable m_verbDispatch;
+  const SignedVerbDispatchTable m_signedVerbDispatch;
+  const UnsignedVerbDispatchTable m_unsignedVerbDispatch;
 
   static const Name COMMAND_PREFIX; // /localhost/nfd/fib
 
@@ -91,8 +101,11 @@ private:
   // UNSIGNED_NCOMPS + 4 command Interest components = 9
   static const size_t COMMAND_SIGNED_NCOMPS;
 
-  static const VerbAndProcessor COMMAND_VERBS[];
+  static const SignedVerbAndProcessor SIGNED_COMMAND_VERBS[];
+  static const UnsignedVerbAndProcessor UNSIGNED_COMMAND_VERBS[];
 
+  static const Name LIST_COMMAND_PREFIX;
+  static const size_t LIST_COMMAND_NCOMPS;
 };
 
 } // namespace nfd

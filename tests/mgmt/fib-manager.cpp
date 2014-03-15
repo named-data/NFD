@@ -14,12 +14,14 @@
 #include "validation-common.hpp"
 #include "tests/test-common.hpp"
 
+#include "fib-enumeration-publisher-common.hpp"
+
 namespace nfd {
 namespace tests {
 
 NFD_LOG_INIT("FibManagerTest");
 
-class FibManagerFixture : protected BaseFixture
+class FibManagerFixture : protected BaseFixture, public FibEnumerationPublisherFixture
 {
 public:
 
@@ -141,20 +143,14 @@ public:
 
 protected:
     FibManagerFixture()
-    : m_face(make_shared<InternalFace>())
-    , m_nameTree(1024)
-    , m_fib(m_nameTree)
-    , m_manager(boost::ref(m_fib),
-                bind(&FibManagerFixture::getFace, this, _1),
-                m_face)
+      : m_manager(boost::ref(m_fib),
+                  bind(&FibManagerFixture::getFace, this, _1),
+                  m_face)
     , m_callbackFired(false)
   {
   }
 
-private:
-  shared_ptr<InternalFace> m_face;
-  NameTree m_nameTree;
-  Fib m_fib;
+protected:
   FibManager m_manager;
 
   std::vector<shared_ptr<Face> > m_faces;
@@ -859,6 +855,48 @@ BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
   getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(TestFibEnumerationRequest, FibManagerFixture)
+{
+  for (int i = 0; i < 87; i++)
+    {
+      Name prefix("/test");
+      prefix.appendSegment(i);
+
+      shared_ptr<DummyFace> dummy1(make_shared<DummyFace>());
+      shared_ptr<DummyFace> dummy2(make_shared<DummyFace>());
+
+      shared_ptr<fib::Entry> entry = m_fib.insert(prefix).first;
+      entry->addNextHop(dummy1, std::numeric_limits<uint64_t>::max() - 1);
+      entry->addNextHop(dummy2, std::numeric_limits<uint64_t>::max() - 2);
+
+      m_referenceEntries.insert(entry);
+    }
+  for (int i = 0; i < 2; i++)
+    {
+      Name prefix("/test2");
+      prefix.appendSegment(i);
+
+      shared_ptr<DummyFace> dummy1(make_shared<DummyFace>());
+      shared_ptr<DummyFace> dummy2(make_shared<DummyFace>());
+
+      shared_ptr<fib::Entry> entry = m_fib.insert(prefix).first;
+      entry->addNextHop(dummy1, std::numeric_limits<uint8_t>::max() - 1);
+      entry->addNextHop(dummy2, std::numeric_limits<uint8_t>::max() - 2);
+
+      m_referenceEntries.insert(entry);
+    }
+
+  ndn::EncodingBuffer buffer;
+
+  m_face->onReceiveData +=
+    bind(&FibEnumerationPublisherFixture::decodeFibEntryBlock, this, _1);
+
+  shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/fib/list"));
+
+  m_manager.onFibRequest(*command);
+  BOOST_REQUIRE(m_finished);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
