@@ -28,13 +28,25 @@
 
 #include <pcap/pcap.h>
 
-#include <cstring>        // for std::strncpy()
+#include <cerrno>         // for errno
+#include <cstdio>         // for std::snprintf()
+#include <cstring>        // for std::strerror() and std::strncpy()
 #include <arpa/inet.h>    // for htons() and ntohs()
 #include <net/ethernet.h> // for struct ether_header
 #include <net/if.h>       // for struct ifreq
-#include <stdio.h>        // for snprintf()
 #include <sys/ioctl.h>    // for ioctl()
 #include <unistd.h>       // for dup()
+
+#if defined(__linux__)
+#include <netpacket/packet.h> // for struct packet_mreq
+#include <sys/socket.h>       // for setsockopt()
+#endif
+
+#ifdef SIOCADDMULTI
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <net/if_dl.h>    // for struct sockaddr_dl
+#endif
+#endif
 
 #if !defined(PCAP_NETMASK_UNKNOWN)
 /*
@@ -53,6 +65,9 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
                            const ethernet::Address& address)
   : Face(FaceUri(address), FaceUri::fromDev(interface.name))
   , m_socket(socket)
+#if defined(__linux__)
+  , m_interfaceIndex(interface.index)
+#endif
   , m_interfaceName(interface.name)
   , m_srcAddress(interface.etherAddress)
   , m_destAddress(address)
@@ -75,12 +90,14 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
                 << "] Interface MTU is: " << m_interfaceMtu);
 
   char filter[100];
-  ::snprintf(filter, sizeof(filter),
-             "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
-             ethernet::ETHERTYPE_NDN,
-             m_destAddress.toString().c_str(),
-             m_srcAddress.toString().c_str());
+  std::snprintf(filter, sizeof(filter),
+                "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
+                ethernet::ETHERTYPE_NDN,
+                m_destAddress.toString().c_str(),
+                m_srcAddress.toString().c_str());
   setPacketFilter(filter);
+
+  joinMulticastGroup();
 
   m_socket->async_read_some(boost::asio::null_buffers(),
                             bind(&EthernetFace::handleRead, this,
@@ -139,10 +156,6 @@ EthernetFace::pcapInit()
   pcap_set_immediate_mode(m_pcap, 1);
 #endif
 
-  /// \todo Do not rely on promisc mode, see task #1278
-  if (!m_destAddress.isBroadcast())
-    pcap_set_promisc(m_pcap, 1);
-
   if (pcap_activate(m_pcap) < 0)
     throw Error("pcap_activate() failed");
 
@@ -165,6 +178,72 @@ EthernetFace::setPacketFilter(const char* filterString)
   pcap_freecode(&filter);
   if (ret < 0)
     throw Error("pcap_setfilter(): " + std::string(pcap_geterr(m_pcap)));
+}
+
+void
+EthernetFace::joinMulticastGroup()
+{
+#if defined(__linux__)
+  packet_mreq mr{};
+  mr.mr_ifindex = m_interfaceIndex;
+  mr.mr_type = PACKET_MR_MULTICAST;
+  mr.mr_alen = m_destAddress.size();
+  std::copy(m_destAddress.begin(), m_destAddress.end(), mr.mr_address);
+
+  if (::setsockopt(m_socket->native_handle(), SOL_PACKET,
+                   PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) == 0)
+    return; // success
+
+  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+               << "] setsockopt(PACKET_ADD_MEMBERSHIP) failed: " << std::strerror(errno));
+#endif
+
+#if defined(SIOCADDMULTI)
+  ifreq ifr{};
+  std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+  /*
+   * Differences between Linux and the BSDs (including OS X):
+   *   o BSD does not have ifr_hwaddr; use ifr_addr instead.
+   *   o While OS X seems to accept both AF_LINK and AF_UNSPEC as the address
+   *     family, FreeBSD explicitly requires AF_LINK, so we have to use AF_LINK
+   *     and sockaddr_dl instead of the generic sockaddr structure.
+   *   o BSD's sockaddr (and sockaddr_dl in particular) contains an additional
+   *     field, sa_len (sdl_len), which must be set to the total length of the
+   *     structure, including the length field itself.
+   *   o We do not specify the interface name, thus sdl_nlen is left at 0 and
+   *     LLADDR is effectively the same as sdl_data.
+   */
+  sockaddr_dl* sdl = reinterpret_cast<sockaddr_dl*>(&ifr.ifr_addr);
+  sdl->sdl_len = sizeof(ifr.ifr_addr);
+  sdl->sdl_family = AF_LINK;
+  sdl->sdl_alen = m_destAddress.size();
+  std::copy(m_destAddress.begin(), m_destAddress.end(), LLADDR(sdl));
+
+  static_assert(sizeof(ifr.ifr_addr) >= offsetof(sockaddr_dl, sdl_data) + ethernet::ADDR_LEN,
+                "ifr_addr in struct ifreq is too small on this platform");
+#else
+  ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
+  std::copy(m_destAddress.begin(), m_destAddress.end(), ifr.ifr_hwaddr.sa_data);
+
+  static_assert(sizeof(ifr.ifr_hwaddr) >= offsetof(sockaddr, sa_data) + ethernet::ADDR_LEN,
+                "ifr_hwaddr in struct ifreq is too small on this platform");
+#endif
+
+  if (::ioctl(m_socket->native_handle(), SIOCADDMULTI, &ifr) >= 0)
+    return; // success
+
+  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+               << "] ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
+#endif
+
+  if (!m_destAddress.isBroadcast())
+    {
+      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
+                    << "] Falling back to promiscuous mode");
+      pcap_set_promisc(m_pcap, 1);
+    }
 }
 
 void
@@ -315,13 +394,13 @@ EthernetFace::getInterfaceMtu() const
   size_t mtu = ethernet::MAX_DATA_LEN;
 
 #ifdef SIOCGIFMTU
-  ifreq ifr = boost::initialized_value;
+  ifreq ifr{};
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
   if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) < 0)
     {
       NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Failed to get interface MTU, assuming " << mtu);
+                   << "] Failed to get interface MTU: " << std::strerror(errno));
     }
   else
     {

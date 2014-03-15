@@ -87,6 +87,9 @@ private:
   setPacketFilter(const char* filterString);
 
   void
+  joinMulticastGroup();
+
+  void
   sendPacket(const ndn::Block& block);
 
   void
@@ -101,6 +104,9 @@ private:
 
 private:
   shared_ptr<boost::asio::posix::stream_descriptor> m_socket;
+#if defined(__linux__)
+  int m_interfaceIndex;
+#endif
   std::string m_interfaceName;
   ethernet::Address m_srcAddress;
   ethernet::Address m_destAddress;
