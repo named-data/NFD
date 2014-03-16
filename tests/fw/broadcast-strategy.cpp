@@ -15,7 +15,7 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(FwBroadcastStrategy, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ForwardTwo)
+BOOST_AUTO_TEST_CASE(Forward2)
 {
   Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
@@ -29,18 +29,17 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  std::pair<shared_ptr<fib::Entry>, bool> fibInsertResult = fib.insert(Name());
-  shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
   fibEntry->addNextHop(face1, 0);
   fibEntry->addNextHop(face2, 0);
   fibEntry->addNextHop(face3, 0);
 
-  Interest interest(Name("ndn:/H0D6i5fc"));
+  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();
-  std::pair<shared_ptr<pit::Entry>, bool> pitInsertResult = pit.insert(interest);
-  shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(face3, *interest);
 
-  strategy.afterReceiveInterest(*face3, interest, fibEntry, pitEntry);
+  strategy.afterReceiveInterest(*face3, *interest, fibEntry, pitEntry);
   BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 2);
   bool hasFace1 = false;
@@ -58,7 +57,32 @@ BOOST_AUTO_TEST_CASE(ForwardTwo)
   BOOST_CHECK(hasFace1 && hasFace2);
 }
 
-BOOST_AUTO_TEST_CASE(Reject)
+BOOST_AUTO_TEST_CASE(RejectScope)
+{
+  Forwarder forwarder;
+  typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
+  BroadcastStrategyTester strategy(forwarder);
+
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert("ndn:/localhop/uS09bub6tm").first;
+  fibEntry->addNextHop(face2, 0);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
+  Pit& pit = forwarder.getPit();
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+
+  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(RejectLoopback)
 {
   Forwarder forwarder;
   typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
@@ -68,16 +92,15 @@ BOOST_AUTO_TEST_CASE(Reject)
   forwarder.addFace(face1);
 
   Fib& fib = forwarder.getFib();
-  std::pair<shared_ptr<fib::Entry>, bool> fibInsertResult = fib.insert(Name());
-  shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
   fibEntry->addNextHop(face1, 0);
 
-  Interest interest(Name("ndn:/H0D6i5fc"));
+  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();
-  std::pair<shared_ptr<pit::Entry>, bool> pitInsertResult = pit.insert(interest);
-  shared_ptr<pit::Entry> pitEntry = pitInsertResult.first;
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
 
-  strategy.afterReceiveInterest(*face1, interest, fibEntry, pitEntry);
+  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
   BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
 }

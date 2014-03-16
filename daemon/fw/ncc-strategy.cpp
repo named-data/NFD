@@ -53,7 +53,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
   if (static_cast<bool>(bestFace) && fibEntry->hasNextHop(bestFace) &&
-      pitEntry->canForwardTo(bestFace)) {
+      pitEntry->canForwardTo(*bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = measurementsEntryInfo->m_prediction;
     deferRange = static_cast<time::Duration>((deferFirst + time::microseconds(1)) / 2);
@@ -71,7 +71,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->m_previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
-      pitEntry->canForwardTo(previousFace)) {
+      pitEntry->canForwardTo(*previousFace)) {
     --nUpstreams;
   }
 
@@ -103,7 +103,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->m_previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
-      pitEntry->canForwardTo(previousFace)) {
+      pitEntry->canForwardTo(*previousFace)) {
     this->sendInterest(pitEntry, previousFace);
   }
 
@@ -111,7 +111,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
   bool isForwarded = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> face = it->getFace();
-    if (pitEntry->canForwardTo(face)) {
+    if (pitEntry->canForwardTo(*face)) {
       isForwarded = true;
       this->sendInterest(pitEntry, face);
       break;

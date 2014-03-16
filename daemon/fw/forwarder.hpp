@@ -157,9 +157,7 @@ private:
   Measurements   m_measurements;
   StrategyChoice m_strategyChoice;
 
-  static const ndn::Milliseconds DEFAULT_INTEREST_LIFETIME;
   static const Name LOCALHOST_NAME;
-  static const Name LOCALHOP_NAME;
 
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;

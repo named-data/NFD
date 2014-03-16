@@ -13,9 +13,7 @@ NFD_LOG_INIT("Forwarder");
 
 using fw::Strategy;
 
-const ndn::Milliseconds Forwarder::DEFAULT_INTEREST_LIFETIME(static_cast<ndn::Milliseconds>(4000));
 const Name Forwarder::LOCALHOST_NAME("ndn:/localhost");
-const Name Forwarder::LOCALHOP_NAME("ndn:/localhop");
 
 Forwarder::Forwarder()
   : m_faceTable(*this)
@@ -35,9 +33,6 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
-  if (interest.getInterestLifetime() < 0) {
-    const_cast<Interest&>(interest).setInterestLifetime(DEFAULT_INTEREST_LIFETIME);
-  }
   m_counters.getInInterest() ++;
 
   // /localhost scope control
@@ -132,22 +127,10 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
   NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
                 " interest=" << pitEntry->getName());
 
-  // /localhost scope control
-  bool isViolatingLocalhost = !outFace.isLocal() &&
-                              LOCALHOST_NAME.isPrefixOf(pitEntry->getName());
-  if (isViolatingLocalhost) {
+  // scope control
+  if (pitEntry->violatesScope(outFace)) {
     NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
-                  " interest=" << pitEntry->getName() << " violates /localhost");
-    return;
-  }
-
-  // /localhop scope control
-  bool isViolatingLocalhop = !outFace.isLocal() &&
-                             LOCALHOP_NAME.isPrefixOf(pitEntry->getName()) &&
-                             !pitEntry->hasLocalInRecord();
-  if (isViolatingLocalhop) {
-    NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
-                  " interest=" << pitEntry->getName() << " violates /localhop");
+                  " interest=" << pitEntry->getName() << " violates scope");
     return;
   }
 
@@ -323,6 +306,12 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
 void
 Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
+  if (pitEntry->hasUnexpiredOutRecords()) {
+    NFD_LOG_DEBUG("setStragglerTimer " << pitEntry->getName() <<
+                  " cannot set StragglerTimer when an OutRecord is pending");
+    return;
+  }
+
   time::Duration stragglerTime = time::milliseconds(100);
 
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,

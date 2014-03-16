@@ -64,10 +64,23 @@ public:
   /** \brief decides whether Interest can be forwarded to face
    *
    *  \return true if OutRecord of this face does not exist or has expired,
-   *          and there is an InRecord not of this face
+   *          and there is an InRecord not of this face,
+   *          and scope is not violated
    */
   bool
-  canForwardTo(shared_ptr<Face> face) const;
+  canForwardTo(const Face& face) const;
+
+  /** \brief decides whether forwarding Interest to face would violate scope
+   *
+   *  \return true if scope control would be violated
+   *  \note canForwardTo has more comprehensive checks (including scope control)
+   *        and should be used by most strategies. Outgoing Interest pipeline
+   *        should only check scope because some strategy (eg. vehicular) needs
+   *        to retransmit sooner than OutRecord expiry, or forward Interest
+   *        back to incoming face
+   */
+  bool
+  violatesScope(const Face& face) const;
 
   /** \brief records a nonce
    *
@@ -101,6 +114,11 @@ public:
   void
   deleteOutRecord(shared_ptr<Face> face);
 
+  /** \return true if there is one or more unexpired OutRecords
+   */
+  bool
+  hasUnexpiredOutRecords() const;
+
 public:
   EventId m_unsatisfyTimer;
   EventId m_stragglerTimer;
@@ -110,6 +128,10 @@ private:
   const Interest m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;
+
+  static const Name LOCALHOST_NAME;
+  static const Name LOCALHOP_NAME;
+
   shared_ptr<name_tree::Entry> m_nameTreeEntry;
 
   friend class nfd::NameTree;

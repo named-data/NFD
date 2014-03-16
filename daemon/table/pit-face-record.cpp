@@ -30,7 +30,13 @@ FaceRecord::update(const Interest& interest)
 {
   m_lastNonce = interest.getNonce();
   m_lastRenewed = time::now();
-  m_expiry = m_lastRenewed + time::milliseconds(interest.getInterestLifetime());
+
+  const ndn::Milliseconds DEFAULT_INTEREST_LIFETIME = static_cast<ndn::Milliseconds>(4000);
+  ndn::Milliseconds lifetime = interest.getInterestLifetime();
+  if (lifetime < 0) {
+    lifetime = DEFAULT_INTEREST_LIFETIME;
+  }
+  m_expiry = m_lastRenewed + time::milliseconds(lifetime);
 }
 
 

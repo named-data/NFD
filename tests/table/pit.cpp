@@ -32,9 +32,9 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   shared_ptr<Interest> interest4 = makeInterest(name);
   interest4->setInterestLifetime(static_cast<ndn::Milliseconds>(8795));
   interest4->setNonce(17365);
-  
+
   pit::Entry entry(*interest);
-  
+
   BOOST_CHECK_EQUAL(entry.getInterest().getName(), name);
   BOOST_CHECK_EQUAL(entry.getName(), name);
 
@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(inRecords1.size(), 0);
   const pit::OutRecordCollection& outRecords1 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords1.size(), 0);
-  
+
   // insert InRecord
   time::Point before1 = time::now();
   pit::InRecordCollection::iterator in1 =
@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_LE(std::abs(in1->getExpiry() - in1->getLastRenewed()
     - time::milliseconds(interest1->getInterestLifetime())),
     (after1 - before1));
-  
+
   // insert OutRecord
   time::Point before2 = time::now();
   pit::OutRecordCollection::iterator out1 =
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_LE(std::abs(out1->getExpiry() - out1->getLastRenewed()
     - time::milliseconds(interest1->getInterestLifetime())),
     (after2 - before2));
-  
+
   // update InRecord
   time::Point before3 = time::now();
   pit::InRecordCollection::iterator in2 =
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   const pit::InRecordCollection& inRecords4 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(in3->getFace(), face2);
-  
+
   // delete all InRecords
   entry.deleteInRecords();
   const pit::InRecordCollection& inRecords5 = entry.getInRecords();
@@ -107,26 +107,60 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   const pit::OutRecordCollection& outRecords3 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(out2->getFace(), face2);
-  
+
   // delete OutRecord
   entry.deleteOutRecord(face2);
   const pit::OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
   BOOST_CHECK_EQUAL(outRecords4.begin()->getFace(), face1);
-  
 }
 
 BOOST_AUTO_TEST_CASE(EntryNonce)
 {
-  Name name("ndn:/qtCQ7I1c");
-  Interest interest(name);
-  
-  pit::Entry entry(interest);
-  
+  shared_ptr<Interest> interest = makeInterest("ndn:/qtCQ7I1c");
+
+  pit::Entry entry(*interest);
+
   BOOST_CHECK_EQUAL(entry.addNonce(25559), true);
   BOOST_CHECK_EQUAL(entry.addNonce(25559), false);
   BOOST_CHECK_EQUAL(entry.addNonce(19004), true);
   BOOST_CHECK_EQUAL(entry.addNonce(19004), false);
+}
+
+BOOST_AUTO_TEST_CASE(EntryLifetime)
+{
+  shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
+  BOOST_ASSERT(interest->getInterestLifetime() < 0); // library uses -1 to indicate unset lifetime
+
+  shared_ptr<Face> face = make_shared<DummyFace>();
+  pit::Entry entry(*interest);
+
+  pit::InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(face, *interest);
+  BOOST_CHECK_GT(inIt->getExpiry(), time::now());
+
+  pit::OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
+  BOOST_CHECK_GT(outIt->getExpiry(), time::now());
+}
+
+BOOST_AUTO_TEST_CASE(EntryCanForwardTo)
+{
+  shared_ptr<Interest> interest = makeInterest("ndn:/WDsuBLIMG");
+  pit::Entry entry(*interest);
+
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
+
+  entry.insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), false);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
+
+  entry.insertOrUpdateInRecord(face2, *interest);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), true);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
+
+  entry.insertOrUpdateOutRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), false);
+  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
 }
 
 BOOST_AUTO_TEST_CASE(Insert)
@@ -161,12 +195,12 @@ BOOST_AUTO_TEST_CASE(Insert)
   Interest interestJ(name1, -1, -1, exclude0, -1, false, -1, -1.0, 2192);
   // different Name+exclude1
   Interest interestK(name2, -1, -1, exclude1, -1, false, -1, -1.0, 0);
-  
+
   NameTree nameTree(16);
   Pit pit(nameTree);
 
   std::pair<shared_ptr<pit::Entry>, bool> insertResult;
-  
+
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
   insertResult = pit.insert(interestA);
@@ -176,28 +210,28 @@ BOOST_AUTO_TEST_CASE(Insert)
   insertResult = pit.insert(interestB);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 2);
-  
+
   insertResult = pit.insert(interestC);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 3);
-  
+
   insertResult = pit.insert(interestD);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 4);
-  
+
   insertResult = pit.insert(interestE);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 5);
-  
+
   insertResult = pit.insert(interestF);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 6);
-  
+
   insertResult = pit.insert(interestG);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 7);
 
-  
+
   insertResult = pit.insert(interestH);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
   BOOST_CHECK_EQUAL(pit.size(), 7);
@@ -205,11 +239,11 @@ BOOST_AUTO_TEST_CASE(Insert)
   insertResult = pit.insert(interestI);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
   BOOST_CHECK_EQUAL(pit.size(), 7);
-  
+
   insertResult = pit.insert(interestJ);
   BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
   BOOST_CHECK_EQUAL(pit.size(), 7);
-  
+
   insertResult = pit.insert(interestK);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 8);
@@ -223,7 +257,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   Pit pit(nameTree);
 
   std::pair<shared_ptr<pit::Entry>, bool> insertResult;
-  
+
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
   insertResult = pit.insert(interest);
@@ -233,7 +267,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   insertResult = pit.insert(interest);
   BOOST_CHECK_EQUAL(insertResult.second, false);
   BOOST_CHECK_EQUAL(pit.size(), 1);
-  
+
   pit.erase(insertResult.first);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
@@ -258,7 +292,7 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   NameTree nameTree(16);
   Pit pit(nameTree);
   int count = 0;
-  
+
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
   pit.insert(interestA  );
@@ -266,13 +300,13 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   pit.insert(interestD  );
 
   nameTree.lookup(nameABCD); // make sure /A/B/C/D is in nameTree
-  
+
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
   Data data(nameABCD);
-  
+
   shared_ptr<pit::DataMatchResult> matches = pit.findAllDataMatches(data);
-  
+
   bool hasA   = false;
   bool hasAB  = false;
   bool hasABC = false;
@@ -288,10 +322,10 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
     if (entry->getName().equals(nameAB))
       hasAB  = true;
-  
+
     if (entry->getName().equals(nameABC))
       hasABC = true;
-    
+
     if (entry->getName().equals(nameD))
       hasD   = true;
   }

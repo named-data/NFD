@@ -38,9 +38,10 @@ BOOST_AUTO_TEST_CASE(Forward3)
   Pit& pit = forwarder.getPit();
 
   // Interest with valid NextHopFaceId
-  shared_ptr<Interest> interest1 = make_shared<Interest>("ndn:/0z8r6yDDe");
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/0z8r6yDDe");
   interest1->setNextHopFaceId(face1->getId());
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
+  pitEntry1->insertOrUpdateInRecord(face4, *interest1);
 
   strategy.m_sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest1, fibEntry, pitEntry1);
@@ -48,8 +49,9 @@ BOOST_AUTO_TEST_CASE(Forward3)
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[0].get<1>(), face1);
 
   // Interest without NextHopFaceId
-  shared_ptr<Interest> interest2 = make_shared<Interest>("ndn:/y6JQADGVz");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/y6JQADGVz");
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
+  pitEntry2->insertOrUpdateInRecord(face4, *interest2);
 
   strategy.m_sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest2, fibEntry, pitEntry2);
@@ -57,9 +59,10 @@ BOOST_AUTO_TEST_CASE(Forward3)
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[0].get<1>(), face2);
 
   // Interest with invalid NextHopFaceId
-  shared_ptr<Interest> interest3 = make_shared<Interest>("ndn:/0z8r6yDDe");
+  shared_ptr<Interest> interest3 = makeInterest("ndn:/0z8r6yDDe");
   interest3->setNextHopFaceId(face3->getId());
   shared_ptr<pit::Entry> pitEntry3 = pit.insert(*interest3).first;
+  pitEntry3->insertOrUpdateInRecord(face4, *interest3);
 
   forwarder.removeFace(face3); // face3 is removed and its FaceId becomes invalid
   strategy.m_sendInterestHistory.clear();

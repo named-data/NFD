@@ -28,16 +28,14 @@ BroadcastStrategy::afterReceiveInterest(const Face& inFace,
 {
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
 
-  bool isPropagated = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> outFace = it->getFace();
-    if (outFace->getId() != inFace.getId()) {
+    if (pitEntry->canForwardTo(*outFace)) {
       this->sendInterest(pitEntry, outFace);
-      isPropagated = true;
     }
   }
 
-  if (!isPropagated) {
+  if (!pitEntry->hasUnexpiredOutRecords()) {
     this->rejectPendingInterest(pitEntry);
   }
 }
