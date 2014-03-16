@@ -22,20 +22,20 @@ def configure(conf):
         pass
 
     if conf.options.debug:
-        conf.define ('_DEBUG', 1)
-        conf.add_supported_cxxflags (cxxflags = ['-O0',
-                                                 '-Wall',
-                                                 '-Wno-unused-variable',
-                                                 '-g3',
-                                                 '-Wno-unused-private-field', # only clang supports
-                                                 '-fcolor-diagnostics',       # only clang supports
-                                                 '-Qunused-arguments',        # only clang supports
-                                                 '-Wno-tautological-compare', # suppress warnings from CryptoPP
-                                                 '-Wno-unused-function',      # suppress warnings from CryptoPP
-                                                 '-fno-inline',
-                                                 ])
+        conf.define('_DEBUG', 1)
+        conf.add_supported_cxxflags(cxxflags = ['-O0',
+                                                '-Wall',
+                                                '-Wno-unused-variable',
+                                                '-g3',
+                                                '-Wno-unused-private-field', # only clang supports
+                                                '-fcolor-diagnostics',       # only clang supports
+                                                '-Qunused-arguments',        # only clang supports
+                                                '-Wno-tautological-compare', # suppress warnings from CryptoPP
+                                                '-Wno-unused-function',      # suppress warnings from CryptoPP
+                                                '-fno-inline',
+                                                ])
     else:
-        conf.add_supported_cxxflags (cxxflags = ['-O3', '-g', '-Wno-tautological-compare', '-Wno-unused-function'])
+        conf.add_supported_cxxflags(cxxflags = ['-O3', '-g', '-Wno-tautological-compare', '-Wno-unused-function'])
 
     if not conf.options.ndn_cpp_dir:
         conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'], uselib_store='NDN_CPP', mandatory=True)
@@ -45,7 +45,7 @@ def configure(conf):
                        linkflags="-L%s/lib" % conf.options.ndn_cpp_dir,
                        mandatory=True)
 
-    boost_libs='system'
+    boost_libs = 'system chrono'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
@@ -54,9 +54,9 @@ def configure(conf):
     conf.check_boost(lib=boost_libs)
 
     if conf.env.BOOST_VERSION_NUMBER < 104800:
-        Logs.error ("Minimum required boost version is 1.48.0")
-        Logs.error ("Please upgrade your distribution or install custom boost libraries" +
-                    " (http://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
+        Logs.error("Minimum required boost version is 1.48.0")
+        Logs.error("Please upgrade your distribution or install custom boost libraries" +
+                   " (http://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
         return
 
     conf.load('unix-socket')
@@ -106,7 +106,7 @@ def build(bld):
 
     # Unit tests
     if bld.env['WITH_TESTS']:
-        unit_tests = unittests = bld.program(
+        unit_tests = bld.program(
             target="unit-tests",
             features = "cxx cxxprogram",
             source = bld.path.ant_glob(['tests/**/*.cpp'],

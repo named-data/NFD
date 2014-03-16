@@ -60,6 +60,9 @@ public: // forwarding entrypoints and tables
   void
   onData(Face& face, const Data& data);
 
+  NameTree&
+  getNameTree();
+
   Fib&
   getFib();
 
@@ -190,6 +193,12 @@ inline void
 Forwarder::onData(Face& face, const Data& data)
 {
   this->onIncomingData(face, data);
+}
+
+inline NameTree&
+Forwarder::getNameTree()
+{
+  return m_nameTree;
 }
 
 inline Fib&
