@@ -9,7 +9,7 @@
 
 #include "mgmt/manager-base.hpp"
 
-#include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
+#include <ndn-cpp-dev/management/nfd-strategy-choice-options.hpp>
 
 namespace nfd {
 
@@ -35,16 +35,16 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   bool
   extractOptions(const Interest& request,
-                   ndn::nfd::FibManagementOptions& extractedOptions);
+                   ndn::nfd::StrategyChoiceOptions& extractedOptions);
 
 
 
   void
-  setStrategy(const ndn::nfd::FibManagementOptions& options,
+  setStrategy(const ndn::nfd::StrategyChoiceOptions& options,
               ControlResponse& response);
 
   void
-  unsetStrategy(const ndn::nfd::FibManagementOptions& options,
+  unsetStrategy(const ndn::nfd::StrategyChoiceOptions& options,
                 ControlResponse& response);
 private:
 

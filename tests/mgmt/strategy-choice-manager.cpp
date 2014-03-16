@@ -208,7 +208,7 @@ BOOST_FIXTURE_TEST_CASE(MalformedCommmand, AllStrategiesFixture)
 
 BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/test");
   options.setStrategy("/localhost/nfd/strategy/best-route");
 
@@ -232,7 +232,7 @@ BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
                         UnauthorizedCommandFixture<StrategyChoiceManagerFixture>)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/test");
   options.setStrategy("/localhost/nfd/strategy/best-route");
 
@@ -256,7 +256,7 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
 
 BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
   Block encodedOptions(options.wireEncode());
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
 
 BOOST_AUTO_TEST_CASE(SetStrategies)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/test");
   options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(SetStrategies)
 
 BOOST_AUTO_TEST_CASE(SetUnsupportedStrategy)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/test");
   options.setStrategy("/localhost/nfd/strategy/unit-test-doesnotexist");
 
@@ -370,7 +370,7 @@ public:
 // BOOST_FIXTURE_TEST_CASE(SetNotInstalled, DefaultStrategyOnlyFixture)
 // {
 //   BOOST_REQUIRE(!getStrategyChoice().hasStrategy("/localhost/nfd/strategy/test-strategy-b"));
-//   ndn::nfd::FibManagementOptions options;
+//   ndn::nfd::StrategyChoiceOptions options;
 //   options.setName("/test");
 //   options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
@@ -396,7 +396,7 @@ public:
 
 BOOST_AUTO_TEST_CASE(Unset)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/test");
 
   BOOST_REQUIRE(m_strategyChoice.insert("/test", "/localhost/nfd/strategy/test-strategy-b"));
@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(Unset)
 
 BOOST_AUTO_TEST_CASE(UnsetRoot)
 {
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   options.setName("/");
 
   Block encodedOptions(options.wireEncode());

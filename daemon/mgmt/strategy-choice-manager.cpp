@@ -72,7 +72,7 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
 
   const Name& command = request->getName();
 
-  ndn::nfd::FibManagementOptions options;
+  ndn::nfd::StrategyChoiceOptions options;
   if (!extractOptions(*request, options))
     {
       sendResponse(command, 400, "Malformed command");
@@ -99,7 +99,7 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
 
 bool
 StrategyChoiceManager::extractOptions(const Interest& request,
-                                      ndn::nfd::FibManagementOptions& extractedOptions)
+                                      ndn::nfd::StrategyChoiceOptions& extractedOptions)
 {
   const Name& command = request.getName();
   const size_t optionCompIndex =
@@ -121,7 +121,7 @@ StrategyChoiceManager::extractOptions(const Interest& request,
 }
 
 void
-StrategyChoiceManager::setStrategy(const ndn::nfd::FibManagementOptions& options,
+StrategyChoiceManager::setStrategy(const ndn::nfd::StrategyChoiceOptions& options,
                                    ControlResponse& response)
 {
   const Name& prefix = options.getName();
@@ -146,7 +146,7 @@ StrategyChoiceManager::setStrategy(const ndn::nfd::FibManagementOptions& options
 }
 
 void
-StrategyChoiceManager::unsetStrategy(const ndn::nfd::FibManagementOptions& options,
+StrategyChoiceManager::unsetStrategy(const ndn::nfd::StrategyChoiceOptions& options,
                                      ControlResponse& response)
 {
   static const Name ROOT_PREFIX;
