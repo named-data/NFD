@@ -36,11 +36,15 @@ FaceTable::add(shared_ptr<Face> face)
                                   &m_forwarder, boost::ref(*face), _1);
   face->onFail            += bind(&FaceTable::remove,
                                   this, face);
+
+  this->onAdd(face);
 }
 
 void
 FaceTable::remove(shared_ptr<Face> face)
 {
+  this->onRemove(face);
+
   FaceId faceId = face->getId();
   m_faces.erase(faceId);
   face->setId(INVALID_FACEID);

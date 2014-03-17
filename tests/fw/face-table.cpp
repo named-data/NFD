@@ -15,9 +15,21 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(FwFaceTable, BaseFixture)
 
+static inline void
+saveFaceId(std::vector<FaceId>& faceIds, shared_ptr<Face> face)
+{
+  faceIds.push_back(face->getId());
+}
+
 BOOST_AUTO_TEST_CASE(AddRemove)
 {
   Forwarder forwarder;
+
+  FaceTable& faceTable = forwarder.getFaceTable();
+  std::vector<FaceId> onAddHistory;
+  std::vector<FaceId> onRemoveHistory;
+  faceTable.onAdd    += bind(&saveFaceId, boost::ref(onAddHistory   ), _1);
+  faceTable.onRemove += bind(&saveFaceId, boost::ref(onRemoveHistory), _1);
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
@@ -32,11 +44,16 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
 
+  BOOST_REQUIRE_EQUAL(onAddHistory.size(), 2);
+  BOOST_CHECK_EQUAL(onAddHistory[0], face1->getId());
+  BOOST_CHECK_EQUAL(onAddHistory[1], face2->getId());
+
   face1->close();
-  face2->close();
 
   BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
+
+  BOOST_REQUIRE_EQUAL(onRemoveHistory.size(), 1);
+  BOOST_CHECK_EQUAL(onRemoveHistory[0], onAddHistory[0]);
 }
 
 BOOST_AUTO_TEST_CASE(Enumerate)

@@ -48,6 +48,17 @@ public: // enumeration
   const_iterator
   end() const;
 
+public: // events
+  /** \brief fires after a Face is added
+   */
+  EventEmitter<shared_ptr<Face> > onAdd;
+
+  /** \brief fires before a Face is removed
+   *
+   *  FaceId is valid when this event is fired
+   */
+  EventEmitter<shared_ptr<Face> > onRemove;
+
 private:
   // remove is private because it's a subscriber of face.onFail event.
   // face->close() closes a face and would trigger .remove(face)
