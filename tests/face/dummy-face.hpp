@@ -44,6 +44,7 @@ public:
   virtual void
   close()
   {
+    this->onFail("close");
   }
 
   void

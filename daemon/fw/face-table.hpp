@@ -29,9 +29,6 @@ public:
   VIRTUAL_WITH_TESTS void
   add(shared_ptr<Face> face);
 
-  VIRTUAL_WITH_TESTS void
-  remove(shared_ptr<Face> face);
-
   VIRTUAL_WITH_TESTS shared_ptr<Face>
   get(FaceId id) const;
 
@@ -50,6 +47,12 @@ public: // enumeration
 
   const_iterator
   end() const;
+
+private:
+  // remove is private because it's a subscriber of face.onFail event.
+  // face->close() closes a face and would trigger .remove(face)
+  void
+  remove(shared_ptr<Face> face);
 
 private:
   Forwarder& m_forwarder;

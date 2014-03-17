@@ -81,11 +81,11 @@ public:
     m_addFired = true;
   }
 
-  virtual void
-  remove(shared_ptr<Face> face)
-  {
-    m_removeFired = true;
-  }
+//  virtual void
+//  remove(shared_ptr<Face> face)
+//  {
+//    m_removeFired = true;
+//  }
 
   virtual shared_ptr<Face>
   get(FaceId id) const
@@ -100,11 +100,11 @@ public:
     return m_addFired;
   }
 
-  bool
-  didRemoveFire() const
-  {
-    return m_removeFired;
-  }
+//  bool
+//  didRemoveFire() const
+//  {
+//    return m_removeFired;
+//  }
 
   bool
   didGetFire() const
@@ -292,11 +292,11 @@ public:
     return m_faceTable.didAddFire();
   }
 
-  bool
-  didFaceTableRemoveFire() const
-  {
-    return m_faceTable.didRemoveFire();
-  }
+//  bool
+//  didFaceTableRemoveFire() const
+//  {
+//    return m_faceTable.didRemoveFire();
+//  }
 
   bool
   didFaceTableGetFire() const
@@ -1022,7 +1022,7 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   destroyFace(command->getName(), options);
 
   BOOST_REQUIRE(didCallbackFire());
-  BOOST_CHECK(TestFaceTableFixture::m_faceTable.didRemoveFire());
+//  BOOST_CHECK(TestFaceTableFixture::m_faceTable.didRemoveFire());
   BOOST_CHECK(TestFaceTableFixture::m_faceTable.getDummyFace()->didCloseFire());
 }
 

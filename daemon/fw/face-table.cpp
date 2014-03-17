@@ -31,9 +31,11 @@ FaceTable::add(shared_ptr<Face> face)
   NFD_LOG_INFO("addFace id=" << faceId);
 
   face->onReceiveInterest += bind(&Forwarder::onInterest,
-                             &m_forwarder, boost::ref(*face), _1);
+                                  &m_forwarder, boost::ref(*face), _1);
   face->onReceiveData     += bind(&Forwarder::onData,
-                             &m_forwarder, boost::ref(*face), _1);
+                                  &m_forwarder, boost::ref(*face), _1);
+  face->onFail            += bind(&FaceTable::remove,
+                                  this, face);
 }
 
 void
@@ -48,6 +50,7 @@ FaceTable::remove(shared_ptr<Face> face)
   //     does not support only removing Forwarder's subscription
   face->onReceiveInterest.clear();
   face->onReceiveData    .clear();
+  // don't clear onFail because other functions may need to execute
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 }

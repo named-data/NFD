@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<pit::Entry> pitEntry3 = pit.insert(*interest3).first;
   pitEntry3->insertOrUpdateInRecord(face4, *interest3);
 
-  forwarder.removeFace(face3); // face3 is removed and its FaceId becomes invalid
+  face3->close(); // face3 is closed and its FaceId becomes invalid
   strategy.m_sendInterestHistory.clear();
   strategy.m_rejectPendingInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest3, fibEntry, pitEntry3);

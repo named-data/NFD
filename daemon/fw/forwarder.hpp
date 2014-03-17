@@ -53,13 +53,6 @@ public: // faces
   void
   addFace(shared_ptr<Face> face);
 
-  /** \brief remove existing Face
-   *
-   *  shortcut to .getFaceTable().remove(face)
-   */
-  void
-  removeFace(shared_ptr<Face> face);
-
 public: // forwarding entrypoints and tables
   void
   onInterest(Face& face, const Interest& interest);
@@ -185,12 +178,6 @@ inline void
 Forwarder::addFace(shared_ptr<Face> face)
 {
   m_faceTable.add(face);
-}
-
-inline void
-Forwarder::removeFace(shared_ptr<Face> face)
-{
-  m_faceTable.remove(face);
 }
 
 inline void

@@ -32,8 +32,8 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
 
-  forwarder.removeFace(face1);
-  forwarder.removeFace(face2);
+  face1->close();
+  face2->close();
 
   BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
   BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Enumerate)
   BOOST_CHECK(hasFace1);
   BOOST_CHECK(hasFace2);
 
-  faceTable.remove(face1);
+  face1->close();
   BOOST_CHECK_EQUAL(faceTable.size(), 1);
   BOOST_CHECK_EQUAL(std::distance(faceTable.begin(), faceTable.end()), faceTable.size());
   hasFace1 = hasFace2 = false;

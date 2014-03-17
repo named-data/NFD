@@ -632,7 +632,7 @@ FaceManager::destroyFace(const Name& requestName,
   shared_ptr<Face> target = m_faceTable.get(options.getFaceId());
   if (target)
     {
-      m_faceTable.remove(target);
+      // don't call m_faceTable.remove(target): it's called by target->close() via onFail
       target->close();
     }
   sendResponse(requestName, 200, "Success");
