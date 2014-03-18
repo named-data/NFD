@@ -10,6 +10,7 @@ namespace ndn {
 namespace nrd {
 
 const Name Nrd::COMMAND_PREFIX = "/localhost/nrd";
+const Name Nrd::REMOTE_COMMAND_PREFIX = "/localhop/nrd";
 
 const size_t Nrd::COMMAND_UNSIGNED_NCOMPS =
   Nrd::COMMAND_PREFIX.size() +
@@ -34,9 +35,10 @@ const Nrd::VerbAndProcessor Nrd::COMMAND_VERBS[] =
   };
 
 void
-setInterestFilterFailed(const Name& name, const std::string& msg) 
+Nrd::setInterestFilterFailed(const Name& name, const std::string& msg) 
 {
   std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
+  m_face.shutdown();
 }
 
 Nrd::Nrd()
@@ -44,10 +46,19 @@ Nrd::Nrd()
     m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
+  //check whether the components of localhop and localhost prefixes are same
+  BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size ()); 
+
+  std::cerr << "Setting interest filter on: " << COMMAND_PREFIX.toUri() << std::endl;
   m_face.setController(m_nfdController);
-  m_face.setInterestFilter("/localhost/nrd",
+  m_face.setInterestFilter(COMMAND_PREFIX.toUri(),
                            bind(&Nrd::onRibRequest, this, _2),
-                           bind(&setInterestFilterFailed, _1, _2));
+                           bind(&Nrd::setInterestFilterFailed, this, _1, _2));
+  
+  std::cerr << "Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri() << std::endl;
+  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
+                           bind(&Nrd::onRibRequest, this, _2),
+                           bind(&Nrd::setInterestFilterFailed, this, _1, _2));
 }
 
 void
@@ -86,13 +97,16 @@ Nrd::onRibRequest(const Interest& request)
       return;
     }
   else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
-           !COMMAND_PREFIX.isPrefixOf(command))
-    {
+      !(COMMAND_PREFIX.isPrefixOf(command)  ||
+       REMOTE_COMMAND_PREFIX.isPrefixOf(command)))
+  {
       std::cerr << "Error: Malformed Command" << std::endl;
       sendResponse(command, 400, "Malformed command");
       return;
     }
 
+  //REMOTE_COMMAND_PREFIX number of componenets are same as 
+  // NRD_COMMAND_PREFIX's so no extra checks are required.
   const Name::Component& verb = command.get(COMMAND_PREFIX.size());
   VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find(verb);
 
@@ -130,6 +144,8 @@ Nrd::extractOptions(const Interest& request,
                     PrefixRegOptions& extractedOptions)
 {
   const Name& command = request.getName();
+  //REMOTE_COMMAND_PREFIX is same in size of NRD_COMMAND_PREFIX 
+  //so no extra processing is required.
   const size_t optionCompIndex = COMMAND_PREFIX.size() + 1;
 
   try

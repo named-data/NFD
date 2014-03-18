@@ -53,6 +53,9 @@ private:
   onControlHeaderError();
 
   void
+  setInterestFilterFailed(const Name& name, const std::string& msg);
+  
+  void
   insertEntry(const Interest& request, const PrefixRegOptions& options);
 
   void
@@ -79,6 +82,7 @@ private:
   const VerbDispatchTable m_verbDispatch;
 
   static const Name COMMAND_PREFIX; // /localhost/nrd
+  static const Name REMOTE_COMMAND_PREFIX; // /localhop/nrd
 
   // number of components in an invalid, but not malformed, unsigned command.
   // (/localhost/nrd + verb + options) = 4
