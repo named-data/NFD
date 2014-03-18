@@ -61,7 +61,7 @@ PartialMessage::reassemble()
   return Block(buffer);
 }
 
-PartialMessageStore::PartialMessageStore(Scheduler& scheduler, time::Duration idleDuration)
+PartialMessageStore::PartialMessageStore(Scheduler& scheduler, const time::nanoseconds& idleDuration)
   : m_scheduler(scheduler)
   , m_idleDuration(idleDuration)
 {

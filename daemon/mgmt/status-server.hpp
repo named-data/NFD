@@ -28,11 +28,11 @@ private:
 
 private:
   static const Name DATASET_PREFIX;
-  static const ndn::Milliseconds RESPONSE_FRESHNESS;
+  static const time::milliseconds RESPONSE_FRESHNESS;
 
   shared_ptr<AppFace> m_face;
   Forwarder& m_forwarder;
-  ndn::nfd::Status::Timestamp m_startTimestamp;
+  time::system_clock::TimePoint m_startTimestamp;
 };
 
 } // namespace nfd

@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   // first Interest: strategy knows nothing and follows routing
   shared_ptr<Interest> interest1p = makeInterest("ndn:/0Jm1ajrW/%00");
   Interest& interest1 = *interest1p;
-  interest1.setInterestLifetime(8000);
+  interest1.setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(face3, interest1);
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   // second Interest: strategy knows face2 is best
   shared_ptr<Interest> interest2p = makeInterest("ndn:/0Jm1ajrW/%00%01");
   Interest& interest2 = *interest2p;
-  interest2.setInterestLifetime(8000);
+  interest2.setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(face3, interest2);

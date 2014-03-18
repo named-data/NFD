@@ -40,9 +40,9 @@ public:
       "   [-r]          - set ChildSelector to select rightmost child\n"
       "   [-m min]      - set MinSuffixComponents\n"
       "   [-M max]      - set MaxSuffixComponents\n"
-      "   [-l lifetime] - set InterestLifetime in milliseconds\n"
+      "   [-l lifetime] - set InterestLifetime in time::milliseconds\n"
       "   [-p]          - print payload only, not full packet\n"
-      "   [-w timeout]  - set Timeout in milliseconds\n"
+      "   [-w timeout]  - set Timeout in time::milliseconds\n"
       "   [-h]          - print help and exit\n\n";
     exit(1);
   }
@@ -80,7 +80,7 @@ public:
   {
     if (interestLifetime < 0)
       usage();
-    m_interestLifetime = interestLifetime;
+    m_interestLifetime = ndn::time::milliseconds(interestLifetime);
   }
 
   void
@@ -94,7 +94,7 @@ public:
   {
     if (timeout < 0)
       usage();
-    m_timeout = timeout;
+    m_timeout = ndn::time::milliseconds(timeout);
   }
 
   void
@@ -105,10 +105,10 @@ public:
       usage();
   }
 
-  int
+  ndn::time::milliseconds
   getDefaultInterestLifetime()
   {
-    return 4000;
+    return ndn::time::seconds(4);
   }
 
   ndn::Interest
@@ -124,7 +124,7 @@ public:
       interestPacket.setMinSuffixComponents(m_minSuffixComponents);
     if (m_maxSuffixComponents >= 0)
       interestPacket.setMaxSuffixComponents(m_maxSuffixComponents);
-    if (m_interestLifetime < 0)
+    if (m_interestLifetime < ndn::time::milliseconds::zero())
       interestPacket.setInterestLifetime(getDefaultInterestLifetime());
     else
       interestPacket.setInterestLifetime(m_interestLifetime);
@@ -163,9 +163,9 @@ public:
                                                    this, _1, _2),
                                ndn::func_lib::bind(&NdnTlvPeek::onTimeout,
                                                    this, _1));
-        if (m_timeout < 0)
+        if (m_timeout < ndn::time::milliseconds::zero())
           {
-            if (m_interestLifetime < 0)
+            if (m_interestLifetime < ndn::time::milliseconds::zero())
               m_face.processEvents(getDefaultInterestLifetime());
             else
               m_face.processEvents(m_interestLifetime);
@@ -193,9 +193,9 @@ private:
   bool m_isChildSelectorRightmost;
   int m_minSuffixComponents;
   int m_maxSuffixComponents;
-  int m_interestLifetime;
+  ndn::time::milliseconds m_interestLifetime;
   bool m_isPayloadOnlySet;
-  int m_timeout;
+  ndn::time::milliseconds m_timeout;
   std::string m_prefixName;
   bool m_isDataReceived;
   ndn::ptr_lib::shared_ptr<boost::asio::io_service> m_ioService;

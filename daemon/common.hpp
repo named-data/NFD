@@ -67,6 +67,8 @@ namespace tlv {
 using namespace ndn::Tlv;
 }
 
+namespace time = ndn::time;
+
 } // namespace nfd
 
 #endif // NFD_COMMON_HPP

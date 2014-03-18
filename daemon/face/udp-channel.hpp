@@ -8,7 +8,6 @@
 #define NFD_FACE_UDP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "core/time.hpp"
 #include "core/global-io.hpp"
 #include "core/scheduler.hpp"
 #include "udp-face.hpp"
@@ -46,7 +45,7 @@ public:
    * \throw UdpChannel::Error if bind on the socket fails
    */
   UdpChannel(const udp::Endpoint& localEndpoint,
-             const time::Duration& timeout);
+             const time::seconds& timeout);
 
   virtual
   ~UdpChannel();
@@ -156,7 +155,7 @@ private:
    * \brief every time m_idleFaceTimeout expires all the idle (and not permanent)
    *        faces will be removed
    */
-  time::Duration m_idleFaceTimeout;
+  time::seconds m_idleFaceTimeout;
 
   EventId m_closeIdleFaceEvent;
 

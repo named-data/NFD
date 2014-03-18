@@ -78,7 +78,7 @@ Entry::isUnsolicited() const
   return m_isUnsolicited;
 }
 
-const time::Point&
+const time::steady_clock::TimePoint&
 Entry::getStaleTime() const
 {
   return m_staleAt;
@@ -87,8 +87,7 @@ Entry::getStaleTime() const
 void
 Entry::updateStaleTime()
 {
-  time::Duration freshness = time::milliseconds(m_dataPacket->getFreshnessPeriod());
-  m_staleAt = time::now() + freshness;
+  m_staleAt = time::steady_clock::now() + m_dataPacket->getFreshnessPeriod();
 }
 
 bool

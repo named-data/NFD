@@ -44,7 +44,7 @@ public:
   discoverHubStage1()
   {
     ndn::Interest interest(ndn::Name("/localhop/ndn-autoconf/hub"));
-    interest.setInterestLifetime(4000); // 4 seconds
+    interest.setInterestLifetime(ndn::time::milliseconds(4000)); // 4 seconds
     interest.setMustBeFresh(true);
     
     std::cerr << "Stage 1: Trying muticast discovery..." << std::endl;
@@ -249,6 +249,8 @@ public:
       connectToHub(uri);
       return true;
     }
+
+    return false;
   }
 };
 

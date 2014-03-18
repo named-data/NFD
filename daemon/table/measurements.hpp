@@ -8,7 +8,6 @@
 #define NFD_TABLE_MEASUREMENTS_HPP
 
 #include "measurements-entry.hpp"
-#include "core/time.hpp"
 #include "name-tree.hpp"
 
 namespace nfd {
@@ -65,7 +64,7 @@ public:
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, const time::Duration lifetime);
+  extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime);
 
   size_t
   size() const;
@@ -80,7 +79,7 @@ private:
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
-  static const time::Duration s_defaultLifetime;
+  static const time::nanoseconds s_defaultLifetime;
 };
 
 inline size_t

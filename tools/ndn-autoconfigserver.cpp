@@ -34,7 +34,7 @@ public:
   {
     size_t total_len = 0;
     ndn::Data data(ndn::Name(interest.getName()).appendVersion());
-    data.setFreshnessPeriod(1000); // 1 sec
+    data.setFreshnessPeriod(time::hours(1)); // 1 hour
     
     // create and encode uri block
     Block uriBlock = dataBlock(tlv::nfd::Uri,

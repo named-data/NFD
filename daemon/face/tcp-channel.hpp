@@ -8,7 +8,6 @@
 #define NFD_FACE_TCP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "core/time.hpp"
 #include <ndn-cpp-dev/util/monotonic_deadline_timer.hpp>
 #include "tcp-face.hpp"
 
@@ -61,7 +60,7 @@ public:
   connect(const tcp::Endpoint& remoteEndpoint,
           const FaceCreatedCallback& onFaceCreated,
           const ConnectFailedCallback& onConnectFailed,
-          const time::Duration& timeout = time::seconds(4));
+          const time::seconds& timeout = time::seconds(4));
 
   /**
    * \brief Create a face by establishing connection to the specified
@@ -78,7 +77,7 @@ public:
   connect(const std::string& remoteHost, const std::string& remotePort,
           const FaceCreatedCallback& onFaceCreated,
           const ConnectFailedCallback& onConnectFailed,
-          const time::Duration& timeout = time::seconds(4));
+          const time::seconds& timeout = time::seconds(4));
 
   /**
    * \brief Get number of faces in the channel
@@ -103,21 +102,21 @@ private:
   void
   handleSuccessfulConnect(const boost::system::error_code& error,
                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                          const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                          const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                           const FaceCreatedCallback& onFaceCreated,
                           const ConnectFailedCallback& onConnectFailed);
 
   void
   handleFailedConnect(const boost::system::error_code& error,
                       const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                      const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                      const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                       const ConnectFailedCallback& onConnectFailed);
 
   void
   handleEndpointResolution(const boost::system::error_code& error,
                            boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
                            const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                           const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                           const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                            const FaceCreatedCallback& onFaceCreated,
                            const ConnectFailedCallback& onConnectFailed,
                            const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);

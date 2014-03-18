@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   Name nameAB ("ndn:/A/B");
   Name nameABC("ndn:/A/B/C");
   shared_ptr<Interest> interestAB = makeInterest(nameAB);
-  interestAB->setInterestLifetime(4000);
+  interestAB->setInterestLifetime(time::seconds(4));
   shared_ptr<Data> dataABC = makeData(nameABC);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
@@ -317,10 +317,10 @@ BOOST_AUTO_TEST_CASE(StrategyDispatch)
   BOOST_CHECK_EQUAL(strategyQ->m_beforeSatisfyPendingInterest_count, 1);
 
   shared_ptr<Interest> interest3 = makeInterest("ndn:/A/3");
-  interest3->setInterestLifetime(30);
+  interest3->setInterestLifetime(time::milliseconds(30));
   forwarder.onInterest(*face1, *interest3);
   shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
-  interest4->setInterestLifetime(5000);
+  interest4->setInterestLifetime(time::milliseconds(5000));
   forwarder.onInterest(*face1, *interest4);
 
   strategyP->m_beforeExpirePendingInterest_count = 0;

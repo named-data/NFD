@@ -15,7 +15,7 @@ NFD_LOG_INIT("UdpChannel");
 using namespace boost::asio;
 
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
-                       const time::Duration& timeout)
+                       const time::seconds& timeout)
   : m_localEndpoint(localEndpoint)
   , m_isListening(false)
   , m_idleFaceTimeout(timeout)

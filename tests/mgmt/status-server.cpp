@@ -17,16 +17,6 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(MgmtStatusServer, BaseFixture)
 
-static inline ndn::nfd::Status::Timestamp
-now()
-{
-  return ndn::nfd::Status::Timestamp(
-    boost::chrono::duration_cast<ndn::nfd::Status::Timestamp::duration>(
-      boost::chrono::system_clock::now().time_since_epoch()
-    )
-  );
-}
-
 shared_ptr<const Data> g_response;
 
 void
@@ -38,12 +28,12 @@ interceptResponse(const Data& data)
 BOOST_AUTO_TEST_CASE(Status)
 {
   // initialize
-  ndn::nfd::Status::Timestamp t1 = now();
+  time::system_clock::TimePoint t1 = time::system_clock::now();
   Forwarder forwarder;
   shared_ptr<InternalFace> internalFace = make_shared<InternalFace>();
   internalFace->onReceiveData += &interceptResponse;
   StatusServer statusServer(internalFace, boost::ref(forwarder));
-  ndn::nfd::Status::Timestamp t2 = now();
+  time::system_clock::TimePoint t2 = time::system_clock::now();
   
   // populate tables
   forwarder.getFib().insert("ndn:/fib1");
@@ -64,9 +54,9 @@ BOOST_AUTO_TEST_CASE(Status)
   request->setChildSelector(1);
   
   g_response.reset();
-  ndn::nfd::Status::Timestamp t3 = now();
+  time::system_clock::TimePoint t3 = time::system_clock::now();
   internalFace->sendInterest(*request);
-  ndn::nfd::Status::Timestamp t4 = now();
+  time::system_clock::TimePoint t4 = time::system_clock::now();
   BOOST_REQUIRE(static_cast<bool>(g_response));
   
   // verify
@@ -74,10 +64,10 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_REQUIRE_NO_THROW(status.wireDecode(g_response->getContent()));
   
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION);
-  BOOST_CHECK_GE(status.getStartTimestamp(), t1);
-  BOOST_CHECK_LE(status.getStartTimestamp(), t2);
-  BOOST_CHECK_GE(status.getCurrentTimestamp(), t3);
-  BOOST_CHECK_LE(status.getCurrentTimestamp(), t4);
+  BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));
+  BOOST_CHECK_LE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t2));
+  BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t3));
+  BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t4));
   
   // StatusServer under test isn't added to Forwarder,
   // so request and response won't affect table size

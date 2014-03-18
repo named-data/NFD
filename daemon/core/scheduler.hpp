@@ -8,7 +8,6 @@
 #define NFD_CORE_SCHEDULER_HPP
 
 #include "global-io.hpp"
-#include "time.hpp"
 #include <ndn-cpp-dev/util/scheduler.hpp>
 
 namespace nfd {
@@ -35,7 +34,7 @@ Scheduler&
 getGlobalScheduler();
 
 inline EventId
-schedule(const time::Duration& after, const Scheduler::Event& event)
+schedule(const time::nanoseconds& after, const Scheduler::Event& event)
 {
   return getGlobalScheduler().scheduleEvent(after, event);
 }

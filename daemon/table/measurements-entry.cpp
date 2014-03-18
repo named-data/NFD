@@ -11,7 +11,7 @@ namespace measurements {
 
 Entry::Entry(const Name& name)
   : m_name(name)
-  , m_expiry(0)
+  , m_expiry(time::steady_clock::TimePoint::min())
 {
 }
 

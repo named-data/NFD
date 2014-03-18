@@ -8,7 +8,6 @@
 #define NFD_TABLE_PIT_FACE_RECORD_HPP
 
 #include "face/face.hpp"
-#include "core/time.hpp"
 #include "strategy-info-host.hpp"
 
 namespace nfd {
@@ -34,13 +33,13 @@ public:
   uint32_t
   getLastNonce() const;
   
-  time::Point
+  time::steady_clock::TimePoint
   getLastRenewed() const;
   
   /** \brief gives the time point this record expires
    *  \return getLastRenewed() + InterestLifetime
    */
-  time::Point
+  time::steady_clock::TimePoint
   getExpiry() const;
 
   /// updates lastNonce, lastRenewed, expiry fields
@@ -50,8 +49,8 @@ public:
 private:
   shared_ptr<Face> m_face;
   uint32_t m_lastNonce;
-  time::Point m_lastRenewed;
-  time::Point m_expiry;
+  time::steady_clock::TimePoint m_lastRenewed;
+  time::steady_clock::TimePoint m_expiry;
 };
 
 inline shared_ptr<Face>
@@ -66,13 +65,13 @@ FaceRecord::getLastNonce() const
   return m_lastNonce;
 }
 
-inline time::Point
+inline time::steady_clock::TimePoint
 FaceRecord::getLastRenewed() const
 {
   return m_lastRenewed;
 }
 
-inline time::Point
+inline time::steady_clock::TimePoint
 FaceRecord::getExpiry() const
 {
   return m_expiry;

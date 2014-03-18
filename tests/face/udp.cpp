@@ -545,7 +545,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   BOOST_CHECK_NE(channel3, channel4);
 
-  scheduler::schedule(time::seconds(0.5),
+  scheduler::schedule(time::milliseconds(500),
            bind(&UdpChannel::connect, channel4, "127.0.0.1", "20070",
                 // does not work without static_cast
                 static_cast<UdpChannel::FaceCreatedCallback>(
@@ -553,7 +553,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                 static_cast<UdpChannel::ConnectFailedCallback>(
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1))));
 
-  scheduler::schedule(time::seconds(0.4), bind(&EndToEndFixture::checkFaceList, this, 2));
+  scheduler::schedule(time::milliseconds(400), bind(&EndToEndFixture::checkFaceList, this, 2));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2,// 2 connects
                       time::seconds(4)) == LimitedIo::EXCEED_OPS,
@@ -727,7 +727,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 //  BOOST_CHECK_NE(channel3, channel4);
 //
 //  scheduler
-//  .scheduleEvent(time::seconds(0.5),
+//  .scheduleEvent(time::milliseconds(500),
 //                 bind(&UdpChannel::connect, channel4,
 //                      "::1", "20070",
 //                      static_cast<UdpChannel::FaceCreatedCallback>(bind(&EndToEndFixture::
@@ -806,7 +806,7 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   BOOST_CHECK(static_cast<bool>(m_face2));
 
   // Face::close must be invoked during io run to be counted as an op
-  scheduler::schedule(time::seconds(0.1), bind(&Face::close, m_face2));
+  scheduler::schedule(time::milliseconds(100), bind(&Face::close, m_face2));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
                       "FaceClosing error: cannot properly close faces");

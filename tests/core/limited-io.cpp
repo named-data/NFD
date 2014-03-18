@@ -13,7 +13,7 @@ namespace tests {
 NFD_LOG_INIT("LimitedIo");
 
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
-const time::Duration LimitedIo::UNLIMITED_TIME = time::nanoseconds(-1);
+const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
 LimitedIo::LimitedIo()
   : m_isRunning(false)
@@ -22,14 +22,14 @@ LimitedIo::LimitedIo()
 }
 
 LimitedIo::StopReason
-LimitedIo::run(int nOpsLimit, time::Duration nTimeLimit)
+LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
 {
   BOOST_ASSERT(!m_isRunning);
   m_isRunning = true;
   
   m_reason = NO_WORK;
   m_nOpsRemaining = nOpsLimit;
-  if (nTimeLimit != UNLIMITED_TIME) {
+  if (nTimeLimit >= time::nanoseconds::zero()) {
     m_timeout = scheduler::schedule(nTimeLimit, bind(&LimitedIo::afterTimeout, this));
   }
   

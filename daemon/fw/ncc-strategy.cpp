@@ -20,9 +20,9 @@ NccStrategy::~NccStrategy()
 {
 }
 
-const time::Duration NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
-const time::Duration NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
-const time::Duration NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
+const time::nanoseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
+const time::nanoseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
+const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 
 void
 NccStrategy::afterReceiveInterest(const Face& inFace,
@@ -47,8 +47,8 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
     this->getMeasurementsEntryInfo(pitEntry);
 
-  time::Duration deferFirst = DEFER_FIRST_WITHOUT_BEST_FACE;
-  time::Duration deferRange = DEFER_RANGE_WITHOUT_BEST_FACE;
+  time::nanoseconds deferFirst = DEFER_FIRST_WITHOUT_BEST_FACE;
+  time::nanoseconds deferRange = DEFER_RANGE_WITHOUT_BEST_FACE;
   size_t nUpstreams = nexthops.size();
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
@@ -56,7 +56,8 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
       pitEntry->canForwardTo(*bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = measurementsEntryInfo->m_prediction;
-    deferRange = static_cast<time::Duration>((deferFirst + time::microseconds(1)) / 2);
+    deferRange = time::nanoseconds((deferFirst.count() +
+                              static_cast<time::nanoseconds>(time::microseconds(1)).count()) / 2);
     --nUpstreams;
     this->sendInterest(pitEntry, bestFace);
     pitEntryInfo->m_bestFaceTimeout = scheduler::schedule(
@@ -75,8 +76,8 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     --nUpstreams;
   }
 
-  pitEntryInfo->m_maxInterval = std::max(time::microseconds(1),
-    static_cast<time::Duration>((2 * deferRange + nUpstreams - 1) / nUpstreams));
+  pitEntryInfo->m_maxInterval = std::max(static_cast<time::nanoseconds>(time::microseconds(1)),
+    time::nanoseconds((2 * deferRange.count() + nUpstreams - 1) / nUpstreams));
   pitEntryInfo->m_propagateTimer = scheduler::schedule(deferFirst,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
@@ -120,8 +121,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
 
   if (isForwarded) {
     static unsigned short seed[3];
-    time::Duration deferNext = static_cast<time::Duration>(
-                               nrand48(seed) % pitEntryInfo->m_maxInterval);
+    time::nanoseconds deferNext = time::nanoseconds(nrand48(seed) % pitEntryInfo->m_maxInterval.count());
     pitEntryInfo->m_propagateTimer = scheduler::schedule(deferNext,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
@@ -206,11 +206,11 @@ NccStrategy::getMeasurementsEntryInfo(shared_ptr<measurements::Entry> entry)
 }
 
 
-const time::Duration NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION =
+const time::nanoseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION =
                                                          time::microseconds(8192);
-const time::Duration NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION =
+const time::nanoseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION =
                                                          time::microseconds(127);
-const time::Duration NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION =
+const time::nanoseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION =
                                                          time::microseconds(160000);
 
 NccStrategy::MeasurementsEntryInfo::MeasurementsEntryInfo()
@@ -253,13 +253,13 @@ NccStrategy::MeasurementsEntryInfo::updateBestFace(const Face& face) {
 void
 NccStrategy::MeasurementsEntryInfo::adjustPredictDown() {
   m_prediction = std::max(MIN_PREDICTION,
-    static_cast<time::Duration>(m_prediction - (m_prediction >> ADJUST_PREDICT_DOWN_SHIFT)));
+    time::nanoseconds(m_prediction.count() - (m_prediction.count() >> ADJUST_PREDICT_DOWN_SHIFT)));
 }
 
 void
 NccStrategy::MeasurementsEntryInfo::adjustPredictUp() {
   m_prediction = std::min(MAX_PREDICTION,
-    static_cast<time::Duration>(m_prediction + (m_prediction >> ADJUST_PREDICT_UP_SHIFT)));
+    time::nanoseconds(m_prediction.count() + (m_prediction.count() >> ADJUST_PREDICT_UP_SHIFT)));
 }
 
 void

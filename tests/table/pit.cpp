@@ -21,16 +21,16 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   Name name("ndn:/KuYfjtRq");
   shared_ptr<Interest> interest  = makeInterest(name);
   shared_ptr<Interest> interest1 = makeInterest(name);
-  interest1->setInterestLifetime(static_cast<ndn::Milliseconds>(2528));
+  interest1->setInterestLifetime(time::milliseconds(2528));
   interest1->setNonce(25559);
   shared_ptr<Interest> interest2 = makeInterest(name);
-  interest2->setInterestLifetime(static_cast<ndn::Milliseconds>(6464));
+  interest2->setInterestLifetime(time::milliseconds(6464));
   interest2->setNonce(19004);
   shared_ptr<Interest> interest3 = makeInterest(name);
-  interest3->setInterestLifetime(static_cast<ndn::Milliseconds>(3585));
+  interest3->setInterestLifetime(time::milliseconds(3585));
   interest3->setNonce(24216);
   shared_ptr<Interest> interest4 = makeInterest(name);
-  interest4->setInterestLifetime(static_cast<ndn::Milliseconds>(8795));
+  interest4->setInterestLifetime(time::milliseconds(8795));
   interest4->setNonce(17365);
 
   pit::Entry entry(*interest);
@@ -44,10 +44,10 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(outRecords1.size(), 0);
 
   // insert InRecord
-  time::Point before1 = time::now();
+  time::steady_clock::TimePoint before1 = time::steady_clock::now();
   pit::InRecordCollection::iterator in1 =
     entry.insertOrUpdateInRecord(face1, *interest1);
-  time::Point after1 = time::now();
+  time::steady_clock::TimePoint after1 = time::steady_clock::now();
   const pit::InRecordCollection& inRecords2 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords2.size(), 1);
   BOOST_CHECK(in1 == inRecords2.begin());
@@ -55,15 +55,15 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(in1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(in1->getLastRenewed(), before1);
   BOOST_CHECK_LE(in1->getLastRenewed(), after1);
-  BOOST_CHECK_LE(std::abs(in1->getExpiry() - in1->getLastRenewed()
-    - time::milliseconds(interest1->getInterestLifetime())),
-    (after1 - before1));
+  BOOST_CHECK_LE(in1->getExpiry() - in1->getLastRenewed()
+                 - interest1->getInterestLifetime(),
+                 (after1 - before1));
 
   // insert OutRecord
-  time::Point before2 = time::now();
+  time::steady_clock::TimePoint before2 = time::steady_clock::now();
   pit::OutRecordCollection::iterator out1 =
     entry.insertOrUpdateOutRecord(face1, *interest1);
-  time::Point after2 = time::now();
+  time::steady_clock::TimePoint after2 = time::steady_clock::now();
   const pit::OutRecordCollection& outRecords2 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords2.size(), 1);
   BOOST_CHECK(out1 == outRecords2.begin());
@@ -71,23 +71,23 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(out1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(out1->getLastRenewed(), before2);
   BOOST_CHECK_LE(out1->getLastRenewed(), after2);
-  BOOST_CHECK_LE(std::abs(out1->getExpiry() - out1->getLastRenewed()
-    - time::milliseconds(interest1->getInterestLifetime())),
-    (after2 - before2));
+  BOOST_CHECK_LE(out1->getExpiry() - out1->getLastRenewed()
+                 - interest1->getInterestLifetime(),
+                 (after2 - before2));
 
   // update InRecord
-  time::Point before3 = time::now();
+  time::steady_clock::TimePoint before3 = time::steady_clock::now();
   pit::InRecordCollection::iterator in2 =
     entry.insertOrUpdateInRecord(face1, *interest2);
-  time::Point after3 = time::now();
+  time::steady_clock::TimePoint after3 = time::steady_clock::now();
   const pit::InRecordCollection& inRecords3 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords3.size(), 1);
   BOOST_CHECK(in2 == inRecords3.begin());
   BOOST_CHECK_EQUAL(in2->getFace(), face1);
   BOOST_CHECK_EQUAL(in2->getLastNonce(), interest2->getNonce());
-  BOOST_CHECK_LE(std::abs(in2->getExpiry() - in2->getLastRenewed()
-    - time::milliseconds(interest2->getInterestLifetime())),
-    (after3 - before3));
+  BOOST_CHECK_LE(in2->getExpiry() - in2->getLastRenewed()
+                 - interest2->getInterestLifetime(),
+                 (after3 - before3));
 
   // insert another InRecord
   pit::InRecordCollection::iterator in3 =
@@ -130,16 +130,16 @@ BOOST_AUTO_TEST_CASE(EntryNonce)
 BOOST_AUTO_TEST_CASE(EntryLifetime)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
-  BOOST_ASSERT(interest->getInterestLifetime() < 0); // library uses -1 to indicate unset lifetime
+  BOOST_ASSERT(interest->getInterestLifetime() < time::milliseconds::zero()); // library uses -1 to indicate unset lifetime
 
   shared_ptr<Face> face = make_shared<DummyFace>();
   pit::Entry entry(*interest);
 
   pit::InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(face, *interest);
-  BOOST_CHECK_GT(inIt->getExpiry(), time::now());
+  BOOST_CHECK_GT(inIt->getExpiry(), time::steady_clock::now());
 
   pit::OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
-  BOOST_CHECK_GT(outIt->getExpiry(), time::now());
+  BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
 }
 
 BOOST_AUTO_TEST_CASE(EntryCanForwardTo)
@@ -174,27 +174,27 @@ BOOST_AUTO_TEST_CASE(Insert)
   exclude2.excludeOne(Name::Component("FG1Ni6nYcf"));
 
   // base
-  Interest interestA(name1, -1, -1, exclude0, -1, false, -1, -1.0, 0);
+  Interest interestA(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds::min(), 0);
   // A+exclude1
-  Interest interestB(name1, -1, -1, exclude1, -1, false, -1, -1.0, 0);
+  Interest interestB(name1, -1, -1, exclude1, -1, false, -1, time::milliseconds::min(), 0);
   // A+exclude2
-  Interest interestC(name1, -1, -1, exclude2, -1, false, -1, -1.0, 0);
+  Interest interestC(name1, -1, -1, exclude2, -1, false, -1, time::milliseconds::min(), 0);
   // A+MinSuffixComponents
-  Interest interestD(name1, 2, -1, exclude0, -1, false, -1, -1.0, 0);
+  Interest interestD(name1, 2, -1, exclude0, -1, false, -1, time::milliseconds::min(), 0);
   // A+MaxSuffixComponents
-  Interest interestE(name1, -1,  4, exclude0, -1, false, -1, -1.0, 0);
+  Interest interestE(name1, -1,  4, exclude0, -1, false, -1, time::milliseconds::min(), 0);
   // A+ChildSelector
-  Interest interestF(name1, -1, -1, exclude0,  1, false, -1, -1.0, 0);
+  Interest interestF(name1, -1, -1, exclude0,  1, false, -1, time::milliseconds::min(), 0);
   // A+MustBeFresh
-  Interest interestG(name1, -1, -1, exclude0, -1,  true, -1, -1.0, 0);
+  Interest interestG(name1, -1, -1, exclude0, -1,  true, -1, time::milliseconds::min(), 0);
   // A+Scope
-  Interest interestH(name1, -1, -1, exclude0, -1, false,  2, -1.0, 0);
+  Interest interestH(name1, -1, -1, exclude0, -1, false,  2, time::milliseconds::min(), 0);
   // A+InterestLifetime
-  Interest interestI(name1, -1, -1, exclude0, -1, false, -1, 2000, 0);
+  Interest interestI(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds(2000), 0);
   // A+Nonce
-  Interest interestJ(name1, -1, -1, exclude0, -1, false, -1, -1.0, 2192);
+  Interest interestJ(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds::min(), 2192);
   // different Name+exclude1
-  Interest interestK(name2, -1, -1, exclude1, -1, false, -1, -1.0, 0);
+  Interest interestK(name2, -1, -1, exclude1, -1, false, -1, time::milliseconds::min(), 0);
 
   NameTree nameTree(16);
   Pit pit(nameTree);

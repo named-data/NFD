@@ -11,7 +11,7 @@
 
 namespace nfd {
 
-const time::Duration Measurements::s_defaultLifetime = time::seconds(4);
+const time::nanoseconds Measurements::s_defaultLifetime = time::seconds(4);
 
 Measurements::Measurements(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -101,12 +101,12 @@ Measurements::findExactMatch(const Name& name) const
 }
 
 void
-Measurements::extendLifetime(measurements::Entry& entry, const time::Duration lifetime)
+Measurements::extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime)
 {
   shared_ptr<measurements::Entry> ret = this->findExactMatch(entry.getName());
   if (static_cast<bool>(ret))
   {
-    time::Point expiry = time::now() + lifetime;
+    time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
     if (ret->m_expiry >= expiry) // has longer lifetime, not extending
       return;
     scheduler::cancel(entry.m_cleanup);

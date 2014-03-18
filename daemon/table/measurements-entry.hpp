@@ -39,7 +39,7 @@ private:
   Name m_name;
 
 private: // lifetime
-  time::Point m_expiry;
+  time::steady_clock::TimePoint m_expiry;
   EventId m_cleanup;
   shared_ptr<name_tree::Entry> m_nameTreeEntry;
 

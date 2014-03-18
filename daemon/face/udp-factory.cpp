@@ -21,7 +21,7 @@ UdpFactory::UdpFactory(const std::string& defaultPort/* = "6363"*/)
 
 shared_ptr<UdpChannel>
 UdpFactory::createChannel(const udp::Endpoint& endpoint,
-                          const time::Duration& timeout)
+                          const time::seconds& timeout)
 {
   NFD_LOG_DEBUG("Creating unicast " << endpoint);
   
@@ -52,7 +52,7 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
 shared_ptr<UdpChannel>
 UdpFactory::createChannel(const std::string& localHost,
                           const std::string& localPort,
-                          const time::Duration& timeout)
+                          const time::seconds& timeout)
 {
   return createChannel(UdpResolver::syncResolve(localHost, localPort),
                        timeout);

@@ -38,7 +38,7 @@ public:
    *  \param nTimeLimit time limit, pass UNLIMITED_TIME for no limit
    */
   StopReason
-  run(int nOpsLimit, time::Duration nTimeLimit);
+  run(int nOpsLimit, const time::nanoseconds& nTimeLimit);
   
   /// count an operation
   void
@@ -53,7 +53,7 @@ private:
 
 public:
   static const int UNLIMITED_OPS;
-  static const time::Duration UNLIMITED_TIME;
+  static const time::nanoseconds UNLIMITED_TIME;
 
 private:
   bool m_isRunning;

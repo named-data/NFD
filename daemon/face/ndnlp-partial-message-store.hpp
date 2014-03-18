@@ -53,7 +53,7 @@ class PartialMessageStore : noncopyable
 {
 public:
   PartialMessageStore(Scheduler& scheduler,
-    time::Duration idleDuration = time::milliseconds(100));
+    const time::nanoseconds& idleDuration = time::milliseconds(100));
 
   virtual
   ~PartialMessageStore();
@@ -80,7 +80,7 @@ private:
   std::map<uint64_t, shared_ptr<PartialMessage> > m_partialMessages;
 
   Scheduler& m_scheduler;
-  time::Duration m_idleDuration;
+  time::nanoseconds m_idleDuration;
 };
 
 } // namespace ndnlp

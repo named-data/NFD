@@ -84,7 +84,7 @@ public:
   generateIdentity(const Name& prefix)
   {
     m_identityName = prefix;
-    m_identityName.append(boost::lexical_cast<std::string>(ndn::time::now()));
+    m_identityName.appendVersion();
 
     const Name certName = m_keys.createIdentity(m_identityName);
 

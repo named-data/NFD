@@ -56,7 +56,7 @@ public:
    */
   shared_ptr<UdpChannel>
   createChannel(const udp::Endpoint& localEndpoint,
-         const time::Duration& timeout = time::seconds(600));
+         const time::seconds& timeout = time::seconds(600));
 
   /**
    * \brief Create UDP-based channel using specified host and port number
@@ -81,7 +81,7 @@ public:
   shared_ptr<UdpChannel>
   createChannel(const std::string& localHost,
          const std::string& localPort,
-         const time::Duration& timeout = time::seconds(600));
+         const time::seconds& timeout = time::seconds(600));
 
   /**
    * \brief Create MulticastUdpFace using udp::Endpoint

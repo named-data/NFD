@@ -41,8 +41,8 @@ public:
       "SignatureSha256WithRsa\n"
       "   [-i identity] - set identity to be used for signing\n"
       "   [-F]          - set FinalBlockId to the last component of Name\n"
-      "   [-x]          - set FreshnessPeriod in milliseconds\n"
-      "   [-w timeout]  - set Timeout in milliseconds\n"
+      "   [-x]          - set FreshnessPeriod in time::milliseconds\n"
+      "   [-w timeout]  - set Timeout in time::milliseconds\n"
       "   [-h]          - print help and exit\n\n";
     exit(1);
   }
@@ -76,7 +76,7 @@ public:
   {
     if (freshnessPeriod < 0)
       usage();
-    m_freshnessPeriod = freshnessPeriod;
+    m_freshnessPeriod = ndn::time::milliseconds(freshnessPeriod);
   }
 
   void
@@ -84,7 +84,7 @@ public:
   {
     if (timeout < 0)
       usage();
-    m_timeout = timeout;
+    m_timeout = ndn::time::milliseconds(timeout);
   }
 
   void
@@ -93,10 +93,10 @@ public:
     m_prefixName = ndn::Name(prefixName);
   }
 
-  ndn::Milliseconds
+  ndn::time::milliseconds
   getDefaultTimeout()
   {
-    return 10000;
+    return ndn::time::seconds(10);
   }
 
   ndn::Data
@@ -107,7 +107,7 @@ public:
     payloadStream << std::cin.rdbuf();
     std::string payload = payloadStream.str();
     dataPacket.setContent(reinterpret_cast<const uint8_t*>(payload.c_str()), payload.length());
-    if (m_freshnessPeriod >= 0)
+    if (m_freshnessPeriod >= ndn::time::milliseconds::zero())
       dataPacket.setFreshnessPeriod(m_freshnessPeriod);
     if (m_isLastAsFinalBlockIdSet)
       {
@@ -162,12 +162,12 @@ public:
         else
           {
             m_face.setInterestFilter(m_prefixName,
-                                     ndn::func_lib::bind(&NdnTlvPoke::onInterest,
-                                                         this, _1, _2, dataPacket),
-                                     ndn::func_lib::bind(&NdnTlvPoke::onRegisterFailed,
-                                                         this, _1, _2));
+                                     ndn::bind(&NdnTlvPoke::onInterest,
+                                               this, _1, _2, dataPacket),
+                                     ndn::bind(&NdnTlvPoke::onRegisterFailed,
+                                               this, _1, _2));
           }
-        if (m_timeout < 0)
+        if (m_timeout < ndn::time::milliseconds::zero())
           m_face.processEvents(getDefaultTimeout());
         else
           m_face.processEvents(m_timeout);
@@ -193,8 +193,8 @@ private:
   bool m_isUseDigestSha256Set;
   ndn::shared_ptr<ndn::Name> m_identityName;
   bool m_isLastAsFinalBlockIdSet;
-  ndn::Milliseconds m_freshnessPeriod;
-  ndn::Milliseconds m_timeout;
+  ndn::time::milliseconds m_freshnessPeriod;
+  ndn::time::milliseconds m_timeout;
   ndn::Name m_prefixName;
   bool m_isDataSent;
   ndn::Face m_face;

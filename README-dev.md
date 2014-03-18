@@ -12,7 +12,8 @@ Include the following header into all .hpp and .cpp files:
 Recommendations
 ---------------
 
-The following code style recommendations are highly advised: https://github.com/cawka/docs-ndn/blob/master/cpp.rst
+NFD code is subject to the code style, defined here:
+http://redmine.named-data.net/projects/nfd/wiki/CodeStyle
 
 Running unit-tests
 ------------------
@@ -46,4 +47,5 @@ command:
 
 There are many more command line options available, information about
 which can be obtained either from the command line using ``--help``
-switch, or online on Boost.Test library website (http://www.boost.org/doc/libs/1_55_0/libs/test/doc/html/).
+switch, or online on Boost.Test library website
+(http://www.boost.org/doc/libs/1_48_0/libs/test/doc/html/).

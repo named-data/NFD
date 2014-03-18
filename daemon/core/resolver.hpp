@@ -9,7 +9,6 @@
 
 #include "common.hpp"
 #include "core/global-io.hpp"
-#include "core/time.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {
@@ -73,7 +72,7 @@ public:
                const SuccessCallback& onSuccess,
                const ErrorCallback& onError,
                const nfd::resolver::AddressSelector& addressSelector = nfd::resolver::AnyAddress(),
-               const time::Duration& timeout = time::seconds(4.0))
+               const time::seconds& timeout = time::seconds(4))
   {
     shared_ptr<Resolver> resolver =
       shared_ptr<Resolver>(new Resolver(onSuccess, onError,
@@ -126,7 +125,7 @@ private:
 
   void
   asyncResolve(const std::string& host, const std::string& port,
-               const time::Duration& timeout,
+               const time::seconds& timeout,
                const shared_ptr<Resolver>& self)
   {
     typename resolver::query query(host, port,

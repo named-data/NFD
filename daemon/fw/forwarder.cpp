@@ -217,7 +217,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
     for (pit::InRecordCollection::const_iterator it = inRecords.begin();
                                                  it != inRecords.end(); ++it) {
-      if (it->getExpiry() > time::now()) {
+      if (it->getExpiry() > time::steady_clock::now()) {
         pendingDownstreams.insert(it->getFace());
       }
     }
@@ -293,8 +293,8 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
     std::max_element(inRecords.begin(), inRecords.end(),
     &compare_InRecord_expiry);
 
-  time::Point lastExpiry = lastExpiring->getExpiry();
-  time::Duration lastExpiryFromNow = lastExpiry  - time::now();
+  time::steady_clock::TimePoint lastExpiry = lastExpiring->getExpiry();
+  time::nanoseconds lastExpiryFromNow = lastExpiry  - time::steady_clock::now();
   if (lastExpiryFromNow <= time::seconds(0)) {
     // TODO all InRecords are already expired; will this happen?
   }
@@ -312,7 +312,7 @@ Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
     return;
   }
 
-  time::Duration stragglerTime = time::milliseconds(100);
+  time::nanoseconds stragglerTime = time::milliseconds(100);
 
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
     bind(&Pit::erase, &m_pit, pitEntry));

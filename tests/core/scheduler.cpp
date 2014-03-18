@@ -57,18 +57,20 @@ struct SchedulerFixture : protected BaseFixture
 
 BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
 {
-  scheduler::schedule(time::seconds(0.5), bind(&SchedulerFixture::event1, this));
+  scheduler::schedule(time::milliseconds(500), bind(&SchedulerFixture::event1, this));
 
-  EventId i = scheduler::schedule(time::seconds(1.0), bind(&SchedulerFixture::event2, this));
+  EventId i = scheduler::schedule(time::seconds(1), bind(&SchedulerFixture::event2, this));
   scheduler::cancel(i);
 
-  scheduler::schedule(time::seconds(0.25), bind(&SchedulerFixture::event3, this));
+  scheduler::schedule(time::milliseconds(250), bind(&SchedulerFixture::event3, this));
 
-  i = scheduler::schedule(time::seconds(0.05), bind(&SchedulerFixture::event2, this));
+  i = scheduler::schedule(time::milliseconds(50), bind(&SchedulerFixture::event2, this));
   scheduler::cancel(i);
 
   // TODO deprecate periodic event
-  i = scheduler::getGlobalScheduler().schedulePeriodicEvent(time::seconds(0.3), time::seconds(0.1), bind(&SchedulerFixture::event4, this));
+  i = scheduler::getGlobalScheduler().schedulePeriodicEvent(time::milliseconds(300),
+                                                            time::milliseconds(100),
+                                                            bind(&SchedulerFixture::event4, this));
   scheduler::schedule(time::seconds(1), bind(&scheduler::cancel, i));
 
   g_io.run();
@@ -98,7 +100,7 @@ struct SelfCancelFixture : protected BaseFixture
 
 BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
 {
-  m_selfEventId = scheduler::schedule(time::seconds(0.1),
+  m_selfEventId = scheduler::schedule(time::milliseconds(100),
                                       bind(&SelfCancelFixture::cancelSelf, this));
 
   BOOST_REQUIRE_NO_THROW(g_io.run());

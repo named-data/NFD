@@ -10,7 +10,6 @@
 #define NFD_TABLE_CS_ENTRY_HPP
 
 #include "common.hpp"
-#include "core/time.hpp"
 #include <ndn-cpp-dev/util/crypto.hpp>
 
 namespace nfd {
@@ -49,9 +48,9 @@ public:
   wasRefreshedByDuplicate() const;
 
   /** \brief returns the absolute time when Data becomes expired
-   *  \return{ Time (resolution up to milliseconds) }
+   *  \return{ Time (resolution up to time::milliseconds) }
    */
-  const time::Point&
+  const time::steady_clock::TimePoint&
   getStaleTime() const;
 
   /** \brief returns the Data packet stored in the CS entry
@@ -102,7 +101,7 @@ private:
   printIterators() const;
 
 private:
-  time::Point m_staleAt;
+  time::steady_clock::TimePoint m_staleAt;
   shared_ptr<const Data> m_dataPacket;
 
   bool m_isUnsolicited;

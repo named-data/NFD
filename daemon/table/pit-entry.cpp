@@ -58,7 +58,7 @@ predicate_FaceRecord_Face(const FaceRecord& faceRecord, const Face* face)
 
 static inline bool
 predicate_FaceRecord_ne_Face_and_unexpired(const FaceRecord& faceRecord,
-  const Face* face, time::Point now)
+  const Face* face, const time::steady_clock::TimePoint& now)
 {
   return faceRecord.getFace().get() != face && faceRecord.getExpiry() >= now;
 }
@@ -70,14 +70,14 @@ Entry::canForwardTo(const Face& face) const
     m_outRecords.begin(), m_outRecords.end(),
     bind(&predicate_FaceRecord_Face, _1, &face));
   bool hasUnexpiredOutRecord = outIt != m_outRecords.end() &&
-                               outIt->getExpiry() >= time::now();
+                               outIt->getExpiry() >= time::steady_clock::now();
   if (hasUnexpiredOutRecord) {
     return false;
   }
 
   InRecordCollection::const_iterator inIt = std::find_if(
     m_inRecords.begin(), m_inRecords.end(),
-    bind(&predicate_FaceRecord_ne_Face_and_unexpired, _1, &face, time::now()));
+    bind(&predicate_FaceRecord_ne_Face_and_unexpired, _1, &face, time::steady_clock::now()));
   bool hasUnexpiredOtherInRecord = inIt != m_inRecords.end();
   if (!hasUnexpiredOtherInRecord) {
     return false;
@@ -162,7 +162,7 @@ Entry::deleteOutRecord(shared_ptr<Face> face)
 }
 
 static inline bool
-predicate_FaceRecord_unexpired(const FaceRecord& faceRecord, time::Point now)
+predicate_FaceRecord_unexpired(const FaceRecord& faceRecord, const time::steady_clock::TimePoint& now)
 {
   return faceRecord.getExpiry() >= now;
 }
@@ -171,7 +171,7 @@ bool
 Entry::hasUnexpiredOutRecords() const
 {
   OutRecordCollection::const_iterator it = std::find_if(m_outRecords.begin(),
-    m_outRecords.end(), bind(&predicate_FaceRecord_unexpired, _1, time::now()));
+    m_outRecords.end(), bind(&predicate_FaceRecord_unexpired, _1, time::steady_clock::now()));
   return it != m_outRecords.end();
 }
 

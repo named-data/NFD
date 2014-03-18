@@ -50,7 +50,7 @@ public:
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, const time::Duration& lifetime);
+  extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime);
 
 private:
   /** \brief perform access control to Measurements entry
@@ -91,7 +91,7 @@ MeasurementsAccessor::getParent(shared_ptr<measurements::Entry> child)
 }
 
 inline void
-MeasurementsAccessor::extendLifetime(measurements::Entry& entry, const time::Duration& lifetime)
+MeasurementsAccessor::extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime)
 {
   m_measurements.extendLifetime(entry, lifetime);
 }

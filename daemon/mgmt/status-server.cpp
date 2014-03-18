@@ -11,31 +11,12 @@
 namespace nfd {
 
 const Name StatusServer::DATASET_PREFIX = "ndn:/localhost/nfd/status";
-const ndn::Milliseconds StatusServer::RESPONSE_FRESHNESS = 5000;
-
-static inline ndn::nfd::Status::Timestamp
-now()
-{
-  // make sure boost::chrono::system_clock's epoch is UNIX epoch
-  BOOST_ASSERT(static_cast<std::time_t>(0) == boost::chrono::system_clock::to_time_t(
-    boost::chrono::system_clock::time_point(
-      boost::chrono::duration_cast<boost::chrono::system_clock::duration>(
-        ndn::nfd::Status::Timestamp::duration::zero()
-      )
-    )
-  ));
-
-  return ndn::nfd::Status::Timestamp(
-    boost::chrono::duration_cast<ndn::nfd::Status::Timestamp::duration>(
-      boost::chrono::system_clock::now().time_since_epoch()
-    )
-  );
-}
+const time::milliseconds StatusServer::RESPONSE_FRESHNESS = time::milliseconds(5000);
 
 StatusServer::StatusServer(shared_ptr<AppFace> face, Forwarder& forwarder)
   : m_face(face)
   , m_forwarder(forwarder)
-  , m_startTimestamp(now())
+  , m_startTimestamp(time::system_clock::now())
 {
   m_face->setInterestFilter(DATASET_PREFIX, bind(&StatusServer::onInterest, this, _2));
 }
@@ -44,9 +25,10 @@ void
 StatusServer::onInterest(const Interest& interest) const
 {
   Name name(DATASET_PREFIX);
-  // TODO use NumberComponent
-  name.append(ndn::Name::Component::fromNumberWithMarker(ndn::ndn_getNowMilliseconds(), 0x00));
-  name.append(ndn::Name::Component::fromNumberWithMarker(0, 0x00));
+  /// \todo use NumberComponent
+  name.append(Name::Component::fromNumberWithMarker(
+    time::toUnixTimestamp(time::system_clock::now()).count(), 0x00));
+  name.append(Name::Component::fromNumberWithMarker(0, 0x00));
 
   shared_ptr<Data> data = make_shared<Data>(name);
   data->setFreshnessPeriod(RESPONSE_FRESHNESS);
@@ -67,7 +49,7 @@ StatusServer::collectStatus() const
 
   status->setNfdVersion(NFD_VERSION);
   status->setStartTimestamp(m_startTimestamp);
-  status->setCurrentTimestamp(now());
+  status->setCurrentTimestamp(time::system_clock::now());
 
   status->setNNameTreeEntries(m_forwarder.getNameTree().size());
   status->setNFibEntries(m_forwarder.getFib().size());

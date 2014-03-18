@@ -349,7 +349,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
                bind(&EndToEndFixture::channel_onConnectFailed, this, _1)),
            time::seconds(4)));
 
-  scheduler::schedule(time::seconds(0.5),
+  scheduler::schedule(time::milliseconds(500),
                       bind(&EndToEndFixture::checkFaceList, this, 4));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(4,// 2 connects and 2 accepts
@@ -385,7 +385,7 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   BOOST_CHECK(static_cast<bool>(m_face2));
 
   // Face::close must be invoked during io run to be counted as an op
-  scheduler::schedule(time::seconds(0.1), bind(&Face::close, m_face1));
+  scheduler::schedule(time::milliseconds(100), bind(&Face::close, m_face1));
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "FaceClosing error: cannot properly close faces");

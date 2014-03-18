@@ -19,7 +19,7 @@ namespace nfd {
 Cs::Cs(int nMaxPackets)
   : m_nMaxPackets(nMaxPackets)
 {
-  srand (time::now());
+  srand (time::toUnixTimestamp(time::system_clock::now()).count());
   SkipListLayer* zeroLayer = new SkipListLayer();
   m_skipList.push_back(zeroLayer);
 }
@@ -304,7 +304,7 @@ Cs::evictItem()
       shared_ptr<cs::Entry> entry = m_contentByStaleness.top();
 
       //because stale time could be updated by the duplicate packet
-      if (entry->getStaleTime() < time::now())
+      if (entry->getStaleTime() < time::steady_clock::now())
         {
           m_contentByStaleness.pop();
           bool isErased = eraseFromSkipList(entry);
@@ -312,7 +312,7 @@ Cs::evictItem()
           if (isErased)
             return true;
         }
-      else if ( (entry->getStaleTime() > time::now()) && entry->wasRefreshedByDuplicate() )
+      else if ( (entry->getStaleTime() > time::steady_clock::now()) && entry->wasRefreshedByDuplicate() )
         {
           m_contentByStaleness.pop();
           m_contentByStaleness.push(entry); // place in a right order
@@ -607,7 +607,7 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
         }
     }
 
-  if (interest.getMustBeFresh() && entry->getStaleTime() < time::now())
+  if (interest.getMustBeFresh() && entry->getStaleTime() < time::steady_clock::now())
     {
       NFD_LOG_DEBUG("violates mustBeFresh");
       return false;

@@ -176,13 +176,13 @@ BOOST_AUTO_TEST_CASE(StalenessQueue)
   
   Name name2("/insert/fresh");
   shared_ptr<Data> data2 = make_shared<Data>(name2);
-  data2->setFreshnessPeriod(5000);
+  data2->setFreshnessPeriod(time::milliseconds(5000));
   data2->setSignature(fakeSignature);
   cs.insert(*data2);
   
   Name name("/insert/expire");
   shared_ptr<Data> data = make_shared<Data>(name);
-  data->setFreshnessPeriod(500);
+  data->setFreshnessPeriod(time::milliseconds(500));
   data->setSignature(fakeSignature);
   cs.insert(*data);
   
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(MustBeFreshSelector)
   
   Name name("/insert/nonfresh");
   shared_ptr<Data> data = make_shared<Data>(name);
-  data->setFreshnessPeriod(500);
+  data->setFreshnessPeriod(time::milliseconds(500));
   data->setSignature(fakeSignature);
   cs.insert(*data);
   
@@ -652,7 +652,7 @@ protected:
   insert(uint32_t id, const Name& name)
   {
     shared_ptr<Data> data = make_shared<Data>(name);
-    data->setFreshnessPeriod(99999);
+    data->setFreshnessPeriod(time::milliseconds(99999));
     data->setContent(reinterpret_cast<const uint8_t*>(&id), sizeof(id));
     
     ndn::SignatureSha256WithRsa fakeSignature;

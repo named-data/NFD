@@ -51,7 +51,7 @@ void
 TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
                     const TcpChannel::FaceCreatedCallback& onFaceCreated,
                     const TcpChannel::ConnectFailedCallback& onConnectFailed,
-                    const time::Duration& timeout/* = time::seconds(4)*/)
+                    const time::seconds& timeout/* = time::seconds(4)*/)
 {
   ChannelFaceMap::iterator i = m_channelFaces.find(remoteEndpoint);
   if (i != m_channelFaces.end()) {
@@ -62,8 +62,8 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
 
-  shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
+  shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
+    make_shared<ndn::monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
@@ -80,13 +80,13 @@ void
 TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort,
                     const TcpChannel::FaceCreatedCallback& onFaceCreated,
                     const TcpChannel::ConnectFailedCallback& onConnectFailed,
-                    const time::Duration& timeout/* = time::seconds(4)*/)
+                    const time::seconds& timeout/* = time::seconds(4)*/)
 {
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
 
-  shared_ptr<monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
+  shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
+    make_shared<ndn::monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
 
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
@@ -170,7 +170,7 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 void
 TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
                                     const shared_ptr<ip::tcp::socket>& socket,
-                                    const shared_ptr<monotonic_deadline_timer>& timer,
+                                    const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                                     const FaceCreatedCallback& onFaceCreated,
                                     const ConnectFailedCallback& onConnectFailed)
 {
@@ -199,7 +199,7 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
 void
 TcpChannel::handleFailedConnect(const boost::system::error_code& error,
                                 const shared_ptr<ip::tcp::socket>& socket,
-                                const shared_ptr<monotonic_deadline_timer>& timer,
+                                const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                                 const ConnectFailedCallback& onConnectFailed)
 {
   if (error) { // e.g., cancelled
@@ -218,7 +218,7 @@ void
 TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
                                      ip::tcp::resolver::iterator remoteEndpoint,
                                      const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                                     const shared_ptr<boost::asio::monotonic_deadline_timer>& timer,
+                                     const shared_ptr<ndn::monotonic_deadline_timer>& timer,
                                      const FaceCreatedCallback& onFaceCreated,
                                      const ConnectFailedCallback& onConnectFailed,
                                      const shared_ptr<ip::tcp::resolver>& resolver)

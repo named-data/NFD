@@ -12,8 +12,8 @@ namespace pit {
 FaceRecord::FaceRecord(shared_ptr<Face> face)
   : m_face(face)
   , m_lastNonce(0)
-  , m_lastRenewed(0)
-  , m_expiry(0)
+  , m_lastRenewed(time::steady_clock::TimePoint::min())
+  , m_expiry(time::steady_clock::TimePoint::min())
 {
 }
 
@@ -29,11 +29,11 @@ void
 FaceRecord::update(const Interest& interest)
 {
   m_lastNonce = interest.getNonce();
-  m_lastRenewed = time::now();
+  m_lastRenewed = time::steady_clock::now();
 
-  const ndn::Milliseconds DEFAULT_INTEREST_LIFETIME = static_cast<ndn::Milliseconds>(4000);
-  ndn::Milliseconds lifetime = interest.getInterestLifetime();
-  if (lifetime < 0) {
+  static const time::milliseconds DEFAULT_INTEREST_LIFETIME = time::milliseconds(4000);
+  time::milliseconds lifetime = interest.getInterestLifetime();
+  if (lifetime < time::milliseconds::zero()) {
     lifetime = DEFAULT_INTEREST_LIFETIME;
   }
   m_expiry = m_lastRenewed + time::milliseconds(lifetime);
