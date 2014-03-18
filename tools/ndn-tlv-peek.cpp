@@ -134,17 +134,16 @@ public:
   void
   onData(const ndn::Interest& interest, ndn::Data& data)
   {
-    int returnValue;
     m_isDataReceived = true;
     if (m_isPayloadOnlySet)
       {
         ndn::Block block = data.getContent();
-        returnValue = write(1, block.value(), block.value_size());
+        write(1, block.value(), block.value_size());
       }
     else
       {
         ndn::Block block = data.wireEncode();
-        returnValue = write(1, block.wire(), block.size());
+        write(1, block.wire(), block.size());
       }
   }
 

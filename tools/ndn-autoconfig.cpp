@@ -3,6 +3,7 @@
  * Copyright (C) 2014 Named Data Networking Project
  * See COPYING for copyright and distribution information.
  */
+
 #include <ndn-cpp-dev/face.hpp>
 #include <ndn-cpp-dev/management/nfd-controller.hpp>
 #include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
@@ -38,7 +39,7 @@ public:
     : ndn::nfd::Controller(face)
   {
   }
-      
+
   // Start to look for a hub (NDN hub discovery first stage)
   void
   discoverHubStage1()
@@ -227,10 +228,7 @@ public:
       }
       
       blob += domainNameSize;
-      
-      rechdr* header = reinterpret_cast<rechdr*>(&blob[0]);
-      srv_t* server = reinterpret_cast<srv_t*>(&blob[sizeof(rechdr)]);
-      
+
       domainNameSize = dn_expand(queryAnswer.buf,
                                  queryAnswer.buf + answerSize,
                                  blob + 16,
@@ -240,6 +238,8 @@ public:
       {
         return false;
       }
+
+      srv_t* server = reinterpret_cast<srv_t*>(&blob[sizeof(rechdr)]);
       uint16_t convertedPort = be16toh(server->port);
       std::string uri = "udp://";
       uri.append(hostName);
