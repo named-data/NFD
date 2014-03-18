@@ -27,7 +27,7 @@ face_system
     idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
-    mcast no
+    mcast yes
 
     ; Example multicast settings
     ; NFD creates one UDP multicast face per NIC
@@ -62,7 +62,7 @@ face_system
 
   ether
   {
-    mcast no
+    mcast yes
 
   ;    Example multicast settings
   ;    NFD creates one Ethernet multicast face per NIC
