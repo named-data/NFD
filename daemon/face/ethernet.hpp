@@ -16,8 +16,6 @@
 namespace nfd {
 namespace ethernet {
 
-typedef std::string Endpoint;
-
 const size_t ADDR_LEN     = 6;      ///< Octets in one Ethernet address
 const size_t TYPE_LEN     = 2;      ///< Octets in Ethertype field
 const size_t HDR_LEN      = 14;     ///< Total octets in Ethernet header (without 802.1Q tag)

@@ -20,6 +20,8 @@ typedef pcap pcap_t;
 
 namespace nfd {
 
+class NetworkInterfaceInfo;
+
 /**
  * \brief Implementation of Face abstraction that uses raw
  *        Ethernet frames as underlying transport mechanism
@@ -36,7 +38,7 @@ public:
   };
 
   EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
-               const ethernet::Endpoint& interface,
+               const shared_ptr<NetworkInterfaceInfo>& interface,
                const ethernet::Address& address);
 
   virtual
@@ -76,16 +78,13 @@ private:
   void
   processErrorCode(const boost::system::error_code& error);
 
-  ethernet::Address
-  getInterfaceAddress() const;
-
   size_t
   getInterfaceMtu() const;
 
 private:
   shared_ptr<boost::asio::posix::stream_descriptor> m_socket;
-  ethernet::Endpoint m_interface;
-  ethernet::Address m_sourceAddress;
+  std::string m_interfaceName;
+  ethernet::Address m_srcAddress;
   ethernet::Address m_destAddress;
   size_t m_interfaceMtu;
   pcap_t* m_pcap;

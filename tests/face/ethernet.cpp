@@ -5,80 +5,102 @@
  */
 
 #include "face/ethernet-factory.hpp"
-#include <ndn-cpp-dev/security/key-chain.hpp>
-
+#include "core/network-interface.hpp"
 #include "tests/test-common.hpp"
+
+#include <ndn-cpp-dev/security/key-chain.hpp>
+#include <pcap/pcap.h>
 
 namespace nfd {
 namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(FaceEthernet, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(MulticastFacesMap)
+class InterfacesFixture : protected BaseFixture
+{
+protected:
+  InterfacesFixture()
+  {
+    std::list< shared_ptr<NetworkInterfaceInfo> > ifs = listNetworkInterfaces();
+    for (std::list< shared_ptr<NetworkInterfaceInfo> >::const_iterator i = ifs.begin();
+         i != ifs.end();
+         ++i)
+      {
+        if (!(*i)->isLoopback() && (*i)->isUp())
+          {
+            pcap_t* p = pcap_create((*i)->name.c_str(), 0);
+            if (!p)
+              continue;
+
+            if (pcap_activate(p) == 0)
+              m_interfaces.push_back(*i);
+
+            pcap_close(p);
+          }
+      }
+  }
+
+protected:
+  std::list< shared_ptr<NetworkInterfaceInfo> > m_interfaces;
+};
+
+
+BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
 {
   EthernetFactory factory;
 
-  std::vector<ethernet::Endpoint> interfaces = EthernetFactory::findAllInterfaces();
-  if (interfaces.size() > 0)
+  if (m_interfaces.empty())
     {
-      shared_ptr<EthernetFace> face1;
-      BOOST_REQUIRE_NO_THROW(face1 =
-                             factory.createMulticastFace(interfaces[0],
-                                                     ethernet::getBroadcastAddress()));
-      shared_ptr<EthernetFace> face1bis;
-      BOOST_REQUIRE_NO_THROW(face1bis =
-                             factory.createMulticastFace(interfaces[0],
-                                                         ethernet::getBroadcastAddress()));
-      BOOST_CHECK_EQUAL(face1, face1bis);
-
-      if (interfaces.size() > 1)
-        {
-          shared_ptr<EthernetFace> face2;
-          BOOST_REQUIRE_NO_THROW(face2 =
-                                 factory.createMulticastFace(interfaces[1],
-                                                             ethernet::getBroadcastAddress()));
-          BOOST_CHECK_NE(face1, face2);
-        }
-      else
-        {
-          BOOST_WARN_MESSAGE(interfaces.size() < 2, "Cannot test second EthernetFace creation, "
-                             "only one interface available for pcap");
-        }
-
-      shared_ptr<EthernetFace> face3;
-      BOOST_REQUIRE_NO_THROW(face3 =
-                             factory.createMulticastFace(interfaces[0],
-                                                         ethernet::getDefaultMulticastAddress()));
-      BOOST_CHECK_NE(face1, face3);
-    }
-  else
-    {
-      BOOST_WARN_MESSAGE(interfaces.empty(), "Cannot perform MulticastFacesMap tests, "
-                         "no interfaces are available for pcap");
-    }
-}
-
-BOOST_AUTO_TEST_CASE(SendPacket)
-{
-  EthernetFactory factory;
-
-  std::vector<ethernet::Endpoint> interfaces = EthernetFactory::findAllInterfaces();
-  if (interfaces.empty())
-    {
-      BOOST_WARN_MESSAGE(interfaces.empty(),
-                         "No interfaces are available for pcap, cannot perform SendPacket test");
+      BOOST_WARN_MESSAGE(false, "No interfaces available, cannot perform MulticastFacesMap test");
       return;
     }
 
-  shared_ptr<EthernetFace> face =
-    factory.createMulticastFace(interfaces[0], ethernet::getDefaultMulticastAddress());
+  shared_ptr<EthernetFace> face1;
+  BOOST_REQUIRE_NO_THROW(face1 = factory.createMulticastFace(m_interfaces.front(),
+                                                             ethernet::getBroadcastAddress()));
+  shared_ptr<EthernetFace> face1bis;
+  BOOST_REQUIRE_NO_THROW(face1bis = factory.createMulticastFace(m_interfaces.front(),
+                                                                ethernet::getBroadcastAddress()));
+  BOOST_CHECK_EQUAL(face1, face1bis);
+
+  if (m_interfaces.size() > 1)
+    {
+      shared_ptr<EthernetFace> face2;
+      BOOST_REQUIRE_NO_THROW(face2 = factory.createMulticastFace(m_interfaces.back(),
+                                                                 ethernet::getBroadcastAddress()));
+      BOOST_CHECK_NE(face1, face2);
+    }
+  else
+    {
+      BOOST_WARN_MESSAGE(false, "Cannot test second EthernetFace creation, "
+                         "only one interface available");
+    }
+
+  shared_ptr<EthernetFace> face3;
+  BOOST_REQUIRE_NO_THROW(face3 = factory.createMulticastFace(m_interfaces.front(),
+                                                             ethernet::getDefaultMulticastAddress()));
+  BOOST_CHECK_NE(face1, face3);
+}
+
+BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
+{
+  EthernetFactory factory;
+
+  if (m_interfaces.empty())
+    {
+      BOOST_WARN_MESSAGE(false, "No interfaces available for pcap, cannot perform SendPacket test");
+      return;
+    }
+
+  shared_ptr<EthernetFace> face = factory.createMulticastFace(m_interfaces.front(),
+                                                              ethernet::getDefaultMulticastAddress());
 
   BOOST_REQUIRE(static_cast<bool>(face));
 
   BOOST_CHECK(!face->isOnDemand());
   BOOST_CHECK_EQUAL(face->isLocal(), false);
   BOOST_CHECK_EQUAL(face->getUri().toString(),
-                    "ether://" + interfaces[0] + "/" +
+                    "ether://" + m_interfaces.front()->name + "/" +
                     ethernet::getDefaultMulticastAddress().toString(':'));
 
   Interest interest1("ndn:/TpnzGvW9R");

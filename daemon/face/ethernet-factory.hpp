@@ -12,6 +12,8 @@
 
 namespace nfd {
 
+class NetworkInterfaceInfo;
+
 class EthernetFactory : public ProtocolFactory
 {
 public:
@@ -23,10 +25,16 @@ public:
     Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
 
+  // from ProtocolFactory
+  virtual void
+  createFace(const FaceUri& uri,
+             const FaceCreatedCallback& onCreated,
+             const FaceConnectFailedCallback& onConnectFailed);
+
   /**
    * \brief Create an EthernetFace to communicate with the given multicast group
    *
-   * If this method is called twice with the same endpoint and group, only
+   * If this method is called twice with the same interface and group, only
    * one face will be created. Instead, the second call will just retrieve
    * the existing face.
    *
@@ -39,27 +47,12 @@ public:
    * \throws EthernetFactory::Error or EthernetFace::Error
    */
   shared_ptr<EthernetFace>
-  createMulticastFace(const ethernet::Endpoint& interface,
+  createMulticastFace(const shared_ptr<NetworkInterfaceInfo>& interface,
                       const ethernet::Address& address);
-
-  /**
-   * \brief Get a list of devices that can be opened for a live capture
-   *
-   * This function is a wrapper for pcap_findalldevs()/pcap_freealldevs()
-   */
-  static std::vector<ethernet::Endpoint>
-  findAllInterfaces();
-
-  // from Factory
-
-  virtual void
-  createFace(const FaceUri& uri,
-             const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed);
 
 private:
   void
-  afterFaceFailed(const ethernet::Endpoint& endpoint,
+  afterFaceFailed(const std::string& interfaceName,
                   const ethernet::Address& address);
 
   /**
@@ -71,11 +64,11 @@ private:
    * \throws never
    */
   shared_ptr<EthernetFace>
-  findMulticastFace(const ethernet::Endpoint& interface,
+  findMulticastFace(const std::string& interfaceName,
                     const ethernet::Address& address) const;
 
 private:
-  typedef std::map< std::pair<ethernet::Endpoint, ethernet::Address>,
+  typedef std::map< std::pair<std::string, ethernet::Address>,
                     shared_ptr<EthernetFace> > MulticastFacesMap;
   MulticastFacesMap m_multicastFaces;
 };

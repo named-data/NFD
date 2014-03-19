@@ -489,7 +489,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
                   try
                     {
                       shared_ptr<EthernetFace> newFace =
-                        factory->createMulticastFace(nic->name, mcastGroup);
+                        factory->createMulticastFace(nic, mcastGroup);
                       NFD_LOG_INFO("Created multicast Face ID " << newFace->getId());
                     }
                   catch (const EthernetFactory::Error& factoryError)

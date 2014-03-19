@@ -5,9 +5,11 @@
  */
 
 #include "ethernet-face.hpp"
+#include "core/network-interface.hpp"
 
 #include <pcap/pcap.h>
 
+#include <cstring>        // for std::strncpy()
 #include <arpa/inet.h>    // for htons() and ntohs()
 #include <net/ethernet.h> // for struct ether_header
 #include <net/if.h>       // for struct ifreq
@@ -15,30 +17,21 @@
 #include <sys/ioctl.h>    // for ioctl()
 #include <unistd.h>       // for dup()
 
-#ifndef SIOCGIFHWADDR
-#include <net/if_dl.h>    // for struct sockaddr_dl
-// must be included *after* <net/if.h>
-#include <ifaddrs.h>      // for getifaddrs()
-#endif
-
 namespace nfd {
 
 NFD_LOG_INIT("EthernetFace")
 
-static const uint8_t MAX_PADDING[ethernet::MIN_DATA_LEN] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-};
-
-
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
-                           const ethernet::Endpoint& interface,
+                           const shared_ptr<NetworkInterfaceInfo>& interface,
                            const ethernet::Address& address)
-  : Face(FaceUri("ether://" + interface + "/" + address.toString(':')))
+  : Face(FaceUri("ether://" + interface->name + "/" + address.toString(':')))
   , m_socket(socket)
-  , m_interface(interface)
+  , m_interfaceName(interface->name)
+  , m_srcAddress(interface->etherAddress)
   , m_destAddress(address)
 {
+  NFD_LOG_INFO("Creating ethernet face on " << m_interfaceName << ": "
+               << m_srcAddress << " <--> " << m_destAddress);
   pcapInit();
 
   int fd = pcap_get_selectable_fd(m_pcap);
@@ -50,11 +43,8 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   // same fd and one of them will fail
   m_socket->assign(::dup(fd));
 
-  m_sourceAddress = getInterfaceAddress();
-  NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interface
-                << "] Local MAC address is: " << m_sourceAddress);
   m_interfaceMtu = getInterfaceMtu();
-  NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interface
+  NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
                 << "] Interface MTU is: " << m_interfaceMtu);
 
   char filter[100];
@@ -62,7 +52,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
              "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
              ETHERTYPE_NDN,
              m_destAddress.toString(':').c_str(),
-             m_sourceAddress.toString(':').c_str());
+             m_srcAddress.toString(':').c_str());
   setPacketFilter(filter);
 
   m_socket->async_read_some(boost::asio::null_buffers(),
@@ -105,12 +95,9 @@ EthernetFace::close()
 void
 EthernetFace::pcapInit()
 {
-  NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interface
-                << "] Initializing pcap");
-
   char errbuf[PCAP_ERRBUF_SIZE];
   errbuf[0] = '\0';
-  m_pcap = pcap_create(m_interface.c_str(), errbuf);
+  m_pcap = pcap_create(m_interfaceName.c_str(), errbuf);
   if (!m_pcap)
     throw Error("pcap_create(): " + std::string(errbuf));
 
@@ -147,7 +134,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
 {
   if (!m_pcap)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                    << "] Trying to send on closed face");
       onFail("Face closed");
       return;
@@ -156,7 +143,8 @@ EthernetFace::sendPacket(const ndn::Block& block)
   /// \todo Fragmentation
   if (block.size() > m_interfaceMtu)
     {
-      NFD_LOG_ERROR("Fragmentation not implemented: dropping packet larger than MTU");
+      NFD_LOG_ERROR("[id:" << getId() << ",endpoint:" << m_interfaceName
+                    << "] Fragmentation not implemented: dropping packet larger than MTU");
       return;
     }
 
@@ -166,13 +154,14 @@ EthernetFace::sendPacket(const ndn::Block& block)
 
   if (block.size() < ethernet::MIN_DATA_LEN)
     {
-      buffer.appendByteArray(MAX_PADDING, ethernet::MIN_DATA_LEN - block.size());
+      static const uint8_t padding[ethernet::MIN_DATA_LEN] = {0};
+      buffer.appendByteArray(padding, ethernet::MIN_DATA_LEN - block.size());
     }
 
   // construct and prepend the ethernet header
   static uint16_t ethertype = htons(ETHERTYPE_NDN);
   buffer.prependByteArray(reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN);
-  buffer.prependByteArray(m_sourceAddress.data(), m_sourceAddress.size());
+  buffer.prependByteArray(m_srcAddress.data(), m_srcAddress.size());
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
 
   // send the packet
@@ -186,7 +175,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
       throw Error("Failed to send packet");
     }
 
-  NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interface
+  NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
                 << "] Successfully sent: " << buffer.size() << " bytes");
 }
 
@@ -205,7 +194,7 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
     }
   else if (ret == 0)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                    << "] pcap_next_ex() timed out");
     }
   else
@@ -220,7 +209,7 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
 
       packet += ethernet::HDR_LEN;
       length -= ethernet::HDR_LEN;
-      NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interface
+      NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
                     << "] Received: " << length << " bytes");
 
       /// \todo Eliminate reliance on exceptions in this path
@@ -230,14 +219,14 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
         ndn::Block element(packet, length);
         if (!decodeAndDispatchInput(element))
           {
-            NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface
-                         << "] Received unrecognized block of type ["
-                         << element.type() << "]");
+            NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                         << "] Received unrecognized block of type " << element.type());
             // ignore unknown packet
           }
-      } catch (const tlv::Error&) {
-        NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface
-                     << "] Received input is invalid or too large to process");
+      }
+      catch (const tlv::Error&) {
+        NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                     << "] Received block is invalid or too large to process");
       }
     }
 
@@ -264,52 +253,16 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
   if (error == boost::asio::error::eof)
     {
       msg = "Face closed";
-      NFD_LOG_INFO("[id:" << getId() << ",endpoint:" << m_interface << "] " << msg);
+      NFD_LOG_INFO("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
   else
     {
-      msg = "Send or receive operation failed, closing face: "
-          + error.category().message(error.value());
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface << "] " << msg);
+      msg = "Receive operation failed, closing face: " + error.category().message(error.value());
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
 
   close();
   onFail(msg);
-}
-
-ethernet::Address
-EthernetFace::getInterfaceAddress() const
-{
-#ifdef SIOCGIFHWADDR
-  ifreq ifr = {};
-  ::strncpy(ifr.ifr_name, m_interface.c_str(), sizeof(ifr.ifr_name));
-
-  if (::ioctl(m_socket->native_handle(), SIOCGIFHWADDR, &ifr) < 0)
-    throw Error("ioctl(SIOCGIFHWADDR) failed");
-
-  uint8_t* hwaddr = reinterpret_cast<uint8_t*>(ifr.ifr_hwaddr.sa_data);
-  return ethernet::Address(hwaddr);
-#else
-  ifaddrs* addrlist;
-  if (::getifaddrs(&addrlist) < 0)
-    throw Error("getifaddrs() failed");
-
-  ethernet::Address address;
-  for (ifaddrs* ifa = addrlist; ifa != 0; ifa = ifa->ifa_next)
-    {
-      if (std::string(ifa->ifa_name) == m_interface
-          && ifa->ifa_addr != 0
-          && ifa->ifa_addr->sa_family == AF_LINK)
-        {
-          sockaddr_dl* sa = reinterpret_cast<sockaddr_dl*>(ifa->ifa_addr);
-          address = ethernet::Address(reinterpret_cast<uint8_t*>(LLADDR(sa)));
-          break;
-        }
-    }
-
-  ::freeifaddrs(addrlist);
-  return address;
-#endif
 }
 
 size_t
@@ -318,12 +271,12 @@ EthernetFace::getInterfaceMtu() const
   size_t mtu = ethernet::MAX_DATA_LEN;
 
 #ifdef SIOCGIFMTU
-  ifreq ifr = {};
-  ::strncpy(ifr.ifr_name, m_interface.c_str(), sizeof(ifr.ifr_name));
+  ifreq ifr = {0};
+  std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
   if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) < 0)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interface
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                    << "] Failed to get interface MTU, assuming " << mtu);
     }
   else
