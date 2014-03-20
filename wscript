@@ -45,7 +45,7 @@ def configure(conf):
                        linkflags="-L%s/lib" % conf.options.ndn_cpp_dir,
                        mandatory=True)
 
-    boost_libs = 'system chrono'
+    boost_libs = 'system chrono program_options'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
@@ -103,7 +103,8 @@ def build(bld):
         bld(features=['cxx', 'cxxprogram'],
             target = 'bin/%s' % (str(app.change_ext(''))),
             source = ['tools/%s' % (str(app))],
-            use = 'BOOST NDN_CPP RT RESOLV',
+            includes = [".", "daemon"],
+            use = 'nfd-objects RESOLV',
             )
 
     # Unit tests

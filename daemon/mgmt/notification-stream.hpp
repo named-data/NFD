@@ -42,6 +42,7 @@ NotificationStream::postNotification(const T& notification)
   dataName.appendSegment(m_sequenceNo);
   shared_ptr<Data> data(make_shared<Data>(dataName));
   data->setContent(notification.wireEncode());
+  data->setFreshnessPeriod(time::seconds(1));
 
   m_face->sign(*data);
   m_face->put(*data);
