@@ -25,6 +25,7 @@ class UnixStreamFace : public StreamFace<boost::asio::local::stream_protocol, Lo
 public:
   typedef boost::asio::local::stream_protocol protocol;
 
+  explicit
   UnixStreamFace(const shared_ptr<protocol::socket>& socket);
 };
 
