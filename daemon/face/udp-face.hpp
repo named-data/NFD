@@ -9,8 +9,7 @@
 
 #include "datagram-face.hpp"
 
-namespace nfd
-{
+namespace nfd {
 
 /**
  * \brief Implementation of Face abstraction that uses UDP
@@ -19,12 +18,9 @@ namespace nfd
 class UdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
-  typedef boost::asio::ip::udp protocol;
-
   UdpFace(const shared_ptr<protocol::socket>& socket,
           bool isOnDemand);
 
-  //@todo if needed by other datagramFaces, it could be moved to datagram-face.hpp
   /**
    * \brief Manages the first datagram received by the UdpChannel socket set on listening
    */
@@ -32,7 +28,6 @@ public:
   handleFirstReceive(const uint8_t* buffer,
                      std::size_t nBytesReceived,
                      const boost::system::error_code& error);
-
 };
 
 } // namespace nfd

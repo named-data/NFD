@@ -9,25 +9,22 @@
 
 #include "datagram-face.hpp"
 
-namespace nfd
-{
+namespace nfd {
 
 /**
- * \brief Implementation of Face abstraction that uses 
+ * \brief Implementation of Face abstraction that uses
  *        multicast UDP as underlying transport mechanism
  */
 class MulticastUdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
-  typedef boost::asio::ip::udp protocol;
-
   /**
-   * \brief Creates a Udp face for multicast communication
+   * \brief Creates a UDP-based face for multicast communication
    */
   explicit
   MulticastUdpFace(const shared_ptr<protocol::socket>& socket);
 
-  const boost::asio::ip::udp::endpoint&
+  const protocol::endpoint&
   getMulticastGroup() const;
 
   // from Face
@@ -36,12 +33,12 @@ public:
 
   virtual void
   sendData(const Data& data);
-  
+
   virtual bool
   isMultiAccess() const;
-  
+
 private:
-  boost::asio::ip::udp::endpoint m_multicastGroup;
+  protocol::endpoint m_multicastGroup;
 };
 
 } // namespace nfd

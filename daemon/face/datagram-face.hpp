@@ -11,18 +11,18 @@
 
 namespace nfd {
 
-template <class T>
+template <class Protocol>
 class DatagramFace : public Face
 {
 public:
-  typedef T protocol;
+  typedef Protocol protocol;
 
   /** \brief Construct datagram face
    *
    * \param uri         FaceUri for the face
    * \param socket      Protocol-specific socket for the created face
    * \param isOnDemand  If true, the face can be closed after it remains
-   *                    unused for a certain amount of time.
+   *                    unused for a certain amount of time
    */
   DatagramFace(const FaceUri& uri,
                const shared_ptr<typename protocol::socket>& socket,

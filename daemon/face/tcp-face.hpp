@@ -9,8 +9,7 @@
 
 #include "stream-face.hpp"
 
-namespace nfd
-{
+namespace nfd {
 
 /**
  * \brief Implementation of Face abstraction that uses TCP
@@ -19,8 +18,6 @@ namespace nfd
 class TcpFace : public StreamFace<boost::asio::ip::tcp>
 {
 public:
-  typedef boost::asio::ip::tcp protocol;
-
   explicit
   TcpFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
 };
@@ -35,8 +32,6 @@ public:
 class TcpLocalFace : public StreamFace<boost::asio::ip::tcp, LocalFace>
 {
 public:
-  typedef boost::asio::ip::tcp protocol;
-
   explicit
   TcpLocalFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
 };
@@ -61,7 +56,6 @@ struct StreamFaceValidator<boost::asio::ip::tcp, LocalFace>
       }
   }
 };
-
 
 } // namespace nfd
 
