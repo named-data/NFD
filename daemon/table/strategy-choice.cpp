@@ -5,6 +5,7 @@
  */
 
 #include "strategy-choice.hpp"
+#include "core/logger.hpp"
 #include "fw/strategy.hpp"
 #include "pit-entry.hpp"
 #include "measurements-entry.hpp"

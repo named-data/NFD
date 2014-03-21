@@ -6,6 +6,7 @@
 
 #include "face-manager.hpp"
 
+#include "core/logger.hpp"
 #include "core/face-uri.hpp"
 #include "core/network-interface.hpp"
 #include "fw/face-table.hpp"

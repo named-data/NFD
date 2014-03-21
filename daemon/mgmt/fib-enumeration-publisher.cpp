@@ -6,7 +6,7 @@
 
 #include "fib-enumeration-publisher.hpp"
 
-#include "common.hpp"
+#include "core/logger.hpp"
 
 #include <ndn-cpp-dev/management/nfd-fib-entry.hpp>
 

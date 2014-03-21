@@ -5,6 +5,7 @@
  */
 
 #include "ethernet-face.hpp"
+#include "core/logger.hpp"
 #include "core/network-interface.hpp"
 
 #include <pcap/pcap.h>

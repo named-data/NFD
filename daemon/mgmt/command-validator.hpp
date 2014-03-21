@@ -7,6 +7,7 @@
 #ifndef NFD_MGMT_COMMAND_VALIDATOR_HPP
 #define NFD_MGMT_COMMAND_VALIDATOR_HPP
 
+#include "common.hpp"
 #include "config-file.hpp"
 #include <ndn-cpp-dev/util/command-interest-validator.hpp>
 
@@ -19,6 +20,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
+    explicit
     Error(const std::string& what)
       : std::runtime_error(what)
     {

@@ -5,6 +5,7 @@
  */
 
 #include "manager-base.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 

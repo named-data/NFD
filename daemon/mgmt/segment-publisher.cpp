@@ -6,7 +6,7 @@
 
 #include "segment-publisher.hpp"
 
-#include "common.hpp"
+#include "core/logger.hpp"
 #include "face/face.hpp"
 
 #include <ndn-cpp-dev/util/time.hpp>

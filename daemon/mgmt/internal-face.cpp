@@ -5,6 +5,7 @@
  */
 
 #include "internal-face.hpp"
+#include "core/logger.hpp"
 #include "core/global-io.hpp"
 
 namespace nfd {

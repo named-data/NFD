@@ -6,6 +6,7 @@
 
 #include "forwarder.hpp"
 #include "available-strategies.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 
@@ -24,6 +25,11 @@ Forwarder::Forwarder()
   , m_strategyChoice(m_nameTree, fw::makeDefaultStrategy(*this))
 {
   fw::installStrategies(*this);
+}
+
+Forwarder::~Forwarder()
+{
+
 }
 
 void

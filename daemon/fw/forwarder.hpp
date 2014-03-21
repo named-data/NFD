@@ -32,6 +32,9 @@ class Forwarder
 public:
   Forwarder();
 
+  VIRTUAL_WITH_TESTS
+  ~Forwarder();
+
   const ForwarderCounters&
   getCounters() const;
 

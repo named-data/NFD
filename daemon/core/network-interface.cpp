@@ -5,6 +5,7 @@
  */
 
 #include "network-interface.hpp"
+#include "core/logger.hpp"
 
 #include <boost/foreach.hpp>
 

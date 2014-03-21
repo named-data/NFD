@@ -7,6 +7,8 @@
  */
 
 #include "cs.hpp"
+#include "core/logger.hpp"
+
 #include <ndn-cpp-dev/util/crypto.hpp>
 
 #define SKIPLIST_MAX_LAYERS 32

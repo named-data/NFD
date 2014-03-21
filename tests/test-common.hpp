@@ -9,6 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include "core/global-io.hpp"
+#include "core/logger.hpp"
 #include <ndn-cpp-dev/security/key-chain.hpp>
 
 namespace nfd {

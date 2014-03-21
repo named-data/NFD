@@ -25,6 +25,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
+    explicit
     Error(const std::string& what)
       : std::runtime_error(what)
     {
@@ -86,4 +87,3 @@ private:
 
 
 #endif // NFD_MGMT_CONFIG_FILE_HPP
-

@@ -33,7 +33,7 @@ MulticastUdpFace::sendInterest(const Interest& interest)
                                               interest.wireEncode().size()),
                           m_multicastGroup,
                           bind(&DatagramFace<protocol>::handleSend, this, _1, interest.wireEncode()));
-    
+
   // anything else should be done here?
 }
 

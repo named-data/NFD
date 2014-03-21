@@ -6,6 +6,7 @@
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {

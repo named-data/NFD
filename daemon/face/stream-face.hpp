@@ -9,6 +9,7 @@
 
 #include "face.hpp"
 #include "local-face.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 

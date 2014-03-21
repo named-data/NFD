@@ -6,6 +6,7 @@
 
 #include "fib-manager.hpp"
 
+#include "core/logger.hpp"
 #include "table/fib.hpp"
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"

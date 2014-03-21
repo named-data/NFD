@@ -7,6 +7,7 @@
  */
 
 #include "cs-entry.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace cs {

@@ -5,6 +5,7 @@
  */
 
 #include "limited-io.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace tests {

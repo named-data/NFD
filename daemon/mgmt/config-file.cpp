@@ -4,8 +4,8 @@
  * See COPYING for copyright and distribution information.
  */
 
-
 #include "config-file.hpp"
+#include "core/logger.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 
@@ -105,4 +105,3 @@ ConfigFile::process(bool isDryRun, const std::string& filename)
 }
 
 }
-

@@ -6,6 +6,7 @@
 
 #include "strategy-choice-manager.hpp"
 #include "table/strategy-choice.hpp"
+#include "core/logger.hpp"
 #include "mgmt/app-face.hpp"
 
 namespace nfd {
@@ -166,5 +167,3 @@ StrategyChoiceManager::unsetStrategy(ControlParameters& parameters,
 
 
 } // namespace nfd
-
-

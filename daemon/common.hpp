@@ -33,6 +33,8 @@
 #include <boost/asio.hpp>
 #include <boost/assert.hpp>
 #include <boost/functional/hash.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <vector>
 #include <list>
@@ -43,8 +45,6 @@
 #include <fstream>
 #include <algorithm>
 #include <numeric>
-
-#include "core/logger.hpp"
 
 namespace nfd {
 

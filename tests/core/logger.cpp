@@ -7,7 +7,9 @@
  */
 
 #include "core/logger.hpp"
+
 #include <boost/test/unit_test.hpp>
+
 #include <iostream>
 
 #include "tests/test-common.hpp"
@@ -17,10 +19,12 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(CoreLogger, BaseFixture)
 
-struct LoggerFixture : protected BaseFixture
+class LoggerFixture : protected BaseFixture
 {
+public:
   LoggerFixture()
     : m_savedBuf(std::cerr.rdbuf())
+    , m_savedLevel(LoggerFactory::getInstance().getDefaultLevel())
   {
     std::cerr.rdbuf(m_buffer.rdbuf());
   }
@@ -28,10 +32,12 @@ struct LoggerFixture : protected BaseFixture
   ~LoggerFixture()
   {
     std::cerr.rdbuf(m_savedBuf);
+    LoggerFactory::getInstance().setDefaultLevel(m_savedLevel);
   }
 
   std::stringstream m_buffer;
   std::streambuf* m_savedBuf;
+  LogLevel m_savedLevel;
 };
 
 BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
@@ -56,9 +62,172 @@ BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
                     );
 }
 
+BOOST_FIXTURE_TEST_CASE(ConfigureFactory, LoggerFixture)
+{
+  NFD_LOG_INIT("ConfigureFactoryTests");
+
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  default_level INFO\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  config.parse(LOG_CONFIG, false, "LOG_CONFIG");
+
+  NFD_LOG_TRACE("trace message JHGFDSR^1");
+  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
+  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+  NFD_LOG_INFO("info message Jjxjshj13");
+  NFD_LOG_ERROR("error message !#$&^%$#@");
+  NFD_LOG_FATAL("fatal message JJSjaamcng");
+
+  BOOST_CHECK_EQUAL(m_buffer.str(),
+                    "WARNING: [ConfigureFactoryTests] warning message XXXhdhd111x\n"
+                    "INFO: [ConfigureFactoryTests] info message Jjxjshj13\n"
+                    "ERROR: [ConfigureFactoryTests] error message !#$&^%$#@\n"
+                    "FATAL: [ConfigureFactoryTests] fatal message JJSjaamcng\n"
+                    );
+}
+
+BOOST_FIXTURE_TEST_CASE(TestNumberLevel, LoggerFixture)
+{
+  NFD_LOG_INIT("TestNumberLevel");
+
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  default_level 2\n" // equivalent of WARN
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  config.parse(LOG_CONFIG, false, "LOG_CONFIG");
+
+  NFD_LOG_TRACE("trace message JHGFDSR^1");
+  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
+  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+  NFD_LOG_INFO("info message Jjxjshj13");
+  NFD_LOG_ERROR("error message !#$&^%$#@");
+  NFD_LOG_FATAL("fatal message JJSjaamcng");
+
+  BOOST_CHECK_EQUAL(m_buffer.str(),
+                    "WARNING: [TestNumberLevel] warning message XXXhdhd111x\n"
+                    "ERROR: [TestNumberLevel] error message !#$&^%$#@\n"
+                    "FATAL: [TestNumberLevel] fatal message JJSjaamcng\n"
+                    );
+}
+
+static void
+testModuleBPrint()
+{
+  NFD_LOG_INIT("TestModuleB");
+  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
+}
+
+BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
+{
+  NFD_LOG_INIT("TestModuleA");
+
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  default_level WARN\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  config.parse(LOG_CONFIG, false, "LOG_CONFIG");
+
+ // this should print
+  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+
+  // this should not because it's level is < WARN
+  testModuleBPrint();
+
+  BOOST_CHECK_EQUAL(m_buffer.str(),
+                    "WARNING: [TestModuleA] warning message XXXhdhd111x\n"
+                    );
+}
+
+BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
+{
+  NFD_LOG_INIT("TestModuleA");
+
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  default_level WARN\n"
+    "  TestModuleB DEBUG\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  config.parse(LOG_CONFIG, false, "LOG_CONFIG");
+
+ // this should print
+  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+
+  // this too because its level is explicitly set to DEBUG
+  testModuleBPrint();
+
+  BOOST_CHECK_EQUAL(m_buffer.str(),
+                    "WARNING: [TestModuleA] warning message XXXhdhd111x\n"
+                    "DEBUG: [TestModuleB] debug message IGg2474fdksd fo 151617\n"
+                    );
+}
+
+static bool
+checkError(const LoggerFactory::Error& error, const std::string& expected)
+{
+  return error.what() == expected;
+}
+
+BOOST_FIXTURE_TEST_CASE(UnknownLevelString, LoggerFixture)
+{
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  default_level TestMadeUpLevel\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  BOOST_REQUIRE_EXCEPTION(config.parse(LOG_CONFIG, false, "LOG_CONFIG"),
+                          LoggerFactory::Error,
+                          bind(&checkError,
+                               _1,
+                               "Unsupported logging level \"TestMadeUpLevel\""));
+}
+
+BOOST_FIXTURE_TEST_CASE(UnknownOption, LoggerFixture)
+{
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  TestMadeUpOption\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  BOOST_REQUIRE_EXCEPTION(config.parse(LOG_CONFIG, false, "LOG_CONFIG"),
+                          LoggerFactory::Error,
+                          bind(&checkError,
+                               _1,
+                               "No logging level found for option \"TestMadeUpOption\""));
+}
+
 class InClassLogger : public LoggerFixture
 {
 public:
+
   InClassLogger()
   {
     g_logger.setLogLevel(LOG_ALL);

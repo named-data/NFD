@@ -8,6 +8,7 @@
 #define NFD_FACE_DATAGRAM_FACE_HPP
 
 #include "face.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 
@@ -30,14 +31,14 @@ public:
 
   virtual
   ~DatagramFace();
-  
+
   // from Face
   virtual void
   sendInterest(const Interest& interest);
-  
+
   virtual void
   sendData(const Data& data);
-  
+
   virtual void
   close();
 
@@ -54,13 +55,13 @@ public:
    */
   void
   resetRecentUsage();
-  
+
   bool
   hasBeenUsedRecently() const;
 
   void
   setOnDemand(bool isOnDemand);
-  
+
 protected:
   void
   receiveDatagram(const uint8_t* buffer,
@@ -69,10 +70,10 @@ protected:
 
   void
   keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);
-  
+
   void
   closeSocket();
-  
+
 protected:
   shared_ptr<typename protocol::socket> m_socket;
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
@@ -101,7 +102,7 @@ inline
 DatagramFace<T>::~DatagramFace()
 {
 }
-  
+
 template <class T>
 inline void
 DatagramFace<T>::sendInterest(const Interest& interest)
@@ -110,10 +111,10 @@ DatagramFace<T>::sendInterest(const Interest& interest)
   m_socket->async_send(boost::asio::buffer(interest.wireEncode().wire(),
                                            interest.wireEncode().size()),
                        bind(&DatagramFace<T>::handleSend, this, _1, interest.wireEncode()));
-    
+
   // anything else should be done here?
 }
-  
+
 template <class T>
 inline void
 DatagramFace<T>::sendData(const Data& data)
@@ -122,7 +123,7 @@ DatagramFace<T>::sendData(const Data& data)
   m_socket->async_send(boost::asio::buffer(data.wireEncode().wire(),
                                            data.wireEncode().size()),
                        bind(&DatagramFace<T>::handleSend, this, _1, data.wireEncode()));
-    
+
   // anything else should be done here?
 }
 
@@ -134,20 +135,20 @@ DatagramFace<T>::handleSend(const boost::system::error_code& error,
   if (error != 0) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
-    
+
     if (!m_socket->is_open())
     {
       onFail("Tunnel closed");
       return;
     }
-    
+
     NFD_LOG_WARN("[id:" << this->getId()
                   << ",endpoint:" << m_socket->local_endpoint()
                   << "] Send operation failed, closing socket: "
                   << error.category().message(error.value()));
-    
+
     closeSocket();
-    
+
     if (error == boost::asio::error::eof)
     {
       onFail("Tunnel closed");
@@ -159,24 +160,24 @@ DatagramFace<T>::handleSend(const boost::system::error_code& error,
     }
     return;
   }
-  
+
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",endpoint:" << m_socket->local_endpoint()
                 << "] Successfully sent: " << wire.size() << " bytes");
   // do nothing (needed to retain validity of wire memory block
 }
-  
+
 template <class T>
 inline void
 DatagramFace<T>::close()
 {
   if (!m_socket->is_open())
     return;
-    
+
   NFD_LOG_INFO("[id:" << this->getId()
                << ",endpoint:" << m_socket->local_endpoint()
                << "] Close tunnel");
-    
+
   closeSocket();
   onFail("Close tunnel");
 }
@@ -273,20 +274,20 @@ inline void
 DatagramFace<T>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face)
 {
 }
-  
+
 template <class T>
 inline void
 DatagramFace<T>::closeSocket()
 {
   NFD_LOG_DEBUG("closeSocket  " << m_socket->local_endpoint());
   boost::asio::io_service& io = m_socket->get_io_service();
-    
+
   // use the non-throwing variants and ignore errors, if any
   boost::system::error_code error;
   m_socket->shutdown(protocol::socket::shutdown_both, error);
   m_socket->close(error);
   // after this, handlers will be called with an error code
-    
+
   // ensure that the Face object is alive at least until all pending
   // handlers are dispatched
   io.post(bind(&DatagramFace<T>::keepFaceAliveUntilAllHandlersExecuted,

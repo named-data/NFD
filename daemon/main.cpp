@@ -24,38 +24,80 @@ NFD_LOG_INIT("Main");
 struct ProgramOptions
 {
   bool showUsage;
+  bool showModules;
   std::string config;
 };
 
 class Nfd : noncopyable
 {
 public:
-  explicit
-  Nfd(const std::string& configFile)
-    : m_internalFace(new InternalFace())
-    , m_fibManager(m_forwarder.getFib(),
-                   bind(&Forwarder::getFace, &m_forwarder, _1),
-                   m_internalFace)
-    , m_faceManager(m_forwarder.getFaceTable(), m_internalFace)
-    , m_strategyChoiceManager(m_forwarder.getStrategyChoice(), m_internalFace)
-    , m_statusServer(m_internalFace, m_forwarder)
+
+  void
+  initialize(const std::string& configFile)
   {
+    initializeLogging(configFile);
+
+    m_forwarder = make_shared<Forwarder>();
+
+    initializeManagement(configFile);
+  }
+
+
+  void
+  initializeLogging(const std::string& configFile)
+  {
+    ConfigFile config;
+    LoggerFactory::getInstance().setConfigFile(config);
+
+    for (size_t i = 0; i < N_SUPPORTED_CONFIG_SECTIONS; ++i)
+      {
+        if (SUPPORTED_CONFIG_SECTIONS[i] != "log")
+          {
+            config.addSectionHandler(SUPPORTED_CONFIG_SECTIONS[i],
+                                     bind(std::plus<int>(), 0, 0)); // no-op.
+          }
+      }
+
+    config.parse(configFile, true);
+    config.parse(configFile, false);
+  }
+
+  void
+  initializeManagement(const std::string& configFile)
+  {
+    m_internalFace = make_shared<InternalFace>();
+
+    m_fibManager = make_shared<FibManager>(boost::ref(m_forwarder->getFib()),
+                                           bind(&Forwarder::getFace, m_forwarder.get(), _1),
+                                           m_internalFace);
+
+    m_faceManager = make_shared<FaceManager>(boost::ref(m_forwarder->getFaceTable()),
+                                             m_internalFace);
+
+    m_strategyChoiceManager =
+      make_shared<StrategyChoiceManager>(boost::ref(m_forwarder->getStrategyChoice()),
+                                         m_internalFace);
+
+    m_statusServer = make_shared<StatusServer>(m_internalFace,
+                                               boost::ref(*m_forwarder));
+
     ConfigFile config;
     m_internalFace->getValidator().setConfigFile(config);
 
-    m_forwarder.addFace(m_internalFace);
+    m_forwarder->addFace(m_internalFace);
 
-    m_faceManager.setConfigFile(config);
+    m_faceManager->setConfigFile(config);
+
+    config.addSectionHandler("log", bind(std::plus<int>(), 0, 0)); // no-op
 
     // parse config file
     config.parse(configFile, true);
     config.parse(configFile, false);
 
     // add FIB entry for NFD Management Protocol
-    shared_ptr<fib::Entry> entry = m_forwarder.getFib().insert("/localhost/nfd").first;
+    shared_ptr<fib::Entry> entry = m_forwarder->getFib().insert("/localhost/nfd").first;
     entry->addNextHop(m_internalFace, 0);
   }
-
 
   static void
   printUsage(std::ostream& os, const std::string& programName)
@@ -67,21 +109,38 @@ public:
        << "\n"
        << "Options:\n"
        << "  [--help]   - print this help message\n"
+       << "  [--modules] - list available logging modules\n"
        << "  [--config /path/to/nfd.conf] - path to configuration file "
        << "(default: " << DEFAULT_CONFIG_FILE << ")\n"
       ;
+  }
+
+  static void
+  printModules(std::ostream& os)
+  {
+    using namespace std;
+
+    os << "Available logging modules: \n";
+
+    list<string> modules(LoggerFactory::getInstance().getModules());
+    for (list<string>::const_iterator i = modules.begin(); i != modules.end(); ++i)
+      {
+        os << *i << "\n";
+      }
   }
 
   static bool
   parseCommandLine(int argc, char** argv, ProgramOptions& options)
   {
     options.showUsage = false;
+    options.showModules = false;
     options.config = DEFAULT_CONFIG_FILE;
 
     while (true) {
       int optionIndex = 0;
       static ::option longOptions[] = {
         { "help"   , no_argument      , 0, 0 },
+        { "modules", no_argument      , 0, 0 },
         { "config" , required_argument, 0, 0 },
         { 0        , 0                , 0, 0 }
       };
@@ -90,21 +149,23 @@ public:
         break;
 
       switch (c) {
-      case 0:
-        switch (optionIndex) {
-        case 0: // help
-          options.showUsage = true;
+        case 0:
+          switch (optionIndex) {
+            case 0: // help
+              options.showUsage = true;
+              break;
+            case 1: // modules
+              options.showModules = true;
+              break;
+            case 2: // config
+              options.config = ::optarg;
+              break;
+            default:
+              return false;
+          }
           break;
-        case 1: // config
-          options.config = ::optarg;
-          break;
-        default:
-          return false;
-        }
-        break;
       }
     }
-
     return true;
   }
 
@@ -131,14 +192,27 @@ public:
   }
 
 private:
-  Forwarder m_forwarder;
-  shared_ptr<InternalFace> m_internalFace;
+  shared_ptr<Forwarder> m_forwarder;
 
-  FibManager            m_fibManager;
-  FaceManager           m_faceManager;
-  StrategyChoiceManager m_strategyChoiceManager;
-  StatusServer          m_statusServer;
+  shared_ptr<InternalFace>          m_internalFace;
+  shared_ptr<FibManager>            m_fibManager;
+  shared_ptr<FaceManager>           m_faceManager;
+  shared_ptr<StrategyChoiceManager> m_strategyChoiceManager;
+  shared_ptr<StatusServer>          m_statusServer;
+
+  static const std::string SUPPORTED_CONFIG_SECTIONS[];
+  static const size_t      N_SUPPORTED_CONFIG_SECTIONS;
 };
+
+const std::string Nfd::SUPPORTED_CONFIG_SECTIONS[] =
+  {
+    "log",
+    "face_system",
+    "authorizations",
+  };
+
+const size_t Nfd::N_SUPPORTED_CONFIG_SECTIONS =
+  sizeof(SUPPORTED_CONFIG_SECTIONS) / sizeof(std::string);
 
 } // namespace nfd
 
@@ -158,33 +232,46 @@ main(int argc, char** argv)
     return 0;
   }
 
+  if (options.showModules) {
+    Nfd::printModules(std::cout);
+    return 0;
+  }
+
+  Nfd nfdInstance;
+
   try {
-    Nfd nfdInstance(options.config);
-
-    boost::asio::signal_set signalSet(getGlobalIoService());
-    signalSet.add(SIGINT);
-    signalSet.add(SIGTERM);
-    signalSet.add(SIGHUP);
-    signalSet.add(SIGUSR1);
-    signalSet.add(SIGUSR2);
-    signalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2,
-                              boost::ref(signalSet)));
-
-    getGlobalIoService().run();
+    nfdInstance.initialize(options.config);
   }
   catch (boost::filesystem::filesystem_error& e) {
     if (e.code() == boost::system::errc::permission_denied) {
-      NFD_LOG_FATAL("Permissions denied for " << e.path1() << ". "
-                    << argv[0] << " should be run as superuser");
+      NFD_LOG_FATAL("Permissions denied for " << e.path1() << ". " <<
+                    argv[0] << " should be run as superuser");
     }
     else {
       NFD_LOG_FATAL(e.what());
     }
+    return 1;
+  }
+  catch (const std::exception& e) {
+    NFD_LOG_FATAL(e.what());
     return 2;
+  }
+
+  boost::asio::signal_set signalSet(getGlobalIoService());
+  signalSet.add(SIGINT);
+  signalSet.add(SIGTERM);
+  signalSet.add(SIGHUP);
+  signalSet.add(SIGUSR1);
+  signalSet.add(SIGUSR2);
+  signalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2,
+                            boost::ref(signalSet)));
+
+  try {
+    getGlobalIoService().run();
   }
   catch (std::exception& e) {
     NFD_LOG_FATAL(e.what());
-    return 1;
+    return 3;
   }
 
   return 0;

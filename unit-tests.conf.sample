@@ -1,0 +1,31 @@
+log
+{
+  ; default_level specifies the logging level for modules
+  ; that are not explicitly named. All debugging levels
+  ; listed above the selected value are enabled.
+  ;
+  ; Valid values:
+  ;
+  ;  NONE ; no messages
+  ;  ERROR ; error messages
+  ;  WARN ; warning messages
+  ;  INFO ; informational messages (default)
+  ;  DEBUG ; debugging messages
+  ;  TRACE ; trace messages (most verbose)
+  ;  ALL ; all messages
+
+  ; default_level INFO
+
+  ; You may override default_level by assigning a logging level
+  ; to the desired module name. Module names can be found in two ways:
+  ;
+  ; Run:
+  ;   nfd --modules
+  ;
+  ; Or look for NFD_LOG_INIT(<module name>) statements in .cpp files
+  ;
+  ; Example module-level settings:
+  ;
+  ; FibManager DEBUG
+  ; Forwarder INFO
+}

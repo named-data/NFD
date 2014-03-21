@@ -5,6 +5,8 @@
  */
 
 #include "command-validator.hpp"
+#include "core/logger.hpp"
+
 #include <ndn-cpp-dev/util/io.hpp>
 #include <ndn-cpp-dev/security/identity-certificate.hpp>
 
@@ -178,4 +180,3 @@ CommandValidator::addSupportedPrivilege(const std::string& privilege)
 }
 
 } // namespace nfd
-

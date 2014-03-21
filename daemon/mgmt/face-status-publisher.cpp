@@ -3,7 +3,9 @@
  * Copyright (C) 2014 Named Data Networking Project
  * See COPYING for copyright and distribution information.
  */
+
 #include "face-status-publisher.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 

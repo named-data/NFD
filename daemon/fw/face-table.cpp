@@ -6,6 +6,7 @@
 
 #include "face-table.hpp"
 #include "forwarder.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 

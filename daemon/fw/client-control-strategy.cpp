@@ -5,6 +5,7 @@
  */
 
 #include "client-control-strategy.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
