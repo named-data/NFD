@@ -152,6 +152,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
   ///       we should reserve some space at the beginning and at the end
   ndn::EncodingBuffer buffer(block);
 
+  // pad with zeroes if the payload is too short
   if (block.size() < ethernet::MIN_DATA_LEN)
     {
       static const uint8_t padding[ethernet::MIN_DATA_LEN] = {0};
@@ -271,7 +272,7 @@ EthernetFace::getInterfaceMtu() const
   size_t mtu = ethernet::MAX_DATA_LEN;
 
 #ifdef SIOCGIFMTU
-  ifreq ifr = {0};
+  ifreq ifr = {};
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
   if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) < 0)
