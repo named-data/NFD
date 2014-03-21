@@ -31,8 +31,9 @@ FibEnumerationPublisher::~FibEnumerationPublisher()
 size_t
 FibEnumerationPublisher::generate(ndn::EncodingBuffer& outBuffer)
 {
-
   size_t totalLength = 0;
+
+  /// \todo Enable use of Fib::const_reverse_iterator (when it is available)
   for (Fib::const_iterator i = m_fib.begin(); i != m_fib.end(); ++i)
     {
       const fib::Entry& entry = *i;

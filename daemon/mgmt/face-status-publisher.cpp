@@ -30,8 +30,8 @@ FaceStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
 {
   size_t totalLength = 0;
 
-  for (FaceTable::const_iterator i = m_faceTable.begin();
-       i != m_faceTable.end();
+  for (FaceTable::const_reverse_iterator i = m_faceTable.rbegin();
+       i != m_faceTable.rend();
        ++i)
     {
       const shared_ptr<Face>& face = *i;

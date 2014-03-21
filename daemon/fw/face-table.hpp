@@ -38,15 +38,25 @@ public:
 public: // enumeration
   typedef std::map<FaceId, shared_ptr<Face> > FaceMap;
 
-  /** \brief ForwarderIterator for shared_ptr<Face>
+  /** \brief ForwardIterator for shared_ptr<Face>
    */
   typedef MapValueIterator<FaceMap> const_iterator;
+
+  /** \brief ReverseIterator for shared_ptr<Face>
+   */
+  typedef MapValueReverseIterator<FaceMap> const_reverse_iterator;
 
   const_iterator
   begin() const;
 
   const_iterator
   end() const;
+
+  const_reverse_iterator
+  rbegin() const;
+
+  const_reverse_iterator
+  rend() const;
 
 public: // events
   /** \brief fires after a Face is added
@@ -94,6 +104,18 @@ inline FaceTable::const_iterator
 FaceTable::end() const
 {
   return const_iterator(m_faces.end());
+}
+
+inline FaceTable::const_reverse_iterator
+FaceTable::rbegin() const
+{
+  return const_reverse_iterator(m_faces.rbegin());
+}
+
+inline FaceTable::const_reverse_iterator
+FaceTable::rend() const
+{
+  return const_reverse_iterator(m_faces.rend());
 }
 
 } // namespace nfd

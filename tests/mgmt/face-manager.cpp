@@ -1147,7 +1147,7 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
       uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
       dummy->setCounters(filler, filler, filler, filler);
 
-      m_referenceFaces.push_front(dummy);
+      m_referenceFaces.push_back(dummy);
 
       add(dummy);
     }
@@ -1158,7 +1158,7 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
       uint64_t filler = std::numeric_limits<uint32_t>::max() - 1;
       dummy->setCounters(filler, filler, filler, filler);
 
-      m_referenceFaces.push_front(dummy);
+      m_referenceFaces.push_back(dummy);
 
       add(dummy);
     }

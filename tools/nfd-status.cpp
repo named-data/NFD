@@ -18,12 +18,12 @@ namespace ndn {
 class NfdStatus
 {
 public:
+  explicit
   NfdStatus(char* toolName)
     : m_toolName(toolName)
     , m_needVersionRetrieval(false)
     , m_needFaceStatusRetrieval(false)
     , m_needFibEnumerationRetrieval(false)
-    , m_face()
   {
   }
 
@@ -139,34 +139,33 @@ public:
   void
   afterFetchedFaceStatusInformation()
   {
-    try
+    std::cout << "Faces:" << std::endl;
+
+    ConstBufferPtr buf = m_buffer->buf();
+
+    Block block;
+    size_t offset = 0;
+    while (offset < buf->size())
       {
-        std::cout << "Faces:" << std::endl;
-
-        ConstBufferPtr buf = m_buffer->buf();
-
-        size_t offset = 0;
-        while (offset < buf->size())
+        bool ok = Block::fromBuffer(buf, offset, block);
+        if (!ok)
           {
-            Block block(buf, buf->begin() + offset, buf->end(), false);
-            offset += block.size();
-
-            nfd::FaceStatus faceStatus(block);
-
-            std::cout << "  faceid=" << faceStatus.getFaceId()
-                      << " uri=" << faceStatus.getUri()
-                      << " counters={"
-                      << "in={" << faceStatus.getInInterest() << "i "
-                                << faceStatus.getInData() << "d}"
-                      << " out={" << faceStatus.getOutInterest() << "i "
-                                 << faceStatus.getOutData() << "d}"
-                      << "}" << std::endl;
+            std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+            break;
           }
 
-      }
-    catch(Tlv::Error& e)
-      {
-        std::cerr << e.what() << std::endl;
+        offset += block.size();
+
+        nfd::FaceStatus faceStatus(block);
+
+        std::cout << "  faceid=" << faceStatus.getFaceId()
+                  << " uri=" << faceStatus.getUri()
+                  << " counters={"
+                  << "in={" << faceStatus.getInInterest() << "i "
+                  << faceStatus.getInData() << "d}"
+                  << " out={" << faceStatus.getOutInterest() << "i "
+                  << faceStatus.getOutData() << "d}"
+                  << "}" << std::endl;
       }
 
     if (m_needFibEnumerationRetrieval)
@@ -193,37 +192,36 @@ public:
   void
   afterFetchedFibEnumerationInformation()
   {
-    try
+    std::cout << "FIB:" << std::endl;
+
+    ConstBufferPtr buf = m_buffer->buf();
+
+    Block block;
+    size_t offset = 0;
+    while (offset < buf->size())
       {
-        std::cout << "FIB:" << std::endl;
-
-        ConstBufferPtr buf = m_buffer->buf();
-
-        size_t offset = 0;
-        while (offset < buf->size())
+        bool ok = Block::fromBuffer(buf, offset, block);
+        if (!ok)
           {
-            Block block(buf, buf->begin() + offset, buf->end(), false);
-            offset += block.size();
-
-            nfd::FibEntry fibEntry(block);
-
-            std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
-            for (std::list<nfd::NextHopRecord>::const_iterator
-                   nextHop = fibEntry.getNextHopRecords().begin();
-                 nextHop != fibEntry.getNextHopRecords().end();
-                 ++nextHop)
-              {
-                if (nextHop != fibEntry.getNextHopRecords().begin())
-                  std::cout << ", ";
-                std::cout << "faceid=" << nextHop->getFaceId()
-                          << " (cost=" << nextHop->getCost() << ")";
-              }
-            std::cout << "}" << std::endl;
+            std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
+            break;
           }
-      }
-    catch(Tlv::Error& e)
-      {
-        std::cerr << e.what() << std::endl;
+        offset += block.size();
+
+        nfd::FibEntry fibEntry(block);
+
+        std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
+        for (std::list<nfd::NextHopRecord>::const_iterator
+               nextHop = fibEntry.getNextHopRecords().begin();
+             nextHop != fibEntry.getNextHopRecords().end();
+             ++nextHop)
+          {
+            if (nextHop != fibEntry.getNextHopRecords().begin())
+              std::cout << ", ";
+            std::cout << "faceid=" << nextHop->getFaceId()
+                      << " (cost=" << nextHop->getCost() << ")";
+          }
+        std::cout << "}" << std::endl;
       }
   }
 
@@ -300,17 +298,16 @@ int main( int argc, char* argv[] )
     case 'b':
       nfdStatus.enableFibEnumerationRetrieval();
       break;
-    default :
+    default:
       nfdStatus.usage();
       return 1;
-      break;
     }
   }
 
   try {
     nfdStatus.fetchInformation();
   }
-  catch(std::exception& e) {
+  catch (std::exception& e) {
     std::cerr << "ERROR: " << e.what() << std::endl;
     return 2;
   }

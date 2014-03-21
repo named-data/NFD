@@ -17,14 +17,42 @@ namespace nfd {
  */
 template<typename Map>
 class MapValueIterator
-  : public boost::transform_iterator<function<const typename Map::mapped_type&(const typename Map::value_type&)>,
-                                     typename Map::const_iterator>
+  : public boost::transform_iterator<
+             function<const typename Map::mapped_type&(const typename Map::value_type&)>,
+             typename Map::const_iterator>
 {
 public:
   explicit
   MapValueIterator(typename Map::const_iterator it)
-    : boost::transform_iterator<function<const typename Map::mapped_type&(const typename Map::value_type&)>,
+    : boost::transform_iterator<
+        function<const typename Map::mapped_type&(const typename Map::value_type&)>,
         typename Map::const_iterator>(it, &takeSecond)
+  {
+  }
+
+private:
+  static const typename Map::mapped_type&
+  takeSecond(const typename Map::value_type& pair)
+  {
+    return pair.second;
+  }
+};
+
+/** \class MapValueReverseIterator
+ *  \brief ReverseIterator to iterator over map values
+ */
+template<typename Map>
+class MapValueReverseIterator
+  : public boost::transform_iterator<
+             function<const typename Map::mapped_type&(const typename Map::value_type&)>,
+             typename Map::const_reverse_iterator>
+{
+public:
+  explicit
+  MapValueReverseIterator(typename Map::const_reverse_iterator it)
+    : boost::transform_iterator<
+             function<const typename Map::mapped_type&(const typename Map::value_type&)>,
+             typename Map::const_reverse_iterator>(it, &takeSecond)
   {
   }
 

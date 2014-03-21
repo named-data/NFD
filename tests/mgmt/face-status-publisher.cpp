@@ -11,9 +11,9 @@ namespace tests {
 
 NFD_LOG_INIT("FaceStatusPublisherTest");
 
-BOOST_FIXTURE_TEST_SUITE(MgmtFaceManager, FaceStatusPublisherFixture)
+BOOST_FIXTURE_TEST_SUITE(MgmtFaceSatusPublisher, FaceStatusPublisherFixture)
 
-BOOST_AUTO_TEST_CASE(TestFaceStatusPublisher)
+BOOST_AUTO_TEST_CASE(EncodingDecoding)
 {
   Name commandName("/localhost/nfd/faces/list");
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(TestFaceStatusPublisher)
       uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
       dummy->setCounters(filler, filler, filler, filler);
 
-      m_referenceFaces.push_front(dummy);
+      m_referenceFaces.push_back(dummy);
 
       add(dummy);
     }
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(TestFaceStatusPublisher)
       uint64_t filler = std::numeric_limits<uint32_t>::max() - 1;
       dummy->setCounters(filler, filler, filler, filler);
 
-      m_referenceFaces.push_front(dummy);
+      m_referenceFaces.push_back(dummy);
 
       add(dummy);
     }
