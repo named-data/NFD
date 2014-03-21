@@ -213,22 +213,24 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
       NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
                     << "] Received: " << length << " bytes");
 
-      /// \todo Eliminate reliance on exceptions in this path
-      try {
-        /// \todo Reserve space in front and at the back
-        ///       of the underlying buffer
-        ndn::Block element(packet, length);
-        if (!decodeAndDispatchInput(element))
-          {
-            NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                         << "] Received unrecognized block of type " << element.type());
-            // ignore unknown packet
-          }
-      }
-      catch (const tlv::Error&) {
-        NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                     << "] Received block is invalid or too large to process");
-      }
+      /// \todo Reserve space in front and at the back
+      ///       of the underlying buffer
+      Block element;
+      bool isOk = Block::fromBuffer(packet, length, element);
+      if (isOk)
+        {
+          if (!decodeAndDispatchInput(element))
+            {
+              NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                           << "] Received unrecognized block of type " << element.type());
+              // ignore unknown packet
+            }
+        }
+      else
+        {
+          NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                       << "] Received block is invalid or too large to process");
+        }
     }
 
   m_socket->async_read_some(boost::asio::null_buffers(),

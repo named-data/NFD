@@ -279,38 +279,40 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
   // do magic
 
   std::size_t offset = 0;
-  /// @todo Eliminate reliance on exceptions in this path
-  try {
-    while(m_inputBufferSize - offset > 0)
-      {
-        Block element(m_inputBuffer + offset, m_inputBufferSize - offset);
-        offset += element.size();
 
-        BOOST_ASSERT(offset <= m_inputBufferSize);
+  bool isOk = true;
+  Block element;
+  while(m_inputBufferSize - offset > 0)
+    {
+      isOk = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset, element);
+      if (!isOk)
+        break;
 
-        if (!this->decodeAndDispatchInput(element))
-          {
-            NFD_LOG_WARN("[id:" << this->getId()
-                         << ",endpoint:" << m_socket->local_endpoint()
-                         << "] Received unrecognized block of type ["
-                         << element.type() << "]");
-            // ignore unknown packet and proceed
-          }
-      }
-  }
-  catch(const tlv::Error& e) {
-    if (m_inputBufferSize == MAX_NDN_PACKET_SIZE && offset == 0)
-      {
-        NFD_LOG_WARN("[id:" << this->getId()
-                     << ",endpoint:" << m_socket->local_endpoint()
-                     << "] Received input is invalid or too large to process, "
-                     << "closing down the face");
+      offset += element.size();
 
-        closeSocket();
-        this->onFail("Received input is invalid or too large to process, closing down the face");
-        return;
-      }
-  }
+      BOOST_ASSERT(offset <= m_inputBufferSize);
+
+      if (!this->decodeAndDispatchInput(element))
+        {
+          NFD_LOG_WARN("[id:" << this->getId()
+                       << ",endpoint:" << m_socket->local_endpoint()
+                       << "] Received unrecognized block of type ["
+                       << element.type() << "]");
+          // ignore unknown packet and proceed
+        }
+    }
+  if (!isOk && m_inputBufferSize == MAX_NDN_PACKET_SIZE && offset == 0)
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Failed to parse incoming packet or it is too large to process, "
+                   << "closing down the face");
+
+      closeSocket();
+      this->onFail("Failed to parse incoming packet or it is too large to process, "
+                   "closing down the face");
+      return;
+    }
 
   if (offset > 0)
     {

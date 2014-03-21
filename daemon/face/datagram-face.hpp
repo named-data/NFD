@@ -233,37 +233,37 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
                 << ",endpoint:" << m_socket->local_endpoint()
                 << "] Received: " << nBytesReceived << " bytes");
 
-  /// @todo Eliminate reliance on exceptions in this path
-  try {
-    Block element(buffer, nBytesReceived);
+  Block element;
+  bool isOk = Block::fromBuffer(buffer, nBytesReceived, element);
+  if (!isOk)
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Failed to parse incoming packet");
+      // This message won't extend the face lifetime
+      return;
+    }
 
-    if (element.size() != nBytesReceived)
-      {
-        NFD_LOG_WARN("[id:" << this->getId()
-                     << ",endpoint:" << m_socket->local_endpoint()
-                     << "] Received datagram size and decoded "
-                     << "element size don't match");
-        // This message won't extend the face lifetime
-        return;
-      }
-    if (!this->decodeAndDispatchInput(element))
-      {
-        NFD_LOG_WARN("[id:" << this->getId()
-                     << ",endpoint:" << m_socket->local_endpoint()
-                     << "] Received unrecognized block of type ["
-                     << element.type() << "]");
-        // ignore unknown packet and proceed
-        // This message won't extend the face lifetime
-        return;
-      }
-  }
-  catch(const tlv::Error& e) {
-    NFD_LOG_WARN("[id:" << this->getId()
-                 << ",endpoint:" << m_socket->local_endpoint()
-                 << "] Received input is invalid");
-    // This message won't extend the face lifetime
-    return;
-  }
+  if (element.size() != nBytesReceived)
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Received datagram size and decoded "
+                   << "element size don't match");
+      // This message won't extend the face lifetime
+      return;
+    }
+
+  if (!this->decodeAndDispatchInput(element))
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Received unrecognized block of type ["
+                   << element.type() << "]");
+      // This message won't extend the face lifetime
+      return;
+    }
+
   m_hasBeenUsedRecently = true;
 }
 
