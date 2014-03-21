@@ -182,6 +182,9 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_REQUIRE(static_cast<bool>(m_face1));
   BOOST_REQUIRE(static_cast<bool>(m_face2));
 
+  BOOST_CHECK(m_face1->isOnDemand());
+  BOOST_CHECK(!m_face2->isOnDemand());
+
   BOOST_CHECK_EQUAL(m_face2->getUri().toString(), "tcp4://127.0.0.1:20070");
   // face1 has an unknown URI, since the source port is automatically chosen by OS
 

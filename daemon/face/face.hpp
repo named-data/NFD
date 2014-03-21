@@ -106,6 +106,11 @@ public:
   virtual bool
   isUp() const;
 
+  /** \brief Get whether face is created on demand or explicitly via FaceManagement protocol
+   */
+  bool
+  isOnDemand() const;
+
   const FaceCounters&
   getCounters() const;
 
@@ -120,6 +125,9 @@ protected:
   FaceCounters&
   getMutableCounters();
 
+  void
+  setOnDemand(bool isOnDemand);
+
 private:
   void
   setId(FaceId faceId);
@@ -130,6 +138,7 @@ private:
   bool m_isLocal; // for scoping purposes
   FaceCounters m_counters;
   FaceUri m_uri;
+  bool m_isOnDemand;
 
   // allow setting FaceId
   friend class FaceTable;
@@ -158,6 +167,18 @@ inline const FaceUri&
 Face::getUri() const
 {
   return m_uri;
+}
+
+inline void
+Face::setOnDemand(bool isOnDemand)
+{
+  m_isOnDemand = isOnDemand;
+}
+
+inline bool
+Face::isOnDemand() const
+{
+  return m_isOnDemand;
 }
 
 } // namespace nfd

@@ -96,7 +96,7 @@ private:
   shared_ptr<UdpFace>
   createFace(const shared_ptr<boost::asio::ip::udp::socket>& socket,
              const FaceCreatedCallback& onFaceCreated,
-             bool isPermanent);
+             bool isOnDemand);
   void
   afterFaceFailed(udp::Endpoint& endpoint);
 
@@ -152,7 +152,7 @@ private:
   bool m_isListening;
   
   /**
-   * \brief every time m_idleFaceTimeout expires all the idle (and not permanent)
+   * \brief every time m_idleFaceTimeout expires all the idle (and on-demand)
    *        faces will be removed
    */
   time::seconds m_idleFaceTimeout;

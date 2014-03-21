@@ -22,7 +22,7 @@ public:
   typedef boost::asio::ip::udp protocol;
 
   UdpFace(const shared_ptr<protocol::socket>& socket,
-          bool isPermanent);
+          bool isOnDemand);
 
   //@todo if needed by other datagramFaces, it could be moved to datagram-face.hpp
   /**

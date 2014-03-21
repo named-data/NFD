@@ -839,6 +839,7 @@ BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
                       "UdpChannel error: cannot connect or cannot accept connection");
 
   m_face2->sendInterest(interest1);
+  BOOST_CHECK(!m_face2->isOnDemand());
 
   BOOST_CHECK_MESSAGE(m_limitedIo.run(2,//1 send + 1 listen return
                                       time::seconds(1)) == LimitedIo::EXCEED_OPS,
@@ -865,6 +866,7 @@ BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
   BOOST_CHECK_EQUAL(channel2->size(), 1);
   BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_CHECK(m_face1->isOnDemand());
   
   channel1->connect("127.0.0.1", "20071",
                     bind(&EndToEndFixture::channel1_onFaceCreatedNoCheck, this, _1),
@@ -873,6 +875,8 @@ BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
   BOOST_CHECK_MESSAGE(m_limitedIo.run(1,//1 connect
                                       time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UdpChannel error: cannot connect");
+
+  BOOST_CHECK(!m_face1->isOnDemand());
   
   //the connect should have set m_face1 as permanent face,
   //but it shouln't have created any additional faces

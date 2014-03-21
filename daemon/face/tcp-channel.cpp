@@ -112,15 +112,16 @@ TcpChannel::size() const
 
 void
 TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
-                       const FaceCreatedCallback& onFaceCreated)
+                       const FaceCreatedCallback& onFaceCreated,
+                       bool isOnDemand)
 {
   tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
   shared_ptr<Face> face;
   if (socket->local_endpoint().address().is_loopback())
-    face = make_shared<TcpLocalFace>(boost::cref(socket));
+    face = make_shared<TcpLocalFace>(boost::cref(socket), isOnDemand);
   else
-    face = make_shared<TcpFace>(boost::cref(socket));
+    face = make_shared<TcpFace>(boost::cref(socket), isOnDemand);
 
   face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
 
@@ -164,7 +165,7 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] "
                 "<< Connection from " << socket->remote_endpoint());
-  createFace(socket, onFaceCreated);
+  createFace(socket, onFaceCreated, true);
 }
 
 void
@@ -193,7 +194,7 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] "
                 ">> Connection to " << socket->remote_endpoint());
 
-  createFace(socket, onFaceCreated);
+  createFace(socket, onFaceCreated, false);
 }
 
 void

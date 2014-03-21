@@ -80,7 +80,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
 {
   ChannelFaceMap::iterator i = m_channelFaces.find(remoteEndpoint);
   if (i != m_channelFaces.end()) {
-    i->second->setPermanent(true);
+    i->second->setOnDemand(false);
     onFaceCreated(i->second);
     return;
   }
@@ -104,7 +104,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
     throw Error("Failed to properly configure the socket. Check the address ("
                 + std::string(e.what()) + ")");
   }
-  createFace(clientSocket, onFaceCreated, true);
+  createFace(clientSocket, onFaceCreated, false);
 }
 
 void
@@ -157,11 +157,11 @@ UdpChannel::size() const
 shared_ptr<UdpFace>
 UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
                        const FaceCreatedCallback& onFaceCreated,
-                       bool isPermanent)
+                       bool isOnDemand)
 {
   udp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
-  shared_ptr<UdpFace> face = make_shared<UdpFace>(boost::cref(socket), isPermanent);
+  shared_ptr<UdpFace> face = make_shared<UdpFace>(boost::cref(socket), isOnDemand);
   face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
 
   onFaceCreated(face);
@@ -204,7 +204,7 @@ UdpChannel::newPeer(const boost::system::error_code& error,
 
     face = createFace(clientSocket,
                       onFaceCreatedNewPeerCallback,
-                      false);
+                      true);
   }
 
   //Passing the message to the correspondent face
@@ -233,7 +233,7 @@ UdpChannel::closeIdleFaces()
   while (next != m_channelFaces.end()) {
     ChannelFaceMap::iterator it = next;
     next++;
-    if (!it->second->isPermanent() &&
+    if (it->second->isOnDemand() &&
         !it->second->hasBeenUsedRecently()) {
       //face has been idle since the last time closeIdleFaces
       //has been called. Going to close it

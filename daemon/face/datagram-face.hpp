@@ -16,10 +16,17 @@ class DatagramFace : public Face
 {
 public:
   typedef T protocol;
-  
+
+  /** \brief Construct datagram face
+   *
+   * \param uri         FaceUri for the face
+   * \param socket      Protocol-specific socket for the created face
+   * \param isOnDemand  If true, the face can be closed after it remains
+   *                    unused for a certain amount of time.
+   */
   DatagramFace(const FaceUri& uri,
                const shared_ptr<typename protocol::socket>& socket,
-               bool isPermanent);
+               bool isOnDemand);
 
   virtual
   ~DatagramFace();
@@ -42,12 +49,6 @@ public:
   handleReceive(const boost::system::error_code& error,
                 size_t nBytesReceived);
 
-  void
-  setPermanent(bool isPermanent);
-  
-  bool
-  isPermanent() const;
-
   /**
    * \brief Set m_hasBeenUsedRecently to false
    */
@@ -56,9 +57,11 @@ public:
   
   bool
   hasBeenUsedRecently() const;
+
+  void
+  setOnDemand(bool isOnDemand);
   
 protected:
-
   void
   receiveDatagram(const uint8_t* buffer,
                   size_t nBytesReceived,
@@ -74,27 +77,21 @@ protected:
   shared_ptr<typename protocol::socket> m_socket;
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
 
-  /**
-   * If false, the face can be closed after it remains unused for a certain
-   * amount of time
-   */
-  bool m_isPermanent;
-  
   bool m_hasBeenUsedRecently;
 
   NFD_LOG_INCLASS_DECLARE();
-
 };
 
 template <class T>
 inline
 DatagramFace<T>::DatagramFace(const FaceUri& uri,
                               const shared_ptr<typename DatagramFace::protocol::socket>& socket,
-                              bool isPermanent)
+                              bool isOnDemand)
   : Face(uri)
   , m_socket(socket)
-  , m_isPermanent(isPermanent)
 {
+  setOnDemand(isOnDemand);
+
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T>::handleReceive, this, _1, _2));
 }
@@ -298,16 +295,9 @@ DatagramFace<T>::closeSocket()
 
 template <class T>
 inline void
-DatagramFace<T>::setPermanent(bool isPermanent)
+DatagramFace<T>::setOnDemand(bool isOnDemand)
 {
-  m_isPermanent = isPermanent;
-}
-
-template <class T>
-inline bool
-DatagramFace<T>::isPermanent() const
-{
-  return m_isPermanent;
+  Face::setOnDemand(isOnDemand);
 }
 
 template <class T>

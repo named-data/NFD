@@ -88,7 +88,8 @@ public:
 private:
   void
   createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-             const FaceCreatedCallback& onFaceCreated);
+             const FaceCreatedCallback& onFaceCreated,
+             bool isOnDemand);
 
   void
   afterFaceFailed(tcp::Endpoint &endpoint);

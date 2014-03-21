@@ -60,7 +60,7 @@ UdpFactory::createChannel(const std::string& localHost,
 
 shared_ptr<MulticastUdpFace>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
-                                       const udp::Endpoint& multicastEndpoint)
+                                const udp::Endpoint& multicastEndpoint)
 {
   //checking if the local and musticast endpoint are already in use for a multicast face
   shared_ptr<MulticastUdpFace> multicastFace = findMulticastFace(localEndpoint);

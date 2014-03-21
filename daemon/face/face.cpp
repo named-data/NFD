@@ -22,6 +22,7 @@ Face::Face(const FaceUri& uri, bool isLocal)
   : m_id(INVALID_FACEID)
   , m_isLocal(isLocal)
   , m_uri(uri)
+  , m_isOnDemand(false)
 {
   onReceiveInterest += bind(&increaseCounter<Interest>, _1, boost::ref(m_counters.getInInterest()));
   onReceiveData     += bind(&increaseCounter<Data>,     _1, boost::ref(m_counters.getInData()));
@@ -74,7 +75,7 @@ bool
 Face::decodeAndDispatchInput(const Block& element)
 {
   /// \todo Ensure lazy field decoding process
-  
+
   if (element.type() == tlv::Interest)
     {
       shared_ptr<Interest> i = make_shared<Interest>();
@@ -89,7 +90,7 @@ Face::decodeAndDispatchInput(const Block& element)
     }
   else
     return false;
-  
+
   return true;
 }
 

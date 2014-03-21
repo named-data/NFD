@@ -1039,7 +1039,8 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_CREATED,
                                                     1,
-                                                    dummy->getUri().toString());
+                                                    dummy->getUri().toString(),
+                                                    0);
 
   Block encodedResultOptions(resultOptions.wireEncode());
 
@@ -1099,7 +1100,7 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
 
   ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_DESTROYED,
                                                     dummy->getId(),
-                                                    dummy->getUri().toString());
+                                                    dummy->getUri().toString(), 0);
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1,

@@ -22,7 +22,7 @@ public:
   typedef boost::asio::ip::tcp protocol;
 
   explicit
-  TcpFace(const shared_ptr<protocol::socket>& socket);
+  TcpFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
 };
 
 //
@@ -38,7 +38,7 @@ public:
   typedef boost::asio::ip::tcp protocol;
 
   explicit
-  TcpLocalFace(const shared_ptr<protocol::socket>& socket);
+  TcpLocalFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
 };
 
 

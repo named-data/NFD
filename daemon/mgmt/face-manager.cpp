@@ -655,7 +655,9 @@ FaceManager::onAddFace(shared_ptr<Face> face)
 {
   ndn::nfd::FaceEventNotification faceCreated(ndn::nfd::FACE_EVENT_CREATED,
                                               face->getId(),
-                                              face->getUri().toString());
+                                              face->getUri().toString(),
+                                              (face->isLocal() ? ndn::nfd::FACE_IS_LOCAL : 0) |
+                                              (face->isOnDemand() ? ndn::nfd::FACE_IS_ON_DEMAND : 0));
 
   m_notificationStream.postNotification(faceCreated);
 }
@@ -665,7 +667,9 @@ FaceManager::onRemoveFace(shared_ptr<Face> face)
 {
   ndn::nfd::FaceEventNotification faceDestroyed(ndn::nfd::FACE_EVENT_DESTROYED,
                                                 face->getId(),
-                                                face->getUri().toString());
+                                                face->getUri().toString(),
+                                                (face->isLocal() ? ndn::nfd::FACE_IS_LOCAL : 0) |
+                                                (face->isOnDemand() ? ndn::nfd::FACE_IS_ON_DEMAND : 0));
 
   m_notificationStream.postNotification(faceDestroyed);
 }

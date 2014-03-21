@@ -26,7 +26,8 @@ public:
    */
   explicit
   StreamFace(const FaceUri& uri,
-             const shared_ptr<typename protocol::socket>& socket);
+             const shared_ptr<typename protocol::socket>& socket,
+             bool isOnDemand);
 
   virtual
   ~StreamFace();
@@ -99,11 +100,13 @@ struct StreamFaceValidator
 template<class T, class FaceBase>
 inline
 StreamFace<T, FaceBase>::StreamFace(const FaceUri& uri,
-                                    const shared_ptr<typename StreamFace::protocol::socket>& socket)
+                                    const shared_ptr<typename StreamFace::protocol::socket>& socket,
+                                    bool isOnDemand)
   : FaceBase(uri)
   , m_socket(socket)
   , m_inputBufferSize(0)
 {
+  FaceBase::setOnDemand(isOnDemand);
   StreamFaceValidator<T, FaceBase>::validateSocket(*socket);
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
                           bind(&StreamFace<T, FaceBase>::handleReceive, this, _1, _2));
