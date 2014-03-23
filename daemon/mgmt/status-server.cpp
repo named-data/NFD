@@ -25,10 +25,8 @@ void
 StatusServer::onInterest(const Interest& interest) const
 {
   Name name(DATASET_PREFIX);
-  /// \todo use NumberComponent
-  name.append(Name::Component::fromNumberWithMarker(
-    time::toUnixTimestamp(time::system_clock::now()).count(), 0x00));
-  name.append(Name::Component::fromNumberWithMarker(0, 0x00));
+  name.appendVersion();
+  name.appendSegment(0);
 
   shared_ptr<Data> data = make_shared<Data>(name);
   data->setFreshnessPeriod(RESPONSE_FRESHNESS);

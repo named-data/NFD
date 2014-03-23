@@ -33,7 +33,7 @@ void
 SegmentPublisher::publish()
 {
   Name segmentPrefix(m_prefix);
-  segmentPrefix.appendSegment(time::toUnixTimestamp(time::system_clock::now()).count());
+  segmentPrefix.appendVersion();
 
   static const size_t  MAX_SEGMENT_SIZE = MAX_NDN_PACKET_SIZE >> 1;
 
