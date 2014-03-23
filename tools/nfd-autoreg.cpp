@@ -153,13 +153,14 @@ public:
 
 
   void
-  usage(const po::options_description& optionDesciption,
+  usage(std::ostream& os,
+        const po::options_description& optionDesciption,
         const char* programName)
   {
-    std::cerr << "General Usage\n  "
-              << programName << " --prefix=</autoreg/prefix> [--prefix=/another/prefix] ..."
-              << std::endl << std::endl;
-    std::cerr << optionDesciption << std::endl;
+    os << "Usage:\n"
+       << "  " << programName << " --prefix=</autoreg/prefix> [--prefix=/another/prefix] ...\n"
+       << "\n";
+    os << optionDesciption;
   }
 
   void
@@ -234,20 +235,20 @@ public:
     catch (std::exception& e)
       {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        usage(optionDesciption, argv[0]);
+        usage(std::cerr, optionDesciption, argv[0]);
         return 1;
       }
 
     if (options.count("help"))
       {
-        usage(optionDesciption, argv[0]);
+        usage(std::cout, optionDesciption, argv[0]);
         return 0;
       }
 
     if (m_autoregPrefixes.empty())
       {
         std::cerr << "ERROR: at least one --prefix must be specified" << std::endl << std::endl;
-        usage(optionDesciption, argv[0]);
+        usage(std::cerr, optionDesciption, argv[0]);
         return 2;
       }
 

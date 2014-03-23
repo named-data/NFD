@@ -30,16 +30,15 @@ public:
   void
   usage()
   {
-    std::cout << "\nUsage: " << m_toolName << " [options]\n"
-      "Shows NFD Status Information\n"
-      "Displays Version Information (NFD Version, Start Timestamp, Current Timestamp).\n"
-      "Face Status Information via NFD Face Status Protocol (FaceID, URI, Counters).\n"
-      "FIB Information via NFD FIB Enumeration Protocol (Prefix, Nexthop).\n"
-      "If no options are provided, all information is retrieved.\n"
+    std::cout << "Usage: \n  " << m_toolName << " [options]\n\n"
+      "Show NFD version and status information\n\n"
+      "Options:\n"
+      "  [-h] - print this help message\n"
       "  [-v] - retrieve version information\n"
       "  [-f] - retrieve face status information\n"
-      "  [-b] - retrieve FIB information\n"
-      "  [-h] - print help and exit\n\n";
+      "  [-b] - retrieve FIB information\n\n"
+      "If no options are provided, all information is retrieved.\n"
+      ;
   }
 
   void
@@ -288,7 +287,7 @@ int main( int argc, char* argv[] )
     switch (option) {
     case 'h':
       nfdStatus.usage();
-      break;
+      return 0;
     case 'v':
       nfdStatus.enableVersionRetrieval();
       break;
