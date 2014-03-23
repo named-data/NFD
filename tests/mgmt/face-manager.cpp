@@ -1104,7 +1104,7 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1,
-         command->getName(), 200, "Success", expectedFaceEvent);
+         command->getName(), 200, "Success", boost::ref(encodedOptions), expectedFaceEvent);
 
   destroyFace(command->getName(), options);
 

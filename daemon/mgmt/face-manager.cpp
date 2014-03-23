@@ -647,7 +647,10 @@ FaceManager::destroyFace(const Name& requestName,
     {
       target->close();
     }
-  sendResponse(requestName, 200, "Success");
+
+  ndn::nfd::ControlResponse response;
+  setResponse(response, 200, "Success", options.wireEncode());
+  sendResponse(requestName, response);
 }
 
 void
