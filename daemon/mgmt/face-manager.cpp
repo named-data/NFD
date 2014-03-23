@@ -395,7 +395,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
                     factory->createMulticastFace(nic->ipv4Addresses[0].to_string(),
                                                  mcastGroup, mcastPort);
 
-                  NFD_LOG_INFO("Created multicast Face ID " << newFace->getId());
+                  addCreatedFaceToForwarder(newFace);
 
                   if (useEndpoint)
                     {
@@ -490,7 +490,8 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
                     {
                       shared_ptr<EthernetFace> newFace =
                         factory->createMulticastFace(nic, mcastGroup);
-                      NFD_LOG_INFO("Created multicast Face ID " << newFace->getId());
+
+                      addCreatedFaceToForwarder(newFace);
                     }
                   catch (const EthernetFactory::Error& factoryError)
                     {
@@ -593,14 +594,21 @@ FaceManager::extractOptions(const Interest& request,
 }
 
 void
+FaceManager::addCreatedFaceToForwarder(const shared_ptr<Face>& newFace)
+{
+  m_faceTable.add(newFace);
+
+  NFD_LOG_INFO("Created face " << newFace->getUri() << " ID " << newFace->getId());
+}
+
+void
 FaceManager::onCreated(const Name& requestName,
                        ndn::nfd::FaceManagementOptions& options,
                        const shared_ptr<Face>& newFace)
 {
-  m_faceTable.add(newFace);
-  options.setFaceId(newFace->getId());
+  addCreatedFaceToForwarder(newFace);
 
-  NFD_LOG_INFO("Created Face ID " << newFace->getId());
+  options.setFaceId(newFace->getId());
 
   ndn::nfd::ControlResponse response;
   setResponse(response, 200, "Success", options.wireEncode());

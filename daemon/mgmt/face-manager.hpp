@@ -78,6 +78,9 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
                  ndn::nfd::FaceManagementOptions& extractedOptions);
 
   void
+  addCreatedFaceToForwarder(const shared_ptr<Face>& newFace);
+
+  void
   onCreated(const Name& requestName,
             ndn::nfd::FaceManagementOptions& options,
             const shared_ptr<Face>& newFace);
