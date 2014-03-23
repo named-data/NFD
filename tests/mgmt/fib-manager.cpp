@@ -21,7 +21,7 @@ namespace tests {
 
 NFD_LOG_INIT("FibManagerTest");
 
-class FibManagerFixture : protected BaseFixture, public FibEnumerationPublisherFixture
+class FibManagerFixture : public FibEnumerationPublisherFixture
 {
 public:
 

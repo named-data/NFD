@@ -32,7 +32,6 @@ public:
   void
   onInterest(const Name& name, const Interest& interest)
   {
-    size_t total_len = 0;
     ndn::Data data(ndn::Name(interest.getName()).appendVersion());
     data.setFreshnessPeriod(time::hours(1)); // 1 hour
     

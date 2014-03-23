@@ -317,6 +317,9 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
           try
             {
               keepAliveInterval = i->second.get_value<size_t>();
+
+              /// \todo Make use of keepAliveInterval
+              (void)(keepAliveInterval);
             }
           catch (const std::exception& e)
             {

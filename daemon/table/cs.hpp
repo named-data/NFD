@@ -85,7 +85,7 @@ private:
    *  Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
    *  \return{ returns random layer (number) in a skip list}
    */
-  int
+  size_t
   pickRandomLayer() const;
 
   /** \brief Inserts a new Content Store Entry in a skip list

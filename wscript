@@ -11,8 +11,6 @@ def options(opt):
     nfdopt = opt.add_option_group('NFD Options')
     nfdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
     nfdopt.add_option('--with-tests', action='store_true',default=False,dest='with_tests',help='''Build unit tests''')
-    nfdopt.add_option('--with-ndn-cpp',action='store',type='string',default=None,dest='ndn_cpp_dir',
-                      help='''Use NDN-CPP library from the specified path''')
 
 def configure(conf):
     conf.load("compiler_cxx boost gnu_dirs")
@@ -21,29 +19,30 @@ def configure(conf):
     except:
         pass
 
+    areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
     if conf.options.debug:
         conf.define('_DEBUG', 1)
-        conf.add_supported_cxxflags(cxxflags = ['-O0',
-                                                '-Wall',
-                                                '-Wno-unused-variable',
-                                                '-g3',
-                                                '-Wno-unused-private-field', # only clang supports
-                                                '-fcolor-diagnostics',       # only clang supports
-                                                '-Qunused-arguments',        # only clang supports
-                                                '-Wno-tautological-compare', # suppress warnings from CryptoPP
-                                                '-Wno-unused-function',      # suppress warnings from CryptoPP
-                                                '-fno-inline',
-                                                ])
-    else:
-        conf.add_supported_cxxflags(cxxflags = ['-O3', '-g', '-Wno-tautological-compare', '-Wno-unused-function'])
+        defaultFlags = ['-O0', '-g3',
+                        '-Werror',
+                        '-Wall',
+                        '-fcolor-diagnostics', # only clang supports
+                        ]
 
-    if not conf.options.ndn_cpp_dir:
-        conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'], uselib_store='NDN_CPP', mandatory=True)
+        if areCustomCxxflagsPresent:
+            missingFlags = [x for x in defaultFlags if x not in conf.env.CXXFLAGS]
+            if len(missingFlags) > 0:
+                Logs.warn("Selected debug mode, but CXXFLAGS is set to a custom value '%s'"
+                           % " ".join(conf.env.CXXFLAGS))
+                Logs.warn("Default flags '%s' are not activated" % " ".join(missingFlags))
+        else:
+            conf.add_supported_cxxflags(cxxflags = defaultFlags)
     else:
-        conf.check_cxx(lib='ndn-cpp-dev', uselib_store='NDN_CPP',
-                       cxxflags="-I%s/include" % conf.options.ndn_cpp_dir,
-                       linkflags="-L%s/lib" % conf.options.ndn_cpp_dir,
-                       mandatory=True)
+        defaultFlags = ['-O2', '-g', '-Wall']
+        if not areCustomCxxflagsPresent:
+            conf.add_supported_cxxflags(cxxflags = defaultFlags)
+
+    conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'],
+                   uselib_store='NDN_CPP', mandatory=True)
 
     boost_libs = 'system chrono program_options'
     if conf.options.with_tests:
@@ -64,9 +63,9 @@ def configure(conf):
     conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
     if conf.check_cxx(lib='pcap', uselib_store='PCAP', define_name='HAVE_PCAP', mandatory=False):
         conf.env['HAVE_PCAP'] = True
-    
+
     conf.check_cxx(lib='resolv', uselib_store='RESOLV', mandatory=True)
-    
+
     conf.load('coverage')
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
@@ -144,7 +143,7 @@ def add_supported_cxxflags(self, cxxflags):
             supportedFlags += [flag]
 
     self.end_msg(' '.join (supportedFlags))
-    self.env.CXXFLAGS += supportedFlags
+    self.env.CXXFLAGS = supportedFlags + self.env.CXXFLAGS
 
 # doxygen docs
 from waflib.Build import BuildContext

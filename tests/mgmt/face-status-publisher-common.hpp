@@ -171,7 +171,7 @@ public:
 
     m_buffer.appendByteArray(payload.value(), payload.value_size());
 
-    uint64_t segmentNo = data.getName()[-1].toSegment();
+    BOOST_CHECK_NO_THROW(data.getName()[-1].toSegment());
     if (data.getFinalBlockId() != data.getName()[-1])
       {
         return;

@@ -138,21 +138,19 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 
   NFD_LOG_DEBUG("Not a duplicate");
 
-  int randomLayer = pickRandomLayer();
+  size_t randomLayer = pickRandomLayer();
 
-  if (randomLayer > (m_skipList.size() - 1))
+  while ( m_skipList.size() < randomLayer + 1)
     {
-      while ( (m_skipList.size() - 1) < randomLayer)
-        {
-          SkipListLayer* newLayer = new SkipListLayer();
-          m_skipList.push_back(newLayer);
+      SkipListLayer* newLayer = new SkipListLayer();
+      m_skipList.push_back(newLayer);
 
-          updateTable[(m_skipList.size() - 1)] = newLayer->begin();
-        }
+      updateTable[(m_skipList.size() - 1)] = newLayer->begin();
     }
 
-  int layer = 0;
-  for (SkipList::iterator i = m_skipList.begin(); i != m_skipList.end() && layer <= randomLayer; ++i)
+  size_t layer = 0;
+  for (SkipList::iterator i = m_skipList.begin();
+       i != m_skipList.end() && layer <= randomLayer; ++i)
     {
       if (updateTable[layer] == (*i)->end() && !insertInFront)
         {
@@ -213,7 +211,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
   return false;
 }
 
-int
+size_t
 Cs::pickRandomLayer() const
 {
   int layer = -1;
@@ -226,7 +224,7 @@ Cs::pickRandomLayer() const
     }
   while ( (randomValue < SKIPLIST_PROBABILITY) && (layer < SKIPLIST_MAX_LAYERS) );
 
-  return layer;
+  return static_cast<size_t>(layer);
 }
 
 bool
@@ -572,7 +570,7 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
 
       BOOST_ASSERT(digest->size() == last.value_size());
       BOOST_ASSERT(digest->size() == ndn::crypto::SHA256_DIGEST_SIZE);
-      
+
       if (std::memcmp(digest->buf(), last.value(), ndn::crypto::SHA256_DIGEST_SIZE) != 0)
         {
           NFD_LOG_DEBUG("violates implicit digest");
@@ -584,9 +582,9 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
     {
       if (interest.getMinSuffixComponents() >= 0)
         {
-          int minDataNameLength = interest.getName().size() + interest.getMinSuffixComponents();
+          size_t minDataNameLength = interest.getName().size() + interest.getMinSuffixComponents();
 
-          bool isSatisfied = minDataNameLength <= entry->getName().size();
+          bool isSatisfied = (minDataNameLength <= entry->getName().size());
           if ( !isSatisfied )
             {
               NFD_LOG_DEBUG("violates minComponents");
@@ -596,9 +594,9 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
 
       if (interest.getMaxSuffixComponents() >= 0)
         {
-          int maxDataNameLength = interest.getName().size() + interest.getMaxSuffixComponents();
+          size_t maxDataNameLength = interest.getName().size() + interest.getMaxSuffixComponents();
 
-          bool isSatisfied = maxDataNameLength >= entry->getName().size();
+          bool isSatisfied = (maxDataNameLength >= entry->getName().size());
           if ( !isSatisfied )
             {
               NFD_LOG_DEBUG("violates maxComponents");
