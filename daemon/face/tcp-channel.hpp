@@ -85,6 +85,9 @@ public:
   size_t
   size() const;
 
+  bool
+  isListening() const;
+
 private:
   void
   createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
@@ -128,9 +131,15 @@ private:
   typedef std::map< tcp::Endpoint, shared_ptr<Face> > ChannelFaceMap;
   ChannelFaceMap m_channelFaces;
 
-  bool isListening;
+  bool m_isListening;
   shared_ptr<boost::asio::ip::tcp::acceptor> m_acceptor;
 };
+
+inline bool
+TcpChannel::isListening() const
+{
+  return m_isListening;
+}
 
 } // namespace nfd
 

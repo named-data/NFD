@@ -169,8 +169,12 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   factory.createChannel("127.0.0.1", "20071");
 
+  BOOST_CHECK_EQUAL(channel1->isListening(), false);
+
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  BOOST_CHECK_EQUAL(channel1->isListening(), true);
 
   factory.createFace(FaceUri("tcp://127.0.0.1:20070"),
                      bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),

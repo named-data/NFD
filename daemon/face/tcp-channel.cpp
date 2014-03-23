@@ -16,6 +16,7 @@ using namespace boost::asio;
 
 TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint)
   : m_localEndpoint(localEndpoint)
+  , m_isListening(false)
 {
   this->setUri(FaceUri(localEndpoint));
 }
@@ -45,6 +46,8 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
                            bind(&TcpChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket,
                                 onFaceCreated, onAcceptFailed));
+
+  m_isListening = true;
 }
 
 void
