@@ -31,7 +31,7 @@ const Name FaceManager::COMMAND_PREFIX("/localhost/nfd/faces");
 const size_t FaceManager::COMMAND_UNSIGNED_NCOMPS =
   FaceManager::COMMAND_PREFIX.size() +
   1 + // verb
-  1;  // verb options
+  1;  // verb parameters
 
 const size_t FaceManager::COMMAND_SIGNED_NCOMPS =
   FaceManager::COMMAND_UNSIGNED_NCOMPS +
@@ -40,14 +40,24 @@ const size_t FaceManager::COMMAND_SIGNED_NCOMPS =
 const FaceManager::SignedVerbAndProcessor FaceManager::SIGNED_COMMAND_VERBS[] =
   {
     SignedVerbAndProcessor(
-                     Name::Component("create"),
-                     &FaceManager::createFace
-                     ),
+                           Name::Component("create"),
+                           &FaceManager::createFace
+                           ),
 
     SignedVerbAndProcessor(
-                     Name::Component("destroy"),
-                     &FaceManager::destroyFace
-                     ),
+                           Name::Component("destroy"),
+                           &FaceManager::destroyFace
+                           ),
+
+    SignedVerbAndProcessor(
+                           Name::Component("enable-local-control"),
+                           &FaceManager::enableLocalControl
+                           ),
+
+    SignedVerbAndProcessor(
+                           Name::Component("disable-local-control"),
+                           &FaceManager::disableLocalControl
+                           ),
   };
 
 const FaceManager::UnsignedVerbAndProcessor FaceManager::UNSIGNED_COMMAND_VERBS[] =
@@ -75,11 +85,11 @@ FaceManager::FaceManager(FaceTable& faceTable,
   , m_statusPublisher(m_faceTable, m_face, LIST_COMMAND_PREFIX)
   , m_notificationStream(m_face, EVENTS_COMMAND_PREFIX)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
-                   SIGNED_COMMAND_VERBS +
-                   (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
+                         SIGNED_COMMAND_VERBS +
+                         (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
   , m_unsignedVerbDispatch(UNSIGNED_COMMAND_VERBS,
-                   UNSIGNED_COMMAND_VERBS +
-                   (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
+                           UNSIGNED_COMMAND_VERBS +
+                           (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
 
 {
   face->setInterestFilter("/localhost/nfd/faces",
@@ -528,7 +538,7 @@ FaceManager::onFaceRequest(const Interest& request)
       (unsignedVerbProcessor->second)(this, boost::cref(request));
     }
   else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
-      commandNComps < COMMAND_SIGNED_NCOMPS)
+           commandNComps < COMMAND_SIGNED_NCOMPS)
     {
       NFD_LOG_INFO("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
@@ -551,20 +561,21 @@ void
 FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
 {
   const Name& command = request->getName();
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+  const Name::Component& verb = command[COMMAND_PREFIX.size()];
+  const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
 
   SignedVerbDispatchTable::const_iterator signedVerbProcessor = m_signedVerbDispatch.find(verb);
   if (signedVerbProcessor != m_signedVerbDispatch.end())
     {
-      ndn::nfd::FaceManagementOptions options;
-      if (!extractOptions(*request, options))
+      ControlParameters parameters;
+      if (!extractParameters(parameterComponent, parameters))
         {
           sendResponse(command, 400, "Malformed command");
           return;
         }
 
       NFD_LOG_INFO("command result: processing verb: " << verb);
-      (signedVerbProcessor->second)(this, command, options);
+      (signedVerbProcessor->second)(this, *request, parameters);
     }
   else
     {
@@ -572,28 +583,6 @@ FaceManager::onValidatedFaceRequest(const shared_ptr<const Interest>& request)
       sendResponse(command, 501, "Unsupported command");
     }
 
-}
-
-bool
-FaceManager::extractOptions(const Interest& request,
-                            ndn::nfd::FaceManagementOptions& extractedOptions)
-{
-  const Name& command = request.getName();
-  const size_t optionCompIndex =
-    COMMAND_PREFIX.size() + 1;
-
-  try
-    {
-      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
-      extractedOptions.wireDecode(rawOptions);
-    }
-  catch (const ndn::Tlv::Error& e)
-    {
-      NFD_LOG_INFO("Bad command option parse: " << command);
-      return false;
-    }
-  NFD_LOG_DEBUG("Options parsed OK");
-  return true;
 }
 
 void
@@ -606,16 +595,13 @@ FaceManager::addCreatedFaceToForwarder(const shared_ptr<Face>& newFace)
 
 void
 FaceManager::onCreated(const Name& requestName,
-                       ndn::nfd::FaceManagementOptions& options,
+                       ControlParameters& parameters,
                        const shared_ptr<Face>& newFace)
 {
   addCreatedFaceToForwarder(newFace);
+  parameters.setFaceId(newFace->getId());
 
-  options.setFaceId(newFace->getId());
-
-  ndn::nfd::ControlResponse response;
-  setResponse(response, 200, "Success", options.wireEncode());
-  sendResponse(requestName, response);
+  sendResponse(requestName, 200, "Success", parameters.wireEncode());
 }
 
 void
@@ -626,11 +612,12 @@ FaceManager::onConnectFailed(const Name& requestName, const std::string& reason)
 }
 
 void
-FaceManager::createFace(const Name& requestName,
-                        ndn::nfd::FaceManagementOptions& options)
+FaceManager::createFace(const Interest& request,
+                        ControlParameters& parameters)
 {
+  const Name& requestName = request.getName();
   FaceUri uri;
-  if (!uri.parse(options.getUri()))
+  if (!parameters.hasUri() || !uri.parse(parameters.getUri()))
     {
       sendResponse(requestName, 400, "Malformed command");
       return;
@@ -644,24 +631,29 @@ FaceManager::createFace(const Name& requestName,
     }
 
   factory->second->createFace(uri,
-                              bind(&FaceManager::onCreated, this, requestName, options, _1),
+                              bind(&FaceManager::onCreated, this, requestName, parameters, _1),
                               bind(&FaceManager::onConnectFailed, this, requestName, _1));
 }
 
 
 void
-FaceManager::destroyFace(const Name& requestName,
-                         ndn::nfd::FaceManagementOptions& options)
+FaceManager::destroyFace(const Interest& request,
+                         ControlParameters& parameters)
 {
-  shared_ptr<Face> target = m_faceTable.get(options.getFaceId());
+  const Name& requestName = request.getName();
+  if (!parameters.hasFaceId())
+    {
+      sendResponse(requestName, 400, "Malformed command");
+      return;
+    }
+
+  shared_ptr<Face> target = m_faceTable.get(parameters.getFaceId());
   if (static_cast<bool>(target))
     {
       target->close();
     }
 
-  ndn::nfd::ControlResponse response;
-  setResponse(response, 200, "Success", options.wireEncode());
-  sendResponse(requestName, response);
+  sendResponse(requestName, 200, "Success", parameters.wireEncode());
 }
 
 void
@@ -688,6 +680,70 @@ FaceManager::onRemoveFace(shared_ptr<Face> face)
   m_notificationStream.postNotification(faceDestroyed);
 }
 
+
+bool
+FaceManager::validateLocalControlParameters(const Interest& request,
+                                            ControlParameters& parameters,
+                                            shared_ptr<LocalFace>& outFace,
+                                            LocalControlFeature& outFeature)
+{
+  if (!parameters.hasLocalControlFeature() ||
+      (parameters.getLocalControlFeature() != LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID &&
+       parameters.getLocalControlFeature() != LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID))
+    {
+      NFD_LOG_INFO("command result: malformed");
+      sendResponse(request.getName(), 400, "Malformed command");
+      return false;
+    }
+
+  shared_ptr<Face> face = m_faceTable.get(request.getIncomingFaceId());
+
+  if (!static_cast<bool>(face))
+    {
+      NFD_LOG_INFO("command result: faceid " << parameters.getFaceId() << " not found");
+      sendResponse(request.getName(), 410, "Requested face not found");
+      return false;
+    }
+  else if (!face->isLocal())
+    {
+      NFD_LOG_INFO("command result: cannot enable local control on non-local faceid " << parameters.getFaceId());
+      sendResponse(request.getName(), 412, "Requested face is non-local");
+      return false;
+    }
+
+  outFace = dynamic_pointer_cast<LocalFace>(face);
+  outFeature = static_cast<LocalControlFeature>(parameters.getLocalControlFeature());
+
+  return true;
+}
+
+void
+FaceManager::enableLocalControl(const Interest& request,
+                                ControlParameters& parameters)
+{
+  shared_ptr<LocalFace> face;
+  LocalControlFeature feature;
+
+  if (validateLocalControlParameters(request, parameters, face, feature))
+    {
+      face->setLocalControlHeaderFeature(feature, true);
+      sendResponse(request.getName(), 200, "Success", parameters.wireEncode());
+    }
+}
+
+void
+FaceManager::disableLocalControl(const Interest& request,
+                                 ControlParameters& parameters)
+{
+  shared_ptr<LocalFace> face;
+  LocalControlFeature feature;
+
+  if (validateLocalControlParameters(request, parameters, face, feature))
+    {
+      face->setLocalControlHeaderFeature(feature, false);
+      sendResponse(request.getName(), 200, "Success", parameters.wireEncode());
+    }
+}
 
 void
 FaceManager::listFaces(const Interest& request)

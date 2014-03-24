@@ -22,7 +22,7 @@ const Name FibManager::COMMAND_PREFIX = "/localhost/nfd/fib";
 const size_t FibManager::COMMAND_UNSIGNED_NCOMPS =
   FibManager::COMMAND_PREFIX.size() +
   1 + // verb
-  1;  // verb options
+  1;  // verb parameters
 
 const size_t FibManager::COMMAND_SIGNED_NCOMPS =
   FibManager::COMMAND_UNSIGNED_NCOMPS +
@@ -92,13 +92,13 @@ FibManager::onFibRequest(const Interest& request)
       (unsignedVerbProcessor->second)(this, boost::cref(request));
     }
   else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
-      commandNComps < COMMAND_SIGNED_NCOMPS)
+           commandNComps < COMMAND_SIGNED_NCOMPS)
     {
       NFD_LOG_INFO("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
     }
   else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
-      !COMMAND_PREFIX.isPrefixOf(command))
+           !COMMAND_PREFIX.isPrefixOf(command))
     {
       NFD_LOG_INFO("command result: malformed");
       sendResponse(command, 400, "Malformed command");
@@ -115,22 +115,30 @@ void
 FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
 {
   const Name& command = request->getName();
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+  const Name::Component& verb = command[COMMAND_PREFIX.size()];
+  const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
 
   SignedVerbDispatchTable::const_iterator signedVerbProcessor = m_signedVerbDispatch.find (verb);
   if (signedVerbProcessor != m_signedVerbDispatch.end())
     {
-      FibManagementOptions options;
-      if (!extractOptions(*request, options))
+      ControlParameters parameters;
+      if (!extractParameters(parameterComponent, parameters) ||
+          !parameters.hasName() ||
+          !parameters.hasFaceId())
         {
           NFD_LOG_INFO("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
           return;
         }
 
+      if (parameters.getFaceId() == 0)
+        {
+          parameters.setFaceId(request->getIncomingFaceId());
+        }
+
       NFD_LOG_INFO("command result: processing verb: " << verb);
       ControlResponse response;
-      (signedVerbProcessor->second)(this, options, response);
+      (signedVerbProcessor->second)(this, parameters, response);
       sendResponse(command, response);
     }
   else
@@ -140,98 +148,70 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
     }
 }
 
-bool
-FibManager::extractOptions(const Interest& request,
-                           FibManagementOptions& extractedOptions)
-{
-  const Name& command = request.getName();
-  const size_t optionCompIndex = COMMAND_PREFIX.size() + 1;
 
-  try
-    {
-      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
-      extractedOptions.wireDecode(rawOptions);
-    }
-  catch (const ndn::Tlv::Error& e)
-    {
-      NFD_LOG_INFO("Bad command option parse: " << command);
-      return false;
-    }
-
-  if (extractedOptions.getFaceId() == 0)
-    {
-      extractedOptions.setFaceId(request.getIncomingFaceId());
-    }
-
-  NFD_LOG_DEBUG("Options parsed OK");
-  return true;
-}
 
 void
-FibManager::addNextHop(const FibManagementOptions& options,
+FibManager::addNextHop(ControlParameters& parameters,
                        ControlResponse& response)
 {
-  NFD_LOG_DEBUG("add-nexthop prefix: " << options.getName()
-                << " faceid: " << options.getFaceId()
-                << " cost: " << options.getCost());
+  if (!parameters.hasCost())
+    {
+      parameters.setCost(0);
+    }
 
-  shared_ptr<Face> nextHopFace = m_getFace(options.getFaceId());
+  const Name& prefix = parameters.getName();
+  FaceId faceId = parameters.getFaceId();
+  uint64_t cost = parameters.getCost();
+
+  NFD_LOG_DEBUG("add-nexthop prefix: " << prefix
+                << " faceid: " << faceId
+                << " cost: " << cost);
+
+  shared_ptr<Face> nextHopFace = m_getFace(faceId);
   if (static_cast<bool>(nextHopFace))
     {
-      shared_ptr<fib::Entry> entry = m_managedFib.insert(options.getName()).first;
+      shared_ptr<fib::Entry> entry = m_managedFib.insert(prefix).first;
 
-      entry->addNextHop(nextHopFace, options.getCost());
+      entry->addNextHop(nextHopFace, cost);
 
       NFD_LOG_INFO("add-nexthop result: OK"
-                   << " prefix:" << options.getName()
-                   << " faceid: " << options.getFaceId()
-                   << " cost: " << options.getCost());
-      setResponse(response, 200, "Success", options.wireEncode());
+                   << " prefix:" << prefix
+                   << " faceid: " << faceId
+                   << " cost: " << cost);
+
+      setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else
     {
-      NFD_LOG_INFO("add-nexthop result: FAIL reason: unknown-faceid: " << options.getFaceId());
-      setResponse(response, 404, "Face not found");
+      NFD_LOG_INFO("add-nexthop result: FAIL reason: unknown-faceid: " << faceId);
+      setResponse(response, 410, "Face not found");
     }
 }
 
 void
-FibManager::removeNextHop(const FibManagementOptions& options,
+FibManager::removeNextHop(ControlParameters& parameters,
                           ControlResponse& response)
 {
-  NFD_LOG_DEBUG("remove-nexthop prefix: " << options.getName()
-                << " faceid: " << options.getFaceId());
+  NFD_LOG_DEBUG("remove-nexthop prefix: " << parameters.getName()
+                << " faceid: " << parameters.getFaceId());
 
-  shared_ptr<Face> faceToRemove = m_getFace(options.getFaceId());
+  shared_ptr<Face> faceToRemove = m_getFace(parameters.getFaceId());
   if (static_cast<bool>(faceToRemove))
     {
-      shared_ptr<fib::Entry> entry = m_managedFib.findExactMatch(options.getName());
+      shared_ptr<fib::Entry> entry = m_managedFib.findExactMatch(parameters.getName());
       if (static_cast<bool>(entry))
         {
           entry->removeNextHop(faceToRemove);
-          NFD_LOG_INFO("remove-nexthop result: OK prefix: " << options.getName()
-                       << " faceid: " << options.getFaceId());
+          NFD_LOG_INFO("remove-nexthop result: OK prefix: " << parameters.getName()
+                       << " faceid: " << parameters.getFaceId());
 
           if (!entry->hasNextHops())
             {
               m_managedFib.erase(*entry);
             }
-
-          setResponse(response, 200, "Success", options.wireEncode());
-        }
-      else
-        {
-          NFD_LOG_INFO("remove-nexthop result: FAIL reason: unknown-prefix: "
-                       << options.getName());
-          setResponse(response, 404, "Prefix not found");
         }
     }
-  else
-    {
-      NFD_LOG_INFO("remove-nexthop result: FAIL reason: unknown-faceid: "
-                   << options.getFaceId());
-      setResponse(response, 404, "Face not found");
-    }
+  setResponse(response, 200, "Success", parameters.wireEncode());
 }
 
 void

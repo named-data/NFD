@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
   shared_ptr<DummyLocalFace> face4 = make_shared<DummyLocalFace>();
-  face4->setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID);
+  face4->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
   forwarder.addFace(face3);

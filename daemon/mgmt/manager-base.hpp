@@ -8,15 +8,17 @@
 #define NFD_MGMT_MANAGER_BASE_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/management/nfd-control-response.hpp>
 
 #include "mgmt/command-validator.hpp"
 #include "mgmt/internal-face.hpp"
 
+#include <ndn-cpp-dev/management/nfd-control-response.hpp>
+#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 
 using ndn::nfd::ControlResponse;
+using ndn::nfd::ControlParameters;
 
 class InternalFace;
 
@@ -40,6 +42,10 @@ public:
 
 protected:
 
+  static bool
+  extractParameters(const Name::Component& parameterComponent,
+                    ControlParameters& extractedParameters);
+
   void
   setResponse(ControlResponse& response,
               uint32_t code,
@@ -58,6 +64,12 @@ protected:
   sendResponse(const Name& name,
                uint32_t code,
                const std::string& text);
+
+  void
+  sendResponse(const Name& name,
+               uint32_t code,
+               const std::string& text,
+               const Block& body);
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   void

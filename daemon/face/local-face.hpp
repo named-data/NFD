@@ -8,48 +8,50 @@
 #define NFD_FACE_LOCAL_FACE_HPP
 
 #include "face.hpp"
+#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 
-/* \brief indicates a feature in LocalControlHeader
- */
-enum LocalControlHeaderFeature
-{
-  /// any feature
-  LOCAL_CONTROL_HEADER_FEATURE_ANY,
-  /// in-faceid
-  LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID,
-  /// out-faceid
-  LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID,
-  /// upper bound of enum
-  LOCAL_CONTROL_HEADER_FEATURE_MAX
-};
-
+using ndn::nfd::LocalControlFeature;
+using ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID;
+using ndn::nfd::LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID;
 
 /** \brief represents a face
  */
 class LocalFace : public Face
 {
 public:
+
   explicit
   LocalFace(const FaceUri& uri);
 
-  /** \brief get whether a LocalControlHeader feature is enabled
+  /** \brief get whether any LocalControlHeader feature is enabled
    *
-   *  \param feature The feature. Cannot be LOCAL_CONTROL_HEADER_FEATURE_MAX
-   *  LOCAL_CONTROL_HEADER_FEATURE_ANY returns true if any feature is enabled.
+   * \returns true if any feature is enabled.
    */
   bool
-  isLocalControlHeaderEnabled(LocalControlHeaderFeature feature =
-                              LOCAL_CONTROL_HEADER_FEATURE_ANY) const;
+  isLocalControlHeaderEnabled() const;
+
+  /** \brief get whether a specific LocalControlHeader feature is enabled
+   *
+   *  \param feature The feature.
+   *  \returns true if the specified feature is enabled.
+   */
+  bool
+  isLocalControlHeaderEnabled(LocalControlFeature feature) const;
 
   /** \brief enable or disable a LocalControlHeader feature
    *
-   *  \param feature The feature. Cannot be LOCAL_CONTROL_HEADER_FEATURE_ANY
-   *                                     or LOCAL_CONTROL_HEADER_FEATURE_MAX
+   *  \param feature The feature. Cannot be LOCAL_CONTROL_FEATURE_ANY
+   *                                     or LOCAL_CONTROL_FEATURE_MAX
    */
   void
-  setLocalControlHeaderFeature(LocalControlHeaderFeature feature, bool enabled = true);
+  setLocalControlHeaderFeature(LocalControlFeature feature, bool enabled = true);
+
+public:
+
+  static const size_t LOCAL_CONTROL_FEATURE_MAX = 3; /// upper bound of LocalControlFeature enum
+  static const size_t LOCAL_CONTROL_FEATURE_ANY = 0; /// any feature
 
 protected:
   // statically overridden from Face
@@ -84,26 +86,31 @@ private:
 inline
 LocalFace::LocalFace(const FaceUri& uri)
   : Face(uri, true)
-  , m_localControlHeaderFeatures(LOCAL_CONTROL_HEADER_FEATURE_MAX)
+  , m_localControlHeaderFeatures(LocalFace::LOCAL_CONTROL_FEATURE_MAX)
 {
 }
 
 inline bool
-LocalFace::isLocalControlHeaderEnabled(LocalControlHeaderFeature feature) const
+LocalFace::isLocalControlHeaderEnabled() const
 {
-  BOOST_ASSERT(feature < m_localControlHeaderFeatures.size());
+  return m_localControlHeaderFeatures[LOCAL_CONTROL_FEATURE_ANY];
+}
+
+inline bool
+LocalFace::isLocalControlHeaderEnabled(LocalControlFeature feature) const
+{
+  BOOST_ASSERT(0 < feature && feature < m_localControlHeaderFeatures.size());
   return m_localControlHeaderFeatures[feature];
 }
 
 inline void
-LocalFace::setLocalControlHeaderFeature(LocalControlHeaderFeature feature, bool enabled/* = true*/)
+LocalFace::setLocalControlHeaderFeature(LocalControlFeature feature, bool enabled/* = true*/)
 {
-  BOOST_ASSERT(feature > LOCAL_CONTROL_HEADER_FEATURE_ANY &&
-               feature < m_localControlHeaderFeatures.size());
+  BOOST_ASSERT(0 < feature && feature < m_localControlHeaderFeatures.size());
+
   m_localControlHeaderFeatures[feature] = enabled;
 
-  BOOST_STATIC_ASSERT(LOCAL_CONTROL_HEADER_FEATURE_ANY == 0);
-  m_localControlHeaderFeatures[LOCAL_CONTROL_HEADER_FEATURE_ANY] =
+  m_localControlHeaderFeatures[LOCAL_CONTROL_FEATURE_ANY] =
     std::find(m_localControlHeaderFeatures.begin() + 1,
               m_localControlHeaderFeatures.end(), true) <
               m_localControlHeaderFeatures.end();
@@ -127,7 +134,7 @@ LocalFace::decodeAndDispatchInput(const Block& element)
         {
           i->getLocalControlHeader().wireDecode(element,
             false,
-            this->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
+            this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
         }
 
       this->onReceiveInterest(*i);
@@ -162,7 +169,7 @@ LocalFace::isEmptyFilteredLocalControlHeader(const ndn::nfd::LocalControlHeader&
   if (!this->isLocalControlHeaderEnabled())
     return true;
 
-  return header.empty(this->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID),
+  return header.empty(this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
                       false);
 }
 
@@ -171,7 +178,7 @@ inline Block
 LocalFace::filterAndEncodeLocalControlHeader(const Packet& packet)
 {
   return packet.getLocalControlHeader().wireEncode(packet,
-           this->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID),
+           this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
            false);
 }
 

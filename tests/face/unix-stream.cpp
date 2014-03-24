@@ -328,17 +328,17 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   data1.setSignature(fakeSignature);
   data2.setSignature(fakeSignature);
 
-  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID);
-  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID);
+  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
-  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID));
-  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
+  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
-  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID);
-  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID);
+  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
-  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID));
-  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID));
+  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
   ////////////////////////////////////////////////////////
 

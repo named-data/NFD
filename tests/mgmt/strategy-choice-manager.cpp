@@ -208,15 +208,15 @@ BOOST_FIXTURE_TEST_CASE(MalformedCommmand, AllStrategiesFixture)
 
 BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/test");
-  options.setStrategy("/localhost/nfd/strategy/best-route");
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/best-route");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("set");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
@@ -232,15 +232,15 @@ BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
                         UnauthorizedCommandFixture<StrategyChoiceManagerFixture>)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/test");
-  options.setStrategy("/localhost/nfd/strategy/best-route");
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/best-route");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("set");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -256,14 +256,15 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
 
 BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("unsupported");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -281,7 +282,7 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
 {
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("set");
-  commandName.append("NotReallyOptions");
+  commandName.append("NotReallyParameters");
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -297,43 +298,86 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
 
 BOOST_AUTO_TEST_CASE(SetStrategies)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/test");
-  options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("set");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedParameters);
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
   BOOST_REQUIRE(didCallbackFire());
   fw::Strategy& strategy = getStrategyChoice().findEffectiveStrategy("/test");
   BOOST_REQUIRE_EQUAL(strategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+}
 
-  resetCallbackFired();
-  getFace()->onReceiveData.clear();
+BOOST_AUTO_TEST_CASE(SetStrategiesMissingName)
+{
+  ControlParameters parameters;
+  parameters.setStrategy("/localhost/nfd/strategy/test-strategy-b");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
+
+  getManager().onValidatedStrategyChoiceRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_AUTO_TEST_CASE(SetStrategiesMissingStrategy)
+{
+  ControlParameters parameters;
+  parameters.setName("/test");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
+
+  getManager().onValidatedStrategyChoiceRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+  fw::Strategy& strategy = getStrategyChoice().findEffectiveStrategy("/test");
+  BOOST_REQUIRE_EQUAL(strategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
 }
 
 BOOST_AUTO_TEST_CASE(SetUnsupportedStrategy)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/test");
-  options.setStrategy("/localhost/nfd/strategy/unit-test-doesnotexist");
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/unit-test-doesnotexist");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("set");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -370,15 +414,15 @@ public:
 // BOOST_FIXTURE_TEST_CASE(SetNotInstalled, DefaultStrategyOnlyFixture)
 // {
 //   BOOST_REQUIRE(!getStrategyChoice().hasStrategy("/localhost/nfd/strategy/test-strategy-b"));
-//   ndn::nfd::StrategyChoiceOptions options;
-//   options.setName("/test");
-//   options.setStrategy("/localhost/nfd/strategy/test-strategy-b");
+//   ControlParameters parameters;
+//   parameters.setName("/test");
+//   parameters.setStrategy("/localhost/nfd/strategy/test-strategy-b");
 
-//   Block encodedOptions(options.wireEncode());
+//   Block encodedParameters(parameters.wireEncode());
 
 //   Name commandName("/localhost/nfd/strategy-choice");
 //   commandName.append("set");
-//   commandName.append(encodedOptions);
+//   commandName.append(encodedParameters);
 
 //   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 //   generateCommand(*command);
@@ -396,25 +440,25 @@ public:
 
 BOOST_AUTO_TEST_CASE(Unset)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/test");
+  ControlParameters parameters;
+  parameters.setName("/test");
 
   BOOST_REQUIRE(m_strategyChoice.insert("/test", "/localhost/nfd/strategy/test-strategy-b"));
   BOOST_REQUIRE_EQUAL(m_strategyChoice.findEffectiveStrategy("/test").getName(),
                       "/localhost/nfd/strategy/test-strategy-b");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("unset");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
   getFace()->onReceiveData +=
     bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedParameters);
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -426,14 +470,14 @@ BOOST_AUTO_TEST_CASE(Unset)
 
 BOOST_AUTO_TEST_CASE(UnsetRoot)
 {
-  ndn::nfd::StrategyChoiceOptions options;
-  options.setName("/");
+  ControlParameters parameters;
+  parameters.setName("/");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/strategy-choice");
   commandName.append("unset");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -448,6 +492,35 @@ BOOST_AUTO_TEST_CASE(UnsetRoot)
 
   BOOST_CHECK_EQUAL(m_strategyChoice.findEffectiveStrategy("/test").getName(),
                     "/localhost/nfd/strategy/test-strategy-a");
+}
+
+BOOST_AUTO_TEST_CASE(UnsetMissingName)
+{
+  ControlParameters parameters;
+
+  BOOST_REQUIRE(m_strategyChoice.insert("/test", "/localhost/nfd/strategy/test-strategy-b"));
+  BOOST_REQUIRE_EQUAL(m_strategyChoice.findEffectiveStrategy("/test").getName(),
+                      "/localhost/nfd/strategy/test-strategy-b");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("unset");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
+
+  getManager().onValidatedStrategyChoiceRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+
+  BOOST_CHECK_EQUAL(m_strategyChoice.findEffectiveStrategy("/test").getName(),
+                    "/localhost/nfd/strategy/test-strategy-b");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -9,7 +9,7 @@
 
 #include "mgmt/manager-base.hpp"
 
-#include <ndn-cpp-dev/management/nfd-strategy-choice-options.hpp>
+#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 
@@ -33,18 +33,12 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   onValidatedStrategyChoiceRequest(const shared_ptr<const Interest>& request);
 
-  bool
-  extractOptions(const Interest& request,
-                   ndn::nfd::StrategyChoiceOptions& extractedOptions);
-
-
-
   void
-  setStrategy(const ndn::nfd::StrategyChoiceOptions& options,
+  setStrategy(const ControlParameters& parameters,
               ControlResponse& response);
 
   void
-  unsetStrategy(const ndn::nfd::StrategyChoiceOptions& options,
+  unsetStrategy(const ControlParameters& parameters,
                 ControlResponse& response);
 private:
 
@@ -53,7 +47,7 @@ private:
   static const Name COMMAND_PREFIX; // /localhost/nfd/strategy-choice
 
   // number of components in an invalid, but not malformed, unsigned command.
-  // (/localhost/nfd/strategy-choice + verb + options) = 5
+  // (/localhost/nfd/strategy-choice + verb + parameters) = 5
   static const size_t COMMAND_UNSIGNED_NCOMPS;
 
   // number of components in a valid signed Interest.

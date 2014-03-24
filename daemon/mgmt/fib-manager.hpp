@@ -14,11 +14,7 @@
 #include "mgmt/manager-base.hpp"
 #include "mgmt/fib-enumeration-publisher.hpp"
 
-#include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
-
 namespace nfd {
-
-using ndn::nfd::FibManagementOptions;
 
 class Forwarder;
 class Fib;
@@ -45,28 +41,15 @@ private:
   onValidatedFibRequest(const shared_ptr<const Interest>& request);
 
   void
-  insertEntry(const FibManagementOptions& options,
-              ControlResponse& response);
-
-
-  void
-  deleteEntry(const FibManagementOptions& options,
-              ControlResponse& response);
-
-  void
-  addNextHop(const FibManagementOptions& options,
+  addNextHop(ControlParameters& parameters,
              ControlResponse& response);
 
   void
-  removeNextHop(const FibManagementOptions& options,
+  removeNextHop(ControlParameters& parameters,
                 ControlResponse& response);
 
   void
   listEntries(const Interest& request);
-
-  bool
-  extractOptions(const Interest& request,
-                 FibManagementOptions& extractedOptions);
 
 private:
 
@@ -75,7 +58,7 @@ private:
   FibEnumerationPublisher m_fibEnumerationPublisher;
 
   typedef function<void(FibManager*,
-                        const FibManagementOptions&,
+                        ControlParameters&,
                         ControlResponse&)> SignedVerbProcessor;
 
   typedef std::map<Name::Component, SignedVerbProcessor> SignedVerbDispatchTable;
@@ -94,7 +77,7 @@ private:
   static const Name COMMAND_PREFIX; // /localhost/nfd/fib
 
   // number of components in an invalid, but not malformed, unsigned command.
-  // (/localhost/nfd/fib + verb + options) = 5
+  // (/localhost/nfd/fib + verb + parameters) = 5
   static const size_t COMMAND_UNSIGNED_NCOMPS;
 
   // number of components in a valid signed Interest.

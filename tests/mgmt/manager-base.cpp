@@ -37,6 +37,15 @@ public:
   void
   testSendResponse(const Name& name,
                    uint32_t code,
+                   const std::string& text,
+                   const Block& body)
+  {
+    sendResponse(name, code, text, body);
+  }
+
+  void
+  testSendResponse(const Name& name,
+                   uint32_t code,
                    const std::string& text)
   {
     sendResponse(name, code, text);
@@ -77,6 +86,34 @@ public:
     BOOST_REQUIRE(control.getText() == expectedText);
   }
 
+  void
+  validateControlResponse(const Data& response,
+                          const Name& expectedName,
+                          uint32_t expectedCode,
+                          const std::string& expectedText,
+                          const Block& expectedBody)
+  {
+    m_callbackFired = true;
+    Block controlRaw = response.getContent().blockFromValue();
+
+    ControlResponse control;
+    control.wireDecode(controlRaw);
+
+    NFD_LOG_DEBUG("received control response"
+                  << " name: " << response.getName()
+                  << " code: " << control.getCode()
+                  << " text: " << control.getText());
+
+    BOOST_REQUIRE(response.getName() == expectedName);
+    BOOST_REQUIRE(control.getCode() == expectedCode);
+    BOOST_REQUIRE(control.getText() == expectedText);
+
+    BOOST_REQUIRE(control.getBody().value_size() == expectedBody.value_size());
+
+    BOOST_CHECK(memcmp(control.getBody().value(), expectedBody.value(),
+                       expectedBody.value_size()) == 0);
+  }
+
   bool
   didCallbackFire()
   {
@@ -104,6 +141,19 @@ BOOST_AUTO_TEST_CASE(SetResponse)
   BOOST_CHECK_EQUAL(response.getText(), "test");
 }
 
+BOOST_AUTO_TEST_CASE(SendResponse4Arg)
+{
+  ndn::nfd::ControlParameters parameters;
+  parameters.setName("/test/body");
+
+  getInternalFace()->onReceiveData +=
+    bind(&ManagerBaseTest::validateControlResponse, this, _1,
+         "/response", 100, "test", parameters.wireEncode());
+
+  testSendResponse("/response", 100, "test", parameters.wireEncode());
+  BOOST_REQUIRE(didCallbackFire());
+}
+
 
 BOOST_AUTO_TEST_CASE(SendResponse3Arg)
 {
@@ -114,7 +164,6 @@ BOOST_AUTO_TEST_CASE(SendResponse3Arg)
   testSendResponse("/response", 100, "test");
   BOOST_REQUIRE(didCallbackFire());
 }
-
 
 BOOST_AUTO_TEST_CASE(SendResponse2Arg)
 {

@@ -17,7 +17,7 @@ const Name StrategyChoiceManager::COMMAND_PREFIX = "/localhost/nfd/strategy-choi
 const size_t StrategyChoiceManager::COMMAND_UNSIGNED_NCOMPS =
   StrategyChoiceManager::COMMAND_PREFIX.size() +
   1 + // verb
-  1;  // verb options
+  1;  // verb parameters
 
 const size_t StrategyChoiceManager::COMMAND_SIGNED_NCOMPS =
   StrategyChoiceManager::COMMAND_UNSIGNED_NCOMPS +
@@ -71,23 +71,24 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
   static const Name::Component VERB_UNSET("unset");
 
   const Name& command = request->getName();
+  const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
 
-  ndn::nfd::StrategyChoiceOptions options;
-  if (!extractOptions(*request, options))
+  ControlParameters parameters;
+  if (!extractParameters(parameterComponent, parameters) || !parameters.hasName())
     {
       sendResponse(command, 400, "Malformed command");
       return;
     }
 
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+  const Name::Component& verb = command[COMMAND_PREFIX.size()];
   ControlResponse response;
   if (verb == VERB_SET)
     {
-      setStrategy(options, response);
+      setStrategy(parameters, response);
     }
   else if (verb == VERB_UNSET)
     {
-      unsetStrategy(options, response);
+      unsetStrategy(parameters, response);
     }
   else
     {
@@ -97,47 +98,30 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
   sendResponse(command, response);
 }
 
-bool
-StrategyChoiceManager::extractOptions(const Interest& request,
-                                      ndn::nfd::StrategyChoiceOptions& extractedOptions)
-{
-  const Name& command = request.getName();
-  const size_t optionCompIndex =
-    COMMAND_PREFIX.size() + 1;
-
-  try
-    {
-      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
-      extractedOptions.wireDecode(rawOptions);
-    }
-  catch (const ndn::Tlv::Error& e)
-    {
-      NFD_LOG_INFO("Bad command option parse: " << command);
-      return false;
-    }
-
-  NFD_LOG_DEBUG("Options parsed OK");
-  return true;
-}
-
 void
-StrategyChoiceManager::setStrategy(const ndn::nfd::StrategyChoiceOptions& options,
+StrategyChoiceManager::setStrategy(const ControlParameters& parameters,
                                    ControlResponse& response)
 {
-  const Name& prefix = options.getName();
-  const Name& selectedStrategy = options.getStrategy();
+  if (!parameters.hasStrategy())
+    {
+      setResponse(response, 400, "Malformed command");
+      return;
+    }
+
+  const Name& prefix = parameters.getName();
+  const Name& selectedStrategy = parameters.getStrategy();
 
   if (!m_strategyChoice.hasStrategy(selectedStrategy))
     {
       NFD_LOG_INFO("strategy-choice result: FAIL reason: unknown-strategy: "
-                   << options.getStrategy());
+                   << parameters.getStrategy());
       setResponse(response, 504, "Unsupported strategy");
       return;
     }
 
   if (m_strategyChoice.insert(prefix, selectedStrategy))
     {
-      setResponse(response, 200, "Success", options.wireEncode());
+      setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else
     {
@@ -146,22 +130,22 @@ StrategyChoiceManager::setStrategy(const ndn::nfd::StrategyChoiceOptions& option
 }
 
 void
-StrategyChoiceManager::unsetStrategy(const ndn::nfd::StrategyChoiceOptions& options,
+StrategyChoiceManager::unsetStrategy(const ControlParameters& parameters,
                                      ControlResponse& response)
 {
   static const Name ROOT_PREFIX;
 
-  const Name& prefix = options.getName();
+  const Name& prefix = parameters.getName();
   if (prefix == ROOT_PREFIX)
     {
       NFD_LOG_INFO("strategy-choice result: FAIL reason: unknown-prefix: "
-                   << options.getName());
+                   << parameters.getName());
       setResponse(response, 403, "Cannot unset root prefix strategy");
       return;
     }
 
   m_strategyChoice.erase(prefix);
-  setResponse(response, 200, "Success", options.wireEncode());
+  setResponse(response, 200, "Success", parameters.wireEncode());
 }
 
 

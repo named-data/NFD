@@ -103,7 +103,6 @@ authorizations
     certfile keys/default.ndncert ; NDN identity certificate file
     privileges ; set of privileges granted to this identity
     {
-      control-header
       faces
       fib
       strategy-choice

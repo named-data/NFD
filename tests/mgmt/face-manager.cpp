@@ -672,14 +672,14 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 
 BOOST_AUTO_TEST_CASE(UnsignedCommand)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
@@ -694,14 +694,14 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FaceManagerFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -733,13 +733,13 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(UnsupportedCommand, AuthorizedCommandFixture<FaceManagerFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
+  ControlParameters parameters;
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("unsupported");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -768,15 +768,15 @@ public:
   }
 
   virtual void
-  createFace(const Name& requestName,
-             ndn::nfd::FaceManagementOptions& options)
+  createFace(const Interest& request,
+             ControlParameters& parameters)
   {
     m_createFaceFired = true;
   }
 
   virtual void
-  destroyFace(const Name& requestName,
-              ndn::nfd::FaceManagementOptions& options)
+  destroyFace(const Interest& request,
+              ControlParameters& parameters)
   {
     m_destroyFaceFired = true;
   }
@@ -809,7 +809,7 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse,
 {
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append("NotReallyOptions");
+  commandName.append("NotReallyParameters");
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -826,14 +826,14 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse,
 BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace,
                         AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -845,14 +845,14 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace,
 BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace,
                         AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("destroy");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -878,6 +878,379 @@ protected:
   Forwarder m_forwarder;
   FaceTable m_faceTable;
 };
+
+class LocalControlFixture : public FaceTableFixture,
+                            public TestFaceManagerCommon,
+                            public FaceManager
+{
+public:
+  LocalControlFixture()
+    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face)
+  {
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(LocalControlInFaceId,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
+  BOOST_REQUIRE(dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setFaceId(dummy->getId());
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 200, "Success", encodedParameters);
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 200, "Success", encodedParameters);
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
+  BOOST_REQUIRE(dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId() + 100);
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 410, "Requested face not found");
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId() + 100);
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 410, "Requested face not found");
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlMissingFeature,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
+  BOOST_REQUIRE(dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setFaceId(dummy->getId());
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 400, "Malformed command");
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 400, "Malformed command");
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<DummyFace> dummy = make_shared<DummyFace>();
+  BOOST_REQUIRE(!dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setFaceId(dummy->getId());
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 412, "Requested face is non-local");
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(enable));
+  disableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 412, "Requested face is non-local");
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceId,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
+  BOOST_REQUIRE(dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setFaceId(dummy->getId());
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 200, "Success", encodedParameters);
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 200, "Success", encodedParameters);
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<LocalFace> dummy = make_shared<DummyLocalFace>();
+  BOOST_REQUIRE(dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId() + 100);
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 410, "Requested face not found");
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId() + 100);
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 410, "Requested face not found");
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+}
+
+BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
+                        AuthorizedCommandFixture<LocalControlFixture>)
+{
+  shared_ptr<DummyFace> dummy = make_shared<DummyFace>();
+  BOOST_REQUIRE(!dummy->isLocal());
+  FaceTableFixture::m_faceTable.add(dummy);
+
+  ControlParameters parameters;
+  parameters.setFaceId(dummy->getId());
+  parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name enable("/localhost/nfd/faces/enable-local-control");
+  enable.append(encodedParameters);
+
+  shared_ptr<Interest> enableCommand(make_shared<Interest>(enable));
+  enableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*enableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         enableCommand->getName(), 412, "Requested face is non-local");
+
+  onValidatedFaceRequest(enableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+
+  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  resetCallbackFired();
+
+  Name disable("/localhost/nfd/faces/disable-local-control");
+  disable.append(encodedParameters);
+
+  shared_ptr<Interest> disableCommand(make_shared<Interest>(disable));
+  disableCommand->setIncomingFaceId(dummy->getId());
+
+  generateCommand(*disableCommand);
+
+  TestFaceManagerCommon::m_face->onReceiveData +=
+    bind(&LocalControlFixture::validateControlResponse, this, _1,
+         disableCommand->getName(), 412, "Requested face is non-local");
+
+  onValidatedFaceRequest(disableCommand);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
 
 class FaceFixture : public FaceTableFixture,
                     public TestFaceManagerCommon,
@@ -971,14 +1344,14 @@ protected:
 
 BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp:/127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp:/127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -987,23 +1360,45 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
     bind(&FaceFixture::validateControlResponse, this, _1,
          command->getName(), 400, "Malformed command");
 
-  createFace(command->getName(), options);
+  createFace(*command, parameters);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_FIXTURE_TEST_CASE(CreateFaceMissingUri, AuthorizedCommandFixture<FaceFixture>)
+{
+  ControlParameters parameters;
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/faces");
+  commandName.append("create");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  getFace()->onReceiveData +=
+    bind(&FaceFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
+
+  createFace(*command, parameters);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
 BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
+  ControlParameters parameters;
   // this will be an unsupported protocol because no factories have been
   // added to the face manager
-  options.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -1012,28 +1407,28 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFi
     bind(&FaceFixture::validateControlResponse, this, _1,
          command->getName(), 501, "Unsupported protocol");
 
-  createFace(command->getName(), options);
+  createFace(*command, parameters);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
 BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  ndn::nfd::FaceManagementOptions resultOptions;
-  resultOptions.setUri("tcp://127.0.0.1");
-  resultOptions.setFaceId(1);
+  ControlParameters resultParameters;
+  resultParameters.setUri("tcp://127.0.0.1");
+  resultParameters.setFaceId(1);
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
 
@@ -1042,14 +1437,14 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
                                                     dummy->getUri().toString(),
                                                     0);
 
-  Block encodedResultOptions(resultOptions.wireEncode());
+  Block encodedResultParameters(resultParameters.wireEncode());
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1,
-                                        command->getName(), 200, "Success",
-                                        encodedResultOptions, expectedFaceEvent);
+         command->getName(), 200, "Success",
+         encodedResultParameters, expectedFaceEvent);
 
-  onCreated(command->getName(), options, dummy);
+  onCreated(command->getName(), parameters, dummy);
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_REQUIRE(didReceiveNotication());
@@ -1057,14 +1452,14 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
 BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
 {
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -1085,15 +1480,15 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
   FaceTableFixture::m_faceTable.add(dummy);
 
-  ndn::nfd::FaceManagementOptions options;
-  options.setUri("tcp://127.0.0.1");
-  options.setFaceId(dummy->getId());
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
+  parameters.setFaceId(dummy->getId());
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("destroy");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -1104,9 +1499,9 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1,
-         command->getName(), 200, "Success", boost::ref(encodedOptions), expectedFaceEvent);
+         command->getName(), 200, "Success", boost::ref(encodedParameters), expectedFaceEvent);
 
-  destroyFace(command->getName(), options);
+  destroyFace(*command, parameters);
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_REQUIRE(didReceiveNotication());

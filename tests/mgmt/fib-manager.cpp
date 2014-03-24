@@ -97,7 +97,7 @@ public:
                                   expectedCode, expectedText, control);
 
     BOOST_REQUIRE(!control.getBody().empty());
-    BOOST_REQUIRE(control.getBody().value_size() == expectedBody.value_size());
+    BOOST_REQUIRE_EQUAL(control.getBody().value_size(), expectedBody.value_size());
 
     BOOST_CHECK(memcmp(control.getBody().value(), expectedBody.value(),
                        expectedBody.value_size()) == 0);
@@ -253,16 +253,16 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
 {
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
-  options.setCost(1);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
+  parameters.setCost(1);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("unsupported");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -282,16 +282,16 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
-  options.setCost(101);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
+  parameters.setCost(101);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   Interest command(commandName);
 
@@ -312,16 +312,16 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FibManag
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
-  options.setCost(101);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
+  parameters.setCost(101);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append("NotReallyOptions");
+  commandName.append("NotReallyParameters");
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
@@ -364,23 +364,23 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1000);
-  options.setCost(101);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1000);
+  parameters.setCost(101);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 404, "Face not found");
+         command->getName(), 410, "Face not found");
 
   getFibManager().onFibRequest(*command);
 
@@ -394,23 +394,23 @@ BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(0);
-  options.setCost(101);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(0);
+  parameters.setCost(101);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
-  FibManagementOptions expectedOptions;
-  expectedOptions.setName("/hello");
-  expectedOptions.setFaceId(1);
-  expectedOptions.setCost(101);
+  ControlParameters expectedParameters;
+  expectedParameters.setName("/hello");
+  expectedParameters.setFaceId(1);
+  expectedParameters.setCost(101);
 
-  Block encodedExpectedOptions(expectedOptions.wireEncode());
+  Block encodedExpectedParameters(expectedParameters.wireEncode());
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   command->setIncomingFaceId(1);
@@ -418,7 +418,7 @@ BOOST_AUTO_TEST_CASE(TestImplicitFaceId)
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedExpectedOptions);
+         command->getName(), 200, "Success", encodedExpectedParameters);
 
   getFibManager().onFibRequest(*command);
 
@@ -432,28 +432,62 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
-  options.setCost(101);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
+  parameters.setCost(101);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("add-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedParameters);
 
   getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
   BOOST_REQUIRE(addedNextHopWithCost(getFib(), "/hello", 0, 101));
+}
+
+BOOST_AUTO_TEST_CASE(AddNextHopVerbImplicitCost)
+{
+  addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face = getInternalFace();
+
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("add-nexthop");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  ControlParameters resultParameters;
+  resultParameters.setName("/hello");
+  resultParameters.setFaceId(1);
+  resultParameters.setCost(0);
+
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 200, "Success", resultParameters.wireEncode());
+
+  getFibManager().onFibRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE(addedNextHopWithCost(getFib(), "/hello", 0, 0));
 }
 
 BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
@@ -464,23 +498,23 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
   for (int i = 1; i <= 2; i++)
     {
 
-      FibManagementOptions options;
-      options.setName("/hello");
-      options.setFaceId(1);
-      options.setCost(100 + i);
+      ControlParameters parameters;
+      parameters.setName("/hello");
+      parameters.setFaceId(1);
+      parameters.setCost(100 + i);
 
-      Block encodedOptions(options.wireEncode());
+      Block encodedParameters(parameters.wireEncode());
 
       Name commandName("/localhost/nfd/fib");
       commandName.append("add-nexthop");
-      commandName.append(encodedOptions);
+      commandName.append(encodedParameters);
 
       shared_ptr<Interest> command(make_shared<Interest>(commandName));
       generateCommand(*command);
 
       face->onReceiveData +=
         bind(&FibManagerFixture::validateControlResponse, this, _1,
-             command->getName(), 200, "Success", encodedOptions);
+             command->getName(), 200, "Success", encodedParameters);
 
       getFibManager().onFibRequest(*command);
       BOOST_REQUIRE(didCallbackFire());
@@ -510,25 +544,25 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
   addFace(make_shared<DummyFace>());
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
 
   {
-    options.setCost(1);
+    parameters.setCost(1);
 
-    Block encodedOptions(options.wireEncode());
+    Block encodedParameters(parameters.wireEncode());
 
     Name commandName("/localhost/nfd/fib");
     commandName.append("add-nexthop");
-    commandName.append(encodedOptions);
+    commandName.append(encodedParameters);
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedParameters);
 
     getFibManager().onFibRequest(*command);
 
@@ -539,20 +573,20 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
   face->onReceiveData.clear();
 
   {
-    options.setCost(102);
+    parameters.setCost(102);
 
-    Block encodedOptions(options.wireEncode());
+    Block encodedParameters(parameters.wireEncode());
 
     Name commandName("/localhost/nfd/fib");
     commandName.append("add-nexthop");
-    commandName.append(encodedOptions);
+    commandName.append(encodedParameters);
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
     face->onReceiveData +=
       bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedOptions);
+           command->getName(), 200, "Success", encodedParameters);
 
     getFibManager().onFibRequest(*command);
 
@@ -578,151 +612,59 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     }
 }
 
-// BOOST_AUTO_TEST_CASE(Insert)
-// {
-//   addFace(make_shared<DummyFace>());
-//   addFace(make_shared<DummyFace>());
-//   shared_ptr<InternalFace> face = getInternalFace();
+BOOST_AUTO_TEST_CASE(AddNextHopVerbMissingPrefix)
+{
+  addFace(make_shared<DummyFace>());
 
-//   {
-//     FibManagementOptions options;
-//     options.setName("/hello");
-//     options.setFaceId(1);
-//     options.setCost(101);
+  shared_ptr<InternalFace> face = getInternalFace();
 
-//     Block encodedOptions(options.wireEncode());
+  ControlParameters parameters;
+  parameters.setFaceId(1);
 
-//     Name commandName("/localhost/nfd/fib");
-//     commandName.append("add-nexthop");
-//     commandName.append(encodedOptions);
+  Block encodedParameters(parameters.wireEncode());
 
-//     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-//     generateCommand(*command);
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("add-nexthop");
+  commandName.append(encodedParameters);
 
-//     face->onReceiveData +=
-//       bind(&FibManagerFixture::validateControlResponse, this, _1,
-//            command->getName(), 200, "Success", encodedOptions);
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
-//     getFibManager().onFibRequest(*command);
-//   }
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
 
-//   BOOST_REQUIRE(didCallbackFire());
+  getFibManager().onFibRequest(*command);
 
-//   shared_ptr<fib::Entry> entry = getFib().findExactMatch("/hello");
-//   if (static_cast<bool>(entry))
-//     {
-//       const fib::NextHopList& hops = entry->getNextHops();
-//       BOOST_CHECK_EQUAL(hops.size(), 1);
-//     }
+  BOOST_REQUIRE(didCallbackFire());
+}
 
-//   resetCallbackFired();
-//   face->onReceiveData.clear();
+BOOST_AUTO_TEST_CASE(AddNextHopVerbMissingFaceId)
+{
+  addFace(make_shared<DummyFace>());
 
-//   {
-//     FibManagementOptions options;
-//     options.setName("/hello");
-//     options.setFaceId(2);
-//     options.setCost(102);
+  shared_ptr<InternalFace> face = getInternalFace();
 
-//     Block encodedOptions(options.wireEncode());
+  ControlParameters parameters;
+  parameters.setName("/hello");
 
-//     Name commandName("/localhost/nfd/fib");
-//     commandName.append("add-nexthop");
-//     commandName.append(encodedOptions);
+  Block encodedParameters(parameters.wireEncode());
 
-//     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-//     generateCommand(*command);
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("add-nexthop");
+  commandName.append(encodedParameters);
 
-//     face->onReceiveData +=
-//       bind(&FibManagerFixture::validateControlResponse, this, _1,
-//            command->getName(), 200, "Success", encodedOptions);
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
 
-//     getFibManager().onFibRequest(*command);
-//   }
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
 
-//   BOOST_REQUIRE(didCallbackFire());
+  getFibManager().onFibRequest(*command);
 
-//   entry = getFib().findExactMatch("/hello");
-//   if (static_cast<bool>(entry))
-//     {
-//       const fib::NextHopList& hops = entry->getNextHops();
-//       BOOST_CHECK_EQUAL(hops.size(), 2);
-//     }
-
-// }
-
-// void
-// testRemove(CommandFixture<FibManagerFixture>* fixture,
-//            FibManager& manager,
-//            Fib& fib,
-//            shared_ptr<Face> face,
-//            const Name& target)
-// {
-//   FibManagementOptions options;
-//   options.setName(target);
-
-//   Block encodedOptions(options.wireEncode());
-
-//   Name commandName("/localhost/nfd/fib");
-//   commandName.append("delete");
-//   commandName.append(encodedOptions);
-
-//   shared_ptr<Interest> command(make_shared<Interest>(commandName));
-//   fixture->generateCommand(*command);
-
-//   face->onReceiveData +=
-//     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-//          command->getName(), 200, "Success", encodedOptions);
-
-//   manager.onFibRequest(*command);
-
-//   BOOST_REQUIRE(fixture->didCallbackFire());
-
-//   if (static_cast<bool>(fib.findExactMatch(target)))
-//     {
-//       BOOST_FAIL("Found \"removed\" prefix");
-//     }
-//   face->onReceiveData.clear();
-// }
-
-// BOOST_AUTO_TEST_CASE(Delete)
-// {
-//   shared_ptr<InternalFace> face = getInternalFace();
-//   FibManager& manager = getFibManager();
-//   Fib& fib = getFib();
-
-//   fib.insert("/a");
-//   fib.insert("/a/b");
-//   fib.insert("/a/b/c");
-
-//   testRemove(this, manager, fib, face, "/");
-
-//   if (!static_cast<bool>(fib.findExactMatch("/a")) ||
-//       !static_cast<bool>(fib.findExactMatch("/a/b")) ||
-//       !static_cast<bool>(fib.findExactMatch("/a/b/c")))
-//     {
-//       BOOST_FAIL("Removed incorrect entry");
-//     }
-
-//   testRemove(this, manager, fib, face, "/a/b");
-
-//   if (!static_cast<bool>(fib.findExactMatch("/a")) ||
-//       !static_cast<bool>(fib.findExactMatch("/a/b/c")))
-//     {
-//       BOOST_FAIL("Removed incorrect entry");
-//     }
-
-//   testRemove(this, manager, fib, face, "/a/b/c");
-
-//   if (!static_cast<bool>(fib.findExactMatch("/a")))
-//     {
-//       BOOST_FAIL("Removed incorrect entry");
-//     }
-
-//   testRemove(this, manager, fib, face, "/a");
-
-//   testRemove(this, manager, fib, face, "/does/not/exist");
-// }
+  BOOST_REQUIRE(didCallbackFire());
+}
 
 bool
 removedNextHopWithCost(const Fib& fib, const Name& prefix, size_t oldSize, uint32_t cost)
@@ -746,22 +688,22 @@ testRemoveNextHop(CommandFixture<FibManagerFixture>* fixture,
                   const Name& targetName,
                   FaceId targetFace)
 {
-  FibManagementOptions options;
-  options.setName(targetName);
-  options.setFaceId(targetFace);
+  ControlParameters parameters;
+  parameters.setName(targetName);
+  parameters.setFaceId(targetFace);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("remove-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   fixture->generateCommand(*command);
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         command->getName(), 200, "Success", encodedOptions);
+         command->getName(), 200, "Success", encodedParameters);
 
   manager.onFibRequest(*command);
 
@@ -803,54 +745,108 @@ BOOST_AUTO_TEST_CASE(RemoveNextHop)
   BOOST_CHECK(!static_cast<bool>(getFib().findExactMatch("/hello")));
 }
 
-BOOST_AUTO_TEST_CASE(RemoveNoFace)
+BOOST_AUTO_TEST_CASE(RemoveFaceNotFound)
 {
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("remove-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 404, "Face not found");
+         command->getName(), 200, "Success", encodedParameters);
 
   getFibManager().onFibRequest(*command);
 
   BOOST_REQUIRE(didCallbackFire());
 }
 
-BOOST_AUTO_TEST_CASE(RemoveNoPrefix)
+BOOST_AUTO_TEST_CASE(RemovePrefixNotFound)
 {
   addFace(make_shared<DummyFace>());
 
   shared_ptr<InternalFace> face = getInternalFace();
 
-  FibManagementOptions options;
-  options.setName("/hello");
-  options.setFaceId(1);
+  ControlParameters parameters;
+  parameters.setName("/hello");
+  parameters.setFaceId(1);
 
-  Block encodedOptions(options.wireEncode());
+  Block encodedParameters(parameters.wireEncode());
 
   Name commandName("/localhost/nfd/fib");
   commandName.append("remove-nexthop");
-  commandName.append(encodedOptions);
+  commandName.append(encodedParameters);
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 404, "Prefix not found");
+         command->getName(), 200, "Success", encodedParameters);
+
+  getFibManager().onFibRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_AUTO_TEST_CASE(RemoveMissingPrefix)
+{
+  addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face = getInternalFace();
+
+  ControlParameters parameters;
+  parameters.setFaceId(1);
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("remove-nexthop");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
+
+  getFibManager().onFibRequest(*command);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+
+BOOST_AUTO_TEST_CASE(RemoveMissingFaceId)
+{
+  addFace(make_shared<DummyFace>());
+
+  shared_ptr<InternalFace> face = getInternalFace();
+
+  ControlParameters parameters;
+  parameters.setName("/hello");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/fib");
+  commandName.append("remove-nexthop");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  face->onReceiveData +=
+    bind(&FibManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 400, "Malformed command");
 
   getFibManager().onFibRequest(*command);
 

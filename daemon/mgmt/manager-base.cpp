@@ -21,12 +21,41 @@ ManagerBase::~ManagerBase()
 
 }
 
+bool
+ManagerBase::extractParameters(const Name::Component& parameterComponent,
+                               ControlParameters& extractedParameters)
+{
+  try
+    {
+      Block rawParameters = parameterComponent.blockFromValue();
+      extractedParameters.wireDecode(rawParameters);
+    }
+  catch (const ndn::Tlv::Error& e)
+    {
+      return false;
+    }
+
+  NFD_LOG_DEBUG("Parameters parsed OK");
+  return true;
+}
+
 void
 ManagerBase::sendResponse(const Name& name,
                           uint32_t code,
                           const std::string& text)
 {
   ControlResponse response(code, text);
+  sendResponse(name, response);
+}
+
+void
+ManagerBase::sendResponse(const Name& name,
+                          uint32_t code,
+                          const std::string& text,
+                          const Block& body)
+{
+  ControlResponse response(code, text);
+  response.setBody(body);
   sendResponse(name, response);
 }
 

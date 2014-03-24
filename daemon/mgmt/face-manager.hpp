@@ -9,6 +9,7 @@
 
 #include "common.hpp"
 #include "face/face.hpp"
+#include "face/local-face.hpp"
 #include "mgmt/app-face.hpp"
 #include "mgmt/manager-base.hpp"
 #include "mgmt/config-file.hpp"
@@ -16,7 +17,7 @@
 #include "mgmt/notification-stream.hpp"
 #include "fw/face-table.hpp"
 
-#include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
+#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
 
 namespace nfd {
@@ -25,6 +26,7 @@ const std::string FACE_MANAGER_PRIVILEGE = "faces";
 
 class ProtocolFactory;
 class NetworkInterfaceInfo;
+class LocalFace;
 
 class FaceManager : public ManagerBase
 {
@@ -63,26 +65,36 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   onValidatedFaceRequest(const shared_ptr<const Interest>& request);
 
   VIRTUAL_WITH_TESTS void
-  createFace(const Name& requestName,
-             ndn::nfd::FaceManagementOptions& options);
+  createFace(const Interest& request,
+             ControlParameters& parameters);
 
   VIRTUAL_WITH_TESTS void
-  destroyFace(const Name& requestName,
-              ndn::nfd::FaceManagementOptions& options);
+  destroyFace(const Interest& request,
+              ControlParameters& parameters);
+
+  VIRTUAL_WITH_TESTS bool
+  validateLocalControlParameters(const Interest& request,
+                                 ControlParameters& parameters,
+                                 shared_ptr<LocalFace>& outFace,
+                                 LocalControlFeature& outFeature);
+
+  VIRTUAL_WITH_TESTS void
+  enableLocalControl(const Interest& request,
+                     ControlParameters& parambeters);
+
+  VIRTUAL_WITH_TESTS void
+  disableLocalControl(const Interest& request,
+                      ControlParameters& parameters);
 
   void
   ignoreUnsignedVerb(const Interest& request);
-
-  bool
-  extractOptions(const Interest& request,
-                 ndn::nfd::FaceManagementOptions& extractedOptions);
 
   void
   addCreatedFaceToForwarder(const shared_ptr<Face>& newFace);
 
   void
   onCreated(const Name& requestName,
-            ndn::nfd::FaceManagementOptions& options,
+            ControlParameters& parameters,
             const shared_ptr<Face>& newFace);
 
   void
@@ -131,8 +143,8 @@ private:
   NotificationStream m_notificationStream;
 
   typedef function<void(FaceManager*,
-                        const Name&,
-                        ndn::nfd::FaceManagementOptions&)> SignedVerbProcessor;
+                        const Interest&,
+                        ControlParameters&)> SignedVerbProcessor;
 
   typedef std::map<Name::Component, SignedVerbProcessor> SignedVerbDispatchTable;
   typedef std::pair<Name::Component, SignedVerbProcessor> SignedVerbAndProcessor;
@@ -149,7 +161,7 @@ private:
   static const Name COMMAND_PREFIX; // /localhost/nfd/faces
 
   // number of components in an invalid signed command (i.e. should be signed, but isn't)
-  // (/localhost/nfd/faces + verb + options) = 5
+  // (/localhost/nfd/faces + verb + parameters) = 5
   static const size_t COMMAND_UNSIGNED_NCOMPS;
 
   // number of components in a valid signed command.

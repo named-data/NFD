@@ -28,17 +28,16 @@ BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
   
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
   
-  face.setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID, true);
+  face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, true);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), true);
+  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), true);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
-                         LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID), true);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
-                         LOCAL_CONTROL_HEADER_FEATURE_NEXTHOP_FACEID), false);
+                         LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID), false);
   
-  face.setLocalControlHeaderFeature(LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID, false);
+  face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, false);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
-                         LOCAL_CONTROL_HEADER_FEATURE_IN_FACEID), false);
+                         LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), false);
 }
 
 BOOST_AUTO_TEST_CASE(Counters)
