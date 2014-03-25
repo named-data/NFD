@@ -61,7 +61,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 
   // is pending?
   const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-  bool isPending = inRecords.begin() == inRecords.end();
+  bool isPending = inRecords.begin() != inRecords.end();
   if (!isPending) {
     // CS lookup
     const Data* csMatch = m_cs.find(interest);
