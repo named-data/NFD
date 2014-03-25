@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
 
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Fib fib(nameTree);
   // []
   BOOST_CHECK_EQUAL(fib.size(), 0);
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   std::pair<shared_ptr<fib::Entry>, bool> insertRes;
   shared_ptr<fib::Entry> entry;
 
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Fib fib(nameTree);
   // {}
 
@@ -262,7 +262,7 @@ validateNoExactMatch(const Fib& fib, const Name& target)
 
 BOOST_AUTO_TEST_CASE(FindExactMatch)
 {
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Fib fib(nameTree);
   fib.insert("/A");
   fib.insert("/A/B");
@@ -275,14 +275,14 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
 
   validateNoExactMatch(fib, "/does/not/exist");
 
-  NameTree gapNameTree(1024);
+  NameTree gapNameTree;
   Fib gapFib(nameTree);
   fib.insert("/X");
   fib.insert("/X/Y/Z");
 
   validateNoExactMatch(gapFib, "/X/Y");
 
-  NameTree emptyNameTree(1024);
+  NameTree emptyNameTree;
   Fib emptyFib(emptyNameTree);
   validateNoExactMatch(emptyFib, "/nothing/here");
 }
@@ -301,7 +301,7 @@ validateRemove(Fib& fib, const Name& target)
 
 BOOST_AUTO_TEST_CASE(Remove)
 {
-  NameTree emptyNameTree(1024);
+  NameTree emptyNameTree;
   Fib emptyFib(emptyNameTree);
 
   emptyFib.erase("/does/not/exist"); // crash test
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(Remove)
 
   emptyFib.erase("/still/does/not/exist"); // crash test
 
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Fib fib(nameTree);
   fib.insert("/");
   fib.insert("/A");
@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(Remove)
   validateRemove(fib, "/");
   validateNoExactMatch(fib, "/");
 
-  NameTree gapNameTree(1024);
+  NameTree gapNameTree;
   Fib gapFib(gapNameTree);
   gapFib.insert("/X");
   gapFib.insert("/X/Y/Z");
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(Remove)
 
 BOOST_AUTO_TEST_CASE(Iterator)
 {
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Fib fib(nameTree);
   Name nameA("/A");
   Name nameAB("/A/B");

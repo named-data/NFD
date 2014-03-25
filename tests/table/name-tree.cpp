@@ -32,6 +32,19 @@ using name_tree::Entry;
 
 BOOST_FIXTURE_TEST_SUITE(TableNameTree, BaseFixture)
 
+BOOST_AUTO_TEST_CASE(Hash)
+{
+  Name root("/");
+  root.wireEncode();
+  size_t hashValue = name_tree::computeHash(root);
+  BOOST_CHECK_EQUAL(hashValue, static_cast<size_t>(0));
+
+  Name prefix("/nohello/world/ndn/research");
+  prefix.wireEncode();
+  std::vector<size_t> hashSet = name_tree::computeHashSet(prefix);
+  BOOST_CHECK_EQUAL(hashSet.size(), prefix.size() + 1);
+}
+
 BOOST_AUTO_TEST_CASE(Entry)
 {
   Name prefix("ndn:/named-data/research/abc/def/ghi");
@@ -41,25 +54,25 @@ BOOST_AUTO_TEST_CASE(Entry)
 
   // examine all the get methods
 
-  uint32_t hash = npe->getHash();
-  BOOST_CHECK_EQUAL(hash, 0);
+  size_t hash = npe->getHash();
+  BOOST_CHECK_EQUAL(hash, static_cast<size_t>(0));
 
   shared_ptr<name_tree::Entry> parent = npe->getParent();
   BOOST_CHECK(!static_cast<bool>(parent));
 
   std::vector<shared_ptr<name_tree::Entry> >& childList = npe->getChildren();
-  BOOST_CHECK_EQUAL(childList.size(), 0);
+  BOOST_CHECK_EQUAL(childList.size(), static_cast<size_t>(0));
 
   shared_ptr<fib::Entry> fib = npe->getFibEntry();
   BOOST_CHECK(!static_cast<bool>(fib));
 
   const std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
-  BOOST_CHECK_EQUAL(pitList.size(), 0);
+  BOOST_CHECK_EQUAL(pitList.size(), static_cast<size_t>(0));
 
   // examine all the set method
 
-  npe->setHash(12345);
-  BOOST_CHECK_EQUAL(npe->getHash(), 12345);
+  npe->setHash(static_cast<size_t>(12345));
+  BOOST_CHECK_EQUAL(npe->getHash(), static_cast<size_t>(12345));
 
   Name parentName("ndn:/named-data/research/abc/def");
   parent = make_shared<name_tree::Entry>(parentName);
@@ -138,7 +151,6 @@ BOOST_AUTO_TEST_CASE(NameTreeBasic)
 
 
   // Longest Prefix Matching
-
   shared_ptr<name_tree::Entry> temp;
   Name nameABCLPM("/a/b/c/def/asdf/nlf");
   temp = nt.findLongestPrefixMatch(nameABCLPM);
@@ -228,8 +240,6 @@ BOOST_AUTO_TEST_CASE(NameTreeBasic)
 
 BOOST_AUTO_TEST_CASE(NameTreeIteratorFullEnumerate)
 {
-  using namespace std;
-
   size_t nBuckets = 1024;
   NameTree nt(nBuckets);
 
@@ -378,7 +388,6 @@ predicate_NameTreeEntry_Example(const name_tree::Entry& entry)
 
 BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
 {
-  using namespace std;
   typedef NameTree::const_iterator const_iterator;
 
   size_t nBuckets = 16;
@@ -680,8 +689,6 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
 
 BOOST_AUTO_TEST_CASE(NameTreeIteratorFindAllMatches)
 {
-  using namespace std;
-
   size_t nBuckets = 16;
   NameTree nt(nBuckets);
   int counter = 0;
@@ -770,6 +777,22 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorFindAllMatches)
   BOOST_CHECK_EQUAL(hasAAD2   , false);
 
   BOOST_CHECK_EQUAL(counter, 7);
+}
+
+BOOST_AUTO_TEST_CASE(NameTreeHashTableResizeShrink)
+{
+  size_t nBuckets = 16;
+  NameTree nameTree(nBuckets);
+
+  Name prefix("/a/b/c/d/e/f/g/h"); // requires 9 buckets
+
+  shared_ptr<name_tree::Entry> entry = nameTree.lookup(prefix);
+  BOOST_CHECK_EQUAL(nameTree.size(), 9);
+  BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 32);
+
+  nameTree.eraseEntryIfEmpty(entry);
+  BOOST_CHECK_EQUAL(nameTree.size(), 0);
+  BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 16);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

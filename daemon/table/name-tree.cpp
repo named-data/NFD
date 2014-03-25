@@ -26,8 +26,7 @@
 
 #include "name-tree.hpp"
 #include "core/logger.hpp"
-
-#include <boost/functional/hash.hpp>
+#include "core/city-hash.hpp"
 
 namespace nfd {
 
@@ -35,20 +34,67 @@ NFD_LOG_INIT("NameTree");
 
 namespace name_tree {
 
-// Interface of different hash functions
-uint32_t
-hashName(const Name& prefix)
+class Hash32
 {
-  // fixed value. Used for debugging only.
-  uint32_t ret = 0;
+public:
+  static size_t
+  compute(const char* buffer, size_t length)
+  {
+    return static_cast<size_t>(CityHash32(buffer, length));
+  }
+};
 
-  // Boost hash
-  // requires the /boost/functional/hash.hpp header file
-  // TODO: improve hash efficiency with Name type
-  boost::hash<std::string> stringHash;
-  ret = stringHash(prefix.toUri());
+class Hash64
+{
+public:
+  static size_t
+  compute(const char* buffer, size_t length)
+  {
+    return static_cast<size_t>(CityHash64(buffer, length));
+  }
+};
 
-  return ret;
+typedef boost::mpl::if_c<sizeof(size_t) >= 8, Hash64, Hash32>::type CityHash;
+
+// Interface of different hash functions
+size_t
+computeHash(const Name& prefix)
+{
+  prefix.wireEncode();  // guarantees prefix's wire buffer is not empty
+
+  size_t hashValue = 0;
+  size_t hashUpdate = 0;
+
+  for (Name::const_iterator it = prefix.begin(); it != prefix.end(); it++)
+    {
+      const char* wireFormat = reinterpret_cast<const char*>( it->wire() );
+      hashUpdate = CityHash::compute(wireFormat, it->size());
+      hashValue ^= hashUpdate;
+    }
+
+  return hashValue;
+}
+
+std::vector<size_t>
+computeHashSet(const Name& prefix)
+{
+  prefix.wireEncode();  // guarantees prefix's wire buffer is not empty
+
+  size_t hashValue = 0;
+  size_t hashUpdate = 0;
+
+  std::vector<size_t> hashValueSet;
+  hashValueSet.push_back(hashValue);
+
+  for (Name::const_iterator it = prefix.begin(); it != prefix.end(); it++)
+    {
+      const char* wireFormat = reinterpret_cast<const char*>( it->wire() );
+      hashUpdate = CityHash::compute(wireFormat, it->size());
+      hashValue ^= hashUpdate;
+      hashValueSet.push_back(hashValue);
+    }
+
+  return hashValueSet;
 }
 
 } // namespace name_tree
@@ -56,11 +102,17 @@ hashName(const Name& prefix)
 NameTree::NameTree(size_t nBuckets)
   : m_nItems(0)
   , m_nBuckets(nBuckets)
-  , m_loadFactor(0.5)
-  , m_resizeFactor(2)
+  , m_minNBuckets(nBuckets)
+  , m_enlargeLoadFactor(0.5)       // more than 50% buckets loaded
+  , m_enlargeFactor(2)       // double the hash table size
+  , m_shrinkLoadFactor(0.1) // less than 10% buckets loaded
+  , m_shrinkFactor(0.5)     // reduce the number of buckets by half
   , m_endIterator(FULL_ENUMERATE_TYPE, *this, m_end)
 {
-  m_resizeThreshold = static_cast<size_t>(m_loadFactor *
+  m_enlargeThreshold = static_cast<size_t>(m_enlargeLoadFactor *
+                                          static_cast<double>(m_nBuckets));
+
+  m_shrinkThreshold = static_cast<size_t>(m_shrinkLoadFactor *
                                           static_cast<double>(m_nBuckets));
 
   // array of node pointers
@@ -74,8 +126,9 @@ NameTree::~NameTree()
 {
   for (size_t i = 0; i < m_nBuckets; i++)
     {
-      if (m_buckets[i] != 0)
+      if (m_buckets[i] != 0) {
         delete m_buckets[i];
+      }
     }
 
   delete [] m_buckets;
@@ -87,8 +140,8 @@ NameTree::insert(const Name& prefix)
 {
   NFD_LOG_TRACE("insert " << prefix);
 
-  uint32_t hashValue = name_tree::hashName(prefix);
-  uint32_t loc = hashValue % m_nBuckets;
+  size_t hashValue = name_tree::computeHash(prefix);
+  size_t loc = hashValue % m_nBuckets;
 
   NFD_LOG_TRACE("Name " << prefix << " hash value = " << hashValue << "  location = " << loc);
 
@@ -152,7 +205,7 @@ NameTree::lookup(const Name& prefix)
 
       if (ret.second == true)
         {
-          m_nItems++; /* Increase the counter */
+          m_nItems++; // Increase the counter
           entry->m_parent = parent;
 
           if (static_cast<bool>(parent))
@@ -161,9 +214,9 @@ NameTree::lookup(const Name& prefix)
             }
         }
 
-      if (m_nItems > m_resizeThreshold)
+      if (m_nItems > m_enlargeThreshold)
         {
-          resize(m_resizeFactor * m_nBuckets);
+          resize(m_enlargeFactor * m_nBuckets);
         }
 
       parent = entry;
@@ -177,8 +230,8 @@ NameTree::findExactMatch(const Name& prefix) const
 {
   NFD_LOG_TRACE("findExactMatch " << prefix);
 
-  uint32_t hashValue = name_tree::hashName(prefix);
-  uint32_t loc = hashValue % m_nBuckets;
+  size_t hashValue = name_tree::computeHash(prefix);
+  size_t loc = hashValue % m_nBuckets;
 
   NFD_LOG_TRACE("Name " << prefix << " hash value = " << hashValue <<
                 "  location = " << loc);
@@ -204,23 +257,42 @@ NameTree::findExactMatch(const Name& prefix) const
 }
 
 // Longest Prefix Match
-// Return the longest matching Entry address
-// start from the full name, and then remove 1 name comp each time
 shared_ptr<name_tree::Entry>
 NameTree::findLongestPrefixMatch(const Name& prefix, const name_tree::EntrySelector& entrySelector) const
 {
   NFD_LOG_TRACE("findLongestPrefixMatch " << prefix);
 
   shared_ptr<name_tree::Entry> entry;
+  std::vector<size_t> hashValueSet = name_tree::computeHashSet(prefix);
 
-  for (int i = prefix.size(); i >= 0; i--)
+  size_t hashValue = 0;
+  size_t loc = 0;
+
+  for (int i = static_cast<int>(prefix.size()); i >= 0; i--)
     {
-      entry = findExactMatch(prefix.getPrefix(i));
-      if (static_cast<bool>(entry) && entrySelector(*entry))
-        return entry;
+      hashValue = hashValueSet[i];
+      loc = hashValue % m_nBuckets;
+
+      name_tree::Node* node = 0;
+      for (node = m_buckets[loc]; node != 0; node = node->m_next)
+        {
+          entry = node->m_entry;
+          if (static_cast<bool>(entry))
+            {
+              // isPrefixOf() is used to avoid making a copy of the name
+              if (hashValue == entry->getHash() &&
+                  entry->getPrefix().isPrefixOf(prefix) &&
+                  entrySelector(*entry))
+                {
+                  return entry;
+                }
+            } // if entry
+        } // for node
     }
 
-  return shared_ptr<name_tree::Entry>();
+  // if not found, the default value of entry (null pointer) will be returned
+  entry.reset();
+  return entry;
 }
 
 shared_ptr<name_tree::Entry>
@@ -300,6 +372,14 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
 
       if (static_cast<bool>(parent))
         eraseEntryIfEmpty(parent);
+
+      size_t newNBuckets = static_cast<size_t>(m_shrinkFactor *
+                                     static_cast<double>(m_nBuckets));
+
+      if (newNBuckets >= m_minNBuckets && m_nItems < m_shrinkThreshold)
+        {
+          resize(newNBuckets);
+        }
 
       return true;
 
@@ -434,10 +514,14 @@ NameTree::resize(size_t newNBuckets)
 
   name_tree::Node** oldBuckets = m_buckets;
   m_buckets = newBuckets;
-  delete oldBuckets;
+  delete [] oldBuckets;
 
   m_nBuckets = newNBuckets;
-  m_resizeThreshold = (int)(m_loadFactor * (double)m_nBuckets);
+
+  m_enlargeThreshold = static_cast<size_t>(m_enlargeLoadFactor *
+                                              static_cast<double>(m_nBuckets));
+  m_shrinkThreshold = static_cast<size_t>(m_shrinkLoadFactor *
+                                              static_cast<double>(m_nBuckets));
 }
 
 // For debugging

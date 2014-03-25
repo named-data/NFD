@@ -75,9 +75,9 @@ public:
   getPrefix() const;
 
   void
-  setHash(uint32_t hash);
+  setHash(size_t hash);
 
-  uint32_t
+  size_t
   getHash() const;
 
   void
@@ -126,7 +126,10 @@ public:
   getStrategyChoiceEntry() const;
 
 private:
-  uint32_t m_hash;
+  // Benefits of storing m_hash
+  // 1. m_hash is compared before m_prefix is compared
+  // 2. fast hash table resize support
+  size_t m_hash;
   Name m_prefix;
   shared_ptr<Entry> m_parent;     // Pointing to the parent entry.
   std::vector<shared_ptr<Entry> > m_children; // Children pointers.
@@ -137,6 +140,7 @@ private:
 
   // get the Name Tree Node that is associated with this Name Tree Entry
   Node* m_node;
+
   // Make private members accessible by Name Tree
   friend class nfd::NameTree;
 };
@@ -147,16 +151,28 @@ Entry::getPrefix() const
   return m_prefix;
 }
 
-inline uint32_t
+inline size_t
 Entry::getHash() const
 {
   return m_hash;
+}
+
+inline void
+Entry::setHash(size_t hash)
+{
+  m_hash = hash;
 }
 
 inline shared_ptr<Entry>
 Entry::getParent() const
 {
   return m_parent;
+}
+
+inline void
+Entry::setParent(shared_ptr<Entry> parent)
+{
+  m_parent = parent;
 }
 
 inline std::vector<shared_ptr<name_tree::Entry> >&
@@ -186,6 +202,22 @@ Entry::getFibEntry() const
   return m_fibEntry;
 }
 
+inline void
+Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
+{
+  if (static_cast<bool>(fibEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(fibEntry->m_nameTreeEntry));
+  }
+
+  if (static_cast<bool>(m_fibEntry)) {
+    m_fibEntry->m_nameTreeEntry.reset();
+  }
+  m_fibEntry = fibEntry;
+  if (static_cast<bool>(m_fibEntry)) {
+    m_fibEntry->m_nameTreeEntry = this->shared_from_this();
+  }
+}
+
 inline bool
 Entry::hasPitEntries() const
 {
@@ -198,16 +230,58 @@ Entry::getPitEntries() const
   return m_pitEntries;
 }
 
+inline void
+Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
+{
+  BOOST_ASSERT(static_cast<bool>(pitEntry));
+  BOOST_ASSERT(!static_cast<bool>(pitEntry->m_nameTreeEntry));
+
+  m_pitEntries.push_back(pitEntry);
+  pitEntry->m_nameTreeEntry = this->shared_from_this();
+}
+
 inline shared_ptr<measurements::Entry>
 Entry::getMeasurementsEntry() const
 {
   return m_measurementsEntry;
 }
 
+inline void
+Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
+{
+  if (static_cast<bool>(measurementsEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(measurementsEntry->m_nameTreeEntry));
+  }
+
+  if (static_cast<bool>(m_measurementsEntry)) {
+    m_measurementsEntry->m_nameTreeEntry.reset();
+  }
+  m_measurementsEntry = measurementsEntry;
+  if (static_cast<bool>(m_measurementsEntry)) {
+    m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
+  }
+}
+
 inline shared_ptr<strategy_choice::Entry>
 Entry::getStrategyChoiceEntry() const
 {
   return m_strategyChoiceEntry;
+}
+
+inline void
+Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
+{
+  if (static_cast<bool>(strategyChoiceEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(strategyChoiceEntry->m_nameTreeEntry));
+  }
+
+  if (static_cast<bool>(m_strategyChoiceEntry)) {
+    m_strategyChoiceEntry->m_nameTreeEntry.reset();
+  }
+  m_strategyChoiceEntry = strategyChoiceEntry;
+  if (static_cast<bool>(m_strategyChoiceEntry)) {
+    m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
+  }
 }
 
 } // namespace name_tree

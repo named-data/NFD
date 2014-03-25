@@ -36,7 +36,6 @@ const Name Forwarder::LOCALHOST_NAME("ndn:/localhost");
 
 Forwarder::Forwarder()
   : m_faceTable(*this)
-  , m_nameTree(1024) // "1024" could be made as one configurable parameter of the forwarder.
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)

@@ -34,14 +34,17 @@ namespace nfd {
 namespace name_tree {
 
 /**
- * \brief Compute the hash value of the given name prefix.
- * \todo 1) have another parameter that specifies the number of components
- * 2) optimize the hash function to return a list of have values for all
- * the (or a certain number of, like a batch operation) prefixes. 3) move
- * the hash-related code to a separate file in /core or ndn-cpp-dev lib.
+ * \brief Compute the hash value of the given name prefix's WIRE FORMAT
  */
-uint32_t
-hashName(const Name& prefix);
+size_t
+computeHash(const Name& prefix);
+
+/**
+ * \brief Incrementally compute hash values
+ * \return Return a vector of hash values, starting from the root prefix
+ */
+std::vector<size_t>
+computeHashSet(const Name& prefix);
 
 /// a predicate to accept or reject an Entry in find operations
 typedef function<bool (const Entry& entry)> EntrySelector;
@@ -80,7 +83,7 @@ public:
   class const_iterator;
 
   explicit
-  NameTree(size_t nBuckets);
+  NameTree(size_t nBuckets = 1024);
 
   ~NameTree();
 
@@ -254,9 +257,13 @@ public:
 private:
   size_t                        m_nItems;  // Number of items being stored
   size_t                        m_nBuckets; // Number of hash buckets
-  double                        m_loadFactor;
-  size_t                        m_resizeThreshold;
-  int                           m_resizeFactor;
+  size_t                        m_minNBuckets; // Minimum number of hash buckets
+  double                        m_enlargeLoadFactor;
+  size_t                        m_enlargeThreshold;
+  int                           m_enlargeFactor;
+  double                        m_shrinkLoadFactor;
+  size_t                        m_shrinkThreshold;
+  double                        m_shrinkFactor;
   name_tree::Node**             m_buckets; // Name Tree Buckets in the NPHT
   shared_ptr<name_tree::Entry>  m_end;
   const_iterator                m_endIterator;

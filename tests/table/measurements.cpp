@@ -33,7 +33,7 @@ BOOST_FIXTURE_TEST_SUITE(TableMeasurements, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
-  NameTree nameTree(1024);
+  NameTree nameTree;
   Measurements measurements(nameTree);
 
   Name name0;

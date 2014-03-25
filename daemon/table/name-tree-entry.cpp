@@ -29,7 +29,9 @@
 namespace nfd {
 namespace name_tree {
 
-Node::Node() : m_prev(0), m_next(0)
+Node::Node()
+  : m_prev(0)
+  , m_next(0)
 {
 }
 
@@ -54,44 +56,6 @@ Entry::~Entry()
 }
 
 void
-Entry::setHash(uint32_t hash)
-{
-  m_hash = hash;
-}
-
-void
-Entry::setParent(shared_ptr<Entry> parent)
-{
-  m_parent = parent;
-}
-
-void
-Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
-{
-  if (static_cast<bool>(fibEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(fibEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_fibEntry)) {
-    m_fibEntry->m_nameTreeEntry.reset();
-  }
-  m_fibEntry = fibEntry;
-  if (static_cast<bool>(m_fibEntry)) {
-    m_fibEntry->m_nameTreeEntry = this->shared_from_this();
-  }
-}
-
-void
-Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
-{
-  BOOST_ASSERT(static_cast<bool>(pitEntry));
-  BOOST_ASSERT(!static_cast<bool>(pitEntry->m_nameTreeEntry));
-
-  m_pitEntries.push_back(pitEntry);
-  pitEntry->m_nameTreeEntry = this->shared_from_this();
-}
-
-void
 Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
 {
   BOOST_ASSERT(static_cast<bool>(pitEntry));
@@ -104,38 +68,6 @@ Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
   *it = m_pitEntries.back();
   m_pitEntries.pop_back();
   pitEntry->m_nameTreeEntry.reset();
-}
-
-void
-Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
-{
-  if (static_cast<bool>(measurementsEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(measurementsEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_measurementsEntry)) {
-    m_measurementsEntry->m_nameTreeEntry.reset();
-  }
-  m_measurementsEntry = measurementsEntry;
-  if (static_cast<bool>(m_measurementsEntry)) {
-    m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
-  }
-}
-
-void
-Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
-{
-  if (static_cast<bool>(strategyChoiceEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(strategyChoiceEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
-    m_strategyChoiceEntry->m_nameTreeEntry.reset();
-  }
-  m_strategyChoiceEntry = strategyChoiceEntry;
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
-    m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
-  }
 }
 
 } // namespace name_tree

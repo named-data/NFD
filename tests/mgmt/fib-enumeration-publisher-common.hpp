@@ -75,8 +75,7 @@ class FibEnumerationPublisherFixture : public BaseFixture
 public:
 
   FibEnumerationPublisherFixture()
-    : m_nameTree(1024)
-    , m_fib(m_nameTree)
+    : m_fib(m_nameTree)
     , m_face(make_shared<InternalFace>())
     , m_publisher(m_fib, m_face, "/localhost/nfd/FibEnumerationPublisherFixture")
     , m_finished(false)
