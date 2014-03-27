@@ -42,8 +42,8 @@ Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
 }
 
 Nrd::Nrd()
-  : m_nfdController(new nfd::Controller(m_face)),
-    m_verbDispatch(COMMAND_VERBS,
+  : m_nfdController(new nfd::Controller(m_face))
+  , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
   //check whether the components of localhop and localhost prefixes are same
@@ -167,16 +167,27 @@ Nrd::extractOptions(const Interest& request,
 }
 
 void
-Nrd::onCommandError(const std::string& error,
+Nrd::onCommandError(uint32_t code, const std::string& error,
                     const Interest& request,
                     const PrefixRegOptions& options)
 {
+  std::cout << "NFD Error: " << error << " (code: " << code << ")" << std::endl;
+
   nfd::ControlResponse response;
 
-  response.setCode(400);
-  response.setText(error);
+  if (code == 404)
+    {
+      response.setCode(code);
+      response.setText(error);
+    }
+  else
+    {
+      response.setCode(533);
+      std::ostringstream os;
+      os << "Failure to update NFD " << "(NFD Error: " << code << " " << error << ")";
+      response.setText(os.str());
+    }
 
-  std::cout << "Error: " << error << std::endl;
   sendResponse(request.getName(), response);
   m_managedRib.erase(options);
 }
@@ -220,20 +231,27 @@ Nrd::insertEntry(const Interest& request, const PrefixRegOptions& options)
   // Rib tree, then nrd will generate fib updates based on flags and then
   // will add next hops one by one..
   m_managedRib.insert(options);
-  m_nfdController->fibAddNextHop(options.getName(), options.getFaceId(),
-                                 options.getCost(),
-                                 bind(&Nrd::onRegSuccess, this, request, options),
-                                 bind(&Nrd::onCommandError, this, _1, request, options));
+  m_nfdController->start<nfd::FibAddNextHopCommand>(
+     nfd::ControlParameters()
+       .setName(options.getName())
+       .setFaceId(options.getFaceId())
+       .setCost(options.getCost()),
+     bind(&Nrd::onRegSuccess, this, request, options),
+     bind(&Nrd::onCommandError, this, _1, _2, request, options)
+  );
 }
 
 
 void
 Nrd::deleteEntry(const Interest& request, const PrefixRegOptions& options)
 {
-  m_nfdController->fibRemoveNextHop(options.getName(),
-                                    options.getFaceId(),
-                                    bind(&Nrd::onUnRegSuccess, this, request, options),
-                                    bind(&Nrd::onCommandError, this, _1, request, options));
+  m_nfdController->start<nfd::FibRemoveNextHopCommand>(
+     nfd::ControlParameters()
+       .setName(options.getName())
+       .setFaceId(options.getFaceId()),
+     bind(&Nrd::onUnRegSuccess, this, request, options),
+     bind(&Nrd::onCommandError, this, _1, _2, request, options)
+  );
 }
 
 
@@ -253,9 +271,10 @@ Nrd::onControlHeaderSuccess()
 
 
 void
-Nrd::onControlHeaderError()
+Nrd::onControlHeaderError(uint32_t code, const std::string& reason)
 {
-  std::cout << "Error: couldn't enable local control header" << std::endl;
+  std::cout << "Error: couldn't enable local control header "
+            << "(code: " << code << ", info: " << reason << ")" << std::endl;
   m_face.shutdown();
 }
 
@@ -263,13 +282,12 @@ Nrd::onControlHeaderError()
 void
 Nrd::enableLocalControlHeader()
 {
-  Name enable("/localhost/nfd/control-header/in-faceid/enable");
-  Interest enableCommand(enable);
-
-  m_keyChain.sign(enableCommand);
-  m_face.expressInterest(enableCommand,
-                         ndn::bind(&Nrd::onControlHeaderSuccess, this),
-                         ndn::bind(&Nrd::onControlHeaderError, this));
+  m_nfdController->start<nfd::FaceEnableLocalControlCommand>(
+    nfd::ControlParameters()
+      .setLocalControlFeature(nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
+    bind(&Nrd::onControlHeaderSuccess, this),
+    bind(&Nrd::onControlHeaderError, this, _1, _2)
+  );
 }
 
 } // namespace nrd

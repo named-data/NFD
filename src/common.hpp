@@ -14,8 +14,6 @@
 #include <ndn-cpp-dev/security/key-chain.hpp>
 #include <ndn-cpp-dev/util/scheduler.hpp>
 
-#include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
-#include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
 #include <ndn-cpp-dev/management/nfd-controller.hpp>
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
 #include <ndn-cpp-dev/management/nrd-prefix-reg-options.hpp>

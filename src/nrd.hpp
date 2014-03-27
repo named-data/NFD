@@ -36,10 +36,10 @@ private:
                uint32_t code,
                const std::string& text);
   void
-  onCommandError(const std::string& error, 
-                 const ndn::Interest& interest, 
+  onCommandError(uint32_t code, const std::string& error,
+                 const ndn::Interest& interest,
                  const PrefixRegOptions& options);
- 
+
   void
   onRegSuccess(const ndn::Interest& interest, const PrefixRegOptions& options);
 
@@ -50,11 +50,11 @@ private:
   onControlHeaderSuccess();
 
   void
-  onControlHeaderError();
+  onControlHeaderError(uint32_t code, const std::string& reason);
 
   void
   setInterestFilterFailed(const Name& name, const std::string& msg);
-  
+
   void
   insertEntry(const Interest& request, const PrefixRegOptions& options);
 
@@ -99,4 +99,3 @@ private:
 } // namespace ndn
 
 #endif // NRD_HPP
-
