@@ -44,6 +44,11 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
 
+  FaceId oldId1 = face1->getId();
+  faceTable.add(face1);
+  BOOST_CHECK_EQUAL(face1->getId(), oldId1);
+  BOOST_CHECK_EQUAL(faceTable.size(), 2);
+
   BOOST_REQUIRE_EQUAL(onAddHistory.size(), 2);
   BOOST_CHECK_EQUAL(onAddHistory[0], face1->getId());
   BOOST_CHECK_EQUAL(onAddHistory[1], face2->getId());

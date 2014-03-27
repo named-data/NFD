@@ -25,6 +25,13 @@ FaceTable::~FaceTable()
 void
 FaceTable::add(shared_ptr<Face> face)
 {
+  if (face->getId() != INVALID_FACEID &&
+      m_faces.count(face->getId()) > 0)
+    {
+      NFD_LOG_DEBUG("Trying to add existing face id=" << face->getId() << " to the face table");
+      return;
+    }
+
   FaceId faceId = ++m_lastFaceId;
   face->setId(faceId);
   m_faces[faceId] = face;
