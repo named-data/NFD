@@ -35,7 +35,7 @@ const Nrd::VerbAndProcessor Nrd::COMMAND_VERBS[] =
   };
 
 void
-Nrd::setInterestFilterFailed(const Name& name, const std::string& msg) 
+Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
 {
   std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
   m_face.shutdown();
@@ -47,14 +47,14 @@ Nrd::Nrd()
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
   //check whether the components of localhop and localhost prefixes are same
-  BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size ()); 
+  BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
   std::cerr << "Setting interest filter on: " << COMMAND_PREFIX.toUri() << std::endl;
   m_face.setController(m_nfdController);
   m_face.setInterestFilter(COMMAND_PREFIX.toUri(),
                            bind(&Nrd::onRibRequest, this, _2),
                            bind(&Nrd::setInterestFilterFailed, this, _1, _2));
-  
+
   std::cerr << "Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri() << std::endl;
   m_face.setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
                            bind(&Nrd::onRibRequest, this, _2),
@@ -105,7 +105,7 @@ Nrd::onRibRequest(const Interest& request)
       return;
     }
 
-  //REMOTE_COMMAND_PREFIX number of componenets are same as 
+  //REMOTE_COMMAND_PREFIX number of componenets are same as
   // NRD_COMMAND_PREFIX's so no extra checks are required.
   const Name::Component& verb = command.get(COMMAND_PREFIX.size());
   VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find(verb);
@@ -127,7 +127,7 @@ Nrd::onRibRequest(const Interest& request)
         }
 
       // \todo add proper log support
-      std::cout << "Received options (name, faceid, cost): " << options.getName() << 
+      std::cout << "Received options (name, faceid, cost): " << options.getName() <<
                    ", " << options.getFaceId() << ", "  << options.getCost() << std::endl;
 
       nfd::ControlResponse response;
@@ -143,8 +143,8 @@ bool
 Nrd::extractOptions(const Interest& request,
                     PrefixRegOptions& extractedOptions)
 {
-  const Name& command = request.getName();
-  //REMOTE_COMMAND_PREFIX is same in size of NRD_COMMAND_PREFIX 
+  // const Name& command = request.getName();
+  //REMOTE_COMMAND_PREFIX is same in size of NRD_COMMAND_PREFIX
   //so no extra processing is required.
   const size_t optionCompIndex = COMMAND_PREFIX.size() + 1;
 
@@ -167,15 +167,15 @@ Nrd::extractOptions(const Interest& request,
 }
 
 void
-Nrd::onCommandError(const std::string& error, 
-                    const Interest& request, 
+Nrd::onCommandError(const std::string& error,
+                    const Interest& request,
                     const PrefixRegOptions& options)
 {
   nfd::ControlResponse response;
-  
+
   response.setCode(400);
   response.setText(error);
-  
+
   std::cout << "Error: " << error << std::endl;
   sendResponse(request.getName(), response);
   m_managedRib.erase(options);
@@ -185,13 +185,13 @@ void
 Nrd::onUnRegSuccess(const Interest& request, const PrefixRegOptions& options)
 {
   nfd::ControlResponse response;
-  
+
   response.setCode(200);
   response.setText("Success");
   response.setBody(options.wireEncode());
- 
-  std::cout << "Success: Name unregistered (" << 
-                options.getName() << ", " << 
+
+  std::cout << "Success: Name unregistered (" <<
+                options.getName() << ", " <<
                 options.getFaceId() << ")" << std::endl;
   sendResponse(request.getName(), response);
   m_managedRib.erase(options);
@@ -201,12 +201,12 @@ void
 Nrd::onRegSuccess(const Interest& request, const PrefixRegOptions& options)
 {
   nfd::ControlResponse response;
-  
+
   response.setCode(200);
   response.setText("Success");
   response.setBody(options.wireEncode());
-  
-  std::cout << "Success: Name registered (" << options.getName() << ", " << 
+
+  std::cout << "Success: Name registered (" << options.getName() << ", " <<
                                                options.getFaceId() << ")" << std::endl;
   sendResponse(request.getName(), response);
 }
@@ -265,7 +265,7 @@ Nrd::enableLocalControlHeader()
 {
   Name enable("/localhost/nfd/control-header/in-faceid/enable");
   Interest enableCommand(enable);
- 
+
   m_keyChain.sign(enableCommand);
   m_face.expressInterest(enableCommand,
                          ndn::bind(&Nrd::onControlHeaderSuccess, this),

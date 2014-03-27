@@ -1,28 +1,40 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-from waflib import Configure
+from waflib import Logs, Configure
 
 def configure(conf):
+    areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
     if conf.options.debug:
-        conf.define ('_DEBUG', 1)
-        flags = ['-O0',
-                 '-Wall',
-                 '-Wno-unused-variable',
-                 '-g3',
-                 '-Wno-unused-private-field', # only clang supports
-                 '-fcolor-diagnostics',       # only clang supports
-                 '-Qunused-arguments',        # only clang supports
-                 '-Wno-tautological-compare', # suppress warnings from CryptoPP
-                 '-Wno-unused-function',      # another annoying warning from CryptoPP
+        conf.define('_DEBUG', 1)
+        defaultFlags = ['-O0', '-g3',
+                        '-Werror',
+                        '-Wall',
+                        '-fcolor-diagnostics', # only clang supports
 
-                 '-Wno-deprecated-declarations',
-                 ]
+                        # # to disable known warnings
+                        # '-Wno-unused-variable', # cryptopp
+                        # '-Wno-unused-function',
+                        # '-Wno-deprecated-declarations',
+                        ]
 
-        conf.add_supported_cxxflags (cxxflags = flags)
+        if areCustomCxxflagsPresent:
+            missingFlags = [x for x in defaultFlags if x not in conf.env.CXXFLAGS]
+            if len(missingFlags) > 0:
+                Logs.warn("Selected debug mode, but CXXFLAGS is set to a custom value '%s'"
+                           % " ".join(conf.env.CXXFLAGS))
+                Logs.warn("Default flags '%s' are not activated" % " ".join(missingFlags))
+        else:
+            conf.add_supported_cxxflags(cxxflags=defaultFlags)
     else:
-        flags = ['-O3', '-g', '-Wno-tautological-compare','-Wno-unused-variable',
-                         '-Wno-unused-function', '-Wno-deprecated-declarations']
-        conf.add_supported_cxxflags (cxxflags = flags)
+        defaultFlags = ['-O2', '-g', '-Wall',
+
+                        # # to disable known warnings
+                        # '-Wno-unused-variable', # cryptopp
+                        # '-Wno-unused-function',
+                        # '-Wno-deprecated-declarations',
+                        ]
+        if not areCustomCxxflagsPresent:
+            conf.add_supported_cxxflags(cxxflags=defaultFlags)
 
 @Configure.conf
 def add_supported_cxxflags(self, cxxflags):
@@ -38,4 +50,3 @@ def add_supported_cxxflags(self, cxxflags):
 
     self.end_msg (' '.join (supportedFlags))
     self.env.CXXFLAGS += supportedFlags
-
