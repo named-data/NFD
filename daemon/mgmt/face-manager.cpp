@@ -376,7 +376,17 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
     {
       shared_ptr<UdpFactory> factory = make_shared<UdpFactory>(boost::cref(port));
 
-      factory->createChannel("::", port, time::seconds(timeout));
+      shared_ptr<UdpChannel> v4Channel =
+        factory->createChannel("0.0.0.0", port, time::seconds(timeout));
+
+      shared_ptr<UdpChannel> v6Channel =
+        factory->createChannel("::", port, time::seconds(timeout));
+
+      v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                        UdpChannel::ConnectFailedCallback());
+
+      v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                        UdpChannel::ConnectFailedCallback());
 
       m_factories.insert(std::make_pair("udp", factory));
       m_factories.insert(std::make_pair("udp4", factory));
@@ -384,19 +394,6 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 
       if (useMcast)
         {
-          bool useEndpoint = false;
-          udp::Endpoint localEndpoint;
-
-          try
-            {
-              localEndpoint.port(boost::lexical_cast<uint16_t>(port));
-              useEndpoint = true;
-            }
-          catch (const boost::bad_lexical_cast& error)
-            {
-              NFD_LOG_DEBUG("Treating UDP port \"" << port << "\" as a service name");
-            }
-
           for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
                i != nicList.end();
                ++i)
@@ -409,34 +406,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
                                                  mcastGroup, mcastPort);
 
                   addCreatedFaceToForwarder(newFace);
-
-                  if (useEndpoint)
-                    {
-                      for (std::vector<boost::asio::ip::address_v4>::const_iterator j =
-                             nic->ipv4Addresses.begin();
-                           j != nic->ipv4Addresses.end();
-                           ++j)
-                        {
-                          localEndpoint.address(*j);
-                          factory->createChannel(localEndpoint, time::seconds(timeout));
-                        }
-                    }
-                  else
-                    {
-                      for (std::vector<boost::asio::ip::address_v4>::const_iterator j =
-                             nic->ipv4Addresses.begin();
-                           j != nic->ipv4Addresses.end();
-                           ++j)
-                        {
-                          factory->createChannel(j->to_string(), port, time::seconds(timeout));
-                        }
-                    }
                 }
             }
-        }
-      else
-        {
-          factory->createChannel("0.0.0.0", port, time::seconds(timeout));
         }
     }
 }
