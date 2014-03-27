@@ -10,42 +10,48 @@
 #include <ndn-cpp-dev/face.hpp>
 #include <ndn-cpp-dev/management/controller.hpp>
 #include <ndn-cpp-dev/management/nfd-controller.hpp>
-#include <ndn-cpp-dev/management/nfd-fib-management-options.hpp>
-#include <ndn-cpp-dev/management/nfd-face-management-options.hpp>
-#include <ndn-cpp-dev/management/nfd-strategy-choice-options.hpp>
 #include <vector>
 
 namespace nfdc {
-    
-class Controller : public ndn::nfd::Controller
+
+using namespace ndn::nfd;
+
+class Nfdc
 {
 public:
-  struct Error : public std::runtime_error
+  class Error : public std::runtime_error
   {
-    Error(const std::string& what) : std::runtime_error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
   };
-    
+
   explicit
-  Controller(ndn::Face& face);
-  
-  ~Controller();
-  
+  Nfdc(ndn::Face& face);
+
+  ~Nfdc();
+
   bool
   dispatch(const std::string& cmd,
            const char* cmdOptions[],
            int nOptions);
+
   /**
-   * \brief Adds a nexthop to a FIB entry. 
+   * \brief Adds a nexthop to a FIB entry.
    *
    * If the FIB entry does not exist, it is inserted automatically
    *
    * cmd format:
    *   name
    *
-   * @param cmdOptions           add command without leading 'insert' component
+   * \param cmdOptions Add next hop command parameters without leading 'add-nexthop' component
    */
   void
   fibAddNextHop(const char* cmdOptions[], bool hasCost);
+
   /**
    * \brief Removes a nexthop from an existing FIB entry
    *
@@ -54,10 +60,12 @@ public:
    * cmd format:
    *   name faceId
    *
-   * @param cmdOptions          delNext command without leading 'remove-nexthop' component
+   * \param cmdOptions Remove next hop command parameters without leading
+   *                   'remove-nexthop' component
    */
   void
-  fibRemoveNextHop(const char* cmdOptions[]);  
+  fibRemoveNextHop(const char* cmdOptions[]);
+
   /**
    * \brief create new face
    *
@@ -66,20 +74,22 @@ public:
    * cmd format:
    *   uri
    *
-   * @param cmdOptions          create command without leading 'create' component
+   * \param cmdOptions Create face command parameters without leading 'create' component
    */
   void
   faceCreate(const char* cmdOptions[]);
+
   /**
    * \brief destroy a face
    *
    * cmd format:
    *   faceId
    *
-   * @param cmdOptions          destroy command without leading 'destroy' component
+   * \param cmdOptions Destroy face command parameters without leading 'destroy' component
    */
   void
   faceDestroy(const char* cmdOptions[]);
+
   /**
    * \brief Set the strategy for a namespace
    *
@@ -87,10 +97,12 @@ public:
    * cmd format:
    *   name strategy
    *
-   * @param cmdOptions          Set command without leading 'Unset' component
+   * \param cmdOptions Set strategy choice command parameters without leading
+   *                   'set-strategy' component
    */
   void
   strategyChoiceSet(const char* cmdOptions[]);
+
   /**
    * \brief Unset the strategy for a namespace
    *
@@ -98,31 +110,27 @@ public:
    * cmd format:
    *   name strategy
    *
-   * @param cmdOptions          Unset command without leading 'Unset' component
+   * \param cmdOptions Unset strategy choice command parameters without leading
+   *                   'unset-strategy' component
    */
   void
   strategyChoiceUnset(const char* cmdOptions[]);
-  
+
 private:
   void
-  onFibSuccess(const ndn::nfd::FibManagementOptions& fibOptions,
-               const std::string& message);
+  onSuccess(const ControlParameters& parameters,
+            const std::string& message);
 
   void
-  onFaceSuccess(const ndn::nfd::FaceManagementOptions& faceOptions,
-                const std::string& message);
-  
-  void
-  onSetStrategySuccess(const ndn::nfd::StrategyChoiceOptions& resp,
-                       const std::string& message);
-  void
-  onError(const std::string& error, const std::string& message);
-  
+  onError(uint32_t code, const std::string& error, const std::string& message);
+
 public:
   const char* m_programName;
+
+private:
+  Controller m_controller;
 };
 
 } // namespace nfdc
 
 #endif // NFD_TOOLS_NFDC_HPP
-

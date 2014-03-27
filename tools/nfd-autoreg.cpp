@@ -41,9 +41,10 @@ public:
   }
 
   void
-  onNfdCommandFailure(const FaceEventNotification& notification, const std::string& reason)
+  onNfdCommandFailure(const FaceEventNotification& notification,
+                      uint32_t code, const std::string& reason)
   {
-    std::cerr << "FAILED: " << notification << std::endl;
+    std::cerr << "FAILED: " << notification << " (code: " << code << ")" << std::endl;
   }
 
   bool
@@ -91,9 +92,14 @@ public:
          ++prefix)
       {
         std::cout << "Try auto-register: " << *prefix << std::endl;
-        m_controller.fibAddNextHop(*prefix, notification.getFaceId(), m_cost,
-                                   bind(&AutoregServer::onNfdCommandSuccess, this, notification),
-                                   bind(&AutoregServer::onNfdCommandFailure, this, notification, _1));
+
+        m_controller.start<FibAddNextHopCommand>(
+          ControlParameters()
+            .setName(*prefix)
+            .setFaceId(notification.getFaceId())
+            .setCost(m_cost),
+          bind(&AutoregServer::onNfdCommandSuccess, this, notification),
+          bind(&AutoregServer::onNfdCommandFailure, this, notification, _1, _2));
       }
   }
 

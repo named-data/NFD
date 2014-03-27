@@ -13,38 +13,39 @@ void
 usage(const char* programName)
 {
   std::cout << "Usage:\n" << programName  << " [-h] COMMAND\n"
-  "       -h print usage and exit\n"
-  "\n"
-  "   COMMAND can be one of following:\n"
-  "       add-nexthop <name> <faceId> [<cost>]\n"
-  "           Add a nexthop to a FIB entry\n"
-  "       remove-nexthop <name> <faceId> \n"
-  "           Remove a nexthop from a FIB entry\n"
-  "       create <uri> \n"
-  "           Create a face in one of the following formats:\n"
-  "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
-  "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
-  "       destroy <faceId> \n"
-  "           Destroy a face\n"
-  "       set-strategy <name> <strategy> \n"
-  "           Set the strategy for a namespace \n"
-  "       unset-strategy <name> \n"
-  "           Unset the strategy for a namespace \n"
-  << std::endl;
+    "       -h print usage and exit\n"
+    "\n"
+    "   COMMAND can be one of following:\n"
+    "       add-nexthop <name> <faceId> [<cost>]\n"
+    "           Add a nexthop to a FIB entry\n"
+    "       remove-nexthop <name> <faceId> \n"
+    "           Remove a nexthop from a FIB entry\n"
+    "       create <uri> \n"
+    "           Create a face in one of the following formats:\n"
+    "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
+    "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
+    "       destroy <faceId> \n"
+    "           Destroy a face\n"
+    "       set-strategy <name> <strategy> \n"
+    "           Set the strategy for a namespace \n"
+    "       unset-strategy <name> \n"
+    "           Unset the strategy for a namespace \n"
+    << std::endl;
 }
 
 namespace nfdc {
-  
-Controller::Controller(ndn::Face& face)
-  : ndn::nfd::Controller(face)
+
+Nfdc::Nfdc(ndn::Face& face)
+  : m_controller(face)
 {
 }
-  
-Controller::~Controller()
+
+Nfdc::~Nfdc()
 {
 }
+
 bool
-Controller::dispatch(const std::string& command, const char* commandOptions[], int nOptions)
+Nfdc::dispatch(const std::string& command, const char* commandOptions[], int nOptions)
 {
   if (command == "add-nexthop") {
     if (nOptions == 2)
@@ -86,44 +87,48 @@ Controller::dispatch(const std::string& command, const char* commandOptions[], i
 }
 
 void
-Controller::fibAddNextHop(const char* commandOptions[], bool hasCost)
+Nfdc::fibAddNextHop(const char* commandOptions[], bool hasCost)
 {
-  ndn::nfd::FibManagementOptions fibOptions;
-  
   const std::string& name = commandOptions[0];
   const int faceId = boost::lexical_cast<int>(commandOptions[1]);
 
-  fibOptions.setName(name);
-  fibOptions.setFaceId(faceId);
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setFaceId(faceId);
 
   if (hasCost)
   {
-    const int cost = boost::lexical_cast<int>(commandOptions[2]);
-    fibOptions.setCost(cost);
+    const uint64_t cost = boost::lexical_cast<uint64_t>(commandOptions[2]);
+    parameters.setCost(cost);
   }
-  startFibCommand("add-nexthop",
-                  fibOptions,
-                  bind(&Controller::onFibSuccess, this, _1, "Nexthop insertion succeeded"),
-                  bind(&Controller::onError, this, _1, "Nexthop insertion failed"));
+
+  m_controller.start<FibAddNextHopCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Nexthop insertion succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Nexthop insertion failed"));
 }
 
 void
-Controller::fibRemoveNextHop(const char* commandOptions[])
+Nfdc::fibRemoveNextHop(const char* commandOptions[])
 {
   const std::string& name = commandOptions[0];
   const int faceId = boost::lexical_cast<int>(commandOptions[1]);
-  ndn::nfd::FibManagementOptions fibOptions;
 
-  fibOptions.setName(name);
-  fibOptions.setFaceId(faceId);
-  startFibCommand("remove-nexthop",
-                  fibOptions,
-                  bind(&Controller::onFibSuccess, this, _1, "Nexthop Removal succeeded"),
-                  bind(&Controller::onError, this, _1, "Nexthop Removal failed"));
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setFaceId(faceId);
+
+  m_controller.start<FibRemoveNextHopCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Nexthop removal succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Nexthop removal failed"));
 }
 
 namespace {
-bool
+
+inline bool
 isValidUri(const std::string& input)
 {
   // an extended regex to support the validation of uri structure
@@ -131,105 +136,94 @@ isValidUri(const std::string& input)
   boost::regex e("^[a-z0-9]+\\:.*");
   return boost::regex_match(input, e);
 }
+
 } // anonymous namespace
 
 void
-Controller::faceCreate(const char* commandOptions[])
+Nfdc::faceCreate(const char* commandOptions[])
 {
-  ndn::nfd::FaceManagementOptions faceOptions;
   const std::string& uri = commandOptions[0];
-  faceOptions.setUri(uri);
-  
-  if (isValidUri(uri))
-  {
-    startFaceCommand("create",
-                     faceOptions,
-                     bind(&Controller::onFaceSuccess, this, _1, "Face creation succeeded"),
-                     bind(&Controller::onError, this, _1, "Face creation failed"));
-  }
-  else
+  if (!isValidUri(uri))
     throw Error("invalid uri format");
+
+  ControlParameters parameters;
+  parameters
+    .setUri(uri);
+
+  m_controller.start<FaceCreateCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Face creation succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Face creation failed"));
 }
- 
+
 void
-Controller::faceDestroy(const char* commandOptions[])
+Nfdc::faceDestroy(const char* commandOptions[])
 {
-  ndn::nfd::FaceManagementOptions faceOptions;
   const int faceId = boost::lexical_cast<int>(commandOptions[0]);
-  faceOptions.setFaceId(faceId);
-                        
-  startFaceCommand("destroy",
-                   faceOptions,
-                   bind(&Controller::onFaceSuccess, this, _1, "Face destroy succeeded"),
-                   bind(&Controller::onError, this, _1, "Face destroy failed"));
+
+  ControlParameters parameters;
+  parameters
+    .setFaceId(faceId);
+
+  m_controller.start<FaceDestroyCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Face destroy succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Face destroy failed"));
 }
-  
+
 void
-Controller::strategyChoiceSet(const char* commandOptions[])
+Nfdc::strategyChoiceSet(const char* commandOptions[])
 {
   const std::string& name = commandOptions[0];
   const std::string& strategy = commandOptions[1];
-  ndn::nfd::StrategyChoiceOptions strategyChoiceOptions;
-  
-  strategyChoiceOptions.setName(name);
-  strategyChoiceOptions.setStrategy(strategy);
-  
-  startStrategyChoiceCommand("set",
-                             strategyChoiceOptions,
-                             bind(&Controller::onSetStrategySuccess,
-                                  this,
-                                  _1,
-                                  "Successfully set strategy choice"),
-                             bind(&Controller::onError, this, _1, "Failed to set strategy choice"));
-  
+
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setStrategy(strategy);
+
+  m_controller.start<StrategyChoiceSetCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Successfully set strategy choice"),
+    bind(&Nfdc::onError, this, _1, _2, "Failed to set strategy choice"));
 }
-  
+
 void
-Controller::strategyChoiceUnset(const char* commandOptions[])
+Nfdc::strategyChoiceUnset(const char* commandOptions[])
 {
   const std::string& name = commandOptions[0];
-  ndn::nfd::StrategyChoiceOptions strategyChoiceOptions;
-  
-  strategyChoiceOptions.setName(name);
-  startStrategyChoiceCommand("unset",
-                             strategyChoiceOptions,
-                             bind(&Controller::onSetStrategySuccess,
-                                  this,
-                                  _1,
-                                  "Successfully unset strategy choice"),
-                             bind(&Controller::onError, this, _1, "Failed to unset strategy choice"));
+
+  ControlParameters parameters;
+  parameters
+    .setName(name);
+
+  m_controller.start<StrategyChoiceUnsetCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Successfully unset strategy choice"),
+    bind(&Nfdc::onError, this, _1, _2, "Failed to unset strategy choice"));
 }
-  
+
 void
-Controller::onFibSuccess(const ndn::nfd::FibManagementOptions& resp, const std::string& message)
+Nfdc::onSuccess(const ControlParameters& parameters, const std::string& message)
 {
-  std::cout << message << ": " << resp << std::endl;
+  std::cout << message << ": " << parameters << std::endl;
 }
-  
+
 void
-Controller::onFaceSuccess(const ndn::nfd::FaceManagementOptions& resp, const std::string& message)
+Nfdc::onError(uint32_t code, const std::string& error, const std::string& message)
 {
-  std::cout << message << ": " << resp << std::endl;
+  std::ostringstream os;
+  os << message << ": " << error << " (code: " << code << ")";
+  throw Error(os.str());
 }
-void
-Controller::onSetStrategySuccess(const ndn::nfd::StrategyChoiceOptions& resp,
-                                 const std::string& message)
-{
-  std::cout << message << ": " << resp << std::endl;
-}
-  
-void
-Controller::onError(const std::string& error, const std::string& message)
-{
-  throw Error(message + ": " + error);
-}
+
 } // namespace nfdc
 
 int
 main(int argc, char** argv)
 {
   ndn::Face face;
-  nfdc::Controller p(face);
+  nfdc::Nfdc p(face);
 
   p.m_programName = argv[0];
   int opt;
@@ -238,7 +232,7 @@ main(int argc, char** argv)
       case 'h':
         usage(p.m_programName);
         return 0;
-        
+
       default:
         usage(p.m_programName);
         return 1;
@@ -251,14 +245,14 @@ main(int argc, char** argv)
   }
 
   try {
-    bool hasSucceeded = p.dispatch(argv[optind],
-                                   const_cast<const char**>(argv + optind + 1),
-                                   argc - optind - 1);
-    if (hasSucceeded == false) {
+    bool isOk = p.dispatch(argv[optind],
+                           const_cast<const char**>(argv + optind + 1),
+                           argc - optind - 1);
+    if (!isOk) {
       usage(p.m_programName);
       return 1;
     }
-    
+
     face.processEvents();
   }
   catch (const std::exception& e) {
@@ -267,4 +261,3 @@ main(int argc, char** argv)
   }
   return 0;
 }
-
