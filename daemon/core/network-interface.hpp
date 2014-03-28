@@ -17,11 +17,13 @@ namespace nfd {
 class NetworkInterfaceInfo
 {
 public:
+
   int index;
   std::string name;
   ethernet::Address etherAddress;
   std::vector<boost::asio::ip::address_v4> ipv4Addresses;
   std::vector<boost::asio::ip::address_v6> ipv6Addresses;
+  boost::asio::ip::address_v4 broadcastAddress;
   unsigned int flags;
 
   bool
@@ -31,7 +33,11 @@ public:
   isMulticastCapable() const;
 
   bool
+  isBroadcastCapable() const;
+
+  bool
   isUp() const;
+
 };
 
 inline bool
@@ -44,6 +50,12 @@ inline bool
 NetworkInterfaceInfo::isMulticastCapable() const
 {
   return (flags & IFF_MULTICAST) != 0;
+}
+
+inline bool
+NetworkInterfaceInfo::isBroadcastCapable() const
+{
+  return (flags & IFF_BROADCAST) != 0;
 }
 
 inline bool

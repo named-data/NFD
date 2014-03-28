@@ -1465,7 +1465,7 @@ BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Failed to create face");
+         command->getName(), 408, "unit-test-reason");
 
   onConnectFailed(command->getName(), "unit-test-reason");
 

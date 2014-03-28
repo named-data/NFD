@@ -26,7 +26,7 @@ public:
   {
     Error(const std::string& what) : ProtocolFactory::Error(what) {}
   };
-  
+
   explicit
   UdpFactory(const std::string& defaultPort = "6363");
 
@@ -66,10 +66,10 @@ public:
    *
    * Note that this call will **BLOCK** until resolution is done or failed.
    *
-   * If localHost is a IPv6 address of a specific device, it must be in the form: 
+   * If localHost is a IPv6 address of a specific device, it must be in the form:
    * ip address%interface name
    * Example: fe80::5e96:9dff:fe7d:9c8d%en1
-   * Otherwise, you can use :: 
+   * Otherwise, you can use ::
    *
    * Once a face is created, if it doesn't send/receive anything for
    * a period of time equal to timeout, it will be destroyed
@@ -98,7 +98,7 @@ public:
    * creation fails and an exception is thrown
    *
    * \returns always a valid pointer to a MulticastUdpFace object, an exception
-   *          is thrown if it cannot be created. 
+   *          is thrown if it cannot be created.
    *
    * \throws UdpFactory::Error
    *
@@ -108,12 +108,12 @@ public:
   shared_ptr<MulticastUdpFace>
   createMulticastFace(const udp::Endpoint& localEndpoint,
                       const udp::Endpoint& multicastEndpoint);
-  
+
   shared_ptr<MulticastUdpFace>
   createMulticastFace(const std::string& localIp,
                       const std::string& multicastIp,
                       const std::string& multicastPort);
-  
+
   // from Factory
   virtual void
   createFace(const FaceUri& uri,
@@ -129,9 +129,19 @@ protected:
   MulticastFaceMap m_multicastFaces;
 
 private:
+
+  void
+  prohibitEndpoint(const udp::Endpoint& endpoint);
+
+  void
+  prohibitAllIpv4Endpoints(const uint16_t port);
+
+  void
+  prohibitAllIpv6Endpoints(const uint16_t port);
+
   void
   afterFaceFailed(udp::Endpoint& endpoint);
-    
+
   /**
    * \brief Look up UdpChannel using specified local endpoint
    *
@@ -142,8 +152,8 @@ private:
    */
   shared_ptr<UdpChannel>
   findChannel(const udp::Endpoint& localEndpoint);
-  
-  
+
+
   /**
    * \brief Look up multicast UdpFace using specified local endpoint
    *
@@ -154,16 +164,18 @@ private:
    */
   shared_ptr<MulticastUdpFace>
   findMulticastFace(const udp::Endpoint& localEndpoint);
-  
+
   void
   continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
                                  const FaceCreatedCallback& onCreated,
                                  const FaceConnectFailedCallback& onConnectFailed);
-  
+
   typedef std::map< udp::Endpoint, shared_ptr<UdpChannel> > ChannelMap;
   ChannelMap m_channels;
-  
+
   std::string m_defaultPort;
+
+  std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
 
 } // namespace nfd

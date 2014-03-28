@@ -31,7 +31,7 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
     {
       m_socket->set_option(ip::v6_only(true));
     }
-  
+
   try {
     m_socket->bind(m_localEndpoint);
   }
@@ -41,9 +41,9 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
     throw Error("Failed to properly configure the socket. "
                 "UdpChannel creation aborted, check the address (" + std::string(e.what()) + ")");
   }
-  
+
   this->setUri(FaceUri(localEndpoint));
-  
+
   //setting the timeout to close the idle faces
   m_closeIdleFaceEvent = scheduler::schedule(m_idleFaceTimeout,
                                 bind(&UdpChannel::closeIdleFaces, this));
@@ -62,7 +62,7 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
     throw Error("Listen already called on this channel");
   }
   m_isListening = true;
-  
+
   onFaceCreatedNewPeerCallback = onFaceCreated;
   onConnectFailedNewPeerCallback = onListenFailed;
 
@@ -76,7 +76,8 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
-                    const FaceCreatedCallback& onFaceCreated)
+                    const FaceCreatedCallback& onFaceCreated,
+                    const ConnectFailedCallback& onConnectFailed)
 {
   ChannelFaceMap::iterator i = m_channelFaces.find(remoteEndpoint);
   if (i != m_channelFaces.end()) {
@@ -88,10 +89,10 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
   //creating a new socket for the face that will be created soon
   shared_ptr<ip::udp::socket> clientSocket =
     make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
-  
+
   clientSocket->open(m_localEndpoint.protocol());
   clientSocket->set_option(ip::udp::socket::reuse_address(true));
-  
+
   try {
     clientSocket->bind(m_localEndpoint);
     clientSocket->connect(remoteEndpoint); //@todo connect or async_connect
@@ -101,8 +102,8 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
   }
   catch (boost::system::system_error& e) {
     clientSocket->close();
-    throw Error("Failed to properly configure the socket. Check the address ("
-                + std::string(e.what()) + ")");
+    onConnectFailed("Failed to configure socket (" + std::string(e.what()) + ")");
+    return;
   }
   createFace(clientSocket, onFaceCreated, false);
 }
@@ -144,7 +145,7 @@ UdpChannel::handleEndpointResolution(const boost::system::error_code& error,
       return;
   }
 
-  connect(*remoteEndpoint, onFaceCreated);
+  connect(*remoteEndpoint, onFaceCreated, onConnectFailed);
 }
 
 size_t
@@ -229,7 +230,7 @@ void
 UdpChannel::closeIdleFaces()
 {
   ChannelFaceMap::iterator next =  m_channelFaces.begin();
-  
+
   while (next != m_channelFaces.end()) {
     ChannelFaceMap::iterator it = next;
     next++;

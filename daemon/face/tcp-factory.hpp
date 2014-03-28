@@ -67,6 +67,16 @@ public:
              const FaceConnectFailedCallback& onConnectFailed);
 
 private:
+
+  void
+  prohibitEndpoint(const tcp::Endpoint& endpoint);
+
+  void
+  prohibitAllIpv4Endpoints(const uint16_t port);
+
+  void
+  prohibitAllIpv6Endpoints(const uint16_t port);
+
   /**
    * \brief Look up TcpChannel using specified local endpoint
    *
@@ -88,6 +98,8 @@ private:
   ChannelMap m_channels;
 
   std::string m_defaultPort;
+
+  std::set<tcp::Endpoint> m_prohibitedEndpoints;
 };
 
 } // namespace nfd

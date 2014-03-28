@@ -69,7 +69,8 @@ public:
    */
   void
   connect(const udp::Endpoint& remoteEndpoint,
-          const FaceCreatedCallback& onFaceCreated);
+          const FaceCreatedCallback& onFaceCreated,
+          const ConnectFailedCallback& onConnectFailed);
   /**
    * \brief Create a face by establishing connection to the specified
    *        remote host and remote port

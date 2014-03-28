@@ -161,13 +161,12 @@ public:
   std::list< shared_ptr<Face> > faces;
 };
 
-
 BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 {
-  TcpFactory factory;
+  TcpFactory factory1;
 
-  shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  factory.createChannel("127.0.0.1", "20071");
+  shared_ptr<TcpChannel> channel1 = factory1.createChannel("127.0.0.1", "20070");
+  factory1.createChannel("127.0.0.1", "20071");
 
   BOOST_CHECK_EQUAL(channel1->isListening(), false);
 
@@ -176,9 +175,14 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(channel1->isListening(), true);
 
-  factory.createFace(FaceUri("tcp://127.0.0.1:20070"),
-                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+  TcpFactory factory2;
+
+  shared_ptr<TcpChannel> channel2 = factory2.createChannel("127.0.0.2", "20070");
+  factory2.createChannel("127.0.0.2", "20071");
+
+  factory2.createFace(FaceUri("tcp://127.0.0.1:20070"),
+                      bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                      bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
   BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot connect or cannot accept connection");
@@ -253,17 +257,21 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
 {
-  TcpFactory factory;
+  TcpFactory factory1;
 
-  shared_ptr<TcpChannel> channel1 = factory.createChannel("::1", "20070");
-  shared_ptr<TcpChannel> channel2 = factory.createChannel("::1", "20071");
+  shared_ptr<TcpChannel> channel1 = factory1.createChannel("::1", "20070");
+  shared_ptr<TcpChannel> channel2 = factory1.createChannel("::1", "20071");
 
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
-  factory.createFace(FaceUri("tcp://[::1]:20070"),
-                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+  TcpFactory factory2;
+
+  factory2.createChannel("::2", "20070");
+
+  factory2.createFace(FaceUri("tcp://[::1]:20070"),
+                      bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                      bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
   BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot connect or cannot accept connection");

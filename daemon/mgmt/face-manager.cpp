@@ -242,6 +242,16 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
       if (i->first == "port")
         {
           port = i->second.get_value<std::string>();
+          try
+            {
+              uint16_t portNo = boost::lexical_cast<uint16_t>(port);
+              NFD_LOG_TRACE("TCP port set to " << portNo);
+            }
+          catch (const std::bad_cast& error)
+            {
+              throw ConfigFile::Error("Invalid value for option " +
+                                      i->first + "\" in \"udp\" section");
+            }
         }
       else if (i->first == "listen")
         {
@@ -311,6 +321,16 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       if (i->first == "port")
         {
           port = i->second.get_value<std::string>();
+          try
+            {
+              uint16_t portNo = boost::lexical_cast<uint16_t>(port);
+              NFD_LOG_TRACE("UDP port set to " << portNo);
+            }
+          catch (const std::bad_cast& error)
+            {
+              throw ConfigFile::Error("Invalid value for option " +
+                                      i->first + "\" in \"udp\" section");
+            }
         }
       else if (i->first == "idle_timeout")
         {
@@ -346,6 +366,16 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       else if (i->first == "mcast_port")
         {
           mcastPort = i->second.get_value<std::string>();
+          try
+            {
+              uint16_t portNo = boost::lexical_cast<uint16_t>(mcastPort);
+              NFD_LOG_TRACE("UDP multicast port set to " << portNo);
+            }
+          catch (const std::bad_cast& error)
+            {
+              throw ConfigFile::Error("Invalid value for option " +
+                                      i->first + "\" in \"udp\" section");
+            }
         }
       else if (i->first == "mcast_group")
         {
@@ -581,7 +611,7 @@ void
 FaceManager::onConnectFailed(const Name& requestName, const std::string& reason)
 {
   NFD_LOG_DEBUG("Failed to create face: " << reason);
-  sendResponse(requestName, 400, "Failed to create face");
+  sendResponse(requestName, 408, reason);
 }
 
 void
@@ -594,6 +624,7 @@ FaceManager::createFace(const Interest& request,
   if (!validateParameters(command, parameters))
     {
       sendResponse(requestName, 400, "Malformed command");
+      NFD_LOG_TRACE("invalid control parameters URI");
       return;
     }
 
@@ -601,6 +632,7 @@ FaceManager::createFace(const Interest& request,
   if (!uri.parse(parameters.getUri()))
     {
       sendResponse(requestName, 400, "Malformed command");
+      NFD_LOG_TRACE("failed to parse URI");
       return;
     }
 
@@ -611,9 +643,30 @@ FaceManager::createFace(const Interest& request,
       return;
     }
 
-  factory->second->createFace(uri,
-                              bind(&FaceManager::onCreated, this, requestName, parameters, _1),
-                              bind(&FaceManager::onConnectFailed, this, requestName, _1));
+  try
+    {
+      factory->second->createFace(uri,
+                                  bind(&FaceManager::onCreated,
+                                       this, requestName, parameters, _1),
+                                  bind(&FaceManager::onConnectFailed,
+                                       this, requestName, _1));
+    }
+  catch (const std::runtime_error& error)
+    {
+      std::string errorMessage = "NFD error: ";
+      errorMessage += error.what();
+
+      NFD_LOG_ERROR(errorMessage);
+      sendResponse(requestName, 500, errorMessage);
+    }
+  catch (const std::logic_error& error)
+    {
+      std::string errorMessage = "NFD error: ";
+      errorMessage += error.what();
+
+      NFD_LOG_ERROR(errorMessage);
+      sendResponse(requestName, 500, errorMessage);
+    }
 }
 
 

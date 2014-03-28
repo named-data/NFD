@@ -95,6 +95,17 @@ listNetworkInterfaces()
           break;
 #endif
         }
+
+      if (netif->isBroadcastCapable() && ifa->ifa_broadaddr != 0)
+        {
+          const sockaddr_in* sin = reinterpret_cast<sockaddr_in*>(ifa->ifa_broadaddr);
+
+          char address[INET_ADDRSTRLEN];
+          if (::inet_ntop(AF_INET, &sin->sin_addr, address, sizeof(address)))
+            netif->broadcastAddress = boost::asio::ip::address_v4::from_string(address);
+          else
+            NFD_LOG_WARN("inet_ntop() failed on " << ifname);
+        }
     }
 
   ::freeifaddrs(ifa_list);

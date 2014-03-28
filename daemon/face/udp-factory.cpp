@@ -7,6 +7,7 @@
 #include "udp-factory.hpp"
 #include "core/global-io.hpp"
 #include "core/resolver.hpp"
+#include "core/network-interface.hpp"
 
 namespace nfd {
 
@@ -17,6 +18,89 @@ NFD_LOG_INIT("UdpFactory");
 UdpFactory::UdpFactory(const std::string& defaultPort/* = "6363"*/)
   : m_defaultPort(defaultPort)
 {
+}
+
+
+
+void
+UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
+{
+  using namespace boost::asio::ip;
+
+  static const address_v4 ALL_V4_ENDPOINT(address_v4::from_string("0.0.0.0"));
+  static const address_v6 ALL_V6_ENDPOINT(address_v6::from_string("::"));
+
+  const address& address = endpoint.address();
+
+  if (address.is_v4() && address == ALL_V4_ENDPOINT)
+    {
+      prohibitAllIpv4Endpoints(endpoint.port());
+    }
+  else if (endpoint.address().is_v6() && address == ALL_V6_ENDPOINT)
+    {
+      prohibitAllIpv6Endpoints(endpoint.port());
+    }
+
+  NFD_LOG_TRACE("prohibiting UDP " <<
+                endpoint.address().to_string() << ":" << endpoint.port());
+
+  m_prohibitedEndpoints.insert(endpoint);
+}
+
+void
+UdpFactory::prohibitAllIpv4Endpoints(const uint16_t port)
+{
+  using namespace boost::asio::ip;
+
+  static const address_v4 INVALID_BROADCAST(address_v4::from_string("0.0.0.0"));
+
+  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
+
+  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
+       i != nicList.end();
+       ++i)
+    {
+      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
+      const std::vector<address_v4>& ipv4Addresses = nic->ipv4Addresses;
+
+      for (std::vector<address_v4>::const_iterator j = ipv4Addresses.begin();
+           j != ipv4Addresses.end();
+           ++j)
+        {
+          prohibitEndpoint(udp::Endpoint(*j, port));
+        }
+
+      if (nic->isBroadcastCapable() && nic->broadcastAddress != INVALID_BROADCAST)
+        {
+          NFD_LOG_TRACE("prohibiting broadcast address: " << nic->broadcastAddress.to_string());
+          prohibitEndpoint(udp::Endpoint(nic->broadcastAddress, port));
+        }
+    }
+
+  prohibitEndpoint(udp::Endpoint(address::from_string("255.255.255.255"), port));
+}
+
+void
+UdpFactory::prohibitAllIpv6Endpoints(const uint16_t port)
+{
+  using namespace boost::asio::ip;
+
+  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
+
+  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
+       i != nicList.end();
+       ++i)
+    {
+      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
+      const std::vector<address_v6>& ipv6Addresses = nic->ipv6Addresses;
+
+      for (std::vector<address_v6>::const_iterator j = ipv6Addresses.begin();
+           j != ipv6Addresses.end();
+           ++j)
+        {
+          prohibitEndpoint(udp::Endpoint(*j, port));
+        }
+    }
 }
 
 shared_ptr<UdpChannel>
@@ -45,6 +129,7 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
   channel = make_shared<UdpChannel>(boost::cref(endpoint),
                                     timeout);
   m_channels[endpoint] = channel;
+  prohibitEndpoint(endpoint);
 
   return channel;
 }
@@ -78,6 +163,11 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   if (static_cast<bool>(unicast)) {
     throw Error("Cannot create the requested UDP multicast face, local "
                 "endpoint is already allocated for a UDP unicast channel");
+  }
+
+  if (m_prohibitedEndpoints.find(multicastEndpoint) != m_prohibitedEndpoints.end()) {
+    throw Error("Cannot create the requested UDP multicast face, "
+                "remote endpoint is owned by this NFD instance");
   }
 
   if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {
@@ -149,6 +239,11 @@ UdpFactory::createFace(const FaceUri& uri,
   else if (uri.getScheme() == "udp6")
     addressSelector = resolver::Ipv6Address();
 
+  if (!uri.getPath().empty())
+    {
+      onConnectFailed("Invalid URI");
+    }
+
   UdpResolver::asyncResolve(uri.getHost(),
                             uri.getPort().empty() ? m_defaultPort : uri.getPort(),
                             bind(&UdpFactory::continueCreateFaceAfterResolve, this, _1,
@@ -168,6 +263,13 @@ UdpFactory::continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
     return;
   }
 
+  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end())
+    {
+      onConnectFailed("Requested endpoint is prohibited "
+                      "(reserved by this NFD or disallowed by face management protocol)");
+      return;
+    }
+
   // very simple logic for now
 
   for (ChannelMap::iterator channel = m_channels.begin();
@@ -177,7 +279,7 @@ UdpFactory::continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
     if ((channel->first.address().is_v4() && endpoint.address().is_v4()) ||
         (channel->first.address().is_v6() && endpoint.address().is_v6()))
     {
-      channel->second->connect(endpoint, onCreated);
+      channel->second->connect(endpoint, onCreated, onConnectFailed);
       return;
     }
   }
