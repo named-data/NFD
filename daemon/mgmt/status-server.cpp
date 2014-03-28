@@ -31,19 +31,17 @@ StatusServer::onInterest(const Interest& interest) const
   shared_ptr<Data> data = make_shared<Data>(name);
   data->setFreshnessPeriod(RESPONSE_FRESHNESS);
 
-  shared_ptr<ndn::nfd::Status> payload = this->collectStatus();
-  ndn::EncodingBuffer payloadBuffer;
-  payload->wireEncode(payloadBuffer);
-  data->setContent(payloadBuffer.buf(), payloadBuffer.size());
+  shared_ptr<ndn::nfd::ForwarderStatus> status = this->collectStatus();
+  data->setContent(status->wireEncode());
 
   m_face->sign(*data);
   m_face->put(*data);
 }
 
-shared_ptr<ndn::nfd::Status>
+shared_ptr<ndn::nfd::ForwarderStatus>
 StatusServer::collectStatus() const
 {
-  shared_ptr<ndn::nfd::Status> status = make_shared<ndn::nfd::Status>();
+  shared_ptr<ndn::nfd::ForwarderStatus> status = make_shared<ndn::nfd::ForwarderStatus>();
 
   status->setNfdVersion(NFD_VERSION);
   status->setStartTimestamp(m_startTimestamp);
@@ -57,8 +55,8 @@ StatusServer::collectStatus() const
 
   const ForwarderCounters& counters = m_forwarder.getCounters();
   status->setNInInterests(counters.getInInterest());
-  status->setNOutInterests(counters.getOutInterest());
   status->setNInDatas(counters.getInData());
+  status->setNOutInterests(counters.getOutInterest());
   status->setNOutDatas(counters.getOutData());
 
   return status;

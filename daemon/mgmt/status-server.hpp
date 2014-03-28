@@ -8,7 +8,7 @@
 #define NFD_MGMT_STATUS_SERVER_HPP
 
 #include "mgmt/app-face.hpp"
-#include <ndn-cpp-dev/management/nfd-status.hpp>
+#include <ndn-cpp-dev/management/nfd-forwarder-status.hpp>
 
 namespace nfd {
 
@@ -23,7 +23,7 @@ private:
   void
   onInterest(const Interest& interest) const;
 
-  shared_ptr<ndn::nfd::Status>
+  shared_ptr<ndn::nfd::ForwarderStatus>
   collectStatus() const;
 
 private:

@@ -11,7 +11,7 @@
 
 #include <ndn-cpp-dev/management/nfd-fib-entry.hpp>
 #include <ndn-cpp-dev/management/nfd-face-status.hpp>
-#include <ndn-cpp-dev/management/nfd-status.hpp>
+#include <ndn-cpp-dev/management/nfd-forwarder-status.hpp>
 
 namespace ndn {
 
@@ -92,7 +92,7 @@ public:
   {
     std::cout << "General NFD status:" << std::endl;
 
-    nfd::Status status(data.getContent());
+    nfd::ForwarderStatus status(data.getContent());
     std::cout << "               version="
               << status.getNfdVersion() << std::endl;
     std::cout << "             startTime="

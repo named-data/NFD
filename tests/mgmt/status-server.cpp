@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_REQUIRE(static_cast<bool>(g_response));
 
   // verify
-  ndn::nfd::Status status;
+  ndn::nfd::ForwarderStatus status;
   BOOST_REQUIRE_NO_THROW(status.wireDecode(g_response->getContent()));
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION);
