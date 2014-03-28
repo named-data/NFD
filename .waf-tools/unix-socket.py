@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-# encoding: utf-8
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+#
+# Copyright (c) 2014, Regents of the University of California
+#
+# GPL 3.0 license, see the COPYING.md file for more information
 
 BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK = '''
 #include <iostream>
@@ -16,7 +19,7 @@ int main() {
 
 def options(opt):
     opt.add_option('--force-unix-socket', action='store_true', default=False,
-                   dest='force_unix_socket',help='''Forcefully enable UNIX sockets support''')
+                   dest='force_unix_socket', help='''Forcefully enable UNIX sockets support''')
 
 def configure(conf):
     def boost_asio_has_local_sockets():

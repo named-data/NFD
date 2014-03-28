@@ -1,45 +1,34 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-VERSION='0.1'
+#
+# Copyright (c) 2014, Regents of the University of California
+#
+# GPL 3.0 license, see the COPYING.md file for more information
+#
 
-from waflib import Build, Logs, Utils, Task, TaskGen, Configure
+VERSION = '0.1.0'
+APPNAME = "nfd"
+BUGREPORT = "http://redmine.named-data.net/projects/nfd"
+URL = "https://github.com/named-data/NFD"
+
+from waflib import Logs
 import os
 
 def options(opt):
     opt.load('compiler_cxx gnu_dirs')
-    opt.load('boost doxygen coverage unix-socket', tooldir=['.waf-tools'])
+    opt.load('boost doxygen coverage unix-socket default-compiler-flags',
+             tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
-    nfdopt.add_option('--debug',action='store_true',default=False,dest='debug',help='''Compile library debugging mode without all optimizations (-O0)''')
-    nfdopt.add_option('--with-tests', action='store_true',default=False,dest='with_tests',help='''Build unit tests''')
+    nfdopt.add_option('--with-tests', action='store_true', default=False,
+                      dest='with_tests', help='''Build unit tests''')
 
 def configure(conf):
     conf.load("compiler_cxx boost gnu_dirs")
-    try:
-        conf.load("doxygen")
-    except:
-        pass
 
-    areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
-    if conf.options.debug:
-        conf.define('_DEBUG', 1)
-        defaultFlags = ['-O0', '-g3',
-                        '-Werror',
-                        '-Wall',
-                        '-fcolor-diagnostics', # only clang supports
-                        ]
+    try: conf.load("doxygen")
+    except: pass
 
-        if areCustomCxxflagsPresent:
-            missingFlags = [x for x in defaultFlags if x not in conf.env.CXXFLAGS]
-            if len(missingFlags) > 0:
-                Logs.warn("Selected debug mode, but CXXFLAGS is set to a custom value '%s'"
-                           % " ".join(conf.env.CXXFLAGS))
-                Logs.warn("Default flags '%s' are not activated" % " ".join(missingFlags))
-        else:
-            conf.add_supported_cxxflags(cxxflags = defaultFlags)
-    else:
-        defaultFlags = ['-O2', '-g', '-Wall']
-        if not areCustomCxxflagsPresent:
-            conf.add_supported_cxxflags(cxxflags = defaultFlags)
+    conf.load('default-compiler-flags')
 
     conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'],
                    uselib_store='NDN_CPP', mandatory=True)
@@ -48,7 +37,7 @@ def configure(conf):
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
-        boost_libs+=' unit_test_framework'
+        boost_libs += ' unit_test_framework'
 
     conf.check_boost(lib=boost_libs)
 
@@ -60,11 +49,14 @@ def configure(conf):
 
     conf.load('unix-socket')
 
-    conf.check_cxx(lib='rt', uselib_store='RT', define_name='HAVE_RT', mandatory=False)
-    if conf.check_cxx(lib='pcap', uselib_store='PCAP', define_name='HAVE_PCAP', mandatory=False):
+    conf.check_cxx(lib='rt', uselib_store='RT',
+                   define_name='HAVE_RT', mandatory=False)
+
+    if conf.check_cxx(lib='pcap', uselib_store='PCAP',
+                      define_name='HAVE_PCAP', mandatory=False):
         conf.env['HAVE_PCAP'] = True
 
-    conf.check_cxx(lib='resolv', uselib_store='RESOLV', mandatory=True)
+    conf.check_cxx(lib='resolv', uselib_store='RESOLV', mandatory=False)
 
     conf.load('coverage')
 
@@ -74,14 +66,14 @@ def configure(conf):
 
 def build(bld):
     nfd_objects = bld(
-        target = "nfd-objects",
-        features = "cxx",
-        source = bld.path.ant_glob(['daemon/**/*.cpp'],
-                                   excl=['daemon/face/ethernet-*.cpp',
-                                         'daemon/face/unix-*.cpp',
-                                         'daemon/main.cpp']),
-        use = 'BOOST NDN_CPP RT',
-        includes = [".", "daemon"],
+        target='nfd-objects',
+        features='cxx',
+        source=bld.path.ant_glob(['daemon/**/*.cpp'],
+                                 excl=['daemon/face/ethernet-*.cpp',
+                                       'daemon/face/unix-*.cpp',
+                                       'daemon/main.cpp']),
+        use='BOOST NDN_CPP RT',
+        includes='. daemon',
         )
 
     if bld.env['HAVE_PCAP']:
@@ -91,32 +83,32 @@ def build(bld):
     if bld.env['HAVE_UNIX_SOCKETS']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
 
-    bld(target = "nfd",
-        features = "cxx cxxprogram",
-        source = 'daemon/main.cpp',
-        use = 'nfd-objects',
-        includes = [".", "daemon"],
+    bld(target='nfd',
+        features='cxx cxxprogram',
+        source='daemon/main.cpp',
+        use='nfd-objects',
+        includes='. daemon',
         )
 
     for app in bld.path.ant_glob('tools/*.cpp'):
         bld(features=['cxx', 'cxxprogram'],
-            target = 'bin/%s' % (str(app.change_ext(''))),
-            source = ['tools/%s' % (str(app))],
-            includes = [".", "daemon"],
-            use = 'nfd-objects RESOLV',
+            target='bin/%s' % (str(app.change_ext(''))),
+            source=['tools/%s' % (str(app))],
+            includes='. daemon',
+            use='nfd-objects RESOLV',
             )
 
     # Unit tests
     if bld.env['WITH_TESTS']:
         unit_tests = bld.program(
-            target="unit-tests",
-            features = "cxx cxxprogram",
-            source = bld.path.ant_glob(['tests/**/*.cpp'],
-                                       excl=['tests/face/ethernet.cpp',
-                                             'tests/face/unix-*.cpp']),
-            use = 'nfd-objects',
-            includes = [".", "daemon"],
-            install_prefix = None,
+            target='unit-tests',
+            features='cxx cxxprogram',
+            source=bld.path.ant_glob(['tests/**/*.cpp'],
+                                     excl=['tests/face/ethernet.cpp',
+                                           'tests/face/unix-*.cpp']),
+            use='nfd-objects',
+            includes='. daemon',
+            install_prefix=None,
           )
 
         if bld.env['HAVE_PCAP']:
@@ -125,31 +117,10 @@ def build(bld):
         if bld.env['HAVE_UNIX_SOCKETS']:
             unit_tests.source += bld.path.ant_glob('tests/face/unix-*.cpp')
 
-    bld(features = "subst",
-        source = 'nfd.conf.sample.in',
-        target = 'nfd.conf.sample',
-        install_path = "${SYSCONFDIR}/ndn")
-
-@Configure.conf
-def add_supported_cxxflags(self, cxxflags):
-    """
-    Check which cxxflags are supported by compiler and add them to env.CXXFLAGS variable
-    """
-    self.start_msg('Checking allowed flags for c++ compiler')
-
-    supportedFlags = []
-    for flag in cxxflags:
-        if self.check_cxx(cxxflags=[flag], mandatory=False):
-            supportedFlags += [flag]
-
-    self.end_msg(' '.join (supportedFlags))
-    self.env.CXXFLAGS = supportedFlags + self.env.CXXFLAGS
-
-# doxygen docs
-from waflib.Build import BuildContext
-class doxy(BuildContext):
-    cmd = "doxygen"
-    fun = "doxygen"
+    bld(features="subst",
+        source='nfd.conf.sample.in',
+        target='nfd.conf.sample',
+        install_path="${SYSCONFDIR}/ndn")
 
 def doxygen(bld):
     if not bld.env.DOXYGEN:
