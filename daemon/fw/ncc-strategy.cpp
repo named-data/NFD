@@ -20,8 +20,8 @@ NccStrategy::~NccStrategy()
 {
 }
 
-const time::nanoseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
-const time::nanoseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
+const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
+const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
 const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 
 void
@@ -38,30 +38,29 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<PitEntryInfo> pitEntryInfo =
     pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
-  bool isNewInterest = pitEntryInfo->m_isNewInterest;
+  bool isNewInterest = pitEntryInfo->isNewInterest;
   if (!isNewInterest) {
     return;
   }
-  pitEntryInfo->m_isNewInterest = false;
+  pitEntryInfo->isNewInterest = false;
 
   shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
     this->getMeasurementsEntryInfo(pitEntry);
 
-  time::nanoseconds deferFirst = DEFER_FIRST_WITHOUT_BEST_FACE;
-  time::nanoseconds deferRange = DEFER_RANGE_WITHOUT_BEST_FACE;
+  time::microseconds deferFirst = DEFER_FIRST_WITHOUT_BEST_FACE;
+  time::microseconds deferRange = DEFER_RANGE_WITHOUT_BEST_FACE;
   size_t nUpstreams = nexthops.size();
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
   if (static_cast<bool>(bestFace) && fibEntry->hasNextHop(bestFace) &&
       pitEntry->canForwardTo(*bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
-    deferFirst = measurementsEntryInfo->m_prediction;
-    deferRange = time::nanoseconds((deferFirst.count() +
-                              static_cast<time::nanoseconds>(time::microseconds(1)).count()) / 2);
+    deferFirst = measurementsEntryInfo->prediction;
+    deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
     this->sendInterest(pitEntry, bestFace);
-    pitEntryInfo->m_bestFaceTimeout = scheduler::schedule(
-      measurementsEntryInfo->m_prediction,
+    pitEntryInfo->bestFaceTimeout = scheduler::schedule(
+      measurementsEntryInfo->prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
   }
   else {
@@ -70,15 +69,17 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     // TODO avoid sending to inFace
   }
 
-  shared_ptr<Face> previousFace = measurementsEntryInfo->m_previousFace.lock();
+  shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
       pitEntry->canForwardTo(*previousFace)) {
     --nUpstreams;
   }
 
-  pitEntryInfo->m_maxInterval = std::max(static_cast<time::nanoseconds>(time::microseconds(1)),
-    time::nanoseconds((2 * deferRange.count() + nUpstreams - 1) / nUpstreams));
-  pitEntryInfo->m_propagateTimer = scheduler::schedule(deferFirst,
+  if (nUpstreams > 0) {
+    pitEntryInfo->maxInterval = std::max(time::microseconds(1),
+      time::microseconds((2 * deferRange.count() + nUpstreams - 1) / nUpstreams));
+  }
+  pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
 }
@@ -95,14 +96,15 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
     return;
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo =
-    pitEntry->getStrategyInfo<PitEntryInfo>();
+  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
+  // pitEntryInfo is guaranteed to exist here, because doPropagate is triggered
+  // from a timer set by NccStrategy.
   BOOST_ASSERT(static_cast<bool>(pitEntryInfo));
 
   shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
     this->getMeasurementsEntryInfo(pitEntry);
 
-  shared_ptr<Face> previousFace = measurementsEntryInfo->m_previousFace.lock();
+  shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
       pitEntry->canForwardTo(*previousFace)) {
     this->sendInterest(pitEntry, previousFace);
@@ -121,8 +123,8 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
 
   if (isForwarded) {
     static unsigned short seed[3];
-    time::nanoseconds deferNext = time::nanoseconds(nrand48(seed) % pitEntryInfo->m_maxInterval.count());
-    pitEntryInfo->m_propagateTimer = scheduler::schedule(deferNext,
+    time::nanoseconds deferNext = time::nanoseconds(nrand48(seed) % pitEntryInfo->maxInterval.count());
+    pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
   }
@@ -172,9 +174,10 @@ NccStrategy::beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
     measurementsEntry = this->getMeasurements().getParent(measurementsEntry);
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo =
-    pitEntry->getStrategyInfo<PitEntryInfo>();
-  scheduler::cancel(pitEntryInfo->m_propagateTimer);
+  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
+  if (static_cast<bool>(pitEntryInfo)) {
+    scheduler::cancel(pitEntryInfo->propagateTimer);
+  }
 }
 
 shared_ptr<NccStrategy::MeasurementsEntryInfo>
@@ -206,15 +209,15 @@ NccStrategy::getMeasurementsEntryInfo(shared_ptr<measurements::Entry> entry)
 }
 
 
-const time::nanoseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION =
-                                                         time::microseconds(8192);
-const time::nanoseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION =
-                                                         time::microseconds(127);
-const time::nanoseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION =
-                                                         time::microseconds(160000);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION =
+                                                             time::microseconds(8192);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION =
+                                                             time::microseconds(127);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION =
+                                                             time::microseconds(160000);
 
 NccStrategy::MeasurementsEntryInfo::MeasurementsEntryInfo()
-  : m_prediction(INITIAL_PREDICTION)
+  : prediction(INITIAL_PREDICTION)
 {
 }
 
@@ -226,57 +229,57 @@ NccStrategy::MeasurementsEntryInfo::inheritFrom(const MeasurementsEntryInfo& oth
 
 shared_ptr<Face>
 NccStrategy::MeasurementsEntryInfo::getBestFace(void) {
-  shared_ptr<Face> best = m_bestFace.lock();
+  shared_ptr<Face> best = this->bestFace.lock();
   if (static_cast<bool>(best)) {
     return best;
   }
-  m_bestFace = best = m_previousFace.lock();
+  this->bestFace = best = this->previousFace.lock();
   return best;
 }
 
 void
 NccStrategy::MeasurementsEntryInfo::updateBestFace(const Face& face) {
-  if (m_bestFace.expired()) {
-    m_bestFace = const_cast<Face&>(face).shared_from_this();
+  if (this->bestFace.expired()) {
+    this->bestFace = const_cast<Face&>(face).shared_from_this();
     return;
   }
-  shared_ptr<Face> bestFace = m_bestFace.lock();
+  shared_ptr<Face> bestFace = this->bestFace.lock();
   if (bestFace.get() == &face) {
     this->adjustPredictDown();
   }
   else {
-    m_previousFace = m_bestFace;
-    m_bestFace = const_cast<Face&>(face).shared_from_this();
+    this->previousFace = this->bestFace;
+    this->bestFace = const_cast<Face&>(face).shared_from_this();
   }
 }
 
 void
 NccStrategy::MeasurementsEntryInfo::adjustPredictDown() {
-  m_prediction = std::max(MIN_PREDICTION,
-    time::nanoseconds(m_prediction.count() - (m_prediction.count() >> ADJUST_PREDICT_DOWN_SHIFT)));
+  prediction = std::max(MIN_PREDICTION,
+    time::microseconds(prediction.count() - (prediction.count() >> ADJUST_PREDICT_DOWN_SHIFT)));
 }
 
 void
 NccStrategy::MeasurementsEntryInfo::adjustPredictUp() {
-  m_prediction = std::min(MAX_PREDICTION,
-    time::nanoseconds(m_prediction.count() + (m_prediction.count() >> ADJUST_PREDICT_UP_SHIFT)));
+  prediction = std::min(MAX_PREDICTION,
+    time::microseconds(prediction.count() + (prediction.count() >> ADJUST_PREDICT_UP_SHIFT)));
 }
 
 void
 NccStrategy::MeasurementsEntryInfo::ageBestFace() {
-  m_previousFace = m_bestFace;
-  m_bestFace.reset();
+  this->previousFace = this->bestFace;
+  this->bestFace.reset();
 }
 
 NccStrategy::PitEntryInfo::PitEntryInfo()
-  : m_isNewInterest(true)
+  : isNewInterest(true)
 {
 }
 
 NccStrategy::PitEntryInfo::~PitEntryInfo()
 {
-  scheduler::cancel(m_bestFaceTimeout);
-  scheduler::cancel(m_propagateTimer);
+  scheduler::cancel(this->bestFaceTimeout);
+  scheduler::cancel(this->propagateTimer);
 }
 
 } // namespace fw

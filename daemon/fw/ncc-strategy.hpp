@@ -59,14 +59,14 @@ protected:
     ageBestFace();
 
   public:
-    weak_ptr<Face> m_bestFace;
-    weak_ptr<Face> m_previousFace;
-    time::nanoseconds m_prediction;
+    weak_ptr<Face> bestFace;
+    weak_ptr<Face> previousFace;
+    time::microseconds prediction;
 
-    static const time::nanoseconds INITIAL_PREDICTION;
-    static const time::nanoseconds MIN_PREDICTION;
+    static const time::microseconds INITIAL_PREDICTION;
+    static const time::microseconds MIN_PREDICTION;
     static const int ADJUST_PREDICT_DOWN_SHIFT = 7;
-    static const time::nanoseconds MAX_PREDICTION;
+    static const time::microseconds MAX_PREDICTION;
     static const int ADJUST_PREDICT_UP_SHIFT = 3;
   };
 
@@ -80,10 +80,10 @@ protected:
     ~PitEntryInfo();
 
   public:
-    bool m_isNewInterest;
-    EventId m_bestFaceTimeout;
-    EventId m_propagateTimer;
-    time::nanoseconds m_maxInterval;
+    bool isNewInterest;
+    EventId bestFaceTimeout;
+    EventId propagateTimer;
+    time::microseconds maxInterval;
   };
 
 protected:
@@ -105,8 +105,8 @@ public:
   static const Name STRATEGY_NAME;
 
 protected:
-  static const time::nanoseconds DEFER_FIRST_WITHOUT_BEST_FACE;
-  static const time::nanoseconds DEFER_RANGE_WITHOUT_BEST_FACE;
+  static const time::microseconds DEFER_FIRST_WITHOUT_BEST_FACE;
+  static const time::microseconds DEFER_RANGE_WITHOUT_BEST_FACE;
   static const int UPDATE_MEASUREMENTS_N_LEVELS = 2;
   static const time::nanoseconds MEASUREMENTS_LIFETIME;
 };
