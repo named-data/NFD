@@ -189,6 +189,7 @@ BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, AllStrategiesFixture)
          command->getName(), 400, "Malformed command");
 
   getFace()->sendInterest(*command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didCallbackFire());
 }

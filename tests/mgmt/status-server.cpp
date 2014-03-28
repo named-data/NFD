@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(Status)
   internalFace->onReceiveData += &interceptResponse;
   StatusServer statusServer(internalFace, boost::ref(forwarder));
   time::system_clock::TimePoint t2 = time::system_clock::now();
-  
+
   // populate tables
   forwarder.getFib().insert("ndn:/fib1");
   forwarder.getPit().insert(*makeInterest("ndn:/pit1"));
@@ -47,28 +47,29 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_CHECK_GE(forwarder.getFib().size(), 1);
   BOOST_CHECK_GE(forwarder.getPit().size(), 4);
   BOOST_CHECK_GE(forwarder.getMeasurements().size(), 3);
-  
+
   // request
   shared_ptr<Interest> request = makeInterest("ndn:/localhost/nfd/status");
   request->setMustBeFresh(true);
   request->setChildSelector(1);
-  
+
   g_response.reset();
   time::system_clock::TimePoint t3 = time::system_clock::now();
   internalFace->sendInterest(*request);
+  g_io.run_one();
   time::system_clock::TimePoint t4 = time::system_clock::now();
   BOOST_REQUIRE(static_cast<bool>(g_response));
-  
+
   // verify
   ndn::nfd::Status status;
   BOOST_REQUIRE_NO_THROW(status.wireDecode(g_response->getContent()));
-  
+
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION);
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));
   BOOST_CHECK_LE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t2));
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t3));
   BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t4));
-  
+
   // StatusServer under test isn't added to Forwarder,
   // so request and response won't affect table size
   BOOST_CHECK_EQUAL(status.getNNameTreeEntries(), forwarder.getNameTree().size());

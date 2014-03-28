@@ -5,6 +5,7 @@
  */
 
 #include "internal-face.hpp"
+#include "core/global-io.hpp"
 
 namespace nfd {
 
@@ -20,6 +21,15 @@ InternalFace::sendInterest(const Interest& interest)
 {
   onSendInterest(interest);
 
+  // Invoke .processInterest a bit later,
+  // to avoid potential problems in forwarding pipelines.
+  getGlobalIoService().post(bind(&InternalFace::processInterest,
+                                 this, boost::cref(interest)));
+}
+
+void
+InternalFace::processInterest(const Interest& interest)
+{
   if (m_interestFilters.size() == 0)
     {
       NFD_LOG_DEBUG("no Interest filters to match against");

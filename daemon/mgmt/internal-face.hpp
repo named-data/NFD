@@ -20,9 +20,14 @@ public:
   /**
    * \brief InternalFace-related error
    */
-  struct Error : public Face::Error
+  class Error : public Face::Error
   {
-    Error(const std::string& what) : Face::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : Face::Error(what)
+    {
+    }
   };
 
   InternalFace();
@@ -54,7 +59,10 @@ public:
   put(const Data& data);
 
 private:
+  void
+  processInterest(const Interest& interest);
 
+private:
   std::map<Name, OnInterest> m_interestFilters;
   CommandValidator m_validator;
 };

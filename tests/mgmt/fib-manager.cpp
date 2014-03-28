@@ -228,6 +228,7 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
          command.getName(), 400, "Malformed command");
 
   face->sendInterest(command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didCallbackFire());
 }

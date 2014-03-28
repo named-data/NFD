@@ -118,6 +118,7 @@ BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
   Name commandName("/localhost/nfd/fib/end");
   Interest command(commandName);
   face->sendInterest(command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
   BOOST_REQUIRE(didNoOnInterestFire() == false);
@@ -140,6 +141,7 @@ BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
   Name commandName("/localhost/nfd");
   Interest command(commandName);
   face->sendInterest(command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didNoOnInterestFire() == false);
 }
@@ -168,6 +170,7 @@ BOOST_AUTO_TEST_CASE(SendInterestHitExact)
   Name commandName("/localhost/nfd/fib");
   Interest command(commandName);
   face->sendInterest(command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
   BOOST_REQUIRE(didNoOnInterestFire() == false);
@@ -193,6 +196,7 @@ BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
   Name commandName("/localhost/nfd/fib/previous");
   Interest command(commandName);
   face->sendInterest(command);
+  g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
   BOOST_REQUIRE(didNoOnInterestFire() == false);
