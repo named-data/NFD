@@ -122,9 +122,7 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
   if (signedVerbProcessor != m_signedVerbDispatch.end())
     {
       ControlParameters parameters;
-      if (!extractParameters(parameterComponent, parameters) ||
-          !parameters.hasName() ||
-          !parameters.hasFaceId())
+      if (!extractParameters(parameterComponent, parameters) || !parameters.hasFaceId())
         {
           NFD_LOG_INFO("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
@@ -148,15 +146,17 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
     }
 }
 
-
-
 void
 FibManager::addNextHop(ControlParameters& parameters,
                        ControlResponse& response)
 {
-  if (!parameters.hasCost())
+  ndn::nfd::FibAddNextHopCommand command;
+
+  if (!validateParameters(command, parameters))
     {
-      parameters.setCost(0);
+      NFD_LOG_INFO("add-nexthop result: FAIL reason: malformed");
+      setResponse(response, 400, "Malformed command");
+      return;
     }
 
   const Name& prefix = parameters.getName();
@@ -179,6 +179,7 @@ FibManager::addNextHop(ControlParameters& parameters,
                    << " faceid: " << faceId
                    << " cost: " << cost);
 
+      NFD_LOG_INFO("add-nexthop result: SUCCESS");
       setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else
@@ -192,6 +193,14 @@ void
 FibManager::removeNextHop(ControlParameters& parameters,
                           ControlResponse& response)
 {
+  ndn::nfd::FibRemoveNextHopCommand command;
+  if (!validateParameters(command, parameters))
+    {
+      NFD_LOG_INFO("remove-nexthop result: FAIL reason: malformed");
+      setResponse(response, 400, "Malformed command");
+      return;
+    }
+
   NFD_LOG_DEBUG("remove-nexthop prefix: " << parameters.getName()
                 << " faceid: " << parameters.getFaceId());
 
@@ -211,6 +220,8 @@ FibManager::removeNextHop(ControlParameters& parameters,
             }
         }
     }
+
+  NFD_LOG_INFO("remove-nexthop result: SUCCESS");
   setResponse(response, 200, "Success", parameters.wireEncode());
 }
 

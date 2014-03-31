@@ -34,12 +34,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onValidatedStrategyChoiceRequest(const shared_ptr<const Interest>& request);
 
   void
-  setStrategy(const ControlParameters& parameters,
+  setStrategy(ControlParameters& parameters,
               ControlResponse& response);
 
   void
-  unsetStrategy(const ControlParameters& parameters,
+  unsetStrategy(ControlParameters& parameters,
                 ControlResponse& response);
+
 private:
 
   StrategyChoice& m_strategyChoice;

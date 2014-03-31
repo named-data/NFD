@@ -77,6 +77,24 @@ ManagerBase::sendResponse(const Name& name,
   m_face->put(*responseData);
 }
 
+bool
+ManagerBase::validateParameters(const ControlCommand& command,
+                                ControlParameters& parameters)
+{
+  try
+    {
+      command.validateRequest(parameters);
+    }
+  catch (const ControlCommand::ArgumentError& error)
+    {
+      return false;
+    }
+
+  command.applyDefaultsToRequest(parameters);
+
+  return true;
+}
+
 void
 ManagerBase::onCommandValidationFailed(const shared_ptr<const Interest>& command,
                                        const std::string& error)

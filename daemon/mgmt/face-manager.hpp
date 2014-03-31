@@ -73,10 +73,11 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
               ControlParameters& parameters);
 
   VIRTUAL_WITH_TESTS bool
-  validateLocalControlParameters(const Interest& request,
-                                 ControlParameters& parameters,
-                                 shared_ptr<LocalFace>& outFace,
-                                 LocalControlFeature& outFeature);
+  extractLocalControlParameters(const Interest& request,
+                                ControlParameters& parameters,
+                                ControlCommand& command,
+                                shared_ptr<LocalFace>& outFace,
+                                LocalControlFeature& outFeature);
 
   VIRTUAL_WITH_TESTS void
   enableLocalControl(const Interest& request,

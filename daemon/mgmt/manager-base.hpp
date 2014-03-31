@@ -12,11 +12,13 @@
 #include "mgmt/command-validator.hpp"
 #include "mgmt/internal-face.hpp"
 
+#include <ndn-cpp-dev/management/nfd-control-command.hpp>
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
 #include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 
+using ndn::nfd::ControlCommand;
 using ndn::nfd::ControlResponse;
 using ndn::nfd::ControlParameters;
 
@@ -70,6 +72,10 @@ protected:
                uint32_t code,
                const std::string& text,
                const Block& body);
+
+  virtual bool
+  validateParameters(const ControlCommand& command,
+                     ControlParameters& parameters);
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   void

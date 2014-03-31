@@ -587,8 +587,16 @@ FaceManager::createFace(const Interest& request,
                         ControlParameters& parameters)
 {
   const Name& requestName = request.getName();
+  ndn::nfd::FaceCreateCommand command;
+
+  if (!validateParameters(command, parameters))
+    {
+      sendResponse(requestName, 400, "Malformed command");
+      return;
+    }
+
   FaceUri uri;
-  if (!parameters.hasUri() || !uri.parse(parameters.getUri()))
+  if (!uri.parse(parameters.getUri()))
     {
       sendResponse(requestName, 400, "Malformed command");
       return;
@@ -612,7 +620,9 @@ FaceManager::destroyFace(const Interest& request,
                          ControlParameters& parameters)
 {
   const Name& requestName = request.getName();
-  if (!parameters.hasFaceId())
+  ndn::nfd::FaceDestroyCommand command;
+
+  if (!validateParameters(command, parameters))
     {
       sendResponse(requestName, 400, "Malformed command");
       return;
@@ -625,6 +635,7 @@ FaceManager::destroyFace(const Interest& request,
     }
 
   sendResponse(requestName, 200, "Success", parameters.wireEncode());
+
 }
 
 void
@@ -653,16 +664,14 @@ FaceManager::onRemoveFace(shared_ptr<Face> face)
 
 
 bool
-FaceManager::validateLocalControlParameters(const Interest& request,
-                                            ControlParameters& parameters,
-                                            shared_ptr<LocalFace>& outFace,
-                                            LocalControlFeature& outFeature)
+FaceManager::extractLocalControlParameters(const Interest& request,
+                                           ControlParameters& parameters,
+                                           ControlCommand& command,
+                                           shared_ptr<LocalFace>& outFace,
+                                           LocalControlFeature& outFeature)
 {
-  if (!parameters.hasLocalControlFeature() ||
-      (parameters.getLocalControlFeature() != LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID &&
-       parameters.getLocalControlFeature() != LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID))
+  if (!validateParameters(command, parameters))
     {
-      NFD_LOG_INFO("command result: malformed");
       sendResponse(request.getName(), 400, "Malformed command");
       return false;
     }
@@ -671,14 +680,15 @@ FaceManager::validateLocalControlParameters(const Interest& request,
 
   if (!static_cast<bool>(face))
     {
-      NFD_LOG_INFO("command result: faceid " << parameters.getFaceId() << " not found");
-      sendResponse(request.getName(), 410, "Requested face not found");
+      NFD_LOG_INFO("command result: faceid " << request.getIncomingFaceId() << " not found");
+      sendResponse(request.getName(), 410, "Face not found");
       return false;
     }
   else if (!face->isLocal())
     {
-      NFD_LOG_INFO("command result: cannot enable local control on non-local faceid " << parameters.getFaceId());
-      sendResponse(request.getName(), 412, "Requested face is non-local");
+      NFD_LOG_INFO("command result: cannot enable local control on non-local faceid " <<
+                   face->getId());
+      sendResponse(request.getName(), 412, "Face is non-local");
       return false;
     }
 
@@ -692,10 +702,13 @@ void
 FaceManager::enableLocalControl(const Interest& request,
                                 ControlParameters& parameters)
 {
+  ndn::nfd::FaceEnableLocalControlCommand command;
+
+
   shared_ptr<LocalFace> face;
   LocalControlFeature feature;
 
-  if (validateLocalControlParameters(request, parameters, face, feature))
+  if (extractLocalControlParameters(request, parameters, command, face, feature))
     {
       face->setLocalControlHeaderFeature(feature, true);
       sendResponse(request.getName(), 200, "Success", parameters.wireEncode());
@@ -706,10 +719,11 @@ void
 FaceManager::disableLocalControl(const Interest& request,
                                  ControlParameters& parameters)
 {
+  ndn::nfd::FaceDisableLocalControlCommand command;
   shared_ptr<LocalFace> face;
   LocalControlFeature feature;
 
-  if (validateLocalControlParameters(request, parameters, face, feature))
+  if (extractLocalControlParameters(request, parameters, command, face, feature))
     {
       face->setLocalControlHeaderFeature(feature, false);
       sendResponse(request.getName(), 200, "Success", parameters.wireEncode());

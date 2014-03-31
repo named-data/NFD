@@ -899,7 +899,6 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceId,
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setFaceId(dummy->getId());
   parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
 
   Block encodedParameters(parameters.wireEncode());
@@ -966,7 +965,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         enableCommand->getName(), 410, "Requested face not found");
+         enableCommand->getName(), 410, "Face not found");
 
   onValidatedFaceRequest(enableCommand);
 
@@ -987,7 +986,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         disableCommand->getName(), 410, "Requested face not found");
+         disableCommand->getName(), 410, "Face not found");
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1004,7 +1003,6 @@ BOOST_FIXTURE_TEST_CASE(LocalControlMissingFeature,
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setFaceId(dummy->getId());
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -1056,7 +1054,6 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setFaceId(dummy->getId());
   parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
 
   Block encodedParameters(parameters.wireEncode());
@@ -1071,7 +1068,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         enableCommand->getName(), 412, "Requested face is non-local");
+         enableCommand->getName(), 412, "Face is non-local");
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1090,7 +1087,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         disableCommand->getName(), 412, "Requested face is non-local");
+         disableCommand->getName(), 412, "Face is non-local");
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1105,7 +1102,6 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceId,
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setFaceId(dummy->getId());
   parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
   Block encodedParameters(parameters.wireEncode());
@@ -1173,7 +1169,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         enableCommand->getName(), 410, "Requested face not found");
+         enableCommand->getName(), 410, "Face not found");
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1195,7 +1191,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         disableCommand->getName(), 410, "Requested face not found");
+         disableCommand->getName(), 410, "Face not found");
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1212,7 +1208,6 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setFaceId(dummy->getId());
   parameters.setLocalControlFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
   Block encodedParameters(parameters.wireEncode());
@@ -1227,7 +1222,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         enableCommand->getName(), 412, "Requested face is non-local");
+         enableCommand->getName(), 412, "Face is non-local");
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1246,7 +1241,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
 
   TestFaceManagerCommon::m_face->onReceiveData +=
     bind(&LocalControlFixture::validateControlResponse, this, _1,
-         disableCommand->getName(), 412, "Requested face is non-local");
+         disableCommand->getName(), 412, "Face is non-local");
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1482,7 +1477,6 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   FaceTableFixture::m_faceTable.add(dummy);
 
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
   parameters.setFaceId(dummy->getId());
 
   Block encodedParameters(parameters.wireEncode());
