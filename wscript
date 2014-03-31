@@ -122,6 +122,12 @@ def build(bld):
         target='nfd.conf.sample',
         install_path="${SYSCONFDIR}/ndn")
 
+    bld(features='subst',
+        source='tools/nfd-status-http-server.py',
+        target='nfd-status-http-server',
+        install_path="${BINDIR}",
+        chmod=0755)
+
 def doxygen(bld):
     if not bld.env.DOXYGEN:
         bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
