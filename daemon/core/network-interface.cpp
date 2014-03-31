@@ -16,7 +16,7 @@
 #if defined(__linux__)
 #include <net/if_arp.h>        // for ARPHRD_* constants
 #include <netpacket/packet.h>  // for struct sockaddr_ll
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
 #include <net/if_dl.h>         // for struct sockaddr_dl
 #else
 #error Platform not supported
@@ -86,7 +86,7 @@ listNetworkInterfaces()
               NFD_LOG_WARN("Unrecognized hardware address on " << ifname);
           }
           break;
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
         case AF_LINK: {
             const sockaddr_dl* sdl = reinterpret_cast<sockaddr_dl*>(ifa->ifa_addr);
             netif->index = sdl->sdl_index;

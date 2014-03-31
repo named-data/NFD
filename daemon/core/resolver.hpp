@@ -99,8 +99,11 @@ public:
   {
     Resolver resolver(SuccessCallback(), ErrorCallback(), addressSelector);
 
-    typename resolver::query query(host, port,
-                                   resolver::query::all_matching);
+    typename resolver::query query(host, port
+#if not defined(__FreeBSD__)
+                                   , resolver::query::all_matching
+#endif
+                                   );
 
     typename resolver::iterator remoteEndpoint = resolver.m_resolver.resolve(query);
     typename resolver::iterator end;
@@ -128,8 +131,11 @@ private:
                const time::seconds& timeout,
                const shared_ptr<Resolver>& self)
   {
-    typename resolver::query query(host, port,
-                                   resolver::query::all_matching);
+    typename resolver::query query(host, port
+#if not defined(__FreeBSD__)
+                                   , resolver::query::all_matching
+#endif
+                                   );
 
     m_resolver.async_resolve(query,
                              bind(&Resolver::onResolveSuccess, this, _1, _2, self));
