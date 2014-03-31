@@ -52,8 +52,8 @@ private:
 class PartialMessageStore : noncopyable
 {
 public:
-  PartialMessageStore(Scheduler& scheduler,
-    const time::nanoseconds& idleDuration = time::milliseconds(100));
+  explicit
+  PartialMessageStore(const time::nanoseconds& idleDuration = time::milliseconds(100));
 
   virtual
   ~PartialMessageStore();
@@ -79,7 +79,6 @@ private:
 private:
   std::map<uint64_t, shared_ptr<PartialMessage> > m_partialMessages;
 
-  Scheduler& m_scheduler;
   time::nanoseconds m_idleDuration;
 };
 

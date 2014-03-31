@@ -7,7 +7,7 @@
 #ifndef NFD_CORE_SCHEDULER_HPP
 #define NFD_CORE_SCHEDULER_HPP
 
-#include "global-io.hpp"
+#include "common.hpp"
 #include <ndn-cpp-dev/util/scheduler.hpp>
 
 namespace nfd {
@@ -20,32 +20,20 @@ using ndn::Scheduler;
  */
 using ndn::EventId;
 
-} // namespace scheduler
+/** \brief schedule an event
+ */
+EventId
+schedule(const time::nanoseconds& after, const Scheduler::Event& event);
 
-// TODO delete this after transition
-using scheduler::Scheduler;
+/** \brief cancel a scheduled event
+ */
+void
+cancel(const EventId& eventId);
+
+} // namespace scheduler
 
 using scheduler::EventId;
 
-namespace scheduler {
-
-// TODO delete this after transition
-Scheduler&
-getGlobalScheduler();
-
-inline EventId
-schedule(const time::nanoseconds& after, const Scheduler::Event& event)
-{
-  return getGlobalScheduler().scheduleEvent(after, event);
-}
-
-inline void
-cancel(const EventId& eventId)
-{
-  getGlobalScheduler().cancelEvent(eventId);
-}
-
-} // namespace scheduler
 } // namespace nfd
 
 #endif // NFD_CORE_SCHEDULER_HPP

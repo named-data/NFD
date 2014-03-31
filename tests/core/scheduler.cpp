@@ -13,13 +13,13 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(CoreScheduler, BaseFixture)
 
-struct SchedulerFixture : protected BaseFixture
+class SchedulerFixture : protected BaseFixture
 {
+public:
   SchedulerFixture()
     : count1(0)
     , count2(0)
     , count3(0)
-    , count4(0)
   {
   }
 
@@ -43,16 +43,9 @@ struct SchedulerFixture : protected BaseFixture
     ++count3;
   }
 
-  void
-  event4()
-  {
-    ++count4;
-  }
-
   int count1;
   int count2;
   int count3;
-  int count4;
 };
 
 BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
@@ -67,18 +60,11 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
   i = scheduler::schedule(time::milliseconds(50), bind(&SchedulerFixture::event2, this));
   scheduler::cancel(i);
 
-  // TODO deprecate periodic event
-  i = scheduler::getGlobalScheduler().schedulePeriodicEvent(time::milliseconds(300),
-                                                            time::milliseconds(100),
-                                                            bind(&SchedulerFixture::event4, this));
-  scheduler::schedule(time::seconds(1), bind(&scheduler::cancel, i));
-
   g_io.run();
 
   BOOST_CHECK_EQUAL(count1, 1);
   BOOST_CHECK_EQUAL(count2, 0);
   BOOST_CHECK_EQUAL(count3, 1);
-  BOOST_CHECK_GT(count4, 1);
 }
 
 BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
@@ -87,8 +73,9 @@ BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
   scheduler::cancel(i);
 }
 
-struct SelfCancelFixture : protected BaseFixture
+class SelfCancelFixture : protected BaseFixture
 {
+public:
   void
   cancelSelf()
   {

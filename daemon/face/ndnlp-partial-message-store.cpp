@@ -61,9 +61,8 @@ PartialMessage::reassemble()
   return Block(buffer);
 }
 
-PartialMessageStore::PartialMessageStore(Scheduler& scheduler, const time::nanoseconds& idleDuration)
-  : m_scheduler(scheduler)
-  , m_idleDuration(idleDuration)
+PartialMessageStore::PartialMessageStore(const time::nanoseconds& idleDuration)
+  : m_idleDuration(idleDuration)
 {
 }
 
@@ -99,7 +98,7 @@ void
 PartialMessageStore::scheduleCleanup(uint64_t messageIdentifier,
                                      shared_ptr<PartialMessage> partialMessage)
 {
-  partialMessage->m_expiry = m_scheduler.scheduleEvent(m_idleDuration,
+  partialMessage->m_expiry = scheduler::schedule(m_idleDuration,
     bind(&PartialMessageStore::cleanup, this, messageIdentifier));
 }
 
@@ -112,7 +111,7 @@ PartialMessageStore::cleanup(uint64_t messageIdentifier)
     return;
   }
 
-  m_scheduler.cancelEvent(it->second->m_expiry);
+  scheduler::cancel(it->second->m_expiry);
   m_partialMessages.erase(it);
 }
 

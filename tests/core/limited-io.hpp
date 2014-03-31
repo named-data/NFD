@@ -7,6 +7,7 @@
 #ifndef NFD_TEST_CORE_LIMITED_IO_HPP
 #define NFD_TEST_CORE_LIMITED_IO_HPP
 
+#include "core/global-io.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {
@@ -18,7 +19,7 @@ class LimitedIo
 {
 public:
   LimitedIo();
-  
+
   /// indicates why .run returns
   enum StopReason
   {
@@ -31,7 +32,7 @@ public:
     /// an exception is thrown
     EXCEPTION
   };
-  
+
   /** \brief g_io.run() with operation count and/or time limit
    *
    *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
@@ -39,14 +40,14 @@ public:
    */
   StopReason
   run(int nOpsLimit, const time::nanoseconds& nTimeLimit);
-  
+
   /// count an operation
   void
   afterOp();
-  
+
   const std::exception&
   getLastException() const;
-  
+
 private:
   void
   afterTimeout();

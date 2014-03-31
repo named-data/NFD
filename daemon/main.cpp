@@ -5,7 +5,10 @@
  */
 
 #include <getopt.h>
+#include <boost/filesystem.hpp>
+
 #include "core/logger.hpp"
+#include "core/global-io.hpp"
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
@@ -13,8 +16,6 @@
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/status-server.hpp"
 #include "mgmt/config-file.hpp"
-
-#include <boost/filesystem.hpp>
 
 namespace nfd {
 

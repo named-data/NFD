@@ -134,9 +134,7 @@ class ReassembleFixture : protected BaseFixture
 {
 protected:
   ReassembleFixture()
-    : m_scheduler(m_io)
-    , m_slicer(1500)
-    , m_partialMessageStore(m_scheduler)
+    : m_slicer(1500)
   {
     m_partialMessageStore.onReceive += bind(&std::vector<Block>::push_back,
                                             &m_received, _1);
@@ -151,9 +149,6 @@ protected:
   }
 
 protected:
-  boost::asio::io_service m_io;
-  Scheduler m_scheduler;
-
   ndnlp::Slicer m_slicer;
   ndnlp::PartialMessageStore m_partialMessageStore;
 

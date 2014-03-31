@@ -5,7 +5,6 @@
  */
 
 #include "limited-io.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace tests {
@@ -26,13 +25,13 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
 {
   BOOST_ASSERT(!m_isRunning);
   m_isRunning = true;
-  
+
   m_reason = NO_WORK;
   m_nOpsRemaining = nOpsLimit;
   if (nTimeLimit >= time::nanoseconds::zero()) {
     m_timeout = scheduler::schedule(nTimeLimit, bind(&LimitedIo::afterTimeout, this));
   }
-  
+
   try {
     getGlobalIoService().run();
   }
@@ -41,7 +40,7 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
     NFD_LOG_ERROR("g_io.run() exception: " << ex.what());
     m_lastException = ex;
   }
-  
+
   getGlobalIoService().reset();
   scheduler::cancel(m_timeout);
   m_isRunning = false;
