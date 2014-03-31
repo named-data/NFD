@@ -139,26 +139,26 @@ public:
         inInterest =
           checkedReadNonNegativeIntegerType(i,
                                             status.elements_end(),
-                                            ndn::tlv::nfd::TotalIncomingInterestCounter);
+                                            ndn::tlv::nfd::NInInterests);
 
         BOOST_REQUIRE_EQUAL(inInterest, counters.getInInterest());
 
         inData =
           checkedReadNonNegativeIntegerType(i,
                                             status.elements_end(),
-                                            ndn::tlv::nfd::TotalIncomingDataCounter);
+                                            ndn::tlv::nfd::NInDatas);
 
         BOOST_REQUIRE_EQUAL(inData, counters.getInData());
 
         outInterest =
           checkedReadNonNegativeIntegerType(i,
                                             status.elements_end(),
-                                            ndn::tlv::nfd::TotalOutgoingInterestCounter);
+                                            ndn::tlv::nfd::NOutInterests);
         BOOST_REQUIRE_EQUAL(outInterest, counters.getOutInterest());
 
         outData =
           readNonNegativeIntegerType(*i,
-                                     ndn::tlv::nfd::TotalOutgoingDataCounter);
+                                     ndn::tlv::nfd::NOutDatas);
 
         BOOST_REQUIRE_EQUAL(outData, counters.getOutData());
       }

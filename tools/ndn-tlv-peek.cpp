@@ -4,7 +4,7 @@
  *
  * Author: Jerald Paul Abraham <jeraldabraham@email.arizona.edu>
  */
- 
+
 #include <boost/asio.hpp>
 
 #include <ndn-cpp-dev/face.hpp>
@@ -137,13 +137,13 @@ public:
     m_isDataReceived = true;
     if (m_isPayloadOnlySet)
       {
-        ndn::Block block = data.getContent();
-        write(1, block.value(), block.value_size());
+        const ndn::Block& block = data.getContent();
+        std::cout.write(reinterpret_cast<const char*>(block.value()), block.value_size());
       }
     else
       {
-        ndn::Block block = data.wireEncode();
-        write(1, block.wire(), block.size());
+        const ndn::Block& block = data.wireEncode();
+        std::cout.write(reinterpret_cast<const char*>(block.wire()), block.size());
       }
   }
 

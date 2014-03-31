@@ -41,19 +41,19 @@ FaceStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
       size_t statusLength = 0;
 
       statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::TotalOutgoingDataCounter,
+                                                     ndn::tlv::nfd::NOutDatas,
                                                      counters.getOutData());
 
       statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::TotalOutgoingInterestCounter,
+                                                     ndn::tlv::nfd::NOutInterests,
                                                      counters.getOutInterest());
 
       statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::TotalIncomingDataCounter,
+                                                     ndn::tlv::nfd::NInDatas,
                                                      counters.getInData());
 
       statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::TotalIncomingInterestCounter,
+                                                     ndn::tlv::nfd::NInInterests,
                                                      counters.getInInterest());
 
       statusLength += prependByteArrayBlock(outBuffer,
