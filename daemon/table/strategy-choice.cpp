@@ -53,12 +53,12 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 
   if (static_cast<bool>(entry)) {
     if (entry->getStrategy().getName() == strategyName) {
-      NFD_LOG_INFO("insert(" << prefix << "," << strategyName << ") not changing");
+      NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") not changing");
       return true;
     }
     oldStrategy = entry->getStrategy().shared_from_this();
-    NFD_LOG_INFO("insert(" << prefix << "," << strategyName << ") "
-                 "changing from " << oldStrategy->getName());
+    NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") "
+                  "changing from " << oldStrategy->getName());
   }
 
   shared_ptr<Strategy> strategy = this->getStrategy(strategyName);
@@ -72,7 +72,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     entry = make_shared<Entry>(prefix);
     nameTreeEntry->setStrategyChoiceEntry(entry);
     ++m_nItems;
-    NFD_LOG_INFO("insert(" << prefix << "," << strategyName << ") new entry");
+    NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") new entry");
   }
 
   this->changeStrategy(entry, oldStrategy, strategy);
@@ -184,7 +184,7 @@ StrategyChoice::setDefaultStrategy(shared_ptr<Strategy> strategy)
   shared_ptr<Entry> entry = make_shared<Entry>(Name());
   nameTreeEntry->setStrategyChoiceEntry(entry);
   ++m_nItems;
-  NFD_LOG_INFO("setDefaultStrategy(" << strategy->getName() << ") new entry");
+  NFD_LOG_INFO("Set default strategy " << strategy->getName());
 
   entry->setStrategy(strategy);
 }

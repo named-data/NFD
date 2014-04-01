@@ -36,7 +36,7 @@ FaceTable::add(shared_ptr<Face> face)
   FaceId faceId = ++m_lastFaceId;
   face->setId(faceId);
   m_faces[faceId] = face;
-  NFD_LOG_INFO("addFace id=" << faceId);
+  NFD_LOG_INFO("Added face id=" << faceId << " uri=" << face->getUri());
 
   face->onReceiveInterest += bind(&Forwarder::onInterest,
                                   &m_forwarder, boost::ref(*face), _1);
@@ -56,7 +56,7 @@ FaceTable::remove(shared_ptr<Face> face)
   FaceId faceId = face->getId();
   m_faces.erase(faceId);
   face->setId(INVALID_FACEID);
-  NFD_LOG_INFO("removeFace id=" << faceId);
+  NFD_LOG_INFO("Removed face id=" << faceId << " uri=" << face->getUri());
 
   // XXX This clears all subscriptions, because EventEmitter
   //     does not support only removing Forwarder's subscription

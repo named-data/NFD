@@ -134,7 +134,7 @@ Entry::printIterators() const
        it != m_layerIterators.end();
        ++it)
     {
-      NFD_LOG_DEBUG("[" << it->first << "]" << " " << &(*it->second));
+      NFD_LOG_TRACE("[" << it->first << "]" << " " << &(*it->second));
     }
 }
 

@@ -65,12 +65,12 @@ NameTree::~NameTree()
 std::pair<shared_ptr<name_tree::Entry>, bool>
 NameTree::insert(const Name& prefix)
 {
-  NFD_LOG_DEBUG("insert " << prefix);
+  NFD_LOG_TRACE("insert " << prefix);
 
   uint32_t hashValue = name_tree::hashName(prefix);
   uint32_t loc = hashValue % m_nBuckets;
 
-  NFD_LOG_DEBUG("Name " << prefix << " hash value = " << hashValue << "  location = " << loc);
+  NFD_LOG_TRACE("Name " << prefix << " hash value = " << hashValue << "  location = " << loc);
 
   // Check if this Name has been stored
   name_tree::Node* node = m_buckets[loc];
@@ -88,7 +88,7 @@ NameTree::insert(const Name& prefix)
       nodePrev = node;
     }
 
-  NFD_LOG_DEBUG("Did not find " << prefix << ", need to insert it to the table");
+  NFD_LOG_TRACE("Did not find " << prefix << ", need to insert it to the table");
 
   // If no bucket is empty occupied, we need to create a new node, and it is
   // linked from nodePrev
@@ -117,7 +117,7 @@ NameTree::insert(const Name& prefix)
 shared_ptr<name_tree::Entry>
 NameTree::lookup(const Name& prefix)
 {
-  NFD_LOG_DEBUG("lookup " << prefix);
+  NFD_LOG_TRACE("lookup " << prefix);
 
   shared_ptr<name_tree::Entry> entry;
   shared_ptr<name_tree::Entry> parent;
@@ -155,12 +155,12 @@ NameTree::lookup(const Name& prefix)
 shared_ptr<name_tree::Entry>
 NameTree::findExactMatch(const Name& prefix) const
 {
-  NFD_LOG_DEBUG("findExactMatch " << prefix);
+  NFD_LOG_TRACE("findExactMatch " << prefix);
 
   uint32_t hashValue = name_tree::hashName(prefix);
   uint32_t loc = hashValue % m_nBuckets;
 
-  NFD_LOG_DEBUG("Name " << prefix << " hash value = " << hashValue <<
+  NFD_LOG_TRACE("Name " << prefix << " hash value = " << hashValue <<
                 "  location = " << loc);
 
   shared_ptr<name_tree::Entry> entry;
@@ -189,7 +189,7 @@ NameTree::findExactMatch(const Name& prefix) const
 shared_ptr<name_tree::Entry>
 NameTree::findLongestPrefixMatch(const Name& prefix, const name_tree::EntrySelector& entrySelector) const
 {
-  NFD_LOG_DEBUG("findLongestPrefixMatch " << prefix);
+  NFD_LOG_TRACE("findLongestPrefixMatch " << prefix);
 
   shared_ptr<name_tree::Entry> entry;
 
@@ -222,7 +222,7 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
 {
   BOOST_ASSERT(static_cast<bool>(entry));
 
-  NFD_LOG_DEBUG("eraseEntryIfEmpty " << entry->getPrefix());
+  NFD_LOG_TRACE("eraseEntryIfEmpty " << entry->getPrefix());
 
   // first check if this Entry can be erased
   if (entry->isEmpty())
@@ -291,7 +291,7 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
 NameTree::const_iterator
 NameTree::fullEnumerate(const name_tree::EntrySelector& entrySelector) const
 {
-  NFD_LOG_DEBUG("fullEnumerate");
+  NFD_LOG_TRACE("fullEnumerate");
 
   // find the first eligible entry
   for (size_t i = 0; i < m_nBuckets; i++)
@@ -347,7 +347,7 @@ NameTree::const_iterator
 NameTree::findAllMatches(const Name& prefix,
                          const name_tree::EntrySelector& entrySelector) const
 {
-  NFD_LOG_DEBUG("NameTree::findAllMatches" << prefix);
+  NFD_LOG_TRACE("NameTree::findAllMatches" << prefix);
 
   // As we are using Name Prefix Hash Table, and the current LPM() is
   // implemented as starting from full name, and reduce the number of
@@ -370,7 +370,7 @@ NameTree::findAllMatches(const Name& prefix,
 void
 NameTree::resize(size_t newNBuckets)
 {
-  NFD_LOG_DEBUG("resize");
+  NFD_LOG_TRACE("resize");
 
   name_tree::Node** newBuckets = new name_tree::Node*[newNBuckets];
   size_t count = 0;
@@ -424,7 +424,7 @@ NameTree::resize(size_t newNBuckets)
 void
 NameTree::dump(std::ostream& output) const
 {
-  NFD_LOG_DEBUG("dump()");
+  NFD_LOG_TRACE("dump()");
 
   name_tree::Node* node = 0;
   shared_ptr<name_tree::Entry> entry;
@@ -493,7 +493,7 @@ NameTree::const_iterator::const_iterator(NameTree::IteratorType type,
 NameTree::const_iterator
 NameTree::const_iterator::operator++()
 {
-  NFD_LOG_DEBUG("const_iterator::operator++()");
+  NFD_LOG_TRACE("const_iterator::operator++()");
 
   BOOST_ASSERT(m_entry != m_nameTree.m_end);
 

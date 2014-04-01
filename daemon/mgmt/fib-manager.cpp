@@ -89,19 +89,19 @@ FibManager::onFibRequest(const Interest& request)
   UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
   if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
     {
-      NFD_LOG_INFO("command result: processing verb: " << verb);
+      NFD_LOG_DEBUG("command result: processing verb: " << verb);
       (unsignedVerbProcessor->second)(this, boost::cref(request));
     }
   else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
            commandNComps < COMMAND_SIGNED_NCOMPS)
     {
-      NFD_LOG_INFO("command result: unsigned verb: " << command);
+      NFD_LOG_DEBUG("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
     }
   else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
            !COMMAND_PREFIX.isPrefixOf(command))
     {
-      NFD_LOG_INFO("command result: malformed");
+      NFD_LOG_DEBUG("command result: malformed");
       sendResponse(command, 400, "Malformed command");
     }
   else
@@ -125,7 +125,7 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
       ControlParameters parameters;
       if (!extractParameters(parameterComponent, parameters) || !parameters.hasFaceId())
         {
-          NFD_LOG_INFO("command result: malformed verb: " << verb);
+          NFD_LOG_DEBUG("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
           return;
         }
@@ -135,14 +135,14 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
           parameters.setFaceId(request->getIncomingFaceId());
         }
 
-      NFD_LOG_INFO("command result: processing verb: " << verb);
+      NFD_LOG_DEBUG("command result: processing verb: " << verb);
       ControlResponse response;
       (signedVerbProcessor->second)(this, parameters, response);
       sendResponse(command, response);
     }
   else
     {
-      NFD_LOG_INFO("command result: unsupported verb: " << verb);
+      NFD_LOG_DEBUG("command result: unsupported verb: " << verb);
       sendResponse(command, 501, "Unsupported command");
     }
 }
@@ -155,7 +155,7 @@ FibManager::addNextHop(ControlParameters& parameters,
 
   if (!validateParameters(command, parameters))
     {
-      NFD_LOG_INFO("add-nexthop result: FAIL reason: malformed");
+      NFD_LOG_DEBUG("add-nexthop result: FAIL reason: malformed");
       setResponse(response, 400, "Malformed command");
       return;
     }
@@ -164,7 +164,7 @@ FibManager::addNextHop(ControlParameters& parameters,
   FaceId faceId = parameters.getFaceId();
   uint64_t cost = parameters.getCost();
 
-  NFD_LOG_DEBUG("add-nexthop prefix: " << prefix
+  NFD_LOG_TRACE("add-nexthop prefix: " << prefix
                 << " faceid: " << faceId
                 << " cost: " << cost);
 
@@ -175,17 +175,16 @@ FibManager::addNextHop(ControlParameters& parameters,
 
       entry->addNextHop(nextHopFace, cost);
 
-      NFD_LOG_INFO("add-nexthop result: OK"
-                   << " prefix:" << prefix
-                   << " faceid: " << faceId
-                   << " cost: " << cost);
+      NFD_LOG_DEBUG("add-nexthop result: OK"
+                    << " prefix:" << prefix
+                    << " faceid: " << faceId
+                    << " cost: " << cost);
 
-      NFD_LOG_INFO("add-nexthop result: SUCCESS");
       setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else
     {
-      NFD_LOG_INFO("add-nexthop result: FAIL reason: unknown-faceid: " << faceId);
+      NFD_LOG_DEBUG("add-nexthop result: FAIL reason: unknown-faceid: " << faceId);
       setResponse(response, 410, "Face not found");
     }
 }
@@ -197,12 +196,12 @@ FibManager::removeNextHop(ControlParameters& parameters,
   ndn::nfd::FibRemoveNextHopCommand command;
   if (!validateParameters(command, parameters))
     {
-      NFD_LOG_INFO("remove-nexthop result: FAIL reason: malformed");
+      NFD_LOG_DEBUG("remove-nexthop result: FAIL reason: malformed");
       setResponse(response, 400, "Malformed command");
       return;
     }
 
-  NFD_LOG_DEBUG("remove-nexthop prefix: " << parameters.getName()
+  NFD_LOG_TRACE("remove-nexthop prefix: " << parameters.getName()
                 << " faceid: " << parameters.getFaceId());
 
   shared_ptr<Face> faceToRemove = m_getFace(parameters.getFaceId());
@@ -212,17 +211,26 @@ FibManager::removeNextHop(ControlParameters& parameters,
       if (static_cast<bool>(entry))
         {
           entry->removeNextHop(faceToRemove);
-          NFD_LOG_INFO("remove-nexthop result: OK prefix: " << parameters.getName()
-                       << " faceid: " << parameters.getFaceId());
+          NFD_LOG_DEBUG("remove-nexthop result: OK prefix: " << parameters.getName()
+                        << " faceid: " << parameters.getFaceId());
 
           if (!entry->hasNextHops())
             {
               m_managedFib.erase(*entry);
             }
         }
+      else
+        {
+          NFD_LOG_DEBUG("remove-nexthop result: OK, but entry for face id "
+                        << parameters.getFaceId() << " not found");
+        }
+    }
+  else
+    {
+      NFD_LOG_DEBUG("remove-nexthop result: OK, but face id "
+                    << parameters.getFaceId() << " not found");
     }
 
-  NFD_LOG_INFO("remove-nexthop result: SUCCESS");
   setResponse(response, 200, "Success", parameters.wireEncode());
 }
 
@@ -235,7 +243,7 @@ FibManager::listEntries(const Interest& request)
   if (commandNComps < LIST_COMMAND_NCOMPS ||
       !LIST_COMMAND_PREFIX.isPrefixOf(command))
     {
-      NFD_LOG_INFO("command result: malformed");
+      NFD_LOG_DEBUG("command result: malformed");
       sendResponse(command, 400, "Malformed command");
       return;
     }

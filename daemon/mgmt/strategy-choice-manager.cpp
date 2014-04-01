@@ -47,7 +47,7 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
   if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
       commandNComps < COMMAND_SIGNED_NCOMPS)
     {
-      NFD_LOG_INFO("command result: unsigned verb: " << command);
+      NFD_LOG_DEBUG("command result: unsigned verb: " << command);
       sendResponse(command, 401, "Signature required");
 
       return;
@@ -55,7 +55,7 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
   else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
            !COMMAND_PREFIX.isPrefixOf(command))
     {
-      NFD_LOG_INFO("command result: malformed");
+      NFD_LOG_DEBUG("command result: malformed");
       sendResponse(command, 400, "Malformed command");
       return;
     }
@@ -93,7 +93,7 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
     }
   else
     {
-      NFD_LOG_INFO("command result: unsupported verb: " << verb);
+      NFD_LOG_DEBUG("command result: unsupported verb: " << verb);
       setResponse(response, 501, "Unsupported command");
     }
 
@@ -108,7 +108,7 @@ StrategyChoiceManager::setStrategy(ControlParameters& parameters,
 
   if (!validateParameters(command, parameters))
     {
-      NFD_LOG_INFO("strategy-choice result: FAIL reason: malformed");
+      NFD_LOG_DEBUG("strategy-choice result: FAIL reason: malformed");
       setResponse(response, 400, "Malformed command");
       return;
     }
@@ -118,20 +118,20 @@ StrategyChoiceManager::setStrategy(ControlParameters& parameters,
 
   if (!m_strategyChoice.hasStrategy(selectedStrategy))
     {
-      NFD_LOG_INFO("strategy-choice result: FAIL reason: unknown-strategy: "
-                   << parameters.getStrategy());
+      NFD_LOG_DEBUG("strategy-choice result: FAIL reason: unknown-strategy: "
+                    << parameters.getStrategy());
       setResponse(response, 504, "Unsupported strategy");
       return;
     }
 
   if (m_strategyChoice.insert(prefix, selectedStrategy))
     {
-      NFD_LOG_INFO("strategy-choice result: SUCCESS");
+      NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
       setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else
     {
-      NFD_LOG_INFO("strategy-choice result: FAIL reason: not-installed");
+      NFD_LOG_DEBUG("strategy-choice result: FAIL reason: not-installed");
       setResponse(response, 405, "Strategy not installed");
     }
 }
@@ -147,12 +147,12 @@ StrategyChoiceManager::unsetStrategy(ControlParameters& parameters,
       static const Name ROOT_PREFIX;
       if (parameters.hasName() && parameters.getName() == ROOT_PREFIX)
         {
-          NFD_LOG_INFO("strategy-choice result: FAIL reason: unset-root");
+          NFD_LOG_DEBUG("strategy-choice result: FAIL reason: unset-root");
           setResponse(response, 403, "Cannot unset root prefix strategy");
         }
       else
         {
-          NFD_LOG_INFO("strategy-choice result: FAIL reason: malformed");
+          NFD_LOG_DEBUG("strategy-choice result: FAIL reason: malformed");
           setResponse(response, 400, "Malformed command");
         }
       return;
@@ -160,7 +160,7 @@ StrategyChoiceManager::unsetStrategy(ControlParameters& parameters,
 
   m_strategyChoice.erase(parameters.getName());
 
-  NFD_LOG_INFO("strategy-choice result: SUCCESS");
+  NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
   setResponse(response, 200, "Success", parameters.wireEncode());
 }
 
