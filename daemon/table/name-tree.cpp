@@ -398,6 +398,7 @@ NameTree::resize(size_t newNBuckets)
           BOOST_ASSERT(static_cast<bool>(p->m_entry));
           h = p->m_entry->m_hash;
           b = h % newNBuckets;
+          pre = 0;
           for (pp = &newBuckets[b]; *pp != 0; pp = &((*pp)->m_next))
             {
               pre = *pp;
