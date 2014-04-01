@@ -10,7 +10,10 @@ int
 main(int argc, char** argv)
 {
   try {
-    ndn::nrd::Nrd nrd;
+    // TODO: the configFilename should be obtained from command line arguments.
+    std::string configFilename("nrd.conf");
+
+    ndn::nrd::Nrd nrd(configFilename);
     nrd.enableLocalControlHeader();
     nrd.listen();
   }

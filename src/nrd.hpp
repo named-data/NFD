@@ -15,7 +15,8 @@ namespace nrd {
 class Nrd
 {
 public:
-  Nrd();
+  explicit
+  Nrd(const std::string& validatorConfig);
 
   void
   onRibRequest(const Interest& request);
@@ -35,6 +36,14 @@ private:
   sendResponse(const Name& name,
                uint32_t code,
                const std::string& text);
+
+  void
+  onRibRequestValidated(const shared_ptr<const Interest>& request);
+
+  void
+  onRibRequestValidationFailed(const shared_ptr<const Interest>& request,
+                               const std::string& failureInfo);
+
   void
   onCommandError(uint32_t code, const std::string& error,
                  const ndn::Interest& interest,
@@ -66,8 +75,9 @@ private:
                  PrefixRegOptions& extractedOptions);
 private:
   Rib m_managedRib;
-  ndn::Face m_face;
+  ndn::shared_ptr<ndn::Face> m_face;
   ndn::KeyChain m_keyChain;
+  ndn::ValidatorConfig m_validator;
   shared_ptr<nfd::Controller> m_nfdController;
 
   typedef boost::function<void(Nrd*,

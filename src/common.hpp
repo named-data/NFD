@@ -12,6 +12,7 @@
 
 #include <ndn-cpp-dev/face.hpp>
 #include <ndn-cpp-dev/security/key-chain.hpp>
+#include <ndn-cpp-dev/security/validator-config.hpp>
 #include <ndn-cpp-dev/util/scheduler.hpp>
 
 #include <ndn-cpp-dev/management/nfd-controller.hpp>

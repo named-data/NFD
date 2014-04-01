@@ -38,27 +38,31 @@ void
 Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
 {
   std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
-  m_face.shutdown();
+  m_face->shutdown();
 }
 
-Nrd::Nrd()
-  : m_nfdController(new nfd::Controller(m_face))
+Nrd::Nrd(const std::string& validatorConfig)
+  : m_face(new Face())
+  , m_validator(m_face)
+  , m_nfdController(new nfd::Controller(*m_face))
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
   //check whether the components of localhop and localhost prefixes are same
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
+  m_validator.load(validatorConfig);
+
   std::cerr << "Setting interest filter on: " << COMMAND_PREFIX.toUri() << std::endl;
-  m_face.setController(m_nfdController);
-  m_face.setInterestFilter(COMMAND_PREFIX.toUri(),
-                           bind(&Nrd::onRibRequest, this, _2),
-                           bind(&Nrd::setInterestFilterFailed, this, _1, _2));
+  m_face->setController(m_nfdController);
+  m_face->setInterestFilter(COMMAND_PREFIX.toUri(),
+                            bind(&Nrd::onRibRequest, this, _2),
+                            bind(&Nrd::setInterestFilterFailed, this, _1, _2));
 
   std::cerr << "Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri() << std::endl;
-  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
-                           bind(&Nrd::onRibRequest, this, _2),
-                           bind(&Nrd::setInterestFilterFailed, this, _1, _2));
+  m_face->setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
+                            bind(&Nrd::onRibRequest, this, _2),
+                            bind(&Nrd::setInterestFilterFailed, this, _1, _2));
 }
 
 void
@@ -71,7 +75,7 @@ Nrd::sendResponse(const Name& name,
   responseData.setContent(encodedControl);
 
   m_keyChain.sign(responseData);
-  m_face.put(responseData);
+  m_face->put(responseData);
 }
 
 void
@@ -86,24 +90,15 @@ Nrd::sendResponse(const Name& name,
 void
 Nrd::onRibRequest(const Interest& request)
 {
-  const Name& command = request.getName();
-  const size_t commandNComps = command.size();
+  m_validator.validate(request,
+                       bind(&Nrd::onRibRequestValidated, this, _1),
+                       bind(&Nrd::onRibRequestValidationFailed, this, _1, _2));
+}
 
-  if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
-      commandNComps < COMMAND_SIGNED_NCOMPS)
-    {
-      std::cerr << "Error: Signature required" << std::endl;
-      sendResponse(command, 401, "Signature required");
-      return;
-    }
-  else if (commandNComps < COMMAND_SIGNED_NCOMPS ||
-      !(COMMAND_PREFIX.isPrefixOf(command)  ||
-       REMOTE_COMMAND_PREFIX.isPrefixOf(command)))
-  {
-      std::cerr << "Error: Malformed Command" << std::endl;
-      sendResponse(command, 400, "Malformed command");
-      return;
-    }
+void
+Nrd::onRibRequestValidated(const shared_ptr<const Interest>& request)
+{
+  const Name& command = request->getName();
 
   //REMOTE_COMMAND_PREFIX number of componenets are same as
   // NRD_COMMAND_PREFIX's so no extra checks are required.
@@ -113,7 +108,7 @@ Nrd::onRibRequest(const Interest& request)
   if (verbProcessor != m_verbDispatch.end())
     {
       PrefixRegOptions options;
-      if (!extractOptions(request, options))
+      if (!extractOptions(*request, options))
         {
           sendResponse(command, 400, "Malformed command");
           return;
@@ -122,21 +117,28 @@ Nrd::onRibRequest(const Interest& request)
       /// \todo authorize command
       if (false)
         {
-          sendResponse(request.getName(), 403, "Unauthorized command");
+          sendResponse(request->getName(), 403, "Unauthorized command");
           return;
         }
 
       // \todo add proper log support
       std::cout << "Received options (name, faceid, cost): " << options.getName() <<
-                   ", " << options.getFaceId() << ", "  << options.getCost() << std::endl;
+        ", " << options.getFaceId() << ", "  << options.getCost() << std::endl;
 
       nfd::ControlResponse response;
-      (verbProcessor->second)(this, request, options);
+      (verbProcessor->second)(this, *request, options);
     }
   else
     {
-      sendResponse(request.getName(), 501, "Unsupported command");
+      sendResponse(request->getName(), 501, "Unsupported command");
     }
+}
+
+void
+Nrd::onRibRequestValidationFailed(const shared_ptr<const Interest>& request,
+                                  const std::string& failureInfo)
+{
+  sendResponse(request->getName(), 403, failureInfo);
 }
 
 bool
@@ -202,8 +204,8 @@ Nrd::onUnRegSuccess(const Interest& request, const PrefixRegOptions& options)
   response.setBody(options.wireEncode());
 
   std::cout << "Success: Name unregistered (" <<
-                options.getName() << ", " <<
-                options.getFaceId() << ")" << std::endl;
+    options.getName() << ", " <<
+    options.getFaceId() << ")" << std::endl;
   sendResponse(request.getName(), response);
   m_managedRib.erase(options);
 }
@@ -218,7 +220,7 @@ Nrd::onRegSuccess(const Interest& request, const PrefixRegOptions& options)
   response.setBody(options.wireEncode());
 
   std::cout << "Success: Name registered (" << options.getName() << ", " <<
-                                               options.getFaceId() << ")" << std::endl;
+    options.getFaceId() << ")" << std::endl;
   sendResponse(request.getName(), response);
 }
 
@@ -232,13 +234,12 @@ Nrd::insertEntry(const Interest& request, const PrefixRegOptions& options)
   // will add next hops one by one..
   m_managedRib.insert(options);
   m_nfdController->start<nfd::FibAddNextHopCommand>(
-     nfd::ControlParameters()
-       .setName(options.getName())
-       .setFaceId(options.getFaceId())
-       .setCost(options.getCost()),
-     bind(&Nrd::onRegSuccess, this, request, options),
-     bind(&Nrd::onCommandError, this, _1, _2, request, options)
-  );
+    nfd::ControlParameters()
+      .setName(options.getName())
+      .setFaceId(options.getFaceId())
+      .setCost(options.getCost()),
+    bind(&Nrd::onRegSuccess, this, request, options),
+    bind(&Nrd::onCommandError, this, _1, _2, request, options));
 }
 
 
@@ -246,12 +247,11 @@ void
 Nrd::deleteEntry(const Interest& request, const PrefixRegOptions& options)
 {
   m_nfdController->start<nfd::FibRemoveNextHopCommand>(
-     nfd::ControlParameters()
-       .setName(options.getName())
-       .setFaceId(options.getFaceId()),
-     bind(&Nrd::onUnRegSuccess, this, request, options),
-     bind(&Nrd::onCommandError, this, _1, _2, request, options)
-  );
+    nfd::ControlParameters()
+      .setName(options.getName())
+      .setFaceId(options.getFaceId()),
+    bind(&Nrd::onUnRegSuccess, this, request, options),
+    bind(&Nrd::onCommandError, this, _1, _2, request, options));
 }
 
 
@@ -259,7 +259,7 @@ void
 Nrd::listen()
 {
   std::cout << "NRD started: listening for incoming interests" << std::endl;
-  m_face.processEvents();
+  m_face->processEvents();
 }
 
 
@@ -275,7 +275,7 @@ Nrd::onControlHeaderError(uint32_t code, const std::string& reason)
 {
   std::cout << "Error: couldn't enable local control header "
             << "(code: " << code << ", info: " << reason << ")" << std::endl;
-  m_face.shutdown();
+  m_face->shutdown();
 }
 
 
@@ -286,8 +286,7 @@ Nrd::enableLocalControlHeader()
     nfd::ControlParameters()
       .setLocalControlFeature(nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
     bind(&Nrd::onControlHeaderSuccess, this),
-    bind(&Nrd::onControlHeaderError, this, _1, _2)
-  );
+    bind(&Nrd::onControlHeaderError, this, _1, _2));
 }
 
 } // namespace nrd
