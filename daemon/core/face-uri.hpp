@@ -11,22 +11,34 @@
 
 namespace nfd {
 
-/// represents a URI in Face Management protocol
+#ifdef HAVE_PCAP
+namespace ethernet {
+class Address;
+} // namespace ethernet
+#endif // HAVE_PCAP
+
+/** \brief represents the underlying protocol and address used by a Face
+ *  \sa http://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#FaceUri
+ */
 class FaceUri
 {
 public:
-  class Error : public std::runtime_error
+  class Error : public std::invalid_argument
   {
   public:
-    Error(const std::string& what) : std::runtime_error(what) {}
+    explicit
+    Error(const std::string& what)
+      : std::invalid_argument(what)
+    {
+    }
   };
 
   FaceUri();
 
   /** \brief construct by parsing
    *
-   * \param uri scheme://domain[:port]/path
-   * \throw FaceUri::Error if URI cannot be parsed
+   *  \param uri scheme://host[:port]/path
+   *  \throw FaceUri::Error if URI cannot be parsed
    */
   explicit
   FaceUri(const std::string& uri);
@@ -36,19 +48,40 @@ public:
   explicit
   FaceUri(const char* uri);
 
-  explicit
-  FaceUri(const boost::asio::ip::tcp::endpoint& endpoint);
-
-  explicit
-  FaceUri(const boost::asio::ip::udp::endpoint& endpoint);
-
-  explicit
-  FaceUri(const boost::asio::local::stream_protocol::endpoint& endpoint);
-
   /// exception-safe parsing
   bool
   parse(const std::string& uri);
 
+public: // scheme-specific construction
+  /// construct tcp4 or tcp6 canonical FaceUri
+  explicit
+  FaceUri(const boost::asio::ip::tcp::endpoint& endpoint);
+
+  /// construct udp4 or udp6 canonical FaceUri
+  explicit
+  FaceUri(const boost::asio::ip::udp::endpoint& endpoint);
+
+#ifdef HAVE_UNIX_SOCKETS
+  /// construct unix canonical FaceUri
+  explicit
+  FaceUri(const boost::asio::local::stream_protocol::endpoint& endpoint);
+#endif // HAVE_UNIX_SOCKETS
+
+  /// create fd FaceUri from file descriptor
+  static FaceUri
+  fromFd(int fd);
+
+#ifdef HAVE_PCAP
+  /// construct ether canonical FaceUri
+  explicit
+  FaceUri(const ethernet::Address& address);
+#endif // HAVE_PCAP
+
+  /// create dev FaceUri from network device name
+  static FaceUri
+  fromDev(const std::string& ifname);
+
+public: // getters
   /// get scheme (protocol)
   const std::string&
   getScheme() const;
@@ -76,12 +109,13 @@ private:
   bool m_isV6;
   std::string m_port;
   std::string m_path;
-  
+
   friend std::ostream& operator<<(std::ostream& os, const FaceUri& uri);
 };
 
 inline
 FaceUri::FaceUri()
+  : m_isV6(false)
 {
 }
 
