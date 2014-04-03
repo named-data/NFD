@@ -21,7 +21,7 @@ class DummyFaceImpl : public FaceBase
 {
 public:
   DummyFaceImpl()
-    : FaceBase(FaceUri("dummy://"))
+    : FaceBase(FaceUri("dummy://"), FaceUri("dummy://"))
   {
   }
 

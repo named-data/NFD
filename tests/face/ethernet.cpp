@@ -99,9 +99,10 @@ BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
 
   BOOST_CHECK(!face->isOnDemand());
   BOOST_CHECK_EQUAL(face->isLocal(), false);
-  BOOST_CHECK_EQUAL(face->getUri().toString(),
-                    "ether://" + m_interfaces.front()->name + "/" +
-                    ethernet::getDefaultMulticastAddress().toString(':'));
+  BOOST_CHECK_EQUAL(face->getRemoteUri().toString(),
+                    "ether://" + ethernet::getDefaultMulticastAddress().toString(':'));
+  BOOST_CHECK_EQUAL(face->getLocalUri().toString(),
+                    "dev://" + m_interfaces.front()->name);
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");

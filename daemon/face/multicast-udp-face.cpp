@@ -10,8 +10,11 @@ namespace nfd {
 
 NFD_LOG_INIT("MulticastUdpFace");
 
-MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& socket)
-  : DatagramFace<protocol>(FaceUri(socket->local_endpoint()), socket, false)
+MulticastUdpFace::MulticastUdpFace(const shared_ptr<protocol::socket>& socket,
+                                   const protocol::endpoint& localEndpoint)
+  : DatagramFace<protocol>(FaceUri(socket->local_endpoint()),
+                           FaceUri(localEndpoint),
+                           socket, false)
   , m_multicastGroup(m_socket->local_endpoint())
 {
   NFD_LOG_INFO("Creating multicast UDP face for group " << m_multicastGroup);

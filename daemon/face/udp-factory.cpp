@@ -11,7 +11,7 @@
 namespace nfd {
 
 using namespace boost::asio;
-  
+
 NFD_LOG_INIT("UdpFactory");
 
 UdpFactory::UdpFactory(const std::string& defaultPort/* = "6363"*/)
@@ -24,18 +24,18 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
                           const time::seconds& timeout)
 {
   NFD_LOG_DEBUG("Creating unicast " << endpoint);
-  
+
   shared_ptr<UdpChannel> channel = findChannel(endpoint);
   if (static_cast<bool>(channel))
     return channel;
 
-  
-  //checking if the endpoint is already in use for multicast face 
+
+  //checking if the endpoint is already in use for multicast face
   shared_ptr<MulticastUdpFace> multicast = findMulticastFace(endpoint);
   if (static_cast<bool>(multicast))
     throw Error("Cannot create the requested UDP unicast channel, local "
                 "endpoint is already allocated for a UDP multicast face");
-  
+
   if (endpoint.address().is_multicast()) {
     throw Error("This method is only for unicast channel. The provided "
                 "endpoint is multicast. Use createMulticastFace to "
@@ -72,7 +72,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                   "endpoint is already allocated for a UDP multicast face "
                   "on a different multicast group");
   }
-  
+
   //checking if the local endpoint is already in use for an unicast channel
   shared_ptr<UdpChannel> unicast = findChannel(localEndpoint);
   if (static_cast<bool>(unicast)) {
@@ -83,7 +83,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {
     throw Error("IPv6 multicast is not supported yet. Please provide an IPv4 address");
   }
-  
+
   if (localEndpoint.port() != multicastEndpoint.port()) {
     throw Error("Cannot create the requested UDP multicast face, "
                 "both endpoints should have the same port number. ");
@@ -96,7 +96,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 
   shared_ptr<ip::udp::socket> clientSocket =
     make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
- 
+
   clientSocket->open(multicastEndpoint.protocol());
 
   clientSocket->set_option(ip::udp::socket::reuse_address(true));
@@ -118,7 +118,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 
   clientSocket->set_option(ip::multicast::enable_loopback(false));
 
-  multicastFace = make_shared<MulticastUdpFace>(boost::cref(clientSocket));
+  multicastFace = make_shared<MulticastUdpFace>(boost::cref(clientSocket), localEndpoint);
   multicastFace->onFail += bind(&UdpFactory::afterFaceFailed, this, localEndpoint);
 
   m_multicastFaces[localEndpoint] = multicastFace;
@@ -131,7 +131,7 @@ UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastIp,
                                 const std::string& multicastPort)
 {
-  
+
   return createMulticastFace(UdpResolver::syncResolve(localIp,
                                                       multicastPort),
                              UdpResolver::syncResolve(multicastIp,
@@ -148,7 +148,7 @@ UdpFactory::createFace(const FaceUri& uri,
     addressSelector = resolver::Ipv4Address();
   else if (uri.getScheme() == "udp6")
     addressSelector = resolver::Ipv6Address();
-  
+
   UdpResolver::asyncResolve(uri.getHost(),
                             uri.getPort().empty() ? m_defaultPort : uri.getPort(),
                             bind(&UdpFactory::continueCreateFaceAfterResolve, this, _1,
@@ -167,9 +167,9 @@ UdpFactory::continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
     onConnectFailed("The provided address is multicast. Please use createMulticastFace method");
     return;
   }
-  
+
   // very simple logic for now
-  
+
   for (ChannelMap::iterator channel = m_channels.begin();
        channel != m_channels.end();
        ++channel)

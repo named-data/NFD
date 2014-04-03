@@ -25,8 +25,7 @@ public:
   /**
    * \brief Create instance of StreamFace
    */
-  explicit
-  StreamFace(const FaceUri& uri,
+  StreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
              const shared_ptr<typename protocol::socket>& socket,
              bool isOnDemand);
 
@@ -100,10 +99,10 @@ struct StreamFaceValidator
 
 template<class T, class FaceBase>
 inline
-StreamFace<T, FaceBase>::StreamFace(const FaceUri& uri,
-                                    const shared_ptr<typename StreamFace::protocol::socket>& socket,
-                                    bool isOnDemand)
-  : FaceBase(uri)
+StreamFace<T, FaceBase>::StreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                const shared_ptr<typename StreamFace::protocol::socket>& socket,
+                bool isOnDemand)
+  : FaceBase(remoteUri, localUri)
   , m_socket(socket)
   , m_inputBufferSize(0)
 {

@@ -8,9 +8,6 @@
 
 namespace nfd {
 
-// The whole purpose of this file is to specialize the logger,
-// otherwise, everything could be put into the header file.
-
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, TcpFace::protocol, "TcpFace");
 
 NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
@@ -18,14 +15,17 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 "TcpLocalFace");
 
 TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket, bool isOnDemand)
-  : StreamFace<protocol>(FaceUri(socket->remote_endpoint()), socket, isOnDemand)
+  : StreamFace<protocol>(FaceUri(socket->remote_endpoint()),
+                         FaceUri(socket->local_endpoint()),
+                         socket, isOnDemand)
 {
 }
 
-//
-
-TcpLocalFace::TcpLocalFace(const shared_ptr<TcpLocalFace::protocol::socket>& socket, bool isOnDemand)
-  : StreamFace<protocol, LocalFace>(FaceUri(socket->remote_endpoint()), socket, isOnDemand)
+TcpLocalFace::TcpLocalFace(const shared_ptr<TcpLocalFace::protocol::socket>& socket,
+                           bool isOnDemand)
+  : StreamFace<protocol, LocalFace>(FaceUri(socket->remote_endpoint()),
+                                    FaceUri(socket->local_endpoint()),
+                                    socket, isOnDemand)
 {
 }
 

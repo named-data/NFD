@@ -25,7 +25,7 @@ NFD_LOG_INIT("EthernetFace")
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
                            const shared_ptr<NetworkInterfaceInfo>& interface,
                            const ethernet::Address& address)
-  : Face(FaceUri("ether://" + interface->name + "/" + address.toString(':')))
+  : Face(FaceUri(address), FaceUri::fromDev(interface->name))
   , m_socket(socket)
   , m_interfaceName(interface->name)
   , m_srcAddress(interface->etherAddress)

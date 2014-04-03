@@ -32,18 +32,20 @@ public:
   /**
    * \brief Face-related error
    */
-  struct Error : public std::runtime_error
+  class Error : public std::runtime_error
   {
-    Error(const std::string& what) : std::runtime_error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
   };
 
-  Face(const FaceUri& uri, bool isLocal = false);
+  Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal = false);
 
   virtual
   ~Face();
-
-  FaceId
-  getId() const;
 
   /// fires when an Interest is received
   EventEmitter<Interest> onReceiveInterest;
@@ -75,6 +77,10 @@ public:
    */
   virtual void
   close() = 0;
+
+public: // attributes
+  FaceId
+  getId() const;
 
   /** \brief Set the description
    *
@@ -114,8 +120,20 @@ public:
   const FaceCounters&
   getCounters() const;
 
+  /** \deprecated use getRemoteUri instead
+   */
   const FaceUri&
   getUri() const;
+
+  /** \return a FaceUri that represents the remote endpoint
+   */
+  const FaceUri&
+  getRemoteUri() const;
+
+  /** \return a FaceUri that represents the local endpoint (NFD side)
+   */
+  const FaceUri&
+  getLocalUri() const;
 
 protected:
   // this is a non-virtual method
@@ -137,7 +155,8 @@ private:
   std::string m_description;
   bool m_isLocal; // for scoping purposes
   FaceCounters m_counters;
-  FaceUri m_uri;
+  FaceUri m_remoteUri;
+  FaceUri m_localUri;
   bool m_isOnDemand;
 
   // allow setting FaceId
@@ -166,7 +185,19 @@ Face::getMutableCounters()
 inline const FaceUri&
 Face::getUri() const
 {
-  return m_uri;
+  return this->getRemoteUri();
+}
+
+inline const FaceUri&
+Face::getRemoteUri() const
+{
+  return m_remoteUri;
+}
+
+inline const FaceUri&
+Face::getLocalUri() const
+{
+  return m_localUri;
 }
 
 inline void

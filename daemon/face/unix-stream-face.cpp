@@ -15,8 +15,13 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 UnixStreamFace::protocol, LocalFace,
                                                 "UnixStreamFace");
 
+BOOST_STATIC_ASSERT((boost::is_same<UnixStreamFace::protocol::socket::native_handle_type,
+                     int>::value));
+
 UnixStreamFace::UnixStreamFace(const shared_ptr<UnixStreamFace::protocol::socket>& socket)
-  : StreamFace<protocol, LocalFace>(FaceUri(socket->local_endpoint()), socket, true)
+  : StreamFace<protocol, LocalFace>(FaceUri::fromFd(socket->native_handle()),
+                                    FaceUri(socket->local_endpoint()),
+                                    socket, true)
 {
 }
 

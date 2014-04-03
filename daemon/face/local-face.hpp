@@ -21,9 +21,7 @@ using ndn::nfd::LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID;
 class LocalFace : public Face
 {
 public:
-
-  explicit
-  LocalFace(const FaceUri& uri);
+  LocalFace(const FaceUri& remoteUri, const FaceUri& localUri);
 
   /** \brief get whether any LocalControlHeader feature is enabled
    *
@@ -84,8 +82,8 @@ private:
 };
 
 inline
-LocalFace::LocalFace(const FaceUri& uri)
-  : Face(uri, true)
+LocalFace::LocalFace(const FaceUri& remoteUri, const FaceUri& localUri)
+  : Face(remoteUri, localUri, true)
   , m_localControlHeaderFeatures(LocalFace::LOCAL_CONTROL_FEATURE_MAX)
 {
 }

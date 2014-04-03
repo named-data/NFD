@@ -20,12 +20,11 @@ public:
 
   /** \brief Construct datagram face
    *
-   * \param uri         FaceUri for the face
    * \param socket      Protocol-specific socket for the created face
    * \param isOnDemand  If true, the face can be closed after it remains
    *                    unused for a certain amount of time
    */
-  DatagramFace(const FaceUri& uri,
+  DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
                const shared_ptr<typename protocol::socket>& socket,
                bool isOnDemand);
 
@@ -85,10 +84,10 @@ protected:
 
 template <class T>
 inline
-DatagramFace<T>::DatagramFace(const FaceUri& uri,
+DatagramFace<T>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
                               const shared_ptr<typename DatagramFace::protocol::socket>& socket,
                               bool isOnDemand)
-  : Face(uri)
+  : Face(remoteUri, localUri)
   , m_socket(socket)
 {
   setOnDemand(isOnDemand);

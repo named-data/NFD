@@ -21,8 +21,8 @@ public:
   /**
    * \brief Creates a UDP-based face for multicast communication
    */
-  explicit
-  MulticastUdpFace(const shared_ptr<protocol::socket>& socket);
+  MulticastUdpFace(const shared_ptr<protocol::socket>& socket,
+                   const protocol::endpoint& localEndpoint);
 
   const protocol::endpoint&
   getMulticastGroup() const;

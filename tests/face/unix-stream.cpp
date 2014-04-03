@@ -5,7 +5,6 @@
  */
 
 #include "face/unix-stream-factory.hpp"
-#include <ndn-cpp-dev/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
 #include "tests/core/limited-io.hpp"
@@ -44,20 +43,20 @@ public:
   {
     BOOST_CHECK_MESSAGE(!error, error.message());
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   channel1_onFaceCreated(const shared_ptr<Face>& newFace)
   {
-    BOOST_CHECK(!static_cast<bool>(m_face1));
-    m_face1 = static_pointer_cast<UnixStreamFace>(newFace);
-    m_face1->onReceiveInterest +=
+    BOOST_CHECK(!static_cast<bool>(face1));
+    face1 = static_pointer_cast<UnixStreamFace>(newFace);
+    face1->onReceiveInterest +=
       bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-    m_face1->onReceiveData +=
+    face1->onReceiveData +=
       bind(&EndToEndFixture::face1_onReceiveData, this, _1);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
@@ -65,47 +64,47 @@ public:
   {
     BOOST_CHECK_MESSAGE(false, reason);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   face1_onReceiveInterest(const Interest& interest)
   {
-    m_face1_receivedInterests.push_back(interest);
+    face1_receivedInterests.push_back(interest);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   face1_onReceiveData(const Data& data)
   {
-    m_face1_receivedDatas.push_back(data);
+    face1_receivedDatas.push_back(data);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   face2_onReceiveInterest(const Interest& interest)
   {
-    m_face2_receivedInterests.push_back(interest);
+    face2_receivedInterests.push_back(interest);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   face2_onReceiveData(const Data& data)
   {
-    m_face2_receivedDatas.push_back(data);
+    face2_receivedDatas.push_back(data);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
   channel_onFaceCreated(const shared_ptr<Face>& newFace)
   {
-    m_faces.push_back(static_pointer_cast<UnixStreamFace>(newFace));
+    faces.push_back(static_pointer_cast<UnixStreamFace>(newFace));
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
   void
@@ -113,20 +112,20 @@ public:
   {
     BOOST_CHECK_MESSAGE(false, reason);
 
-    m_limitedIo.afterOp();
+    limitedIo.afterOp();
   }
 
 protected:
-  LimitedIo m_limitedIo;
+  LimitedIo limitedIo;
 
-  shared_ptr<UnixStreamFace> m_face1;
-  std::vector<Interest> m_face1_receivedInterests;
-  std::vector<Data> m_face1_receivedDatas;
-  shared_ptr<UnixStreamFace> m_face2;
-  std::vector<Interest> m_face2_receivedInterests;
-  std::vector<Data> m_face2_receivedDatas;
+  shared_ptr<UnixStreamFace> face1;
+  std::vector<Interest> face1_receivedInterests;
+  std::vector<Data> face1_receivedDatas;
+  shared_ptr<UnixStreamFace> face2;
+  std::vector<Interest> face2_receivedInterests;
+  std::vector<Data> face2_receivedDatas;
 
-  std::list< shared_ptr<UnixStreamFace> > m_faces;
+  std::list< shared_ptr<UnixStreamFace> > faces;
 };
 
 
@@ -143,20 +142,22 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot connect or cannot accept connection");
 
-  BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_REQUIRE(static_cast<bool>(face1));
 
-  std::string face1uri = m_face1->getUri().toString();
-  BOOST_CHECK_EQUAL(face1uri.find("unix:///"), 0); // third '/' is the path separator
-  BOOST_CHECK_EQUAL(face1uri.rfind(CHANNEL_PATH1),
-                    face1uri.size() - std::string(CHANNEL_PATH1).size());
+  BOOST_CHECK_EQUAL(face1->getRemoteUri().getScheme(), "fd");
+  BOOST_CHECK_NO_THROW(boost::lexical_cast<int>(face1->getRemoteUri().getHost()));
+  std::string face1localUri = face1->getLocalUri().toString();
+  BOOST_CHECK_EQUAL(face1localUri.find("unix:///"), 0); // third '/' is the path separator
+  BOOST_CHECK_EQUAL(face1localUri.rfind(CHANNEL_PATH1),
+                    face1localUri.size() - std::string(CHANNEL_PATH1).size());
 
-  m_face2 = make_shared<UnixStreamFace>(client);
-  m_face2->onReceiveInterest +=
+  face2 = make_shared<UnixStreamFace>(client);
+  face2->onReceiveInterest +=
     bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  m_face2->onReceiveData +=
+  face2->onReceiveData +=
     bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
   Interest interest1("ndn:/TpnzGvW9R");
@@ -173,35 +174,35 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   data1.setSignature(fakeSignature);
   data2.setSignature(fakeSignature);
 
-  m_face1->sendInterest(interest1);
-  m_face1->sendInterest(interest1);
-  m_face1->sendInterest(interest1);
-  m_face1->sendData    (data1    );
-  m_face2->sendInterest(interest2);
-  m_face2->sendData    (data2    );
-  m_face2->sendData    (data2    );
-  m_face2->sendData    (data2    );
+  face1->sendInterest(interest1);
+  face1->sendInterest(interest1);
+  face1->sendInterest(interest1);
+  face1->sendData    (data1    );
+  face2->sendInterest(interest2);
+  face2->sendData    (data2    );
+  face2->sendData    (data2    );
+  face2->sendData    (data2    );
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(8, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
 
-  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 3);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 3);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 3);
+  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 3);
+  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
 
-  const FaceCounters& counters1 = m_face1->getCounters();
+  const FaceCounters& counters1 = face1->getCounters();
   BOOST_CHECK_EQUAL(counters1.getInInterest() , 1);
   BOOST_CHECK_EQUAL(counters1.getInData()     , 3);
   BOOST_CHECK_EQUAL(counters1.getOutInterest(), 3);
   BOOST_CHECK_EQUAL(counters1.getOutData()    , 1);
 
-  const FaceCounters& counters2 = m_face2->getCounters();
+  const FaceCounters& counters2 = face2->getCounters();
   BOOST_CHECK_EQUAL(counters2.getInInterest() , 3);
   BOOST_CHECK_EQUAL(counters2.getInData()     , 1);
   BOOST_CHECK_EQUAL(counters2.getOutInterest(), 1);
@@ -221,36 +222,32 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   client1->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot connect or cannot accept connection");
 
-  BOOST_CHECK_EQUAL(m_faces.size(), 1);
+  BOOST_CHECK_EQUAL(faces.size(), 1);
 
   shared_ptr<stream_protocol::socket> client2 =
       make_shared<stream_protocol::socket>(boost::ref(g_io));
   client2->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot accept multiple connections");
 
-  BOOST_CHECK_EQUAL(m_faces.size(), 2);
+  BOOST_CHECK_EQUAL(faces.size(), 2);
 
   // now close one of the faces
-  m_faces.front()->close();
+  faces.front()->close();
 
   // we should still be able to send/receive with the other one
-  m_face1 = m_faces.back();
-  m_face1->onReceiveInterest +=
-      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-  m_face1->onReceiveData +=
-      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
+  face1 = faces.back();
+  face1->onReceiveInterest += bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
+  face1->onReceiveData += bind(&EndToEndFixture::face1_onReceiveData, this, _1);
 
-  m_face2 = make_shared<UnixStreamFace>(client2);
-  m_face2->onReceiveInterest +=
-      bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  m_face2->onReceiveData +=
-      bind(&EndToEndFixture::face2_onReceiveData, this, _1);
+  face2 = make_shared<UnixStreamFace>(client2);
+  face2->onReceiveInterest += bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
+  face2->onReceiveData += bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
   Interest interest1("ndn:/TpnzGvW9R");
   Data     data1    ("ndn:/KfczhUqVix");
@@ -266,23 +263,23 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   data1.setSignature(fakeSignature);
   data2.setSignature(fakeSignature);
 
-  m_face1->sendInterest(interest1);
-  m_face1->sendData    (data1    );
-  m_face2->sendInterest(interest2);
-  m_face2->sendData    (data2    );
+  face1->sendInterest(interest1);
+  face1->sendData    (data1    );
+  face2->sendInterest(interest2);
+  face2->sendData    (data2    );
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(4, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(4, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
 
-  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
 }
 
 static inline void
@@ -303,15 +300,15 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot connect or cannot accept connection");
 
-  BOOST_REQUIRE(static_cast<bool>(m_face1));
+  BOOST_REQUIRE(static_cast<bool>(face1));
 
-  m_face2 = make_shared<UnixStreamFace>(client);
-  m_face2->onReceiveInterest +=
+  face2 = make_shared<UnixStreamFace>(client);
+  face2->onReceiveInterest +=
     bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  m_face2->onReceiveData +=
+  face2->onReceiveData +=
     bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
   Interest interest1("ndn:/TpnzGvW9R");
@@ -328,44 +325,44 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   data1.setSignature(fakeSignature);
   data2.setSignature(fakeSignature);
 
-  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
-  m_face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+  face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+  face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
-  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
-  BOOST_CHECK(m_face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(face1->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
-  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
-  m_face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+  face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+  face2->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
 
-  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
-  BOOST_CHECK(m_face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+  BOOST_CHECK(face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
+  BOOST_CHECK(face2->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
   ////////////////////////////////////////////////////////
 
   interest1.setIncomingFaceId(11);
   interest1.setNextHopFaceId(111);
 
-  m_face1->sendInterest(interest1);
+  face1->sendInterest(interest1);
 
   data1.setIncomingFaceId(22);
   data1.getLocalControlHeader().setNextHopFaceId(222);
 
-  m_face1->sendData    (data1);
+  face1->sendData    (data1);
 
   //
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
 
-  BOOST_REQUIRE_EQUAL(m_face2_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face2_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
   // sending allows only IncomingFaceId, receiving allows only NextHopFaceId
-  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getLocalControlHeader().hasIncomingFaceId(), false);
-  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getLocalControlHeader().hasNextHopFaceId(), false);
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getLocalControlHeader().hasIncomingFaceId(), false);
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getLocalControlHeader().hasNextHopFaceId(), false);
 
-  BOOST_CHECK_EQUAL(m_face2_receivedDatas[0].getLocalControlHeader().hasIncomingFaceId(), false);
-  BOOST_CHECK_EQUAL(m_face2_receivedDatas[0].getLocalControlHeader().hasNextHopFaceId(), false);
+  BOOST_CHECK_EQUAL(face2_receivedDatas[0].getLocalControlHeader().hasIncomingFaceId(), false);
+  BOOST_CHECK_EQUAL(face2_receivedDatas[0].getLocalControlHeader().hasNextHopFaceId(), false);
 
   ////////////////////////////////////////////////////////
 
@@ -388,18 +385,18 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   client->async_send(interestWithHeader, bind(&noOp));
   client->async_send(dataWithHeader, bind(&noOp));
 
-  BOOST_CHECK_MESSAGE(m_limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
 
-  BOOST_REQUIRE_EQUAL(m_face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(m_face1_receivedDatas    .size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getLocalControlHeader().hasIncomingFaceId(), false);
-  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getLocalControlHeader().hasNextHopFaceId(), true);
-  BOOST_CHECK_EQUAL(m_face1_receivedInterests[0].getNextHopFaceId(), 111);
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getLocalControlHeader().hasIncomingFaceId(), false);
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getLocalControlHeader().hasNextHopFaceId(), true);
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getNextHopFaceId(), 111);
 
-  BOOST_CHECK_EQUAL(m_face1_receivedDatas[0].getLocalControlHeader().hasIncomingFaceId(), false);
-  BOOST_CHECK_EQUAL(m_face1_receivedDatas[0].getLocalControlHeader().hasNextHopFaceId(), false);
+  BOOST_CHECK_EQUAL(face1_receivedDatas[0].getLocalControlHeader().hasIncomingFaceId(), false);
+  BOOST_CHECK_EQUAL(face1_receivedDatas[0].getLocalControlHeader().hasNextHopFaceId(), false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
