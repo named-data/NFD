@@ -185,86 +185,107 @@ BOOST_AUTO_TEST_CASE(Insert)
 {
   Name name1("ndn:/5vzBNnMst");
   Name name2("ndn:/igSGfEIM62");
-  Exclude exclude0;
   Exclude exclude1;
   exclude1.excludeOne(Name::Component("u26p47oep"));
   Exclude exclude2;
-  exclude2.excludeOne(Name::Component("FG1Ni6nYcf"));
-
-  // base
-  Interest interestA(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds::min(), 0);
-  // A+exclude1
-  Interest interestB(name1, -1, -1, exclude1, -1, false, -1, time::milliseconds::min(), 0);
-  // A+exclude2
-  Interest interestC(name1, -1, -1, exclude2, -1, false, -1, time::milliseconds::min(), 0);
-  // A+MinSuffixComponents
-  Interest interestD(name1, 2, -1, exclude0, -1, false, -1, time::milliseconds::min(), 0);
-  // A+MaxSuffixComponents
-  Interest interestE(name1, -1,  4, exclude0, -1, false, -1, time::milliseconds::min(), 0);
-  // A+ChildSelector
-  Interest interestF(name1, -1, -1, exclude0,  1, false, -1, time::milliseconds::min(), 0);
-  // A+MustBeFresh
-  Interest interestG(name1, -1, -1, exclude0, -1,  true, -1, time::milliseconds::min(), 0);
-  // A+Scope
-  Interest interestH(name1, -1, -1, exclude0, -1, false,  2, time::milliseconds::min(), 0);
-  // A+InterestLifetime
-  Interest interestI(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds(2000), 0);
-  // A+Nonce
-  Interest interestJ(name1, -1, -1, exclude0, -1, false, -1, time::milliseconds::min(), 2192);
-  // different Name+exclude1
-  Interest interestK(name2, -1, -1, exclude1, -1, false, -1, time::milliseconds::min(), 0);
+  exclude2.excludeBefore(Name::Component("u26p47oep"));
+  ndn::KeyLocator keyLocator1("ndn:/sGAE3peMHA");
+  ndn::KeyLocator keyLocator2("ndn:/nIJH6pr4");
 
   NameTree nameTree(16);
   Pit pit(nameTree);
-
+  BOOST_CHECK_EQUAL(pit.size(), 0);
   std::pair<shared_ptr<pit::Entry>, bool> insertResult;
 
-  BOOST_CHECK_EQUAL(pit.size(), 0);
-
-  insertResult = pit.insert(interestA);
+  // base
+  shared_ptr<Interest> interestA = make_shared<Interest>(name1);
+  insertResult = pit.insert(*interestA);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
-  insertResult = pit.insert(interestB);
+  // A+MinSuffixComponents
+  shared_ptr<Interest> interestB = make_shared<Interest>(*interestA);
+  interestB->setMinSuffixComponents(2);
+  insertResult = pit.insert(*interestB);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 2);
 
-  insertResult = pit.insert(interestC);
+  // A+MaxSuffixComponents
+  shared_ptr<Interest> interestC = make_shared<Interest>(*interestA);
+  interestC->setMaxSuffixComponents(4);
+  insertResult = pit.insert(*interestC);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
-  insertResult = pit.insert(interestD);
+  // A+KeyLocator1
+  shared_ptr<Interest> interestD = make_shared<Interest>(*interestA);
+  interestD->setPublisherPublicKeyLocator(keyLocator1);
+  insertResult = pit.insert(*interestD);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 4);
 
-  insertResult = pit.insert(interestE);
+  // A+KeyLocator2
+  shared_ptr<Interest> interestE = make_shared<Interest>(*interestA);
+  interestE->setPublisherPublicKeyLocator(keyLocator2);
+  insertResult = pit.insert(*interestE);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 5);
 
-  insertResult = pit.insert(interestF);
+  // A+Exclude1
+  shared_ptr<Interest> interestF = make_shared<Interest>(*interestA);
+  interestF->setExclude(exclude1);
+  insertResult = pit.insert(*interestF);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 6);
 
-  insertResult = pit.insert(interestG);
+  // A+Exclude2
+  shared_ptr<Interest> interestG = make_shared<Interest>(*interestA);
+  interestG->setExclude(exclude2);
+  insertResult = pit.insert(*interestG);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 7);
 
-
-  insertResult = pit.insert(interestH);
-  BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
-  BOOST_CHECK_EQUAL(pit.size(), 7);
-
-  insertResult = pit.insert(interestI);
-  BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
-  BOOST_CHECK_EQUAL(pit.size(), 7);
-
-  insertResult = pit.insert(interestJ);
-  BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
-  BOOST_CHECK_EQUAL(pit.size(), 7);
-
-  insertResult = pit.insert(interestK);
+  // A+ChildSelector0
+  shared_ptr<Interest> interestH = make_shared<Interest>(*interestA);
+  interestH->setChildSelector(0);
+  insertResult = pit.insert(*interestH);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 8);
+
+  // A+ChildSelector1
+  shared_ptr<Interest> interestI = make_shared<Interest>(*interestA);
+  interestI->setChildSelector(1);
+  insertResult = pit.insert(*interestI);
+  BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 9);
+
+  // A+MustBeFresh
+  shared_ptr<Interest> interestJ = make_shared<Interest>(*interestA);
+  interestJ->setMustBeFresh(true);
+  insertResult = pit.insert(*interestJ);
+  BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 10);
+
+  // A+InterestLifetime
+  shared_ptr<Interest> interestK = make_shared<Interest>(*interestA);
+  interestK->setInterestLifetime(time::milliseconds(1000));
+  insertResult = pit.insert(*interestK);
+  BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
+  BOOST_CHECK_EQUAL(pit.size(), 10);
+
+  // A+Nonce
+  shared_ptr<Interest> interestL = make_shared<Interest>(*interestA);
+  interestL->setNonce(2192);
+  insertResult = pit.insert(*interestL);
+  BOOST_CHECK_EQUAL(insertResult.second, false);// only guiders differ
+  BOOST_CHECK_EQUAL(pit.size(), 10);
+
+  // different Name+Exclude1
+  shared_ptr<Interest> interestM = make_shared<Interest>(name2);
+  interestM->setExclude(exclude1);
+  insertResult = pit.insert(*interestM);
+  BOOST_CHECK_EQUAL(insertResult.second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 11);
 }
 
 BOOST_AUTO_TEST_CASE(Erase)

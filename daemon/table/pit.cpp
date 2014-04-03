@@ -26,7 +26,9 @@
 
 namespace nfd {
 
-Pit::Pit(NameTree& nameTree) : m_nameTree(nameTree), m_nItems(0)
+Pit::Pit(NameTree& nameTree)
+  : m_nameTree(nameTree)
+  , m_nItems(0)
 {
 }
 
@@ -57,7 +59,7 @@ predicate_PitEntry_similar_Interest(shared_ptr<pit::Entry> entry,
   return pi.getName().equals(interest.getName()) &&
          pi.getMinSuffixComponents() == interest.getMinSuffixComponents() &&
          pi.getMaxSuffixComponents() == interest.getMaxSuffixComponents() &&
-         // TODO PublisherPublicKeyLocator (ndn-cpp-dev #1157)
+         pi.getPublisherPublicKeyLocator() == interest.getPublisherPublicKeyLocator() &&
          pi.getExclude() == interest.getExclude() &&
          pi.getChildSelector() == interest.getChildSelector() &&
          pi.getMustBeFresh() == interest.getMustBeFresh();
@@ -109,7 +111,7 @@ Pit::findAllDataMatches(const Data& data) const
       std::vector<shared_ptr<pit::Entry> >& pitEntries = it->getPitEntries();
       for (size_t i = 0; i < pitEntries.size(); i++)
         {
-          if (pitEntries[i]->getInterest().matchesName(data.getName()))
+          if (pitEntries[i]->getInterest().matchesData(data))
             result->push_back(pitEntries[i]);
         }
     }
