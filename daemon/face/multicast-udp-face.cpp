@@ -10,8 +10,8 @@ namespace nfd {
 
 NFD_LOG_INIT("MulticastUdpFace");
 
-MulticastUdpFace::MulticastUdpFace(const shared_ptr<protocol::socket>& socket,
-                                   const protocol::endpoint& localEndpoint)
+MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& socket,
+                                   const MulticastUdpFace::protocol::endpoint& localEndpoint)
   : DatagramFace<protocol>(FaceUri(socket->local_endpoint()),
                            FaceUri(localEndpoint),
                            socket, false)

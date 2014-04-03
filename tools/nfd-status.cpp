@@ -158,12 +158,13 @@ public:
         nfd::FaceStatus faceStatus(block);
 
         std::cout << "  faceid=" << faceStatus.getFaceId()
-                  << " uri=" << faceStatus.getUri()
+                  << " remote=" << faceStatus.getRemoteUri()
+                  << " local=" << faceStatus.getLocalUri()
                   << " counters={"
-                  << "in={" << faceStatus.getInInterest() << "i "
-                  << faceStatus.getInData() << "d}"
-                  << " out={" << faceStatus.getOutInterest() << "i "
-                  << faceStatus.getOutData() << "d}"
+                  << "in={" << faceStatus.getNInInterests() << "i "
+                  << faceStatus.getNInDatas() << "d}"
+                  << " out={" << faceStatus.getNOutInterests() << "i "
+                  << faceStatus.getNOutDatas() << "d}"
                   << "}" << std::endl;
       }
 

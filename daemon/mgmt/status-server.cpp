@@ -54,10 +54,10 @@ StatusServer::collectStatus() const
   status->setNCsEntries(m_forwarder.getCs().size());
 
   const ForwarderCounters& counters = m_forwarder.getCounters();
-  status->setNInInterests(counters.getInInterest());
-  status->setNInDatas(counters.getInData());
-  status->setNOutInterests(counters.getOutInterest());
-  status->setNOutDatas(counters.getOutData());
+  status->setNInInterests(counters.getNInInterests());
+  status->setNInDatas(counters.getNInDatas());
+  status->setNOutInterests(counters.getNOutInterests());
+  status->setNOutDatas(counters.getNOutDatas());
 
   return status;
 }

@@ -28,94 +28,94 @@ public:
 
   /// incoming Interest (total packets since Face establishment)
   const FaceCounter&
-  getInInterest() const;
+  getNInInterests() const;
 
   FaceCounter&
-  getInInterest();
+  getNInInterests();
 
   /// incoming Data (total packets since Face establishment)
   const FaceCounter&
-  getInData() const;
+  getNInDatas() const;
 
   FaceCounter&
-  getInData();
+  getNInDatas();
 
   /// outgoing Interest (total packets since Face establishment)
   const FaceCounter&
-  getOutInterest() const;
+  getNOutInterests() const;
 
   FaceCounter&
-  getOutInterest();
+  getNOutInterests();
 
   /// outgoing Data (total packets since Face establishment)
   const FaceCounter&
-  getOutData() const;
+  getNOutDatas() const;
 
   FaceCounter&
-  getOutData();
+  getNOutDatas();
 
 private:
-  FaceCounter m_inInterest;
-  FaceCounter m_inData;
-  FaceCounter m_outInterest;
-  FaceCounter m_outData;
+  FaceCounter m_nInInterests;
+  FaceCounter m_nInDatas;
+  FaceCounter m_outInterests;
+  FaceCounter m_outDatas;
 };
 
 inline
 FaceCounters::FaceCounters()
-  : m_inInterest(0)
-  , m_inData(0)
-  , m_outInterest(0)
-  , m_outData(0)
+  : m_nInInterests(0)
+  , m_nInDatas(0)
+  , m_outInterests(0)
+  , m_outDatas(0)
 {
 }
 
 inline const FaceCounter&
-FaceCounters::getInInterest() const
+FaceCounters::getNInInterests() const
 {
-  return m_inInterest;
+  return m_nInInterests;
 }
 
 inline FaceCounter&
-FaceCounters::getInInterest()
+FaceCounters::getNInInterests()
 {
-  return m_inInterest;
+  return m_nInInterests;
 }
 
 inline const FaceCounter&
-FaceCounters::getInData() const
+FaceCounters::getNInDatas() const
 {
-  return m_inData;
+  return m_nInDatas;
 }
 
 inline FaceCounter&
-FaceCounters::getInData()
+FaceCounters::getNInDatas()
 {
-  return m_inData;
+  return m_nInDatas;
 }
 
 inline const FaceCounter&
-FaceCounters::getOutInterest() const
+FaceCounters::getNOutInterests() const
 {
-  return m_outInterest;
+  return m_outInterests;
 }
 
 inline FaceCounter&
-FaceCounters::getOutInterest()
+FaceCounters::getNOutInterests()
 {
-  return m_outInterest;
+  return m_outInterests;
 }
 
 inline const FaceCounter&
-FaceCounters::getOutData() const
+FaceCounters::getNOutDatas() const
 {
-  return m_outData;
+  return m_outDatas;
 }
 
 inline FaceCounter&
-FaceCounters::getOutData()
+FaceCounters::getNOutDatas()
 {
-  return m_outData;
+  return m_outDatas;
 }
 
 

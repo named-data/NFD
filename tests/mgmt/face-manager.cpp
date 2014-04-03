@@ -1323,9 +1323,10 @@ public:
 
     ndn::nfd::FaceEventNotification notification(wire);
 
+    BOOST_CHECK_EQUAL(notification.getKind(), expectedFaceEvent.getKind());
     BOOST_CHECK_EQUAL(notification.getFaceId(), expectedFaceEvent.getFaceId());
-    BOOST_CHECK_EQUAL(notification.getUri(), expectedFaceEvent.getUri());
-    BOOST_CHECK_EQUAL(notification.getEventKind(), expectedFaceEvent.getEventKind());
+    BOOST_CHECK_EQUAL(notification.getRemoteUri(), expectedFaceEvent.getRemoteUri());
+    BOOST_CHECK_EQUAL(notification.getLocalUri(), expectedFaceEvent.getLocalUri());
   }
 
   bool
@@ -1428,10 +1429,12 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
 
-  ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_CREATED,
-                                                    1,
-                                                    dummy->getUri().toString(),
-                                                    0);
+  ndn::nfd::FaceEventNotification expectedFaceEvent;
+  expectedFaceEvent.setKind(ndn::nfd::FACE_EVENT_CREATED)
+                   .setFaceId(1)
+                   .setRemoteUri(dummy->getRemoteUri().toString())
+                   .setLocalUri(dummy->getLocalUri().toString())
+                   .setFlags(0);
 
   Block encodedResultParameters(resultParameters.wireEncode());
 
@@ -1488,9 +1491,12 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  ndn::nfd::FaceEventNotification expectedFaceEvent(ndn::nfd::FACE_EVENT_DESTROYED,
-                                                    dummy->getId(),
-                                                    dummy->getUri().toString(), 0);
+  ndn::nfd::FaceEventNotification expectedFaceEvent;
+  expectedFaceEvent.setKind(ndn::nfd::FACE_EVENT_DESTROYED)
+                   .setFaceId(dummy->getId())
+                   .setRemoteUri(dummy->getRemoteUri().toString())
+                   .setLocalUri(dummy->getLocalUri().toString())
+                   .setFlags(0);
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1,

@@ -5,7 +5,9 @@
  */
 
 #include "face-status-publisher.hpp"
+#include "face-flags.hpp"
 #include "core/logger.hpp"
+#include <ndn-cpp-dev/management/nfd-face-status.hpp>
 
 namespace nfd {
 
@@ -33,45 +35,22 @@ FaceStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
   size_t totalLength = 0;
 
   for (FaceTable::const_reverse_iterator i = m_faceTable.rbegin();
-       i != m_faceTable.rend();
-       ++i)
-    {
-      const shared_ptr<Face>& face = *i;
-      const FaceCounters& counters = face->getCounters();
-      const std::string uri = face->getUri().toString();
+       i != m_faceTable.rend(); ++i) {
+    const shared_ptr<Face>& face = *i;
+    const FaceCounters& counters = face->getCounters();
 
-      size_t statusLength = 0;
+    ndn::nfd::FaceStatus status;
+    status.setFaceId(face->getId())
+          .setRemoteUri(face->getRemoteUri().toString())
+          .setLocalUri(face->getLocalUri().toString())
+          .setFlags(getFaceFlags(*face))
+          .setNInInterests(counters.getNInInterests())
+          .setNInDatas(counters.getNInDatas())
+          .setNOutInterests(counters.getNOutInterests())
+          .setNOutDatas(counters.getNOutDatas());
 
-      statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::NOutDatas,
-                                                     counters.getOutData());
-
-      statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::NOutInterests,
-                                                     counters.getOutInterest());
-
-      statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::NInDatas,
-                                                     counters.getInData());
-
-      statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::NInInterests,
-                                                     counters.getInInterest());
-
-      statusLength += prependByteArrayBlock(outBuffer,
-                                            ndn::tlv::nfd::Uri,
-                                            reinterpret_cast<const uint8_t*>(uri.c_str()),
-                                            uri.size());
-
-      statusLength += prependNonNegativeIntegerBlock(outBuffer,
-                                                     ndn::tlv::nfd::FaceId,
-                                                     face->getId());
-
-      statusLength += outBuffer.prependVarNumber(statusLength);
-      statusLength += outBuffer.prependVarNumber(ndn::tlv::nfd::FaceStatus);
-
-      totalLength += statusLength;
-    }
+    totalLength += status.wireEncode(outBuffer);
+  }
   return totalLength;
 }
 

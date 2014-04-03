@@ -120,11 +120,6 @@ public: // attributes
   const FaceCounters&
   getCounters() const;
 
-  /** \deprecated use getRemoteUri instead
-   */
-  const FaceUri&
-  getUri() const;
-
   /** \return a FaceUri that represents the remote endpoint
    */
   const FaceUri&
@@ -180,12 +175,6 @@ inline FaceCounters&
 Face::getMutableCounters()
 {
   return m_counters;
-}
-
-inline const FaceUri&
-Face::getUri() const
-{
-  return this->getRemoteUri();
 }
 
 inline const FaceUri&

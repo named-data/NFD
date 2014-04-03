@@ -25,15 +25,15 @@ BOOST_AUTO_TEST_CASE(Description)
 BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
 {
   DummyLocalFace face;
-  
+
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
-  
+
   face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, true);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), true);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), true);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
                          LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID), false);
-  
+
   face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, false);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
   BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
@@ -44,10 +44,10 @@ BOOST_AUTO_TEST_CASE(Counters)
 {
   DummyFace face;
   const FaceCounters& counters = face.getCounters();
-  BOOST_CHECK_EQUAL(counters.getInInterest() , 0);
-  BOOST_CHECK_EQUAL(counters.getInData()     , 0);
-  BOOST_CHECK_EQUAL(counters.getOutInterest(), 0);
-  BOOST_CHECK_EQUAL(counters.getOutData()    , 0);
+  BOOST_CHECK_EQUAL(counters.getNInInterests() , 0);
+  BOOST_CHECK_EQUAL(counters.getNInDatas()     , 0);
+  BOOST_CHECK_EQUAL(counters.getNOutInterests(), 0);
+  BOOST_CHECK_EQUAL(counters.getNOutDatas()    , 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

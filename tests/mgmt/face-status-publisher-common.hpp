@@ -10,12 +10,13 @@
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/app-face.hpp"
 #include "mgmt/internal-face.hpp"
+#include "mgmt/face-flags.hpp"
 #include "fw/forwarder.hpp"
-#include "../face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/face/dummy-face.hpp"
 
-#include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cpp-dev/management/nfd-face-status.hpp>
 
 namespace nfd {
 namespace tests {
@@ -34,16 +35,16 @@ public:
   }
 
   void
-  setCounters(FaceCounter inInterest,
-              FaceCounter inData,
-              FaceCounter outInterest,
-              FaceCounter outData)
+  setCounters(FaceCounter nInInterests,
+              FaceCounter nInDatas,
+              FaceCounter nOutInterests,
+              FaceCounter nOutDatas)
   {
     FaceCounters& counters = getMutableCounters();
-    counters.getInInterest() = inInterest;
-    counters.getInData() = inData;
-    counters.getOutInterest() = outInterest;
-    counters.getOutData() = outData;
+    counters.getNInInterests()  = nInInterests;
+    counters.getNInDatas()      = nInDatas;
+    counters.getNOutInterests() = nOutInterests;
+    counters.getNOutDatas()     = nOutDatas;
   }
 
 
@@ -102,66 +103,20 @@ public:
   }
 
   void
-  validateFaceStatus(const Block& status, const shared_ptr<Face>& reference)
+  validateFaceStatus(const Block& statusBlock, const shared_ptr<Face>& reference)
   {
+    ndn::nfd::FaceStatus status;
+    BOOST_REQUIRE_NO_THROW(status.wireDecode(statusBlock));
     const FaceCounters& counters = reference->getCounters();
 
-    FaceId faceId = INVALID_FACEID;
-    std::string uri;
-    FaceCounter inInterest = 0;
-    FaceCounter inData = 0;
-    FaceCounter outInterest = 0;
-    FaceCounter outData = 0;
-
-    status.parse();
-
-    for (Block::element_const_iterator i = status.elements_begin();
-         i != status.elements_end();
-         ++i)
-      {
-        // parse a full set of FaceStatus sub-blocks
-        faceId =
-          checkedReadNonNegativeIntegerType(i,
-                                            status.elements_end(),
-                                            ndn::tlv::nfd::FaceId);
-
-        BOOST_REQUIRE_EQUAL(faceId, reference->getId());
-
-        BOOST_REQUIRE(i->type() == ndn::tlv::nfd::Uri);
-
-        uri.append(reinterpret_cast<const char*>(i->value()), i->value_size());
-        ++i;
-
-        BOOST_REQUIRE(i != status.elements_end());
-
-        BOOST_REQUIRE_EQUAL(uri, reference->getUri().toString());
-
-        inInterest =
-          checkedReadNonNegativeIntegerType(i,
-                                            status.elements_end(),
-                                            ndn::tlv::nfd::NInInterests);
-
-        BOOST_REQUIRE_EQUAL(inInterest, counters.getInInterest());
-
-        inData =
-          checkedReadNonNegativeIntegerType(i,
-                                            status.elements_end(),
-                                            ndn::tlv::nfd::NInDatas);
-
-        BOOST_REQUIRE_EQUAL(inData, counters.getInData());
-
-        outInterest =
-          checkedReadNonNegativeIntegerType(i,
-                                            status.elements_end(),
-                                            ndn::tlv::nfd::NOutInterests);
-        BOOST_REQUIRE_EQUAL(outInterest, counters.getOutInterest());
-
-        outData =
-          readNonNegativeIntegerType(*i,
-                                     ndn::tlv::nfd::NOutDatas);
-
-        BOOST_REQUIRE_EQUAL(outData, counters.getOutData());
-      }
+    BOOST_CHECK_EQUAL(status.getFaceId(), reference->getId());
+    BOOST_CHECK_EQUAL(status.getRemoteUri(), reference->getRemoteUri().toString());
+    BOOST_CHECK_EQUAL(status.getLocalUri(), reference->getLocalUri().toString());
+    BOOST_CHECK_EQUAL(status.getFlags(), getFaceFlags(*reference));
+    BOOST_CHECK_EQUAL(status.getNInInterests(), counters.getNInInterests());
+    BOOST_CHECK_EQUAL(status.getNInDatas(), counters.getNInDatas());
+    BOOST_CHECK_EQUAL(status.getNOutInterests(), counters.getNOutInterests());
+    BOOST_CHECK_EQUAL(status.getNOutDatas(), counters.getNOutDatas());
   }
 
   void

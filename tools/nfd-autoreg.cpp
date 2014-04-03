@@ -79,7 +79,7 @@ public:
   void
   processCreateFace(const FaceEventNotification& notification)
   {
-    FaceUri uri(notification.getUri());
+    FaceUri uri(notification.getRemoteUri());
 
     if (isFiltered(uri))
       {
@@ -111,7 +111,7 @@ public:
     // process
     FaceEventNotification notification(data.getContent().blockFromValue());
 
-    if (notification.getEventKind() == FACE_EVENT_CREATED &&
+    if (notification.getKind() == FACE_EVENT_CREATED &&
         !notification.isLocal() &&
         notification.isOnDemand())
       {

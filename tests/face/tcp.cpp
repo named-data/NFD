@@ -239,16 +239,16 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
 
   const FaceCounters& counters1 = face1->getCounters();
-  BOOST_CHECK_EQUAL(counters1.getInInterest() , 1);
-  BOOST_CHECK_EQUAL(counters1.getInData()     , 3);
-  BOOST_CHECK_EQUAL(counters1.getOutInterest(), 3);
-  BOOST_CHECK_EQUAL(counters1.getOutData()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
+  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
+  BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
 
   const FaceCounters& counters2 = face2->getCounters();
-  BOOST_CHECK_EQUAL(counters2.getInInterest() , 3);
-  BOOST_CHECK_EQUAL(counters2.getInData()     , 1);
-  BOOST_CHECK_EQUAL(counters2.getOutInterest(), 1);
-  BOOST_CHECK_EQUAL(counters2.getOutData()    , 3);
+  BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);
+  BOOST_CHECK_EQUAL(counters2.getNInDatas()     , 1);
+  BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 1);
+  BOOST_CHECK_EQUAL(counters2.getNOutDatas()    , 3);
 }
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)

@@ -35,32 +35,30 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  std::pair<shared_ptr<fib::Entry>, bool> fibInsertResult =
-    fib.insert(Name("ndn:/A"));
-  shared_ptr<fib::Entry> fibEntry = fibInsertResult.first;
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
   fibEntry->addNextHop(face2, 0);
 
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getInInterest (), 0);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getOutInterest(), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 0);
   face1->receiveInterest(*interestAB);
   g_io.run();
   g_io.reset();
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getInInterest (), 1);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getOutInterest(), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 1);
 
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getInData (), 0);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getOutData(), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 0);
   face2->receiveData(*dataABC);
   g_io.run();
   g_io.reset();
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   BOOST_CHECK(face1->m_sentDatas[0].getName().equals(nameABC));
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getInData (), 1);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getOutData(), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 1);
 }
 
 class ScopeLocalhostIncomingTestForwarder : public Forwarder

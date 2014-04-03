@@ -5,6 +5,7 @@
  */
 
 #include "face-manager.hpp"
+#include "face-flags.hpp"
 
 #include "core/logger.hpp"
 #include "core/face-uri.hpp"
@@ -562,7 +563,7 @@ FaceManager::addCreatedFaceToForwarder(const shared_ptr<Face>& newFace)
 {
   m_faceTable.add(newFace);
 
-  NFD_LOG_DEBUG("Created face " << newFace->getUri() << " ID " << newFace->getId());
+  //NFD_LOG_DEBUG("Created face " << newFace->getRemoteUri() << " ID " << newFace->getId());
 }
 
 void
@@ -642,25 +643,27 @@ FaceManager::destroyFace(const Interest& request,
 void
 FaceManager::onAddFace(shared_ptr<Face> face)
 {
-  ndn::nfd::FaceEventNotification faceCreated(ndn::nfd::FACE_EVENT_CREATED,
-                                              face->getId(),
-                                              face->getUri().toString(),
-                                              (face->isLocal() ? ndn::nfd::FACE_IS_LOCAL : 0) |
-                                              (face->isOnDemand() ? ndn::nfd::FACE_IS_ON_DEMAND : 0));
+  ndn::nfd::FaceEventNotification notification;
+  notification.setKind(ndn::nfd::FACE_EVENT_CREATED)
+              .setFaceId(face->getId())
+              .setRemoteUri(face->getRemoteUri().toString())
+              .setLocalUri(face->getLocalUri().toString())
+              .setFlags(getFaceFlags(*face));
 
-  m_notificationStream.postNotification(faceCreated);
+  m_notificationStream.postNotification(notification);
 }
 
 void
 FaceManager::onRemoveFace(shared_ptr<Face> face)
 {
-  ndn::nfd::FaceEventNotification faceDestroyed(ndn::nfd::FACE_EVENT_DESTROYED,
-                                                face->getId(),
-                                                face->getUri().toString(),
-                                                (face->isLocal() ? ndn::nfd::FACE_IS_LOCAL : 0) |
-                                                (face->isOnDemand() ? ndn::nfd::FACE_IS_ON_DEMAND : 0));
+  ndn::nfd::FaceEventNotification notification;
+  notification.setKind(ndn::nfd::FACE_EVENT_DESTROYED)
+              .setFaceId(face->getId())
+              .setRemoteUri(face->getRemoteUri().toString())
+              .setLocalUri(face->getLocalUri().toString())
+              .setFlags(getFaceFlags(*face));
 
-  m_notificationStream.postNotification(faceDestroyed);
+  m_notificationStream.postNotification(notification);
 }
 
 
