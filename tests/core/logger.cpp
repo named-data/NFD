@@ -9,6 +9,8 @@
 #include "core/logger.hpp"
 
 #include <boost/test/unit_test.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 #include <iostream>
 
@@ -38,99 +40,251 @@ public:
   std::stringstream m_buffer;
   std::streambuf* m_savedBuf;
   LogLevel m_savedLevel;
+
 };
 
 BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
 {
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
   NFD_LOG_INIT("BasicTests");
   g_logger.setLogLevel(LOG_ALL);
 
-  NFD_LOG_TRACE("trace message JHGFDSR^1");
-  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
-  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-  NFD_LOG_INFO("info message Jjxjshj13");
-  NFD_LOG_ERROR("error message !#$&^%$#@");
-  NFD_LOG_FATAL("fatal message JJSjaamcng");
+  const string EXPECTED[] =
+    {
+      "TRACE:",   "[BasicTests]", "trace-message-JHGFDSR^1\n",
+      "DEBUG:",   "[BasicTests]", "debug-message-IGg2474fdksd-fo-151617\n",
+      "WARNING:", "[BasicTests]", "warning-message-XXXhdhd111x\n",
+      "INFO:",    "[BasicTests]", "info-message-Jjxjshj13\n",
+      "ERROR:",   "[BasicTests]", "error-message-!#$&^%$#@\n",
+      "FATAL:",   "[BasicTests]", "fatal-message-JJSjaamcng\n",
+    };
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "TRACE: [BasicTests] trace message JHGFDSR^1\n"
-                    "DEBUG: [BasicTests] debug message IGg2474fdksd fo 151617\n"
-                    "WARNING: [BasicTests] warning message XXXhdhd111x\n"
-                    "INFO: [BasicTests] info message Jjxjshj13\n"
-                    "ERROR: [BasicTests] error message !#$&^%$#@\n"
-                    "FATAL: [BasicTests] fatal message JJSjaamcng\n"
-                    );
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  NFD_LOG_TRACE("trace-message-JHGFDSR^1");
+  NFD_LOG_DEBUG("debug-message-IGg2474fdksd-fo-" << 15 << 16 << 17);
+  NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 <<"x");
+  NFD_LOG_INFO("info-message-Jjxjshj13");
+  NFD_LOG_ERROR("error-message-!#$&^%$#@");
+  NFD_LOG_FATAL("fatal-message-JJSjaamcng");
+
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // std::cout << components.size() << " for " << moduleName  << std::endl;
+  // for (size_t i = 0; i < components.size(); ++i)
+  //   {
+  //     std::cout << "-> " << components[i] << std::endl;
+  //   }
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 6 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
+
 }
+
 
 BOOST_FIXTURE_TEST_CASE(ConfigureFactory, LoggerFixture)
 {
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
   NFD_LOG_INIT("ConfigureFactoryTests");
 
-  const std::string LOG_CONFIG =
+  const string LOG_CONFIG =
     "log\n"
     "{\n"
     "  default_level INFO\n"
     "}\n";
+
+  LoggerFactory::getInstance().setDefaultLevel(LOG_ALL);
 
   ConfigFile config;
   LoggerFactory::getInstance().setConfigFile(config);
 
   config.parse(LOG_CONFIG, false, "LOG_CONFIG");
 
-  NFD_LOG_TRACE("trace message JHGFDSR^1");
-  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
-  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-  NFD_LOG_INFO("info message Jjxjshj13");
-  NFD_LOG_ERROR("error message !#$&^%$#@");
-  NFD_LOG_FATAL("fatal message JJSjaamcng");
+  BOOST_REQUIRE_EQUAL(LoggerFactory::getInstance().getDefaultLevel(), LOG_INFO);
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "WARNING: [ConfigureFactoryTests] warning message XXXhdhd111x\n"
-                    "INFO: [ConfigureFactoryTests] info message Jjxjshj13\n"
-                    "ERROR: [ConfigureFactoryTests] error message !#$&^%$#@\n"
-                    "FATAL: [ConfigureFactoryTests] fatal message JJSjaamcng\n"
-                    );
+  const std::string EXPECTED[] =
+    {
+      "WARNING:", "[ConfigureFactoryTests]", "warning-message-XXXhdhd111x\n",
+      "INFO:",    "[ConfigureFactoryTests]", "info-message-Jjxjshj13\n",
+      "ERROR:",   "[ConfigureFactoryTests]", "error-message-!#$&^%$#@\n",
+      "FATAL:",   "[ConfigureFactoryTests]", "fatal-message-JJSjaamcng\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(std::string);
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  NFD_LOG_TRACE("trace-message-JHGFDSR^1");
+  NFD_LOG_DEBUG("debug-message-IGg2474fdksd-fo-" << 15 << 16 << 17);
+  NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 <<"x");
+  NFD_LOG_INFO("info-message-Jjxjshj13");
+  NFD_LOG_ERROR("error-message-!#$&^%$#@");
+  NFD_LOG_FATAL("fatal-message-JJSjaamcng");
+
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // std::cout << components.size() << " for " << moduleName  << std::endl;
+  // for (size_t i = 0; i < components.size(); ++i)
+  //   {
+  //     std::cout << "-> " << components[i] << std::endl;
+  //   }
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 4 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
 
 BOOST_FIXTURE_TEST_CASE(TestNumberLevel, LoggerFixture)
 {
-  NFD_LOG_INIT("TestNumberLevel");
-
   const std::string LOG_CONFIG =
     "log\n"
     "{\n"
     "  default_level 2\n" // equivalent of WARN
     "}\n";
 
+  LoggerFactory::getInstance().setDefaultLevel(LOG_ALL);
+
   ConfigFile config;
   LoggerFactory::getInstance().setConfigFile(config);
 
   config.parse(LOG_CONFIG, false, "LOG_CONFIG");
 
-  NFD_LOG_TRACE("trace message JHGFDSR^1");
-  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
-  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-  NFD_LOG_INFO("info message Jjxjshj13");
-  NFD_LOG_ERROR("error message !#$&^%$#@");
-  NFD_LOG_FATAL("fatal message JJSjaamcng");
-
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "WARNING: [TestNumberLevel] warning message XXXhdhd111x\n"
-                    "ERROR: [TestNumberLevel] error message !#$&^%$#@\n"
-                    "FATAL: [TestNumberLevel] fatal message JJSjaamcng\n"
-                    );
+  BOOST_REQUIRE_EQUAL(LoggerFactory::getInstance().getDefaultLevel(), LOG_WARN);
 }
 
 static void
 testModuleBPrint()
 {
   NFD_LOG_INIT("TestModuleB");
-  NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
+  NFD_LOG_DEBUG("debug-message-IGg2474fdksd-fo-" << 15 << 16 << 17);
 }
 
 BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
 {
+  using namespace ndn::time;
+  using std::string;
+
   NFD_LOG_INIT("TestModuleA");
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
+  const std::string EXPECTED[] =
+    {
+      "WARNING:", "[TestModuleA]", "warning-message-XXXhdhd111x\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(std::string);
 
   const std::string LOG_CONFIG =
     "log\n"
@@ -143,20 +297,79 @@ BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
 
   config.parse(LOG_CONFIG, false, "LOG_CONFIG");
 
- // this should print
-  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  // this should print
+  NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 << "x");
 
   // this should not because it's level is < WARN
   testModuleBPrint();
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "WARNING: [TestModuleA] warning message XXXhdhd111x\n"
-                    );
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 1 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
 
 BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
 {
+  using namespace ndn::time;
+  using std::string;
+
   NFD_LOG_INIT("TestModuleA");
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
 
   const std::string LOG_CONFIG =
     "log\n"
@@ -170,16 +383,82 @@ BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
 
   config.parse(LOG_CONFIG, false, "LOG_CONFIG");
 
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
  // this should print
-  NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
+  NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 << "x");
 
   // this too because its level is explicitly set to DEBUG
   testModuleBPrint();
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "WARNING: [TestModuleA] warning message XXXhdhd111x\n"
-                    "DEBUG: [TestModuleB] debug message IGg2474fdksd fo 151617\n"
-                    );
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const std::string EXPECTED[] =
+    {
+      "WARNING:", "[TestModuleA]", "warning-message-XXXhdhd111x\n",
+      "DEBUG:",   "[TestModuleB]", "debug-message-IGg2474fdksd-fo-151617\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(std::string);
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // for (size_t i = 0; i < components.size(); ++i)
+  //   {
+  //     std::cout << "-> " << components[i] << std::endl;
+  //   }
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 2 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
 
 static bool
@@ -236,12 +515,12 @@ public:
   void
   writeLogs()
   {
-    NFD_LOG_TRACE("trace message JHGFDSR^1");
-    NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
-    NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-    NFD_LOG_INFO("info message Jjxjshj13");
-    NFD_LOG_ERROR("error message !#$&^%$#@");
-    NFD_LOG_FATAL("fatal message JJSjaamcng");
+    NFD_LOG_TRACE("trace-message-JHGFDSR^1");
+    NFD_LOG_DEBUG("debug-message-IGg2474fdksd-fo-" << 15 << 16 << 17);
+    NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 <<"x");
+    NFD_LOG_INFO("info-message-Jjxjshj13");
+    NFD_LOG_ERROR("error-message-!#$&^%$#@");
+    NFD_LOG_FATAL("fatal-message-JJSjaamcng");
   }
 
 private:
@@ -252,16 +531,82 @@ NFD_LOG_INCLASS_DEFINE(InClassLogger, "InClassLogger");
 
 BOOST_FIXTURE_TEST_CASE(InClass, InClassLogger)
 {
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
   writeLogs();
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "TRACE: [InClassLogger] trace message JHGFDSR^1\n"
-                    "DEBUG: [InClassLogger] debug message IGg2474fdksd fo 151617\n"
-                    "WARNING: [InClassLogger] warning message XXXhdhd111x\n"
-                    "INFO: [InClassLogger] info message Jjxjshj13\n"
-                    "ERROR: [InClassLogger] error message !#$&^%$#@\n"
-                    "FATAL: [InClassLogger] fatal message JJSjaamcng\n"
-                    );
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string EXPECTED[] =
+    {
+      "TRACE:",   "[InClassLogger]", "trace-message-JHGFDSR^1\n",
+      "DEBUG:",   "[InClassLogger]", "debug-message-IGg2474fdksd-fo-151617\n",
+      "WARNING:", "[InClassLogger]", "warning-message-XXXhdhd111x\n",
+      "INFO:",    "[InClassLogger]", "info-message-Jjxjshj13\n",
+      "ERROR:",   "[InClassLogger]", "error-message-!#$&^%$#@\n",
+      "FATAL:",   "[InClassLogger]", "fatal-message-JJSjaamcng\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 6 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
 
 
@@ -277,12 +622,12 @@ public:
   void
   writeLogs()
   {
-    NFD_LOG_TRACE("trace message JHGFDSR^1");
-    NFD_LOG_DEBUG("debug message IGg2474fdksd fo " << 15 << 16 << 17);
-    NFD_LOG_WARN("warning message XXXhdhd11" << 1 << "x");
-    NFD_LOG_INFO("info message Jjxjshj13");
-    NFD_LOG_ERROR("error message !#$&^%$#@");
-    NFD_LOG_FATAL("fatal message JJSjaamcng");
+    NFD_LOG_TRACE("trace-message-JHGFDSR^1");
+    NFD_LOG_DEBUG("debug-message-IGg2474fdksd-fo-" << 15 << 16 << 17);
+    NFD_LOG_WARN("warning-message-XXXhdhd11" << 1 <<"x");
+    NFD_LOG_INFO("info-message-Jjxjshj13");
+    NFD_LOG_ERROR("error-message-!#$&^%$#@");
+    NFD_LOG_FATAL("fatal-message-JJSjaamcng");
   }
 
 private:
@@ -294,30 +639,163 @@ NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(InClassTemplateLogger, int, "IntI
 
 BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
 {
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
   writeLogs();
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "TRACE: [GenericInClassTemplateLogger] trace message JHGFDSR^1\n"
-                    "DEBUG: [GenericInClassTemplateLogger] debug message IGg2474fdksd fo 151617\n"
-                    "WARNING: [GenericInClassTemplateLogger] warning message XXXhdhd111x\n"
-                    "INFO: [GenericInClassTemplateLogger] info message Jjxjshj13\n"
-                    "ERROR: [GenericInClassTemplateLogger] error message !#$&^%$#@\n"
-                    "FATAL: [GenericInClassTemplateLogger] fatal message JJSjaamcng\n"
-                    );
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string EXPECTED[] =
+    {
+      "TRACE:",   "[GenericInClassTemplateLogger]", "trace-message-JHGFDSR^1\n",
+      "DEBUG:",   "[GenericInClassTemplateLogger]", "debug-message-IGg2474fdksd-fo-151617\n",
+      "WARNING:", "[GenericInClassTemplateLogger]", "warning-message-XXXhdhd111x\n",
+      "INFO:",    "[GenericInClassTemplateLogger]", "info-message-Jjxjshj13\n",
+      "ERROR:",   "[GenericInClassTemplateLogger]", "error-message-!#$&^%$#@\n",
+      "FATAL:",   "[GenericInClassTemplateLogger]", "fatal-message-JJSjaamcng\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 6 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
+
 
 BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
 {
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
   writeLogs();
 
-  BOOST_CHECK_EQUAL(m_buffer.str(),
-                    "TRACE: [IntInClassLogger] trace message JHGFDSR^1\n"
-                    "DEBUG: [IntInClassLogger] debug message IGg2474fdksd fo 151617\n"
-                    "WARNING: [IntInClassLogger] warning message XXXhdhd111x\n"
-                    "INFO: [IntInClassLogger] info message Jjxjshj13\n"
-                    "ERROR: [IntInClassLogger] error message !#$&^%$#@\n"
-                    "FATAL: [IntInClassLogger] fatal message JJSjaamcng\n"
-                    );
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string EXPECTED[] =
+    {
+      "TRACE:",   "[IntInClassLogger]", "trace-message-JHGFDSR^1\n",
+      "DEBUG:",   "[IntInClassLogger]", "debug-message-IGg2474fdksd-fo-151617\n",
+      "WARNING:", "[IntInClassLogger]", "warning-message-XXXhdhd111x\n",
+      "INFO:",    "[IntInClassLogger]", "info-message-Jjxjshj13\n",
+      "ERROR:",   "[IntInClassLogger]", "error-message-!#$&^%$#@\n",
+      "FATAL:",   "[IntInClassLogger]", "fatal-message-JJSjaamcng\n",
+    };
+
+  const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  const string buffer = m_buffer.str();
+
+  std::vector<string> components;
+  boost::split(components, buffer, boost::is_any_of(" ,\n"));
+
+  // expected + number of timestamps (one per log statement) + trailing newline of last statement
+  BOOST_REQUIRE_EQUAL(components.size(), N_EXPECTED + 6 + 1);
+
+  std::vector<std::string>::const_iterator componentIter = components.begin();
+  for (size_t i = 0; i < N_EXPECTED; ++i)
+    {
+      // timestamp LOG_LEVEL: [ModuleName] message\n
+
+      const string& timestamp = *componentIter;
+      // std::cout << "timestamp = " << timestamp << std::endl;
+      ++componentIter;
+
+      size_t timeDelimiterPosition = timestamp.find(".");
+
+      BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+      string secondsString = timestamp.substr(0, timeDelimiterPosition);
+      string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+      microseconds::rep extractedTime =
+        ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+        boost::lexical_cast<microseconds::rep>(usecondsString);
+
+      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+
+      BOOST_REQUIRE(before <= extractedTime);
+      BOOST_REQUIRE(extractedTime <= after);
+
+      // LOG_LEVEL:
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      // [ModuleName]
+      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      ++componentIter;
+      ++i;
+
+      const string& message = *componentIter;
+
+      // std::cout << "message = " << message << std::endl;
+
+      // add back the newline that we split on
+      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      ++componentIter;
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
