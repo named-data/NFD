@@ -30,10 +30,70 @@
 #include "common.hpp"
 #include "cs-entry.hpp"
 
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
+#include <boost/multi_index/identity.hpp>
+
+using namespace ::boost;
+using namespace ::boost::multi_index;
+
 namespace nfd {
 
-typedef std::list< shared_ptr<cs::Entry> > SkipListLayer;
+typedef std::list<cs::Entry*> SkipListLayer;
 typedef std::list<SkipListLayer*> SkipList;
+
+class StalenessComparator
+{
+public:
+  bool
+  operator()(const cs::Entry* entry1, const cs::Entry* entry2) const
+  {
+    return entry1->getStaleTime() < entry2->getStaleTime();
+  }
+};
+
+class UnsolicitedComparator
+{
+public:
+  bool
+  operator()(const cs::Entry* entry1, const cs::Entry* entry2) const
+  {
+    return entry1->isUnsolicited();
+  }
+};
+
+// tags
+class unsolicited;
+class byStaleness;
+class byArrival;
+
+typedef multi_index_container<
+  cs::Entry*,
+  indexed_by<
+
+    // by arrival (FIFO)
+    sequenced<
+      tag<byArrival>
+    >,
+
+    // index by staleness time
+    ordered_non_unique<
+      tag<byStaleness>,
+      identity<cs::Entry*>,
+      StalenessComparator
+    >,
+
+    // unsolicited Data is in the front
+    ordered_non_unique<
+      tag<unsolicited>,
+      identity<cs::Entry*>,
+      UnsolicitedComparator
+    >
+
+  >
+> CleanupIndex;
 
 /** \brief represents Content Store
  */
@@ -110,14 +170,14 @@ private:
    *  \return{ returns a pair containing a pointer to the CS Entry,
    *  and a flag indicating if the entry was newly created (True) or refreshed (False) }
    */
-  std::pair< shared_ptr<cs::Entry>, bool>
+  std::pair<cs::Entry*, bool>
   insertToSkipList(const Data& data, bool isUnsolicited = false);
 
   /** \brief Removes a specific CS Entry from all layers of a skip list
    *  \return{ returns True if CS Entry was succesfully removed and False if CS Entry was not found}
    */
   bool
-  eraseFromSkipList(shared_ptr<cs::Entry> entry);
+  eraseFromSkipList(cs::Entry* entry);
 
   /** \brief Prints contents of the skip list, starting from the top layer
    */
@@ -144,32 +204,23 @@ private:
    *  \return{ true if satisfies all selectors; false otherwise }
    */
   bool
-  doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entry) const;
+  doesComplyWithSelectors(const Interest& interest,
+                          cs::Entry* entry,
+                          bool doesInterestContainDigest) const;
 
   /** \brief interprets minSuffixComponent and name lengths to understand if Interest contains
    *  implicit digest of the data
    *  \return{ True if Interest name contains digest; False otherwise }
    */
   bool
-  recognizeInterestWithDigest(const Interest& interest, shared_ptr<cs::Entry> entry) const;
+  recognizeInterestWithDigest(const Interest& interest, cs::Entry* entry) const;
 
 private:
-  class StalenessComparator
-  {
-  public:
-    bool
-    operator() (shared_ptr<cs::Entry> entry1, shared_ptr<cs::Entry> entry2)
-    {
-      return entry1->getStaleTime() > entry2->getStaleTime();
-    }
-  };
-
   SkipList m_skipList;
-  size_t m_nMaxPackets; //user defined maximum size of the Content Store in packets
-
-  std::queue< shared_ptr<cs::Entry> > m_unsolicitedContent; //FIFO for unsolicited Data
-  std::queue< shared_ptr<cs::Entry> > m_contentByArrival;   //FIFO index
-  std::priority_queue< shared_ptr<cs::Entry>, std::vector< shared_ptr<cs::Entry> >, StalenessComparator> m_contentByStaleness; //index by staleness time
+  CleanupIndex m_cleanupIndex;
+  size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
+  size_t m_nPackets;    // current number of packets in Content Store
+  std::queue<cs::Entry*> m_freeCsEntries; // memory pool
 };
 
 } // namespace nfd

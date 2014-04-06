@@ -41,11 +41,14 @@ class Entry;
 class Entry : noncopyable
 {
 public:
-  typedef std::map<int, std::list< shared_ptr<Entry> >::iterator> LayerIterators;
+  typedef std::map<int, std::list<Entry*>::iterator > LayerIterators;
 
-  Entry(const Data& data, bool isUnsolicited = false);
+  Entry();
 
-  ~Entry();
+  /** \brief releases reference counts on shared objects
+   */
+  void
+  release();
 
   /** \brief returns the name of the Data packet stored in the CS entry
    *  \return{ NDN name }
@@ -59,11 +62,6 @@ public:
    */
   bool
   isUnsolicited() const;
-
-  /** \brief Returns True if CS entry was refreshed by a duplicate Data packet
-   */
-  bool
-  wasRefreshedByDuplicate() const;
 
   /** \brief returns the absolute time when Data becomes expired
    *  \return{ Time (resolution up to time::milliseconds) }
@@ -79,12 +77,12 @@ public:
   /** \brief changes the content of CS entry and recomputes digest
    */
   void
-  setData(const Data& data);
+  setData(const Data& data, bool isUnsolicited);
 
   /** \brief changes the content of CS entry and modifies digest
    */
   void
-  setData(const Data& data, const ndn::ConstBufferPtr& digest);
+  setData(const Data& data, bool isUnsolicited, const ndn::ConstBufferPtr& digest);
 
   /** \brief refreshes the time when Data becomes expired
    *  according to the current absolute time.
@@ -123,14 +121,47 @@ private:
   shared_ptr<const Data> m_dataPacket;
 
   bool m_isUnsolicited;
-  bool m_wasRefreshedByDuplicate;
-
   Name m_nameWithDigest;
 
   mutable ndn::ConstBufferPtr m_digest;
 
   LayerIterators m_layerIterators;
 };
+
+inline
+Entry::Entry()
+{
+}
+
+inline const Name&
+Entry::getName() const
+{
+  return m_nameWithDigest;
+}
+
+inline const Data&
+Entry::getData() const
+{
+  return *m_dataPacket;
+}
+
+inline bool
+Entry::isUnsolicited() const
+{
+  return m_isUnsolicited;
+}
+
+inline const time::steady_clock::TimePoint&
+Entry::getStaleTime() const
+{
+  return m_staleAt;
+}
+
+inline const Entry::LayerIterators&
+Entry::getIterators() const
+{
+  return m_layerIterators;
+}
 
 } // namespace cs
 } // namespace nfd

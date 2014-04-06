@@ -29,15 +29,12 @@
 
 #include "tests/test-common.hpp"
 
-#include <ndn-cpp-dev/security/key-chain.hpp>
-
 namespace nfd {
 namespace tests {
 
 class CsAccessor : public Cs
 {
 public:
-
   bool
   evictItem_accessor()
   {
@@ -51,37 +48,17 @@ BOOST_AUTO_TEST_CASE(Insertion)
 {
   Cs cs;
 
-  shared_ptr<Data> data = make_shared<Data>("/insertion");
-
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-  data->setSignature(fakeSignature);
-
-  BOOST_CHECK_EQUAL(cs.insert(*data), true);
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/insertion")), true);
 }
 
 BOOST_AUTO_TEST_CASE(Insertion2)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
-  cs.insert(*data);
-
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
-  cs.insert(*data2);
-
-  shared_ptr<Data> data3 = make_shared<Data>("/c");
-  data3->setSignature(fakeSignature);
-  cs.insert(*data3);
-
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
-  cs.insert(*data4);
+  cs.insert(*makeData("/a"));
+  cs.insert(*makeData("/b"));
+  cs.insert(*makeData("/c"));
+  cs.insert(*makeData("/d"));
 
   BOOST_CHECK_EQUAL(cs.size(), 4);
 }
@@ -91,15 +68,10 @@ BOOST_AUTO_TEST_CASE(DuplicateInsertion)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data0 = make_shared<Data>("/insert/smth");
-  data0->setSignature(fakeSignature);
+  shared_ptr<Data> data0 = makeData("/insert/smth");
   BOOST_CHECK_EQUAL(cs.insert(*data0), true);
 
-  shared_ptr<Data> data = make_shared<Data>("/insert/duplicate");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/insert/duplicate");
   BOOST_CHECK_EQUAL(cs.insert(*data), true);
 
   cs.insert(*data);
@@ -111,18 +83,13 @@ BOOST_AUTO_TEST_CASE(DuplicateInsertion2)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/insert/duplicate");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/insert/duplicate");
   BOOST_CHECK_EQUAL(cs.insert(*data), true);
 
   cs.insert(*data);
   BOOST_CHECK_EQUAL(cs.size(), 1);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/insert/original");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/insert/original");
   BOOST_CHECK_EQUAL(cs.insert(*data2), true);
   BOOST_CHECK_EQUAL(cs.size(), 2);
 }
@@ -131,13 +98,9 @@ BOOST_AUTO_TEST_CASE(InsertAndFind)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name("/insert/and/find");
 
-  shared_ptr<Data> data = make_shared<Data>(name);
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData(name);
   BOOST_CHECK_EQUAL(cs.insert(*data), true);
 
   shared_ptr<Interest> interest = make_shared<Interest>(name);
@@ -152,12 +115,8 @@ BOOST_AUTO_TEST_CASE(InsertAndNotFind)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name("/insert/and/find");
-  shared_ptr<Data> data = make_shared<Data>(name);
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData(name);
   BOOST_CHECK_EQUAL(cs.insert(*data), true);
 
   Name name2("/not/find");
@@ -173,11 +132,7 @@ BOOST_AUTO_TEST_CASE(InsertAndErase)
 {
   CsAccessor cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/insertandelete");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/insertandelete");
   cs.insert(*data);
   BOOST_CHECK_EQUAL(cs.size(), 1);
 
@@ -189,24 +144,19 @@ BOOST_AUTO_TEST_CASE(StalenessQueue)
 {
   CsAccessor cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name2("/insert/fresh");
-  shared_ptr<Data> data2 = make_shared<Data>(name2);
+  shared_ptr<Data> data2 = makeData(name2);
   data2->setFreshnessPeriod(time::milliseconds(5000));
-  data2->setSignature(fakeSignature);
   cs.insert(*data2);
 
   Name name("/insert/expire");
-  shared_ptr<Data> data = make_shared<Data>(name);
+  shared_ptr<Data> data = makeData(name);
   data->setFreshnessPeriod(time::milliseconds(500));
-  data->setSignature(fakeSignature);
   cs.insert(*data);
 
   BOOST_CHECK_EQUAL(cs.size(), 2);
 
-  sleep(1);
+  sleep(3);
 
   cs.evictItem_accessor();
   BOOST_CHECK_EQUAL(cs.size(), 1);
@@ -222,27 +172,19 @@ BOOST_AUTO_TEST_CASE(ReplacementEvenSize)
 {
   Cs cs(4);
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/c");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/c");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  shared_ptr<Data> data5 = make_shared<Data>("/e");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/e");
   cs.insert(*data5);
 
   BOOST_CHECK_EQUAL(cs.size(), 4);
@@ -253,23 +195,16 @@ BOOST_AUTO_TEST_CASE(Replacement2)
 {
   Cs cs(3);
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/c");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/c");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
   BOOST_CHECK_EQUAL(cs.size(), 3);
@@ -279,82 +214,64 @@ BOOST_AUTO_TEST_CASE(InsertAndEraseByName)
 {
   CsAccessor cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name("/insertandremovebyname");
-  shared_ptr<Data> data = make_shared<Data>(name);
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData(name);
   cs.insert(*data);
 
-  uint8_t digest1[32];
-  ndn::ndn_digestSha256(data->wireEncode().wire(), data->wireEncode().size(), digest1);
+  ndn::ConstBufferPtr digest1 = ndn::crypto::sha256(data->wireEncode().wire(),
+                                                    data->wireEncode().size());
 
-  shared_ptr<Data> data2 = make_shared<Data>("/a");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/a");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/z");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/z");
   cs.insert(*data3);
 
   BOOST_CHECK_EQUAL(cs.size(), 3);
 
-  name.append(digest1, 32);
+  name.append(digest1->buf(), digest1->size());
   cs.erase(name);
   BOOST_CHECK_EQUAL(cs.size(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(DigestCalculation)
 {
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
+  shared_ptr<Data> data = makeData("/digest/compute");
 
-  shared_ptr<Data> data = make_shared<Data>("/digest/compute");
-  data->setSignature(fakeSignature);
+  ndn::ConstBufferPtr digest1 = ndn::crypto::sha256(data->wireEncode().wire(),
+                                                    data->wireEncode().size());
+  BOOST_CHECK_EQUAL(digest1->size(), 32);
 
-  uint8_t digest1[32];
-  ndn::ndn_digestSha256(data->wireEncode().wire(), data->wireEncode().size(), digest1);
+  cs::Entry* entry = new cs::Entry();
+  entry->setData(*data, false);
 
-  cs::Entry* entry = new cs::Entry(*data, false);
-
-  BOOST_CHECK_EQUAL_COLLECTIONS(digest1, digest1+32,
-                                entry->getDigest()->buf(), entry->getDigest()->buf()+32);
+  BOOST_CHECK_EQUAL_COLLECTIONS(digest1->begin(), digest1->end(),
+                                entry->getDigest()->begin(), entry->getDigest()->end());
 }
 
 BOOST_AUTO_TEST_CASE(InsertCanonical)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/c");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/c");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  shared_ptr<Data> data5 = make_shared<Data>("/c/c/1/2/3/4/5/6");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/c/c/1/2/3/4/5/6");
   cs.insert(*data5);
 
-  shared_ptr<Data> data6 = make_shared<Data>("/c/c/1/2/3");
-  data6->setSignature(fakeSignature);
+  shared_ptr<Data> data6 = makeData("/c/c/1/2/3");
   cs.insert(*data6);
 
-  shared_ptr<Data> data7 = make_shared<Data>("/c/c/1");
-  data7->setSignature(fakeSignature);
+  shared_ptr<Data> data7 = makeData("/c/c/1");
   cs.insert(*data7);
 }
 
@@ -362,42 +279,32 @@ BOOST_AUTO_TEST_CASE(EraseCanonical)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/c");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/c");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  uint8_t digest1[32];
-  ndn::ndn_digestSha256(data->wireEncode().wire(), data->wireEncode().size(), digest1);
-
-  shared_ptr<Data> data5 = make_shared<Data>("/c/c/1/2/3/4/5/6");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/c/c/1/2/3/4/5/6");
   cs.insert(*data5);
 
-  shared_ptr<Data> data6 = make_shared<Data>("/c/c/1/2/3");
-  data6->setSignature(fakeSignature);
+  shared_ptr<Data> data6 = makeData("/c/c/1/2/3");
   cs.insert(*data6);
 
-  shared_ptr<Data> data7 = make_shared<Data>("/c/c/1");
-  data7->setSignature(fakeSignature);
+  shared_ptr<Data> data7 = makeData("/c/c/1");
   cs.insert(*data7);
 
+  ndn::ConstBufferPtr digest1 = ndn::crypto::sha256(data->wireEncode().wire(),
+                                                    data->wireEncode().size());
+
   Name name("/a");
-  name.append(digest1,32);
+  name.append(digest1->buf(), digest1->size());
   cs.erase(name);
   BOOST_CHECK_EQUAL(cs.size(), 6);
 }
@@ -406,28 +313,23 @@ BOOST_AUTO_TEST_CASE(ImplicitDigestSelector)
 {
   CsAccessor cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name("/digest/works");
-  shared_ptr<Data> data = make_shared<Data>(name);
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData(name);
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/a");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/a");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/z/z/z");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/z/z/z");
   cs.insert(*data3);
 
-  uint8_t digest1[32];
-  ndn::ndn_digestSha256(data->wireEncode().wire(), data->wireEncode().size(), digest1);
+  ndn::ConstBufferPtr digest1 = ndn::crypto::sha256(data->wireEncode().wire(),
+                                                    data->wireEncode().size());
+  uint8_t digest2[32] = {0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
 
-  uint8_t digest2[32] = {0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1};
-
-  shared_ptr<Interest> interest = make_shared<Interest>(boost::cref(Name(name).append(digest1, 32)));
+  shared_ptr<Interest> interest = make_shared<Interest>();
+  interest->setName(Name(name).append(digest1->buf(), digest1->size()));
   interest->setMinSuffixComponents(0);
   interest->setMaxSuffixComponents(0);
 
@@ -435,7 +337,8 @@ BOOST_AUTO_TEST_CASE(ImplicitDigestSelector)
   BOOST_CHECK_NE(found, static_cast<const Data*>(0));
   BOOST_CHECK_EQUAL(found->getName(), name);
 
-  shared_ptr<Interest> interest2 = make_shared<Interest>(boost::cref(Name(name).append(digest2, 32)));
+  shared_ptr<Interest> interest2 = make_shared<Interest>();
+  interest2->setName(Name(name).append(digest2, 32));
   interest2->setMinSuffixComponents(0);
   interest2->setMaxSuffixComponents(0);
 
@@ -447,31 +350,22 @@ BOOST_AUTO_TEST_CASE(ChildSelector)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  shared_ptr<Data> data5 = make_shared<Data>("/c/c");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/c/c");
   cs.insert(*data5);
 
-  shared_ptr<Data> data6 = make_shared<Data>("/c/f");
-  data6->setSignature(fakeSignature);
+  shared_ptr<Data> data6 = makeData("/c/f");
   cs.insert(*data6);
 
-  shared_ptr<Data> data7 = make_shared<Data>("/c/n");
-  data7->setSignature(fakeSignature);
+  shared_ptr<Data> data7 = makeData("/c/n");
   cs.insert(*data7);
 
   shared_ptr<Interest> interest = make_shared<Interest>("/c");
@@ -491,23 +385,16 @@ BOOST_AUTO_TEST_CASE(ChildSelector2)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a/b/1");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a/b/1");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/a/b/2");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/a/b/2");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/a/z/1");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/a/z/1");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/a/z/2");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/a/z/2");
   cs.insert(*data4);
 
   shared_ptr<Interest> interest = make_shared<Interest>("/a");
@@ -521,13 +408,9 @@ BOOST_AUTO_TEST_CASE(MustBeFreshSelector)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
   Name name("/insert/nonfresh");
-  shared_ptr<Data> data = make_shared<Data>(name);
+  shared_ptr<Data> data = makeData(name);
   data->setFreshnessPeriod(time::milliseconds(500));
-  data->setSignature(fakeSignature);
   cs.insert(*data);
 
   sleep(1);
@@ -543,35 +426,25 @@ BOOST_AUTO_TEST_CASE(MinMaxComponentsSelector)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  shared_ptr<Data> data5 = make_shared<Data>("/c/c/1/2/3/4/5/6");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/c/c/1/2/3/4/5/6");
   cs.insert(*data5);
 
-  shared_ptr<Data> data6 = make_shared<Data>("/c/c/6/7/8/9");
-  data6->setSignature(fakeSignature);
+  shared_ptr<Data> data6 = makeData("/c/c/6/7/8/9");
   cs.insert(*data6);
 
-  shared_ptr<Data> data7 = make_shared<Data>("/c/c/1/2/3");
-  data7->setSignature(fakeSignature);
+  shared_ptr<Data> data7 = makeData("/c/c/1/2/3");
   cs.insert(*data7);
 
-  shared_ptr<Data> data8 = make_shared<Data>("/c/c/1");
-  data8->setSignature(fakeSignature);
+  shared_ptr<Data> data8 = makeData("/c/c/1");
   cs.insert(*data8);
 
   shared_ptr<Interest> interest = make_shared<Interest>("/c/c");
@@ -600,35 +473,25 @@ BOOST_AUTO_TEST_CASE(ExcludeSelector)
 {
   Cs cs;
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  shared_ptr<Data> data = make_shared<Data>("/a");
-  data->setSignature(fakeSignature);
+  shared_ptr<Data> data = makeData("/a");
   cs.insert(*data);
 
-  shared_ptr<Data> data2 = make_shared<Data>("/b");
-  data2->setSignature(fakeSignature);
+  shared_ptr<Data> data2 = makeData("/b");
   cs.insert(*data2);
 
-  shared_ptr<Data> data3 = make_shared<Data>("/c/a");
-  data3->setSignature(fakeSignature);
+  shared_ptr<Data> data3 = makeData("/c/a");
   cs.insert(*data3);
 
-  shared_ptr<Data> data4 = make_shared<Data>("/d");
-  data4->setSignature(fakeSignature);
+  shared_ptr<Data> data4 = makeData("/d");
   cs.insert(*data4);
 
-  shared_ptr<Data> data5 = make_shared<Data>("/c/c");
-  data5->setSignature(fakeSignature);
+  shared_ptr<Data> data5 = makeData("/c/c");
   cs.insert(*data5);
 
-  shared_ptr<Data> data6 = make_shared<Data>("/c/f");
-  data6->setSignature(fakeSignature);
+  shared_ptr<Data> data6 = makeData("/c/f");
   cs.insert(*data6);
 
-  shared_ptr<Data> data7 = make_shared<Data>("/c/n");
-  data7->setSignature(fakeSignature);
+  shared_ptr<Data> data7 = makeData("/c/n");
   cs.insert(*data7);
 
   shared_ptr<Interest> interest = make_shared<Interest>("/c");
@@ -669,13 +532,9 @@ protected:
   void
   insert(uint32_t id, const Name& name)
   {
-    shared_ptr<Data> data = make_shared<Data>(name);
+    shared_ptr<Data> data = makeData(name);
     data->setFreshnessPeriod(time::milliseconds(99999));
     data->setContent(reinterpret_cast<const uint8_t*>(&id), sizeof(id));
-
-    ndn::SignatureSha256WithRsa fakeSignature;
-    fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-    data->setSignature(fakeSignature);
 
     m_cs.insert(*data);
   }
@@ -891,23 +750,121 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   insert(3, "ndn:/A/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"); // 33 'C's
 
   startInterest("ndn:/A")
-    .setExclude(Exclude().excludeBefore(ndn::name::Component(reinterpret_cast<const uint8_t*>(
+    .setExclude(Exclude().excludeBefore(name::Component(reinterpret_cast<const uint8_t*>(
         "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"
         "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF"), 31))); // 31 0xFF's
   BOOST_CHECK_EQUAL(find(), 2);
 
   startInterest("ndn:/A")
     .setChildSelector(1)
-    .setExclude(Exclude().excludeAfter(ndn::name::Component(reinterpret_cast<const uint8_t*>(
+    .setExclude(Exclude().excludeAfter(name::Component(reinterpret_cast<const uint8_t*>(
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00"), 33))); // 33 0x00's
   BOOST_CHECK_EQUAL(find(), 2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_CASE(ExactName32)
+{
+  insert(1, "ndn:/A/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"); // 32 'B's
+  insert(2, "ndn:/A/CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"); // 32 'C's
 
-BOOST_AUTO_TEST_SUITE_END()
+  startInterest("ndn:/A/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
+  BOOST_CHECK_EQUAL(find(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(MinSuffixComponents32)
+{
+  insert(1, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A/1/2/3/4"); // 32 'x's
+  insert(2, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/B/1/2/3");
+  insert(3, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/C/1/2");
+  insert(4, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/D/1");
+  insert(5, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/E");
+  insert(6, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(0);
+  BOOST_CHECK_EQUAL(find(), 6);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(1);
+  BOOST_CHECK_EQUAL(find(), 6);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(2);
+  BOOST_CHECK_EQUAL(find(), 5);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(3);
+  BOOST_CHECK_EQUAL(find(), 4);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(4);
+  BOOST_CHECK_EQUAL(find(), 3);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(5);
+  BOOST_CHECK_EQUAL(find(), 2);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(6);
+  BOOST_CHECK_EQUAL(find(), 1);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setChildSelector(1)
+    .setMinSuffixComponents(7);
+  BOOST_CHECK_EQUAL(find(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(MaxSuffixComponents32)
+{
+  insert(1, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/"); // 32 'x's
+  insert(2, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A");
+  insert(3, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A/B");
+  insert(4, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A/B/C");
+  insert(5, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A/B/C/D");
+  insert(6, "ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/A/B/C/D/E");
+  // Order is 6,5,4,3,2,1, because <32-octet hash> is greater than a 1-octet component.
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(0);
+  BOOST_CHECK_EQUAL(find(), 0);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(1);
+  BOOST_CHECK_EQUAL(find(), 1);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(2);
+  BOOST_CHECK_EQUAL(find(), 2);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(3);
+  BOOST_CHECK_EQUAL(find(), 3);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(4);
+  BOOST_CHECK_EQUAL(find(), 4);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(5);
+  BOOST_CHECK_EQUAL(find(), 5);
+
+  startInterest("ndn:/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+    .setMaxSuffixComponents(6);
+  BOOST_CHECK_EQUAL(find(), 6);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Find
+
+BOOST_AUTO_TEST_SUITE_END() // TableCs
 
 } // namespace tests
 } // namespace nfd

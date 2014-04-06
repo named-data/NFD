@@ -79,6 +79,7 @@ using boost::bind;
 using ndn::Interest;
 using ndn::Data;
 using ndn::Name;
+namespace name = ndn::name;
 using ndn::Exclude;
 using ndn::Block;
 namespace tlv {

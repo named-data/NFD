@@ -39,6 +39,8 @@ def options(opt):
     nfdopt = opt.add_option_group('NFD Options')
     nfdopt.add_option('--with-tests', action='store_true', default=False,
                       dest='with_tests', help='''Build unit tests''')
+    nfdopt.add_option('--with-other-tests', action='store_true', default=False,
+                      dest='with_other_tests', help='''Build other tests''')
 
 def configure(conf):
     conf.load("compiler_cxx boost gnu_dirs")
@@ -56,6 +58,9 @@ def configure(conf):
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
         boost_libs += ' unit_test_framework'
+
+    if conf.options.with_other_tests:
+        conf.env['WITH_OTHER_TESTS'] = 1
 
     conf.check_boost(lib=boost_libs)
 
@@ -85,6 +90,7 @@ def configure(conf):
 def build(bld):
     nfd_objects = bld(
         target='nfd-objects',
+        name='nfd-objects',
         features='cxx',
         source=bld.path.ant_glob(['daemon/**/*.cpp'],
                                  excl=['daemon/face/ethernet-*.cpp',
@@ -134,6 +140,9 @@ def build(bld):
 
         if bld.env['HAVE_UNIX_SOCKETS']:
             unit_tests.source += bld.path.ant_glob('tests/face/unix-*.cpp')
+
+    if bld.env['WITH_OTHER_TESTS']:
+        bld.recurse("tests-other")
 
     bld(features="subst",
         source='nfd.conf.sample.in',

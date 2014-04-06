@@ -26,11 +26,10 @@
 
 #include "cs.hpp"
 #include "core/logger.hpp"
-
 #include <ndn-cpp-dev/util/crypto.hpp>
 
 #define SKIPLIST_MAX_LAYERS 32
-#define SKIPLIST_PROBABILITY 50         // 50% ( p = 1/2 )
+#define SKIPLIST_PROBABILITY 25         // 25% (p = 1/4)
 
 NFD_LOG_INIT("ContentStore");
 
@@ -38,21 +37,34 @@ namespace nfd {
 
 Cs::Cs(int nMaxPackets)
   : m_nMaxPackets(nMaxPackets)
+  , m_nPackets(0)
 {
-  srand (time::toUnixTimestamp(time::system_clock::now()).count());
   SkipListLayer* zeroLayer = new SkipListLayer();
   m_skipList.push_back(zeroLayer);
+
+  for (size_t i = 0; i < m_nMaxPackets; i++)
+    m_freeCsEntries.push(new cs::Entry());
 }
 
 Cs::~Cs()
 {
-  /// \todo Fix memory leak
+  // evict all items from CS
+  while (evictItem())
+    ;
+
+  BOOST_ASSERT(m_freeCsEntries.size() == m_nMaxPackets);
+
+  while (!m_freeCsEntries.empty())
+    {
+      delete m_freeCsEntries.front();
+      m_freeCsEntries.pop();
+    }
 }
 
 size_t
 Cs::size() const
 {
-  return (*m_skipList.begin())->size(); // size of the first layer in a skip list
+  return m_nPackets; // size of the first layer in a skip list
 }
 
 void
@@ -62,7 +74,8 @@ Cs::setLimit(size_t nMaxPackets)
 
   while (isFull())
     {
-      evictItem();
+      if (!evictItem())
+        break;
     }
 }
 
@@ -73,13 +86,20 @@ Cs::getLimit() const
 }
 
 //Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
-std::pair< shared_ptr<cs::Entry>, bool>
+std::pair<cs::Entry*, bool>
 Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 {
   NFD_LOG_TRACE("insertToSkipList() " << data.getName() << ", "
                 << "skipList size " << size());
 
-  shared_ptr<cs::Entry> entry = make_shared<cs::Entry>(data, isUnsolicited);
+  BOOST_ASSERT(m_cleanupIndex.size() <= size());
+  BOOST_ASSERT(m_freeCsEntries.size() > 0);
+
+  // take entry for the memory pool
+  cs::Entry* entry = m_freeCsEntries.front();
+  m_freeCsEntries.pop();
+  m_nPackets++;
+  entry->setData(data, isUnsolicited);
 
   bool insertInFront = false;
   bool isIterated = false;
@@ -87,14 +107,14 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
   SkipListLayer::iterator updateTable[SKIPLIST_MAX_LAYERS];
   SkipListLayer::iterator head = (*topLayer)->begin();
 
-  if ( !(*topLayer)->empty() )
+  if (!(*topLayer)->empty())
     {
       //start from the upper layer towards bottom
       int layer = m_skipList.size() - 1;
       for (SkipList::reverse_iterator rit = topLayer; rit != m_skipList.rend(); ++rit)
         {
           //if we didn't do any iterations on the higher layers, start from the begin() again
-          if ( !isIterated )
+          if (!isIterated)
             head = (*rit)->begin();
 
           updateTable[layer] = head;
@@ -102,7 +122,7 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
           if (head != (*rit)->end())
             {
               // it can happen when begin() contains the element in front of which we need to insert
-              if ( !isIterated && ((*head)->getName() >= entry->getName()) )
+              if (!isIterated && ((*head)->getName() >= entry->getName()))
                 {
                   --updateTable[layer];
                   insertInFront = true;
@@ -153,6 +173,11 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 
       (*head)->setData(data, entry->getDigest()); //updates stale time
 
+      // new entry not needed, returning to the pool
+      entry->release();
+      m_freeCsEntries.push(entry);
+      m_nPackets--;
+
       return std::make_pair(*head, false);
     }
 
@@ -160,7 +185,7 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 
   size_t randomLayer = pickRandomLayer();
 
-  while ( m_skipList.size() < randomLayer + 1)
+  while (m_skipList.size() < randomLayer + 1)
     {
       SkipListLayer* newLayer = new SkipListLayer();
       m_skipList.push_back(newLayer);
@@ -198,8 +223,6 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
       layer++;
     }
 
-  printSkipList();
-
   return std::make_pair(entry, true);
 }
 
@@ -214,17 +237,12 @@ Cs::insert(const Data& data, bool isUnsolicited)
     }
 
   //pointer and insertion status
-  std::pair< shared_ptr<cs::Entry>, bool> entry = insertToSkipList(data, isUnsolicited);
+  std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
 
   //new entry
-  if (entry.first && (entry.second == true))
+  if (static_cast<bool>(entry.first) && (entry.second == true))
     {
-      m_contentByArrival.push(entry.first);
-      m_contentByStaleness.push(entry.first);
-
-      if (entry.first->isUnsolicited())
-        m_unsolicitedContent.push(entry.first);
-
+      m_cleanupIndex.push_back(entry.first);
       return true;
     }
 
@@ -242,7 +260,7 @@ Cs::pickRandomLayer() const
       layer++;
       randomValue = rand() % 100 + 1;
     }
-  while ( (randomValue < SKIPLIST_PROBABILITY) && (layer < SKIPLIST_MAX_LAYERS) );
+  while ((randomValue < SKIPLIST_PROBABILITY) && (layer < SKIPLIST_MAX_LAYERS));
 
   return static_cast<size_t>(layer);
 }
@@ -257,40 +275,52 @@ Cs::isFull() const
 }
 
 bool
-Cs::eraseFromSkipList(shared_ptr<cs::Entry> entry)
+Cs::eraseFromSkipList(cs::Entry* entry)
 {
   NFD_LOG_TRACE("eraseFromSkipList() "  << entry->getName());
   NFD_LOG_TRACE("SkipList size " << size());
 
   bool isErased = false;
 
-  int layer = m_skipList.size() - 1;
-  for (SkipList::reverse_iterator rit = m_skipList.rbegin(); rit != m_skipList.rend(); ++rit)
-    {
-      const std::map<int, std::list< shared_ptr<cs::Entry> >::iterator>& iterators = entry->getIterators();
-      std::map<int, std::list< shared_ptr<cs::Entry> >::iterator>::const_iterator it = iterators.find(layer);
-      if (it != iterators.end())
-        {
-          (*rit)->erase(it->second);
-          entry->removeIterator(layer);
-          isErased = true;
-        }
+  const std::map<int, std::list<cs::Entry*>::iterator>& iterators = entry->getIterators();
 
-      layer--;
+  if (!iterators.empty())
+    {
+      int layer = 0;
+
+      for (SkipList::iterator it = m_skipList.begin(); it != m_skipList.end(); )
+        {
+          std::map<int, std::list<cs::Entry*>::iterator>::const_iterator i = iterators.find(layer);
+
+          if (i != iterators.end())
+            {
+              (*it)->erase(i->second);
+              entry->removeIterator(layer);
+              isErased = true;
+
+              //remove layers that do not contain any elements (starting from the second layer)
+              if ((layer != 0) && (*it)->empty())
+                {
+                  delete *it;
+                  it = m_skipList.erase(it);
+                }
+              else
+                ++it;
+
+              layer++;
+            }
+          else
+            break;
+      }
     }
 
-  printSkipList();
-
-  //remove layers that do not contain any elements (starting from the second layer)
-  for (SkipList::iterator it = (++m_skipList.begin()); it != m_skipList.end();)
-    {
-      if ((*it)->empty())
-        {
-          it = m_skipList.erase(it);
-        }
-      else
-        ++it;
-    }
+  //delete entry;
+  if (isErased)
+  {
+    entry->release();
+    m_freeCsEntries.push(entry);
+    m_nPackets--;
+  }
 
   return isErased;
 }
@@ -300,65 +330,34 @@ Cs::evictItem()
 {
   NFD_LOG_TRACE("evictItem()");
 
-  //because there is a possibility that this item is in a queue, but no longer in skiplist
-  while ( !m_unsolicitedContent.empty() )
-    {
-      NFD_LOG_TRACE("Evict from unsolicited queue");
+  if (!m_cleanupIndex.get<unsolicited>().empty() &&
+      (*m_cleanupIndex.get<unsolicited>().begin())->isUnsolicited())
+  {
+    NFD_LOG_TRACE("Evict from unsolicited queue");
 
-      shared_ptr<cs::Entry> entry = m_unsolicitedContent.front();
-      m_unsolicitedContent.pop();
-      bool isErased = eraseFromSkipList(entry);
+    eraseFromSkipList(*m_cleanupIndex.get<unsolicited>().begin());
+    m_cleanupIndex.get<unsolicited>().erase(m_cleanupIndex.get<unsolicited>().begin());
+    return true;
+  }
 
-      if (isErased)
-        return true;
-    }
+  if (!m_cleanupIndex.get<byStaleness>().empty() &&
+      (*m_cleanupIndex.get<byStaleness>().begin())->getStaleTime() < time::steady_clock::now())
+  {
+    NFD_LOG_TRACE("Evict from staleness queue");
 
-  //because there is a possibility that this item is in a queue, but no longer in skiplist
-  int nIterations = size() * 0.01;  // 1% of the Content Store
-  while ( !m_contentByStaleness.empty() )
-    {
-      NFD_LOG_TRACE("Evict from staleness queue");
+    eraseFromSkipList(*m_cleanupIndex.get<byStaleness>().begin());
+    m_cleanupIndex.get<byStaleness>().erase(m_cleanupIndex.get<byStaleness>().begin());
+    return true;
+  }
 
-      shared_ptr<cs::Entry> entry = m_contentByStaleness.top();
+  if (!m_cleanupIndex.get<byArrival>().empty())
+  {
+    NFD_LOG_TRACE("Evict from arrival queue");
 
-      //because stale time could be updated by the duplicate packet
-      if (entry->getStaleTime() < time::steady_clock::now())
-        {
-          m_contentByStaleness.pop();
-          bool isErased = eraseFromSkipList(entry);
-
-          if (isErased)
-            return true;
-        }
-      else if ( (entry->getStaleTime() > time::steady_clock::now()) && entry->wasRefreshedByDuplicate() )
-        {
-          m_contentByStaleness.pop();
-          m_contentByStaleness.push(entry); // place in a right order
-
-          nIterations--;
-          // if 1% of the CS are non-expired refreshed CS entries (allocated sequentially),
-          // then stop to prevent too many iterations
-          if ( nIterations <= 0 )
-            break;
-        }
-      else //no further item will be expired, stop
-        {
-          break;
-        }
-    }
-
-  //because there is a possibility that this item is in a queue, but no longer in skiplist
-  while ( !m_contentByArrival.empty() )
-    {
-      NFD_LOG_TRACE("Evict from arrival queue");
-
-      shared_ptr<cs::Entry> entry = m_contentByArrival.front();
-      m_contentByArrival.pop();
-      bool isErased = eraseFromSkipList(entry);
-
-      if (isErased)
-        return true;
-    }
+    eraseFromSkipList(*m_cleanupIndex.get<byArrival>().begin());
+    m_cleanupIndex.get<byArrival>().erase(m_cleanupIndex.get<byArrival>().begin());
+    return true;
+  }
 
   return false;
 }
@@ -372,7 +371,7 @@ Cs::find(const Interest& interest) const
   SkipList::const_reverse_iterator topLayer = m_skipList.rbegin();
   SkipListLayer::iterator head = (*topLayer)->begin();
 
-  if ( !(*topLayer)->empty() )
+  if (!(*topLayer)->empty())
     {
       //start from the upper layer towards bottom
       int layer = m_skipList.size() - 1;
@@ -385,7 +384,7 @@ Cs::find(const Interest& interest) const
           if (head != (*rit)->end())
             {
               // it happens when begin() contains the element we want to find
-              if ( !isIterated && (interest.getName().isPrefixOf((*head)->getName())) )
+              if (!isIterated && (interest.getName().isPrefixOf((*head)->getName())))
                 {
                   if (layer > 0)
                     {
@@ -401,7 +400,7 @@ Cs::find(const Interest& interest) const
                 {
                   SkipListLayer::iterator it = head;
 
-                  while ( (*it)->getName() < interest.getName() )
+                  while ((*it)->getName() < interest.getName())
                     {
                       NFD_LOG_TRACE((*it)->getName() << " < " << interest.getName());
                       head = it;
@@ -420,7 +419,7 @@ Cs::find(const Interest& interest) const
             }
           else //if we reached the first layer
             {
-              if ( isIterated )
+              if (isIterated)
                 return selectChild(interest, head);
             }
 
@@ -431,19 +430,18 @@ Cs::find(const Interest& interest) const
   return 0;
 }
 
-// because skip list is a probabilistic data structure and the way it is traversed,
-// there is no guarantee that startingPoint is an element preceding the leftmost child
 const Data*
 Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const
 {
-  BOOST_ASSERT( startingPoint != (*m_skipList.begin())->end() );
+  BOOST_ASSERT(startingPoint != (*m_skipList.begin())->end());
 
   if (startingPoint != (*m_skipList.begin())->begin())
     {
-      BOOST_ASSERT( (*startingPoint)->getName() < interest.getName() );
+      BOOST_ASSERT((*startingPoint)->getName() < interest.getName());
     }
 
-  NFD_LOG_TRACE("selectChild() " << interest.getChildSelector() << " " << (*startingPoint)->getName());
+  NFD_LOG_TRACE("selectChild() " << interest.getChildSelector() << " "
+                << (*startingPoint)->getName());
 
   bool hasLeftmostSelector = (interest.getChildSelector() <= 0);
   bool hasRightmostSelector = !hasLeftmostSelector;
@@ -464,7 +462,7 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
 
       if (isInPrefix)
         {
-          if (doesComplyWithSelectors(interest, *startingPoint))
+          if (doesComplyWithSelectors(interest, *startingPoint, doesInterestContainDigest))
             {
               return &(*startingPoint)->getData();
             }
@@ -487,11 +485,13 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
           bool doesInterestContainDigest = false;
           if (isInBoundaries)
             {
-              doesInterestContainDigest = recognizeInterestWithDigest(interest, *rightmostCandidate);
+              doesInterestContainDigest = recognizeInterestWithDigest(interest,
+                                                                      *rightmostCandidate);
 
               if (doesInterestContainDigest)
                 {
-                  isInPrefix = interest.getName().getPrefix(-1).isPrefixOf((*rightmostCandidate)->getName());
+                  isInPrefix = interest.getName().getPrefix(-1)
+                                 .isPrefixOf((*rightmostCandidate)->getName());
                 }
               else
                 {
@@ -501,7 +501,7 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
 
           if (isInPrefix)
             {
-              if (doesComplyWithSelectors(interest, *rightmostCandidate))
+              if (doesComplyWithSelectors(interest, *rightmostCandidate, doesInterestContainDigest))
                 {
                   if (hasLeftmostSelector)
                     {
@@ -512,11 +512,13 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
                     {
                       if (doesInterestContainDigest)
                         {
-                          // get prefix which is one component longer than Interest name (without digest)
-                          const Name& childPrefix = (*rightmostCandidate)->getName().getPrefix(interest.getName().size());
+                          // get prefix which is one component longer than Interest name
+                          // (without digest)
+                          const Name& childPrefix = (*rightmostCandidate)->getName()
+                                                      .getPrefix(interest.getName().size());
                           NFD_LOG_TRACE("Child prefix" << childPrefix);
 
-                          if ( currentChildPrefix.empty() || (childPrefix != currentChildPrefix) )
+                          if (currentChildPrefix.empty() || (childPrefix != currentChildPrefix))
                             {
                               currentChildPrefix = childPrefix;
                               rightmost = rightmostCandidate;
@@ -525,10 +527,11 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
                       else
                         {
                           // get prefix which is one component longer than Interest name
-                          const Name& childPrefix = (*rightmostCandidate)->getName().getPrefix(interest.getName().size() + 1);
+                          const Name& childPrefix = (*rightmostCandidate)->getName()
+                                                      .getPrefix(interest.getName().size() + 1);
                           NFD_LOG_TRACE("Child prefix" << childPrefix);
 
-                          if ( currentChildPrefix.empty() || (childPrefix != currentChildPrefix) )
+                          if (currentChildPrefix.empty() || (childPrefix != currentChildPrefix))
                             {
                               currentChildPrefix = childPrefix;
                               rightmost = rightmostCandidate;
@@ -563,7 +566,7 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
 
       if (isInPrefix)
         {
-          if (doesComplyWithSelectors(interest, *startingPoint))
+          if (doesComplyWithSelectors(interest, *startingPoint, doesInterestContainDigest))
             {
               return &(*startingPoint)->getData();
             }
@@ -574,16 +577,18 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
 }
 
 bool
-Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entry) const
+Cs::doesComplyWithSelectors(const Interest& interest,
+                            cs::Entry* entry,
+                            bool doesInterestContainDigest) const
 {
   NFD_LOG_TRACE("doesComplyWithSelectors()");
 
   /// \todo The following detection is not correct
   ///       1. If data name ends with 32-octet component doesn't mean that this component is digest
-  ///       2. Only min/max selectors (both 0) can be specified, all other selectors do not make sense
-  ///          for interests with digest (though not sure if we need to enforce this)
-  bool doesInterestContainDigest = recognizeInterestWithDigest(interest, entry);
-  if ( doesInterestContainDigest )
+  ///       2. Only min/max selectors (both 0) can be specified, all other selectors do not
+  ///          make sense for interests with digest (though not sure if we need to enforce this)
+
+  if (doesInterestContainDigest)
     {
       const ndn::name::Component& last = interest.getName().get(-1);
       const ndn::ConstBufferPtr& digest = entry->getDigest();
@@ -598,14 +603,14 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
         }
     }
 
-  if ( !doesInterestContainDigest )
+  if (!doesInterestContainDigest)
     {
       if (interest.getMinSuffixComponents() >= 0)
         {
           size_t minDataNameLength = interest.getName().size() + interest.getMinSuffixComponents();
 
           bool isSatisfied = (minDataNameLength <= entry->getName().size());
-          if ( !isSatisfied )
+          if (!isSatisfied)
             {
               NFD_LOG_TRACE("violates minComponents");
               return false;
@@ -617,7 +622,7 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
           size_t maxDataNameLength = interest.getName().size() + interest.getMaxSuffixComponents();
 
           bool isSatisfied = (maxDataNameLength >= entry->getName().size());
-          if ( !isSatisfied )
+          if (!isSatisfied)
             {
               NFD_LOG_TRACE("violates maxComponents");
               return false;
@@ -631,11 +636,11 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
       return false;
     }
 
-  if ( doesInterestContainDigest )
+  if (doesInterestContainDigest)
     {
       const ndn::name::Component& lastComponent = entry->getName().get(-1);
 
-      if ( !lastComponent.empty() )
+      if (!lastComponent.empty())
         {
           if (interest.getExclude().isExcluded(lastComponent))
             {
@@ -648,9 +653,9 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
     {
       if (entry->getName().size() >= interest.getName().size() + 1)
         {
-          const ndn::name::Component& nextComponent = entry->getName().get(interest.getName().size());
-
-          if ( !nextComponent.empty() )
+          const ndn::name::Component& nextComponent = entry->getName()
+                                                        .get(interest.getName().size());
+          if (!nextComponent.empty())
             {
               if (interest.getExclude().isExcluded(nextComponent))
                 {
@@ -666,7 +671,7 @@ Cs::doesComplyWithSelectors(const Interest& interest, shared_ptr<cs::Entry> entr
 }
 
 bool
-Cs::recognizeInterestWithDigest(const Interest& interest, shared_ptr<cs::Entry> entry) const
+Cs::recognizeInterestWithDigest(const Interest& interest, cs::Entry* entry) const
 {
   // only when min selector is not specified or specified with value of 0
   // and Interest's name length is exactly the length of the name of CS entry
@@ -695,14 +700,14 @@ Cs::erase(const Name& exactName)
   SkipList::reverse_iterator topLayer = m_skipList.rbegin();
   SkipListLayer::iterator head = (*topLayer)->begin();
 
-  if ( !(*topLayer)->empty() )
+  if (!(*topLayer)->empty())
     {
       //start from the upper layer towards bottom
       int layer = m_skipList.size() - 1;
       for (SkipList::reverse_iterator rit = topLayer; rit != m_skipList.rend(); ++rit)
         {
           //if we didn't do any iterations on the higher layers, start from the begin() again
-          if ( !isIterated )
+          if (!isIterated)
             head = (*rit)->begin();
 
           updateTable[layer] = head;
@@ -710,7 +715,7 @@ Cs::erase(const Name& exactName)
           if (head != (*rit)->end())
             {
               // it can happen when begin() contains the element we want to remove
-              if ( !isIterated && ((*head)->getName() == exactName) )
+              if (!isIterated && ((*head)->getName() == exactName))
                 {
                   eraseFromSkipList(*head);
                   return;
@@ -726,7 +731,7 @@ Cs::erase(const Name& exactName)
                       isIterated = true;
 
                       ++it;
-                      if ( it == (*rit)->end() )
+                      if (it == (*rit)->end())
                         break;
                     }
                 }
@@ -760,8 +765,6 @@ Cs::erase(const Name& exactName)
       NFD_LOG_TRACE("Found target " << (*head)->getName());
       eraseFromSkipList(*head);
     }
-
-  printSkipList();
 }
 
 void
