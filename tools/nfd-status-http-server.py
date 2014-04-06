@@ -9,6 +9,7 @@ import urlparse
 import logging
 import cgi
 import argparse
+import socket
 
 
 class StatusHandler(BaseHTTPRequestHandler):
@@ -46,20 +47,10 @@ class StatusHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(resultMessage)
 
-    def do_HEAD(self):
-        self.send_response(405)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-
-    def do_POST(self):
-        self.send_response(405)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-
     def log_message(self, format, *args):
         if self.server.verbose:
-            logging.info("%s - [%s] %s\n" % (self.address_string(),
-                         self.log_date_time_string(), format % args))
+            logging.info("%s - %s\n" % (self.address_string(),
+                         format % args))
 
     def getNfdStatus(self):
         """
@@ -98,9 +89,20 @@ class StatusHandler(BaseHTTPRequestHandler):
         return htmlStr
 
 
-class ThreadHTTPServer(ThreadingMixIn, HTTPServer):
-    """ Handle requests using threads"""
+class ThreadHttpServer(ThreadingMixIn, HTTPServer):
+    """ Handle requests using threads """
     def __init__(self, server, handler, verbose=False, robots=False):
+        serverAddr = server[0]
+        # socket.AF_UNSPEC is not supported, check whether it is v6 or v4
+        ipType = self.getIpType(serverAddr)
+        if ipType == socket.AF_INET6:
+            self.address_family = socket.AF_INET6
+        elif ipType == socket.AF_INET:
+            self.address_family == socket.AF_INET
+        else:
+            logging.error("The input IP address is neither IPv6 nor IPv4")
+            sys.exit(2)
+
         try:
             HTTPServer.__init__(self, server, handler)
         except Exception as e:
@@ -109,6 +111,21 @@ class ThreadHTTPServer(ThreadingMixIn, HTTPServer):
         self.verbose = verbose
         self.robots = robots
 
+    def getIpType(self, ipAddr):
+        """ Get ipAddr's address type """
+        # if ipAddr is an IPv6 addr, return AF_INET6
+        try:
+            socket.inet_pton(socket.AF_INET6, ipAddr)
+            return socket.AF_INET6
+        except socket.error:
+            pass
+        # if ipAddr is an IPv4 addr return AF_INET, if not, return None
+        try:
+            socket.inet_pton(socket.AF_INET, ipAddr)
+            return socket.AF_INET
+        except socket.error:
+            return None
+
 
 # main function to start
 def httpServer():
@@ -116,9 +133,8 @@ def httpServer():
     parser.add_argument("-p", type=int, metavar="port number",
                         help="Specify the HTTP server port number, default is 8080.",
                         dest="port", default=8080)
-    # if address is not specified, using empty str
-    # so it can bind to local address
-    parser.add_argument("-a", default="localhost", metavar="IP address", dest="addr",
+    # if address is not specified, use 127.0.0.1
+    parser.add_argument("-a", default="127.0.0.1", metavar="IP address", dest="addr",
                         help="Specify the HTTP server IP address.")
     parser.add_argument("-r", default=False, dest="robots", action="store_true",
                         help="Enable HTTP robots to crawl; disabled by default.")
@@ -135,25 +151,31 @@ def httpServer():
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',
                         level=logging.INFO)
 
-    # if port is not valid, exit
+    # if port is invalid, exit
     if localPort <= 0 or localPort > 65535:
         logging.error("Specified port number is invalid")
         sys.exit(2)
 
-    httpd = ThreadHTTPServer((localAddr, localPort), StatusHandler,
+    httpd = ThreadHttpServer((localAddr, localPort), StatusHandler,
                              verbose, robots)
+    httpServerAddr = ""
+    if httpd.address_family == socket.AF_INET6:
+        httpServerAddr = "http://[%s]:%s" % (httpd.server_address[0],
+                                             httpd.server_address[1])
+    else:
+        httpServerAddr = "http://%s:%s" % (httpd.server_address[0],
+                                           httpd.server_address[1])
 
-    logging.info("Server Starts - at http://%s:%s" % httpd.server_address)
+    logging.info("Server started - at %s" % httpServerAddr)
 
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
         pass
 
-    logging.info("Server stopping ...")
     httpd.server_close()
 
-    logging.info("Server Stopped - at http://%s:%s" % httpd.server_address)
+    logging.info("Server stopped")
 
 
 if __name__ == '__main__':
