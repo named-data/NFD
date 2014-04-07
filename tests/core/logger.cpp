@@ -25,15 +25,15 @@ class LoggerFixture : protected BaseFixture
 {
 public:
   LoggerFixture()
-    : m_savedBuf(std::cerr.rdbuf())
+    : m_savedBuf(std::clog.rdbuf())
     , m_savedLevel(LoggerFactory::getInstance().getDefaultLevel())
   {
-    std::cerr.rdbuf(m_buffer.rdbuf());
+    std::clog.rdbuf(m_buffer.rdbuf());
   }
 
   ~LoggerFixture()
   {
-    std::cerr.rdbuf(m_savedBuf);
+    std::clog.rdbuf(m_savedBuf);
     LoggerFactory::getInstance().setDefaultLevel(m_savedLevel);
   }
 

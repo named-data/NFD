@@ -135,7 +135,7 @@ nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name);
 #define NFD_LOG(level, expression)                                      \
 do {                                                                    \
   if (g_logger.isEnabled(::nfd::LOG_##level))                           \
-    std::cerr << ::nfd::Logger::now() << " "#level": "                  \
+    std::clog << ::nfd::Logger::now() << " "#level": "                  \
               << "[" << g_logger << "] " << expression << "\n";         \
 } while (false)
 
@@ -148,13 +148,13 @@ do {                                                                    \
 #define NFD_LOG_WARN(expression)                                        \
 do {                                                                    \
   if (g_logger.isEnabled(::nfd::LOG_WARN))                              \
-    std::cerr << ::nfd::Logger::now() << " WARNING: "                   \
+    std::clog << ::nfd::Logger::now() << " WARNING: "                   \
               << "[" << g_logger << "] " << expression << "\n";         \
 } while (false)
 
 #define NFD_LOG_FATAL(expression)                                       \
 do {                                                                    \
-  std::cerr << ::nfd::Logger::now() << " FATAL: "                       \
+  std::clog << ::nfd::Logger::now() << " FATAL: "                       \
             << "[" << g_logger << "] " << expression << "\n";           \
 } while (false)
 
