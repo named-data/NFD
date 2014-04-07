@@ -28,6 +28,7 @@
 #include "version.hpp"
 #include "core/logger.hpp"
 #include "core/global-io.hpp"
+#include "core/privilege-helper.hpp"
 #include "fw/forwarder.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
@@ -35,6 +36,7 @@
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/status-server.hpp"
 #include "core/config-file.hpp"
+#include "mgmt/general-config-section.hpp"
 
 namespace nfd {
 
@@ -60,6 +62,8 @@ public:
     m_forwarder = make_shared<Forwarder>();
 
     initializeManagement(configFile);
+
+    PrivilegeHelper::drop();
   }
 
 
@@ -118,6 +122,8 @@ public:
                                                boost::ref(*m_forwarder));
 
     ConfigFile config((IgnoreRibAndLogSections()));
+
+    general::setConfigFile(config);
     m_internalFace->getValidator().setConfigFile(config);
 
     m_forwarder->addFace(m_internalFace);
@@ -289,6 +295,16 @@ main(int argc, char** argv)
     NFD_LOG_FATAL(e.what());
     return 2;
   }
+  catch (const PrivilegeHelper::Error& e) {
+    // PrivilegeHelper::Errors do not inherit from std::exception
+    // and represent seteuid/gid failures
+
+    NFD_LOG_FATAL(e.what());
+    return 3;
+  }
+
+
+
 
   boost::asio::signal_set signalSet(getGlobalIoService());
   signalSet.add(SIGINT);
@@ -302,9 +318,13 @@ main(int argc, char** argv)
   try {
     getGlobalIoService().run();
   }
-  catch (std::exception& e) {
+  catch (const std::exception& e) {
     NFD_LOG_FATAL(e.what());
-    return 3;
+    return 4;
+  }
+  catch (const PrivilegeHelper::Error& e) {
+    NFD_LOG_FATAL(e.what());
+    return 5;
   }
 
   return 0;

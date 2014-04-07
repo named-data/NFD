@@ -1,7 +1,13 @@
 ; The general section contains settings of nfd process.
-; general
-; {
-; }
+general
+{
+  ; Specify a user and/or group for NFD to drop privileges to
+  ; when not performing privileged tasks. NFD does not drop
+  ; privileges by default.
+
+  ; user ndn-user
+  ; group ndn-user
+}
 
 log
 {

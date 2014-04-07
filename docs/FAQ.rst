@@ -69,6 +69,32 @@ in ``tcp`` and ``udp`` sections of ``/usr/local/etc/ndn/nfd.conf``:
 How to run NFD as non-root user?
 --------------------------------
 
+How to configure automatic dropping of privileges?
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+NFD can be configured to drop privileges whenever possible.  You can specify a user and/or
+group for NFD to change its *effective* user/group ID to in the ``general`` section of the
+configuration file. For example:
+
+::
+
+    general
+    {
+      user nobody
+      group nogroup
+    }
+
+will configure NFD to drop its effective user and group IDs to ``nobody`` and ``nogroup``,
+respectively.
+
+.. note::
+
+    **IMPORTANT:** NFD may regain elevated permissions as needed during normal
+    execution. Dropping privileges in this manner should not be considered a security
+    mechanism (a compromised NFD that was started as root can trivially return to
+    root). However, reducing privileges may limit any damaged caused by well intentioned,
+    but buggy, code.
+
 
 How to enable Ethernet Face Support?
 ++++++++++++++++++++++++++++++++++++
