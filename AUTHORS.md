@@ -40,7 +40,7 @@ volunteers.
     * Steve DiBenedetto     <http://www.cs.colostate.edu/~dibenede/>
     * Christos Papadopoulos <http://www.cs.colostate.edu/~christos/>
 
-* Université Pierre et Marie Curie, Sorbonne Universities
+* University Pierre & Marie Curie, Sorbonne University
 
     * Davide Pesavento    <http://www.lip6.fr/actualite/personnes-fiche.php?ident=D1469>
     * Giulio Grassi       <http://www.lip6.fr/actualite/personnes-fiche.php?ident=D1461>
