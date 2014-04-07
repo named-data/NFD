@@ -24,17 +24,22 @@ NFD: NDN Forwarding Daemon
 
         sudo apt-get install libpcap-dev
 
-To build API documentation:
+To build manpages and API documentation:
 
 * `doxygen`
+* `graphviz`
+* `python-sphinx`
 
     On Mac OS X 10.8 and 10.9 with macports:
 
-        sudo port install doxygen
+        sudo port install doxygen graphviz py27-sphinx sphinx_select
+        sudo port select sphinx py27-sphinx
 
     On Ubuntu >= 12.04:
 
-        sudo apt-get install doxygen
+        sudo apt-get install doxygen graphviz python-sphinx
+
+
 
 ## Build
 
@@ -52,3 +57,14 @@ In some configurations, configuration step may require small modification:
     ./waf configure
     ./waf
     sudo ./waf install
+
+# Building API documentation
+
+The following commands can be used to build API documentation in `build/docs/doxygen`
+
+    ./waf doxygen
+
+Note that manpages are automatically created and installed during the normal build process (e.g., during `./waf` and `./waf install`), if `python-sphinx` module is detected during `./waf configure` stage.
+By default, manpages are installed into `${PREFIX}/share/man` (where default value for `PREFIX` is `/usr/local`).
+This location can be changed during `./waf configure` stage using `--prefix`, `--datarootdir`, or `--mandir` options.
+For more details, refer to `./waf --help`.

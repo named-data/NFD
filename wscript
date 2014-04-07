@@ -33,7 +33,7 @@ import os
 
 def options(opt):
     opt.load('compiler_cxx gnu_dirs')
-    opt.load('boost doxygen coverage unix-socket default-compiler-flags',
+    opt.load('boost doxygen coverage unix-socket default-compiler-flags sphinx_build',
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
@@ -43,9 +43,12 @@ def options(opt):
                       dest='with_other_tests', help='''Build other tests''')
 
 def configure(conf):
-    conf.load("compiler_cxx boost gnu_dirs")
+    conf.load("compiler_cxx boost gnu_dirs sphinx_build")
 
     try: conf.load("doxygen")
+    except: pass
+
+    try: conf.load("sphinx_build")
     except: pass
 
     conf.load('default-compiler-flags')
@@ -155,8 +158,24 @@ def build(bld):
         install_path="${BINDIR}",
         chmod=0755)
 
+    if bld.env['SPHINX_BUILD']:
+        bld(features="sphinx",
+            builder="man",
+            outdir="docs/manpages",
+            config="docs/conf.py",
+            source=bld.path.ant_glob('docs/manpages/**/*.rst'),
+            install_path="${MANDIR}/")
+
 def doxygen(bld):
     if not bld.env.DOXYGEN:
         bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
     bld(features="doxygen",
-        doxyfile='docs/doxygen.conf')
+        doxyfile='docs/doxygen.conf',
+        install_path=None)
+
+def sphinx(bld):
+    bld(features="sphinx",
+        outdir="docs",
+        source=bld.path.ant_glob('docs/**/*.rst'),
+        config="docs/conf.py",
+        install_path=None)

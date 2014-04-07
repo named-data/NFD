@@ -1,0 +1,71 @@
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+html { font-size: 62.5%; }
+
+body {
+  font-family: "Verdana", Arial, sans-serif;
+  background-color: #eeeeec;
+  color: #777;
+  border-top: 4px solid #fd7800;
+}
+
+body { background: white; font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1; color: #222222; position: relative; -webkit-font-smoothing: antialiased; }
+
+.clearer {
+  clear: both;
+}
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
+.line-block {
+    display: block;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.line-block .line-block {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 1.5em;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: normal;
+  color: #3465a4;
+  margin-bottom: .8em;
+}
+
+h1 {
+  color: #204a87;
+}
+
+h2 {
+  padding-bottom: .5em;
+  border-bottom: 1px solid #3465a4;
+}
+
+a.headerlink {
+  visibility: hidden;
+  color: #dddddd;
+  padding-left: .3em;
+}
+
+h1:hover > a.headerlink,
+h2:hover > a.headerlink,
+h3:hover > a.headerlink,
+h4:hover > a.headerlink,
+h5:hover > a.headerlink,
+h6:hover > a.headerlink,
+dt:hover > a.headerlink {
+  visibility: visible;
+}

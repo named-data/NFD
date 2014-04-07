@@ -1,0 +1,14 @@
+@import url("agogo.css");
+
+pre {
+    padding: 10px;
+    background-color: #fafafa;
+    color: #222;
+    line-height: 1.2em;
+    border: 2px solid #C6C9CB;
+    font-size: 1.1em;
+    /* margin: 1.5em 0 1.5em 0; */
+    margin: 0;
+    border-right-style: none;
+    border-left-style: none;
+}
