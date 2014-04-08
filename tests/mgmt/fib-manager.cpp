@@ -239,13 +239,13 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {
   shared_ptr<InternalFace> face = getInternalFace();
 
-  Interest command("/localhost/nfd/fib");
+  shared_ptr<Interest> command = makeInterest("/localhost/nfd/fib");
 
   face->onReceiveData +=
     bind(&FibManagerFixture::validateControlResponse, this,  _1,
-         command.getName(), 400, "Malformed command");
+         command->getName(), 400, "Malformed command");
 
-  face->sendInterest(command);
+  face->sendInterest(*command);
   g_io.run_one();
 
   BOOST_REQUIRE(didCallbackFire());

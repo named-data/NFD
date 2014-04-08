@@ -134,8 +134,8 @@ BOOST_AUTO_TEST_CASE(SendInterestHitEnd)
   // we hit the end of the std::map
 
   Name commandName("/localhost/nfd/fib/end");
-  Interest command(commandName);
-  face->sendInterest(command);
+  shared_ptr<Interest> command = makeInterest(commandName);
+  face->sendInterest(*command);
   g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
@@ -157,8 +157,8 @@ BOOST_AUTO_TEST_CASE(SendInterestHitBegin)
   // we hit the beginning of the std::map
 
   Name commandName("/localhost/nfd");
-  Interest command(commandName);
-  face->sendInterest(command);
+  shared_ptr<Interest> command = makeInterest(commandName);
+  face->sendInterest(*command);
   g_io.run_one();
 
   BOOST_REQUIRE(didNoOnInterestFire() == false);
@@ -186,8 +186,8 @@ BOOST_AUTO_TEST_CASE(SendInterestHitExact)
   // /localhost/nfd/fib
 
   Name commandName("/localhost/nfd/fib");
-  Interest command(commandName);
-  face->sendInterest(command);
+  shared_ptr<Interest> command = makeInterest(commandName);
+  face->sendInterest(*command);
   g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
@@ -212,12 +212,22 @@ BOOST_AUTO_TEST_CASE(SendInterestHitPrevious)
   // an Interest filter
 
   Name commandName("/localhost/nfd/fib/previous");
-  Interest command(commandName);
-  face->sendInterest(command);
+  shared_ptr<Interest> command = makeInterest(commandName);
+  face->sendInterest(*command);
   g_io.run_one();
 
   BOOST_REQUIRE(didOnInterestFire());
   BOOST_REQUIRE(didNoOnInterestFire() == false);
+}
+
+BOOST_AUTO_TEST_CASE(InterestGone)
+{
+  shared_ptr<InternalFace> face = make_shared<InternalFace>();
+  shared_ptr<Interest> interest = makeInterest("ndn:/localhost/nfd/gone");
+  face->sendInterest(*interest);
+
+  interest.reset();
+  BOOST_CHECK_NO_THROW(g_io.poll());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

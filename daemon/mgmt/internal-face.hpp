@@ -78,7 +78,7 @@ public:
 
 private:
   void
-  processInterest(const Interest& interest);
+  processInterest(weak_ptr<const Interest> interestWeak);
 
 private:
   std::map<Name, OnInterest> m_interestFilters;

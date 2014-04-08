@@ -42,13 +42,22 @@ InternalFace::sendInterest(const Interest& interest)
 
   // Invoke .processInterest a bit later,
   // to avoid potential problems in forwarding pipelines.
+  weak_ptr<const Interest> interestWeak = interest.shared_from_this();
   getGlobalIoService().post(bind(&InternalFace::processInterest,
-                                 this, boost::cref(interest)));
+                                 this, interestWeak));
 }
 
 void
-InternalFace::processInterest(const Interest& interest)
+InternalFace::processInterest(weak_ptr<const Interest> interestWeak)
 {
+  shared_ptr<const Interest> interestPtr = interestWeak.lock();
+  if (!static_cast<bool>(interestPtr)) {
+    // Interest is gone because it's satisfied and removed from PIT
+    NFD_LOG_DEBUG("processInterest: Interest is gone");
+    return;
+  }
+  const Interest& interest = *interestPtr;
+
   if (m_interestFilters.size() == 0)
     {
       NFD_LOG_DEBUG("no Interest filters to match against");
