@@ -62,5 +62,19 @@ Rib::erase(const PrefixRegOptions& options)
     }
 }
 
+void
+Rib::erase(uint64_t faceId)
+{
+  //Keep it simple for now, with Trie this will be changed.
+  RibTable::iterator it = m_rib.begin();
+  while (it != m_rib.end())
+  {
+    if (it->getFaceId() == faceId)
+      it = m_rib.erase(it);
+    else
+      ++it;
+  }
+}
+
 } // namespace nrd
 } // namespace ndn

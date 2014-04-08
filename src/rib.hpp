@@ -33,6 +33,9 @@ public:
   void
   erase(const PrefixRegOptions& options);
 
+  void
+  erase(uint64_t faceId);
+
   const_iterator
   begin() const;
 

@@ -8,6 +8,7 @@
 #define NRD_HPP
 
 #include "rib.hpp"
+#include "face-monitor.hpp"
 
 namespace ndn {
 namespace nrd {
@@ -73,12 +74,17 @@ private:
   bool
   extractOptions(const Interest& request,
                  PrefixRegOptions& extractedOptions);
+
+  void
+  onNotification(const nfd::FaceEventNotification& notification);
+
 private:
   Rib m_managedRib;
   ndn::shared_ptr<ndn::Face> m_face;
+  ndn::shared_ptr<nfd::Controller> m_nfdController;
   ndn::KeyChain m_keyChain;
   ndn::ValidatorConfig m_validator;
-  shared_ptr<nfd::Controller> m_nfdController;
+  ndn::FaceMonitor m_faceMonitor;
 
   typedef boost::function<void(Nrd*,
                                const Interest&,

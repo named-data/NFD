@@ -34,17 +34,11 @@ const Nrd::VerbAndProcessor Nrd::COMMAND_VERBS[] =
                      ),
   };
 
-void
-Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
-{
-  std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
-  m_face->shutdown();
-}
-
 Nrd::Nrd(const std::string& validatorConfig)
   : m_face(new Face())
-  , m_validator(m_face)
   , m_nfdController(new nfd::Controller(*m_face))
+  , m_validator(m_face)
+  , m_faceMonitor(*m_face)
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
@@ -63,7 +57,19 @@ Nrd::Nrd(const std::string& validatorConfig)
   m_face->setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
                             bind(&Nrd::onRibRequest, this, _2),
                             bind(&Nrd::setInterestFilterFailed, this, _1, _2));
+
+  std::cerr << "Monitoring faces" << std::endl;
+  m_faceMonitor.addSubscriber(boost::bind(&Nrd::onNotification, this, _1));
+  m_faceMonitor.startNotifications();
 }
+
+void
+Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
+{
+  std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
+  m_face->shutdown();
+}
+
 
 void
 Nrd::sendResponse(const Name& name,
@@ -278,7 +284,6 @@ Nrd::onControlHeaderError(uint32_t code, const std::string& reason)
   m_face->shutdown();
 }
 
-
 void
 Nrd::enableLocalControlHeader()
 {
@@ -287,6 +292,15 @@ Nrd::enableLocalControlHeader()
       .setLocalControlFeature(nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
     bind(&Nrd::onControlHeaderSuccess, this),
     bind(&Nrd::onControlHeaderError, this, _1, _2));
+}
+
+void
+Nrd::onNotification(const nfd::FaceEventNotification& notification)
+{
+  /// \todo A notification can be missed, in this case check Facelist
+  if (notification.getKind() == 2) { //face destroyed
+      m_managedRib.erase(notification.getFaceId());
+    }
 }
 
 } // namespace nrd
