@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(Entry)
   shared_ptr<fib::Entry> fib = npe->getFibEntry();
   BOOST_CHECK(!static_cast<bool>(fib));
 
-  std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
+  const std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
   BOOST_CHECK_EQUAL(pitList.size(), 0);
 
   // examine all the set method
@@ -82,33 +82,17 @@ BOOST_AUTO_TEST_CASE(Entry)
   shared_ptr<pit::Entry> PitEntry(make_shared<pit::Entry>(prefix));
   shared_ptr<pit::Entry> PitEntry2(make_shared<pit::Entry>(parentName));
 
-  Name prefix3("ndn:/named-data/research/abc/def");
-  shared_ptr<pit::Entry> PitEntry3(make_shared<pit::Entry>(prefix3));
-
   npe->insertPitEntry(PitEntry);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
   npe->insertPitEntry(PitEntry2);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 2);
 
-  BOOST_CHECK_EQUAL(npe->
-  erasePitEntry(PitEntry), true);
+  npe->erasePitEntry(PitEntry);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
-  // erase a PIT Entry that does not exist
-
-  BOOST_CHECK_EQUAL(npe->
-  erasePitEntry(PitEntry3), false);
-  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
-
-  BOOST_CHECK_EQUAL(npe->
-  erasePitEntry(PitEntry2), true);
+  npe->erasePitEntry(PitEntry2);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 0);
-
-  // erase a PIT Entry that does not exist any more
-
-  BOOST_CHECK_EQUAL(npe->
-  erasePitEntry(PitEntry2), false);
 }
 
 BOOST_AUTO_TEST_CASE(NameTreeBasic)

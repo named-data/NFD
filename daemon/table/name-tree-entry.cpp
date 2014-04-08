@@ -43,7 +43,9 @@ Node::~Node()
     delete m_next;
 }
 
-Entry::Entry(const Name& name) : m_hash(0), m_prefix(name)
+Entry::Entry(const Name& name)
+  : m_hash(0)
+  , m_prefix(name)
 {
 }
 
@@ -66,6 +68,10 @@ Entry::setParent(shared_ptr<Entry> parent)
 void
 Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 {
+  if (static_cast<bool>(fibEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(fibEntry->m_nameTreeEntry));
+  }
+
   if (static_cast<bool>(m_fibEntry)) {
     m_fibEntry->m_nameTreeEntry.reset();
   }
@@ -76,40 +82,41 @@ Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 }
 
 void
-Entry::insertPitEntry(shared_ptr<pit::Entry> pit)
+Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
 {
-  if (static_cast<bool>(pit)) {
-    pit->m_nameTreeEntry = this->shared_from_this();
-    m_pitEntries.push_back(pit);
-  }
-}
+  BOOST_ASSERT(static_cast<bool>(pitEntry));
+  BOOST_ASSERT(!static_cast<bool>(pitEntry->m_nameTreeEntry));
 
-bool
-Entry::erasePitEntry(shared_ptr<pit::Entry> pit)
-{
-  for (size_t i = 0; i < m_pitEntries.size(); i++) {
-      if (m_pitEntries[i] == pit) {
-          BOOST_ASSERT(pit->m_nameTreeEntry);
-
-          pit->m_nameTreeEntry.reset();
-          // copy the last item to the current position
-          m_pitEntries[i] = m_pitEntries[m_pitEntries.size() - 1];
-          // then erase the last item
-          m_pitEntries.pop_back();
-          return true; // success
-      }
-  }
-  // not found this entry
-  return false; // failure
+  m_pitEntries.push_back(pitEntry);
+  pitEntry->m_nameTreeEntry = this->shared_from_this();
 }
 
 void
-Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
+Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
 {
+  BOOST_ASSERT(static_cast<bool>(pitEntry));
+  BOOST_ASSERT(pitEntry->m_nameTreeEntry.get() == this);
+
+  std::vector<shared_ptr<pit::Entry> >::iterator it =
+    std::find(m_pitEntries.begin(), m_pitEntries.end(), pitEntry);
+  BOOST_ASSERT(it != m_pitEntries.end());
+
+  *it = m_pitEntries.back();
+  m_pitEntries.pop_back();
+  pitEntry->m_nameTreeEntry.reset();
+}
+
+void
+Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
+{
+  if (static_cast<bool>(measurementsEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(measurementsEntry->m_nameTreeEntry));
+  }
+
   if (static_cast<bool>(m_measurementsEntry)) {
     m_measurementsEntry->m_nameTreeEntry.reset();
   }
-  m_measurementsEntry = measurements;
+  m_measurementsEntry = measurementsEntry;
   if (static_cast<bool>(m_measurementsEntry)) {
     m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
   }
@@ -118,6 +125,10 @@ Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurements)
 void
 Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
 {
+  if (static_cast<bool>(strategyChoiceEntry)) {
+    BOOST_ASSERT(!static_cast<bool>(strategyChoiceEntry->m_nameTreeEntry));
+  }
+
   if (static_cast<bool>(m_strategyChoiceEntry)) {
     m_strategyChoiceEntry->m_nameTreeEntry.reset();
   }

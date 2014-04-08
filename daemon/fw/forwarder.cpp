@@ -323,6 +323,7 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
     // TODO all InRecords are already expired; will this happen?
   }
 
+  scheduler::cancel(pitEntry->m_unsatisfyTimer);
   pitEntry->m_unsatisfyTimer = scheduler::schedule(lastExpiryFromNow,
     bind(&Forwarder::onInterestUnsatisfied, this, pitEntry));
 }
@@ -338,6 +339,7 @@ Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 
   time::nanoseconds stragglerTime = time::milliseconds(100);
 
+  scheduler::cancel(pitEntry->m_stragglerTimer);
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
     bind(&Pit::erase, &m_pit, pitEntry));
 }

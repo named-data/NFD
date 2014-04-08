@@ -65,8 +65,6 @@ public:
  */
 class Entry : public enable_shared_from_this<Entry>, noncopyable
 {
-  // Make private members accessible by Name Tree
-  friend class nfd::NameTree;
 public:
   explicit
   Entry(const Name& prefix);
@@ -104,26 +102,19 @@ public:
   getFibEntry() const;
 
   void
-  insertPitEntry(shared_ptr<pit::Entry> pit);
+  insertPitEntry(shared_ptr<pit::Entry> pitEntry);
+
+  void
+  erasePitEntry(shared_ptr<pit::Entry> pitEntry);
 
   bool
   hasPitEntries() const;
 
-  std::vector<shared_ptr<pit::Entry> >&
-  getPitEntries();
-
   const std::vector<shared_ptr<pit::Entry> >&
   getPitEntries() const;
 
-  /**
-   * \brief Erase a PIT Entry
-   * \details The address of this PIT Entry is required
-   */
-  bool
-  erasePitEntry(shared_ptr<pit::Entry> pit);
-
   void
-  setMeasurementsEntry(shared_ptr<measurements::Entry> measurements);
+  setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry);
 
   shared_ptr<measurements::Entry>
   getMeasurementsEntry() const;
@@ -146,6 +137,8 @@ private:
 
   // get the Name Tree Node that is associated with this Name Tree Entry
   Node* m_node;
+  // Make private members accessible by Name Tree
+  friend class nfd::NameTree;
 };
 
 inline const Name&
@@ -197,12 +190,6 @@ inline bool
 Entry::hasPitEntries() const
 {
   return !m_pitEntries.empty();
-}
-
-inline std::vector<shared_ptr<pit::Entry> >&
-Entry::getPitEntries()
-{
-  return m_pitEntries;
 }
 
 inline const std::vector<shared_ptr<pit::Entry> >&

@@ -75,13 +75,14 @@ Pit::insert(const Interest& interest)
   // - Alternatively, we could try to do findExactMatch() first, if not found,
   // then do lookup().
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(interest.getName());
-
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
 
-  std::vector<shared_ptr<pit::Entry> >& pitEntries = nameTreeEntry->getPitEntries();
+  const std::vector<shared_ptr<pit::Entry> >& pitEntries = nameTreeEntry->getPitEntries();
 
   // then check if this Interest is already in the PIT entries
-  std::vector<shared_ptr<pit::Entry> >::iterator it = std::find_if(pitEntries.begin(), pitEntries.end(), bind(&predicate_PitEntry_similar_Interest, _1, interest));
+  std::vector<shared_ptr<pit::Entry> >::const_iterator it =
+    std::find_if(pitEntries.begin(), pitEntries.end(),
+                 bind(&predicate_PitEntry_similar_Interest, _1, boost::cref(interest)));
 
   if (it != pitEntries.end())
     {
@@ -108,7 +109,7 @@ Pit::findAllDataMatches(const Data& data) const
        m_nameTree.findAllMatches(data.getName(), &predicate_NameTreeEntry_hasPitEntry);
        it != m_nameTree.end(); it++)
     {
-      std::vector<shared_ptr<pit::Entry> >& pitEntries = it->getPitEntries();
+      const std::vector<shared_ptr<pit::Entry> >& pitEntries = it->getPitEntries();
       for (size_t i = 0; i < pitEntries.size(); i++)
         {
           if (pitEntries[i]->getInterest().matchesData(data))
@@ -122,21 +123,13 @@ Pit::findAllDataMatches(const Data& data) const
 void
 Pit::erase(shared_ptr<pit::Entry> pitEntry)
 {
-  // first get the NPE
-  // If pit-entry.hpp stores a NameTree Entry for each PIT, we could also use the get() method
-  // directly, saving one hash computation.
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(pitEntry->getName());
-
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(*pitEntry);
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
 
-  // erase this PIT entry
-  if (static_cast<bool>(nameTreeEntry))
-    {
-      nameTreeEntry->erasePitEntry(pitEntry);
-      m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
+  nameTreeEntry->erasePitEntry(pitEntry);
+  m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
 
-      m_nItems--;
-    }
+  --m_nItems;
 }
 
 } // namespace nfd
