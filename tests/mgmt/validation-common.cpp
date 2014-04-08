@@ -44,7 +44,7 @@ CommandIdentityGlobalFixture::~CommandIdentityGlobalFixture()
   m_keys.deleteIdentity(s_identityName);
 }
 
-BOOST_GLOBAL_FIXTURE(CommandIdentityGlobalFixture);
+BOOST_GLOBAL_FIXTURE(CommandIdentityGlobalFixture)
 
 } // namespace tests
 } // namespace nfd

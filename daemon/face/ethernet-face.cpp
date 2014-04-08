@@ -38,7 +38,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("EthernetFace")
+NFD_LOG_INIT("EthernetFace");
 
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
                            const shared_ptr<NetworkInterfaceInfo>& interface,

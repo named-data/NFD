@@ -42,22 +42,34 @@ Address::toString(char sep) const
 Address
 Address::fromString(const std::string& str)
 {
+  unsigned short temp[ADDR_LEN];
+  char sep[5][2]; // 5 * (1 separator char + 1 null terminator)
+  int n = 0; // num of chars read from the input string
+
+  // ISO C++98 does not support the 'hh' type modifier
+  /// \todo use SCNx8 (cinttypes) when we enable C++11
+  int ret = ::sscanf(str.c_str(), "%2hx%1[:-]%2hx%1[:-]%2hx%1[:-]%2hx%1[:-]%2hx%1[:-]%2hx%n",
+                     &temp[0], &sep[0][0], &temp[1], &sep[1][0], &temp[2], &sep[2][0],
+                     &temp[3], &sep[3][0], &temp[4], &sep[4][0], &temp[5], &n);
+
+  if (ret < 11 || static_cast<size_t>(n) != str.length())
+    return Address();
+
   Address a;
-  int n, ret;
+  for (size_t i = 0; i < ADDR_LEN; ++i)
+    {
+      // check that all separators are actually the same char (: or -)
+      if (i < 5 && sep[i][0] != sep[0][0])
+        return Address();
 
-  // colon-separated
-  ret = ::sscanf(str.c_str(), "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx%n",
-                 &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &n);
-  if (ret >= 6 && str.c_str()[n] == '\0')
-    return a;
+      // check that each value fits into a uint8_t
+      if (temp[i] > 0xFF)
+        return Address();
 
-  // dash-separated
-  ret = ::sscanf(str.c_str(), "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx%n",
-                 &a[0], &a[1], &a[2], &a[3], &a[4], &a[5], &n);
-  if (ret >= 6 && str.c_str()[n] == '\0')
-    return a;
+      a[i] = static_cast<uint8_t>(temp[i]);
+    }
 
-  return Address();
+  return a;
 }
 
 std::ostream&

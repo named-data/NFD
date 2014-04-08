@@ -32,7 +32,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("EthernetFactory")
+NFD_LOG_INIT("EthernetFactory");
 
 shared_ptr<EthernetFace>
 EthernetFactory::createMulticastFace(const shared_ptr<NetworkInterfaceInfo> &interface,

@@ -24,6 +24,7 @@
 
 #include "face-uri.hpp"
 #include "core/logger.hpp"
+
 #ifdef HAVE_PCAP
 #include "face/ethernet.hpp"
 #endif // HAVE_PCAP

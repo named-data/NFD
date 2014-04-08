@@ -41,7 +41,7 @@ enum LogLevel {
   LOG_DEBUG          = 4, // debug messages
   LOG_TRACE          = 5, // trace messages (most verbose)
   // LOG_FATAL is not a level and is logged unconditionally
-  LOG_ALL            = 255, // all messages
+  LOG_ALL            = 255 // all messages
 };
 
 class Logger
@@ -81,7 +81,6 @@ public:
     m_moduleName = name;
   }
 
-
   /// \brief return a string representation of time since epoch: seconds.microseconds
   static std::string
   now()
@@ -89,13 +88,11 @@ public:
     using namespace ndn::time;
 
     static const microseconds::rep ONE_SECOND = 1000000;
-
-    // 10 (whole seconds) + '.' + 6 (fraction) + 1 (\0)
-    char buffer[10 + 1 + 6 + 1];
-
     microseconds::rep microseconds_since_epoch =
       duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
 
+    // 10 (whole seconds) + '.' + 6 (fraction) + 1 (\0)
+    char buffer[10 + 1 + 6 + 1];
     ::snprintf(buffer, sizeof(buffer), "%lld.%06lld",
                static_cast<long long int>(microseconds_since_epoch / ONE_SECOND),
                static_cast<long long int>(microseconds_since_epoch % ONE_SECOND));
@@ -126,26 +123,26 @@ operator<<(std::ostream& output, const Logger& logger)
 
 namespace nfd {
 
-#define NFD_LOG_INIT(name)                                              \
-static nfd::Logger& g_logger = nfd::LoggerFactory::create(name);
+#define NFD_LOG_INIT(name) \
+static nfd::Logger& g_logger = nfd::LoggerFactory::create(name)
 
-#define NFD_LOG_INCLASS_DECLARE()               \
-static nfd::Logger& g_logger;
+#define NFD_LOG_INCLASS_DECLARE() \
+static nfd::Logger& g_logger
 
-#define NFD_LOG_INCLASS_DEFINE(cls, name)                       \
-nfd::Logger& cls::g_logger = nfd::LoggerFactory::create(name);
+#define NFD_LOG_INCLASS_DEFINE(cls, name) \
+nfd::Logger& cls::g_logger = nfd::LoggerFactory::create(name)
 
-#define NFD_LOG_INCLASS_TEMPLATE_DEFINE(cls, name)                      \
-template<class T>                                                       \
-nfd::Logger& cls<T>::g_logger = nfd::LoggerFactory::create(name);
+#define NFD_LOG_INCLASS_TEMPLATE_DEFINE(cls, name) \
+template<class T>                                  \
+nfd::Logger& cls<T>::g_logger = nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(cls, specialization, name) \
-template<>                                                              \
-nfd::Logger& cls<specialization>::g_logger = nfd::LoggerFactory::create(name);
+template<>                                                                        \
+nfd::Logger& cls<specialization>::g_logger = nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(cls, s1, s2, name) \
-template<>                                                              \
-nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name);
+template<>                                                                 \
+nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name)
 
 
 #define NFD_LOG(level, expression)                                      \

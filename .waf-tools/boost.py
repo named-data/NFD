@@ -61,6 +61,14 @@ BOOST_VERSION_CODE = '''
 #include <boost/version.hpp>
 int main() { std::cout << BOOST_LIB_VERSION << ":" << BOOST_VERSION << std::endl; }
 '''
+BOOST_SYSTEM_CODE = '''
+#include <boost/system/error_code.hpp>
+int main() { boost::system::error_code c; }
+'''
+BOOST_THREAD_CODE = '''
+#include <boost/thread.hpp>
+int main() { boost::thread t; }
+'''
 
 # toolsets from {boost_dir}/tools/build/v2/tools/common.jam
 PLATFORM = Utils.unversioned_sys_platform()
@@ -96,10 +104,10 @@ def options(opt):
 
 	opt.add_option('--boost-includes', type='string',
 				   default='', dest='boost_includes',
-				   help='''path to the directory where the boost includes are, e.g., /path/to/boost_1_47_0/stage/include''')
+				   help='''path to the directory where the boost includes are, e.g., /path/to/boost_1_55_0/stage/include''')
 	opt.add_option('--boost-libs', type='string',
 				   default='', dest='boost_libs',
-				   help='''path to the directory where the boost libs are, e.g., /path/to/boost_1_47_0/stage/lib''')
+				   help='''path to the directory where the boost libs are, e.g., /path/to/boost_1_55_0/stage/lib''')
 	opt.add_option('--boost-static', action='store_true',
 				   default=False, dest='boost_static',
 				   help='link with static boost libraries (.lib/.a)')
@@ -136,10 +144,10 @@ def boost_get_version(self, d):
 		except (OSError, IOError):
 			Logs.error("Could not read the file %r" % node.abspath())
 		else:
-			re_but1 = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.*)"', re.M)
+			re_but1 = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.+)"', re.M)
 			m1 = re_but1.search(txt)
 
-			re_but2 = re.compile('^#define\\s+BOOST_VERSION\\s+"(.*)"', re.M)
+			re_but2 = re.compile('^#define\\s+BOOST_VERSION\\s+(\\d+)', re.M)
 			m2 = re_but2.search(txt)
 
 			if m1 and m2:
@@ -310,19 +318,13 @@ def check_boost(self, *k, **kw):
 	def try_link():
 		if 'system' in params['lib']:
 			self.check_cxx(
-			 fragment="\n".join([
-			  '#include <boost/system/error_code.hpp>',
-			  'int main() { boost::system::error_code c; }',
-			 ]),
+			 fragment=BOOST_SYSTEM_CODE,
 			 use=var,
 			 execute=False,
 			)
 		if 'thread' in params['lib']:
 			self.check_cxx(
-			 fragment="\n".join([
-			  '#include <boost/thread.hpp>',
-			  'int main() { boost::thread t; }',
-			 ]),
+			 fragment=BOOST_THREAD_CODE,
 			 use=var,
 			 execute=False,
 			)

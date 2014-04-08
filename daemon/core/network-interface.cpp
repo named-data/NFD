@@ -40,9 +40,9 @@
 #error Platform not supported
 #endif
 
-namespace nfd {
+NFD_LOG_INIT("NetworkInterfaceInfo");
 
-NFD_LOG_INIT("NetworkInterfaceInfo")
+namespace nfd {
 
 std::list< shared_ptr<NetworkInterfaceInfo> >
 listNetworkInterfaces()

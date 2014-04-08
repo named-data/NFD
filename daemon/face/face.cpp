@@ -27,8 +27,6 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("Face")
-
 static inline void
 increaseCounter(FaceCounter& counter)
 {

@@ -37,6 +37,8 @@ def options(opt):
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
+    nfdopt.add_option('--with-c++11', action='store_true', default=False, dest='use_cxx11',
+                      help='''Enable C++11 mode (experimental, may not work)''')
     nfdopt.add_option('--with-tests', action='store_true', default=False,
                       dest='with_tests', help='''Build unit tests''')
     nfdopt.add_option('--with-other-tests', action='store_true', default=False,

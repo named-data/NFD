@@ -57,6 +57,8 @@ BOOST_AUTO_TEST_CASE(FromString)
                     ethernet::getBroadcastAddress());
   BOOST_CHECK_EQUAL(ethernet::Address::fromString("de:ad:be:ef:1:2"),
                     ethernet::Address(0xde, 0xad, 0xbe, 0xef, 0x01, 0x02));
+  BOOST_CHECK_EQUAL(ethernet::Address::fromString("DE:AD:BE:EF:1:2"),
+                    ethernet::Address(0xde, 0xad, 0xbe, 0xef, 0x01, 0x02));
 
   // malformed inputs
   BOOST_CHECK_EQUAL(ethernet::Address::fromString("01.23.45.67.89.ab"),
@@ -68,6 +70,8 @@ BOOST_AUTO_TEST_CASE(FromString)
   BOOST_CHECK_EQUAL(ethernet::Address::fromString("01-23-45-67-89"),
                     ethernet::Address());
   BOOST_CHECK_EQUAL(ethernet::Address::fromString("01:23:45:67:89:ab:cd"),
+                    ethernet::Address());
+  BOOST_CHECK_EQUAL(ethernet::Address::fromString("01:23:45:67-89-ab"),
                     ethernet::Address());
   BOOST_CHECK_EQUAL(ethernet::Address::fromString("qw-er-ty-12-34-56"),
                     ethernet::Address());

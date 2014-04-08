@@ -28,6 +28,8 @@
 
 #include "tests/test-common.hpp"
 
+#include <boost/scoped_array.hpp>
+
 namespace nfd {
 namespace tests {
 
@@ -161,9 +163,9 @@ protected:
   Block
   makeBlock(size_t valueLength)
   {
-    uint8_t blockValue[valueLength];
-    memset(blockValue, 0xcc, sizeof(blockValue));
-    return ndn::dataBlock(0x01, blockValue, sizeof(blockValue));
+    boost::scoped_array<uint8_t> blockValue(new uint8_t[valueLength]);
+    memset(blockValue.get(), 0xcc, valueLength);
+    return ndn::dataBlock(0x01, blockValue.get(), valueLength);
   }
 
 protected:

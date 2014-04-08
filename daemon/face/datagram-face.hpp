@@ -94,11 +94,11 @@ protected:
 protected:
   shared_ptr<typename protocol::socket> m_socket;
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
-
   bool m_hasBeenUsedRecently;
 
   NFD_LOG_INCLASS_DECLARE();
 };
+
 
 template <class T>
 inline
