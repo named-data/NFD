@@ -11,7 +11,10 @@ default to `PREFIX/etc`.
 You may override `SYSCONFDIR` and `PREFIX` by specifying their
 corresponding options during installation:
 
-    ./waf install --prefix <path/for/prefix> --sysconfdir <some/other/path>
+    ./waf configure --prefix <path/for/prefix> --sysconfdir <some/other/path>
+
+Refer to `INSTALL.md` for more detailed instructions on how to compile
+and install NFD.
 
 ## Running and Configuring NFD
 
