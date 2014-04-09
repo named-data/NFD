@@ -9,15 +9,16 @@
 
 #include "rib.hpp"
 #include "face-monitor.hpp"
+#include "nrd-config.hpp"
 
 namespace ndn {
 namespace nrd {
 
-class Nrd
+class Nrd : noncopyable
 {
 public:
-  explicit
-  Nrd(const std::string& validatorConfig);
+  Nrd(const ndn::nrd::ConfigSection& securitySection,
+      const std::string& validatorConfig);
 
   void
   onRibRequest(const Interest& request);

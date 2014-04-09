@@ -34,7 +34,8 @@ const Nrd::VerbAndProcessor Nrd::COMMAND_VERBS[] =
                      ),
   };
 
-Nrd::Nrd(const std::string& validatorConfig)
+Nrd::Nrd(const ndn::nrd::ConfigSection& securitySection,
+         const std::string& validatorConfig)
   : m_face(new Face())
   , m_nfdController(new nfd::Controller(*m_face))
   , m_validator(m_face)
@@ -45,7 +46,8 @@ Nrd::Nrd(const std::string& validatorConfig)
   //check whether the components of localhop and localhost prefixes are same
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
-  m_validator.load(validatorConfig);
+  //m_validator.load(validatorConfig);
+  m_validator.load(securitySection, validatorConfig);
 
   std::cerr << "Setting interest filter on: " << COMMAND_PREFIX.toUri() << std::endl;
   m_face->setController(m_nfdController);
@@ -69,7 +71,6 @@ Nrd::setInterestFilterFailed(const Name& name, const std::string& msg)
   std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
   m_face->shutdown();
 }
-
 
 void
 Nrd::sendResponse(const Name& name,
@@ -230,7 +231,6 @@ Nrd::onRegSuccess(const Interest& request, const PrefixRegOptions& options)
   sendResponse(request.getName(), response);
 }
 
-
 void
 Nrd::insertEntry(const Interest& request, const PrefixRegOptions& options)
 {
@@ -248,7 +248,6 @@ Nrd::insertEntry(const Interest& request, const PrefixRegOptions& options)
     bind(&Nrd::onCommandError, this, _1, _2, request, options));
 }
 
-
 void
 Nrd::deleteEntry(const Interest& request, const PrefixRegOptions& options)
 {
@@ -260,7 +259,6 @@ Nrd::deleteEntry(const Interest& request, const PrefixRegOptions& options)
     bind(&Nrd::onCommandError, this, _1, _2, request, options));
 }
 
-
 void
 Nrd::listen()
 {
@@ -268,13 +266,11 @@ Nrd::listen()
   m_face->processEvents();
 }
 
-
 void
 Nrd::onControlHeaderSuccess()
 {
   std::cout << "Local control header enabled" << std::endl;
 }
-
 
 void
 Nrd::onControlHeaderError(uint32_t code, const std::string& reason)
@@ -298,9 +294,10 @@ void
 Nrd::onNotification(const nfd::FaceEventNotification& notification)
 {
   /// \todo A notification can be missed, in this case check Facelist
-  if (notification.getKind() == 2) { //face destroyed
-      m_managedRib.erase(notification.getFaceId());
-    }
+  std::cerr << "Notification Rcvd: " << notification << std::endl;
+  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) { //face destroyed
+    m_managedRib.erase(notification.getFaceId());
+  }
 }
 
 } // namespace nrd

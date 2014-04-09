@@ -39,6 +39,7 @@ def configure(conf):
     # except:
     #     pass
 
+    conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nrd.conf' % conf.env['SYSCONFDIR'])
     conf.write_config_header('src/config.hpp')
 
 def build (bld):
@@ -65,4 +66,7 @@ def build (bld):
             use='nrd-objects',
             includes=['.', 'src'],
             install_prefix=None,
-          )
+            )
+
+    bld.install_files('${SYSCONFDIR}/ndn', 'nrd.conf.sample')
+
