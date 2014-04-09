@@ -39,13 +39,13 @@ BOOST_AUTO_TEST_CASE(Checks)
 
 BOOST_AUTO_TEST_CASE(ToString)
 {
-  BOOST_CHECK_EQUAL(ethernet::Address().toString(),
+  BOOST_CHECK_EQUAL(ethernet::Address().toString('-'),
                     "00-00-00-00-00-00");
-  BOOST_CHECK_EQUAL(ethernet::getBroadcastAddress().toString(':'),
+  BOOST_CHECK_EQUAL(ethernet::getBroadcastAddress().toString(),
                     "ff:ff:ff:ff:ff:ff");
-  BOOST_CHECK_EQUAL(ethernet::Address(0x01, 0x23, 0x45, 0x67, 0x89, 0xAB).toString(),
+  BOOST_CHECK_EQUAL(ethernet::Address(0x01, 0x23, 0x45, 0x67, 0x89, 0xAB).toString('-'),
                     "01-23-45-67-89-ab");
-  BOOST_CHECK_EQUAL(ethernet::Address(0x01, 0x23, 0x45, 0x67, 0x89, 0xAB).toString(':'),
+  BOOST_CHECK_EQUAL(ethernet::Address(0x01, 0x23, 0x45, 0x67, 0x89, 0xAB).toString(),
                     "01:23:45:67:89:ab");
 }
 

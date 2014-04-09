@@ -70,8 +70,8 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   ::snprintf(filter, sizeof(filter),
              "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
              ETHERTYPE_NDN,
-             m_destAddress.toString(':').c_str(),
-             m_srcAddress.toString(':').c_str());
+             m_destAddress.toString().c_str(),
+             m_srcAddress.toString().c_str());
   setPacketFilter(filter);
 
   m_socket->async_read_some(boost::asio::null_buffers(),

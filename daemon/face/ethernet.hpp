@@ -46,7 +46,7 @@ const size_t CRC_LEN      = 4;      ///< Octets in Ethernet frame check sequence
 class Address : public boost::array<uint8_t, ADDR_LEN>
 {
 public:
-  /// Constructs a null Ethernet address (00-00-00-00-00-00)
+  /// Constructs a null Ethernet address (00:00:00:00:00:00)
   Address();
 
   /// Constructs a new Ethernet address with the given octets
@@ -60,7 +60,7 @@ public:
   /// Copy constructor
   Address(const Address& address);
 
-  /// True if this is a broadcast address (FF-FF-FF-FF-FF-FF)
+  /// True if this is a broadcast address (ff:ff:ff:ff:ff:ff)
   bool
   isBroadcast() const;
 
@@ -68,7 +68,7 @@ public:
   bool
   isMulticast() const;
 
-  /// True if this is a null address (00-00-00-00-00-00)
+  /// True if this is a null address (00:00:00:00:00:00)
   bool
   isNull() const;
 
@@ -76,14 +76,14 @@ public:
    * @brief Converts the address to a human-readable string
    *
    * @param sep A character used to visually separate the octets,
-   *            usually a dash (the default value) or a colon
+   *            usually ':' (the default value) or '-'
    */
   std::string
-  toString(char sep = '-') const;
+  toString(char sep = ':') const;
 
   /**
    * @brief Creates an Address from a string containing an Ethernet address
-   *        in hexadecimal notation, with colons or dashes as separators
+   *        in hexadecimal notation, with colons or hyphens as separators
    *
    * @param str The string to be parsed
    * @return Always an instance of Address, which will be null
@@ -93,7 +93,7 @@ public:
   fromString(const std::string& str);
 };
 
-/// Returns the Ethernet broadcast address (FF-FF-FF-FF-FF-FF)
+/// Returns the Ethernet broadcast address (ff:ff:ff:ff:ff:ff)
 inline Address
 getBroadcastAddress()
 {

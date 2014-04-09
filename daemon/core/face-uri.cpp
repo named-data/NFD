@@ -134,7 +134,7 @@ FaceUri::FaceUri(const ethernet::Address& address)
   : m_isV6(false)
 {
   m_scheme = "ether";
-  m_host = address.toString(':');
+  m_host = address.toString();
 }
 #endif // HAVE_PCAP
 
