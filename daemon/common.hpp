@@ -39,53 +39,42 @@
 #define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
+#include <ndn-cpp-dev/common.hpp>
 #include <ndn-cpp-dev/interest.hpp>
 #include <ndn-cpp-dev/data.hpp>
 
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-#include <boost/ref.hpp>
-#include <boost/asio.hpp>
 #include <boost/assert.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
-
-#include <vector>
-#include <list>
-#include <queue>
-#include <set>
-#include <sstream>
-#include <istream>
-#include <fstream>
-#include <algorithm>
-#include <numeric>
+#include <boost/noncopyable.hpp>
+#include <boost/ref.hpp>
+#include <boost/scoped_ptr.hpp>
 
 namespace nfd {
 
 using boost::noncopyable;
-using boost::shared_ptr;
-using boost::enable_shared_from_this;
-using boost::make_shared;
-using boost::static_pointer_cast;
-using boost::dynamic_pointer_cast;
-using boost::weak_ptr;
-using boost::function;
-using boost::bind;
+using boost::scoped_ptr;
+
+using ndn::shared_ptr;
+using ndn::weak_ptr;
+using ndn::enable_shared_from_this;
+using ndn::make_shared;
+using ndn::static_pointer_cast;
+using ndn::dynamic_pointer_cast;
+using ndn::const_pointer_cast;
+using ndn::function;
+using ndn::bind;
 
 using ndn::Interest;
 using ndn::Data;
 using ndn::Name;
-namespace name = ndn::name;
 using ndn::Exclude;
 using ndn::Block;
+
 namespace tlv {
 using namespace ndn::Tlv;
 }
 
+namespace name = ndn::name;
 namespace time = ndn::time;
 
 } // namespace nfd

@@ -24,13 +24,10 @@
 
 #include "core/logger.hpp"
 
-#include <boost/test/unit_test.hpp>
+#include "tests/test-common.hpp"
+
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/classification.hpp>
-
-#include <iostream>
-
-#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {

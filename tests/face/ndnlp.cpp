@@ -156,8 +156,10 @@ protected:
   ReassembleFixture()
     : m_slicer(1500)
   {
-    m_partialMessageStore.onReceive += bind(&std::vector<Block>::push_back,
-                                            &m_received, _1);
+    m_partialMessageStore.onReceive +=
+      // push_back in C++11 has 2 overloads, and specific version needs to be selected
+      bind(static_cast<void (std::vector<Block>::*)(const Block&)>(&std::vector<Block>::push_back),
+           &m_received, _1);
   }
 
   Block

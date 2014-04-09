@@ -36,8 +36,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <boost/multi_index/identity.hpp>
 
-using namespace ::boost;
-using namespace ::boost::multi_index;
+#include <queue>
 
 namespace nfd {
 
@@ -69,26 +68,26 @@ class unsolicited;
 class byStaleness;
 class byArrival;
 
-typedef multi_index_container<
+typedef boost::multi_index_container<
   cs::Entry*,
-  indexed_by<
+  boost::multi_index::indexed_by<
 
     // by arrival (FIFO)
-    sequenced<
-      tag<byArrival>
+    boost::multi_index::sequenced<
+      boost::multi_index::tag<byArrival>
     >,
 
     // index by staleness time
-    ordered_non_unique<
-      tag<byStaleness>,
-      identity<cs::Entry*>,
+    boost::multi_index::ordered_non_unique<
+      boost::multi_index::tag<byStaleness>,
+      boost::multi_index::identity<cs::Entry*>,
       StalenessComparator
     >,
 
     // unsolicited Data is in the front
-    ordered_non_unique<
-      tag<unsolicited>,
-      identity<cs::Entry*>,
+    boost::multi_index::ordered_non_unique<
+      boost::multi_index::tag<unsolicited>,
+      boost::multi_index::identity<cs::Entry*>,
       UnsolicitedComparator
     >
 

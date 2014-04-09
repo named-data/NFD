@@ -25,8 +25,6 @@
 #ifndef NFD_CORE_VERSION_HPP
 #define NFD_CORE_VERSION_HPP
 
-#include "common.hpp"
-
 namespace nfd {
 
 /** NFD version follows Semantic Versioning 2.0.0 specification

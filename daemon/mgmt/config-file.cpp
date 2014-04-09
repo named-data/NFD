@@ -26,6 +26,7 @@
 #include "core/logger.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
+#include <fstream>
 
 namespace nfd {
 
@@ -33,7 +34,6 @@ NFD_LOG_INIT("ConfigFile");
 
 ConfigFile::ConfigFile()
 {
-
 }
 
 void

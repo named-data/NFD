@@ -25,10 +25,11 @@
 #ifndef NFD_MGMT_FIB_ENUMERATION_PUBLISHER_HPP
 #define NFD_MGMT_FIB_ENUMERATION_PUBLISHER_HPP
 
-#include "table/fib.hpp"
 #include "mgmt/segment-publisher.hpp"
 
 namespace nfd {
+
+class Fib;
 
 class FibEnumerationPublisher : public SegmentPublisher
 {

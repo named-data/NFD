@@ -25,6 +25,8 @@
 #include "face-status-publisher.hpp"
 #include "face-flags.hpp"
 #include "core/logger.hpp"
+#include "fw/face-table.hpp"
+
 #include <ndn-cpp-dev/management/nfd-face-status.hpp>
 
 namespace nfd {

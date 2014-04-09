@@ -26,14 +26,10 @@
 #define NFD_MGMT_FACE_MANAGER_HPP
 
 #include "common.hpp"
-#include "face/face.hpp"
 #include "face/local-face.hpp"
-#include "mgmt/app-face.hpp"
 #include "mgmt/manager-base.hpp"
-#include "mgmt/config-file.hpp"
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/notification-stream.hpp"
-#include "fw/face-table.hpp"
 
 #include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
 #include <ndn-cpp-dev/management/nfd-control-response.hpp>
@@ -42,9 +38,12 @@ namespace nfd {
 
 const std::string FACE_MANAGER_PRIVILEGE = "faces";
 
-class ProtocolFactory;
-class NetworkInterfaceInfo;
+class ConfigFile;
+class Face;
+class FaceTable;
 class LocalFace;
+class NetworkInterfaceInfo;
+class ProtocolFactory;
 
 class FaceManager : public ManagerBase
 {

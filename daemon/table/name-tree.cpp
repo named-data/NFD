@@ -27,6 +27,8 @@
 #include "name-tree.hpp"
 #include "core/logger.hpp"
 
+#include <boost/functional/hash.hpp>
+
 namespace nfd {
 
 NFD_LOG_INIT("NameTree");

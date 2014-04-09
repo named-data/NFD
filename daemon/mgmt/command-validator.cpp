@@ -29,6 +29,7 @@
 #include <ndn-cpp-dev/security/identity-certificate.hpp>
 
 #include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace nfd {
 

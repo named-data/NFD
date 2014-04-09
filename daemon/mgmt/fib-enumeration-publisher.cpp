@@ -23,8 +23,8 @@
  **/
 
 #include "fib-enumeration-publisher.hpp"
-
 #include "core/logger.hpp"
+#include "table/fib.hpp"
 
 #include <ndn-cpp-dev/management/nfd-fib-entry.hpp>
 
@@ -38,12 +38,10 @@ FibEnumerationPublisher::FibEnumerationPublisher(const Fib& fib,
   : SegmentPublisher(face, prefix)
   , m_fib(fib)
 {
-
 }
 
 FibEnumerationPublisher::~FibEnumerationPublisher()
 {
-
 }
 
 size_t

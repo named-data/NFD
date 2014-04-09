@@ -27,10 +27,10 @@
 
 #include "tests/test-common.hpp"
 
-#include <boost/test/unit_test.hpp>
 #include <ndn-cpp-dev/util/command-interest-generator.hpp>
 #include <ndn-cpp-dev/util/io.hpp>
 #include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace nfd {
 

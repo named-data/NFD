@@ -22,10 +22,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-
 #include "mgmt/config-file.hpp"
 
 #include "tests/test-common.hpp"
+
+#include <fstream>
 
 namespace nfd {
 namespace tests {

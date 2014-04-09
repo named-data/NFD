@@ -23,16 +23,15 @@
  **/
 
 #include "face-manager.hpp"
-#include "face-flags.hpp"
 
+#include "face-flags.hpp"
 #include "core/logger.hpp"
 #include "core/face-uri.hpp"
 #include "core/network-interface.hpp"
 #include "fw/face-table.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
-
-#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
+#include "mgmt/config-file.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"
@@ -41,6 +40,8 @@
 #ifdef HAVE_PCAP
 #include "face/ethernet-factory.hpp"
 #endif // HAVE_PCAP
+
+#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
 

@@ -25,10 +25,11 @@
 #ifndef NFD_MGMT_FACE_STATUS_PUBLISHER_HPP
 #define NFD_MGMT_FACE_STATUS_PUBLISHER_HPP
 
-#include "fw/face-table.hpp"
 #include "mgmt/segment-publisher.hpp"
 
 namespace nfd {
+
+class FaceTable;
 
 class FaceStatusPublisher : public SegmentPublisher
 {

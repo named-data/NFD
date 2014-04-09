@@ -26,14 +26,12 @@
 #define NFD_MGMT_FIB_MANAGER_HPP
 
 #include "common.hpp"
-#include "face/face.hpp"
-#include "mgmt/app-face.hpp"
-#include "fw/strategy.hpp"
 #include "mgmt/manager-base.hpp"
 #include "mgmt/fib-enumeration-publisher.hpp"
 
 namespace nfd {
 
+class Face;
 class Forwarder;
 class Fib;
 

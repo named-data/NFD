@@ -29,6 +29,8 @@
 
 #include "mgmt/app-face.hpp"
 #include "mgmt/internal-face.hpp"
+#include "table/fib.hpp"
+#include "table/name-tree.hpp"
 
 #include "tests/test-common.hpp"
 #include "../face/dummy-face.hpp"
@@ -79,13 +81,11 @@ public:
     , m_publisher(m_fib, m_face, "/localhost/nfd/FibEnumerationPublisherFixture")
     , m_finished(false)
   {
-
   }
 
   virtual
   ~FibEnumerationPublisherFixture()
   {
-
   }
 
   bool
