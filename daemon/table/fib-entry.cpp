@@ -47,7 +47,7 @@ Entry::hasNextHop(shared_ptr<Face> face) const
 }
 
 void
-Entry::addNextHop(shared_ptr<Face> face, int32_t cost)
+Entry::addNextHop(shared_ptr<Face> face, uint64_t cost)
 {
   NextHopList::iterator it = std::find_if(m_nextHops.begin(), m_nextHops.end(),
     bind(&predicate_NextHop_eq_Face, _1, face));

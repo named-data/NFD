@@ -69,7 +69,7 @@ public:
 
   /// adds a nexthop
   void
-  addNextHop(shared_ptr<Face> face, int32_t cost);
+  addNextHop(shared_ptr<Face> face, uint64_t cost);
 
   /// removes a nexthop
   void
