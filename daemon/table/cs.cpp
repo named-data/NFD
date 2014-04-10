@@ -27,6 +27,7 @@
 #include "cs.hpp"
 #include "core/logger.hpp"
 #include <ndn-cpp-dev/util/crypto.hpp>
+#include "ndn-cpp-dev/security/signature-sha256-with-rsa.hpp"
 
 #define SKIPLIST_MAX_LAYERS 32
 #define SKIPLIST_PROBABILITY 25         // 25% (p = 1/4)
@@ -634,6 +635,24 @@ Cs::doesComplyWithSelectors(const Interest& interest,
     {
       NFD_LOG_TRACE("violates mustBeFresh");
       return false;
+    }
+
+  if (!interest.getPublisherPublicKeyLocator().empty())
+    {
+      if (entry->getData().getSignature().getType() == ndn::Signature::Sha256WithRsa)
+        {
+          ndn::SignatureSha256WithRsa rsaSignature(entry->getData().getSignature());
+          if (rsaSignature.getKeyLocator() != interest.getPublisherPublicKeyLocator())
+            {
+              NFD_LOG_TRACE("violates publisher key selector");
+              return false;
+            }
+        }
+      else
+        {
+          NFD_LOG_TRACE("violates publisher key selector");
+          return false;
+        }
     }
 
   if (doesInterestContainDigest)

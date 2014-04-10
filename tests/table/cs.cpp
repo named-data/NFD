@@ -422,6 +422,55 @@ BOOST_AUTO_TEST_CASE(MustBeFreshSelector)
   BOOST_CHECK_EQUAL(found, static_cast<const Data*>(0));
 }
 
+BOOST_AUTO_TEST_CASE(PublisherKeySelector)
+{
+  Cs cs;
+
+  Name name("/insert/withkey");
+  shared_ptr<Data> data = makeData(name);
+  cs.insert(*data);
+
+  shared_ptr<Interest> interest = make_shared<Interest>(name);
+  Name keyName("/somewhere/key");
+
+  ndn::KeyLocator locator(keyName);
+  interest->setPublisherPublicKeyLocator(locator);
+
+  const Data* found = cs.find(*interest);
+  BOOST_CHECK_EQUAL(found, static_cast<const Data*>(0));
+}
+
+BOOST_AUTO_TEST_CASE(PublisherKeySelector2)
+{
+  Cs cs;
+  Name name("/insert/withkey");
+  shared_ptr<Data> data = makeData(name);
+  cs.insert(*data);
+
+  Name name2("/insert/withkey2");
+  shared_ptr<Data> data2 = make_shared<Data>(name2);
+
+  Name keyName("/somewhere/key");
+  const ndn::KeyLocator locator(keyName);
+
+  ndn::SignatureSha256WithRsa fakeSignature;
+  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
+                                        reinterpret_cast<const uint8_t*>(0), 0));
+
+  fakeSignature.setKeyLocator(locator);
+  data2->setSignature(fakeSignature);
+
+  cs.insert(*data2);
+
+  shared_ptr<Interest> interest = make_shared<Interest>(name2);
+  interest->setPublisherPublicKeyLocator(locator);
+
+  const Data* found = cs.find(*interest);
+  BOOST_CHECK_NE(found, static_cast<const Data*>(0));
+  BOOST_CHECK_EQUAL(found->getName(), data2->getName());
+}
+
+
 BOOST_AUTO_TEST_CASE(MinMaxComponentsSelector)
 {
   Cs cs;
