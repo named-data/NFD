@@ -171,7 +171,7 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
     {
       NFD_LOG_TRACE("Duplicate name (with digest)");
 
-      (*head)->setData(data, entry->getDigest()); //updates stale time
+      (*head)->setData(data, isUnsolicited, entry->getDigest()); //updates stale time
 
       // new entry not needed, returning to the pool
       entry->release();
