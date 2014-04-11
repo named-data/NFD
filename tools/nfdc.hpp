@@ -28,13 +28,12 @@
 #include <ndn-cpp-dev/face.hpp>
 #include <ndn-cpp-dev/management/controller.hpp>
 #include <ndn-cpp-dev/management/nfd-controller.hpp>
-#include <vector>
 
 namespace nfdc {
 
 using namespace ndn::nfd;
 
-class Nfdc
+class Nfdc : boost::noncopyable
 {
 public:
   class Error : public std::runtime_error
@@ -53,22 +52,31 @@ public:
   ~Nfdc();
 
   bool
-  dispatch(const std::string& cmd,
-           const char* cmdOptions[],
-           int nOptions);
+  dispatch(const std::string& cmd);
 
+  /**
+   * \brief Adds a name to a FIB entry after creating the attaced face.
+   *
+   * Create a new face for the given faceUri and use it when adding the given name to the fib
+   *
+   *
+   * cmd format:
+   *   add name faceUri [cost]
+   *
+   */
+  void
+  addName();
   /**
    * \brief Adds a nexthop to a FIB entry.
    *
    * If the FIB entry does not exist, it is inserted automatically
    *
    * cmd format:
-   *   name
+   *   name faceId [cost]
    *
-   * \param cmdOptions Add next hop command parameters without leading 'add-nexthop' component
    */
   void
-  fibAddNextHop(const char* cmdOptions[], bool hasCost);
+  fibAddNextHop(bool hasCost);
 
   /**
    * \brief Removes a nexthop from an existing FIB entry
@@ -78,11 +86,9 @@ public:
    * cmd format:
    *   name faceId
    *
-   * \param cmdOptions Remove next hop command parameters without leading
-   *                   'remove-nexthop' component
    */
   void
-  fibRemoveNextHop(const char* cmdOptions[]);
+  fibRemoveNextHop();
 
   /**
    * \brief create new face
@@ -92,10 +98,9 @@ public:
    * cmd format:
    *   uri
    *
-   * \param cmdOptions Create face command parameters without leading 'create' component
    */
   void
-  faceCreate(const char* cmdOptions[]);
+  faceCreate();
 
   /**
    * \brief destroy a face
@@ -103,10 +108,9 @@ public:
    * cmd format:
    *   faceId
    *
-   * \param cmdOptions Destroy face command parameters without leading 'destroy' component
    */
   void
-  faceDestroy(const char* cmdOptions[]);
+  faceDestroy();
 
   /**
    * \brief Set the strategy for a namespace
@@ -115,11 +119,9 @@ public:
    * cmd format:
    *   name strategy
    *
-   * \param cmdOptions Set strategy choice command parameters without leading
-   *                   'set-strategy' component
    */
   void
-  strategyChoiceSet(const char* cmdOptions[]);
+  strategyChoiceSet();
 
   /**
    * \brief Unset the strategy for a namespace
@@ -128,22 +130,32 @@ public:
    * cmd format:
    *   name strategy
    *
-   * \param cmdOptions Unset strategy choice command parameters without leading
-   *                   'unset-strategy' component
    */
   void
-  strategyChoiceUnset(const char* cmdOptions[]);
+  strategyChoiceUnset();
 
 private:
+
   void
   onSuccess(const ControlParameters& parameters,
             const std::string& message);
 
   void
+  onAddSuccess(const ControlParameters& parameters,
+               const std::string& message);
+
+  void
   onError(uint32_t code, const std::string& error, const std::string& message);
+
+  void
+  fibAddNextHop(const std::string& name, const uint64_t faceId, bool hasCost);
 
 public:
   const char* m_programName;
+
+  // command parameters without leading 'cmd' component
+  const char** m_commandLineArguments;
+  int m_nOptions;
 
 private:
   Controller m_controller;

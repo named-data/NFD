@@ -34,6 +34,8 @@ usage(const char* programName)
     "       -h print usage and exit\n"
     "\n"
     "   COMMAND can be one of following:\n"
+    "       add <name> <faceUri> [<cost>]\n"
+    "           Create a face, and add a nexthop for this face to a FIB entry\n"
     "       add-nexthop <name> <faceId> [<cost>]\n"
     "           Add a nexthop to a FIB entry\n"
     "       remove-nexthop <name> <faceId> \n"
@@ -63,40 +65,48 @@ Nfdc::~Nfdc()
 }
 
 bool
-Nfdc::dispatch(const std::string& command, const char* commandOptions[], int nOptions)
+Nfdc::dispatch(const std::string& command)
 {
-  if (command == "add-nexthop") {
-    if (nOptions == 2)
-      fibAddNextHop(commandOptions, false);
-    else if (nOptions == 3)
-      fibAddNextHop(commandOptions, true);
+  if (command == "add") {
+    if (m_nOptions == 2)
+      addName();
+    else if (m_nOptions == 3)
+      addName();
+    else
+      return false;
+  }
+  else if (command == "add-nexthop") {
+    if (m_nOptions == 2)
+      fibAddNextHop(false);
+    else if (m_nOptions == 3)
+      fibAddNextHop(true);
     else
       return false;
   }
   else if (command == "remove-nexthop") {
-    if (nOptions != 2)
+    if (m_nOptions != 2)
       return false;
-    fibRemoveNextHop(commandOptions);
+    fibRemoveNextHop();
   }
   else if (command == "create") {
-    if (nOptions != 1)
+    if (m_nOptions != 1)
       return false;
-    faceCreate(commandOptions);
+    faceCreate();
   }
   else if (command == "destroy") {
-    if (nOptions != 1)
+    if (m_nOptions != 1)
       return false;
-    faceDestroy(commandOptions);
+    faceDestroy();
   }
   else if (command == "set-strategy") {
-    if (nOptions != 2)
+    if (m_nOptions != 2)
       return false;
-    strategyChoiceSet(commandOptions);
+    strategyChoiceSet();
   }
   else if (command == "unset-strategy") {
-    if (nOptions != 1)
+    if (m_nOptions != 1)
       return false;
-    strategyChoiceUnset(commandOptions);
+    strategyChoiceUnset();
   }
   else
     usage(m_programName);
@@ -104,45 +114,6 @@ Nfdc::dispatch(const std::string& command, const char* commandOptions[], int nOp
   return true;
 }
 
-void
-Nfdc::fibAddNextHop(const char* commandOptions[], bool hasCost)
-{
-  const std::string& name = commandOptions[0];
-  const int faceId = boost::lexical_cast<int>(commandOptions[1]);
-
-  ControlParameters parameters;
-  parameters
-    .setName(name)
-    .setFaceId(faceId);
-
-  if (hasCost)
-  {
-    const uint64_t cost = boost::lexical_cast<uint64_t>(commandOptions[2]);
-    parameters.setCost(cost);
-  }
-
-  m_controller.start<FibAddNextHopCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Nexthop insertion succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Nexthop insertion failed"));
-}
-
-void
-Nfdc::fibRemoveNextHop(const char* commandOptions[])
-{
-  const std::string& name = commandOptions[0];
-  const int faceId = boost::lexical_cast<int>(commandOptions[1]);
-
-  ControlParameters parameters;
-  parameters
-    .setName(name)
-    .setFaceId(faceId);
-
-  m_controller.start<FibRemoveNextHopCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Nexthop removal succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Nexthop removal failed"));
-}
 
 namespace {
 
@@ -158,15 +129,78 @@ isValidUri(const std::string& input)
 } // anonymous namespace
 
 void
-Nfdc::faceCreate(const char* commandOptions[])
+Nfdc::addName()
 {
-  const std::string& uri = commandOptions[0];
-  if (!isValidUri(uri))
+  if (!isValidUri(m_commandLineArguments[1]))
     throw Error("invalid uri format");
 
   ControlParameters parameters;
   parameters
-    .setUri(uri);
+    .setUri(m_commandLineArguments[1]);
+
+  m_controller.start<FaceCreateCommand>(
+    parameters,
+    bind(&Nfdc::onAddSuccess, this, _1, "nfdc add:Face creation succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "nfdc add: Face creation failed"));
+
+}
+
+void
+Nfdc::fibAddNextHop(bool hasCost)
+{
+  const std::string& name = m_commandLineArguments[0];
+  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+
+  fibAddNextHop(name, faceId, hasCost);
+
+}
+
+void
+Nfdc::fibAddNextHop(const std::string& name, const uint64_t faceId, bool hasCost)
+{
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setFaceId(faceId);
+
+  if (hasCost)
+  {
+    const uint64_t cost = boost::lexical_cast<uint64_t>(m_commandLineArguments[2]);
+    parameters.setCost(cost);
+  }
+
+  m_controller.start<FibAddNextHopCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Nexthop insertion succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Nexthop insertion failed"));
+}
+
+void
+Nfdc::fibRemoveNextHop()
+{
+  const std::string& name = m_commandLineArguments[0];
+  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setFaceId(faceId);
+
+  m_controller.start<FibRemoveNextHopCommand>(
+    parameters,
+    bind(&Nfdc::onSuccess, this, _1, "Nexthop removal succeeded"),
+    bind(&Nfdc::onError, this, _1, _2, "Nexthop removal failed"));
+}
+
+void
+Nfdc::faceCreate()
+{
+  if (!isValidUri(m_commandLineArguments[0]))
+    throw Error("invalid uri format");
+
+  ControlParameters parameters;
+  parameters
+    .setUri(m_commandLineArguments[0]);
 
   m_controller.start<FaceCreateCommand>(
     parameters,
@@ -175,9 +209,9 @@ Nfdc::faceCreate(const char* commandOptions[])
 }
 
 void
-Nfdc::faceDestroy(const char* commandOptions[])
+Nfdc::faceDestroy()
 {
-  const int faceId = boost::lexical_cast<int>(commandOptions[0]);
+  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[0]);
 
   ControlParameters parameters;
   parameters
@@ -190,10 +224,10 @@ Nfdc::faceDestroy(const char* commandOptions[])
 }
 
 void
-Nfdc::strategyChoiceSet(const char* commandOptions[])
+Nfdc::strategyChoiceSet()
 {
-  const std::string& name = commandOptions[0];
-  const std::string& strategy = commandOptions[1];
+  const std::string& name = m_commandLineArguments[0];
+  const std::string& strategy = m_commandLineArguments[1];
 
   ControlParameters parameters;
   parameters
@@ -207,9 +241,9 @@ Nfdc::strategyChoiceSet(const char* commandOptions[])
 }
 
 void
-Nfdc::strategyChoiceUnset(const char* commandOptions[])
+Nfdc::strategyChoiceUnset()
 {
-  const std::string& name = commandOptions[0];
+  const std::string& name = m_commandLineArguments[0];
 
   ControlParameters parameters;
   parameters
@@ -228,6 +262,18 @@ Nfdc::onSuccess(const ControlParameters& parameters, const std::string& message)
 }
 
 void
+Nfdc::onAddSuccess(const ControlParameters& parameters, const std::string& message)
+{
+  uint64_t faceId = parameters.getFaceId();
+
+  if (m_nOptions == 2)
+    fibAddNextHop(m_commandLineArguments[0], faceId, false);
+  else if (m_nOptions == 3)
+    fibAddNextHop(m_commandLineArguments[0], faceId, true);
+  else
+    throw Error("invalid number of arguments");
+}
+void
 Nfdc::onError(uint32_t code, const std::string& error, const std::string& message)
 {
   std::ostringstream os;
@@ -244,6 +290,7 @@ main(int argc, char** argv)
   nfdc::Nfdc p(face);
 
   p.m_programName = argv[0];
+
   int opt;
   while ((opt = getopt(argc, argv, "h")) != -1) {
     switch (opt) {
@@ -263,9 +310,9 @@ main(int argc, char** argv)
   }
 
   try {
-    bool isOk = p.dispatch(argv[optind],
-                           const_cast<const char**>(argv + optind + 1),
-                           argc - optind - 1);
+    p.m_commandLineArguments = const_cast<const char**>(argv + optind + 1);
+    p.m_nOptions = argc - optind - 1;
+    bool isOk = p.dispatch(argv[optind]);
     if (!isOk) {
       usage(p.m_programName);
       return 1;
