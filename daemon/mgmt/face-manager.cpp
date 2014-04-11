@@ -253,6 +253,8 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 
   std::string port = "6363";
   bool needToListen = true;
+  bool enableV4 = true;
+  bool enableV6 = true;
 
   for (ConfigSection::const_iterator i = configSection.begin();
        i != configSection.end();
@@ -269,12 +271,20 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
           catch (const std::bad_cast& error)
             {
               throw ConfigFile::Error("Invalid value for option " +
-                                      i->first + "\" in \"udp\" section");
+                                      i->first + "\" in \"tcp\" section");
             }
         }
       else if (i->first == "listen")
         {
           needToListen = parseYesNo(i, i->first, "tcp");
+        }
+      else if (i->first == "enable_v4")
+        {
+          enableV4 = parseYesNo(i, i->first, "tcp");
+        }
+      else if (i->first == "enable_v6")
+        {
+          enableV6 = parseYesNo(i, i->first, "tcp");
         }
       else
         {
@@ -282,28 +292,43 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
         }
     }
 
+  if (!enableV4 && !enableV6)
+    {
+      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                              " Remove \"tcp\" section to disable TCP channels or"
+                              " re-enable at least one channel type.");
+    }
+
   if (!isDryRun)
     {
       shared_ptr<TcpFactory> factory = make_shared<TcpFactory>(boost::cref(port));
+      m_factories.insert(std::make_pair("tcp", factory));
 
-      using namespace boost::asio::ip;
-
-      shared_ptr<TcpChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
-      shared_ptr<TcpChannel> ipv6Channel = factory->createChannel("::", port);
-
-      if (needToListen)
+      if (enableV4)
         {
-          // Should acceptFailed callback be used somehow?
+          shared_ptr<TcpChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
+          if (needToListen)
+            {
+              // Should acceptFailed callback be used somehow?
+              ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                                  TcpChannel::ConnectFailedCallback());
+            }
 
-          ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                              TcpChannel::ConnectFailedCallback());
-          ipv6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                              TcpChannel::ConnectFailedCallback());
+          m_factories.insert(std::make_pair("tcp4", factory));
         }
 
-      m_factories.insert(std::make_pair("tcp", factory));
-      m_factories.insert(std::make_pair("tcp4", factory));
-      m_factories.insert(std::make_pair("tcp6", factory));
+      if (enableV6)
+        {
+          shared_ptr<TcpChannel> ipv6Channel = factory->createChannel("::", port);
+          if (needToListen)
+            {
+              // Should acceptFailed callback be used somehow?
+              ipv6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                                  TcpChannel::ConnectFailedCallback());
+            }
+
+          m_factories.insert(std::make_pair("tcp6", factory));
+        }
     }
 }
 
@@ -326,6 +351,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
   // }
 
   std::string port = "6363";
+  bool enableV4 = true;
+  bool enableV6 = true;
   size_t timeout = 30;
   size_t keepAliveInterval = 25;
   bool useMcast = true;
@@ -350,6 +377,14 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
               throw ConfigFile::Error("Invalid value for option " +
                                       i->first + "\" in \"udp\" section");
             }
+        }
+      else if (i->first == "enable_v4")
+        {
+          enableV4 = parseYesNo(i, i->first, "udp");
+        }
+      else if (i->first == "enable_v6")
+        {
+          enableV6 = parseYesNo(i, i->first, "udp");
         }
       else if (i->first == "idle_timeout")
         {
@@ -421,29 +456,47 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
         }
     }
 
+  if (!enableV4 && !enableV6)
+    {
+      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                              " Remove \"udp\" section to disable UDP channels or"
+                              " re-enable at least one channel type.");
+    }
+  else if (useMcast && !enableV4)
+    {
+      throw ConfigFile::Error("IPv4 multicast requested, but IPv4 channels"
+                              " have been disabled (conflicting configuration options set)");
+    }
+
   /// \todo what is keep alive interval used for?
 
   if (!isDryRun)
     {
       shared_ptr<UdpFactory> factory = make_shared<UdpFactory>(boost::cref(port));
-
-      shared_ptr<UdpChannel> v4Channel =
-        factory->createChannel("0.0.0.0", port, time::seconds(timeout));
-
-      shared_ptr<UdpChannel> v6Channel =
-        factory->createChannel("::", port, time::seconds(timeout));
-
-      v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                        UdpChannel::ConnectFailedCallback());
-
-      v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                        UdpChannel::ConnectFailedCallback());
-
       m_factories.insert(std::make_pair("udp", factory));
-      m_factories.insert(std::make_pair("udp4", factory));
-      m_factories.insert(std::make_pair("udp6", factory));
 
-      if (useMcast)
+      if (enableV4)
+        {
+          shared_ptr<UdpChannel> v4Channel =
+            factory->createChannel("0.0.0.0", port, time::seconds(timeout));
+
+          v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                            UdpChannel::ConnectFailedCallback());
+
+          m_factories.insert(std::make_pair("udp4", factory));
+        }
+
+      if (enableV6)
+        {
+          shared_ptr<UdpChannel> v6Channel =
+            factory->createChannel("::", port, time::seconds(timeout));
+
+          v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                            UdpChannel::ConnectFailedCallback());
+          m_factories.insert(std::make_pair("udp6", factory));
+        }
+
+      if (useMcast && enableV4)
         {
           for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
                i != nicList.end();

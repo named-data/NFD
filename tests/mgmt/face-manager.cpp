@@ -400,6 +400,8 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionTcp)
     "  {\n"
     "    listen yes\n"
     "    port 6363\n"
+    "    enable_v4 yes\n"
+    "    enable_v6 yes\n"
     "  }\n"
     "}\n";
   try
@@ -425,6 +427,8 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionTcpDryRun)
     "  {\n"
     "    listen yes\n"
     "    port 6363\n"
+    "    enable_v4 yes\n"
+    "    enable_v6 yes\n"
     "  }\n"
     "}\n";
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
@@ -443,6 +447,25 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionTcpBadListen)
   BOOST_CHECK_EXCEPTION(parseConfig(CONFIG, false), ConfigFile::Error,
                         bind(&isExpectedException, _1,
                              "Invalid value for option \"listen\" in \"tcp\" section"));
+}
+
+BOOST_AUTO_TEST_CASE(TestProcessSectionTcpChannelsDisabled)
+{
+  const std::string CONFIG =
+    "face_system\n"
+    "{\n"
+    "  tcp\n"
+    "  {\n"
+    "    port 6363\n"
+    "    enable_v4 no\n"
+    "    enable_v6 no\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_EXCEPTION(parseConfig(CONFIG, false), ConfigFile::Error,
+                        bind(&isExpectedException, _1,
+                             "IPv4 and IPv6 channels have been disabled."
+                             " Remove \"tcp\" section to disable TCP channels or"
+                             " re-enable at least one channel type."));
 }
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionTcpUnknownOption)
@@ -468,6 +491,8 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdp)
     "  udp\n"
     "  {\n"
     "    port 6363\n"
+    "    enable_v4 yes\n"
+    "    enable_v6 yes\n"
     "    idle_timeout 30\n"
     "    keep_alive_interval 25\n"
     "    mcast yes\n"
@@ -563,6 +588,55 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdpBadMcastGroupV6)
                         bind(&isExpectedException, _1,
                              "Invalid value for option \"mcast_group\" in \"udp\" section"));
 }
+
+BOOST_AUTO_TEST_CASE(TestProcessSectionUdpChannelsDisabled)
+{
+  const std::string CONFIG =
+    "face_system\n"
+    "{\n"
+    "  udp\n"
+    "  {\n"
+    "    port 6363\n"
+    "    enable_v4 no\n"
+    "    enable_v6 no\n"
+    "    idle_timeout 30\n"
+    "    keep_alive_interval 25\n"
+    "    mcast yes\n"
+    "    mcast_port 56363\n"
+    "    mcast_group 224.0.23.170\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_EXCEPTION(parseConfig(CONFIG, false), ConfigFile::Error,
+                        bind(&isExpectedException, _1,
+                             "IPv4 and IPv6 channels have been disabled."
+                             " Remove \"udp\" section to disable UDP channels or"
+                             " re-enable at least one channel type."));
+}
+
+BOOST_AUTO_TEST_CASE(TestProcessSectionUdpConflictingMcast)
+{
+  const std::string CONFIG =
+    "face_system\n"
+    "{\n"
+    "  udp\n"
+    "  {\n"
+    "    port 6363\n"
+    "    enable_v4 no\n"
+    "    enable_v6 yes\n"
+    "    idle_timeout 30\n"
+    "    keep_alive_interval 25\n"
+    "    mcast yes\n"
+    "    mcast_port 56363\n"
+    "    mcast_group 224.0.23.170\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_EXCEPTION(parseConfig(CONFIG, false), ConfigFile::Error,
+                        bind(&isExpectedException, _1,
+                             "IPv4 multicast requested, but IPv4 channels"
+                             " have been disabled (conflicting configuration options set)"));
+}
+
+
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionUdpUnknownOption)
 {

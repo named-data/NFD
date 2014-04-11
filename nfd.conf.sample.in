@@ -50,12 +50,17 @@ face_system
   {
     listen yes ; set to 'no' to disable TCP listener, default 'yes'
     port 6363 ; TCP listener port number
+    enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
+    enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
   }
 
   ; The udp section contains settings of UDP faces and channels.
+  ; UDP channel is always listening; delete udp section to disable UDP
   udp
   {
     port 6363 ; UDP unicast port number
+    enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
+    enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
     idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
