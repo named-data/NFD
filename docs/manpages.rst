@@ -6,3 +6,4 @@ NFD Manpages
    manpages/nrd
    manpages/ndn-autoconfig
    manpages/ndn-autoconfig-server
+   :maxdepth: 1

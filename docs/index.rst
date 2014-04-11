@@ -1,9 +1,11 @@
 NFD - Named Data Networking Forwarding Daemon's documentation
 =============================================================
 
-Contents:
-
 .. toctree::
    release_notes
+   Installation Instruction <INSTALL>
+   NFD Configuration Tips <README>
    manpages
-   :maxdepth: 2
+   :maxdepth: 1
+
+* `API documentation (doxygen) <doxygen/annotated.html>`_

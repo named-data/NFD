@@ -10,7 +10,7 @@ pre {
     padding: 10px;
     background-color: #fafafa;
     color: #222;
-    line-height: 1.0em;
+    /* line-height: 1.0em; */
     border: 2px solid #C6C9CB;
     font-size: 0.9em;
     /* margin: 1.5em 0 1.5em 0; */

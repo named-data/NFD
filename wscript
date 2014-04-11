@@ -182,6 +182,10 @@ def build(bld):
             source=bld.path.ant_glob('docs/manpages/**/*.rst'),
             install_path="${MANDIR}/")
 
+def docs(bld):
+    from waflib import Options
+    Options.commands = ['doxygen', 'sphinx'] + Options.commands
+
 def doxygen(bld):
     if not bld.env.DOXYGEN:
         bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")

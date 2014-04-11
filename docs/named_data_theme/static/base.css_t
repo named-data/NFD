@@ -17,7 +17,7 @@ body { background: white; font-family: "Helvetica Neue", "Helvetica", Helvetica,
 /* Page layout */
 
 div.header, div.content, div.footer {
-  width: {{ theme_pagewidth }};
+  width: 90%;
   margin-left: auto;
   margin-right: auto;
 }
@@ -159,13 +159,13 @@ div.content-wrapper {
 }
 
 div.document {
-  width: {{ theme_documentwidth }};
+  width: 70%;
   float: left;
 }
 
 div.body {
   padding-right: 2em;
-  text-align: {{ theme_textalign }};
+  text-align: left;
 }
 
 div.document h1 {
@@ -236,7 +236,7 @@ div.document ol {
 /* Sidebar */
 
 div.sidebar {
-  width: {{ theme_sidebarwidth }};
+  width: 20%;
   float: right;
   font-size: .9em;
 }
@@ -452,4 +452,12 @@ div.viewcode-block:target {
     background-color: #f4debf;
     border-top: 1px solid #ac9;
     border-bottom: 1px solid #ac9;
+}
+
+td.linenos pre {
+    padding: 5px 0px;
+    border: 0;
+    background-color: transparent;
+    color: #aaa;
+    margin-top: -10pt;
 }
