@@ -32,11 +32,17 @@ from waflib import Logs
 import os
 
 def options(opt):
-    opt.load('compiler_cxx gnu_dirs')
-    opt.load('boost doxygen coverage unix-socket default-compiler-flags sphinx_build',
+    opt.load(['compiler_cxx', 'gnu_dirs'])
+    opt.load(['boost', 'unix-socket', 'dependency-checker',
+              'default-compiler-flags', 'coverage',
+              'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
+    opt.addDependencyOptions(nfdopt, 'libpcap',   '(optional)')
+    opt.addDependencyOptions(nfdopt, 'librt',     '(optional)')
+    opt.addDependencyOptions(nfdopt, 'libresolv', '(optional)')
+
     nfdopt.add_option('--with-c++11', action='store_true', default=False, dest='use_cxx11',
                       help='''Enable C++11 mode (experimental, may not work)''')
     nfdopt.add_option('--with-tests', action='store_true', default=False,
@@ -77,14 +83,9 @@ def configure(conf):
 
     conf.load('unix-socket')
 
-    conf.check_cxx(lib='rt', uselib_store='RT',
-                   define_name='HAVE_RT', mandatory=False)
-
-    if conf.check_cxx(lib='pcap', uselib_store='PCAP',
-                      define_name='HAVE_PCAP', mandatory=False):
-        conf.env['HAVE_PCAP'] = True
-
-    conf.check_cxx(lib='resolv', uselib_store='RESOLV', mandatory=False)
+    conf.checkDependency(name='librt', lib='rt', mandatory=False)
+    conf.checkDependency(name='libpcap', lib='pcap', mandatory=False)
+    conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
     conf.load('coverage')
 
@@ -101,13 +102,13 @@ def build(bld):
                                  excl=['daemon/face/ethernet-*.cpp',
                                        'daemon/face/unix-*.cpp',
                                        'daemon/main.cpp']),
-        use='BOOST NDN_CPP RT',
+        use='BOOST NDN_CPP LIBRT',
         includes='. daemon',
         )
 
     if bld.env['HAVE_PCAP']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/ethernet-*.cpp')
-        nfd_objects.use += ' PCAP'
+        nfd_objects.use += ' LIBPCAP'
 
     if bld.env['HAVE_UNIX_SOCKETS']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
@@ -124,7 +125,7 @@ def build(bld):
             target='bin/%s' % (str(app.change_ext(''))),
             source=['tools/%s' % (str(app))],
             includes='. daemon',
-            use='nfd-objects RESOLV',
+            use='nfd-objects LIBRESOLV',
             )
 
     # Unit tests
