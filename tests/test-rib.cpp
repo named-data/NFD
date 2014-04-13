@@ -23,22 +23,33 @@ BOOST_AUTO_TEST_CASE(Basic)
   options1.setFlags(tlv::nrd::NDN_FORW_CHILD_INHERIT | tlv::nrd::NDN_FORW_CAPTURE);
   options1.setCost(10);
   options1.setExpirationPeriod(time::milliseconds(1500));
+  options1.setFaceId(1);
+
+  rib.insert(options1);
+  BOOST_CHECK_EQUAL(rib.size(), 1);
 
   PrefixRegOptions options2;
   options2.setName("/hello/world");
   options2.setFlags(tlv::nrd::NDN_FORW_CHILD_INHERIT);
   options2.setExpirationPeriod(time::seconds(0));
+  options2.setFaceId(1);
+  options2.setCost(100);
 
-  rib.insert(options1);
-  BOOST_CHECK_EQUAL(rib.size(), 1);
-  
   rib.insert(options2);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  options2.setName("/foo/bar");
+  options2.setFaceId(2);
   rib.insert(options2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
+  options2.setName("/foo/bar");
+  rib.insert(options2);
+  BOOST_CHECK_EQUAL(rib.size(), 3);
+
+  rib.erase(options2);
+  BOOST_CHECK_EQUAL(rib.size(), 2);
+
+  options2.setName("/hello/world");
   rib.erase(options2);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
