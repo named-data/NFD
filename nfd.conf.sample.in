@@ -19,7 +19,7 @@ log
   ;  TRACE ; trace messages (most verbose)
   ;  ALL ; all messages
 
-  ; default_level INFO
+  default_level INFO
 
   ; You may override default_level by assigning a logging level
   ; to the desired module name. Module names can be found in two ways:
@@ -64,14 +64,12 @@ face_system
     idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
-    mcast yes
-
-    ; Example multicast settings
+    ; UDP multicast settings
     ; NFD creates one UDP multicast face per NIC
 
-    ; mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
-    ; mcast_port 56363 ; UDP multicast port number
-    ; mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
+    mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
+    mcast_port 56363 ; UDP multicast port number
+    mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
   }
 
   ; The ether section contains settings of Ethernet faces and channels.
@@ -97,16 +95,14 @@ face_system
   ;    sudo chgrp admin /dev/bpf*
   ;    sudo chmod g+rw /dev/bpf*
 
-  ether
-  {
-    mcast yes
-
-  ;    Example multicast settings
-  ;    NFD creates one Ethernet multicast face per NIC
-  ;
-  ;    mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
-  ;    mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
-  }
+  @IF_HAVE_LIBPCAP@ether
+  @IF_HAVE_LIBPCAP@{
+  @IF_HAVE_LIBPCAP@  ; Ethernet multicast settings
+  @IF_HAVE_LIBPCAP@  ; NFD creates one Ethernet multicast face per NIC
+  @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
+  @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
+  @IF_HAVE_LIBPCAP@}
 }
 
 ; The authorizations section grants privileges to authorized keys.
@@ -149,13 +145,13 @@ authorizations
   ; You may have multiple authorize sections that specify additional
   ; certificates and their privileges.
 
-;  authorize
-;  {
-;    certfile keys/this_cert_does_not_exist.ndncert
-;    authorize
-;    privileges
-;    {
-;      faces
-;    }
-;  }
+  ; authorize
+  ; {
+  ;   certfile keys/this_cert_does_not_exist.ndncert
+  ;   authorize
+  ;   privileges
+  ;   {
+  ;     faces
+  ;   }
+  ; }
 }

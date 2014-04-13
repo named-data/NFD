@@ -39,7 +39,12 @@ def options(opt):
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
-    opt.addDependencyOptions(nfdopt, 'libpcap',   '(optional)')
+    opt.addUnixOptions(nfdopt)
+    opt.addDependencyOptions(nfdopt, 'libpcap')
+    nfdopt.add_option('--without-libpcap', action='store_true', default=False,
+                      dest='without_libpcap',
+                      help='''Disable libpcap (Ethernet face support will be disabled)''')
+
     opt.addDependencyOptions(nfdopt, 'librt',     '(optional)')
     opt.addDependencyOptions(nfdopt, 'libresolv', '(optional)')
 
@@ -84,8 +89,11 @@ def configure(conf):
     conf.load('unix-socket')
 
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
-    conf.checkDependency(name='libpcap', lib='pcap', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
+    if not conf.options.without_libpcap:
+        conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
+                             errmsg='not found, but required for Ethernet face support. '
+                                    'Specify --without-libpcap to disable Ethernet face support.')
 
     conf.load('coverage')
 
@@ -106,7 +114,7 @@ def build(bld):
         includes='. daemon',
         )
 
-    if bld.env['HAVE_PCAP']:
+    if bld.env['HAVE_LIBPCAP']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/ethernet-*.cpp')
         nfd_objects.use += ' LIBPCAP'
 
@@ -141,7 +149,7 @@ def build(bld):
             install_prefix=None,
           )
 
-        if bld.env['HAVE_PCAP']:
+        if bld.env['HAVE_LIBPCAP']:
             unit_tests.source += bld.path.ant_glob('tests/face/ethernet.cpp')
 
         if bld.env['HAVE_UNIX_SOCKETS']:
@@ -153,7 +161,8 @@ def build(bld):
     bld(features="subst",
         source='nfd.conf.sample.in',
         target='nfd.conf.sample',
-        install_path="${SYSCONFDIR}/ndn")
+        install_path="${SYSCONFDIR}/ndn",
+        IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ")
 
     bld(features='subst',
         source='tools/nfd-status-http-server.py',

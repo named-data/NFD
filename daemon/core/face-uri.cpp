@@ -25,9 +25,9 @@
 #include "face-uri.hpp"
 #include "core/logger.hpp"
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 #include "face/ethernet.hpp"
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
 #include <boost/regex.hpp>
 
@@ -130,14 +130,14 @@ FaceUri::fromFd(int fd)
   return uri;
 }
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 FaceUri::FaceUri(const ethernet::Address& address)
   : m_isV6(false)
 {
   m_scheme = "ether";
   m_host = address.toString();
 }
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
 FaceUri
 FaceUri::fromDev(const std::string& ifname)

@@ -37,9 +37,9 @@
 #include "face/unix-stream-factory.hpp"
 #endif // HAVE_UNIX_SOCKETS
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 #include "face/ethernet-factory.hpp"
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
 #include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
 
@@ -529,7 +529,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
   //   mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
   // }
 
-#if defined(HAVE_PCAP)
+#if defined(HAVE_LIBPCAP)
 
   using ethernet::Address;
 
@@ -595,7 +595,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
     }
 #else
   throw ConfigFile::Error("NFD was compiled without libpcap, cannot process \"ether\" section");
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 }
 
 

@@ -4,6 +4,8 @@
 #
 # GPL 3.0 license, see the COPYING.md file for more information
 
+from waflib import Options
+
 BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK = '''
 #include <iostream>
 #include <boost/asio.hpp>
@@ -17,9 +19,10 @@ int main() {
 }
 '''
 
-def options(opt):
+def addUnixOptions(self, opt):
     opt.add_option('--force-unix-socket', action='store_true', default=False,
                    dest='force_unix_socket', help='''Forcefully enable UNIX sockets support''')
+setattr(Options.OptionsContext, "addUnixOptions", addUnixOptions)
 
 def configure(conf):
     def boost_asio_has_local_sockets():

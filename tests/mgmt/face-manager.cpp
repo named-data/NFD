@@ -653,7 +653,7 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdpUnknownOption)
                              "Unrecognized option \"hello\" in \"udp\" section"));
 }
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionEther)
 {

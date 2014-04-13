@@ -23,9 +23,9 @@
  **/
 
 #include "core/face-uri.hpp"
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 #include "face/ethernet.hpp"
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
 #include "tests/test-common.hpp"
 
@@ -164,11 +164,11 @@ BOOST_AUTO_TEST_CASE(Ether)
 
   BOOST_CHECK_EQUAL(uri.parse("ether://08:00:27:zz:dd:01"), false);
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
   ethernet::Address address = ethernet::Address::fromString("33:33:01:01:01:01");
   BOOST_REQUIRE_NO_THROW(FaceUri(address));
   BOOST_CHECK_EQUAL(FaceUri(address).toString(), "ether://33:33:01:01:01:01");
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 }
 
 BOOST_AUTO_TEST_CASE(Dev)

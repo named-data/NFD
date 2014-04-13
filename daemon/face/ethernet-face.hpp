@@ -28,8 +28,8 @@
 #include "ethernet.hpp"
 #include "face.hpp"
 
-#ifndef HAVE_PCAP
-#error "Cannot include this file when pcap is not available"
+#ifndef HAVE_LIBPCAP
+#error "Cannot include this file when libpcap is not available"
 #endif
 
 // forward declarations

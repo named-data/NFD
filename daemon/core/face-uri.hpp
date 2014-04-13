@@ -29,11 +29,11 @@
 
 namespace nfd {
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
 namespace ethernet {
 class Address;
 } // namespace ethernet
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
 /** \brief represents the underlying protocol and address used by a Face
  *  \sa http://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#FaceUri
@@ -89,11 +89,11 @@ public: // scheme-specific construction
   static FaceUri
   fromFd(int fd);
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_LIBPCAP
   /// construct ether canonical FaceUri
   explicit
   FaceUri(const ethernet::Address& address);
-#endif // HAVE_PCAP
+#endif // HAVE_LIBPCAP
 
   /// create dev FaceUri from network device name
   static FaceUri
