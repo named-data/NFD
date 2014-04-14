@@ -79,10 +79,6 @@ public:
 
 private:
   void
-  createFace(const shared_ptr<boost::asio::local::stream_protocol::socket>& socket,
-             const FaceCreatedCallback& onFaceCreated);
-
-  void
   handleSuccessfulAccept(const boost::system::error_code& error,
                          const shared_ptr<boost::asio::local::stream_protocol::socket>& socket,
                          const FaceCreatedCallback& onFaceCreated,
@@ -91,6 +87,7 @@ private:
 private:
   unix_stream::Endpoint m_endpoint;
   shared_ptr<boost::asio::local::stream_protocol::acceptor> m_acceptor;
+  bool m_isListening;
 };
 
 } // namespace nfd
