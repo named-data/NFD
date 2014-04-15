@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TABLE_PIT_HPP
-#define NFD_TABLE_PIT_HPP
+#ifndef NFD_DAEMON_TABLE_PIT_HPP
+#define NFD_DAEMON_TABLE_PIT_HPP
 
 #include "name-tree.hpp"
 #include "pit-entry.hpp"
@@ -90,4 +90,4 @@ Pit::size() const
 
 } // namespace nfd
 
-#endif // NFD_TABLE_PIT_HPP
+#endif // NFD_DAEMON_TABLE_PIT_HPP

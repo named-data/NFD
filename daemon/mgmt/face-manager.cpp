@@ -31,7 +31,7 @@
 #include "fw/face-table.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
-#include "mgmt/config-file.hpp"
+#include "core/config-file.hpp"
 
 #ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"

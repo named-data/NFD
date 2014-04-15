@@ -33,7 +33,7 @@
 #include "mgmt/face-manager.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/status-server.hpp"
-#include "mgmt/config-file.hpp"
+#include "core/config-file.hpp"
 
 namespace nfd {
 

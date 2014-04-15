@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_MGMT_FACE_FLAGS_HPP
-#define NFD_MGMT_FACE_FLAGS_HPP
+#ifndef NFD_DAEMON_MGMT_FACE_FLAGS_HPP
+#define NFD_DAEMON_MGMT_FACE_FLAGS_HPP
 
 #include "face/face.hpp"
 #include <ndn-cpp-dev/management/nfd-face-flags.hpp>
@@ -45,4 +45,4 @@ getFaceFlags(const Face& face)
 
 } // namespace nfd
 
-#endif // NFD_MGMT_FACE_FLAGS_HPP
+#endif // NFD_DAEMON_MGMT_FACE_FLAGS_HPP

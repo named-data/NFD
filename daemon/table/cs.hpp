@@ -24,8 +24,8 @@
  * \author Ilya Moiseenko <iliamo@ucla.edu>
  */
 
-#ifndef NFD_TABLE_CS_HPP
-#define NFD_TABLE_CS_HPP
+#ifndef NFD_DAEMON_TABLE_CS_HPP
+#define NFD_DAEMON_TABLE_CS_HPP
 
 #include "common.hpp"
 #include "cs-entry.hpp"
@@ -224,4 +224,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_TABLE_CS_HPP
+#endif // NFD_DAEMON_TABLE_CS_HPP

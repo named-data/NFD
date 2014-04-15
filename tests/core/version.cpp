@@ -22,7 +22,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include "core/version.hpp"
+#include "version.hpp"
 #include "core/logger.hpp"
 
 #include "tests/test-common.hpp"

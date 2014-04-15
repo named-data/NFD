@@ -21,8 +21,8 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
-#ifndef NFD_MGMT_NOTIFICATION_STREAM_HPP
-#define NFD_MGMT_NOTIFICATION_STREAM_HPP
+#ifndef NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP
+#define NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP
 
 #include "mgmt/app-face.hpp"
 
@@ -76,4 +76,4 @@ NotificationStream::~NotificationStream()
 } // namespace nfd
 
 
-#endif // NFD_MGMT_NOTIFICATION_STREAM_HPP
+#endif // NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP

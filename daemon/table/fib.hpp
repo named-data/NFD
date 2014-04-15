@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TABLE_FIB_HPP
-#define NFD_TABLE_FIB_HPP
+#ifndef NFD_DAEMON_TABLE_FIB_HPP
+#define NFD_DAEMON_TABLE_FIB_HPP
 
 #include "fib-entry.hpp"
 #include "name-tree.hpp"
@@ -206,4 +206,4 @@ Fib::const_iterator::operator!=(const Fib::const_iterator& other) const
 
 } // namespace nfd
 
-#endif // NFD_TABLE_FIB_HPP
+#endif // NFD_DAEMON_TABLE_FIB_HPP

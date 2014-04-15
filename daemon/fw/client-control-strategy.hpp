@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FW_CLIENT_CONTROL_STRATEGY_HPP
-#define NFD_FW_CLIENT_CONTROL_STRATEGY_HPP
+#ifndef NFD_DAEMON_FW_CLIENT_CONTROL_STRATEGY_HPP
+#define NFD_DAEMON_FW_CLIENT_CONTROL_STRATEGY_HPP
 
 #include "best-route-strategy.hpp"
 
@@ -54,4 +54,4 @@ public:
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_FW_CLIENT_CONTROL_STRATEGY_HPP
+#endif // NFD_DAEMON_FW_CLIENT_CONTROL_STRATEGY_HPP

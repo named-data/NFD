@@ -24,7 +24,7 @@
 
 #include "status-server.hpp"
 #include "fw/forwarder.hpp"
-#include "core/version.hpp"
+#include "version.hpp"
 
 namespace nfd {
 

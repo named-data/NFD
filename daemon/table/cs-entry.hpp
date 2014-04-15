@@ -24,8 +24,8 @@
  * \author Ilya Moiseenko <iliamo@ucla.edu>
  */
 
-#ifndef NFD_TABLE_CS_ENTRY_HPP
-#define NFD_TABLE_CS_ENTRY_HPP
+#ifndef NFD_DAEMON_TABLE_CS_ENTRY_HPP
+#define NFD_DAEMON_TABLE_CS_ENTRY_HPP
 
 #include "common.hpp"
 #include <ndn-cpp-dev/util/crypto.hpp>
@@ -166,4 +166,4 @@ Entry::getIterators() const
 } // namespace cs
 } // namespace nfd
 
-#endif // NFD_TABLE_CS_ENTRY_HPP
+#endif // NFD_DAEMON_TABLE_CS_ENTRY_HPP

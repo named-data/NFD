@@ -99,19 +99,30 @@ def configure(conf):
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 
-    conf.write_config_header('daemon/config.hpp')
+    conf.write_config_header('config.hpp')
 
 def build(bld):
+    core = bld(
+        target='core-objects',
+        name='core-objects',
+        features='cxx',
+        source=bld.path.ant_glob(['core/**/*.cpp']),
+        use='BOOST NDN_CPP LIBRT',
+        includes='. core',
+        export_includes='. core',
+        )
+
     nfd_objects = bld(
-        target='nfd-objects',
-        name='nfd-objects',
+        target='daemon-objects',
+        name='daemon-objects',
         features='cxx',
         source=bld.path.ant_glob(['daemon/**/*.cpp'],
                                  excl=['daemon/face/ethernet-*.cpp',
                                        'daemon/face/unix-*.cpp',
                                        'daemon/main.cpp']),
-        use='BOOST NDN_CPP LIBRT',
-        includes='. daemon',
+        use='core-objects',
+        includes='daemon',
+        export_includes='daemon',
         )
 
     if bld.env['HAVE_LIBPCAP']:
@@ -121,42 +132,20 @@ def build(bld):
     if bld.env['HAVE_UNIX_SOCKETS']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
 
-    bld(target='nfd',
+    bld(target='bin/nfd',
         features='cxx cxxprogram',
         source='daemon/main.cpp',
-        use='nfd-objects',
-        includes='. daemon',
+        use='daemon-objects',
         )
 
     for app in bld.path.ant_glob('tools/*.cpp'):
         bld(features=['cxx', 'cxxprogram'],
             target='bin/%s' % (str(app.change_ext(''))),
             source=['tools/%s' % (str(app))],
-            includes='. daemon',
-            use='nfd-objects LIBRESOLV',
+            use='core-objects LIBRESOLV',
             )
 
-    # Unit tests
-    if bld.env['WITH_TESTS']:
-        unit_tests = bld.program(
-            target='unit-tests',
-            features='cxx cxxprogram',
-            source=bld.path.ant_glob(['tests/**/*.cpp'],
-                                     excl=['tests/face/ethernet.cpp',
-                                           'tests/face/unix-*.cpp']),
-            use='nfd-objects',
-            includes='. daemon',
-            install_prefix=None,
-          )
-
-        if bld.env['HAVE_LIBPCAP']:
-            unit_tests.source += bld.path.ant_glob('tests/face/ethernet.cpp')
-
-        if bld.env['HAVE_UNIX_SOCKETS']:
-            unit_tests.source += bld.path.ant_glob('tests/face/unix-*.cpp')
-
-    if bld.env['WITH_OTHER_TESTS']:
-        bld.recurse("tests-other")
+    bld.recurse("tests")
 
     bld(features="subst",
         source='nfd.conf.sample.in',

@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FW_FORWARDER_COUNTER_HPP
-#define NFD_FW_FORWARDER_COUNTER_HPP
+#ifndef NFD_DAEMON_FW_FORWARDER_COUNTER_HPP
+#define NFD_DAEMON_FW_FORWARDER_COUNTER_HPP
 
 #include "face/face-counter.hpp"
 
@@ -46,4 +46,4 @@ class ForwarderCounters : public FaceCounters
 
 } // namespace nfd
 
-#endif // NFD_FW_FORWARDER_COUNTER_HPP
+#endif // NFD_DAEMON_FW_FORWARDER_COUNTER_HPP

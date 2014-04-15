@@ -24,7 +24,7 @@
 
 #include "core/face-uri.hpp"
 #ifdef HAVE_LIBPCAP
-#include "face/ethernet.hpp"
+#include "core/ethernet.hpp"
 #endif // HAVE_LIBPCAP
 
 #include "tests/test-common.hpp"

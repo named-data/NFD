@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FW_FACE_TABLE_HPP
-#define NFD_FW_FACE_TABLE_HPP
+#ifndef NFD_DAEMON_FW_FACE_TABLE_HPP
+#define NFD_DAEMON_FW_FACE_TABLE_HPP
 
 #include "face/face.hpp"
 #include "core/map-value-iterator.hpp"
@@ -138,4 +138,4 @@ FaceTable::rend() const
 
 } // namespace nfd
 
-#endif // NFD_FW_FACE_TABLE_HPP
+#endif // NFD_DAEMON_FW_FACE_TABLE_HPP

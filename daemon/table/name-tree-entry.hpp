@@ -24,8 +24,8 @@
 
 // Name Tree Entry (i.e., Name Prefix Entry)
 
-#ifndef NFD_TABLE_NAME_TREE_ENTRY_HPP
-#define NFD_TABLE_NAME_TREE_ENTRY_HPP
+#ifndef NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
+#define NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 
 #include "common.hpp"
 #include "table/fib-entry.hpp"
@@ -287,4 +287,4 @@ Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceE
 } // namespace name_tree
 } // namespace nfd
 
-#endif // NFD_TABLE_NAME_TREE_ENTRY_HPP
+#endif // NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP

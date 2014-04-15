@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TABLE_STRATEGY_INFO_HOST_HPP
-#define NFD_TABLE_STRATEGY_INFO_HOST_HPP
+#ifndef NFD_DAEMON_TABLE_STRATEGY_INFO_HOST_HPP
+#define NFD_DAEMON_TABLE_STRATEGY_INFO_HOST_HPP
 
 #include "fw/strategy-info.hpp"
 
@@ -99,4 +99,4 @@ StrategyInfoHost::getOrCreateStrategyInfo(T1& a1)
 
 } // namespace nfd
 
-#endif // NFD_TABLE_STRATEGY_INFO_HOST_HPP
+#endif // NFD_DAEMON_TABLE_STRATEGY_INFO_HOST_HPP

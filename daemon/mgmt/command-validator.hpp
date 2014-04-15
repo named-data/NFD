@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_MGMT_COMMAND_VALIDATOR_HPP
-#define NFD_MGMT_COMMAND_VALIDATOR_HPP
+#ifndef NFD_DAEMON_MGMT_COMMAND_VALIDATOR_HPP
+#define NFD_DAEMON_MGMT_COMMAND_VALIDATOR_HPP
 
 #include "common.hpp"
 #include "config-file.hpp"
@@ -113,4 +113,4 @@ CommandValidator::validate(const Interest& interest,
 
 } // namespace nfd
 
-#endif // NFD_MGMT_COMMAND_VALIDATOR_HPP
+#endif // NFD_DAEMON_MGMT_COMMAND_VALIDATOR_HPP

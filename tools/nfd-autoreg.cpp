@@ -32,7 +32,7 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
-#include "daemon/core/face-uri.hpp"
+#include "core/face-uri.hpp"
 #include "network.hpp"
 
 namespace po = boost::program_options;

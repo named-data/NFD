@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FACE_NDNLP_PARSE_HPP
-#define NFD_FACE_NDNLP_PARSE_HPP
+#ifndef NFD_DAEMON_FACE_NDNLP_PARSE_HPP
+#define NFD_DAEMON_FACE_NDNLP_PARSE_HPP
 
 #include "common.hpp"
 #include "ndnlp-tlv.hpp"
@@ -67,4 +67,4 @@ public:
 } // namespace ndnlp
 } // namespace nfd
 
-#endif // NFD_FACE_NDNLP_PARSE_HPP
+#endif // NFD_DAEMON_FACE_NDNLP_PARSE_HPP

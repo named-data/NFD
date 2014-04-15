@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TABLE_PIT_OUT_RECORD_HPP
-#define NFD_TABLE_PIT_OUT_RECORD_HPP
+#ifndef NFD_DAEMON_TABLE_PIT_OUT_RECORD_HPP
+#define NFD_DAEMON_TABLE_PIT_OUT_RECORD_HPP
 
 #include "pit-face-record.hpp"
 
@@ -45,4 +45,4 @@ public:
 } // namespace pit
 } // namespace nfd
 
-#endif // NFD_TABLE_PIT_IN_RECORD_HPP
+#endif // NFD_DAEMON_TABLE_PIT_IN_RECORD_HPP

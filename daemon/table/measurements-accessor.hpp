@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TABLE_MEASUREMENTS_ACCESSOR_HPP
-#define NFD_TABLE_MEASUREMENTS_ACCESSOR_HPP
+#ifndef NFD_DAEMON_TABLE_MEASUREMENTS_ACCESSOR_HPP
+#define NFD_DAEMON_TABLE_MEASUREMENTS_ACCESSOR_HPP
 
 #include "measurements.hpp"
 #include "strategy-choice.hpp"
@@ -116,4 +116,4 @@ MeasurementsAccessor::extendLifetime(measurements::Entry& entry, const time::nan
 
 } // namespace nfd
 
-#endif // NFD_TABLE_MEASUREMENTS_ACCESSOR_HPP
+#endif // NFD_DAEMON_TABLE_MEASUREMENTS_ACCESSOR_HPP

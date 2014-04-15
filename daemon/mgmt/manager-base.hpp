@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_MGMT_MANAGER_BASE_HPP
-#define NFD_MGMT_MANAGER_BASE_HPP
+#ifndef NFD_DAEMON_MGMT_MANAGER_BASE_HPP
+#define NFD_DAEMON_MGMT_MANAGER_BASE_HPP
 
 #include "common.hpp"
 
@@ -159,4 +159,4 @@ ManagerBase::validate(const Interest& interest,
 
 } // namespace nfd
 
-#endif // NFD_MGMT_MANAGER_BASE_HPP
+#endif // NFD_DAEMON_MGMT_MANAGER_BASE_HPP

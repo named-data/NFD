@@ -24,8 +24,8 @@
 
 // Name Tree (Name Prefix Hash Table)
 
-#ifndef NFD_TABLE_NAME_TREE_HPP
-#define NFD_TABLE_NAME_TREE_HPP
+#ifndef NFD_DAEMON_TABLE_NAME_TREE_HPP
+#define NFD_DAEMON_TABLE_NAME_TREE_HPP
 
 #include "common.hpp"
 #include "name-tree-entry.hpp"
@@ -372,4 +372,4 @@ NameTree::const_iterator::operator!=(const NameTree::const_iterator& other) cons
 
 } // namespace nfd
 
-#endif // NFD_TABLE_NAME_TREE_HPP
+#endif // NFD_DAEMON_TABLE_NAME_TREE_HPP

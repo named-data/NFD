@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FACE_MULTICAST_UDP_FACE_HPP
-#define NFD_FACE_MULTICAST_UDP_FACE_HPP
+#ifndef NFD_DAEMON_FACE_MULTICAST_UDP_FACE_HPP
+#define NFD_DAEMON_FACE_MULTICAST_UDP_FACE_HPP
 
 #include "datagram-face.hpp"
 
@@ -61,4 +61,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_FACE_MULTICAST_UDP_FACE_HPP
+#endif // NFD_DAEMON_FACE_MULTICAST_UDP_FACE_HPP

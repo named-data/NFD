@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FACE_ETHERNET_FACTORY_HPP
-#define NFD_FACE_ETHERNET_FACTORY_HPP
+#ifndef NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
+#define NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
 
 #include "ethernet-face.hpp"
 #include "protocol-factory.hpp"
@@ -93,4 +93,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_FACE_ETHERNET_FACTORY_HPP
+#endif // NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP

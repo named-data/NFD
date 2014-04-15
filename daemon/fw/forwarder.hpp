@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FW_FORWARDER_HPP
-#define NFD_FW_FORWARDER_HPP
+#ifndef NFD_DAEMON_FW_FORWARDER_HPP
+#define NFD_DAEMON_FW_FORWARDER_HPP
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
@@ -267,4 +267,4 @@ Forwarder::dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, Function trigger)
 
 } // namespace nfd
 
-#endif // NFD_FW_FORWARDER_HPP
+#endif // NFD_DAEMON_FW_FORWARDER_HPP

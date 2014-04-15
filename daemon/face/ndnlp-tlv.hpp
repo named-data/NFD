@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FACE_NDNLP_TLV_HPP
-#define NFD_FACE_NDNLP_TLV_HPP
+#ifndef NFD_DAEMON_FACE_NDNLP_TLV_HPP
+#define NFD_DAEMON_FACE_NDNLP_TLV_HPP
 
 namespace nfd {
 namespace tlv {
@@ -40,4 +40,4 @@ enum
 } // namespace tlv
 } // namespace nfd
 
-#endif // NFD_FACE_NDNLP_TLV_HPP
+#endif // NFD_DAEMON_FACE_NDNLP_TLV_HPP

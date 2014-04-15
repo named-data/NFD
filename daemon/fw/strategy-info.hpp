@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_FW_STRATEGY_INFO_HPP
-#define NFD_FW_STRATEGY_INFO_HPP
+#ifndef NFD_DAEMON_FW_STRATEGY_INFO_HPP
+#define NFD_DAEMON_FW_STRATEGY_INFO_HPP
 
 #include "common.hpp"
 
@@ -49,4 +49,4 @@ StrategyInfo::~StrategyInfo()
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_FW_STRATEGY_INFO_HPP
+#endif // NFD_DAEMON_FW_STRATEGY_INFO_HPP
