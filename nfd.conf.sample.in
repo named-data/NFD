@@ -66,7 +66,12 @@ face_system
 
     ; UDP multicast settings
     ; NFD creates one UDP multicast face per NIC
-
+    ;
+    ; In multi-homed Linux machines these settings will NOT work without
+    ; root or settings the appropriate permissions:
+    ;
+    ;    sudo setcap cap_net_raw=eip /full/path/nfd
+    ;
     mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
     mcast_port 56363 ; UDP multicast port number
     mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)

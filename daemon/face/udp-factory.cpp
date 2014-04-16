@@ -27,6 +27,10 @@
 #include "core/resolver.hpp"
 #include "core/network-interface.hpp"
 
+#if defined(__linux__)
+#include <sys/socket.h>
+#endif
+
 namespace nfd {
 
 using namespace boost::asio;
@@ -163,9 +167,10 @@ UdpFactory::createChannel(const std::string& localHost,
 
 shared_ptr<MulticastUdpFace>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
-                                const udp::Endpoint& multicastEndpoint)
+                                const udp::Endpoint& multicastEndpoint,
+                                const std::string& networkInterfaceName /* "" */)
 {
-  //checking if the local and musticast endpoint are already in use for a multicast face
+  //checking if the local and multicast endpoint are already in use for a multicast face
   shared_ptr<MulticastUdpFace> multicastFace = findMulticastFace(localEndpoint);
   if (static_cast<bool>(multicastFace)) {
     if (multicastFace->getMulticastGroup() == multicastEndpoint)
@@ -224,6 +229,24 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
     throw Error(msg.str());
   }
 
+#if defined(__linux__)
+  //On linux system, if there are more than one MulticastUdpFace for the same multicast group but
+  //bound on different network interfaces, the socket has to be bound with the specific interface
+  //using SO_BINDTODEVICE, otherwise the face will receive packets also from other interfaces.
+  //Without SO_BINDTODEVICE every MulticastUdpFace that have joined the same multicast group
+  //on different interfaces will receive the same packet.
+  //This applies only on linux, for OS X the ip::multicast::join_group is enough to get
+  //the desired behaviour
+  if (!networkInterfaceName.empty()) {
+    if (::setsockopt(clientSocket->native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
+                     networkInterfaceName.c_str(), networkInterfaceName.size()+1) == -1){
+      throw Error("Cannot bind multicast face to " + networkInterfaceName
+                  + " make sure you have CAP_NET_RAW capability" );
+    }
+  }
+
+#endif
+
   clientSocket->set_option(ip::multicast::enable_loopback(false));
 
   multicastFace = make_shared<MulticastUdpFace>(boost::cref(clientSocket), localEndpoint);
@@ -237,13 +260,15 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 shared_ptr<MulticastUdpFace>
 UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastIp,
-                                const std::string& multicastPort)
+                                const std::string& multicastPort,
+                                const std::string& networkInterfaceName /* "" */)
 {
 
   return createMulticastFace(UdpResolver::syncResolve(localIp,
                                                       multicastPort),
                              UdpResolver::syncResolve(multicastIp,
-                                                      multicastPort));
+                                                      multicastPort),
+                             networkInterfaceName);
 }
 
 void

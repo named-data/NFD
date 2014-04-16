@@ -115,6 +115,13 @@ public:
    * If an unicast face is already active on the same local NIC and port, the
    * creation fails and an exception is thrown
    *
+   * \param networkInterfaceName name of the network interface on which the face will be bound
+   *        (Used only on multihomed linux machine with more than one MulticastUdpFace for
+   *        the same multicast group. If specified, will requires CAP_NET_RAW capability)
+   *        An empty string can be provided in other system or in linux machine with only one
+   *        MulticastUdpFace per multicast group
+   *
+   *
    * \returns always a valid pointer to a MulticastUdpFace object, an exception
    *          is thrown if it cannot be created.
    *
@@ -125,12 +132,14 @@ public:
    */
   shared_ptr<MulticastUdpFace>
   createMulticastFace(const udp::Endpoint& localEndpoint,
-                      const udp::Endpoint& multicastEndpoint);
+                      const udp::Endpoint& multicastEndpoint,
+                      const std::string& networkInterfaceName = "");
 
   shared_ptr<MulticastUdpFace>
   createMulticastFace(const std::string& localIp,
                       const std::string& multicastIp,
-                      const std::string& multicastPort);
+                      const std::string& multicastPort,
+                      const std::string& networkInterfaceName = "");
 
   // from Factory
   virtual void

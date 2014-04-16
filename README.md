@@ -90,3 +90,12 @@ or manually:
 
     sudo chgrp admin /dev/bpf*
     sudo chmod g+rw /dev/bpf*
+
+## UDP multicast support in multi-homed Linux machines
+
+The UDP configuration file section contains settings for unicast and multicast UDP
+faces. If the Linux box is equipped with multiple network interfaces with multicast
+capabilities, the settings for multicast faces will **NOT** work without root
+or setting the appropriate permissions:
+
+    sudo setcap cap_net_raw=eip /full/path/nfd

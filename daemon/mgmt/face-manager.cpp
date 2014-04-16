@@ -498,6 +498,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 
       if (useMcast && enableV4)
         {
+          std::list<shared_ptr<NetworkInterfaceInfo> > ipv4MulticastInterfaces;
           for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
                i != nicList.end();
                ++i)
@@ -505,12 +506,34 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
               const shared_ptr<NetworkInterfaceInfo>& nic = *i;
               if (nic->isUp() && nic->isMulticastCapable() && !nic->ipv4Addresses.empty())
                 {
-                  shared_ptr<MulticastUdpFace> newFace =
-                    factory->createMulticastFace(nic->ipv4Addresses[0].to_string(),
-                                                 mcastGroup, mcastPort);
-
-                  addCreatedFaceToForwarder(newFace);
+                  ipv4MulticastInterfaces.push_back(nic);
                 }
+            }
+
+          bool isNicNameNecessary = false;
+
+#if defined(__linux__)
+          if (ipv4MulticastInterfaces.size() > 1)
+            {
+              //On Linux, if we have more than one MulticastUdpFace we need to specify
+              //the name of the interface
+              isNicNameNecessary = true;
+            }
+#endif
+
+          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i =
+                 ipv4MulticastInterfaces.begin();
+               i != ipv4MulticastInterfaces.end();
+               ++i)
+            {
+              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
+              shared_ptr<MulticastUdpFace> newFace;
+              newFace = factory->createMulticastFace(nic->ipv4Addresses[0].to_string(),
+                                                     mcastGroup,
+                                                     mcastPort,
+                                                     isNicNameNecessary ? nic->name : "");
+
+              addCreatedFaceToForwarder(newFace);
             }
         }
     }
