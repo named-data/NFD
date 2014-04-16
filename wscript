@@ -138,6 +138,21 @@ def build(bld):
         use='daemon-objects',
         )
 
+    rib_objects = bld(
+        target='rib-objects',
+        name='rib-objects',
+        features='cxx',
+        source=bld.path.ant_glob(['rib/**/*.cpp'],
+                                 excl=['rib/main.cpp']),
+        use='core-objects',
+        )
+
+    bld(target='bin/nrd',
+        features='cxx cxxprogram',
+        source='rib/main.cpp',
+        use='rib-objects',
+        )
+
     for app in bld.path.ant_glob('tools/*.cpp'):
         bld(features=['cxx', 'cxxprogram'],
             target='bin/%s' % (str(app.change_ext(''))),
@@ -152,6 +167,9 @@ def build(bld):
         target='nfd.conf.sample',
         install_path="${SYSCONFDIR}/ndn",
         IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ")
+
+    # @todo Merge with nfd.conf
+    bld.install_files('${SYSCONFDIR}/ndn', 'nrd.conf.sample')
 
     bld(features='subst',
         source='tools/nfd-status-http-server.py',

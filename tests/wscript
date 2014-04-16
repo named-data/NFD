@@ -64,6 +64,15 @@ def build(bld):
         if bld.env['HAVE_UNIX_SOCKETS']:
             unit_tests_nfd.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
 
+        unit_tests_rib = bld.program(
+            target='../unit-tests-rib',
+            features='cxx cxxprogram',
+            source=bld.path.ant_glob(['rib/**/*.cpp']),
+            use='rib-objects unit-tests-main',
+            includes=['.'],
+            install_prefix=None,
+          )
+
     # Other tests (e.g., stress tests that can be enabled even if unit tests are disabled)
     if bld.env['WITH_TESTS'] or bld.env['WITH_OTHER_TESTS']:
         bld.recurse("other")

@@ -56,3 +56,8 @@ volunteers.
     * Haowei Yuan         <http://www.cse.wustl.edu/~yuanh/>
     * Hila Ben Abraham    <http://research.engineering.wustl.edu/~abrahamh/>
     * Patrick Crowley     <http://www.arl.wustl.edu/~pcrowley/>
+
+* The University of Memphis
+
+    * Syed Obaid Amin     <http://obaidamin.weebly.com/>
+    * Lan Wang            <http://www.cs.memphis.edu/~lanwang/>

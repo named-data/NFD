@@ -1,19 +1,38 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil -*- */
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (C) 2014 Regents of the University of California.
- * See COPYING for copyright and distribution information.
- */
+ * Copyright (c) 2014  Regents of the University of California,
+ *                     Arizona Board of Regents,
+ *                     Colorado State University,
+ *                     University Pierre & Marie Curie, Sorbonne University,
+ *                     Washington University in St. Louis,
+ *                     Beijing Institute of Technology,
+ *                     The University of Memphis
+ *
+ * This file is part of NFD (Named Data Networking Forwarding Daemon).
+ * See AUTHORS.md for complete list of NFD authors and contributors.
+ *
+ * NFD is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ **/
 
-#include "common.hpp"
 #include "face-monitor.hpp"
-#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
+#include "core/logger.hpp"
 
+#include <ndn-cpp-dev/face.hpp>
 
-namespace ndn {
+namespace nfd {
 
-using namespace nfd;
+NFD_LOG_INIT("FaceMonitor");
 
-FaceMonitor::FaceMonitor(Face& face)
+FaceMonitor::FaceMonitor(ndn::Face& face)
   : m_face(face)
   , m_isStopped(true)
 {
@@ -53,8 +72,7 @@ FaceMonitor::startNotifications()
     .setInterestLifetime(time::seconds(60))
   ;
 
-  //todo: add logging support.
-  std::cout << "startNotification: Interest Sent: " << interest << std::endl;
+  NFD_LOG_DEBUG("startNotification: Interest Sent: " << interest);
 
   m_lastInterestId = m_face.expressInterest(interest,
                                             bind(&FaceMonitor::onNotification, this, _2),
@@ -103,8 +121,7 @@ FaceMonitor::onTimeout()
     .setInterestLifetime(time::seconds(60))
     ;
 
-  //todo: add logging support.
-  std::cout << "In onTimeout, sending interest: " << newInterest << std::endl;
+  NFD_LOG_DEBUG("In onTimeout, sending interest: " << newInterest);
 
   m_lastInterestId = m_face.expressInterest(newInterest,
                                             bind(&FaceMonitor::onNotification, this, _2),
@@ -138,12 +155,11 @@ FaceMonitor::onNotification(const Data& data)
   Interest interest(nextNotification);
   interest.setInterestLifetime(time::seconds(60));
 
-  //todo: add logging support.
-  std::cout << "onNotification: Interest sent: " <<  interest << std::endl;
+  NFD_LOG_DEBUG("onNotification: Interest sent: " <<  interest);
 
   m_lastInterestId = m_face.expressInterest(interest,
                                             bind(&FaceMonitor::onNotification, this, _2),
                                             bind(&FaceMonitor::onTimeout, this));
 }
 
-}//namespace ndn
+} // namespace nfd

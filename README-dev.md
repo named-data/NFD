@@ -10,7 +10,8 @@ Include the following header into all `.hpp` and `.cpp` files:
      *                     Colorado State University,
      *                     University Pierre & Marie Curie, Sorbonne University,
      *                     Washington University in St. Louis,
-     *                     Beijing Institute of Technology
+     *                     Beijing Institute of Technology,
+     *                     The University of Memphis
      *
      * This file is part of NFD (Named Data Networking Forwarding Daemon).
      * See AUTHORS.md for complete list of NFD authors and contributors.
