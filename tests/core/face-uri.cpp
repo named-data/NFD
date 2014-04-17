@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(Ether)
 {
   FaceUri uri;
 
-  BOOST_CHECK(uri.parse("ether://08:00:27:01:dd:01"));
+  BOOST_CHECK(uri.parse("ether://[08:00:27:01:dd:01]"));
   BOOST_CHECK_EQUAL(uri.getScheme(), "ether");
   BOOST_CHECK_EQUAL(uri.getHost(), "08:00:27:01:dd:01");
   BOOST_CHECK_EQUAL(uri.getPort(), "");
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(Ether)
 #ifdef HAVE_LIBPCAP
   ethernet::Address address = ethernet::Address::fromString("33:33:01:01:01:01");
   BOOST_REQUIRE_NO_THROW(FaceUri(address));
-  BOOST_CHECK_EQUAL(FaceUri(address).toString(), "ether://33:33:01:01:01:01");
+  BOOST_CHECK_EQUAL(FaceUri(address).toString(), "ether://[33:33:01:01:01:01]");
 #endif // HAVE_LIBPCAP
 }
 

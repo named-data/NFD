@@ -70,7 +70,7 @@ FaceUri::parse(const std::string& uri)
   // pattern for IPv6 address enclosed in [ ], with optional port number
   static const boost::regex v6Exp("^\\[([a-fA-F0-9:]+)\\](?:\\:(\\d+))?$");
   // pattern for Ethernet address in standard hex-digits-and-colons notation
-  static const boost::regex etherExp("^((?:[a-fA-F0-9]{1,2}\\:){5}(?:[a-fA-F0-9]{1,2}))$");
+  static const boost::regex etherExp("^\\[((?:[a-fA-F0-9]{1,2}\\:){5}(?:[a-fA-F0-9]{1,2}))\\]$");
   // pattern for IPv4/hostname/fd/ifname, with optional port number
   static const boost::regex v4HostExp("^([^:]+)(?:\\:(\\d+))?$");
 
@@ -132,7 +132,7 @@ FaceUri::fromFd(int fd)
 
 #ifdef HAVE_LIBPCAP
 FaceUri::FaceUri(const ethernet::Address& address)
-  : m_isV6(false)
+  : m_isV6(true)
 {
   m_scheme = "ether";
   m_host = address.toString();

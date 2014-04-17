@@ -8,6 +8,7 @@ Manpages
    manpages/nrd
    manpages/nfdc
    manpages/nfd-status
+   schema
    manpages/nfd-status-http-server
    manpages/ndn-autoconfig
    manpages/ndn-autoconfig-server

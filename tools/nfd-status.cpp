@@ -46,6 +46,7 @@ public:
     , m_needVersionRetrieval(false)
     , m_needFaceStatusRetrieval(false)
     , m_needFibEnumerationRetrieval(false)
+    , m_needXmlDataRetrieval(false)
   {
   }
 
@@ -59,10 +60,12 @@ public:
       "  [-v] - retrieve version information\n"
       "  [-f] - retrieve face status information\n"
       "  [-b] - retrieve FIB information\n"
+      "  [-x] - retrieve NFD status information in XML format\n"
       "\n"
       "  [-V] - show version information of nfd-status and exit\n"
       "\n"
       "If no options are provided, all information is retrieved.\n"
+      "If -x is provided, other options(v, f and b) are ignored, and all information is retrieved in XML format.\n"
       ;
   }
 
@@ -82,6 +85,12 @@ public:
   enableFibEnumerationRetrieval()
   {
     m_needFibEnumerationRetrieval = true;
+  }
+
+  void
+  enableXmlDataRetrieval()
+  {
+    m_needXmlDataRetrieval = true;
   }
 
   void
@@ -112,32 +121,86 @@ public:
       }
   }
 
+  void escapeSpecialCharacters(std::string *data)
+  {
+    using boost::algorithm::replace_all;
+    replace_all(*data, "&",  "&amp;");
+    replace_all(*data, "\"", "&quot;");
+    replace_all(*data, "\'", "&apos;");
+    replace_all(*data, "<",  "&lt;");
+    replace_all(*data, ">",  "&gt;");
+  }
+
   void
   afterFetchedVersionInformation(const Data& data)
   {
-    std::cout << "General NFD status:" << std::endl;
-
     nfd::ForwarderStatus status(data.getContent());
-    std::cout << "               version="
-              << status.getNfdVersion() << std::endl;
-    std::cout << "             startTime="
-              << time::toIsoString(status.getStartTimestamp()) << std::endl;
-    std::cout << "           currentTime="
-              << time::toIsoString(status.getCurrentTimestamp()) << std::endl;
-    std::cout << "                uptime="
-              << time::duration_cast<time::seconds>(status.getCurrentTimestamp()
-                                                    - status.getStartTimestamp()) << std::endl;
+    if (m_needXmlDataRetrieval)
+      {
+        std::cout << "<?xml version=\"1.0\"?>";
+        std::cout << "<nfdStatus xmlns=\"ndn:/localhost/nfd/status/1\">";
+        std::cout << "<generalStatus>";
+        std::cout << "<version>"
+                  << status.getNfdVersion() << "</version>";
+        std::cout << "<startTime>"
+                  << time::toString(status.getStartTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
+                  << "</startTime>";
+        std::cout << "<currentTime>"
+                  << time::toString(status.getCurrentTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
+                  << "</currentTime>";
+        std::cout << "<uptime>PT"
+                  << time::duration_cast<time::seconds>(status.getCurrentTimestamp()
+                                                        - status.getStartTimestamp()).count()
+                  << "S</uptime>";
+        std::cout << "<nNameTreeEntries>"     << status.getNNameTreeEntries()
+                  << "</nNameTreeEntries>";
+        std::cout << "<nFibEntries>"          << status.getNFibEntries()
+                  << "</nFibEntries>";
+        std::cout << "<nPitEntries>"          << status.getNPitEntries()
+                  << "</nPitEntries>";
+        std::cout << "<nMeasurementsEntries>" << status.getNMeasurementsEntries()
+                  << "</nMeasurementsEntries>";
+        std::cout << "<nCsEntries>"           << status.getNCsEntries()
+                  << "</nCsEntries>";
+        std::cout << "<packetCounters>";
+        std::cout << "<incomingPackets>";
+        std::cout << "<nInterests>"           << status.getNInInterests()
+                  << "</nInterests>";
+        std::cout << "<nDatas>"               << status.getNInDatas()
+                  << "</nDatas>";
+        std::cout << "</incomingPackets>";
+        std::cout << "<outgoingPackets>";
+        std::cout << "<nInterests>"           << status.getNOutInterests()
+                  << "</nInterests>";
+        std::cout << "<nDatas>"               << status.getNOutDatas()
+                  << "</nDatas>";
+        std::cout << "</outgoingPackets>";
+        std::cout << "</packetCounters>";
+        std::cout << "</generalStatus>";
+      }
+    else
+      {
+        std::cout << "General NFD status:" << std::endl;
+        std::cout << "               version="
+                  << status.getNfdVersion() << std::endl;
+        std::cout << "             startTime="
+                  << time::toIsoString(status.getStartTimestamp()) << std::endl;
+        std::cout << "           currentTime="
+                  << time::toIsoString(status.getCurrentTimestamp()) << std::endl;
+        std::cout << "                uptime="
+                  << time::duration_cast<time::seconds>(status.getCurrentTimestamp()
+                                                        - status.getStartTimestamp()) << std::endl;
 
-    std::cout << "      nNameTreeEntries=" << status.getNNameTreeEntries()     << std::endl;
-    std::cout << "           nFibEntries=" << status.getNFibEntries()          << std::endl;
-    std::cout << "           nPitEntries=" << status.getNPitEntries()          << std::endl;
-    std::cout << "  nMeasurementsEntries=" << status.getNMeasurementsEntries() << std::endl;
-    std::cout << "            nCsEntries=" << status.getNCsEntries()           << std::endl;
-    std::cout << "          nInInterests=" << status.getNInInterests()         << std::endl;
-    std::cout << "         nOutInterests=" << status.getNOutInterests()        << std::endl;
-    std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
-    std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
-
+        std::cout << "      nNameTreeEntries=" << status.getNNameTreeEntries()     << std::endl;
+        std::cout << "           nFibEntries=" << status.getNFibEntries()          << std::endl;
+        std::cout << "           nPitEntries=" << status.getNPitEntries()          << std::endl;
+        std::cout << "  nMeasurementsEntries=" << status.getNMeasurementsEntries() << std::endl;
+        std::cout << "            nCsEntries=" << status.getNCsEntries()           << std::endl;
+        std::cout << "          nInInterests=" << status.getNInInterests()         << std::endl;
+        std::cout << "         nOutInterests=" << status.getNOutInterests()        << std::endl;
+        std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
+        std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
+      }
     if (m_needFaceStatusRetrieval)
       {
         fetchFaceStatusInformation();
@@ -163,35 +226,84 @@ public:
   void
   afterFetchedFaceStatusInformation()
   {
-    std::cout << "Faces:" << std::endl;
-
     ConstBufferPtr buf = m_buffer->buf();
-
-    Block block;
-    size_t offset = 0;
-    while (offset < buf->size())
+    if (m_needXmlDataRetrieval)
       {
-        bool ok = Block::fromBuffer(buf, offset, block);
-        if (!ok)
+        std::cout << "<faces>";
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
           {
-            std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-            break;
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+                break;
+              }
+
+            offset += block.size();
+
+            nfd::FaceStatus faceStatus(block);
+
+            std::cout << "<face>";
+            std::cout << "<faceId>" << faceStatus.getFaceId() << "</faceId>";
+
+            std::string remoteUri(faceStatus.getRemoteUri());
+            escapeSpecialCharacters(&remoteUri);
+            std::cout << "<remoteUri>" << remoteUri << "</remoteUri>";
+
+            std::string localUri(faceStatus.getLocalUri());
+            escapeSpecialCharacters(&localUri);
+            std::cout << "<localUri>" << localUri << "</localUri>";
+            std::cout << "<packetCounters>";
+            std::cout << "<incomingPackets>";
+            std::cout << "<nInterests>"       << faceStatus.getNInInterests()
+                      << "</nInterests>";
+            std::cout << "<nDatas>"           << faceStatus.getNInInterests()
+                      << "</nDatas>";
+            std::cout << "</incomingPackets>";
+            std::cout << "<outgoingPackets>";
+            std::cout << "<nInterests>"       << faceStatus.getNOutInterests()
+                      << "</nInterests>";
+            std::cout << "<nDatas>"           << faceStatus.getNOutInterests()
+                      << "</nDatas>";
+            std::cout << "</outgoingPackets>";
+            std::cout << "</packetCounters>";
+            std::cout << "</face>";
           }
-
-        offset += block.size();
-
-        nfd::FaceStatus faceStatus(block);
-
-        std::cout << "  faceid=" << faceStatus.getFaceId()
-                  << " remote=" << faceStatus.getRemoteUri()
-                  << " local=" << faceStatus.getLocalUri()
-                  << " counters={"
-                  << "in={" << faceStatus.getNInInterests() << "i "
-                  << faceStatus.getNInDatas() << "d}"
-                  << " out={" << faceStatus.getNOutInterests() << "i "
-                  << faceStatus.getNOutDatas() << "d}"
-                  << "}" << std::endl;
+        std::cout << "</faces>";
       }
+    else
+      {
+        std::cout << "Faces:" << std::endl;
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+                break;
+              }
+
+            offset += block.size();
+
+            nfd::FaceStatus faceStatus(block);
+
+            std::cout << "  faceid=" << faceStatus.getFaceId()
+                      << " remote=" << faceStatus.getRemoteUri()
+                      << " local=" << faceStatus.getLocalUri()
+                      << " counters={"
+                      << "in={" << faceStatus.getNInInterests() << "i "
+                      << faceStatus.getNInDatas() << "d}"
+                      << " out={" << faceStatus.getNOutInterests() << "i "
+                      << faceStatus.getNOutDatas() << "d}"
+                      << "}" << std::endl;
+          }
+       }
 
     if (m_needFibEnumerationRetrieval)
       {
@@ -217,36 +329,78 @@ public:
   void
   afterFetchedFibEnumerationInformation()
   {
-    std::cout << "FIB:" << std::endl;
-
     ConstBufferPtr buf = m_buffer->buf();
-
-    Block block;
-    size_t offset = 0;
-    while (offset < buf->size())
+    if (m_needXmlDataRetrieval)
       {
-        bool ok = Block::fromBuffer(buf, offset, block);
-        if (!ok)
-          {
-            std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
-            break;
-          }
-        offset += block.size();
+        std::cout << "<fib>";
 
-        nfd::FibEntry fibEntry(block);
-
-        std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
-        for (std::list<nfd::NextHopRecord>::const_iterator
-               nextHop = fibEntry.getNextHopRecords().begin();
-             nextHop != fibEntry.getNextHopRecords().end();
-             ++nextHop)
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
           {
-            if (nextHop != fibEntry.getNextHopRecords().begin())
-              std::cout << ", ";
-            std::cout << "faceid=" << nextHop->getFaceId()
-                      << " (cost=" << nextHop->getCost() << ")";
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode FibEntry TLV";
+                break;
+              }
+            offset += block.size();
+
+            nfd::FibEntry fibEntry(block);
+
+            std::cout << "<fibEntry>";
+            std::string prefix(fibEntry.getPrefix().toUri());
+            escapeSpecialCharacters(&prefix);
+            std::cout << "<prefix>" << prefix << "</prefix>";
+            std::cout << "<nextHops>";
+            for (std::list<nfd::NextHopRecord>::const_iterator
+                   nextHop = fibEntry.getNextHopRecords().begin();
+                 nextHop != fibEntry.getNextHopRecords().end();
+                 ++nextHop)
+              {
+                std::cout << "<nextHop>" ;
+                std::cout << "<faceId>"  << nextHop->getFaceId() << "</faceId>";
+                std::cout << "<cost>"    << nextHop->getCost()   << "</cost>";
+                std::cout << "</nextHop>";
+              }
+            std::cout << "</nextHops>";
+            std::cout << "</fibEntry>";
           }
-        std::cout << "}" << std::endl;
+
+        std::cout << "</fib>";
+        std::cout << "</nfdStatus>";
+      }
+    else
+      {
+        std::cout << "FIB:" << std::endl;
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
+                break;
+              }
+            offset += block.size();
+
+            nfd::FibEntry fibEntry(block);
+
+            std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
+            for (std::list<nfd::NextHopRecord>::const_iterator
+                   nextHop = fibEntry.getNextHopRecords().begin();
+                 nextHop != fibEntry.getNextHopRecords().end();
+                 ++nextHop)
+              {
+                if (nextHop != fibEntry.getNextHopRecords().begin())
+                  std::cout << ", ";
+                std::cout << "faceid=" << nextHop->getFaceId()
+                          << " (cost=" << nextHop->getCost() << ")";
+              }
+            std::cout << "}" << std::endl;
+          }
       }
   }
 
@@ -267,9 +421,10 @@ public:
   void
   fetchInformation()
   {
-    if (!m_needVersionRetrieval &&
+    if (m_needXmlDataRetrieval ||
+        (!m_needVersionRetrieval &&
         !m_needFaceStatusRetrieval &&
-        !m_needFibEnumerationRetrieval)
+        !m_needFibEnumerationRetrieval))
       {
         enableVersionRetrieval();
         enableFaceStatusRetrieval();
@@ -297,6 +452,7 @@ private:
   bool m_needVersionRetrieval;
   bool m_needFaceStatusRetrieval;
   bool m_needFibEnumerationRetrieval;
+  bool m_needXmlDataRetrieval;
   Face m_face;
 
   shared_ptr<OBufferStream> m_buffer;
@@ -309,7 +465,7 @@ int main(int argc, char* argv[])
   int option;
   ndn::NfdStatus nfdStatus(argv[0]);
 
-  while ((option = getopt(argc, argv, "hvfbV")) != -1) {
+  while ((option = getopt(argc, argv, "hvfbxV")) != -1) {
     switch (option) {
     case 'h':
       nfdStatus.usage();
@@ -322,6 +478,9 @@ int main(int argc, char* argv[])
       break;
     case 'b':
       nfdStatus.enableFibEnumerationRetrieval();
+      break;
+    case 'x':
+      nfdStatus.enableXmlDataRetrieval();
       break;
     case 'V':
       std::cout << NFD_VERSION_BUILD_STRING << std::endl;
