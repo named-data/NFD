@@ -168,9 +168,6 @@ def build(bld):
         install_path="${SYSCONFDIR}/ndn",
         IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ")
 
-    # @todo Merge with nfd.conf
-    bld.install_files('${SYSCONFDIR}/ndn', 'nrd.conf.sample')
-
     bld(features='subst',
         source='tools/nfd-status-http-server.py',
         target='nfd-status-http-server',

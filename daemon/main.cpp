@@ -37,7 +37,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("Main");
+NFD_LOG_INIT("NFD");
 
 struct ProgramOptions
 {
@@ -199,7 +199,7 @@ public:
         signalNo == SIGTERM)
       {
         getGlobalIoService().stop();
-        std::cout << "Caught signal '" << strsignal(signalNo) << "', exiting..." << std::endl;
+        NFD_LOG_INFO("Caught signal '" << strsignal(signalNo) << "', exiting...");
       }
     else
       {
@@ -227,6 +227,7 @@ const std::string Nfd::SUPPORTED_CONFIG_SECTIONS[] =
     "log",
     "face_system",
     "authorizations",
+    "rib_security",
   };
 
 const size_t Nfd::N_SUPPORTED_CONFIG_SECTIONS =

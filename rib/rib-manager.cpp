@@ -24,9 +24,12 @@
  **/
 
 #include "rib-manager.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace rib {
+
+NFD_LOG_INIT("RibManager");
 
 const Name RibManager::COMMAND_PREFIX = "/localhost/nrd";
 const Name RibManager::REMOTE_COMMAND_PREFIX = "/localhop/nrd";
@@ -69,18 +72,18 @@ RibManager::registerWithNfd()
   //check whether the components of localhop and localhost prefixes are same
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
-  std::cerr << "Setting interest filter on: " << COMMAND_PREFIX.toUri() << std::endl;
+  NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX.toUri());
   m_face->setController(m_nfdController);
   m_face->setInterestFilter(COMMAND_PREFIX.toUri(),
                             bind(&RibManager::onRibRequest, this, _2),
                             bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
-  std::cerr << "Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri() << std::endl;
+  NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri());
   m_face->setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
                             bind(&RibManager::onRibRequest, this, _2),
                             bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
-  std::cerr << "Monitoring faces" << std::endl;
+  NFD_LOG_INFO("Start monitoring face create/destroy events");
   m_faceMonitor.addSubscriber(boost::bind(&RibManager::onNotification, this, _1));
   m_faceMonitor.startNotifications();
 }
@@ -105,7 +108,7 @@ RibManager::onConfig(const ConfigSection& configSection,
 void
 RibManager::setInterestFilterFailed(const Name& name, const std::string& msg)
 {
-  std::cerr << "Error in setting interest filter (" << name << "): " << msg << std::endl;
+  NFD_LOG_ERROR("Error in setting interest filter (" << name << "): " << msg);
   m_face->shutdown();
 }
 
@@ -151,29 +154,25 @@ RibManager::onRibRequestValidated(const shared_ptr<const Interest>& request)
 
   if (verbProcessor != m_verbDispatch.end())
     {
+      NFD_LOG_TRACE("Processing '" << verb << "' verb");
+
       PrefixRegOptions options;
       if (!extractOptions(*request, options))
         {
+          NFD_LOG_DEBUG("Error while extracting options, returning malformed command");
           sendResponse(command, 400, "Malformed command");
           return;
         }
 
-      /// \todo authorize command
-      if (false)
-        {
-          sendResponse(request->getName(), 403, "Unauthorized command");
-          return;
-        }
-
-      // \todo add proper log support
-      std::cout << "Received options (name, faceid, cost): " << options.getName() <<
-        ", " << options.getFaceId() << ", "  << options.getCost() << std::endl;
+      NFD_LOG_DEBUG("Received options (name, faceid, cost): " << options.getName()
+                    << ", " << options.getFaceId() << ", "  << options.getCost());
 
       ControlResponse response;
       (verbProcessor->second)(this, *request, options);
     }
   else
     {
+      NFD_LOG_DEBUG("Unsupported command: " << verb);
       sendResponse(request->getName(), 501, "Unsupported command");
     }
 }
@@ -182,6 +181,7 @@ void
 RibManager::onRibRequestValidationFailed(const shared_ptr<const Interest>& request,
                                          const std::string& failureInfo)
 {
+  NFD_LOG_DEBUG("RibRequestValidationFailed: " << failureInfo);
   sendResponse(request->getName(), 403, failureInfo);
 }
 
@@ -206,7 +206,7 @@ RibManager::extractOptions(const Interest& request,
 
   if (extractedOptions.getFaceId() == 0)
     {
-      std::cout <<"IncomingFaceId: " << request.getIncomingFaceId() << std::endl;
+      NFD_LOG_TRACE("IncomingFaceId: " << request.getIncomingFaceId());
       extractedOptions.setFaceId(request.getIncomingFaceId());
     }
   return true;
@@ -217,7 +217,7 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
                            const Interest& request,
                            const PrefixRegOptions& options)
 {
-  std::cout << "NFD Error: " << error << " (code: " << code << ")" << std::endl;
+  NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
 
   ControlResponse response;
 
@@ -247,9 +247,9 @@ RibManager::onUnRegSuccess(const Interest& request, const PrefixRegOptions& opti
   response.setText("Success");
   response.setBody(options.wireEncode());
 
-  std::cout << "Success: Name unregistered (" <<
-    options.getName() << ", " <<
-    options.getFaceId() << ")" << std::endl;
+  NFD_LOG_DEBUG("onUnRegSuccess: Name unregistered (" << options.getName()
+                << ", " << options.getFaceId() << ")");
+
   sendResponse(request.getName(), response);
   m_managedRib.erase(options);
 }
@@ -263,8 +263,8 @@ RibManager::onRegSuccess(const Interest& request, const PrefixRegOptions& option
   response.setText("Success");
   response.setBody(options.wireEncode());
 
-  std::cout << "Success: Name registered (" << options.getName() << ", " <<
-    options.getFaceId() << ")" << std::endl;
+  NFD_LOG_DEBUG("onRegSuccess: Name registered (" << options.getName() << ", "
+                << options.getFaceId() << ")");
   sendResponse(request.getName(), response);
 }
 
@@ -306,14 +306,14 @@ RibManager::getIoService()
 void
 RibManager::onControlHeaderSuccess()
 {
-  std::cout << "Local control header enabled" << std::endl;
+  NFD_LOG_DEBUG("Local control header enabled");
 }
 
 void
 RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
 {
-  std::cout << "Error: couldn't enable local control header "
-            << "(code: " << code << ", info: " << reason << ")" << std::endl;
+  NFD_LOG_ERROR("Error: couldn't enable local control header "
+                << "(code: " << code << ", info: " << reason << ")");
   m_face->shutdown();
 }
 
@@ -331,7 +331,7 @@ void
 RibManager::onNotification(const FaceEventNotification& notification)
 {
   /// \todo A notification can be missed, in this case check Facelist
-  std::cerr << "Notification Rcvd: " << notification << std::endl;
+  NFD_LOG_TRACE("onNotification: " << notification);
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) { //face destroyed
     m_managedRib.erase(notification.getFaceId());
   }

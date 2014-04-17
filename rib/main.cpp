@@ -33,7 +33,7 @@
 namespace nfd {
 namespace rib {
 
-NFD_LOG_INIT("nrd.Main");
+NFD_LOG_INIT("NRD");
 
 struct ProgramOptions
 {
@@ -54,7 +54,15 @@ public:
 
     ConfigFile config;
     m_ribManager->setConfigFile(config);
-    config.addSectionHandler("log", bind(std::plus<int>(), 0, 0)); // no-op
+
+    for (size_t i = 0; i < N_SUPPORTED_CONFIG_SECTIONS; ++i)
+      {
+        if (SUPPORTED_CONFIG_SECTIONS[i] != "rib_security")
+          {
+            config.addSectionHandler(SUPPORTED_CONFIG_SECTIONS[i],
+                                     bind(std::plus<int>(), 0, 0)); // no-op.
+          }
+      }
 
     // parse config file
     config.parse(configFile, true);
@@ -99,7 +107,7 @@ public:
        << "\n"
        << "Options:\n"
        << "  [--help]   - print this help message\n"
-       << "  [--config /path/to/nrd.conf] - path to configuration file "
+       << "  [--config /path/to/nfd.conf] - path to configuration file "
        << "(default: " << DEFAULT_CONFIG_FILE << ")\n"
       ;
   }
@@ -122,12 +130,14 @@ public:
   parseCommandLine(int argc, char** argv, ProgramOptions& options)
   {
     options.showUsage = false;
+    options.showModules = false;
     options.config = DEFAULT_CONFIG_FILE;
 
     while (true) {
       int optionIndex = 0;
       static ::option longOptions[] = {
         { "help"   , no_argument      , 0, 0 },
+        { "modules", no_argument      , 0, 0 },
         { "config" , required_argument, 0, 0 },
         { 0        , 0                , 0, 0 }
       };
@@ -136,18 +146,21 @@ public:
         break;
 
       switch (c) {
-      case 0:
-        switch (optionIndex) {
-        case 0: // help
-          options.showUsage = true;
+        case 0:
+          switch (optionIndex) {
+            case 0: // help
+              options.showUsage = true;
+              break;
+            case 1: // modules
+              options.showModules = true;
+              break;
+            case 2: // config
+              options.config = ::optarg;
+              break;
+            default:
+              return false;
+          }
           break;
-        case 1: // config
-          options.config = ::optarg;
-          break;
-        default:
-          return false;
-        }
-        break;
       }
     }
     return true;
@@ -166,11 +179,11 @@ public:
         signalNo == SIGTERM)
       {
         getIoService().stop();
-        std::cout << "Caught signal '" << strsignal(signalNo) << "', exiting..." << std::endl;
+        NFD_LOG_INFO("Caught signal '" << strsignal(signalNo) << "', exiting...");
       }
     else
       {
-        /// \todo May be try to reload config file (at least security section)
+        /// \todo May be try to reload config file
         signalSet.async_wait(bind(&Nrd::terminate, this, _1, _2,
                                   boost::ref(signalSet)));
       }
@@ -186,7 +199,9 @@ private:
 const std::string Nrd::SUPPORTED_CONFIG_SECTIONS[] =
   {
     "log",
-    "security",
+    "face_system",
+    "authorizations",
+    "rib_security",
   };
 
 const size_t Nrd::N_SUPPORTED_CONFIG_SECTIONS =
