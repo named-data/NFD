@@ -9,14 +9,10 @@ notifications:
     on_success: always
     on_failure: always
 before_install:
-  - travis_retry sudo add-apt-repository -y ppa:named-data/ppa
   - travis_retry sudo apt-get update
-  - travis_retry sudo apt-get install -qq ndnx-dev
-  - travis_retry sudo apt-get install -qq libboost1.48-all-dev
-  - travis_retry sudo apt-get install -qq libcrypto++-dev
-  - travis_retry sudo apt-get install -qq libsqlite3-dev
-  - travis_retry git clone git://github.com/named-data/ndn-cpp-dev ndn-cpp
-  - cd ndn-cpp
+  - travis_retry sudo apt-get install -qq libssl-dev libpcap-dev libboost1.48-all-dev libcrypto++-dev libsqlite3-dev
+  - travis_retry git clone git://github.com/named-data/ndn-cpp-dev ndn-cpp-dev
+  - cd ndn-cpp-dev
   - ./waf configure
   - ./waf -j1
   - sudo ./waf install
@@ -27,7 +23,9 @@ script:
   - ./waf configure --with-tests
   - ./waf -j1
   - sudo ./waf install
-  - ./build/unit-tests
+  - ./build/unit-tests-core
+  - ./build/unit-tests-daemon
+  - ./build/unit-tests-rib
 # Tutorial for setting up notifications:
 # http://docs.travis-ci.com/user/notifications/
 # Here's a simple example for email notifications:
