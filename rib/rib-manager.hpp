@@ -117,7 +117,7 @@ private:
 
 private:
   Rib m_managedRib;
-  ndn::shared_ptr<ndn::Face> m_face;
+  ndn::Face m_face;
   ndn::shared_ptr<ndn::nfd::Controller> m_nfdController;
   ndn::KeyChain m_keyChain;
   ndn::ValidatorConfig m_validator;

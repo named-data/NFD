@@ -64,10 +64,10 @@ NullDeleter(boost::asio::io_service* variable)
 }
 
 RibManager::RibManager()
-  : m_face(new ndn::Face(shared_ptr<boost::asio::io_service>(&getGlobalIoService(), &NullDeleter)))
-  , m_nfdController(new ndn::nfd::Controller(*m_face))
+  : m_face(shared_ptr<boost::asio::io_service>(&getGlobalIoService(), &NullDeleter))
+  , m_nfdController(new ndn::nfd::Controller(m_face))
   , m_validator(m_face)
-  , m_faceMonitor(*m_face)
+  , m_faceMonitor(m_face)
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
@@ -80,15 +80,15 @@ RibManager::registerWithNfd()
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
   NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX.toUri());
-  m_face->setController(m_nfdController);
-  m_face->setInterestFilter(COMMAND_PREFIX.toUri(),
-                            bind(&RibManager::onRibRequest, this, _2),
-                            bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+  m_face.setController(m_nfdController);
+  m_face.setInterestFilter(COMMAND_PREFIX.toUri(),
+                           bind(&RibManager::onRibRequest, this, _2),
+                           bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
   NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri());
-  m_face->setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
-                            bind(&RibManager::onRibRequest, this, _2),
-                            bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
+                           bind(&RibManager::onRibRequest, this, _2),
+                           bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
   m_faceMonitor.addSubscriber(boost::bind(&RibManager::onNotification, this, _1));
@@ -104,8 +104,8 @@ RibManager::setConfigFile(ConfigFile& configFile)
 
 void
 RibManager::onConfig(const ConfigSection& configSection,
-                      bool isDryRun,
-                      const std::string& filename)
+                     bool isDryRun,
+                     const std::string& filename)
 {
   /// \todo remove check after validator-conf replaces settings on each load
   if (!isDryRun)
@@ -116,7 +116,7 @@ void
 RibManager::setInterestFilterFailed(const Name& name, const std::string& msg)
 {
   NFD_LOG_ERROR("Error in setting interest filter (" << name << "): " << msg);
-  m_face->shutdown();
+  m_face.shutdown();
 }
 
 void
@@ -129,7 +129,7 @@ RibManager::sendResponse(const Name& name,
   responseData.setContent(encodedControl);
 
   m_keyChain.sign(responseData);
-  m_face->put(responseData);
+  m_face.put(responseData);
 }
 
 void
@@ -314,7 +314,7 @@ RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
 {
   NFD_LOG_ERROR("Error: couldn't enable local control header "
                 << "(code: " << code << ", info: " << reason << ")");
-  m_face->shutdown();
+  m_face.shutdown();
 }
 
 void
