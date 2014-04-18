@@ -28,6 +28,7 @@
 #include "common.hpp"
 #include "rib-manager.hpp"
 #include "core/config-file.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -95,12 +96,6 @@ public:
 
     config.parse(configFile, true);
     config.parse(configFile, false);
-  }
-
-  boost::asio::io_service&
-  getIoService()
-  {
-    return m_ribManager->getIoService();
   }
 
   static void
@@ -184,7 +179,7 @@ public:
     if (signalNo == SIGINT ||
         signalNo == SIGTERM)
       {
-        getIoService().stop();
+        getGlobalIoService().stop();
         NFD_LOG_INFO("Caught signal '" << strsignal(signalNo) << "', exiting...");
       }
     else
@@ -243,7 +238,7 @@ main(int argc, char** argv)
     return 2;
   }
 
-  boost::asio::signal_set signalSet(nrdInstance.getIoService());
+  boost::asio::signal_set signalSet(nfd::getGlobalIoService());
   signalSet.add(SIGINT);
   signalSet.add(SIGTERM);
   signalSet.add(SIGHUP);
@@ -253,7 +248,7 @@ main(int argc, char** argv)
                             boost::ref(signalSet)));
 
   try {
-    nrdInstance.getIoService().run();
+    nfd::getGlobalIoService().run();
   }
   catch (std::exception& e) {
     NFD_LOG_FATAL(e.what());

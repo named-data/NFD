@@ -57,9 +57,6 @@ public:
   void
   enableLocalControlHeader();
 
-  boost::asio::io_service&
-  getIoService();
-
   void
   setConfigFile(ConfigFile& configFile);
 

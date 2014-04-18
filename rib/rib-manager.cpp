@@ -24,6 +24,7 @@
  **/
 
 #include "rib-manager.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -56,8 +57,14 @@ const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
                      ),
   };
 
+inline static void
+NullDeleter(boost::asio::io_service* variable)
+{
+  // do nothing
+}
+
 RibManager::RibManager()
-  : m_face(new ndn::Face())
+  : m_face(new ndn::Face(shared_ptr<boost::asio::io_service>(&getGlobalIoService(), &NullDeleter)))
   , m_nfdController(new ndn::nfd::Controller(*m_face))
   , m_validator(m_face)
   , m_faceMonitor(*m_face)
@@ -294,13 +301,6 @@ RibManager::deleteEntry(const Interest& request, const PrefixRegOptions& options
       .setFaceId(options.getFaceId()),
     bind(&RibManager::onUnRegSuccess, this, request, options),
     bind(&RibManager::onCommandError, this, _1, _2, request, options));
-}
-
-boost::asio::io_service&
-RibManager::getIoService()
-{
-  /// \todo Switch face to use global io service (needs library update)
-  return *m_face->ioService();
 }
 
 void

@@ -170,7 +170,7 @@ def build(bld):
 
     bld(features='subst',
         source='tools/nfd-status-http-server.py',
-        target='nfd-status-http-server',
+        target='bin/nfd-status-http-server',
         install_path="${BINDIR}",
         chmod=0755)
 
