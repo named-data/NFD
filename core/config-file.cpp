@@ -32,7 +32,30 @@ namespace nfd {
 
 NFD_LOG_INIT("ConfigFile");
 
-ConfigFile::ConfigFile()
+void
+ConfigFile::throwErrorOnUnknownSection(const std::string& filename,
+                                       const std::string& sectionName,
+                                       const ConfigSection& section,
+                                       bool isDryRun)
+{
+  std::string msg = "Error processing configuration file ";
+  msg += filename;
+  msg += ": no module subscribed for section \"" + sectionName + "\"";
+
+  throw ConfigFile::Error(msg);
+}
+
+void
+ConfigFile::ignoreUnknownSection(const std::string& filename,
+                                 const std::string& sectionName,
+                                 const ConfigSection& section,
+                                 bool isDryRun)
+{
+  // do nothing
+}
+
+ConfigFile::ConfigFile(UnknownConfigSectionHandler unknownSectionCallback)
+  : m_unknownSectionCallback(unknownSectionCallback)
 {
 }
 
@@ -93,8 +116,7 @@ ConfigFile::process(bool isDryRun, const std::string& filename)
 
   if (m_global.begin() == m_global.end())
     {
-      std::string msg = "Error processing configuration file";
-      msg += ": ";
+      std::string msg = "Error processing configuration file: ";
       msg += filename;
       msg += " no data";
       throw Error(msg);
@@ -113,11 +135,7 @@ ConfigFile::process(bool isDryRun, const std::string& filename)
         }
       else
         {
-          std::string msg = "Error processing configuration file";
-          msg += " ";
-          msg += filename;
-          msg += " no module subscribed for section: " + sectionName;
-          throw Error(msg);
+          m_unknownSectionCallback(filename, sectionName, section, isDryRun);
         }
     }
 }

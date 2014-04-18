@@ -342,11 +342,43 @@ BOOST_AUTO_TEST_CASE(OnConfigReplaceSubscriber)
   BOOST_CHECK(sub2.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigUncoveredSections)
+class MissingCallbackFixture : public BaseFixture
+{
+public:
+  MissingCallbackFixture()
+    : m_missingFired(false)
+  {
+  }
+
+  void
+  checkMissingHandler(const std::string& filename,
+                      const std::string& sectionName,
+                      const ConfigSection& section,
+                      bool isDryRun)
+  {
+    m_missingFired = true;
+  }
+
+protected:
+  bool m_missingFired;
+};
+
+
+
+BOOST_FIXTURE_TEST_CASE(OnConfigUncoveredSections, MissingCallbackFixture)
 {
   ConfigFile file;
 
-  BOOST_CHECK_THROW(file.parse(CONFIG, false, "dummy-config"), ConfigFile::Error);
+  BOOST_REQUIRE_THROW(file.parse(CONFIG, false, "dummy-config"), ConfigFile::Error);
+
+  ConfigFile permissiveFile(bind(&MissingCallbackFixture::checkMissingHandler,
+                                 this, _1, _2, _3, _4));
+
+  DummyOneSubscriber subA(permissiveFile, "a");
+
+  BOOST_REQUIRE_NO_THROW(permissiveFile.parse(CONFIG, false, "dummy-config"));
+  BOOST_CHECK(subA.allCallbacksFired());
+  BOOST_CHECK(m_missingFired);
 }
 
 BOOST_AUTO_TEST_CASE(OnConfigCoveredByPartialSubscribers)

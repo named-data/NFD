@@ -34,7 +34,15 @@ namespace nfd {
 typedef boost::property_tree::ptree ConfigSection;
 
 /// \brief callback for config file sections
-typedef function<void(const ConfigSection&, bool, const std::string&)> ConfigSectionHandler;
+typedef function<void(const ConfigSection& /*section*/,
+                      bool /*isDryRun*/,
+                      const std::string& /*filename*/)> ConfigSectionHandler;
+
+/// \brief callback for config file sections without a subscribed handler
+typedef function<void(const std::string& /*filename*/,
+                      const std::string& /*sectionName*/,
+                      const ConfigSection& /*section*/,
+                      bool /*isDryRun*/)> UnknownConfigSectionHandler;
 
 class ConfigFile : noncopyable
 {
@@ -51,7 +59,19 @@ public:
     }
   };
 
-  ConfigFile();
+  ConfigFile(UnknownConfigSectionHandler unknownSectionCallback = throwErrorOnUnknownSection);
+
+  static void
+  throwErrorOnUnknownSection(const std::string& filename,
+                             const std::string& sectionName,
+                             const ConfigSection& section,
+                             bool isDryRun);
+
+  static void
+  ignoreUnknownSection(const std::string& filename,
+                       const std::string& sectionName,
+                       const ConfigSection& section,
+                       bool isDryRun);
 
   /// \brief setup notification of configuration file sections
   void
@@ -93,6 +113,7 @@ private:
   process(bool isDryRun, const std::string& filename);
 
 private:
+  UnknownConfigSectionHandler m_unknownSectionCallback;
 
   typedef std::map<std::string, ConfigSectionHandler> SubscriptionTable;
 

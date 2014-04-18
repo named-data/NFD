@@ -91,7 +91,7 @@ RibManager::registerWithNfd()
 void
 RibManager::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler("security",
+  configFile.addSectionHandler("rib_security",
                                bind(&RibManager::onConfig, this, _1, _2, _3));
 }
 

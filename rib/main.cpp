@@ -45,6 +45,30 @@ struct ProgramOptions
 class Nrd : noncopyable
 {
 public:
+  class IgnoreNfdAndLogSections
+  {
+  public:
+    void
+    operator()(const std::string& filename,
+               const std::string& sectionName,
+               const ConfigSection& section,
+               bool isDryRun)
+    {
+      // Ignore "log" and sections belonging to NFD,
+      // but raise an error if we're missing a handler for an "rib_" section.
+
+      if (sectionName.find("rib_") != 0 || sectionName == "log")
+        {
+          // do nothing
+        }
+      else
+        {
+          // missing NRD section
+          ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
+        }
+    }
+  };
+
   void
   initialize(const std::string& configFile)
   {
@@ -52,17 +76,8 @@ public:
 
     m_ribManager = make_shared<RibManager>();
 
-    ConfigFile config;
+    ConfigFile config((IgnoreNfdAndLogSections()));
     m_ribManager->setConfigFile(config);
-
-    for (size_t i = 0; i < N_SUPPORTED_CONFIG_SECTIONS; ++i)
-      {
-        if (SUPPORTED_CONFIG_SECTIONS[i] != "rib_security")
-          {
-            config.addSectionHandler(SUPPORTED_CONFIG_SECTIONS[i],
-                                     bind(std::plus<int>(), 0, 0)); // no-op.
-          }
-      }
 
     // parse config file
     config.parse(configFile, true);
@@ -75,17 +90,8 @@ public:
   void
   initializeLogging(const std::string& configFile)
   {
-    ConfigFile config;
+    ConfigFile config(&ConfigFile::ignoreUnknownSection);
     LoggerFactory::getInstance().setConfigFile(config);
-
-    for (size_t i = 0; i < N_SUPPORTED_CONFIG_SECTIONS; ++i)
-      {
-        if (SUPPORTED_CONFIG_SECTIONS[i] != "log")
-          {
-            config.addSectionHandler(SUPPORTED_CONFIG_SECTIONS[i],
-                                     bind(std::plus<int>(), 0, 0)); // no-op.
-          }
-      }
 
     config.parse(configFile, true);
     config.parse(configFile, false);
@@ -191,21 +197,7 @@ public:
 
 private:
   shared_ptr<RibManager> m_ribManager;
-
-  static const std::string SUPPORTED_CONFIG_SECTIONS[];
-  static const size_t      N_SUPPORTED_CONFIG_SECTIONS;
 };
-
-const std::string Nrd::SUPPORTED_CONFIG_SECTIONS[] =
-  {
-    "log",
-    "face_system",
-    "authorizations",
-    "rib_security",
-  };
-
-const size_t Nrd::N_SUPPORTED_CONFIG_SECTIONS =
-  sizeof(SUPPORTED_CONFIG_SECTIONS) / sizeof(std::string);
 
 } // namespace rib
 } // namespace nfd

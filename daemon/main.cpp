@@ -64,21 +64,37 @@ public:
   void
   initializeLogging(const std::string& configFile)
   {
-    ConfigFile config;
+    ConfigFile config(&ConfigFile::ignoreUnknownSection);
     LoggerFactory::getInstance().setConfigFile(config);
-
-    for (size_t i = 0; i < N_SUPPORTED_CONFIG_SECTIONS; ++i)
-      {
-        if (SUPPORTED_CONFIG_SECTIONS[i] != "log")
-          {
-            config.addSectionHandler(SUPPORTED_CONFIG_SECTIONS[i],
-                                     bind(std::plus<int>(), 0, 0)); // no-op.
-          }
-      }
 
     config.parse(configFile, true);
     config.parse(configFile, false);
   }
+
+  class IgnoreRibAndLogSections
+  {
+  public:
+    void
+    operator()(const std::string& filename,
+               const std::string& sectionName,
+               const ConfigSection& section,
+               bool isDryRun)
+
+    {
+      // Ignore "log" and sections beginning with "rib_" (intended for rib manager),
+      // but raise an error if we're missing a handler for an NFD section.
+
+      if (sectionName.find("rib_") == 0 || sectionName == "log")
+        {
+          // do nothing
+        }
+      else
+        {
+          // missing NFD section
+          ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
+        }
+    }
+  };
 
   void
   initializeManagement(const std::string& configFile)
@@ -99,14 +115,12 @@ public:
     m_statusServer = make_shared<StatusServer>(m_internalFace,
                                                boost::ref(*m_forwarder));
 
-    ConfigFile config;
+    ConfigFile config((IgnoreRibAndLogSections()));
     m_internalFace->getValidator().setConfigFile(config);
 
     m_forwarder->addFace(m_internalFace);
 
     m_faceManager->setConfigFile(config);
-
-    config.addSectionHandler("log", bind(std::plus<int>(), 0, 0)); // no-op
 
     // parse config file
     config.parse(configFile, true);
@@ -217,21 +231,7 @@ private:
   shared_ptr<FaceManager>           m_faceManager;
   shared_ptr<StrategyChoiceManager> m_strategyChoiceManager;
   shared_ptr<StatusServer>          m_statusServer;
-
-  static const std::string SUPPORTED_CONFIG_SECTIONS[];
-  static const size_t      N_SUPPORTED_CONFIG_SECTIONS;
 };
-
-const std::string Nfd::SUPPORTED_CONFIG_SECTIONS[] =
-  {
-    "log",
-    "face_system",
-    "authorizations",
-    "rib_security",
-  };
-
-const size_t Nfd::N_SUPPORTED_CONFIG_SECTIONS =
-  sizeof(SUPPORTED_CONFIG_SECTIONS) / sizeof(std::string);
 
 } // namespace nfd
 
