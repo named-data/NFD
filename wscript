@@ -97,6 +97,8 @@ def configure(conf):
 
     conf.load('coverage')
 
+    conf.find_program('bash', var='BASH')
+
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 
     conf.write_config_header('config.hpp')
@@ -181,6 +183,13 @@ def build(bld):
             config="docs/conf.py",
             source=bld.path.ant_glob('docs/manpages/**/*.rst'),
             install_path="${MANDIR}/")
+
+    for script in bld.path.ant_glob('tools/*.sh'):
+        bld(features='subst',
+            source='tools/%s' % (str(script)),
+            target='bin/%s' % (str(script.change_ext(''))),
+            install_path="${BINDIR}",
+            chmod=0755)
 
 def docs(bld):
     from waflib import Options
