@@ -35,11 +35,6 @@ usage(const char* programName)
     "       -h print usage and exit\n"
     "\n"
     "   COMMAND can be one of the following:\n"
-    "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
-    "           Add a nexthop to a FIB entry\n"
-    "           -c: specify cost\n"
-    "       remove-nexthop <name> <faceId> \n"
-    "           Remove a nexthop from a FIB entry\n"
     "       register [-I] [-C] [-c cost] name <faceId | faceUri>\n"
     "           register name to the given faceId or faceUri\n"
     "           -I: unset CHILD_INHERIT flag\n"
@@ -57,6 +52,11 @@ usage(const char* programName)
     "           Set the strategy for a namespace \n"
     "       unset-strategy <name> \n"
     "           Unset the strategy for a namespace \n"
+    "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
+    "           Add a nexthop to a FIB entry\n"
+    "           -c: specify cost\n"
+    "       remove-nexthop <name> <faceId> \n"
+    "           Remove a nexthop from a FIB entry\n"
     << std::endl;
 }
 

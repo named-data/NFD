@@ -235,6 +235,14 @@ man_pages = [
         u'NFD Auto-configuration Server', None, 1),
     ('manpages/ndn-autoconfig', 'ndn-autoconfig',
         u'NFD Auto-configuration Client', None, 1),
+    ('manpages/nfdc', 'nfdc',
+        u'NFD utility to manipulate the forwarding table (FIB)', None, 1),
+    ('manpages/ndn-tlv-peek', 'ndn-tlv-peek', u'NFD consumer', None, 1),
+    ('manpages/ndn-tlv-poke', 'ndn-tlv-poke', u'NFD producer', None, 1),
+    ('manpages/nfd-autoreg', 'nfd-autoreg', u'NFD Auto-registration Server', None, 1),
+    ('manpages/nfd-status-http-server', 'nfd-status-http-server',
+        u'NFD status HTTP server', None, 1),
+    ('manpages/nfd-status', 'nfd-status', u'Command-line utility to show NFD status', None, 1),
 ]
 
 

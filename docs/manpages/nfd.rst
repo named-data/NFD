@@ -1,8 +1,8 @@
 nfd
 ===
 
-Synopsis
---------
+Usage
+-----
 
 ::
 
@@ -12,8 +12,27 @@ Synopsis
 Description
 -----------
 
+NFD forwarding daemon.
+
+
+Options:
+--------
+
+``--help``
+  Print this help message.
+
+``--modules``
+  List available logging modules
+
+``--config <path/to/nfd.conf>``
+  Specify the path to nfd configuration file (default: ``${SYSCONFDIR}/ndn/nfd.conf``).
+
+Examples
+--------
+
+Start NFD forwarding daemon as super user and use a configuration file from the current
+working directory.
+
 ::
 
-    [--help]   - print this help message
-    [--modules] - list available logging modules
-    [--config /path/to/nfd.conf] - path to configuration file (default: /usr/local/etc/ndn/nfd.conf)
+    sudo nfd --config nfd.conf
