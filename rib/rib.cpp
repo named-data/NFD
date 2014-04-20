@@ -38,19 +38,19 @@ Rib::~Rib()
 }
 
 static inline bool
-compareNameFaceProtocol(const PrefixRegOptions& opt1, const PrefixRegOptions& opt2)
+compareNameFaceProtocol(const RibEntry& entry1, const RibEntry& entry2)
 {
-  return (opt1.getName() == opt2.getName() &&
-          opt1.getFaceId() == opt2.getFaceId() &&
-          opt1.getProtocol() == opt2.getProtocol());
+  return (entry1.name == entry2.name &&
+          entry1.faceId == entry2.faceId &&
+          entry1.origin == entry2.origin);
 }
 
 
 Rib::const_iterator
-Rib::find(const PrefixRegOptions& options) const
+Rib::find(const RibEntry& entry) const
 {
   RibTable::const_iterator it = std::find_if(m_rib.begin(), m_rib.end(),
-                                             bind(&compareNameFaceProtocol, _1, options));
+                                             bind(&compareNameFaceProtocol, _1, entry));
   if (it == m_rib.end())
     {
       return end();
@@ -61,30 +61,29 @@ Rib::find(const PrefixRegOptions& options) const
 
 
 void
-Rib::insert(const PrefixRegOptions& options)
+Rib::insert(const RibEntry& entry)
 {
   RibTable::iterator it = std::find_if(m_rib.begin(), m_rib.end(),
-                                       bind(&compareNameFaceProtocol, _1, options));
+                                       bind(&compareNameFaceProtocol, _1, entry));
   if (it == m_rib.end())
     {
-      m_rib.push_front(options);
+      m_rib.push_front(entry);
     }
   else
     {
-      //entry exist, update other fields
-      it->setFlags(options.getFlags());
-      it->setCost(options.getCost());
-      it->setExpirationPeriod(options.getExpirationPeriod());
-      it->setProtocol(options.getProtocol());
+      // entry exist, update other fields
+      it->flags = entry.flags;
+      it->cost = entry.cost;
+      it->expires = entry.expires;
     }
 }
 
 
 void
-Rib::erase(const PrefixRegOptions& options)
+Rib::erase(const RibEntry& entry)
 {
   RibTable::iterator it = std::find_if(m_rib.begin(), m_rib.end(),
-                                       bind(&compareNameFaceProtocol, _1, options));
+                                       bind(&compareNameFaceProtocol, _1, entry));
   if (it != m_rib.end())
     {
       m_rib.erase(it);
@@ -94,15 +93,30 @@ Rib::erase(const PrefixRegOptions& options)
 void
 Rib::erase(uint64_t faceId)
 {
-  //Keep it simple for now, with Trie this will be changed.
+  // Keep it simple for now, with Trie this will be changed.
   RibTable::iterator it = m_rib.begin();
   while (it != m_rib.end())
   {
-    if (it->getFaceId() == faceId)
+    if (it->faceId == faceId)
       it = m_rib.erase(it);
     else
       ++it;
   }
+}
+
+std::ostream&
+operator<<(std::ostream& os, const RibEntry& entry)
+{
+  os << "RibEntry("
+     << "name: " << entry.name
+     << " faceid: " << entry.faceId
+     << " origin: " << entry.origin
+     << " cost: " << entry.cost
+     << " flags: " << entry.flags
+     << " expires in: " << (entry.expires - time::steady_clock::now())
+     << ")";
+
+  return os;
 }
 
 } // namespace rib

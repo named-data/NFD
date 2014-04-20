@@ -137,8 +137,8 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
   const Name::Component& verb = command[COMMAND_PREFIX.size()];
   const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
 
-  SignedVerbDispatchTable::const_iterator signedVerbProcessor = m_signedVerbDispatch.find (verb);
-  if (signedVerbProcessor != m_signedVerbDispatch.end())
+  SignedVerbDispatchTable::const_iterator verbProcessor = m_signedVerbDispatch.find(verb);
+  if (verbProcessor != m_signedVerbDispatch.end())
     {
       ControlParameters parameters;
       if (!extractParameters(parameterComponent, parameters) || !parameters.hasFaceId())
@@ -155,7 +155,7 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
 
       NFD_LOG_DEBUG("command result: processing verb: " << verb);
       ControlResponse response;
-      (signedVerbProcessor->second)(this, parameters, response);
+      (verbProcessor->second)(this, parameters, response);
       sendResponse(command, response);
     }
   else

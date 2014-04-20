@@ -27,21 +27,38 @@
 #define NFD_RIB_RIB_HPP
 
 #include "common.hpp"
-
-#include <ndn-cpp-dev/management/nrd-prefix-reg-options.hpp>
+#include <ndn-cpp-dev/management/nfd-control-command.hpp>
 
 namespace nfd {
 namespace rib {
 
-using ndn::nrd::PrefixRegOptions;
-namespace tlv = ndn::tlv;
+class RibEntry
+{
+public:
+  RibEntry()
+    : faceId(0)
+    , origin(0)
+    , flags(0)
+    , cost(0)
+    , expires(time::steady_clock::TimePoint::min())
+  {
+  }
+
+public:
+  Name name;
+  uint64_t faceId;
+  uint64_t origin;
+  uint64_t flags;
+  uint64_t cost;
+  time::steady_clock::TimePoint expires;
+};
 
 /** \brief represents the RIB
  */
-class Rib
+class Rib : noncopyable
 {
 public:
-  typedef std::list<PrefixRegOptions> RibTable;
+  typedef std::list<RibEntry> RibTable;
   typedef RibTable::const_iterator const_iterator;
 
   Rib();
@@ -49,13 +66,13 @@ public:
   ~Rib();
 
   const_iterator
-  find(const PrefixRegOptions& options) const;
+  find(const RibEntry& entry) const;
 
   void
-  insert(const PrefixRegOptions& options);
+  insert(const RibEntry& entry);
 
   void
-  erase(const PrefixRegOptions& options);
+  erase(const RibEntry& entry);
 
   void
   erase(uint64_t faceId);
@@ -101,6 +118,9 @@ Rib::empty() const
 {
   return m_rib.empty();
 }
+
+std::ostream&
+operator<<(std::ostream& os, const RibEntry& entry);
 
 } // namespace rib
 } // namespace nfd

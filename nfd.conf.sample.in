@@ -193,7 +193,7 @@ rib_security
     filter
     {
       type name                               ; condition on interest name (w/o signature)
-      regex ^[<localhop><localhost>]<nrd>[<register><unregister>]<>{3}$
+      regex ^[<localhop><localhost>]<nfd><rib>[<register><unregister>]<>{3}$
     }
     checker
     {

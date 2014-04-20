@@ -37,46 +37,59 @@ BOOST_AUTO_TEST_CASE(Basic)
 {
   rib::Rib rib;
 
-  PrefixRegOptions options1;
-  options1.setName("/hello/world");
-  options1.setFlags(tlv::nrd::NDN_FORW_CHILD_INHERIT | tlv::nrd::NDN_FORW_CAPTURE);
-  options1.setCost(10);
-  options1.setExpirationPeriod(time::milliseconds(1500));
-  options1.setFaceId(1);
+  RibEntry entry1;
+  entry1.name = "/hello/world";
+  entry1.faceId = 1;
+  entry1.origin = 20;
+  entry1.cost = 10;
+  entry1.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE;
+  entry1.expires = time::steady_clock::now() + time::milliseconds(1500);
 
-  rib.insert(options1);
+  rib.insert(entry1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  PrefixRegOptions options2;
-  options2.setName("/hello/world");
-  options2.setFlags(tlv::nrd::NDN_FORW_CHILD_INHERIT);
-  options2.setExpirationPeriod(time::seconds(0));
-  options2.setFaceId(1);
-  options2.setCost(100);
-
-  rib.insert(options2);
+  rib.insert(entry1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  options2.setFaceId(2);
-  rib.insert(options2);
+  RibEntry entry2;
+  entry2.name = "/hello/world";
+  entry2.faceId = 1;
+  entry2.origin = 20;
+  entry2.cost = 100;
+  entry2.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+  entry2.expires = time::steady_clock::now() + time::seconds(0);
+
+  rib.insert(entry2);
+  BOOST_CHECK_EQUAL(rib.size(), 1);
+
+  entry2.faceId = 2;
+  rib.insert(entry2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  options2.setName("/foo/bar");
-  rib.insert(options2);
+  entry2.name = "/foo/bar";
+  rib.insert(entry2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
-  rib.erase(options2);
+  entry2.origin = 1;
+  rib.insert(entry2);
+  BOOST_CHECK_EQUAL(rib.size(), 4);
+
+  rib.erase(entry2);
+  BOOST_CHECK_EQUAL(rib.size(), 3);
+
+  entry2.name = "/hello/world";
+  rib.erase(entry2);
+  BOOST_CHECK_EQUAL(rib.size(), 3);
+
+  entry2.origin = 20;
+  rib.erase(entry2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  options2.setName("/hello/world");
-  rib.erase(options2);
+  BOOST_CHECK(rib.find(entry2) == rib.end());
+  BOOST_CHECK(rib.find(entry1) != rib.end());
+
+  rib.erase(entry1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
-
-  BOOST_CHECK(rib.find(options2) == rib.end());
-  BOOST_CHECK(rib.find(options1) != rib.end());
-
-  rib.erase(options1);
-  BOOST_CHECK(rib.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

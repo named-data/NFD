@@ -32,8 +32,8 @@ namespace rib {
 
 NFD_LOG_INIT("RibManager");
 
-const Name RibManager::COMMAND_PREFIX = "/localhost/nrd";
-const Name RibManager::REMOTE_COMMAND_PREFIX = "/localhop/nrd";
+const Name RibManager::COMMAND_PREFIX = "/localhost/nfd/rib";
+const Name RibManager::REMOTE_COMMAND_PREFIX = "/localhop/nfd/rib";
 
 const size_t RibManager::COMMAND_UNSIGNED_NCOMPS =
   RibManager::COMMAND_PREFIX.size() +
@@ -48,12 +48,12 @@ const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
   {
     VerbAndProcessor(
                      Name::Component("register"),
-                     &RibManager::insertEntry
+                     &RibManager::registerEntry
                      ),
 
     VerbAndProcessor(
                      Name::Component("unregister"),
-                     &RibManager::deleteEntry
+                     &RibManager::unregisterEntry
                      ),
   };
 
@@ -79,14 +79,14 @@ RibManager::registerWithNfd()
   //check whether the components of localhop and localhost prefixes are same
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
-  NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX.toUri());
+  NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX);
   m_face.setController(m_nfdController);
-  m_face.setInterestFilter(COMMAND_PREFIX.toUri(),
+  m_face.setInterestFilter(COMMAND_PREFIX,
                            bind(&RibManager::onRibRequest, this, _2),
                            bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
-  NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX.toUri());
-  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX.toUri(),
+  NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX);
+  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX,
                            bind(&RibManager::onRibRequest, this, _2),
                            bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
@@ -145,37 +145,38 @@ void
 RibManager::onRibRequest(const Interest& request)
 {
   m_validator.validate(request,
-                       bind(&RibManager::onRibRequestValidated, this, _1),
-                       bind(&RibManager::onRibRequestValidationFailed, this, _1, _2));
+                       bind(&RibManager::onCommandValidated, this, _1),
+                       bind(&RibManager::onCommandValidationFailed, this, _1, _2));
 }
 
 void
-RibManager::onRibRequestValidated(const shared_ptr<const Interest>& request)
+RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
 {
-  const Name& command = request->getName();
-
-  //REMOTE_COMMAND_PREFIX number of componenets are same as
+  // REMOTE_COMMAND_PREFIX number of componenets are same as
   // NRD_COMMAND_PREFIX's so no extra checks are required.
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
-  VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find(verb);
 
+  const Name& command = request->getName();
+  const Name::Component& verb = command[COMMAND_PREFIX.size()];
+  const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
+
+  VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find(verb);
   if (verbProcessor != m_verbDispatch.end())
     {
-      NFD_LOG_TRACE("Processing '" << verb << "' verb");
-
-      PrefixRegOptions options;
-      if (!extractOptions(*request, options))
+      ControlParameters parameters;
+      if (!extractParameters(parameterComponent, parameters))
         {
-          NFD_LOG_DEBUG("Error while extracting options, returning malformed command");
+          NFD_LOG_DEBUG("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
           return;
         }
 
-      NFD_LOG_DEBUG("Received options (name, faceid, cost): " << options.getName()
-                    << ", " << options.getFaceId() << ", "  << options.getCost());
+      if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
+        {
+          parameters.setFaceId(request->getIncomingFaceId());
+        }
 
-      ControlResponse response;
-      (verbProcessor->second)(this, *request, options);
+      NFD_LOG_DEBUG("command result: processing verb: " << verb);
+      (verbProcessor->second)(this, request, parameters);
     }
   else
     {
@@ -185,44 +186,119 @@ RibManager::onRibRequestValidated(const shared_ptr<const Interest>& request)
 }
 
 void
-RibManager::onRibRequestValidationFailed(const shared_ptr<const Interest>& request,
-                                         const std::string& failureInfo)
+RibManager::registerEntry(const shared_ptr<const Interest>& request,
+                          ControlParameters& parameters)
+{
+  ndn::nfd::RibRegisterCommand command;
+
+  if (!validateParameters(command, parameters))
+    {
+      NFD_LOG_DEBUG("register result: FAIL reason: malformed");
+      sendResponse(request->getName(), 400, "Malformed command");
+      return;
+    }
+
+  RibEntry ribEntry;
+  ribEntry.name = parameters.getName();
+  ribEntry.faceId = parameters.getFaceId();
+  ribEntry.origin = parameters.getOrigin();
+  ribEntry.cost = parameters.getCost();
+  ribEntry.flags = parameters.getFlags();
+  ribEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
+
+  NFD_LOG_TRACE("register prefix: " << ribEntry);
+
+  // For right now, just pass the options to fib as it is,
+  // without processing flags. Later options will be first added to
+  // Rib tree, then nrd will generate fib updates based on flags and then
+  // will add next hops one by one..
+  m_managedRib.insert(ribEntry);
+  m_nfdController->start<ndn::nfd::FibAddNextHopCommand>(
+    ControlParameters()
+      .setName(ribEntry.name)
+      .setFaceId(ribEntry.faceId)
+      .setCost(ribEntry.cost),
+    bind(&RibManager::onRegSuccess, this, request, parameters, ribEntry),
+    bind(&RibManager::onCommandError, this, _1, _2, request, ribEntry));
+}
+
+void
+RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
+                            ControlParameters& parameters)
+{
+  ndn::nfd::RibRegisterCommand command;
+
+  if (!validateParameters(command, parameters))
+    {
+      NFD_LOG_DEBUG("register result: FAIL reason: malformed");
+      sendResponse(request->getName(), 400, "Malformed command");
+      return;
+    }
+
+  RibEntry ribEntry;
+  ribEntry.name = parameters.getName();
+  ribEntry.faceId = parameters.getFaceId();
+  ribEntry.origin = parameters.getOrigin();
+
+  NFD_LOG_TRACE("unregister prefix: " << ribEntry);
+
+  m_nfdController->start<ndn::nfd::FibRemoveNextHopCommand>(
+    ControlParameters()
+      .setName(ribEntry.name)
+      .setFaceId(ribEntry.faceId),
+    bind(&RibManager::onUnRegSuccess, this, request, parameters, ribEntry),
+    bind(&RibManager::onCommandError, this, _1, _2, request, ribEntry));
+}
+
+void
+RibManager::onCommandValidationFailed(const shared_ptr<const Interest>& request,
+                                      const std::string& failureInfo)
 {
   NFD_LOG_DEBUG("RibRequestValidationFailed: " << failureInfo);
   sendResponse(request->getName(), 403, failureInfo);
 }
 
-bool
-RibManager::extractOptions(const Interest& request,
-                           PrefixRegOptions& extractedOptions)
-{
-  // const Name& command = request.getName();
-  //REMOTE_COMMAND_PREFIX is same in size of NRD_COMMAND_PREFIX
-  //so no extra processing is required.
-  const size_t optionCompIndex = COMMAND_PREFIX.size() + 1;
 
+bool
+RibManager::extractParameters(const Name::Component& parameterComponent,
+                              ControlParameters& extractedParameters)
+{
   try
     {
-      Block rawOptions = request.getName()[optionCompIndex].blockFromValue();
-      extractedOptions.wireDecode(rawOptions);
+      Block rawParameters = parameterComponent.blockFromValue();
+      extractedParameters.wireDecode(rawParameters);
     }
   catch (const ndn::Tlv::Error& e)
     {
       return false;
     }
 
-  if (extractedOptions.getFaceId() == 0)
+  NFD_LOG_DEBUG("Parameters parsed OK");
+  return true;
+}
+
+bool
+RibManager::validateParameters(const ControlCommand& command,
+                               ControlParameters& parameters)
+{
+  try
     {
-      NFD_LOG_TRACE("IncomingFaceId: " << request.getIncomingFaceId());
-      extractedOptions.setFaceId(request.getIncomingFaceId());
+      command.validateRequest(parameters);
     }
+  catch (const ControlCommand::ArgumentError&)
+    {
+      return false;
+    }
+
+  command.applyDefaultsToRequest(parameters);
+
   return true;
 }
 
 void
 RibManager::onCommandError(uint32_t code, const std::string& error,
-                           const Interest& request,
-                           const PrefixRegOptions& options)
+                           const shared_ptr<const Interest>& request,
+                           const RibEntry& ribEntry)
 {
   NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
 
@@ -241,66 +317,42 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
       response.setText(os.str());
     }
 
-  sendResponse(request.getName(), response);
-  m_managedRib.erase(options);
+  sendResponse(request->getName(), response);
+  m_managedRib.erase(ribEntry);
 }
 
 void
-RibManager::onUnRegSuccess(const Interest& request, const PrefixRegOptions& options)
+RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
+                         const ControlParameters& parameters,
+                         const RibEntry& ribEntry)
 {
   ControlResponse response;
 
   response.setCode(200);
   response.setText("Success");
-  response.setBody(options.wireEncode());
+  response.setBody(parameters.wireEncode());
 
-  NFD_LOG_DEBUG("onUnRegSuccess: Name unregistered (" << options.getName()
-                << ", " << options.getFaceId() << ")");
+  NFD_LOG_TRACE("onRegSuccess: registered " << ribEntry);
 
-  sendResponse(request.getName(), response);
-  m_managedRib.erase(options);
+  sendResponse(request->getName(), response);
 }
 
+
 void
-RibManager::onRegSuccess(const Interest& request, const PrefixRegOptions& options)
+RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
+                           const ControlParameters& parameters,
+                           const RibEntry& ribEntry)
 {
   ControlResponse response;
 
   response.setCode(200);
   response.setText("Success");
-  response.setBody(options.wireEncode());
+  response.setBody(parameters.wireEncode());
 
-  NFD_LOG_DEBUG("onRegSuccess: Name registered (" << options.getName() << ", "
-                << options.getFaceId() << ")");
-  sendResponse(request.getName(), response);
-}
+  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << ribEntry);
 
-void
-RibManager::insertEntry(const Interest& request, const PrefixRegOptions& options)
-{
-  // For right now, just pass the options to fib as it is,
-  // without processing flags. Later options will be first added to
-  // Rib tree, then nrd will generate fib updates based on flags and then
-  // will add next hops one by one..
-  m_managedRib.insert(options);
-  m_nfdController->start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters()
-      .setName(options.getName())
-      .setFaceId(options.getFaceId())
-      .setCost(options.getCost()),
-    bind(&RibManager::onRegSuccess, this, request, options),
-    bind(&RibManager::onCommandError, this, _1, _2, request, options));
-}
-
-void
-RibManager::deleteEntry(const Interest& request, const PrefixRegOptions& options)
-{
-  m_nfdController->start<ndn::nfd::FibRemoveNextHopCommand>(
-    ControlParameters()
-      .setName(options.getName())
-      .setFaceId(options.getFaceId()),
-    bind(&RibManager::onUnRegSuccess, this, request, options),
-    bind(&RibManager::onCommandError, this, _1, _2, request, options));
+  sendResponse(request->getName(), response);
+  m_managedRib.erase(ribEntry);
 }
 
 void

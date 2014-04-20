@@ -76,22 +76,35 @@ private:
                const std::string& text);
 
   void
-  onRibRequestValidated(const shared_ptr<const Interest>& request);
+  registerEntry(const shared_ptr<const Interest>& request,
+                ControlParameters& parameters);
 
   void
-  onRibRequestValidationFailed(const shared_ptr<const Interest>& request,
-                               const std::string& failureInfo);
+  unregisterEntry(const shared_ptr<const Interest>& request,
+                  ControlParameters& parameters);
+
+  void
+  onCommandValidated(const shared_ptr<const Interest>& request);
+
+  void
+  onCommandValidationFailed(const shared_ptr<const Interest>& request,
+                            const std::string& failureInfo);
+
 
   void
   onCommandError(uint32_t code, const std::string& error,
-                 const ndn::Interest& interest,
-                 const PrefixRegOptions& options);
+                 const shared_ptr<const Interest>& request,
+                 const RibEntry& ribEntry);
 
   void
-  onRegSuccess(const ndn::Interest& interest, const PrefixRegOptions& options);
+  onRegSuccess(const shared_ptr<const Interest>& request,
+               const ControlParameters& parameters,
+               const RibEntry& ribEntry);
 
   void
-  onUnRegSuccess(const ndn::Interest& interest, const PrefixRegOptions& options);
+  onUnRegSuccess(const shared_ptr<const Interest>& request,
+                 const ControlParameters& parameters,
+                 const RibEntry& ribEntry);
 
   void
   onControlHeaderSuccess();
@@ -102,15 +115,13 @@ private:
   void
   setInterestFilterFailed(const Name& name, const std::string& msg);
 
-  void
-  insertEntry(const Interest& request, const PrefixRegOptions& options);
-
-  void
-  deleteEntry(const Interest& request, const PrefixRegOptions& options);
+  static bool
+  extractParameters(const Name::Component& parameterComponent,
+                    ControlParameters& extractedParameters);
 
   bool
-  extractOptions(const Interest& request,
-                 PrefixRegOptions& extractedOptions);
+  validateParameters(const ControlCommand& command,
+                     ControlParameters& parameters);
 
   void
   onNotification(const FaceEventNotification& notification);
@@ -124,8 +135,8 @@ private:
   FaceMonitor m_faceMonitor;
 
   typedef boost::function<void(RibManager*,
-                               const Interest&,
-                               const PrefixRegOptions&)> VerbProcessor;
+                               const shared_ptr<const Interest>& request,
+                               ControlParameters& parameters)> VerbProcessor;
 
   typedef std::map<name::Component, VerbProcessor> VerbDispatchTable;
 
