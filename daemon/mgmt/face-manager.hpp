@@ -144,6 +144,9 @@ private:
                       bool isDryRun,
                       const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList);
 
+  void
+  processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
+
   /** \brief parse a config option that can be either "yes" or "no"
    *  \throw ConfigFile::Error value is neither "yes" nor "no"
    *  \return true if "yes", false if "no"

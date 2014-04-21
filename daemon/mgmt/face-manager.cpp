@@ -41,6 +41,10 @@
 #include "face/ethernet-factory.hpp"
 #endif // HAVE_LIBPCAP
 
+#ifdef HAVE_WEBSOCKET
+#include "face/websocket-factory.hpp"
+#endif // HAVE_WEBSOCKET
+
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
@@ -142,6 +146,7 @@ FaceManager::onConfig(const ConfigSection& configSection,
   bool hasSeenTcp = false;
   bool hasSeenUdp = false;
   bool hasSeenEther = false;
+  bool hasSeenWebSocket = false;
 
   const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
 
@@ -180,6 +185,14 @@ FaceManager::onConfig(const ConfigSection& configSection,
           hasSeenEther = true;
 
           processSectionEther(item->second, isDryRun, nicList);
+        }
+      else if (item->first == "websocket")
+        {
+          if (hasSeenWebSocket)
+            throw Error("Duplicate \"websocket\" section");
+          hasSeenWebSocket = true;
+
+          processSectionWebSocket(item->second, isDryRun);
         }
       else
         {
@@ -619,6 +632,107 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
 #else
   throw ConfigFile::Error("NFD was compiled without libpcap, cannot process \"ether\" section");
 #endif // HAVE_LIBPCAP
+}
+
+void
+FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool isDryRun)
+{
+  // ; the websocket section contains settings of WebSocket faces and channels
+  // websocket
+  // {
+  //   listen yes ; set to 'no' to disable WebSocket listener, default 'yes'
+  //   port 9696 ; WebSocket listener port number
+  //   enable_v4 yes ; set to 'no' to disable listening on IPv4 socket, default 'yes'
+  //   enable_v6 yes ; set to 'no' to disable listening on IPv6 socket, default 'yes'
+  // }
+
+#if defined(HAVE_WEBSOCKET)
+
+  std::string port = "9696";
+  bool needToListen = true;
+  bool enableV4 = true;
+  bool enableV6 = true;
+
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end();
+       ++i)
+    {
+      if (i->first == "port")
+        {
+          port = i->second.get_value<std::string>();
+          try
+            {
+              uint16_t portNo = boost::lexical_cast<uint16_t>(port);
+              NFD_LOG_TRACE("WebSocket port set to " << portNo);
+            }
+          catch (const std::bad_cast& error)
+            {
+              throw ConfigFile::Error("Invalid value for option " +
+                                      i->first + "\" in \"websocket\" section");
+            }
+        }
+      else if (i->first == "listen")
+        {
+          needToListen = parseYesNo(i, i->first, "websocket");
+        }
+      else if (i->first == "enable_v4")
+        {
+          enableV4 = parseYesNo(i, i->first, "websocket");
+        }
+      else if (i->first == "enable_v6")
+        {
+          enableV6 = parseYesNo(i, i->first, "websocket");
+        }
+      else
+        {
+          throw ConfigFile::Error("Unrecognized option \"" +
+                                  i->first + "\" in \"websocket\" section");
+        }
+    }
+
+  if (!enableV4 && !enableV6)
+    {
+      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                              " Remove \"websocket\" section to disable WebSocket channels or"
+                              " re-enable at least one channel type.");
+    }
+
+  if (!enableV4 && enableV6)
+    {
+      throw ConfigFile::Error("NFD does not allow pure IPv6 WebSocket channel.");
+    }
+
+  if (!isDryRun)
+    {
+      shared_ptr<WebSocketFactory> factory = make_shared<WebSocketFactory>(boost::cref(port));
+      m_factories.insert(std::make_pair("websocket", factory));
+      uint16_t portNo = boost::lexical_cast<uint16_t>(port);
+
+      if (enableV6 && enableV4)
+        {
+          shared_ptr<WebSocketChannel> ip46Channel = factory->createChannel("::", portNo);
+          if (needToListen)
+            {
+              ip46Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
+            }
+
+          m_factories.insert(std::make_pair("websocket46", factory));
+        }
+      else if (enableV4)
+        {
+          shared_ptr<WebSocketChannel> ipv4Channel = factory->createChannel("0.0.0.0", portNo);
+          if (needToListen)
+            {
+              ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
+            }
+
+          m_factories.insert(std::make_pair("websocket4", factory));
+        }
+    }
+#else
+  throw ConfigFile::Error("NFD was compiled without WebSocket, "
+                          "cannot process \"websocket\" section");
+#endif // HAVE_WEBSOCKET
 }
 
 

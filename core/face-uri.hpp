@@ -79,6 +79,9 @@ public: // scheme-specific construction
   explicit
   FaceUri(const boost::asio::ip::udp::endpoint& endpoint);
 
+  /// construct tcp canonical FaceUri with customized scheme
+  FaceUri(const boost::asio::ip::tcp::endpoint& endpoint, const std::string& scheme);
+
 #ifdef HAVE_UNIX_SOCKETS
   /// construct unix canonical FaceUri
   explicit

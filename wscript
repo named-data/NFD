@@ -32,13 +32,14 @@ from waflib import Logs, Utils, Context
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'unix-socket', 'dependency-checker',
+    opt.load(['boost', 'unix-socket', 'dependency-checker', 'websocket',
               'default-compiler-flags', 'coverage',
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
     opt.addUnixOptions(nfdopt)
+    opt.addWebsocketOptions(nfdopt)
     opt.addDependencyOptions(nfdopt, 'libpcap')
     nfdopt.add_option('--without-libpcap', action='store_true', default=False,
                       dest='without_libpcap',
@@ -55,7 +56,7 @@ def options(opt):
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags',
-               'boost', 'dependency-checker',
+               'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
@@ -79,6 +80,7 @@ def configure(conf):
         return
 
     conf.load('unix-socket')
+    conf.checkWebsocket(mandatory=True)
 
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
@@ -130,9 +132,10 @@ def build(bld):
         source=bld.path.ant_glob(['daemon/**/*.cpp'],
                                  excl=['daemon/face/ethernet-*.cpp',
                                        'daemon/face/unix-*.cpp',
+                                       'daemon/face/websocket-*.cpp',
                                        'daemon/main.cpp']),
         use='core-objects',
-        includes='daemon',
+        includes='daemon websocketpp',
         export_includes='daemon',
         )
 
@@ -142,6 +145,9 @@ def build(bld):
 
     if bld.env['HAVE_UNIX_SOCKETS']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
+
+    if bld.env['HAVE_WEBSOCKET']:
+        nfd_objects.source += bld.path.ant_glob('daemon/face/websocket-*.cpp')
 
     bld(target='bin/nfd',
         features='cxx cxxprogram',
@@ -177,7 +183,8 @@ def build(bld):
         source='nfd.conf.sample.in',
         target='nfd.conf.sample',
         install_path="${SYSCONFDIR}/ndn",
-        IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ")
+        IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ",
+        IF_HAVE_WEBSOCKET="" if bld.env['HAVE_WEBSOCKET'] else "; ")
 
     bld(features='subst',
         source='tools/nfd-status-http-server.py',

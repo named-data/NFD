@@ -52,7 +52,8 @@ def build(bld):
             features='cxx cxxprogram',
             source=bld.path.ant_glob(['daemon/**/*.cpp'],
                                      excl=['daemon/face/ethernet.cpp',
-                                           'daemon/face/unix-*.cpp']),
+                                           'daemon/face/unix-*.cpp',
+                                           'daemon/face/websocket-*.cpp']),
             use='daemon-objects unit-tests-main',
             includes='.',
             install_path=None,
@@ -63,6 +64,9 @@ def build(bld):
 
         if bld.env['HAVE_UNIX_SOCKETS']:
             unit_tests_nfd.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
+
+        if bld.env['HAVE_WEBSOCKET']:
+            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/websocket-*.cpp')
 
         unit_tests_rib = bld.program(
             target='../unit-tests-rib',

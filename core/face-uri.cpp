@@ -112,6 +112,14 @@ FaceUri::FaceUri(const boost::asio::ip::udp::endpoint& endpoint)
   m_port = boost::lexical_cast<std::string>(endpoint.port());
 }
 
+FaceUri::FaceUri(const boost::asio::ip::tcp::endpoint& endpoint, const std::string& scheme)
+  : m_scheme(scheme)
+{
+  m_isV6 = endpoint.address().is_v6();
+  m_host = endpoint.address().to_string();
+  m_port = boost::lexical_cast<std::string>(endpoint.port());
+}
+
 #ifdef HAVE_UNIX_SOCKETS
 FaceUri::FaceUri(const boost::asio::local::stream_protocol::endpoint& endpoint)
   : m_isV6(false)
