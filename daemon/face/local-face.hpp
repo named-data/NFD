@@ -115,14 +115,16 @@ LocalFace::isLocalControlHeaderEnabled() const
 inline bool
 LocalFace::isLocalControlHeaderEnabled(LocalControlFeature feature) const
 {
-  BOOST_ASSERT(0 < feature && feature < m_localControlHeaderFeatures.size());
+  BOOST_ASSERT(0 < feature &&
+               static_cast<size_t>(feature) < m_localControlHeaderFeatures.size());
   return m_localControlHeaderFeatures[feature];
 }
 
 inline void
 LocalFace::setLocalControlHeaderFeature(LocalControlFeature feature, bool enabled/* = true*/)
 {
-  BOOST_ASSERT(0 < feature && feature < m_localControlHeaderFeatures.size());
+  BOOST_ASSERT(0 < feature &&
+               static_cast<size_t>(feature) < m_localControlHeaderFeatures.size());
 
   m_localControlHeaderFeatures[feature] = enabled;
 

@@ -51,7 +51,7 @@ public:
   onInterest(const Name& name, const Interest& interest)
   {
     ndn::Data data(ndn::Name(interest.getName()).appendVersion());
-    data.setFreshnessPeriod(time::hours(1)); // 1 hour
+    data.setFreshnessPeriod(ndn::time::hours(1)); // 1 hour
 
     // create and encode uri block
     Block uriBlock = dataBlock(tlv::nfd::Uri,

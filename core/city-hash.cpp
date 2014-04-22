@@ -69,6 +69,17 @@ static uint32 UNALIGNED_LOAD32(const char *p) {
 #define bswap_64(x) bswap64(x)
 #endif
 
+
+#elif defined(__FreeBSD__)
+
+// Based on https://code.google.com/p/freebsd/source/browse/sys/ofed/include/byteswap.h?spec=svn38a8350a629d959c8c5509221cd07ffb891b5a77&r=38a8350a629d959c8c5509221cd07ffb891b5a77
+
+#include <sys/types.h>
+#include <sys/endian.h>
+#define bswap_16(x) bswap16(x)
+#define bswap_32(x) bswap32(x)
+#define bswap_64(x) bswap64(x)
+
 #else
 
 #include <byteswap.h>
