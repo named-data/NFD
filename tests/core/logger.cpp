@@ -125,18 +125,21 @@ BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -145,7 +148,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 
@@ -233,18 +236,20 @@ BOOST_FIXTURE_TEST_CASE(ConfigureFactory, LoggerFixture)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -253,7 +258,7 @@ BOOST_FIXTURE_TEST_CASE(ConfigureFactory, LoggerFixture)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 }
@@ -350,18 +355,20 @@ BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -370,7 +377,7 @@ BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 }
@@ -449,18 +456,20 @@ BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -469,9 +478,66 @@ BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
+}
+
+BOOST_FIXTURE_TEST_CASE(UnknownModule, LoggerFixture)
+{
+  using namespace ndn::time;
+  using std::string;
+
+  const ndn::time::microseconds::rep ONE_SECOND = 1000000;
+
+  const std::string LOG_CONFIG =
+    "log\n"
+    "{\n"
+    "  TestMadeUpModule INFO\n"
+    "}\n";
+
+  ConfigFile config;
+  LoggerFactory::getInstance().setDefaultLevel(LOG_ALL);
+  LoggerFactory::getInstance().setConfigFile(config);
+
+  const std::string EXPECTED = "DEBUG: [LoggerFactory] "
+    "Failed to configure logging level for module \"TestMadeUpModule\" (module not found)\n";
+
+  microseconds::rep before =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  config.parse(LOG_CONFIG, false, "LOG_CONFIG");
+
+  microseconds::rep after =
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  const string buffer = m_buffer.str();
+
+  const size_t firstSpace = buffer.find(" ");
+  BOOST_REQUIRE(firstSpace != string::npos);
+
+  const string timestamp = buffer.substr(0, firstSpace);
+  const string message = buffer.substr(firstSpace + 1);
+
+  size_t timeDelimiterPosition = timestamp.find(".");
+
+  BOOST_REQUIRE_NE(string::npos, timeDelimiterPosition);
+
+  string secondsString = timestamp.substr(0, timeDelimiterPosition);
+  string usecondsString = timestamp.substr(timeDelimiterPosition + 1);
+
+  microseconds::rep extractedTime =
+    ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
+    boost::lexical_cast<microseconds::rep>(usecondsString);
+
+  // std::cout << "before=" << before
+  //           << " extracted=" << extractedTime
+  //           << " after=" << after << std::endl;
+
+  BOOST_CHECK_LE(before, extractedTime);
+  BOOST_CHECK_LE(extractedTime, after);
+
+  BOOST_CHECK_EQUAL(message, EXPECTED);
 }
 
 static bool
@@ -496,24 +562,6 @@ BOOST_FIXTURE_TEST_CASE(UnknownLevelString, LoggerFixture)
                           bind(&checkError,
                                _1,
                                "Unsupported logging level \"TestMadeUpLevel\""));
-}
-
-BOOST_FIXTURE_TEST_CASE(UnknownOption, LoggerFixture)
-{
-  const std::string LOG_CONFIG =
-    "log\n"
-    "{\n"
-    "  TestMadeUpOption\n"
-    "}\n";
-
-  ConfigFile config;
-  LoggerFactory::getInstance().setConfigFile(config);
-
-  BOOST_REQUIRE_EXCEPTION(config.parse(LOG_CONFIG, false, "LOG_CONFIG"),
-                          LoggerFactory::Error,
-                          bind(&checkError,
-                               _1,
-                               "No logging level found for option \"TestMadeUpOption\""));
 }
 
 class InClassLogger : public LoggerFixture
@@ -597,18 +645,20 @@ BOOST_FIXTURE_TEST_CASE(InClass, InClassLogger)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -617,7 +667,7 @@ BOOST_FIXTURE_TEST_CASE(InClass, InClassLogger)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 }
@@ -705,18 +755,20 @@ BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
         ONE_SECOND * boost::lexical_cast<microseconds::rep>(secondsString) +
         boost::lexical_cast<microseconds::rep>(usecondsString);
 
-      // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
+      // std::cout << "before=" << before
+      //           << " extracted=" << extractedTime
+      //           << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -725,7 +777,7 @@ BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 }
@@ -788,16 +840,16 @@ BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
 
       // std::cout << "before=" << before << " extracted=" << extractedTime << " after=" << after << std::endl;
 
-      BOOST_REQUIRE(before <= extractedTime);
-      BOOST_REQUIRE(extractedTime <= after);
+      BOOST_CHECK_LE(before, extractedTime);
+      BOOST_CHECK_LE(extractedTime, after);
 
       // LOG_LEVEL:
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
       // [ModuleName]
-      BOOST_REQUIRE_EQUAL(*componentIter, EXPECTED[i]);
+      BOOST_CHECK_EQUAL(*componentIter, EXPECTED[i]);
       ++componentIter;
       ++i;
 
@@ -806,7 +858,7 @@ BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
       // std::cout << "message = " << message << std::endl;
 
       // add back the newline that we split on
-      BOOST_REQUIRE_EQUAL(message + "\n", EXPECTED[i]);
+      BOOST_CHECK_EQUAL(message + "\n", EXPECTED[i]);
       ++componentIter;
     }
 }

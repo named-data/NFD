@@ -26,6 +26,8 @@
 
 namespace nfd {
 
+NFD_LOG_INIT("LoggerFactory");
+
 LoggerFactory&
 LoggerFactory::getInstance()
 {
@@ -137,8 +139,8 @@ LoggerFactory::onConfig(const ConfigSection& section,
           LoggerMap::iterator loggerIt = m_loggers.find(item->first);
           if (loggerIt == m_loggers.end())
             {
-              throw LoggerFactory::Error("Invalid module name \"" +
-                                         item->first + "\" in configuration file");
+              NFD_LOG_DEBUG("Failed to configure logging level for module \"" <<
+                            item->first << "\" (module not found)");
             }
 
           if (!isDryRun)
