@@ -32,11 +32,11 @@ namespace nfd {
 
 NFD_LOG_INIT("PrivilegeHelper");
 
-uid_t PrivilegeHelper::s_normalUid;
-gid_t PrivilegeHelper::s_normalGid;
+uid_t PrivilegeHelper::s_normalUid = ::geteuid();
+gid_t PrivilegeHelper::s_normalGid = ::getegid();
 
-uid_t PrivilegeHelper::s_privilegedUid;
-gid_t PrivilegeHelper::s_privilegedGid;
+uid_t PrivilegeHelper::s_privilegedUid = ::geteuid();
+gid_t PrivilegeHelper::s_privilegedGid = ::getegid();
 
 void
 PrivilegeHelper::initialize(const std::string& userName, const std::string& groupName)
@@ -49,14 +49,6 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
 
   NFD_LOG_TRACE("initializing privilege helper with user \"" << userName << "\""
                 << " group \"" << groupName << "\"");
-
-  s_privilegedUid = ::geteuid();
-  s_privilegedGid = ::getegid();
-
-  NFD_LOG_TRACE("saving effective uid=" << s_privilegedUid << " gid=" << s_privilegedGid);
-
-  s_normalUid = s_privilegedUid;
-  s_normalGid = s_privilegedGid;
 
   // workflow from man getpwnam_r
 
