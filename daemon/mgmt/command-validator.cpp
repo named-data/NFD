@@ -119,14 +119,18 @@ CommandValidator::onConfig(const ConfigSection& section,
         }
       catch(const std::runtime_error& error)
         {
-          std::string msg = "Malformed certificate file " + certfilePath.native();
-          if (!isDryRun)
-            {
-              throw ConfigFile::Error(msg);
-            }
-          aggregateErrors(dryRunErrors, msg);
-          continue;
+          // do nothing
         }
+
+      if (!static_cast<bool>(id)) {
+        std::string msg = "Malformed certificate file " + certfilePath.native();
+        if (!isDryRun)
+          {
+            throw ConfigFile::Error(msg);
+          }
+        aggregateErrors(dryRunErrors, msg);
+        continue;
+      }
 
       in.close();
 
