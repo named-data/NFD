@@ -6,6 +6,7 @@
  *                     University Pierre & Marie Curie, Sorbonne University,
  *                     Washington University in St. Louis,
  *                     Beijing Institute of Technology
+ *                     The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -30,21 +31,27 @@
 void
 usage(const char* programName)
 {
-  std::cout << "Usage:\n" << programName  << " [-h] COMMAND\n"
+  std::cout << "Usage:\n" << programName  << " [-h] COMMAND [<Command Options>]\n"
     "       -h print usage and exit\n"
     "\n"
-    "   COMMAND can be one of following:\n"
-    "       add <name> <faceUri> [<cost>]\n"
-    "           Create a face, and add a nexthop for this face to a FIB entry\n"
-    "       add-nexthop <name> <faceId> [<cost>]\n"
+    "   COMMAND can be one of the following:\n"
+    "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
     "           Add a nexthop to a FIB entry\n"
+    "           -c: specify cost\n"
     "       remove-nexthop <name> <faceId> \n"
     "           Remove a nexthop from a FIB entry\n"
-    "       create <uri> \n"
+    "       register [-I] [-C] [-c cost] name <faceId | faceUri>\n"
+    "           register name to the given faceId or faceUri\n"
+    "           -I: unset CHILD_INHERIT flag\n"
+    "           -C: set CAPTURE flag\n"
+    "           -c: specify cost\n"
+    "       unregister name <faceId>\n"
+    "           unregister name from the given faceId\n"
+    "       create <faceUri> \n"
     "           Create a face in one of the following formats:\n"
     "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
     "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
-    "       destroy <faceId> \n"
+    "       destroy <faceId | faceUri> \n"
     "           Destroy a face\n"
     "       set-strategy <name> <strategy> \n"
     "           Set the strategy for a namespace \n"
@@ -56,7 +63,9 @@ usage(const char* programName)
 namespace nfdc {
 
 Nfdc::Nfdc(ndn::Face& face)
-  : m_controller(face)
+  : m_flags(ROUTE_FLAG_CHILD_INHERIT)
+  , m_cost(0)
+  , m_controller(face)
 {
 }
 
@@ -67,26 +76,25 @@ Nfdc::~Nfdc()
 bool
 Nfdc::dispatch(const std::string& command)
 {
-  if (command == "add") {
-    if (m_nOptions == 2)
-      addName();
-    else if (m_nOptions == 3)
-      addName();
-    else
+  if (command == "add-nexthop") {
+    if (m_nOptions != 2)
       return false;
-  }
-  else if (command == "add-nexthop") {
-    if (m_nOptions == 2)
-      fibAddNextHop(false);
-    else if (m_nOptions == 3)
-      fibAddNextHop(true);
-    else
-      return false;
+    fibAddNextHop();
   }
   else if (command == "remove-nexthop") {
     if (m_nOptions != 2)
       return false;
     fibRemoveNextHop();
+  }
+  else if (command == "register") {
+    if (m_nOptions != 2)
+      return false;
+    ribRegisterPrefix();
+  }
+  else if (command == "unregister") {
+    if (m_nOptions != 2)
+      return false;
+    ribUnregisterPrefix();
   }
   else if (command == "create") {
     if (m_nOptions != 1)
@@ -114,7 +122,6 @@ Nfdc::dispatch(const std::string& command)
   return true;
 }
 
-
 namespace {
 
 inline bool
@@ -129,67 +136,147 @@ isValidUri(const std::string& input)
 } // anonymous namespace
 
 void
-Nfdc::addName()
+Nfdc::fibAddNextHop()
 {
-  if (!isValidUri(m_commandLineArguments[1]))
-    throw Error("invalid uri format");
-
+  m_name = m_commandLineArguments[0];
   ControlParameters parameters;
   parameters
-    .setUri(m_commandLineArguments[1]);
+    .setName(m_name)
+    .setCost(m_cost);
 
-  m_controller.start<FaceCreateCommand>(
-    parameters,
-    bind(&Nfdc::onAddSuccess, this, _1, "nfdc add:Face creation succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "nfdc add: Face creation failed"));
-
-}
-
-void
-Nfdc::fibAddNextHop(bool hasCost)
-{
-  const std::string& name = m_commandLineArguments[0];
-  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
-
-  fibAddNextHop(name, faceId, hasCost);
-
-}
-
-void
-Nfdc::fibAddNextHop(const std::string& name, const uint64_t faceId, bool hasCost)
-{
-  ControlParameters parameters;
-  parameters
-    .setName(name)
-    .setFaceId(faceId);
-
-  if (hasCost)
-  {
-    const uint64_t cost = boost::lexical_cast<uint64_t>(m_commandLineArguments[2]);
-    parameters.setCost(cost);
+  if (!isValidUri(m_commandLineArguments[1])) {
+    try { //So the uri is not valid, may be a faceId is provided.
+      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+    }
+    catch (const std::exception& e) {
+      std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
+      return;
+    }
+    parameters.setFaceId(m_faceId);
+    fibAddNextHop(parameters);
   }
+  else {
+    ControlParameters faceParameters;
+    faceParameters.setUri(m_commandLineArguments[1]);
 
-  m_controller.start<FibAddNextHopCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Nexthop insertion succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Nexthop insertion failed"));
+    m_controller.start<FaceCreateCommand>(faceParameters,
+                                          bind(&Nfdc::fibAddNextHop, this, _1),
+                                          bind(&Nfdc::onError, this, _1, _2,
+                                               "Face creation failed"));
+  }
+}
+
+void
+Nfdc::fibAddNextHop(const ControlParameters& faceCreateResult)
+{
+  ControlParameters ribParameters;
+  ribParameters
+    .setName(m_name)
+    .setCost(m_cost)
+    .setFaceId(faceCreateResult.getFaceId());
+
+  m_controller.start<FibAddNextHopCommand>(ribParameters,
+                                           bind(&Nfdc::onSuccess, this, _1,
+                                                "Nexthop insertion succeeded"),
+                                           bind(&Nfdc::onError, this, _1, _2,
+                                                "Nexthop insertion failed"));
 }
 
 void
 Nfdc::fibRemoveNextHop()
 {
-  const std::string& name = m_commandLineArguments[0];
-  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+  m_name = m_commandLineArguments[0];
+  try {
+    m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+  }
+  catch (const std::exception& e) {
+    std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
+    return;
+  }
 
   ControlParameters parameters;
   parameters
-    .setName(name)
-    .setFaceId(faceId);
+    .setName(m_name)
+    .setFaceId(m_faceId);
 
-  m_controller.start<FibRemoveNextHopCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Nexthop removal succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Nexthop removal failed"));
+  m_controller.start<FibRemoveNextHopCommand>(parameters,
+                                              bind(&Nfdc::onSuccess, this, _1,
+                                                   "Nexthop removal succeeded"),
+                                              bind(&Nfdc::onError, this, _1, _2,
+                                                   "Nexthop removal failed"));
+}
+
+void
+Nfdc::ribRegisterPrefix()
+{
+  m_name = m_commandLineArguments[0];
+  ControlParameters parameters;
+  parameters
+    .setName(m_name)
+    .setCost(m_cost)
+    .setFlags(m_flags);
+
+  if (!isValidUri(m_commandLineArguments[1])) {
+    try { //So the uri is not valid, may be a faceId is provided.
+      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+    }
+    catch (const std::exception& e) {
+      std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
+      return;
+    }
+    parameters.setFaceId(m_faceId);
+    ribRegisterPrefix(parameters);
+  }
+  else {
+    ControlParameters faceParameters;
+    faceParameters.setUri(m_commandLineArguments[1]);
+
+    m_controller.start<FaceCreateCommand>(faceParameters,
+                                          bind(&Nfdc::ribRegisterPrefix, this, _1),
+                                          bind(&Nfdc::onError, this, _1, _2,
+                                               "Face creation failed"));
+  }
+}
+
+void
+Nfdc::ribRegisterPrefix(const ControlParameters& faceCreateResult)
+{
+  ControlParameters ribParameters;
+  ribParameters
+    .setName(m_name)
+    .setCost(m_cost)
+    .setFlags(m_flags)
+    .setFaceId(faceCreateResult.getFaceId());
+
+  m_controller.start<RibRegisterCommand>(ribParameters,
+                                         bind(&Nfdc::onSuccess, this, _1,
+                                                "Successful in name registration"),
+                                         bind(&Nfdc::onError, this, _1, _2,
+                                                "Failed in name registration"));
+}
+
+void
+Nfdc::ribUnregisterPrefix()
+{
+  m_name = m_commandLineArguments[0];
+  try {
+    m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
+  }
+  catch (const std::exception& e) {
+    std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
+    return;
+  }
+
+  ControlParameters parameters;
+  parameters
+    .setName(m_name)
+    .setFaceId(m_faceId);
+
+  m_controller.start<RibUnregisterCommand>(parameters,
+                                           bind(&Nfdc::onSuccess, this, _1,
+                                                "Successful in unregistering name"),
+                                           bind(&Nfdc::onError, this, _1, _2,
+                                                "Failed in unregistering name"));
 }
 
 void
@@ -199,28 +286,51 @@ Nfdc::faceCreate()
     throw Error("invalid uri format");
 
   ControlParameters parameters;
-  parameters
-    .setUri(m_commandLineArguments[0]);
+  parameters.setUri(m_commandLineArguments[0]);
 
-  m_controller.start<FaceCreateCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Face creation succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Face creation failed"));
+  m_controller.start<FaceCreateCommand>(parameters,
+                                        bind(&Nfdc::onSuccess, this, _1,
+                                             "Face creation succeeded"),
+                                        bind(&Nfdc::onError, this, _1, _2,
+                                             "Face creation failed"));
 }
 
 void
 Nfdc::faceDestroy()
 {
-  const int faceId = boost::lexical_cast<int>(m_commandLineArguments[0]);
-
   ControlParameters parameters;
-  parameters
-    .setFaceId(faceId);
+  if (!isValidUri(m_commandLineArguments[0])) {
+    try { //So the uri is not valid, may be a faceId is provided.
+      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[0]);
+    }
+    catch (const std::exception& e) {
+      std::cerr << "No valid faceUri or faceId is provided" << std::endl;
+      return;
+    }
+    parameters.setFaceId(m_faceId);
+    faceDestroy(parameters);
+  }
+  else{
+    ControlParameters faceParameters;
+    faceParameters.setUri(m_commandLineArguments[0]);
+    m_controller.start<FaceCreateCommand>(faceParameters,
+                                          bind(&Nfdc::faceDestroy, this, _1),
+                                          bind(&Nfdc::onError, this, _1, _2,
+                                               "Face destroy failed"));
+  }
+}
 
-  m_controller.start<FaceDestroyCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Face destroy succeeded"),
-    bind(&Nfdc::onError, this, _1, _2, "Face destroy failed"));
+void
+Nfdc::faceDestroy(const ControlParameters& faceCreateResult)
+{
+  ControlParameters faceParameters;
+  faceParameters.setFaceId(faceCreateResult.getFaceId());
+
+  m_controller.start<FaceDestroyCommand>(faceParameters,
+                                         bind(&Nfdc::onSuccess, this, _1,
+                                              "Face destroy succeeded"),
+                                         bind(&Nfdc::onError, this, _1, _2,
+                                              "Face destroy failed"));
 }
 
 void
@@ -234,10 +344,11 @@ Nfdc::strategyChoiceSet()
     .setName(name)
     .setStrategy(strategy);
 
-  m_controller.start<StrategyChoiceSetCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Successfully set strategy choice"),
-    bind(&Nfdc::onError, this, _1, _2, "Failed to set strategy choice"));
+  m_controller.start<StrategyChoiceSetCommand>(parameters,
+                                               bind(&Nfdc::onSuccess, this, _1,
+                                                    "Successfully set strategy choice"),
+                                               bind(&Nfdc::onError, this, _1, _2,
+                                                    "Failed to set strategy choice"));
 }
 
 void
@@ -246,33 +357,21 @@ Nfdc::strategyChoiceUnset()
   const std::string& name = m_commandLineArguments[0];
 
   ControlParameters parameters;
-  parameters
-    .setName(name);
+  parameters.setName(name);
 
-  m_controller.start<StrategyChoiceUnsetCommand>(
-    parameters,
-    bind(&Nfdc::onSuccess, this, _1, "Successfully unset strategy choice"),
-    bind(&Nfdc::onError, this, _1, _2, "Failed to unset strategy choice"));
+  m_controller.start<StrategyChoiceUnsetCommand>(parameters,
+                                                 bind(&Nfdc::onSuccess, this, _1,
+                                                      "Successfully unset strategy choice"),
+                                                 bind(&Nfdc::onError, this, _1, _2,
+                                                      "Failed to unset strategy choice"));
 }
 
 void
-Nfdc::onSuccess(const ControlParameters& parameters, const std::string& message)
+Nfdc::onSuccess(const ControlParameters& commandSuccessResult, const std::string& message)
 {
-  std::cout << message << ": " << parameters << std::endl;
+  std::cout << message << ": " << commandSuccessResult << std::endl;
 }
 
-void
-Nfdc::onAddSuccess(const ControlParameters& parameters, const std::string& message)
-{
-  uint64_t faceId = parameters.getFaceId();
-
-  if (m_nOptions == 2)
-    fibAddNextHop(m_commandLineArguments[0], faceId, false);
-  else if (m_nOptions == 3)
-    fibAddNextHop(m_commandLineArguments[0], faceId, true);
-  else
-    throw Error("invalid number of arguments");
-}
 void
 Nfdc::onError(uint32_t code, const std::string& error, const std::string& message)
 {
@@ -280,6 +379,8 @@ Nfdc::onError(uint32_t code, const std::string& error, const std::string& messag
   os << message << ": " << error << " (code: " << code << ")";
   throw Error(os.str());
 }
+
+
 
 } // namespace nfdc
 
@@ -291,16 +392,42 @@ main(int argc, char** argv)
 
   p.m_programName = argv[0];
 
-  int opt;
-  while ((opt = getopt(argc, argv, "h")) != -1) {
-    switch (opt) {
-      case 'h':
-        usage(p.m_programName);
-        return 0;
+  if (argc < 2) {
+    usage(p.m_programName);
+    return 0;
+  }
 
-      default:
-        usage(p.m_programName);
+  if (!strcmp(argv[1], "-h")) {
+    usage(p.m_programName);
+    return 0;
+  }
+
+
+  int opt;
+  //start reading options from 2nd argument i.e. Command
+  optind=2;
+  while ((opt = getopt(argc, argv, "ICc:")) != -1) {
+    switch (opt) {
+    case 'I':
+      p.m_flags =  p.m_flags & ~(nfdc::ROUTE_FLAG_CHILD_INHERIT);
+      break;
+
+    case 'C':
+      p.m_flags =  p.m_flags | nfdc::ROUTE_FLAG_CAPTURE;
+      break;
+
+    case 'c':
+      try {
+        p.m_cost =  boost::lexical_cast<int>(optarg);
+      }
+      catch (const std::exception& e) {
+        std::cerr << "Error: cost must be in integer format" << std::endl;
         return 1;
+      }
+      break;
+    default:
+      usage(p.m_programName);
+      return 1;
     }
   }
 
@@ -310,14 +437,15 @@ main(int argc, char** argv)
   }
 
   try {
-    p.m_commandLineArguments = const_cast<const char**>(argv + optind + 1);
-    p.m_nOptions = argc - optind - 1;
-    bool isOk = p.dispatch(argv[optind]);
+    p.m_commandLineArguments = const_cast<const char**>(argv + optind);
+    p.m_nOptions = argc - optind;
+
+    //argv[1] points to the command, so pass it to the dispatch
+    bool isOk = p.dispatch(argv[1]);
     if (!isOk) {
       usage(p.m_programName);
       return 1;
     }
-
     face.processEvents();
   }
   catch (const std::exception& e) {

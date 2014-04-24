@@ -6,6 +6,7 @@
  *                     University Pierre & Marie Curie, Sorbonne University,
  *                     Washington University in St. Louis,
  *                     Beijing Institute of Technology
+ *                     The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -55,28 +56,23 @@ public:
   dispatch(const std::string& cmd);
 
   /**
-   * \brief Adds a name to a FIB entry after creating the attaced face.
-   *
-   * Create a new face for the given faceUri and use it when adding the given name to the fib
-   *
-   *
-   * cmd format:
-   *   add name faceUri [cost]
-   *
-   */
-  void
-  addName();
-  /**
-   * \brief Adds a nexthop to a FIB entry.
+   * \brief Adds a nexthop to a FIB entry
    *
    * If the FIB entry does not exist, it is inserted automatically
    *
    * cmd format:
-   *   name faceId [cost]
+   *  [-c cost]  name faceId|faceUri
    *
    */
   void
-  fibAddNextHop(bool hasCost);
+  fibAddNextHop();
+
+  /**
+   * \brief Adds a nexthop to a FIB entry using faceId provided in the faceCreateResult
+   *
+   */
+  void
+  fibAddNextHop(const ControlParameters& faceCreateResult);
 
   /**
    * \brief Removes a nexthop from an existing FIB entry
@@ -84,40 +80,74 @@ public:
    * If the last nexthop record in a FIB entry is removed, the FIB entry is also deleted
    *
    * cmd format:
-   *   name faceId
+   *  name faceId
    *
    */
   void
   fibRemoveNextHop();
 
   /**
-   * \brief create new face
-   *
-   * This command allows creation of UDP unicast and TCP faces only.
+   * \brief Registers name to the given faceId or faceUri
    *
    * cmd format:
-   *   uri
+   *  [-I] [-C] [-c cost] name faceId|faceUri
+   */
+  void
+  ribRegisterPrefix();
+
+  /**
+   * \brief Registers name to the faceId provided in faceCreateResult
+   *
+   */
+  void
+  ribRegisterPrefix(const ControlParameters& faceCreateResult);
+
+  /**
+   * \brief Unregisters name from the given faceId
+   *
+   * cmd format:
+   *  name faceId
+   */
+  void
+  ribUnregisterPrefix();
+
+  /**
+   * \brief Creates new face
+   *
+   * This command allows creation of UDP unicast and TCP faces only
+   *
+   * cmd format:
+   *  uri
    *
    */
   void
   faceCreate();
 
   /**
-   * \brief destroy a face
+   * \brief Destroys face
    *
    * cmd format:
-   *   faceId
+   *  faceId|faceUri
    *
    */
   void
   faceDestroy();
 
   /**
-   * \brief Set the strategy for a namespace
-   *
+   * \brief Destroys face based on faceId provided in faceCreateResult
    *
    * cmd format:
-   *   name strategy
+   *  faceId|faceUri
+   *
+   */
+  void
+  faceDestroy(const ControlParameters& faceCreateResult);
+
+  /**
+   * \brief Sets the strategy for a namespace
+   *
+   * cmd format:
+   *  name strategy
    *
    */
   void
@@ -126,9 +156,8 @@ public:
   /**
    * \brief Unset the strategy for a namespace
    *
-   *
    * cmd format:
-   *   name strategy
+   *  name strategy
    *
    */
   void
@@ -137,18 +166,11 @@ public:
 private:
 
   void
-  onSuccess(const ControlParameters& parameters,
+  onSuccess(const ControlParameters& commandSuccessResult,
             const std::string& message);
 
   void
-  onAddSuccess(const ControlParameters& parameters,
-               const std::string& message);
-
-  void
   onError(uint32_t code, const std::string& error, const std::string& message);
-
-  void
-  fibAddNextHop(const std::string& name, const uint64_t faceId, bool hasCost);
 
 public:
   const char* m_programName;
@@ -156,6 +178,10 @@ public:
   // command parameters without leading 'cmd' component
   const char** m_commandLineArguments;
   int m_nOptions;
+  uint64_t m_flags;
+  uint64_t m_cost;
+  uint64_t m_faceId;
+  std::string m_name;
 
 private:
   Controller m_controller;
