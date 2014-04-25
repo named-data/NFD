@@ -28,7 +28,7 @@ def configure(conf):
     def boost_asio_has_local_sockets():
         return conf.check_cxx(msg='Checking if UNIX sockets are supported',
                               fragment=BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK,
-                              use='BOOST NDN_CPP RT', mandatory=False)
+                              use='BOOST', mandatory=False)
 
     if conf.options.force_unix_socket or boost_asio_has_local_sockets():
         conf.define('HAVE_UNIX_SOCKETS', 1)
