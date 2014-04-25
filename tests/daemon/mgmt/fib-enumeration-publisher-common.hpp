@@ -35,7 +35,7 @@
 #include "tests/test-common.hpp"
 #include "../face/dummy-face.hpp"
 
-#include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 
 namespace nfd {
 namespace tests {

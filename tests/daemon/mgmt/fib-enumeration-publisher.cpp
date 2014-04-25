@@ -32,7 +32,7 @@
 
 #include "fib-enumeration-publisher-common.hpp"
 
-#include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 
 namespace nfd {
 namespace tests {

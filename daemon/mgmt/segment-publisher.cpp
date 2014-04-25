@@ -27,7 +27,7 @@
 #include "core/logger.hpp"
 #include "face/face.hpp"
 
-#include <ndn-cpp-dev/util/time.hpp>
+#include <ndn-cxx/util/time.hpp>
 
 namespace nfd {
 

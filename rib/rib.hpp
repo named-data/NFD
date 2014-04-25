@@ -27,7 +27,7 @@
 #define NFD_RIB_RIB_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/management/nfd-control-command.hpp>
+#include <ndn-cxx/management/nfd-control-command.hpp>
 
 namespace nfd {
 namespace rib {

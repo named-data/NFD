@@ -28,7 +28,7 @@
 
 #include "common.hpp"
 
-#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 namespace ndn {
 class Face;

@@ -6,7 +6,7 @@ NFD Installation Instructions
 Prerequisites
 -------------
 
--  `ndn-cpp-dev library <https://github.com/named-data/ndn-cpp-dev>`__
+-  `ndn-cxx library <https://github.com/named-data/ndn-cxx>`__
    and its requirements:
 
    -  ``libcrypto``
@@ -16,7 +16,7 @@ Prerequisites
    -  Boost libraries (>= 1.48)
    -  OSX Security framework (on OSX platform only)
 
-   Refer to https://github.com/named-data/ndn-cpp-dev/blob/master/INSTALL.md for detailed
+   Refer to https://github.com/named-data/ndn-cxx/blob/master/INSTALL.md for detailed
    installation instructions.
 
 -  ``libpcap``

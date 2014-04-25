@@ -24,7 +24,7 @@
 
 #include "ndnlp-slicer.hpp"
 
-#include <ndn-cpp-dev/encoding/encoding-buffer.hpp>
+#include <ndn-cxx/encoding/encoding-buffer.hpp>
 
 namespace nfd {
 namespace ndnlp {

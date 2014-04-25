@@ -9,6 +9,8 @@ from waflib import Logs, Configure
 def options(opt):
     opt.add_option('--debug', '--with-debug', action='store_true', default=False, dest='debug',
                    help='''Compile in debugging mode without all optimizations (-O0)''')
+    opt.add_option('--with-c++11', action='store_true', default=False, dest='use_cxx11',
+                   help='''Enable C++11 mode (experimental, may not work)''')
 
 def configure(conf):
     areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)

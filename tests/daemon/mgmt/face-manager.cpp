@@ -36,8 +36,8 @@
 #include "validation-common.hpp"
 #include "face-status-publisher-common.hpp"
 
-#include <ndn-cpp-dev/encoding/tlv.hpp>
-#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
 namespace tests {

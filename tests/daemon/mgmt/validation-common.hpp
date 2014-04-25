@@ -26,7 +26,7 @@
 #define NFD_TESTS_NFD_MGMT_VALIDATION_COMMON_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/util/command-interest-generator.hpp>
+#include <ndn-cxx/util/command-interest-generator.hpp>
 
 namespace nfd {
 namespace tests {

@@ -28,7 +28,7 @@
 #define NFD_DAEMON_TABLE_CS_ENTRY_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/util/crypto.hpp>
+#include <ndn-cxx/util/crypto.hpp>
 
 namespace nfd {
 

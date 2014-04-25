@@ -26,7 +26,7 @@
 #include "face-monitor.hpp"
 #include "core/logger.hpp"
 
-#include <ndn-cpp-dev/face.hpp>
+#include <ndn-cxx/face.hpp>
 
 namespace nfd {
 

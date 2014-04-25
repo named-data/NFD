@@ -26,7 +26,7 @@
 #include "core/network-interface.hpp"
 #include "tests/test-common.hpp"
 
-#include <ndn-cpp-dev/security/key-chain.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 #include <pcap/pcap.h>
 
 namespace nfd {

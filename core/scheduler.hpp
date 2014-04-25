@@ -26,7 +26,7 @@
 #define NFD_CORE_SCHEDULER_HPP
 
 #include "common.hpp"
-#include <ndn-cpp-dev/util/scheduler.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
 namespace scheduler {

@@ -27,7 +27,7 @@
 #include "mgmt/app-face.hpp"
 
 #include "tests/test-common.hpp"
-#include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 
 namespace nfd {
 namespace tests {

@@ -27,7 +27,7 @@
 
 #include "mgmt/manager-base.hpp"
 
-#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 

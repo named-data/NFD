@@ -39,9 +39,9 @@
 #define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
-#include <ndn-cpp-dev/common.hpp>
-#include <ndn-cpp-dev/interest.hpp>
-#include <ndn-cpp-dev/data.hpp>
+#include <ndn-cxx/common.hpp>
+#include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/data.hpp>
 
 #include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>

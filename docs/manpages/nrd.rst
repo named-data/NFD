@@ -64,4 +64,4 @@ Starting experiments
    ~$ nrd
 
 8. Try to connect any application to NFD. For example, producer
-   application that is provided ndn-cpp-dev examples.
+   application that is provided ndn-cxx examples.

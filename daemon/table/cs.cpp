@@ -26,8 +26,8 @@
 
 #include "cs.hpp"
 #include "core/logger.hpp"
-#include <ndn-cpp-dev/util/crypto.hpp>
-#include "ndn-cpp-dev/security/signature-sha256-with-rsa.hpp"
+#include <ndn-cxx/util/crypto.hpp>
+#include "ndn-cxx/security/signature-sha256-with-rsa.hpp"
 
 #define SKIPLIST_MAX_LAYERS 32
 #define SKIPLIST_PROBABILITY 25         // 25% (p = 1/4)

@@ -30,11 +30,11 @@
 #include "face-monitor.hpp"
 #include "core/config-file.hpp"
 
-#include <ndn-cpp-dev/security/validator-config.hpp>
-#include <ndn-cpp-dev/management/nfd-controller.hpp>
-#include <ndn-cpp-dev/management/nfd-control-command.hpp>
-#include <ndn-cpp-dev/management/nfd-control-response.hpp>
-#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/security/validator-config.hpp>
+#include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/management/nfd-control-command.hpp>
+#include <ndn-cxx/management/nfd-control-response.hpp>
+#include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 namespace rib {

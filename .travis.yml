@@ -11,8 +11,8 @@ notifications:
 before_install:
   - travis_retry sudo apt-get update
   - travis_retry sudo apt-get install -qq libssl-dev libpcap-dev libboost1.48-all-dev libcrypto++-dev libsqlite3-dev
-  - travis_retry git clone git://github.com/named-data/ndn-cpp-dev ndn-cpp-dev
-  - cd ndn-cpp-dev
+  - travis_retry git clone --depth 1 git://github.com/named-data/ndn-cxx ndn-cxx
+  - cd ndn-cxx
   - ./waf configure
   - ./waf -j1
   - sudo ./waf install

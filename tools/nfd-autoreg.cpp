@@ -22,11 +22,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include <ndn-cpp-dev/face.hpp>
-#include <ndn-cpp-dev/name.hpp>
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/name.hpp>
 
-#include <ndn-cpp-dev/management/nfd-face-event-notification.hpp>
-#include <ndn-cpp-dev/management/nfd-controller.hpp>
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/management/nfd-controller.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>

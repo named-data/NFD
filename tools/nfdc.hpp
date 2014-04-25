@@ -25,9 +25,9 @@
 #ifndef NFD_TOOLS_NFDC_HPP
 #define NFD_TOOLS_NFDC_HPP
 
-#include <ndn-cpp-dev/face.hpp>
-#include <ndn-cpp-dev/management/controller.hpp>
-#include <ndn-cpp-dev/management/nfd-controller.hpp>
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/management/controller.hpp>
+#include <ndn-cxx/management/nfd-controller.hpp>
 
 namespace nfdc {
 

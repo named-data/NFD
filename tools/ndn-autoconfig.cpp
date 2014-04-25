@@ -22,9 +22,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include <ndn-cpp-dev/face.hpp>
-#include <ndn-cpp-dev/management/nfd-controller.hpp>
-#include <ndn-cpp-dev/security/key-chain.hpp>
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 #include <sys/types.h>
 #include <netinet/in.h>

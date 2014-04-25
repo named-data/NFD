@@ -34,7 +34,7 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
-#include <ndn-cpp-dev/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
 namespace tests {

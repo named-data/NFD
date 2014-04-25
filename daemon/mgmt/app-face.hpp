@@ -27,7 +27,7 @@
 
 #include "common.hpp"
 
-#include <ndn-cpp-dev/security/key-chain.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 

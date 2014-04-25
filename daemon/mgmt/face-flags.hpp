@@ -26,7 +26,7 @@
 #define NFD_DAEMON_MGMT_FACE_FLAGS_HPP
 
 #include "face/face.hpp"
-#include <ndn-cpp-dev/management/nfd-face-flags.hpp>
+#include <ndn-cxx/management/nfd-face-flags.hpp>
 
 namespace nfd {
 

@@ -23,7 +23,7 @@
  **/
 
 #include "face/tcp-factory.hpp"
-#include <ndn-cpp-dev/security/key-chain.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"

@@ -26,7 +26,7 @@
 #include "core/logger.hpp"
 #include "table/fib.hpp"
 
-#include <ndn-cpp-dev/management/nfd-fib-entry.hpp>
+#include <ndn-cxx/management/nfd-fib-entry.hpp>
 
 namespace nfd {
 

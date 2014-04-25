@@ -30,7 +30,7 @@
 #include "mgmt/internal-face.hpp"
 #include "mgmt/app-face.hpp"
 
-#include <ndn-cpp-dev/encoding/tlv.hpp>
+#include <ndn-cxx/encoding/tlv.hpp>
 
 namespace nfd {
 

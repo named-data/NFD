@@ -27,8 +27,8 @@
 
 #include "tests/test-common.hpp"
 
-#include <ndn-cpp-dev/util/command-interest-generator.hpp>
-#include <ndn-cpp-dev/util/io.hpp>
+#include <ndn-cxx/util/command-interest-generator.hpp>
+#include <ndn-cxx/util/io.hpp>
 #include <boost/filesystem.hpp>
 #include <fstream>
 

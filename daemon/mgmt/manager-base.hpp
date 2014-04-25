@@ -30,9 +30,9 @@
 #include "mgmt/command-validator.hpp"
 #include "mgmt/internal-face.hpp"
 
-#include <ndn-cpp-dev/management/nfd-control-command.hpp>
-#include <ndn-cpp-dev/management/nfd-control-response.hpp>
-#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/management/nfd-control-command.hpp>
+#include <ndn-cxx/management/nfd-control-response.hpp>
+#include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 

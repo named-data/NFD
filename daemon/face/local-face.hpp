@@ -26,7 +26,7 @@
 #define NFD_DAEMON_FACE_LOCAL_FACE_HPP
 
 #include "face.hpp"
-#include <ndn-cpp-dev/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 

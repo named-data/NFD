@@ -26,7 +26,7 @@
 #define NFD_DAEMON_FACE_TCP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include <ndn-cpp-dev/util/monotonic_deadline_timer.hpp>
+#include <ndn-cxx/util/monotonic_deadline_timer.hpp>
 #include "tcp-face.hpp"
 
 namespace nfd {

@@ -27,7 +27,7 @@
 #include "core/logger.hpp"
 #include "fw/face-table.hpp"
 
-#include <ndn-cpp-dev/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
 

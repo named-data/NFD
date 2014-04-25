@@ -27,7 +27,7 @@
 
 #include "common.hpp"
 #include "config-file.hpp"
-#include <ndn-cpp-dev/util/command-interest-validator.hpp>
+#include <ndn-cxx/util/command-interest-validator.hpp>
 
 namespace nfd {
 

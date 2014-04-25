@@ -48,8 +48,6 @@ def options(opt):
     opt.addDependencyOptions(nfdopt, 'librt',     '(optional)')
     opt.addDependencyOptions(nfdopt, 'libresolv', '(optional)')
 
-    nfdopt.add_option('--with-c++11', action='store_true', default=False, dest='use_cxx11',
-                      help='''Enable C++11 mode (experimental, may not work)''')
     nfdopt.add_option('--with-tests', action='store_true', default=False,
                       dest='with_tests', help='''Build unit tests''')
     nfdopt.add_option('--with-other-tests', action='store_true', default=False,
@@ -66,8 +64,8 @@ def configure(conf):
 
     conf.load('default-compiler-flags')
 
-    conf.check_cfg(package='libndn-cpp-dev', args=['--cflags', '--libs'],
-                   uselib_store='NDN_CPP', mandatory=True)
+    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
+                   uselib_store='NDN_CXX', mandatory=True)
 
     boost_libs = 'system chrono program_options'
     if conf.options.with_tests:
@@ -109,7 +107,7 @@ def build(bld):
         name='core-objects',
         features='cxx',
         source=bld.path.ant_glob(['core/**/*.cpp']),
-        use='BOOST NDN_CPP LIBRT',
+        use='BOOST NDN_CXX LIBRT',
         includes='. core',
         export_includes='. core',
         )
