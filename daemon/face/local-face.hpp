@@ -138,47 +138,52 @@ LocalFace::setLocalControlHeaderFeature(LocalControlFeature feature, bool enable
 inline bool
 LocalFace::decodeAndDispatchInput(const Block& element)
 {
-  const Block& payload = ndn::nfd::LocalControlHeader::getPayload(element);
+  try {
+    const Block& payload = ndn::nfd::LocalControlHeader::getPayload(element);
 
-  // If received LocalControlHeader, but it is not enabled on the face
-  if ((&payload != &element) && !this->isLocalControlHeaderEnabled())
+    // If received LocalControlHeader, but it is not enabled on the face
+    if ((&payload != &element) && !this->isLocalControlHeaderEnabled())
+      return false;
+
+    if (payload.type() == tlv::Interest)
+      {
+        shared_ptr<Interest> i = make_shared<Interest>();
+        i->wireDecode(payload);
+        if (&payload != &element)
+          {
+            i->getLocalControlHeader().wireDecode(element,
+              false,
+              this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+          }
+
+        this->onReceiveInterest(*i);
+      }
+    else if (payload.type() == tlv::Data)
+      {
+        shared_ptr<Data> d = make_shared<Data>();
+        d->wireDecode(payload);
+
+        /// \todo Uncomment and correct the following when we have more
+        ///       options in LocalControlHeader that apply for incoming
+        ///       Data packets (if ever)
+        // if (&payload != &element)
+        //   {
+        //
+        //     d->getLocalControlHeader().wireDecode(element,
+        //       false,
+        //       false);
+        //   }
+
+        this->onReceiveData(*d);
+      }
+    else
+      return false;
+
+    return true;
+  }
+  catch (tlv::Error&) {
     return false;
-
-  if (payload.type() == tlv::Interest)
-    {
-      shared_ptr<Interest> i = make_shared<Interest>();
-      i->wireDecode(payload);
-      if (&payload != &element)
-        {
-          i->getLocalControlHeader().wireDecode(element,
-            false,
-            this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
-        }
-
-      this->onReceiveInterest(*i);
-    }
-  else if (payload.type() == tlv::Data)
-    {
-      shared_ptr<Data> d = make_shared<Data>();
-      d->wireDecode(payload);
-
-      /// \todo Uncomment and correct the following when we have more
-      ///       options in LocalControlHeader that apply for incoming
-      ///       Data packets (if ever)
-      // if (&payload != &element)
-      //   {
-      //
-      //     d->getLocalControlHeader().wireDecode(element,
-      //       false,
-      //       false);
-      //   }
-
-      this->onReceiveData(*d);
-    }
-  else
-    return false;
-
-  return true;
+  }
 }
 
 inline bool

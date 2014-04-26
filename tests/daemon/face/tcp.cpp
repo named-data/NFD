@@ -23,10 +23,14 @@
  **/
 
 #include "face/tcp-factory.hpp"
+#include "core/resolver.hpp"
+#include "core/network-interface.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
+#include "dummy-stream-sender.hpp"
+#include "packet-datasets.hpp"
 
 namespace nfd {
 namespace tests {
@@ -223,28 +227,19 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   // integrated tests needs to check that TcpFace for non-loopback fails these tests...
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
+  face1->sendInterest(*interest1);
+  face1->sendInterest(*interest1);
+  face1->sendInterest(*interest1);
+  face1->sendData    (*data1    );
+  face2->sendInterest(*interest2);
+  face2->sendData    (*data2    );
+  face2->sendData    (*data2    );
+  face2->sendData    (*data2    );
 
   BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot send or receive Interest/Data packets");
@@ -255,10 +250,10 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 3);
   BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2->getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2->getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 
   const FaceCounters& counters1 = face1->getCounters();
   BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
@@ -309,24 +304,15 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
 
   // integrated tests needs to check that TcpFace for non-loopback fails these tests...
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
+  face1->sendInterest(*interest1);
+  face1->sendData    (*data1    );
+  face2->sendInterest(*interest2);
+  face2->sendData    (*data2    );
 
   BOOST_CHECK_MESSAGE(limitedIo.run(4, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot send or receive Interest/Data packets");
@@ -337,10 +323,10 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
   BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2->getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2->getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 }
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
@@ -433,6 +419,127 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel2->size(), 0);
 }
 
+
+
+
+class SimpleEndToEndFixture : protected BaseFixture
+{
+public:
+  void
+  onFaceCreated(const shared_ptr<Face>& face)
+  {
+    face->onReceiveInterest +=
+      bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1);
+    face->onReceiveData +=
+      bind(&SimpleEndToEndFixture::onReceiveData, this, _1);
+    face->onFail +=
+      bind(&SimpleEndToEndFixture::onFail, this, face);
+
+    if (static_cast<bool>(dynamic_pointer_cast<LocalFace>(face))) {
+      static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(
+        LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+
+      static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(
+        LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+    }
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onConnectFailed(const std::string& reason)
+  {
+    BOOST_CHECK_MESSAGE(false, reason);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onReceiveInterest(const Interest& interest)
+  {
+    receivedInterests.push_back(interest);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onReceiveData(const Data& data)
+  {
+    receivedDatas.push_back(data);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onFail(const shared_ptr<Face>& face)
+  {
+    limitedIo.afterOp();
+  }
+
+public:
+  LimitedIo limitedIo;
+
+  std::vector<Interest> receivedInterests;
+  std::vector<Data> receivedDatas;
+};
+
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalFaceCorruptedInput, Dataset,
+                                 CorruptedPackets, SimpleEndToEndFixture)
+{
+  TcpFactory factory;
+
+  shared_ptr<TcpChannel> channel = factory.createChannel("127.0.0.1", "20070");
+  channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
+                  bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
+  BOOST_REQUIRE_EQUAL(channel->isListening(), true);
+
+  DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
+  sender.start(Resolver<boost::asio::ip::tcp>::syncResolve("127.0.0.1", "20070"));
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
+                                    time::seconds(1)) == LimitedIo::EXCEED_TIME,
+                      "Exception thrown for " + Dataset::getName());
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
+                                 CorruptedPackets, SimpleEndToEndFixture)
+{
+  // tests with non-local Face
+  std::string someIpv4Address;
+  std::list< shared_ptr<NetworkInterfaceInfo> > ifs = listNetworkInterfaces();
+  for (std::list< shared_ptr<NetworkInterfaceInfo> >::const_iterator i = ifs.begin();
+       i != ifs.end();
+       ++i)
+    {
+      if (!(*i)->isLoopback() && (*i)->isUp() && !(*i)->ipv4Addresses.empty())
+        {
+          someIpv4Address = (*i)->ipv4Addresses[0].to_string();
+          break;
+        }
+    }
+  if (someIpv4Address.empty())
+    {
+      BOOST_TEST_MESSAGE("Test with non-local Face cannot be run "
+                         "(no non-local interface with IPv4 address available)");
+      return;
+    }
+
+  TcpFactory factory;
+
+  shared_ptr<TcpChannel> channel = factory.createChannel(someIpv4Address, "20070");
+  channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
+                  bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
+  BOOST_REQUIRE_EQUAL(channel->isListening(), true);
+
+
+  DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
+  sender.start(Resolver<boost::asio::ip::tcp>::syncResolve(someIpv4Address, "20070"));
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
+                                    time::seconds(1)) == LimitedIo::EXCEED_TIME,
+                      "Exception thrown for " + Dataset::getName());
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -26,6 +26,8 @@
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
+#include "dummy-stream-sender.hpp"
+#include "packet-datasets.hpp"
 
 namespace nfd {
 namespace tests {
@@ -178,28 +180,19 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   face2->onReceiveData +=
     bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
+  face1->sendInterest(*interest1);
+  face1->sendInterest(*interest1);
+  face1->sendInterest(*interest1);
+  face1->sendData    (*data1    );
+  face2->sendInterest(*interest2);
+  face2->sendData    (*data2    );
+  face2->sendData    (*data2    );
+  face2->sendData    (*data2    );
 
   BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
@@ -209,10 +202,10 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 3);
   BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2->getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2->getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 
   const FaceCounters& counters1 = face1->getCounters();
   BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
@@ -267,24 +260,15 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   face2->onReceiveInterest += bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
   face2->onReceiveData += bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
+  face1->sendInterest(*interest1);
+  face1->sendData    (*data1    );
+  face2->sendInterest(*interest2);
+  face2->sendData    (*data2    );
 
   BOOST_CHECK_MESSAGE(limitedIo.run(4, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
@@ -294,10 +278,10 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
 
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2->getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2->getName());
+  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
+  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 }
 
 static inline void
@@ -329,19 +313,8 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   face2->onReceiveData +=
     bind(&EndToEndFixture::face2_onReceiveData, this, _1);
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
-
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
 
   face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
   face1->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
@@ -357,15 +330,15 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
 
   ////////////////////////////////////////////////////////
 
-  interest1.setIncomingFaceId(11);
-  interest1.setNextHopFaceId(111);
+  interest1->setIncomingFaceId(11);
+  interest1->setNextHopFaceId(111);
 
-  face1->sendInterest(interest1);
+  face1->sendInterest(*interest1);
 
-  data1.setIncomingFaceId(22);
-  data1.getLocalControlHeader().setNextHopFaceId(222);
+  data1->setIncomingFaceId(22);
+  data1->getLocalControlHeader().setNextHopFaceId(222);
 
-  face1->sendData    (data1);
+  face1->sendData(*data1);
 
   //
 
@@ -387,14 +360,14 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   using namespace boost::asio;
 
   std::vector<const_buffer> interestWithHeader;
-  Block iHeader  = interest1.getLocalControlHeader().wireEncode(interest1, true, true);
-  Block iPayload = interest1.wireEncode();
+  Block iHeader  = interest1->getLocalControlHeader().wireEncode(*interest1, true, true);
+  Block iPayload = interest1->wireEncode();
   interestWithHeader.push_back(buffer(iHeader.wire(),  iHeader.size()));
   interestWithHeader.push_back(buffer(iPayload.wire(), iPayload.size()));
 
   std::vector<const_buffer> dataWithHeader;
-  Block dHeader  = data1.getLocalControlHeader().wireEncode(data1, true, true);
-  Block dPayload = data1.wireEncode();
+  Block dHeader  = data1->getLocalControlHeader().wireEncode(*data1, true, true);
+  Block dPayload = data1->wireEncode();
   dataWithHeader.push_back(buffer(dHeader.wire(),  dHeader.size()));
   dataWithHeader.push_back(buffer(dPayload.wire(), dPayload.size()));
 
@@ -416,6 +389,87 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   BOOST_CHECK_EQUAL(face1_receivedDatas[0].getLocalControlHeader().hasIncomingFaceId(), false);
   BOOST_CHECK_EQUAL(face1_receivedDatas[0].getLocalControlHeader().hasNextHopFaceId(), false);
 }
+
+
+class SimpleEndToEndFixture : protected BaseFixture
+{
+public:
+  void
+  onFaceCreated(const shared_ptr<Face>& face)
+  {
+    face->onReceiveInterest +=
+      bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1);
+    face->onReceiveData +=
+      bind(&SimpleEndToEndFixture::onReceiveData, this, _1);
+    face->onFail +=
+      bind(&SimpleEndToEndFixture::onFail, this, face);
+
+    if (static_cast<bool>(dynamic_pointer_cast<LocalFace>(face))) {
+      static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(
+        LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID);
+
+      static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(
+        LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
+    }
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onConnectFailed(const std::string& reason)
+  {
+    BOOST_CHECK_MESSAGE(false, reason);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onReceiveInterest(const Interest& interest)
+  {
+    receivedInterests.push_back(interest);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onReceiveData(const Data& data)
+  {
+    receivedDatas.push_back(data);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onFail(const shared_ptr<Face>& face)
+  {
+    limitedIo.afterOp();
+  }
+
+public:
+  LimitedIo limitedIo;
+
+  std::vector<Interest> receivedInterests;
+  std::vector<Data> receivedDatas;
+};
+
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(CorruptedInput, Dataset,
+                                 CorruptedPackets, SimpleEndToEndFixture)
+{
+  UnixStreamFactory factory;
+
+  shared_ptr<UnixStreamChannel> channel = factory.createChannel(CHANNEL_PATH1);
+  channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
+                  bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
+
+  DummyStreamSender<stream_protocol, Dataset> sender;
+  sender.start(stream_protocol::endpoint(CHANNEL_PATH1));
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
+                                    time::seconds(1)) == LimitedIo::EXCEED_TIME,
+                      "Exception thrown for " + Dataset::getName());
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

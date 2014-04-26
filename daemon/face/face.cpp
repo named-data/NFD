@@ -90,24 +90,29 @@ Face::isUp() const
 bool
 Face::decodeAndDispatchInput(const Block& element)
 {
-  /// \todo Ensure lazy field decoding process
+  try {
+    /// \todo Ensure lazy field decoding process
 
-  if (element.type() == tlv::Interest)
-    {
-      shared_ptr<Interest> i = make_shared<Interest>();
-      i->wireDecode(element);
-      this->onReceiveInterest(*i);
-    }
-  else if (element.type() == tlv::Data)
-    {
-      shared_ptr<Data> d = make_shared<Data>();
-      d->wireDecode(element);
-      this->onReceiveData(*d);
-    }
-  else
+    if (element.type() == tlv::Interest)
+      {
+        shared_ptr<Interest> i = make_shared<Interest>();
+        i->wireDecode(element);
+        this->onReceiveInterest(*i);
+      }
+    else if (element.type() == tlv::Data)
+      {
+        shared_ptr<Data> d = make_shared<Data>();
+        d->wireDecode(element);
+        this->onReceiveData(*d);
+      }
+    else
+      return false;
+
+    return true;
+  }
+  catch (tlv::Error&) {
     return false;
-
-  return true;
+  }
 }
 
 } //namespace nfd
