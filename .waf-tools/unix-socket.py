@@ -26,7 +26,8 @@ setattr(Options.OptionsContext, "addUnixOptions", addUnixOptions)
 
 def configure(conf):
     def boost_asio_has_local_sockets():
-        return conf.check_cxx(msg='Checking if UNIX sockets are supported',
+        return conf.check_cxx(features="cxx",
+                              msg='Checking if UNIX sockets are supported',
                               fragment=BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK,
                               use='BOOST', mandatory=False)
 
