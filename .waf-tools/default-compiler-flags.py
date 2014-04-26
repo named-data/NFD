@@ -54,7 +54,7 @@ def add_supported_cxxflags(self, cxxflags):
 
     supportedFlags = []
     for flag in cxxflags:
-        if self.check_cxx(cxxflags=[flag], mandatory=False):
+        if self.check_cxx(cxxflags=['-Werror', flag], mandatory=False):
             supportedFlags += [flag]
 
     self.end_msg(' '.join(supportedFlags))
