@@ -23,7 +23,10 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-VERSION = '0.1.0'
+import re
+
+VERSION = re.search('^#define NFD_VERSION_STRING\\s+"(.*)"',
+                    open("version.hpp").read(), re.M).group(1)
 APPNAME = "nfd"
 BUGREPORT = "http://redmine.named-data.net/projects/nfd"
 URL = "https://github.com/named-data/NFD"
@@ -54,15 +57,10 @@ def options(opt):
                       dest='with_other_tests', help='''Build other tests''')
 
 def configure(conf):
-    conf.load("compiler_cxx boost gnu_dirs sphinx_build")
-
-    try: conf.load("doxygen")
-    except: pass
-
-    try: conf.load("sphinx_build")
-    except: pass
-
-    conf.load('default-compiler-flags')
+    conf.load(['compiler_cxx', 'gnu_dirs',
+               'default-compiler-flags',
+               'boost', 'dependency-checker',
+               'doxygen', 'sphinx_build'])
 
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
                    uselib_store='NDN_CXX', mandatory=True)
@@ -180,7 +178,8 @@ def build(bld):
             outdir="docs/manpages",
             config="docs/conf.py",
             source=bld.path.ant_glob('docs/manpages/**/*.rst'),
-            install_path="${MANDIR}/")
+            install_path="${MANDIR}/",
+            VERSION=VERSION)
 
     for script in bld.path.ant_glob('tools/*.sh'):
         bld(features='subst',
@@ -195,14 +194,25 @@ def docs(bld):
 
 def doxygen(bld):
     if not bld.env.DOXYGEN:
-        bld.fatal("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
-    bld(features="doxygen",
-        doxyfile='docs/doxygen.conf',
-        install_path=None)
+        Logs.error("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
+    else:
+        bld(features="subst",
+            name="doxygen-conf",
+            source="docs/doxygen.conf.in",
+            target="docs/doxygen.conf",
+            VERSION=VERSION,
+            )
+
+        bld(features="doxygen",
+            doxyfile='docs/doxygen.conf',
+            use="doxygen-conf")
 
 def sphinx(bld):
-    bld(features="sphinx",
-        outdir="docs",
-        source=bld.path.ant_glob('docs/**/*.rst'),
-        config="docs/conf.py",
-        install_path=None)
+    if not bld.env.SPHINX_BUILD:
+        bld.fatal("ERROR: cannot build documentation (`sphinx-build' is not found in $PATH)")
+    else:
+        bld(features="sphinx",
+            outdir="docs",
+            source=bld.path.ant_glob('docs/**/*.rst'),
+            config="docs/conf.py",
+            VERSION=VERSION)

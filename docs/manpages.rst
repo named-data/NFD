@@ -1,5 +1,7 @@
-NFD Manpages
-============
+.. _Manpages:
+
+Manpages
+========
 
 .. toctree::
    manpages/nfd

@@ -66,7 +66,7 @@ div.hr hr, div.hr2 hr {
 }
 
 p {
-    padding: 0 0 0.5em;
+    padding: 0;
     line-height:1.6em;
 }
 ul {
@@ -124,7 +124,6 @@ del {
     color: #555;
 }
 blockquote {
-    font-style: italic;
     padding: 0 3em;
 }
 blockquote cite,
@@ -802,4 +801,13 @@ a img.aligncenter {
     display:block;
     margin-left:auto;
     margin-right:auto;
+}
+
+
+table {
+    border-collapse:collapse;
+}
+table, th, td {
+    border: 1px solid black;
+    padding: 5px;
 }

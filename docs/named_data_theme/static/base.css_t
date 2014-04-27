@@ -173,7 +173,7 @@ div.document h1 {
 }
 
 div.document ul {
-  margin: 1.5em;
+  margin-left: 1.5em;
   list-style-type: square;
 }
 
@@ -222,10 +222,6 @@ div.document .docutils.literal {
 div.document .docutils.xref.literal {
   background-color: transparent;
   padding: 0px;
-}
-
-div.document blockquote {
-  margin: 1em;
 }
 
 div.document ol {
