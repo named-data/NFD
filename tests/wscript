@@ -43,7 +43,7 @@ def build(bld):
             source=bld.path.ant_glob(['core/**/*.cpp']),
             use='core-objects unit-tests-main',
             includes='.',
-            install_prefix=None,
+            install_path=None,
           )
 
         # NFD tests
@@ -55,7 +55,7 @@ def build(bld):
                                            'daemon/face/unix-*.cpp']),
             use='daemon-objects unit-tests-main',
             includes='.',
-            install_prefix=None,
+            install_path=None,
           )
 
         if bld.env['HAVE_LIBPCAP']:
@@ -70,7 +70,7 @@ def build(bld):
             source=bld.path.ant_glob(['rib/**/*.cpp']),
             use='rib-objects unit-tests-main',
             includes=['.'],
-            install_prefix=None,
+            install_path=None,
           )
 
     # Other tests (e.g., stress tests that can be enabled even if unit tests are disabled)

@@ -29,4 +29,5 @@ def build(bld):
     bld.program(target="../../cs-smoketest",
                 source="cs-smoketest.cpp",
                 use='daemon-objects',
-                install_path=None)
+                install_path=None,
+                )
