@@ -226,7 +226,7 @@ void
 RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
                             ControlParameters& parameters)
 {
-  ndn::nfd::RibRegisterCommand command;
+  ndn::nfd::RibUnregisterCommand command;
 
   if (!validateParameters(command, parameters))
     {
