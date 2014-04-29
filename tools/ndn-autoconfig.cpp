@@ -70,7 +70,7 @@ public:
     interest.setInterestLifetime(ndn::time::milliseconds(4000)); // 4 seconds
     interest.setMustBeFresh(true);
 
-    std::cerr << "Stage 1: Trying muticast discovery..." << std::endl;
+    std::cerr << "Stage 1: Trying multicast discovery..." << std::endl;
     m_face.expressInterest(interest,
                            ndn::bind(&NdnAutoconfig::onDiscoverHubStage1Success, this, _1, _2),
                            ndn::bind(&NdnAutoconfig::discoverHubStage2, this, _1, "Timeout"));
@@ -183,26 +183,24 @@ public:
     std::cerr << "about to connect to: " << uri << std::endl;
 
     m_controller.start<ndn::nfd::FaceCreateCommand>(
-       ndn::nfd::ControlParameters()
-         .setUri(uri),
-       bind(&NdnAutoconfig::onHubConnectSuccess, this,
-            _1, "Succesfully created face: "),
-       bind(&NdnAutoconfig::onHubConnectError, this,
-            _1, _2, "Failed to create face: ")
+      ndn::nfd::ControlParameters()
+        .setUri(uri),
+      bind(&NdnAutoconfig::onHubConnectSuccess, this, _1),
+      bind(&NdnAutoconfig::onHubConnectError, this, _1, _2)
     );
   }
 
   void
-  onHubConnectSuccess(const ndn::nfd::ControlParameters& resp, const std::string& message)
+  onHubConnectSuccess(const ndn::nfd::ControlParameters& resp)
   {
-    std::cerr << message << resp << std::endl;
+    std::cerr << "Successfully created face: " << resp << std::endl;
   }
 
   void
-  onHubConnectError(uint32_t code, const std::string& error, const std::string& message)
+  onHubConnectError(uint32_t code, const std::string& error)
   {
     std::ostringstream os;
-    os << message << ": " << error << " (code: " << code << ")";
+    os << "Failed to create face: " << error << " (code: " << code << ")";
     throw Error(os.str());
   }
 
@@ -241,31 +239,33 @@ public:
 
     for (int i = 0; i < ntohs(queryAnswer.header.ancount); i++)
     {
-      char hostName[NS_MAXDNAME];
-      int domainNameSize = dn_expand(queryAnswer.buf,
-                                     queryAnswer.buf + answerSize,
-                                     blob,
-                                     hostName,
+      char srvName[NS_MAXDNAME];
+      int serverNameSize = dn_expand(queryAnswer.buf,               // message pointer
+                                     queryAnswer.buf + answerSize,  // end of message
+                                     blob,                          // compressed server name
+                                     srvName,                       // expanded server name
                                      NS_MAXDNAME);
-      if (domainNameSize < 0)
-      {
-        return false;
-      }
-
-      blob += domainNameSize;
-
-      domainNameSize = dn_expand(queryAnswer.buf,
-                                 queryAnswer.buf + answerSize,
-                                 blob + 16,
-                                 hostName,
-                                 NS_MAXDNAME);
-      if (domainNameSize < 0)
+      if (serverNameSize < 0)
       {
         return false;
       }
 
       srv_t* server = reinterpret_cast<srv_t*>(&blob[sizeof(rechdr)]);
       uint16_t convertedPort = be16toh(server->port);
+
+      blob += serverNameSize + NS_HFIXEDSZ + NS_QFIXEDSZ;
+
+      char hostName[NS_MAXDNAME];
+      int hostNameSize = dn_expand(queryAnswer.buf,               // message pointer
+                                   queryAnswer.buf + answerSize,  // end of message
+                                   blob,                          // compressed host name
+                                   hostName,                      // expanded host name
+                                   NS_MAXDNAME);
+      if (hostNameSize < 0)
+      {
+        return false;
+      }
+
       std::string uri = "udp://";
       uri.append(hostName);
       uri.append(":");
