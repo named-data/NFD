@@ -176,7 +176,7 @@ public:
   const char* m_programName;
 
   // command parameters without leading 'cmd' component
-  const char** m_commandLineArguments;
+  const char* const* m_commandLineArguments;
   int m_nOptions;
   uint64_t m_flags;
   uint64_t m_cost;

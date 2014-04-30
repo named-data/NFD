@@ -402,11 +402,9 @@ main(int argc, char** argv)
     return 0;
   }
 
-
+  ::optind = 2; //start reading options from 2nd argument i.e. Command
   int opt;
-  //start reading options from 2nd argument i.e. Command
-  optind=2;
-  while ((opt = getopt(argc, argv, "ICc:")) != -1) {
+  while ((opt = ::getopt(argc, argv, "ICc:")) != -1) {
     switch (opt) {
     case 'I':
       p.m_flags =  p.m_flags & ~(nfdc::ROUTE_FLAG_CHILD_INHERIT);
@@ -418,27 +416,28 @@ main(int argc, char** argv)
 
     case 'c':
       try {
-        p.m_cost =  boost::lexical_cast<int>(optarg);
+        p.m_cost = boost::lexical_cast<int>(::optarg);
       }
-      catch (const std::exception& e) {
+      catch (boost::bad_lexical_cast&) {
         std::cerr << "Error: cost must be in integer format" << std::endl;
         return 1;
       }
       break;
+
     default:
       usage(p.m_programName);
       return 1;
     }
   }
 
-  if (argc == optind) {
+  if (argc == ::optind) {
     usage(p.m_programName);
     return 1;
   }
 
   try {
-    p.m_commandLineArguments = const_cast<const char**>(argv + optind);
-    p.m_nOptions = argc - optind;
+    p.m_commandLineArguments = argv + ::optind;
+    p.m_nOptions = argc - ::optind;
 
     //argv[1] points to the command, so pass it to the dispatch
     bool isOk = p.dispatch(argv[1]);
