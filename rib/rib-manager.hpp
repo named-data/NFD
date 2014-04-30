@@ -46,10 +46,17 @@ using ndn::nfd::ControlParameters;
 class RibManager : noncopyable
 {
 public:
-  RibManager();
+  class Error : public std::runtime_error
+  {
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
+  };
 
-  void
-  onRibRequest(const Interest& request);
+  RibManager();
 
   void
   registerWithNfd();
@@ -65,6 +72,12 @@ private:
   onConfig(const ConfigSection& configSection,
            bool isDryRun,
            const std::string& filename);
+
+  void
+  onLocalhopRequest(const Interest& request);
+
+  void
+  onLocalhostRequest(const Interest& request);
 
   void
   sendResponse(const Name& name,
@@ -131,8 +144,10 @@ private:
   ndn::Face m_face;
   ndn::shared_ptr<ndn::nfd::Controller> m_nfdController;
   ndn::KeyChain m_keyChain;
-  ndn::ValidatorConfig m_validator;
+  ndn::ValidatorConfig m_localhostValidator;
+  ndn::ValidatorConfig m_localhopValidator;
   FaceMonitor m_faceMonitor;
+  bool m_isLocalhopEnabled;
 
   typedef boost::function<void(RibManager*,
                                const shared_ptr<const Interest>& request,

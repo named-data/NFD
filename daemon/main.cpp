@@ -84,7 +84,7 @@ public:
       // Ignore "log" and sections beginning with "rib_" (intended for rib manager),
       // but raise an error if we're missing a handler for an NFD section.
 
-      if (sectionName.find("rib_") == 0 || sectionName == "log")
+      if (sectionName.find("rib") == 0 || sectionName == "log")
         {
           // do nothing
         }

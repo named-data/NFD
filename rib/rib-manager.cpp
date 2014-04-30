@@ -66,8 +66,10 @@ NullDeleter(boost::asio::io_service* variable)
 RibManager::RibManager()
   : m_face(shared_ptr<boost::asio::io_service>(&getGlobalIoService(), &NullDeleter))
   , m_nfdController(new ndn::nfd::Controller(m_face))
-  , m_validator(m_face)
+  , m_localhostValidator(m_face)
+  , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
+  , m_isLocalhopEnabled(false)
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
@@ -82,13 +84,16 @@ RibManager::registerWithNfd()
   NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX);
   m_face.setController(m_nfdController);
   m_face.setInterestFilter(COMMAND_PREFIX,
-                           bind(&RibManager::onRibRequest, this, _2),
+                           bind(&RibManager::onLocalhostRequest, this, _2),
                            bind(&RibManager::setInterestFilterFailed, this, _1, _2));
 
-  NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX);
-  m_face.setInterestFilter(REMOTE_COMMAND_PREFIX,
-                           bind(&RibManager::onRibRequest, this, _2),
-                           bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+  if (m_isLocalhopEnabled)
+    {
+      NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX);
+      m_face.setInterestFilter(REMOTE_COMMAND_PREFIX,
+                               bind(&RibManager::onLocalhopRequest, this, _2),
+                               bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+    }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
   m_faceMonitor.addSubscriber(boost::bind(&RibManager::onNotification, this, _1));
@@ -98,7 +103,7 @@ RibManager::registerWithNfd()
 void
 RibManager::setConfigFile(ConfigFile& configFile)
 {
-  configFile.addSectionHandler("rib_security",
+  configFile.addSectionHandler("rib",
                                bind(&RibManager::onConfig, this, _1, _2, _3));
 }
 
@@ -107,9 +112,19 @@ RibManager::onConfig(const ConfigSection& configSection,
                      bool isDryRun,
                      const std::string& filename)
 {
-  /// \todo remove check after validator-conf replaces settings on each load
-  if (!isDryRun)
-    m_validator.load(configSection, filename);
+  for (ConfigSection::const_iterator i = configSection.begin();
+       i != configSection.end(); ++i)
+    {
+      if (i->first == "localhost_security")
+          m_localhostValidator.load(i->second, filename);
+      else if (i->first == "localhop_security")
+        {
+          m_localhopValidator.load(i->second, filename);
+          m_isLocalhopEnabled = true;
+        }
+      else
+        throw Error("Unrecognized rib property: " + i->first);
+    }
 }
 
 void
@@ -142,11 +157,19 @@ RibManager::sendResponse(const Name& name,
 }
 
 void
-RibManager::onRibRequest(const Interest& request)
+RibManager::onLocalhostRequest(const Interest& request)
 {
-  m_validator.validate(request,
-                       bind(&RibManager::onCommandValidated, this, _1),
-                       bind(&RibManager::onCommandValidationFailed, this, _1, _2));
+  m_localhostValidator.validate(request,
+                                bind(&RibManager::onCommandValidated, this, _1),
+                                bind(&RibManager::onCommandValidationFailed, this, _1, _2));
+}
+
+void
+RibManager::onLocalhopRequest(const Interest& request)
+{
+  m_localhopValidator.validate(request,
+                               bind(&RibManager::onCommandValidated, this, _1),
+                               bind(&RibManager::onCommandValidationFailed, this, _1, _2));
 }
 
 void
