@@ -139,7 +139,9 @@ authorizations
     ; your machine. You may move your newly created key to the location it
     ; specifies or path.
 
-    certfile keys/default.ndncert ; NDN identity certificate file
+    ; certfile keys/default.ndncert ; NDN identity certificate file
+    certfile any ; "any" authorizes command interests signed under any certificate,
+                 ; i.e., no actual validation.
     privileges ; set of privileges granted to this identity
     {
       faces

@@ -96,46 +96,58 @@ CommandValidator::onConfig(const ConfigSection& section,
           continue;
         }
 
-      path certfilePath = absolute(certfile, path(filename).parent_path());
-      NFD_LOG_DEBUG("generated certfile path: " << certfilePath.native());
-
-      std::ifstream in;
-      in.open(certfilePath.c_str());
-      if (!in.is_open())
-        {
-          std::string msg = "Unable to open certificate file " + certfilePath.native();
-          if (!isDryRun)
-            {
-              throw ConfigFile::Error(msg);
-            }
-          aggregateErrors(dryRunErrors, msg);
-          continue;
-        }
-
       shared_ptr<ndn::IdentityCertificate> id;
-      try
-        {
-          id = ndn::io::load<ndn::IdentityCertificate>(in);
-        }
-      catch(const std::runtime_error& error)
-        {
-          // do nothing
-        }
 
-      if (!static_cast<bool>(id)) {
-        std::string msg = "Malformed certificate file " + certfilePath.native();
-        if (!isDryRun)
-          {
-            throw ConfigFile::Error(msg);
+      if (certfile != "any")
+        {
+          path certfilePath = absolute(certfile, path(filename).parent_path());
+          NFD_LOG_DEBUG("generated certfile path: " << certfilePath.native());
+
+          std::ifstream in;
+          in.open(certfilePath.c_str());
+          if (!in.is_open())
+            {
+              std::string msg = "Unable to open certificate file " + certfilePath.native();
+              if (!isDryRun)
+                {
+                  throw ConfigFile::Error(msg);
+                }
+              aggregateErrors(dryRunErrors, msg);
+              continue;
+            }
+
+          try
+            {
+              id = ndn::io::load<ndn::IdentityCertificate>(in);
+            }
+          catch (const std::runtime_error& error)
+            {
+              // do nothing
+            }
+
+          if (!static_cast<bool>(id)) {
+            std::string msg = "Malformed certificate file " + certfilePath.native();
+            if (!isDryRun)
+              {
+                throw ConfigFile::Error(msg);
+              }
+            aggregateErrors(dryRunErrors, msg);
+            continue;
           }
-        aggregateErrors(dryRunErrors, msg);
-        continue;
-      }
 
-      in.close();
+          in.close();
+        }
 
+      std::string keyNameForLogging;
+      if (static_cast<bool>(id))
+        keyNameForLogging = id->getPublicKeyName().toUri();
+      else
+        {
+          keyNameForLogging = "wildcard";
+          NFD_LOG_WARN("Wildcard identity is intended for demo purpose only and " <<
+                       "SHOULD NOT be used in production environment");
+        }
       const ConfigSection* privileges = 0;
-
       try
         {
           privileges = &authIt->second.get_child("privileges");
@@ -143,7 +155,7 @@ CommandValidator::onConfig(const ConfigSection& section,
       catch (const std::runtime_error& error)
         {
           std::string msg = "No privileges section found for certificate file " +
-            certfile + " (" + id->getPublicKeyName().toUri() + ")";
+            certfile + " (" + keyNameForLogging + ")";
           if (!isDryRun)
             {
               throw ConfigFile::Error(msg);
@@ -155,7 +167,7 @@ CommandValidator::onConfig(const ConfigSection& section,
       if (privileges->begin() == privileges->end())
         {
           NFD_LOG_WARN("No privileges specified for certificate file " << certfile
-                       << " (" << id->getPublicKeyName().toUri() << ")");
+                       << " (" << keyNameForLogging << ")");
         }
 
       ConfigSection::const_iterator privIt;
@@ -165,18 +177,21 @@ CommandValidator::onConfig(const ConfigSection& section,
           if (m_supportedPrivileges.find(privilegeName) != m_supportedPrivileges.end())
             {
               NFD_LOG_INFO("Giving privilege \"" << privilegeName
-                           << "\" to identity " << id->getPublicKeyName());
+                           << "\" to identity " << keyNameForLogging);
               if (!isDryRun)
                 {
                   const std::string regex = "^<localhost><nfd><" + privilegeName + ">";
-                  m_validator.addInterestRule(regex, *id);
+                  if (static_cast<bool>(id))
+                    m_validator.addInterestRule(regex, *id);
+                  else
+                    m_validator.addInterestBypassRule(regex);
                 }
             }
           else
             {
               // Invalid configuration
-              std::string msg = "Invalid privilege \"" + privilegeName + "\" for certificate file " +
-                certfile + " (" + id->getPublicKeyName().toUri() + ")";
+              std::string msg = "Invalid privilege \"" + privilegeName +
+                "\" for certificate file " + certfile + " (" + keyNameForLogging + ")";
               if (!isDryRun)
                 {
                   throw ConfigFile::Error(msg);

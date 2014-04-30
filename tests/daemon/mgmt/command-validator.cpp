@@ -593,6 +593,66 @@ BOOST_AUTO_TEST_CASE(MalformedCertDryRun)
                         bind(&validateErrorMessage, error.str(), _1));
 }
 
+BOOST_FIXTURE_TEST_CASE(Wildcard, TwoValidatorFixture)
+{
+  const std::string WILDCARD_CERT_CONFIG =
+    "authorizations\n"
+    "{\n"
+    "  authorize\n"
+    "  {\n"
+    "    certfile any\n"
+    "    privileges\n"
+    "    {\n"
+    "      faces\n"
+    "      stats\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+  shared_ptr<Interest> fibCommand = make_shared<Interest>("/localhost/nfd/fib/insert");
+  shared_ptr<Interest> statsCommand = make_shared<Interest>("/localhost/nfd/stats/dosomething");
+  shared_ptr<Interest> facesCommand = make_shared<Interest>("/localhost/nfd/faces/create");
+
+  ndn::CommandInterestGenerator generator;
+  generator.generateWithIdentity(*fibCommand, m_tester1.getIdentityName());
+  generator.generateWithIdentity(*statsCommand, m_tester1.getIdentityName());
+  generator.generateWithIdentity(*facesCommand, m_tester1.getIdentityName());
+
+  ConfigFile config;
+  CommandValidator validator;
+  validator.addSupportedPrivilege("faces");
+  validator.addSupportedPrivilege("fib");
+  validator.addSupportedPrivilege("stats");
+
+  validator.setConfigFile(config);
+
+  config.parse(WILDCARD_CERT_CONFIG, false, CONFIG_PATH.native());
+
+  validator.validate(*fibCommand,
+                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed,
+                          boost::ref(m_tester1), _1, _2));
+
+  BOOST_REQUIRE(m_tester1.commandValidationFailed());
+  m_tester1.resetValidation();
+
+  validator.validate(*statsCommand,
+                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed,
+                          boost::ref(m_tester1), _1, _2));
+
+  BOOST_REQUIRE(m_tester1.commandValidated());
+  m_tester1.resetValidation();
+
+  validator.validate(*facesCommand,
+                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed,
+                          boost::ref(m_tester1), _1, _2));
+
+  BOOST_REQUIRE(m_tester1.commandValidated());
+  m_tester1.resetValidation();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
