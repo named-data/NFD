@@ -16,8 +16,8 @@ Prerequisites
    -  Boost libraries (>= 1.48)
    -  OSX Security framework (on OSX platform only)
 
-   Refer to https://github.com/named-data/ndn-cxx/blob/master/INSTALL.md for detailed
-   installation instructions.
+   Refer to `Getting started with ndn-cxx <http://named-data.net/doc/ndn-cxx/current/INSTALL.html>`_
+   for detailed installation instructions of the library.
 
 -  ``libpcap``
 
