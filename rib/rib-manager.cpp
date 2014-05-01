@@ -130,8 +130,7 @@ RibManager::onConfig(const ConfigSection& configSection,
 void
 RibManager::setInterestFilterFailed(const Name& name, const std::string& msg)
 {
-  NFD_LOG_ERROR("Error in setting interest filter (" << name << "): " << msg);
-  m_face.shutdown();
+  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
 }
 
 void
@@ -387,9 +386,10 @@ RibManager::onControlHeaderSuccess()
 void
 RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
 {
-  NFD_LOG_ERROR("Error: couldn't enable local control header "
-                << "(code: " << code << ", info: " << reason << ")");
-  m_face.shutdown();
+  std::ostringstream os;
+  os << "Couldn't enable local control header "
+     << "(code: " << code << ", info: " << reason << ")";
+  throw Error(os.str());
 }
 
 void
