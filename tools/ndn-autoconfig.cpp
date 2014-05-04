@@ -194,6 +194,17 @@ public:
   onHubConnectSuccess(const ndn::nfd::ControlParameters& resp)
   {
     std::cerr << "Successfully created face: " << resp << std::endl;
+
+    // Register a prefix in RIB
+    ndn::nfd::ControlParameters ribParameters;
+    ribParameters
+      .setName("/ndn")
+      .setFaceId(resp.getFaceId());
+
+    m_controller.start<ndn::nfd::RibRegisterCommand>(
+      ribParameters,
+      bind(&NdnAutoconfig::onPrefixRegistrationSuccess, this, _1),
+      bind(&NdnAutoconfig::onPrefixRegistrationError, this, _1, _2));
   }
 
   void
@@ -276,6 +287,20 @@ public:
     }
 
     return false;
+  }
+
+  void
+  onPrefixRegistrationSuccess(const ndn::nfd::ControlParameters& commandSuccessResult)
+  {
+    std::cerr << "Successful in name registration: " << commandSuccessResult << std::endl;
+  }
+
+  void
+  onPrefixRegistrationError(uint32_t code, const std::string& error)
+  {
+    std::ostringstream os;
+    os << "Failed in name registration, " << error << " (code: " << code << ")";
+    throw Error(os.str());
   }
 
 private:
