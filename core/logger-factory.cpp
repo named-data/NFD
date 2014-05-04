@@ -142,8 +142,7 @@ LoggerFactory::onConfig(const ConfigSection& section,
               NFD_LOG_DEBUG("Failed to configure logging level for module \"" <<
                             item->first << "\" (module not found)");
             }
-
-          if (!isDryRun)
+          else if (!isDryRun)
             {
               // std::cerr << "changing level for module " << item->first << " to " << level << std::endl;
               loggerIt->second.setLogLevel(level);
