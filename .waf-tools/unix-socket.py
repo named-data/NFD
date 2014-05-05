@@ -7,29 +7,22 @@
 from waflib import Options
 
 BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK = '''
-#include <iostream>
 #include <boost/asio.hpp>
-int main() {
-#ifdef BOOST_ASIO_HAS_LOCAL_SOCKETS
-    return 0;
-#else
+#ifndef BOOST_ASIO_HAS_LOCAL_SOCKETS
 #error "Unix sockets are not available on this platform"
 #endif
-    return 0;
-}
 '''
 
 def addUnixOptions(self, opt):
     opt.add_option('--force-unix-socket', action='store_true', default=False,
-                   dest='force_unix_socket', help='''Forcefully enable UNIX sockets support''')
+                   dest='force_unix_socket', help='''Forcefully enable Unix sockets support''')
 setattr(Options.OptionsContext, "addUnixOptions", addUnixOptions)
 
 def configure(conf):
     def boost_asio_has_local_sockets():
-        return conf.check_cxx(features="cxx",
-                              msg='Checking if UNIX sockets are supported',
+        return conf.check_cxx(msg='Checking if Unix sockets are supported',
                               fragment=BOOST_ASIO_HAS_LOCAL_SOCKETS_CHECK,
-                              use='BOOST', mandatory=False)
+                              features='cxx', use='BOOST', mandatory=False)
 
     if conf.options.force_unix_socket or boost_asio_has_local_sockets():
         conf.define('HAVE_UNIX_SOCKETS', 1)
