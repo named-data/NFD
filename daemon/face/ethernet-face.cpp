@@ -120,6 +120,14 @@ EthernetFace::pcapInit()
   if (!m_pcap)
     throw Error("pcap_create(): " + std::string(errbuf));
 
+#ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
+  // Enable "immediate mode", effectively disabling any read buffering in the kernel.
+  // This corresponds to the BIOCIMMEDIATE ioctl on BSD-like systems (including OS X)
+  // where libpcap uses a BPF device. On Linux this forces libpcap not to use TPACKET_V3,
+  // even if the kernel supports it, thus preventing bug #1511.
+  pcap_set_immediate_mode(m_pcap, 1);
+#endif
+
   /// \todo Do not rely on promisc mode, see task #1278
   if (!m_destAddress.isBroadcast())
     pcap_set_promisc(m_pcap, 1);

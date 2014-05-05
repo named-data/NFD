@@ -59,6 +59,8 @@ def configure(conf):
                'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
+    conf.find_program('bash', var='BASH')
+
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
                    uselib_store='NDN_CXX', mandatory=True)
 
@@ -72,7 +74,6 @@ def configure(conf):
         conf.env['WITH_OTHER_TESTS'] = 1
 
     conf.check_boost(lib=boost_libs)
-
     if conf.env.BOOST_VERSION_NUMBER < 104800:
         Logs.error("Minimum required boost version is 1.48.0")
         Logs.error("Please upgrade your distribution or install custom boost libraries" +
@@ -84,14 +85,16 @@ def configure(conf):
 
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
+
     if not conf.options.without_libpcap:
         conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
                              errmsg='not found, but required for Ethernet face support. '
                                     'Specify --without-libpcap to disable Ethernet face support.')
+    if conf.env['HAVE_LIBPCAP']:
+        conf.check_cxx(function_name='pcap_set_immediate_mode', header_name='pcap/pcap.h',
+                       cxxflags='-Wno-error', use='LIBPCAP', mandatory=False)
 
     conf.load('coverage')
-
-    conf.find_program('bash', var='BASH')
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 

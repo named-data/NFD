@@ -25,6 +25,7 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_FACE_HPP
 #define NFD_DAEMON_FACE_ETHERNET_FACE_HPP
 
+#include "config.hpp"
 #include "ethernet.hpp"
 #include "face.hpp"
 
