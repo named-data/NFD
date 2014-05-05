@@ -25,6 +25,7 @@
 #include <getopt.h>
 #include <boost/filesystem.hpp>
 
+#include "version.hpp"
 #include "core/logger.hpp"
 #include "core/global-io.hpp"
 #include "fw/forwarder.hpp"
@@ -42,6 +43,7 @@ NFD_LOG_INIT("NFD");
 struct ProgramOptions
 {
   bool showUsage;
+  bool showVersion;
   bool showModules;
   std::string config;
 };
@@ -140,7 +142,8 @@ public:
        << "Run NFD forwarding daemon\n"
        << "\n"
        << "Options:\n"
-       << "  [--help]   - print this help message\n"
+       << "  [--help]    - print this help message\n"
+       << "  [--version] - print version and exit\n"
        << "  [--modules] - list available logging modules\n"
        << "  [--config /path/to/nfd.conf] - path to configuration file "
        << "(default: " << DEFAULT_CONFIG_FILE << ")\n"
@@ -165,6 +168,7 @@ public:
   parseCommandLine(int argc, char** argv, ProgramOptions& options)
   {
     options.showUsage = false;
+    options.showVersion = false;
     options.showModules = false;
     options.config = DEFAULT_CONFIG_FILE;
 
@@ -174,6 +178,7 @@ public:
         { "help"   , no_argument      , 0, 0 },
         { "modules", no_argument      , 0, 0 },
         { "config" , required_argument, 0, 0 },
+        { "version", no_argument      , 0, 0 },
         { 0        , 0                , 0, 0 }
       };
       int c = getopt_long_only(argc, argv, "", longOptions, &optionIndex);
@@ -181,21 +186,24 @@ public:
         break;
 
       switch (c) {
-        case 0:
-          switch (optionIndex) {
-            case 0: // help
-              options.showUsage = true;
-              break;
-            case 1: // modules
-              options.showModules = true;
-              break;
-            case 2: // config
-              options.config = ::optarg;
-              break;
-            default:
-              return false;
-          }
+      case 0:
+        switch (optionIndex) {
+        case 0: // help
+          options.showUsage = true;
           break;
+        case 1: // modules
+          options.showModules = true;
+          break;
+        case 2: // config
+          options.config = ::optarg;
+          break;
+        case 3: // version
+          options.showVersion = true;
+          break;
+        default:
+          return false;
+        }
+        break;
       }
     }
     return true;
@@ -246,8 +254,14 @@ main(int argc, char** argv)
     Nfd::printUsage(std::cerr, argv[0]);
     return 1;
   }
+
   if (options.showUsage) {
     Nfd::printUsage(std::cout, argv[0]);
+    return 0;
+  }
+
+  if (options.showVersion) {
+    std::cout << NFD_VERSION_BUILD_STRING << std::endl;
     return 0;
   }
 

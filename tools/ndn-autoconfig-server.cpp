@@ -22,6 +22,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
+#include "version.hpp"
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
@@ -29,11 +30,12 @@
 void
 usage(const char* programName)
 {
-  std::cout << "Usage:\n" << programName  << " [-h] Uri \n"
-  "   -h print usage and exit\n"
-  "\n"
-  "   Uri - a FaceMgmt URI\n"
-  << std::endl;
+  std::cout << "Usage:\n" << programName  << " [-h] [-V] Uri \n"
+            << "   -h  - print usage and exit\n"
+            << "   -V  - print version number and exit\n"
+            << "\n"
+            << "   Uri - a FaceMgmt URI\n"
+            << std::endl;
 }
 
 using namespace ndn;
@@ -92,35 +94,33 @@ main(int argc, char** argv)
   int opt;
   const char* programName = argv[0];
 
-  while ((opt = getopt(argc, argv, "h")) != -1)
-  {
-    switch (opt)
-    {
-      case 'h':
-        usage(programName);
-        return 0;
-
-      default:
-        usage(programName);
-        return 1;
+  while ((opt = getopt(argc, argv, "hV")) != -1) {
+    switch (opt) {
+    case 'h':
+      usage(programName);
+      return 0;
+    case 'V':
+      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+      return 0;
+    default:
+      usage(programName);
+      return 1;
     }
   }
 
-  if (argc != optind + 1)
-  {
+  if (argc != optind + 1) {
     usage(programName);
     return 1;
   }
-  // get the configured face managment uri
+  // get the configured face management uri
   NdnAutoconfigServer producer(argv[optind]);
 
-  try
-  {
+  try {
     producer.listen();
   }
-  catch (std::exception& error)
-  {
+  catch (const std::exception& error) {
     std::cerr << "ERROR: " << error.what() << std::endl;
+    return 1;
   }
   return 0;
 }

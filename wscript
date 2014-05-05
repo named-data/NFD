@@ -23,16 +23,12 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re
-
-VERSION = re.search('^#define NFD_VERSION_STRING\\s+"(.*)"',
-                    open("version.hpp").read(), re.M).group(1)
+VERSION = "0.1.0"
 APPNAME = "nfd"
 BUGREPORT = "http://redmine.named-data.net/projects/nfd"
-URL = "https://github.com/named-data/NFD"
+URL = "http://named-data.net/doc/NFD/"
 
-from waflib import Logs
-import os
+from waflib import Logs, Utils, Context
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
@@ -100,12 +96,29 @@ def configure(conf):
     conf.write_config_header('config.hpp')
 
 def build(bld):
+    version(bld)
+
+    bld(features="subst",
+        name='version',
+        source='version.hpp.in',
+        target='version.hpp',
+        install_path=None,
+        VERSION_STRING=VERSION_BASE,
+        VERSION_BUILD=VERSION,
+        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
+                int(VERSION_SPLIT[1]) * 1000 +
+                int(VERSION_SPLIT[2]),
+        VERSION_MAJOR=VERSION_SPLIT[0],
+        VERSION_MINOR=VERSION_SPLIT[1],
+        VERSION_PATCH=VERSION_SPLIT[2],
+        )
+
     core = bld(
         target='core-objects',
         name='core-objects',
         features='cxx',
         source=bld.path.ant_glob(['core/**/*.cpp']),
-        use='BOOST NDN_CXX LIBRT',
+        use='version BOOST NDN_CXX LIBRT',
         includes='. core',
         export_includes='. core',
         )
@@ -170,7 +183,8 @@ def build(bld):
         source='tools/nfd-status-http-server.py',
         target='bin/nfd-status-http-server',
         install_path="${BINDIR}",
-        chmod=0755)
+        chmod=0755,
+        VERSION=VERSION)
 
     if bld.env['SPHINX_BUILD']:
         bld(features="sphinx",
@@ -186,13 +200,16 @@ def build(bld):
             source='tools/%s' % (str(script)),
             target='bin/%s' % (str(script.change_ext(''))),
             install_path="${BINDIR}",
-            chmod=0755)
+            chmod=0755,
+            VERSION=VERSION)
 
 def docs(bld):
     from waflib import Options
     Options.commands = ['doxygen', 'sphinx'] + Options.commands
 
 def doxygen(bld):
+    version(bld)
+
     if not bld.env.DOXYGEN:
         Logs.error("ERROR: cannot build documentation (`doxygen' is not found in $PATH)")
     else:
@@ -200,7 +217,7 @@ def doxygen(bld):
             name="doxygen-conf",
             source="docs/doxygen.conf.in",
             target="docs/doxygen.conf",
-            VERSION=VERSION,
+            VERSION=VERSION_BASE,
             )
 
         bld(features="doxygen",
@@ -208,6 +225,8 @@ def doxygen(bld):
             use="doxygen-conf")
 
 def sphinx(bld):
+    version(bld)
+
     if not bld.env.SPHINX_BUILD:
         bld.fatal("ERROR: cannot build documentation (`sphinx-build' is not found in $PATH)")
     else:
@@ -215,4 +234,24 @@ def sphinx(bld):
             outdir="docs",
             source=bld.path.ant_glob('docs/**/*.rst'),
             config="docs/conf.py",
-            VERSION=VERSION)
+            VERSION=VERSION_BASE)
+
+def version(ctx):
+    Context.g_module.VERSION_BASE = Context.g_module.VERSION
+    Context.g_module.VERSION_SPLIT = [v for v in VERSION_BASE.split('.')]
+
+    try:
+        cmd = ['git', 'describe', '--match', 'NFD-*']
+        p = Utils.subprocess.Popen(cmd, stdout=Utils.subprocess.PIPE,
+                                   stderr=None, stdin=None)
+        out = p.communicate()[0].strip()
+        if p.returncode == 0 and out != "":
+            Context.g_module.VERSION = out[4:]
+    except:
+        pass
+
+def dist(ctx):
+    version(ctx)
+
+def distcheck(ctx):
+    version(ctx)

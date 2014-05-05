@@ -25,6 +25,8 @@
  * @author Jerald Paul Abraham <jeraldabraham@email.arizona.edu>
  */
 
+#include "version.hpp"
+
 #include <boost/asio.hpp>
 
 #include <ndn-cxx/face.hpp>
@@ -63,7 +65,9 @@ public:
       "   [-l lifetime] - set InterestLifetime in time::milliseconds\n"
       "   [-p]          - print payload only, not full packet\n"
       "   [-w timeout]  - set Timeout in time::milliseconds\n"
-      "   [-h]          - print help and exit\n\n";
+      "   [-h]          - print help and exit\n"
+      "   [-V]          - print version and exit\n"
+      "\n";
     exit(1);
   }
 
@@ -228,37 +232,40 @@ main(int argc, char* argv[])
 {
   int option;
   ndntlvpeek::NdnTlvPeek ndnTlvPeek (argv[0]);
-  while ((option = getopt(argc, argv, "hfrm:M:l:pw:")) != -1)
-    {
-      switch (option) {
-        case 'h':
-          ndnTlvPeek.usage();
-          break;
-        case 'f':
-          ndnTlvPeek.setMustBeFresh();
-          break;
-        case 'r':
-          ndnTlvPeek.setRightmostChildSelector();
-          break;
-        case 'm':
-          ndnTlvPeek.setMinSuffixComponents(atoi(optarg));
-          break;
-        case 'M':
-          ndnTlvPeek.setMaxSuffixComponents(atoi(optarg));
-          break;
-        case 'l':
-          ndnTlvPeek.setInterestLifetime(atoi(optarg));
-          break;
-        case 'p':
-          ndnTlvPeek.setPayloadOnly();
-          break;
-        case 'w':
-          ndnTlvPeek.setTimeout(atoi(optarg));
-          break;
-        default:
-          ndnTlvPeek.usage();
-      }
+  while ((option = getopt(argc, argv, "hfrm:M:l:pw:V")) != -1) {
+    switch (option) {
+    case 'h':
+      ndnTlvPeek.usage();
+      break;
+    case 'f':
+      ndnTlvPeek.setMustBeFresh();
+      break;
+    case 'r':
+      ndnTlvPeek.setRightmostChildSelector();
+      break;
+    case 'm':
+      ndnTlvPeek.setMinSuffixComponents(atoi(optarg));
+      break;
+    case 'M':
+      ndnTlvPeek.setMaxSuffixComponents(atoi(optarg));
+      break;
+    case 'l':
+      ndnTlvPeek.setInterestLifetime(atoi(optarg));
+      break;
+    case 'p':
+      ndnTlvPeek.setPayloadOnly();
+      break;
+    case 'w':
+      ndnTlvPeek.setTimeout(atoi(optarg));
+      break;
+    case 'V':
+      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+      return 0;
+    default:
+      ndnTlvPeek.usage();
+      break;
     }
+  }
 
   argc -= optind;
   argv += optind;

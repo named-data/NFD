@@ -25,6 +25,8 @@
  * @author Jerald Paul Abraham <jeraldabraham@email.arizona.edu>
  */
 
+#include "version.hpp"
+
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/interest.hpp>
@@ -56,7 +58,10 @@ public:
       "  [-h] - print this help message\n"
       "  [-v] - retrieve version information\n"
       "  [-f] - retrieve face status information\n"
-      "  [-b] - retrieve FIB information\n\n"
+      "  [-b] - retrieve FIB information\n"
+      "\n"
+      "  [-V] - show version information of nfd-status and exit\n"
+      "\n"
       "If no options are provided, all information is retrieved.\n"
       ;
   }
@@ -299,12 +304,12 @@ private:
 
 }
 
-int main( int argc, char* argv[] )
+int main(int argc, char* argv[])
 {
   int option;
-  ndn::NfdStatus nfdStatus (argv[0]);
+  ndn::NfdStatus nfdStatus(argv[0]);
 
-  while ((option = getopt(argc, argv, "hvfb")) != -1) {
+  while ((option = getopt(argc, argv, "hvfbV")) != -1) {
     switch (option) {
     case 'h':
       nfdStatus.usage();
@@ -318,6 +323,9 @@ int main( int argc, char* argv[] )
     case 'b':
       nfdStatus.enableFibEnumerationRetrieval();
       break;
+    case 'V':
+      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+      return 0;
     default:
       nfdStatus.usage();
       return 1;

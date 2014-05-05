@@ -164,8 +164,15 @@ def httpServer():
                         help="Enable HTTP robots to crawl; disabled by default.")
     parser.add_argument("-v", default=False, dest="verbose", action="store_true",
                         help="Verbose mode.")
+    parser.add_argument("--version", default=False, dest="version", action="store_true",
+                        help="Show version and exit")
 
     args = vars(parser.parse_args())
+
+    if args['version']:
+        print "@VERSION@"
+        return
+
     localPort = args["port"]
     localAddr = args["addr"]
     verbose = args["verbose"]

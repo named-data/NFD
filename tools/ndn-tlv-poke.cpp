@@ -25,6 +25,8 @@
  * @author Jerald Paul Abraham <jeraldabraham@email.arizona.edu>
  */
 
+#include "version.hpp"
+
 #include <boost/utility.hpp>
 
 #include <ndn-cxx/face.hpp>
@@ -63,7 +65,9 @@ public:
       "   [-F]          - set FinalBlockId to the last component of Name\n"
       "   [-x]          - set FreshnessPeriod in time::milliseconds\n"
       "   [-w timeout]  - set Timeout in time::milliseconds\n"
-      "   [-h]          - print help and exit\n\n";
+      "   [-h]          - print help and exit\n"
+      "   [-V]          - print version and exit\n"
+      "\n";
     exit(1);
   }
 
@@ -228,35 +232,37 @@ main(int argc, char* argv[])
 {
   int option;
   ndntlvpoke::NdnTlvPoke ndnTlvPoke(argv[0]);
-  while ((option = getopt(argc, argv, "hfDi:Fx:w:")) != -1)
-    {
-      switch (option) {
-        case 'h':
-          ndnTlvPoke.usage();
-          break;
-        case 'f':
-          ndnTlvPoke.setForceData();
-          break;
-        case 'D':
-          ndnTlvPoke.setUseDigestSha256();
-          break;
-        case 'i':
-          ndnTlvPoke.setIdentityName(optarg);
-          break;
-        case 'F':
-          ndnTlvPoke.setLastAsFinalBlockId();
-          break;
-        case 'x':
-          ndnTlvPoke.setFreshnessPeriod(atoi(optarg));
-          break;
-        case 'w':
-          ndnTlvPoke.setTimeout(atoi(optarg));
-          break;
-        default:
-          ndnTlvPoke.usage();
-          break;
-      }
+  while ((option = getopt(argc, argv, "hfDi:Fx:w:V")) != -1) {
+    switch (option) {
+    case 'h':
+      ndnTlvPoke.usage();
+      break;
+    case 'f':
+      ndnTlvPoke.setForceData();
+      break;
+    case 'D':
+      ndnTlvPoke.setUseDigestSha256();
+      break;
+    case 'i':
+      ndnTlvPoke.setIdentityName(optarg);
+      break;
+    case 'F':
+      ndnTlvPoke.setLastAsFinalBlockId();
+      break;
+    case 'x':
+      ndnTlvPoke.setFreshnessPeriod(atoi(optarg));
+      break;
+    case 'w':
+      ndnTlvPoke.setTimeout(atoi(optarg));
+      break;
+    case 'V':
+      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+      return 0;
+    default:
+      ndnTlvPoke.usage();
+      break;
     }
+  }
 
   argc -= optind;
   argv += optind;

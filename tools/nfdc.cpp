@@ -22,7 +22,10 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
+
 #include "nfdc.hpp"
+#include "version.hpp"
+
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/regex_find_format.hpp>
@@ -31,8 +34,9 @@
 void
 usage(const char* programName)
 {
-  std::cout << "Usage:\n" << programName  << " [-h] COMMAND [<Command Options>]\n"
+  std::cout << "Usage:\n" << programName  << " [-h] [-V] COMMAND [<Command Options>]\n"
     "       -h print usage and exit\n"
+    "       -V print version and exit\n"
     "\n"
     "   COMMAND can be one of the following:\n"
     "       register [-I] [-C] [-c cost] name <faceId | faceUri>\n"
@@ -399,6 +403,11 @@ main(int argc, char** argv)
 
   if (!strcmp(argv[1], "-h")) {
     usage(p.m_programName);
+    return 0;
+  }
+
+  if (!strcmp(argv[1], "-V")) {
+    std::cout << NFD_VERSION_BUILD_STRING << std::endl;
     return 0;
   }
 

@@ -35,20 +35,36 @@ namespace nfd {
  *
  *  MAJOR*1000000 + MINOR*1000 + PATCH
  */
-#define NFD_VERSION 1000
+#define NFD_VERSION @VERSION@
 
 /** \brief NFD version represented as a string
  *
  *  MAJOR.MINOR.PATCH
  */
-#define NFD_VERSION_STRING "0.1.0"
+#define NFD_VERSION_STRING "@VERSION_STRING@"
+
+/** \brief NFD version string, including git commit information, if NFD is build from
+ *         specific git commit
+ *
+ * NFD_VERSION_BUILD_STRING is obtained using the following command (`NFD-` prefix is
+ * afterwards removed):
+ *
+ *    `git describe --match 'NFD-*'`
+ *
+ * When NFD is built not from git, NFD_VERSION_BUILD_STRING equals NFD_VERSION_STRING
+ *
+ * MAJOR.MINOR.PATCH(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
+ *
+ * Example, 0.1.0-rc1-1-g5c86570
+ */
+#define NFD_VERSION_BUILD_STRING "@VERSION_BUILD@"
 
 /// MAJOR version
-#define NFD_VERSION_MAJOR (NFD_VERSION / 1000000)
+#define NFD_VERSION_MAJOR @VERSION_MAJOR@
 /// MINOR version
-#define NFD_VERSION_MINOR (NFD_VERSION % 1000000 / 1000)
+#define NFD_VERSION_MINOR @VERSION_MINOR@
 /// PATCH version
-#define NFD_VERSION_PATCH (NFD_VERSION % 1000)
+#define NFD_VERSION_PATCH @VERSION_PATCH@
 
 } // namespace nfd
 

@@ -32,6 +32,7 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
+#include "version.hpp"
 #include "core/face-uri.hpp"
 #include "network.hpp"
 
@@ -248,6 +249,7 @@ public:
        "Whitelisted network, e.g., 192.168.2.0/24 or ::1/128")
       ("blacklist,b", po::value<std::vector<Network> >(&m_blackList)->composing(),
        "Blacklisted network, e.g., 192.168.2.32/30 or ::1/128")
+      ("version,V", "show version and exit")
       ;
 
     po::variables_map options;
@@ -266,6 +268,12 @@ public:
     if (options.count("help"))
       {
         usage(std::cout, optionDesciption, argv[0]);
+        return 0;
+      }
+
+    if (options.count("version"))
+      {
+        std::cout << NFD_VERSION_BUILD_STRING << std::endl;
         return 0;
       }
 
