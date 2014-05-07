@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd" >
+<plist version='1.0'>
+<dict>
+<key>Label</key><string>net.named-data.nrd</string>
+<key>ProgramArguments</key>
+<array>
+  <string>/usr/local/bin/nrd</string>
+  <string>--config</string>
+  <string>/usr/local/etc/ndn/nfd.conf</string>
+</array>
+<key>UserName</key><string>ndn</string>
+<key>GroupName</key><string>ndn</string>
+<key>EnvironmentVariables</key>
+<dict>
+  <key>HOME</key><string>/usr/local/var/lib/ndn/nrd</string>
+</dict>
+<key>Debug</key><true/>
+<key>Disabled</key><true/>
+<key>KeepAlive</key><true/>
+<key>StandardErrorPath</key><string>/usr/local/var/log/ndn/nrd.log</string>
+<key>ProcessType</key><string>Background</string>
+</dict>
+</plist>
