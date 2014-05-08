@@ -237,6 +237,9 @@ def sphinx(bld):
             VERSION=VERSION_BASE)
 
 def version(ctx):
+    if getattr(Context.g_module, 'VERSION_BASE', None):
+        return
+
     Context.g_module.VERSION_BASE = Context.g_module.VERSION
     Context.g_module.VERSION_SPLIT = [v for v in VERSION_BASE.split('.')]
 

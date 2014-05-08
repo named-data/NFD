@@ -6,62 +6,30 @@ Networking (NDN) `protocol <http://named-data.net/doc/ndn-tlv/>`__. After the in
 release, NFD will become a core component of the `NDN Platform
 <http://named-data.net/codebase/platform/>`__ and will follow the same release cycle.
 
-NFD is developed by a community effort. Although the first release was mostly done by the
-members of `NSF-sponsored NDN project team
-<http://named-data.net/project/participants/>`__, it already contains significant
-contributions from people outside the project team (for more details, refer to `AUTHORS.md
-<https://github.com/named-data/NFD/blob/master/AUTHORS.md>`__).  We strongly encourage
-participation from all interested parties, since broader community support is key for NDN
-to succeed as a new Internet architecture. Bug reports and feedback are highly
-appreciated and can be made through `Redmine site
-<http://redmine.named-data.net/projects/nfd>`__ and the `ndn-interest mailing list
-<http://www.lists.cs.ucla.edu/mailman/listinfo/ndn-interest>`__.
-
-The main design goal of NFD is to support diverse experimentation of NDN technology. The
-design emphasizes *modularity* and *extensibility* to allow easy experiments with new
-protocol features, algorithms, and applications. We have not fully optimized the code for
-performance.  The intention is that performance optimizations are one type of experiments
-that developers can conduct by trying out different data structures and different
-algorithms; over time, better implementations may emerge within the same design framework.
-
-NFD will keep evolving in three aspects: improvement of the modularity framework, keeping
-up with the NDN protocol spec, and addition of other new features. We hope to keep the
-modular framework stable and lean, allowing researchers to implement and experiment
-with various features, some of which may eventually work into the protocol spec.
-
-The design and development of NFD benefited from our earlier experience with `CCNx
-<http://www.ccnx.org>`__ software package. However, NFD is not in any part derived from
-CCNx codebase and does not maintain compatibility with CCNx.
-
-Downloading
------------
-
-NFD code can be downloaded from `GitHub git repository <https://github.com/named-data/NFD>`_.
-
-Refer to :ref:`NFD Installation Instructions` for detailed guide on how to install NFD
-from source.
-
 NFD Documentation
 -----------------
 
 .. toctree::
    :hidden:
-   :maxdepth: 2
+   :maxdepth: 3
 
-   RELEASE_NOTES
-   Installation Instruction <INSTALL>
-   NFD Configuration Tips <README>
+   README
+   getting-started
+   FAQ
    manpages
 
+..
+   INSTALL
 
+* :doc:`README`
 
-* :ref:`NFD v0.1.0 Release Notes`
+* :doc:`getting-started`
 
-* :ref:`NFD Installation Instructions`
+* :doc:`FAQ`
 
-* :ref:`NFD Configuration Tips`
+* :doc:`manpages`
 
-* :ref:`Manpages`
+**Additional documentation**
 
 * `NFD Wiki <http://redmine.named-data.net/projects/nfd/wiki>`_
 
@@ -70,6 +38,14 @@ NFD Documentation
 
 * `API documentation (doxygen) <doxygen/annotated.html>`_
 
+Downloading
+-----------
+
+* `Source code GitHub git repository <https://github.com/named-data/NFD>`_.
+
+* :ref:`MacPorts NDN repository <How to start using NDN MacPorts repository on OSX>`
+
+* :ref:`Ubuntu NDN PPA repository <How to start using NDN PPA repository on Ubuntu Linux>`
 
 License
 -------

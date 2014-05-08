@@ -1,124 +1,86 @@
-.. _NFD Configuration Tips:
+NFD Overview
+============
 
-NFD - Named Data Networking Forwarding Daemon
-=============================================
+.. toctree::
+   :maxdepth: 2
 
-Default Paths
--------------
+   RELEASE_NOTES
 
-This document uses ``SYSCONFDIR`` when referring to the default locations
-of various NFD configuration files. By default, ``SYSCONFDIR`` is set to
-``/usr/local/etc``. If you override ``PREFIX``, then ``SYSCONFDIR`` will
-default to ``PREFIX/etc``.
+NDN Forwarding Daemon (NFD) is a network forwarder that implements and evolves together
+with the Named Data Networking (NDN) `protocol
+<http://named-data.net/doc/ndn-tlv/>`__. After the initial release, NFD will become a core
+component of the `NDN Platform <http://named-data.net/codebase/platform/>`__ and will
+follow the same release cycle.
 
-You may override ``SYSCONFDIR`` and ``PREFIX`` by specifying their
-corresponding options during installation:
+NFD is developed by a community effort. Although the first release was mostly done by the
+members of `NSF-sponsored NDN project team
+<http://named-data.net/project/participants/>`__, it already contains significant
+contributions from people outside the project team (for more details, refer to `AUTHORS.md
+<https://github.com/named-data/NFD/blob/master/AUTHORS.md>`__).  We strongly encourage
+participation from all interested parties, since broader community support is key for NDN
+to succeed as a new Internet architecture. Bug reports and feedback are highly
+appreciated and can be made through `Redmine site
+<http://redmine.named-data.net/projects/nfd>`__ and the `ndn-interest mailing list
+<http://www.lists.cs.ucla.edu/mailman/listinfo/ndn-interest>`__.
 
-::
+The main design goal of NFD is to support diverse experimentation of NDN technology. The
+design emphasizes *modularity* and *extensibility* to allow easy experiments with new
+protocol features, algorithms, and applications. We have not fully optimized the code for
+performance.  The intention is that performance optimizations are one type of experiments
+that developers can conduct by trying out different data structures and different
+algorithms; over time, better implementations may emerge within the same design framework.
 
-    ./waf configure --prefix <path/for/prefix> --sysconfdir <some/other/path>
+NFD will keep evolving in three aspects: improvement of the modularity framework, keeping
+up with the NDN protocol spec, and addition of other new features. We hope to keep the
+modular framework stable and lean, allowing researchers to implement and experiment
+with various features, some of which may eventually work into the protocol spec.
 
-Refer to :ref:`NFD Installation Instructions` for more detailed instructions on how to compile
-and install NFD.
+The design and development of NFD benefited from our earlier experience with `CCNx
+<http://www.ccnx.org>`__ software package. However, NFD is not in any part derived from
+CCNx codebase and does not maintain compatibility with CCNx.
 
-Running and Configuring NFD
----------------------------
 
-NFD's runtime settings may be modified via configuration file. After
-installation, a working sample configuration is provided at
-``SYSCONFDIR/ndn/nfd.conf.sample``. At startup, NFD will attempt to read
-the default configuration file location: ``SYSCONFDIR/ndn/nfd.conf``.
+Major Modules of NFD
+--------------------
 
-You may also specify an alternative configuration file location by
-running NFD with:
+NFD has the following major modules:
 
-::
+- Core
+    Provides various common services shared between different NFD modules. These include
+    hash computation routines, DNS resolver, config file, face monitoring, and
+    several other modules.
 
-    nfd --config </path/to/nfd.conf>
+- Faces
+    Implements the NDN face abstraction on top of different lower level transport
+    mechanisms.
 
-Once again, note that you may simply copy or rename the provided sample
-configuration and have an **almost** fully configured NFD. However, this
-NFD will be unable to add FIB entries or perform other typical operation
-tasks until you authorize an NDN certificate with the appropriate
-privileges.
+- Tables
+    Implements the Content Store (CS), the Pending Interest Table (PIT), the Forwarding
+    Information Base (FIB), and other data structures to support forwarding of NDN Data
+    and Interest packets.
 
-Installing an NDN Certificate for Command Authentication
---------------------------------------------------------
+- Forwarding
+    Implements basic packet processing pathways, which interact with Faces, Tables,
+    and Strategies.
 
-Many NFD management protocols require signed commands to be processed
-(e.g. FIB modification, Face creation/destructions, etc.). You will need
-an NDN certificate to use any application that issues signed commands.
+  + **Strategy Support**, a major part of the forwarding module
+      Implements a framework to support different forwarding strategies. It includes
+      StrategyChoice, Measurements, Strategies, and hooks in the forwarding pipelines. The
+      StrategyChoice records the choice of the strategy for a namespace, and Measurement
+      records are used by strategies to store past performance results for namespaces.
 
-If you do not already have NDN certificate, you can generate one with
-the following commands:
+- Management
+    Implements the `NFD Management Protocol
+    <http://redmine.named-data.net/projects/nfd/wiki/Management>`_, which allows
+    applications to configure NFD and set/query NFD's internal states.  Protocol interaction
+    is done via NDN's Interest/Data exchange between applications and NFD.
 
-**Generate and install a self-signed identity certificate**:
-
-::
-
-    ndnsec-keygen /`whoami` | ndnsec-install-cert -
-
-Note that the argument to ndnsec-key will be the identity name of the
-new key (in this case, ``/your-username``). Identity names are
-hierarchical NDN names and may have multiple components (e.g.
-``/ndn/ucla/edu/alice``). You may create additional keys and identities
-as you see fit.
-
-**Dump the NDN certificate to a file**:
-
-The following commands assume that you have not modified ``PREFIX`` or
-``SYSCONFDIR`` If you have, please substitute ``/usr/local/etc`` for the
-appropriate value (the overriden ``SYSCONFDIR`` or ``PREFIX/etc`` if you
-changed ``PREFIX``).
-
-::
-
-    sudo mkdir -p /usr/local/etc/ndn/keys
-    ndnsec-cert-dump -i /`whoami` > default.ndncert
-    sudo mv default.ndncert /usr/local/etc/ndn/keys/default.ndncert
-
-Running NFD with Ethernet Face Support
---------------------------------------
-
-The ether configuration file section contains settings for Ethernet
-faces and channels. These settings will **NOT** work without root or
-setting the appropriate permissions:
-
-::
-
-    sudo setcap cap_net_raw,cap_net_admin=eip /full/path/nfd
-
-You may need to install a package to use setcap:
-
-**Ubuntu:**
-
-::
-
-    sudo apt-get install libcap2-bin
-
-**Mac OS X:**
-
-::
-
-    curl https://bugs.wireshark.org/bugzilla/attachment.cgi?id=3373 -o ChmodBPF.tar.gz
-    tar zxvf ChmodBPF.tar.gz
-    open ChmodBPF/Install\ ChmodBPF.app
-
-or manually:
-
-::
-
-    sudo chgrp admin /dev/bpf*
-    sudo chmod g+rw /dev/bpf*
-
-UDP multicast support in multi-homed Linux machines
----------------------------------------------------
-
-The UDP configuration file section contains settings for unicast and multicast UDP
-faces. If the Linux box is equipped with multiple network interfaces with multicast
-capabilities, the settings for multicast faces will **NOT** work without root
-or setting the appropriate permissions:
-
-::
-
-    sudo setcap cap_net_raw=eip /full/path/nfd
+- RIB Management
+    Manages the routing information base (RIB).  The RIB may be updated by different parties
+    in different ways, including various routing protocols, application's prefix
+    registrations, and command-line manipulation by sysadmins.  The RIB management module
+    processes all these requests to generate a consistent forwarding table, and then syncs
+    it up with the NFD's FIB, which contains only the minimal information needed for
+    forwarding decisions. Strictly speaking RIB management is part of the NFD management
+    module. However, due to its importance to the overall operations and its more complex
+    processing, we make it a separate module.

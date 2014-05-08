@@ -59,8 +59,8 @@ The following commands should be used to build NFD:
     ./waf
     sudo ./waf install
 
-Refer to :ref:`NFD Configuration Tips` (``README.rst``) for more options that can be used
-during ``configure`` stage and how to properly configure and run NFD.
+Refer to ``./waf --help`` for more options that can be used during ``configure`` stage and
+how to properly configure and run NFD.
 
 In some configurations, configuration step may require small modification. For example, on
 OSX that uses macports (correct the path if macports was not installed in the default path
@@ -79,6 +79,22 @@ On some Linux distributions (e.g., Fedora 20):
 
     export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$PKG_CONFIG_PATH
     ./waf configure
+    ./waf
+    sudo ./waf install
+
+Debug symbols
++++++++++++++
+
+The default compiler flags enable debug symbols to be included in binaries.  This
+potentially allows more meaningful debugging if NFD or other tools happen to crash.
+
+If it is undesirable, default flags can be easily overridden.  The following example shows
+how to completely disable debug symbols and configure NFD to be installed into ``/usr``
+with configuration in ``/etc`` folder.
+
+::
+
+    CXXFLAGS="-O2" ./waf configure --prefix=/usr --sysconfdir=/etc
     ./waf
     sudo ./waf install
 
