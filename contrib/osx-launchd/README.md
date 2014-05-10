@@ -82,13 +82,12 @@ not support non-interactive access, and file-based private key storage needs to 
 
 ### Configuring NFD's security
 
-Default sample NFD's configuration allows anybody to create faces, add nexthops to FIB,
+NFD sample configuration allows anybody to create faces, add nexthops to FIB,
 and set strategy choice for namespaces.  While such settings could be a good start, it is
 generally not a good idea to run NFD in this mode.
 
-While thorough discussion about security configuration of NFD is outside the scope of the
-current document, at least the following change should be done to nfd.conf in authorize
-section:
+While thorough discussion about security configuration of NFD is outside the scope of this
+document, at least the following change should be done to nfd.conf in authorize section:
 
     authorizations
     {
