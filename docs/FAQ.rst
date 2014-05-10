@@ -236,22 +236,48 @@ How to start using NDN PPA repository on Ubuntu Linux?
 
 NFD binaries and related tools for Ubuntu 12.04, 13.10, and 14.04 can be installed using
 PPA packages from named-data repository.  First, you will need to add ``named-data/ppa``
-repository to binary package sources and update list of available packages:
+repository to binary package sources and update list of available packages.
+
+Preliminary steps if you haven't used PPA packages before
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+To simplify adding new PPA repositories, Ubuntu provides ``add-apt-repository`` tool, which
+is not installed by default on some platforms.
+
+On Ubuntu **12.04**:
+
+::
+
+    sudo apt-get install python-software-properties
+
+On Ubuntu **13.10** and **14.04**:
+
+::
+
+    sudo apt-get install software-properties-common
+
+
+Adding NDN PPA
+++++++++++++++
+
+After installing ``add-apt-repository``, run the following command to add `NDN PPA repository`_.
 
 ::
 
     sudo add-apt-repository ppa:named-data/ppa
-
-    # if you do not have add-apt-repository command installed:
-    sudo apt-get install python-software-properties
     sudo apt-get update
 
-After that, NFD can be easily installed in a standard way, i.e., either using ``apt-get`` as shown
-below or using any other package manager (e.g., Synaptic Package Manager):
+Installing NFD and other NDN packages
++++++++++++++++++++++++++++++++++++++
+
+After you have added `NDN PPA repository`_, NFD and other NDN packages can be easily
+installed in a standard way, i.e., either using ``apt-get`` as shown below or using any
+other package manager, such as Synaptic Package Manager:
 
 ::
 
     sudo apt-get install nfd
 
-For the list of available packages, refer to `NDN PPA repository
-<https://launchpad.net/~named-data/+archive/ppa>`_.
+For the list of available packages, refer to `NDN PPA repository`_ homepage.
+
+.. _NDN PPA repository: https://launchpad.net/~named-data/+archive/ppa
