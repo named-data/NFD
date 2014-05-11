@@ -32,11 +32,6 @@ InRecord::InRecord(shared_ptr<Face> face)
 {
 }
 
-InRecord::InRecord(const InRecord& other)
-  : FaceRecord(other)
-{
-}
-
 void
 InRecord::update(const Interest& interest)
 {

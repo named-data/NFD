@@ -39,8 +39,6 @@ public:
   explicit
   InRecord(shared_ptr<Face> face);
 
-  InRecord(const InRecord& other);
-
   void
   update(const Interest& interest);
 

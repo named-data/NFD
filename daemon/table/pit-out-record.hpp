@@ -38,8 +38,6 @@ class OutRecord : public FaceRecord
 public:
   explicit
   OutRecord(shared_ptr<Face> face);
-
-  OutRecord(const OutRecord& other);
 };
 
 } // namespace pit

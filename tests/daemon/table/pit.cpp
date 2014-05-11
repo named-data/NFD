@@ -76,6 +76,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_LE(in1->getExpiry() - in1->getLastRenewed()
                  - interest1->getInterestLifetime(),
                  (after1 - before1));
+  BOOST_CHECK(in1 == entry.getInRecord(face1));
 
   // insert OutRecord
   time::steady_clock::TimePoint before2 = time::steady_clock::now();
@@ -92,6 +93,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_LE(out1->getExpiry() - out1->getLastRenewed()
                  - interest1->getInterestLifetime(),
                  (after2 - before2));
+  BOOST_CHECK(out1 == entry.getOutRecord(face1));
 
   // update InRecord
   time::steady_clock::TimePoint before3 = time::steady_clock::now();
@@ -114,10 +116,16 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(in3->getFace(), face2);
 
+  // get InRecord
+  pit::InRecordCollection::const_iterator in4 = entry.getInRecord(face1);
+  BOOST_REQUIRE(in4 != entry.getInRecords().end());
+  BOOST_CHECK_EQUAL(in4->getFace(), face1);
+
   // delete all InRecords
   entry.deleteInRecords();
   const pit::InRecordCollection& inRecords5 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords5.size(), 0);
+  BOOST_CHECK(entry.getInRecord(face1) == entry.getInRecords().end());
 
   // insert another OutRecord
   pit::OutRecordCollection::iterator out2 =
@@ -126,11 +134,17 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(out2->getFace(), face2);
 
+  // get OutRecord
+  pit::OutRecordCollection::const_iterator out3 = entry.getOutRecord(face1);
+  BOOST_REQUIRE(out3 != entry.getOutRecords().end());
+  BOOST_CHECK_EQUAL(out3->getFace(), face1);
+
   // delete OutRecord
   entry.deleteOutRecord(face2);
   const pit::OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
   BOOST_CHECK_EQUAL(outRecords4.begin()->getFace(), face1);
+  BOOST_CHECK(entry.getOutRecord(face2) == entry.getOutRecords().end());
 }
 
 BOOST_AUTO_TEST_CASE(EntryNonce)

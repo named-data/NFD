@@ -32,10 +32,5 @@ OutRecord::OutRecord(shared_ptr<Face> face)
 {
 }
 
-OutRecord::OutRecord(const OutRecord& other)
-  : FaceRecord(other)
-{
-}
-
 } // namespace pit
 } // namespace nfd

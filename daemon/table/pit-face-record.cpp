@@ -35,14 +35,6 @@ FaceRecord::FaceRecord(shared_ptr<Face> face)
 {
 }
 
-FaceRecord::FaceRecord(const FaceRecord& other)
-  : m_face(other.m_face)
-  , m_lastNonce(other.m_lastNonce)
-  , m_lastRenewed(other.m_lastRenewed)
-  , m_expiry(other.m_expiry)
-{
-}
-
 void
 FaceRecord::update(const Interest& interest)
 {

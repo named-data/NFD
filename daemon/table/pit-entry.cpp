@@ -148,6 +148,13 @@ Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
   return it;
 }
 
+InRecordCollection::const_iterator
+Entry::getInRecord(shared_ptr<Face> face) const
+{
+  return std::find_if(m_inRecords.begin(), m_inRecords.end(),
+                      bind(&predicate_FaceRecord_Face, _1, face.get()));
+}
+
 void
 Entry::deleteInRecords()
 {
@@ -167,6 +174,13 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
   it->update(interest);
   m_nonces.insert(interest.getNonce());
   return it;
+}
+
+OutRecordCollection::const_iterator
+Entry::getOutRecord(shared_ptr<Face> face) const
+{
+  return std::find_if(m_outRecords.begin(), m_outRecords.end(),
+                      bind(&predicate_FaceRecord_Face, _1, face.get()));
 }
 
 void

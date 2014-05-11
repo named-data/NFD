@@ -43,8 +43,6 @@ public:
   explicit
   FaceRecord(shared_ptr<Face> face);
 
-  FaceRecord(const FaceRecord& other);
-
   shared_ptr<Face>
   getFace() const;
 

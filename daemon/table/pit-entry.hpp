@@ -39,13 +39,11 @@ class Entry;
 
 namespace pit {
 
-/** \class InRecordCollection
- *  \brief represents an unordered collection of InRecords
+/** \brief represents an unordered collection of InRecords
  */
 typedef std::list< InRecord>  InRecordCollection;
 
-/** \class OutRecordCollection
- *  \brief represents an unordered collection of OutRecords
+/** \brief represents an unordered collection of OutRecords
  */
 typedef std::list<OutRecord> OutRecordCollection;
 
@@ -64,20 +62,6 @@ public:
    */
   const Name&
   getName() const;
-
-  const InRecordCollection&
-  getInRecords() const;
-
-  const OutRecordCollection&
-  getOutRecords() const;
-
-  /** \brief determines whether any InRecord is a local Face
-   *
-   *  \return true if any InRecord is a local Face,
-   *          false if all InRecords are non-local Faces
-   */
-  bool
-  hasLocalInRecord() const;
 
   /** \brief decides whether Interest can be forwarded to face
    *
@@ -107,6 +91,18 @@ public:
   bool
   addNonce(uint32_t nonce);
 
+public: // InRecord
+  const InRecordCollection&
+  getInRecords() const;
+
+  /** \brief determines whether any InRecord is a local Face
+   *
+   *  \return true if any InRecord is a local Face,
+   *          false if all InRecords are non-local Faces
+   */
+  bool
+  hasLocalInRecord() const;
+
   /** \brief inserts a InRecord for face, and updates it with interest
    *
    *  If InRecord for face exists, the existing one is updated.
@@ -116,9 +112,19 @@ public:
   InRecordCollection::iterator
   insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest);
 
+  /** \brief get the InRecord for face
+   *  \return an iterator to the InRecord, or .end if it does not exist
+   */
+  InRecordCollection::const_iterator
+  getInRecord(shared_ptr<Face> face) const;
+
   /// deletes all InRecords
   void
   deleteInRecords();
+
+public: // OutRecord
+  const OutRecordCollection&
+  getOutRecords() const;
 
   /** \brief inserts a OutRecord for face, and updates it with interest
    *
@@ -127,6 +133,12 @@ public:
    */
   OutRecordCollection::iterator
   insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest);
+
+  /** \brief get the OutRecord for face
+   *  \return an iterator to the OutRecord, or .end if it does not exist
+   */
+  OutRecordCollection::const_iterator
+  getOutRecord(shared_ptr<Face> face) const;
 
   /// deletes one OutRecord for face if exists
   void

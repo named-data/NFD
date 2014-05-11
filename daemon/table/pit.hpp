@@ -58,8 +58,8 @@ public:
   size_t
   size() const;
 
-  /** \brief inserts a FIB entry for prefix
-   *  If an entry for exact same prefix exists, that entry is returned.
+  /** \brief inserts a PIT entry for prefix
+   *  If an entry for exact same name and selectors exists, that entry is returned.
    *  \return{ the entry, and true for new entry, false for existing entry }
    */
   std::pair<shared_ptr<pit::Entry>, bool>
