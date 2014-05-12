@@ -1,6 +1,12 @@
 NFD - Named Data Networking Forwarding Daemon
 =============================================
 
+NFD overview, release notes for the released versions, getting started tutorial, and other
+additional documentation are available online on
+[NFD's homepage](http://named-data.net/doc/NFD/).
+
+## Overview
+
 NFD is a network forwarder that implements and evolves together with the Named Data
 Networking (NDN) [protocol](http://named-data.net/doc/ndn-tlv/).  After the initial
 release, NFD will become a core component of the
@@ -39,12 +45,44 @@ The design and development of NFD benefited from our earlier experience with
 [CCNx](http://www.ccnx.org) software package.  However, NFD is not in any part derived from
 CCNx codebase and does not maintain compatibility with CCNx.
 
-Documentation
--------------
+Binary release
+--------------
 
-For more information refer to
+As of release 0.1.0, we are providing NFD binaries for the supported platforms, which are
+the preferred installation method of NFD:
 
-* [Release notes `docs/RELEASE_NOTES.rst`](https://github.com/named-data/NFD/blob/master/docs/RELEASE_NOTES.rst)
-* [Installation instruction `docs/INSTALL.rst`](https://github.com/named-data/NFD/blob/master/docs/INSTALL.rst)
-* [Hints on configuration `docs/README.rst`](https://github.com/named-data/NFD/blob/master/docs/README.rst)
-* Other documentation in [`docs/`](https://github.com/named-data/NFD/blob/master/docs) folder
+- [Ubuntu 12.04, 13.10, and 14.04](http://named-data.net/doc/NFD/current/FAQ.html#how-to-start-using-ndn-ppa-repository-on-ubuntu-linux)
+
+- [OSX 10.8, 10.9 with MacPorts](http://named-data.net/doc/NFD/current/FAQ.html#how-to-start-using-ndn-macports-repository-on-osx)
+
+Next releases would include support for other platforms.  Please send us feedback on the
+platforms you're using, so we can prioritize our goals.  We would also appreciate if
+someone can provide help with packaging the current NFD release for other platforms.
+
+Besides simplicity of installation, the binary release includes automatic initial
+configuration and platform-specific tools to automatically start NFD and related daemons.
+In particular, on OSX NFD is controlled using
+[launchd](https://github.com/named-data/NFD/tree/master/contrib/osx-launchd) and on Ubuntu
+using [upstart](https://github.com/named-data/NFD/tree/master/contrib/upstart) mechanisms.
+In both cases, `nfd-start` and `nfd-stop` scripts are convenience wrappers for launchd and
+upstart.
+
+Source releases
+---------------
+
+The source code and source-code installation instructions are always available on NFD's homepage:
+
+- [Getting Started with NFD](http://named-data.net/doc/NFD/current/getting-started.html)
+- [Github NFD repository](https://github.com/named-data/NFD)
+
+Additional information
+----------------------
+
+- [NFD Wiki](http://redmine.named-data.net/projects/nfd/wiki/)
+- Feature requests and bug reports are welcome on our
+  [NDN Redmine](http://redmine.named-data.net/projects/nfd)
+
+Besides officially supported platforms, NFD is known to work on: Fedora 20, CentOS 6,
+Raspberry Pi, OpenWRT, FreeBSD 10.0, and several other platforms.  We are soliciting help
+with documenting common problems / pitfalls in installing/using NFD on different platforms
+on [NFD WiKi](http://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms).
