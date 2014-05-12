@@ -193,7 +193,7 @@ def build(bld):
         source='tools/nfd-status-http-server.py',
         target='bin/nfd-status-http-server',
         install_path="${BINDIR}",
-        chmod=0755,
+        chmod=Utils.O755,
         VERSION=VERSION)
 
     if bld.env['SPHINX_BUILD']:
@@ -210,7 +210,7 @@ def build(bld):
             source='tools/%s' % (str(script)),
             target='bin/%s' % (str(script.change_ext(''))),
             install_path="${BINDIR}",
-            chmod=0755,
+            chmod=Utils.O755,
             VERSION=VERSION)
 
 def docs(bld):
