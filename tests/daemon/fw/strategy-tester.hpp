@@ -51,7 +51,9 @@ public:
 
 protected:
   virtual void
-  sendInterest(shared_ptr<pit::Entry> pitEntry,shared_ptr<Face> outFace);
+  sendInterest(shared_ptr<pit::Entry> pitEntry,
+               shared_ptr<Face> outFace,
+               bool wantNewNonce = false);
 
   virtual void
   rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
@@ -68,7 +70,8 @@ public:
 template<typename S>
 inline void
 StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                                shared_ptr<Face> outFace)
+                                shared_ptr<Face> outFace,
+                                bool wantNewNonce)
 {
   m_sendInterestHistory.push_back(SendInterestArgs(pitEntry, outFace));
   pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());

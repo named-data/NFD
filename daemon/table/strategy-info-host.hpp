@@ -41,7 +41,7 @@ public:
 
   template<typename T>
   shared_ptr<T>
-  getStrategyInfo();
+  getStrategyInfo() const;
 
   template<typename T>
   shared_ptr<T>
@@ -68,7 +68,7 @@ StrategyInfoHost::setStrategyInfo(shared_ptr<T> strategyInfo)
 
 template<typename T>
 shared_ptr<T>
-StrategyInfoHost::getStrategyInfo()
+StrategyInfoHost::getStrategyInfo() const
 {
   return static_pointer_cast<T, fw::StrategyInfo>(m_strategyInfo);
 }

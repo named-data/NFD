@@ -114,7 +114,8 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief outgoing Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace);
+  onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
+                     bool wantNewNonce = false);
 
   /** \brief Interest reject pipeline
    */

@@ -113,7 +113,8 @@ protected: // actions
   /// send Interest to outFace
   VIRTUAL_WITH_TESTS void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
-               shared_ptr<Face> outFace);
+               shared_ptr<Face> outFace,
+               bool wantNewNonce = false);
 
   /** \brief decide that a pending Interest cannot be forwarded
    *
@@ -150,9 +151,10 @@ Strategy::getName() const
 
 inline void
 Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                       shared_ptr<Face> outFace)
+                       shared_ptr<Face> outFace,
+                       bool wantNewNonce)
 {
-  m_forwarder.onOutgoingInterest(pitEntry, *outFace);
+  m_forwarder.onOutgoingInterest(pitEntry, *outFace, wantNewNonce);
 }
 
 inline void

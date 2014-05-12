@@ -23,8 +23,9 @@
  **/
 
 #include "forwarder.hpp"
-#include "available-strategies.hpp"
+#include <ndn-cxx/util/random.hpp>
 #include "core/logger.hpp"
+#include "available-strategies.hpp"
 
 namespace nfd {
 
@@ -145,7 +146,8 @@ compare_pickInterest(const pit::InRecord& a, const pit::InRecord& b, const Face*
 }
 
 void
-Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
+Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
+                              bool wantNewNonce)
 {
   NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
                 " interest=" << pitEntry->getName());
@@ -162,22 +164,33 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace)
   pit::InRecordCollection::const_iterator pickedInRecord = std::max_element(
     inRecords.begin(), inRecords.end(), bind(&compare_pickInterest, _1, _2, &outFace));
   BOOST_ASSERT(pickedInRecord != inRecords.end());
-  const Interest& interest = pickedInRecord->getInterest();
+  shared_ptr<Interest> interest = const_pointer_cast<Interest>(
+    pickedInRecord->getInterest().shared_from_this());
+
+  if (wantNewNonce) {
+    interest = make_shared<Interest>(*interest);
+    interest->setNonce(ndn::random::generateWord32());
+  }
 
   // insert OutRecord
-  pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), interest);
+  pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), *interest);
 
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
 
   // send Interest
-  outFace.sendInterest(interest);
+  outFace.sendInterest(*interest);
   m_counters.getNOutInterests() ++;
 }
 
 void
 Forwarder::onInterestReject(shared_ptr<pit::Entry> pitEntry)
 {
+  if (pitEntry->hasUnexpiredOutRecords()) {
+    NFD_LOG_ERROR("onInterestReject interest=" << pitEntry->getName() <<
+                  " cannot reject forwarded Interest");
+    return;
+  }
   NFD_LOG_DEBUG("onInterestReject interest=" << pitEntry->getName());
 
   // set PIT straggler timer
@@ -194,6 +207,7 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
                                           pitEntry));
 
   // PIT delete
+  this->cancelUnsatisfyAndStragglerTimer(pitEntry);
   m_pit.erase(pitEntry);
 }
 
@@ -245,16 +259,16 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
       }
     }
 
+    // invoke PIT satisfy callback
+    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyPendingInterest, _1,
+                                            pitEntry, cref(inFace), cref(data)));
+
     // mark PIT satisfied
     pitEntry->deleteInRecords();
     pitEntry->deleteOutRecord(inFace.shared_from_this());
 
     // set PIT straggler timer
     this->setStragglerTimer(pitEntry);
-
-    // invoke PIT satisfy callback
-    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyPendingInterest, _1,
-                                            pitEntry, cref(inFace), cref(data)));
   }
 
   // foreach pending downstream
