@@ -18,8 +18,8 @@ def checkDependency(self, name, **kw):
     kw['mandatory'] = kw.get('mandatory', True)
 
     if root:
-        isOk = self.check_cxx(cxxflags="-I%s/include" % root,
-                              linkflags="-L%s/lib" % root,
+        isOk = self.check_cxx(includes="%s/include" % root,
+                              libpath="%s/lib" % root,
                               **kw)
     else:
         isOk = self.check_cxx(**kw)
