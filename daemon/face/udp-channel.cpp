@@ -42,7 +42,7 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   ///       We need to check this
   ///       (SO_REUSEADDR doesn't behave uniformly in different OS)
 
-  m_socket = make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
+  m_socket = make_shared<ip::udp::socket>(ref(getGlobalIoService()));
   m_socket->open(m_localEndpoint.protocol());
   m_socket->set_option(boost::asio::ip::udp::socket::reuse_address(true));
   if (m_localEndpoint.address().is_v6())
@@ -106,7 +106,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
 
   //creating a new socket for the face that will be created soon
   shared_ptr<ip::udp::socket> clientSocket =
-    make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
 
   clientSocket->open(m_localEndpoint.protocol());
   clientSocket->set_option(ip::udp::socket::reuse_address(true));
@@ -134,7 +134,7 @@ UdpChannel::connect(const std::string& remoteHost,
 {
   ip::udp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::udp::resolver> resolver =
-  make_shared<ip::udp::resolver>(boost::ref(getGlobalIoService()));
+    make_shared<ip::udp::resolver>(ref(getGlobalIoService()));
 
   resolver->async_resolve(query,
                           bind(&UdpChannel::handleEndpointResolution, this, _1, _2,
@@ -180,7 +180,7 @@ UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
 {
   udp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
-  shared_ptr<UdpFace> face = make_shared<UdpFace>(boost::cref(socket), isOnDemand);
+  shared_ptr<UdpFace> face = make_shared<UdpFace>(socket, isOnDemand);
   face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
 
   onFaceCreated(face);
@@ -215,7 +215,7 @@ UdpChannel::newPeer(const boost::system::error_code& error,
   }
   else {
     shared_ptr<ip::udp::socket> clientSocket =
-      make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
+      make_shared<ip::udp::socket>(ref(getGlobalIoService()));
     clientSocket->open(m_localEndpoint.protocol());
     clientSocket->set_option(ip::udp::socket::reuse_address(true));
     clientSocket->bind(m_localEndpoint);

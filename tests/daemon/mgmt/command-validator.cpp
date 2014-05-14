@@ -230,21 +230,21 @@ BOOST_FIXTURE_TEST_CASE(TwoKeys, TwoValidatorFixture)
   config.parse(CONFIG, false, CONFIG_PATH.native());
 
   validator.validate(*fibCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidated());
   m_tester1.resetValidation();
 
   validator.validate(*statsCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidated());
 
   validator.validate(*facesCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester2), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester2), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester2), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester2), _1, _2));
 
   BOOST_REQUIRE(m_tester2.commandValidated());
   m_tester2.resetValidation();
@@ -254,8 +254,8 @@ BOOST_FIXTURE_TEST_CASE(TwoKeys, TwoValidatorFixture)
   generator.generateWithIdentity(*unauthorizedFibCommand, m_tester2.getIdentityName());
 
   validator.validate(*unauthorizedFibCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester2), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester2), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester2), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester2), _1, _2));
 
   BOOST_REQUIRE(m_tester2.commandValidationFailed());
 }
@@ -290,21 +290,21 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
   config.parse(CONFIG, true, CONFIG_PATH.native());
 
   validator.validate(*fibCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidationFailed());
   m_tester1.resetValidation();
 
   validator.validate(*statsCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidationFailed());
 
   validator.validate(*facesCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester2), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester2), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester2), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester2), _1, _2));
 
   BOOST_REQUIRE(m_tester2.commandValidationFailed());
   m_tester2.resetValidation();
@@ -314,8 +314,8 @@ BOOST_FIXTURE_TEST_CASE(TwoKeysDryRun, TwoValidatorFixture)
   generator.generateWithIdentity(*unauthorizedFibCommand, m_tester2.getIdentityName());
 
   validator.validate(*unauthorizedFibCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester2), _1),
-                     bind(&CommandValidatorTester::onValidationFailed, boost::ref(m_tester2), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester2), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester2), _1, _2));
 
   BOOST_REQUIRE(m_tester2.commandValidationFailed());
 }
@@ -629,25 +629,22 @@ BOOST_FIXTURE_TEST_CASE(Wildcard, TwoValidatorFixture)
   config.parse(WILDCARD_CERT_CONFIG, false, CONFIG_PATH.native());
 
   validator.validate(*fibCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed,
-                          boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidationFailed());
   m_tester1.resetValidation();
 
   validator.validate(*statsCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed,
-                          boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidated());
   m_tester1.resetValidation();
 
   validator.validate(*facesCommand,
-                     bind(&CommandValidatorTester::onValidated, boost::ref(m_tester1), _1),
-                     bind(&CommandValidatorTester::onValidationFailed,
-                          boost::ref(m_tester1), _1, _2));
+                     bind(&CommandValidatorTester::onValidated, ref(m_tester1), _1),
+                     bind(&CommandValidatorTester::onValidationFailed, ref(m_tester1), _1, _2));
 
   BOOST_REQUIRE(m_tester1.commandValidated());
   m_tester1.resetValidation();

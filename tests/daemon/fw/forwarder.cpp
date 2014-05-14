@@ -300,9 +300,9 @@ BOOST_AUTO_TEST_CASE(StrategyDispatch)
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   shared_ptr<DummyStrategy> strategyP = make_shared<DummyStrategy>(
-                                        boost::ref(forwarder), "ndn:/strategyP");
+                                        ref(forwarder), "ndn:/strategyP");
   shared_ptr<DummyStrategy> strategyQ = make_shared<DummyStrategy>(
-                                        boost::ref(forwarder), "ndn:/strategyQ");
+                                        ref(forwarder), "ndn:/strategyQ");
   strategyChoice.install(strategyP);
   strategyChoice.install(strategyQ);
   strategyChoice.insert("ndn:/" , strategyP->getName());

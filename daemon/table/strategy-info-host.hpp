@@ -91,7 +91,7 @@ StrategyInfoHost::getOrCreateStrategyInfo(T1& a1)
 {
   shared_ptr<T> info = this->getStrategyInfo<T>();
   if (!static_cast<bool>(info)) {
-    info = make_shared<T>(boost::ref(a1));
+    info = make_shared<T>(ref(a1));
     this->setStrategyInfo(info);
   }
   return info;

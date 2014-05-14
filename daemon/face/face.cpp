@@ -40,10 +40,10 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   , m_localUri(localUri)
   , m_isOnDemand(false)
 {
-  onReceiveInterest += bind(&increaseCounter, boost::ref(m_counters.getNInInterests()));
-  onReceiveData     += bind(&increaseCounter, boost::ref(m_counters.getNInDatas()));
-  onSendInterest    += bind(&increaseCounter, boost::ref(m_counters.getNOutInterests()));
-  onSendData        += bind(&increaseCounter, boost::ref(m_counters.getNOutDatas()));
+  onReceiveInterest += bind(&increaseCounter, ref(m_counters.getNInInterests()));
+  onReceiveData     += bind(&increaseCounter, ref(m_counters.getNInDatas()));
+  onSendInterest    += bind(&increaseCounter, ref(m_counters.getNOutInterests()));
+  onSendData        += bind(&increaseCounter, ref(m_counters.getNOutDatas()));
 }
 
 Face::~Face()

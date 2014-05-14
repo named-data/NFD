@@ -160,10 +160,8 @@ public:
   }
 
 protected:
-    FibManagerFixture()
-      : m_manager(boost::ref(m_fib),
-                  bind(&FibManagerFixture::getFace, this, _1),
-                  m_face)
+  FibManagerFixture()
+    : m_manager(ref(m_fib), bind(&FibManagerFixture::getFace, this, _1), m_face)
     , m_callbackFired(false)
   {
   }

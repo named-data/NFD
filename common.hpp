@@ -46,7 +46,6 @@
 #include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
-#include <boost/ref.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace nfd {
@@ -63,6 +62,8 @@ using ndn::dynamic_pointer_cast;
 using ndn::const_pointer_cast;
 using ndn::function;
 using ndn::bind;
+using ndn::ref;
+using ndn::cref;
 
 using ndn::Interest;
 using ndn::Data;

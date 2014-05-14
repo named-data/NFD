@@ -107,19 +107,19 @@ public:
   {
     m_internalFace = make_shared<InternalFace>();
 
-    m_fibManager = make_shared<FibManager>(boost::ref(m_forwarder->getFib()),
+    m_fibManager = make_shared<FibManager>(ref(m_forwarder->getFib()),
                                            bind(&Forwarder::getFace, m_forwarder.get(), _1),
                                            m_internalFace);
 
-    m_faceManager = make_shared<FaceManager>(boost::ref(m_forwarder->getFaceTable()),
+    m_faceManager = make_shared<FaceManager>(ref(m_forwarder->getFaceTable()),
                                              m_internalFace);
 
     m_strategyChoiceManager =
-      make_shared<StrategyChoiceManager>(boost::ref(m_forwarder->getStrategyChoice()),
+      make_shared<StrategyChoiceManager>(ref(m_forwarder->getStrategyChoice()),
                                          m_internalFace);
 
     m_statusServer = make_shared<StatusServer>(m_internalFace,
-                                               boost::ref(*m_forwarder));
+                                               ref(*m_forwarder));
 
     ConfigFile config((IgnoreRibAndLogSections()));
 
@@ -232,8 +232,7 @@ public:
     else
       {
         /// \todo May be try to reload config file (at least security section)
-        signalSet.async_wait(bind(&Nfd::terminate, this, _1, _2,
-                                  boost::ref(signalSet)));
+        signalSet.async_wait(bind(&Nfd::terminate, this, _1, _2, ref(signalSet)));
       }
   }
 
@@ -312,8 +311,7 @@ main(int argc, char** argv)
   signalSet.add(SIGHUP);
   signalSet.add(SIGUSR1);
   signalSet.add(SIGUSR2);
-  signalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2,
-                            boost::ref(signalSet)));
+  signalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2, ref(signalSet)));
 
   try {
     getGlobalIoService().run();

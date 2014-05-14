@@ -125,8 +125,8 @@ public:
 
     std::set<shared_ptr<fib::Entry> >::const_iterator referenceIter =
       std::find_if(m_referenceEntries.begin(), m_referenceEntries.end(),
-                   boost::bind(&FibEnumerationPublisherFixture::entryHasPrefix,
-                               this, _1, prefix));
+                   bind(&FibEnumerationPublisherFixture::entryHasPrefix,
+                        this, _1, prefix));
 
     BOOST_REQUIRE(referenceIter != m_referenceEntries.end());
 

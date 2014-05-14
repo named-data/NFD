@@ -230,7 +230,7 @@ public:
                            bind(&AutoregServer::onTimeout, this, _1));
 
     boost::asio::signal_set signalSet(*m_face.ioService(), SIGINT, SIGTERM);
-    signalSet.async_wait(boost::bind(&AutoregServer::signalHandler, this));
+    signalSet.async_wait(bind(&AutoregServer::signalHandler, this));
 
     m_face.processEvents();
   }

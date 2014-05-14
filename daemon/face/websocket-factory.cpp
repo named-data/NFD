@@ -43,7 +43,7 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
   if (static_cast<bool>(channel))
     return channel;
 
-  channel = make_shared<WebSocketChannel>(boost::cref(endpoint));
+  channel = make_shared<WebSocketChannel>(endpoint);
   m_channels[endpoint] = channel;
 
   return channel;

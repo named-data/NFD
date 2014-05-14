@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   LimitedIo limitedIo;
   Forwarder forwarder;
   typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
-  shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(boost::ref(forwarder));
+  shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
   strategy->onAction += bind(&LimitedIo::afterOp, &limitedIo);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();

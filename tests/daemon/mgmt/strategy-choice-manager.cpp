@@ -50,7 +50,8 @@ public:
     , m_manager(m_strategyChoice, m_face)
     , m_callbackFired(false)
   {
-    m_strategyChoice.install(make_shared<DummyStrategy>(boost::ref(m_forwarder), "/localhost/nfd/strategy/test-strategy-a"));
+    m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                        "/localhost/nfd/strategy/test-strategy-a"));
     m_strategyChoice.insert("ndn:/", "/localhost/nfd/strategy/test-strategy-a");
   }
 
@@ -169,7 +170,8 @@ class AllStrategiesFixture : public StrategyChoiceManagerFixture
 public:
   AllStrategiesFixture()
   {
-    m_strategyChoice.install(make_shared<DummyStrategy>(boost::ref(m_forwarder), "/localhost/nfd/strategy/test-strategy-b"));
+    m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                        "/localhost/nfd/strategy/test-strategy-b"));
   }
 
   virtual

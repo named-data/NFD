@@ -39,7 +39,7 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   if (channel)
     return channel;
 
-  channel = make_shared<UnixStreamChannel>(boost::cref(endpoint));
+  channel = make_shared<UnixStreamChannel>(endpoint);
   m_channels[endpoint] = channel;
   return channel;
 }

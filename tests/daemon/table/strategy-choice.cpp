@@ -40,8 +40,8 @@ BOOST_AUTO_TEST_CASE(Effective)
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
   Name nameZ("ndn:/strategy/Z");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(boost::ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(boost::ref(forwarder), nameQ);
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
 
@@ -110,8 +110,8 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(boost::ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(boost::ref(forwarder), nameQ);
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
   Measurements& measurements = forwarder.getMeasurements();

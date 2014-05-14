@@ -157,8 +157,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
-  shared_ptr<stream_protocol::socket> client =
-      make_shared<stream_protocol::socket>(boost::ref(g_io));
+  shared_ptr<stream_protocol::socket> client = make_shared<stream_protocol::socket>(ref(g_io));
   client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 
@@ -228,8 +227,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   channel->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
 
-  shared_ptr<stream_protocol::socket> client1 =
-      make_shared<stream_protocol::socket>(boost::ref(g_io));
+  shared_ptr<stream_protocol::socket> client1 = make_shared<stream_protocol::socket>(ref(g_io));
   client1->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
@@ -238,8 +236,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(faces.size(), 1);
 
-  shared_ptr<stream_protocol::socket> client2 =
-      make_shared<stream_protocol::socket>(boost::ref(g_io));
+  shared_ptr<stream_protocol::socket> client2 = make_shared<stream_protocol::socket>(ref(g_io));
   client2->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                          bind(&EndToEndFixture::client_onConnect, this, _1));
 
@@ -297,8 +294,7 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
-  shared_ptr<stream_protocol::socket> client =
-      make_shared<stream_protocol::socket>(boost::ref(g_io));
+  shared_ptr<stream_protocol::socket> client = make_shared<stream_protocol::socket>(ref(g_io));
   client->async_connect(stream_protocol::endpoint(CHANNEL_PATH1),
                         bind(&EndToEndFixture::client_onConnect, this, _1));
 

@@ -57,14 +57,8 @@ const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
                      ),
   };
 
-inline static void
-NullDeleter(boost::asio::io_service* variable)
-{
-  // do nothing
-}
-
 RibManager::RibManager()
-  : m_face(shared_ptr<boost::asio::io_service>(&getGlobalIoService(), &NullDeleter))
+  : m_face(getGlobalIoService())
   , m_nfdController(new ndn::nfd::Controller(m_face))
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)
@@ -96,7 +90,7 @@ RibManager::registerWithNfd()
     }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
-  m_faceMonitor.addSubscriber(boost::bind(&RibManager::onNotification, this, _1));
+  m_faceMonitor.addSubscriber(bind(&RibManager::onNotification, this, _1));
   m_faceMonitor.startNotifications();
 }
 

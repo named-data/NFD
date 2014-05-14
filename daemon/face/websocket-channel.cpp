@@ -78,7 +78,7 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
       m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ecode);
     }
   shared_ptr<WebSocketFace> face = make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
-                                                              hdl, boost::ref(m_server));
+                                                              hdl, ref(m_server));
   m_onFaceCreatedCallback(face);
   m_channelFaces[hdl] = face;
 }

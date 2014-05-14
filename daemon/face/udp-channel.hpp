@@ -124,8 +124,7 @@ private:
    *        associated with any UdpFace
    */
   void
-  newPeer(const boost::system::error_code& error,
-                   std::size_t nBytesReceived);
+  newPeer(const boost::system::error_code& error, std::size_t nBytesReceived);
 
   void
   handleEndpointResolution(const boost::system::error_code& error,

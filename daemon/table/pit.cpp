@@ -82,7 +82,7 @@ Pit::insert(const Interest& interest)
   // then check if this Interest is already in the PIT entries
   std::vector<shared_ptr<pit::Entry> >::const_iterator it =
     std::find_if(pitEntries.begin(), pitEntries.end(),
-                 bind(&predicate_PitEntry_similar_Interest, _1, boost::cref(interest)));
+                 bind(&predicate_PitEntry_similar_Interest, _1, cref(interest)));
 
   if (it != pitEntries.end())
     {

@@ -34,7 +34,7 @@ inline Scheduler&
 getGlobalScheduler()
 {
   if (!static_cast<bool>(g_scheduler)) {
-    g_scheduler = make_shared<Scheduler>(boost::ref(getGlobalIoService()));
+    g_scheduler = make_shared<Scheduler>(ref(getGlobalIoService()));
   }
   return *g_scheduler;
 }

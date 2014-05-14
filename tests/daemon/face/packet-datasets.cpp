@@ -33,7 +33,7 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(Datasets, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Currupted)
+BOOST_AUTO_TEST_CASE(Corrupted)
 {
   {
     typedef CorruptedInterest Dataset;

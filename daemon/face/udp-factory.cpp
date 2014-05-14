@@ -148,8 +148,7 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
                 "create a multicast face");
   }
 
-  channel = make_shared<UdpChannel>(boost::cref(endpoint),
-                                    timeout);
+  channel = make_shared<UdpChannel>(endpoint, timeout);
   m_channels[endpoint] = channel;
   prohibitEndpoint(endpoint);
 
@@ -208,7 +207,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   }
 
   shared_ptr<ip::udp::socket> clientSocket =
-    make_shared<ip::udp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
 
   clientSocket->open(multicastEndpoint.protocol());
 
@@ -249,7 +248,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 
   clientSocket->set_option(ip::multicast::enable_loopback(false));
 
-  multicastFace = make_shared<MulticastUdpFace>(boost::cref(clientSocket), localEndpoint);
+  multicastFace = make_shared<MulticastUdpFace>(clientSocket, localEndpoint);
   multicastFace->onFail += bind(&UdpFactory::afterFaceFailed, this, localEndpoint);
 
   m_multicastFaces[localEndpoint] = multicastFace;
@@ -326,8 +325,8 @@ UdpFactory::continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
       return;
     }
   }
-  onConnectFailed("No channels available to connect to "
-                  + boost::lexical_cast<std::string>(endpoint));
+  onConnectFailed("No channels available to connect to " +
+                  boost::lexical_cast<std::string>(endpoint));
 }
 
 shared_ptr<UdpChannel>

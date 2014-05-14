@@ -47,11 +47,9 @@ EthernetFactory::createMulticastFace(const shared_ptr<NetworkInterfaceInfo> &int
     return face;
 
   shared_ptr<boost::asio::posix::stream_descriptor> socket =
-    make_shared<boost::asio::posix::stream_descriptor>(boost::ref(getGlobalIoService()));
+    make_shared<boost::asio::posix::stream_descriptor>(ref(getGlobalIoService()));
 
-  face = make_shared<EthernetFace>(boost::cref(socket),
-                                   boost::cref(interface),
-                                   boost::cref(address));
+  face = make_shared<EthernetFace>(socket, interface, address);
   face->onFail += bind(&EthernetFactory::afterFaceFailed,
                        this, name, address);
   m_multicastFaces[std::make_pair(name, address)] = face;

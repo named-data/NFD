@@ -195,7 +195,7 @@ public:
       {
         /// \todo May be try to reload config file
         signalSet.async_wait(bind(&Nrd::terminate, this, _1, _2,
-                                  boost::ref(signalSet)));
+                                  ref(signalSet)));
       }
   }
 
@@ -259,7 +259,7 @@ main(int argc, char** argv)
   signalSet.add(SIGUSR1);
   signalSet.add(SIGUSR2);
   signalSet.async_wait(bind(&Nrd::terminate, &nrdInstance, _1, _2,
-                            boost::ref(signalSet)));
+                            ndn::ref(signalSet)));
 
   try {
     nfd::getGlobalIoService().run();

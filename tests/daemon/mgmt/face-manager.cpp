@@ -1591,8 +1591,8 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
                    .setFlags(0);
 
   getFace()->onReceiveData +=
-    bind(&FaceFixture::callbackDispatch, this, _1,
-         command->getName(), 200, "Success", boost::ref(encodedParameters), expectedFaceEvent);
+    bind(&FaceFixture::callbackDispatch, this, _1, command->getName(),
+         200, "Success", ref(encodedParameters), expectedFaceEvent);
 
   destroyFace(*command, parameters);
 

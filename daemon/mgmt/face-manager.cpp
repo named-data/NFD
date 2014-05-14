@@ -314,7 +314,7 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 
   if (!isDryRun)
     {
-      shared_ptr<TcpFactory> factory = make_shared<TcpFactory>(boost::cref(port));
+      shared_ptr<TcpFactory> factory = ndn::make_shared<TcpFactory>(port);
       m_factories.insert(std::make_pair("tcp", factory));
 
       if (enableV4)
@@ -485,7 +485,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 
   if (!isDryRun)
     {
-      shared_ptr<UdpFactory> factory = make_shared<UdpFactory>(boost::cref(port));
+      shared_ptr<UdpFactory> factory = ndn::make_shared<UdpFactory>(port);
       m_factories.insert(std::make_pair("udp", factory));
 
       if (enableV4)
@@ -704,7 +704,7 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
 
   if (!isDryRun)
     {
-      shared_ptr<WebSocketFactory> factory = make_shared<WebSocketFactory>(boost::cref(port));
+      shared_ptr<WebSocketFactory> factory = ndn::make_shared<WebSocketFactory>(port);
       m_factories.insert(std::make_pair("websocket", factory));
       uint16_t portNo = boost::lexical_cast<uint16_t>(port);
 
@@ -747,7 +747,7 @@ FaceManager::onFaceRequest(const Interest& request)
   if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
     {
       NFD_LOG_DEBUG("command result: processing verb: " << verb);
-      (unsignedVerbProcessor->second)(this, boost::cref(request));
+      (unsignedVerbProcessor->second)(this, request);
     }
   else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
            commandNComps < COMMAND_SIGNED_NCOMPS)

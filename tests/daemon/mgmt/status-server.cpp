@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Status)
   Forwarder forwarder;
   shared_ptr<InternalFace> internalFace = make_shared<InternalFace>();
   internalFace->onReceiveData += &interceptResponse;
-  StatusServer statusServer(internalFace, boost::ref(forwarder));
+  StatusServer statusServer(internalFace, ref(forwarder));
   time::system_clock::TimePoint t2 = time::system_clock::now();
 
   // populate tables

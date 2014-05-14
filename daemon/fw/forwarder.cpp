@@ -105,7 +105,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 
   // dispatch to strategy
   this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveInterest, _1,
-    boost::cref(inFace), boost::cref(interest), fibEntry, pitEntry));
+                                          cref(inFace), cref(interest), fibEntry, pitEntry));
 }
 
 void
@@ -191,7 +191,7 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
 
   // invoke PIT unsatisfied callback
   this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeExpirePendingInterest, _1,
-    pitEntry));
+                                          pitEntry));
 
   // PIT delete
   m_pit.erase(pitEntry);
@@ -254,7 +254,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
     // invoke PIT satisfy callback
     this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyPendingInterest, _1,
-      pitEntry, boost::cref(inFace), boost::cref(data)));
+                                            pitEntry, cref(inFace), cref(data)));
   }
 
   // foreach pending downstream

@@ -115,7 +115,7 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
   if(static_cast<bool>(channel))
     return channel;
 
-  channel = make_shared<TcpChannel>(boost::cref(endpoint));
+  channel = make_shared<TcpChannel>(endpoint);
   m_channels[endpoint] = channel;
   prohibitEndpoint(endpoint);
 

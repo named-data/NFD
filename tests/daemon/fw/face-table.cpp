@@ -46,8 +46,8 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   FaceTable& faceTable = forwarder.getFaceTable();
   std::vector<FaceId> onAddHistory;
   std::vector<FaceId> onRemoveHistory;
-  faceTable.onAdd    += bind(&saveFaceId, boost::ref(onAddHistory   ), _1);
-  faceTable.onRemove += bind(&saveFaceId, boost::ref(onRemoveHistory), _1);
+  faceTable.onAdd    += bind(&saveFaceId, ndn::ref(onAddHistory   ), _1);
+  faceTable.onRemove += bind(&saveFaceId, ndn::ref(onRemoveHistory), _1);
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();

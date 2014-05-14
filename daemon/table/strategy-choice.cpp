@@ -265,7 +265,7 @@ StrategyChoice::changeStrategy(shared_ptr<strategy_choice::Entry> entry,
 
   std::for_each(m_nameTree.partialEnumerate(entry->getPrefix(),
                            bind(&predicate_nameTreeEntry_needResetStrategyChoice,
-                                _1, boost::cref(*m_nameTree.get(*entry)))),
+                                _1, cref(*m_nameTree.get(*entry)))),
                 m_nameTree.end(),
                 &clearStrategyInfo);
 }

@@ -58,9 +58,9 @@ FaceTable::add(shared_ptr<Face> face)
                                               " local=" << face->getLocalUri());
 
   face->onReceiveInterest += bind(&Forwarder::onInterest,
-                                  &m_forwarder, boost::ref(*face), _1);
+                                  &m_forwarder, ref(*face), _1);
   face->onReceiveData     += bind(&Forwarder::onData,
-                                  &m_forwarder, boost::ref(*face), _1);
+                                  &m_forwarder, ref(*face), _1);
   face->onFail            += bind(&FaceTable::remove,
                                   this, face);
 

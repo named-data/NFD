@@ -48,7 +48,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
                    const ConnectFailedCallback& onAcceptFailed,
                    int backlog/* = tcp::acceptor::max_connections*/)
 {
-  m_acceptor = make_shared<ip::tcp::acceptor>(boost::ref(getGlobalIoService()));
+  m_acceptor = make_shared<ip::tcp::acceptor>(ref(getGlobalIoService()));
   m_acceptor->open(m_localEndpoint.protocol());
   m_acceptor->set_option(ip::tcp::acceptor::reuse_address(true));
   if (m_localEndpoint.address().is_v6())
@@ -59,7 +59,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor->listen(backlog);
 
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&TcpChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket,
@@ -81,10 +81,10 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   }
 
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
   shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<ndn::monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
+    make_shared<ndn::monotonic_deadline_timer>(ref(getGlobalIoService()));
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
@@ -104,14 +104,14 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
                     const time::seconds& timeout/* = time::seconds(4)*/)
 {
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
   shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<ndn::monotonic_deadline_timer>(boost::ref(getGlobalIoService()));
+    make_shared<ndn::monotonic_deadline_timer>(ref(getGlobalIoService()));
 
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
-    make_shared<ip::tcp::resolver>(boost::ref(getGlobalIoService()));
+    make_shared<ip::tcp::resolver>(ref(getGlobalIoService()));
 
   resolver->async_resolve(query,
                           bind(&TcpChannel::handleEndpointResolution, this, _1, _2,
@@ -140,9 +140,9 @@ TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
 
   shared_ptr<Face> face;
   if (socket->local_endpoint().address().is_loopback())
-    face = make_shared<TcpLocalFace>(boost::cref(socket), isOnDemand);
+    face = make_shared<TcpLocalFace>(socket, isOnDemand);
   else
-    face = make_shared<TcpFace>(boost::cref(socket), isOnDemand);
+    face = make_shared<TcpFace>(socket, isOnDemand);
 
   face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
 
@@ -178,7 +178,7 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 
   // prepare accepting the next connection
   shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(boost::ref(getGlobalIoService()));
+    make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
   m_acceptor->async_accept(*clientSocket,
                            bind(&TcpChannel::handleSuccessfulAccept, this, _1,
                                 clientSocket,

@@ -68,9 +68,9 @@ BOOST_AUTO_TEST_CASE(Access)
   Forwarder forwarder;
 
   shared_ptr<MeasurementsAccessorTestStrategy> strategy1 =
-    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder), "ndn:/strategy1");
+    make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy1");
   shared_ptr<MeasurementsAccessorTestStrategy> strategy2 =
-    make_shared<MeasurementsAccessorTestStrategy>(boost::ref(forwarder), "ndn:/strategy2");
+    make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy2");
 
   Name nameRoot("ndn:/");
   Name nameA   ("ndn:/A");

@@ -149,9 +149,9 @@ private:
   FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
 
-  typedef boost::function<void(RibManager*,
-                               const shared_ptr<const Interest>& request,
-                               ControlParameters& parameters)> VerbProcessor;
+  typedef function<void(RibManager*,
+                        const shared_ptr<const Interest>& request,
+                        ControlParameters& parameters)> VerbProcessor;
 
   typedef std::map<name::Component, VerbProcessor> VerbDispatchTable;
 

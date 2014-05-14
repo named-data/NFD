@@ -108,7 +108,7 @@ FibManager::onFibRequest(const Interest& request)
   if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
     {
       NFD_LOG_DEBUG("command result: processing verb: " << verb);
-      (unsignedVerbProcessor->second)(this, boost::cref(request));
+      (unsignedVerbProcessor->second)(this, request);
     }
   else if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
            commandNComps < COMMAND_SIGNED_NCOMPS)

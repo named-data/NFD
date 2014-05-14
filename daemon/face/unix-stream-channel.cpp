@@ -96,7 +96,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
       throw Error(m_endpoint.path() + " already exists and is not a socket file");
     }
 
-  m_acceptor = make_shared<stream_protocol::acceptor>(boost::ref(getGlobalIoService()));
+  m_acceptor = make_shared<stream_protocol::acceptor>(ref(getGlobalIoService()));
   m_acceptor->open();
   m_acceptor->bind(m_endpoint);
   m_acceptor->listen(backlog);
@@ -108,7 +108,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     }
 
   shared_ptr<stream_protocol::socket> clientSocket =
-    make_shared<stream_protocol::socket>(boost::ref(getGlobalIoService()));
+    make_shared<stream_protocol::socket>(ref(getGlobalIoService()));
 
   m_acceptor->async_accept(*clientSocket,
                            bind(&UnixStreamChannel::handleSuccessfulAccept, this,
@@ -134,7 +134,7 @@ UnixStreamChannel::handleSuccessfulAccept(const boost::system::error_code& error
   NFD_LOG_DEBUG("[" << m_endpoint << "] << Incoming connection");
 
   shared_ptr<stream_protocol::socket> clientSocket =
-    make_shared<stream_protocol::socket>(boost::ref(getGlobalIoService()));
+    make_shared<stream_protocol::socket>(ref(getGlobalIoService()));
 
   // prepare accepting the next connection
   m_acceptor->async_accept(*clientSocket,
@@ -142,7 +142,7 @@ UnixStreamChannel::handleSuccessfulAccept(const boost::system::error_code& error
                                 boost::asio::placeholders::error, clientSocket,
                                 onFaceCreated, onAcceptFailed));
 
-  shared_ptr<UnixStreamFace> face = make_shared<UnixStreamFace>(boost::cref(socket));
+  shared_ptr<UnixStreamFace> face = make_shared<UnixStreamFace>(socket);
   onFaceCreated(face);
 }
 

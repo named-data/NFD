@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(PutData)
 
   bool didPutData = false;
   Name dataName("/hello");
-  face->onReceiveData += bind(&validatePutData, boost::ref(didPutData), dataName, _1);
+  face->onReceiveData += bind(&validatePutData, ref(didPutData), dataName, _1);
 
   Data testData(dataName);
   face->sign(testData);
