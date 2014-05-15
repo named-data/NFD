@@ -59,7 +59,7 @@ const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
 
 RibManager::RibManager()
   : m_face(getGlobalIoService())
-  , m_nfdController(new ndn::nfd::Controller(m_face))
+  , m_nfdController(m_face)
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
@@ -76,17 +76,27 @@ RibManager::registerWithNfd()
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
   NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX);
-  m_face.setController(m_nfdController);
-  m_face.setInterestFilter(COMMAND_PREFIX,
-                           bind(&RibManager::onLocalhostRequest, this, _2),
-                           bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+
+  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
+    ControlParameters()
+      .setName(COMMAND_PREFIX),
+    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(COMMAND_PREFIX)),
+    bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(COMMAND_PREFIX), _2));
+
+  m_face.setInterestFilter(COMMAND_PREFIX, bind(&RibManager::onLocalhostRequest, this, _2));
 
   if (m_isLocalhopEnabled)
     {
       NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX);
+
+      m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
+        ControlParameters()
+          .setName(COMMAND_PREFIX),
+        bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(REMOTE_COMMAND_PREFIX)),
+        bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(REMOTE_COMMAND_PREFIX), _2));
+
       m_face.setInterestFilter(REMOTE_COMMAND_PREFIX,
-                               bind(&RibManager::onLocalhopRequest, this, _2),
-                               bind(&RibManager::setInterestFilterFailed, this, _1, _2));
+                               bind(&RibManager::onLocalhopRequest, this, _2));
     }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
@@ -119,12 +129,6 @@ RibManager::onConfig(const ConfigSection& configSection,
       else
         throw Error("Unrecognized rib property: " + i->first);
     }
-}
-
-void
-RibManager::setInterestFilterFailed(const Name& name, const std::string& msg)
-{
-  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
 }
 
 void
@@ -229,7 +233,7 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   // Rib tree, then nrd will generate fib updates based on flags and then
   // will add next hops one by one..
   m_managedRib.insert(ribEntry);
-  m_nfdController->start<ndn::nfd::FibAddNextHopCommand>(
+  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
     ControlParameters()
       .setName(ribEntry.name)
       .setFaceId(ribEntry.faceId)
@@ -258,7 +262,7 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
 
   NFD_LOG_TRACE("unregister prefix: " << ribEntry);
 
-  m_nfdController->start<ndn::nfd::FibRemoveNextHopCommand>(
+  m_nfdController.start<ndn::nfd::FibRemoveNextHopCommand>(
     ControlParameters()
       .setName(ribEntry.name)
       .setFaceId(ribEntry.faceId),
@@ -372,6 +376,30 @@ RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
 }
 
 void
+RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix)
+{
+  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
+}
+
+void
+RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
+{
+  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
+}
+
+void
+RibManager::onAddNextHopSuccess(const Name& prefix)
+{
+  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
+}
+
+void
+RibManager::onAddNextHopError(const Name& name, const std::string& msg)
+{
+  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
+}
+
+void
 RibManager::onControlHeaderSuccess()
 {
   NFD_LOG_DEBUG("Local control header enabled");
@@ -389,7 +417,7 @@ RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
 void
 RibManager::enableLocalControlHeader()
 {
-  m_nfdController->start<ndn::nfd::FaceEnableLocalControlCommand>(
+  m_nfdController.start<ndn::nfd::FaceEnableLocalControlCommand>(
     ControlParameters()
       .setLocalControlFeature(ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
     bind(&RibManager::onControlHeaderSuccess, this),

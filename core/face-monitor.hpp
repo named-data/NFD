@@ -32,7 +32,7 @@
 
 namespace ndn {
 class Face;
-struct PendingInterestId;
+class PendingInterestId;
 }
 
 namespace nfd {

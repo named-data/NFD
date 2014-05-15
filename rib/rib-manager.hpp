@@ -120,14 +120,22 @@ private:
                  const RibEntry& ribEntry);
 
   void
+  onNrdCommandPrefixAddNextHopSuccess(const Name& prefix);
+
+  void
+  onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
+
+  void
+  onAddNextHopSuccess(const Name& prefix);
+
+  void
+  onAddNextHopError(const Name& name, const std::string& msg);
+
+  void
   onControlHeaderSuccess();
 
   void
   onControlHeaderError(uint32_t code, const std::string& reason);
-
-  void
-  setInterestFilterFailed(const Name& name, const std::string& msg);
-
   static bool
   extractParameters(const Name::Component& parameterComponent,
                     ControlParameters& extractedParameters);
@@ -142,7 +150,7 @@ private:
 private:
   Rib m_managedRib;
   ndn::Face m_face;
-  ndn::shared_ptr<ndn::nfd::Controller> m_nfdController;
+  ndn::nfd::Controller m_nfdController;
   ndn::KeyChain m_keyChain;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;

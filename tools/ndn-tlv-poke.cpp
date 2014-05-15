@@ -188,6 +188,7 @@ public:
             m_face.setInterestFilter(m_prefixName,
                                      ndn::bind(&NdnTlvPoke::onInterest,
                                                this, _1, _2, dataPacket),
+                                     ndn::RegisterPrefixSuccessCallback(),
                                      ndn::bind(&NdnTlvPoke::onRegisterFailed,
                                                this, _1, _2));
           }

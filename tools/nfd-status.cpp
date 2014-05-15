@@ -30,10 +30,13 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-forwarder-status.hpp>
+
+#include <boost/algorithm/string/replace.hpp>
 
 namespace ndn {
 

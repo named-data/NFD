@@ -77,6 +77,7 @@ public:
   {
     m_face.setInterestFilter("/localhop/ndn-autoconf/hub",
                              ndn::bind(&NdnAutoconfigServer::onInterest, this, _1, _2),
+                             ndn::RegisterPrefixSuccessCallback(),
                              ndn::bind(&NdnAutoconfigServer::onRegisterFailed, this, _1, _2));
     m_face.processEvents();
   }

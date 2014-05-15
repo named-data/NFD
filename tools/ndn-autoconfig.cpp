@@ -28,6 +28,8 @@
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
@@ -155,7 +157,7 @@ public:
 
     for (ndn::Name::const_reverse_iterator i = identity.rbegin(); i != identity.rend(); i++)
     {
-      serverName.append(i->toEscapedString());
+      serverName.append(i->toUri());
       serverName.append(".");
     }
     serverName += "_homehub._autoconf.named-data.net";

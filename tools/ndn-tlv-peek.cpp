@@ -47,8 +47,6 @@ public:
     , m_timeout(-1)
     , m_prefixName("")
     , m_isDataReceived(false)
-    , m_ioService(new boost::asio::io_service)
-    , m_face(m_ioService)
   {
   }
 
@@ -221,7 +219,6 @@ private:
   ndn::time::milliseconds m_timeout;
   std::string m_prefixName;
   bool m_isDataReceived;
-  ndn::ptr_lib::shared_ptr<boost::asio::io_service> m_ioService;
   ndn::Face m_face;
 };
 
@@ -230,8 +227,8 @@ private:
 int
 main(int argc, char* argv[])
 {
+  ndntlvpeek::NdnTlvPeek ndnTlvPeek(argv[0]);
   int option;
-  ndntlvpeek::NdnTlvPeek ndnTlvPeek (argv[0]);
   while ((option = getopt(argc, argv, "hfrm:M:l:pw:V")) != -1) {
     switch (option) {
     case 'h':
