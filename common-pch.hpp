@@ -22,63 +22,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TESTS_TEST_COMMON_HPP
-#define NFD_TESTS_TEST_COMMON_HPP
+#ifndef NFD_COMMON_PCH_HPP
+#define NFD_COMMON_PCH_HPP
 
-#include "boost-test.hpp"
+#include "config.hpp"
+#include "common.hpp"
 
-#include "core/global-io.hpp"
-#include "core/logger.hpp"
-
-#include <ndn-cxx/security/key-chain.hpp>
-
-namespace nfd {
-namespace tests {
-
-/** \brief base test fixture
- *
- *  Every test case should be based on this fixture,
- *  to have per test case io_service initialization.
- */
-class BaseFixture
-{
-protected:
-  BaseFixture()
-    : g_io(getGlobalIoService())
-  {
-  }
-
-  ~BaseFixture()
-  {
-    resetGlobalIoService();
-  }
-
-protected:
-  /// reference to global io_service
-  boost::asio::io_service& g_io;
-};
-
-
-inline shared_ptr<Interest>
-makeInterest(const Name& name)
-{
-  return make_shared<Interest>(name);
-}
-
-inline shared_ptr<Data>
-makeData(const Name& name)
-{
-  shared_ptr<Data> data = make_shared<Data>(name);
-
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
-                                        reinterpret_cast<const uint8_t*>(0), 0));
-  data->setSignature(fakeSignature);
-
-  return data;
-}
-
-} // namespace tests
-} // namespace nfd
-
-#endif // NFD_TESTS_TEST_COMMON_HPP
+#endif // NFD_COMMON_PCH_HPP

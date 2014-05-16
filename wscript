@@ -33,7 +33,7 @@ from waflib import Logs, Utils, Context
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
     opt.load(['boost', 'unix-socket', 'dependency-checker', 'websocket',
-              'default-compiler-flags', 'coverage',
+              'default-compiler-flags', 'coverage', 'pch',
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
@@ -55,7 +55,7 @@ def options(opt):
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
-               'default-compiler-flags',
+               'default-compiler-flags', 'pch',
                'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
@@ -126,6 +126,7 @@ def build(bld):
         use='version BOOST NDN_CXX LIBRT',
         includes='. core',
         export_includes='. core',
+        pch='common-pch.hpp',
         )
 
     nfd_objects = bld(
@@ -140,6 +141,7 @@ def build(bld):
         use='core-objects',
         includes='daemon websocketpp',
         export_includes='daemon',
+        pch='common-pch.hpp',
         )
 
     if bld.env['HAVE_LIBPCAP']:

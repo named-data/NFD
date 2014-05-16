@@ -44,6 +44,7 @@ def build(bld):
             use='core-objects unit-tests-main',
             includes='.',
             install_path=None,
+            pch='test-pch.hpp',
           )
 
         # NFD tests
@@ -57,6 +58,7 @@ def build(bld):
             use='daemon-objects unit-tests-main',
             includes='.',
             install_path=None,
+            pch='test-pch.hpp',
           )
 
         if bld.env['HAVE_LIBPCAP']:
@@ -75,6 +77,7 @@ def build(bld):
             use='rib-objects unit-tests-main',
             includes=['.'],
             install_path=None,
+            pch='test-pch.hpp',
           )
 
     # Other tests (e.g., stress tests that can be enabled even if unit tests are disabled)

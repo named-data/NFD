@@ -39,13 +39,20 @@
 #define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
+#include <list>
+#include <set>
+#include <vector>
+
 #include <ndn-cxx/common.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
 
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
 #include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace nfd {
