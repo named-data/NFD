@@ -274,8 +274,12 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   // foreach pending downstream
   for (std::set<shared_ptr<Face> >::iterator it = pendingDownstreams.begin();
       it != pendingDownstreams.end(); ++it) {
+    shared_ptr<Face> pendingDownstream = *it;
+    if (pendingDownstream.get() == &inFace) {
+      continue;
+    }
     // goto outgoing Data pipeline
-    this->onOutgoingData(data, **it);
+    this->onOutgoingData(data, *pendingDownstream);
   }
 }
 

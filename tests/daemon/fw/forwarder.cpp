@@ -346,6 +346,40 @@ BOOST_AUTO_TEST_CASE(StrategyDispatch)
   BOOST_CHECK_EQUAL(strategyQ->m_beforeExpirePendingInterest_count, 0);
 }
 
+BOOST_AUTO_TEST_CASE(IncomingData)
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face4 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  Pit& pit = forwarder.getPit();
+  shared_ptr<Interest> interest0 = makeInterest("ndn:/");
+  shared_ptr<pit::Entry> pit0 = pit.insert(*interest0).first;
+  pit0->insertOrUpdateInRecord(face1, *interest0);
+  shared_ptr<Interest> interestA = makeInterest("ndn:/A");
+  shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
+  pitA->insertOrUpdateInRecord(face1, *interestA);
+  pitA->insertOrUpdateInRecord(face2, *interestA);
+  shared_ptr<Interest> interestC = makeInterest("ndn:/A/B/C");
+  shared_ptr<pit::Entry> pitC = pit.insert(*interestC).first;
+  pitC->insertOrUpdateInRecord(face3, *interestC);
+  pitC->insertOrUpdateInRecord(face4, *interestC);
+
+  shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
+  forwarder.onIncomingData(*face3, *dataD);
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+
+  BOOST_CHECK_EQUAL(face1->m_sentDatas.size(), 1);
+  BOOST_CHECK_EQUAL(face2->m_sentDatas.size(), 1);
+  BOOST_CHECK_EQUAL(face3->m_sentDatas.size(), 0);
+  BOOST_CHECK_EQUAL(face4->m_sentDatas.size(), 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
