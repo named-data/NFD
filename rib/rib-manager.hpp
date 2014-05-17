@@ -74,6 +74,9 @@ private:
            const std::string& filename);
 
   void
+  startListening(const Name& commandPrefix, const ndn::OnInterest& onRequest);
+
+  void
   onLocalhopRequest(const Interest& request);
 
   void

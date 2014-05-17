@@ -70,34 +70,32 @@ RibManager::RibManager()
 }
 
 void
+RibManager::startListening(const Name& commandPrefix, const ndn::OnInterest& onRequest)
+{
+  NFD_LOG_INFO("Listening on: " << commandPrefix);
+
+  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
+    ControlParameters()
+      .setName(commandPrefix)
+      .setFaceId(0),
+    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(commandPrefix)),
+    bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(commandPrefix), _2));
+
+  m_face.setInterestFilter(commandPrefix, onRequest);
+}
+
+void
 RibManager::registerWithNfd()
 {
   //check whether the components of localhop and localhost prefixes are same
   BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
 
-  NFD_LOG_INFO("Setting interest filter on: " << COMMAND_PREFIX);
+  this->startListening(COMMAND_PREFIX, bind(&RibManager::onLocalhostRequest, this, _2));
 
-  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters()
-      .setName(COMMAND_PREFIX),
-    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(COMMAND_PREFIX)),
-    bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(COMMAND_PREFIX), _2));
-
-  m_face.setInterestFilter(COMMAND_PREFIX, bind(&RibManager::onLocalhostRequest, this, _2));
-
-  if (m_isLocalhopEnabled)
-    {
-      NFD_LOG_INFO("Setting interest filter on: " << REMOTE_COMMAND_PREFIX);
-
-      m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-        ControlParameters()
-          .setName(COMMAND_PREFIX),
-        bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(REMOTE_COMMAND_PREFIX)),
-        bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(REMOTE_COMMAND_PREFIX), _2));
-
-      m_face.setInterestFilter(REMOTE_COMMAND_PREFIX,
-                               bind(&RibManager::onLocalhopRequest, this, _2));
-    }
+  if (m_isLocalhopEnabled) {
+    this->startListening(REMOTE_COMMAND_PREFIX,
+                         bind(&RibManager::onLocalhopRequest, this, _2));
+  }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
   m_faceMonitor.addSubscriber(bind(&RibManager::onNotification, this, _1));
