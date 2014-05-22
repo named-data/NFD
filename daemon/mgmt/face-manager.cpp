@@ -812,6 +812,7 @@ FaceManager::onCreated(const Name& requestName,
 {
   addCreatedFaceToForwarder(newFace);
   parameters.setFaceId(newFace->getId());
+  parameters.setUri(newFace->getRemoteUri().toString());
 
   sendResponse(requestName, 200, "Success", parameters.wireEncode());
 }

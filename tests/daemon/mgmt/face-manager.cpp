@@ -1516,7 +1516,7 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
   generateCommand(*command);
 
   ControlParameters resultParameters;
-  resultParameters.setUri("tcp://127.0.0.1");
+  resultParameters.setUri("dummy://");
   resultParameters.setFaceId(1);
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
