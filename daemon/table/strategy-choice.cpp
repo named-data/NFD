@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -37,6 +38,7 @@ NFD_LOG_INIT("StrategyChoice");
 
 StrategyChoice::StrategyChoice(NameTree& nameTree, shared_ptr<Strategy> defaultStrategy)
   : m_nameTree(nameTree)
+  , m_nItems(0)
 {
   this->setDefaultStrategy(defaultStrategy);
 }
@@ -268,6 +270,12 @@ StrategyChoice::changeStrategy(shared_ptr<strategy_choice::Entry> entry,
                                 _1, cref(*m_nameTree.get(*entry)))),
                 m_nameTree.end(),
                 &clearStrategyInfo);
+}
+
+StrategyChoice::const_iterator
+StrategyChoice::begin() const
+{
+  return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasStrategyChoiceEntry));
 }
 
 } // namespace nfd

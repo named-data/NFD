@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -99,6 +100,44 @@ BOOST_AUTO_TEST_CASE(Effective)
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/A")  .getName(), nameP);
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/A/B").getName(), nameP);
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/D")  .getName(), nameQ);
+}
+
+//XXX BOOST_CONCEPT_ASSERT((ForwardIterator<std::vector<int>::iterator>))
+//    is also failing. There might be a problem with ForwardIterator concept checking.
+//BOOST_CONCEPT_ASSERT((ForwardIterator<StrategyChoice::const_iterator>));
+
+BOOST_AUTO_TEST_CASE(Enumerate)
+{
+
+  Forwarder forwarder;
+  Name nameP("ndn:/strategy/P");
+  Name nameQ("ndn:/strategy/Q");
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+
+  StrategyChoice& table = forwarder.getStrategyChoice();
+  table.install(strategyP);
+  table.install(strategyQ);
+
+  table.insert("ndn:/",      nameP);
+  table.insert("ndn:/A/B",   nameQ);
+  table.insert("ndn:/A/B/C", nameP);
+  table.insert("ndn:/D",     nameP);
+  table.insert("ndn:/E",     nameQ);
+
+  BOOST_CHECK_EQUAL(table.size(), 5);
+
+  std::map<Name, Name> map; // namespace=>strategyName
+  for (StrategyChoice::const_iterator it = table.begin(); it != table.end(); ++it) {
+    map[it->getPrefix()] = it->getStrategyName();
+  }
+  BOOST_CHECK_EQUAL(map.size(), 5);
+  BOOST_CHECK_EQUAL(map["ndn:/"],      nameP);
+  BOOST_CHECK_EQUAL(map["ndn:/A/B"],   nameQ);
+  BOOST_CHECK_EQUAL(map["ndn:/A/B/C"], nameP);
+  BOOST_CHECK_EQUAL(map["ndn:/D"],     nameP);
+  BOOST_CHECK_EQUAL(map["ndn:/E"],     nameQ);
+  BOOST_CHECK_EQUAL(map.size(), 5);
 }
 
 class PStrategyInfo : public fw::StrategyInfo

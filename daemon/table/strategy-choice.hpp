@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -68,7 +69,7 @@ public: // Strategy Choice table
   shared_ptr<const Name>
   get(const Name& prefix) const;
 
-public: // effect strategy
+public: // effective strategy
   /// get effective strategy for prefix
   fw::Strategy&
   findEffectiveStrategy(const Name& prefix) const;
@@ -81,9 +82,47 @@ public: // effect strategy
   fw::Strategy&
   findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
 
+public: // enumeration
+  class const_iterator
+    : public std::iterator<std::forward_iterator_tag, const strategy_choice::Entry>
+  {
+  public:
+    explicit
+    const_iterator(const NameTree::const_iterator& it);
+
+    ~const_iterator();
+
+    const strategy_choice::Entry&
+    operator*() const;
+
+    shared_ptr<strategy_choice::Entry>
+    operator->() const;
+
+    const_iterator&
+    operator++();
+
+    const_iterator
+    operator++(int);
+
+    bool
+    operator==(const const_iterator& other) const;
+
+    bool
+    operator!=(const const_iterator& other) const;
+
+  private:
+    NameTree::const_iterator m_nameTreeIterator;
+  };
+
   /// number of entries stored
   size_t
   size() const;
+
+  const_iterator
+  begin() const;
+
+  const_iterator
+  end() const;
 
 private:
   shared_ptr<fw::Strategy>
@@ -112,6 +151,63 @@ inline size_t
 StrategyChoice::size() const
 {
   return m_nItems;
+}
+
+inline StrategyChoice::const_iterator
+StrategyChoice::end() const
+{
+  return const_iterator(m_nameTree.end());
+}
+
+inline
+StrategyChoice::const_iterator::const_iterator(const NameTree::const_iterator& it)
+  : m_nameTreeIterator(it)
+{
+}
+
+inline
+StrategyChoice::const_iterator::~const_iterator()
+{
+}
+
+inline
+StrategyChoice::const_iterator
+StrategyChoice::const_iterator::operator++(int)
+{
+  StrategyChoice::const_iterator temp(*this);
+  ++(*this);
+  return temp;
+}
+
+inline StrategyChoice::const_iterator&
+StrategyChoice::const_iterator::operator++()
+{
+  ++m_nameTreeIterator;
+  return *this;
+}
+
+inline const strategy_choice::Entry&
+StrategyChoice::const_iterator::operator*() const
+{
+  return *(m_nameTreeIterator->getStrategyChoiceEntry());
+}
+
+inline shared_ptr<strategy_choice::Entry>
+StrategyChoice::const_iterator::operator->() const
+{
+  return m_nameTreeIterator->getStrategyChoiceEntry();
+}
+
+inline bool
+StrategyChoice::const_iterator::operator==(const StrategyChoice::const_iterator& other) const
+{
+  return m_nameTreeIterator == other.m_nameTreeIterator;
+}
+
+inline bool
+StrategyChoice::const_iterator::operator!=(const StrategyChoice::const_iterator& other) const
+{
+  return m_nameTreeIterator != other.m_nameTreeIterator;
 }
 
 } // namespace nfd
