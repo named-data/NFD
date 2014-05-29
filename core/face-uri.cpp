@@ -5,7 +5,8 @@
  *                     Colorado State University,
  *                     University Pierre & Marie Curie, Sorbonne University,
  *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ *                     Beijing Institute of Technology,
+ *                     The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -71,6 +72,8 @@ FaceUri::parse(const std::string& uri)
   static const boost::regex v6Exp("^\\[([a-fA-F0-9:]+)\\](?:\\:(\\d+))?$");
   // pattern for Ethernet address in standard hex-digits-and-colons notation
   static const boost::regex etherExp("^\\[((?:[a-fA-F0-9]{1,2}\\:){5}(?:[a-fA-F0-9]{1,2}))\\]$");
+  // pattern for IPv4-mapped IPv6 address, with optional port number
+  static const boost::regex v4MappedV6Exp("^\\[::ffff:(\\d+(?:\\.\\d+){3})\\](?:\\:(\\d+))?$");
   // pattern for IPv4/hostname/fd/ifname, with optional port number
   static const boost::regex v4HostExp("^([^:]+)(?:\\:(\\d+))?$");
 
@@ -82,6 +85,7 @@ FaceUri::parse(const std::string& uri)
     m_isV6 = boost::regex_match(authority, match, v6Exp);
     if (m_isV6 ||
         boost::regex_match(authority, match, etherExp) ||
+        boost::regex_match(authority, match, v4MappedV6Exp) ||
         boost::regex_match(authority, match, v4HostExp)) {
       m_host = match[1];
       m_port = match[2];

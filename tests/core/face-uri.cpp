@@ -5,7 +5,8 @@
  *                     Colorado State University,
  *                     University Pierre & Marie Curie, Sorbonne University,
  *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ *                     Beijing Institute of Technology,
+ *                     The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -184,6 +185,18 @@ BOOST_AUTO_TEST_CASE(Dev)
   std::string ifname = "en1";
   BOOST_REQUIRE_NO_THROW(FaceUri::fromDev(ifname));
   BOOST_CHECK_EQUAL(FaceUri::fromDev(ifname).toString(), "dev://en1");
+}
+
+BOOST_AUTO_TEST_CASE(Bug1635)
+{
+  FaceUri uri;
+
+  BOOST_CHECK(uri.parse("wsclient://[::ffff:76.90.11.239]:56366"));
+  BOOST_CHECK_EQUAL(uri.getScheme(), "wsclient");
+  BOOST_CHECK_EQUAL(uri.getHost(), "76.90.11.239");
+  BOOST_CHECK_EQUAL(uri.getPort(), "56366");
+  BOOST_CHECK_EQUAL(uri.getPath(), "");
+  BOOST_CHECK_EQUAL(uri.toString(), "wsclient://76.90.11.239:56366");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
