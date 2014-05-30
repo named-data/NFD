@@ -121,12 +121,12 @@ def build(bld):
     core = bld(
         target='core-objects',
         name='core-objects',
-        features='cxx',
+        features='cxx pch',
         source=bld.path.ant_glob(['core/**/*.cpp']),
         use='version BOOST NDN_CXX LIBRT',
         includes='. core',
         export_includes='. core',
-        pch='common-pch.hpp',
+        headers='common.hpp',
         )
 
     nfd_objects = bld(
@@ -141,7 +141,6 @@ def build(bld):
         use='core-objects',
         includes='daemon websocketpp',
         export_includes='daemon',
-        pch='common-pch.hpp',
         )
 
     if bld.env['HAVE_LIBPCAP']:
