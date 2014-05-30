@@ -32,6 +32,8 @@
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
 
+#include <ndn-cxx/management/nfd-strategy-choice.hpp>
+
 #include "tests/test-common.hpp"
 #include "validation-common.hpp"
 
@@ -116,6 +118,15 @@ public:
     BOOST_CHECK(memcmp(control.getBody().value(), expectedBody.value(),
                        expectedBody.value_size()) == 0);
 
+  }
+
+  void
+  validateList(const Data& data, const ndn::nfd::StrategyChoice& expectedChoice)
+  {
+    m_callbackFired = true;
+    ndn::nfd::StrategyChoice choice(data.getContent().blockFromValue());
+    BOOST_CHECK_EQUAL(choice.getStrategy(), expectedChoice.getStrategy());
+    BOOST_CHECK_EQUAL(choice.getName(), expectedChoice.getName());
   }
 
   bool
@@ -542,6 +553,22 @@ BOOST_AUTO_TEST_CASE(UnsetMissingName)
 
   BOOST_CHECK_EQUAL(m_strategyChoice.findEffectiveStrategy("/test").getName(),
                     "/localhost/nfd/strategy/test-strategy-b");
+}
+
+BOOST_AUTO_TEST_CASE(Publish)
+{
+  Name commandName("/localhost/nfd/strategy-choice/list");
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  ndn::nfd::StrategyChoice expectedChoice;
+  expectedChoice.setStrategy("/localhost/nfd/strategy/test-strategy-a");
+  expectedChoice.setName("/");
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateList, this, _1, expectedChoice);
+
+  m_manager.onStrategyChoiceRequest(*command);
+  BOOST_REQUIRE(didCallbackFire());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

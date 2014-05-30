@@ -5,7 +5,8 @@
  *                     Colorado State University,
  *                     University Pierre & Marie Curie, Sorbonne University,
  *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ *                     Beijing Institute of Technology,
+ *                     The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -42,10 +43,13 @@ const size_t StrategyChoiceManager::COMMAND_SIGNED_NCOMPS =
   StrategyChoiceManager::COMMAND_UNSIGNED_NCOMPS +
   4; // (timestamp, nonce, signed info tlv, signature tlv)
 
+const Name StrategyChoiceManager::LIST_DATASET_PREFIX("/localhost/nfd/strategy-choice/list");
+
 StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
                                              shared_ptr<InternalFace> face)
   : ManagerBase(face, STRATEGY_CHOICE_PRIVILEGE)
   , m_strategyChoice(strategyChoice)
+  , m_listPublisher(strategyChoice, m_face, LIST_DATASET_PREFIX)
 {
   face->setInterestFilter("/localhost/nfd/strategy-choice",
                           bind(&StrategyChoiceManager::onStrategyChoiceRequest, this, _2));
@@ -61,6 +65,12 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
 {
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
+
+  if (command == LIST_DATASET_PREFIX)
+    {
+      listStrategies(request);
+      return;
+    }
 
   if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
       commandNComps < COMMAND_SIGNED_NCOMPS)
@@ -81,6 +91,12 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
   validate(request,
            bind(&StrategyChoiceManager::onValidatedStrategyChoiceRequest, this, _1),
            bind(&ManagerBase::onCommandValidationFailed, this, _1, _2));
+}
+
+void
+StrategyChoiceManager::listStrategies(const Interest& request)
+{
+  m_listPublisher.publish();
 }
 
 void
