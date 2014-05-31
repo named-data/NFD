@@ -301,7 +301,7 @@ EthernetFace::getInterfaceMtu() const
   size_t mtu = ethernet::MAX_DATA_LEN;
 
 #ifdef SIOCGIFMTU
-  ifreq ifr = {};
+  ifreq ifr = boost::initialized_value;
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
   if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) < 0)

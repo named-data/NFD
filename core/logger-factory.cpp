@@ -73,7 +73,8 @@ LoggerFactory::parseLevel(const std::string& level)
     {
       uint32_t levelNo = boost::lexical_cast<uint32_t>(level);
 
-      if ((LOG_NONE <= levelNo && levelNo <= LOG_TRACE) ||
+      if ((boost::lexical_cast<uint32_t>(LOG_NONE) <= levelNo &&
+           levelNo <= boost::lexical_cast<uint32_t>(LOG_TRACE)) ||
           levelNo == LOG_ALL)
         {
           return static_cast<LogLevel>(levelNo);

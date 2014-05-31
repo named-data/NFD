@@ -63,7 +63,8 @@ public:
   onNfdCommandFailure(const FaceEventNotification& notification,
                       uint32_t code, const std::string& reason)
   {
-    std::cerr << "FAILED: " << notification << " (code: " << code << ")" << std::endl;
+    std::cerr << "FAILED: " << notification
+              << " (code: " << code << ", reason: " << reason << ")" << std::endl;
   }
 
   bool

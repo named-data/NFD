@@ -110,7 +110,7 @@ operator>>(std::istream& is, Network& network)
 
       if (address.is_v4())
         {
-          ip::address_v4::bytes_type maskBytes = {};
+          ip::address_v4::bytes_type maskBytes = boost::initialized_value;
           for (size_t i = 0; i < mask; i++)
             {
               size_t byteId = i / 8;
@@ -133,7 +133,7 @@ operator>>(std::istream& is, Network& network)
         }
       else
         {
-          ip::address_v6::bytes_type maskBytes = {};
+          ip::address_v6::bytes_type maskBytes = boost::initialized_value;
           for (size_t i = 0; i < mask; i++)
             {
               size_t byteId = i / 8;
