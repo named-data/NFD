@@ -64,6 +64,8 @@ WebSocketFace::close()
       m_closed = true;
       websocketpp::lib::error_code ecode;
       m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ecode);
+
+      onFail("Face closed");
     }
 }
 

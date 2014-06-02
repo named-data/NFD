@@ -82,6 +82,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
 
 EthernetFace::~EthernetFace()
 {
+  onFail.clear(); // no reason to call onFail anymore
   close();
 }
 
@@ -108,6 +109,8 @@ EthernetFace::close()
       m_socket->close(error); // ignore errors
       pcap_close(m_pcap);
       m_pcap = 0;
+
+      onFail("Face closed");
     }
 }
 
