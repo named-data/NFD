@@ -30,6 +30,8 @@
 #include "../face/dummy-face.hpp"
 #include "fw/face-table.hpp"
 #include "fw/forwarder.hpp"
+#include "face/udp-factory.hpp"
+#include "face/ethernet-factory.hpp"
 
 #include "common.hpp"
 #include "tests/test-common.hpp"
@@ -653,6 +655,37 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdpUnknownOption)
                              "Unrecognized option \"hello\" in \"udp\" section"));
 }
 
+
+BOOST_AUTO_TEST_CASE(TestProcessSectionUdpMulticastReinit)
+{
+  const std::string CONFIG_WITH_MCAST =
+    "face_system\n"
+    "{\n"
+    "  udp\n"
+    "  {\n"
+    "    mcast yes\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
+
+  shared_ptr<UdpFactory> factory = static_pointer_cast<UdpFactory>(getManager().findFactory("udp"));
+  BOOST_REQUIRE(static_cast<bool>(factory));
+
+  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
+
+  const std::string CONFIG_WITHOUT_MCAST =
+    "face_system\n"
+    "{\n"
+    "  udp\n"
+    "  {\n"
+    "    mcast no\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
+}
+
+
 #ifdef HAVE_LIBPCAP
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionEther)
@@ -733,6 +766,37 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionEtherUnknownOption)
                         bind(&isExpectedException, _1,
                              "Unrecognized option \"hello\" in \"ether\" section"));
 }
+
+BOOST_AUTO_TEST_CASE(TestProcessSectionEtherMulticastReinit)
+{
+  const std::string CONFIG_WITH_MCAST =
+    "face_system\n"
+    "{\n"
+    "  ether\n"
+    "  {\n"
+    "    mcast yes\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
+
+  shared_ptr<EthernetFactory> factory =
+    static_pointer_cast<EthernetFactory>(getManager().findFactory("ether"));
+  BOOST_REQUIRE(static_cast<bool>(factory));
+
+  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
+
+  const std::string CONFIG_WITHOUT_MCAST =
+    "face_system\n"
+    "{\n"
+    "  ether\n"
+    "  {\n"
+    "    mcast no\n"
+    "  }\n"
+    "}\n";
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
+}
+
 
 #endif
 

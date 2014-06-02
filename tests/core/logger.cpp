@@ -493,6 +493,7 @@ BOOST_FIXTURE_TEST_CASE(UnknownModule, LoggerFixture)
   const std::string LOG_CONFIG =
     "log\n"
     "{\n"
+    "  default_level DEBUG\n"
     "  TestMadeUpModule INFO\n"
     "}\n";
 

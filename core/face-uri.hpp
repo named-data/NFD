@@ -123,6 +123,15 @@ public: // getters
   std::string
   toString() const;
 
+public: // EqualityComparable concept
+  /// equality operator
+  bool
+  operator==(const FaceUri& rhs) const;
+
+  /// inequality operator
+  bool
+  operator!=(const FaceUri& rhs) const;
+
 private:
   std::string m_scheme;
   std::string m_host;
@@ -170,6 +179,22 @@ FaceUri::toString() const
   std::ostringstream os;
   os << *this;
   return os.str();
+}
+
+inline bool
+FaceUri::operator==(const FaceUri& rhs) const
+{
+  return (m_scheme == rhs.m_scheme &&
+          m_host == rhs.m_host &&
+          m_isV6 == rhs.m_isV6 &&
+          m_port == rhs.m_port &&
+          m_path == rhs.m_path);
+}
+
+inline bool
+FaceUri::operator!=(const FaceUri& rhs) const
+{
+  return !(*this == rhs);
 }
 
 inline std::ostream&

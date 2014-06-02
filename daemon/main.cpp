@@ -53,28 +53,41 @@ struct ProgramOptions
 class Nfd : noncopyable
 {
 public:
+  explicit
+  Nfd(const std::string& configFile)
+    : m_configFile(configFile)
+    , m_originalStreamBuf(0)
+  {
+  }
+
+  ~Nfd()
+  {
+    if (static_cast<bool>(m_originalStreamBuf)) {
+      std::clog.rdbuf(m_originalStreamBuf);
+    }
+  }
 
   void
-  initialize(const std::string& configFile)
+  initialize()
   {
-    initializeLogging(configFile);
+    initializeLogging();
 
     m_forwarder = make_shared<Forwarder>();
 
-    initializeManagement(configFile);
+    initializeManagement();
 
     PrivilegeHelper::drop();
   }
 
 
   void
-  initializeLogging(const std::string& configFile)
+  initializeLogging()
   {
     ConfigFile config(&ConfigFile::ignoreUnknownSection);
     LoggerFactory::getInstance().setConfigFile(config);
 
-    config.parse(configFile, true);
-    config.parse(configFile, false);
+    config.parse(m_configFile, true);
+    config.parse(m_configFile, false);
   }
 
   class IgnoreRibAndLogSections
@@ -103,7 +116,7 @@ public:
   };
 
   void
-  initializeManagement(const std::string& configFile)
+  initializeManagement()
   {
     m_internalFace = make_shared<InternalFace>();
 
@@ -131,8 +144,8 @@ public:
     m_faceManager->setConfigFile(config);
 
     // parse config file
-    config.parse(configFile, true);
-    config.parse(configFile, false);
+    config.parse(m_configFile, true);
+    config.parse(m_configFile, false);
 
     // add FIB entry for NFD Management Protocol
     shared_ptr<fib::Entry> entry = m_forwarder->getFib().insert("/localhost/nfd").first;
@@ -231,12 +244,46 @@ public:
       }
     else
       {
-        /// \todo May be try to reload config file (at least security section)
         signalSet.async_wait(bind(&Nfd::terminate, this, _1, _2, ref(signalSet)));
       }
   }
 
+  void
+  reload(const boost::system::error_code& error,
+         int signalNo,
+         boost::asio::signal_set& signalSet)
+  {
+    if (error)
+      return;
+
+    NFD_LOG_INFO("Caught signal '" << strsignal(signalNo));
+
+    ////////////////////////
+    // Reload config file //
+    ////////////////////////
+
+    // Logging
+    initializeLogging();
+    /// \todo Reopen log file
+
+    // Other stuff
+    ConfigFile config((IgnoreRibAndLogSections()));
+
+    general::setConfigFile(config);
+
+    m_internalFace->getValidator().setConfigFile(config);
+    m_faceManager->setConfigFile(config);
+
+    config.parse(m_configFile, false);
+
+    ////////////////////////
+
+    signalSet.async_wait(bind(&Nfd::reload, this, _1, _2, ref(signalSet)));
+  }
+
 private:
+  std::string m_configFile;
+
   shared_ptr<Forwarder> m_forwarder;
 
   shared_ptr<InternalFace>          m_internalFace;
@@ -244,6 +291,9 @@ private:
   shared_ptr<FaceManager>           m_faceManager;
   shared_ptr<StrategyChoiceManager> m_strategyChoiceManager;
   shared_ptr<StatusServer>          m_statusServer;
+
+  shared_ptr<std::ofstream>         m_logFile;
+  std::basic_streambuf<char>*       m_originalStreamBuf;
 };
 
 } // namespace nfd
@@ -275,10 +325,10 @@ main(int argc, char** argv)
     return 0;
   }
 
-  Nfd nfdInstance;
+  Nfd nfdInstance(options.config);
 
   try {
-    nfdInstance.initialize(options.config);
+    nfdInstance.initialize();
   }
   catch (boost::filesystem::filesystem_error& e) {
     if (e.code() == boost::system::errc::permission_denied) {
@@ -302,16 +352,16 @@ main(int argc, char** argv)
     return 3;
   }
 
+  boost::asio::signal_set terminationSignalSet(getGlobalIoService());
+  terminationSignalSet.add(SIGINT);
+  terminationSignalSet.add(SIGTERM);
+  terminationSignalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2,
+                                       ref(terminationSignalSet)));
 
-
-
-  boost::asio::signal_set signalSet(getGlobalIoService());
-  signalSet.add(SIGINT);
-  signalSet.add(SIGTERM);
-  signalSet.add(SIGHUP);
-  signalSet.add(SIGUSR1);
-  signalSet.add(SIGUSR2);
-  signalSet.async_wait(bind(&Nfd::terminate, &nfdInstance, _1, _2, ref(signalSet)));
+  boost::asio::signal_set reloadSignalSet(getGlobalIoService());
+  reloadSignalSet.add(SIGHUP);
+  reloadSignalSet.async_wait(bind(&Nfd::reload, &nfdInstance, _1, _2,
+                                  ref(reloadSignalSet)));
 
   try {
     getGlobalIoService().run();

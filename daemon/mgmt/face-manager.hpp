@@ -76,6 +76,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   listFaces(const Interest& request);
 
+  shared_ptr<ProtocolFactory>
+  findFactory(const std::string& protocol);
+
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 
   void

@@ -69,7 +69,8 @@ shared_ptr<EthernetFace>
 EthernetFactory::findMulticastFace(const std::string& interfaceName,
                                    const ethernet::Address& address) const
 {
-  MulticastFacesMap::const_iterator i = m_multicastFaces.find(std::make_pair(interfaceName, address));
+  MulticastFaceMap::const_iterator i =
+    m_multicastFaces.find(std::make_pair(interfaceName, address));
   if (i != m_multicastFaces.end())
     return i->second;
   else

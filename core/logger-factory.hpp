@@ -81,6 +81,9 @@ private:
   LogLevel
   parseLevel(const std::string& level);
 
+  LogLevel
+  extractLevel(const ConfigSection& item, const std::string& key);
+
 private:
 
   typedef std::map<std::string, LogLevel> LevelMap;

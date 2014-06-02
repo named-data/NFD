@@ -236,6 +236,19 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
 
   if (!isDryRun)
     {
+      if (m_factories.count("unix") > 0)
+        {
+          return;
+          // shared_ptr<UnixStreamFactory> factory
+          //   = static_pointer_cast<UnixStreamFactory>(m_factories["unix"]);
+          // shared_ptr<UnixStreamChannel> unixChannel = factory->findChannel(path);
+
+          // if (static_cast<bool>(unixChannel))
+          //   {
+          //     return;
+          //   }
+        }
+
       shared_ptr<UnixStreamFactory> factory = make_shared<UnixStreamFactory>();
       shared_ptr<UnixStreamChannel> unixChannel = factory->createChannel(path);
 
@@ -249,7 +262,8 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
       m_factories.insert(std::make_pair("unix", factory));
     }
 #else
-  throw ConfigFile::Error("NFD was compiled without UNIX sockets support, cannot process \"unix\" section");
+  throw ConfigFile::Error("NFD was compiled without UNIX sockets support, "
+                          "cannot process \"unix\" section");
 #endif // HAVE_UNIX_SOCKETS
 
 }
@@ -314,6 +328,11 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 
   if (!isDryRun)
     {
+      if (m_factories.count("tcp") > 0)
+        {
+          return;
+        }
+
       shared_ptr<TcpFactory> factory = ndn::make_shared<TcpFactory>(port);
       m_factories.insert(std::make_pair("tcp", factory));
 
@@ -485,10 +504,18 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 
   if (!isDryRun)
     {
-      shared_ptr<UdpFactory> factory = ndn::make_shared<UdpFactory>(port);
-      m_factories.insert(std::make_pair("udp", factory));
+      shared_ptr<UdpFactory> factory;
+      bool isReload = false;
+      if (m_factories.count("udp") > 0) {
+        isReload = true;
+        factory = static_pointer_cast<UdpFactory>(m_factories["udp"]);
+      }
+      else {
+        factory = ndn::make_shared<UdpFactory>(port);
+        m_factories.insert(std::make_pair("udp", factory));
+      }
 
-      if (enableV4)
+      if (!isReload && enableV4)
         {
           shared_ptr<UdpChannel> v4Channel =
             factory->createChannel("0.0.0.0", port, time::seconds(timeout));
@@ -499,7 +526,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
           m_factories.insert(std::make_pair("udp4", factory));
         }
 
-      if (enableV6)
+      if (!isReload && enableV6)
         {
           shared_ptr<UdpChannel> v6Channel =
             factory->createChannel("::", port, time::seconds(timeout));
@@ -534,6 +561,15 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
             }
 #endif
 
+          std::list<shared_ptr<MulticastUdpFace> > multicastFacesToRemove;
+          for (UdpFactory::MulticastFaceMap::const_iterator i =
+                 factory->getMulticastFaces().begin();
+               i != factory->getMulticastFaces().end();
+               ++i)
+            {
+              multicastFacesToRemove.push_back(i->second);
+            }
+
           for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i =
                  ipv4MulticastInterfaces.begin();
                i != ipv4MulticastInterfaces.end();
@@ -547,6 +583,34 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
                                                      isNicNameNecessary ? nic->name : "");
 
               addCreatedFaceToForwarder(newFace);
+              multicastFacesToRemove.remove(newFace);
+            }
+
+          for (std::list<shared_ptr<MulticastUdpFace> >::iterator i =
+                 multicastFacesToRemove.begin();
+               i != multicastFacesToRemove.end();
+               ++i)
+            {
+              (*i)->close();
+            }
+        }
+      else
+        {
+          std::list<shared_ptr<MulticastUdpFace> > multicastFacesToRemove;
+          for (UdpFactory::MulticastFaceMap::const_iterator i =
+                 factory->getMulticastFaces().begin();
+               i != factory->getMulticastFaces().end();
+               ++i)
+            {
+              multicastFacesToRemove.push_back(i->second);
+            }
+
+          for (std::list<shared_ptr<MulticastUdpFace> >::iterator i =
+                 multicastFacesToRemove.begin();
+               i != multicastFacesToRemove.end();
+               ++i)
+            {
+              (*i)->close();
             }
         }
     }
@@ -598,11 +662,26 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
 
   if (!isDryRun)
     {
-      shared_ptr<EthernetFactory> factory = make_shared<EthernetFactory>();
-      m_factories.insert(std::make_pair("ether", factory));
+      shared_ptr<EthernetFactory> factory;
+      if (m_factories.count("ether") > 0) {
+        factory = static_pointer_cast<EthernetFactory>(m_factories["ether"]);
+      }
+      else {
+        factory = ndn::make_shared<EthernetFactory>();
+        m_factories.insert(std::make_pair("ether", factory));
+      }
 
       if (useMcast)
         {
+          std::list<shared_ptr<EthernetFace> > multicastFacesToRemove;
+          for (EthernetFactory::MulticastFaceMap::const_iterator i =
+                 factory->getMulticastFaces().begin();
+               i != factory->getMulticastFaces().end();
+               ++i)
+            {
+              multicastFacesToRemove.push_back(i->second);
+            }
+
           for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
                i != nicList.end();
                ++i)
@@ -616,6 +695,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
                         factory->createMulticastFace(nic, mcastGroup);
 
                       addCreatedFaceToForwarder(newFace);
+                      multicastFacesToRemove.remove(newFace);
                     }
                   catch (const EthernetFactory::Error& factoryError)
                     {
@@ -626,6 +706,33 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
                       NFD_LOG_ERROR(faceError.what() << ", continuing");
                     }
                 }
+            }
+
+          for (std::list<shared_ptr<EthernetFace> >::iterator i =
+                 multicastFacesToRemove.begin();
+               i != multicastFacesToRemove.end();
+               ++i)
+            {
+              (*i)->close();
+            }
+        }
+      else
+        {
+          std::list<shared_ptr<EthernetFace> > multicastFacesToRemove;
+          for (EthernetFactory::MulticastFaceMap::const_iterator i =
+                 factory->getMulticastFaces().begin();
+               i != factory->getMulticastFaces().end();
+               ++i)
+            {
+              multicastFacesToRemove.push_back(i->second);
+            }
+
+          for (std::list<shared_ptr<EthernetFace> >::iterator i =
+                 multicastFacesToRemove.begin();
+               i != multicastFacesToRemove.end();
+               ++i)
+            {
+              (*i)->close();
             }
         }
     }
@@ -704,6 +811,11 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
 
   if (!isDryRun)
     {
+      if (m_factories.count("websocket") > 0)
+        {
+          return;
+        }
+
       shared_ptr<WebSocketFactory> factory = ndn::make_shared<WebSocketFactory>(port);
       m_factories.insert(std::make_pair("websocket", factory));
       uint16_t portNo = boost::lexical_cast<uint16_t>(port);
@@ -743,7 +855,8 @@ FaceManager::onFaceRequest(const Interest& request)
   const size_t commandNComps = command.size();
   const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
-  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
+  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor =
+    m_unsignedVerbDispatch.find(verb);
   if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
     {
       NFD_LOG_DEBUG("command result: processing verb: " << verb);
@@ -1013,5 +1126,16 @@ FaceManager::listFaces(const Interest& request)
 
   m_statusPublisher.publish();
 }
+
+shared_ptr<ProtocolFactory>
+FaceManager::findFactory(const std::string& protocol)
+{
+  FactoryMap::iterator factory = m_factories.find(protocol);
+  if (factory != m_factories.end())
+    return factory->second;
+  else
+    return shared_ptr<ProtocolFactory>();
+}
+
 
 } // namespace nfd

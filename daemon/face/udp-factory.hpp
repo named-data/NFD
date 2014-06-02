@@ -40,10 +40,17 @@ public:
   /**
    * \brief Exception of UdpFactory
    */
-  struct Error : public ProtocolFactory::Error
+  class Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ProtocolFactory::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : ProtocolFactory::Error(what)
+    {
+    }
   };
+
+  typedef std::map< udp::Endpoint, shared_ptr<MulticastUdpFace> > MulticastFaceMap;
 
   explicit
   UdpFactory(const std::string& defaultPort = "6363");
@@ -74,7 +81,7 @@ public:
    */
   shared_ptr<UdpChannel>
   createChannel(const udp::Endpoint& localEndpoint,
-         const time::seconds& timeout = time::seconds(600));
+                const time::seconds& timeout = time::seconds(600));
 
   /**
    * \brief Create UDP-based channel using specified host and port number
@@ -89,17 +96,13 @@ public:
    * Example: fe80::5e96:9dff:fe7d:9c8d%en1
    * Otherwise, you can use ::
    *
-   * Once a face is created, if it doesn't send/receive anything for
-   * a period of time equal to timeout, it will be destroyed
-   * @todo this funcionality has to be implemented
-   *
    * \throws UdpChannel::Error if the bind on the socket fails
    * \throws UdpFactory::Error
    */
   shared_ptr<UdpChannel>
   createChannel(const std::string& localHost,
-         const std::string& localPort,
-         const time::seconds& timeout = time::seconds(600));
+                const std::string& localPort,
+                const time::seconds& timeout = time::seconds(600));
 
   /**
    * \brief Create MulticastUdpFace using udp::Endpoint
@@ -147,13 +150,12 @@ public:
              const FaceCreatedCallback& onCreated,
              const FaceConnectFailedCallback& onConnectFailed);
 
-protected:
-  typedef std::map< udp::Endpoint, shared_ptr<MulticastUdpFace> > MulticastFaceMap;
 
   /**
-   * \brief Keeps tracking of the MulticastUdpFace created
+   * \brief Get map of configured multicast faces
    */
-  MulticastFaceMap m_multicastFaces;
+  const MulticastFaceMap&
+  getMulticastFaces() const;
 
 private:
 
@@ -197,13 +199,23 @@ private:
                                  const FaceCreatedCallback& onCreated,
                                  const FaceConnectFailedCallback& onConnectFailed);
 
+private:
   typedef std::map< udp::Endpoint, shared_ptr<UdpChannel> > ChannelMap;
+
   ChannelMap m_channels;
+  MulticastFaceMap m_multicastFaces;
 
   std::string m_defaultPort;
-
   std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
+
+
+inline const UdpFactory::MulticastFaceMap&
+UdpFactory::getMulticastFaces() const
+{
+  return m_multicastFaces;
+}
+
 
 } // namespace nfd
 

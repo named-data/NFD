@@ -74,6 +74,10 @@ public:
    * \param onFaceCreated  Callback to notify successful creation of the face
    * \param onAcceptFailed Callback to notify when channel fails
    *
+   * Once a face is created, if it doesn't send/receive anything for
+   * a period of time equal to timeout, it will be destroyed
+   * \todo this functionality has to be implemented
+   *
    * \throws UdpChannel::Error if called multiple times
    */
   void

@@ -71,6 +71,8 @@ CommandValidator::onConfig(const ConfigSection& section,
 
   const ConfigSection EMPTY_SECTION;
 
+  m_validator.reset();
+
   if (section.begin() == section.end())
     {
       throw ConfigFile::Error("No authorize sections found");

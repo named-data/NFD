@@ -38,10 +38,18 @@ public:
   /**
    * \brief Exception of EthernetFactory
    */
-  struct Error : public ProtocolFactory::Error
+  class Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ProtocolFactory::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : ProtocolFactory::Error(what)
+    {
+    }
   };
+
+  typedef std::map< std::pair<std::string, ethernet::Address>,
+                    shared_ptr<EthernetFace> > MulticastFaceMap;
 
   // from ProtocolFactory
   virtual void
@@ -68,6 +76,12 @@ public:
   createMulticastFace(const shared_ptr<NetworkInterfaceInfo>& interface,
                       const ethernet::Address& address);
 
+  /**
+   * \brief Get map of configured multicast faces
+   */
+  const MulticastFaceMap&
+  getMulticastFaces() const;
+
 private:
   void
   afterFaceFailed(const std::string& interfaceName,
@@ -86,10 +100,16 @@ private:
                     const ethernet::Address& address) const;
 
 private:
-  typedef std::map< std::pair<std::string, ethernet::Address>,
-                    shared_ptr<EthernetFace> > MulticastFacesMap;
-  MulticastFacesMap m_multicastFaces;
+  MulticastFaceMap m_multicastFaces;
 };
+
+
+inline const EthernetFactory::MulticastFaceMap&
+EthernetFactory::getMulticastFaces() const
+{
+  return m_multicastFaces;
+}
+
 
 } // namespace nfd
 

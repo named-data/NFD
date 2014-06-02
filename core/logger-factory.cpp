@@ -87,6 +87,25 @@ LoggerFactory::parseLevel(const std::string& level)
                              level + "\"");
 }
 
+LogLevel
+LoggerFactory::extractLevel(const ConfigSection& item, const std::string& key)
+{
+  std::string levelString;
+  try
+    {
+      levelString = item.get_value<std::string>();
+    }
+  catch (const boost::property_tree::ptree_error& error)
+    {
+    }
+
+  if (levelString.empty())
+    {
+      throw LoggerFactory::Error("No logging level found for option \"" + key + "\"");
+    }
+
+  return parseLevel(levelString);
+}
 
 void
 LoggerFactory::onConfig(const ConfigSection& section,
@@ -107,33 +126,29 @@ LoggerFactory::onConfig(const ConfigSection& section,
 //   Forwarder WARN
 // }
 
-  // std::cerr << "loading logging configuration" << std::endl;
+  if (!isDryRun)
+    {
+      ConfigSection::const_assoc_iterator item = section.find("default_level");
+      if (item != section.not_found())
+        {
+          LogLevel level = extractLevel(item->second, "default_level");
+          setDefaultLevel(level);
+        }
+      else
+        {
+          setDefaultLevel(LOG_INFO);
+        }
+    }
+
   for (ConfigSection::const_iterator item = section.begin();
        item != section.end();
        ++item)
     {
-      std::string levelString;
-      try
-        {
-          levelString = item->second.get_value<std::string>();
-        }
-      catch (const boost::property_tree::ptree_error& error)
-        {
-        }
-
-      if (levelString.empty())
-        {
-          throw LoggerFactory::Error("No logging level found for option \"" + item->first + "\"");
-        }
-
-      LogLevel level = parseLevel(levelString);
+      LogLevel level = extractLevel(item->second, item->first);
 
       if (item->first == "default_level")
         {
-          if (!isDryRun)
-            {
-              setDefaultLevel(level);
-            }
+          // do nothing
         }
       else
         {
