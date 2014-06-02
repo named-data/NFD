@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include <getopt.h>
 #include <boost/filesystem.hpp>
@@ -37,6 +38,7 @@
 #include "mgmt/status-server.hpp"
 #include "core/config-file.hpp"
 #include "mgmt/general-config-section.hpp"
+#include "mgmt/tables-config-section.hpp"
 
 namespace nfd {
 
@@ -137,6 +139,15 @@ public:
     ConfigFile config((IgnoreRibAndLogSections()));
 
     general::setConfigFile(config);
+
+    TablesConfigSection tablesConfig(m_forwarder->getCs(),
+                                     m_forwarder->getPit(),
+                                     m_forwarder->getFib(),
+                                     m_forwarder->getStrategyChoice(),
+                                     m_forwarder->getMeasurements());
+
+    tablesConfig.setConfigFile(config);
+
     m_internalFace->getValidator().setConfigFile(config);
 
     m_forwarder->addFace(m_internalFace);
@@ -270,6 +281,14 @@ public:
     ConfigFile config((IgnoreRibAndLogSections()));
 
     general::setConfigFile(config);
+
+    TablesConfigSection tablesConfig(m_forwarder->getCs(),
+                                     m_forwarder->getPit(),
+                                     m_forwarder->getFib(),
+                                     m_forwarder->getStrategyChoice(),
+                                     m_forwarder->getMeasurements());
+
+    tablesConfig.setConfigFile(config);
 
     m_internalFace->getValidator().setConfigFile(config);
     m_faceManager->setConfigFile(config);

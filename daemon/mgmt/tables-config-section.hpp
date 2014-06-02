@@ -23,42 +23,45 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include "unit-under-test.hpp"
-// Unit being tested MUST be included first, to ensure header compiles on its own.
+#ifndef NFD_MGMT_TABLES_CONFIG_SECTION_HPP
+#define NFD_MGMT_TABLES_CONFIG_SECTION_HPP
 
-#include "tests/test-common.hpp"
+#include "table/fib.hpp"
+#include "table/pit.hpp"
+#include "table/cs.hpp"
+#include "table/measurements.hpp"
+#include "table/strategy-choice.hpp"
+
+#include "core/config-file.hpp"
 
 namespace nfd {
-namespace tests {
-// Unit tests SHOULD go inside nfd::tests namespace.
 
-// Test suite SHOULD use BaseFixture or a subclass of it.
-BOOST_FIXTURE_TEST_SUITE(TestSkeleton, BaseFixture)
-
-BOOST_AUTO_TEST_CASE(Test1)
+class TablesConfigSection
 {
-  int i = 0;
-  /**
-   * For reference of available Boost.Test macros, @see http://www.boost.org/doc/libs/1_55_0/libs/test/doc/html/utf/testing-tools/reference.html
-   */
+public:
 
-  BOOST_REQUIRE_NO_THROW(i = 1);
-  BOOST_REQUIRE_EQUAL(i, 1);
-}
+  TablesConfigSection(Cs& cs,
+                      Pit& pit,
+                      Fib& fib,
+                      StrategyChoice& strategyChoice,
+                      Measurements& measurements);
 
-// Custom fixture SHOULD derive from BaseFixture.
-class Test2Fixture : protected BaseFixture
-{
+  void
+  setConfigFile(ConfigFile& configFile);
+
+  void
+  onConfig(const ConfigSection& configSection,
+           bool isDryRun,
+           const std::string& filename);
+
+private:
+  Cs& m_cs;
+  // Pit& m_pit;
+  // Fib& m_fib;
+  // StrategyChoice& m_strategyChoice;
+  // Measurements& m_measurements;
 };
 
-BOOST_FIXTURE_TEST_CASE(Test2, Test2Fixture)
-{
-  // g_io is a shorthand of getGlobalIoService()
-  // resetGlobalIoService() is automatically called after each test case
-  g_io.run();
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-} // namespace tests
 } // namespace nfd
+
+#endif // NFD_MGMT_TABLES_CONFIG_SECTION_HPP

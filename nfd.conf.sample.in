@@ -42,6 +42,15 @@ log
   ; Forwarder INFO
 }
 
+; The tables section configures the CS, PIT, FIB, Strategy Choice, and Measurements
+tables
+{
+
+  ; ContentStore size limit in number of packets
+  ; default is 65536, about 500MB with 8KB packet size
+  cs_max_packets 65536
+}
+
 ; The face_system section defines what faces and channels are created.
 face_system
 {
