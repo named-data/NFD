@@ -59,6 +59,8 @@ def checkWebsocket(self, **kw):
 
         self.end_msg('.'.join(self.env['WEBSOCKET_VERSION']))
 
+
+        self.env['INCLUDES_WEBSOCKET'] = websocketDir.parent.abspath()
         self.env['HAVE_WEBSOCKET'] = True
         self.define('HAVE_WEBSOCKET', 1)
 

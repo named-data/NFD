@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "face-manager.hpp"
 
@@ -96,19 +97,28 @@ const FaceManager::UnsignedVerbAndProcessor FaceManager::UNSIGNED_COMMAND_VERBS[
                              Name::Component("events"),
                              &FaceManager::ignoreUnsignedVerb
                              ),
+
+    UnsignedVerbAndProcessor(
+                             Name::Component("channels"),
+                             &FaceManager::listChannels
+                             ),
   };
 
-const Name FaceManager::LIST_COMMAND_PREFIX("/localhost/nfd/faces/list");
-const size_t FaceManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
+const Name FaceManager::FACES_LIST_DATASET_PREFIX("/localhost/nfd/faces/list");
+const size_t FaceManager::FACES_LIST_DATASET_NCOMPS = FACES_LIST_DATASET_PREFIX.size();
 
-const Name FaceManager::EVENTS_COMMAND_PREFIX("/localhost/nfd/faces/events");
+const Name FaceManager::FACE_EVENTS_PREFIX("/localhost/nfd/faces/events");
+
+const Name FaceManager::CHANNELS_LIST_DATASET_PREFIX("/localhost/nfd/faces/channels");
+const size_t FaceManager::CHANNELS_LIST_DATASET_NCOMPS = CHANNELS_LIST_DATASET_PREFIX.size();
 
 FaceManager::FaceManager(FaceTable& faceTable,
                          shared_ptr<InternalFace> face)
   : ManagerBase(face, FACE_MANAGER_PRIVILEGE)
   , m_faceTable(faceTable)
-  , m_statusPublisher(m_faceTable, m_face, LIST_COMMAND_PREFIX)
-  , m_notificationStream(m_face, EVENTS_COMMAND_PREFIX)
+  , m_faceStatusPublisher(m_faceTable, m_face, FACES_LIST_DATASET_PREFIX)
+  , m_channelStatusPublisher(m_factories, m_face, CHANNELS_LIST_DATASET_PREFIX)
+  , m_notificationStream(m_face, FACE_EVENTS_PREFIX)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
                          SIGNED_COMMAND_VERBS +
                          (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
@@ -818,11 +828,10 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
 
       shared_ptr<WebSocketFactory> factory = ndn::make_shared<WebSocketFactory>(port);
       m_factories.insert(std::make_pair("websocket", factory));
-      uint16_t portNo = boost::lexical_cast<uint16_t>(port);
 
       if (enableV6 && enableV4)
         {
-          shared_ptr<WebSocketChannel> ip46Channel = factory->createChannel("::", portNo);
+          shared_ptr<WebSocketChannel> ip46Channel = factory->createChannel("::", port);
           if (needToListen)
             {
               ip46Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
@@ -832,7 +841,7 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
         }
       else if (enableV4)
         {
-          shared_ptr<WebSocketChannel> ipv4Channel = factory->createChannel("0.0.0.0", portNo);
+          shared_ptr<WebSocketChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
           if (needToListen)
             {
               ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
@@ -1116,15 +1125,34 @@ FaceManager::listFaces(const Interest& request)
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
 
-  if (commandNComps < LIST_COMMAND_NCOMPS ||
-      !LIST_COMMAND_PREFIX.isPrefixOf(command))
+  if (commandNComps < FACES_LIST_DATASET_NCOMPS ||
+      !FACES_LIST_DATASET_PREFIX.isPrefixOf(command))
     {
       NFD_LOG_DEBUG("command result: malformed");
       sendResponse(command, 400, "Malformed command");
       return;
     }
 
-  m_statusPublisher.publish();
+  m_faceStatusPublisher.publish();
+}
+
+void
+FaceManager::listChannels(const Interest& request)
+{
+  NFD_LOG_DEBUG("in listChannels");
+  const Name& command = request.getName();
+  const size_t commandNComps = command.size();
+
+  if (commandNComps < CHANNELS_LIST_DATASET_NCOMPS ||
+      !CHANNELS_LIST_DATASET_PREFIX.isPrefixOf(command))
+    {
+      NFD_LOG_DEBUG("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  NFD_LOG_DEBUG("publishing");
+  m_channelStatusPublisher.publish();
 }
 
 shared_ptr<ProtocolFactory>

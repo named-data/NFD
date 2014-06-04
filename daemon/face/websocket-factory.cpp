@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology,
- *                     The University of Memphis
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,9 +21,10 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "websocket-factory.hpp"
+#include "core/resolver.hpp"
 
 namespace nfd {
 
@@ -50,16 +51,10 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 }
 
 shared_ptr<WebSocketChannel>
-WebSocketFactory::createChannel(const std::string& localIPAddress,
-                                uint16_t localPort)
+WebSocketFactory::createChannel(const std::string& host, const std::string& port)
 {
-  boost::system::error_code ec;
-  ip::address address = ip::address::from_string(localIPAddress, ec);
-  if (ec)
-    {
-      throw Error("Invalid address format: " + localIPAddress);
-    }
-  websocket::Endpoint endpoint(address, localPort);
+  ip::tcp::endpoint tcpEndpoint = TcpResolver::syncResolve(host, port);
+  websocket::Endpoint endpoint(tcpEndpoint.address(), tcpEndpoint.port());
   return createChannel(endpoint);
 }
 
@@ -79,6 +74,18 @@ WebSocketFactory::createFace(const FaceUri& uri,
                              const FaceConnectFailedCallback& onConnectFailed)
 {
   throw Error("WebSocketFactory does not support 'createFace' operation");
+}
+
+std::list<shared_ptr<const Channel> >
+WebSocketFactory::getChannels() const
+{
+  std::list<shared_ptr<const Channel> > channels;
+  for (ChannelMap::const_iterator i = m_channels.begin(); i != m_channels.end(); ++i)
+    {
+      channels.push_back(i->second);
+    }
+
+  return channels;
 }
 
 } // namespace nfd

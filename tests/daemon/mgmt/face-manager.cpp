@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "mgmt/face-manager.hpp"
 #include "mgmt/internal-face.hpp"
@@ -37,6 +38,7 @@
 #include "tests/test-common.hpp"
 #include "validation-common.hpp"
 #include "face-status-publisher-common.hpp"
+#include "channel-status-common.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>
@@ -254,8 +256,6 @@ public:
 
 protected:
   shared_ptr<InternalFace> m_face;
-
-private:
   bool m_callbackFired;
 };
 
@@ -311,7 +311,7 @@ public:
     m_faceTable.reset();
   }
 
-private:
+protected:
   FaceManager m_manager;
   ConfigFile m_config;
 };
@@ -1690,7 +1690,6 @@ protected:
 };
 
 BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
-
 {
   Name commandName("/localhost/nfd/faces/list");
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
@@ -1728,6 +1727,46 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
 
   m_manager.listFaces(*command);
   BOOST_REQUIRE(m_finished);
+}
+
+class ChannelStatusFixture : public FaceManagerFixture
+{
+public:
+  void
+  validatePublish(const Data& data, const ndn::nfd::ChannelStatus& expectedEntry)
+  {
+    m_callbackFired = true;
+    Block b = data.getContent().blockFromValue();
+    ndn::nfd::ChannelStatus entry(b);
+    BOOST_CHECK_EQUAL(entry.getLocalUri(), expectedEntry.getLocalUri());
+  }
+
+  virtual shared_ptr<DummyProtocolFactory>
+  addProtocolFactory(const std::string& protocol)
+  {
+    shared_ptr<DummyProtocolFactory> factory(make_shared<DummyProtocolFactory>());
+    m_manager.m_factories[protocol] = factory;
+
+    return factory;
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(TestChannelStatus, ChannelStatusFixture)
+{
+  shared_ptr<DummyProtocolFactory> factory(addProtocolFactory("dummy"));
+  factory->addChannel("dummy://");
+
+  Name requestName("/localhost/nfd/faces/channels");
+  shared_ptr<Interest> request(make_shared<Interest>(requestName));
+
+  ndn::nfd::ChannelStatus expectedEntry;
+  expectedEntry.setLocalUri(DummyChannel("dummy://").getUri().toString());
+
+  m_face->onReceiveData +=
+    bind(&ChannelStatusFixture::validatePublish, this, _1, expectedEntry);
+
+  m_manager.listChannels(*request);
+  BOOST_REQUIRE(m_callbackFired);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

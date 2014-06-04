@@ -23,59 +23,75 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
-#define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
+#ifndef NFD_TESTS_NFD_MGMT_CHANNEL_STATUS_COMMON_HPP
+#define NFD_TESTS_NFD_MGMT_CHANNEL_STATUS_COMMON_HPP
 
-#include "common.hpp"
-#include "core/face-uri.hpp"
+#include "face/protocol-factory.hpp"
+#include "face/channel.hpp"
+
+#include "tests/test-common.hpp"
+
+#include <ndn-cxx/management/nfd-channel-status.hpp>
+
+
 
 namespace nfd {
+namespace tests {
 
-class Face;
-class Channel;
-
-/**
- * \brief Prototype for the callback called when face is created
- *        (as a response to incoming connection or after connection
- *        is established)
- */
-typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
-
-/**
- * \brief Prototype for the callback that is called when face is failed to
- *        get created
- */
-typedef function<void(const std::string& reason)> FaceConnectFailedCallback;
-
-
-class ProtocolFactory
+class DummyChannel : public Channel
 {
 public:
-  /**
-   * \brief Base class for all exceptions thrown by channel factories
-   */
-  struct Error : public std::runtime_error
-  {
-    Error(const std::string& what) : std::runtime_error(what) {}
-  };
 
-  /** \brief Try to create Face using the supplied Face URI
-   *
-   * This method should automatically choose channel, based on supplied Face URI
-   * and create face.
-   *
-   * \throws Factory::Error if Factory does not support connect operation
-   */
+  DummyChannel(const std::string& uri)
+  {
+    setUri(FaceUri(uri));
+  }
+
+  virtual
+  ~DummyChannel()
+  {
+  }
+};
+
+class DummyProtocolFactory : public ProtocolFactory
+{
+public:
+
+  DummyProtocolFactory()
+  {
+
+  }
+
   virtual void
   createFace(const FaceUri& uri,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed) = 0;
+             const FaceConnectFailedCallback& onConnectFailed)
+  {
+  }
+
+  virtual void
+  addChannel(const std::string& channelUri)
+  {
+    m_channels.push_back(make_shared<DummyChannel>(channelUri));
+  }
 
   virtual std::list<shared_ptr<const Channel> >
-  getChannels() const = 0;
+  getChannels() const
+  {
+    return m_channels;
+  }
 
+  virtual size_t
+  getNChannels() const
+  {
+    return m_channels.size();
+  }
+
+private:
+  std::list<shared_ptr<const Channel> > m_channels;
 };
 
+} // namespace tests
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
+#endif // NFD_TESTS_NFD_MGMT_CHANNEL_STATUS_COMMON_HPP

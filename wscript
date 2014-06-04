@@ -138,8 +138,8 @@ def build(bld):
                                        'daemon/face/unix-*.cpp',
                                        'daemon/face/websocket-*.cpp',
                                        'daemon/main.cpp']),
-        use='core-objects',
-        includes='daemon websocketpp',
+        use='core-objects WEBSOCKET',
+        includes='daemon',
         export_includes='daemon',
         )
 

@@ -23,18 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_WEBSOCKETPP_HPP
-#define NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+#include "face/websocket-factory.hpp"
+#include "tests/test-common.hpp"
 
-#ifndef HAVE_WEBSOCKET
-#error "This file must not be included when WebSocket Face support is disabled"
-#endif
+namespace nfd {
+namespace tests {
 
-// suppress websocketpp warnings
-#pragma GCC system_header
-#pragma clang system_header
+BOOST_FIXTURE_TEST_SUITE(FaceWebSocket, BaseFixture)
 
-#include "websocketpp/config/asio_no_tls.hpp"
-#include "websocketpp/server.hpp"
+BOOST_AUTO_TEST_CASE(GetChannels)
+{
+  WebSocketFactory factory("19596");
+  BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
-#endif // NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+  std::vector<shared_ptr<const Channel> > expectedChannels;
+
+  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
+  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
+  expectedChannels.push_back(factory.createChannel("::1", "20071"));
+
+  std::list<shared_ptr<const Channel> > channels = factory.getChannels();
+  for (std::list<shared_ptr<const Channel> >::const_iterator i = channels.begin();
+       i != channels.end(); ++i)
+    {
+      std::vector<shared_ptr<const Channel> >::iterator pos =
+        std::find(expectedChannels.begin(), expectedChannels.end(), *i);
+
+      BOOST_REQUIRE(pos != expectedChannels.end());
+      expectedChannels.erase(pos);
+    }
+
+  BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+} // namespace tests
+} // namespace nfd

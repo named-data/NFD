@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
@@ -29,6 +30,7 @@
 #include "face/local-face.hpp"
 #include "mgmt/manager-base.hpp"
 #include "mgmt/face-status-publisher.hpp"
+#include "mgmt/channel-status-publisher.hpp"
 #include "mgmt/notification-stream.hpp"
 
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
@@ -75,6 +77,9 @@ public:
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   listFaces(const Interest& request);
+
+  void
+  listChannels(const Interest& request);
 
   shared_ptr<ProtocolFactory>
   findFactory(const std::string& protocol);
@@ -159,11 +164,15 @@ private:
              const std::string& optionName,
              const std::string& sectionName);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
+
   FactoryMap m_factories;
+
+private:
   FaceTable& m_faceTable;
-  FaceStatusPublisher m_statusPublisher;
+  FaceStatusPublisher m_faceStatusPublisher;
+  ChannelStatusPublisher m_channelStatusPublisher;
   NotificationStream m_notificationStream;
 
   typedef function<void(FaceManager*,
@@ -195,10 +204,13 @@ private:
   static const SignedVerbAndProcessor SIGNED_COMMAND_VERBS[];
   static const UnsignedVerbAndProcessor UNSIGNED_COMMAND_VERBS[];
 
-  static const Name LIST_COMMAND_PREFIX;
-  static const size_t LIST_COMMAND_NCOMPS;
+  static const Name FACES_LIST_DATASET_PREFIX;
+  static const size_t FACES_LIST_DATASET_NCOMPS;
 
-  static const Name EVENTS_COMMAND_PREFIX;
+  static const Name CHANNELS_LIST_DATASET_PREFIX;
+  static const size_t CHANNELS_LIST_DATASET_NCOMPS;
+
+  static const Name FACE_EVENTS_PREFIX;
 };
 
 inline bool

@@ -23,18 +23,36 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_WEBSOCKETPP_HPP
-#define NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+#ifndef NFD_DAEMON_MGMT_CHANNEL_STATUS_PUBLISHER_HPP
+#define NFD_DAEMON_MGMT_CHANNEL_STATUS_PUBLISHER_HPP
 
-#ifndef HAVE_WEBSOCKET
-#error "This file must not be included when WebSocket Face support is disabled"
-#endif
+#include "mgmt/segment-publisher.hpp"
 
-// suppress websocketpp warnings
-#pragma GCC system_header
-#pragma clang system_header
+namespace nfd {
 
-#include "websocketpp/config/asio_no_tls.hpp"
-#include "websocketpp/server.hpp"
+class ProtocolFactory;
 
-#endif // NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+class ChannelStatusPublisher : public SegmentPublisher
+{
+public:
+  typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
+
+  ChannelStatusPublisher(const FactoryMap& factories,
+                         shared_ptr<AppFace> face,
+                         const Name& prefix);
+
+  virtual
+  ~ChannelStatusPublisher();
+
+protected:
+
+  virtual size_t
+  generate(ndn::EncodingBuffer& outBuffer);
+
+private:
+  const FactoryMap& m_factories;
+};
+
+} // namespace nfd
+
+#endif // NFD_DAEMON_MGMT_CHANNEL_STATUS_PUBLISHER_HPP
