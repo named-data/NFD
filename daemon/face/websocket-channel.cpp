@@ -89,6 +89,7 @@ WebSocketChannel::handleClose(websocketpp::connection_hdl hdl)
   ChannelFaceMap::iterator it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end())
     {
+      it->second->close();
       NFD_LOG_DEBUG("handleClose: remove client");
       m_channelFaces.erase(it);
     }
