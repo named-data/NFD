@@ -671,7 +671,10 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUdpMulticastReinit)
   shared_ptr<UdpFactory> factory = static_pointer_cast<UdpFactory>(getManager().findFactory("udp"));
   BOOST_REQUIRE(static_cast<bool>(factory));
 
-  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
+  if (factory->getMulticastFaces().size() == 0) {
+    BOOST_TEST_MESSAGE("Destroying multicast faces is not tested because "
+                       "no UDP multicast faces are available");
+  }
 
   const std::string CONFIG_WITHOUT_MCAST =
     "face_system\n"
@@ -783,7 +786,10 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionEtherMulticastReinit)
     static_pointer_cast<EthernetFactory>(getManager().findFactory("ether"));
   BOOST_REQUIRE(static_cast<bool>(factory));
 
-  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
+  if (factory->getMulticastFaces().size() == 0) {
+    BOOST_TEST_MESSAGE("Destroying multicast faces is not tested because "
+                       "no Ethernet multicast faces are available");
+  }
 
   const std::string CONFIG_WITHOUT_MCAST =
     "face_system\n"

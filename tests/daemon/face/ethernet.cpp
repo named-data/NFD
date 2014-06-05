@@ -39,6 +39,8 @@ class InterfacesFixture : protected BaseFixture
 protected:
   InterfacesFixture()
   {
+    EthernetFactory factory;
+
     std::list< shared_ptr<NetworkInterfaceInfo> > ifs = listNetworkInterfaces();
     for (std::list< shared_ptr<NetworkInterfaceInfo> >::const_iterator i = ifs.begin();
          i != ifs.end();
@@ -46,14 +48,14 @@ protected:
       {
         if (!(*i)->isLoopback() && (*i)->isUp())
           {
-            pcap_t* p = pcap_create((*i)->name.c_str(), 0);
-            if (!p)
+            try {
+              factory.createMulticastFace(*i, ethernet::getBroadcastAddress());
+            }
+            catch (Face::Error&) {
               continue;
+            }
 
-            if (pcap_activate(p) == 0)
-              m_interfaces.push_back(*i);
-
-            pcap_close(p);
+            m_interfaces.push_back(*i);
           }
       }
   }
@@ -73,19 +75,16 @@ BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
       return;
     }
 
-  shared_ptr<EthernetFace> face1;
-  BOOST_REQUIRE_NO_THROW(face1 = factory.createMulticastFace(m_interfaces.front(),
-                                                             ethernet::getBroadcastAddress()));
-  shared_ptr<EthernetFace> face1bis;
-  BOOST_REQUIRE_NO_THROW(face1bis = factory.createMulticastFace(m_interfaces.front(),
-                                                                ethernet::getBroadcastAddress()));
+  shared_ptr<EthernetFace> face1 = factory.createMulticastFace(m_interfaces.front(),
+                                                               ethernet::getBroadcastAddress());
+  shared_ptr<EthernetFace> face1bis = factory.createMulticastFace(m_interfaces.front(),
+                                                                  ethernet::getBroadcastAddress());
   BOOST_CHECK_EQUAL(face1, face1bis);
 
   if (m_interfaces.size() > 1)
     {
-      shared_ptr<EthernetFace> face2;
-      BOOST_REQUIRE_NO_THROW(face2 = factory.createMulticastFace(m_interfaces.back(),
-                                                                 ethernet::getBroadcastAddress()));
+      shared_ptr<EthernetFace> face2 = factory.createMulticastFace(m_interfaces.back(),
+                                                                   ethernet::getBroadcastAddress());
       BOOST_CHECK_NE(face1, face2);
     }
   else
@@ -94,9 +93,8 @@ BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
                          "only one interface available");
     }
 
-  shared_ptr<EthernetFace> face3;
-  BOOST_REQUIRE_NO_THROW(face3 = factory.createMulticastFace(m_interfaces.front(),
-                                                             ethernet::getDefaultMulticastAddress()));
+  shared_ptr<EthernetFace> face3 = factory.createMulticastFace(m_interfaces.front(),
+                                     ethernet::getDefaultMulticastAddress());
   BOOST_CHECK_NE(face1, face3);
 }
 
@@ -111,7 +109,7 @@ BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
     }
 
   shared_ptr<EthernetFace> face = factory.createMulticastFace(m_interfaces.front(),
-                                                              ethernet::getDefaultMulticastAddress());
+                                    ethernet::getDefaultMulticastAddress());
 
   BOOST_REQUIRE(static_cast<bool>(face));
 
@@ -122,24 +120,15 @@ BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
   BOOST_CHECK_EQUAL(face->getLocalUri().toString(),
                     "dev://" + m_interfaces.front()->name);
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-
-  BOOST_CHECK_NO_THROW(face->sendInterest(interest1));
-  BOOST_CHECK_NO_THROW(face->sendData    (data1    ));
-  BOOST_CHECK_NO_THROW(face->sendInterest(interest2));
-  BOOST_CHECK_NO_THROW(face->sendData    (data2    ));
+  BOOST_CHECK_NO_THROW(face->sendInterest(*interest1));
+  BOOST_CHECK_NO_THROW(face->sendData    (*data1    ));
+  BOOST_CHECK_NO_THROW(face->sendInterest(*interest2));
+  BOOST_CHECK_NO_THROW(face->sendData    (*data2    ));
 
 //  m_ioRemaining = 4;
 //  m_ioService.run();
