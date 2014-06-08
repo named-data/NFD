@@ -32,11 +32,14 @@
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 
-#include <ndn-cxx/management/nfd-fib-entry.hpp>
-#include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-forwarder-status.hpp>
+#include <ndn-cxx/management/nfd-channel-status.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-fib-entry.hpp>
+#include <ndn-cxx/management/nfd-strategy-choice.hpp>
 
 #include <boost/algorithm/string/replace.hpp>
+#include <list>
 
 namespace ndn {
 
@@ -47,9 +50,11 @@ public:
   NfdStatus(char* toolName)
     : m_toolName(toolName)
     , m_needVersionRetrieval(false)
+    , m_needChannelStatusRetrieval(false)
     , m_needFaceStatusRetrieval(false)
     , m_needFibEnumerationRetrieval(false)
-    , m_needXmlDataRetrieval(false)
+    , m_needStrategyChoiceRetrieval(false)
+    , m_isOutputXml(false)
   {
   }
 
@@ -61,8 +66,10 @@ public:
       "Options:\n"
       "  [-h] - print this help message\n"
       "  [-v] - retrieve version information\n"
+      "  [-c] - retrieve channel status information\n"
       "  [-f] - retrieve face status information\n"
       "  [-b] - retrieve FIB information\n"
+      "  [-s] - retrieve configured strategy choice for NDN namespaces\n"
       "  [-x] - retrieve NFD status information in XML format\n"
       "\n"
       "  [-V] - show version information of nfd-status and exit\n"
@@ -79,6 +86,12 @@ public:
   }
 
   void
+  enableChannelStatusRetrieval()
+  {
+    m_needChannelStatusRetrieval = true;
+  }
+
+  void
   enableFaceStatusRetrieval()
   {
     m_needFaceStatusRetrieval = true;
@@ -91,15 +104,23 @@ public:
   }
 
   void
-  enableXmlDataRetrieval()
+  enableStrategyChoiceRetrieval()
   {
-    m_needXmlDataRetrieval = true;
+    m_needStrategyChoiceRetrieval = true;
+  }
+
+  void
+  enableXmlOutput()
+  {
+    m_isOutputXml = true;
   }
 
   void
   onTimeout()
   {
     std::cerr << "Request timed out" << std::endl;
+
+    runNextStep();
   }
 
   void
@@ -124,7 +145,8 @@ public:
       }
   }
 
-  void escapeSpecialCharacters(std::string *data)
+  void
+  escapeSpecialCharacters(std::string *data)
   {
     using boost::algorithm::replace_all;
     replace_all(*data, "&",  "&amp;");
@@ -134,14 +156,27 @@ public:
     replace_all(*data, ">",  "&gt;");
   }
 
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+
+  void
+  fetchVersionInformation()
+  {
+    Interest interest("/localhost/nfd/status");
+    interest.setChildSelector(1);
+    interest.setMustBeFresh(true);
+    m_face.expressInterest(
+                           interest,
+                           bind(&NfdStatus::afterFetchedVersionInformation, this, _2),
+                           bind(&NfdStatus::onTimeout, this));
+  }
+
   void
   afterFetchedVersionInformation(const Data& data)
   {
     nfd::ForwarderStatus status(data.getContent());
-    if (m_needXmlDataRetrieval)
+    if (m_isOutputXml)
       {
-        std::cout << "<?xml version=\"1.0\"?>";
-        std::cout << "<nfdStatus xmlns=\"ndn:/localhost/nfd/status/1\">";
         std::cout << "<generalStatus>";
         std::cout << "<version>"
                   << status.getNfdVersion() << "</version>";
@@ -204,25 +239,100 @@ public:
         std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
         std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
       }
-    if (m_needFaceStatusRetrieval)
-      {
-        fetchFaceStatusInformation();
-      }
-    else if (m_needFibEnumerationRetrieval)
-      {
-        fetchFibEnumerationInformation();
-      }
+
+    runNextStep();
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+
+  void
+  fetchChannelStatusInformation()
+  {
+    m_buffer = make_shared<OBufferStream>();
+
+    Interest interest("/localhost/nfd/faces/channels");
+    interest.setChildSelector(1);
+    interest.setMustBeFresh(true);
+
+    m_face.expressInterest(interest,
+                           bind(&NfdStatus::fetchSegments, this, _2,
+                                &NfdStatus::afterFetchedChannelStatusInformation),
+                           bind(&NfdStatus::onTimeout, this));
   }
 
   void
-  fetchVersionInformation()
+  afterFetchedChannelStatusInformation()
   {
-    Interest interest("/localhost/nfd/status");
+    ConstBufferPtr buf = m_buffer->buf();
+    if (m_isOutputXml)
+      {
+        std::cout << "<channels>";
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
+                break;
+              }
+
+            offset += block.size();
+
+            nfd::ChannelStatus channelStatus(block);
+
+            std::cout << "<channel>";
+
+            std::string localUri(channelStatus.getLocalUri());
+            escapeSpecialCharacters(&localUri);
+            std::cout << "<localUri>" << localUri << "</localUri>";
+            std::cout << "</channel>";
+          }
+        std::cout << "</channels>";
+      }
+    else
+      {
+        std::cout << "Channels:" << std::endl;
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
+                break;
+              }
+
+            offset += block.size();
+
+            nfd::ChannelStatus channelStatus(block);
+            std::cout << "  " << channelStatus.getLocalUri() << std::endl;
+          }
+       }
+
+    runNextStep();
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+
+  void
+  fetchFaceStatusInformation()
+  {
+    m_buffer = make_shared<OBufferStream>();
+
+    Interest interest("/localhost/nfd/faces/list");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
-    m_face.expressInterest(
-                           interest,
-                           bind(&NfdStatus::afterFetchedVersionInformation, this, _2),
+
+    m_face.expressInterest(interest,
+                           bind(&NfdStatus::fetchSegments, this, _2,
+                                &NfdStatus::afterFetchedFaceStatusInformation),
                            bind(&NfdStatus::onTimeout, this));
   }
 
@@ -230,7 +340,7 @@ public:
   afterFetchedFaceStatusInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_needXmlDataRetrieval)
+    if (m_isOutputXml)
       {
         std::cout << "<faces>";
 
@@ -308,24 +418,23 @@ public:
           }
        }
 
-    if (m_needFibEnumerationRetrieval)
-      {
-        fetchFibEnumerationInformation();
-      }
+    runNextStep();
   }
 
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+
   void
-  fetchFaceStatusInformation()
+  fetchFibEnumerationInformation()
   {
     m_buffer = make_shared<OBufferStream>();
 
-    Interest interest("/localhost/nfd/faces/list");
+    Interest interest("/localhost/nfd/fib/list");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
-
     m_face.expressInterest(interest,
                            bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedFaceStatusInformation),
+                                &NfdStatus::afterFetchedFibEnumerationInformation),
                            bind(&NfdStatus::onTimeout, this));
   }
 
@@ -333,7 +442,7 @@ public:
   afterFetchedFibEnumerationInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_needXmlDataRetrieval)
+    if (m_isOutputXml)
       {
         std::cout << "<fib>";
 
@@ -371,7 +480,6 @@ public:
           }
 
         std::cout << "</fib>";
-        std::cout << "</nfdStatus>";
       }
     else
       {
@@ -405,60 +513,176 @@ public:
             std::cout << "}" << std::endl;
           }
       }
+
+    runNextStep();
   }
 
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+
   void
-  fetchFibEnumerationInformation()
+  fetchStrategyChoiceInformation()
   {
     m_buffer = make_shared<OBufferStream>();
 
-    Interest interest("/localhost/nfd/fib/list");
+    Interest interest("/localhost/nfd/strategy-choice/list");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
     m_face.expressInterest(interest,
                            bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedFibEnumerationInformation),
+                                &NfdStatus::afterFetchedStrategyChoiceInformationInformation),
                            bind(&NfdStatus::onTimeout, this));
+  }
+
+  void
+  afterFetchedStrategyChoiceInformationInformation()
+  {
+    ConstBufferPtr buf = m_buffer->buf();
+    if (m_isOutputXml)
+      {
+        std::cout << "<strategyChoices>";
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode StrategyChoice TLV";
+                break;
+              }
+            offset += block.size();
+
+            nfd::StrategyChoice strategyChoice(block);
+
+            std::cout << "<strategyChoice>";
+
+            std::string name(strategyChoice.getName().toUri());
+            escapeSpecialCharacters(&name);
+            std::cout << "<namespace>" << name << "</namespace>";
+            std::cout << "<strategy>";
+
+            std::string strategy(strategyChoice.getStrategy().toUri());
+            escapeSpecialCharacters(&strategy);
+
+            std::cout << "<name>" << strategy << "</name>";
+            std::cout << "</strategy>";
+            std::cout << "</strategyChoice>";
+          }
+
+        std::cout << "</strategyChoices>";
+      }
+    else
+      {
+        std::cout << "Strategy choices:" << std::endl;
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode StrategyChoice TLV" << std::endl;
+                break;
+              }
+            offset += block.size();
+
+            nfd::StrategyChoice strategyChoice(block);
+
+            std::cout << "  " << strategyChoice.getName()
+                      << " strategy=" << strategyChoice.getStrategy() << std::endl;
+          }
+      }
+
+    runNextStep();
   }
 
   void
   fetchInformation()
   {
-    if (m_needXmlDataRetrieval ||
+    if (m_isOutputXml ||
         (!m_needVersionRetrieval &&
-        !m_needFaceStatusRetrieval &&
-        !m_needFibEnumerationRetrieval))
+         !m_needChannelStatusRetrieval &&
+         !m_needFaceStatusRetrieval &&
+         !m_needFibEnumerationRetrieval &&
+         !m_needStrategyChoiceRetrieval))
       {
         enableVersionRetrieval();
+        enableChannelStatusRetrieval();
         enableFaceStatusRetrieval();
         enableFibEnumerationRetrieval();
+        enableStrategyChoiceRetrieval();
       }
+
+    if (m_isOutputXml)
+      m_fetchSteps.push_back(bind(&NfdStatus::printXmlHeader, this));
 
     if (m_needVersionRetrieval)
-      {
-        fetchVersionInformation();
-      }
-    else if (m_needFaceStatusRetrieval)
-      {
-        fetchFaceStatusInformation();
-      }
-    else if (m_needFibEnumerationRetrieval)
-      {
-        fetchFibEnumerationInformation();
-      }
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchVersionInformation, this));
 
+    if (m_needChannelStatusRetrieval)
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchChannelStatusInformation, this));
+
+    if (m_needFaceStatusRetrieval)
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchFaceStatusInformation, this));
+
+    if (m_needFibEnumerationRetrieval)
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchFibEnumerationInformation, this));
+
+    if (m_needStrategyChoiceRetrieval)
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchStrategyChoiceInformation, this));
+
+    if (m_isOutputXml)
+      m_fetchSteps.push_back(bind(&NfdStatus::printXmlFooter, this));
+
+    runNextStep();
     m_face.processEvents();
+  }
+
+private:
+  void
+  printXmlHeader()
+  {
+    std::cout << "<?xml version=\"1.0\"?>";
+    std::cout << "<nfdStatus xmlns=\"ndn:/localhost/nfd/status/1\">";
+
+    runNextStep();
+  }
+
+  void
+  printXmlFooter()
+  {
+    std::cout << "</nfdStatus>";
+
+    runNextStep();
+  }
+
+  void
+  runNextStep()
+  {
+    if (m_fetchSteps.empty())
+      return;
+
+    function<void()> nextStep = m_fetchSteps.front();
+    m_fetchSteps.pop_front();
+    nextStep();
   }
 
 private:
   std::string m_toolName;
   bool m_needVersionRetrieval;
+  bool m_needChannelStatusRetrieval;
   bool m_needFaceStatusRetrieval;
   bool m_needFibEnumerationRetrieval;
-  bool m_needXmlDataRetrieval;
+  bool m_needStrategyChoiceRetrieval;
+  bool m_isOutputXml;
   Face m_face;
 
   shared_ptr<OBufferStream> m_buffer;
+
+  std::deque<function<void()> > m_fetchSteps;
 };
 
 }
@@ -468,7 +692,7 @@ int main(int argc, char* argv[])
   int option;
   ndn::NfdStatus nfdStatus(argv[0]);
 
-  while ((option = getopt(argc, argv, "hvfbxV")) != -1) {
+  while ((option = getopt(argc, argv, "hvcfbsxV")) != -1) {
     switch (option) {
     case 'h':
       nfdStatus.usage();
@@ -476,14 +700,20 @@ int main(int argc, char* argv[])
     case 'v':
       nfdStatus.enableVersionRetrieval();
       break;
+    case 'c':
+      nfdStatus.enableChannelStatusRetrieval();
+      break;
     case 'f':
       nfdStatus.enableFaceStatusRetrieval();
       break;
     case 'b':
       nfdStatus.enableFibEnumerationRetrieval();
       break;
+    case 's':
+      nfdStatus.enableStrategyChoiceRetrieval();
+      break;
     case 'x':
-      nfdStatus.enableXmlDataRetrieval();
+      nfdStatus.enableXmlOutput();
       break;
     case 'V':
       std::cout << NFD_VERSION_BUILD_STRING << std::endl;

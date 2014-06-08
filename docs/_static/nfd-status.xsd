@@ -33,6 +33,18 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="channelType">
+  <xs:sequence>
+    <xs:element type="xs:anyURI" name="localUri"/>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="channelsType">
+  <xs:sequence>
+    <xs:element type="nfd:channelType" name="channel" maxOccurs="unbounded" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="faceType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
@@ -74,12 +86,34 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="strategyType">
+  <xs:sequence>
+    <xs:element type="xs:anyURI" name="name"/>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="strategyChoiceType">
+  <xs:sequence>
+    <xs:element type="xs:anyURI" name="namespace"/>
+    <xs:element type="nfd:strategyType" name="strategy"/>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="strategyChoicesType">
+  <xs:sequence>
+    <xs:element type="nfd:strategyChoiceType" name="strategyChoice"
+                maxOccurs="unbounded" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:element name="nfdStatus">
   <xs:complexType>
     <xs:sequence>
       <xs:element type="nfd:generalStatusType" name="generalStatus"/>
+      <xs:element type="nfd:channelsType" name="channels"/>
       <xs:element type="nfd:facesType" name="faces"/>
       <xs:element type="nfd:fibType" name="fib"/>
+      <xs:element type="nfd:strategyChoicesType" name="strategyChoices"/>
     </xs:sequence>
   </xs:complexType>
 </xs:element>
