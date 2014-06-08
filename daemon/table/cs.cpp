@@ -71,13 +71,24 @@ Cs::size() const
 void
 Cs::setLimit(size_t nMaxPackets)
 {
+  size_t oldNMaxPackets = m_nMaxPackets;
   m_nMaxPackets = nMaxPackets;
 
-  while (isFull())
-    {
-      if (!evictItem())
-        break;
+  while (size() > m_nMaxPackets) {
+    evictItem();
+  }
+
+  if (m_nMaxPackets >= oldNMaxPackets) {
+    for (size_t i = oldNMaxPackets; i < m_nMaxPackets; i++) {
+      m_freeCsEntries.push(new cs::Entry());
     }
+  }
+  else {
+    for (size_t i = oldNMaxPackets; i > m_nMaxPackets; i--) {
+      delete m_freeCsEntries.front();
+      m_freeCsEntries.pop();
+    }
+  }
 }
 
 size_t

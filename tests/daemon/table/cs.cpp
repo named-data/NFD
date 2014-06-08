@@ -44,6 +44,24 @@ public:
 
 BOOST_FIXTURE_TEST_SUITE(TableCs, BaseFixture)
 
+BOOST_AUTO_TEST_CASE(SetLimit)
+{
+  Cs cs(1);
+
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/1")), true);
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/2")), true);
+  BOOST_CHECK_EQUAL(cs.size(), 1);
+
+  cs.setLimit(3);
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/3")), true);
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/4")), true);
+  BOOST_CHECK_EQUAL(cs.insert(*makeData("/5")), true);
+  BOOST_CHECK_EQUAL(cs.size(), 3);
+
+  cs.setLimit(2);
+  BOOST_CHECK_EQUAL(cs.size(), 2);
+}
+
 BOOST_AUTO_TEST_CASE(Insertion)
 {
   Cs cs;
