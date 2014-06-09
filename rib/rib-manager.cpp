@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology,
- *                     The University of Memphis
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "rib-manager.hpp"
 #include "core/global-io.hpp"
@@ -216,28 +216,27 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       return;
     }
 
-  RibEntry ribEntry;
-  ribEntry.name = parameters.getName();
-  ribEntry.faceId = parameters.getFaceId();
-  ribEntry.origin = parameters.getOrigin();
-  ribEntry.cost = parameters.getCost();
-  ribEntry.flags = parameters.getFlags();
-  ribEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
+  FaceEntry faceEntry;
+  faceEntry.faceId = parameters.getFaceId();
+  faceEntry.origin = parameters.getOrigin();
+  faceEntry.cost = parameters.getCost();
+  faceEntry.flags = parameters.getFlags();
+  faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
 
-  NFD_LOG_TRACE("register prefix: " << ribEntry);
+  NFD_LOG_TRACE("register prefix: " << faceEntry);
 
-  // For right now, just pass the options to fib as it is,
-  // without processing flags. Later options will be first added to
-  // Rib tree, then nrd will generate fib updates based on flags and then
-  // will add next hops one by one..
-  m_managedRib.insert(ribEntry);
+  /// \todo For right now, just pass the options to fib as is
+  ///       without processing flags. Later, options will first be added to
+  ///       Rib tree, nrd will generate fib updates based on flags, and
+  ///       will then add next hops one by one.
+  m_managedRib.insert(parameters.getName(), faceEntry);
   m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
     ControlParameters()
-      .setName(ribEntry.name)
-      .setFaceId(ribEntry.faceId)
-      .setCost(ribEntry.cost),
-    bind(&RibManager::onRegSuccess, this, request, parameters, ribEntry),
-    bind(&RibManager::onCommandError, this, _1, _2, request, ribEntry));
+      .setName(parameters.getName())
+      .setFaceId(faceEntry.faceId)
+      .setCost(faceEntry.cost),
+    bind(&RibManager::onRegSuccess, this, request, parameters, faceEntry),
+    bind(&RibManager::onCommandError, this, _1, _2, request, faceEntry));
 }
 
 void
@@ -253,19 +252,18 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
       return;
     }
 
-  RibEntry ribEntry;
-  ribEntry.name = parameters.getName();
-  ribEntry.faceId = parameters.getFaceId();
-  ribEntry.origin = parameters.getOrigin();
+  FaceEntry faceEntry;
+  faceEntry.faceId = parameters.getFaceId();
+  faceEntry.origin = parameters.getOrigin();
 
-  NFD_LOG_TRACE("unregister prefix: " << ribEntry);
+  NFD_LOG_TRACE("unregister prefix: " << faceEntry);
 
   m_nfdController.start<ndn::nfd::FibRemoveNextHopCommand>(
     ControlParameters()
-      .setName(ribEntry.name)
-      .setFaceId(ribEntry.faceId),
-    bind(&RibManager::onUnRegSuccess, this, request, parameters, ribEntry),
-    bind(&RibManager::onCommandError, this, _1, _2, request, ribEntry));
+      .setName(parameters.getName())
+      .setFaceId(faceEntry.faceId),
+    bind(&RibManager::onUnRegSuccess, this, request, parameters, faceEntry),
+    bind(&RibManager::onCommandError, this, _1, _2, request, faceEntry));
 }
 
 void
@@ -316,7 +314,7 @@ RibManager::validateParameters(const ControlCommand& command,
 void
 RibManager::onCommandError(uint32_t code, const std::string& error,
                            const shared_ptr<const Interest>& request,
-                           const RibEntry& ribEntry)
+                           const FaceEntry& faceEntry)
 {
   NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
 
@@ -336,13 +334,13 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
     }
 
   sendResponse(request->getName(), response);
-  m_managedRib.erase(ribEntry);
+  m_managedRib.erase(request->getName(), faceEntry);
 }
 
 void
 RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
                          const ControlParameters& parameters,
-                         const RibEntry& ribEntry)
+                         const FaceEntry& faceEntry)
 {
   ControlResponse response;
 
@@ -350,7 +348,7 @@ RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
   response.setText("Success");
   response.setBody(parameters.wireEncode());
 
-  NFD_LOG_TRACE("onRegSuccess: registered " << ribEntry);
+  NFD_LOG_TRACE("onRegSuccess: registered " << faceEntry);
 
   sendResponse(request->getName(), response);
 }
@@ -359,7 +357,7 @@ RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
 void
 RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
                            const ControlParameters& parameters,
-                           const RibEntry& ribEntry)
+                           const FaceEntry& faceEntry)
 {
   ControlResponse response;
 
@@ -367,10 +365,10 @@ RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
   response.setText("Success");
   response.setBody(parameters.wireEncode());
 
-  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << ribEntry);
+  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << faceEntry);
 
   sendResponse(request->getName(), response);
-  m_managedRib.erase(ribEntry);
+  m_managedRib.erase(request->getName(), faceEntry);
 }
 
 void
