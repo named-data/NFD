@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -159,6 +160,11 @@ protected:
   void
   setOnDemand(bool isOnDemand);
 
+  /** \brief fail the face and raise onFail event if it's UP; otherwise do nothing
+   */
+  void
+  fail(const std::string& reason);
+
 private:
   void
   setId(FaceId faceId);
@@ -171,6 +177,7 @@ private:
   FaceUri m_remoteUri;
   FaceUri m_localUri;
   bool m_isOnDemand;
+  bool m_isFailed;
 
   // allow setting FaceId
   friend class FaceTable;

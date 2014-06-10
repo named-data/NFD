@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -211,7 +212,7 @@ StreamFace<T, U>::close()
                << "] Close connection");
 
   closeSocket();
-  this->onFail("Close connection");
+  this->fail("Close connection");
 }
 
 template<class T, class U>
@@ -223,7 +224,7 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
 
   if (!m_socket->is_open())
     {
-      this->onFail("Connection closed");
+      this->fail("Connection closed");
       return;
     }
 
@@ -245,11 +246,11 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
 
   if (error == boost::asio::error::eof)
     {
-      this->onFail("Connection closed");
+      this->fail("Connection closed");
     }
   else
     {
-      this->onFail("Send or receive operation failed, closing socket: " +
+      this->fail("Send or receive operation failed, closing socket: " +
                    error.category().message(error.value()));
     }
 }
@@ -327,7 +328,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
                    << "closing down the face");
 
       closeSocket();
-      this->onFail("Failed to parse incoming packet or it is too large to process, "
+      this->fail("Failed to parse incoming packet or it is too large to process, "
                    "closing down the face");
       return;
     }

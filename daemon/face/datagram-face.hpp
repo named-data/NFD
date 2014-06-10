@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -155,7 +156,7 @@ DatagramFace<T>::handleSend(const boost::system::error_code& error,
 
     if (!m_socket->is_open())
     {
-      onFail("Tunnel closed");
+      fail("Tunnel closed");
       return;
     }
 
@@ -168,11 +169,11 @@ DatagramFace<T>::handleSend(const boost::system::error_code& error,
 
     if (error == boost::asio::error::eof)
     {
-      onFail("Tunnel closed");
+      fail("Tunnel closed");
     }
     else
     {
-      onFail("Send operation failed, closing socket: " +
+      fail("Send operation failed, closing socket: " +
              error.category().message(error.value()));
     }
     return;
@@ -196,7 +197,7 @@ DatagramFace<T>::close()
                << "] Close tunnel");
 
   closeSocket();
-  onFail("Close tunnel");
+  fail("Close tunnel");
 }
 
 template <class T>
@@ -224,7 +225,7 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
     // this should be unnecessary, but just in case
     if (!m_socket->is_open())
     {
-      onFail("Tunnel closed");
+      fail("Tunnel closed");
       return;
     }
 
@@ -237,11 +238,11 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
 
     if (error == boost::asio::error::eof)
     {
-      onFail("Tunnel closed");
+      fail("Tunnel closed");
     }
     else
     {
-      onFail("Receive operation failed, closing socket: " +
+      fail("Receive operation failed, closing socket: " +
              error.category().message(error.value()));
     }
     return;

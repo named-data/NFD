@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -66,6 +67,43 @@ BOOST_AUTO_TEST_CASE(Counters)
   BOOST_CHECK_EQUAL(counters.getNInDatas()     , 0);
   BOOST_CHECK_EQUAL(counters.getNOutInterests(), 0);
   BOOST_CHECK_EQUAL(counters.getNOutDatas()    , 0);
+}
+
+class FaceFailTestFace : public DummyFace
+{
+public:
+  FaceFailTestFace()
+    : failCount(0)
+  {
+    this->onFail += bind(&FaceFailTestFace::failHandler, this, _1);
+  }
+
+  void
+  failOnce()
+  {
+    this->fail("reason");
+  }
+
+private:
+  void
+  failHandler(const std::string& reason)
+  {
+    BOOST_CHECK_EQUAL(reason, "reason");
+    ++this->failCount;
+  }
+
+public:
+  int failCount;
+};
+
+BOOST_AUTO_TEST_CASE(FailTwice)
+{
+  FaceFailTestFace face;
+  BOOST_CHECK_EQUAL(face.failCount, 0);
+  face.failOnce();
+  BOOST_CHECK_EQUAL(face.failCount, 1);
+  face.failOnce();
+  BOOST_CHECK_EQUAL(face.failCount, 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

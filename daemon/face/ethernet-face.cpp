@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -110,7 +111,7 @@ EthernetFace::close()
       pcap_close(m_pcap);
       m_pcap = 0;
 
-      onFail("Face closed");
+      fail("Face closed");
     }
 }
 
@@ -166,7 +167,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
     {
       NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                    << "] Trying to send on closed face");
-      onFail("Face closed");
+      fail("Face closed");
       return;
     }
 
@@ -278,7 +279,7 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
 
   if (!m_pcap)
     {
-      onFail("Face closed");
+      fail("Face closed");
       return;
     }
 
@@ -295,7 +296,7 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
     }
 
   close();
-  onFail(msg);
+  fail(msg);
 }
 
 size_t
