@@ -27,11 +27,15 @@
 
 #include "cs.hpp"
 #include "core/logger.hpp"
+#include "core/random.hpp"
 #include <ndn-cxx/util/crypto.hpp>
-#include "ndn-cxx/security/signature-sha256-with-rsa.hpp"
+#include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
+#include <boost/random/bernoulli_distribution.hpp>
 
-#define SKIPLIST_MAX_LAYERS 32
-#define SKIPLIST_PROBABILITY 25         // 25% (p = 1/4)
+/// max skip list layers
+static const size_t SKIPLIST_MAX_LAYERS = 32;
+/// probability for an entry in layer N to appear also in layer N+1
+static const double SKIPLIST_PROBABILITY = 0.25;
 
 NFD_LOG_INIT("ContentStore");
 
@@ -265,17 +269,15 @@ Cs::insert(const Data& data, bool isUnsolicited)
 size_t
 Cs::pickRandomLayer() const
 {
-  int layer = -1;
-  int randomValue;
-
-  do
-    {
-      layer++;
-      randomValue = rand() % 100 + 1;
+  static boost::random::bernoulli_distribution<> dist(SKIPLIST_PROBABILITY);
+  // TODO rewrite using geometry_distribution
+  size_t layer;
+  for (layer = 0; layer < SKIPLIST_MAX_LAYERS; ++layer) {
+    if (!dist(getGlobalRng())) {
+      break;
     }
-  while ((randomValue < SKIPLIST_PROBABILITY) && (layer < SKIPLIST_MAX_LAYERS));
-
-  return static_cast<size_t>(layer);
+  }
+  return layer;
 }
 
 bool

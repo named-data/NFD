@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,9 +21,11 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "ncc-strategy.hpp"
+#include "core/random.hpp"
+#include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {
 namespace fw {
@@ -140,8 +143,9 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
   }
 
   if (isForwarded) {
-    static unsigned short seed[3];
-    time::nanoseconds deferNext = time::nanoseconds(nrand48(seed) % pitEntryInfo->maxInterval.count());
+    boost::random::uniform_int_distribution<time::nanoseconds::rep> dist(
+      0, pitEntryInfo->maxInterval.count() - 1);
+    time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));

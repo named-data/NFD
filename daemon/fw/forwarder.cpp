@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,12 +21,13 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "forwarder.hpp"
-#include <ndn-cxx/util/random.hpp>
 #include "core/logger.hpp"
+#include "core/random.hpp"
 #include "available-strategies.hpp"
+#include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {
 
@@ -169,7 +171,8 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
 
   if (wantNewNonce) {
     interest = make_shared<Interest>(*interest);
-    interest->setNonce(ndn::random::generateWord32());
+    static boost::random::uniform_int_distribution<uint32_t> dist;
+    interest->setNonce(dist(getGlobalRng()));
   }
 
   // insert OutRecord
