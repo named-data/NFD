@@ -26,8 +26,8 @@
 #define NFD_DAEMON_FACE_TCP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include <ndn-cxx/util/monotonic_deadline_timer.hpp>
 #include "tcp-face.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 
@@ -124,21 +124,19 @@ private:
   void
   handleSuccessfulConnect(const boost::system::error_code& error,
                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                          const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+                          const EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
                           const ConnectFailedCallback& onConnectFailed);
 
   void
-  handleFailedConnect(const boost::system::error_code& error,
-                      const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                      const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+  handleFailedConnect(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                       const ConnectFailedCallback& onConnectFailed);
 
   void
   handleEndpointResolution(const boost::system::error_code& error,
                            boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
                            const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                           const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+                           const EventId& connectTimeoutEvent,
                            const FaceCreatedCallback& onFaceCreated,
                            const ConnectFailedCallback& onConnectFailed,
                            const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);

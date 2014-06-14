@@ -566,6 +566,50 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
                       "Exception thrown for " + Dataset::getName());
 }
 
+class FaceCreateTimeoutFixture : protected BaseFixture
+{
+public:
+  void
+  onFaceCreated(const shared_ptr<Face>& newFace)
+  {
+    BOOST_CHECK_MESSAGE(false, "Timeout expected");
+    BOOST_CHECK(!static_cast<bool>(face1));
+    face1 = newFace;
+
+    limitedIo.afterOp();
+  }
+
+  void
+  onConnectFailed(const std::string& reason)
+  {
+    BOOST_CHECK_MESSAGE(true, reason);
+
+    limitedIo.afterOp();
+  }
+
+public:
+  LimitedIo limitedIo;
+
+  shared_ptr<Face> face1;
+};
+
+
+BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
+{
+  TcpFactory factory;
+  shared_ptr<TcpChannel> channel = factory.createChannel("0.0.0.0", "20070");
+
+  factory.createFace(FaceUri("tcp://192.0.2.1:20070"),
+                     bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
+                     bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _1));
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
+
+  BOOST_CHECK_EQUAL(static_cast<bool>(face1), false);
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

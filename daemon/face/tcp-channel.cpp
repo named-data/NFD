@@ -83,18 +83,14 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
-  shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<ndn::monotonic_deadline_timer>(ref(getGlobalIoService()));
+  EventId connectTimeoutEvent = scheduler::schedule(timeout,
+                                                    bind(&TcpChannel::handleFailedConnect, this,
+                                                         clientSocket, onConnectFailed));
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
-                                   clientSocket, connectTimeoutTimer,
+                                   clientSocket, connectTimeoutEvent,
                                    onFaceCreated, onConnectFailed));
-
-  connectTimeoutTimer->expires_from_now(timeout);
-  connectTimeoutTimer->async_wait(bind(&TcpChannel::handleFailedConnect, this, _1,
-                                       clientSocket, connectTimeoutTimer,
-                                       onConnectFailed));
 }
 
 void
@@ -106,23 +102,19 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
-  shared_ptr<ndn::monotonic_deadline_timer> connectTimeoutTimer =
-    make_shared<ndn::monotonic_deadline_timer>(ref(getGlobalIoService()));
-
   ip::tcp::resolver::query query(remoteHost, remotePort);
   shared_ptr<ip::tcp::resolver> resolver =
     make_shared<ip::tcp::resolver>(ref(getGlobalIoService()));
 
+  EventId connectTimeoutEvent = scheduler::schedule(timeout,
+                                                    bind(&TcpChannel::handleFailedConnect, this,
+                                                         clientSocket, onConnectFailed));
+
   resolver->async_resolve(query,
                           bind(&TcpChannel::handleEndpointResolution, this, _1, _2,
-                               clientSocket, connectTimeoutTimer,
+                               clientSocket, connectTimeoutEvent,
                                onFaceCreated, onConnectFailed,
                                resolver));
-
-  connectTimeoutTimer->expires_from_now(timeout);
-  connectTimeoutTimer->async_wait(bind(&TcpChannel::handleFailedConnect, this, _1,
-                                       clientSocket, connectTimeoutTimer,
-                                       onConnectFailed));
 }
 
 size_t
@@ -192,11 +184,11 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 void
 TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
                                     const shared_ptr<ip::tcp::socket>& socket,
-                                    const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+                                    const EventId& connectTimeoutEvent,
                                     const FaceCreatedCallback& onFaceCreated,
                                     const ConnectFailedCallback& onConnectFailed)
 {
-  timer->cancel();
+  scheduler::cancel(connectTimeoutEvent);
 
   if (error) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
@@ -219,20 +211,11 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
 }
 
 void
-TcpChannel::handleFailedConnect(const boost::system::error_code& error,
-                                const shared_ptr<ip::tcp::socket>& socket,
-                                const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+TcpChannel::handleFailedConnect(const shared_ptr<ip::tcp::socket>& socket,
                                 const ConnectFailedCallback& onConnectFailed)
 {
-  if (error) { // e.g., cancelled
-    return;
-  }
-
-  NFD_LOG_DEBUG("Connect to remote endpoint timed out: "
-                << error.category().message(error.value()));
-
-  onConnectFailed("Connect to remote endpoint timed out: " +
-                  error.category().message(error.value()));
+  NFD_LOG_DEBUG("Connect to remote endpoint timed out");
+  onConnectFailed("Connect to remote endpoint timed out");
   socket->close(); // abort the connection
 }
 
@@ -240,7 +223,7 @@ void
 TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
                                      ip::tcp::resolver::iterator remoteEndpoint,
                                      const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                                     const shared_ptr<ndn::monotonic_deadline_timer>& timer,
+                                     const EventId& connectTimeoutEvent,
                                      const FaceCreatedCallback& onFaceCreated,
                                      const ConnectFailedCallback& onConnectFailed,
                                      const shared_ptr<ip::tcp::resolver>& resolver)
@@ -252,7 +235,7 @@ TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
         return;
 
       socket->close();
-      timer->cancel();
+      scheduler::cancel(connectTimeoutEvent);
 
       NFD_LOG_DEBUG("Remote endpoint hostname or port cannot be resolved: "
                     << error.category().message(error.value()));
@@ -265,7 +248,7 @@ TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
   // got endpoint, now trying to connect (only try the first resolution option)
   socket->async_connect(*remoteEndpoint,
                         bind(&TcpChannel::handleSuccessfulConnect, this, _1,
-                             socket, timer,
+                             socket, connectTimeoutEvent,
                              onFaceCreated, onConnectFailed));
 }
 
