@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,13 +21,17 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "version.hpp"
 
+#include "core/face-uri.hpp"
+
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 
 #include <boost/lexical_cast.hpp>
 
@@ -39,6 +44,7 @@
 #include <arpa/nameser_compat.h>
 #endif
 
+namespace ndn {
 namespace tools {
 
 void
@@ -75,34 +81,167 @@ public:
   {
   }
 
-  // Start to look for a hub (NDN hub discovery first stage)
+  void
+  run()
+  {
+    m_face.processEvents();
+  }
+
+  void
+  fetchSegments(const Data& data, const shared_ptr<OBufferStream>& buffer,
+                void (NdnAutoconfig::*onDone)(const shared_ptr<OBufferStream>&))
+  {
+    buffer->write(reinterpret_cast<const char*>(data.getContent().value()),
+                  data.getContent().value_size());
+
+    uint64_t currentSegment = data.getName().get(-1).toSegment();
+
+    const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
+    if (finalBlockId.empty() ||
+        finalBlockId.toSegment() > currentSegment)
+      {
+        m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
+                               bind(&NdnAutoconfig::fetchSegments, this, _2, buffer, onDone),
+                               bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
+      }
+    else
+      {
+        return (this->*onDone)(buffer);
+      }
+  }
+
   void
   discoverHubStage1()
   {
-    ndn::Interest interest(ndn::Name("/localhop/ndn-autoconf/hub"));
-    interest.setInterestLifetime(ndn::time::milliseconds(4000)); // 4 seconds
+    shared_ptr<OBufferStream> buffer = make_shared<OBufferStream>();
+
+    Interest interest("/localhost/nfd/faces/list");
+    interest.setChildSelector(1);
+    interest.setMustBeFresh(true);
+
+    m_face.expressInterest(interest,
+                           bind(&NdnAutoconfig::fetchSegments, this, _2, buffer,
+                                &NdnAutoconfig::discoverHubStage1_registerLocalhubNdnAutoconfHub),
+                           bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
+  }
+
+  void
+  discoverHubStage1_registerLocalhubNdnAutoconfHub(const shared_ptr<OBufferStream>& buffer)
+  {
+    ConstBufferPtr buf = buffer->buf();
+    std::vector<uint64_t> multicastFaces;
+
+    size_t offset = 0;
+    while (offset < buf->size())
+      {
+        Block block;
+        bool ok = Block::fromBuffer(buf, offset, block);
+        if (!ok)
+          {
+            std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+            break;
+          }
+
+        offset += block.size();
+
+        nfd::FaceStatus faceStatus(block);
+
+        ::nfd::FaceUri uri(faceStatus.getRemoteUri());
+        if (uri.getScheme() == "udp4") {
+          namespace ip = boost::asio::ip;
+          boost::system::error_code ec;
+          ip::address address = ip::address::from_string(uri.getHost(), ec);
+
+          if (!ec && address.is_multicast()) {
+            multicastFaces.push_back(faceStatus.getFaceId());
+          }
+          else
+            continue;
+        }
+      }
+
+    if (multicastFaces.empty()) {
+      discoverHubStage2("No multicast faces available, skipping stage 1");
+    }
+    else {
+      shared_ptr<nfd::Controller> controller = make_shared<nfd::Controller>(ref(m_face));
+      shared_ptr<std::pair<size_t, size_t> > nRegistrations =
+        make_shared<std::pair<size_t, size_t> >(0, 0);
+
+      nfd::ControlParameters parameters;
+      parameters
+        .setName("/localhop/ndn-autoconf/hub")
+        .setCost(1);
+
+      nRegistrations->first = multicastFaces.size();
+
+      for (std::vector<uint64_t>::iterator i = multicastFaces.begin();
+           i != multicastFaces.end(); ++i) {
+        parameters.setFaceId(*i);
+
+        controller->start<nfd::RibRegisterCommand>(parameters,
+          bind(&NdnAutoconfig::discoverHubStage1_onRegisterSuccess,
+               this, controller, nRegistrations),
+          bind(&NdnAutoconfig::discoverHubStage1_onRegisterFailure,
+               this, _1, _2, controller, nRegistrations));
+      }
+    }
+  }
+
+  void
+  discoverHubStage1_onRegisterSuccess(const shared_ptr<nfd::Controller>& controller,
+                                      const shared_ptr<std::pair<size_t, size_t> >& nRegistrations)
+  {
+    nRegistrations->second++;
+
+    if (nRegistrations->first == nRegistrations->second) {
+      discoverHubStage1_requestHubData();
+    }
+  }
+
+  void
+  discoverHubStage1_onRegisterFailure(uint32_t code, const std::string& error,
+                                      const shared_ptr<nfd::Controller> controller,
+                                      const shared_ptr<std::pair<size_t, size_t> >& nRegistrations)
+  {
+    std::cerr << "ERROR: " << error << " (code: " << code << ")" << std::endl;
+    nRegistrations->first--;
+
+    if (nRegistrations->first == nRegistrations->second) {
+      if (nRegistrations->first > 0) {
+        discoverHubStage1_requestHubData();
+      } else {
+        discoverHubStage2("Failed to register /localhop/ndn-autoconf/hub for all multicast faces");
+      }
+    }
+  }
+
+  // Start to look for a hub (NDN hub discovery first stage)
+  void
+  discoverHubStage1_requestHubData()
+  {
+    Interest interest(Name("/localhop/ndn-autoconf/hub"));
+    interest.setInterestLifetime(time::milliseconds(4000)); // 4 seconds
     interest.setMustBeFresh(true);
 
     std::cerr << "Stage 1: Trying multicast discovery..." << std::endl;
     m_face.expressInterest(interest,
-                           ndn::bind(&NdnAutoconfig::onDiscoverHubStage1Success, this, _1, _2),
-                           ndn::bind(&NdnAutoconfig::discoverHubStage2, this, _1, "Timeout"));
-
-    m_face.processEvents();
+                           bind(&NdnAutoconfig::onDiscoverHubStage1Success, this, _1, _2),
+                           bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
   }
 
   // First stage OnData Callback
   void
-  onDiscoverHubStage1Success(const ndn::Interest& interest, ndn::Data& data)
+  onDiscoverHubStage1Success(const Interest& interest, Data& data)
   {
-    const ndn::Block& content = data.getContent();
+    const Block& content = data.getContent();
     content.parse();
 
     // Get Uri
-    ndn::Block::element_const_iterator blockValue = content.find(ndn::tlv::nfd::Uri);
+    Block::element_const_iterator blockValue = content.find(tlv::nfd::Uri);
     if (blockValue == content.elements_end())
     {
-      discoverHubStage2(interest, "Incorrect reply to stage1");
+      discoverHubStage2("Incorrect reply to stage1");
       return;
     }
     std::string faceMgmtUri(reinterpret_cast<const char*>(blockValue->value()),
@@ -112,7 +251,7 @@ public:
 
   // First stage OnTimeout callback - start 2nd stage
   void
-  discoverHubStage2(const ndn::Interest& interest, const std::string& message)
+  discoverHubStage2(const std::string& message)
   {
     std::cerr << message << std::endl;
     std::cerr << "Stage 2: Trying DNS query with default suffix..." << std::endl;
@@ -151,11 +290,11 @@ public:
     std::cerr << message << std::endl;
     std::cerr << "Stage 3: Trying to find home router..." << std::endl;
 
-    ndn::KeyChain keyChain;
-    ndn::Name identity = keyChain.getDefaultIdentity();
+    KeyChain keyChain;
+    Name identity = keyChain.getDefaultIdentity();
     std::string serverName = "_ndn._udp.";
 
-    for (ndn::Name::const_reverse_iterator i = identity.rbegin(); i != identity.rend(); i++)
+    for (Name::const_reverse_iterator i = identity.rbegin(); i != identity.rend(); i++)
     {
       serverName.append(i->toUri());
       serverName.append(".");
@@ -195,8 +334,8 @@ public:
   {
     std::cerr << "about to connect to: " << uri << std::endl;
 
-    m_controller.start<ndn::nfd::FaceCreateCommand>(
-      ndn::nfd::ControlParameters()
+    m_controller.start<nfd::FaceCreateCommand>(
+      nfd::ControlParameters()
         .setUri(uri),
       bind(&NdnAutoconfig::onHubConnectSuccess, this, _1),
       bind(&NdnAutoconfig::onHubConnectError, this, _1, _2)
@@ -204,17 +343,17 @@ public:
   }
 
   void
-  onHubConnectSuccess(const ndn::nfd::ControlParameters& resp)
+  onHubConnectSuccess(const nfd::ControlParameters& resp)
   {
     std::cerr << "Successfully created face: " << resp << std::endl;
 
     // Register a prefix in RIB
-    ndn::nfd::ControlParameters ribParameters;
+    nfd::ControlParameters ribParameters;
     ribParameters
       .setName("/ndn")
       .setFaceId(resp.getFaceId());
 
-    m_controller.start<ndn::nfd::RibRegisterCommand>(
+    m_controller.start<nfd::RibRegisterCommand>(
       ribParameters,
       bind(&NdnAutoconfig::onPrefixRegistrationSuccess, this, _1),
       bind(&NdnAutoconfig::onPrefixRegistrationError, this, _1, _2));
@@ -303,7 +442,7 @@ public:
   }
 
   void
-  onPrefixRegistrationSuccess(const ndn::nfd::ControlParameters& commandSuccessResult)
+  onPrefixRegistrationSuccess(const nfd::ControlParameters& commandSuccessResult)
   {
     std::cerr << "Successful in name registration: " << commandSuccessResult << std::endl;
   }
@@ -317,11 +456,12 @@ public:
   }
 
 private:
-  ndn::Face m_face;
-  ndn::nfd::Controller m_controller;
+  Face m_face;
+  nfd::Controller m_controller;
 };
 
 } // namespace tools
+} // namespace ndn
 
 int
 main(int argc, char** argv)
@@ -332,7 +472,7 @@ main(int argc, char** argv)
   while ((opt = getopt(argc, argv, "hV")) != -1) {
     switch (opt) {
     case 'h':
-      tools::usage(programName);
+      ndn::tools::usage(programName);
       return 0;
     case 'V':
       std::cout << NFD_VERSION_BUILD_STRING << std::endl;
@@ -341,9 +481,10 @@ main(int argc, char** argv)
   }
 
   try {
-    tools::NdnAutoconfig autoConfigInstance;
+    ndn::tools::NdnAutoconfig autoConfigInstance;
 
     autoConfigInstance.discoverHubStage1();
+    autoConfigInstance.run();
   }
   catch (const std::exception& error) {
     std::cerr << "ERROR: " << error.what() << std::endl;
