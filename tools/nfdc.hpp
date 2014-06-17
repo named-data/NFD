@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
- *                     The University of Memphis
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,21 +21,27 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_TOOLS_NFDC_HPP
 #define NFD_TOOLS_NFDC_HPP
 
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/util/time.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 
 namespace nfdc {
+
 
 using namespace ndn::nfd;
 
 class Nfdc : boost::noncopyable
 {
 public:
+
+  static const ndn::time::milliseconds DEFAULT_EXPIRATION_PERIOD;
+  static const uint64_t DEFAULT_COST;
+
   class Error : public std::runtime_error
   {
   public:
@@ -180,7 +186,10 @@ public:
   uint64_t m_flags;
   uint64_t m_cost;
   uint64_t m_faceId;
+  uint64_t m_origin;
+  ndn::time::milliseconds m_expires;
   std::string m_name;
+
 
 private:
   Controller m_controller;

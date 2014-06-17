@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
- *                     The University of Memphis
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "nfdc.hpp"
 #include "version.hpp"
@@ -39,11 +39,14 @@ usage(const char* programName)
     "       -V print version and exit\n"
     "\n"
     "   COMMAND can be one of the following:\n"
-    "       register [-I] [-C] [-c cost] name <faceId | faceUri>\n"
+    "       register [-I] [-C] [-c cost] [-e expiration time] [-o origin] name <faceId | faceUri>\n"
     "           register name to the given faceId or faceUri\n"
     "           -I: unset CHILD_INHERIT flag\n"
     "           -C: set CAPTURE flag\n"
     "           -c: specify cost\n"
+    "           -e: specify expiring time in ms\n"
+    "           -o: specify origin\n"
+    "               0 for Local producer applications, 128 for NLSR, 255 for static routes\n"
     "       unregister name <faceId>\n"
     "           unregister name from the given faceId\n"
     "       create <faceUri> \n"
@@ -66,9 +69,14 @@ usage(const char* programName)
 
 namespace nfdc {
 
+const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds(3600000);
+const uint64_t Nfdc::DEFAULT_COST = 0;
+
 Nfdc::Nfdc(ndn::Face& face)
   : m_flags(ROUTE_FLAG_CHILD_INHERIT)
-  , m_cost(0)
+  , m_cost(DEFAULT_COST)
+  , m_origin(ROUTE_ORIGIN_STATIC)
+  , m_expires(DEFAULT_EXPIRATION_PERIOD)
   , m_controller(face)
 {
 }
@@ -218,7 +226,9 @@ Nfdc::ribRegisterPrefix()
   parameters
     .setName(m_name)
     .setCost(m_cost)
-    .setFlags(m_flags);
+    .setFlags(m_flags)
+    .setOrigin(m_origin)
+    .setExpirationPeriod(m_expires);
 
   if (!isValidUri(m_commandLineArguments[1])) {
     try { //So the uri is not valid, may be a faceId is provided.
@@ -250,6 +260,8 @@ Nfdc::ribRegisterPrefix(const ControlParameters& faceCreateResult)
     .setName(m_name)
     .setCost(m_cost)
     .setFlags(m_flags)
+    .setExpirationPeriod(m_expires)
+    .setOrigin(m_origin)
     .setFaceId(faceCreateResult.getFaceId());
 
   m_controller.start<RibRegisterCommand>(ribParameters,
@@ -267,7 +279,7 @@ Nfdc::ribUnregisterPrefix()
     m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
   }
   catch (const std::exception& e) {
-    std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
+    std::cerr << "No valid faceId is provided" << std::endl;
     return;
   }
 
@@ -413,7 +425,7 @@ main(int argc, char** argv)
 
   ::optind = 2; //start reading options from 2nd argument i.e. Command
   int opt;
-  while ((opt = ::getopt(argc, argv, "ICc:")) != -1) {
+  while ((opt = ::getopt(argc, argv, "ICc:e:o:")) != -1) {
     switch (opt) {
     case 'I':
       p.m_flags =  p.m_flags & ~(nfdc::ROUTE_FLAG_CHILD_INHERIT);
@@ -425,10 +437,32 @@ main(int argc, char** argv)
 
     case 'c':
       try {
-        p.m_cost = boost::lexical_cast<int>(::optarg);
+        p.m_cost = boost::lexical_cast<uint64_t>(::optarg);
       }
       catch (boost::bad_lexical_cast&) {
-        std::cerr << "Error: cost must be in integer format" << std::endl;
+        std::cerr << "Error: cost must be in unsigned integer format" << std::endl;
+        return 1;
+      }
+      break;
+
+    case 'e':
+      uint64_t expires;
+      try {
+        expires = boost::lexical_cast<uint64_t>(::optarg);
+      }
+      catch (boost::bad_lexical_cast&) {
+        std::cerr << "Error: expiration time must be in unsigned integer format" << std::endl;
+        return 1;
+      }
+      p.m_expires = ndn::time::milliseconds(expires);
+      break;
+
+    case 'o':
+      try {
+        p.m_origin = boost::lexical_cast<uint64_t>(::optarg);
+      }
+      catch (boost::bad_lexical_cast&) {
+        std::cerr << "Error: origin must be in unsigned integer format" << std::endl;
         return 1;
       }
       break;

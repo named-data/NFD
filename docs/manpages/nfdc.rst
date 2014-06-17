@@ -27,7 +27,7 @@ Options
   ``register``
     Register a new or update existing routing entry in Routing Information Base (RIB).
 
-    ``register [-I] [-C] [-c <cost>] <prefix> <faceId | faceUri>``
+    ``register [-I] [-C] [-c <cost>] [-e expiration time] [-o origin] <prefix> <faceId | faceUri>``
 
       ``-I``
         Unset CHILD_INHERIT flag from the routing entry.
@@ -37,6 +37,13 @@ Options
 
       ``-c <cost>``
         Cost for the RIB entry (default is 0).
+
+      ``-e <expiration time>``
+        Expiration time of the RIB entry in milliseconds (default is 3600000).
+
+       ``-o <origin>``
+        Origin of the registration request (default is 255).
+        0 for Local producer applications, 128 for NLSR, 255 for static routes.
 
       ``prefix``
         A prefix of an existing or to be created RIB entry, for which routing entry is
