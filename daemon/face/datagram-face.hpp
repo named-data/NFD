@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_DATAGRAM_FACE_HPP
 #define NFD_DAEMON_FACE_DATAGRAM_FACE_HPP
@@ -31,7 +31,10 @@
 
 namespace nfd {
 
-template <class Protocol>
+class Unicast {};
+class Multicast {};
+
+template<class Protocol, class Type = Unicast>
 class DatagramFace : public Face
 {
 public:
@@ -101,54 +104,54 @@ protected:
 };
 
 
-template <class T>
+template<class T, class U>
 inline
-DatagramFace<T>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                              const shared_ptr<typename DatagramFace::protocol::socket>& socket,
-                              bool isOnDemand)
+DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                                 const shared_ptr<typename DatagramFace::protocol::socket>& socket,
+                                 bool isOnDemand)
   : Face(remoteUri, localUri)
   , m_socket(socket)
 {
   setOnDemand(isOnDemand);
 
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
-                          bind(&DatagramFace<T>::handleReceive, this, _1, _2));
+                          bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
 }
 
-template <class T>
+template<class T, class U>
 inline
-DatagramFace<T>::~DatagramFace()
+DatagramFace<T, U>::~DatagramFace()
 {
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::sendInterest(const Interest& interest)
+DatagramFace<T, U>::sendInterest(const Interest& interest)
 {
   this->onSendInterest(interest);
   m_socket->async_send(boost::asio::buffer(interest.wireEncode().wire(),
                                            interest.wireEncode().size()),
-                       bind(&DatagramFace<T>::handleSend, this, _1, interest.wireEncode()));
+                       bind(&DatagramFace<T, U>::handleSend, this, _1, interest.wireEncode()));
 
   // anything else should be done here?
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::sendData(const Data& data)
+DatagramFace<T, U>::sendData(const Data& data)
 {
   this->onSendData(data);
   m_socket->async_send(boost::asio::buffer(data.wireEncode().wire(),
                                            data.wireEncode().size()),
-                       bind(&DatagramFace<T>::handleSend, this, _1, data.wireEncode()));
+                       bind(&DatagramFace<T, U>::handleSend, this, _1, data.wireEncode()));
 
   // anything else should be done here?
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::handleSend(const boost::system::error_code& error,
-                            const Block& wire)
+DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
+                               const Block& wire)
 {
   if (error != 0) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
@@ -185,9 +188,9 @@ DatagramFace<T>::handleSend(const boost::system::error_code& error,
   // do nothing (needed to retain validity of wire memory block
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::close()
+DatagramFace<T, U>::close()
 {
   if (!m_socket->is_open())
     return;
@@ -200,23 +203,23 @@ DatagramFace<T>::close()
   fail("Close tunnel");
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::handleReceive(const boost::system::error_code& error,
-                               size_t nBytesReceived)
+DatagramFace<T, U>::handleReceive(const boost::system::error_code& error,
+                                  size_t nBytesReceived)
 {
   NFD_LOG_DEBUG("handleReceive: " << nBytesReceived);
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
   if (m_socket->is_open())
     m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
-                            bind(&DatagramFace<T>::handleReceive, this, _1, _2));
+                            bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
-                                 size_t nBytesReceived,
-                                 const boost::system::error_code& error)
+DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
+                                    size_t nBytesReceived,
+                                    const boost::system::error_code& error)
 {
   if (error != 0 || nBytesReceived == 0) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
@@ -287,15 +290,15 @@ DatagramFace<T>::receiveDatagram(const uint8_t* buffer,
 }
 
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face)
+DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face)
 {
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::closeSocket()
+DatagramFace<T, U>::closeSocket()
 {
   NFD_LOG_DEBUG("closeSocket  " << m_socket->local_endpoint());
   boost::asio::io_service& io = m_socket->get_io_service();
@@ -308,27 +311,27 @@ DatagramFace<T>::closeSocket()
 
   // ensure that the Face object is alive at least until all pending
   // handlers are dispatched
-  io.post(bind(&DatagramFace<T>::keepFaceAliveUntilAllHandlersExecuted,
+  io.post(bind(&DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted,
                this, this->shared_from_this()));
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::setOnDemand(bool isOnDemand)
+DatagramFace<T, U>::setOnDemand(bool isOnDemand)
 {
   Face::setOnDemand(isOnDemand);
 }
 
-template <class T>
+template<class T, class U>
 inline void
-DatagramFace<T>::resetRecentUsage()
+DatagramFace<T, U>::resetRecentUsage()
 {
   m_hasBeenUsedRecently = false;
 }
 
-template <class T>
+template<class T, class U>
 inline bool
-DatagramFace<T>::hasBeenUsedRecently() const
+DatagramFace<T, U>::hasBeenUsedRecently() const
 {
   return m_hasBeenUsedRecently;
 }

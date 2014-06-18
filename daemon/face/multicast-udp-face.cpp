@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,20 +21,22 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "multicast-udp-face.hpp"
 
 namespace nfd {
 
-NFD_LOG_INIT("MulticastUdpFace");
+NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace,
+                                                MulticastUdpFace::protocol, Multicast,
+                                                "MulticastUdpFace");
 
 MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& socket,
                                    const MulticastUdpFace::protocol::endpoint& localEndpoint)
-  : DatagramFace<protocol>(FaceUri(socket->local_endpoint()),
-                           FaceUri(localEndpoint),
-                           socket, false)
-  , m_multicastGroup(m_socket->local_endpoint())
+  : DatagramFace<protocol, Multicast>(FaceUri(socket->local_endpoint()),
+                                      FaceUri(localEndpoint),
+                                      socket, false)
+  , m_multicastGroup(socket->local_endpoint())
 {
   NFD_LOG_INFO("Creating multicast UDP face for group " << m_multicastGroup);
 }
@@ -45,17 +48,21 @@ MulticastUdpFace::getMulticastGroup() const
 }
 
 void
+MulticastUdpFace::sendBlock(const Block& block)
+{
+  m_socket->async_send_to(boost::asio::buffer(block.wire(), block.size()),
+                          m_multicastGroup,
+                          bind(&DatagramFace<protocol, Multicast>::handleSend,
+                               this, _1, block));
+}
+
+void
 MulticastUdpFace::sendInterest(const Interest& interest)
 {
   onSendInterest(interest);
 
   NFD_LOG_DEBUG("Sending interest");
-  m_socket->async_send_to(boost::asio::buffer(interest.wireEncode().wire(),
-                                              interest.wireEncode().size()),
-                          m_multicastGroup,
-                          bind(&DatagramFace<protocol>::handleSend, this, _1, interest.wireEncode()));
-
-  // anything else should be done here?
+  sendBlock(interest.wireEncode());
 }
 
 void
@@ -66,12 +73,7 @@ MulticastUdpFace::sendData(const Data& data)
   onSendData(data);
 
   NFD_LOG_DEBUG("Sending data");
-  m_socket->async_send_to(boost::asio::buffer(data.wireEncode().wire(),
-                                              data.wireEncode().size()),
-                          m_multicastGroup,
-                          bind(&DatagramFace<protocol>::handleSend, this, _1, data.wireEncode()));
-
-  // anything else should be done here?
+  sendBlock(data.wireEncode());
 }
 
 bool
