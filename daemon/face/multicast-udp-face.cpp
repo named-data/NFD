@@ -31,12 +31,15 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace,
                                                 MulticastUdpFace::protocol, Multicast,
                                                 "MulticastUdpFace");
 
-MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& socket,
-                                   const MulticastUdpFace::protocol::endpoint& localEndpoint)
-  : DatagramFace<protocol, Multicast>(FaceUri(socket->local_endpoint()),
+MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& recvSocket,
+                                   const shared_ptr<MulticastUdpFace::protocol::socket>& sendSocket,
+                                   const MulticastUdpFace::protocol::endpoint& localEndpoint,
+                                   const MulticastUdpFace::protocol::endpoint& multicastEndpoint)
+  : DatagramFace<protocol, Multicast>(FaceUri(multicastEndpoint),
                                       FaceUri(localEndpoint),
-                                      socket, false)
-  , m_multicastGroup(socket->local_endpoint())
+                                      recvSocket, false)
+  , m_multicastGroup(multicastEndpoint)
+  , m_sendSocket(sendSocket)
 {
   NFD_LOG_INFO("Creating multicast UDP face for group " << m_multicastGroup);
 }
@@ -50,10 +53,10 @@ MulticastUdpFace::getMulticastGroup() const
 void
 MulticastUdpFace::sendBlock(const Block& block)
 {
-  m_socket->async_send_to(boost::asio::buffer(block.wire(), block.size()),
-                          m_multicastGroup,
-                          bind(&DatagramFace<protocol, Multicast>::handleSend,
-                               this, _1, block));
+  m_sendSocket->async_send_to(boost::asio::buffer(block.wire(), block.size()),
+                              m_multicastGroup,
+                              bind(&DatagramFace<protocol, Multicast>::handleSend,
+                                   this, _1, block));
 }
 
 void

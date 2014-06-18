@@ -207,21 +207,31 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                 "the multicast group given as input is not a multicast address");
   }
 
-  shared_ptr<ip::udp::socket> clientSocket =
+  shared_ptr<ip::udp::socket> receiveSocket =
     make_shared<ip::udp::socket>(ref(getGlobalIoService()));
 
-  clientSocket->open(multicastEndpoint.protocol());
+  shared_ptr<ip::udp::socket> sendSocket =
+    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
 
-  clientSocket->set_option(ip::udp::socket::reuse_address(true));
+  receiveSocket->open(multicastEndpoint.protocol());
+  receiveSocket->set_option(ip::udp::socket::reuse_address(true));
+
+  sendSocket->open(multicastEndpoint.protocol());
+  sendSocket->set_option(ip::udp::socket::reuse_address(true));
+  sendSocket->set_option(ip::multicast::enable_loopback(false));
 
   try {
-    clientSocket->bind(multicastEndpoint);
+    sendSocket->bind(udp::Endpoint(ip::address_v4::any(), multicastEndpoint.port()));
+    receiveSocket->bind(multicastEndpoint);
 
     if (localEndpoint.address() != ip::address::from_string("0.0.0.0")) {
-      clientSocket->set_option(ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
+      sendSocket->set_option(ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
     }
-    clientSocket->set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
-                                                       localEndpoint.address().to_v4()));
+    sendSocket->set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
+                                                     localEndpoint.address().to_v4()));
+
+    receiveSocket->set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
+                                                        localEndpoint.address().to_v4()));
   }
   catch (boost::system::system_error& e) {
     std::stringstream msg;
@@ -238,7 +248,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   //This applies only on linux, for OS X the ip::multicast::join_group is enough to get
   //the desired behaviour
   if (!networkInterfaceName.empty()) {
-    if (::setsockopt(clientSocket->native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
+    if (::setsockopt(receiveSocket->native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
                      networkInterfaceName.c_str(), networkInterfaceName.size()+1) == -1){
       throw Error("Cannot bind multicast face to " + networkInterfaceName
                   + " make sure you have CAP_NET_RAW capability" );
@@ -247,9 +257,8 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 
 #endif
 
-  clientSocket->set_option(ip::multicast::enable_loopback(false));
-
-  multicastFace = make_shared<MulticastUdpFace>(clientSocket, localEndpoint);
+  multicastFace = make_shared<MulticastUdpFace>(receiveSocket, sendSocket,
+                                                localEndpoint, multicastEndpoint);
   multicastFace->onFail += bind(&UdpFactory::afterFaceFailed, this, localEndpoint);
 
   m_multicastFaces[localEndpoint] = multicastFace;
