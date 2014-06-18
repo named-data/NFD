@@ -47,6 +47,8 @@
 namespace ndn {
 namespace tools {
 
+static const Name LOCALHOP_HUB_DISCOVERY_PREFIX = "/localhop/ndn-autoconf/hub";
+
 void
 usage(const char* programName)
 {
@@ -121,12 +123,12 @@ public:
 
     m_face.expressInterest(interest,
                            bind(&NdnAutoconfig::fetchSegments, this, _2, buffer,
-                                &NdnAutoconfig::discoverHubStage1_registerLocalhubNdnAutoconfHub),
+                                &NdnAutoconfig::discoverHubStage1_registerHubDiscoveryPrefix),
                            bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
   }
 
   void
-  discoverHubStage1_registerLocalhubNdnAutoconfHub(const shared_ptr<OBufferStream>& buffer)
+  discoverHubStage1_registerHubDiscoveryPrefix(const shared_ptr<OBufferStream>& buffer)
   {
     ConstBufferPtr buf = buffer->buf();
     std::vector<uint64_t> multicastFaces;
@@ -170,7 +172,7 @@ public:
 
       nfd::ControlParameters parameters;
       parameters
-        .setName("/localhop/ndn-autoconf/hub")
+        .setName(LOCALHOP_HUB_DISCOVERY_PREFIX)
         .setCost(1);
 
       nRegistrations->first = multicastFaces.size();
@@ -195,13 +197,13 @@ public:
     nRegistrations->second++;
 
     if (nRegistrations->first == nRegistrations->second) {
-      discoverHubStage1_requestHubData();
+      discoverHubStage1_setStrategy(controller);
     }
   }
 
   void
   discoverHubStage1_onRegisterFailure(uint32_t code, const std::string& error,
-                                      const shared_ptr<nfd::Controller> controller,
+                                      const shared_ptr<nfd::Controller>& controller,
                                       const shared_ptr<std::pair<size_t, size_t> >& nRegistrations)
   {
     std::cerr << "ERROR: " << error << " (code: " << code << ")" << std::endl;
@@ -209,18 +211,48 @@ public:
 
     if (nRegistrations->first == nRegistrations->second) {
       if (nRegistrations->first > 0) {
-        discoverHubStage1_requestHubData();
+        discoverHubStage1_setStrategy(controller);
       } else {
-        discoverHubStage2("Failed to register /localhop/ndn-autoconf/hub for all multicast faces");
+        discoverHubStage2("Failed to register " + LOCALHOP_HUB_DISCOVERY_PREFIX.toUri() +
+                          " for all multicast faces");
       }
     }
+  }
+
+  void
+  discoverHubStage1_setStrategy(const shared_ptr<nfd::Controller>& controller)
+  {
+    nfd::ControlParameters parameters;
+    parameters
+      .setName(LOCALHOP_HUB_DISCOVERY_PREFIX)
+      .setStrategy("/localhost/nfd/strategy/broadcast");
+
+    controller->start<nfd::StrategyChoiceSetCommand>(parameters,
+      bind(&NdnAutoconfig::discoverHubStage1_onSetStrategySuccess,
+           this, controller),
+      bind(&NdnAutoconfig::discoverHubStage1_onSetStrategyFailure,
+           this, _2, controller));
+  }
+
+  void
+  discoverHubStage1_onSetStrategySuccess(const shared_ptr<nfd::Controller>& controller)
+  {
+    discoverHubStage1_requestHubData();
+  }
+
+  void
+  discoverHubStage1_onSetStrategyFailure(const std::string& error,
+                                         const shared_ptr<nfd::Controller>& controller)
+  {
+    discoverHubStage2("Failed to set broadcast strategy for " +
+                      LOCALHOP_HUB_DISCOVERY_PREFIX.toUri() + " namespace (" + error + ")");
   }
 
   // Start to look for a hub (NDN hub discovery first stage)
   void
   discoverHubStage1_requestHubData()
   {
-    Interest interest(Name("/localhop/ndn-autoconf/hub"));
+    Interest interest(LOCALHOP_HUB_DISCOVERY_PREFIX);
     interest.setInterestLifetime(time::milliseconds(4000)); // 4 seconds
     interest.setMustBeFresh(true);
 
