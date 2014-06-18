@@ -38,6 +38,7 @@ volunteers.
 * Colorado State University
 
     * Steve DiBenedetto     <http://www.cs.colostate.edu/~dibenede/>
+    * Chengyu Fan           <chengyu@cs.colostate.edu>
     * Christos Papadopoulos <http://www.cs.colostate.edu/~christos/>
 
 * University Pierre & Marie Curie, Sorbonne University
@@ -60,4 +61,5 @@ volunteers.
 * The University of Memphis
 
     * Syed Obaid Amin     <http://obaidamin.weebly.com/>
+    * Vince Lehman        <vslehman@memphis.edu>
     * Lan Wang            <http://www.cs.memphis.edu/~lanwang/>
