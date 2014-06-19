@@ -67,10 +67,8 @@ makeInterest(const Name& name)
 }
 
 inline shared_ptr<Data>
-makeData(const Name& name)
+signData(const shared_ptr<Data>& data)
 {
-  shared_ptr<Data> data = make_shared<Data>(name);
-
   ndn::SignatureSha256WithRsa fakeSignature;
   fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
                                         reinterpret_cast<const uint8_t*>(0), 0));
@@ -79,6 +77,15 @@ makeData(const Name& name)
 
   return data;
 }
+
+inline shared_ptr<Data>
+makeData(const Name& name)
+{
+  shared_ptr<Data> data = make_shared<Data>(name);
+
+  return signData(data);
+}
+
 
 } // namespace tests
 } // namespace nfd

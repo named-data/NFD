@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,17 +22,17 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Ilya Moiseenko <iliamo@ucla.edu>
+ * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
+ * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
+ * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
 #ifndef NFD_DAEMON_TABLE_CS_ENTRY_HPP
 #define NFD_DAEMON_TABLE_CS_ENTRY_HPP
 
 #include "common.hpp"
-#include <ndn-cxx/util/crypto.hpp>
 
 namespace nfd {
-
 namespace cs {
 
 class Entry;
@@ -56,6 +57,13 @@ public:
   const Name&
   getName() const;
 
+  /** \brief returns the full name (including implicit digest) of the Data packet stored
+   *         in the CS entry
+   *  \return{ NDN name }
+   */
+  const Name&
+  getFullName() const;
+
   /** \brief Data packet is unsolicited if this particular NDN node
    *  did not receive an Interest packet for it, or the Interest packet has already expired
    *  \return{ True if the Data packet is unsolicited; otherwise False  }
@@ -79,21 +87,11 @@ public:
   void
   setData(const Data& data, bool isUnsolicited);
 
-  /** \brief changes the content of CS entry and modifies digest
-   */
-  void
-  setData(const Data& data, bool isUnsolicited, const ndn::ConstBufferPtr& digest);
-
   /** \brief refreshes the time when Data becomes expired
    *  according to the current absolute time.
    */
   void
   updateStaleTime();
-
-  /** \brief returns the digest of the Data packet stored in the CS entry.
-   */
-  const ndn::ConstBufferPtr&
-  getDigest() const;
 
   /** \brief saves the iterator pointing to the CS entry on a specific layer of skip list
    */
@@ -121,9 +119,6 @@ private:
   shared_ptr<const Data> m_dataPacket;
 
   bool m_isUnsolicited;
-  Name m_nameWithDigest;
-
-  mutable ndn::ConstBufferPtr m_digest;
 
   LayerIterators m_layerIterators;
 };
@@ -136,7 +131,13 @@ Entry::Entry()
 inline const Name&
 Entry::getName() const
 {
-  return m_nameWithDigest;
+  return m_dataPacket->getName();
+}
+
+inline const Name&
+Entry::getFullName() const
+{
+  return m_dataPacket->getFullName();
 }
 
 inline const Data&

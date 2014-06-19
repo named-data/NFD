@@ -22,7 +22,9 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Ilya Moiseenko <iliamo@ucla.edu>
+ * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
+ * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
+ * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
 #ifndef NFD_DAEMON_TABLE_CS_HPP

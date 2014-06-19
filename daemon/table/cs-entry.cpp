@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,7 +22,9 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  *
- * \author Ilya Moiseenko <iliamo@ucla.edu>
+ * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
+ * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
+ * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
 #include "cs-entry.hpp"
@@ -38,8 +41,6 @@ Entry::release()
   BOOST_ASSERT(m_layerIterators.empty());
 
   m_dataPacket.reset();
-  m_digest.reset();
-  m_nameWithDigest.clear();
 }
 
 void
@@ -47,42 +48,14 @@ Entry::setData(const Data& data, bool isUnsolicited)
 {
   m_isUnsolicited = isUnsolicited;
   m_dataPacket = data.shared_from_this();
-  m_digest.reset();
 
   updateStaleTime();
-
-  m_nameWithDigest = data.getName();
-  m_nameWithDigest.append(ndn::name::Component(getDigest()));
-}
-
-void
-Entry::setData(const Data& data, bool isUnsolicited, const ndn::ConstBufferPtr& digest)
-{
-  m_dataPacket = data.shared_from_this();
-  m_digest = digest;
-
-  updateStaleTime();
-
-  m_nameWithDigest = data.getName();
-  m_nameWithDigest.append(ndn::name::Component(getDigest()));
 }
 
 void
 Entry::updateStaleTime()
 {
   m_staleAt = time::steady_clock::now() + m_dataPacket->getFreshnessPeriod();
-}
-
-const ndn::ConstBufferPtr&
-Entry::getDigest() const
-{
-  if (!static_cast<bool>(m_digest))
-    {
-      const Block& block = m_dataPacket->wireEncode();
-      m_digest = ndn::crypto::sha256(block.wire(), block.size());
-    }
-
-  return m_digest;
 }
 
 void

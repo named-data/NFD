@@ -165,11 +165,13 @@ BOOST_AUTO_TEST_CASE(StalenessQueue)
   Name name2("/insert/fresh");
   shared_ptr<Data> data2 = makeData(name2);
   data2->setFreshnessPeriod(time::milliseconds(5000));
+  signData(data2);
   cs.insert(*data2);
 
   Name name("/insert/expire");
   shared_ptr<Data> data = makeData(name);
   data->setFreshnessPeriod(time::milliseconds(500));
+  signData(data);
   cs.insert(*data);
 
   BOOST_CHECK_EQUAL(cs.size(), 2);
@@ -264,7 +266,8 @@ BOOST_AUTO_TEST_CASE(DigestCalculation)
   entry->setData(*data, false);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(digest1->begin(), digest1->end(),
-                                entry->getDigest()->begin(), entry->getDigest()->end());
+                                entry->getFullName()[-1].value_begin(),
+                                entry->getFullName()[-1].value_end());
 }
 
 BOOST_AUTO_TEST_CASE(InsertCanonical)
@@ -429,6 +432,7 @@ BOOST_AUTO_TEST_CASE(MustBeFreshSelector)
   Name name("/insert/nonfresh");
   shared_ptr<Data> data = makeData(name);
   data->setFreshnessPeriod(time::milliseconds(500));
+  signData(data);
   cs.insert(*data);
 
   sleep(1);
@@ -477,6 +481,7 @@ BOOST_AUTO_TEST_CASE(PublisherKeySelector2)
 
   fakeSignature.setKeyLocator(locator);
   data2->setSignature(fakeSignature);
+  data2->wireEncode();
 
   cs.insert(*data2);
 
@@ -602,6 +607,7 @@ protected:
     shared_ptr<Data> data = makeData(name);
     data->setFreshnessPeriod(time::milliseconds(99999));
     data->setContent(reinterpret_cast<const uint8_t*>(&id), sizeof(id));
+    signData(data);
 
     m_cs.insert(*data);
   }
