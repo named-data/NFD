@@ -64,6 +64,7 @@ RibManager::RibManager()
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
   , m_isLocalhopEnabled(false)
+  , m_lastTransactionId(0)
   , m_verbDispatch(COMMAND_VERBS,
                    COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
 {
@@ -225,18 +226,9 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 
   NFD_LOG_TRACE("register prefix: " << faceEntry);
 
-  /// \todo For right now, just pass the options to fib as is
-  ///       without processing flags. Later, options will first be added to
-  ///       Rib tree, nrd will generate fib updates based on flags, and
-  ///       will then add next hops one by one.
   m_managedRib.insert(parameters.getName(), faceEntry);
-  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters()
-      .setName(parameters.getName())
-      .setFaceId(faceEntry.faceId)
-      .setCost(faceEntry.cost),
-    bind(&RibManager::onRegSuccess, this, request, parameters, faceEntry),
-    bind(&RibManager::onCommandError, this, _1, _2, request, faceEntry));
+
+  sendUpdatesToFib(request, parameters);
 }
 
 void
@@ -258,12 +250,9 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
 
   NFD_LOG_TRACE("unregister prefix: " << faceEntry);
 
-  m_nfdController.start<ndn::nfd::FibRemoveNextHopCommand>(
-    ControlParameters()
-      .setName(parameters.getName())
-      .setFaceId(faceEntry.faceId),
-    bind(&RibManager::onUnRegSuccess, this, request, parameters, faceEntry),
-    bind(&RibManager::onCommandError, this, _1, _2, request, faceEntry));
+  m_managedRib.erase(parameters.getName(), faceEntry);
+
+  sendUpdatesToFib(request, parameters);
 }
 
 void
@@ -334,7 +323,6 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
     }
 
   sendResponse(request->getName(), response);
-  m_managedRib.erase(request->getName(), faceEntry);
 }
 
 void
@@ -368,7 +356,53 @@ RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
   NFD_LOG_TRACE("onUnRegSuccess: unregistered " << faceEntry);
 
   sendResponse(request->getName(), response);
-  m_managedRib.erase(request->getName(), faceEntry);
+}
+
+void
+RibManager::sendSuccessResponse(const shared_ptr<const Interest>& request,
+                                const ControlParameters& parameters)
+{
+  if (!static_cast<bool>(request))
+    {
+      return;
+    }
+
+  ControlResponse response;
+
+  response.setCode(200);
+  response.setText("Success");
+  response.setBody(parameters.wireEncode());
+
+  sendResponse(request->getName(), response);
+}
+
+void
+RibManager::sendErrorResponse(uint32_t code, const std::string& error,
+                              const shared_ptr<const Interest>& request)
+{
+  NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
+
+  if (!static_cast<bool>(request))
+    {
+      return;
+    }
+
+  ControlResponse response;
+
+  if (code == 404)
+    {
+      response.setCode(code);
+      response.setText(error);
+    }
+  else
+    {
+      response.setCode(533);
+      std::ostringstream os;
+      os << "Failure to update NFD " << "(NFD Error: " << code << " " << error << ")";
+      response.setText(os.str());
+    }
+
+  sendResponse(request->getName(), response);
 }
 
 void
@@ -383,16 +417,87 @@ RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::strin
   throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
 }
 
-void
-RibManager::onAddNextHopSuccess(const Name& prefix)
+bool
+RibManager::isTransactionComplete(const TransactionId transactionId)
 {
-  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
+  FibTransactionTable::iterator it = m_pendingFibTransactions.find(transactionId);
+
+  if (it != m_pendingFibTransactions.end())
+    {
+      int& updatesLeft = it->second;
+
+      updatesLeft--;
+
+      // All of the updates have been applied successfully
+      if (updatesLeft == 0)
+        {
+          m_pendingFibTransactions.erase(it);
+          return true;
+        }
+    }
+
+    return false;
 }
 
 void
-RibManager::onAddNextHopError(const Name& name, const std::string& msg)
+RibManager::invalidateTransaction(const TransactionId transactionId)
 {
-  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
+  FibTransactionTable::iterator it = m_pendingFibTransactions.find(transactionId);
+
+  if (it != m_pendingFibTransactions.end())
+    {
+      m_pendingFibTransactions.erase(it);
+    }
+}
+
+void
+RibManager::onAddNextHopSuccess(const shared_ptr<const Interest>& request,
+                                const ControlParameters& parameters,
+                                const TransactionId transactionId,
+                                const bool shouldSendResponse)
+{
+  if (isTransactionComplete(transactionId) && shouldSendResponse)
+    {
+      sendSuccessResponse(request, parameters);
+    }
+}
+
+void
+RibManager::onAddNextHopError(uint32_t code, const std::string& error,
+                              const shared_ptr<const Interest>& request,
+                              const TransactionId transactionId, const bool shouldSendResponse)
+{
+  invalidateTransaction(transactionId);
+
+  if (shouldSendResponse)
+  {
+    sendErrorResponse(code, error, request);
+  }
+}
+
+void
+RibManager::onRemoveNextHopSuccess(const shared_ptr<const Interest>& request,
+                                   const ControlParameters& parameters,
+                                   const TransactionId transactionId,
+                                   const bool shouldSendResponse)
+{
+  if (isTransactionComplete(transactionId) && shouldSendResponse)
+    {
+      sendSuccessResponse(request, parameters);
+    }
+}
+
+void
+RibManager::onRemoveNextHopError(uint32_t code, const std::string& error,
+                                 const shared_ptr<const Interest>& request,
+                                 const TransactionId transactionId, const bool shouldSendResponse)
+{
+  invalidateTransaction(transactionId);
+
+  if (shouldSendResponse)
+  {
+    sendErrorResponse(code, error, request);
+  }
 }
 
 void
@@ -425,9 +530,98 @@ RibManager::onNotification(const FaceEventNotification& notification)
 {
   /// \todo A notification can be missed, in this case check Facelist
   NFD_LOG_TRACE("onNotification: " << notification);
-  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) { //face destroyed
-    m_managedRib.erase(notification.getFaceId());
-  }
+  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) //face destroyed
+    {
+      m_managedRib.erase(notification.getFaceId());
+
+      sendUpdatesToFibAfterFaceDestroyEvent();
+    }
+}
+
+void
+RibManager::sendUpdatesToFib(const shared_ptr<const Interest>& request,
+                             const ControlParameters& parameters)
+{
+  const Rib::FibUpdateList& updates = m_managedRib.getFibUpdates();
+
+  // If no updates were generated, consider the operation a success
+  if (updates.empty())
+    {
+      sendSuccessResponse(request, parameters);
+      return;
+    }
+
+  bool shouldWaitToRespond = false;
+
+  // An application request should wait for all FIB updates to be applied
+  // successfully before sending a response
+  if (parameters.getOrigin() == ndn::nfd::ROUTE_ORIGIN_APP)
+    {
+      shouldWaitToRespond = true;
+    }
+  else // Respond immediately
+    {
+      sendSuccessResponse(request, parameters);
+    }
+
+  NFD_LOG_DEBUG("Applying " << updates.size() << " updates to FIB");
+
+  // Assign an ID to this FIB transaction
+  TransactionId currentTransactionId = ++m_lastTransactionId;
+
+  // Add this transaction to the transaction table
+  m_pendingFibTransactions[currentTransactionId] = updates.size();
+
+  for (Rib::FibUpdateList::const_iterator it = updates.begin(); it != updates.end(); ++it)
+    {
+      shared_ptr<const FibUpdate> update(*it);
+
+      if (update->action == FibUpdate::ADD_NEXTHOP)
+        {
+          FaceEntry faceEntry;
+          faceEntry.faceId = update->faceId;
+          faceEntry.cost = update->cost;
+
+          m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
+            ControlParameters()
+              .setName(update->name)
+              .setFaceId(faceEntry.faceId)
+              .setCost(faceEntry.cost),
+            bind(&RibManager::onAddNextHopSuccess, this, request,
+                                                         parameters,
+                                                         currentTransactionId,
+                                                         shouldWaitToRespond),
+            bind(&RibManager::onAddNextHopError, this, _1, _2, request, currentTransactionId,
+                                                                        shouldWaitToRespond));
+        }
+      else if (update->action == FibUpdate::REMOVE_NEXTHOP)
+        {
+          FaceEntry faceEntry;
+          faceEntry.faceId = update->faceId;
+
+          m_nfdController.start<ndn::nfd::FibRemoveNextHopCommand>(
+            ControlParameters()
+              .setName(update->name)
+              .setFaceId(faceEntry.faceId),
+            bind(&RibManager::onRemoveNextHopSuccess, this, request,
+                                                            parameters,
+                                                            currentTransactionId,
+                                                            shouldWaitToRespond),
+            bind(&RibManager::onRemoveNextHopError, this, _1, _2, request, currentTransactionId,
+                                                                           shouldWaitToRespond));
+        }
+    }
+
+  m_managedRib.clearFibUpdates();
+}
+
+void
+RibManager::sendUpdatesToFibAfterFaceDestroyEvent()
+{
+  ControlParameters parameters;
+  parameters.setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC);
+
+  sendUpdatesToFib(shared_ptr<const Interest>(), parameters);
 }
 
 } // namespace rib

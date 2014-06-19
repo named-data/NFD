@@ -23,54 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_FACE_ENTRY_HPP
-#define NFD_RIB_FACE_ENTRY_HPP
-
-#include "common.hpp"
+#include "fib-update.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \class FaceEntry
- *  \brief represents a route for a name prefix
- */
-class FaceEntry
+shared_ptr<FibUpdate>
+FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
 {
-public:
-  FaceEntry()
-    : faceId(0)
-    , origin(0)
-    , flags(0)
-    , cost(0)
-    , expires(time::steady_clock::TimePoint::min())
-  {
-  }
+  shared_ptr<FibUpdate> update = make_shared<FibUpdate>();
 
-public:
-  uint64_t faceId;
-  uint64_t origin;
-  uint64_t flags;
-  uint64_t cost;
-  time::steady_clock::TimePoint expires;
-};
+  update->name = name;
+  update->faceId = faceId;
+  update->cost = cost;
+  update->action = ADD_NEXTHOP;
 
-inline bool
-compareFaceIdAndOrigin(const FaceEntry& entry1, const FaceEntry& entry2)
-{
-  return (entry1.faceId == entry2.faceId && entry1.origin == entry2.origin);
+  return update;
 }
 
-inline bool
-compareFaceId(const FaceEntry& entry, const uint64_t faceId)
+shared_ptr<FibUpdate>
+FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
 {
-  return (entry.faceId == faceId);
-}
+  shared_ptr<FibUpdate> update = make_shared<FibUpdate>();
 
-// Method definition in rib-entry.cpp
-std::ostream&
-operator<<(std::ostream& os, const FaceEntry& entry);
+  update->name = name;
+  update->faceId = faceId;
+  update->action = REMOVE_NEXTHOP;
+
+  return update;
+}
 
 } // namespace rib
 } // namespace nfd
-
-#endif // NFD_RIB_RIB_ENTRY_HPP

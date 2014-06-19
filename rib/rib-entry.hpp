@@ -42,6 +42,7 @@ public:
   typedef FaceList::const_iterator const_iterator;
 
   RibEntry()
+    : m_nFacesWithCaptureSet(0)
   {
   }
 
@@ -98,6 +99,60 @@ public:
   iterator
   findFace(const FaceEntry& face);
 
+  bool
+  hasFace(const FaceEntry& face);
+
+  void
+  addInheritedFace(const FaceEntry& face);
+
+  void
+  removeInheritedFace(const FaceEntry& face);
+
+  /** \brief Returns the faces this namespace has inherited.
+   *  The inherited faces returned represent inherited entries this namespace has in the FIB.
+   *  \return{ faces inherited by this namespace }
+   */
+  FaceList&
+  getInheritedFaces();
+
+  /** \brief Finds an inherited face with a matching face ID.
+   *  \return{ An iterator to the matching face if one is found;
+   *           otherwise, an iterator to the end of the entry's
+   *           inherited face list }
+   */
+  FaceList::iterator
+  findInheritedFace(const FaceEntry& face);
+
+  /** \brief Determines if the entry has an inherited face with a matching face ID.
+   *  \return{ True, if a matching inherited face is found; otherwise, false. }
+   */
+  bool
+  hasInheritedFace(const FaceEntry& face);
+
+  bool
+  hasCapture() const;
+
+  /** \brief Determines if the entry has an inherited face with the passed
+   *         face ID and its child inherit flag set.
+   *  \return{ True, if a matching inherited face is found; otherwise, false. }
+   */
+  bool
+  hasChildInheritOnFaceId(uint64_t faceId) const;
+
+  /** \brief Returns the face with the lowest cost that has the passed face ID.
+   *  \return{ The face with with the lowest cost that has the passed face ID}
+   */
+  shared_ptr<FaceEntry>
+  getFaceWithLowestCostByFaceId(uint64_t faceId);
+
+  /** \brief Returns the face with the lowest cost that has the passed face ID
+   *         and its child inherit flag set.
+   *  \return{ The face with with the lowest cost that has the passed face ID
+   *           and its child inherit flag set }
+   */
+  shared_ptr<FaceEntry>
+  getFaceWithLowestCostAndChildInheritByFaceId(uint64_t faceId);
+
   const_iterator
   cbegin() const;
 
@@ -120,6 +175,14 @@ private:
   shared_ptr<RibEntry> m_parent;
   FaceList m_faces;
   FaceList m_inheritedFaces;
+
+  /** \brief The number of faces on this namespace with the capture flag set.
+   *
+   *  This count is used to check if the namespace will block inherited faces.
+   *  If the number is greater than zero, a route on the namespace has it's capture
+   *  flag set which means the namespace should not inherit any faces.
+   */
+  uint64_t m_nFacesWithCaptureSet;
 };
 
 inline void
@@ -158,6 +221,12 @@ RibEntry::getFaces()
   return m_faces;
 }
 
+inline RibEntry::FaceList&
+RibEntry::getInheritedFaces()
+{
+  return m_inheritedFaces;
+}
+
 inline RibEntry::const_iterator
 RibEntry::cbegin() const
 {
@@ -181,6 +250,9 @@ RibEntry::end()
 {
   return m_faces.end();
 }
+
+std::ostream&
+operator<<(std::ostream& os, const RibEntry& entry);
 
 } // namespace rib
 } // namespace nfd

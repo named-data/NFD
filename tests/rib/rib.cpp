@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(RibEntry)
   BOOST_CHECK_EQUAL(entry.eraseFace(face1), false);
 }
 
-BOOST_AUTO_TEST_CASE(Rib_Parent)
+BOOST_AUTO_TEST_CASE(Parent)
 {
   rib::Rib rib;
 
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(Rib_Parent)
   BOOST_CHECK(ribEntry->getFaces().front().faceId == 2);
 }
 
-BOOST_AUTO_TEST_CASE(Rib_Children)
+BOOST_AUTO_TEST_CASE(Children)
 {
   rib::Rib rib;
 
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(Rib_Children)
   BOOST_CHECK_EQUAL((rib.find(name3)->second)->getParent()->getName(), name4);
 }
 
-BOOST_AUTO_TEST_CASE(Rib_EraseFace)
+BOOST_AUTO_TEST_CASE(EraseFace)
 {
   rib::Rib rib;
 
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(Rib_EraseFace)
   rib.erase(name4, entry4);
 }
 
-BOOST_AUTO_TEST_CASE(Rib_EraseRibEntry)
+BOOST_AUTO_TEST_CASE(EraseRibEntry)
 {
   rib::Rib rib;
 
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(Rib_EraseRibEntry)
   BOOST_CHECK(ribEntry3->getParent() == ribEntry1);
 }
 
-BOOST_AUTO_TEST_CASE(Rib_EraseByFaceId)
+BOOST_AUTO_TEST_CASE(EraseByFaceId)
 {
   rib::Rib rib;
 

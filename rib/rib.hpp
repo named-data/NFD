@@ -26,6 +26,8 @@
 #ifndef NFD_RIB_RIB_HPP
 #define NFD_RIB_RIB_HPP
 
+#include "rib-entry.hpp"
+#include "fib-update.hpp"
 #include "common.hpp"
 #include "rib-entry.hpp"
 #include <ndn-cxx/management/nfd-control-command.hpp>
@@ -42,6 +44,9 @@ public:
   typedef std::map<Name, shared_ptr<RibEntry> > RibTable;
   typedef RibTable::const_iterator const_iterator;
   typedef std::map<uint64_t, std::list<shared_ptr<RibEntry> > > FaceLookupTable;
+  typedef bool (*FaceComparePredicate)(const FaceEntry&, const FaceEntry&);
+  typedef std::set<FaceEntry, FaceComparePredicate> FaceSet;
+  typedef std::list<shared_ptr<const FibUpdate> > FibUpdateList;
 
   Rib();
 
@@ -74,7 +79,6 @@ public:
   bool
   empty() const;
 
-
   shared_ptr<RibEntry>
   findParent(const Name& prefix) const;
 
@@ -84,15 +88,62 @@ public:
   std::list<shared_ptr<RibEntry> >
   findDescendants(const Name& prefix) const;
 
+  const std::list<shared_ptr<const FibUpdate> >&
+  getFibUpdates() const;
+
+  void
+  clearFibUpdates();
+
+private:
   RibTable::iterator
   eraseEntry(RibTable::iterator it);
 
   void
-  eraseEntry(const Name& name);
+  insertFibUpdate(shared_ptr<FibUpdate> update);
+
+  void
+  createFibUpdatesForNewRibEntry(RibEntry& entry, const FaceEntry& face);
+
+  void
+  createFibUpdatesForNewFaceEntry(RibEntry& entry, const FaceEntry& face,
+                                  const bool captureWasTurnedOn);
+
+  void
+  createFibUpdatesForUpdatedEntry(RibEntry& entry, const FaceEntry& face,
+                                  const uint64_t previousFlags, const uint64_t previousCost);
+  void
+  createFibUpdatesForErasedFaceEntry(RibEntry& entry, const FaceEntry& face,
+                                     const bool captureWasTurnedOff);
+
+  void
+  createFibUpdatesForErasedRibEntry(RibEntry& entry);
+
+  FaceSet
+  getAncestorFaces(const RibEntry& entry) const;
+
+  void
+  modifyChildrensInheritedFaces(RibEntry& entry, const Rib::FaceSet& facesToAdd,
+                                                 const Rib::FaceSet& facesToRemove);
+
+  void
+  traverseSubTree(RibEntry& entry, Rib::FaceSet facesToAdd,
+                                   Rib::FaceSet facesToRemove);
+
+  /** \brief Adds passed faces to the entry's inherited faces list
+   */
+  void
+  addInheritedFacesToEntry(RibEntry& entry, const Rib::FaceSet& facesToAdd);
+
+  /** \brief Removes passed faces from the entry's inherited faces list
+   */
+  void
+  removeInheritedFacesFromEntry(RibEntry& entry, const Rib::FaceSet& facesToRemove);
 
 private:
   RibTable m_rib;
   FaceLookupTable m_faceMap;
+  FibUpdateList m_fibUpdateList;
+
   size_t m_nItems;
 };
 
@@ -120,11 +171,17 @@ Rib::empty() const
   return m_rib.empty();
 }
 
-std::ostream&
-operator<<(std::ostream& os, const FaceEntry& entry);
+inline const Rib::FibUpdateList&
+Rib::getFibUpdates() const
+{
+  return m_fibUpdateList;
+}
 
-std::ostream&
-operator<<(std::ostream& os, const RibEntry& entry);
+inline void
+Rib::clearFibUpdates()
+{
+  m_fibUpdateList.clear();
+}
 
 std::ostream&
 operator<<(std::ostream& os, const Rib& rib);

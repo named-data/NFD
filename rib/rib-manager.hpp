@@ -68,6 +68,8 @@ public:
   setConfigFile(ConfigFile& configFile);
 
 private:
+  typedef uint32_t TransactionId;
+
   void
   onConfig(const ConfigSection& configSection,
            bool isDryRun,
@@ -90,6 +92,14 @@ private:
   sendResponse(const Name& name,
                uint32_t code,
                const std::string& text);
+
+  void
+  sendSuccessResponse(const shared_ptr<const Interest>& request,
+                      const ControlParameters& parameters);
+
+  void
+  sendErrorResponse(uint32_t code, const std::string& error,
+                    const shared_ptr<const Interest>& request);
 
   void
   registerEntry(const shared_ptr<const Interest>& request,
@@ -129,10 +139,26 @@ private:
   onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
 
   void
-  onAddNextHopSuccess(const Name& prefix);
+  onAddNextHopSuccess(const shared_ptr<const Interest>& request,
+                      const ControlParameters& parameters,
+                      const TransactionId transactionId,
+                      const bool shouldSendResponse);
 
   void
-  onAddNextHopError(const Name& name, const std::string& msg);
+  onAddNextHopError(uint32_t code, const std::string& error,
+                    const shared_ptr<const Interest>& request,
+                    const TransactionId transactionId, const bool shouldSendResponse);
+
+  void
+  onRemoveNextHopSuccess(const shared_ptr<const Interest>& request,
+                         const ControlParameters& parameters,
+                         const TransactionId transactionId,
+                         const bool shouldSendResponse);
+
+  void
+  onRemoveNextHopError(uint32_t code, const std::string& error,
+                       const shared_ptr<const Interest>& request,
+                       const TransactionId transactionId, const bool shouldSendResponse);
 
   void
   onControlHeaderSuccess();
@@ -150,6 +176,24 @@ private:
   void
   onNotification(const FaceEventNotification& notification);
 
+  void
+  sendUpdatesToFib(const shared_ptr<const Interest>& request,
+                   const ControlParameters& parameters);
+
+  void
+  sendUpdatesToFibAfterFaceDestroyEvent();
+
+  /** \brief Checks if the transaction has received all of the expected responses
+   *         from the FIB.
+   *  \return{ True if the transaction with the passed transactionId has applied
+   *           all of its FIB updates successfully; otherwise, false }
+   */
+  bool
+  isTransactionComplete(const TransactionId transactionId);
+
+  void
+  invalidateTransaction(const TransactionId transactionId);
+
 private:
   Rib m_managedRib;
   ndn::Face m_face;
@@ -159,6 +203,22 @@ private:
   ndn::ValidatorConfig m_localhopValidator;
   FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
+
+  /** \brief The last transaction ID for FIB update response messages.
+   *         Each group of FIB updates applied to the FIB is assigned an incrementing
+   *         ID that is used to track the number of successfully applied updates.
+   */
+  TransactionId m_lastTransactionId;
+
+  /// table of FIB update transactions => count of pending FIB updates
+  typedef std::map<TransactionId, int> FibTransactionTable;
+
+  /** \brief Table used to track the number of FIB updates that have not yet received
+   *         a response from the FIB.
+   *         The table maps a transaction ID to the number of updates remaining for that
+   *         specific transaction.
+   */
+  FibTransactionTable m_pendingFibTransactions;
 
   typedef function<void(RibManager*,
                         const shared_ptr<const Interest>& request,

@@ -23,54 +23,68 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_FACE_ENTRY_HPP
-#define NFD_RIB_FACE_ENTRY_HPP
+#ifndef NFD_RIB_FIB_UPDATE_HPP
+#define NFD_RIB_FIB_UPDATE_HPP
 
 #include "common.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \class FaceEntry
- *  \brief represents a route for a name prefix
+/** \class FibUpdate
+ *  \brief represents a FIB update
  */
-class FaceEntry
+class FibUpdate
 {
 public:
-  FaceEntry()
+  FibUpdate()
     : faceId(0)
-    , origin(0)
-    , flags(0)
     , cost(0)
-    , expires(time::steady_clock::TimePoint::min())
   {
   }
 
+  static shared_ptr<FibUpdate>
+  createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost);
+
+  static shared_ptr<FibUpdate>
+  createRemoveUpdate(const Name& name, const uint64_t faceId);
+
+  enum Action
+  {
+    ADD_NEXTHOP    = 0,
+    REMOVE_NEXTHOP = 1
+  };
+
 public:
+  Name name;
   uint64_t faceId;
-  uint64_t origin;
-  uint64_t flags;
   uint64_t cost;
-  time::steady_clock::TimePoint expires;
+  Action action;
 };
 
-inline bool
-compareFaceIdAndOrigin(const FaceEntry& entry1, const FaceEntry& entry2)
+inline std::ostream&
+operator<<(std::ostream& os, const FibUpdate& update)
 {
-  return (entry1.faceId == entry2.faceId && entry1.origin == entry2.origin);
-}
+  os << "FibUpdate("
+     << " Name: " << update.name << ", "
+     << "faceId: " << update.faceId << ", ";
 
-inline bool
-compareFaceId(const FaceEntry& entry, const uint64_t faceId)
-{
-  return (entry.faceId == faceId);
-}
+  if (update.action == FibUpdate::ADD_NEXTHOP)
+    {
+      os << "cost: " << update.cost << ", "
+         << "action: ADD_NEXTHOP";
+    }
+  else
+    {
+      os << "action: REMOVE_NEXTHOP";
+    }
 
-// Method definition in rib-entry.cpp
-std::ostream&
-operator<<(std::ostream& os, const FaceEntry& entry);
+  os << ")";
+
+  return os;
+}
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_RIB_ENTRY_HPP
+#endif // NFD_RIB_FIB_UPDATE_HPP
