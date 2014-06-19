@@ -85,6 +85,9 @@ public:
   size_t
   size() const;
 
+  bool
+  isListening() const;
+
 private:
   void
   handleMessage(websocketpp::connection_hdl hdl, websocket::Server::message_ptr msg);
@@ -116,6 +119,12 @@ private:
   bool m_isListening;
 
 };
+
+inline bool
+WebSocketChannel::isListening() const
+{
+  return m_isListening;
+}
 
 } // namespace nfd
 

@@ -44,6 +44,8 @@ WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   m_server.set_open_handler(bind(&WebSocketChannel::handleOpen, this, _1));
   m_server.set_close_handler(bind(&WebSocketChannel::handleClose, this, _1));
   m_server.init_asio(&getGlobalIoService());
+  // Always set SO_REUSEADDR flag
+  m_server.set_reuse_addr(true);
 
   this->setUri(FaceUri(localEndpoint, "ws"));
 }

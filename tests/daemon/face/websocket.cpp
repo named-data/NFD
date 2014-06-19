@@ -25,6 +25,12 @@
 
 #include "face/websocket-factory.hpp"
 #include "tests/test-common.hpp"
+#include "tests/limited-io.hpp"
+
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
+
+typedef websocketpp::client<websocketpp::config::asio_client> Client;
 
 namespace nfd {
 namespace tests {
@@ -54,6 +60,209 @@ BOOST_AUTO_TEST_CASE(GetChannels)
     }
 
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
+}
+
+class EndToEndFixture : protected BaseFixture
+{
+public:
+  void
+  channel1_onFaceCreated(const shared_ptr<Face>& newFace)
+  {
+    BOOST_CHECK(!static_cast<bool>(face1));
+    face1 = newFace;
+    face1->onReceiveInterest +=
+      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
+    face1->onReceiveData +=
+      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
+    face1->onFail +=
+      bind(&EndToEndFixture::face1_onFail, this);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  face1_onReceiveInterest(const Interest& interest)
+  {
+    face1_receivedInterests.push_back(interest);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  face1_onReceiveData(const Data& data)
+  {
+    face1_receivedDatas.push_back(data);
+
+    limitedIo.afterOp();
+  }
+
+  void
+  face1_onFail()
+  {
+    face1.reset();
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_onOpen(websocketpp::connection_hdl hdl)
+  {
+    handle = hdl;
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_onClose(websocketpp::connection_hdl hdl)
+  {
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_onFail(websocketpp::connection_hdl hdl)
+  {
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_sendInterest(const Interest& interest)
+  {
+    const Block& payload = interest.wireEncode();
+    client1.send(handle, payload.wire(), payload.size(), websocketpp::frame::opcode::binary);
+  }
+
+  void
+  client1_sendData(const Data& data)
+  {
+    const Block& payload = data.wireEncode();
+    client1.send(handle, payload.wire(), payload.size(), websocketpp::frame::opcode::binary);
+  }
+
+  void
+  client1_onMessage(websocketpp::connection_hdl hdl,
+                    websocketpp::config::asio_client::message_type::ptr msg)
+  {
+    bool isOk = true;
+    Block element;
+    const std::string& payload = msg->get_payload();
+    isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(payload.c_str()),
+                             payload.size(), element);
+    if (isOk)
+      {
+        try {
+          if (element.type() == tlv::Interest)
+            {
+              shared_ptr<Interest> i = make_shared<Interest>();
+              i->wireDecode(element);
+              client1_onReceiveInterest(*i);
+            }
+          else if (element.type() == tlv::Data)
+            {
+              shared_ptr<Data> d = make_shared<Data>();
+              d->wireDecode(element);
+              client1_onReceiveData(*d);
+            }
+        }
+        catch (tlv::Error&) {
+          // Do something?
+        }
+      }
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_onReceiveInterest(const Interest& interest)
+  {
+    client1_receivedInterests.push_back(interest);
+    limitedIo.afterOp();
+  }
+
+  void
+  client1_onReceiveData(const Data& data)
+  {
+    client1_receivedDatas.push_back(data);
+    limitedIo.afterOp();
+  }
+
+public:
+  LimitedIo limitedIo;
+
+  shared_ptr<Face> face1;
+  std::vector<Interest> face1_receivedInterests;
+  std::vector<Data> face1_receivedDatas;
+  Client client1;
+  websocketpp::connection_hdl handle;
+  std::vector<Interest> client1_receivedInterests;
+  std::vector<Data> client1_receivedDatas;
+
+  std::list< shared_ptr<Face> > faces;
+};
+
+BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
+{
+  WebSocketFactory factory1("9696");
+
+  shared_ptr<WebSocketChannel> channel1 = factory1.createChannel("127.0.0.1", "20070");
+
+  BOOST_CHECK_EQUAL(channel1->isListening(), false);
+
+  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1));
+
+  BOOST_CHECK_EQUAL(channel1->isListening(), true);
+
+  Client client1;
+  // Clear all logging info from websocketpp library
+  client1.clear_access_channels(websocketpp::log::alevel::all);
+
+  client1.init_asio(&getGlobalIoService());
+  client1.set_open_handler(bind(&EndToEndFixture::client1_onOpen,   this, _1));
+  client1.set_close_handler(bind(&EndToEndFixture::client1_onClose, this, _1));
+  client1.set_fail_handler(bind(&EndToEndFixture::client1_onFail,   this, _1));
+  client1.set_message_handler(bind(&EndToEndFixture::client1_onMessage, this, _1, _2));
+
+  websocketpp::lib::error_code ec;
+  Client::connection_ptr con = client1.get_connection("ws://127.0.0.1:20070", ec);
+  client1.connect(con);
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "WebSocketChannel error: cannot connect or cannot accept connection");
+
+  BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "ws://127.0.0.1:20070");
+
+  //BOOST_CHECK_EQUAL(face1->isLocal(), true);
+
+  //BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(face1)), false);
+
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
+  shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
+  shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
+
+  client1_sendInterest(*interest1);
+  client1_sendInterest(*interest1);
+  client1_sendInterest(*interest1);
+  face1->sendData     (*data1);
+  face1->sendInterest (*interest2);
+  client1_sendData    (*data2);
+  client1_sendData    (*data2);
+  client1_sendData    (*data2);
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "WebSocketChannel error: cannot send or receive Interest/Data packets");
+
+  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 3);
+  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 3);
+  BOOST_REQUIRE_EQUAL(client1_receivedInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(client1_receivedDatas    .size(), 1);
+
+  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest1->getName());
+  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2->getName());
+  BOOST_CHECK_EQUAL(client1_receivedInterests[0].getName(), interest2->getName());
+  BOOST_CHECK_EQUAL(client1_receivedDatas    [0].getName(), data1->getName());
+
+  const FaceCounters& counters1 = face1->getCounters();
+  BOOST_CHECK_EQUAL(counters1.getNInInterests() , 3);
+  BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
+  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 1);
+  BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
