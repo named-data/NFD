@@ -131,15 +131,32 @@ TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
   tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
   shared_ptr<Face> face;
-  if (socket->local_endpoint().address().is_loopback())
-    face = make_shared<TcpLocalFace>(socket, isOnDemand);
+
+  ChannelFaceMap::iterator faceMapPos = m_channelFaces.find(remoteEndpoint);
+  if (faceMapPos == m_channelFaces.end())
+    {
+      if (socket->local_endpoint().address().is_loopback())
+        face = make_shared<TcpLocalFace>(socket, isOnDemand);
+      else
+        face = make_shared<TcpFace>(socket, isOnDemand);
+
+      face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
+
+      m_channelFaces[remoteEndpoint] = face;
+    }
   else
-    face = make_shared<TcpFace>(socket, isOnDemand);
+    {
+      // we've already created a a face for this endpoint, just reuse it
+      face = faceMapPos->second;
 
-  face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
+      boost::system::error_code error;
+      socket->shutdown(ip::tcp::socket::shutdown_both, error);
+      socket->close(error);
+    }
 
+  // Need to invoke the callback regardless of whether or not we have already created
+  // the face so that control responses and such can be sent.
   onFaceCreated(face);
-  m_channelFaces[remoteEndpoint] = face;
 }
 
 void

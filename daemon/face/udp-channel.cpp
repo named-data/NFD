@@ -180,11 +180,30 @@ UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
 {
   udp::Endpoint remoteEndpoint = socket->remote_endpoint();
 
-  shared_ptr<UdpFace> face = make_shared<UdpFace>(socket, isOnDemand);
-  face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
+  shared_ptr<UdpFace> face;
 
+  ChannelFaceMap::iterator faceMapPos = m_channelFaces.find(remoteEndpoint);
+  if (faceMapPos == m_channelFaces.end())
+    {
+      face = make_shared<UdpFace>(socket, isOnDemand);
+      face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
+
+      m_channelFaces[remoteEndpoint] = face;
+    }
+  else
+    {
+      // we've already created a a face for this endpoint, just reuse it
+      face = faceMapPos->second;
+
+      boost::system::error_code error;
+      socket->shutdown(ip::udp::socket::shutdown_both, error);
+      socket->close(error);
+    }
+
+  // Need to invoke the callback regardless of whether or not we have already created
+  // the face so that control responses and such can be sent.
   onFaceCreated(face);
-  m_channelFaces[remoteEndpoint] = face;
+
   return face;
 }
 
