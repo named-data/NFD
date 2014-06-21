@@ -70,12 +70,12 @@ public:
       "  [-f] - retrieve face status information\n"
       "  [-b] - retrieve FIB information\n"
       "  [-s] - retrieve configured strategy choice for NDN namespaces\n"
-      "  [-x] - retrieve NFD status information in XML format\n"
+      "  [-x] - output NFD status information in XML format\n"
       "\n"
       "  [-V] - show version information of nfd-status and exit\n"
       "\n"
       "If no options are provided, all information is retrieved.\n"
-      "If -x is provided, other options(v, f and b) are ignored, and all information is retrieved in XML format.\n"
+      "If -x is provided, other options(-v, -c, etc.) are ignored, and all information is printed in XML format.\n"
       ;
   }
 
