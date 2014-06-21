@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "measurements.hpp"
 #include "name-tree.hpp"
@@ -28,8 +29,6 @@
 #include "fib-entry.hpp"
 
 namespace nfd {
-
-const time::nanoseconds Measurements::s_defaultLifetime = time::seconds(4);
 
 Measurements::Measurements(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -53,9 +52,15 @@ Measurements::get(shared_ptr<name_tree::Entry> nameTreeEntry)
   shared_ptr<measurements::Entry> entry = nameTreeEntry->getMeasurementsEntry();
   if (static_cast<bool>(entry))
     return entry;
+
   entry = make_shared<measurements::Entry>(nameTreeEntry->getPrefix());
   nameTreeEntry->setMeasurementsEntry(entry);
-  m_nItems++;
+  ++m_nItems;
+
+  entry->m_expiry = time::steady_clock::now() + getInitialLifetime();
+  entry->m_cleanup = scheduler::schedule(getInitialLifetime(),
+                                         bind(&Measurements::cleanup, this, entry));
+
   return entry;
 }
 

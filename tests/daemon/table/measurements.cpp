@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,11 +21,12 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "table/measurements.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
@@ -53,6 +55,64 @@ BOOST_AUTO_TEST_CASE(Get_Parent)
 
   shared_ptr<measurements::Entry> entry0c = measurements.getParent(entryA);
   BOOST_CHECK_EQUAL(entry0, entry0c);
+}
+
+BOOST_AUTO_TEST_CASE(Lifetime)
+{
+  LimitedIo limitedIo;
+  NameTree nameTree;
+  Measurements measurements(nameTree);
+  Name nameA("ndn:/A");
+  Name nameB("ndn:/B");
+  Name nameC("ndn:/C");
+
+  BOOST_CHECK_EQUAL(measurements.size(), 0);
+
+  shared_ptr<measurements::Entry> entryA = measurements.get(nameA);
+  shared_ptr<measurements::Entry> entryB = measurements.get(nameB);
+  shared_ptr<measurements::Entry> entryC = measurements.get(nameC);
+  BOOST_CHECK_EQUAL(measurements.size(), 3);
+
+  const time::nanoseconds EXTEND_A = time::seconds(2);
+  const time::nanoseconds CHECK1 = time::seconds(3);
+  const time::nanoseconds CHECK2 = time::seconds(5);
+  const time::nanoseconds EXTEND_C = time::seconds(6);
+  const time::nanoseconds CHECK3 = time::seconds(7);
+  BOOST_ASSERT(EXTEND_A < CHECK1 &&
+               CHECK1 < Measurements::getInitialLifetime() &&
+               Measurements::getInitialLifetime() < CHECK2 &&
+               CHECK2 < EXTEND_C &&
+               EXTEND_C < CHECK3);
+
+  measurements.extendLifetime(*entryA, EXTEND_A);
+  measurements.extendLifetime(*entryC, EXTEND_C);
+  // remaining lifetime:
+  //   A = initial lifetime, because it's extended by less duration
+  //   B = initial lifetime
+  //   C = EXTEND_C
+  entryA.reset();
+  entryB.reset();
+  entryC.reset();
+
+  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK1), LimitedIo::EXCEED_TIME);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), true);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), true);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), true);
+  BOOST_CHECK_EQUAL(measurements.size(), 3);
+
+  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK2 - CHECK1),
+                    LimitedIo::EXCEED_TIME);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), false);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), false);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), true);
+  BOOST_CHECK_EQUAL(measurements.size(), 1);
+
+  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK3 - CHECK2),
+                    LimitedIo::EXCEED_TIME);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), false);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), false);
+  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), false);
+  BOOST_CHECK_EQUAL(measurements.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
