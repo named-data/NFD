@@ -59,9 +59,12 @@ Options
   ``unregister``
     Unregister an existing routing entry from Routing Information Base (RIB).
 
-    ``unregister <prefix> <faceId>``
+    ``unregister [-o origin] <prefix> <faceId>``
 
-      ``prefix``
+       ``-o <origin>``
+        Origin of the unregistration request (default is 255).
+
+       ``prefix``
         A prefix of an existing RIB entry, from which routing entry is requested to be
         removed.
 

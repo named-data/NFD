@@ -47,7 +47,7 @@ usage(const char* programName)
     "           -e: specify expiring time in ms\n"
     "           -o: specify origin\n"
     "               0 for Local producer applications, 128 for NLSR, 255 for static routes\n"
-    "       unregister name <faceId>\n"
+    "       unregister [-o origin] name <faceId>\n"
     "           unregister name from the given faceId\n"
     "       create <faceUri> \n"
     "           Create a face in one of the following formats:\n"
@@ -286,7 +286,8 @@ Nfdc::ribUnregisterPrefix()
   ControlParameters parameters;
   parameters
     .setName(m_name)
-    .setFaceId(m_faceId);
+    .setFaceId(m_faceId)
+    .setOrigin(m_origin);
 
   m_controller.start<RibUnregisterCommand>(parameters,
                                            bind(&Nfdc::onSuccess, this, _1,
