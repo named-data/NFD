@@ -24,6 +24,11 @@
 
 #include "udp-face.hpp"
 
+#ifdef __linux__
+#include <netinet/in.h> // for IP_MTU_DISCOVER and IP_PMTUDISC_DONT
+#include <sys/socket.h> // for setsockopt()
+#endif
+
 namespace nfd {
 
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
@@ -33,6 +38,28 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket, bool isOnD
                            FaceUri(socket->local_endpoint()),
                            socket, isOnDemand)
 {
+#ifdef __linux__
+  //
+  // By default, Linux does path MTU discovery on IPv4 sockets,
+  // and sets the DF (Don't Fragment) flag on datagrams smaller
+  // than the interface MTU. However this does not work for us,
+  // because we cannot properly respond to ICMP "packet too big"
+  // messages by fragmenting the packet at the application level,
+  // since we want to rely on IP for fragmentation and reassembly.
+  //
+  // Therefore, we disable PMTU discovery, which prevents the kernel
+  // from setting the DF flag on outgoing datagrams, and thus allows
+  // routers along the path to perform fragmentation as needed.
+  //
+  const int value = IP_PMTUDISC_DONT;
+  if (::setsockopt(socket->native_handle(), IPPROTO_IP,
+                   IP_MTU_DISCOVER, &value, sizeof(value)) < 0)
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Failed to disable path MTU discovery");
+    }
+#endif
 }
 
 void
