@@ -26,6 +26,8 @@
 #ifndef NFD_RIB_FACE_ENTRY_HPP
 #define NFD_RIB_FACE_ENTRY_HPP
 
+#include "common.hpp"
+
 namespace nfd {
 namespace rib {
 
