@@ -37,6 +37,14 @@
 #include <sys/ioctl.h>    // for ioctl()
 #include <unistd.h>       // for dup()
 
+#if !defined(PCAP_NETMASK_UNKNOWN)
+/*
+ * Value to pass to pcap_compile() as the netmask if you don't know what
+ * the netmask is.
+ */
+#define PCAP_NETMASK_UNKNOWN    0xffffffff
+#endif
+
 namespace nfd {
 
 NFD_LOG_INIT("EthernetFace");
