@@ -83,7 +83,7 @@ def apply_pch(self):
 	if getattr(self.bld, 'pch_tasks', None) is None:
 		self.bld.pch_tasks = {}
 
-        if getattr(self, 'headers', None) is None:
+	if getattr(self, 'headers', None) is None:
 		return
 
 	self.headers = self.to_nodes(self.headers)
@@ -102,7 +102,7 @@ def apply_pch(self):
 	# target should be an absolute path of `out`, but without precompiled header extension
 	task.target = out.abspath()[:-len(out.suffix())]
 
-        self.pch_task = task
+	self.pch_task = task
 	if getattr(self, 'name', None):
 		self.bld.pch_tasks[self.name] = task
 
