@@ -76,28 +76,6 @@ UdpFace::~UdpFace()
   scheduler::cancel(m_closeIfIdleEvent);
 }
 
-void
-UdpFace::handleFirstReceive(const uint8_t* buffer,
-                            std::size_t nBytesReceived,
-                            const boost::system::error_code& error)
-{
-  NFD_LOG_TRACE("handleFirstReceive");
-
-  // Checking if the received message size is too big.
-  // This check is redundant, since in the actual implementation
-  // a packet cannot be larger than MAX_NDN_PACKET_SIZE.
-  if (!error && (nBytesReceived > MAX_NDN_PACKET_SIZE))
-    {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
-                   << "] Received message too big. Maximum size is "
-                   << MAX_NDN_PACKET_SIZE );
-      return;
-    }
-
-  receiveDatagram(buffer, nBytesReceived, error);
-}
-
 ndn::nfd::FaceStatus
 UdpFace::getFaceStatus() const
 {

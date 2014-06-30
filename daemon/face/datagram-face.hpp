@@ -64,12 +64,9 @@ public:
   close();
 
   void
-  handleSend(const boost::system::error_code& error,
-             const Block& wire);
-
-  void
-  handleReceive(const boost::system::error_code& error,
-                size_t nBytesReceived);
+  receiveDatagram(const uint8_t* buffer,
+                  size_t nBytesReceived,
+                  const boost::system::error_code& error);
 
   /**
    * \brief Set m_hasBeenUsedRecently to false
@@ -85,9 +82,12 @@ public:
 
 protected:
   void
-  receiveDatagram(const uint8_t* buffer,
-                  size_t nBytesReceived,
-                  const boost::system::error_code& error);
+  handleSend(const boost::system::error_code& error,
+             const Block& wire);
+
+  void
+  handleReceive(const boost::system::error_code& error,
+                size_t nBytesReceived);
 
   void
   keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);

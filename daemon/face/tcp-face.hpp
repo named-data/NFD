@@ -36,8 +36,8 @@ namespace nfd {
 class TcpFace : public StreamFace<boost::asio::ip::tcp>
 {
 public:
-  explicit
-  TcpFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
+  TcpFace(const shared_ptr<protocol::socket>& socket,
+          bool isOnDemand);
 };
 
 //
@@ -50,8 +50,8 @@ public:
 class TcpLocalFace : public StreamFace<boost::asio::ip::tcp, LocalFace>
 {
 public:
-  explicit
-  TcpLocalFace(const shared_ptr<protocol::socket>& socket, bool isOnDemand);
+  TcpLocalFace(const shared_ptr<protocol::socket>& socket,
+               bool isOnDemand);
 };
 
 

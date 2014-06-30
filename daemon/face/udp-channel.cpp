@@ -236,8 +236,8 @@ UdpChannel::newPeer(const boost::system::error_code& error,
                       true);
   }
 
-  //Passing the message to the correspondent face
-  face->handleFirstReceive(m_inputBuffer, nBytesReceived, error);
+  // dispatch the datagram to the face for processing
+  face->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
   m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE),
                                m_newRemoteEndpoint,

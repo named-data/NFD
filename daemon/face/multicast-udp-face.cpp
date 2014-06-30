@@ -55,8 +55,7 @@ MulticastUdpFace::sendBlock(const Block& block)
 {
   m_sendSocket->async_send_to(boost::asio::buffer(block.wire(), block.size()),
                               m_multicastGroup,
-                              bind(&DatagramFace<protocol, Multicast>::handleSend,
-                                   this, _1, block));
+                              bind(&MulticastUdpFace::handleSend, this, _1, block));
 }
 
 void

@@ -44,14 +44,6 @@ public:
   virtual
   ~UdpFace();
 
-  /**
-   * \brief Manages the first datagram received by the UdpChannel socket set on listening
-   */
-  void
-  handleFirstReceive(const uint8_t* buffer,
-                     std::size_t nBytesReceived,
-                     const boost::system::error_code& error);
-
   virtual ndn::nfd::FaceStatus
   getFaceStatus() const;
 
