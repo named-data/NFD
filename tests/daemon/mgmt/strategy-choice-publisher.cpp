@@ -29,7 +29,6 @@
 #include "mgmt/strategy-choice-publisher.hpp"
 #include "mgmt/app-face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "mgmt/face-flags.hpp"
 #include "fw/forwarder.hpp"
 #include "../fw/dummy-strategy.hpp"
 

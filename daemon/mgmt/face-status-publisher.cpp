@@ -23,7 +23,6 @@
  **/
 
 #include "face-status-publisher.hpp"
-#include "face-flags.hpp"
 #include "core/logger.hpp"
 #include "fw/face-table.hpp"
 
@@ -57,18 +56,7 @@ FaceStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
   for (FaceTable::const_reverse_iterator i = m_faceTable.rbegin();
        i != m_faceTable.rend(); ++i) {
     const shared_ptr<Face>& face = *i;
-    const FaceCounters& counters = face->getCounters();
-
-    ndn::nfd::FaceStatus status;
-    status.setFaceId(face->getId())
-          .setRemoteUri(face->getRemoteUri().toString())
-          .setLocalUri(face->getLocalUri().toString())
-          .setFlags(getFaceFlags(*face))
-          .setNInInterests(counters.getNInInterests())
-          .setNInDatas(counters.getNInDatas())
-          .setNOutInterests(counters.getNOutInterests())
-          .setNOutDatas(counters.getNOutDatas());
-
+    ndn::nfd::FaceStatus status = face->getFaceStatus();
     totalLength += status.wireEncode(outBuffer);
   }
   return totalLength;

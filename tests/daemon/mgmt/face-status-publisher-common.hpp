@@ -28,7 +28,7 @@
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/app-face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "mgmt/face-flags.hpp"
+#include "face/face-flags.hpp"
 #include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"

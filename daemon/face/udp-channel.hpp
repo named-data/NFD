@@ -27,7 +27,6 @@
 
 #include "channel.hpp"
 #include "core/global-io.hpp"
-#include "core/scheduler.hpp"
 #include "udp-face.hpp"
 
 namespace nfd {
@@ -64,9 +63,6 @@ public:
    */
   UdpChannel(const udp::Endpoint& localEndpoint,
              const time::seconds& timeout);
-
-  virtual
-  ~UdpChannel();
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -137,9 +133,6 @@ private:
                            const ConnectFailedCallback& onConnectFailed,
                            const shared_ptr<boost::asio::ip::udp::resolver>& resolver);
 
-  void
-  closeIdleFaces();
-
 private:
   udp::Endpoint m_localEndpoint;
 
@@ -178,9 +171,6 @@ private:
    *        faces will be removed
    */
   time::seconds m_idleFaceTimeout;
-
-  EventId m_closeIdleFaceEvent;
-
 };
 
 } // namespace nfd

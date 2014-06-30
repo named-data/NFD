@@ -25,11 +25,11 @@
 
 #include "face-manager.hpp"
 
-#include "face-flags.hpp"
 #include "core/logger.hpp"
 #include "core/face-uri.hpp"
 #include "core/network-interface.hpp"
 #include "fw/face-table.hpp"
+#include "face/face-flags.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 #include "core/config-file.hpp"

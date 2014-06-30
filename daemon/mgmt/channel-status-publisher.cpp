@@ -25,7 +25,6 @@
 
 #include "channel-status-publisher.hpp"
 
-#include "face-flags.hpp"
 #include "core/logger.hpp"
 #include "face/protocol-factory.hpp"
 #include "face/channel.hpp"

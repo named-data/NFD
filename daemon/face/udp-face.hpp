@@ -26,6 +26,7 @@
 #define NFD_DAEMON_FACE_UDP_FACE_HPP
 
 #include "datagram-face.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 
@@ -37,7 +38,11 @@ class UdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
   UdpFace(const shared_ptr<protocol::socket>& socket,
-          bool isOnDemand);
+          bool isOnDemand,
+          const time::seconds& idleTimeout);
+
+  virtual
+  ~UdpFace();
 
   /**
    * \brief Manages the first datagram received by the UdpChannel socket set on listening
@@ -46,6 +51,18 @@ public:
   handleFirstReceive(const uint8_t* buffer,
                      std::size_t nBytesReceived,
                      const boost::system::error_code& error);
+
+  virtual ndn::nfd::FaceStatus
+  getFaceStatus() const;
+
+private:
+  void
+  closeIfIdle();
+
+private:
+  EventId m_closeIfIdleEvent;
+  time::seconds m_idleTimeout;
+  time::steady_clock::TimePoint m_lastIdleCheck;
 };
 
 } // namespace nfd

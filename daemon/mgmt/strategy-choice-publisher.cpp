@@ -24,7 +24,6 @@
  **/
 
 #include "strategy-choice-publisher.hpp"
-#include "face-flags.hpp"
 #include "core/logger.hpp"
 #include "table/strategy-choice.hpp"
 

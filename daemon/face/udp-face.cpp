@@ -33,10 +33,14 @@ namespace nfd {
 
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
 
-UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket, bool isOnDemand)
+UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
+                 bool isOnDemand,
+                 const time::seconds& idleTimeout)
   : DatagramFace<protocol>(FaceUri(socket->remote_endpoint()),
                            FaceUri(socket->local_endpoint()),
                            socket, isOnDemand)
+  , m_idleTimeout(idleTimeout)
+  , m_lastIdleCheck(time::steady_clock::now())
 {
 #ifdef __linux__
   //
@@ -60,6 +64,16 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket, bool isOnD
                    << "] Failed to disable path MTU discovery");
     }
 #endif
+
+  if (isOnDemand && m_idleTimeout > time::seconds::zero()) {
+    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout,
+                                             bind(&UdpFace::closeIfIdle, this));
+  }
+}
+
+UdpFace::~UdpFace()
+{
+  scheduler::cancel(m_closeIfIdleEvent);
 }
 
 void
@@ -82,6 +96,51 @@ UdpFace::handleFirstReceive(const uint8_t* buffer,
     }
 
   receiveDatagram(buffer, nBytesReceived, error);
+}
+
+ndn::nfd::FaceStatus
+UdpFace::getFaceStatus() const
+{
+  ndn::nfd::FaceStatus status = Face::getFaceStatus();
+  if (isOnDemand()) {
+    time::milliseconds left = time::duration_cast<time::milliseconds>(
+      time::steady_clock::now() - m_lastIdleCheck);
+
+    if (hasBeenUsedRecently()) {
+      status.setExpirationPeriod(left + m_idleTimeout);
+    }
+    else {
+      status.setExpirationPeriod(left);
+    }
+  }
+  return status;
+}
+
+void
+UdpFace::closeIfIdle()
+{
+  // Face can be switched from on-demand to non-on-demand mode
+  // (non-on-demand -> on-demand transition is not allowed)
+  if (isOnDemand()) {
+    if (!hasBeenUsedRecently()) {
+      // face has been idle since the last time closeIfIdle
+      // has been called. Going to close it
+      NFD_LOG_DEBUG("Found idle face id: " << getId());
+
+      NFD_LOG_INFO("[id:" << this->getId()
+                   << ",endpoint:" << m_socket->local_endpoint()
+                   << "] Idle for more than " << m_idleTimeout << ", closing");
+      close();
+    }
+    else {
+      resetRecentUsage();
+
+      m_lastIdleCheck = time::steady_clock::now();
+      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout,
+                                               bind(&UdpFace::closeIfIdle, this));
+    }
+  }
+  // else do nothing and do not reschedule the event
 }
 
 } // namespace nfd

@@ -22,7 +22,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include "mgmt/face-flags.hpp"
+#include "face/face-flags.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -30,7 +30,7 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(MgmtFaceFlags, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(FaceFaceFlags, BaseFixture)
 
 template<typename DummyFaceBase>
 class DummyOnDemandFace : public DummyFaceBase

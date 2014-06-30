@@ -31,6 +31,8 @@
 #include "core/face-uri.hpp"
 #include "face-counter.hpp"
 
+#include <ndn-cxx/management/nfd-face-status.hpp>
+
 namespace nfd {
 
 /** \class FaceId
@@ -148,6 +150,11 @@ public: // attributes
    */
   const FaceUri&
   getLocalUri() const;
+
+  /** \return FaceStatus data structure filled with the current Face status
+   */
+  virtual ndn::nfd::FaceStatus
+  getFaceStatus() const;
 
 protected:
   // this is a non-virtual method

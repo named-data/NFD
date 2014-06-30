@@ -24,6 +24,7 @@
  **/
 
 #include "face.hpp"
+#include "face-flags.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -127,5 +128,24 @@ Face::fail(const std::string& reason)
   m_isFailed = true;
   this->onFail(reason);
 }
+
+ndn::nfd::FaceStatus
+Face::getFaceStatus() const
+{
+  const FaceCounters& counters = getCounters();
+
+  ndn::nfd::FaceStatus status;
+  status.setFaceId(getId())
+    .setRemoteUri(getRemoteUri().toString())
+    .setLocalUri(getLocalUri().toString())
+    .setFlags(getFaceFlags(*this))
+    .setNInInterests(counters.getNInInterests())
+    .setNInDatas(counters.getNInDatas())
+    .setNOutInterests(counters.getNOutInterests())
+    .setNOutDatas(counters.getNOutDatas());
+
+  return status;
+}
+
 
 } //namespace nfd

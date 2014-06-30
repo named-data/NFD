@@ -61,15 +61,6 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   }
 
   this->setUri(FaceUri(localEndpoint));
-
-  //setting the timeout to close the idle faces
-  m_closeIdleFaceEvent = scheduler::schedule(m_idleFaceTimeout,
-                                bind(&UdpChannel::closeIdleFaces, this));
-}
-
-UdpChannel::~UdpChannel()
-{
-  scheduler::cancel(m_closeIdleFaceEvent);
 }
 
 void
@@ -185,7 +176,7 @@ UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
   ChannelFaceMap::iterator faceMapPos = m_channelFaces.find(remoteEndpoint);
   if (faceMapPos == m_channelFaces.end())
     {
-      face = make_shared<UdpFace>(socket, isOnDemand);
+      face = make_shared<UdpFace>(socket, isOnDemand, m_idleFaceTimeout);
       face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
 
       m_channelFaces[remoteEndpoint] = face;
@@ -261,28 +252,6 @@ UdpChannel::afterFaceFailed(udp::Endpoint &endpoint)
 {
   NFD_LOG_DEBUG("afterFaceFailed: " << endpoint);
   m_channelFaces.erase(endpoint);
-}
-
-void
-UdpChannel::closeIdleFaces()
-{
-  ChannelFaceMap::iterator next =  m_channelFaces.begin();
-
-  while (next != m_channelFaces.end()) {
-    ChannelFaceMap::iterator it = next;
-    next++;
-    if (it->second->isOnDemand() &&
-        !it->second->hasBeenUsedRecently()) {
-      //face has been idle since the last time closeIdleFaces
-      //has been called. Going to close it
-      NFD_LOG_DEBUG("Found idle face id: " << it->second->getId());
-      it->second->close();
-    } else {
-      it->second->resetRecentUsage();
-    }
-  }
-  m_closeIdleFaceEvent = scheduler::schedule(m_idleFaceTimeout,
-                                             bind(&UdpChannel::closeIdleFaces, this));
 }
 
 } // namespace nfd
