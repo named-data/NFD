@@ -383,6 +383,17 @@ public:
                       << "</nDatas>";
             std::cout << "</outgoingPackets>";
             std::cout << "</packetCounters>";
+
+            if (faceStatus.getFlags() != 0) {
+              std::cout << "<flags>";
+              if (faceStatus.isLocal()) {
+                std::cout << "<local/>";
+              }
+              if (faceStatus.isOnDemand()) {
+                std::cout << "<on-demand/>";
+              }
+              std::cout << "</flags>";
+            }
             std::cout << "</face>";
           }
         std::cout << "</faces>";
@@ -414,7 +425,12 @@ public:
                       << faceStatus.getNInDatas() << "d}"
                       << " out={" << faceStatus.getNOutInterests() << "i "
                       << faceStatus.getNOutDatas() << "d}"
-                      << "}" << std::endl;
+                      << "}";
+            if (faceStatus.isLocal())
+              std::cout << " local";
+            if (faceStatus.isOnDemand())
+              std::cout << " on-demand";
+            std::cout << std::endl;
           }
        }
 
