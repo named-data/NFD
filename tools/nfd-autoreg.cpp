@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
@@ -43,7 +44,7 @@ namespace nfd {
 using namespace ndn::nfd;
 using ndn::Face;
 
-class AutoregServer
+class AutoregServer : boost::noncopyable
 {
 public:
   AutoregServer()
@@ -54,19 +55,23 @@ public:
   }
 
   void
-  onNfdCommandSuccess(const FaceEventNotification& notification)
+  onRegisterCommandSuccess(const FaceEventNotification& notification, const Name& prefix)
   {
-    std::cerr << "SUCCEED: " << notification << std::endl;
+    std::cerr << "SUCCEED: register " << prefix << " on face "
+              << notification.getFaceId() << std::endl;
   }
 
   void
-  onNfdCommandFailure(const FaceEventNotification& notification,
-                      uint32_t code, const std::string& reason)
+  onRegisterCommandFailure(const FaceEventNotification& notification, const Name& prefix,
+                           uint32_t code, const std::string& reason)
   {
-    std::cerr << "FAILED: " << notification
+    std::cerr << "FAILED: register " << prefix << " on face " << notification.getFaceId()
               << " (code: " << code << ", reason: " << reason << ")" << std::endl;
   }
 
+  /**
+   * \return true if auto-register should not be performed for uri
+   */
   bool
   isFiltered(const FaceUri& uri)
   {
@@ -103,23 +108,24 @@ public:
 
     if (isFiltered(uri))
       {
-        std::cerr << "Not processing (filtered): " << notification << std::endl;
+        std::cerr << "FILTERED: " << notification << std::endl;
         return;
       }
 
+    std::cerr << "PROCESSING: " << notification << std::endl;
     for (std::vector<ndn::Name>::const_iterator prefix = m_autoregPrefixes.begin();
          prefix != m_autoregPrefixes.end();
          ++prefix)
       {
-        std::cout << "Try auto-register: " << *prefix << std::endl;
-
-        m_controller.start<FibAddNextHopCommand>(
+        m_controller.start<RibRegisterCommand>(
           ControlParameters()
             .setName(*prefix)
             .setFaceId(notification.getFaceId())
-            .setCost(m_cost),
-          bind(&AutoregServer::onNfdCommandSuccess, this, notification),
-          bind(&AutoregServer::onNfdCommandFailure, this, notification, _1, _2));
+            .setOrigin(ROUTE_ORIGIN_AUTOREG)
+            .setCost(m_cost)
+            .setExpirationPeriod(time::milliseconds::max()),
+          bind(&AutoregServer::onRegisterCommandSuccess, this, notification, *prefix),
+          bind(&AutoregServer::onRegisterCommandFailure, this, notification, *prefix, _1, _2));
       }
   }
 
@@ -139,7 +145,7 @@ public:
       }
     else
       {
-        std::cout << "IGNORED: " << notification << std::endl;
+        std::cerr << "IGNORED: " << notification << std::endl;
       }
 
     Name nextNotification("/localhost/nfd/faces/events");
@@ -192,7 +198,7 @@ public:
   void
   startProcessing()
   {
-    std::cout << "AUTOREG prefixes: " << std::endl;
+    std::cerr << "AUTOREG prefixes: " << std::endl;
     for (std::vector<ndn::Name>::const_iterator prefix = m_autoregPrefixes.begin();
          prefix != m_autoregPrefixes.end();
          ++prefix)
@@ -202,7 +208,7 @@ public:
 
     if (!m_blackList.empty())
       {
-        std::cout << "Blacklisted networks: " << std::endl;
+        std::cerr << "Blacklisted networks: " << std::endl;
         for (std::vector<Network>::const_iterator network = m_blackList.begin();
              network != m_blackList.end();
              ++network)
@@ -211,7 +217,7 @@ public:
           }
       }
 
-    std::cout << "Whitelisted networks: " << std::endl;
+    std::cerr << "Whitelisted networks: " << std::endl;
     for (std::vector<Network>::const_iterator network = m_whiteList.begin();
          network != m_whiteList.end();
          ++network)
