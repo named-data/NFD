@@ -82,6 +82,8 @@ FaceTable::remove(shared_ptr<Face> face)
   //     does not support only removing Forwarder's subscription
   face->onReceiveInterest.clear();
   face->onReceiveData    .clear();
+  face->onSendInterest   .clear();
+  face->onSendData       .clear();
   // don't clear onFail because other functions may need to execute
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);

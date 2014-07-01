@@ -127,6 +127,8 @@ Face::fail(const std::string& reason)
 
   m_isFailed = true;
   this->onFail(reason);
+
+  this->onFail.clear();
 }
 
 ndn::nfd::FaceStatus
