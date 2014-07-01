@@ -55,7 +55,7 @@ public:
   const_iterator
   find(const Name& prefix) const;
 
-  shared_ptr<FaceEntry>
+  FaceEntry*
   find(const Name& prefix, const FaceEntry& face) const;
 
   void

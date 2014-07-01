@@ -319,8 +319,8 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.erase(name4, entry2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  BOOST_CHECK(rib.find(name2, entry2) == shared_ptr<rib::FaceEntry>());
-  BOOST_CHECK(rib.find(name1, entry1) != shared_ptr<rib::FaceEntry>());
+  BOOST_CHECK_EQUAL(rib.find(name2, entry2), static_cast<FaceEntry*>(0));
+  BOOST_CHECK_NE(rib.find(name1, entry1), static_cast<FaceEntry*>(0));
 
   rib.erase(name1, entry1);
   BOOST_CHECK_EQUAL(rib.size(), 1);

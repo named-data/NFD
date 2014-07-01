@@ -186,7 +186,8 @@ RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
       if (!extractParameters(parameterComponent, parameters))
         {
           NFD_LOG_DEBUG("command result: malformed verb: " << verb);
-          sendResponse(command, 400, "Malformed command");
+          if (static_cast<bool>(request))
+            sendResponse(command, 400, "Malformed command");
           return;
         }
 
@@ -201,7 +202,8 @@ RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
   else
     {
       NFD_LOG_DEBUG("Unsupported command: " << verb);
-      sendResponse(request->getName(), 501, "Unsupported command");
+      if (static_cast<bool>(request))
+        sendResponse(request->getName(), 501, "Unsupported command");
     }
 }
 
@@ -214,7 +216,8 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   if (!validateParameters(command, parameters))
     {
       NFD_LOG_DEBUG("register result: FAIL reason: malformed");
-      sendResponse(request->getName(), 400, "Malformed command");
+      if (static_cast<bool>(request))
+        sendResponse(request->getName(), 400, "Malformed command");
       return;
     }
 
@@ -223,7 +226,25 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   faceEntry.origin = parameters.getOrigin();
   faceEntry.cost = parameters.getCost();
   faceEntry.flags = parameters.getFlags();
-  faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
+
+  if (parameters.getExpirationPeriod() != time::milliseconds::max())
+    {
+      faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
+
+      // Schedule a new event, the old one will be cancelled during rib insertion.
+      EventId eventId;
+      NFD_LOG_TRACE("scheduling unregistration at: " << faceEntry.expires);
+      eventId = scheduler::schedule(parameters.getExpirationPeriod(),
+                                    bind(&RibManager::unregisterEntry,
+                                    this, shared_ptr<Interest>(), parameters));
+
+      //set the  NewEventId of this entry
+      faceEntry.setExpirationEvent(eventId);
+    }
+  else
+    {
+      faceEntry.expires = time::steady_clock::TimePoint::max();
+    }
 
   NFD_LOG_TRACE("register prefix: " << faceEntry);
 
@@ -234,14 +255,22 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 
 void
 RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
-                            ControlParameters& parameters)
+                            ControlParameters& params)
 {
   ndn::nfd::RibUnregisterCommand command;
 
+  //passing all parameters gives error in validation.
+  //so passing only the required arguments.
+  ControlParameters parameters;
+  parameters.setName(params.getName());
+  parameters.setFaceId(params.getFaceId());
+  parameters.setOrigin(params.getOrigin());
+
   if (!validateParameters(command, parameters))
     {
-      NFD_LOG_DEBUG("register result: FAIL reason: malformed");
-      sendResponse(request->getName(), 400, "Malformed command");
+      NFD_LOG_DEBUG("unregister result: FAIL reason: malformed");
+      if (static_cast<bool>(request))
+        sendResponse(request->getName(), 400, "Malformed command");
       return;
     }
 
@@ -261,7 +290,8 @@ RibManager::onCommandValidationFailed(const shared_ptr<const Interest>& request,
                                       const std::string& failureInfo)
 {
   NFD_LOG_DEBUG("RibRequestValidationFailed: " << failureInfo);
-  sendResponse(request->getName(), 403, failureInfo);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), 403, failureInfo);
 }
 
 
@@ -323,7 +353,8 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
       response.setText(os.str());
     }
 
-  sendResponse(request->getName(), response);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), response);
 }
 
 void
@@ -339,7 +370,8 @@ RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
 
   NFD_LOG_TRACE("onRegSuccess: registered " << faceEntry);
 
-  sendResponse(request->getName(), response);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), response);
 }
 
 
@@ -356,7 +388,8 @@ RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
 
   NFD_LOG_TRACE("onUnRegSuccess: unregistered " << faceEntry);
 
-  sendResponse(request->getName(), response);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), response);
 }
 
 void
@@ -374,7 +407,8 @@ RibManager::sendSuccessResponse(const shared_ptr<const Interest>& request,
   response.setText("Success");
   response.setBody(parameters.wireEncode());
 
-  sendResponse(request->getName(), response);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), response);
 }
 
 void
@@ -403,7 +437,8 @@ RibManager::sendErrorResponse(uint32_t code, const std::string& error,
       response.setText(os.str());
     }
 
-  sendResponse(request->getName(), response);
+  if (static_cast<bool>(request))
+    sendResponse(request->getName(), response);
 }
 
 void

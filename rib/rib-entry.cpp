@@ -69,6 +69,9 @@ RibEntry::eraseFace(const FaceEntry& face)
           m_nFacesWithCaptureSet--;
         }
 
+      //cancel any scheduled event
+      scheduler::cancel(it->getExpirationEvent());
+
       m_faces.erase(it);
       return true;
     }
@@ -229,12 +232,17 @@ std::ostream&
 operator<<(std::ostream& os, const FaceEntry& entry)
 {
   os << "FaceEntry("
-     << " faceid: " << entry.faceId
-     << " origin: " << entry.origin
-     << " cost: " << entry.cost
-     << " flags: " << entry.flags
-     << " expires in: " << (entry.expires - time::steady_clock::now())
-     << ")";
+     << "faceid: " << entry.faceId
+     << ", origin: " << entry.origin
+     << ", cost: " << entry.cost
+     << ", flags: " << entry.flags;
+  if (entry.expires != time::steady_clock::TimePoint::max()) {
+    os << ", expires in: " << (entry.expires - time::steady_clock::now());
+  }
+  else {
+    os << ", never expires";
+  }
+  os << ")";
 
   return os;
 }
@@ -242,8 +250,8 @@ operator<<(std::ostream& os, const FaceEntry& entry)
 std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry)
 {
-  os << "RibEntry{\n";
-  os << "\tName:  " << entry.getName() << "\n";
+  os << "RibEntry {\n";
+  os << "\tName: " << entry.getName() << "\n";
 
   for (RibEntry::FaceList::const_iterator faceIt = entry.cbegin(); faceIt != entry.cend(); ++faceIt)
     {

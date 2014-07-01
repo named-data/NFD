@@ -27,6 +27,7 @@
 #define NFD_RIB_FACE_ENTRY_HPP
 
 #include "common.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace rib {
@@ -43,7 +44,21 @@ public:
     , flags(0)
     , cost(0)
     , expires(time::steady_clock::TimePoint::min())
+    , m_expirationEvent()
   {
+  }
+
+public:
+  void
+  setExpirationEvent(const EventId eid)
+  {
+    m_expirationEvent = eid;
+  }
+
+  const EventId&
+  getExpirationEvent() const
+  {
+    return m_expirationEvent;
   }
 
 public:
@@ -52,6 +67,9 @@ public:
   uint64_t flags;
   uint64_t cost;
   time::steady_clock::TimePoint expires;
+
+private:
+  EventId m_expirationEvent;
 };
 
 inline bool

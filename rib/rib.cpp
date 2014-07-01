@@ -74,7 +74,7 @@ Rib::find(const Name& prefix) const
   return m_rib.find(prefix);
 }
 
-shared_ptr<FaceEntry>
+FaceEntry*
 Rib::find(const Name& prefix, const FaceEntry& face) const
 {
   RibTable::const_iterator ribIt = m_rib.find(prefix);
@@ -84,16 +84,15 @@ Rib::find(const Name& prefix, const FaceEntry& face) const
     {
       shared_ptr<RibEntry> entry(ribIt->second);
 
-      RibEntry::const_iterator faceIt = std::find_if(entry->begin(), entry->end(),
+      RibEntry::iterator faceIt = std::find_if(entry->begin(), entry->end(),
                                                      bind(&compareFaceIdAndOrigin, _1, face));
 
       if (faceIt != entry->end())
         {
-          return make_shared<FaceEntry>(*faceIt);
+          return &((*faceIt));
         }
     }
-
-  return shared_ptr<FaceEntry>();
+  return 0;
 }
 
 void
@@ -126,6 +125,13 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
         }
       else // Entry exists, update fields
         {
+          // First cancel old scheduled event, if any, then set the EventId to new one
+          if (static_cast<bool>(faceIt->getExpirationEvent()))
+              scheduler::cancel(faceIt->getExpirationEvent());
+
+          // No checks are required here as the iterator needs to be updated in all cases.
+          faceIt->setExpirationEvent(face.getExpirationEvent());
+
           // Save flags for update processing
           uint64_t previousFlags = faceIt->flags;
 
@@ -171,7 +177,6 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
                 {
                   parent->removeChild((*child));
                 }
-
               entry->addChild((*child));
             }
         }
@@ -182,7 +187,6 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
       createFibUpdatesForNewRibEntry(*entry, face);
     }
 }
-
 
 void
 Rib::erase(const Name& prefix, const FaceEntry& face)
@@ -199,12 +203,13 @@ Rib::erase(const Name& prefix, const FaceEntry& face)
       // Need to copy face to do FIB updates with correct cost and flags since nfdc does not
       // pass flags or cost
       RibEntry::iterator faceIt = entry->findFace(face);
-      FaceEntry faceToErase = *faceIt;
-      faceToErase.flags = faceIt->flags;
-      faceToErase.cost = faceIt->cost;
 
       if (faceIt != entry->end())
         {
+          FaceEntry faceToErase = *faceIt;
+          faceToErase.flags = faceIt->flags;
+          faceToErase.cost = faceIt->cost;
+
           entry->eraseFace(faceIt);
           m_nItems--;
 
