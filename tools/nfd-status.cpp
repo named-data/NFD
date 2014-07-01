@@ -369,6 +369,14 @@ public:
             std::string localUri(faceStatus.getLocalUri());
             escapeSpecialCharacters(&localUri);
             std::cout << "<localUri>" << localUri << "</localUri>";
+
+            if (faceStatus.hasExpirationPeriod()) {
+              std::cout << "<expirationPeriod>PT"
+                        << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
+                             .count() << "S"
+                        << "</expirationPeriod>";
+            }
+
             std::cout << "<packetCounters>";
             std::cout << "<incomingPackets>";
             std::cout << "<nInterests>"       << faceStatus.getNInInterests()
@@ -419,8 +427,13 @@ public:
 
             std::cout << "  faceid=" << faceStatus.getFaceId()
                       << " remote=" << faceStatus.getRemoteUri()
-                      << " local=" << faceStatus.getLocalUri()
-                      << " counters={"
+                      << " local=" << faceStatus.getLocalUri();
+            if (faceStatus.hasExpirationPeriod()) {
+              std::cout  << " expires="
+                         << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
+                              .count() << "s";
+            }
+            std::cout << " counters={"
                       << "in={" << faceStatus.getNInInterests() << "i "
                       << faceStatus.getNInDatas() << "d}"
                       << " out={" << faceStatus.getNOutInterests() << "i "

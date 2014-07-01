@@ -57,6 +57,7 @@ elementFormDefault="qualified">
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
     <xs:element type="xs:anyURI" name="remoteUri"/>
     <xs:element type="xs:anyURI" name="localUri"/>
+    <xs:element type="xs:duration" name="expirationPeriod" maxOccurs="1" minOccurs="0"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
     <xs:element type="nfd:faceFlagsType" name="flags" maxOccurs="1" minOccurs="0"/>
   </xs:sequence>

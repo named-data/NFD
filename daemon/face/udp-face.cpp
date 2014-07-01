@@ -103,8 +103,10 @@ UdpFace::getFaceStatus() const
 {
   ndn::nfd::FaceStatus status = Face::getFaceStatus();
   if (isOnDemand()) {
-    time::milliseconds left = time::duration_cast<time::milliseconds>(
+    time::milliseconds left = m_idleTimeout - time::duration_cast<time::milliseconds>(
       time::steady_clock::now() - m_lastIdleCheck);
+    if (left < time::milliseconds::zero())
+      left = time::milliseconds::zero();
 
     if (hasBeenUsedRecently()) {
       status.setExpirationPeriod(left + m_idleTimeout);
