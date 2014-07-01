@@ -1,10 +1,118 @@
-.. _NFD v0.1.0 Release Notes:
+.. _NFD Release Notes:
 
-NFD v0.1.0 Release Notes
-========================
+NFD Release Notes
+=================
 
-Features in Version 0.1.0
--------------------------
+NFD version 0.2.0 (changes since version 0.1.0)
+-----------------------------------------------
+
+Release date: July 1, 2014
+
+- **Documentation**
+
+  + `"NFD Developer's Guide" by NFD authors
+    <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_ that
+    explains NFD's internals including the overall design, major modules, their
+    implementation, and their interactions
+
+  + New detailed instructions on how to enable auto-start of NFD using OSX ``launchd``
+    and Ubuntu's ``upstart`` (see `contrib/ folder
+    <https://github.com/named-data/NFD/tree/master/contrib>`_)
+
+- **Core**
+
+  + Add support for temporary privilege drop and elevation (`Issue #1370
+    <http://redmine.named-data.net/issues/1370>`_)
+
+  + Add support to reinitialize multicast Faces and (partially) reload config file
+    (`Issue #1584 <http://redmine.named-data.net/issues/1584>`_)
+
+  + Randomization routines are now uniform across all NFD modules
+    (`Issue #1369 <http://redmine.named-data.net/issues/1369>`_)
+
+- **Faces**
+
+  + `WebSocket <http://tools.ietf.org/html/rfc6455>`_ Face support
+    (`Issue #1468 <http://redmine.named-data.net/issues/1468>`_)
+
+  + Fix Ethernet Face support on Linux with ``libpcap`` version >=1.5.0
+    (`Issue #1511 <http://redmine.named-data.net/issues/1511>`_)
+
+  + Fix to recognize IPv4-mapped IPv6 addresses in ``FaceUri``
+    (`Issue #1635 <http://redmine.named-data.net/issues/1635>`_)
+
+  + Fix to avoid multiple onFail events
+    (`Issue #1497 <http://redmine.named-data.net/issues/1497>`_)
+
+  + Fix broken support of multicast UDP Faces on OSX
+    (`Issue #1668 <http://redmine.named-data.net/issues/1668>`_)
+
+  + On Linux, path MTU discovery on unicast UDPv4 faces is now disabled
+    (`Issue #1651 <http://redmine.named-data.net/issues/1651>`_)
+
+- **Forwarding**
+
+  + Outgoing Interest pipeline now allows strategies to request a fresh ``Nonce``
+    (e.g., when the strategy needs to re-express the Interest)
+    (`Issue #1596 <http://redmine.named-data.net/issues/1596>`_)
+
+  + Fix in the incoming Data pipeline to avoid sending packets to the incoming Face
+    (`Issue #1556 <http://redmine.named-data.net/issues/1556>`_)
+
+  + New ``RttEstimator`` class that implements the Mean-Deviation RTT estimator to be used
+    in forwarding strategies
+
+- **Tables**
+
+  + Fix in ContentStore to properly adjust internal structure when ``Cs::setLimit`` is called
+    (`Issue #1646 <http://redmine.named-data.net/issues/1646>`_)
+
+  + New option in configuration file to set an upper bound on ContentStore size
+    (`Issue #1623 <http://redmine.named-data.net/issues/1623>`_)
+
+  + Fix to prevent infinite lifetime of Measurement entries
+    (`Issue #1665 <http://redmine.named-data.net/issues/1665>`_)
+
+- **Management**
+
+  + RibManager now fully support ``CHILD_INHERIT`` and ``CAPTURE`` flags
+    (`Issue #1325 <http://redmine.named-data.net/issues/1325>`_)
+
+  + Fix in ``FaceManager`` to respond with canonical form of Face URI for Face creation
+    command (`Issue #1619 <http://redmine.named-data.net/issues/1619>`_)
+
+  + Fix to prevent creation of duplicate TCP/UDP Faces due to async calls
+    (`Issue #1680 <http://redmine.named-data.net/issues/1680>`_)
+
+- **Tools**
+
+  + Extended functionality of ``nfd-status``
+
+     * ``-x`` to output in XML format, see :ref:`nfd-status xml schema`
+     * ``-c`` to retrieve channel status information (enabled by default)
+     * ``-s`` to retrieve configured strategy choice for NDN namespaces (enabled by default)
+     * Face status now includes reporting of Face flags (``local`` and ``on-demand``)
+     * On-demand UDP Faces now report remaining lifetime (``expirationPeriod``)
+
+  + Several fixes in ``ndn-autoconfig`` tool
+    (`Issue #1595 <http://redmine.named-data.net/issues/1595>`_)
+
+  + Extended options in ``nfdc``:
+
+    * ``-e`` to set expiration time for registered routes
+    * ``-o`` to specify origin for registration and unregistration commands
+
+- **Build**
+
+  + Enable support of precompiled headers for clang and gcc to speed up compilation
+
+- `Other small fixes and extensions
+  <https://github.com/named-data/NFD/compare/NFD-0.1.0...master>`_
+
+NFD version 0.1.0
+-----------------
+
+Release date: May 7, 2014
 
 This is an incomplete list of features that are implemented in NFD version 0.1.0.
 

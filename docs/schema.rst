@@ -1,3 +1,5 @@
+.. _nfd-status xml schema:
+
 NFD Status XML Schema
 =====================
 

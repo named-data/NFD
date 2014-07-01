@@ -29,6 +29,10 @@ protocol features, algorithms, and applications. We have not fully optimized the
 performance.  The intention is that performance optimizations are one type of experiments
 that developers can conduct by trying out different data structures and different
 algorithms; over time, better implementations may emerge within the same design framework.
+To facilitate such experimentation with the forwarder, the NFD team has also written a
+`developer's guide <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_,
+which details the current implementation and provides tips for extending all aspects of
+NFD.
 
 NFD will keep evolving in three aspects: improvement of the modularity framework, keeping
 up with the NDN protocol spec, and addition of other new features. We hope to keep the

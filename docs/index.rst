@@ -31,6 +31,8 @@ NFD Documentation
 
 **Additional documentation**
 
+* `NFD Developer's Guide <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_
+
 * `NFD Wiki <http://redmine.named-data.net/projects/nfd/wiki>`_
 
   + `NFD Management protocol <http://redmine.named-data.net/projects/nfd/wiki/Management>`_
