@@ -281,3 +281,24 @@ other package manager, such as Synaptic Package Manager:
 For the list of available packages, refer to `NDN PPA repository`_ homepage.
 
 .. _NDN PPA repository: https://launchpad.net/~named-data/+archive/ppa
+
+
+.. _How to start using NDN Overlay on Gentoo Linux:
+
+How to start using NDN Overlay on Gentoo Linux?
+-----------------------------------------------
+
+If you want to install NFD and other packages using Portage on Gentoo Linux, you can start
+using NDN Overlay.
+
+Simply checkout `NDN Overlay <https://github.com/Pesa/ndn-overlay>`_ repository to some
+location add the checkout path to ``PORTDIR_OVERLAY`` in ``/etc/portage/make.conf``:
+
+::
+
+    cd /some/path
+    git clone https://github.com/Pesa/ndn-overlay.git
+
+    # and then add /some/path/ndn-overlay to PORTDIR_OVERLAY in /etc/portage/make.conf
+
+Afterwards, you will be able to install ``nfd`` using standard mechanisms.

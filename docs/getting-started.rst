@@ -18,7 +18,7 @@ From source
 To install NFD from source:
 
 -  install ``ndn-cxx`` according to `ndn-cxx installation
-   instructions <http://named-data.net/doc/ndn-cxx/0.1.0/INSTALL.html>`__
+   instructions <http://named-data.net/doc/ndn-cxx/0.2.0/INSTALL.html>`__
 -  install ``NFD`` according to :doc:`these
    instructions <INSTALL>`
 
@@ -29,13 +29,13 @@ branch for both ``ndn-cxx`` and ``NFD``
 
     git clone https://github.com/named-data/ndn-cxx
     cd ndn-cxx
-    git checkout ndn-cxx-0.1.0
+    git checkout ndn-cxx-0.2.0
     ...
     # continue with ndn-cxx installation instructions
 
-    git clone https://github.com/named-data/NFD
+    git clone --recursive https://github.com/named-data/NFD
     cd NFD
-    git checkout NFD-0.1.0
+    git checkout NFD-0.2.0
     ...
     # continue with NFD installation instructions
 
@@ -141,7 +141,7 @@ and play with the following:
 Sample applications:
 
 -  `Simple examples in ndn-cxx
-   library <http://named-data.net/doc/ndn-cxx/0.1.0/examples.html>`__.
+   library <http://named-data.net/doc/ndn-cxx/0.2.0/examples.html>`__.
    If you have installed ndn-cxx from source, you already have compiled
    these:
 
