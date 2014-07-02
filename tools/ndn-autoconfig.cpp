@@ -173,7 +173,8 @@ public:
       nfd::ControlParameters parameters;
       parameters
         .setName(LOCALHOP_HUB_DISCOVERY_PREFIX)
-        .setCost(1);
+        .setCost(1)
+        .setExpirationPeriod(time::seconds(30));
 
       nRegistrations->first = multicastFaces.size();
 
@@ -380,13 +381,14 @@ public:
     std::cerr << "Successfully created face: " << resp << std::endl;
 
     // Register a prefix in RIB
-    nfd::ControlParameters ribParameters;
-    ribParameters
-      .setName("/ndn")
-      .setFaceId(resp.getFaceId());
-
+    static const Name TESTBED_PREFIX("/ndn");
     m_controller.start<nfd::RibRegisterCommand>(
-      ribParameters,
+      nfd::ControlParameters()
+        .setName(TESTBED_PREFIX)
+        .setFaceId(resp.getFaceId())
+        .setOrigin(nfd::ROUTE_ORIGIN_AUTOCONF)
+        .setCost(100)
+        .setExpirationPeriod(time::milliseconds::max()),
       bind(&NdnAutoconfig::onPrefixRegistrationSuccess, this, _1),
       bind(&NdnAutoconfig::onPrefixRegistrationError, this, _1, _2));
   }
