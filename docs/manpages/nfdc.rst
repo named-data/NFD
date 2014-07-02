@@ -39,7 +39,8 @@ Options
         Cost for the RIB entry (default is 0).
 
       ``-e <expiration time>``
-        Expiration time of the RIB entry in milliseconds (default is 3600000).
+        Expiration time of the RIB entry in milliseconds. If not specified, the entry remains in FIB
+        for the lifetime of the associated face.
 
        ``-o <origin>``
         Origin of the registration request (default is 255).

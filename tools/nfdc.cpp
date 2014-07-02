@@ -43,10 +43,11 @@ usage(const char* programName)
     "           register name to the given faceId or faceUri\n"
     "           -I: unset CHILD_INHERIT flag\n"
     "           -C: set CAPTURE flag\n"
-    "           -c: specify cost\n"
-    "           -e: specify expiring time in ms\n"
+    "           -c: specify cost (default 0)\n"
+    "           -e: specify expiration time in ms\n"
+    "               (by default the entry remains in FIB for the lifetime of the associated face)\n"
     "           -o: specify origin\n"
-    "               0 for Local producer applications, 128 for NLSR, 255 for static routes\n"
+    "               0 for Local producer applications, 128 for NLSR, 255(default) for static routes\n"
     "       unregister [-o origin] name <faceId>\n"
     "           unregister name from the given faceId\n"
     "       create <faceUri> \n"
@@ -61,7 +62,7 @@ usage(const char* programName)
     "           Unset the strategy for a namespace \n"
     "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
     "           Add a nexthop to a FIB entry\n"
-    "           -c: specify cost\n"
+    "           -c: specify cost (default 0)\n"
     "       remove-nexthop <name> <faceId> \n"
     "           Remove a nexthop from a FIB entry\n"
     << std::endl;
@@ -69,7 +70,7 @@ usage(const char* programName)
 
 namespace nfdc {
 
-const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds(3600000);
+const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds::max();
 const uint64_t Nfdc::DEFAULT_COST = 0;
 
 Nfdc::Nfdc(ndn::Face& face)
