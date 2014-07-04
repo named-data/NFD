@@ -356,6 +356,8 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   shared_ptr<DummyFace> face4 = make_shared<DummyFace>();
   forwarder.addFace(face1);
   forwarder.addFace(face2);
+  forwarder.addFace(face3);
+  forwarder.addFace(face4);
 
   Pit& pit = forwarder.getPit();
   shared_ptr<Interest> interest0 = makeInterest("ndn:/");

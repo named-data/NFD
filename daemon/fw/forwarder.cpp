@@ -151,6 +151,10 @@ void
 Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
                               bool wantNewNonce)
 {
+  if (outFace.getId() == INVALID_FACEID) {
+    NFD_LOG_WARN("onOutgoingInterest face=invalid interest=" << pitEntry->getName());
+    return;
+  }
   NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
                 " interest=" << pitEntry->getName());
 
@@ -304,6 +308,10 @@ Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
 void
 Forwarder::onOutgoingData(const Data& data, Face& outFace)
 {
+  if (outFace.getId() == INVALID_FACEID) {
+    NFD_LOG_WARN("onOutgoingData face=invalid data=" << data.getName());
+    return;
+  }
   NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << data.getName());
 
   // /localhost scope control
