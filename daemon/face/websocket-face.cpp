@@ -43,17 +43,39 @@ WebSocketFace::WebSocketFace(const FaceUri& remoteUri, const FaceUri& localUri,
 void
 WebSocketFace::sendInterest(const Interest& interest)
 {
+  if (m_closed)
+    return;
+
   this->onSendInterest(interest);
   const Block& payload = interest.wireEncode();
-  m_server.send(m_handle, payload.wire(), payload.size(), websocketpp::frame::opcode::binary);
+
+  try {
+    m_server.send(m_handle, payload.wire(), payload.size(),
+                  websocketpp::frame::opcode::binary);
+  }
+  catch (const websocketpp::lib::error_code& e) {
+    NFD_LOG_DEBUG("Failed to send Interest because: " << e
+                  << "(" << e.message() << ")");
+  }
 }
 
 void
 WebSocketFace::sendData(const Data& data)
 {
+  if (m_closed)
+    return;
+
   this->onSendData(data);
   const Block& payload = data.wireEncode();
-  m_server.send(m_handle, payload.wire(), payload.size(), websocketpp::frame::opcode::binary);
+
+  try {
+    m_server.send(m_handle, payload.wire(), payload.size(),
+                  websocketpp::frame::opcode::binary);
+  }
+  catch (const websocketpp::lib::error_code& e) {
+    NFD_LOG_DEBUG("Failed to send Data because: " << e
+                  << "(" << e.message() << ")");
+  }
 }
 
 void
