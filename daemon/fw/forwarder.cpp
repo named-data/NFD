@@ -359,12 +359,6 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
 void
 Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
-  if (pitEntry->hasUnexpiredOutRecords()) {
-    NFD_LOG_DEBUG("setStragglerTimer " << pitEntry->getName() <<
-                  " cannot set StragglerTimer when an OutRecord is pending");
-    return;
-  }
-
   time::nanoseconds stragglerTime = time::milliseconds(100);
 
   scheduler::cancel(pitEntry->m_stragglerTimer);
