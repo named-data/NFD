@@ -207,7 +207,16 @@ TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
 {
   scheduler::cancel(connectTimeoutEvent);
 
+#if (BOOST_VERSION == 105400)
+  // To handle regression in Boost 1.54
+  // https://svn.boost.org/trac/boost/ticket/8795
+  boost::system::error_code anotherErrorCode;
+  socket->remote_endpoint(anotherErrorCode);
+  if (error || anotherErrorCode) {
+#else
   if (error) {
+#endif
+
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
 
