@@ -68,6 +68,8 @@ TablesConfigSection::ensureTablesAreConfigured()
 
   NFD_LOG_INFO("Setting CS max packets to " << DEFAULT_CS_MAX_PACKETS);
   m_cs.setLimit(DEFAULT_CS_MAX_PACKETS);
+
+  m_areTablesConfigured = true;
 }
 
 void
