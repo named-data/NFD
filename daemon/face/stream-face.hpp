@@ -208,7 +208,7 @@ StreamFace<T, U>::close()
     return;
 
   NFD_LOG_INFO("[id:" << this->getId()
-               << ",endpoint:" << m_socket->local_endpoint()
+               << ",uri:" << this->getRemoteUri()
                << "] Close connection");
 
   closeSocket();
@@ -231,13 +231,13 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
   if (error == boost::asio::error::eof)
     {
       NFD_LOG_INFO("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Connection closed");
     }
   else
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Send or receive operation failed, closing socket: "
                    << error.category().message(error.value()));
     }
@@ -265,7 +265,7 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
     return processErrorCode(error);
 
   NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
+                << ",uri:" << this->getRemoteUri()
                 << "] Successfully sent: " << wire.size() << " bytes");
 }
 
@@ -278,7 +278,7 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
     return processErrorCode(error);
 
   NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
+                << ",uri:" << this->getRemoteUri()
                 << "] Successfully sent: " << (header.size()+payload.size()) << " bytes");
 }
 
@@ -291,7 +291,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
     return processErrorCode(error);
 
   NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
+                << ",uri:" << this->getRemoteUri()
                 << "] Received: " << bytes_recvd << " bytes");
 
   m_inputBufferSize += bytes_recvd;
@@ -314,7 +314,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
       if (!this->decodeAndDispatchInput(element))
         {
           NFD_LOG_WARN("[id:" << this->getId()
-                       << ",endpoint:" << m_socket->local_endpoint()
+                       << ",uri:" << this->getRemoteUri()
                        << "] Received unrecognized block of type ["
                        << element.type() << "]");
           // ignore unknown packet and proceed
@@ -323,7 +323,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
   if (!isOk && m_inputBufferSize == MAX_NDN_PACKET_SIZE && offset == 0)
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Failed to parse incoming packet or it is too large to process, "
                    << "closing down the face");
 

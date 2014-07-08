@@ -164,7 +164,7 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
     }
 
     NFD_LOG_WARN("[id:" << this->getId()
-                  << ",endpoint:" << m_socket->local_endpoint()
+                  << ",uri:" << this->getRemoteUri()
                   << "] Send operation failed, closing socket: "
                   << error.category().message(error.value()));
 
@@ -183,7 +183,7 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
   }
 
   NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
+                << ",uri:" << this->getRemoteUri()
                 << "] Successfully sent: " << wire.size() << " bytes");
   // do nothing (needed to retain validity of wire memory block
 }
@@ -196,7 +196,7 @@ DatagramFace<T, U>::close()
     return;
 
   NFD_LOG_INFO("[id:" << this->getId()
-               << ",endpoint:" << m_socket->local_endpoint()
+               << ",uri:" << this->getRemoteUri()
                << "] Close tunnel");
 
   closeSocket();
@@ -233,7 +233,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
     }
 
     NFD_LOG_WARN("[id:" << this->getId()
-                 << ",endpoint:" << m_socket->local_endpoint()
+                 << ",uri:" << this->getRemoteUri()
                  << "] Receive operation failed: "
                  << error.category().message(error.value()));
 
@@ -252,7 +252,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   }
 
   NFD_LOG_TRACE("[id:" << this->getId()
-                << ",endpoint:" << m_socket->local_endpoint()
+                << ",uri:" << this->getRemoteUri()
                 << "] Received: " << nBytesReceived << " bytes");
 
   Block element;
@@ -260,7 +260,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   if (!isOk)
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Failed to parse incoming packet");
       // This message won't extend the face lifetime
       return;
@@ -269,7 +269,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   if (element.size() != nBytesReceived)
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Received datagram size and decoded "
                    << "element size don't match");
       // This message won't extend the face lifetime
@@ -279,7 +279,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   if (!this->decodeAndDispatchInput(element))
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << ",endpoint:" << m_socket->local_endpoint()
+                   << ",uri:" << this->getRemoteUri()
                    << "] Received unrecognized block of type ["
                    << element.type() << "]");
       // This message won't extend the face lifetime
@@ -300,7 +300,10 @@ template<class T, class U>
 inline void
 DatagramFace<T, U>::closeSocket()
 {
-  NFD_LOG_DEBUG("closeSocket  " << m_socket->local_endpoint());
+  NFD_LOG_DEBUG("[id:" << this->getId()
+                << ",uri:" << this->getRemoteUri()
+                << "] closeSocket");
+
   boost::asio::io_service& io = m_socket->get_io_service();
 
   // use the non-throwing variants and ignore errors, if any
