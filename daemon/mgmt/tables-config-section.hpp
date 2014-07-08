@@ -39,7 +39,6 @@ namespace nfd {
 class TablesConfigSection
 {
 public:
-
   TablesConfigSection(Cs& cs,
                       Pit& pit,
                       Fib& fib,
@@ -48,6 +47,11 @@ public:
 
   void
   setConfigFile(ConfigFile& configFile);
+
+  void
+  ensureTablesAreConfigured();
+
+private:
 
   void
   onConfig(const ConfigSection& configSection,
@@ -60,6 +64,12 @@ private:
   // Fib& m_fib;
   // StrategyChoice& m_strategyChoice;
   // Measurements& m_measurements;
+
+  bool m_areTablesConfigured;
+
+private:
+
+  static const size_t DEFAULT_CS_MAX_PACKETS;
 };
 
 } // namespace nfd

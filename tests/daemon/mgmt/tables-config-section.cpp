@@ -54,7 +54,7 @@ public:
   }
 
   bool
-  validateException(const ConfigFile::Error& exception, const std::string& expectedMsg)
+  validateException(const std::runtime_error& exception, const std::string& expectedMsg)
   {
     return exception.what() == expectedMsg;
   }
@@ -70,10 +70,17 @@ protected:
 
   TablesConfigSection m_tablesConfig;
   ConfigFile m_config;
-
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestTableConfigSection, TablesConfigSectionFixture)
+
+BOOST_AUTO_TEST_CASE(ConfigureTablesWithDefaults)
+{
+  const size_t initialLimit = m_cs.getLimit();
+
+  m_tablesConfig.ensureTablesAreConfigured();
+  BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
+}
 
 BOOST_AUTO_TEST_CASE(EmptyTablesSection)
 {
@@ -85,12 +92,15 @@ BOOST_AUTO_TEST_CASE(EmptyTablesSection)
   const size_t nCsMaxPackets = m_cs.getLimit();
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
-
   BOOST_CHECK_EQUAL(m_cs.getLimit(), nCsMaxPackets);
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  BOOST_CHECK_NE(m_cs.getLimit(), nCsMaxPackets);
 
-  BOOST_CHECK_EQUAL(m_cs.getLimit(), nCsMaxPackets);
+  const size_t defaultLimit = m_cs.getLimit();
+
+  m_tablesConfig.ensureTablesAreConfigured();
+  BOOST_CHECK_EQUAL(defaultLimit, m_cs.getLimit());
 }
 
 BOOST_AUTO_TEST_CASE(ValidCsMaxPackets)
@@ -104,11 +114,12 @@ BOOST_AUTO_TEST_CASE(ValidCsMaxPackets)
   BOOST_REQUIRE_NE(m_cs.getLimit(), 101);
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
-
   BOOST_CHECK_NE(m_cs.getLimit(), 101);
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  BOOST_CHECK_EQUAL(m_cs.getLimit(), 101);
 
+  m_tablesConfig.ensureTablesAreConfigured();
   BOOST_CHECK_EQUAL(m_cs.getLimit(), 101);
 }
 
@@ -124,6 +135,11 @@ BOOST_AUTO_TEST_CASE(MissingValueCsMaxPackets)
     "Invalid value for option \"cs_max_packets\" in \"tables\" section";
 
   BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
                         ConfigFile::Error,
                         bind(&TablesConfigSectionFixture::validateException,
                              this, _1, expectedMsg));
@@ -144,6 +160,52 @@ BOOST_AUTO_TEST_CASE(InvalidValueCsMaxPackets)
                         ConfigFile::Error,
                         bind(&TablesConfigSectionFixture::validateException,
                              this, _1, expectedMsg));
+
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+}
+
+class IgnoreNotTablesSection
+{
+public:
+  void
+  operator()(const std::string& filename,
+             const std::string& sectionName,
+             const ConfigSection& section,
+             bool isDryRun)
+
+  {
+    // Ignore "not_tables" section
+    if (sectionName == "not_tables")
+      {
+        // do nothing
+      }
+  }
+};
+
+BOOST_AUTO_TEST_CASE(MissingTablesSection)
+{
+  const std::string CONFIG =
+    "not_tables\n"
+    "{\n"
+    "  some_other_field 0\n"
+    "}\n";
+
+  ConfigFile passiveConfig((IgnoreNotTablesSection()));
+
+  const size_t initialLimit = m_cs.getLimit();
+
+  passiveConfig.parse(CONFIG, true, "dummy-config");
+  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
+
+  passiveConfig.parse(CONFIG, false, "dummy-config");
+  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
+
+  m_tablesConfig.ensureTablesAreConfigured();
+  BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

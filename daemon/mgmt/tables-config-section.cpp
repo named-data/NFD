@@ -33,6 +33,8 @@ namespace nfd {
 
 NFD_LOG_INIT("TablesConfigSection");
 
+const size_t TablesConfigSection::DEFAULT_CS_MAX_PACKETS = 65536;
+
 TablesConfigSection::TablesConfigSection(Cs& cs,
                                          Pit& pit,
                                          Fib& fib,
@@ -43,8 +45,29 @@ TablesConfigSection::TablesConfigSection(Cs& cs,
   // , m_fib(fib)
   // , m_strategyChoice(strategyChoice)
   // , m_measurements(measurements)
+  , m_areTablesConfigured(false)
 {
 
+}
+
+void
+TablesConfigSection::setConfigFile(ConfigFile& configFile)
+{
+  configFile.addSectionHandler("tables",
+                               bind(&TablesConfigSection::onConfig, this, _1, _2, _3));
+}
+
+
+void
+TablesConfigSection::ensureTablesAreConfigured()
+{
+  if (m_areTablesConfigured)
+    {
+      return;
+    }
+
+  NFD_LOG_INFO("Setting CS max packets to " << DEFAULT_CS_MAX_PACKETS);
+  m_cs.setLimit(DEFAULT_CS_MAX_PACKETS);
 }
 
 void
@@ -56,6 +79,8 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
   // {
   //    cs_max_packets 65536
   // }
+
+  size_t nCsMaxPackets = DEFAULT_CS_MAX_PACKETS;
 
   boost::optional<const ConfigSection&> csMaxPacketsNode =
     configSection.get_child_optional("cs_max_packets");
@@ -70,18 +95,17 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
           throw ConfigFile::Error("Invalid value for option \"cs_max_packets\""
                                   " in \"tables\" section");
         }
-      else if (!isDryRun)
-        {
-          m_cs.setLimit(*valCsMaxPackets);
-        }
-    }
-}
 
-void
-TablesConfigSection::setConfigFile(ConfigFile& configFile)
-{
-  configFile.addSectionHandler("tables",
-                               bind(&TablesConfigSection::onConfig, this, _1, _2, _3));
+      nCsMaxPackets = *valCsMaxPackets;
+    }
+
+  if (!isDryRun)
+    {
+      NFD_LOG_INFO("Setting CS max packets to " << nCsMaxPackets);
+
+      m_cs.setLimit(nCsMaxPackets);
+      m_areTablesConfigured = true;
+    }
 }
 
 } // namespace nfd

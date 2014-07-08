@@ -158,6 +158,8 @@ public:
     config.parse(m_configFile, true);
     config.parse(m_configFile, false);
 
+    tablesConfig.ensureTablesAreConfigured();
+
     // add FIB entry for NFD Management Protocol
     shared_ptr<fib::Entry> entry = m_forwarder->getFib().insert("/localhost/nfd").first;
     entry->addNextHop(m_internalFace, 0);
