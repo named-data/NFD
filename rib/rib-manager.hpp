@@ -177,6 +177,9 @@ private:
   onNotification(const FaceEventNotification& notification);
 
   void
+  processErasureAfterNotification(uint64_t faceId);
+
+  void
   sendUpdatesToFib(const shared_ptr<const Interest>& request,
                    const ControlParameters& parameters);
 

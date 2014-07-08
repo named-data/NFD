@@ -26,6 +26,7 @@
 #include "rib-manager.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace rib {
@@ -532,10 +533,18 @@ RibManager::onNotification(const FaceEventNotification& notification)
   NFD_LOG_TRACE("onNotification: " << notification);
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) //face destroyed
     {
-      m_managedRib.erase(notification.getFaceId());
-
-      sendUpdatesToFibAfterFaceDestroyEvent();
+      scheduler::schedule(time::seconds(0),
+                          bind(&RibManager::processErasureAfterNotification, this,
+                               notification.getFaceId()));
     }
+}
+
+void
+RibManager::processErasureAfterNotification(uint64_t faceId)
+{
+  m_managedRib.erase(faceId);
+
+  sendUpdatesToFibAfterFaceDestroyEvent();
 }
 
 void
