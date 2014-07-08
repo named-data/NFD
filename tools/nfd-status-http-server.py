@@ -24,7 +24,8 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from BaseHTTPServer import HTTPServer
+from SimpleHTTPServer import SimpleHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import sys
 import commands
@@ -34,84 +35,63 @@ import logging
 import cgi
 import argparse
 import socket
+import os
 
 
-class StatusHandler(BaseHTTPRequestHandler):
+class StatusHandler(SimpleHTTPRequestHandler):
     """ The handler class to handle requests."""
     def do_GET(self):
         # get the url info to decide how to respond
         parsedPath = urlparse.urlparse(self.path)
-        resultMessage = ""
-        if parsedPath.path == "/robots.txt":
-            if self.server.robots == False:
-                # return User-agent: * Disallow: / to disallow robots
-                resultMessage = "User-agent: * \nDisallow: /\n"
+        if parsedPath.path == "/":
+            # get current nfd status, and use it as result message
+            (res, resultMessage) = self.getNfdStatus()
+            self.send_response(200)
+            if res == 0:
+                self.send_header("Content-type", "text/xml; charset=UTF-8")
+            else:
+                self.send_header("Content-type", "text/html; charset=UTF-8")
+
+            self.end_headers()
+            self.wfile.write(resultMessage)
+        elif parsedPath.path == "/robots.txt" and self.server.robots == True:
+            resultMessage = ""
             self.send_response(200)
             self.send_header("Content-type", "text/plain")
-        elif parsedPath.path == "/":
-            # get current nfd status, and use it as result message
-            resultMessage = self.getNfdStatus()
-            self.send_response(200)
-            self.send_header("Content-type", "text/html; charset=UTF-8")
+            self.end_headers()
+            self.wfile.write(resultMessage)
         else:
-            # non-existing content
-            resultMessage = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 '\
-                   + 'Transitional//EN" '\
-                   + '"http://www.w3.org/TR/html4/loose.dtd">\n'\
-                   + '<html><head><title>Object not '\
-                   + 'found!</title><meta http-equiv="Content-type" ' \
-                   + 'content="text/html;charset=UTF-8"></head>\n'\
-                   + '<body><h1>Object not found!</h1>'\
-                   + '<p>The requested URL was not found on this server.</p>'\
-                   + '<h2>Error 404</h2>'\
-                   + '</body></html>'
-            self.send_response(404)
-            self.send_header("Content-type", "text/html; charset=UTF-8")
-
-        self.end_headers()
-        self.wfile.write(resultMessage)
+            SimpleHTTPRequestHandler.do_GET(self)
 
     def log_message(self, format, *args):
         if self.server.verbose:
             logging.info("%s - %s\n" % (self.address_string(),
-                         format % args))
+                        format % args))
 
     def getNfdStatus(self):
         """
-        This function tries to call nfd-status command
-        to get nfd's current status, after convert it
-        to html format, return it to the caller
+        This function is to call nfd-status command
+        to get xml format output
         """
-        (res, output) = commands.getstatusoutput('nfd-status')
-
-        htmlStr = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional'\
-                + '//EN" "http://www.w3.org/TR/html4/loose.dtd">\n'\
-                + '<html><head><title>NFD status</title>'\
-                + '<meta http-equiv="Content-type" content="text/html;'\
-                + 'charset=UTF-8"></head>\n<body>'
+        (res, output) = commands.getstatusoutput('nfd-status -x')
         if res == 0:
-            # parse the output
-            buf = StringIO.StringIO(output)
-            firstLine = 0
-            for line in buf:
-                if line.endswith(":\n"):
-                    if firstLine != 0:
-                        htmlStr += "</ul>\n"
-                    firstLine += 1
-                    htmlStr += "<b>" + cgi.escape(line.strip()) + "</b><br>\n"\
-                             + "<ul>\n"
-                    continue
-                line = line.strip()
-                htmlStr += "<li>" + cgi.escape(line) + "</li>\n"
-            buf.close()
-            htmlStr += "</ul>\n"
+            # add the xml-stylesheet processing instruction after the 1st '>' symbol
+            newLineIndex = output.index('>') + 1
+            resultStr = output[:newLineIndex]\
+                      + "<?xml-stylesheet type=\"text/xsl\" href=\"nfd-status.xsl\"?>"\
+                      + output[newLineIndex:]
+            return (res, resultStr)
         else:
+            htmlStr = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional'\
+                    + '//EN" "http://www.w3.org/TR/html4/loose.dtd">\n'\
+                    + '<html><head><title>NFD status</title>'\
+                    + '<meta http-equiv="Content-type" content="text/html;'\
+                    + 'charset=UTF-8"></head>\n<body>'
             # return connection error code
             htmlStr = htmlStr + "<p>Cannot connect to NFD,"\
                     + " Code = " + str(res) + "</p>\n"
-        htmlStr = htmlStr + "</body></html>"
-        return htmlStr
-
+            htmlStr = htmlStr + "</body></html>"
+            return (res, htmlStr)
 
 class ThreadHttpServer(ThreadingMixIn, HTTPServer):
     """ Handle requests using threads """
@@ -162,6 +142,8 @@ def httpServer():
                         help="Specify the HTTP server IP address.")
     parser.add_argument("-r", default=False, dest="robots", action="store_true",
                         help="Enable HTTP robots to crawl; disabled by default.")
+    parser.add_argument("-f", default="/usr/local/share/ndn/", metavar="Server Directory", dest="serverDir",
+                        help="Specify the working directory of nfd-status-http-server, default is /usr/local/share/ndn.")
     parser.add_argument("-v", default=False, dest="verbose", action="store_true",
                         help="Verbose mode.")
     parser.add_argument("--version", default=False, dest="version", action="store_true",
@@ -177,6 +159,9 @@ def httpServer():
     localAddr = args["addr"]
     verbose = args["verbose"]
     robots = args["robots"]
+    serverDirectory = args["serverDir"]
+
+    os.chdir(serverDirectory)
 
     # setting log message format
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s',

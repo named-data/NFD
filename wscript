@@ -190,6 +190,13 @@ def build(bld):
         IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ",
         IF_HAVE_WEBSOCKET="" if bld.env['HAVE_WEBSOCKET'] else "; ")
 
+    for file in bld.path.ant_glob('tools/nfd-status-http-server-files/*'):
+        bld(features="subst",
+            source='tools/nfd-status-http-server-files/%s' % (str(file)),
+            target='nfd-status-http-server/%s' % (str(file)),
+            install_path="${DATAROOTDIR}/ndn",
+            VERSION=VERSION)
+
     bld(features='subst',
         source='tools/nfd-status-http-server.py',
         target='bin/nfd-status-http-server',
