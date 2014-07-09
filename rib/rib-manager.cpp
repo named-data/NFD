@@ -58,8 +58,8 @@ const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
                      ),
   };
 
-RibManager::RibManager()
-  : m_face(getGlobalIoService())
+RibManager::RibManager(ndn::Face& face)
+  : m_face(face)
   , m_nfdController(m_face)
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)

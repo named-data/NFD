@@ -72,12 +72,17 @@ public:
     }
   };
 
+  Nrd()
+    : m_face(getGlobalIoService())
+  {
+  }
+
   void
   initialize(const std::string& configFile)
   {
     initializeLogging(configFile);
 
-    m_ribManager = make_shared<RibManager>();
+    m_ribManager = make_shared<RibManager>(ndn::ref(m_face));
 
     ConfigFile config((IgnoreNfdAndLogSections()));
     m_ribManager->setConfigFile(config);
@@ -201,6 +206,7 @@ public:
 
 private:
   shared_ptr<RibManager> m_ribManager;
+  ndn::Face m_face;
 };
 
 } // namespace rib

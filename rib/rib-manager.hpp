@@ -56,7 +56,8 @@ public:
     }
   };
 
-  RibManager();
+  explicit
+  RibManager(ndn::Face& face);
 
   void
   registerWithNfd();
@@ -199,7 +200,7 @@ private:
 
 private:
   Rib m_managedRib;
-  ndn::Face m_face;
+  ndn::Face& m_face;
   ndn::nfd::Controller m_nfdController;
   ndn::KeyChain m_keyChain;
   ndn::ValidatorConfig m_localhostValidator;
