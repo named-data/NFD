@@ -103,6 +103,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // insert InRecord
   pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
 
+  // set PIT unsatisfy timer
+  this->setUnsatisfyTimer(pitEntry);
+
   // FIB lookup
   shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
 
@@ -182,9 +185,6 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
   // insert OutRecord
   pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), *interest);
 
-  // set PIT unsatisfy timer
-  this->setUnsatisfyTimer(pitEntry);
-
   // send Interest
   outFace.sendInterest(*interest);
   m_counters.getNOutInterests() ++;
@@ -199,6 +199,9 @@ Forwarder::onInterestReject(shared_ptr<pit::Entry> pitEntry)
     return;
   }
   NFD_LOG_DEBUG("onInterestReject interest=" << pitEntry->getName());
+
+  // cancel unsatisfy & straggler timer
+  this->cancelUnsatisfyAndStragglerTimer(pitEntry);
 
   // set PIT straggler timer
   this->setStragglerTimer(pitEntry);
