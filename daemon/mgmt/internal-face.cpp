@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "internal-face.hpp"
 #include "core/logger.hpp"
@@ -42,29 +43,20 @@ InternalFace::sendInterest(const Interest& interest)
 
   // Invoke .processInterest a bit later,
   // to avoid potential problems in forwarding pipelines.
-  weak_ptr<const Interest> interestWeak = interest.shared_from_this();
   getGlobalIoService().post(bind(&InternalFace::processInterest,
-                                 this, interestWeak));
+                                 this, interest.shared_from_this()));
 }
 
 void
-InternalFace::processInterest(weak_ptr<const Interest> interestWeak)
+InternalFace::processInterest(const shared_ptr<const Interest>& interest)
 {
-  shared_ptr<const Interest> interestPtr = interestWeak.lock();
-  if (!static_cast<bool>(interestPtr)) {
-    // Interest is gone because it's satisfied and removed from PIT
-    NFD_LOG_DEBUG("processInterest: Interest is gone");
-    return;
-  }
-  const Interest& interest = *interestPtr;
-
   if (m_interestFilters.size() == 0)
     {
       NFD_LOG_DEBUG("no Interest filters to match against");
       return;
     }
 
-  const Name& interestName(interest.getName());
+  const Name& interestName(interest->getName());
   NFD_LOG_DEBUG("received Interest: " << interestName);
 
   std::map<Name, OnInterest>::const_iterator filter =
@@ -92,7 +84,7 @@ InternalFace::processInterest(weak_ptr<const Interest> interestWeak)
       if (filter->first.isPrefixOf(interestName))
         {
           NFD_LOG_DEBUG("found Interest filter for " << filter->first << " (before end match)");
-          filter->second(interestName, interest);
+          filter->second(interestName, *interest);
         }
       else
         {
@@ -102,7 +94,7 @@ InternalFace::processInterest(weak_ptr<const Interest> interestWeak)
   else if (filter->first == interestName)
     {
       NFD_LOG_DEBUG("found Interest filter for " << filter->first << " (exact match)");
-      filter->second(interestName, interest);
+      filter->second(interestName, *interest);
     }
   else if (filter != m_interestFilters.begin())
     {
@@ -113,7 +105,7 @@ InternalFace::processInterest(weak_ptr<const Interest> interestWeak)
       if (filter->first.isPrefixOf(interestName))
         {
           NFD_LOG_DEBUG("found Interest filter for " << filter->first << " (previous match)");
-          filter->second(interestName, interest);
+          filter->second(interestName, *interest);
         }
       else
         {
