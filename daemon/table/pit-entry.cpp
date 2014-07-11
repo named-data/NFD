@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "pit-entry.hpp"
 #include <algorithm>
@@ -32,14 +33,14 @@ const Name Entry::LOCALHOST_NAME("ndn:/localhost");
 const Name Entry::LOCALHOP_NAME("ndn:/localhop");
 
 Entry::Entry(const Interest& interest)
-  : m_interest(interest)
+  : m_interest(interest.shared_from_this())
 {
 }
 
 const Name&
 Entry::getName() const
 {
-  return m_interest.getName();
+  return m_interest->getName();
 }
 
 const InRecordCollection&

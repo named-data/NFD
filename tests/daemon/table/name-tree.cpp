@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "table/name-tree.hpp"
 #include "tests/test-common.hpp"
@@ -92,19 +93,19 @@ BOOST_AUTO_TEST_CASE(Entry)
 
   // Insert a PIT
 
-  shared_ptr<pit::Entry> PitEntry(make_shared<pit::Entry>(prefix));
-  shared_ptr<pit::Entry> PitEntry2(make_shared<pit::Entry>(parentName));
+  shared_ptr<pit::Entry> pitEntry(make_shared<pit::Entry>(*makeInterest(prefix)));
+  shared_ptr<pit::Entry> pitEntry2(make_shared<pit::Entry>(*makeInterest(parentName)));
 
-  npe->insertPitEntry(PitEntry);
+  npe->insertPitEntry(pitEntry);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
-  npe->insertPitEntry(PitEntry2);
+  npe->insertPitEntry(pitEntry2);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 2);
 
-  npe->erasePitEntry(PitEntry);
+  npe->erasePitEntry(pitEntry);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
 
-  npe->erasePitEntry(PitEntry2);
+  npe->erasePitEntry(pitEntry2);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 0);
 }
 

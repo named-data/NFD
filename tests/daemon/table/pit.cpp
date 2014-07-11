@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(Insert)
 
 BOOST_AUTO_TEST_CASE(Erase)
 {
-  Interest interest(Name("ndn:/z88Admz6A2"));
+  shared_ptr<Interest> interest = makeInterest("/z88Admz6A2");
 
   NameTree nameTree(16);
   Pit pit(nameTree);
@@ -314,18 +314,18 @@ BOOST_AUTO_TEST_CASE(Erase)
 
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  insertResult = pit.insert(interest);
+  insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
-  insertResult = pit.insert(interest);
+  insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, false);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   pit.erase(insertResult.first);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  insertResult = pit.insert(interest);
+  insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
@@ -339,9 +339,9 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   Name nameABCD("ndn:/A/B/C/D");
   Name nameD   ("ndn:/D");
 
-  Interest interestA  (nameA  );
-  Interest interestABC(nameABC);
-  Interest interestD  (nameD  );
+  shared_ptr<Interest> interestA   = makeInterest(nameA  );
+  shared_ptr<Interest> interestABC = makeInterest(nameABC);
+  shared_ptr<Interest> interestD   = makeInterest(nameD  );
 
   NameTree nameTree(16);
   Pit pit(nameTree);
@@ -349,9 +349,9 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
-  pit.insert(interestA  );
-  pit.insert(interestABC);
-  pit.insert(interestD  );
+  pit.insert(*interestA  );
+  pit.insert(*interestABC);
+  pit.insert(*interestD  );
 
   nameTree.lookup(nameABCD); // make sure /A/B/C/D is in nameTree
 
