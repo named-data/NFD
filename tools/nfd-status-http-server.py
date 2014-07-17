@@ -142,8 +142,8 @@ def httpServer():
                         help="Specify the HTTP server IP address.")
     parser.add_argument("-r", default=False, dest="robots", action="store_true",
                         help="Enable HTTP robots to crawl; disabled by default.")
-    parser.add_argument("-f", default="/usr/local/share/ndn/", metavar="Server Directory", dest="serverDir",
-                        help="Specify the working directory of nfd-status-http-server, default is /usr/local/share/ndn.")
+    parser.add_argument("-f", default="@DATAROOTDIR@/ndn", metavar="Server Directory", dest="serverDir",
+                        help="Specify the working directory of nfd-status-http-server, default is @DATAROOTDIR@/ndn.")
     parser.add_argument("-v", default=False, dest="verbose", action="store_true",
                         help="Verbose mode.")
     parser.add_argument("--version", default=False, dest="version", action="store_true",

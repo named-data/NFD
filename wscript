@@ -190,20 +190,6 @@ def build(bld):
         IF_HAVE_LIBPCAP="" if bld.env['HAVE_LIBPCAP'] else "; ",
         IF_HAVE_WEBSOCKET="" if bld.env['HAVE_WEBSOCKET'] else "; ")
 
-    for file in bld.path.ant_glob('tools/nfd-status-http-server-files/*'):
-        bld(features="subst",
-            source='tools/nfd-status-http-server-files/%s' % (str(file)),
-            target='nfd-status-http-server/%s' % (str(file)),
-            install_path="${DATAROOTDIR}/ndn",
-            VERSION=VERSION)
-
-    bld(features='subst',
-        source='tools/nfd-status-http-server.py',
-        target='bin/nfd-status-http-server',
-        install_path="${BINDIR}",
-        chmod=Utils.O755,
-        VERSION=VERSION)
-
     if bld.env['SPHINX_BUILD']:
         bld(features="sphinx",
             builder="man",
@@ -213,13 +199,16 @@ def build(bld):
             install_path="${MANDIR}/",
             VERSION=VERSION)
 
-    for script in bld.path.ant_glob('tools/*.sh'):
+    for script in bld.path.ant_glob(['tools/*.sh', 'tools/*.py']):
         bld(features='subst',
             source='tools/%s' % (str(script)),
             target='bin/%s' % (str(script.change_ext(''))),
             install_path="${BINDIR}",
             chmod=Utils.O755,
             VERSION=VERSION)
+
+    bld.install_files("${DATAROOTDIR}/ndn",
+                      bld.path.ant_glob('tools/nfd-status-http-server-files/*'))
 
 def docs(bld):
     from waflib import Options

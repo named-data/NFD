@@ -1,147 +1,225 @@
 <xsl:stylesheet version="1.0"
-xmlns="http://www.w3.org/1999/xhtml"
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns:nfd="ndn:/localhost/nfd/status/1">
+<xsl:output method="html" encoding="utf-8" indent="yes" />
 
 <xsl:template match="/">
+  <xsl:text disable-output-escaping='yes'>&lt;!DOCTYPE html></xsl:text>
   <html>
   <head>
   <title>NFD Status</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
   </head>
   <body>
-  <xsl:apply-templates/>
+  <header>
+    <h1>NFD Status</h1>
+  </header>
+  <article>
+    <div id="content">
+      <xsl:apply-templates/>
+    </div>
+  </article>
+  <footer>
+    <xsl:variable name="version">
+      <xsl:apply-templates select="nfd:nfdStatus/nfd:generalStatus/nfd:version"/>
+    </xsl:variable>
+    <span class="grey">Powered by </span><a target="_blank" href="http://named-data.net/doc/NFD/{$version}/"><span class="green">NFD version <xsl:value-of select="$version"/></span></a><span class="grey">.</span>
+  </footer>
   </body>
   </html>
 </xsl:template>
 
+<xsl:template match="nfd:version">
+  <xsl:variable name="major"><xsl:value-of select="floor(. div 1000000) mod 1000"/></xsl:variable>
+  <xsl:variable name="minor"><xsl:value-of select="floor(. div 1000) mod 1000"/></xsl:variable>
+  <xsl:variable name="patch"><xsl:value-of select=". mod 1000"/></xsl:variable>
+
+  <xsl:value-of select="$major"/>.<xsl:value-of select="$minor"/>.<xsl:value-of select="$patch"/>
+</xsl:template>
+
+<xsl:template name="formatDate">
+  <xsl:param name="date" />
+  <xsl:value-of select="substring($date, 0, 11)"/>&#160;<xsl:value-of select="substring($date, 12, 8)"/>
+</xsl:template>
+
+<xsl:template name="formatDuration">
+  <xsl:param name="duration" />
+  <xsl:variable name="seconds"><xsl:value-of select="substring($duration, 3, string-length($duration)-3)" /></xsl:variable>
+  <xsl:variable name="days"><xsl:value-of select="round($seconds div 86400)" /></xsl:variable>
+  <xsl:variable name="hours"><xsl:value-of select="round($seconds div 3600)" /></xsl:variable>
+  <xsl:variable name="minutes"><xsl:value-of select="round($seconds div 60)" /></xsl:variable>
+  <xsl:variable name="uptime">
+  <xsl:choose>
+    <xsl:when test="$days > 0">
+      <xsl:value-of select="$days"/> days
+    </xsl:when>
+    <xsl:when test="$hours > 0">
+      <xsl:value-of select="$hours"/> hours
+    </xsl:when>
+    <xsl:when test="$minutes > 0">
+      <xsl:value-of select="$minutes"/> minutes
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:value-of select="$seconds"/> seconds
+    </xsl:otherwise>
+  </xsl:choose>
+  </xsl:variable>
+  <xsl:value-of select="$uptime"/>
+</xsl:template>
+
 <xsl:template match="nfd:generalStatus">
   <h2>General NFD status</h2>
-  <table>
-    <tr>
-      <td>Version</td>
-      <td><xsl:value-of select="nfd:version"/></td>
-    </tr>
-    <tr>
-      <td>startTime</td>
-      <td><xsl:value-of select="nfd:startTime"/></td>
-    </tr>
-    <tr>
-      <td>currentTime</td>
-      <td><xsl:value-of select="nfd:currentTime"/></td>
-    </tr>
-    <tr>
-      <td>upTime</td>
-      <td><xsl:value-of select="nfd:uptime"/></td>
-    </tr>
-    <tr>
-      <td>nNameTreeEntries</td>
-      <td><xsl:value-of select="nfd:nNameTreeEntries"/></td>
-    </tr>
-    <tr>
-      <td>nFibEntries</td>
-      <td><xsl:value-of select="nfd:nFibEntries"/></td>
-    </tr>
-    <tr>
-      <td>nPitEntries</td>
-      <td><xsl:value-of select="nfd:nPitEntries"/></td>
-    </tr>
-    <tr>
-      <td>nMeasurementsEntries</td>
-      <td><xsl:value-of select="nfd:nMeasurementsEntries"/></td>
-    </tr>
-    <tr>
-      <td>nCsEntries</td>
-      <td><xsl:value-of select="nfd:nCsEntries"/></td>
-    </tr>
-    <tr>
-      <td>nInInterests</td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
-    </tr>
-    <tr>
-      <td>nOutInterests</td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
-    </tr>
-    <tr>
-      <td>nInDatas</td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
-    </tr>
-    <tr>
-      <td>nOutDatas</td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
-    </tr>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Start time</th>
+        <th>Current time</th>
+        <th>Uptime</th>
+        <th>NameTree Entries</th>
+        <th>FIB entries</th>
+        <th>PIT entries</th>
+        <th>Measurements entries</th>
+        <th>CS entries</th>
+        <th>In Interests</th>
+        <th>Out Interests</th>
+        <th>In Data</th>
+        <th>Out Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="center">
+        <td><xsl:apply-templates select="nfd:version"/></td>
+        <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:startTime" /></xsl:call-template></td>
+        <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:currentTime" /></xsl:call-template></td>
+        <td><xsl:call-template name="formatDuration"><xsl:with-param name="duration" select="nfd:uptime" /></xsl:call-template></td>
+        <td><xsl:value-of select="nfd:nNameTreeEntries"/></td>
+        <td><xsl:value-of select="nfd:nFibEntries"/></td>
+        <td><xsl:value-of select="nfd:nPitEntries"/></td>
+        <td><xsl:value-of select="nfd:nMeasurementsEntries"/></td>
+        <td><xsl:value-of select="nfd:nCsEntries"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+      </tr>
+    </tbody>
   </table>
 </xsl:template>
 
 <xsl:template match="nfd:channels">
   <h2>Channels</h2>
-  <table>
-    <xsl:for-each select="nfd:channel">
-    <tr>
-      <td><xsl:value-of select="nfd:localUri"/></td>
-    </tr>
-    </xsl:for-each>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Channel URI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <xsl:for-each select="nfd:channel">
+        <xsl:variable name="style">
+          <xsl:choose>
+            <xsl:when test="position() mod 2 = 1">
+              <xsl:text>odd</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>even</xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <tr class="{$style}">
+          <td><xsl:value-of select="nfd:localUri"/></td>
+        </tr>
+      </xsl:for-each>
+    </tbody>
   </table>
 </xsl:template>
 
 <xsl:template match="nfd:faces">
   <h2>Faces</h2>
-  <table>
-    <tr style="background-color: #9acd32;">
-      <th>faceID</th>
-      <th>remoteUri</th>
-      <th>localUri</th>
-      <th>nInInterests</th>
-      <th>nInDatas</th>
-      <th>nOutInterests</th>
-      <th>nOutDatas</th>
-    </tr>
-    <xsl:for-each select="nfd:face">
-    <tr>
-      <td><xsl:value-of select="nfd:faceId"/></td>
-      <td><xsl:value-of select="nfd:remoteUri"/></td>
-      <td><xsl:value-of select="nfd:localUri"/></td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
-      <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
-    </tr>
-    </xsl:for-each>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Face ID</th>
+        <th>Remote URI</th>
+        <th>Local URI</th>
+        <th>In Interests</th>
+        <th>In Data</th>
+        <th>Out Interests</th>
+        <th>Out Data</th>
+      </tr>
+    </thead>
+    <tbody>
+      <xsl:for-each select="nfd:face">
+      <xsl:variable name="style">
+        <xsl:choose>
+          <xsl:when test="position() mod 2 = 1">
+            <xsl:text>odd</xsl:text>
+          </xsl:when>
+          <xsl:otherwise>even</xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
+      <tr class="{$style}">
+        <td><xsl:value-of select="nfd:faceId"/></td>
+        <td><xsl:value-of select="nfd:remoteUri"/></td>
+        <td><xsl:value-of select="nfd:localUri"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+      </tr>
+      </xsl:for-each>
+    </tbody>
   </table>
 </xsl:template>
 
 <xsl:template match="nfd:fib">
   <h2>FIB</h2>
-  <table>
-    <tr style="background-color: #9acd32;">
-      <th>prefix</th>
-      <th>nextHops</th>
-    </tr>
-    <xsl:for-each select="nfd:fibEntry">
-    <tr>
-      <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
-      <td>
-      <xsl:for-each select="nfd:nextHops/nfd:nextHop">
-        faceid=<xsl:value-of select="nfd:faceId"/> (cost=<xsl:value-of select="nfd:cost"/>);
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Prefix</th>
+        <th>NextHops</th>
+      </tr>
+    </thead>
+    <tbody>
+      <xsl:for-each select="nfd:fibEntry">
+        <xsl:variable name="style">
+          <xsl:choose>
+            <xsl:when test="position() mod 2 = 1">
+              <xsl:text>odd</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>even</xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <tr class="{$style}">
+        <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
+        <td>
+        <xsl:for-each select="nfd:nextHops/nfd:nextHop">
+          faceid=<xsl:value-of select="nfd:faceId"/> (cost=<xsl:value-of select="nfd:cost"/>);
+        </xsl:for-each>
+        </td>
+      </tr>
       </xsl:for-each>
-      </td>
-    </tr>
-    </xsl:for-each>
+    </tbody>
   </table>
 </xsl:template>
 
 <xsl:template match="nfd:strategyChoices">
   <h2>Strategy Choices</h2>
-  <table>
-    <tr style="background-color: #9acd32;">
-      <th>Namespace</th>
-      <th>Strategy Name</th>
-    </tr>
-    <xsl:for-each select="nfd:strategyChoice">
-    <tr>
-      <td><xsl:value-of select="nfd:namespace"/></td>
-      <td><xsl:value-of select="nfd:strategy/nfd:name"/></td>
-    </tr>
-    </xsl:for-each>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Namespace</th>
+        <th>Strategy Name</th>
+      </tr>
+    </thead>
+    <tbody>
+      <xsl:for-each select="nfd:strategyChoice">
+      <tr>
+        <td><xsl:value-of select="nfd:namespace"/></td>
+        <td><xsl:value-of select="nfd:strategy/nfd:name"/></td>
+      </tr>
+      </xsl:for-each>
+    </tbody>
   </table>
 </xsl:template>
 
