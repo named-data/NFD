@@ -191,11 +191,6 @@ RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
           return;
         }
 
-      if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
-        {
-          parameters.setFaceId(request->getIncomingFaceId());
-        }
-
       NFD_LOG_DEBUG("command result: processing verb: " << verb);
       (verbProcessor->second)(this, request, parameters);
     }
@@ -219,6 +214,11 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       if (static_cast<bool>(request))
         sendResponse(request->getName(), 400, "Malformed command");
       return;
+    }
+
+  if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
+    {
+      parameters.setFaceId(request->getIncomingFaceId());
     }
 
   FaceEntry faceEntry;
@@ -272,6 +272,11 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
       if (static_cast<bool>(request))
         sendResponse(request->getName(), 400, "Malformed command");
       return;
+    }
+
+  if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
+    {
+      parameters.setFaceId(request->getIncomingFaceId());
     }
 
   FaceEntry faceEntry;
