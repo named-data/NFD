@@ -59,7 +59,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
-  m_counters.getNInInterests() ++;
+  ++m_counters.getNInInterests();
 
   // /localhost scope control
   bool isViolatingLocalhost = !inFace.isLocal() &&
@@ -187,7 +187,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
 
   // send Interest
   outFace.sendInterest(*interest);
-  m_counters.getNOutInterests() ++;
+  ++m_counters.getNOutInterests();
 }
 
 void
@@ -227,7 +227,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
   const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
-  m_counters.getNInDatas() ++;
+  ++m_counters.getNInDatas();
 
   // /localhost scope control
   bool isViolatingLocalhost = !inFace.isLocal() &&
@@ -331,7 +331,7 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 
   // send Data
   outFace.sendData(data);
-  m_counters.getNOutDatas() ++;
+  ++m_counters.getNOutDatas();
 }
 
 static inline bool

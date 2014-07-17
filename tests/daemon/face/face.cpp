@@ -59,16 +59,6 @@ BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
                          LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), false);
 }
 
-BOOST_AUTO_TEST_CASE(Counters)
-{
-  DummyFace face;
-  const FaceCounters& counters = face.getCounters();
-  BOOST_CHECK_EQUAL(counters.getNInInterests() , 0);
-  BOOST_CHECK_EQUAL(counters.getNInDatas()     , 0);
-  BOOST_CHECK_EQUAL(counters.getNOutInterests(), 0);
-  BOOST_CHECK_EQUAL(counters.getNOutDatas()    , 0);
-}
-
 class FaceFailTestFace : public DummyFace
 {
 public:

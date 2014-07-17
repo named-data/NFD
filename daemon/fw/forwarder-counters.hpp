@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,30 +21,22 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#ifndef NFD_DAEMON_FW_FORWARDER_COUNTER_HPP
-#define NFD_DAEMON_FW_FORWARDER_COUNTER_HPP
+#ifndef NFD_DAEMON_FW_FORWARDER_COUNTERS_HPP
+#define NFD_DAEMON_FW_FORWARDER_COUNTERS_HPP
 
-#include "face/face-counter.hpp"
+#include "face/face-counters.hpp"
 
 namespace nfd {
 
-/** \class ForwarderCounter
- *  \brief represents a counter on forwarder
- *
- *  \todo This class should be noncopyable
- */
-typedef uint64_t ForwarderCounter;
-
-
 /** \brief contains counters on forwarder
  */
-class ForwarderCounters : public FaceCounters
+class ForwarderCounters : public NetworkLayerCounters
 {
 };
 
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_FORWARDER_COUNTER_HPP
+#endif // NFD_DAEMON_FW_FORWARDER_COUNTERS_HPP

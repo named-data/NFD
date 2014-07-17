@@ -53,16 +53,16 @@ public:
   }
 
   void
-  setCounters(FaceCounter nInInterests,
-              FaceCounter nInDatas,
-              FaceCounter nOutInterests,
-              FaceCounter nOutDatas)
+  setCounters(PacketCounter::rep nInInterests,
+              PacketCounter::rep nInDatas,
+              PacketCounter::rep nOutInterests,
+              PacketCounter::rep nOutDatas)
   {
     FaceCounters& counters = getMutableCounters();
-    counters.getNInInterests()  = nInInterests;
-    counters.getNInDatas()      = nInDatas;
-    counters.getNOutInterests() = nOutInterests;
-    counters.getNOutDatas()     = nOutDatas;
+    counters.getNInInterests().set(nInInterests);
+    counters.getNInDatas().set(nInDatas);
+    counters.getNOutInterests().set(nOutInterests);
+    counters.getNOutDatas().set(nOutDatas);
   }
 
 

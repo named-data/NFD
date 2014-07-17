@@ -29,12 +29,6 @@
 
 namespace nfd {
 
-static inline void
-increaseCounter(FaceCounter& counter)
-{
-  ++counter;
-}
-
 Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   : m_id(INVALID_FACEID)
   , m_isLocal(isLocal)
@@ -43,10 +37,10 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   , m_isOnDemand(false)
   , m_isFailed(false)
 {
-  onReceiveInterest += bind(&increaseCounter, ref(m_counters.getNInInterests()));
-  onReceiveData     += bind(&increaseCounter, ref(m_counters.getNInDatas()));
-  onSendInterest    += bind(&increaseCounter, ref(m_counters.getNOutInterests()));
-  onSendData        += bind(&increaseCounter, ref(m_counters.getNOutDatas()));
+  onReceiveInterest += bind(&PacketCounter::operator++, &m_counters.getNInInterests());
+  onReceiveData     += bind(&PacketCounter::operator++, &m_counters.getNInDatas());
+  onSendInterest    += bind(&PacketCounter::operator++, &m_counters.getNOutInterests());
+  onSendData        += bind(&PacketCounter::operator++, &m_counters.getNOutDatas());
 }
 
 Face::~Face()
@@ -59,7 +53,7 @@ Face::getId() const
   return m_id;
 }
 
-// this method is private and should be used only by the Forwarder
+// this method is private and should be used only by the FaceTable
 void
 Face::setId(FaceId faceId)
 {

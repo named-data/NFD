@@ -27,7 +27,7 @@
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
-#include "forwarder-counter.hpp"
+#include "forwarder-counters.hpp"
 #include "face-table.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"

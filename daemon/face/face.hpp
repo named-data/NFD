@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_FACE_HPP
 #define NFD_DAEMON_FACE_FACE_HPP
@@ -29,7 +29,7 @@
 #include "common.hpp"
 #include "core/event-emitter.hpp"
 #include "core/face-uri.hpp"
-#include "face-counter.hpp"
+#include "face-counters.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
