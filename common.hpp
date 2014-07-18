@@ -41,6 +41,7 @@
 
 #include <list>
 #include <set>
+#include <queue>
 #include <vector>
 
 #include <ndn-cxx/common.hpp>

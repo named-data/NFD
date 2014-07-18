@@ -33,6 +33,27 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TablePit, BaseFixture)
 
+BOOST_AUTO_TEST_CASE(NonceList)
+{
+  BOOST_REQUIRE_GE(pit::NonceList::CAPACITY, 32);
+  BOOST_REQUIRE_LE(pit::NonceList::CAPACITY, 4096);
+
+  pit::NonceList nl;
+  for (uint32_t nonce = 0; nonce < static_cast<uint32_t>(pit::NonceList::CAPACITY); ++nonce) {
+    BOOST_CHECK_EQUAL(nl.add(nonce), true);
+  }
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(32), false);
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(4096), true);
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(0), true);// 0 is evicted
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+}
+
 BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();

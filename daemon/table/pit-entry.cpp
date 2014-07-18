@@ -129,10 +129,7 @@ Entry::violatesScope(const Face& face) const
 bool
 Entry::addNonce(uint32_t nonce)
 {
-  std::pair<std::set<uint32_t>::iterator, bool> insertResult =
-    m_nonces.insert(nonce);
-
-  return insertResult.second;
+  return m_nonceList.add(nonce);
 }
 
 InRecordCollection::iterator
@@ -173,7 +170,7 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
   }
 
   it->update(interest);
-  m_nonces.insert(interest.getNonce());
+  m_nonceList.add(interest.getNonce());
   return it;
 }
 
