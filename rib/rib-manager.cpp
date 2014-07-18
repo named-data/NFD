@@ -227,7 +227,8 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   faceEntry.cost = parameters.getCost();
   faceEntry.flags = parameters.getFlags();
 
-  if (parameters.getExpirationPeriod() != time::milliseconds::max())
+  if (parameters.hasExpirationPeriod() &&
+      parameters.getExpirationPeriod() != time::milliseconds::max())
     {
       faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
 
