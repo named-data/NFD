@@ -40,8 +40,20 @@ namespace nfd {
  */
 typedef int FaceId;
 
+/// indicates an invalid FaceId
 const FaceId INVALID_FACEID = -1;
 
+/// identifies the InternalFace used in management
+const FaceId FACEID_INTERNAL_FACE = 1;
+/// identifies a packet comes from the ContentStore, in LocalControlHeader incomingFaceId
+const FaceId FACEID_CONTENT_STORE = 254;
+/// identifies the NullFace that drops every packet
+const FaceId FACEID_NULL = 255;
+/// upper bound of reserved FaceIds
+const FaceId FACEID_RESERVED_MAX = 255;
+
+
+/// pratical limit of packet size in octets
 const size_t MAX_NDN_PACKET_SIZE = 8800;
 
 

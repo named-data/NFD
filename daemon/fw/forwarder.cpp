@@ -92,6 +92,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
     // CS lookup
     const Data* csMatch = m_cs.find(interest);
     if (csMatch != 0) {
+      const_cast<Data*>(csMatch)->setIncomingFaceId(FACEID_CONTENT_STORE);
       // XXX should we lookup PIT for other Interests that also match csMatch?
 
       // goto outgoing Data pipeline

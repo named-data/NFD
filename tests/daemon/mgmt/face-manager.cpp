@@ -1587,13 +1587,13 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   ControlParameters resultParameters;
   resultParameters.setUri("dummy://");
-  resultParameters.setFaceId(1);
+  resultParameters.setFaceId(FACEID_RESERVED_MAX + 1);
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
 
   ndn::nfd::FaceEventNotification expectedFaceEvent;
   expectedFaceEvent.setKind(ndn::nfd::FACE_EVENT_CREATED)
-                   .setFaceId(1)
+                   .setFaceId(FACEID_RESERVED_MAX + 1)
                    .setRemoteUri(dummy->getRemoteUri().toString())
                    .setLocalUri(dummy->getLocalUri().toString())
                    .setFlags(0);

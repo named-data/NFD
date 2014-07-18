@@ -31,6 +31,7 @@
 #include "core/global-io.hpp"
 #include "core/privilege-helper.hpp"
 #include "fw/forwarder.hpp"
+#include "face/null-face.hpp"
 #include "mgmt/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
@@ -77,6 +78,10 @@ public:
     m_forwarder = make_shared<Forwarder>();
 
     initializeManagement();
+
+    m_forwarder->getFaceTable().addReserved(make_shared<NullFace>(), FACEID_NULL);
+    m_forwarder->getFaceTable().addReserved(
+      make_shared<NullFace>(FaceUri("contentstore://")), FACEID_CONTENT_STORE);
 
     PrivilegeHelper::drop();
   }
@@ -125,19 +130,14 @@ public:
     m_fibManager = make_shared<FibManager>(ref(m_forwarder->getFib()),
                                            bind(&Forwarder::getFace, m_forwarder.get(), _1),
                                            m_internalFace);
-
     m_faceManager = make_shared<FaceManager>(ref(m_forwarder->getFaceTable()),
                                              m_internalFace);
+    m_strategyChoiceManager = make_shared<StrategyChoiceManager>(
+                                ref(m_forwarder->getStrategyChoice()), m_internalFace);
 
-    m_strategyChoiceManager =
-      make_shared<StrategyChoiceManager>(ref(m_forwarder->getStrategyChoice()),
-                                         m_internalFace);
-
-    m_statusServer = make_shared<StatusServer>(m_internalFace,
-                                               ref(*m_forwarder));
+    m_statusServer = make_shared<StatusServer>(m_internalFace, ref(*m_forwarder));
 
     ConfigFile config((IgnoreRibAndLogSections()));
-
     general::setConfigFile(config);
 
     TablesConfigSection tablesConfig(m_forwarder->getCs(),
@@ -145,12 +145,11 @@ public:
                                      m_forwarder->getFib(),
                                      m_forwarder->getStrategyChoice(),
                                      m_forwarder->getMeasurements());
-
     tablesConfig.setConfigFile(config);
 
     m_internalFace->getValidator().setConfigFile(config);
 
-    m_forwarder->addFace(m_internalFace);
+    m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
 
     m_faceManager->setConfigFile(config);
 

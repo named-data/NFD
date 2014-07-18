@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "fw/face-table.hpp"
 #include "fw/forwarder.hpp"
@@ -61,6 +62,8 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   BOOST_CHECK_NE(face1->getId(), INVALID_FACEID);
   BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
+  BOOST_CHECK_GT(face1->getId(), FACEID_RESERVED_MAX);
+  BOOST_CHECK_GT(face2->getId(), FACEID_RESERVED_MAX);
 
   FaceId oldId1 = face1->getId();
   faceTable.add(face1);
@@ -77,6 +80,18 @@ BOOST_AUTO_TEST_CASE(AddRemove)
 
   BOOST_REQUIRE_EQUAL(onRemoveHistory.size(), 1);
   BOOST_CHECK_EQUAL(onRemoveHistory[0], onAddHistory[0]);
+}
+
+BOOST_AUTO_TEST_CASE(AddReserved)
+{
+  Forwarder forwarder;
+  FaceTable& faceTable = forwarder.getFaceTable();
+
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
+
+  faceTable.addReserved(face1, 5);
+  BOOST_CHECK_EQUAL(face1->getId(), 5);
 }
 
 BOOST_AUTO_TEST_CASE(Enumerate)
