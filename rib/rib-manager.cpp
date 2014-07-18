@@ -137,11 +137,11 @@ RibManager::sendResponse(const Name& name,
 {
   const Block& encodedControl = response.wireEncode();
 
-  Data responseData(name);
-  responseData.setContent(encodedControl);
+  shared_ptr<Data> responseData = make_shared<Data>(name);
+  responseData->setContent(encodedControl);
 
-  m_keyChain.sign(responseData);
-  m_face.put(responseData);
+  m_keyChain.sign(*responseData);
+  m_face.put(*responseData);
 }
 
 void
