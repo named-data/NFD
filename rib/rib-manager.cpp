@@ -263,8 +263,10 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
   //so passing only the required arguments.
   ControlParameters parameters;
   parameters.setName(params.getName());
-  parameters.setFaceId(params.getFaceId());
-  parameters.setOrigin(params.getOrigin());
+  if (params.hasFaceId())
+    parameters.setFaceId(params.getFaceId());
+  if (params.hasOrigin())
+    parameters.setOrigin(params.getOrigin());
 
   if (!validateParameters(command, parameters))
     {
