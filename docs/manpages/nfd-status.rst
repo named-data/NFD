@@ -31,6 +31,9 @@ Options:
 ``-b``
   Retrieve FIB information.
 
+``-r``
+  Retrieve RIB information.
+
 ``-s``
   Retrieve configured strategy choice for NDN namespaces.
 

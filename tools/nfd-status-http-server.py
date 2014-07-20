@@ -28,7 +28,7 @@ from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import sys
-import commands
+import subprocess
 import StringIO
 import urlparse
 import logging
@@ -73,9 +73,11 @@ class StatusHandler(SimpleHTTPRequestHandler):
         This function is to call nfd-status command
         to get xml format output
         """
-        (res, output) = commands.getstatusoutput('nfd-status -x')
+        sp = subprocess.Popen(['nfd-status', '-x'], stdout=subprocess.PIPE)
+        res = sp.wait()
         if res == 0:
             # add the xml-stylesheet processing instruction after the 1st '>' symbol
+            output = sp.stdout.read()
             newLineIndex = output.index('>') + 1
             resultStr = output[:newLineIndex]\
                       + "<?xml-stylesheet type=\"text/xsl\" href=\"nfd-status.xsl\"?>"\

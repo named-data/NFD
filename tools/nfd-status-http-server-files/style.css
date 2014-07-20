@@ -114,6 +114,43 @@ h5 {
     border-top: 1px solid transparent;
 }
 
+.item-sublist
+{
+    border-collapse:collapse;
+    border:1px solid gray;
+
+    padding: 4px;
+    font-family: sans-serif;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.item-sublist th
+{
+    background-color: transparent;
+    font-weight: bold;
+    padding: 4px;
+    text-align: center;
+
+    border-collapse:collapse;
+    border:1px solid gray;
+}
+
+.item-sublist th.border-left {
+}
+
+.item-sublist td
+{
+    border-collapse:collapse;
+    border:1px solid gray;
+
+    padding: 2px;
+    color: #000;
+    text-align: center;
+    min-width: 20px;
+}
+
+
 tr.center td
 {
     text-align: center;

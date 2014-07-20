@@ -176,7 +176,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   <table class="item-list">
     <thead>
       <tr>
-        <th>Prefix</th>
+        <th width="20%">Prefix</th>
         <th>NextHops</th>
       </tr>
     </thead>
@@ -193,9 +193,90 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <tr class="{$style}">
         <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
         <td>
-        <xsl:for-each select="nfd:nextHops/nfd:nextHop">
-          faceid=<xsl:value-of select="nfd:faceId"/> (cost=<xsl:value-of select="nfd:cost"/>);
-        </xsl:for-each>
+          <table class="item-sublist">
+            <tr>
+              <th>FaceId</th>
+              <xsl:for-each select="nfd:nextHops/nfd:nextHop">
+                <td><xsl:value-of select="nfd:faceId"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>Cost</th>
+              <xsl:for-each select="nfd:nextHops/nfd:nextHop">
+                <td><xsl:value-of select="nfd:cost"/></td>
+              </xsl:for-each>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      </xsl:for-each>
+    </tbody>
+  </table>
+</xsl:template>
+
+<xsl:template match="nfd:rib">
+  <h2>RIB</h2>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th width="20%">Prefix</th>
+        <th>Routes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <xsl:for-each select="nfd:ribEntry">
+        <xsl:variable name="style">
+          <xsl:choose>
+            <xsl:when test="position() mod 2 = 1">
+              <xsl:text>odd</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>even</xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <tr class="{$style}">
+        <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
+        <td>
+          <table class="item-sublist">
+            <tr>
+              <th>FaceId</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td><xsl:value-of select="nfd:faceId"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>Origin</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td><xsl:value-of select="nfd:origin"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>Cost</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td><xsl:value-of select="nfd:cost"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>Flags</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td><xsl:value-of select="nfd:flags"/></td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>Expires in</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td>
+                  <xsl:choose>
+                    <xsl:when test="nfd:expirationPeriod">
+                      <xsl:call-template name="formatDuration"><xsl:with-param name="duration" select="nfd:expirationPeriod" /></xsl:call-template>
+                    </xsl:when>
+                    <xsl:otherwise>
+                      Never
+                    </xsl:otherwise>
+                  </xsl:choose>
+                </td>
+              </xsl:for-each>
+            </tr>
+          </table>
         </td>
       </tr>
       </xsl:for-each>
@@ -208,7 +289,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   <table class="item-list">
     <thead>
       <tr>
-        <th>Namespace</th>
+        <th width="20%">Namespace</th>
         <th>Strategy Name</th>
       </tr>
     </thead>
