@@ -34,8 +34,17 @@ namespace nfd {
  */
 class ForwarderCounters : public NetworkLayerCounters
 {
+public:
+  /** \brief copy current obseverations to a struct
+   *  \param recipient an object with set methods for counters
+   */
+  template<typename R>
+  void
+  copyTo(R& recipient) const
+  {
+    this->NetworkLayerCounters::copyTo(recipient);
+  }
 };
-
 
 } // namespace nfd
 

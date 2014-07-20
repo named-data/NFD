@@ -128,17 +128,13 @@ Face::fail(const std::string& reason)
 ndn::nfd::FaceStatus
 Face::getFaceStatus() const
 {
-  const FaceCounters& counters = getCounters();
-
   ndn::nfd::FaceStatus status;
   status.setFaceId(getId())
     .setRemoteUri(getRemoteUri().toString())
     .setLocalUri(getLocalUri().toString())
-    .setFlags(getFaceFlags(*this))
-    .setNInInterests(counters.getNInInterests())
-    .setNInDatas(counters.getNInDatas())
-    .setNOutInterests(counters.getNOutInterests())
-    .setNOutDatas(counters.getNOutDatas());
+    .setFlags(getFaceFlags(*this));
+
+  this->getCounters().copyTo(status);
 
   return status;
 }

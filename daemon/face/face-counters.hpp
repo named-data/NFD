@@ -67,7 +67,6 @@ private:
   rep m_value;
 };
 
-
 /** \brief represents a counter of number of bytes
  */
 // ByteCounter is noncopyable, because increment should be called on the counter,
@@ -103,7 +102,6 @@ public:
 private:
   rep m_value;
 };
-
 
 /** \brief contains network layer packet counters
  */
@@ -162,13 +160,26 @@ public:
     return m_nOutDatas;
   }
 
+protected:
+  /** \brief copy current obseverations to a struct
+   *  \param recipient an object with set methods for counters
+   */
+  template<typename R>
+  void
+  copyTo(R& recipient) const
+  {
+    recipient.setNInInterests(this->getNInInterests());
+    recipient.setNInDatas(this->getNInDatas());
+    recipient.setNOutInterests(this->getNOutInterests());
+    recipient.setNOutDatas(this->getNOutDatas());
+  }
+
 private:
   PacketCounter m_nInInterests;
   PacketCounter m_nInDatas;
   PacketCounter m_nOutInterests;
   PacketCounter m_nOutDatas;
 };
-
 
 /** \brief contains link layer byte counters
  */
@@ -201,16 +212,38 @@ public:
     return m_nOutBytes;
   }
 
+protected:
+  /** \brief copy current obseverations to a struct
+   *  \param recipient an object with set methods for counters
+   */
+  template<typename R>
+  void
+  copyTo(R& recipient) const
+  {
+    recipient.setNInBytes(this->getNInBytes());
+    recipient.setNOutBytes(this->getNOutBytes());
+  }
+
 private:
   ByteCounter m_nInBytes;
   ByteCounter m_nOutBytes;
 };
 
-
 /** \brief contains counters on face
  */
 class FaceCounters : public NetworkLayerCounters, public LinkLayerCounters
 {
+public:
+  /** \brief copy current obseverations to a struct
+   *  \param recipient an object with set methods for counters
+   */
+  template<typename R>
+  void
+  copyTo(R& recipient) const
+  {
+    this->NetworkLayerCounters::copyTo(recipient);
+    this->LinkLayerCounters::copyTo(recipient);
+  }
 };
 
 } // namespace nfd
