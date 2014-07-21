@@ -83,7 +83,8 @@ public:
 protected:
   void
   handleSend(const boost::system::error_code& error,
-             const Block& wire);
+             size_t nBytesSent,
+             const Block& payload);
 
   void
   handleReceive(const boost::system::error_code& error,
@@ -129,9 +130,9 @@ inline void
 DatagramFace<T, U>::sendInterest(const Interest& interest)
 {
   this->onSendInterest(interest);
-  m_socket->async_send(boost::asio::buffer(interest.wireEncode().wire(),
-                                           interest.wireEncode().size()),
-                       bind(&DatagramFace<T, U>::handleSend, this, _1, interest.wireEncode()));
+  const Block& payload = interest.wireEncode();
+  m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
+                       bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
 
   // anything else should be done here?
 }
@@ -141,9 +142,9 @@ inline void
 DatagramFace<T, U>::sendData(const Data& data)
 {
   this->onSendData(data);
-  m_socket->async_send(boost::asio::buffer(data.wireEncode().wire(),
-                                           data.wireEncode().size()),
-                       bind(&DatagramFace<T, U>::handleSend, this, _1, data.wireEncode()));
+  const Block& payload = data.wireEncode();
+  m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
+                       bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
 
   // anything else should be done here?
 }
@@ -151,14 +152,15 @@ DatagramFace<T, U>::sendData(const Data& data)
 template<class T, class U>
 inline void
 DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
-                               const Block& wire)
+                               size_t nBytesSent,
+                               const Block& payload)
+// 'payload' is unused; it's needed to retain the underlying Buffer
 {
   if (error != 0) {
     if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
       return;
 
-    if (!m_socket->is_open())
-    {
+    if (!m_socket->is_open()) {
       fail("Tunnel closed");
       return;
     }
@@ -170,12 +172,10 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
 
     closeSocket();
 
-    if (error == boost::asio::error::eof)
-    {
+    if (error == boost::asio::error::eof) {
       fail("Tunnel closed");
     }
-    else
-    {
+    else {
       fail("Send operation failed, closing socket: " +
              error.category().message(error.value()));
     }
@@ -184,8 +184,8 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
 
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << wire.size() << " bytes");
-  // do nothing (needed to retain validity of wire memory block
+                << "] Successfully sent: " << nBytesSent << " bytes");
+  this->getMutableCounters().getNOutBytes() += nBytesSent;
 }
 
 template<class T, class U>
@@ -226,8 +226,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
       return;
 
     // this should be unnecessary, but just in case
-    if (!m_socket->is_open())
-    {
+    if (!m_socket->is_open()) {
       fail("Tunnel closed");
       return;
     }
@@ -239,12 +238,10 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
 
     closeSocket();
 
-    if (error == boost::asio::error::eof)
-    {
+    if (error == boost::asio::error::eof) {
       fail("Tunnel closed");
     }
-    else
-    {
+    else {
       fail("Receive operation failed, closing socket: " +
              error.category().message(error.value()));
     }
@@ -254,6 +251,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
                 << "] Received: " << nBytesReceived << " bytes");
+  this->getMutableCounters().getNInBytes() += nBytesReceived;
 
   Block element;
   bool isOk = Block::fromBuffer(buffer, nBytesReceived, element);

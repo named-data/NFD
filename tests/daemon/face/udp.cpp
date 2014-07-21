@@ -379,6 +379,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(face2->getRemoteUri().toString(), "udp4://127.0.0.1:20070");
   BOOST_CHECK_EQUAL(face2->getLocalUri().toString(), "udp4://127.0.0.1:20071");
   BOOST_CHECK_EQUAL(face2->isLocal(), false);
+  BOOST_CHECK_EQUAL(face2->getCounters().getNOutBytes(), 0);
+  BOOST_CHECK_EQUAL(face2->getCounters().getNInBytes(), 0);
   // face1 is not created yet
 
   shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
@@ -410,6 +412,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   face2->sendData    (data2    );
   face2->sendData    (data2    );
   face2->sendData    (data2    );
+  size_t nBytesSent2 = interest2.wireEncode().size() + data2.wireEncode().size() * 3;
 
   BOOST_CHECK_MESSAGE(limitedIo.run(5,//4 send + 1 listen return
                       time::seconds(4)) == LimitedIo::EXCEED_OPS,
@@ -428,7 +431,6 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_MESSAGE(limitedIo.run(4, time::seconds(4)) == LimitedIo::EXCEED_OPS,
                       "UdpChannel error: cannot send or receive Interest/Data packets");
 
-
   BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 3);
   BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 3);
@@ -445,6 +447,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   face2->sendData    (data3    );
   face2->sendInterest(interest3);
+  nBytesSent2 += data3.wireEncode().size() + interest3.wireEncode().size();
 
   BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UdpChannel error: cannot send or receive Interest/Data packets");
@@ -460,12 +463,14 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 4);
   BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
   BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesSent2);
 
   const FaceCounters& counters2 = face2->getCounters();
   BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);
   BOOST_CHECK_EQUAL(counters2.getNInDatas()     , 1);
   BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 2);
   BOOST_CHECK_EQUAL(counters2.getNOutDatas()    , 4);
+  BOOST_CHECK_EQUAL(counters2.getNOutBytes(), nBytesSent2);
 }
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)

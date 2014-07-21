@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_STREAM_FACE_HPP
 #define NFD_DAEMON_FACE_STREAM_FACE_HPP
@@ -70,11 +70,11 @@ protected:
 
   void
   handleSend(const boost::system::error_code& error,
-             std::size_t nBytesTransferred);
+             size_t nBytesSent);
 
   void
   handleReceive(const boost::system::error_code& error,
-                std::size_t nBytesReceived);
+                size_t nBytesReceived);
 
   void
   keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);
@@ -87,7 +87,7 @@ protected:
 
 private:
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
-  std::size_t m_inputBufferSize;
+  size_t m_inputBufferSize;
   std::queue<Block> m_sendQueue;
 
   friend struct StreamFaceSenderImpl<Protocol, FaceBase, Interest>;
@@ -257,7 +257,7 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
 template<class T, class U>
 inline void
 StreamFace<T, U>::handleSend(const boost::system::error_code& error,
-                             size_t nBytesTransferred)
+                             size_t nBytesSent)
 {
   if (error)
     return processErrorCode(error);
@@ -266,7 +266,8 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
 
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << nBytesTransferred << " bytes");
+                << "] Successfully sent: " << nBytesSent << " bytes");
+  this->getMutableCounters().getNOutBytes() += nBytesSent;
 
   m_sendQueue.pop();
   if (!m_sendQueue.empty())
@@ -276,7 +277,7 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
 template<class T, class U>
 inline void
 StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
-                                std::size_t nBytesReceived)
+                                size_t nBytesReceived)
 {
   if (error)
     return processErrorCode(error);
@@ -284,15 +285,15 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
                 << "] Received: " << nBytesReceived << " bytes");
+  this->getMutableCounters().getNInBytes() += nBytesReceived;
 
   m_inputBufferSize += nBytesReceived;
-  // do magic
 
-  std::size_t offset = 0;
+  size_t offset = 0;
 
   bool isOk = true;
   Block element;
-  while(m_inputBufferSize - offset > 0)
+  while (m_inputBufferSize - offset > 0)
     {
       isOk = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset, element);
       if (!isOk)
