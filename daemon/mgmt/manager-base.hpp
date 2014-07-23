@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_MGMT_MANAGER_BASE_HPP
 #define NFD_DAEMON_MGMT_MANAGER_BASE_HPP
@@ -51,7 +52,9 @@ public:
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-  ManagerBase(shared_ptr<InternalFace> face, const std::string& privilege);
+  ManagerBase(shared_ptr<InternalFace> face,
+              const std::string& privilege,
+              ndn::KeyChain& keyChain);
 
   virtual
   ~ManagerBase();
@@ -112,6 +115,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED:
 
 protected:
   shared_ptr<InternalFace> m_face;
+  ndn::KeyChain& m_keyChain;
 };
 
 inline void

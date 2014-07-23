@@ -257,13 +257,14 @@ public:
 protected:
   shared_ptr<InternalFace> m_face;
   bool m_callbackFired;
+  ndn::KeyChain m_testKeyChain;
 };
 
 class FaceManagerFixture : public TestFaceTableFixture, public TestFaceManagerCommon
 {
 public:
   FaceManagerFixture()
-    : m_manager(m_faceTable, m_face)
+    : m_manager(m_faceTable, m_face, m_testKeyChain)
   {
     m_manager.setConfigFile(m_config);
   }
@@ -923,7 +924,7 @@ class ValidatedFaceRequestFixture : public TestFaceTableFixture,
 public:
 
   ValidatedFaceRequestFixture()
-    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face),
+    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain),
       m_createFaceFired(false),
       m_destroyFaceFired(false)
   {
@@ -1048,7 +1049,7 @@ class LocalControlFixture : public FaceTableFixture,
 {
 public:
   LocalControlFixture()
-    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face)
+    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain)
   {
   }
 };
@@ -1417,7 +1418,8 @@ class FaceFixture : public FaceTableFixture,
 public:
   FaceFixture()
     : FaceManager(FaceTableFixture::m_faceTable,
-                  TestFaceManagerCommon::m_face)
+                  TestFaceManagerCommon::m_face,
+                  m_testKeyChain)
     , m_receivedNotification(false)
   {
 
@@ -1674,7 +1676,7 @@ class FaceListFixture : public FaceStatusPublisherFixture
 {
 public:
   FaceListFixture()
-    : m_manager(m_table, m_face)
+    : m_manager(m_table, m_face, m_testKeyChain)
   {
 
   }
@@ -1687,6 +1689,7 @@ public:
 
 protected:
   FaceManager m_manager;
+  ndn::KeyChain m_testKeyChain;
 };
 
 BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)

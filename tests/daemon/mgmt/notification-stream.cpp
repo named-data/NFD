@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "mgmt/notification-stream.hpp"
 #include "mgmt/internal-face.hpp"
@@ -80,6 +81,7 @@ protected:
   const std::string m_prefix;
   const std::string m_message;
   uint64_t m_sequenceNo;
+  ndn::KeyChain m_keyChain;
 };
 
 BOOST_FIXTURE_TEST_SUITE(MgmtNotificationStream, NotificationStreamFixture)
@@ -115,7 +117,7 @@ private:
 BOOST_AUTO_TEST_CASE(TestPostEvent)
 {
   shared_ptr<InternalFace> face(make_shared<InternalFace>());
-  NotificationStream notificationStream(face, "/localhost/nfd/NotificationStreamTest");
+  NotificationStream notificationStream(face, "/localhost/nfd/NotificationStreamTest", m_keyChain);
 
   face->onReceiveData += bind(&NotificationStreamFixture::validateCallback, this, _1);
 

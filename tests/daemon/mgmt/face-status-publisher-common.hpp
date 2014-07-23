@@ -107,7 +107,7 @@ public:
   FaceStatusPublisherFixture()
     : m_table(m_forwarder)
     , m_face(make_shared<InternalFace>())
-    , m_publisher(m_table, m_face, "/localhost/nfd/FaceStatusPublisherFixture")
+    , m_publisher(m_table, *m_face, "/localhost/nfd/FaceStatusPublisherFixture", m_keyChain)
     , m_finished(false)
   {
 
@@ -188,6 +188,7 @@ protected:
   FaceStatusPublisher m_publisher;
   ndn::EncodingBuffer m_buffer;
   std::list<shared_ptr<Face> > m_referenceFaces;
+  ndn::KeyChain m_keyChain;
 
 protected:
   bool m_finished;

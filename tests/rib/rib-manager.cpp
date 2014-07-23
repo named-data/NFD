@@ -26,7 +26,7 @@
 #include "rib/rib-manager.hpp"
 
 #include "tests/test-common.hpp"
-#include "rib/dummy-face.hpp"
+#include "tests/dummy-face.hpp"
 
 namespace nfd {
 namespace rib {
@@ -40,7 +40,7 @@ public:
     , ADD_NEXTHOP_VERB("add-nexthop")
     , REMOVE_NEXTHOP_VERB("remove-nexthop")
   {
-    face = ndn::makeDummyFace();
+    face = nfd::tests::makeDummyFace();
 
     manager = make_shared<RibManager>(ndn::ref(*face));
     manager->registerWithNfd();
@@ -78,7 +78,7 @@ public:
 
 public:
   shared_ptr<RibManager> manager;
-  shared_ptr<ndn::DummyFace> face;
+  shared_ptr<nfd::tests::DummyFace> face;
 
   const Name COMMAND_PREFIX;
   const Name::Component ADD_NEXTHOP_VERB;

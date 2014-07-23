@@ -34,9 +34,10 @@ NFD_LOG_INIT("FaceStatusPublisher");
 
 
 FaceStatusPublisher::FaceStatusPublisher(const FaceTable& faceTable,
-                                         shared_ptr<AppFace> face,
-                                         const Name& prefix)
-  : SegmentPublisher(face, prefix)
+                                         AppFace& face,
+                                         const Name& prefix,
+                                         ndn::KeyChain& keyChain)
+  : SegmentPublisher(face, prefix, keyChain)
   , m_faceTable(faceTable)
 {
 

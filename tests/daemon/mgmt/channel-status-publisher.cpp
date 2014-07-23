@@ -39,7 +39,7 @@ class ChannelStatusPublisherFixture : BaseFixture
 public:
   ChannelStatusPublisherFixture()
     : m_face(make_shared<InternalFace>())
-    , m_publisher(m_factories, m_face, "/localhost/nfd/faces/channels")
+    , m_publisher(m_factories, *m_face, "/localhost/nfd/faces/channels", m_keyChain)
     , m_finished(false)
   {
   }
@@ -120,6 +120,8 @@ protected:
   std::set<std::string> m_matchedEntries;
 
   bool m_finished;
+
+  ndn::KeyChain m_keyChain;
 };
 
 BOOST_FIXTURE_TEST_SUITE(MgmtChannelStatusPublisher, ChannelStatusPublisherFixture)

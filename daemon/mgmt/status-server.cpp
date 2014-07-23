@@ -32,10 +32,11 @@ namespace nfd {
 const Name StatusServer::DATASET_PREFIX = "ndn:/localhost/nfd/status";
 const time::milliseconds StatusServer::RESPONSE_FRESHNESS = time::milliseconds(5000);
 
-StatusServer::StatusServer(shared_ptr<AppFace> face, Forwarder& forwarder)
+StatusServer::StatusServer(shared_ptr<AppFace> face, Forwarder& forwarder, ndn::KeyChain& keyChain)
   : m_face(face)
   , m_forwarder(forwarder)
   , m_startTimestamp(time::system_clock::now())
+  , m_keyChain(keyChain)
 {
   m_face->setInterestFilter(DATASET_PREFIX, bind(&StatusServer::onInterest, this, _2));
 }
@@ -53,7 +54,7 @@ StatusServer::onInterest(const Interest& interest) const
   shared_ptr<ndn::nfd::ForwarderStatus> status = this->collectStatus();
   data->setContent(status->wireEncode());
 
-  m_face->sign(*data);
+  m_keyChain.sign(*data);
   m_face->put(*data);
 }
 

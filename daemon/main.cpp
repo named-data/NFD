@@ -129,13 +129,21 @@ public:
 
     m_fibManager = make_shared<FibManager>(ref(m_forwarder->getFib()),
                                            bind(&Forwarder::getFace, m_forwarder.get(), _1),
-                                           m_internalFace);
-    m_faceManager = make_shared<FaceManager>(ref(m_forwarder->getFaceTable()),
-                                             m_internalFace);
-    m_strategyChoiceManager = make_shared<StrategyChoiceManager>(
-                                ref(m_forwarder->getStrategyChoice()), m_internalFace);
+                                           m_internalFace,
+                                           ndn::ref(m_keyChain));
 
-    m_statusServer = make_shared<StatusServer>(m_internalFace, ref(*m_forwarder));
+    m_faceManager = make_shared<FaceManager>(ref(m_forwarder->getFaceTable()),
+                                             m_internalFace,
+                                             ndn::ref(m_keyChain));
+
+    m_strategyChoiceManager =
+      make_shared<StrategyChoiceManager>(ref(m_forwarder->getStrategyChoice()),
+                                         m_internalFace,
+                                         ndn::ref(m_keyChain));
+
+    m_statusServer = make_shared<StatusServer>(m_internalFace,
+                                               ref(*m_forwarder),
+                                               ndn::ref(m_keyChain));
 
     ConfigFile config((IgnoreRibAndLogSections()));
     general::setConfigFile(config);
@@ -314,6 +322,7 @@ private:
 
   shared_ptr<std::ofstream>         m_logFile;
   std::basic_streambuf<char>*       m_originalStreamBuf;
+  ndn::KeyChain                     m_keyChain;
 };
 
 } // namespace nfd
