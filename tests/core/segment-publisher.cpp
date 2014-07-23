@@ -141,7 +141,7 @@ protected:
 };
 
 using boost::mpl::int_;
-typedef boost::mpl::vector<int_<10000>, int_<100>, int_<10>/*, int_<0>*/ > DatasetSizes;
+typedef boost::mpl::vector<int_<10000>, int_<100>, int_<10>, int_<0> > DatasetSizes;
 
 BOOST_AUTO_TEST_SUITE(SegmentPublisher)
 

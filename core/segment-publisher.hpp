@@ -71,7 +71,7 @@ public:
     const uint8_t* end = rawBuffer + buffer.size();
 
     uint64_t segmentNo = 0;
-    while (segmentBegin < end)
+    do
       {
         const uint8_t* segmentEnd = segmentBegin + getMaxSegmentSize();
         if (segmentEnd > end)
@@ -94,6 +94,7 @@ public:
         publishSegment(data);
         segmentNo++;
       }
+    while (segmentBegin < end);
   }
 
 protected:
