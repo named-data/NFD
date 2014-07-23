@@ -45,18 +45,29 @@ const size_t RibManager::COMMAND_SIGNED_NCOMPS =
   RibManager::COMMAND_UNSIGNED_NCOMPS +
   4; // (timestamp, nonce, signed info tlv, signature tlv)
 
-const RibManager::VerbAndProcessor RibManager::COMMAND_VERBS[] =
+const RibManager::SignedVerbAndProcessor RibManager::SIGNED_COMMAND_VERBS[] =
   {
-    VerbAndProcessor(
-                     Name::Component("register"),
-                     &RibManager::registerEntry
-                     ),
+    SignedVerbAndProcessor(
+                           Name::Component("register"),
+                           &RibManager::registerEntry
+                           ),
 
-    VerbAndProcessor(
-                     Name::Component("unregister"),
-                     &RibManager::unregisterEntry
-                     ),
+    SignedVerbAndProcessor(
+                           Name::Component("unregister"),
+                           &RibManager::unregisterEntry
+                           ),
   };
+
+const RibManager::UnsignedVerbAndProcessor RibManager::UNSIGNED_COMMAND_VERBS[] =
+  {
+    UnsignedVerbAndProcessor(
+                             Name::Component("list"),
+                             &RibManager::listEntries
+                             ),
+  };
+
+const Name RibManager::LIST_COMMAND_PREFIX("/localhost/nfd/rib/list");
+const size_t RibManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
 
 RibManager::RibManager(ndn::Face& face)
   : m_face(face)
@@ -65,9 +76,14 @@ RibManager::RibManager(ndn::Face& face)
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
   , m_isLocalhopEnabled(false)
+  , m_ribStatusPublisher(m_managedRib, face, LIST_COMMAND_PREFIX, m_keyChain)
   , m_lastTransactionId(0)
-  , m_verbDispatch(COMMAND_VERBS,
-                   COMMAND_VERBS + (sizeof(COMMAND_VERBS) / sizeof(VerbAndProcessor)))
+  , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
+                         SIGNED_COMMAND_VERBS +
+                         (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
+  , m_unsignedVerbDispatch(UNSIGNED_COMMAND_VERBS,
+                           UNSIGNED_COMMAND_VERBS +
+                           (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
 {
 }
 
@@ -156,9 +172,22 @@ RibManager::sendResponse(const Name& name,
 void
 RibManager::onLocalhostRequest(const Interest& request)
 {
-  m_localhostValidator.validate(request,
-                                bind(&RibManager::onCommandValidated, this, _1),
-                                bind(&RibManager::onCommandValidationFailed, this, _1, _2));
+  const Name& command = request.getName();
+  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+
+  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
+
+  if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
+    {
+      NFD_LOG_DEBUG("command result: processing unsigned verb: " << verb);
+      (unsignedVerbProcessor->second)(this, request);
+    }
+  else
+    {
+      m_localhostValidator.validate(request,
+                                    bind(&RibManager::onCommandValidated, this, _1),
+                                    bind(&RibManager::onCommandValidationFailed, this, _1, _2));
+    }
 }
 
 void
@@ -179,8 +208,8 @@ RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
   const Name::Component& verb = command[COMMAND_PREFIX.size()];
   const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
 
-  VerbDispatchTable::const_iterator verbProcessor = m_verbDispatch.find(verb);
-  if (verbProcessor != m_verbDispatch.end())
+  SignedVerbDispatchTable::const_iterator verbProcessor = m_signedVerbDispatch.find(verb);
+  if (verbProcessor != m_signedVerbDispatch.end())
     {
       ControlParameters parameters;
       if (!extractParameters(parameterComponent, parameters))
@@ -669,6 +698,23 @@ RibManager::sendUpdatesToFibAfterFaceDestroyEvent()
   parameters.setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC);
 
   sendUpdatesToFib(shared_ptr<const Interest>(), parameters);
+}
+
+void
+RibManager::listEntries(const Interest& request)
+{
+  const Name& command = request.getName();
+  const size_t commandNComps = command.size();
+
+  if (commandNComps < LIST_COMMAND_NCOMPS ||
+      !LIST_COMMAND_PREFIX.isPrefixOf(command))
+    {
+      NFD_LOG_DEBUG("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  m_ribStatusPublisher.publish();
 }
 
 } // namespace rib
