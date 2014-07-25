@@ -18,7 +18,7 @@ def checkWebsocket(self, **kw):
 
     isMandatory = kw.get('mandatory', True)
 
-    self.start_msg('Checking for Websocket includes')
+    self.start_msg('Checking for WebSocket includes')
 
     try:
         websocketDir = self.path.find_dir('websocketpp/websocketpp')
@@ -27,12 +27,12 @@ def checkWebsocket(self, **kw):
 
         versionFile = websocketDir.find_node('version.hpp')
         if not websocketDir:
-            raise Errors.WafError('Corrupted: Websocket version file not found')
+            raise Errors.WafError('Corrupted: WebSocket version file not found')
 
         try:
             txt = versionFile.read()
         except (OSError, IOError):
-            raise Errors.WafError('Corrupted: cannot read Websocket version file')
+            raise Errors.WafError('Corrupted: cannot read WebSocket version file')
 
         # Looking for the following:
         # static int const major_version = 0;
@@ -71,9 +71,9 @@ def checkWebsocket(self, **kw):
             Logs.warn('    git submodule init && git submodule update')
             Logs.warn('Otherwise, manually download and extract websocketpp library:')
             Logs.warn('    mkdir websocketpp')
-            Logs.warn('    curl -L -O https://github.com/zaphoyd/websocketpp/archive/0.3.0-alpha4.tar.gz')
-            Logs.warn('    tar zxf 0.3.0-alpha4.tar.gz -C websocketpp/ --strip 1')
-            Logs.warn('Alternatively, Websocket support can be disabled with --without-websocket')
+            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/tarball/65cc3765a892ee5928160ba478178e747233aa6c > websocket.tar.gz')
+            Logs.warn('    tar zxf websocket.tar.gz -C websocketpp/ --strip 1')
+            Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
             self.fatal("The configuration failed")
         else:
             self.end_msg(str(error))
