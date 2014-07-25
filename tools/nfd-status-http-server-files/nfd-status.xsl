@@ -143,8 +143,10 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Local URI</th>
         <th>In Interests</th>
         <th>In Data</th>
+        <th>In Bytes</th>
         <th>Out Interests</th>
         <th>Out Data</th>
+        <th>Out Bytes</th>
       </tr>
     </thead>
     <tbody>
@@ -163,8 +165,10 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:localUri"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:byteCounters/nfd:incomingBytes"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:byteCounters/nfd:outgoingBytes"/></td>
       </tr>
       </xsl:for-each>
     </tbody>

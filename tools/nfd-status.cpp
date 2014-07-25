@@ -401,6 +401,13 @@ public:
             std::cout << "</outgoingPackets>";
             std::cout << "</packetCounters>";
 
+            std::cout << "<byteCounters>";
+            std::cout << "<incomingBytes>"    << faceStatus.getNInBytes()
+                      << "</incomingBytes>";
+            std::cout << "<outgoingBytes>"    << faceStatus.getNOutBytes()
+                      << "</outgoingBytes>";
+            std::cout << "</byteCounters>";
+
             if (faceStatus.getFlags() != 0) {
               std::cout << "<flags>";
               if (faceStatus.isLocal()) {
@@ -444,9 +451,11 @@ public:
             }
             std::cout << " counters={"
                       << "in={" << faceStatus.getNInInterests() << "i "
-                      << faceStatus.getNInDatas() << "d}"
+                      << faceStatus.getNInDatas() << "d "
+                      << faceStatus.getNInBytes() << "B}"
                       << " out={" << faceStatus.getNOutInterests() << "i "
-                      << faceStatus.getNOutDatas() << "d}"
+                      << faceStatus.getNOutDatas() << "d "
+                      << faceStatus.getNOutBytes() << "B}"
                       << "}";
             if (faceStatus.isLocal())
               std::cout << " local";

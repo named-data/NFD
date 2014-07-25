@@ -18,6 +18,13 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="bidirectionalByteCountersType">
+  <xs:sequence>
+    <xs:element type="xs:nonNegativeInteger" name="incomingBytes"/>
+    <xs:element type="xs:nonNegativeInteger" name="outgoingBytes"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="generalStatusType">
   <xs:sequence>
     <xs:element type="xs:string" name="version"/>
@@ -59,6 +66,7 @@ elementFormDefault="qualified">
     <xs:element type="xs:anyURI" name="localUri"/>
     <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
+    <xs:element type="nfd:bidirectionalByteCountersType" name="byteCounters"/>
     <xs:element type="nfd:faceFlagsType" name="flags" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
