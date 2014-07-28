@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "strategy-choice.hpp"
 #include "core/logger.hpp"
@@ -120,6 +120,7 @@ StrategyChoice::erase(const Name& prefix)
   this->changeStrategy(entry, oldStrategy.shared_from_this(), parentStrategy.shared_from_this());
 
   nameTreeEntry->setStrategyChoiceEntry(shared_ptr<Entry>());
+  m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
   --m_nItems;
 }
 

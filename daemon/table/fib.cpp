@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "fib.hpp"
 #include "pit-entry.hpp"
@@ -114,24 +115,28 @@ Fib::findExactMatch(const Name& prefix) const
 }
 
 void
+Fib::erase(shared_ptr<name_tree::Entry> nameTreeEntry)
+{
+  nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
+  m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
+  --m_nItems;
+}
+
+void
 Fib::erase(const Name& prefix)
 {
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
-  if (static_cast<bool>(nameTreeEntry))
-  {
-    nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
-    --m_nItems;
+  if (static_cast<bool>(nameTreeEntry)) {
+    this->erase(nameTreeEntry);
   }
 }
 
 void
 Fib::erase(const fib::Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(entry);
-  if (static_cast<bool>(nameTreeEntry))
-  {
-    nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
-    --m_nItems;
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(entry);
+  if (static_cast<bool>(nameTreeEntry)) {
+    this->erase(nameTreeEntry);
   }
 }
 

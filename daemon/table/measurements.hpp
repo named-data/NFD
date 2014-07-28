@@ -86,7 +86,7 @@ public:
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime);
+  extendLifetime(shared_ptr<measurements::Entry> entry, const time::nanoseconds& lifetime);
 
   size_t
   size() const;

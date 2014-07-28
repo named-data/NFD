@@ -352,6 +352,18 @@ BOOST_AUTO_TEST_CASE(Erase)
 
 }
 
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+{
+  NameTree nameTree;
+  Pit pit(nameTree);
+  size_t nNameTreeEntriesBefore = nameTree.size();
+
+  shared_ptr<Interest> interest = makeInterest("/37xWVvQ2K");
+  shared_ptr<pit::Entry> entry = pit.insert(*interest).first;
+  pit.erase(entry);
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
+}
+
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 {
   Name nameA   ("ndn:/A");

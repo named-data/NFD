@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_CASE(Lifetime)
                CHECK2 < EXTEND_C &&
                EXTEND_C < CHECK3);
 
-  measurements.extendLifetime(*entryA, EXTEND_A);
-  measurements.extendLifetime(*entryC, EXTEND_C);
+  measurements.extendLifetime(entryA, EXTEND_A);
+  measurements.extendLifetime(entryC, EXTEND_C);
   // remaining lifetime:
   //   A = initial lifetime, because it's extended by less duration
   //   B = initial lifetime
@@ -113,6 +113,22 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), false);
   BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), false);
   BOOST_CHECK_EQUAL(measurements.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+{
+  LimitedIo limitedIo;
+  NameTree nameTree;
+  Measurements measurements(nameTree);
+  size_t nNameTreeEntriesBefore = nameTree.size();
+
+  shared_ptr<measurements::Entry> entry = measurements.get("/A");
+  BOOST_CHECK_EQUAL(
+    limitedIo.run(LimitedIo::UNLIMITED_OPS,
+                  Measurements::getInitialLifetime() + time::milliseconds(10)),
+    LimitedIo::EXCEED_TIME);
+  BOOST_CHECK_EQUAL(measurements.size(), 0);
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

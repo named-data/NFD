@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,9 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
-
-// Name Tree Entry (i.e., Name Prefix Entry)
+ */
 
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
@@ -95,6 +94,7 @@ public:
   bool
   isEmpty() const;
 
+public: // attached table entries
   void
   setFibEntry(shared_ptr<fib::Entry> fibEntry);
 
@@ -187,35 +187,10 @@ Entry::hasChildren() const
   return !m_children.empty();
 }
 
-inline bool
-Entry::isEmpty() const
-{
-  return m_children.empty() &&
-         !static_cast<bool>(m_fibEntry) &&
-         m_pitEntries.empty() &&
-         !static_cast<bool>(m_measurementsEntry);
-}
-
 inline shared_ptr<fib::Entry>
 Entry::getFibEntry() const
 {
   return m_fibEntry;
-}
-
-inline void
-Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
-{
-  if (static_cast<bool>(fibEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(fibEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_fibEntry)) {
-    m_fibEntry->m_nameTreeEntry.reset();
-  }
-  m_fibEntry = fibEntry;
-  if (static_cast<bool>(m_fibEntry)) {
-    m_fibEntry->m_nameTreeEntry = this->shared_from_this();
-  }
 }
 
 inline bool
@@ -230,58 +205,16 @@ Entry::getPitEntries() const
   return m_pitEntries;
 }
 
-inline void
-Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
-{
-  BOOST_ASSERT(static_cast<bool>(pitEntry));
-  BOOST_ASSERT(!static_cast<bool>(pitEntry->m_nameTreeEntry));
-
-  m_pitEntries.push_back(pitEntry);
-  pitEntry->m_nameTreeEntry = this->shared_from_this();
-}
-
 inline shared_ptr<measurements::Entry>
 Entry::getMeasurementsEntry() const
 {
   return m_measurementsEntry;
 }
 
-inline void
-Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
-{
-  if (static_cast<bool>(measurementsEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(measurementsEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_measurementsEntry)) {
-    m_measurementsEntry->m_nameTreeEntry.reset();
-  }
-  m_measurementsEntry = measurementsEntry;
-  if (static_cast<bool>(m_measurementsEntry)) {
-    m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
-  }
-}
-
 inline shared_ptr<strategy_choice::Entry>
 Entry::getStrategyChoiceEntry() const
 {
   return m_strategyChoiceEntry;
-}
-
-inline void
-Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
-{
-  if (static_cast<bool>(strategyChoiceEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(strategyChoiceEntry->m_nameTreeEntry));
-  }
-
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
-    m_strategyChoiceEntry->m_nameTreeEntry.reset();
-  }
-  m_strategyChoiceEntry = strategyChoiceEntry;
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
-    m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
-  }
 }
 
 } // namespace name_tree

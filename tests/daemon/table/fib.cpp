@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "table/fib.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -288,7 +289,7 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
 }
 
 void
-validateRemove(Fib& fib, const Name& target)
+validateErase(Fib& fib, const Name& target)
 {
   fib.erase(target);
 
@@ -299,14 +300,14 @@ validateRemove(Fib& fib, const Name& target)
     }
 }
 
-BOOST_AUTO_TEST_CASE(Remove)
+BOOST_AUTO_TEST_CASE(Erase)
 {
   NameTree emptyNameTree;
   Fib emptyFib(emptyNameTree);
 
   emptyFib.erase("/does/not/exist"); // crash test
 
-  validateRemove(emptyFib, "/");
+  validateErase(emptyFib, "/");
 
   emptyFib.erase("/still/does/not/exist"); // crash test
 
@@ -320,19 +321,19 @@ BOOST_AUTO_TEST_CASE(Remove)
   // check if we remove the right thing and leave
   // everything else alone
 
-  validateRemove(fib, "/A/B");
+  validateErase(fib, "/A/B");
   validateFindExactMatch(fib, "/A");
   validateFindExactMatch(fib, "/A/B/C");
   validateFindExactMatch(fib, "/");
 
-  validateRemove(fib, "/A/B/C");
+  validateErase(fib, "/A/B/C");
   validateFindExactMatch(fib, "/A");
   validateFindExactMatch(fib, "/");
 
-  validateRemove(fib, "/A");
+  validateErase(fib, "/A");
   validateFindExactMatch(fib, "/");
 
-  validateRemove(fib, "/");
+  validateErase(fib, "/");
   validateNoExactMatch(fib, "/");
 
   NameTree gapNameTree;
@@ -343,6 +344,17 @@ BOOST_AUTO_TEST_CASE(Remove)
   gapFib.erase("/X/Y"); //should do nothing
   validateFindExactMatch(gapFib, "/X");
   validateFindExactMatch(gapFib, "/X/Y/Z");
+}
+
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+  size_t nNameTreeEntriesBefore = nameTree.size();
+
+  fib.insert("ndn:/A/B/C");
+  fib.erase("ndn:/A/B/C");
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
 BOOST_AUTO_TEST_CASE(Iterator)
