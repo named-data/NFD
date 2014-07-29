@@ -113,12 +113,13 @@ const Name FaceManager::CHANNELS_LIST_DATASET_PREFIX("/localhost/nfd/faces/chann
 const size_t FaceManager::CHANNELS_LIST_DATASET_NCOMPS = CHANNELS_LIST_DATASET_PREFIX.size();
 
 FaceManager::FaceManager(FaceTable& faceTable,
-                         shared_ptr<InternalFace> face)
-  : ManagerBase(face, FACE_MANAGER_PRIVILEGE)
+                         shared_ptr<InternalFace> face,
+                         ndn::KeyChain& keyChain)
+  : ManagerBase(face, FACE_MANAGER_PRIVILEGE, keyChain)
   , m_faceTable(faceTable)
-  , m_faceStatusPublisher(m_faceTable, m_face, FACES_LIST_DATASET_PREFIX)
-  , m_channelStatusPublisher(m_factories, m_face, CHANNELS_LIST_DATASET_PREFIX)
-  , m_notificationStream(m_face, FACE_EVENTS_PREFIX)
+  , m_faceStatusPublisher(m_faceTable, *m_face, FACES_LIST_DATASET_PREFIX, keyChain)
+  , m_channelStatusPublisher(m_factories, *m_face, CHANNELS_LIST_DATASET_PREFIX, keyChain)
+  , m_notificationStream(m_face, FACE_EVENTS_PREFIX, keyChain)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
                          SIGNED_COMMAND_VERBS +
                          (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))

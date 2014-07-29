@@ -36,6 +36,7 @@
 #include <ndn-cxx/management/nfd-channel-status.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
+#include <ndn-cxx/management/nfd-rib-entry.hpp>
 #include <ndn-cxx/management/nfd-strategy-choice.hpp>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -53,6 +54,7 @@ public:
     , m_needChannelStatusRetrieval(false)
     , m_needFaceStatusRetrieval(false)
     , m_needFibEnumerationRetrieval(false)
+    , m_needRibStatusRetrieval(false)
     , m_needStrategyChoiceRetrieval(false)
     , m_isOutputXml(false)
   {
@@ -69,6 +71,7 @@ public:
       "  [-c] - retrieve channel status information\n"
       "  [-f] - retrieve face status information\n"
       "  [-b] - retrieve FIB information\n"
+      "  [-r] - retrieve RIB information\n"
       "  [-s] - retrieve configured strategy choice for NDN namespaces\n"
       "  [-x] - output NFD status information in XML format\n"
       "\n"
@@ -107,6 +110,12 @@ public:
   enableStrategyChoiceRetrieval()
   {
     m_needStrategyChoiceRetrieval = true;
+  }
+
+  void
+  enableRibStatusRetrieval()
+  {
+    m_needRibStatusRetrieval = true;
   }
 
   void
@@ -381,16 +390,23 @@ public:
             std::cout << "<incomingPackets>";
             std::cout << "<nInterests>"       << faceStatus.getNInInterests()
                       << "</nInterests>";
-            std::cout << "<nDatas>"           << faceStatus.getNInInterests()
+            std::cout << "<nDatas>"           << faceStatus.getNInDatas()
                       << "</nDatas>";
             std::cout << "</incomingPackets>";
             std::cout << "<outgoingPackets>";
             std::cout << "<nInterests>"       << faceStatus.getNOutInterests()
                       << "</nInterests>";
-            std::cout << "<nDatas>"           << faceStatus.getNOutInterests()
+            std::cout << "<nDatas>"           << faceStatus.getNOutDatas()
                       << "</nDatas>";
             std::cout << "</outgoingPackets>";
             std::cout << "</packetCounters>";
+
+            std::cout << "<byteCounters>";
+            std::cout << "<incomingBytes>"    << faceStatus.getNInBytes()
+                      << "</incomingBytes>";
+            std::cout << "<outgoingBytes>"    << faceStatus.getNOutBytes()
+                      << "</outgoingBytes>";
+            std::cout << "</byteCounters>";
 
             if (faceStatus.getFlags() != 0) {
               std::cout << "<flags>";
@@ -435,9 +451,11 @@ public:
             }
             std::cout << " counters={"
                       << "in={" << faceStatus.getNInInterests() << "i "
-                      << faceStatus.getNInDatas() << "d}"
+                      << faceStatus.getNInDatas() << "d "
+                      << faceStatus.getNInBytes() << "B}"
                       << " out={" << faceStatus.getNOutInterests() << "i "
-                      << faceStatus.getNOutDatas() << "d}"
+                      << faceStatus.getNOutDatas() << "d "
+                      << faceStatus.getNOutBytes() << "B}"
                       << "}";
             if (faceStatus.isLocal())
               std::cout << " local";
@@ -629,6 +647,118 @@ public:
   }
 
   void
+  fetchRibStatusInformation()
+  {
+    m_buffer = make_shared<OBufferStream>();
+
+    Interest interest("/localhost/nfd/rib/list");
+    interest.setChildSelector(1);
+    interest.setMustBeFresh(true);
+
+    m_face.expressInterest(interest,
+                           bind(&NfdStatus::fetchSegments, this, _2,
+                                &NfdStatus::afterFetchedRibStatusInformation),
+                           bind(&NfdStatus::onTimeout, this));
+  }
+
+  void
+  afterFetchedRibStatusInformation()
+  {
+    ConstBufferPtr buf = m_buffer->buf();
+    if (m_isOutputXml)
+      {
+        std::cout << "<rib>";
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode RibEntry TLV";
+                break;
+              }
+            offset += block.size();
+
+            nfd::RibEntry ribEntry(block);
+
+            std::cout << "<ribEntry>";
+            std::string prefix(ribEntry.getName().toUri());
+            escapeSpecialCharacters(&prefix);
+            std::cout << "<prefix>" << prefix << "</prefix>";
+            std::cout << "<routes>";
+            for (std::list<nfd::Route>::const_iterator
+                   nextRoute = ribEntry.begin();
+                 nextRoute != ribEntry.end();
+                 ++nextRoute)
+              {
+                std::cout << "<route>" ;
+                std::cout << "<faceId>"  << nextRoute->getFaceId() << "</faceId>";
+                std::cout << "<origin>"  << nextRoute->getOrigin() << "</origin>";
+                std::cout << "<cost>"    << nextRoute->getCost()   << "</cost>";
+                std::cout << "<flags>"   << nextRoute->getFlags()  << "</flags>";
+                if (!nextRoute->hasInfiniteExpirationPeriod()) {
+                  std::cout << "<expirationPeriod>PT"
+                            << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
+                                 .count() << "S"
+                            << "</expirationPeriod>";
+                }
+                std::cout << "</route>";
+              }
+            std::cout << "</routes>";
+            std::cout << "</ribEntry>";
+          }
+
+        std::cout << "</rib>";
+      }
+    else
+      {
+        std::cout << "Rib:" << std::endl;
+
+        Block block;
+        size_t offset = 0;
+        while (offset < buf->size())
+          {
+            bool ok = Block::fromBuffer(buf, offset, block);
+            if (!ok)
+              {
+                std::cerr << "ERROR: cannot decode RibEntry TLV" << std::endl;
+                break;
+              }
+
+            offset += block.size();
+
+            nfd::RibEntry ribEntry(block);
+
+            std::cout << " " << ribEntry.getName().toUri() << " route={";
+            for (std::list<nfd::Route>::const_iterator
+                   nextRoute = ribEntry.begin();
+                 nextRoute != ribEntry.end();
+                 ++nextRoute)
+              {
+                if (nextRoute != ribEntry.begin())
+                  std::cout << ", ";
+                std::cout << "faceid="   << nextRoute->getFaceId()
+                          << " (origin="  << nextRoute->getOrigin()
+                          << " cost="    << nextRoute->getCost()
+                          << " flags="   << nextRoute->getFlags();
+                if (!nextRoute->hasInfiniteExpirationPeriod()) {
+                  std::cout << " expires="
+                            << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
+                               .count() << "s";
+                }
+                std::cout << ")";
+              }
+            std::cout << "}" << std::endl;
+          }
+       }
+
+    runNextStep();
+  }
+
+
+  void
   fetchInformation()
   {
     if (m_isOutputXml ||
@@ -636,12 +766,14 @@ public:
          !m_needChannelStatusRetrieval &&
          !m_needFaceStatusRetrieval &&
          !m_needFibEnumerationRetrieval &&
+         !m_needRibStatusRetrieval &&
          !m_needStrategyChoiceRetrieval))
       {
         enableVersionRetrieval();
         enableChannelStatusRetrieval();
         enableFaceStatusRetrieval();
         enableFibEnumerationRetrieval();
+        enableRibStatusRetrieval();
         enableStrategyChoiceRetrieval();
       }
 
@@ -659,6 +791,9 @@ public:
 
     if (m_needFibEnumerationRetrieval)
       m_fetchSteps.push_back(bind(&NfdStatus::fetchFibEnumerationInformation, this));
+
+    if (m_needRibStatusRetrieval)
+      m_fetchSteps.push_back(bind(&NfdStatus::fetchRibStatusInformation, this));
 
     if (m_needStrategyChoiceRetrieval)
       m_fetchSteps.push_back(bind(&NfdStatus::fetchStrategyChoiceInformation, this));
@@ -705,6 +840,7 @@ private:
   bool m_needChannelStatusRetrieval;
   bool m_needFaceStatusRetrieval;
   bool m_needFibEnumerationRetrieval;
+  bool m_needRibStatusRetrieval;
   bool m_needStrategyChoiceRetrieval;
   bool m_isOutputXml;
   Face m_face;
@@ -721,7 +857,7 @@ int main(int argc, char* argv[])
   int option;
   ndn::NfdStatus nfdStatus(argv[0]);
 
-  while ((option = getopt(argc, argv, "hvcfbsxV")) != -1) {
+  while ((option = getopt(argc, argv, "hvcfbrsxV")) != -1) {
     switch (option) {
     case 'h':
       nfdStatus.usage();
@@ -737,6 +873,9 @@ int main(int argc, char* argv[])
       break;
     case 'b':
       nfdStatus.enableFibEnumerationRetrieval();
+      break;
+    case 'r':
+      nfdStatus.enableRibStatusRetrieval();
       break;
     case 's':
       nfdStatus.enableStrategyChoiceRetrieval();

@@ -18,6 +18,13 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="bidirectionalByteCountersType">
+  <xs:sequence>
+    <xs:element type="xs:nonNegativeInteger" name="incomingBytes"/>
+    <xs:element type="xs:nonNegativeInteger" name="outgoingBytes"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="generalStatusType">
   <xs:sequence>
     <xs:element type="xs:string" name="version"/>
@@ -47,8 +54,8 @@ elementFormDefault="qualified">
 
 <xs:complexType name="faceFlagsType">
   <xs:sequence>
-    <xs:element type="xs:string" name="local" maxOccurs="1" minOccurs="0"/>
-    <xs:element type="xs:string" name="on-demand" maxOccurs="1" minOccurs="0"/>
+    <xs:element type="xs:string" name="local" minOccurs="0"/>
+    <xs:element type="xs:string" name="on-demand" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
 
@@ -57,9 +64,10 @@ elementFormDefault="qualified">
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
     <xs:element type="xs:anyURI" name="remoteUri"/>
     <xs:element type="xs:anyURI" name="localUri"/>
-    <xs:element type="xs:duration" name="expirationPeriod" maxOccurs="1" minOccurs="0"/>
+    <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
-    <xs:element type="nfd:faceFlagsType" name="flags" maxOccurs="1" minOccurs="0"/>
+    <xs:element type="nfd:bidirectionalByteCountersType" name="byteCounters"/>
+    <xs:element type="nfd:faceFlagsType" name="flags" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
 
@@ -95,6 +103,35 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="routeType">
+  <xs:sequence>
+    <xs:element type="xs:nonNegativeInteger" name="faceId"/>
+    <xs:element type="xs:nonNegativeInteger" name="origin"/>
+    <xs:element type="xs:nonNegativeInteger" name="cost"/>
+    <xs:element type="xs:nonNegativeInteger" name="flags"/>
+    <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="ribEntryType">
+  <xs:sequence>
+    <xs:element type="xs:anyURI" name="prefix"/>
+    <xs:element name="routes">
+      <xs:complexType>
+        <xs:sequence>
+          <xs:element type="nfd:routeType" name="route" maxOccurs="unbounded"/>
+        </xs:sequence>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="ribType">
+  <xs:sequence>
+    <xs:element type="nfd:ribEntryType" name="ribEntry" maxOccurs="unbounded" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="strategyType">
   <xs:sequence>
     <xs:element type="xs:anyURI" name="name"/>
@@ -122,6 +159,7 @@ elementFormDefault="qualified">
       <xs:element type="nfd:channelsType" name="channels"/>
       <xs:element type="nfd:facesType" name="faces"/>
       <xs:element type="nfd:fibType" name="fib"/>
+      <xs:element type="nfd:ribType" name="rib"/>
       <xs:element type="nfd:strategyChoicesType" name="strategyChoices"/>
     </xs:sequence>
   </xs:complexType>

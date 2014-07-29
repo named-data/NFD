@@ -100,7 +100,15 @@ Measurements::getParent(shared_ptr<measurements::Entry> child)
     return shared_ptr<measurements::Entry>();
   }
 
-  return this->get(child->getName().getPrefix(-1));
+  shared_ptr<name_tree::Entry> nameTreeChild = m_nameTree.get(*child);
+  shared_ptr<name_tree::Entry> nameTreeEntry = nameTreeChild->getParent();
+  if (static_cast<bool>(nameTreeEntry)) {
+    return this->get(nameTreeEntry);
+  }
+  else {
+    BOOST_ASSERT(nameTreeChild->getPrefix().size() == 0); // root entry has no parent
+    return shared_ptr<measurements::Entry>();
+  }
 }
 
 shared_ptr<measurements::Entry>
@@ -124,33 +132,38 @@ Measurements::findExactMatch(const Name& name) const
 }
 
 void
-Measurements::extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime)
+Measurements::extendLifetime(shared_ptr<measurements::Entry> entry,
+                             const time::nanoseconds& lifetime)
 {
-  shared_ptr<measurements::Entry> ret = this->findExactMatch(entry.getName());
-  if (static_cast<bool>(ret))
-  {
-    time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
-    if (ret->m_expiry >= expiry) // has longer lifetime, not extending
-      return;
-    scheduler::cancel(entry.m_cleanup);
-    entry.m_expiry = expiry;
-    entry.m_cleanup = scheduler::schedule(lifetime,
-                         bind(&Measurements::cleanup, this, ret));
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(*entry);
+  if (!static_cast<bool>(nameTreeEntry) ||
+      nameTreeEntry->getMeasurementsEntry().get() != entry.get()) {
+    // entry is already gone; it is a dangling reference
+    return;
   }
+
+  time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
+  if (entry->m_expiry >= expiry) {
+    // has longer lifetime, not extending
+    return;
+  }
+
+  scheduler::cancel(entry->m_cleanup);
+  entry->m_expiry = expiry;
+  entry->m_cleanup = scheduler::schedule(lifetime, bind(&Measurements::cleanup, this, entry));
 }
 
 void
 Measurements::cleanup(shared_ptr<measurements::Entry> entry)
 {
-  BOOST_ASSERT(entry);
+  BOOST_ASSERT(static_cast<bool>(entry));
 
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(entry->getName());
-  if (static_cast<bool>(nameTreeEntry))
-  {
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(*entry);
+  if (static_cast<bool>(nameTreeEntry)) {
     nameTreeEntry->setMeasurementsEntry(shared_ptr<measurements::Entry>());
+    m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
     m_nItems--;
   }
-
 }
 
 } // namespace nfd

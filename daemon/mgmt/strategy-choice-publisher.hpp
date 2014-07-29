@@ -26,18 +26,20 @@
 #ifndef NFD_DAEMON_MGMT_STRATEGY_CHOICE_PUBLISHER_HPP
 #define NFD_DAEMON_MGMT_STRATEGY_CHOICE_PUBLISHER_HPP
 
-#include "mgmt/segment-publisher.hpp"
+#include "core/segment-publisher.hpp"
+#include "mgmt/app-face.hpp"
 
 namespace nfd {
 
 class StrategyChoice;
 
-class StrategyChoicePublisher : public SegmentPublisher
+class StrategyChoicePublisher : public SegmentPublisher<AppFace>
 {
 public:
   StrategyChoicePublisher(const StrategyChoice& strategyChoice,
-                          shared_ptr<AppFace> face,
-                          const Name& prefix);
+                          AppFace& face,
+                          const Name& prefix,
+                          ndn::KeyChain& keyChain);
 
   virtual
   ~StrategyChoicePublisher();

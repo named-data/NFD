@@ -26,7 +26,8 @@
 #include "rib/rib-manager.hpp"
 
 #include "tests/test-common.hpp"
-#include "rib/dummy-face.hpp"
+#include "tests/dummy-face.hpp"
+#include "rib/rib-status-publisher-common.hpp"
 
 namespace nfd {
 namespace rib {
@@ -40,7 +41,7 @@ public:
     , ADD_NEXTHOP_VERB("add-nexthop")
     , REMOVE_NEXTHOP_VERB("remove-nexthop")
   {
-    face = ndn::makeDummyFace();
+    face = nfd::tests::makeDummyFace();
 
     manager = make_shared<RibManager>(ndn::ref(*face));
     manager->registerWithNfd();
@@ -78,7 +79,7 @@ public:
 
 public:
   shared_ptr<RibManager> manager;
-  shared_ptr<ndn::DummyFace> face;
+  shared_ptr<nfd::tests::DummyFace> face;
 
   const Name COMMAND_PREFIX;
   const Name::Component ADD_NEXTHOP_VERB;
@@ -111,7 +112,7 @@ public:
 
 typedef RibManagerFixture UnauthorizedRibManager;
 
-BOOST_FIXTURE_TEST_SUITE(RibRibManager, RibManagerFixture)
+BOOST_FIXTURE_TEST_SUITE(RibManager, RibManagerFixture)
 
 BOOST_FIXTURE_TEST_CASE(Basic, AuthorizedRibManager)
 {
@@ -217,6 +218,39 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
   receiveCommandInterest(commandName, parameters);
 
   BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
+{
+  FaceEntry entry;
+  Name name("/");
+  entry.faceId = 1;
+  entry.origin = 128;
+  entry.cost = 32;
+  entry.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
+
+  ControlParameters parameters;
+  parameters
+    .setName(name)
+    .setFaceId(entry.faceId)
+    .setOrigin(entry.origin)
+    .setCost(entry.cost)
+    .setFlags(entry.flags)
+    .setExpirationPeriod(ndn::time::milliseconds::max());
+
+  Name commandName("/localhost/nfd/rib/register");
+
+  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 0);
+
+  receiveCommandInterest(commandName, parameters);
+  face->m_sentInterests.clear();
+  face->m_sentDatas.clear();
+
+  face->receive(Interest("/localhost/nfd/rib/list"));
+  face->processEvents(time::milliseconds(1));
+
+  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
+  RibStatusPublisherFixture::decodeRibEntryBlock(face->m_sentDatas[0], name, entry);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

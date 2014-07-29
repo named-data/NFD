@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 #define NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 
+#include "pit-nonce-list.hpp"
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
 #include "core/scheduler.hpp"
@@ -155,7 +156,7 @@ public:
   EventId m_stragglerTimer;
 
 private:
-  std::set<uint32_t> m_nonces;
+  pit::NonceList m_nonceList;
   shared_ptr<const Interest> m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;

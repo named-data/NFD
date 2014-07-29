@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "status-server.hpp"
 #include "fw/forwarder.hpp"
@@ -31,10 +32,11 @@ namespace nfd {
 const Name StatusServer::DATASET_PREFIX = "ndn:/localhost/nfd/status";
 const time::milliseconds StatusServer::RESPONSE_FRESHNESS = time::milliseconds(5000);
 
-StatusServer::StatusServer(shared_ptr<AppFace> face, Forwarder& forwarder)
+StatusServer::StatusServer(shared_ptr<AppFace> face, Forwarder& forwarder, ndn::KeyChain& keyChain)
   : m_face(face)
   , m_forwarder(forwarder)
   , m_startTimestamp(time::system_clock::now())
+  , m_keyChain(keyChain)
 {
   m_face->setInterestFilter(DATASET_PREFIX, bind(&StatusServer::onInterest, this, _2));
 }
@@ -52,7 +54,7 @@ StatusServer::onInterest(const Interest& interest) const
   shared_ptr<ndn::nfd::ForwarderStatus> status = this->collectStatus();
   data->setContent(status->wireEncode());
 
-  m_face->sign(*data);
+  m_keyChain.sign(*data);
   m_face->put(*data);
 }
 
@@ -71,11 +73,7 @@ StatusServer::collectStatus() const
   status->setNMeasurementsEntries(m_forwarder.getMeasurements().size());
   status->setNCsEntries(m_forwarder.getCs().size());
 
-  const ForwarderCounters& counters = m_forwarder.getCounters();
-  status->setNInInterests(counters.getNInInterests());
-  status->setNInDatas(counters.getNInDatas());
-  status->setNOutInterests(counters.getNOutInterests());
-  status->setNOutDatas(counters.getNOutDatas());
+  m_forwarder.getCounters().copyTo(*status);
 
   return status;
 }

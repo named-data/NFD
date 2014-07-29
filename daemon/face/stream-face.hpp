@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_STREAM_FACE_HPP
 #define NFD_DAEMON_FACE_STREAM_FACE_HPP
@@ -66,15 +66,15 @@ protected:
   processErrorCode(const boost::system::error_code& error);
 
   void
-  handleSend(const boost::system::error_code& error,
-             const Block& header, const Block& payload);
+  sendFromQueue();
+
   void
   handleSend(const boost::system::error_code& error,
-             const Block& wire);
+             size_t nBytesSent);
 
   void
   handleReceive(const boost::system::error_code& error,
-                std::size_t bytes_recvd);
+                size_t nBytesReceived);
 
   void
   keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face);
@@ -87,7 +87,8 @@ protected:
 
 private:
   uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
-  std::size_t m_inputBufferSize;
+  size_t m_inputBufferSize;
+  std::queue<Block> m_sendQueue;
 
   friend struct StreamFaceSenderImpl<Protocol, FaceBase, Interest>;
   friend struct StreamFaceSenderImpl<Protocol, FaceBase, Data>;
@@ -143,10 +144,11 @@ struct StreamFaceSenderImpl
   static void
   send(StreamFace<Protocol, FaceBase>& face, const Packet& packet)
   {
-    face.m_socket->async_send(boost::asio::buffer(packet.wireEncode().wire(),
-                                                  packet.wireEncode().size()),
-                              bind(&StreamFace<Protocol, FaceBase>::handleSend,
-                                   &face, _1, packet.wireEncode()));
+    bool wasQueueEmpty = face.m_sendQueue.empty();
+    face.m_sendQueue.push(packet.wireEncode());
+
+    if (wasQueueEmpty)
+      face.sendFromQueue();
   }
 };
 
@@ -157,29 +159,16 @@ struct StreamFaceSenderImpl<Protocol, LocalFace, Packet>
   static void
   send(StreamFace<Protocol, LocalFace>& face, const Packet& packet)
   {
-    using namespace boost::asio;
+    bool wasQueueEmpty = face.m_sendQueue.empty();
 
-    if (face.isEmptyFilteredLocalControlHeader(packet.getLocalControlHeader()))
+    if (!face.isEmptyFilteredLocalControlHeader(packet.getLocalControlHeader()))
       {
-        const Block& payload = packet.wireEncode();
-        face.m_socket->async_send(buffer(payload.wire(), payload.size()),
-                                  bind(&StreamFace<Protocol, LocalFace>::handleSend,
-                                       &face, _1, packet.wireEncode()));
+        face.m_sendQueue.push(face.filterAndEncodeLocalControlHeader(packet));
       }
-    else
-      {
-        Block header = face.filterAndEncodeLocalControlHeader(packet);
-        const Block& payload = packet.wireEncode();
+    face.m_sendQueue.push(packet.wireEncode());
 
-        std::vector<const_buffer> buffers;
-        buffers.reserve(2);
-        buffers.push_back(buffer(header.wire(),  header.size()));
-        buffers.push_back(buffer(payload.wire(), payload.size()));
-
-        face.m_socket->async_send(buffers,
-                                  bind(&StreamFace<Protocol, LocalFace>::handleSend,
-                                       &face, _1, header, payload));
-      }
+    if (wasQueueEmpty)
+      face.sendFromQueue();
   }
 };
 
@@ -198,6 +187,15 @@ StreamFace<T, U>::sendData(const Data& data)
 {
   this->onSendData(data);
   StreamFaceSenderImpl<T, U, Data>::send(*this, data);
+}
+
+template<class T, class U>
+inline void
+StreamFace<T, U>::sendFromQueue()
+{
+  const Block& block = this->m_sendQueue.front();
+  boost::asio::async_write(*this->m_socket, boost::asio::buffer(block),
+                           bind(&StreamFace<T, U>::handleSend, this, _1, _2));
 }
 
 template<class T, class U>
@@ -259,49 +257,43 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
 template<class T, class U>
 inline void
 StreamFace<T, U>::handleSend(const boost::system::error_code& error,
-                             const Block& wire)
+                             size_t nBytesSent)
 {
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << wire.size() << " bytes");
-}
-
-template<class T, class U>
-inline void
-StreamFace<T, U>::handleSend(const boost::system::error_code& error,
-                             const Block& header, const Block& payload)
-{
-  if (error)
-    return processErrorCode(error);
+  BOOST_ASSERT(!m_sendQueue.empty());
 
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << (header.size()+payload.size()) << " bytes");
+                << "] Successfully sent: " << nBytesSent << " bytes");
+  this->getMutableCounters().getNOutBytes() += nBytesSent;
+
+  m_sendQueue.pop();
+  if (!m_sendQueue.empty())
+    sendFromQueue();
 }
 
 template<class T, class U>
 inline void
 StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
-                             std::size_t bytes_recvd)
+                                size_t nBytesReceived)
 {
   if (error)
     return processErrorCode(error);
 
   NFD_LOG_TRACE("[id:" << this->getId()
                 << ",uri:" << this->getRemoteUri()
-                << "] Received: " << bytes_recvd << " bytes");
+                << "] Received: " << nBytesReceived << " bytes");
+  this->getMutableCounters().getNInBytes() += nBytesReceived;
 
-  m_inputBufferSize += bytes_recvd;
-  // do magic
+  m_inputBufferSize += nBytesReceived;
 
-  std::size_t offset = 0;
+  size_t offset = 0;
 
   bool isOk = true;
   Block element;
-  while(m_inputBufferSize - offset > 0)
+  while (m_inputBufferSize - offset > 0)
     {
       isOk = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset, element);
       if (!isOk)
@@ -374,6 +366,10 @@ StreamFace<T, U>::closeSocket()
   // handlers are dispatched
   io.post(bind(&StreamFace<T, U>::keepFaceAliveUntilAllHandlersExecuted,
                this, this->shared_from_this()));
+
+  // clear send queue
+  std::queue<Block> emptyQueue;
+  std::swap(emptyQueue, m_sendQueue);
 }
 
 } // namespace nfd

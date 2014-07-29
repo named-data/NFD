@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,28 +21,31 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#include "mgmt/segment-publisher.hpp"
-#include "mgmt/internal-face.hpp"
-#include "mgmt/app-face.hpp"
+#include "core/segment-publisher.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/dummy-face.hpp"
+
 #include <ndn-cxx/encoding/tlv.hpp>
+
+#include <boost/foreach.hpp>
 
 namespace nfd {
 namespace tests {
 
 NFD_LOG_INIT("SegmentPublisherTest");
 
-class TestSegmentPublisher : public SegmentPublisher
+template<size_t N=10000>
+class TestSegmentPublisher : public SegmentPublisher<DummyFace>
 {
 public:
-  TestSegmentPublisher(shared_ptr<AppFace> face,
+  TestSegmentPublisher(DummyFace& face,
                        const Name& prefix,
-                       const uint64_t limit=10000)
-    : SegmentPublisher(face, prefix)
-    , m_limit((limit == 0)?(1):(limit))
+                       ndn::KeyChain& keyChain)
+    : SegmentPublisher(face, prefix, keyChain)
+    , m_totalPayloadLength(0)
   {
 
   }
@@ -49,13 +53,18 @@ public:
   virtual
   ~TestSegmentPublisher()
   {
-
   }
 
   uint16_t
   getLimit() const
   {
-    return m_limit;
+    return N;
+  }
+
+  size_t
+  getTotalPayloadLength() const
+  {
+    return m_totalPayloadLength;
   }
 
 protected:
@@ -64,26 +73,26 @@ protected:
   generate(ndn::EncodingBuffer& outBuffer)
   {
     size_t totalLength = 0;
-    for (uint64_t i = 0; i < m_limit; i++)
+    for (uint64_t i = 0; i < N; i++)
       {
         totalLength += prependNonNegativeIntegerBlock(outBuffer, ndn::Tlv::Content, i);
       }
+    m_totalPayloadLength += totalLength;
     return totalLength;
   }
 
 protected:
-  const uint64_t m_limit;
+  size_t m_totalPayloadLength;
 };
 
+template<size_t N>
 class SegmentPublisherFixture : public BaseFixture
 {
 public:
   SegmentPublisherFixture()
-    : m_face(make_shared<InternalFace>())
-    , m_publisher(m_face, "/localhost/nfd/SegmentPublisherFixture")
-    , m_finished(false)
+    : m_face(makeDummyFace())
+    , m_publisher(*m_face, "/localhost/nfd/SegmentPublisherFixture", m_keyChain)
   {
-
   }
 
   void
@@ -122,27 +131,35 @@ public:
         BOOST_REQUIRE_EQUAL(number, expectedNo);
         --expectedNo;
       }
-    m_finished = true;
   }
 
 protected:
-  shared_ptr<InternalFace> m_face;
-  TestSegmentPublisher m_publisher;
+  shared_ptr<DummyFace> m_face;
+  TestSegmentPublisher<N> m_publisher;
   ndn::EncodingBuffer m_buffer;
-
-protected:
-  bool m_finished;
+  ndn::KeyChain m_keyChain;
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtSegmentPublisher, SegmentPublisherFixture)
+using boost::mpl::int_;
+typedef boost::mpl::vector<int_<10000>, int_<100>, int_<10>, int_<0> > DatasetSizes;
 
-BOOST_AUTO_TEST_CASE(Generate)
+BOOST_AUTO_TEST_SUITE(SegmentPublisher)
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(Generate, T, DatasetSizes, SegmentPublisherFixture<T::value>)
 {
-  m_face->onReceiveData +=
-    bind(&SegmentPublisherFixture::validate, this, _1);
+  this->m_publisher.publish();
+  this->m_face->processEvents();
 
-  m_publisher.publish();
-  BOOST_REQUIRE(m_finished);
+  size_t nSegments = this->m_publisher.getTotalPayloadLength() /
+                       this->m_publisher.getMaxSegmentSize();
+  if (this->m_publisher.getTotalPayloadLength() % this->m_publisher.getMaxSegmentSize() != 0 ||
+      nSegments == 0)
+    ++nSegments;
+
+  BOOST_CHECK_EQUAL(this->m_face->m_sentDatas.size(), nSegments);
+  BOOST_FOREACH(const Data& data, this->m_face->m_sentDatas) {
+    this->validate(data);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

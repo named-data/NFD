@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,46 +21,40 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#ifndef NFD_DAEMON_MGMT_SEGMENT_PUBLISHER_HPP
-#define NFD_DAEMON_MGMT_SEGMENT_PUBLISHER_HPP
+#ifndef NFD_RIB_RIB_STATUS_PUBLISHER_HPP
+#define NFD_RIB_RIB_STATUS_PUBLISHER_HPP
 
-#include "common.hpp"
-#include "mgmt/app-face.hpp"
-
-#include <ndn-cxx/encoding/encoding-buffer.hpp>
+#include "core/segment-publisher.hpp"
+#include <ndn-cxx/face.hpp>
 
 namespace nfd {
+namespace rib {
 
-class AppFace;
+class Rib;
 
-class SegmentPublisher : noncopyable
+class RibStatusPublisher : public SegmentPublisher<ndn::Face>
 {
 public:
-  SegmentPublisher(shared_ptr<AppFace> face,
-                   const Name& prefix);
+  RibStatusPublisher(const Rib& rib,
+                     ndn::Face& face,
+                     const Name& prefix,
+                     ndn::KeyChain& keyChain);
 
   virtual
-  ~SegmentPublisher();
-
-  void
-  publish();
+  ~RibStatusPublisher();
 
 protected:
-
   virtual size_t
-  generate(ndn::EncodingBuffer& outBuffer) =0;
+  generate(ndn::EncodingBuffer& outBuffer);
 
 private:
-  void
-  publishSegment(shared_ptr<Data>& data);
-
-private:
-  shared_ptr<AppFace> m_face;
-  const Name m_prefix;
+  const Rib& m_rib;
 };
 
+
+} // namespace rib
 } // namespace nfd
 
-#endif // NFD_DAEMON_MGMT_SEGMENT_PUBLISHER_HPP
+#endif

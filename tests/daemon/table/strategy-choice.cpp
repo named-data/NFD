@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "table/strategy-choice.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
@@ -186,6 +186,28 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
   BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>()));
   BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>()));
   BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>()));
+}
+
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+{
+  Forwarder forwarder;
+  NameTree& nameTree = forwarder.getNameTree();
+  StrategyChoice& table = forwarder.getStrategyChoice();
+
+  Name nameP("ndn:/strategy/P");
+  Name nameQ("ndn:/strategy/Q");
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  table.install(strategyP);
+  table.install(strategyQ);
+
+  table.insert("ndn:/", nameP);
+
+  size_t nNameTreeEntriesBefore = nameTree.size();
+
+  table.insert("ndn:/A/B", nameQ);
+  table.erase("ndn:/A/B");
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

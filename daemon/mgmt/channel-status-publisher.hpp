@@ -26,20 +26,22 @@
 #ifndef NFD_DAEMON_MGMT_CHANNEL_STATUS_PUBLISHER_HPP
 #define NFD_DAEMON_MGMT_CHANNEL_STATUS_PUBLISHER_HPP
 
-#include "mgmt/segment-publisher.hpp"
+#include "core/segment-publisher.hpp"
+#include "mgmt/app-face.hpp"
 
 namespace nfd {
 
 class ProtocolFactory;
 
-class ChannelStatusPublisher : public SegmentPublisher
+class ChannelStatusPublisher : public SegmentPublisher<AppFace>
 {
 public:
   typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
 
   ChannelStatusPublisher(const FactoryMap& factories,
-                         shared_ptr<AppFace> face,
-                         const Name& prefix);
+                         AppFace& face,
+                         const Name& prefix,
+                         ndn::KeyChain& keyChain);
 
   virtual
   ~ChannelStatusPublisher();

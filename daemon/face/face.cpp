@@ -21,19 +21,13 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "face.hpp"
 #include "face-flags.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
-
-static inline void
-increaseCounter(FaceCounter& counter)
-{
-  ++counter;
-}
 
 Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   : m_id(INVALID_FACEID)
@@ -43,10 +37,10 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   , m_isOnDemand(false)
   , m_isFailed(false)
 {
-  onReceiveInterest += bind(&increaseCounter, ref(m_counters.getNInInterests()));
-  onReceiveData     += bind(&increaseCounter, ref(m_counters.getNInDatas()));
-  onSendInterest    += bind(&increaseCounter, ref(m_counters.getNOutInterests()));
-  onSendData        += bind(&increaseCounter, ref(m_counters.getNOutDatas()));
+  onReceiveInterest += bind(&PacketCounter::operator++, &m_counters.getNInInterests());
+  onReceiveData     += bind(&PacketCounter::operator++, &m_counters.getNInDatas());
+  onSendInterest    += bind(&PacketCounter::operator++, &m_counters.getNOutInterests());
+  onSendData        += bind(&PacketCounter::operator++, &m_counters.getNOutDatas());
 }
 
 Face::~Face()
@@ -59,7 +53,7 @@ Face::getId() const
   return m_id;
 }
 
-// this method is private and should be used only by the Forwarder
+// this method is private and should be used only by the FaceTable
 void
 Face::setId(FaceId faceId)
 {
@@ -134,17 +128,13 @@ Face::fail(const std::string& reason)
 ndn::nfd::FaceStatus
 Face::getFaceStatus() const
 {
-  const FaceCounters& counters = getCounters();
-
   ndn::nfd::FaceStatus status;
   status.setFaceId(getId())
     .setRemoteUri(getRemoteUri().toString())
     .setLocalUri(getLocalUri().toString())
-    .setFlags(getFaceFlags(*this))
-    .setNInInterests(counters.getNInInterests())
-    .setNInDatas(counters.getNInDatas())
-    .setNOutInterests(counters.getNOutInterests())
-    .setNOutDatas(counters.getNOutDatas());
+    .setFlags(getFaceFlags(*this));
+
+  this->getCounters().copyTo(status);
 
   return status;
 }

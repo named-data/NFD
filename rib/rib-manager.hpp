@@ -29,6 +29,7 @@
 #include "rib.hpp"
 #include "face-monitor.hpp"
 #include "core/config-file.hpp"
+#include "rib-status-publisher.hpp"
 
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
@@ -198,6 +199,9 @@ private:
   void
   invalidateTransaction(const TransactionId transactionId);
 
+  void
+  listEntries(const Interest& request);
+
 private:
   Rib m_managedRib;
   ndn::Face& m_face;
@@ -207,6 +211,8 @@ private:
   ndn::ValidatorConfig m_localhopValidator;
   FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
+
+  RibStatusPublisher m_ribStatusPublisher;
 
   /** \brief The last transaction ID for FIB update response messages.
    *         Each group of FIB updates applied to the FIB is assigned an incrementing
@@ -226,14 +232,14 @@ private:
 
   typedef function<void(RibManager*,
                         const shared_ptr<const Interest>& request,
-                        ControlParameters& parameters)> VerbProcessor;
+                        ControlParameters& parameters)> SignedVerbProcessor;
 
-  typedef std::map<name::Component, VerbProcessor> VerbDispatchTable;
+  typedef std::map<name::Component, SignedVerbProcessor> SignedVerbDispatchTable;
 
-  typedef std::pair<name::Component, VerbProcessor> VerbAndProcessor;
+  typedef std::pair<name::Component, SignedVerbProcessor> SignedVerbAndProcessor;
 
 
-  const VerbDispatchTable m_verbDispatch;
+  const SignedVerbDispatchTable m_signedVerbDispatch;
 
   static const Name COMMAND_PREFIX; // /localhost/nrd
   static const Name REMOTE_COMMAND_PREFIX; // /localhop/nrd
@@ -246,7 +252,17 @@ private:
   // 8 with signed Interest support.
   static const size_t COMMAND_SIGNED_NCOMPS;
 
-  static const VerbAndProcessor COMMAND_VERBS[];
+  static const SignedVerbAndProcessor SIGNED_COMMAND_VERBS[];
+
+  typedef function<void(RibManager*, const Interest&)> UnsignedVerbProcessor;
+  typedef std::map<Name::Component, UnsignedVerbProcessor> UnsignedVerbDispatchTable;
+  typedef std::pair<Name::Component, UnsignedVerbProcessor> UnsignedVerbAndProcessor;
+
+  const UnsignedVerbDispatchTable m_unsignedVerbDispatch;
+  static const UnsignedVerbAndProcessor UNSIGNED_COMMAND_VERBS[];
+
+  static const Name LIST_COMMAND_PREFIX;
+  static const size_t LIST_COMMAND_NCOMPS;
 };
 
 } // namespace rib

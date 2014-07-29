@@ -33,6 +33,27 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TablePit, BaseFixture)
 
+BOOST_AUTO_TEST_CASE(NonceList)
+{
+  BOOST_REQUIRE_GE(pit::NonceList::CAPACITY, 32);
+  BOOST_REQUIRE_LE(pit::NonceList::CAPACITY, 4096);
+
+  pit::NonceList nl;
+  for (uint32_t nonce = 0; nonce < static_cast<uint32_t>(pit::NonceList::CAPACITY); ++nonce) {
+    BOOST_CHECK_EQUAL(nl.add(nonce), true);
+  }
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(32), false);
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(4096), true);
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+
+  BOOST_CHECK_EQUAL(nl.add(0), true);// 0 is evicted
+  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
+}
+
 BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
@@ -329,6 +350,18 @@ BOOST_AUTO_TEST_CASE(Erase)
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
+}
+
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+{
+  NameTree nameTree;
+  Pit pit(nameTree);
+  size_t nNameTreeEntriesBefore = nameTree.size();
+
+  shared_ptr<Interest> interest = makeInterest("/37xWVvQ2K");
+  shared_ptr<pit::Entry> entry = pit.insert(*interest).first;
+  pit.erase(entry);
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)

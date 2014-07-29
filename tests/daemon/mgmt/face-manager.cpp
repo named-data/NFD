@@ -257,13 +257,14 @@ public:
 protected:
   shared_ptr<InternalFace> m_face;
   bool m_callbackFired;
+  ndn::KeyChain m_testKeyChain;
 };
 
 class FaceManagerFixture : public TestFaceTableFixture, public TestFaceManagerCommon
 {
 public:
   FaceManagerFixture()
-    : m_manager(m_faceTable, m_face)
+    : m_manager(m_faceTable, m_face, m_testKeyChain)
   {
     m_manager.setConfigFile(m_config);
   }
@@ -923,7 +924,7 @@ class ValidatedFaceRequestFixture : public TestFaceTableFixture,
 public:
 
   ValidatedFaceRequestFixture()
-    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face),
+    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain),
       m_createFaceFired(false),
       m_destroyFaceFired(false)
   {
@@ -1048,7 +1049,7 @@ class LocalControlFixture : public FaceTableFixture,
 {
 public:
   LocalControlFixture()
-    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face)
+    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain)
   {
   }
 };
@@ -1417,7 +1418,8 @@ class FaceFixture : public FaceTableFixture,
 public:
   FaceFixture()
     : FaceManager(FaceTableFixture::m_faceTable,
-                  TestFaceManagerCommon::m_face)
+                  TestFaceManagerCommon::m_face,
+                  m_testKeyChain)
     , m_receivedNotification(false)
   {
 
@@ -1587,13 +1589,13 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   ControlParameters resultParameters;
   resultParameters.setUri("dummy://");
-  resultParameters.setFaceId(1);
+  resultParameters.setFaceId(FACEID_RESERVED_MAX + 1);
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
 
   ndn::nfd::FaceEventNotification expectedFaceEvent;
   expectedFaceEvent.setKind(ndn::nfd::FACE_EVENT_CREATED)
-                   .setFaceId(1)
+                   .setFaceId(FACEID_RESERVED_MAX + 1)
                    .setRemoteUri(dummy->getRemoteUri().toString())
                    .setLocalUri(dummy->getLocalUri().toString())
                    .setFlags(0);
@@ -1674,7 +1676,7 @@ class FaceListFixture : public FaceStatusPublisherFixture
 {
 public:
   FaceListFixture()
-    : m_manager(m_table, m_face)
+    : m_manager(m_table, m_face, m_testKeyChain)
   {
 
   }
@@ -1687,6 +1689,7 @@ public:
 
 protected:
   FaceManager m_manager;
+  ndn::KeyChain m_testKeyChain;
 };
 
 BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
@@ -1694,26 +1697,14 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
   Name commandName("/localhost/nfd/faces/list");
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 55
-  // 55 divides 4400 (== 80), so only use 79 FaceStatuses and then two smaller ones
-  // to force a FaceStatus to span Data packets
-  for (int i = 0; i < 79; i++)
+  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 75
+  // use 59 FaceStatuses to force a FaceStatus to span Data packets
+  for (int i = 0; i < 59; i++)
     {
       shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
 
       uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
-      dummy->setCounters(filler, filler, filler, filler);
-
-      m_referenceFaces.push_back(dummy);
-
-      add(dummy);
-    }
-
-  for (int i = 0; i < 2; i++)
-    {
-      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
-      uint64_t filler = std::numeric_limits<uint32_t>::max() - 1;
-      dummy->setCounters(filler, filler, filler, filler);
+      dummy->setCounters(filler, filler, filler, filler, filler, filler);
 
       m_referenceFaces.push_back(dummy);
 

@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "face-status-publisher-common.hpp"
 
@@ -36,26 +37,14 @@ BOOST_AUTO_TEST_CASE(EncodingDecoding)
   Name commandName("/localhost/nfd/faces/list");
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 55
-  // 55 divides 4400 (== 80), so only use 79 FaceStatuses and then two smaller ones
-  // to force a FaceStatus to span Data packets
-  for (int i = 0; i < 79; i++)
+  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 75
+  // use 59 FaceStatuses to force a FaceStatus to span Data packets
+  for (int i = 0; i < 59; i++)
     {
       shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
 
       uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
-      dummy->setCounters(filler, filler, filler, filler);
-
-      m_referenceFaces.push_back(dummy);
-
-      add(dummy);
-    }
-
-  for (int i = 0; i < 2; i++)
-    {
-      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
-      uint64_t filler = std::numeric_limits<uint32_t>::max() - 1;
-      dummy->setCounters(filler, filler, filler, filler);
+      dummy->setCounters(filler, filler, filler, filler, filler, filler);
 
       m_referenceFaces.push_back(dummy);
 

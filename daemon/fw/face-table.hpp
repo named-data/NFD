@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FW_FACE_TABLE_HPP
 #define NFD_DAEMON_FW_FACE_TABLE_HPP
@@ -35,7 +36,7 @@ class Forwarder;
 
 /** \brief container of all Faces
  */
-class FaceTable
+class FaceTable : noncopyable
 {
 public:
   explicit
@@ -46,6 +47,10 @@ public:
 
   VIRTUAL_WITH_TESTS void
   add(shared_ptr<Face> face);
+
+  /// add a special Face with a reserved FaceId
+  VIRTUAL_WITH_TESTS void
+  addReserved(shared_ptr<Face> face, FaceId faceId);
 
   VIRTUAL_WITH_TESTS shared_ptr<Face>
   get(FaceId id) const;
@@ -88,8 +93,11 @@ public: // events
   EventEmitter<shared_ptr<Face> > onRemove;
 
 private:
+  void
+  addImpl(shared_ptr<Face> face, FaceId faceId);
+
   // remove is private because it's a subscriber of face.onFail event.
-  // face->close() closes a face and would trigger .remove(face)
+  // face->close() closes a face and triggers .remove(face)
   void
   remove(shared_ptr<Face> face);
 

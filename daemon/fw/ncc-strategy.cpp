@@ -166,7 +166,7 @@ NccStrategy::timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak)
       // going out of this strategy's namespace
       return;
     }
-    this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
+    this->getMeasurements().extendLifetime(measurementsEntry, MEASUREMENTS_LIFETIME);
 
     shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
       this->getMeasurementsEntryInfo(measurementsEntry);
@@ -187,7 +187,7 @@ NccStrategy::beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
       // going out of this strategy's namespace
       return;
     }
-    this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
+    this->getMeasurements().extendLifetime(measurementsEntry, MEASUREMENTS_LIFETIME);
 
     shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
       this->getMeasurementsEntryInfo(measurementsEntry);

@@ -23,15 +23,16 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef RIB_TESTS_UNIT_TESTS_TRANSPORT_DUMMY_FACE_HPP
-#define RIB_TESTS_UNIT_TESTS_TRANSPORT_DUMMY_FACE_HPP
+#ifndef NFD_TESTS_DUMMY_FACE_HPP
+#define NFD_TESTS_DUMMY_FACE_HPP
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/transport/transport.hpp>
 
-namespace ndn {
+namespace nfd {
+namespace tests {
 
-class DummyTransport : public Transport
+class DummyTransport : public ndn::Transport
 {
 public:
   void
@@ -58,10 +59,10 @@ public:
   virtual void
   send(const Block& wire)
   {
-    if (wire.type() == Tlv::Interest) {
+    if (wire.type() == tlv::Interest) {
       m_sentInterests->push_back(Interest(wire));
     }
-    else if (wire.type() == Tlv::Data) {
+    else if (wire.type() == tlv::Data) {
       m_sentDatas->push_back(Data(wire));
     }
   }
@@ -80,7 +81,7 @@ public:
 
 /** \brief a Face for unit testing
  */
-class DummyFace : public Face
+class DummyFace : public ndn::Face
 {
 public:
   explicit
@@ -115,6 +116,7 @@ makeDummyFace()
   return make_shared<DummyFace>(make_shared<DummyTransport>());
 }
 
-} // namespace ndn
+} // namespace tests
+} // namespace nfd
 
-#endif // RIB_TESTS_UNIT_TESTS_TRANSPORT_DUMMY_FACE_HPP
+#endif // NFD_TESTS_DUMMY_FACE_HPP

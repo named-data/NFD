@@ -213,10 +213,12 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   face1->sendInterest(*interest1);
   face1->sendInterest(*interest1);
   face1->sendData    (*data1    );
+  size_t nBytesSent1 = interest1->wireEncode().size() * 3 + data1->wireEncode().size();
   face2->sendInterest(*interest2);
   face2->sendData    (*data2    );
   face2->sendData    (*data2    );
   face2->sendData    (*data2    );
+  size_t nBytesSent2 = interest2->wireEncode().size() + data2->wireEncode().size() * 3;
 
   BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(1)) == LimitedIo::EXCEED_OPS,
                       "UnixStreamChannel error: cannot send or receive Interest/Data packets");
@@ -231,11 +233,16 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
   BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 
+  // needed to ensure NOutBytes counters are accurate
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(1));
+
   const FaceCounters& counters1 = face1->getCounters();
   BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
   BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
   BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
   BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesSent2);
+  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent1);
 
   const FaceCounters& counters2 = face2->getCounters();
   BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);

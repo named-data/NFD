@@ -261,6 +261,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   face1->sendInterest(*interest1);
   face1->sendInterest(*interest1);
   face1->sendData    (*data1    );
+  size_t nBytesSent1 = interest1->wireEncode().size() * 3 + data1->wireEncode().size();
   face2->sendInterest(*interest2);
   face2->sendData    (*data2    );
   face2->sendData    (*data2    );
@@ -268,7 +269,6 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot send or receive Interest/Data packets");
-
 
   BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
   BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 3);
@@ -280,17 +280,22 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1->getName());
   BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1->getName());
 
+  // needed to ensure NOutBytes counters are accurate
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(1));
+
   const FaceCounters& counters1 = face1->getCounters();
   BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
   BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
   BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
   BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent1);
 
   const FaceCounters& counters2 = face2->getCounters();
   BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);
   BOOST_CHECK_EQUAL(counters2.getNInDatas()     , 1);
   BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 1);
   BOOST_CHECK_EQUAL(counters2.getNOutDatas()    , 3);
+  BOOST_CHECK_EQUAL(counters2.getNInBytes(), nBytesSent1);
 }
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)

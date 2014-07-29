@@ -61,7 +61,8 @@ public:
    */
 
   FaceManager(FaceTable& faceTable,
-              shared_ptr<InternalFace> face);
+              shared_ptr<InternalFace> face,
+              ndn::KeyChain& keyChain);
 
   virtual
   ~FaceManager();

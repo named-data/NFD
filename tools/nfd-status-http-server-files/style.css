@@ -1,0 +1,183 @@
+@import 'reset.css';
+@import 'text.css';
+
+@charset "utf-8";
+
+body {
+    background-color: #ffffff;
+    color: #000000;
+    font-family: sans-serif;
+}
+
+li {
+    margin: 0;
+}
+
+header, nav, article, footer, address {
+    display: block;
+}
+
+header {
+    margin: 20px;
+    width: 90%;
+}
+
+header h1 {
+    height: 50px;
+    padding-left: 55px;
+    padding-top: 6px;
+}
+
+article {
+    margin: 20px auto 20px;
+    width: 90%;
+    padding-bottom: 20px;
+}
+
+footer {
+    margin: 20px auto 0;
+    width: 90%;
+
+    padding-bottom: 2px;
+    text-align: right;
+
+    position: fixed;
+    font-height: 10px;
+    bottom: 0;
+    left: 5%;
+}
+
+h1 {
+    font-family: sans-serif;
+}
+
+h3 {
+    font-family: sans-serif;
+}
+
+h5 {
+    font-family: sans-serif;
+    color: #727272;
+}
+
+/* MISC */
+.grey {
+    color: #727272;
+    font-weight: 200;
+}
+
+.green {
+    color: #2D9A65;
+    font-weight: 200;
+}
+
+.red {
+    color: red;
+    font-weight: 200;
+    font-size: 2.4em;
+}
+
+.hidden {
+    display: none;
+}
+
+/* */
+.item-list
+{
+    border-radius: 6px;
+
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-family: sans-serif;
+    width: 100%;
+    text-align: left;
+}
+
+.item-list th
+{
+    font-weight: normal;
+    padding: 8px;
+    background: #EAF4EF;
+    border-top: 1px solid #99CCB2;
+    color: #727272;
+    text-align: left;
+}
+
+.item-list th.border-left {
+}
+
+.item-list td
+{
+    padding: 2px;
+    border-bottom: 1px solid #fff;
+    color: #000;
+    border-top: 1px solid transparent;
+}
+
+.item-sublist
+{
+    border-collapse:collapse;
+    border:1px solid gray;
+
+    padding: 4px;
+    font-family: sans-serif;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.item-sublist th
+{
+    background-color: transparent;
+    font-weight: bold;
+    padding: 4px;
+    text-align: center;
+
+    border-collapse:collapse;
+    border:1px solid gray;
+}
+
+.item-sublist th.border-left {
+}
+
+.item-sublist td
+{
+    border-collapse:collapse;
+    border:1px solid gray;
+
+    padding: 2px;
+    color: #000;
+    text-align: center;
+    min-width: 20px;
+}
+
+
+tr.center td
+{
+    text-align: center;
+}
+
+.border-left {
+    border-left: 1px solid #99CCB2;
+}
+
+.border-right {
+    border-right: 1px solid #99CCB2;
+}
+
+tfoot {
+    border-bottom: 2px solid #99CCB2;
+    background: #EAF4EF;
+}
+
+.item-list tfoot td {
+    padding: 0;
+}
+
+.odd {
+    background-color: #eeeeee;
+}
+
+.highlighted {
+    background-color: #cccccc;
+    cursor: pointer;
+}

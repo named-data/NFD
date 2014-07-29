@@ -228,8 +228,10 @@ Nfdc::ribRegisterPrefix()
     .setName(m_name)
     .setCost(m_cost)
     .setFlags(m_flags)
-    .setOrigin(m_origin)
-    .setExpirationPeriod(m_expires);
+    .setOrigin(m_origin);
+
+  if (m_expires != DEFAULT_EXPIRATION_PERIOD)
+    parameters.setExpirationPeriod(m_expires);
 
   if (!isValidUri(m_commandLineArguments[1])) {
     try { //So the uri is not valid, may be a faceId is provided.
@@ -261,9 +263,11 @@ Nfdc::ribRegisterPrefix(const ControlParameters& faceCreateResult)
     .setName(m_name)
     .setCost(m_cost)
     .setFlags(m_flags)
-    .setExpirationPeriod(m_expires)
     .setOrigin(m_origin)
     .setFaceId(faceCreateResult.getFaceId());
+
+  if (m_expires != DEFAULT_EXPIRATION_PERIOD)
+    ribParameters.setExpirationPeriod(m_expires);
 
   m_controller.start<RibRegisterCommand>(ribParameters,
                                          bind(&Nfdc::onSuccess, this, _1,
