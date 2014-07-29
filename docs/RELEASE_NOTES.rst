@@ -6,7 +6,7 @@ NFD Release Notes
 NFD version 0.2.0 (changes since version 0.1.0)
 -----------------------------------------------
 
-Release date: July 1, 2014
+Release date: August 25, 2014
 
 - **Documentation**
 
@@ -30,6 +30,10 @@ Release date: July 1, 2014
   + Randomization routines are now uniform across all NFD modules
     (`Issue #1369 <http://redmine.named-data.net/issues/1369>`_)
 
+  + Enable use of new NDN naming conventions
+    (`Issue #1837 <http://redmine.named-data.net/issues/1837>`_ and
+    `#1838 <http://redmine.named-data.net/issues/1838>`_)
+
 - **Faces**
 
   + `WebSocket <http://tools.ietf.org/html/rfc6455>`_ Face support
@@ -50,6 +54,15 @@ Release date: July 1, 2014
   + On Linux, path MTU discovery on unicast UDPv4 faces is now disabled
     (`Issue #1651 <http://redmine.named-data.net/issues/1651>`_)
 
+  + Added link layer byte counts in FaceCounters
+    (`Issue #1729 <http://redmine.named-data.net/issues/1729>`_)
+
+  + Face IDs 0-255 are now reserved for internal NFD use
+    (`Issue #1620 <http://redmine.named-data.net/issues/1620>`_)
+
+  + Serialized StreamFace::send(Interest|Data) operations using queue
+    (`Issue #1777 <http://redmine.named-data.net/issues/1777>`_)
+
 - **Forwarding**
 
   + Outgoing Interest pipeline now allows strategies to request a fresh ``Nonce``
@@ -62,6 +75,12 @@ Release date: July 1, 2014
   + New ``RttEstimator`` class that implements the Mean-Deviation RTT estimator to be used
     in forwarding strategies
 
+  + Fix memory leak caused by not removing PIT entry when Interest matches CS
+    (`Issue #1882 <http://redmine.named-data.net/issues/1882>`_)
+
+  + Fix spurious assertion in NCC strategy
+    (`Issue #1853 <http://redmine.named-data.net/issues/1853>`_)
+
 - **Tables**
 
   + Fix in ContentStore to properly adjust internal structure when ``Cs::setLimit`` is called
@@ -72,6 +91,15 @@ Release date: July 1, 2014
 
   + Fix to prevent infinite lifetime of Measurement entries
     (`Issue #1665 <http://redmine.named-data.net/issues/1665>`_)
+
+  + Introducing capacity limit in PIT NonceList
+    (`Issue #1770 <http://redmine.named-data.net/issues/1770>`_)
+
+  + Fix memory leak in NameTree
+    (`Issue #1803 <http://redmine.named-data.net/issues/1803>`_)
+
+  + Fix segfault during Fib::removeNextHopFromAllEntries
+    (`Issue #1816 <http://redmine.named-data.net/issues/1816>`_)
 
 - **Management**
 
@@ -84,6 +112,19 @@ Release date: July 1, 2014
   + Fix to prevent creation of duplicate TCP/UDP Faces due to async calls
     (`Issue #1680 <http://redmine.named-data.net/issues/1680>`_)
 
+  + Fix to properly handle optional ExpirationPeriod in RibRegister command
+    (`Issue #1772 <http://redmine.named-data.net/issues/1772>`_)
+
+  + Added functionality of publishing RIB status (RIB dataset) by RibManager
+    (`Issue #1662 <http://redmine.named-data.net/issues/1662>`_)
+
+  + Fix issue of not properly canceling route expiration during processing of
+    ``unregister`` command
+    (`Issue #1902 <http://redmine.named-data.net/issues/1902>`_)
+
+  + Enable periodic clean up of route entries that refer to non-existing faces
+    (`Issue #1875 <http://redmine.named-data.net/issues/1875>`_)
+
 - **Tools**
 
   + Extended functionality of ``nfd-status``
@@ -93,6 +134,13 @@ Release date: July 1, 2014
      * ``-s`` to retrieve configured strategy choice for NDN namespaces (enabled by default)
      * Face status now includes reporting of Face flags (``local`` and ``on-demand``)
      * On-demand UDP Faces now report remaining lifetime (``expirationPeriod``)
+     * ``-r`` to retrieve RIB information
+
+  + Improved ``nfd-status-http-server``
+
+     * HTTP server now presents status as XSL-formatted XML page
+     * XML dataset and formatted page now include certificate name of the corresponding NFD
+       (`Issue #1807 <http://redmine.named-data.net/issues/1807>`_)
 
   + Several fixes in ``ndn-autoconfig`` tool
     (`Issue #1595 <http://redmine.named-data.net/issues/1595>`_)
@@ -101,6 +149,14 @@ Release date: July 1, 2014
 
     * ``-e`` to set expiration time for registered routes
     * ``-o`` to specify origin for registration and unregistration commands
+
+  + Enable ``all-faces-prefix'' option in ``nfd-autoreg`` to register prefix for all face
+    (on-demand and non-on-demand)
+    (`Issue #1861 <http://redmine.named-data.net/issues/1861>`_)
+
+  + Enable processing auto-registration in ``nfd-autoreg`` for faces that existed
+    prior to start of the tool
+    (`Issue #1863 <http://redmine.named-data.net/issues/1863>`_)
 
 - **Build**
 
