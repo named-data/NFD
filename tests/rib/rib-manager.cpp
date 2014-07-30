@@ -48,6 +48,8 @@ public:
 
     face->processEvents(time::milliseconds(1));
     face->m_sentInterests.clear();
+
+    manager->activeFaces.insert(1);
   }
 
   ~RibManagerFixture()

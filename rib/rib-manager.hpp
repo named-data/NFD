@@ -202,6 +202,18 @@ private:
   void
   listEntries(const Interest& request);
 
+  void
+  fetchActiveFaces();
+
+  void
+  fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffer);
+
+  void
+  updateActiveFaces(shared_ptr<ndn::OBufferStream> buffer);
+
+  void
+  onFetchFaceStatusTimeout();
+
 private:
   Rib m_managedRib;
   ndn::Face& m_face;
@@ -263,6 +275,11 @@ private:
 
   static const Name LIST_COMMAND_PREFIX;
   static const size_t LIST_COMMAND_NCOMPS;
+
+  static const Name FACES_LIST_DATASET_PREFIX;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  std::set<int> activeFaces;
 };
 
 } // namespace rib

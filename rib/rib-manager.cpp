@@ -27,6 +27,7 @@
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+#include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
 namespace rib {
@@ -35,6 +36,7 @@ NFD_LOG_INIT("RibManager");
 
 const Name RibManager::COMMAND_PREFIX = "/localhost/nfd/rib";
 const Name RibManager::REMOTE_COMMAND_PREFIX = "/localhop/nfd/rib";
+const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
 
 const size_t RibManager::COMMAND_UNSIGNED_NCOMPS =
   RibManager::COMMAND_PREFIX.size() +
@@ -118,6 +120,8 @@ RibManager::registerWithNfd()
   NFD_LOG_INFO("Start monitoring face create/destroy events");
   m_faceMonitor.addSubscriber(bind(&RibManager::onNotification, this, _1));
   m_faceMonitor.startNotifications();
+
+  fetchActiveFaces();
 }
 
 void
@@ -240,14 +244,31 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   if (!validateParameters(command, parameters))
     {
       NFD_LOG_DEBUG("register result: FAIL reason: malformed");
+
       if (static_cast<bool>(request))
-        sendResponse(request->getName(), 400, "Malformed command");
+        {
+          sendResponse(request->getName(), 400, "Malformed command");
+        }
+
       return;
     }
 
   if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
     {
       parameters.setFaceId(request->getIncomingFaceId());
+    }
+
+  // Is the face valid?
+  if (activeFaces.find(parameters.getFaceId()) == activeFaces.end())
+    {
+      NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
+
+      if (static_cast<bool>(request))
+        {
+          sendResponse(request->getName(), 410, "Face not found");
+        }
+
+      return;
     }
 
   FaceEntry faceEntry;
@@ -309,6 +330,19 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
   if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
     {
       parameters.setFaceId(request->getIncomingFaceId());
+    }
+
+  // Is the face valid?
+  if (activeFaces.find(parameters.getFaceId()) == activeFaces.end())
+    {
+      NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
+
+      if (static_cast<bool>(request))
+        {
+          sendResponse(request->getName(), 410, "Face not found");
+        }
+
+      return;
     }
 
   FaceEntry faceEntry;
@@ -603,8 +637,17 @@ RibManager::onNotification(const FaceEventNotification& notification)
 {
   /// \todo A notification can be missed, in this case check Facelist
   NFD_LOG_TRACE("onNotification: " << notification);
-  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) //face destroyed
+
+  if (notification.getKind() == ndn::nfd::FACE_EVENT_CREATED)
     {
+      NFD_LOG_DEBUG("Received notification for created faceId: " << notification.getFaceId());
+      activeFaces.insert(notification.getFaceId());
+    }
+  else if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED)
+    {
+      NFD_LOG_DEBUG("Received notification for destroyed faceId: " << notification.getFaceId());
+      activeFaces.erase(notification.getFaceId());
+
       scheduler::schedule(time::seconds(0),
                           bind(&RibManager::processErasureAfterNotification, this,
                                notification.getFaceId()));
@@ -720,6 +763,76 @@ RibManager::listEntries(const Interest& request)
     }
 
   m_ribStatusPublisher.publish();
+}
+
+void
+RibManager::fetchActiveFaces()
+{
+  NFD_LOG_DEBUG("Fetching active faces");
+
+  Interest interest(FACES_LIST_DATASET_PREFIX);
+  interest.setChildSelector(1);
+  interest.setMustBeFresh(true);
+
+  shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
+
+  m_face.expressInterest(interest,
+                         bind(&RibManager::fetchSegments, this, _2, buffer),
+                         bind(&RibManager::onFetchFaceStatusTimeout, this));
+}
+
+void
+RibManager::fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffer)
+{
+  buffer->write(reinterpret_cast<const char*>(data.getContent().value()),
+                data.getContent().value_size());
+
+  uint64_t currentSegment = data.getName().get(-1).toSegment();
+
+  const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
+  if (finalBlockId.empty() || finalBlockId.toSegment() > currentSegment)
+    {
+      m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
+                             bind(&RibManager::fetchSegments, this, _2, buffer),
+                             bind(&RibManager::onFetchFaceStatusTimeout, this));
+    }
+  else
+    {
+      updateActiveFaces(buffer);
+    }
+}
+
+void
+RibManager::updateActiveFaces(shared_ptr<ndn::OBufferStream> buffer)
+{
+  NFD_LOG_DEBUG("Updating active faces");
+
+  ndn::ConstBufferPtr buf = buffer->buf();
+
+  Block block;
+  size_t offset = 0;
+
+  while (offset < buf->size())
+    {
+      if (!Block::fromBuffer(buf, offset, block))
+        {
+          std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+          break;
+        }
+
+      offset += block.size();
+
+      ndn::nfd::FaceStatus status(block);
+
+      NFD_LOG_DEBUG("Adding faceId: " << status.getFaceId() << " to activeFaces");
+      activeFaces.insert(status.getFaceId());
+    }
+}
+
+void
+RibManager::onFetchFaceStatusTimeout()
+{
+  std::cerr << "Face Status Dataset request timed out" << std::endl;
 }
 
 } // namespace rib
