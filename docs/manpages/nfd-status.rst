@@ -55,6 +55,7 @@ Get all status information from NFD::
     $ nfd-status
 
     General NFD status:
+                     nfdId=/chengyu/KEY/ksk-1405136377018/ID-CERT
                    version=2000
                  startTime=20140725T232341.374000
                currentTime=20140725T233240

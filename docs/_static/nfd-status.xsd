@@ -27,6 +27,7 @@ elementFormDefault="qualified">
 
 <xs:complexType name="generalStatusType">
   <xs:sequence>
+    <xs:element type="xs:anyURI" name="nfdId"/>
     <xs:element type="xs:string" name="version"/>
     <xs:element type="xs:dateTime" name="startTime"/>
     <xs:element type="xs:dateTime" name="currentTime"/>

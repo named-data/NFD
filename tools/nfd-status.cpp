@@ -184,9 +184,20 @@ public:
   afterFetchedVersionInformation(const Data& data)
   {
     nfd::ForwarderStatus status(data.getContent());
+    std::string nfdId;
+    if (data.getSignature().hasKeyLocator())
+      {
+        const ndn::KeyLocator& locator = data.getSignature().getKeyLocator();
+        if (locator.getType() == KeyLocator::KeyLocator_Name)
+          nfdId = locator.getName().toUri();
+        //todo: KeyDigest supporting
+      }
+
     if (m_isOutputXml)
       {
         std::cout << "<generalStatus>";
+        std::cout << "<nfdId>"
+                  << nfdId << "</nfdId>";
         std::cout << "<version>"
                   << status.getNfdVersion() << "</version>";
         std::cout << "<startTime>"
@@ -228,6 +239,8 @@ public:
     else
       {
         std::cout << "General NFD status:" << std::endl;
+        std::cout << "                 nfdId="
+                  << nfdId << std::endl;
         std::cout << "               version="
                   << status.getNfdVersion() << std::endl;
         std::cout << "             startTime="
