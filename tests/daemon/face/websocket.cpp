@@ -192,8 +192,6 @@ public:
   websocketpp::connection_hdl handle;
   std::vector<Interest> client1_receivedInterests;
   std::vector<Data> client1_receivedDatas;
-
-  std::list< shared_ptr<Face> > faces;
 };
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
@@ -244,6 +242,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   client1_sendData    (*data2);
   client1_sendData    (*data2);
   client1_sendData    (*data2);
+  size_t nBytesSent = data1->wireEncode().size() + interest2->wireEncode().size();
+  size_t nBytesReceived = interest1->wireEncode().size() * 3 + data2->wireEncode().size() * 3;
 
   BOOST_CHECK_MESSAGE(limitedIo.run(8, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "WebSocketChannel error: cannot send or receive Interest/Data packets");
@@ -263,6 +263,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
   BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 1);
   BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesReceived);
+  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

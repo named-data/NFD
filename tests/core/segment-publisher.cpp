@@ -37,7 +37,7 @@ namespace tests {
 
 NFD_LOG_INIT("SegmentPublisherTest");
 
-template<size_t N=10000>
+template<int64_t N=10000>
 class TestSegmentPublisher : public SegmentPublisher<DummyFace>
 {
 public:
@@ -73,7 +73,7 @@ protected:
   generate(ndn::EncodingBuffer& outBuffer)
   {
     size_t totalLength = 0;
-    for (uint64_t i = 0; i < N; i++)
+    for (int64_t i = 0; i < N; i++)
       {
         totalLength += prependNonNegativeIntegerBlock(outBuffer, ndn::Tlv::Content, i);
       }
@@ -85,7 +85,7 @@ protected:
   size_t m_totalPayloadLength;
 };
 
-template<size_t N>
+template<int64_t N>
 class SegmentPublisherFixture : public BaseFixture
 {
 public:

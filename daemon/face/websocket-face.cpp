@@ -48,6 +48,7 @@ WebSocketFace::sendInterest(const Interest& interest)
 
   this->onSendInterest(interest);
   const Block& payload = interest.wireEncode();
+  this->getMutableCounters().getNOutBytes() += payload.size();
 
   try {
     m_server.send(m_handle, payload.wire(), payload.size(),
@@ -67,6 +68,7 @@ WebSocketFace::sendData(const Data& data)
 
   this->onSendData(data);
   const Block& payload = data.wireEncode();
+  this->getMutableCounters().getNOutBytes() += payload.size();
 
   try {
     m_server.send(m_handle, payload.wire(), payload.size(),
@@ -96,6 +98,8 @@ WebSocketFace::handleReceive(const std::string& msg)
 {
   // Copy message into Face internal buffer
   BOOST_ASSERT(msg.size() <= MAX_NDN_PACKET_SIZE);
+
+  this->getMutableCounters().getNInBytes() += msg.size();
 
   // Try to parse message data
   bool isOk = true;
