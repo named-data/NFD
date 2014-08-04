@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(Entry)
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(NameTreeBasic)
+BOOST_AUTO_TEST_CASE(Basic)
 {
   size_t nBuckets = 16;
   NameTree nt(nBuckets);
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(NameTreeBasic)
   BOOST_CHECK_EQUAL(nt.size(), 8);
 }
 
-BOOST_AUTO_TEST_CASE(NameTreeIteratorFullEnumerate)
+BOOST_AUTO_TEST_CASE(IteratorFullEnumerate)
 {
   size_t nBuckets = 1024;
   NameTree nt(nBuckets);
@@ -387,7 +387,7 @@ predicate_NameTreeEntry_Example(const name_tree::Entry& entry)
   return std::make_pair(first, second);
 }
 
-BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
+BOOST_AUTO_TEST_CASE(IteratorPartialEnumerate)
 {
   typedef NameTree::const_iterator const_iterator;
 
@@ -467,7 +467,8 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
 
   // No NameA
   // No SubTree from NameAB
-  const_iterator itNoNameANoSubNameAB = nameTree.partialEnumerate(nameA, &predicate_NameTreeEntry_NoNameA_NoSubNameAB);
+  const_iterator itNoNameANoSubNameAB = nameTree.partialEnumerate(nameA,
+    &predicate_NameTreeEntry_NoNameA_NoSubNameAB);
   hasA   = false;
   hasAB  = false;
   hasAB1 = false;
@@ -516,7 +517,8 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
 
   // No NameA
   // No SubTree from NameAC
-  const_iterator itNoNameANoSubNameAC = nameTree.partialEnumerate(nameA, &predicate_NameTreeEntry_NoNameA_NoSubNameAC);
+  const_iterator itNoNameANoSubNameAC = nameTree.partialEnumerate(nameA,
+    &predicate_NameTreeEntry_NoNameA_NoSubNameAC);
   hasA   = false;
   hasAB  = false;
   hasAB1 = false;
@@ -564,7 +566,8 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
   BOOST_CHECK_EQUAL(counter, 4);
 
   // No Subtree from NameA
-  const_iterator itNoANoSubNameA = nameTree.partialEnumerate(nameA, &predicate_NameTreeEntry_NoSubNameA);
+  const_iterator itNoANoSubNameA = nameTree.partialEnumerate(nameA,
+    &predicate_NameTreeEntry_NoSubNameA);
 
   hasA   = false;
   hasAB  = false;
@@ -648,7 +651,8 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
   bool hasF = false;
 
   counter = 0;
-  const_iterator itExample = nameTreeExample.partialEnumerate(nameA, &predicate_NameTreeEntry_Example);
+  const_iterator itExample = nameTreeExample.partialEnumerate(nameA,
+    &predicate_NameTreeEntry_Example);
 
   for (; itExample != nameTreeExample.end(); itExample++)
   {
@@ -688,7 +692,7 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorPartialEnumerate)
 }
 
 
-BOOST_AUTO_TEST_CASE(NameTreeIteratorFindAllMatches)
+BOOST_AUTO_TEST_CASE(IteratorFindAllMatches)
 {
   size_t nBuckets = 16;
   NameTree nt(nBuckets);
@@ -780,7 +784,7 @@ BOOST_AUTO_TEST_CASE(NameTreeIteratorFindAllMatches)
   BOOST_CHECK_EQUAL(counter, 7);
 }
 
-BOOST_AUTO_TEST_CASE(NameTreeHashTableResizeShrink)
+BOOST_AUTO_TEST_CASE(HashTableResizeShrink)
 {
   size_t nBuckets = 16;
   NameTree nameTree(nBuckets);
@@ -794,6 +798,63 @@ BOOST_AUTO_TEST_CASE(NameTreeHashTableResizeShrink)
   nameTree.eraseEntryIfEmpty(entry);
   BOOST_CHECK_EQUAL(nameTree.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 16);
+}
+
+// .lookup should not invalidate iterator
+BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterLookup)
+{
+  NameTree nt;
+  nt.lookup("/A/B/C");
+  nt.lookup("/E");
+
+  Name nameB("/A/B");
+  std::set<Name> seenNames;
+  for (NameTree::const_iterator it = nt.begin(); it != nt.end(); ++it) {
+    BOOST_CHECK(seenNames.insert(it->getPrefix()).second);
+    if (it->getPrefix() == nameB) {
+      nt.lookup("/D");
+    }
+  }
+
+  BOOST_CHECK_EQUAL(seenNames.count("/"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/B"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/B/C"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/E"), 1);
+
+  seenNames.erase("/D"); // /D may or may not appear
+  BOOST_CHECK(seenNames.size() == 5);
+}
+
+// .eraseEntryIfEmpty should not invalidate iterator
+BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
+{
+  NameTree nt;
+  nt.lookup("/A/B/C");
+  nt.lookup("/A/D/E");
+  nt.lookup("/A/F/G");
+  nt.lookup("/H");
+
+  Name nameD("/A/D");
+  std::set<Name> seenNames;
+  for (NameTree::const_iterator it = nt.begin(); it != nt.end(); ++it) {
+    BOOST_CHECK(seenNames.insert(it->getPrefix()).second);
+    if (it->getPrefix() == nameD) {
+      nt.eraseEntryIfEmpty(nt.findExactMatch("/A/F/G")); // /A/F/G and /A/F are erased
+    }
+  }
+
+  BOOST_CHECK_EQUAL(seenNames.count("/"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/B"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/B/C"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/D"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/A/D/E"), 1);
+  BOOST_CHECK_EQUAL(seenNames.count("/H"), 1);
+
+  seenNames.erase("/A/F"); // /A/F may or may not appear
+  seenNames.erase("/A/F/G"); // /A/F/G may or may not appear
+  BOOST_CHECK(seenNames.size() == 7);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

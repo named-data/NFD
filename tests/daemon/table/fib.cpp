@@ -223,9 +223,36 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   // {'/A':[1,2], '/B':[1]}
   BOOST_CHECK_EQUAL(fib.size(), 2);
 
+  insertRes = fib.insert("/C");
+  insertRes.first->addNextHop(face2, 1);
+  // {'/A':[1,2], '/B':[1], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 3);
+
+  insertRes = fib.insert("/B/1");
+  insertRes.first->addNextHop(face1, 0);
+  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 4);
+
+  insertRes = fib.insert("/B/1/2");
+  insertRes.first->addNextHop(face1, 0);
+  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 5);
+
+  insertRes = fib.insert("/B/1/2/3");
+  insertRes.first->addNextHop(face1, 0);
+  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/B/1/3':[1], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 6);
+
+  insertRes = fib.insert("/B/1/2/3/4");
+  insertRes.first->addNextHop(face1, 0);
+  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/B/1/2/3':[1], '/B/1/2/3/4':[1], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 7);
+
+  /////////////
+
   fib.removeNextHopFromAllEntries(face1);
-  // {'/A':[2]}
-  BOOST_CHECK_EQUAL(fib.size(), 1);
+  // {'/A':[2], '/C':[2]}
+  BOOST_CHECK_EQUAL(fib.size(), 2);
 
   entry = fib.findLongestPrefixMatch(nameA);
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);

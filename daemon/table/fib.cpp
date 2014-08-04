@@ -144,8 +144,11 @@ void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
   for (NameTree::const_iterator it = m_nameTree.fullEnumerate(
-       &predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end(); ++it) {
+       &predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end();) {
     shared_ptr<fib::Entry> entry = it->getFibEntry();
+
+    ++it; // need to be advance before `erase`, otherwise the iterator can be invalidated
+
     entry->removeNextHop(face);
     if (!entry->hasNextHops()) {
       this->erase(*entry);

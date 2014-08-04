@@ -86,6 +86,7 @@ public:
 
   ~NameTree();
 
+public: // information
   /**
    * \brief Get the number of occupied entries in the Name Tree
    */
@@ -101,6 +102,13 @@ public:
   getNBuckets() const;
 
   /**
+   * \brief Dump all the information stored in the Name Tree for debugging.
+   */
+  void
+  dump(std::ostream& output) const;
+
+public: // mutation
+  /**
    * \brief Look for the Name Tree Entry that contains this name prefix.
    * \details Starts from the shortest name prefix, and then increase the
    * number of name components by one each time. All non-existing Name Tree
@@ -108,17 +116,10 @@ public:
    * \param prefix The querying name prefix.
    * \return The pointer to the Name Tree Entry that contains this full name
    * prefix.
+   * \note Existing iterators are unaffected.
    */
   shared_ptr<name_tree::Entry>
   lookup(const Name& prefix);
-
-  /**
-   * \brief Exact match lookup for the given name prefix.
-   * \return a null shared_ptr if this prefix is not found;
-   * otherwise return the Name Tree Entry address
-   */
-  shared_ptr<name_tree::Entry>
-  findExactMatch(const Name& prefix) const;
 
   /**
    * \brief Delete a Name Tree Entry if this entry is empty.
@@ -126,9 +127,36 @@ public:
    * \note This function must be called after a table entry is detached from Name Tree
    *       entry. The function deletes a Name Tree entry if nothing is attached to it and
    *       it has no children, then repeats the same process on its ancestors.
+   * \note Existing iterators, except those pointing to deleted entries, are unaffected.
    */
   bool
   eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry);
+
+public: // shortcut access
+  /// get NameTree entry from attached FIB entry
+  shared_ptr<name_tree::Entry>
+  get(const fib::Entry& fibEntry) const;
+
+  /// get NameTree entry from attached PIT entry
+  shared_ptr<name_tree::Entry>
+  get(const pit::Entry& pitEntry) const;
+
+  /// get NameTree entry from attached Measurements entry
+  shared_ptr<name_tree::Entry>
+  get(const measurements::Entry& measurementsEntry) const;
+
+  /// get NameTree entry from attached StrategyChoice entry
+  shared_ptr<name_tree::Entry>
+  get(const strategy_choice::Entry& strategyChoiceEntry) const;
+
+public: // matching
+  /**
+   * \brief Exact match lookup for the given name prefix.
+   * \return a null shared_ptr if this prefix is not found;
+   * otherwise return the Name Tree Entry address
+   */
+  shared_ptr<name_tree::Entry>
+  findExactMatch(const Name& prefix) const;
 
   /**
    * \brief Longest prefix matching for the given name
@@ -146,15 +174,13 @@ public:
                          name_tree::AnyEntry()) const;
 
   /**
-   * \brief Resize the hash table size when its load factor reaches a threshold.
-   * \details As we are currently using a hand-written hash table implementation
-   * for the Name Tree, the hash table resize() function should be kept in the
-   * name-tree.hpp file.
-   * \param newNBuckets The number of buckets for the new hash table.
+   * \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
    */
-  void
-  resize(size_t newNBuckets);
+  const_iterator
+  findAllMatches(const Name& prefix,
+                 const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
+public: // enumeration
   /**
    * \brief Enumerate all the name prefixes stored in the Name Tree.
    */
@@ -169,39 +195,13 @@ public:
                    const name_tree::EntrySubTreeSelector& entrySubTreeSelector =
                          name_tree::AnyEntrySubTree()) const;
 
-  /**
-   * \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
-   */
-  const_iterator
-  findAllMatches(const Name& prefix,
-                 const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
-
-  /**
-   * \brief Dump all the information stored in the Name Tree for debugging.
-   */
-  void
-  dump(std::ostream& output) const;
-
-  shared_ptr<name_tree::Entry>
-  get(const fib::Entry& fibEntry) const;
-
-  shared_ptr<name_tree::Entry>
-  get(const pit::Entry& pitEntry) const;
-
-  shared_ptr<name_tree::Entry>
-  get(const measurements::Entry& measurementsEntry) const;
-
-  shared_ptr<name_tree::Entry>
-  get(const strategy_choice::Entry& strategeChoiceEntry) const;
-
   const_iterator
   begin() const;
 
   const_iterator
   end() const;
 
-  enum IteratorType
-  {
+  enum IteratorType {
     FULL_ENUMERATE_TYPE,
     PARTIAL_ENUMERATE_TYPE,
     FIND_ALL_MATCHES_TYPE
@@ -247,6 +247,17 @@ public:
     NameTree::IteratorType                      m_type;
     bool                                        m_shouldVisitChildren;
   };
+
+private:
+  /**
+   * \brief Resize the hash table size when its load factor reaches a threshold.
+   * \details As we are currently using a hand-written hash table implementation
+   * for the Name Tree, the hash table resize() function should be kept in the
+   * name-tree.hpp file.
+   * \param newNBuckets The number of buckets for the new hash table.
+   */
+  void
+  resize(size_t newNBuckets);
 
 private:
   size_t                        m_nItems;  // Number of items being stored
@@ -309,9 +320,9 @@ NameTree::get(const measurements::Entry& measurementsEntry) const
 }
 
 inline shared_ptr<name_tree::Entry>
-NameTree::get(const strategy_choice::Entry& strategeChoiceEntry) const
+NameTree::get(const strategy_choice::Entry& strategyChoiceEntry) const
 {
-  return strategeChoiceEntry.m_nameTreeEntry;
+  return strategyChoiceEntry.m_nameTreeEntry;
 }
 
 inline NameTree::const_iterator
