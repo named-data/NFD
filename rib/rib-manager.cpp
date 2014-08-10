@@ -118,8 +118,8 @@ RibManager::registerWithNfd()
   }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
-  m_faceMonitor.addSubscriber(bind(&RibManager::onNotification, this, _1));
-  m_faceMonitor.startNotifications();
+  m_faceMonitor.onNotification += bind(&RibManager::onNotification, this, _1);
+  m_faceMonitor.start();
 
   fetchActiveFaces();
 }

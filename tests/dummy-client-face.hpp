@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DUMMY_FACE_HPP
-#define NFD_TESTS_DUMMY_FACE_HPP
+#ifndef NFD_TESTS_DUMMY_CLIENT_FACE_HPP
+#define NFD_TESTS_DUMMY_CLIENT_FACE_HPP
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/transport/transport.hpp>
@@ -32,13 +32,14 @@
 namespace nfd {
 namespace tests {
 
-class DummyTransport : public ndn::Transport
+class DummyClientTransport : public ndn::Transport
 {
 public:
   void
   receive(const Block& block)
   {
-    m_receiveCallback(block);
+    if (static_cast<bool>(m_receiveCallback))
+      m_receiveCallback(block);
   }
 
   virtual void
@@ -79,13 +80,13 @@ public:
 };
 
 
-/** \brief a Face for unit testing
+/** \brief a client-side face for unit testing
  */
-class DummyFace : public ndn::Face
+class DummyClientFace : public ndn::Face
 {
 public:
   explicit
-  DummyFace(shared_ptr<DummyTransport> transport)
+  DummyClientFace(shared_ptr<DummyClientTransport> transport)
     : Face(transport)
     , m_transport(transport)
   {
@@ -103,20 +104,28 @@ public:
   }
 
 public:
+  /** \brief sent Interests
+   *  \note After .expressInterest, .processEvents must be called before
+   *        the Interest would show up here.
+   */
   std::vector<Interest> m_sentInterests;
+  /** \brief sent Datas
+   *  \note After .put, .processEvents must be called before
+   *        the Interest would show up here.
+   */
   std::vector<Data>     m_sentDatas;
 
 private:
-  shared_ptr<DummyTransport> m_transport;
+  shared_ptr<DummyClientTransport> m_transport;
 };
 
-inline shared_ptr<DummyFace>
-makeDummyFace()
+inline shared_ptr<DummyClientFace>
+makeDummyClientFace()
 {
-  return make_shared<DummyFace>(make_shared<DummyTransport>());
+  return make_shared<DummyClientFace>(make_shared<DummyClientTransport>());
 }
 
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_DUMMY_FACE_HPP
+#endif // NFD_TESTS_DUMMY_CLIENT_FACE_HPP

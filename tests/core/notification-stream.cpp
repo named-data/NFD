@@ -23,43 +23,47 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rib/rib-status-publisher.hpp"
+#include "core/notification-stream.hpp"
+#include "simple-notification.hpp"
 
-#include "rib-status-publisher-common.hpp"
+#include "tests/test-common.hpp"
 #include "tests/dummy-client-face.hpp"
 
+
 namespace nfd {
-namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(RibStatusPublisherSuite, RibStatusPublisherFixture)
+BOOST_FIXTURE_TEST_SUITE(CoreNotificationStream, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Basic)
+BOOST_AUTO_TEST_CASE(Post)
 {
-  Rib rib;
-
-  FaceEntry entry;
-  Name name("/");
-  entry.faceId = 1;
-  entry.origin = 128;
-  entry.cost = 32;
-  entry.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
-  rib.insert(name, entry);
-
+  shared_ptr<DummyClientFace> face = makeDummyClientFace();
   ndn::KeyChain keyChain;
-  shared_ptr<nfd::tests::DummyClientFace> face = nfd::tests::makeDummyClientFace();
-  RibStatusPublisher publisher(rib, *face, "/localhost/nfd/rib/list", keyChain);
+  NotificationStream<DummyClientFace> notificationStream(*face,
+    "/localhost/nfd/NotificationStreamTest", keyChain);
 
-  publisher.publish();
-  face->processEvents(time::milliseconds(1));
-
+  SimpleNotification event1("msg1");
+  notificationStream.postNotification(event1);
+  face->processEvents();
   BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
-  decodeRibEntryBlock(face->m_sentDatas[0], name, entry);
-}
+  BOOST_CHECK_EQUAL(face->m_sentDatas[0].getName(),
+                    "/localhost/nfd/NotificationStreamTest/%FE%00");
+  SimpleNotification decoded1;
+  BOOST_CHECK_NO_THROW(decoded1.wireDecode(face->m_sentDatas[0].getContent().blockFromValue()));
+  BOOST_CHECK_EQUAL(decoded1.getMessage(), "msg1");
 
+  SimpleNotification event2("msg2");
+  notificationStream.postNotification(event2);
+  face->processEvents();
+  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 2);
+  BOOST_CHECK_EQUAL(face->m_sentDatas[1].getName(),
+                    "/localhost/nfd/NotificationStreamTest/%FE%01");
+  SimpleNotification decoded2;
+  BOOST_CHECK_NO_THROW(decoded2.wireDecode(face->m_sentDatas[1].getContent().blockFromValue()));
+  BOOST_CHECK_EQUAL(decoded2.getMessage(), "msg2");
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
-} // namespace rib
 } // namespace nfd

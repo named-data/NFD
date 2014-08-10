@@ -119,7 +119,7 @@ FaceManager::FaceManager(FaceTable& faceTable,
   , m_faceTable(faceTable)
   , m_faceStatusPublisher(m_faceTable, *m_face, FACES_LIST_DATASET_PREFIX, keyChain)
   , m_channelStatusPublisher(m_factories, *m_face, CHANNELS_LIST_DATASET_PREFIX, keyChain)
-  , m_notificationStream(m_face, FACE_EVENTS_PREFIX, keyChain)
+  , m_notificationStream(*m_face, FACE_EVENTS_PREFIX, keyChain)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
                          SIGNED_COMMAND_VERBS +
                          (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))

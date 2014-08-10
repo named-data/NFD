@@ -33,6 +33,9 @@
 
 namespace nfd {
 
+/** \brief provides a publisher of Status Dataset or other segmented octet stream
+ *  \sa http://redmine.named-data.net/projects/nfd/wiki/StatusDataset
+ */
 template <class FaceBase>
 class SegmentPublisher : noncopyable
 {
@@ -59,48 +62,44 @@ public:
   void
   publish()
   {
-    Name segmentPrefix(m_prefix);
-    segmentPrefix.appendVersion();
-
     ndn::EncodingBuffer buffer;
-
     generate(buffer);
 
     const uint8_t* rawBuffer = buffer.buf();
     const uint8_t* segmentBegin = rawBuffer;
     const uint8_t* end = rawBuffer + buffer.size();
 
+    Name segmentPrefix(m_prefix);
+    segmentPrefix.appendVersion();
+
     uint64_t segmentNo = 0;
-    do
-      {
-        const uint8_t* segmentEnd = segmentBegin + getMaxSegmentSize();
-        if (segmentEnd > end)
-          {
-            segmentEnd = end;
-          }
-
-        Name segmentName(segmentPrefix);
-        segmentName.appendSegment(segmentNo);
-
-        shared_ptr<Data> data(make_shared<Data>(segmentName));
-        data->setContent(segmentBegin, segmentEnd - segmentBegin);
-
-        segmentBegin = segmentEnd;
-        if (segmentBegin >= end)
-          {
-            data->setFinalBlockId(segmentName[-1]);
-          }
-
-        publishSegment(data);
-        segmentNo++;
+    do {
+      const uint8_t* segmentEnd = segmentBegin + getMaxSegmentSize();
+      if (segmentEnd > end) {
+        segmentEnd = end;
       }
-    while (segmentBegin < end);
+
+      Name segmentName(segmentPrefix);
+      segmentName.appendSegment(segmentNo);
+
+      shared_ptr<Data> data = make_shared<Data>(segmentName);
+      data->setContent(segmentBegin, segmentEnd - segmentBegin);
+
+      segmentBegin = segmentEnd;
+      if (segmentBegin >= end) {
+        data->setFinalBlockId(segmentName[-1]);
+      }
+
+      publishSegment(data);
+      ++segmentNo;
+    } while (segmentBegin < end);
   }
 
 protected:
-
+  /** \brief In a derived class, write the octets into outBuffer.
+   */
   virtual size_t
-  generate(ndn::EncodingBuffer& outBuffer) =0;
+  generate(ndn::EncodingBuffer& outBuffer) = 0;
 
 private:
   void

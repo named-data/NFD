@@ -23,63 +23,72 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP
-#define NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP
+#ifndef NFD_TESTS_CORE_SIMPLE_NOTIFICATION_HPP
+#define NFD_TESTS_CORE_SIMPLE_NOTIFICATION_HPP
 
-#include "mgmt/app-face.hpp"
+#include "common.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-class NotificationStream
+class SimpleNotification
 {
 public:
-  NotificationStream(shared_ptr<AppFace> face, const Name& prefix, ndn::KeyChain& keyChain);
+  SimpleNotification()
+  {
+  }
 
-  ~NotificationStream();
+  SimpleNotification(const std::string& message)
+    : m_message(message)
+  {
+  }
 
-  template <typename T> void
-  postNotification(const T& notification);
+  ~SimpleNotification()
+  {
+  }
+
+  Block
+  wireEncode() const
+  {
+    ndn::EncodingBuffer buffer;
+    prependByteArrayBlock(buffer,
+                          0x8888,
+                          reinterpret_cast<const uint8_t*>(m_message.c_str()),
+                          m_message.size());
+    return buffer.block();
+  }
+
+  void
+  wireDecode(const Block& block)
+  {
+    m_message.assign(reinterpret_cast<const char*>(block.value()),
+                     block.value_size());
+
+    // error for testing
+    if (!m_message.empty() && m_message[0] == '\x07')
+      throw tlv::Error("0x07 error");
+  }
+
+public:
+  const std::string&
+  getMessage() const
+  {
+    return m_message;
+  }
+
+  void
+  setMessage(const std::string& message)
+  {
+    m_message = message;
+  }
 
 private:
-  shared_ptr<AppFace> m_face;
-  const Name m_prefix;
-  uint64_t m_sequenceNo;
-  ndn::KeyChain& m_keyChain;
+  std::string m_message;
 };
 
-inline
-NotificationStream::NotificationStream(shared_ptr<AppFace> face,
-                                       const Name& prefix,
-                                       ndn::KeyChain& keyChain)
-  : m_face(face)
-  , m_prefix(prefix)
-  , m_sequenceNo(0)
-  , m_keyChain(keyChain)
-{
-}
-
-template <typename T>
-inline void
-NotificationStream::postNotification(const T& notification)
-{
-  Name dataName(m_prefix);
-  dataName.appendSegment(m_sequenceNo);
-  shared_ptr<Data> data(make_shared<Data>(dataName));
-  data->setContent(notification.wireEncode());
-  data->setFreshnessPeriod(time::seconds(1));
-
-  m_keyChain.sign(*data);
-  m_face->put(*data);
-
-  ++m_sequenceNo;
-}
-
-inline
-NotificationStream::~NotificationStream()
-{
-}
-
+} // namespace tests
 } // namespace nfd
 
-
-#endif // NFD_DAEMON_MGMT_NOTIFICATION_STREAM_HPP
+#endif // NFD_TESTS_CORE_SIMPLE_NOTIFICATION_HPP

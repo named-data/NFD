@@ -26,7 +26,6 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
 
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 
 #include <boost/program_options/options_description.hpp>
@@ -35,6 +34,7 @@
 
 #include "version.hpp"
 #include "core/face-uri.hpp"
+#include "core/face-monitor.hpp"
 #include "network.hpp"
 
 namespace po = boost::program_options;
@@ -49,7 +49,7 @@ class AutoregServer : boost::noncopyable
 public:
   AutoregServer()
     : m_controller(m_face)
-    // , m_lastNotification(<undefined>)
+    , m_faceMonitor(m_face)
     , m_cost(255)
   {
   }
@@ -130,13 +130,8 @@ public:
   }
 
   void
-  onNotification(const Data& data)
+  onNotification(const FaceEventNotification& notification)
   {
-    m_lastNotification = data.getName().get(-1).toSegment();
-
-    // process
-    FaceEventNotification notification(data.getContent().blockFromValue());
-
     if (notification.getKind() == FACE_EVENT_CREATED &&
         !notification.isLocal() &&
         notification.isOnDemand())
@@ -147,33 +142,6 @@ public:
       {
         std::cerr << "IGNORED: " << notification << std::endl;
       }
-
-    Name nextNotification("/localhost/nfd/faces/events");
-    nextNotification
-      .appendSegment(m_lastNotification + 1);
-
-    // no need to set freshness or child selectors
-    m_face.expressInterest(nextNotification,
-                           bind(&AutoregServer::onNotification, this, _2),
-                           bind(&AutoregServer::onTimeout, this, _1));
-  }
-
-  void
-  onTimeout(const Interest& timedOutInterest)
-  {
-    // re-express the timed out interest, but reset Nonce, since it has to change
-
-    // To be robust against missing notification, use ChildSelector and MustBeFresh
-    Interest interest("/localhost/nfd/faces/events");
-    interest
-      .setMustBeFresh(true)
-      .setChildSelector(1)
-      .setInterestLifetime(time::seconds(60))
-      ;
-
-    m_face.expressInterest(interest,
-                           bind(&AutoregServer::onNotification, this, _2),
-                           bind(&AutoregServer::onTimeout, this, _1));
   }
 
   void
@@ -225,16 +193,8 @@ public:
         std::cout << "  " << *network << std::endl;
       }
 
-    Interest interest("/localhost/nfd/faces/events");
-    interest
-      .setMustBeFresh(true)
-      .setChildSelector(1)
-      .setInterestLifetime(time::seconds(60))
-      ;
-
-    m_face.expressInterest(interest,
-                           bind(&AutoregServer::onNotification, this, _2),
-                           bind(&AutoregServer::onTimeout, this, _1));
+    m_faceMonitor.onNotification += bind(&AutoregServer::onNotification, this, _1);
+    m_faceMonitor.start();
 
     boost::asio::signal_set signalSet(m_face.getIoService(), SIGINT, SIGTERM);
     signalSet.async_wait(bind(&AutoregServer::signalHandler, this));
@@ -314,7 +274,7 @@ public:
 private:
   Face m_face;
   Controller m_controller;
-  uint64_t m_lastNotification;
+  FaceMonitor m_faceMonitor;
   std::vector<ndn::Name> m_autoregPrefixes;
   uint64_t m_cost;
   std::vector<Network> m_whiteList;

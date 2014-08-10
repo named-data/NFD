@@ -27,11 +27,11 @@
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 
 #include "common.hpp"
+#include "core/notification-stream.hpp"
 #include "face/local-face.hpp"
 #include "mgmt/manager-base.hpp"
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/channel-status-publisher.hpp"
-#include "mgmt/notification-stream.hpp"
 
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
 #include <ndn-cxx/management/nfd-control-response.hpp>
@@ -174,7 +174,7 @@ private:
   FaceTable& m_faceTable;
   FaceStatusPublisher m_faceStatusPublisher;
   ChannelStatusPublisher m_channelStatusPublisher;
-  NotificationStream m_notificationStream;
+  NotificationStream<AppFace> m_notificationStream;
 
   typedef function<void(FaceManager*,
                         const Interest&,

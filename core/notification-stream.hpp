@@ -23,26 +23,59 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_CORE_FACE_MONITOR_HPP
-#define NFD_CORE_FACE_MONITOR_HPP
+#ifndef NFD_CORE_NOTIFICATION_STREAM_HPP
+#define NFD_CORE_NOTIFICATION_STREAM_HPP
 
-#include "notification-subscriber.hpp"
+#include "common.hpp"
 
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/encoding/encoding-buffer.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 
-using ndn::nfd::FaceEventNotification;
-
-class FaceMonitor : public NotificationSubscriber<FaceEventNotification>
+/** \brief provides a publisher of Notification Stream
+ *  \sa http://redmine.named-data.net/projects/nfd/wiki/Notification
+ */
+template <class FaceBase>
+class NotificationStream : noncopyable
 {
 public:
-  FaceMonitor(ndn::Face& face)
-    : NotificationSubscriber<FaceEventNotification>(face, "ndn:/localhost/nfd/faces/events")
+  NotificationStream(FaceBase& face, const Name& prefix, ndn::KeyChain& keyChain)
+    : m_face(face)
+    , m_prefix(prefix)
+    , m_keyChain(keyChain)
+    , m_sequenceNo(0)
   {
   }
+
+  virtual
+  ~NotificationStream()
+  {
+  }
+
+  template<typename T> void
+  postNotification(const T& notification)
+  {
+    Name dataName = m_prefix;
+    dataName.appendSequenceNumber(m_sequenceNo);
+
+    shared_ptr<Data> data = make_shared<Data>(dataName);
+    data->setContent(notification.wireEncode());
+    data->setFreshnessPeriod(time::seconds(1));
+
+    m_keyChain.sign(*data);
+    m_face.put(*data);
+
+    ++m_sequenceNo;
+  }
+
+private:
+  FaceBase& m_face;
+  const Name m_prefix;
+  ndn::KeyChain& m_keyChain;
+  uint64_t m_sequenceNo;
 };
 
 } // namespace nfd
 
-#endif // NFD_CORE_FACE_MONITOR_HPP
+#endif // NFD_CORE_NOTIFICATION_STREAM_HPP

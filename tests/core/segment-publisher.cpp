@@ -26,7 +26,7 @@
 #include "core/segment-publisher.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/dummy-face.hpp"
+#include "tests/dummy-client-face.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
 
@@ -38,10 +38,10 @@ namespace tests {
 NFD_LOG_INIT("SegmentPublisherTest");
 
 template<int64_t N=10000>
-class TestSegmentPublisher : public SegmentPublisher<DummyFace>
+class TestSegmentPublisher : public SegmentPublisher<DummyClientFace>
 {
 public:
-  TestSegmentPublisher(DummyFace& face,
+  TestSegmentPublisher(DummyClientFace& face,
                        const Name& prefix,
                        ndn::KeyChain& keyChain)
     : SegmentPublisher(face, prefix, keyChain)
@@ -90,7 +90,7 @@ class SegmentPublisherFixture : public BaseFixture
 {
 public:
   SegmentPublisherFixture()
-    : m_face(makeDummyFace())
+    : m_face(makeDummyClientFace())
     , m_publisher(*m_face, "/localhost/nfd/SegmentPublisherFixture", m_keyChain)
   {
   }
@@ -134,7 +134,7 @@ public:
   }
 
 protected:
-  shared_ptr<DummyFace> m_face;
+  shared_ptr<DummyClientFace> m_face;
   TestSegmentPublisher<N> m_publisher;
   ndn::EncodingBuffer m_buffer;
   ndn::KeyChain m_keyChain;
