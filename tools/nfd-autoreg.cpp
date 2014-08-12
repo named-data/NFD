@@ -27,6 +27,7 @@
 #include <ndn-cxx/name.hpp>
 
 #include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/management/nfd-face-monitor.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -34,7 +35,6 @@
 
 #include "version.hpp"
 #include "core/face-uri.hpp"
-#include "core/face-monitor.hpp"
 #include "network.hpp"
 
 namespace po = boost::program_options;
@@ -43,6 +43,7 @@ namespace nfd {
 
 using namespace ndn::nfd;
 using ndn::Face;
+using ndn::nfd::FaceEventNotification;
 
 class AutoregServer : boost::noncopyable
 {

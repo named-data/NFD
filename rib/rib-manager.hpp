@@ -27,11 +27,11 @@
 #define NFD_RIB_RIB_MANAGER_HPP
 
 #include "rib.hpp"
-#include "face-monitor.hpp"
 #include "core/config-file.hpp"
 #include "rib-status-publisher.hpp"
 
 #include <ndn-cxx/security/validator-config.hpp>
+#include <ndn-cxx/management/nfd-face-monitor.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-control-command.hpp>
 #include <ndn-cxx/management/nfd-control-response.hpp>
@@ -43,6 +43,8 @@ namespace rib {
 using ndn::nfd::ControlCommand;
 using ndn::nfd::ControlResponse;
 using ndn::nfd::ControlParameters;
+
+using ndn::nfd::FaceEventNotification;
 
 class RibManager : noncopyable
 {
@@ -221,7 +223,7 @@ private:
   ndn::KeyChain m_keyChain;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
-  FaceMonitor m_faceMonitor;
+  ndn::nfd::FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
 
   RibStatusPublisher m_ribStatusPublisher;
