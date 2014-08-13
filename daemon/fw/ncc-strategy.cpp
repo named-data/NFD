@@ -100,6 +100,12 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     pitEntryInfo->maxInterval = std::max(time::microseconds(1),
       time::microseconds((2 * deferRange.count() + nUpstreams - 1) / nUpstreams));
   }
+  else {
+    // Normally, maxInterval is unused if there aren't any face beyond best and previousBest.
+    // However, in case FIB entry gains a new nexthop before doPropagate executes (bug 1853),
+    // this maxInterval would be used to determine when the next doPropagate would happen.
+    pitEntryInfo->maxInterval = deferFirst;
+  }
   pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
     bind(&NccStrategy::doPropagate, this,
          weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
@@ -143,8 +149,8 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
   }
 
   if (isForwarded) {
-    boost::random::uniform_int_distribution<time::nanoseconds::rep> dist(
-      0, pitEntryInfo->maxInterval.count() - 1);
+    boost::random::uniform_int_distribution<time::nanoseconds::rep> dist(0,
+      pitEntryInfo->maxInterval.count() - 1);
     time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
     bind(&NccStrategy::doPropagate, this,

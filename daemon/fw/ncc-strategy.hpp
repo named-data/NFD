@@ -99,8 +99,11 @@ protected:
 
   public:
     bool isNewInterest;
+    /// timer that expires when best face does not respond within predicted time
     EventId bestFaceTimeout;
+    /// timer for propagating to another face
     EventId propagateTimer;
+    /// maximum interval between forwarding to two nexthops except best and previous
     time::microseconds maxInterval;
   };
 
