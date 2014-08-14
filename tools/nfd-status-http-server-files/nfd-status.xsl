@@ -45,26 +45,35 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
 <xsl:template name="formatDuration">
   <xsl:param name="duration" />
   <xsl:variable name="seconds"><xsl:value-of select="substring($duration, 3, string-length($duration)-3)" /></xsl:variable>
-  <xsl:variable name="days"><xsl:value-of select="round($seconds div 86400)" /></xsl:variable>
-  <xsl:variable name="hours"><xsl:value-of select="round($seconds div 3600)" /></xsl:variable>
-  <xsl:variable name="minutes"><xsl:value-of select="round($seconds div 60)" /></xsl:variable>
-  <xsl:variable name="uptime">
+  <xsl:variable name="days"><xsl:value-of select="floor($seconds div 86400)" /></xsl:variable>
+  <xsl:variable name="hours"><xsl:value-of select="floor($seconds div 3600)" /></xsl:variable>
+  <xsl:variable name="minutes"><xsl:value-of select="floor($seconds div 60)" /></xsl:variable>
   <xsl:choose>
-    <xsl:when test="$days > 0">
+    <xsl:when test="$days = 1">
+      <xsl:value-of select="$days"/> day
+    </xsl:when>
+    <xsl:when test="$days > 1">
       <xsl:value-of select="$days"/> days
     </xsl:when>
-    <xsl:when test="$hours > 0">
+    <xsl:when test="$hours = 1">
+      <xsl:value-of select="$hours"/> hour
+    </xsl:when>
+    <xsl:when test="$hours > 1">
       <xsl:value-of select="$hours"/> hours
     </xsl:when>
-    <xsl:when test="$minutes > 0">
+    <xsl:when test="$minutes = 1">
+      <xsl:value-of select="$minutes"/> minute
+    </xsl:when>
+    <xsl:when test="$minutes > 1">
       <xsl:value-of select="$minutes"/> minutes
+    </xsl:when>
+    <xsl:when test="$seconds = 1">
+      <xsl:value-of select="$seconds"/> second
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="$seconds"/> seconds
     </xsl:otherwise>
   </xsl:choose>
-  </xsl:variable>
-  <xsl:value-of select="$uptime"/>
 </xsl:template>
 
 <xsl:template match="nfd:generalStatus">
