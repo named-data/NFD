@@ -28,6 +28,8 @@
 
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -81,13 +83,11 @@ public:
   }
 
   /**
-   * \return true if uri is blacklisted
+   * \return true if address is blacklisted
    */
   bool
-  isBlacklisted(const FaceUri& uri)
+  isBlacklisted(const boost::asio::ip::address& address)
   {
-    boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost());
-
     for (std::vector<Network>::const_iterator network = m_blackList.begin();
          network != m_blackList.end();
          ++network)
@@ -100,13 +100,11 @@ public:
   }
 
   /**
-   * \return true if uri is whitelisted
+   * \return true if address is whitelisted
    */
   bool
-  isWhitelisted(const FaceUri& uri)
+  isWhitelisted(const boost::asio::ip::address& address)
   {
-    boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost());
-
     for (std::vector<Network>::const_iterator network = m_whiteList.begin();
          network != m_whiteList.end();
          ++network)
@@ -139,6 +137,25 @@ public:
   }
 
   void
+  registerPrefixesIfNeeded(uint64_t faceId, const FaceUri& uri, bool isOnDemand)
+  {
+    if (hasAllowedSchema(uri)) {
+      boost::system::error_code ec;
+      boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost(), ec);
+
+      if (!address.is_multicast()) {
+        // register all-face prefixes
+        registerPrefixesForFace(faceId, m_allFacesPrefixes);
+
+        // register autoreg prefixes if new face is on-demand and not blacklisted and whitelisted
+        if (isOnDemand && !isBlacklisted(address) && isWhitelisted(address)) {
+          registerPrefixesForFace(faceId, m_autoregPrefixes);
+        }
+      }
+    }
+  }
+
+  void
   onNotification(const FaceEventNotification& notification)
   {
     if (notification.getKind() == FACE_EVENT_CREATED &&
@@ -146,17 +163,8 @@ public:
       {
         std::cerr << "PROCESSING: " << notification << std::endl;
 
-        FaceUri uri(notification.getRemoteUri());
-
-        if (hasAllowedSchema(uri)) {
-          // register all-face prefixes
-          registerPrefixesForFace(notification.getFaceId(), m_allFacesPrefixes);
-
-          // register autoreg prefixes if new face is on-demand and not blacklisted and whitelisted
-          if (notification.isOnDemand() && !isBlacklisted(uri) && isWhitelisted(uri)) {
-            registerPrefixesForFace(notification.getFaceId(), m_autoregPrefixes);
-          }
-        }
+        registerPrefixesIfNeeded(notification.getFaceId(), FaceUri(notification.getRemoteUri()),
+                                 notification.isOnDemand());
       }
     else
       {
@@ -229,6 +237,68 @@ public:
     m_face.processEvents();
   }
 
+
+  void
+  fetchFaceStatusSegments(const Data& data, const shared_ptr<ndn::OBufferStream>& buffer)
+  {
+    buffer->write(reinterpret_cast<const char*>(data.getContent().value()),
+                  data.getContent().value_size());
+
+    uint64_t currentSegment = data.getName().get(-1).toSegment();
+
+    const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
+    if (finalBlockId.empty() ||
+        finalBlockId.toSegment() > currentSegment)
+      {
+        m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
+                               bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
+                               ndn::OnTimeout());
+      }
+    else
+      {
+        return processFaceStatusDataset(buffer);
+      }
+  }
+
+  void
+  startFetchingFaceStatusDataset()
+  {
+    shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
+
+    Interest interest("/localhost/nfd/faces/list");
+    interest.setChildSelector(1);
+    interest.setMustBeFresh(true);
+
+    m_face.expressInterest(interest,
+                           bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
+                           ndn::OnTimeout());
+  }
+
+  void
+  processFaceStatusDataset(const shared_ptr<ndn::OBufferStream>& buffer)
+  {
+    ndn::ConstBufferPtr buf = buffer->buf();
+    std::vector<uint64_t> multicastFaces;
+
+    size_t offset = 0;
+    while (offset < buf->size())
+      {
+        Block block;
+        bool ok = Block::fromBuffer(buf, offset, block);
+        if (!ok)
+          {
+            std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+            break;
+          }
+
+        offset += block.size();
+
+        nfd::FaceStatus faceStatus(block);
+        registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
+                                 faceStatus.isOnDemand());
+      }
+  }
+
   int
   main(int argc, char* argv[])
   {
@@ -292,6 +362,7 @@ public:
 
     try
       {
+        startFetchingFaceStatusDataset();
         startProcessing();
       }
     catch (std::exception& e)
