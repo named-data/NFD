@@ -253,13 +253,15 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       return;
     }
 
-  if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
+  bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
+  if (isSelfRegistration)
     {
       parameters.setFaceId(request->getIncomingFaceId());
     }
 
   // Is the face valid?
-  if (activeFaces.find(parameters.getFaceId()) == activeFaces.end())
+  // Issue 1852: There is no need to check (and it can easily fail) for self-registrations
+  if (!isSelfRegistration && activeFaces.find(parameters.getFaceId()) == activeFaces.end())
     {
       NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
 
@@ -327,13 +329,15 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
       return;
     }
 
-  if (!parameters.hasFaceId() || parameters.getFaceId() == 0)
+  bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
+  if (isSelfRegistration)
     {
       parameters.setFaceId(request->getIncomingFaceId());
     }
 
   // Is the face valid?
-  if (activeFaces.find(parameters.getFaceId()) == activeFaces.end())
+  // Issue 1852: There is no need to check (and it can easily fail) for self-registrations
+  if (!isSelfRegistration && activeFaces.find(parameters.getFaceId()) == activeFaces.end())
     {
       NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
 
