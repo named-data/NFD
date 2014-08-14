@@ -216,7 +216,8 @@ EthernetFace::sendPacket(const ndn::Block& block)
     }
 
   NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                << "] Successfully sent: " << buffer.size() << " bytes");
+                << "] Successfully sent: " << block.size() << " bytes");
+  this->getMutableCounters().getNOutBytes() += block.size();
 }
 
 void
@@ -249,8 +250,6 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
 
       packet += ethernet::HDR_LEN;
       length -= ethernet::HDR_LEN;
-      NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                    << "] Received: " << length << " bytes");
 
       /// \todo Reserve space in front and at the back
       ///       of the underlying buffer
@@ -258,6 +257,10 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
       bool isOk = Block::fromBuffer(packet, length, element);
       if (isOk)
         {
+          NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
+                        << "] Received: " << element.size() << " bytes");
+          this->getMutableCounters().getNInBytes() += element.size();
+
           if (!decodeAndDispatchInput(element))
             {
               NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
@@ -299,7 +302,7 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
     }
   else
     {
-      msg = "Receive operation failed, closing face: " + error.category().message(error.value());
+      msg = "Receive operation failed, closing face: " + error.message();
       NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
 
