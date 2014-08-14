@@ -56,31 +56,36 @@ public:
   }
 
   void
-  onRegisterCommandSuccess(const FaceEventNotification& notification, const Name& prefix)
+  onRegisterCommandSuccess(uint64_t faceId, const Name& prefix)
   {
-    std::cerr << "SUCCEED: register " << prefix << " on face "
-              << notification.getFaceId() << std::endl;
+    std::cerr << "SUCCEED: register " << prefix << " on face " << faceId << std::endl;
   }
 
   void
-  onRegisterCommandFailure(const FaceEventNotification& notification, const Name& prefix,
+  onRegisterCommandFailure(uint64_t faceId, const Name& prefix,
                            uint32_t code, const std::string& reason)
   {
-    std::cerr << "FAILED: register " << prefix << " on face " << notification.getFaceId()
+    std::cerr << "FAILED: register " << prefix << " on face " << faceId
               << " (code: " << code << ", reason: " << reason << ")" << std::endl;
   }
 
   /**
-   * \return true if auto-register should not be performed for uri
+   * \return true if uri has schema allowed to do auto-registrations
    */
   bool
-  isFiltered(const FaceUri& uri)
+  hasAllowedSchema(const FaceUri& uri)
   {
     const std::string& scheme = uri.getScheme();
-    if (!(scheme == "udp4" || scheme == "tcp4" ||
-          scheme == "udp6" || scheme == "tcp6"))
-      return true;
+    return (scheme == "udp4" || scheme == "tcp4" ||
+            scheme == "udp6" || scheme == "tcp6");
+  }
 
+  /**
+   * \return true if uri is blacklisted
+   */
+  bool
+  isBlacklisted(const FaceUri& uri)
+  {
     boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost());
 
     for (std::vector<Network>::const_iterator network = m_blackList.begin();
@@ -91,42 +96,45 @@ public:
           return true;
       }
 
+    return false;
+  }
+
+  /**
+   * \return true if uri is whitelisted
+   */
+  bool
+  isWhitelisted(const FaceUri& uri)
+  {
+    boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost());
+
     for (std::vector<Network>::const_iterator network = m_whiteList.begin();
          network != m_whiteList.end();
          ++network)
       {
         if (network->doesContain(address))
-          return false;
+          return true;
       }
 
-    return true;
+    return false;
   }
 
   void
-  processCreateFace(const FaceEventNotification& notification)
+  registerPrefixesForFace(uint64_t faceId,
+                          const std::vector<ndn::Name>& prefixes)
   {
-    FaceUri uri(notification.getRemoteUri());
-
-    if (isFiltered(uri))
-      {
-        std::cerr << "FILTERED: " << notification << std::endl;
-        return;
-      }
-
-    std::cerr << "PROCESSING: " << notification << std::endl;
-    for (std::vector<ndn::Name>::const_iterator prefix = m_autoregPrefixes.begin();
-         prefix != m_autoregPrefixes.end();
+    for (std::vector<ndn::Name>::const_iterator prefix = prefixes.begin();
+         prefix != prefixes.end();
          ++prefix)
       {
         m_controller.start<RibRegisterCommand>(
           ControlParameters()
             .setName(*prefix)
-            .setFaceId(notification.getFaceId())
+            .setFaceId(faceId)
             .setOrigin(ROUTE_ORIGIN_AUTOREG)
             .setCost(m_cost)
             .setExpirationPeriod(time::milliseconds::max()),
-          bind(&AutoregServer::onRegisterCommandSuccess, this, notification, *prefix),
-          bind(&AutoregServer::onRegisterCommandFailure, this, notification, *prefix, _1, _2));
+          bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, *prefix),
+          bind(&AutoregServer::onRegisterCommandFailure, this, faceId, *prefix, _1, _2));
       }
   }
 
@@ -134,10 +142,21 @@ public:
   onNotification(const FaceEventNotification& notification)
   {
     if (notification.getKind() == FACE_EVENT_CREATED &&
-        !notification.isLocal() &&
-        notification.isOnDemand())
+        !notification.isLocal())
       {
-        processCreateFace(notification);
+        std::cerr << "PROCESSING: " << notification << std::endl;
+
+        FaceUri uri(notification.getRemoteUri());
+
+        if (hasAllowedSchema(uri)) {
+          // register all-face prefixes
+          registerPrefixesForFace(notification.getFaceId(), m_allFacesPrefixes);
+
+          // register autoreg prefixes if new face is on-demand and not blacklisted and whitelisted
+          if (notification.isOnDemand() && !isBlacklisted(uri) && isWhitelisted(uri)) {
+            registerPrefixesForFace(notification.getFaceId(), m_autoregPrefixes);
+          }
+        }
       }
     else
       {
@@ -145,12 +164,12 @@ public:
       }
   }
 
+
   void
   signalHandler()
   {
     m_face.shutdown();
   }
-
 
 
   void
@@ -170,6 +189,13 @@ public:
     std::cerr << "AUTOREG prefixes: " << std::endl;
     for (std::vector<ndn::Name>::const_iterator prefix = m_autoregPrefixes.begin();
          prefix != m_autoregPrefixes.end();
+         ++prefix)
+      {
+        std::cout << "  " << *prefix << std::endl;
+      }
+    std::cerr << "ALL-FACES-AUTOREG prefixes: " << std::endl;
+    for (std::vector<ndn::Name>::const_iterator prefix = m_allFacesPrefixes.begin();
+         prefix != m_allFacesPrefixes.end();
          ++prefix)
       {
         std::cout << "  " << *prefix << std::endl;
@@ -210,7 +236,11 @@ public:
     optionDesciption.add_options()
       ("help,h", "produce help message")
       ("prefix,i", po::value<std::vector<ndn::Name> >(&m_autoregPrefixes)->composing(),
-       "prefix that should be automatically registered when new remote face is established")
+       "prefix that should be automatically registered when new a remote non-local face is "
+       "established")
+      ("all-faces-prefix,a", po::value<std::vector<ndn::Name> >(&m_allFacesPrefixes)->composing(),
+       "prefix that should be automatically registered for all TCP and UDP non-local faces "
+       "(blacklists and whitelists do not apply to this prefix)")
       ("cost,c", po::value<uint64_t>(&m_cost)->default_value(255),
        "FIB cost which should be assigned to autoreg nexthops")
       ("whitelist,w", po::value<std::vector<Network> >(&m_whiteList)->composing(),
@@ -245,9 +275,10 @@ public:
         return 0;
       }
 
-    if (m_autoregPrefixes.empty())
+    if (m_autoregPrefixes.empty() && m_allFacesPrefixes.empty())
       {
-        std::cerr << "ERROR: at least one --prefix must be specified" << std::endl << std::endl;
+        std::cerr << "ERROR: at least one --prefix or --all-faces-prefix must be specified"
+                  << std::endl << std::endl;
         usage(std::cerr, optionDesciption, argv[0]);
         return 2;
       }
@@ -277,6 +308,7 @@ private:
   Controller m_controller;
   FaceMonitor m_faceMonitor;
   std::vector<ndn::Name> m_autoregPrefixes;
+  std::vector<ndn::Name> m_allFacesPrefixes;
   uint64_t m_cost;
   std::vector<Network> m_whiteList;
   std::vector<Network> m_blackList;
