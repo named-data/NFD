@@ -152,6 +152,9 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Face ID</th>
         <th>Remote URI</th>
         <th>Local URI</th>
+        <th>Local</th>
+        <th>OnDemand</th>
+        <th>Expires in</th>
         <th>In Interests</th>
         <th>In Data</th>
         <th>In Bytes</th>
@@ -174,6 +177,26 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:faceId"/></td>
         <td><xsl:value-of select="nfd:remoteUri"/></td>
         <td><xsl:value-of select="nfd:localUri"/></td>
+        <td>
+          <xsl:if test="nfd:flags/nfd:local">
+            Y
+          </xsl:if>
+        </td>
+        <td>
+          <xsl:if test="nfd:flags/nfd:on-demand">
+            Y
+          </xsl:if>
+        </td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="nfd:expirationPeriod">
+              <xsl:call-template name="formatDuration"><xsl:with-param name="duration" select="nfd:expirationPeriod" /></xsl:call-template>
+            </xsl:when>
+            <xsl:otherwise>
+              Never
+            </xsl:otherwise>
+          </xsl:choose>
+        </td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
         <td><xsl:value-of select="nfd:byteCounters/nfd:incomingBytes"/></td>
