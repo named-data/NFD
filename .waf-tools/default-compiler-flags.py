@@ -19,7 +19,7 @@ def configure(conf):
     if conf.options.use_cxx11:
         defaultFlags += ['-std=c++0x', '-std=c++11']
     else:
-        defaultFlags += ['-std=c++03']
+        defaultFlags += ['-std=c++03', '-Wno-variadic-macros', '-Wno-c99-extensions']
 
     defaultFlags += ['-pedantic', '-Wall', '-Wno-long-long', '-Wno-unneeded-internal-declaration']
 
