@@ -692,7 +692,8 @@ RibManager::sendUpdatesToFib(const shared_ptr<const Interest>& request,
       sendSuccessResponse(request, parameters);
     }
 
-  NFD_LOG_DEBUG("Applying " << updates.size() << " updates to FIB");
+  std::string updateString = (updates.size() == 1) ? " update" : " updates";
+  NFD_LOG_DEBUG("Applying " << updates.size() << updateString << " to FIB");
 
   // Assign an ID to this FIB transaction
   TransactionId currentTransactionId = ++m_lastTransactionId;
@@ -703,6 +704,7 @@ RibManager::sendUpdatesToFib(const shared_ptr<const Interest>& request,
   for (Rib::FibUpdateList::const_iterator it = updates.begin(); it != updates.end(); ++it)
     {
       shared_ptr<const FibUpdate> update(*it);
+      NFD_LOG_DEBUG("Sending FIB update: " << *update);
 
       if (update->action == FibUpdate::ADD_NEXTHOP)
         {
