@@ -71,6 +71,8 @@ const RibManager::UnsignedVerbAndProcessor RibManager::UNSIGNED_COMMAND_VERBS[] 
 const Name RibManager::LIST_COMMAND_PREFIX("/localhost/nfd/rib/list");
 const size_t RibManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
 
+const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
+
 RibManager::RibManager(ndn::Face& face)
   : m_face(face)
   , m_nfdController(m_face)
@@ -87,6 +89,11 @@ RibManager::RibManager(ndn::Face& face)
                            UNSIGNED_COMMAND_VERBS +
                            (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
 {
+}
+
+RibManager::~RibManager()
+{
+  scheduler::cancel(m_activeFaceFetchEvent);
 }
 
 void
@@ -121,7 +128,7 @@ RibManager::registerWithNfd()
   m_faceMonitor.onNotification += bind(&RibManager::onNotification, this, _1);
   m_faceMonitor.start();
 
-  fetchActiveFaces();
+  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
 }
 
 void
@@ -259,20 +266,6 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       parameters.setFaceId(request->getIncomingFaceId());
     }
 
-  // Is the face valid?
-  // Issue 1852: There is no need to check (and it can easily fail) for self-registrations
-  if (!isSelfRegistration && activeFaces.find(parameters.getFaceId()) == activeFaces.end())
-    {
-      NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
-
-      if (static_cast<bool>(request))
-        {
-          sendResponse(request->getName(), 410, "Face not found");
-        }
-
-      return;
-    }
-
   FaceEntry faceEntry;
   faceEntry.faceId = parameters.getFaceId();
   faceEntry.origin = parameters.getOrigin();
@@ -303,6 +296,7 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   NFD_LOG_TRACE("register prefix: " << faceEntry);
 
   m_managedRib.insert(parameters.getName(), faceEntry);
+  m_registeredFaces.insert(faceEntry.faceId);
 
   sendUpdatesToFib(request, parameters);
 }
@@ -347,20 +341,6 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
   if (isSelfRegistration)
     {
       parameters.setFaceId(request->getIncomingFaceId());
-    }
-
-  // Is the face valid?
-  // Issue 1852: There is no need to check (and it can easily fail) for self-registrations
-  if (!isSelfRegistration && activeFaces.find(parameters.getFaceId()) == activeFaces.end())
-    {
-      NFD_LOG_DEBUG("register result: FAIL reason: unknown faceId");
-
-      if (static_cast<bool>(request))
-        {
-          sendResponse(request->getName(), 410, "Face not found");
-        }
-
-      return;
     }
 
   FaceEntry faceEntry;
@@ -598,6 +578,9 @@ RibManager::onAddNextHopError(uint32_t code, const std::string& error,
   {
     sendErrorResponse(code, error, request);
   }
+
+  // Since the FIB rejected the update, clean up the invalid face
+  scheduleActiveFaceFetch(time::seconds(1));
 }
 
 void
@@ -653,18 +636,11 @@ RibManager::enableLocalControlHeader()
 void
 RibManager::onNotification(const FaceEventNotification& notification)
 {
-  /// \todo A notification can be missed, in this case check Facelist
   NFD_LOG_TRACE("onNotification: " << notification);
 
-  if (notification.getKind() == ndn::nfd::FACE_EVENT_CREATED)
-    {
-      NFD_LOG_DEBUG("Received notification for created faceId: " << notification.getFaceId());
-      activeFaces.insert(notification.getFaceId());
-    }
-  else if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED)
+  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED)
     {
       NFD_LOG_DEBUG("Received notification for destroyed faceId: " << notification.getFaceId());
-      activeFaces.erase(notification.getFaceId());
 
       scheduler::schedule(time::seconds(0),
                           bind(&RibManager::processErasureAfterNotification, this,
@@ -676,6 +652,7 @@ void
 RibManager::processErasureAfterNotification(uint64_t faceId)
 {
   m_managedRib.erase(faceId);
+  m_registeredFaces.erase(faceId);
 
   sendUpdatesToFibAfterFaceDestroyEvent();
 }
@@ -786,6 +763,15 @@ RibManager::listEntries(const Interest& request)
 }
 
 void
+RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
+{
+  scheduler::cancel(m_activeFaceFetchEvent);
+
+  m_activeFaceFetchEvent = scheduler::schedule(timeToWait,
+                                               bind(&RibManager::fetchActiveFaces, this));
+}
+
+void
 RibManager::fetchActiveFaces()
 {
   NFD_LOG_DEBUG("Fetching active faces");
@@ -818,19 +804,20 @@ RibManager::fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffe
     }
   else
     {
-      updateActiveFaces(buffer);
+      removeInvalidFaces(buffer);
     }
 }
 
 void
-RibManager::updateActiveFaces(shared_ptr<ndn::OBufferStream> buffer)
+RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
 {
-  NFD_LOG_DEBUG("Updating active faces");
+  NFD_LOG_DEBUG("Checking for invalid face registrations");
 
   ndn::ConstBufferPtr buf = buffer->buf();
 
   Block block;
   size_t offset = 0;
+  FaceIdSet activeFaces;
 
   while (offset < buf->size())
     {
@@ -843,16 +830,30 @@ RibManager::updateActiveFaces(shared_ptr<ndn::OBufferStream> buffer)
       offset += block.size();
 
       ndn::nfd::FaceStatus status(block);
-
-      NFD_LOG_DEBUG("Adding faceId: " << status.getFaceId() << " to activeFaces");
       activeFaces.insert(status.getFaceId());
     }
+
+  // Look for face IDs that were registered but not active to find missed
+  // face destroyed events
+  for (FaceIdSet::iterator it = m_registeredFaces.begin(); it != m_registeredFaces.end(); ++it)
+    {
+      if (activeFaces.find(*it) == activeFaces.end())
+        {
+          NFD_LOG_DEBUG("Removing invalid face ID: " << *it);
+          scheduler::schedule(time::seconds(0),
+                              bind(&RibManager::processErasureAfterNotification, this, *it));
+        }
+    }
+
+  // Reschedule the check for future clean up
+  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
 }
 
 void
 RibManager::onFetchFaceStatusTimeout()
 {
   std::cerr << "Face Status Dataset request timed out" << std::endl;
+  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
 }
 
 } // namespace rib

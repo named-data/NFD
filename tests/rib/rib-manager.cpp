@@ -28,7 +28,10 @@
 #include "tests/test-common.hpp"
 #include "tests/dummy-client-face.hpp"
 #include "tests/limited-io.hpp"
+
 #include "rib/rib-status-publisher-common.hpp"
+
+#include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
 namespace rib {
@@ -49,8 +52,6 @@ public:
 
     face->processEvents(time::milliseconds(1));
     face->m_sentInterests.clear();
-
-    manager->activeFaces.insert(1);
   }
 
   ~RibManagerFixture()
@@ -293,6 +294,55 @@ BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
   limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
 
   BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
+}
+
+BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
+{
+  // Register valid face
+  ControlParameters validParameters;
+  validParameters
+    .setName("/test")
+    .setFaceId(1);
+
+  Name validName("/localhost/nfd/rib/register");
+  receiveCommandInterest(validName, validParameters);
+
+  // Register invalid face
+  ControlParameters invalidParameters;
+  invalidParameters
+    .setName("/test")
+    .setFaceId(2);
+
+  Name invalidName("/localhost/nfd/rib/register");
+  receiveCommandInterest(invalidName, invalidParameters);
+
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 2);
+
+  // Receive status with only faceId: 1
+  ndn::nfd::FaceStatus status;
+  status.setFaceId(1);
+
+  shared_ptr<Data> data = nfd::tests::makeData("/localhost/nfd/faces/list");
+  data->setContent(status.wireEncode());
+
+  shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
+  buffer->write(reinterpret_cast<const char*>(data->getContent().value()),
+                data->getContent().value_size());
+
+  manager->removeInvalidFaces(buffer);
+
+  // Run scheduler
+  nfd::tests::LimitedIo limitedIo;
+  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
+
+  Rib::const_iterator it = manager->m_managedRib.find("/test");
+  BOOST_REQUIRE(it != manager->m_managedRib.end());
+
+  shared_ptr<RibEntry> entry = it->second;
+  BOOST_CHECK_EQUAL(entry->hasFaceId(1), true);
+  BOOST_CHECK_EQUAL(entry->hasFaceId(2), false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

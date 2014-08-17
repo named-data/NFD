@@ -279,6 +279,7 @@ Rib::erase(const uint64_t faceId)
               FaceEntry copy = *faceIt;
 
               faceIt = entry->eraseFace(faceIt);
+              m_nItems--;
 
               const bool captureWasTurnedOff = (hadCapture && !entry->hasCapture());
               createFibUpdatesForErasedFaceEntry(*entry, copy, captureWasTurnedOff);

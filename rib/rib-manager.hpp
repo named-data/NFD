@@ -62,6 +62,8 @@ public:
   explicit
   RibManager(ndn::Face& face);
 
+  ~RibManager();
+
   void
   registerWithNfd();
 
@@ -209,16 +211,22 @@ private:
   listEntries(const Interest& request);
 
   void
+  scheduleActiveFaceFetch(const time::seconds& timeToWait);
+
+  void
   fetchActiveFaces();
 
   void
   fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffer);
 
   void
-  updateActiveFaces(shared_ptr<ndn::OBufferStream> buffer);
-
-  void
   onFetchFaceStatusTimeout();
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /** \param buffer Face dataset contents
+  */
+  void
+  removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Rib m_managedRib;
@@ -286,8 +294,13 @@ private:
 
   static const Name FACES_LIST_DATASET_PREFIX;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  std::set<int> activeFaces;
+  static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
+  EventId m_activeFaceFetchEvent;
+
+  typedef std::set<uint64_t> FaceIdSet;
+  /** \brief contains FaceIds with one or more Routes in the RIB
+  */
+  FaceIdSet m_registeredFaces;
 };
 
 } // namespace rib
