@@ -95,6 +95,9 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
       const_cast<Data*>(csMatch)->setIncomingFaceId(FACEID_CONTENT_STORE);
       // XXX should we lookup PIT for other Interests that also match csMatch?
 
+      // set PIT straggler timer
+      this->setStragglerTimer(pitEntry);
+
       // goto outgoing Data pipeline
       this->onOutgoingData(*csMatch, inFace);
       return;

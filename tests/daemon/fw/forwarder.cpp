@@ -79,6 +79,47 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(CsMatched)
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  shared_ptr<Interest> interestA = makeInterest("ndn:/A");
+  interestA->setInterestLifetime(time::seconds(4));
+  shared_ptr<Data> dataA = makeData("ndn:/A");
+  dataA->setIncomingFaceId(face3->getId());
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
+  fibEntry->addNextHop(face2, 0);
+
+  Pit& pit = forwarder.getPit();
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  Cs& cs = forwarder.getCs();
+  BOOST_REQUIRE(cs.insert(*dataA));
+
+  face1->receiveInterest(*interestA);
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+  // Interest matching ContentStore should not be forwarded
+  BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 0);
+
+  BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
+  // IncomingFaceId field should be reset to represent CS
+  BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), FACEID_CONTENT_STORE);
+
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
+  // PIT entry should not be left behind
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+}
+
 class ScopeLocalhostIncomingTestForwarder : public Forwarder
 {
 public:
