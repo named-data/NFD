@@ -294,9 +294,23 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
               </xsl:for-each>
             </tr>
             <tr>
-              <th>Flags</th>
+              <th>ChildInherit</th>
               <xsl:for-each select="nfd:routes/nfd:route">
-                <td><xsl:value-of select="nfd:flags"/></td>
+                <td>
+                  <xsl:if test="nfd:flags/nfd:childInherit">
+                    Y
+                  </xsl:if>
+                </td>
+              </xsl:for-each>
+            </tr>
+            <tr>
+              <th>RibCapture</th>
+              <xsl:for-each select="nfd:routes/nfd:route">
+                <td>
+                  <xsl:if test="nfd:flags/nfd:ribCapture">
+                    Y
+                  </xsl:if>
+                </td>
               </xsl:for-each>
             </tr>
             <tr>

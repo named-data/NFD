@@ -710,7 +710,14 @@ public:
                 std::cout << "<faceId>"  << nextRoute->getFaceId() << "</faceId>";
                 std::cout << "<origin>"  << nextRoute->getOrigin() << "</origin>";
                 std::cout << "<cost>"    << nextRoute->getCost()   << "</cost>";
-                std::cout << "<flags>"   << nextRoute->getFlags()  << "</flags>";
+
+                std::cout << "<flags>";
+                if (nextRoute->isChildInherit())
+                  std::cout << "<childInherit/>";
+                if (nextRoute->isRibCapture())
+                  std::cout << "<ribCapture/>";
+                std::cout << "</flags>";
+
                 if (!nextRoute->hasInfiniteExpirationPeriod()) {
                   std::cout << "<expirationPeriod>PT"
                             << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
@@ -754,13 +761,18 @@ public:
                   std::cout << ", ";
                 std::cout << "faceid="   << nextRoute->getFaceId()
                           << " (origin="  << nextRoute->getOrigin()
-                          << " cost="    << nextRoute->getCost()
-                          << " flags="   << nextRoute->getFlags();
+                          << " cost="    << nextRoute->getCost();
                 if (!nextRoute->hasInfiniteExpirationPeriod()) {
                   std::cout << " expires="
                             << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
                                .count() << "s";
                 }
+
+                if (nextRoute->isChildInherit())
+                  std::cout << " ChildInherit";
+                if (nextRoute->isRibCapture())
+                  std::cout << " RibCapture";
+
                 std::cout << ")";
               }
             std::cout << "}" << std::endl;

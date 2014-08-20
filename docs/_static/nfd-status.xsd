@@ -104,12 +104,19 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="ribFlagsType">
+  <xs:sequence>
+    <xs:element type="xs:string" name="childInherit" minOccurs="0"/>
+    <xs:element type="xs:string" name="ribCapture" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="routeType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
     <xs:element type="xs:nonNegativeInteger" name="origin"/>
     <xs:element type="xs:nonNegativeInteger" name="cost"/>
-    <xs:element type="xs:nonNegativeInteger" name="flags"/>
+    <xs:element type="nfd:ribFlagsType" name="flags"/>
     <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
