@@ -23,40 +23,39 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "best-route-strategy.hpp"
-#include "broadcast-strategy.hpp"
-#include "client-control-strategy.hpp"
-#include "ncc-strategy.hpp"
-#include "best-route-strategy2.hpp"
+#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+
+#include "strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-shared_ptr<Strategy>
-makeDefaultStrategy(Forwarder& forwarder)
+/** \brief Best Route strategy version 2
+ *
+ *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
+ *  After that, it recognizes consumer retransmission:
+ *  if a similar Interest arrives from any downstream after MIN_RETRANSMISSION_INTERVAL,
+ *  the strategy forwards the Interest again to the lowest-cost nexthop (except downstream)
+ *  that is not previously used. If all nexthops have been used, the strategy starts over.
+ */
+class BestRouteStrategy2 : public Strategy
 {
-  return make_shared<BestRouteStrategy2>(ref(forwarder));
-}
+public:
+  BestRouteStrategy2(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
-template<typename S>
-inline void
-installStrategy(Forwarder& forwarder)
-{
-  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
-  if (!strategyChoice.hasStrategy(S::STRATEGY_NAME)) {
-    strategyChoice.install(make_shared<S>(ref(forwarder)));
-  }
-}
+  virtual void
+  afterReceiveInterest(const Face& inFace,
+                       const Interest& interest,
+                       shared_ptr<fib::Entry> fibEntry,
+                       shared_ptr<pit::Entry> pitEntry);
 
-void
-installStrategies(Forwarder& forwarder)
-{
-  installStrategy<BestRouteStrategy>(forwarder);
-  installStrategy<BroadcastStrategy>(forwarder);
-  installStrategy<ClientControlStrategy>(forwarder);
-  installStrategy<NccStrategy>(forwarder);
-  installStrategy<BestRouteStrategy2>(forwarder);
-}
+public:
+  static const Name STRATEGY_NAME;
+  static const time::milliseconds MIN_RETRANSMISSION_INTERVAL;
+};
 
 } // namespace fw
 } // namespace nfd
+
+#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP

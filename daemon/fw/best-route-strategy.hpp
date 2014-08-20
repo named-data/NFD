@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
 #define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
@@ -30,9 +31,16 @@
 namespace nfd {
 namespace fw {
 
-/** \class BestRouteStrategy
- *  \brief a forwarding strategy that forwards Interest
- *         to the first nexthop
+/** \brief Best Route strategy version 1
+ *
+ *  This strategy forwards a new Interest to the lowest-cost nexthop
+ *  that is not same as the downstream, and does not violate scope.
+ *  Subsequent similar Interests or consumer retransmissions are suppressed
+ *  until after InterestLifetime expiry.
+ *
+ *  \deprecated This strategy is superceded by Best Route strategy version 2,
+ *              which allows consumer retransmissions. This version is kept for
+ *              comparison purposes and is not recommended for general usage.
  */
 class BestRouteStrategy : public Strategy
 {
