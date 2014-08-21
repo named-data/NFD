@@ -79,9 +79,8 @@ public:
   insertFace(const FaceEntry& face);
 
   /** \brief erases a FaceEntry with the same faceId and origin
-   *  \return{ true if the face is removed, false otherwise }
    */
-  bool
+  void
   eraseFace(const FaceEntry& face);
 
   /** \brief erases a FaceEntry with the passed iterator

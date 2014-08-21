@@ -27,6 +27,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/dummy-client-face.hpp"
+#include "tests/limited-io.hpp"
 #include "rib/rib-status-publisher-common.hpp"
 
 namespace nfd {
@@ -253,6 +254,45 @@ BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
 
   BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
   RibStatusPublisherFixture::decodeRibEntryBlock(face->m_sentDatas[0], name, entry);
+}
+
+BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
+{
+  // Register face
+  ControlParameters addParameters;
+  addParameters
+    .setName("/expire")
+    .setFaceId(1)
+    .setCost(10)
+    .setFlags(0)
+    .setOrigin(128)
+    .setExpirationPeriod(ndn::time::milliseconds(500));
+
+  Name registerName("/localhost/nfd/rib/register");
+
+  receiveCommandInterest(registerName, addParameters);
+  face->m_sentInterests.clear();
+
+  // Unregister face
+  ControlParameters removeParameters;
+  removeParameters
+    .setName("/expire")
+    .setFaceId(1)
+    .setOrigin(128);
+
+  Name unregisterName("/localhost/nfd/rib/unregister");
+
+  receiveCommandInterest(unregisterName, removeParameters);
+
+  // Reregister face
+  Name reRegisterName("/localhost/nfd/rib/register");
+  addParameters.setExpirationPeriod(ndn::time::milliseconds::max());
+  receiveCommandInterest(reRegisterName, addParameters);
+
+  nfd::tests::LimitedIo limitedIo;
+  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -60,7 +60,9 @@ BOOST_AUTO_TEST_CASE(RibEntry)
   entry.insertFace(face2);
   BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
 
-  BOOST_CHECK_EQUAL(entry.eraseFace(face1), false);
+  entry.eraseFace(face1);
+  BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
+  BOOST_CHECK(entry.findFace(face2) != entry.getFaces().end());
 }
 
 BOOST_AUTO_TEST_CASE(Parent)

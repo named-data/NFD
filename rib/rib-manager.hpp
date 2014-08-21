@@ -114,6 +114,9 @@ private:
                   ControlParameters& parameters);
 
   void
+  expireEntry(const shared_ptr<const Interest>& request, ControlParameters& params);
+
+  void
   onCommandValidated(const shared_ptr<const Interest>& request);
 
   void
@@ -169,6 +172,7 @@ private:
 
   void
   onControlHeaderError(uint32_t code, const std::string& reason);
+
   static bool
   extractParameters(const Name::Component& parameterComponent,
                     ControlParameters& extractedParameters);
@@ -216,8 +220,10 @@ private:
   void
   onFetchFaceStatusTimeout();
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Rib m_managedRib;
+
+private:
   ndn::Face& m_face;
   ndn::nfd::Controller m_nfdController;
   ndn::KeyChain m_keyChain;

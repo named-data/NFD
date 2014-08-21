@@ -25,7 +25,11 @@
 
 #include "rib-entry.hpp"
 
+#include "core/logger.hpp"
+
 #include <ndn-cxx/management/nfd-control-command.hpp>
+
+NFD_LOG_INIT("RibEntry");
 
 namespace nfd {
 namespace rib {
@@ -57,28 +61,11 @@ RibEntry::insertFace(const FaceEntry& entry)
     }
 }
 
-bool
+void
 RibEntry::eraseFace(const FaceEntry& face)
 {
   RibEntry::iterator it = std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, face));
-
-  if (it != m_faces.end())
-    {
-      if (it->flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
-        {
-          m_nFacesWithCaptureSet--;
-        }
-
-      //cancel any scheduled event
-      scheduler::cancel(it->getExpirationEvent());
-
-      m_faces.erase(it);
-      return true;
-    }
-  else
-    {
-      return false;
-    }
+  eraseFace(it);
 }
 
 bool
@@ -123,6 +110,10 @@ RibEntry::eraseFace(FaceList::iterator face)
         {
           m_nFacesWithCaptureSet--;
         }
+
+      //cancel any scheduled event
+      NFD_LOG_TRACE("Cancelling expiration eventId: " << face->getExpirationEvent());
+      scheduler::cancel(face->getExpirationEvent());
 
       return m_faces.erase(face);
     }

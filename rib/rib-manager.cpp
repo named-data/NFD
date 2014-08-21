@@ -286,10 +286,11 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 
       // Schedule a new event, the old one will be cancelled during rib insertion.
       EventId eventId;
-      NFD_LOG_TRACE("scheduling unregistration at: " << faceEntry.expires);
       eventId = scheduler::schedule(parameters.getExpirationPeriod(),
-                                    bind(&RibManager::unregisterEntry,
+                                    bind(&RibManager::expireEntry,
                                     this, shared_ptr<Interest>(), parameters));
+      NFD_LOG_TRACE("Scheduled unregistration at: " << faceEntry.expires <<
+                    " with EventId: " << eventId);
 
       //set the  NewEventId of this entry
       faceEntry.setExpirationEvent(eventId);
@@ -304,6 +305,19 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
   m_managedRib.insert(parameters.getName(), faceEntry);
 
   sendUpdatesToFib(request, parameters);
+}
+
+void
+RibManager::expireEntry(const shared_ptr<const Interest>& request, ControlParameters& params)
+{
+  FaceEntry face;
+  face.faceId = params.getFaceId();
+  face.origin = params.getOrigin();
+  face.cost = params.getCost();
+  face.flags = params.getFlags();
+
+  NFD_LOG_DEBUG(face << " for " << params.getName() << " has expired");
+  unregisterEntry(request, params);
 }
 
 void

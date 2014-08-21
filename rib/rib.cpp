@@ -25,6 +25,10 @@
 
 #include "rib.hpp"
 
+#include "core/logger.hpp"
+
+NFD_LOG_INIT("Rib");
+
 namespace nfd {
 namespace rib {
 
@@ -127,7 +131,11 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
         {
           // First cancel old scheduled event, if any, then set the EventId to new one
           if (static_cast<bool>(faceIt->getExpirationEvent()))
+            {
+              NFD_LOG_TRACE("Cancelling expiration event for " << entry->getName() << " "
+                                                               << *faceIt);
               scheduler::cancel(faceIt->getExpirationEvent());
+            }
 
           // No checks are required here as the iterator needs to be updated in all cases.
           faceIt->setExpirationEvent(face.getExpirationEvent());
@@ -211,6 +219,7 @@ Rib::erase(const Name& prefix, const FaceEntry& face)
           faceToErase.cost = faceIt->cost;
 
           entry->eraseFace(faceIt);
+
           m_nItems--;
 
           const bool captureWasTurnedOff = (hadCapture && !entry->hasCapture());
