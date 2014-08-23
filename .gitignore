@@ -4,4 +4,4 @@
 .lock*
 **/*.pyc
 build/
-
+VERSION

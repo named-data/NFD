@@ -27,6 +27,7 @@ VERSION = "0.2.0"
 APPNAME = "nfd"
 BUGREPORT = "http://redmine.named-data.net/projects/nfd"
 URL = "http://named-data.net/doc/NFD/"
+GIT_TAG_PREFIX = "NFD-"
 
 from waflib import Logs, Utils, Context
 
@@ -250,15 +251,48 @@ def version(ctx):
     Context.g_module.VERSION_BASE = Context.g_module.VERSION
     Context.g_module.VERSION_SPLIT = [v for v in VERSION_BASE.split('.')]
 
+    didGetVersion = False
     try:
-        cmd = ['git', 'describe', '--match', 'NFD-*']
+        cmd = ['git', 'describe', '--always', '--match', '%s*' % GIT_TAG_PREFIX]
         p = Utils.subprocess.Popen(cmd, stdout=Utils.subprocess.PIPE,
                                    stderr=None, stdin=None)
         out = p.communicate()[0].strip()
-        if p.returncode == 0 and out != "":
-            Context.g_module.VERSION = out[4:]
-    except:
+        didGetVersion = (p.returncode == 0 and out != "")
+        if didGetVersion:
+            if out.startswith(GIT_TAG_PREFIX):
+                Context.g_module.VERSION = out[len(GIT_TAG_PREFIX):]
+            else:
+                Context.g_module.VERSION = "%s-commit-%s" % (Context.g_module.VERSION_BASE, out)
+    except OSError:
         pass
+
+    versionFile = ctx.path.find_node('VERSION')
+
+    if not didGetVersion and versionFile is not None:
+        try:
+            Context.g_module.VERSION = versionFile.read()
+            return
+        except (OSError, IOError):
+            pass
+
+    # version was obtained from git, update VERSION file if necessary
+    if versionFile is not None:
+        try:
+            version = versionFile.read()
+            if version == Context.g_module.VERSION:
+                return # no need to update
+        except (OSError, IOError):
+            Logs.warn("VERSION file exists, but not readable")
+    else:
+        versionFile = ctx.path.make_node('VERSION')
+
+    if versionFile is None:
+        return
+
+    try:
+        versionFile.write(Context.g_module.VERSION)
+    except (OSError, IOError):
+        Logs.warn("VERSION file is not writeable")
 
 def dist(ctx):
     version(ctx)
