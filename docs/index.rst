@@ -13,19 +13,22 @@ NFD Documentation
    :hidden:
    :maxdepth: 3
 
-   README
-   getting-started
+   overview
+   INSTALL
    FAQ
    manpages
 
-..
-   INSTALL
+* :doc:`overview`
 
-* :doc:`README`
+  A brief overview of NFD and its major modules.
 
-* :doc:`getting-started`
+* :doc:`INSTALL`
+
+  Instructions for obtaining, installing, and running NFD.
 
 * :doc:`FAQ`
+
+  Suggestions for configuring and running non-standard NFD setups.
 
 * :doc:`manpages`
 
@@ -33,21 +36,20 @@ NFD Documentation
 
 * `NFD Developer's Guide <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_
 
+  A comprehensive guide to the design and implementation of NFD. The developer's guide also contains
+  suggestions and hints for anyone wanting to modify or extend NFD.
+
 * `NFD Wiki <http://redmine.named-data.net/projects/nfd/wiki>`_
 
   + `NFD Management protocol <http://redmine.named-data.net/projects/nfd/wiki/Management>`_
   + `NFD Configuration file format <http://redmine.named-data.net/projects/nfd/wiki/ConfigFileFormat>`_
 
-* `API documentation (doxygen) <doxygen/annotated.html>`_
+  The NFD Wiki contains detailed protocol specifications and
+  information for building on unsupported platforms.
 
-Downloading
------------
+* `API Documentation (doxygen) <doxygen/annotated.html>`_
 
-* `Source code GitHub git repository <https://github.com/named-data/NFD>`_.
-
-* :ref:`MacPorts NDN repository <How to start using NDN MacPorts repository on OSX>`
-
-* :ref:`Ubuntu NDN PPA repository <How to start using NDN PPA repository on Ubuntu Linux>`
+* `Release Notes <RELEASE_NOTES.html>`_
 
 License
 -------

@@ -191,97 +191,14 @@ changed ``PREFIX``).
 How to start using NDN MacPorts repository on OSX?
 --------------------------------------------------
 
-OSX users have an opportunity to seamlessly install and run NFD and other related
-applications via `MacPorts <https://www.macports.org/>`_. If you are not using MacPorts
-yet, go to `MacPorts website <https://www.macports.org/install.php>`_ and download and
-install the MacPorts package.
-
-NFD and related ports are not part of the official MacPorts repository and in order to use
-it, you need to add NDN MacPorts repository to the local configuration.  In particular,
-you will need to modify the list of source URLs for MacPorts.  For example, if your
-MacPorts are installed in ``/opt/local``, add the following line
-`/opt/local/etc/macports/sources.conf` before or after the default port repository:
-
-::
-
-    rsync://macports.named-data.net/macports/
-
-After this step, you can use ``sudo port selfupdate`` to fetch updated port definitions.
-
-The following command will install NFD using MacPorts:
-
-::
-
-    sudo port install nfd
-
-.. note::
-    You have to have XCode installed on your machine.  For latest versions of OSX (Lion or
-    Mountain Lion) you can install it from AppStore for free, for older versions you have to
-    go to developer.apple.com and download old version of XCode that is appropriate for your
-    system.
-
-
-One of the advantages of using MacPorts is that you can easily upgrade NFD and other
-packages to the most recent version available.  The following commands will do this job:
-
-::
-
-    sudo port selfupdate
-    sudo port upgrade nfd
+Please see :ref:`Install NFD Using the NDN MacPorts Repository on OS X`.
 
 .. _How to start using NDN PPA repository on Ubuntu Linux:
 
 How to start using NDN PPA repository on Ubuntu Linux?
 ------------------------------------------------------
 
-NFD binaries and related tools for Ubuntu 12.04, 13.10, and 14.04 can be installed using
-PPA packages from named-data repository.  First, you will need to add ``named-data/ppa``
-repository to binary package sources and update list of available packages.
-
-Preliminary steps if you haven't used PPA packages before
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-To simplify adding new PPA repositories, Ubuntu provides ``add-apt-repository`` tool, which
-is not installed by default on some platforms.
-
-On Ubuntu **12.04**:
-
-::
-
-    sudo apt-get install python-software-properties
-
-On Ubuntu **13.10** and **14.04**:
-
-::
-
-    sudo apt-get install software-properties-common
-
-
-Adding NDN PPA
-++++++++++++++
-
-After installing ``add-apt-repository``, run the following command to add `NDN PPA repository`_.
-
-::
-
-    sudo add-apt-repository ppa:named-data/ppa
-    sudo apt-get update
-
-Installing NFD and other NDN packages
-+++++++++++++++++++++++++++++++++++++
-
-After you have added `NDN PPA repository`_, NFD and other NDN packages can be easily
-installed in a standard way, i.e., either using ``apt-get`` as shown below or using any
-other package manager, such as Synaptic Package Manager:
-
-::
-
-    sudo apt-get install nfd
-
-For the list of available packages, refer to `NDN PPA repository`_ homepage.
-
-.. _NDN PPA repository: https://launchpad.net/~named-data/+archive/ppa
-
+Please see :ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.
 
 .. _How to start using NDN Overlay on Gentoo Linux:
 
