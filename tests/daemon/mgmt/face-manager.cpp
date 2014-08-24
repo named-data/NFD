@@ -32,7 +32,10 @@
 #include "fw/face-table.hpp"
 #include "fw/forwarder.hpp"
 #include "face/udp-factory.hpp"
+
+#ifdef HAVE_LIBPCAP
 #include "face/ethernet-factory.hpp"
+#endif // HAVE_LIBPCAP
 
 #include "common.hpp"
 #include "tests/test-common.hpp"
@@ -804,8 +807,7 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionEtherMulticastReinit)
   BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
 }
 
-
-#endif
+#endif // HAVE_LIBPCAP
 
 BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 {

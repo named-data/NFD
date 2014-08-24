@@ -34,7 +34,7 @@ from waflib import Logs, Utils, Context
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
     opt.load(['boost', 'unix-socket', 'dependency-checker', 'websocket',
-              'default-compiler-flags', 'coverage', 'pch',
+              'default-compiler-flags', 'coverage', 'pch', 'boost-kqueue',
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
@@ -56,7 +56,7 @@ def options(opt):
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
-               'default-compiler-flags', 'pch',
+               'default-compiler-flags', 'pch', 'boost-kqueue',
                'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
@@ -88,9 +88,14 @@ def configure(conf):
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
     if not conf.options.without_libpcap:
-        conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
-                             errmsg='not found, but required for Ethernet face support. '
-                                    'Specify --without-libpcap to disable Ethernet face support.')
+        conf.check_asio_pcap_support()
+        if conf.env['HAVE_ASIO_PCAP_SUPPORT']:
+            conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
+                                 errmsg='not found, but required for Ethernet face support. '
+                                        'Specify --without-libpcap to disable Ethernet face support.')
+        else:
+            Logs.warn('Warning: Ethernet face support is not supported on this platform with Boost libraries version 1.56. '
+                      'See http://redmine.named-data.net/issues/1877 for more details')
     if conf.env['HAVE_LIBPCAP']:
         conf.check_cxx(function_name='pcap_set_immediate_mode', header_name='pcap/pcap.h',
                        cxxflags='-Wno-error', use='LIBPCAP', mandatory=False)
