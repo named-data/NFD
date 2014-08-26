@@ -32,6 +32,21 @@ extensions = [
     'sphinx.ext.todo',
 ]
 
+def addExtensionIfExists(extension):
+    try:
+        __import__(extension)
+        extensions.append(extension)
+    except ImportError:
+        sys.stderr.write("Extension '%s' in not available. "
+                         "Some documentation may not build correctly.\n" % extension)
+        sys.stderr.write("To install, use \n"
+                         "  sudo pip install %s\n" % extension.replace('.', '-'))
+
+addExtensionIfExists('sphinxcontrib.doxylink')
+
+if os.getenv('GOOGLE_ANALYTICS', None):
+    addExtensionIfExists('sphinxcontrib.googleanalytics')
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -243,3 +258,11 @@ man_pages = [
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
+
+doxylink = {
+  'NFD' : ('NFD.tag', 'doxygen/'),
+}
+
+if os.getenv('GOOGLE_ANALYTICS', None):
+    googleanalytics_id = os.environ['GOOGLE_ANALYTICS']
+    googleanalytics_enabled = True
