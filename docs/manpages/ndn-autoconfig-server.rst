@@ -8,7 +8,7 @@ Usage
 
 ::
 
-    ndn-autoconfig-server [-h] FaceUri
+    ndn-autoconfig-server [-h] [-p prefix] [-p prefix] ... FaceUri
 
 
 Description
@@ -27,12 +27,21 @@ this block is the ``Uri`` for the HUB, preferrably a UDP tunnel.
 ``FaceUri``
   FaceUri for this NDN hub.
 
+``-p prefix``
+  A local prefix for which the local hub allow end applications to register prefix
+  (See more details in :ref:`local-prefix-discovery`).  One can supply more than one
+  prefixes.  All supplied prefixes will be put into the local prefix discovery data
+  as described in :ref:`local-prefix-discovery`.  If no prefix is specified,
+  auto-config-server will not serve any local prefix discovery data.
+
 Examples
 --------
 
 ::
 
     ndn-autoconfig-server tcp://spurs.cs.ucla.edu
+
+    ndn-autoconfig-server -p /ndn/edu/ucla tcp://spurs.cs.ucla.edu
 
 
 See also
