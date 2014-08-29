@@ -151,7 +151,7 @@ TcpFactory::createFace(const FaceUri& uri,
   else if (uri.getScheme() == "tcp6")
     addressSelector = resolver::Ipv6Address();
 
-  if (!uri.getPath().empty())
+  if (!uri.getPath().empty() && uri.getPath() != "/")
     {
       onConnectFailed("Invalid URI");
     }

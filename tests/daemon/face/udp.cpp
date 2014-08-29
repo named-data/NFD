@@ -61,25 +61,29 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 class FactoryErrorCheck : protected BaseFixture
 {
 public:
-  bool isTheSameMulticastEndpoint(const UdpFactory::Error& e) {
+  bool
+  isTheSameMulticastEndpoint(const UdpFactory::Error& e) {
     return strcmp(e.what(),
                   "Cannot create the requested UDP unicast channel, local "
                   "endpoint is already allocated for a UDP multicast face") == 0;
   }
 
-  bool isNotMulticastAddress(const UdpFactory::Error& e) {
+  bool
+  isNotMulticastAddress(const UdpFactory::Error& e) {
     return strcmp(e.what(),
                   "Cannot create the requested UDP multicast face, "
                   "the multicast group given as input is not a multicast address") == 0;
   }
 
-  bool isTheSameUnicastEndpoint(const UdpFactory::Error& e) {
+  bool
+  isTheSameUnicastEndpoint(const UdpFactory::Error& e) {
     return strcmp(e.what(),
                   "Cannot create the requested UDP multicast face, local "
                   "endpoint is already allocated for a UDP unicast channel") == 0;
   }
 
-  bool isLocalEndpointOnDifferentGroup(const UdpFactory::Error& e) {
+  bool
+  isLocalEndpointOnDifferentGroup(const UdpFactory::Error& e) {
     return strcmp(e.what(),
                   "Cannot create the requested UDP multicast face, local "
                   "endpoint is already allocated for a UDP multicast face "
@@ -199,6 +203,45 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
 //                                                "A112:0:0:0:0:0:0:2",
 //                                                "20075"),
 //                    UdpFactory::Error);
+}
+
+class FaceCreateFixture : protected BaseFixture
+{
+public:
+  void
+  ignore()
+  {
+  }
+
+  void
+  checkError(const std::string& errorActual, const std::string& errorExpected)
+  {
+    BOOST_CHECK_EQUAL(errorActual, errorExpected);
+  }
+
+  void
+  failIfError(const std::string& errorActual)
+  {
+    BOOST_FAIL("No error expected, but got: [" << errorActual << "]");
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
+{
+  UdpFactory factory = UdpFactory();
+
+  factory.createFace(FaceUri("udp4://127.0.0.1"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+
+  factory.createFace(FaceUri("udp4://127.0.0.1/"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+
+  factory.createFace(FaceUri("udp4://127.0.0.1/path"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::checkError, this, _1, "Invalid URI"));
+
 }
 
 class EndToEndFixture : protected BaseFixture

@@ -79,6 +79,45 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
+class FaceCreateFixture : protected BaseFixture
+{
+public:
+  void
+  ignore()
+  {
+  }
+
+  void
+  checkError(const std::string& errorActual, const std::string& errorExpected)
+  {
+    BOOST_CHECK_EQUAL(errorActual, errorExpected);
+  }
+
+  void
+  failIfError(const std::string& errorActual)
+  {
+    BOOST_FAIL("No error expected, but got: [" << errorActual << "]");
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
+{
+  TcpFactory factory = TcpFactory();
+
+  factory.createFace(FaceUri("tcp4://127.0.0.1"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+
+  factory.createFace(FaceUri("tcp4://127.0.0.1/"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+
+  factory.createFace(FaceUri("tcp4://127.0.0.1/path"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::checkError, this, _1, "Invalid URI"));
+
+}
+
 class EndToEndFixture : protected BaseFixture
 {
 public:
