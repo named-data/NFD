@@ -637,7 +637,6 @@ public:
   shared_ptr<Face> face1;
 };
 
-
 BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
 {
   TcpFactory factory;
@@ -653,6 +652,50 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   BOOST_CHECK_EQUAL(static_cast<bool>(face1), false);
 }
 
+BOOST_FIXTURE_TEST_CASE(Bug1856, EndToEndFixture)
+{
+  TcpFactory factory1;
+
+  shared_ptr<TcpChannel> channel1 = factory1.createChannel("127.0.0.1", "20070");
+  factory1.createChannel("127.0.0.1", "20071");
+
+  BOOST_CHECK_EQUAL(channel1->isListening(), false);
+
+  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
+                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+
+  BOOST_CHECK_EQUAL(channel1->isListening(), true);
+
+  TcpFactory factory2;
+
+  shared_ptr<TcpChannel> channel2 = factory2.createChannel("127.0.0.2", "20070");
+  factory2.createChannel("127.0.0.2", "20071");
+
+  factory2.createFace(FaceUri("tcp://127.0.0.1:20070"),
+                      bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
+                      bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+
+  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
+                      "TcpChannel error: cannot connect or cannot accept connection");
+
+  BOOST_REQUIRE(static_cast<bool>(face1));
+  BOOST_REQUIRE(static_cast<bool>(face2));
+
+  std::ostringstream hugeName;
+  hugeName << "/huge-name/";
+  for (size_t i = 0; i < MAX_NDN_PACKET_SIZE; i++)
+    hugeName << 'a';
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/KfczhUqVix");
+  shared_ptr<Interest> hugeInterest = makeInterest(hugeName.str());
+
+  face1->sendInterest(*hugeInterest);
+  face2->sendInterest(*interest);
+  face2->sendInterest(*interest);
+
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(1));
+  BOOST_TEST_MESSAGE("Unexpected assertion test passed");
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
