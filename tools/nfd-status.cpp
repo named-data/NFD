@@ -734,7 +734,7 @@ public:
       }
     else
       {
-        std::cout << "Rib:" << std::endl;
+        std::cout << "RIB:" << std::endl;
 
         Block block;
         size_t offset = 0;
@@ -751,7 +751,7 @@ public:
 
             nfd::RibEntry ribEntry(block);
 
-            std::cout << " " << ribEntry.getName().toUri() << " route={";
+            std::cout << "  " << ribEntry.getName().toUri() << " route={";
             for (std::list<nfd::Route>::const_iterator
                    nextRoute = ribEntry.begin();
                  nextRoute != ribEntry.end();

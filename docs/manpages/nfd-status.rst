@@ -93,7 +93,7 @@ Get all status information from NFD::
       /localhost/nfd nexthops={faceid=1 (cost=0)}
       /example/testApp nexthops={faceid=268 (cost=0)}
       /localhost/nfd/rib nexthops={faceid=262 (cost=0)}
-    Rib:
-     /example/testApp route={faceid=268 (origin=0 cost=0 flags=1)}
+    RIB:
+      /example/testApp route={faceid=268 (origin=0 cost=0 flags=1)}
     Strategy choices:
       / strategy=/localhost/nfd/strategy/best-route
