@@ -268,7 +268,7 @@ def version(ctx):
         cmd = ['git', 'describe', '--always', '--match', '%s*' % GIT_TAG_PREFIX]
         p = Utils.subprocess.Popen(cmd, stdout=Utils.subprocess.PIPE,
                                    stderr=None, stdin=None)
-        out = p.communicate()[0].strip()
+        out = str(p.communicate()[0].strip())
         didGetVersion = (p.returncode == 0 and out != "")
         if didGetVersion:
             if out.startswith(GIT_TAG_PREFIX):
