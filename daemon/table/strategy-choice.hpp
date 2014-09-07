@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_TABLE_STRATEGY_CHOICE_HPP
 #define NFD_DAEMON_TABLE_STRATEGY_CHOICE_HPP
@@ -31,16 +31,29 @@
 
 namespace nfd {
 
+/** \brief represents the Strategy Choice table
+ *
+ *  The Strategy Choice table maintains available Strategy types,
+ *  and associates Name prefixes with Strategy types.
+ *
+ *  Each strategy is identified by a strategyName.
+ *  It's recommended to include a version number as the last component of strategyName.
+ *
+ *  A Name prefix is owned by a strategy if a longest prefix match on the
+ *  Strategy Choice table returns that strategy.
+ */
 class StrategyChoice : noncopyable
 {
 public:
   StrategyChoice(NameTree& nameTree, shared_ptr<fw::Strategy> defaultStrategy);
 
 public: // available Strategy types
-  /** \return true if strategy is installed
+  /** \brief determines if a strategy is installed
+   *  \param isExact true to require exact match, false to permit unversioned strategyName
+   *  \return true if strategy is installed
    */
   bool
-  hasStrategy(const Name& strategyName) const;
+  hasStrategy(const Name& strategyName, bool isExact = false) const;
 
   /** \brief install a strategy
    *  \return true if installed; false if not installed due to duplicate strategyName
@@ -50,8 +63,13 @@ public: // available Strategy types
 
 public: // Strategy Choice table
   /** \brief set strategy of prefix to be strategyName
-   *  \param strategyName the strategy to be used, must be installed
+   *  \param strategyName the strategy to be used
    *  \return true on success
+   *
+   *  This method set a strategy onto a Name prefix.
+   *  The strategy must have been installed.
+   *  The strategyName can either be exact (contains version component),
+   *  or omit the version component to pick the latest version.
    */
   bool
   insert(const Name& prefix, const Name& strategyName);
@@ -125,8 +143,11 @@ public: // enumeration
   end() const;
 
 private:
+  /** \brief get Strategy instance by strategyName
+   *  \param strategyName a versioned or unversioned strategyName
+   */
   shared_ptr<fw::Strategy>
-  getStrategy(const Name& strategyName);
+  getStrategy(const Name& strategyName) const;
 
   void
   setDefaultStrategy(shared_ptr<fw::Strategy> strategy);

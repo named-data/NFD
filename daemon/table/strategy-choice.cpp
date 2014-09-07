@@ -44,9 +44,14 @@ StrategyChoice::StrategyChoice(NameTree& nameTree, shared_ptr<Strategy> defaultS
 }
 
 bool
-StrategyChoice::hasStrategy(const Name& strategyName) const
+StrategyChoice::hasStrategy(const Name& strategyName, bool isExact) const
 {
-  return m_strategyInstances.count(strategyName) > 0;
+  if (isExact) {
+    return m_strategyInstances.count(strategyName) > 0;
+  }
+  else {
+    return static_cast<bool>(this->getStrategy(strategyName));
+  }
 }
 
 bool
@@ -64,27 +69,43 @@ StrategyChoice::install(shared_ptr<Strategy> strategy)
   return true;
 }
 
+shared_ptr<fw::Strategy>
+StrategyChoice::getStrategy(const Name& strategyName) const
+{
+  shared_ptr<fw::Strategy> candidate;
+  for (StrategyInstanceTable::const_iterator it = m_strategyInstances.lower_bound(strategyName);
+       it != m_strategyInstances.end() && strategyName.isPrefixOf(it->first); ++it) {
+    switch (it->first.size() - strategyName.size()) {
+    case 0: // exact match
+      return it->second;
+    case 1: // unversioned strategyName matches versioned strategy
+      candidate = it->second;
+      break;
+    }
+  }
+  return candidate;
+}
+
 bool
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
-  shared_ptr<Entry> entry = nameTreeEntry->getStrategyChoiceEntry();
-  shared_ptr<Strategy> oldStrategy;
-
-  if (static_cast<bool>(entry)) {
-    if (entry->getStrategy().getName() == strategyName) {
-      NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") not changing");
-      return true;
-    }
-    oldStrategy = entry->getStrategy().shared_from_this();
-    NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") "
-                  "changing from " << oldStrategy->getName());
-  }
-
   shared_ptr<Strategy> strategy = this->getStrategy(strategyName);
   if (!static_cast<bool>(strategy)) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not installed");
     return false;
+  }
+
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
+  shared_ptr<Entry> entry = nameTreeEntry->getStrategyChoiceEntry();
+  shared_ptr<Strategy> oldStrategy;
+  if (static_cast<bool>(entry)) {
+    if (entry->getStrategy().getName() == strategy->getName()) {
+      NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getName());
+      return true;
+    }
+    oldStrategy = entry->getStrategy().shared_from_this();
+    NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getName() <<
+                  " to " << strategy->getName());
   }
 
   if (!static_cast<bool>(entry)) {
@@ -92,7 +113,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     entry = make_shared<Entry>(prefix);
     nameTreeEntry->setStrategyChoiceEntry(entry);
     ++m_nItems;
-    NFD_LOG_TRACE("insert(" << prefix << "," << strategyName << ") new entry");
+    NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getName());
   }
 
   this->changeStrategy(entry, oldStrategy, strategy);
@@ -185,13 +206,6 @@ StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEnt
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
 
   return findEffectiveStrategy(nameTreeEntry);
-}
-
-shared_ptr<fw::Strategy>
-StrategyChoice::getStrategy(const Name& strategyName)
-{
-  StrategyInstanceTable::iterator it = m_strategyInstances.find(strategyName);
-  return it != m_strategyInstances.end() ? it->second : shared_ptr<fw::Strategy>();
 }
 
 void

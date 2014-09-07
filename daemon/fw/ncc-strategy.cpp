@@ -30,7 +30,7 @@
 namespace nfd {
 namespace fw {
 
-const Name NccStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/ncc");
+const Name NccStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/ncc/%FD%01");
 
 NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)

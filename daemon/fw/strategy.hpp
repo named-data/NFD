@@ -37,6 +37,13 @@ namespace fw {
 class Strategy : public enable_shared_from_this<Strategy>, noncopyable
 {
 public:
+  /** \brief construct a strategy instance
+   *  \param forwarder a reference to the Forwarder, used to enable actions and accessors.
+   *         Strategy subclasses should pass this reference,
+   *         and should not keep a reference themselves.
+   *  \param name the strategy Name.
+   *         It's recommended to include a version number as the last component.
+   */
   Strategy(Forwarder& forwarder, const Name& name);
 
   virtual

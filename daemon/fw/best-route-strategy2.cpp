@@ -31,8 +31,7 @@ namespace fw {
 
 NFD_LOG_INIT("BestRouteStrategy2");
 
-/// \todo set to ndn:/localhost/nfd/strategy/best-route/%FD%02 after #1893 completion
-const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route");
+const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%02");
 /// \todo don't use fixed interval; make it adaptive or use exponential back-off #1913
 const time::milliseconds BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL(100);
 

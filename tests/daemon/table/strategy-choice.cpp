@@ -210,6 +210,73 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
+BOOST_AUTO_TEST_CASE(Versioning)
+{
+  Forwarder forwarder;
+  Name nameP("ndn:/strategy/P");
+  Name nameP1("ndn:/strategy/P/%FD%01");
+  Name nameP2("ndn:/strategy/P/%FD%02");
+  Name name3("ndn:/%FD%03");
+  Name name4("ndn:/%FD%04");
+  Name nameQ("ndn:/strategy/Q");
+  Name nameQ5("ndn:/strategy/Q/%FD%05");
+  shared_ptr<Strategy> strategyP1 = make_shared<DummyStrategy>(ref(forwarder), nameP1);
+  shared_ptr<Strategy> strategyP2 = make_shared<DummyStrategy>(ref(forwarder), nameP2);
+  shared_ptr<Strategy> strategy3  = make_shared<DummyStrategy>(ref(forwarder), name3);
+  shared_ptr<Strategy> strategy4  = make_shared<DummyStrategy>(ref(forwarder), name4);
+  shared_ptr<Strategy> strategyQ  = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  shared_ptr<Strategy> strategyQ5 = make_shared<DummyStrategy>(ref(forwarder), nameQ5);
+
+  StrategyChoice& table = forwarder.getStrategyChoice();
+
+  // install
+  BOOST_CHECK_EQUAL(table.install(strategyP1), true);
+  BOOST_CHECK_EQUAL(table.install(strategyP1), false);
+  BOOST_CHECK_EQUAL(table.hasStrategy(nameP,  false), true);
+  BOOST_CHECK_EQUAL(table.hasStrategy(nameP,  true),  false);
+  BOOST_CHECK_EQUAL(table.hasStrategy(nameP1, true),  true);
+
+  BOOST_CHECK_EQUAL(table.install(strategyP2), true);
+  BOOST_CHECK_EQUAL(table.install(strategy3),  true);
+  BOOST_CHECK_EQUAL(table.install(strategy4),  true);
+  BOOST_CHECK_EQUAL(table.install(strategyQ),  true);
+  BOOST_CHECK_EQUAL(table.install(strategyQ5), true);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  // exact match, { '/'=>Q }
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameQ);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  BOOST_CHECK(table.insert("ndn:/", nameP));
+  // { '/'=>P2 }
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameP2);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  BOOST_CHECK(table.insert("ndn:/", nameP1));
+  // { '/'=>P1 }
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameP1);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  BOOST_CHECK(table.insert("ndn:/", nameP2));
+  // { '/'=>P2 }
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameP2);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  BOOST_CHECK(! table.insert("ndn:/", "ndn:/strategy/A"));
+  // not installed
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameQ);
+
+  BOOST_CHECK(table.insert("ndn:/", nameQ));
+  BOOST_CHECK(! table.insert("ndn:/", "ndn:/strategy/Z"));
+  // not installed
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), nameQ);
+
+  BOOST_CHECK(table.insert("ndn:/", nameP1));
+  BOOST_CHECK(table.insert("ndn:/", "ndn:/"));
+  // match one component longer only, { '/'=>4 }
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), name4);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
