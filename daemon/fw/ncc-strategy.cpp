@@ -183,9 +183,15 @@ NccStrategy::timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak)
 }
 
 void
-NccStrategy::beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
-                                          const Face& inFace, const Data& data)
+NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+                                   const Face& inFace, const Data& data)
 {
+  if (pitEntry->getInRecords().empty()) {
+    // PIT entry has already been satisfied (and is now waiting for straggler timer to expire)
+    // NCC does not collect measurements for non-best face
+    return;
+  }
+
   shared_ptr<measurements::Entry> measurementsEntry = this->getMeasurements().get(*pitEntry);
 
   for (int i = 0; i < UPDATE_MEASUREMENTS_N_LEVELS; ++i) {

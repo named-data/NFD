@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
@@ -44,10 +45,10 @@ Strategy::~Strategy()
 }
 
 void
-Strategy::beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
-                                       const Face& inFace, const Data& data)
+Strategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+                                const Face& inFace, const Data& data)
 {
-  NFD_LOG_DEBUG("beforeSatisfyPendingInterest pitEntry=" << pitEntry->getName() <<
+  NFD_LOG_DEBUG("beforeSatisfyInterest pitEntry=" << pitEntry->getName() <<
     " inFace=" << inFace.getId() << " data=" << data.getName());
 }
 

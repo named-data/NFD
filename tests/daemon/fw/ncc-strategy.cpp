@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "fw/ncc-strategy.hpp"
 #include "strategy-tester.hpp"
@@ -86,7 +87,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   // face2 responds
   shared_ptr<Data> data1p = makeData("ndn:/0Jm1ajrW/%00");
   Data& data1 = *data1p;
-  strategy->beforeSatisfyPendingInterest(pitEntry1, *face2, data1);
+  strategy->beforeSatisfyInterest(pitEntry1, *face2, data1);
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
 
   // second Interest: strategy knows face2 is best
@@ -143,7 +144,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
 
   // face1 responds
   shared_ptr<Data> data1 = makeData("ndn:/nztwIvHX/%00");
-  strategy->beforeSatisfyPendingInterest(pitEntry1, *face1, *data1);
+  strategy->beforeSatisfyInterest(pitEntry1, *face1, *data1);
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
 
   // second Interest: bestFace is face1, nUpstreams becomes 0,
@@ -160,6 +161,65 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(1000));// should not crash
 }
 
+BOOST_AUTO_TEST_CASE(Bug1961)
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
+  strategy->onAction += bind(&LimitedIo::afterOp, &limitedIo);
+
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
+  fibEntry->addNextHop(face1, 10);
+  fibEntry->addNextHop(face2, 20);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  strategyChoice.install(strategy);
+  strategyChoice.insert(Name(), strategy->getName());
+
+  Pit& pit = forwarder.getPit();
+
+  // first Interest: strategy forwards to face1 and face2
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/seRMz5a6/%00");
+  interest1->setInterestLifetime(time::milliseconds(2000));
+  shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
+
+  pitEntry1->insertOrUpdateInRecord(face3, *interest1);
+  strategy->afterReceiveInterest(*face3, *interest1, fibEntry, pitEntry1);
+  limitedIo.run(2 - strategy->m_sendInterestHistory.size(), time::milliseconds(2000));
+  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
+  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face1);
+  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
+
+  // face1 responds
+  shared_ptr<Data> data1 = makeData("ndn:/seRMz5a6/%00");
+  strategy->beforeSatisfyInterest(pitEntry1, *face1, *data1);
+  pitEntry1->deleteInRecords();
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(10));
+  // face2 also responds
+  strategy->beforeSatisfyInterest(pitEntry1, *face2, *data1);
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(10));
+
+  // second Interest: bestFace should be face 1
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/seRMz5a6/%01");
+  interest2->setInterestLifetime(time::milliseconds(2000));
+  shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
+
+  pitEntry2->insertOrUpdateInRecord(face3, *interest2);
+  strategy->afterReceiveInterest(*face3, *interest2, fibEntry, pitEntry2);
+  limitedIo.run(3 - strategy->m_sendInterestHistory.size(), time::milliseconds(2000));
+
+  BOOST_REQUIRE_GE(strategy->m_sendInterestHistory.size(), 3);
+  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[2].get<1>(), face1);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

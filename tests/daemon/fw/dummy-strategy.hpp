@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,10 +21,10 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#ifndef NFD_TESTS_NFD_FW_DUMMY_STRATEGY_HPP
-#define NFD_TESTS_NFD_FW_DUMMY_STRATEGY_HPP
+#ifndef NFD_TESTS_DAEMON_FW_DUMMY_STRATEGY_HPP
+#define NFD_TESTS_DAEMON_FW_DUMMY_STRATEGY_HPP
 
 #include "fw/strategy.hpp"
 
@@ -59,10 +60,10 @@ public:
   }
 
   virtual void
-  beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
-                               const Face& inFace, const Data& data)
+  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+                        const Face& inFace, const Data& data)
   {
-    ++m_beforeSatisfyPendingInterest_count;
+    ++m_beforeSatisfyInterest_count;
   }
 
   virtual void
@@ -73,7 +74,7 @@ public:
 
 public:
   int m_afterReceiveInterest_count;
-  int m_beforeSatisfyPendingInterest_count;
+  int m_beforeSatisfyInterest_count;
   int m_beforeExpirePendingInterest_count;
 
   /// outFace to use in afterReceiveInterest, nullptr to reject
@@ -83,4 +84,4 @@ public:
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_NFD_FW_DUMMY_STRATEGY_HPP
+#endif // NFD_TESTS_DAEMON_FW_DUMMY_STRATEGY_HPP

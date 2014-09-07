@@ -274,7 +274,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     }
 
     // invoke PIT satisfy callback
-    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyPendingInterest, _1,
+    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyInterest, _1,
                                             pitEntry, cref(inFace), cref(data)));
 
     // mark PIT satisfied

@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "limited-io.hpp"
 #include "core/logger.hpp"
@@ -43,6 +44,11 @@ LimitedIo::StopReason
 LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
 {
   BOOST_ASSERT(!m_isRunning);
+
+  if (nOpsLimit <= 0) {
+    return EXCEED_OPS;
+  }
+
   m_isRunning = true;
 
   m_reason = NO_WORK;
@@ -69,6 +75,12 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
 void
 LimitedIo::afterOp()
 {
+  if (!m_isRunning) {
+    // Do not proceed further if .afterOp() is invoked out of .run(),
+    // because io_service.stop() without io_service.reset() would leave it unusable.
+    return;
+  }
+
   --m_nOpsRemaining;
   if (m_nOpsRemaining <= 0) {
     m_reason = EXCEED_OPS;

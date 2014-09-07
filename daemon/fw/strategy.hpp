@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FW_STRATEGY_HPP
 #define NFD_DAEMON_FW_STRATEGY_HPP
@@ -59,20 +60,32 @@ public: // triggers
    *    invoke this->sendInterest one or more times, either now or shortly after
    *  - If strategy concludes that this Interest cannot be forwarded,
    *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
+   *
+   *  \note The strategy is permitted to store a weak reference to fibEntry.
+   *        Do not store a shared reference, because PIT entry may be deleted at any moment.
+   *        fibEntry is passed by value to allow obtaining a weak reference from it.
+   *  \note The strategy is permitted to store a shared reference to pitEntry.
+   *        pitEntry is passed by value to reflect this fact.
    */
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry) =0;
+                       shared_ptr<pit::Entry> pitEntry) = 0;
 
   /** \brief trigger before PIT entry is satisfied
    *
+   *  This trigger is invoked when an incoming Data satisfies the PIT entry.
+   *  It can be invoked even if the PIT entry has already been satisfied.
+   *
    *  In this base class this method does nothing.
+   *
+   *  \note The strategy is permitted to store a shared reference to pitEntry.
+   *        pitEntry is passed by value to reflect this fact.
    */
   virtual void
-  beforeSatisfyPendingInterest(shared_ptr<pit::Entry> pitEntry,
-                               const Face& inFace, const Data& data);
+  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+                        const Face& inFace, const Data& data);
 
   /** \brief trigger before PIT entry expires
    *
@@ -82,32 +95,12 @@ public: // triggers
    *  This trigger is not invoked for PIT entry already satisfied.
    *
    *  In this base class this method does nothing.
+   *
+   *  \note The strategy is permitted to store a shared reference to pitEntry.
+   *        pitEntry is passed by value to reflect this fact.
    */
   virtual void
   beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry);
-
-//  /** \brief trigger after FIB entry is being inserted
-//   *         and becomes managed by this strategy
-//   *
-//   *  In this base class this method does nothing.
-//   */
-//  virtual void
-//  afterAddFibEntry(shared_ptr<fib::Entry> fibEntry);
-//
-//  /** \brief trigger after FIB entry being managed by this strategy is updated
-//   *
-//   *  In this base class this method does nothing.
-//   */
-//  virtual void
-//  afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry);
-//
-//  /** \brief trigger before FIB entry ceises to be managed by this strategy
-//   *         or is being deleted
-//   *
-//   *  In this base class this method does nothing.
-//   */
-//  virtual void
-//  beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry);
 
 protected: // actions
   /// send Interest to outFace
