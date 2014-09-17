@@ -26,6 +26,8 @@
 #include "websocket-channel.hpp"
 #include "core/face-uri.hpp"
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 namespace nfd {
 
 NFD_LOG_INIT("WebSocketChannel");
@@ -35,6 +37,7 @@ using namespace boost::asio;
 WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   : m_localEndpoint(localEndpoint)
   , m_isListening(false)
+  , m_pingInterval(10000)
 {
   // Setup WebSocket server
   m_server.clear_access_channels(websocketpp::log::alevel::all);
@@ -47,11 +50,44 @@ WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   // Always set SO_REUSEADDR flag
   m_server.set_reuse_addr(true);
 
+  // Detect disconnection using PONG message
+  m_server.set_pong_handler(bind(&WebSocketChannel::handlePong, this, _1, _2));
+  m_server.set_pong_timeout_handler(bind(&WebSocketChannel::handlePongTimeout,
+                                         this, _1, _2));
+
   this->setUri(FaceUri(localEndpoint, "ws"));
 }
 
 WebSocketChannel::~WebSocketChannel()
 {
+}
+
+void
+WebSocketChannel::setPongTimeout(time::milliseconds timeout)
+{
+  m_server.set_pong_timeout(static_cast<long>(timeout.count()));
+}
+
+void
+WebSocketChannel::handlePongTimeout(websocketpp::connection_hdl hdl, std::string msg)
+{
+  ChannelFaceMap::iterator it = m_channelFaces.find(hdl);
+  if (it != m_channelFaces.end())
+    {
+      it->second->close();
+      NFD_LOG_DEBUG("handlePongTimeout: remove " << it->second->getRemoteUri());
+      m_channelFaces.erase(it);
+    }
+}
+
+void
+WebSocketChannel::handlePong(websocketpp::connection_hdl hdl, std::string msg)
+{
+  ChannelFaceMap::iterator it = m_channelFaces.find(hdl);
+  if (it != m_channelFaces.end())
+    {
+      NFD_LOG_TRACE("handlePong: from " << it->second->getRemoteUri());
+    }
 }
 
 void
@@ -73,7 +109,7 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
     {
       remote = "wsclient://" + m_server.get_con_from_hdl(hdl)->get_remote_endpoint();
     }
-  catch (websocketpp::lib::error_code ec)
+  catch (websocketpp::lib::error_code&)
     {
       NFD_LOG_DEBUG("handleOpen: cannot get remote uri");
       websocketpp::lib::error_code ecode;
@@ -83,6 +119,37 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
                                                               hdl, ref(m_server));
   m_onFaceCreatedCallback(face);
   m_channelFaces[hdl] = face;
+
+  // Schedule PING message
+  EventId pingEvent = scheduler::schedule(m_pingInterval,
+                                          bind(&WebSocketChannel::sendPing, this, hdl));
+  face->setPingEventId(pingEvent);
+}
+
+void
+WebSocketChannel::sendPing(websocketpp::connection_hdl hdl)
+{
+  ChannelFaceMap::iterator it = m_channelFaces.find(hdl);
+  if (it != m_channelFaces.end())
+    {
+      try
+        {
+          m_server.ping(hdl, "NFD-WebSocket");
+        }
+      catch (websocketpp::lib::error_code&)
+        {
+          it->second->close();
+          NFD_LOG_DEBUG("sendPing: failed to ping " << it->second->getRemoteUri());
+          m_channelFaces.erase(it);
+        }
+
+      NFD_LOG_TRACE("sendPing: to " << it->second->getRemoteUri());
+
+      // Schedule next PING message
+      EventId pingEvent = scheduler::schedule(m_pingInterval,
+                                              bind(&WebSocketChannel::sendPing, this, hdl));
+      it->second->setPingEventId(pingEvent);
+    }
 }
 
 void
@@ -92,7 +159,7 @@ WebSocketChannel::handleClose(websocketpp::connection_hdl hdl)
   if (it != m_channelFaces.end())
     {
       it->second->close();
-      NFD_LOG_DEBUG("handleClose: remove client");
+      NFD_LOG_DEBUG("handleClose: remove " << it->second->getRemoteUri());
       m_channelFaces.erase(it);
     }
 }

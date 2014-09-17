@@ -84,7 +84,6 @@ public:
   face1_onReceiveInterest(const Interest& interest)
   {
     face1_receivedInterests.push_back(interest);
-
     limitedIo.afterOp();
   }
 
@@ -92,7 +91,6 @@ public:
   face1_onReceiveData(const Data& data)
   {
     face1_receivedDatas.push_back(data);
-
     limitedIo.afterOp();
   }
 
@@ -120,6 +118,15 @@ public:
   client1_onFail(websocketpp::connection_hdl hdl)
   {
     limitedIo.afterOp();
+  }
+
+  bool
+  client1_onPing(websocketpp::connection_hdl hdl, std::string msg)
+  {
+    limitedIo.afterOp();
+    // Return false to suppress the pong response,
+    // which will cause timeout in the websocket channel
+    return false;
   }
 
   void
@@ -199,6 +206,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   WebSocketFactory factory1("9696");
 
   shared_ptr<WebSocketChannel> channel1 = factory1.createChannel("127.0.0.1", "20070");
+  channel1->setPingInterval(time::milliseconds(3000));
+  channel1->setPongTimeout(time::milliseconds(1000));
 
   BOOST_CHECK_EQUAL(channel1->isListening(), false);
 
@@ -206,7 +215,6 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(channel1->isListening(), true);
 
-  Client client1;
   // Clear all logging info from websocketpp library
   client1.clear_access_channels(websocketpp::log::alevel::all);
 
@@ -215,6 +223,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   client1.set_close_handler(bind(&EndToEndFixture::client1_onClose, this, _1));
   client1.set_fail_handler(bind(&EndToEndFixture::client1_onFail,   this, _1));
   client1.set_message_handler(bind(&EndToEndFixture::client1_onMessage, this, _1, _2));
+  client1.set_ping_handler(bind(&EndToEndFixture::client1_onPing, this, _1, _2));
 
   websocketpp::lib::error_code ec;
   Client::connection_ptr con = client1.get_connection("ws://127.0.0.1:20070", ec);
@@ -223,7 +232,10 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "WebSocketChannel error: cannot connect or cannot accept connection");
 
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
+
   BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "ws://127.0.0.1:20070");
+  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
 
   //BOOST_CHECK_EQUAL(face1->isLocal(), true);
 
@@ -265,6 +277,9 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
   BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesReceived);
   BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent);
+
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(8));
+  BOOST_CHECK_EQUAL(channel1->size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

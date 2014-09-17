@@ -24,6 +24,7 @@
  **/
 
 #include "websocket-face.hpp"
+#include "core/global-io.hpp"
 
 namespace nfd {
 
@@ -37,8 +38,8 @@ WebSocketFace::WebSocketFace(const FaceUri& remoteUri, const FaceUri& localUri,
   , m_server(server)
   , m_closed(false)
 {
+  this->setOnDemand(true);
 }
-
 
 void
 WebSocketFace::sendInterest(const Interest& interest)
@@ -86,6 +87,7 @@ WebSocketFace::close()
   if (m_closed == false)
     {
       m_closed = true;
+      scheduler::cancel(m_pingEventId);
       websocketpp::lib::error_code ecode;
       m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ecode);
 

@@ -88,7 +88,25 @@ public:
   bool
   isListening() const;
 
+  void
+  setPingInterval(time::milliseconds interval)
+  {
+    m_pingInterval = interval;
+  }
+
+  void
+  setPongTimeout(time::milliseconds timeout);
+
 private:
+  void
+  sendPing(websocketpp::connection_hdl hdl);
+
+  void
+  handlePong(websocketpp::connection_hdl hdl, std::string msg);
+
+  void
+  handlePongTimeout(websocketpp::connection_hdl hdl, std::string msg);
+
   void
   handleMessage(websocketpp::connection_hdl hdl, websocket::Server::message_ptr msg);
 
@@ -118,6 +136,7 @@ private:
    */
   bool m_isListening;
 
+  time::milliseconds m_pingInterval;
 };
 
 inline bool

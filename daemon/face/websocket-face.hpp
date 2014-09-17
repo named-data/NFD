@@ -28,6 +28,7 @@
 
 #include "face.hpp"
 #include "core/logger.hpp"
+#include "core/scheduler.hpp"
 
 #ifndef HAVE_WEBSOCKET
 #error "Cannot include this file when WebSocket support is not enabled"
@@ -64,11 +65,18 @@ public:
   close();
 
   void
+  setPingEventId(EventId& id)
+  {
+    m_pingEventId = id;
+  }
+
+  void
   handleReceive(const std::string& msg);
 
 private:
   websocketpp::connection_hdl m_handle;
   websocket::Server& m_server;
+  EventId m_pingEventId;
   bool m_closed;
 };
 
