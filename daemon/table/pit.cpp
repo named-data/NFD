@@ -44,15 +44,6 @@ predicate_NameTreeEntry_hasPitEntry(const name_tree::Entry& entry)
 }
 
 static inline bool
-operator==(const Exclude& a, const Exclude& b)
-{
-  const Block& aBlock = a.wireEncode();
-  const Block& bBlock = b.wireEncode();
-  return aBlock.size() == bBlock.size() &&
-         0 == memcmp(aBlock.wire(), bBlock.wire(), aBlock.size());
-}
-
-static inline bool
 predicate_PitEntry_similar_Interest(const shared_ptr<pit::Entry>& entry,
                                     const Interest& interest)
 {
