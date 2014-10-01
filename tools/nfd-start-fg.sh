@@ -22,6 +22,7 @@ esac
 
 nfd-start || exit $?
 
-read -p 'To stop, hit ENTER or CTRL-C '
+echo "To stop, hit ENTER or CTRL-C"
+read
 
 nfd-stop || exit $?
