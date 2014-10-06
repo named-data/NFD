@@ -35,6 +35,23 @@ BOOST_FIXTURE_TEST_SUITE(TableStrategyChoice, BaseFixture)
 
 using fw::Strategy;
 
+BOOST_AUTO_TEST_CASE(Get)
+{
+  Forwarder forwarder;
+  Name nameP("ndn:/strategy/P");
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+
+  StrategyChoice& table = forwarder.getStrategyChoice();
+
+  // install
+  BOOST_CHECK_EQUAL(table.install(strategyP), true);
+
+  BOOST_CHECK(table.insert("ndn:/", nameP));
+  // { '/'=>P }
+
+  BOOST_CHECK_EQUAL(*table.get("ndn:/"), nameP);
+}
+
 BOOST_AUTO_TEST_CASE(Effective)
 {
   Forwarder forwarder;

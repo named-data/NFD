@@ -41,7 +41,7 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("StrategyChoiceManagerTest");
+NFD_LOG_INIT("MgmtStrategyChoiceManager");
 
 class StrategyChoiceManagerFixture : protected BaseFixture
 {
@@ -185,6 +185,14 @@ public:
   {
     m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
                                                         "/localhost/nfd/strategy/test-strategy-b"));
+
+    const Name strategyCVersion1("/localhost/nfd/strategy/test-strategy-c/%FD%01");
+    m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                        strategyCVersion1));
+
+    const Name strategyCVersion2("/localhost/nfd/strategy/test-strategy-c/%FD%02");
+    m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                        strategyCVersion2));
   }
 
   virtual
@@ -353,6 +361,60 @@ BOOST_AUTO_TEST_CASE(SetStrategies)
   BOOST_REQUIRE(didCallbackFire());
   fw::Strategy& strategy = getStrategyChoice().findEffectiveStrategy("/test");
   BOOST_REQUIRE_EQUAL(strategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+}
+
+BOOST_AUTO_TEST_CASE(SetStrategySpecifiedVersion)
+{
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/test-strategy-c/%FD%01");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 200, "Success", encodedParameters);
+
+  getManager().onValidatedStrategyChoiceRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+  fw::Strategy& strategy = getStrategyChoice().findEffectiveStrategy("/test");
+  BOOST_REQUIRE_EQUAL(strategy.getName(), "/localhost/nfd/strategy/test-strategy-c/%FD%01");
+}
+
+BOOST_AUTO_TEST_CASE(SetStrategyLatestVersion)
+{
+  ControlParameters parameters;
+  parameters.setName("/test");
+  parameters.setStrategy("/localhost/nfd/strategy/test-strategy-c");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/strategy-choice");
+  commandName.append("set");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+
+  ControlParameters responseParameters;
+  responseParameters.setName("/test");
+  responseParameters.setStrategy("/localhost/nfd/strategy/test-strategy-c/%FD%02");
+
+  getFace()->onReceiveData +=
+    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
+         command->getName(), 200, "Success", responseParameters.wireEncode());
+
+  getManager().onValidatedStrategyChoiceRequest(command);
+
+  BOOST_REQUIRE(didCallbackFire());
+  fw::Strategy& strategy = getStrategyChoice().findEffectiveStrategy("/test");
+  BOOST_REQUIRE_EQUAL(strategy.getName(), "/localhost/nfd/strategy/test-strategy-c/%FD%02");
 }
 
 BOOST_AUTO_TEST_CASE(SetStrategiesMissingName)
