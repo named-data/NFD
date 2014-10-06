@@ -29,7 +29,6 @@
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/app-face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "face/face-flags.hpp"
 #include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"
@@ -135,7 +134,28 @@ public:
     BOOST_CHECK_EQUAL(status.getFaceId(), reference->getId());
     BOOST_CHECK_EQUAL(status.getRemoteUri(), reference->getRemoteUri().toString());
     BOOST_CHECK_EQUAL(status.getLocalUri(), reference->getLocalUri().toString());
-    BOOST_CHECK_EQUAL(status.getFlags(), getFaceFlags(*reference));
+
+    if (reference->isLocal()) {
+      BOOST_CHECK_EQUAL(status.getFaceScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+    }
+    else {
+      BOOST_CHECK_EQUAL(status.getFaceScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+    }
+
+    if (reference->isOnDemand()) {
+      BOOST_CHECK_EQUAL(status.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+    }
+    else {
+      BOOST_CHECK_EQUAL(status.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+    }
+
+    if (reference->isMultiAccess()) {
+      BOOST_CHECK_EQUAL(status.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+    }
+    else {
+      BOOST_CHECK_EQUAL(status.getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+    }
+
     BOOST_CHECK_EQUAL(status.getNInInterests(), counters.getNInInterests());
     BOOST_CHECK_EQUAL(status.getNInDatas(), counters.getNInDatas());
     BOOST_CHECK_EQUAL(status.getNOutInterests(), counters.getNOutInterests());

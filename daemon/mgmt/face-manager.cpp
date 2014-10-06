@@ -29,7 +29,6 @@
 #include "core/face-uri.hpp"
 #include "core/network-interface.hpp"
 #include "fw/face-table.hpp"
-#include "face/face-flags.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 #include "core/config-file.hpp"
@@ -1030,11 +1029,8 @@ void
 FaceManager::onAddFace(shared_ptr<Face> face)
 {
   ndn::nfd::FaceEventNotification notification;
-  notification.setKind(ndn::nfd::FACE_EVENT_CREATED)
-              .setFaceId(face->getId())
-              .setRemoteUri(face->getRemoteUri().toString())
-              .setLocalUri(face->getLocalUri().toString())
-              .setFlags(getFaceFlags(*face));
+  notification.setKind(ndn::nfd::FACE_EVENT_CREATED);
+  face->copyStatusTo(notification);
 
   m_notificationStream.postNotification(notification);
 }
@@ -1043,15 +1039,11 @@ void
 FaceManager::onRemoveFace(shared_ptr<Face> face)
 {
   ndn::nfd::FaceEventNotification notification;
-  notification.setKind(ndn::nfd::FACE_EVENT_DESTROYED)
-              .setFaceId(face->getId())
-              .setRemoteUri(face->getRemoteUri().toString())
-              .setLocalUri(face->getLocalUri().toString())
-              .setFlags(getFaceFlags(*face));
+  notification.setKind(ndn::nfd::FACE_EVENT_DESTROYED);
+  face->copyStatusTo(notification);
 
   m_notificationStream.postNotification(notification);
 }
-
 
 bool
 FaceManager::extractLocalControlParameters(const Interest& request,

@@ -1493,6 +1493,9 @@ public:
     BOOST_CHECK_EQUAL(notification.getFaceId(), expectedFaceEvent.getFaceId());
     BOOST_CHECK_EQUAL(notification.getRemoteUri(), expectedFaceEvent.getRemoteUri());
     BOOST_CHECK_EQUAL(notification.getLocalUri(), expectedFaceEvent.getLocalUri());
+    BOOST_CHECK_EQUAL(notification.getFaceScope(), expectedFaceEvent.getFaceScope());
+    BOOST_CHECK_EQUAL(notification.getFacePersistency(), expectedFaceEvent.getFacePersistency());
+    BOOST_CHECK_EQUAL(notification.getLinkType(), expectedFaceEvent.getLinkType());
   }
 
   bool

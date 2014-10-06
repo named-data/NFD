@@ -24,7 +24,6 @@
  */
 
 #include "face.hpp"
-#include "face-flags.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -125,19 +124,44 @@ Face::fail(const std::string& reason)
   this->onFail.clear();
 }
 
+template<typename FaceTraits>
+void
+Face::copyStatusTo(FaceTraits& traits) const
+{
+  traits.setFaceId(getId())
+    .setRemoteUri(getRemoteUri().toString())
+    .setLocalUri(getLocalUri().toString());
+
+  if (isLocal()) {
+    traits.setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL);
+  }
+  else {
+    traits.setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  }
+
+  if (isOnDemand()) {
+    traits.setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  }
+  else {
+    traits.setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  }
+}
+
+template void
+Face::copyStatusTo<ndn::nfd::FaceStatus>(ndn::nfd::FaceStatus&) const;
+
+template void
+Face::copyStatusTo<ndn::nfd::FaceEventNotification>(ndn::nfd::FaceEventNotification&) const;
+
 ndn::nfd::FaceStatus
 Face::getFaceStatus() const
 {
   ndn::nfd::FaceStatus status;
-  status.setFaceId(getId())
-    .setRemoteUri(getRemoteUri().toString())
-    .setLocalUri(getLocalUri().toString())
-    .setFlags(getFaceFlags(*this));
+  copyStatusTo(status);
 
   this->getCounters().copyTo(status);
 
   return status;
 }
-
 
 } //namespace nfd

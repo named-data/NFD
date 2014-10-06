@@ -32,6 +32,7 @@
 #include "face-counters.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
 
@@ -163,6 +164,12 @@ public: // attributes
   const FaceUri&
   getLocalUri() const;
 
+  /** \return FaceTraits data structure filled with the current FaceTraits status
+   */
+  template<typename FaceTraits>
+  void
+  copyStatusTo(FaceTraits& traits) const;
+
   /** \return FaceStatus data structure filled with the current Face status
    */
   virtual ndn::nfd::FaceStatus
@@ -201,7 +208,6 @@ private:
   // allow setting FaceId
   friend class FaceTable;
 };
-
 
 inline bool
 Face::isLocal() const
