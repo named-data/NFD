@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "mgmt/general-config-section.hpp"
 
@@ -29,9 +30,9 @@
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(GeneralSectionConfig)
+BOOST_FIXTURE_TEST_SUITE(MgmtGeneralConfigSection, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(TestConfig)
+BOOST_AUTO_TEST_CASE(UserAndGroupConfig)
 {
   const std::string CONFIG =
     "general\n"
@@ -47,7 +48,7 @@ BOOST_AUTO_TEST_CASE(TestConfig)
 
 }
 
-BOOST_AUTO_TEST_CASE(TestDefaultConfig)
+BOOST_AUTO_TEST_CASE(DefaultConfig)
 {
   const std::string CONFIG =
     "general\n"
@@ -60,7 +61,7 @@ BOOST_AUTO_TEST_CASE(TestDefaultConfig)
   BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
 }
 
-BOOST_AUTO_TEST_CASE(TestNoUserConfig)
+BOOST_AUTO_TEST_CASE(NoUserConfig)
 {
   const std::string CONFIG =
     "general\n"
@@ -74,7 +75,7 @@ BOOST_AUTO_TEST_CASE(TestNoUserConfig)
   BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
 }
 
-BOOST_AUTO_TEST_CASE(TestNoGroupConfig)
+BOOST_AUTO_TEST_CASE(NoGroupConfig)
 {
   const std::string CONFIG =
     "general\n"
@@ -94,7 +95,7 @@ checkExceptionMessage(const ConfigFile::Error& error, const std::string& expecte
   return error.what() == expected;
 }
 
-BOOST_AUTO_TEST_CASE(TestInvalidUserConfig)
+BOOST_AUTO_TEST_CASE(InvalidUserConfig)
 {
   const std::string CONFIG =
     "general\n"
@@ -111,7 +112,7 @@ BOOST_AUTO_TEST_CASE(TestInvalidUserConfig)
                           bind(&checkExceptionMessage, _1, expected));
 }
 
-BOOST_AUTO_TEST_CASE(TestInvalidGroupConfig)
+BOOST_AUTO_TEST_CASE(InvalidGroupConfig)
 {
   const std::string CONFIG =
     "general\n"
