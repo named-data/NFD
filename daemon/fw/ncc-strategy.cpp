@@ -59,11 +59,10 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<PitEntryInfo> pitEntryInfo =
     pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
-  bool isNewInterest = pitEntryInfo->isNewInterest;
-  if (!isNewInterest) {
+  bool isNewPitEntry = !pitEntry->hasUnexpiredOutRecords();
+  if (!isNewPitEntry) {
     return;
   }
-  pitEntryInfo->isNewInterest = false;
 
   shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
     this->getMeasurementsEntryInfo(pitEntry);
@@ -303,11 +302,6 @@ void
 NccStrategy::MeasurementsEntryInfo::ageBestFace() {
   this->previousFace = this->bestFace;
   this->bestFace.reset();
-}
-
-NccStrategy::PitEntryInfo::PitEntryInfo()
-  : isNewInterest(true)
-{
 }
 
 NccStrategy::PitEntryInfo::~PitEntryInfo()

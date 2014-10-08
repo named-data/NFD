@@ -93,13 +93,10 @@ protected:
   class PitEntryInfo : public StrategyInfo
   {
   public:
-    PitEntryInfo();
-
     virtual
     ~PitEntryInfo();
 
   public:
-    bool isNewInterest;
     /// timer that expires when best face does not respond within predicted time
     EventId bestFaceTimeout;
     /// timer for propagating to another face

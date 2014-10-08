@@ -221,6 +221,56 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[2].get<1>(), face1);
 }
 
+BOOST_AUTO_TEST_CASE(Bug1971)
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
+  strategy->onAction += bind(&LimitedIo::afterOp, &limitedIo);
+
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
+  fibEntry->addNextHop(face2, 10);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  strategyChoice.install(strategy);
+  strategyChoice.insert(Name(), strategy->getName());
+
+  Pit& pit = forwarder.getPit();
+
+  // first Interest: strategy forwards to face2
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/M4mBXCsd");
+  interest1->setInterestLifetime(time::milliseconds(2000));
+  shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
+
+  pitEntry1->insertOrUpdateInRecord(face1, *interest1);
+  strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
+  limitedIo.run(1 - strategy->m_sendInterestHistory.size(), time::milliseconds(2000));
+  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face2);
+
+  // face2 responds
+  shared_ptr<Data> data1 = makeData("ndn:/M4mBXCsd");
+  data1->setFreshnessPeriod(time::milliseconds(5));
+  strategy->beforeSatisfyInterest(pitEntry1, *face2, *data1);
+  pitEntry1->deleteOutRecord(face2);
+  pitEntry1->deleteInRecords();
+  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(10));
+
+  // similar Interest: strategy should still forward it
+  pitEntry1->insertOrUpdateInRecord(face1, *interest1);
+  strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
+  limitedIo.run(2 - strategy->m_sendInterestHistory.size(), time::milliseconds(2000));
+  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
+  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
