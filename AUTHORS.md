@@ -18,7 +18,7 @@ volunteers.
 * Lixia Zhang         <http://www.cs.ucla.edu/~lixia/>
 
 
-## All project authors and contributors and their affiliations:
+## Main project authors and their affiliations:
 
 * University of California, Los Angeles
 
@@ -63,3 +63,11 @@ volunteers.
     * Syed Obaid Amin     <http://obaidamin.weebly.com/>
     * Vince Lehman        <vslehman@memphis.edu>
     * Lan Wang            <http://www.cs.memphis.edu/~lanwang/>
+
+## Project contributors
+
+The following is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS,
+people who have reported bugs, submitted patches, and implemented new features
+in the library:
+
+* Tai-Lin Chu             <https://www.linkedin.com/pub/tai-lin-chu/55/5b2/669>
