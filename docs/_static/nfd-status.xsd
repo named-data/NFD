@@ -53,22 +53,17 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
-<xs:complexType name="faceFlagsType">
-  <xs:sequence>
-    <xs:element type="xs:string" name="local" minOccurs="0"/>
-    <xs:element type="xs:string" name="on-demand" minOccurs="0"/>
-  </xs:sequence>
-</xs:complexType>
-
 <xs:complexType name="faceType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
     <xs:element type="xs:anyURI" name="remoteUri"/>
     <xs:element type="xs:anyURI" name="localUri"/>
     <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
+    <xs:element type="xs:string" name="faceScope"/>
+    <xs:element type="xs:string" name="facePersistency"/>
+    <xs:element type="xs:string" name="linkType"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
     <xs:element type="nfd:bidirectionalByteCountersType" name="byteCounters"/>
-    <xs:element type="nfd:faceFlagsType" name="flags" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
 

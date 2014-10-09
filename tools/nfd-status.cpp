@@ -399,6 +399,13 @@ public:
                         << "</expirationPeriod>";
             }
 
+            std::cout << "<faceScope>" << faceStatus.getFaceScope()
+                      << "</faceScope>";
+            std::cout << "<facePersistency>" << faceStatus.getFacePersistency()
+                      << "</facePersistency>";
+            std::cout << "<linkType>" << faceStatus.getLinkType()
+                      << "</linkType>";
+
             std::cout << "<packetCounters>";
             std::cout << "<incomingPackets>";
             std::cout << "<nInterests>"       << faceStatus.getNInInterests()
@@ -421,16 +428,6 @@ public:
                       << "</outgoingBytes>";
             std::cout << "</byteCounters>";
 
-            if (faceStatus.getFlags() != 0) {
-              std::cout << "<flags>";
-              if (faceStatus.isLocal()) {
-                std::cout << "<local/>";
-              }
-              if (faceStatus.isOnDemand()) {
-                std::cout << "<on-demand/>";
-              }
-              std::cout << "</flags>";
-            }
             std::cout << "</face>";
           }
         std::cout << "</faces>";
@@ -470,10 +467,9 @@ public:
                       << faceStatus.getNOutDatas() << "d "
                       << faceStatus.getNOutBytes() << "B}"
                       << "}";
-            if (faceStatus.isLocal())
-              std::cout << " local";
-            if (faceStatus.isOnDemand())
-              std::cout << " on-demand";
+            std::cout << " " << faceStatus.getFaceScope()
+                      << " " << faceStatus.getFacePersistency()
+                      << " " << faceStatus.getLinkType();
             std::cout << std::endl;
           }
        }

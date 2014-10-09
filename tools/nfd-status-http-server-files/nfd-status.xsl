@@ -152,8 +152,9 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Face ID</th>
         <th>Remote URI</th>
         <th>Local URI</th>
-        <th>Local</th>
-        <th>OnDemand</th>
+        <th>Scope</th>
+        <th>Persistency</th>
+        <th>LinkType</th>
         <th>Expires in</th>
         <th>In Interests</th>
         <th>In Data</th>
@@ -177,16 +178,9 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:faceId"/></td>
         <td><xsl:value-of select="nfd:remoteUri"/></td>
         <td><xsl:value-of select="nfd:localUri"/></td>
-        <td>
-          <xsl:if test="nfd:flags/nfd:local">
-            Y
-          </xsl:if>
-        </td>
-        <td>
-          <xsl:if test="nfd:flags/nfd:on-demand">
-            Y
-          </xsl:if>
-        </td>
+        <td><xsl:value-of select="nfd:faceScope"/></td>
+        <td><xsl:value-of select="nfd:facePersistency"/></td>
+        <td><xsl:value-of select="nfd:linkType"/></td>
         <td>
           <xsl:choose>
             <xsl:when test="nfd:expirationPeriod">
