@@ -143,14 +143,15 @@ FibManager::onValidatedFibRequest(const shared_ptr<const Interest>& request)
   if (verbProcessor != m_signedVerbDispatch.end())
     {
       ControlParameters parameters;
-      if (!extractParameters(parameterComponent, parameters) || !parameters.hasFaceId())
+      if (!extractParameters(parameterComponent, parameters))
         {
           NFD_LOG_DEBUG("command result: malformed verb: " << verb);
           sendResponse(command, 400, "Malformed command");
           return;
         }
 
-      if (parameters.getFaceId() == 0)
+      bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
+      if (isSelfRegistration)
         {
           parameters.setFaceId(request->getIncomingFaceId());
         }
