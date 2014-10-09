@@ -75,12 +75,12 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   strategy->afterReceiveInterest(*face3, interest1, fibEntry, pitEntry1);
 
   // forwards to face1 because routing says it's best
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(1));
+  // (no io run here: afterReceiveInterest has already sent the Interest)
   BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face1);
 
   // forwards to face2 because face1 doesn't respond
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
+  limitedIo.run(1, time::milliseconds(500));
   BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
   BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
 
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   shared_ptr<Data> data1p = makeData("ndn:/0Jm1ajrW/%00");
   Data& data1 = *data1p;
   strategy->beforeSatisfyInterest(pitEntry1, *face2, data1);
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
+  limitedIo.defer(time::milliseconds(500));
 
   // second Interest: strategy knows face2 is best
   shared_ptr<Interest> interest2p = makeInterest("ndn:/0Jm1ajrW/%00%01");
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   strategy->afterReceiveInterest(*face3, interest2, fibEntry, pitEntry2);
 
   // forwards to face2 because it responds previously
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(1));
+  limitedIo.defer(time::milliseconds(1));
   BOOST_REQUIRE_GE(strategy->m_sendInterestHistory.size(), 3);
   BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[2].get<1>(), face2);
 }
