@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FW_FORWARDER_HPP
 #define NFD_DAEMON_FW_FORWARDER_HPP
@@ -34,6 +35,7 @@
 #include "table/cs.hpp"
 #include "table/measurements.hpp"
 #include "table/strategy-choice.hpp"
+#include "table/dead-nonce-list.hpp"
 
 namespace nfd {
 
@@ -99,6 +101,9 @@ public: // forwarding entrypoints and tables
   StrategyChoice&
   getStrategyChoice();
 
+  DeadNonceList&
+  getDeadNonceList();
+
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
@@ -127,6 +132,14 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry);
 
+  /** \brief Interest finalize pipeline
+   *  \param isSatisfied whether the Interest has been satisfied
+   *  \param dataFreshnessPeriod FreshnessPeriod of satisfying Data
+   */
+  VIRTUAL_WITH_TESTS void
+  onInterestFinalize(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
+                     const time::milliseconds& dataFreshnessPeriod = time::milliseconds(-1));
+
   /** \brief incoming Data pipeline
    */
   VIRTUAL_WITH_TESTS void
@@ -147,10 +160,20 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry);
 
   VIRTUAL_WITH_TESTS void
-  setStragglerTimer(shared_ptr<pit::Entry> pitEntry);
+  setStragglerTimer(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
+                    const time::milliseconds& dataFreshnessPeriod = time::milliseconds(-1));
 
   VIRTUAL_WITH_TESTS void
   cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
+
+  /** \brief insert Nonce to Dead Nonce List if necessary
+   *  \param upstream if null, insert Nonces from all OutRecords;
+   *                  if not null, insert Nonce only on the OutRecord of this face
+   */
+  VIRTUAL_WITH_TESTS void
+  insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
+                      const time::milliseconds& dataFreshnessPeriod,
+                      Face* upstream);
 
   /// call trigger (method) on the effective strategy of pitEntry
 #ifdef WITH_TESTS
@@ -174,6 +197,7 @@ private:
   Cs             m_cs;
   Measurements   m_measurements;
   StrategyChoice m_strategyChoice;
+  DeadNonceList  m_deadNonceList;
 
   static const Name LOCALHOST_NAME;
 
@@ -251,6 +275,12 @@ inline StrategyChoice&
 Forwarder::getStrategyChoice()
 {
   return m_strategyChoice;
+}
+
+inline DeadNonceList&
+Forwarder::getDeadNonceList()
+{
+  return m_deadNonceList;
 }
 
 #ifdef WITH_TESTS

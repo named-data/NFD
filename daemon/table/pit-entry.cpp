@@ -126,10 +126,38 @@ Entry::violatesScope(const Face& face) const
   return false;
 }
 
-bool
-Entry::addNonce(uint32_t nonce)
+int
+Entry::findNonce(uint32_t nonce, const Face& face) const
 {
-  return m_nonceList.add(nonce);
+  // TODO should we ignore expired in/out records?
+
+  int dnw = DUPLICATE_NONCE_NONE;
+
+  for (InRecordCollection::const_iterator it = m_inRecords.begin();
+       it != m_inRecords.end(); ++it) {
+    if (it->getLastNonce() == nonce) {
+      if (it->getFace().get() == &face) {
+        dnw |= DUPLICATE_NONCE_IN_SAME;
+      }
+      else {
+        dnw |= DUPLICATE_NONCE_IN_OTHER;
+      }
+    }
+  }
+
+  for (OutRecordCollection::const_iterator it = m_outRecords.begin();
+       it != m_outRecords.end(); ++it) {
+    if (it->getLastNonce() == nonce) {
+      if (it->getFace().get() == &face) {
+        dnw |= DUPLICATE_NONCE_OUT_SAME;
+      }
+      else {
+        dnw |= DUPLICATE_NONCE_OUT_OTHER;
+      }
+    }
+  }
+
+  return dnw;
 }
 
 InRecordCollection::iterator
@@ -170,7 +198,6 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
   }
 
   it->update(interest);
-  m_nonceList.add(interest.getNonce());
   return it;
 }
 

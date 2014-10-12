@@ -41,12 +41,19 @@ BOOST_AUTO_TEST_CASE(Basic)
   const uint32_t nonce2 = 0x1f46372b;
 
   DeadNonceList dnl;
-
+  BOOST_CHECK_EQUAL(dnl.size(), 0);
   BOOST_CHECK_EQUAL(dnl.has(nameA, nonce1), false);
+
   dnl.add(nameA, nonce1);
+  BOOST_CHECK_EQUAL(dnl.size(), 1);
   BOOST_CHECK_EQUAL(dnl.has(nameA, nonce1), true);
   BOOST_CHECK_EQUAL(dnl.has(nameA, nonce2), false);
   BOOST_CHECK_EQUAL(dnl.has(nameB, nonce1), false);
+}
+
+BOOST_AUTO_TEST_CASE(MinLifetime)
+{
+  BOOST_CHECK_THROW(DeadNonceList dnl(time::milliseconds::zero()), std::invalid_argument);
 }
 
 /// A Fixture that periodically inserts Nonces
@@ -100,6 +107,8 @@ const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = time::millisecond
 
 BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
 {
+  BOOST_CHECK_EQUAL(dnl.getLifetime(), LIFETIME);
+
   LimitedIo limitedIo;
 
   const int RATE = DeadNonceList::INITIAL_CAPACITY / 2;

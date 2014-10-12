@@ -74,9 +74,11 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // PIT insert
   shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
 
-  // detect loop and record Nonce
-  bool isLoop = ! pitEntry->addNonce(interest.getNonce());
-  if (isLoop) {
+  // detect duplicate Nonce
+  int dnw = pitEntry->findNonce(interest.getNonce(), inFace);
+  bool hasDuplicateNonce = (dnw != pit::DUPLICATE_NONCE_NONE) ||
+                           m_deadNonceList.has(interest.getName(), interest.getNonce());
+  if (hasDuplicateNonce) {
     // goto Interest loop pipeline
     this->onInterestLoop(inFace, interest, pitEntry);
     return;
@@ -96,7 +98,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
       // XXX should we lookup PIT for other Interests that also match csMatch?
 
       // set PIT straggler timer
-      this->setStragglerTimer(pitEntry);
+      this->setStragglerTimer(pitEntry, true, csMatch->getFreshnessPeriod());
 
       // goto outgoing Data pipeline
       this->onOutgoingData(*csMatch, inFace);
@@ -208,7 +210,7 @@ Forwarder::onInterestReject(shared_ptr<pit::Entry> pitEntry)
   this->cancelUnsatisfyAndStragglerTimer(pitEntry);
 
   // set PIT straggler timer
-  this->setStragglerTimer(pitEntry);
+  this->setStragglerTimer(pitEntry, false);
 }
 
 void
@@ -219,6 +221,20 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
   // invoke PIT unsatisfied callback
   this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeExpirePendingInterest, _1,
                                           pitEntry));
+
+  // goto Interest Finalize pipeline
+  this->onInterestFinalize(pitEntry, false);
+}
+
+void
+Forwarder::onInterestFinalize(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
+                              const time::milliseconds& dataFreshnessPeriod)
+{
+  NFD_LOG_DEBUG("onInterestFinalize interest=" << pitEntry->getName() <<
+                (isSatisfied ? " satisfied" : " unsatisfied"));
+
+  // Dead Nonce List insert if necessary
+  this->insertDeadNonceList(*pitEntry, isSatisfied, dataFreshnessPeriod, 0);
 
   // PIT delete
   this->cancelUnsatisfyAndStragglerTimer(pitEntry);
@@ -277,12 +293,15 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyInterest, _1,
                                             pitEntry, cref(inFace), cref(data)));
 
+    // Dead Nonce List insert if necessary (for OutRecord of inFace)
+    this->insertDeadNonceList(*pitEntry, true, data.getFreshnessPeriod(), &inFace);
+
     // mark PIT satisfied
     pitEntry->deleteInRecords();
     pitEntry->deleteOutRecord(inFace.shared_from_this());
 
     // set PIT straggler timer
-    this->setStragglerTimer(pitEntry);
+    this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
   }
 
   // foreach pending downstream
@@ -364,13 +383,14 @@ Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
 }
 
 void
-Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry)
+Forwarder::setStragglerTimer(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
+                             const time::milliseconds& dataFreshnessPeriod)
 {
   time::nanoseconds stragglerTime = time::milliseconds(100);
 
   scheduler::cancel(pitEntry->m_stragglerTimer);
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
-    bind(&Pit::erase, &m_pit, pitEntry));
+    bind(&Forwarder::onInterestFinalize, this, pitEntry, isSatisfied, dataFreshnessPeriod));
 }
 
 void
@@ -378,6 +398,51 @@ Forwarder::cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry)
 {
   scheduler::cancel(pitEntry->m_unsatisfyTimer);
   scheduler::cancel(pitEntry->m_stragglerTimer);
+}
+
+static inline void
+insertNonceToDnl(DeadNonceList& dnl, const pit::Entry& pitEntry,
+                 const pit::OutRecord& outRecord)
+{
+  dnl.add(pitEntry.getName(), outRecord.getLastNonce());
+}
+
+void
+Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
+                               const time::milliseconds& dataFreshnessPeriod,
+                               Face* upstream)
+{
+  // need Dead Nonce List insert?
+  bool needDnl = false;
+  if (isSatisfied) {
+    bool hasFreshnessPeriod = dataFreshnessPeriod >= time::milliseconds::zero();
+    // Data never becomes stale if it doesn't have FreshnessPeriod field
+    needDnl = static_cast<bool>(pitEntry.getInterest().getMustBeFresh()) &&
+              (hasFreshnessPeriod && dataFreshnessPeriod < m_deadNonceList.getLifetime());
+  }
+  else {
+    needDnl = true;
+  }
+
+  if (!needDnl) {
+    return;
+  }
+
+  // Dead Nonce List insert
+  if (upstream == 0) {
+    // insert all outgoing Nonces
+    const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
+    std::for_each(outRecords.begin(), outRecords.end(),
+                  bind(&insertNonceToDnl, ref(m_deadNonceList), cref(pitEntry), _1));
+  }
+  else {
+    // insert outgoing Nonce of a specific face
+    pit::OutRecordCollection::const_iterator outRecord =
+      pitEntry.getOutRecord(upstream->shared_from_this());
+    if (outRecord != pitEntry.getOutRecords().end()) {
+      m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
+    }
+  }
 }
 
 } // namespace nfd

@@ -33,27 +33,6 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TablePit, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(NonceList)
-{
-  BOOST_REQUIRE_GE(pit::NonceList::CAPACITY, 32);
-  BOOST_REQUIRE_LE(pit::NonceList::CAPACITY, 4096);
-
-  pit::NonceList nl;
-  for (uint32_t nonce = 0; nonce < static_cast<uint32_t>(pit::NonceList::CAPACITY); ++nonce) {
-    BOOST_CHECK_EQUAL(nl.add(nonce), true);
-  }
-  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
-
-  BOOST_CHECK_EQUAL(nl.add(32), false);
-  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
-
-  BOOST_CHECK_EQUAL(nl.add(4096), true);
-  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
-
-  BOOST_CHECK_EQUAL(nl.add(0), true);// 0 is evicted
-  BOOST_CHECK_EQUAL(nl.size(), pit::NonceList::CAPACITY);
-}
-
 BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
@@ -171,20 +150,68 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
 
 BOOST_AUTO_TEST_CASE(EntryNonce)
 {
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
+
   shared_ptr<Interest> interest = makeInterest("ndn:/qtCQ7I1c");
+  interest->setNonce(25559);
 
-  pit::Entry entry(*interest);
+  pit::Entry entry0(*interest);
+  BOOST_CHECK_EQUAL(entry0.findNonce(25559, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry0.findNonce(25559, *face2), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry0.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry0.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
 
-  BOOST_CHECK_EQUAL(entry.addNonce(25559), true);
-  BOOST_CHECK_EQUAL(entry.addNonce(25559), false);
-  BOOST_CHECK_EQUAL(entry.addNonce(19004), true);
-  BOOST_CHECK_EQUAL(entry.addNonce(19004), false);
+  pit::Entry entry1(*interest);
+  entry1.insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(entry1.findNonce(25559, *face1), pit::DUPLICATE_NONCE_IN_SAME);
+  BOOST_CHECK_EQUAL(entry1.findNonce(25559, *face2), pit::DUPLICATE_NONCE_IN_OTHER);
+  BOOST_CHECK_EQUAL(entry1.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry1.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
+
+  pit::Entry entry2(*interest);
+  entry2.insertOrUpdateOutRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(entry2.findNonce(25559, *face1), pit::DUPLICATE_NONCE_OUT_SAME);
+  BOOST_CHECK_EQUAL(entry2.findNonce(25559, *face2), pit::DUPLICATE_NONCE_OUT_OTHER);
+  BOOST_CHECK_EQUAL(entry2.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry2.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
+
+  pit::Entry entry3(*interest);
+  entry3.insertOrUpdateInRecord(face1, *interest);
+  entry3.insertOrUpdateOutRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(entry3.findNonce(25559, *face1),
+                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_OUT_SAME);
+  BOOST_CHECK_EQUAL(entry3.findNonce(25559, *face2),
+                    pit::DUPLICATE_NONCE_IN_OTHER | pit::DUPLICATE_NONCE_OUT_OTHER);
+  BOOST_CHECK_EQUAL(entry3.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry3.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
+
+  pit::Entry entry4(*interest);
+  entry4.insertOrUpdateInRecord(face1, *interest);
+  entry4.insertOrUpdateInRecord(face2, *interest);
+  BOOST_CHECK_EQUAL(entry4.findNonce(25559, *face1),
+                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_IN_OTHER);
+  BOOST_CHECK_EQUAL(entry4.findNonce(25559, *face2),
+                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_IN_OTHER);
+  BOOST_CHECK_EQUAL(entry4.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry4.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
+
+  pit::Entry entry5(*interest);
+  entry5.insertOrUpdateOutRecord(face1, *interest);
+  entry5.insertOrUpdateOutRecord(face2, *interest);
+  BOOST_CHECK_EQUAL(entry5.findNonce(25559, *face1),
+                    pit::DUPLICATE_NONCE_OUT_SAME | pit::DUPLICATE_NONCE_OUT_OTHER);
+  BOOST_CHECK_EQUAL(entry5.findNonce(25559, *face2),
+                    pit::DUPLICATE_NONCE_OUT_SAME | pit::DUPLICATE_NONCE_OUT_OTHER);
+  BOOST_CHECK_EQUAL(entry5.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
+  BOOST_CHECK_EQUAL(entry5.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
 }
 
 BOOST_AUTO_TEST_CASE(EntryLifetime)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
-  BOOST_ASSERT(interest->getInterestLifetime() < time::milliseconds::zero()); // library uses -1 to indicate unset lifetime
+  // library uses -1 to indicate unset lifetime
+  BOOST_ASSERT(interest->getInterestLifetime() < time::milliseconds::zero());
 
   shared_ptr<Face> face = make_shared<DummyFace>();
   pit::Entry entry(*interest);

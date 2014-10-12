@@ -424,6 +424,38 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   BOOST_CHECK_EQUAL(face4->m_sentDatas.size(), 1);
 }
 
+static inline void
+delayedInterestLoop(const time::nanoseconds& delay, DummyFace& face, const Interest& interest)
+{
+  scheduler::schedule(delay, bind(&DummyFace::receiveInterest, &face, cref(interest)));
+}
+
+BOOST_AUTO_TEST_CASE(Bug1953) // persistent loop with short InterestLifetime
+{
+  LimitedIo limitedIo;
+  Forwarder forwarder;
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  // cause an Interest sent out of face2 to loop back into face1 after a delay
+  face2->onSendInterest += bind(&delayedInterestLoop, time::milliseconds(170), ref(*face1), _1);
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
+  fibEntry->addNextHop(face2, 0);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/A/1");
+  interest->setNonce(82101183);
+  interest->setInterestLifetime(time::milliseconds(50));
+  face1->receiveInterest(*interest);
+
+  limitedIo.defer(time::milliseconds(1000));
+
+  BOOST_CHECK_EQUAL(face2->m_sentInterests.size(), 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

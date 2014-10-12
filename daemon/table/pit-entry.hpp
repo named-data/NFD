@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 #define NFD_DAEMON_TABLE_PIT_ENTRY_HPP
 
-#include "pit-nonce-list.hpp"
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
 #include "core/scheduler.hpp"
@@ -48,6 +47,20 @@ typedef std::list< InRecord>  InRecordCollection;
 /** \brief represents an unordered collection of OutRecords
  */
 typedef std::list<OutRecord> OutRecordCollection;
+
+/** \brief indicates where duplicate Nonces are found
+ */
+enum DuplicateNonceWhere {
+  DUPLICATE_NONCE_NONE      = 0,
+  /// in-record of same face
+  DUPLICATE_NONCE_IN_SAME   = (1 << 0),
+  /// in-record of other face
+  DUPLICATE_NONCE_IN_OTHER  = (1 << 1),
+  /// out-record of same face
+  DUPLICATE_NONCE_OUT_SAME  = (1 << 2),
+  /// out-record of other face
+  DUPLICATE_NONCE_OUT_OTHER = (1 << 3)
+};
 
 /** \brief represents a PIT entry
  */
@@ -86,12 +99,11 @@ public:
   bool
   violatesScope(const Face& face) const;
 
-  /** \brief records a nonce
-   *
-   *  \return true if nonce is new; false if nonce is seen before
+  /** \brief finds where a duplicate Nonce appears
+   *  \return OR'ed DuplicateNonceWhere
    */
-  bool
-  addNonce(uint32_t nonce);
+  int
+  findNonce(uint32_t nonce, const Face& face) const;
 
 public: // InRecord
   const InRecordCollection&
@@ -156,7 +168,6 @@ public:
   EventId m_stragglerTimer;
 
 private:
-  pit::NonceList m_nonceList;
   shared_ptr<const Interest> m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;

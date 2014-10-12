@@ -83,6 +83,11 @@ public:
   size_t
   size() const;
 
+  /** \return expected lifetime
+   */
+  const time::nanoseconds&
+  getLifetime() const;
+
 private: // Entry and Index
   typedef uint64_t Entry;
 
@@ -205,6 +210,12 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity contr
    */
   static const size_t EVICT_LIMIT;
 };
+
+inline const time::nanoseconds&
+DeadNonceList::getLifetime() const
+{
+  return m_lifetime;
+}
 
 } // namespace nfd
 
