@@ -1603,7 +1603,8 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
                    .setFaceId(FACEID_RESERVED_MAX + 1)
                    .setRemoteUri(dummy->getRemoteUri().toString())
                    .setLocalUri(dummy->getLocalUri().toString())
-                   .setFlags(0);
+                   .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+                   .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 
   Block encodedResultParameters(resultParameters.wireEncode());
 
@@ -1665,7 +1666,8 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
                    .setFaceId(dummy->getId())
                    .setRemoteUri(dummy->getRemoteUri().toString())
                    .setLocalUri(dummy->getLocalUri().toString())
-                   .setFlags(0);
+                   .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+                   .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 
   getFace()->onReceiveData +=
     bind(&FaceFixture::callbackDispatch, this, _1, command->getName(),

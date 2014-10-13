@@ -137,7 +137,7 @@ public:
   }
 
   void
-  registerPrefixesIfNeeded(uint64_t faceId, const FaceUri& uri, bool isOnDemand)
+  registerPrefixesIfNeeded(uint64_t faceId, const FaceUri& uri, FacePersistency facePersistency)
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
@@ -148,7 +148,8 @@ public:
         registerPrefixesForFace(faceId, m_allFacesPrefixes);
 
         // register autoreg prefixes if new face is on-demand and not blacklisted and whitelisted
-        if (isOnDemand && !isBlacklisted(address) && isWhitelisted(address)) {
+        if (facePersistency == FACE_PERSISTENCY_ON_DEMAND &&
+            !isBlacklisted(address) && isWhitelisted(address)) {
           registerPrefixesForFace(faceId, m_autoregPrefixes);
         }
       }
@@ -159,12 +160,12 @@ public:
   onNotification(const FaceEventNotification& notification)
   {
     if (notification.getKind() == FACE_EVENT_CREATED &&
-        !notification.isLocal())
+        notification.getFaceScope() != FACE_SCOPE_LOCAL)
       {
         std::cerr << "PROCESSING: " << notification << std::endl;
 
         registerPrefixesIfNeeded(notification.getFaceId(), FaceUri(notification.getRemoteUri()),
-                                 notification.isOnDemand());
+                                 notification.getFacePersistency());
       }
     else
       {
@@ -295,7 +296,7 @@ public:
 
         nfd::FaceStatus faceStatus(block);
         registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
-                                 faceStatus.isOnDemand());
+                                 faceStatus.getFacePersistency());
       }
   }
 
