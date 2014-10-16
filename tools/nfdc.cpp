@@ -79,6 +79,7 @@ Nfdc::Nfdc(ndn::Face& face)
   , m_origin(ROUTE_ORIGIN_STATIC)
   , m_expires(DEFAULT_EXPIRATION_PERIOD)
   , m_controller(face)
+  , m_ioService(face.getIoService())
 {
 }
 
@@ -169,14 +170,25 @@ Nfdc::fibAddNextHop()
     fibAddNextHop(parameters);
   }
   else {
-    ControlParameters faceParameters;
-    faceParameters.setUri(m_commandLineArguments[1]);
+    ndn::util::FaceUri faceUri;
+    faceUri.parse(m_commandLineArguments[1]);
 
-    m_controller.start<FaceCreateCommand>(faceParameters,
-                                          bind(&Nfdc::fibAddNextHop, this, _1),
-                                          bind(&Nfdc::onError, this, _1, _2,
-                                               "Face creation failed"));
+    faceUri.canonize(bind(&Nfdc::startFibAddNextHop, this, _1),
+                     bind(&Nfdc::onCanonizeFailure, this, _1),
+                     m_ioService, ndn::time::seconds(4));
   }
+}
+
+void
+Nfdc::startFibAddNextHop(const ndn::util::FaceUri& canonicalUri)
+{
+  ControlParameters parameters;
+  parameters.setUri(canonicalUri.toString());
+
+  m_controller.start<FaceCreateCommand>(parameters,
+                                        bind(&Nfdc::fibAddNextHop, this, _1),
+                                        bind(&Nfdc::onError, this, _1, _2,
+                                             "Face creation failed"));
 }
 
 void
@@ -245,14 +257,25 @@ Nfdc::ribRegisterPrefix()
     ribRegisterPrefix(parameters);
   }
   else {
-    ControlParameters faceParameters;
-    faceParameters.setUri(m_commandLineArguments[1]);
+    ndn::util::FaceUri faceUri;
+    faceUri.parse(m_commandLineArguments[1]);
 
-    m_controller.start<FaceCreateCommand>(faceParameters,
-                                          bind(&Nfdc::ribRegisterPrefix, this, _1),
-                                          bind(&Nfdc::onError, this, _1, _2,
-                                               "Face creation failed"));
+    faceUri.canonize(bind(&Nfdc::startRibRegisterPrefix, this, _1),
+                     bind(&Nfdc::onCanonizeFailure, this, _1),
+                     m_ioService, ndn::time::seconds(4));
   }
+}
+
+void
+Nfdc::startRibRegisterPrefix(const ndn::util::FaceUri& canonicalUri)
+{
+  ControlParameters parameters;
+  parameters.setUri(canonicalUri.toString());
+
+  m_controller.start<FaceCreateCommand>(parameters,
+                                        bind(&Nfdc::ribRegisterPrefix, this, _1),
+                                        bind(&Nfdc::onError, this, _1, _2,
+                                             "Face creation failed"));
 }
 
 void
@@ -302,13 +325,30 @@ Nfdc::ribUnregisterPrefix()
 }
 
 void
+Nfdc::onCanonizeFailure(const std::string& reason)
+{
+  std::cerr << reason << std::endl;
+}
+
+void
 Nfdc::faceCreate()
 {
   if (!isValidUri(m_commandLineArguments[0]))
     throw Error("invalid uri format");
 
+  ndn::util::FaceUri faceUri;
+  faceUri.parse(m_commandLineArguments[0]);
+
+  faceUri.canonize(bind(&Nfdc::startFaceCreate, this, _1),
+                   bind(&Nfdc::onCanonizeFailure, this, _1),
+                   m_ioService, ndn::time::seconds(4));
+}
+
+void
+Nfdc::startFaceCreate(const ndn::util::FaceUri& canonicalUri)
+{
   ControlParameters parameters;
-  parameters.setUri(m_commandLineArguments[0]);
+  parameters.setUri(canonicalUri.toString());
 
   m_controller.start<FaceCreateCommand>(parameters,
                                         bind(&Nfdc::onSuccess, this, _1,
@@ -333,13 +373,25 @@ Nfdc::faceDestroy()
     faceDestroy(parameters);
   }
   else{
-    ControlParameters faceParameters;
-    faceParameters.setUri(m_commandLineArguments[0]);
-    m_controller.start<FaceCreateCommand>(faceParameters,
-                                          bind(&Nfdc::faceDestroy, this, _1),
-                                          bind(&Nfdc::onError, this, _1, _2,
-                                               "Face destroy failed"));
+    ndn::util::FaceUri faceUri;
+    faceUri.parse(m_commandLineArguments[0]);
+
+    faceUri.canonize(bind(&Nfdc::startFaceDestroy, this, _1),
+                     bind(&Nfdc::onCanonizeFailure, this, _1),
+                     m_ioService, ndn::time::seconds(4));
   }
+}
+
+void
+Nfdc::startFaceDestroy(const ndn::util::FaceUri& canonicalUri)
+{
+  ControlParameters parameters;
+  parameters.setUri(canonicalUri.toString());
+
+  m_controller.start<FaceCreateCommand>(parameters,
+                                        bind(&Nfdc::faceDestroy, this, _1),
+                                        bind(&Nfdc::onError, this, _1, _2,
+                                             "Face destroy failed"));
 }
 
 void

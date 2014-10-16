@@ -29,9 +29,9 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/util/time.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/util/face-uri.hpp>
 
 namespace nfdc {
-
 
 using namespace ndn::nfd;
 
@@ -177,6 +177,21 @@ private:
   void
   onError(uint32_t code, const std::string& error, const std::string& message);
 
+  void
+  onCanonizeFailure(const std::string& reason);
+
+  void
+  startFaceCreate(const ndn::util::FaceUri& canonicalUri);
+
+  void
+  startFaceDestroy(const ndn::util::FaceUri& canonicalUri);
+
+  void
+  startFibAddNextHop(const ndn::util::FaceUri& canonicalUri);
+
+  void
+  startRibRegisterPrefix(const ndn::util::FaceUri& canonicalUri);
+
 public:
   const char* m_programName;
 
@@ -193,6 +208,7 @@ public:
 
 private:
   Controller m_controller;
+  boost::asio::io_service& m_ioService;
 };
 
 } // namespace nfdc
