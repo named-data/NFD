@@ -82,7 +82,7 @@ readNonNegativeIntegerType(const Block& block,
     }
   std::stringstream error;
   error << "expected type " << type << " got " << block.type();
-  throw ndn::Tlv::Error(error.str());
+  throw tlv::Error(error.str());
 }
 
 static inline uint64_t
@@ -96,7 +96,7 @@ checkedReadNonNegativeIntegerType(Block::element_const_iterator& i,
       ++i;
       return readNonNegativeIntegerType(block, type);
     }
-  throw ndn::Tlv::Error("Unexpected end of FaceStatus");
+  throw tlv::Error("Unexpected end of FaceStatus");
 }
 
 class FaceStatusPublisherFixture : public BaseFixture
@@ -179,7 +179,7 @@ public:
 
     // wrap the Face Statuses in a single Content TLV for easy parsing
     m_buffer.prependVarNumber(m_buffer.size());
-    m_buffer.prependVarNumber(ndn::Tlv::Content);
+    m_buffer.prependVarNumber(tlv::Content);
 
     ndn::Block parser(m_buffer.buf(), m_buffer.size());
     parser.parse();

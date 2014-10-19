@@ -51,7 +51,7 @@ readNonNegativeIntegerType(const Block& block,
     }
   std::stringstream error;
   error << "Expected type " << type << " got " << block.type();
-  throw ndn::Tlv::Error(error.str());
+  throw tlv::Error(error.str());
 }
 
 static inline uint64_t
@@ -68,7 +68,7 @@ checkedReadNonNegativeIntegerType(Block::element_const_iterator& i,
   std::stringstream error;
   error << "Unexpected end of Block while attempting to read type #"
         << type;
-  throw ndn::Tlv::Error(error.str());
+  throw tlv::Error(error.str());
 }
 
 class FibEnumerationPublisherFixture : public BaseFixture
@@ -120,7 +120,7 @@ public:
     BOOST_REQUIRE(i != entry.elements_end());
 
 
-    BOOST_REQUIRE(i->type() == ndn::Tlv::Name);
+    BOOST_REQUIRE(i->type() == tlv::Name);
     Name prefix(*i);
     ++i;
 
@@ -181,7 +181,7 @@ public:
 
     // wrap the FIB Entry blocks in a single Content TLV for easy parsing
     m_buffer.prependVarNumber(m_buffer.size());
-    m_buffer.prependVarNumber(ndn::Tlv::Content);
+    m_buffer.prependVarNumber(tlv::Content);
 
     ndn::Block parser(m_buffer.buf(), m_buffer.size());
     parser.parse();

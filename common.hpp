@@ -84,8 +84,9 @@ using ndn::Exclude;
 using ndn::Block;
 
 namespace tlv {
-using namespace ndn::Tlv;
-}
+// Don't write "namespace tlv = ndn::tlv", because NFD can add other members into this namespace.
+using namespace ndn::tlv;
+} // namespace tlv
 
 namespace name = ndn::name;
 namespace time = ndn::time;

@@ -70,7 +70,7 @@ public:
 
     buffer.appendByteArray(payload.value(), payload.value_size());
     buffer.prependVarNumber(buffer.size());
-    buffer.prependVarNumber(ndn::Tlv::Content);
+    buffer.prependVarNumber(tlv::Content);
 
     ndn::Block parser(buffer.buf(), buffer.size());
     parser.parse();

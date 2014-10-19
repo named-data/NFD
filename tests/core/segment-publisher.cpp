@@ -75,7 +75,7 @@ protected:
     size_t totalLength = 0;
     for (int64_t i = 0; i < N; i++)
       {
-        totalLength += prependNonNegativeIntegerBlock(outBuffer, ndn::Tlv::Content, i);
+        totalLength += prependNonNegativeIntegerBlock(outBuffer, tlv::Content, i);
       }
     m_totalPayloadLength += totalLength;
     return totalLength;
@@ -113,7 +113,7 @@ public:
 
     // wrap data in a single Content TLV for easy parsing
     m_buffer.prependVarNumber(m_buffer.size());
-    m_buffer.prependVarNumber(ndn::Tlv::Content);
+    m_buffer.prependVarNumber(tlv::Content);
 
     BOOST_TEST_CHECKPOINT("creating parser");
     ndn::Block parser(m_buffer.buf(), m_buffer.size());

@@ -73,7 +73,7 @@ public:
 
     // wrap the Channel Status entries in a single Content TLV for easy parsing
     m_buffer.prependVarNumber(m_buffer.size());
-    m_buffer.prependVarNumber(ndn::Tlv::Content);
+    m_buffer.prependVarNumber(tlv::Content);
 
     ndn::Block parser(m_buffer.buf(), m_buffer.size());
     parser.parse();

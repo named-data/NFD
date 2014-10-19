@@ -373,7 +373,7 @@ RibManager::extractParameters(const Name::Component& parameterComponent,
       Block rawParameters = parameterComponent.blockFromValue();
       extractedParameters.wireDecode(rawParameters);
     }
-  catch (const ndn::Tlv::Error& e)
+  catch (const tlv::Error&)
     {
       return false;
     }
