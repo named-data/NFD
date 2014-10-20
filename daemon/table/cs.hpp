@@ -64,6 +64,15 @@ public:
   {
     return entry1->isUnsolicited();
   }
+
+  bool
+  operator()(bool isUnsolicited, const cs::Entry* entry) const
+  {
+    if (isUnsolicited)
+      return true;
+    else
+      return !entry->isUnsolicited();
+  }
 };
 
 // tags

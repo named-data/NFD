@@ -81,7 +81,6 @@ BOOST_AUTO_TEST_CASE(Insertion2)
   BOOST_CHECK_EQUAL(cs.size(), 4);
 }
 
-
 BOOST_AUTO_TEST_CASE(DuplicateInsertion)
 {
   Cs cs;
@@ -185,6 +184,42 @@ BOOST_AUTO_TEST_CASE(StalenessQueue)
   const Data* found = cs.find(*interest);
   BOOST_REQUIRE(found != 0);
   BOOST_CHECK_EQUAL(found->getName(), name2);
+}
+
+BOOST_AUTO_TEST_CASE(Bug2043) // eviction order of unsolicited packets
+{
+  Cs cs(3);
+
+  cs.insert(*makeData("/a"), true);
+  cs.insert(*makeData("/b"), true);
+  cs.insert(*makeData("/c"), true);
+  BOOST_CHECK_EQUAL(cs.size(), 3);
+
+  cs.insert(*makeData("/d"), true);
+  BOOST_CHECK_EQUAL(cs.size(), 3);
+
+  const Data* oldestData = cs.find(Interest("/a"));
+  const Data* newestData = cs.find(Interest("/c"));
+  BOOST_CHECK(oldestData == 0);
+  BOOST_CHECK(newestData != 0);
+}
+
+BOOST_AUTO_TEST_CASE(UnsolicitedWithSolicitedEvictionOrder)
+{
+  Cs cs(3);
+
+  cs.insert(*makeData("/a"), true);
+  cs.insert(*makeData("/b"), false);
+  cs.insert(*makeData("/c"), true);
+  BOOST_CHECK_EQUAL(cs.size(), 3);
+
+  cs.insert(*makeData("/d"), true);
+  BOOST_CHECK_EQUAL(cs.size(), 3);
+
+  const Data* oldestData = cs.find(Interest("/a"));
+  const Data* newestData = cs.find(Interest("/c"));
+  BOOST_CHECK(oldestData == 0);
+  BOOST_CHECK(newestData != 0);
 }
 
 //even max size

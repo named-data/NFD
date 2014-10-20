@@ -349,14 +349,22 @@ Cs::evictItem()
 {
   NFD_LOG_TRACE("evictItem()");
 
-  if (!m_cleanupIndex.get<unsolicited>().empty() &&
-      (*m_cleanupIndex.get<unsolicited>().begin())->isUnsolicited())
-  {
-    NFD_LOG_TRACE("Evict from unsolicited queue");
+  if (!m_cleanupIndex.get<unsolicited>().empty()) {
+    CleanupIndex::index<unsolicited>::type::const_iterator firstSolicited =
+      m_cleanupIndex.get<unsolicited>().upper_bound(false);
 
-    eraseFromSkipList(*m_cleanupIndex.get<unsolicited>().begin());
-    m_cleanupIndex.get<unsolicited>().erase(m_cleanupIndex.get<unsolicited>().begin());
-    return true;
+    if (firstSolicited != m_cleanupIndex.get<unsolicited>().begin()) {
+      --firstSolicited;
+      BOOST_ASSERT((*firstSolicited)->isUnsolicited());
+      NFD_LOG_TRACE("Evict from unsolicited queue");
+
+      eraseFromSkipList(*firstSolicited);
+      m_cleanupIndex.get<unsolicited>().erase(firstSolicited);
+      return true;
+    }
+    else {
+      BOOST_ASSERT(!(*m_cleanupIndex.get<unsolicited>().begin())->isUnsolicited());
+    }
   }
 
   if (!m_cleanupIndex.get<byStaleness>().empty() &&
