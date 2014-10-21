@@ -103,8 +103,8 @@ public:
         finalBlockId.toSegment() > currentSegment)
       {
         m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
-                               bind(&NdnAutoconfig::fetchSegments, this, _2, buffer, onDone),
-                               bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
+                               ndn::bind(&NdnAutoconfig::fetchSegments, this, _2, buffer, onDone),
+                               ndn::bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
       }
     else
       {
@@ -122,9 +122,9 @@ public:
     interest.setMustBeFresh(true);
 
     m_face.expressInterest(interest,
-                           bind(&NdnAutoconfig::fetchSegments, this, _2, buffer,
-                                &NdnAutoconfig::discoverHubStage1_registerHubDiscoveryPrefix),
-                           bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
+                           ndn::bind(&NdnAutoconfig::fetchSegments, this, _2, buffer,
+                                     &NdnAutoconfig::discoverHubStage1_registerHubDiscoveryPrefix),
+                           ndn::bind(&NdnAutoconfig::discoverHubStage2, this, "Timeout"));
   }
 
   void

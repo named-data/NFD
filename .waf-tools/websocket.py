@@ -71,7 +71,7 @@ def checkWebsocket(self, **kw):
             Logs.warn('    git submodule init && git submodule update')
             Logs.warn('Otherwise, manually download and extract websocketpp library:')
             Logs.warn('    mkdir websocketpp')
-            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/tarball/e203dbed45409111c2e95cb3e4a1d178ee57d2bc > websocket.tar.gz')
+            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/tarball/4309749dd98937b8a7be5dc0bfe679ba201c5512 > websocket.tar.gz')
             Logs.warn('    tar zxf websocket.tar.gz -C websocketpp/ --strip 1')
             Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
             self.fatal("The configuration failed")

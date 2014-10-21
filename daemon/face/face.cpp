@@ -36,10 +36,10 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   , m_isOnDemand(false)
   , m_isFailed(false)
 {
-  onReceiveInterest += bind(&PacketCounter::operator++, &m_counters.getNInInterests());
-  onReceiveData     += bind(&PacketCounter::operator++, &m_counters.getNInDatas());
-  onSendInterest    += bind(&PacketCounter::operator++, &m_counters.getNOutInterests());
-  onSendData        += bind(&PacketCounter::operator++, &m_counters.getNOutDatas());
+  onReceiveInterest += [this](const ndn::Interest&) { ++m_counters.getNInInterests(); };
+  onReceiveData     += [this](const ndn::Data&) {     ++m_counters.getNInDatas(); };
+  onSendInterest    += [this](const ndn::Interest&) { ++m_counters.getNOutInterests(); };
+  onSendData        += [this](const ndn::Data&) {     ++m_counters.getNOutDatas(); };
 }
 
 Face::~Face()

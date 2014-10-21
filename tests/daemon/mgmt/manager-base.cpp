@@ -80,7 +80,7 @@ public:
   shared_ptr<InternalFace>
   getInternalFace()
   {
-    return ndn::ptr_lib::static_pointer_cast<InternalFace>(m_face);
+    return static_pointer_cast<InternalFace>(m_face);
   }
 
   void

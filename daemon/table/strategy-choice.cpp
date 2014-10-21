@@ -158,7 +158,7 @@ StrategyChoice::get(const Name& prefix) const
     return shared_ptr<const Name>();
   }
 
-  return make_shared<const Name>(entry->getStrategy().getName());
+  return make_shared<Name>(entry->getStrategy().getName());
 }
 
 static inline bool

@@ -27,15 +27,19 @@
 
 #include "version.hpp"
 
-#include <boost/asio.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <ndn-cxx/face.hpp>
 
 namespace ndntlvpeek {
 
-class NdnTlvPeek
+using ndn::_1;
+using ndn::_2;
+
+class NdnTlvPeek : boost::noncopyable
 {
 public:
+  explicit
   NdnTlvPeek(char* programName)
     : m_programName(programName)
     , m_mustBeFresh(false)
@@ -180,10 +184,8 @@ public:
     try
       {
         m_face.expressInterest(createInterestPacket(),
-                               ndn::func_lib::bind(&NdnTlvPeek::onData,
-                                                   this, _1, _2),
-                               ndn::func_lib::bind(&NdnTlvPeek::onTimeout,
-                                                   this, _1));
+                               bind(&NdnTlvPeek::onData, this, _1, _2),
+                               bind(&NdnTlvPeek::onTimeout, this, _1));
         if (m_timeout < ndn::time::milliseconds::zero())
           {
             if (m_interestLifetime < ndn::time::milliseconds::zero())

@@ -234,6 +234,16 @@ public:
     BOOST_CHECK_EQUAL(faces.size(), shouldBe);
   }
 
+  void
+  connect(const shared_ptr<TcpChannel>& channel,
+          const std::string& remoteHost,
+          const std::string& remotePort)
+  {
+    channel->connect(remoteHost, remotePort,
+                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
+                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
+  }
+
 public:
   LimitedIo limitedIo;
 
@@ -431,13 +441,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   BOOST_CHECK_NE(channel3, channel4);
 
   scheduler::schedule(time::seconds(1),
-      bind(&TcpChannel::connect, channel4, "127.0.0.1", "20070",
-          // does not work without static_cast
-           static_cast<TcpChannel::FaceCreatedCallback>(
-               bind(&EndToEndFixture::channel_onFaceCreated, this, _1)),
-           static_cast<TcpChannel::ConnectFailedCallback>(
-               bind(&EndToEndFixture::channel_onConnectFailed, this, _1)),
-           time::seconds(4)));
+                      bind(&EndToEndFixture::connect, this, channel4, "127.0.0.1", "20070"));
 
   scheduler::schedule(time::milliseconds(500),
                       bind(&EndToEndFixture::checkFaceList, this, 4));

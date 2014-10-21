@@ -27,18 +27,19 @@
 
 #include "version.hpp"
 
-#include <boost/utility.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndntlvpoke {
 
+using ndn::_1;
+using ndn::_2;
+
 class NdnTlvPoke : boost::noncopyable
 {
-
 public:
-
   explicit
   NdnTlvPoke(char* programName)
     : m_programName(programName)
@@ -186,11 +187,9 @@ public:
         else
           {
             m_face.setInterestFilter(m_prefixName,
-                                     ndn::bind(&NdnTlvPoke::onInterest,
-                                               this, _1, _2, dataPacket),
+                                     bind(&NdnTlvPoke::onInterest, this, _1, _2, dataPacket),
                                      ndn::RegisterPrefixSuccessCallback(),
-                                     ndn::bind(&NdnTlvPoke::onRegisterFailed,
-                                               this, _1, _2));
+                                     bind(&NdnTlvPoke::onRegisterFailed, this, _1, _2));
           }
         if (m_timeout < ndn::time::milliseconds::zero())
           m_face.processEvents(getDefaultTimeout());

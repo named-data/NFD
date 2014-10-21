@@ -70,6 +70,10 @@ usage(const char* programName)
 
 namespace nfdc {
 
+using ndn::bind;
+using ndn::_1;
+using ndn::_2;
+
 const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds::max();
 const uint64_t Nfdc::DEFAULT_COST = 0;
 
@@ -186,9 +190,11 @@ Nfdc::startFibAddNextHop(const ndn::util::FaceUri& canonicalUri)
   parameters.setUri(canonicalUri.toString());
 
   m_controller.start<FaceCreateCommand>(parameters,
-                                        bind(&Nfdc::fibAddNextHop, this, _1),
+                                        [this](const ControlParameters& result) {
+                                          fibAddNextHop(result);
+                                        },
                                         bind(&Nfdc::onError, this, _1, _2,
-                                             "Face creation failed"));
+                                                  "Face creation failed"));
 }
 
 void
@@ -273,7 +279,9 @@ Nfdc::startRibRegisterPrefix(const ndn::util::FaceUri& canonicalUri)
   parameters.setUri(canonicalUri.toString());
 
   m_controller.start<FaceCreateCommand>(parameters,
-                                        bind(&Nfdc::ribRegisterPrefix, this, _1),
+                                        [this](const ControlParameters& result) {
+                                          ribRegisterPrefix(result);
+                                        },
                                         bind(&Nfdc::onError, this, _1, _2,
                                              "Face creation failed"));
 }
@@ -389,7 +397,9 @@ Nfdc::startFaceDestroy(const ndn::util::FaceUri& canonicalUri)
   parameters.setUri(canonicalUri.toString());
 
   m_controller.start<FaceCreateCommand>(parameters,
-                                        bind(&Nfdc::faceDestroy, this, _1),
+                                        [this](const ControlParameters& result) {
+                                          faceDestroy(result);
+                                        },
                                         bind(&Nfdc::onError, this, _1, _2,
                                              "Face destroy failed"));
 }

@@ -115,8 +115,8 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
       websocketpp::lib::error_code ecode;
       m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ecode);
     }
-  shared_ptr<WebSocketFace> face = make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
-                                                              hdl, ref(m_server));
+  shared_ptr<WebSocketFace> face = ndn::make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
+                                                                   hdl, ref(m_server));
   m_onFaceCreatedCallback(face);
   m_channelFaces[hdl] = face;
 

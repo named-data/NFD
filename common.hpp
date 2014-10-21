@@ -65,17 +65,21 @@ using std::size_t;
 using boost::noncopyable;
 using boost::scoped_ptr;
 
-using ndn::shared_ptr;
-using ndn::weak_ptr;
-using ndn::enable_shared_from_this;
-using ndn::make_shared;
-using ndn::static_pointer_cast;
-using ndn::dynamic_pointer_cast;
-using ndn::const_pointer_cast;
-using ndn::function;
-using ndn::bind;
-using ndn::ref;
-using ndn::cref;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::weak_ptr;
+using std::bad_weak_ptr;
+using std::make_shared;
+using std::enable_shared_from_this;
+
+using std::static_pointer_cast;
+using std::dynamic_pointer_cast;
+using std::const_pointer_cast;
+
+using std::function;
+using std::bind;
+using std::ref;
+using std::cref;
 
 using ndn::Interest;
 using ndn::Data;
