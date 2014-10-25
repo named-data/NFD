@@ -11,33 +11,5 @@ notifications:
 before_install:
   - travis_retry sudo apt-get update
   - travis_retry sudo apt-get install -qq libssl-dev libpcap-dev libboost1.48-all-dev libcrypto++-dev libsqlite3-dev
-  - travis_retry git clone --depth 1 git://github.com/named-data/ndn-cxx ndn-cxx
-  - cd ndn-cxx
-  - ./waf configure
-  - ./waf -j1
-  - sudo ./waf install
-  - sudo ldconfig
-  - cd ..
-  - ndnsec-keygen /tmp/key | ndnsec-install-cert -
 script:
-  - ./waf configure --with-tests
-  - ./waf -j1
-  - sudo ./waf install
-  - ./build/unit-tests-core
-  - ./build/unit-tests-daemon
-  - ./build/unit-tests-rib
-# Tutorial for setting up notifications:
-# http://docs.travis-ci.com/user/notifications/
-# Here's a simple example for email notifications:
-#
-# notifications:
-#   email:
-#     recipients:
-#       - one@example.com
-#       - other@example.com
-#     on_success: [always|never|change] # default: change
-#     on_failure: [always|never|change] # default: always
-#
-# There are also other types of notifications available, including:
-# IRC, Campfire, Flowdock, HipChat, and Webhook.
-# For more infomation about notifications, please visit the link above.
+  - ./.jenkins
