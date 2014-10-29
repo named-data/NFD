@@ -46,6 +46,7 @@
 #endif // HAVE_WEBSOCKET
 
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/management/nfd-face-query-filter.hpp>
 
 namespace nfd {
 
@@ -101,6 +102,11 @@ const FaceManager::UnsignedVerbAndProcessor FaceManager::UNSIGNED_COMMAND_VERBS[
                              Name::Component("channels"),
                              &FaceManager::listChannels
                              ),
+
+    UnsignedVerbAndProcessor(
+                             Name::Component("query"),
+                             &FaceManager::listQueriedFaces
+                             ),
   };
 
 const Name FaceManager::FACES_LIST_DATASET_PREFIX("/localhost/nfd/faces/list");
@@ -110,6 +116,9 @@ const Name FaceManager::FACE_EVENTS_PREFIX("/localhost/nfd/faces/events");
 
 const Name FaceManager::CHANNELS_LIST_DATASET_PREFIX("/localhost/nfd/faces/channels");
 const size_t FaceManager::CHANNELS_LIST_DATASET_NCOMPS = CHANNELS_LIST_DATASET_PREFIX.size();
+
+const Name FaceManager::FACES_QUERY_DATASET_PREFIX("/localhost/nfd/faces/query");
+const size_t FaceManager::FACES_QUERY_DATASET_NCOMPS = FACES_QUERY_DATASET_PREFIX.size() + 1;
 
 FaceManager::FaceManager(FaceTable& faceTable,
                          shared_ptr<InternalFace> face,
@@ -1146,6 +1155,39 @@ FaceManager::listChannels(const Interest& request)
 
   NFD_LOG_DEBUG("publishing");
   m_channelStatusPublisher.publish();
+}
+
+void
+FaceManager::listQueriedFaces(const Interest& request)
+{
+  NFD_LOG_DEBUG("in listQueriedFaces");
+  const Name& query = request.getName();
+  const size_t queryNComps = query.size();
+
+  if (queryNComps < FACES_QUERY_DATASET_NCOMPS ||
+      !FACES_QUERY_DATASET_PREFIX.isPrefixOf(query))
+    {
+      NFD_LOG_DEBUG("query result: malformed");
+      //sendNack(query);
+      return;
+    }
+
+  ndn::nfd::FaceQueryFilter faceFilter;
+  try
+    {
+      faceFilter.wireDecode(query[-1].blockFromValue());
+    }
+  catch (tlv::Error&)
+    {
+      NFD_LOG_DEBUG("query result: malformed filter");
+      //sendNack(query);
+      return;
+    }
+
+  FaceQueryStatusPublisher
+    faceQueryStatusPublisher(m_faceTable, *m_face, query, faceFilter, m_keyChain);
+
+  faceQueryStatusPublisher.publish();
 }
 
 shared_ptr<ProtocolFactory>

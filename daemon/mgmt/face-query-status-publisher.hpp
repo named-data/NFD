@@ -23,77 +23,42 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_DUMMY_FACE_HPP
-#define NFD_TESTS_DAEMON_FACE_DUMMY_FACE_HPP
+#ifndef NFD_DAEMON_MGMT_QUERIED_FACE_STATUS_PUBLISHER_HPP
+#define NFD_DAEMON_MGMT_QUERIED_FACE_STATUS_PUBLISHER_HPP
 
-#include "face/face.hpp"
-#include "face/local-face.hpp"
+#include "core/segment-publisher.hpp"
+#include "mgmt/app-face.hpp"
+#include "fw/face-table.hpp"
+
+#include <ndn-cxx/management/nfd-face-query-filter.hpp>
 
 namespace nfd {
-namespace tests {
 
-/** \class DummyFace
- *  \brief a Face for unit testing
- */
-template<class FaceBase>
-class DummyFaceImpl : public FaceBase
+class FaceQueryStatusPublisher : public SegmentPublisher<AppFace>
 {
 public:
-  DummyFaceImpl()
-    : FaceBase(FaceUri("dummy://"), FaceUri("dummy://"))
-  {
-  }
+  FaceQueryStatusPublisher(const FaceTable& faceTable,
+                           AppFace& face,
+                           const Name& prefix,
+                           const ndn::nfd::FaceQueryFilter& filter,
+                           ndn::KeyChain& keyChain);
 
-  DummyFaceImpl(const std::string& remoteUri, const std::string& localUri)
-    : FaceBase(FaceUri(remoteUri), FaceUri(localUri))
-  {
-  }
+  virtual
+  ~FaceQueryStatusPublisher();
 
-  virtual void
-  sendInterest(const Interest& interest)
-  {
-    this->onSendInterest(interest);
-    m_sentInterests.push_back(interest);
-    this->afterSend();
-  }
+  bool
+  doesMatchFilter(const shared_ptr<Face>& face);
 
-  virtual void
-  sendData(const Data& data)
-  {
-    this->onSendData(data);
-    m_sentDatas.push_back(data);
-    this->afterSend();
-  }
+protected:
 
-  virtual void
-  close()
-  {
-    this->onFail("close");
-  }
+  virtual size_t
+  generate(ndn::EncodingBuffer& outBuffer);
 
-  void
-  receiveInterest(const Interest& interest)
-  {
-    this->onReceiveInterest(interest);
-  }
-
-  void
-  receiveData(const Data& data)
-  {
-    this->onReceiveData(data);
-  }
-
-  EventEmitter<> afterSend;
-
-public:
-  std::vector<Interest> m_sentInterests;
-  std::vector<Data> m_sentDatas;
+private:
+  const FaceTable& m_faceTable;
+  const ndn::nfd::FaceQueryFilter& m_faceFilter;
 };
 
-typedef DummyFaceImpl<Face> DummyFace;
-typedef DummyFaceImpl<LocalFace> DummyLocalFace;
-
-} // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_DUMMY_FACE_HPP
+#endif // NFD_DAEMON_MGMT_QUERIED_FACE_STATUS_PUBLISHER_HPP

@@ -41,6 +41,7 @@
 #include "tests/test-common.hpp"
 #include "validation-common.hpp"
 #include "face-status-publisher-common.hpp"
+#include "face-query-status-publisher-common.hpp"
 #include "channel-status-common.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
@@ -1777,6 +1778,75 @@ BOOST_FIXTURE_TEST_CASE(TestChannelStatus, ChannelStatusFixture)
   m_manager.listChannels(*request);
   BOOST_REQUIRE(m_callbackFired);
 }
+
+class FaceQueryListFixture : public FaceQueryStatusPublisherFixture
+{
+public:
+  FaceQueryListFixture()
+    : m_manager(m_table, m_face, m_testKeyChain)
+  {
+
+  }
+
+  virtual
+  ~FaceQueryListFixture()
+  {
+
+  }
+
+protected:
+  FaceManager m_manager;
+  ndn::KeyChain m_testKeyChain;
+};
+
+BOOST_FIXTURE_TEST_CASE(TestValidQueryFilter, FaceQueryListFixture)
+{
+  Name queryName("/localhost/nfd/faces/query");
+  ndn::nfd::FaceQueryFilter queryFilter;
+  queryFilter.setUriScheme("dummy");
+  queryName.append(queryFilter.wireEncode());
+
+  shared_ptr<Interest> query(make_shared<Interest>(queryName));
+
+  // add expected faces
+  shared_ptr<DummyLocalFace> expectedFace1(make_shared<DummyLocalFace>());
+  m_referenceFaces.push_back(expectedFace1);
+  add(expectedFace1);
+
+  shared_ptr<DummyFace> expectedFace2(make_shared<DummyFace>());
+  m_referenceFaces.push_back(expectedFace2);
+  add(expectedFace2);
+
+  // add other faces
+  shared_ptr<DummyFace> face1(make_shared<DummyFace>("udp://", "udp://"));
+  add(face1);
+  shared_ptr<DummyLocalFace> face2(make_shared<DummyLocalFace>("tcp://", "tcp://"));
+  add(face2);
+
+  m_face->onReceiveData +=
+    bind(&FaceQueryStatusPublisherFixture::decodeFaceStatusBlock, this, _1);
+
+  m_manager.listQueriedFaces(*query);
+  BOOST_REQUIRE(m_finished);
+}
+
+//BOOST_FIXTURE_TEST_CASE(TestInvalidQueryFilter, FaceQueryListFixture)
+//{
+//  Name queryName("/localhost/nfd/faces/query");
+//  ndn::nfd::FaceStatus queryFilter;
+//  queryName.append(queryFilter.wireEncode());
+//
+//  shared_ptr<Interest> query(make_shared<Interest>(queryName));
+//
+//  shared_ptr<DummyLocalFace> face(make_shared<DummyLocalFace>());
+//  add(face);
+//
+//  m_face->onReceiveData +=
+//    bind(&FaceQueryStatusPublisherFixture::decodeNackBlock, this, _1);
+//
+//  m_manager.listQueriedFaces(*query);
+//  BOOST_REQUIRE(m_finished);
+//}
 
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -32,6 +32,7 @@
 #include "mgmt/manager-base.hpp"
 #include "mgmt/face-status-publisher.hpp"
 #include "mgmt/channel-status-publisher.hpp"
+#include "mgmt/face-query-status-publisher.hpp"
 
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
 #include <ndn-cxx/management/nfd-control-response.hpp>
@@ -81,6 +82,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
   listChannels(const Interest& request);
+
+  void
+  listQueriedFaces(const Interest& request);
 
   shared_ptr<ProtocolFactory>
   findFactory(const std::string& protocol);
@@ -210,6 +214,9 @@ private:
 
   static const Name CHANNELS_LIST_DATASET_PREFIX;
   static const size_t CHANNELS_LIST_DATASET_NCOMPS;
+
+  static const Name FACES_QUERY_DATASET_PREFIX;
+  static const size_t FACES_QUERY_DATASET_NCOMPS;
 
   static const Name FACE_EVENTS_PREFIX;
 };
