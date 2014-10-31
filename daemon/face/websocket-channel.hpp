@@ -128,7 +128,8 @@ private:
    */
   FaceCreatedCallback m_onFaceCreatedCallback;
 
-  typedef std::map< websocketpp::connection_hdl, shared_ptr<WebSocketFace> > ChannelFaceMap;
+  typedef std::map< websocketpp::connection_hdl, shared_ptr<WebSocketFace>,
+                    std::owner_less<websocketpp::connection_hdl> > ChannelFaceMap;
   ChannelFaceMap m_channelFaces;
 
   /**
