@@ -12,7 +12,7 @@ COVERAGE=$( python -c "print '--with-coverage' if 'code-coverage' in '$JOB_NAME'
 sudo ./waf -j1 --color=yes distclean
 
 # Configure/build in debug mode
-./waf -j1 --color=yes configure --with-tests --without-pch --debug
+./waf -j1 --color=yes configure --with-tests --debug
 ./waf -j1 --color=yes build
 
 # Cleanup
