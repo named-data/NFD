@@ -58,11 +58,15 @@ private:
            bool isDryRun,
            const std::string& filename);
 
+  void
+  processSectionStrategyChoice(const ConfigSection& configSection,
+                               bool isDryRun);
+
 private:
   Cs& m_cs;
   // Pit& m_pit;
   // Fib& m_fib;
-  // StrategyChoice& m_strategyChoice;
+  StrategyChoice& m_strategyChoice;
   // Measurements& m_measurements;
 
   bool m_areTablesConfigured;

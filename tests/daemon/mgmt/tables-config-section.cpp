@@ -28,9 +28,12 @@
 
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/fw/dummy-strategy.hpp"
 
 namespace nfd {
 namespace tests {
+
+NFD_LOG_INIT("MgmtTablesConfigSection");
 
 class TablesConfigSectionFixture : protected BaseFixture
 {
@@ -56,7 +59,14 @@ public:
   bool
   validateException(const std::runtime_error& exception, const std::string& expectedMsg)
   {
-    return exception.what() == expectedMsg;
+    if (exception.what() != expectedMsg)
+      {
+        NFD_LOG_DEBUG("exception.what(): " << exception.what());
+        NFD_LOG_DEBUG("msg:            : " << expectedMsg);
+
+        return false;
+      }
+    return true;
   }
 
 protected:
@@ -161,6 +171,181 @@ BOOST_AUTO_TEST_CASE(InvalidValueCsMaxPackets)
                         bind(&TablesConfigSectionFixture::validateException,
                              this, _1, expectedMsg));
 
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+}
+
+BOOST_AUTO_TEST_CASE(ConfigStrategy)
+{
+  const std::string CONFIG =
+    "tables\n"
+    "{\n"
+    "strategy_choice\n"
+    "{\n"
+    "  / /localhost/nfd/strategy/test-strategy-a\n"
+    "  /a /localhost/nfd/strategy/test-strategy-b\n"
+    "}\n"
+    "}\n";
+
+  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                      "/localhost/nfd/strategy/test-strategy-a"));
+  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                      "/localhost/nfd/strategy/test-strategy-b"));
+
+  runConfig(CONFIG, true);
+  {
+    fw::Strategy& rootStrategy = m_strategyChoice.findEffectiveStrategy("/");
+    BOOST_REQUIRE_NE(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
+    BOOST_REQUIRE_NE(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+
+    fw::Strategy& aStrategy = m_strategyChoice.findEffectiveStrategy("/a");
+    BOOST_REQUIRE_NE(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+    BOOST_REQUIRE_NE(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
+  }
+
+  runConfig(CONFIG, false);
+  {
+    fw::Strategy& rootStrategy = m_strategyChoice.findEffectiveStrategy("/");
+    BOOST_REQUIRE_EQUAL(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
+
+    fw::Strategy& aStrategy = m_strategyChoice.findEffectiveStrategy("/a");
+    BOOST_REQUIRE_EQUAL(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+  }
+}
+
+BOOST_AUTO_TEST_CASE(ConfigVersionedStrategy)
+{
+  const std::string CONFIG =
+    "tables\n"
+    "{\n"
+    "strategy_choice\n"
+    "{\n"
+    "  /test/latest /localhost/nfd/strategy/test-strategy-a\n"
+    "  /test/old /localhost/nfd/strategy/test-strategy-a/%FD%01\n"
+    "}\n"
+    "}\n";
+
+
+  auto version1 = make_shared<DummyStrategy>(ref(m_forwarder),
+                                             "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+
+  auto version2 = make_shared<DummyStrategy>(ref(m_forwarder),
+                                             "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+  m_strategyChoice.install(version1);
+  m_strategyChoice.install(version2);
+
+  runConfig(CONFIG, true);
+  {
+    fw::Strategy& testLatestStrategy = m_strategyChoice.findEffectiveStrategy("/test/latest");
+    BOOST_REQUIRE_NE(testLatestStrategy.getName(),
+                     "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+    BOOST_REQUIRE_NE(testLatestStrategy.getName(),
+                     "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+
+    fw::Strategy& testOldStrategy = m_strategyChoice.findEffectiveStrategy("/test/old");
+    BOOST_REQUIRE_NE(testOldStrategy.getName(),
+                     "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+    BOOST_REQUIRE_NE(testOldStrategy.getName(),
+                     "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+  }
+
+  runConfig(CONFIG, false);
+  {
+    fw::Strategy& testLatestStrategy = m_strategyChoice.findEffectiveStrategy("/test/latest");
+    BOOST_REQUIRE_EQUAL(testLatestStrategy.getName(),
+                        "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+
+    fw::Strategy& testOldStrategy = m_strategyChoice.findEffectiveStrategy("/test/old");
+    BOOST_REQUIRE_EQUAL(testOldStrategy.getName(),
+                        "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+  }
+}
+
+BOOST_AUTO_TEST_CASE(InvalidStrategy)
+{
+  const std::string CONFIG =
+    "tables\n"
+    "{\n"
+    "strategy_choice\n"
+    "{\n"
+    "  / /localhost/nfd/strategy/test-doesnotexist\n"
+    "}\n"
+    "}\n";
+
+
+  const std::string expectedMsg =
+    "Invalid strategy choice \"/localhost/nfd/strategy/test-doesnotexist\" "
+    "for prefix \"/\" in \"strategy_choice\" section";
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+}
+
+BOOST_AUTO_TEST_CASE(MissingStrategyPrefix)
+{
+  const std::string CONFIG =
+    "tables\n"
+    "{\n"
+    "strategy_choice\n"
+    "{\n"
+    "  /localhost/nfd/strategy/test-strategy-a\n"
+    "}\n"
+    "}\n";
+
+
+  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                      "/localhost/nfd/strategy/test-strategy-a"));
+
+
+  const std::string expectedMsg = "Invalid strategy choice \"\" for prefix "
+    "\"/localhost/nfd/strategy/test-strategy-a\" in \"strategy_choice\" section";
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
+}
+
+BOOST_AUTO_TEST_CASE(DuplicateStrategy)
+{
+  const std::string CONFIG =
+    "tables\n"
+    "{\n"
+    "strategy_choice\n"
+    "{\n"
+    "  / /localhost/nfd/strategy/test-strategy-a\n"
+    "  /a /localhost/nfd/strategy/test-strategy-b\n"
+    "  / /localhost/nfd/strategy/test-strategy-b\n"
+    "}\n"
+    "}\n";
+
+  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                      "/localhost/nfd/strategy/test-strategy-a"));
+  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
+                                                      "/localhost/nfd/strategy/test-strategy-b"));
+
+  const std::string expectedMsg =
+    "Duplicate strategy choice for prefix \"/\" in \"strategy_choice\" section";
+
+  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
+                        ConfigFile::Error,
+                        bind(&TablesConfigSectionFixture::validateException,
+                             this, _1, expectedMsg));
 
   BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
                         ConfigFile::Error,

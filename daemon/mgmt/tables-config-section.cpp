@@ -43,7 +43,7 @@ TablesConfigSection::TablesConfigSection(Cs& cs,
   : m_cs(cs)
   // , m_pit(pit)
   // , m_fib(fib)
-  // , m_strategyChoice(strategyChoice)
+  , m_strategyChoice(strategyChoice)
   // , m_measurements(measurements)
   , m_areTablesConfigured(false)
 {
@@ -80,6 +80,14 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
   // tables
   // {
   //    cs_max_packets 65536
+  //
+  //    strategy_choice
+  //    {
+  //       /               /localhost/nfd/strategy/best-route
+  //       /localhost      /localhost/nfd/strategy/broadcast
+  //       /localhost/nfd  /localhost/nfd/strategy/best-route
+  //       /ndn/broadcast  /localhost/nfd/strategy/broadcast
+  //    }
   // }
 
   size_t nCsMaxPackets = DEFAULT_CS_MAX_PACKETS;
@@ -101,6 +109,14 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
       nCsMaxPackets = *valCsMaxPackets;
     }
 
+  boost::optional<const ConfigSection&> strategyChoiceSection =
+    configSection.get_child_optional("strategy_choice");
+
+  if (strategyChoiceSection)
+    {
+      processSectionStrategyChoice(*strategyChoiceSection, isDryRun);
+    }
+
   if (!isDryRun)
     {
       NFD_LOG_INFO("Setting CS max packets to " << nCsMaxPackets);
@@ -109,5 +125,60 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
       m_areTablesConfigured = true;
     }
 }
+
+void
+TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSection,
+                                                  bool isDryRun)
+{
+  // strategy_choice
+  // {
+  //   /               /localhost/nfd/strategy/best-route
+  //   /localhost      /localhost/nfd/strategy/broadcast
+  //   /localhost/nfd  /localhost/nfd/strategy/best-route
+  //   /ndn/broadcast  /localhost/nfd/strategy/broadcast
+  // }
+
+  std::map<Name, Name> choices;
+
+  for (const auto& prefixAndStrategy : configSection)
+    {
+      const Name prefix(prefixAndStrategy.first);
+      if (choices.find(prefix) != choices.end())
+        {
+          throw ConfigFile::Error("Duplicate strategy choice for prefix \"" +
+                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+        }
+
+      const std::string strategyString(prefixAndStrategy.second.get_value<std::string>());
+      if (strategyString.empty())
+        {
+          throw ConfigFile::Error("Invalid strategy choice \"\" for prefix \"" +
+                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+        }
+
+      const Name strategyName(strategyString);
+      if (!m_strategyChoice.hasStrategy(strategyName))
+        {
+          throw ConfigFile::Error("Invalid strategy choice \"" +
+                                  strategyName.toUri() + "\" for prefix \"" +
+                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+        }
+
+      choices[prefix] = strategyName;
+    }
+
+
+  for (const auto& prefixAndStrategy : choices)
+    {
+      if (!isDryRun && !m_strategyChoice.insert(prefixAndStrategy.first, prefixAndStrategy.second))
+        {
+          throw ConfigFile::Error("Failed to set strategy \"" +
+                                  prefixAndStrategy.second.toUri() + "\" for prefix \"" +
+                                  prefixAndStrategy.first.toUri() + "\" in \"strategy_choicev\"");
+        }
+    }
+}
+
+
 
 } // namespace nfd

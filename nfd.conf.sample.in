@@ -49,6 +49,16 @@ tables
   ; ContentStore size limit in number of packets
   ; default is 65536, about 500MB with 8KB packet size
   cs_max_packets 65536
+
+  ; Set the forwarding strategy for the specified prefixes:
+  ;   <prefix> <strategy>
+  strategy_choice
+  {
+    /               /localhost/nfd/strategy/best-route
+    /localhost      /localhost/nfd/strategy/broadcast
+    /localhost/nfd  /localhost/nfd/strategy/best-route
+    /ndn/broadcast  /localhost/nfd/strategy/broadcast
+  }
 }
 
 ; The face_system section defines what faces and channels are created.
