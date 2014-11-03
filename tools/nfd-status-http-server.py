@@ -73,16 +73,15 @@ class StatusHandler(SimpleHTTPRequestHandler):
         This function is to call nfd-status command
         to get xml format output
         """
-        sp = subprocess.Popen(['nfd-status', '-x'], stdout=subprocess.PIPE)
-        res = sp.wait()
-        if res == 0:
+        sp = subprocess.Popen(['nfd-status', '-x'], stdout=subprocess.PIPE, close_fds=True)
+        output = sp.communicate()[0]
+        if sp.returncode == 0:
             # add the xml-stylesheet processing instruction after the 1st '>' symbol
-            output = sp.stdout.read()
             newLineIndex = output.index('>') + 1
             resultStr = output[:newLineIndex]\
                       + "<?xml-stylesheet type=\"text/xsl\" href=\"nfd-status.xsl\"?>"\
                       + output[newLineIndex:]
-            return (res, resultStr)
+            return (sp.returncode, resultStr)
         else:
             htmlStr = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional'\
                     + '//EN" "http://www.w3.org/TR/html4/loose.dtd">\n'\
@@ -91,9 +90,9 @@ class StatusHandler(SimpleHTTPRequestHandler):
                     + 'charset=UTF-8"></head>\n<body>'
             # return connection error code
             htmlStr = htmlStr + "<p>Cannot connect to NFD,"\
-                    + " Code = " + str(res) + "</p>\n"
+                    + " Code = " + str(sp.returncode) + "</p>\n"
             htmlStr = htmlStr + "</body></html>"
-            return (res, htmlStr)
+            return (sp.returncode, htmlStr)
 
 class ThreadHttpServer(ThreadingMixIn, HTTPServer):
     """ Handle requests using threads """
