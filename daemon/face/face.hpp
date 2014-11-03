@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FACE_FACE_HPP
 
 #include "common.hpp"
-#include "core/event-emitter.hpp"
 #include "core/face-uri.hpp"
 #include "face-counters.hpp"
 

@@ -26,7 +26,6 @@
 #define NFD_DAEMON_FACE_NDNLP_PARTIAL_MESSAGE_STORE_HPP
 
 #include "ndnlp-parse.hpp"
-#include "core/event-emitter.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {

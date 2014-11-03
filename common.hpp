@@ -49,6 +49,7 @@
 #include <ndn-cxx/common.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/util/event-emitter.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -86,6 +87,7 @@ using ndn::Data;
 using ndn::Name;
 using ndn::Exclude;
 using ndn::Block;
+using ndn::util::EventEmitter;
 
 namespace tlv {
 // Don't write "namespace tlv = ndn::tlv", because NFD can add other members into this namespace.
