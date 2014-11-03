@@ -47,19 +47,6 @@ predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& entry)
   return static_cast<bool>(entry.getFibEntry());
 }
 
-std::pair<shared_ptr<fib::Entry>, bool>
-Fib::insert(const Name& prefix)
-{
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
-  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
-  if (static_cast<bool>(entry))
-    return std::make_pair(entry, false);
-  entry = make_shared<fib::Entry>(prefix);
-  nameTreeEntry->setFibEntry(entry);
-  ++m_nItems;
-  return std::make_pair(entry, true);
-}
-
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
@@ -114,6 +101,19 @@ Fib::findExactMatch(const Name& prefix) const
   return shared_ptr<fib::Entry>();
 }
 
+std::pair<shared_ptr<fib::Entry>, bool>
+Fib::insert(const Name& prefix)
+{
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
+  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
+  if (static_cast<bool>(entry))
+    return std::make_pair(entry, false);
+  entry = make_shared<fib::Entry>(prefix);
+  nameTreeEntry->setFibEntry(entry);
+  ++m_nItems;
+  return std::make_pair(entry, true);
+}
+
 void
 Fib::erase(shared_ptr<name_tree::Entry> nameTreeEntry)
 {
@@ -147,7 +147,7 @@ Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
        &predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end();) {
     shared_ptr<fib::Entry> entry = it->getFibEntry();
 
-    ++it; // need to be advance before `erase`, otherwise the iterator can be invalidated
+    ++it; // advance the iterator before `erase` invalidates it
 
     entry->removeNextHop(face);
     if (!entry->hasNextHops()) {

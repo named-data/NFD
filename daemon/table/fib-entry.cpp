@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "fib-entry.hpp"
 
@@ -32,28 +33,29 @@ Entry::Entry(const Name& prefix)
 {
 }
 
-static inline bool
-predicate_NextHop_eq_Face(const NextHop& nexthop, shared_ptr<Face> face)
+NextHopList::iterator
+Entry::findNextHop(Face& face)
 {
-  return nexthop.getFace() == face;
+  return std::find_if(m_nextHops.begin(), m_nextHops.end(),
+                      [&face] (const NextHop& nexthop) {
+                        return nexthop.getFace().get() == &face;
+                      });
 }
 
 bool
 Entry::hasNextHop(shared_ptr<Face> face) const
 {
-  NextHopList::const_iterator it = std::find_if(m_nextHops.begin(), m_nextHops.end(),
-    bind(&predicate_NextHop_eq_Face, _1, face));
-  return it != m_nextHops.end();
+  return const_cast<Entry*>(this)->findNextHop(*face) != m_nextHops.end();
 }
 
 void
 Entry::addNextHop(shared_ptr<Face> face, uint64_t cost)
 {
-  NextHopList::iterator it = std::find_if(m_nextHops.begin(), m_nextHops.end(),
-    bind(&predicate_NextHop_eq_Face, _1, face));
+  auto it = this->findNextHop(*face);
   if (it == m_nextHops.end()) {
     m_nextHops.push_back(fib::NextHop(face));
-    it = m_nextHops.end() - 1;
+    it = m_nextHops.end();
+    --it;
   }
   // now it refers to the NextHop for face
 
@@ -65,25 +67,17 @@ Entry::addNextHop(shared_ptr<Face> face, uint64_t cost)
 void
 Entry::removeNextHop(shared_ptr<Face> face)
 {
-  NextHopList::iterator it = std::find_if(m_nextHops.begin(), m_nextHops.end(),
-    bind(&predicate_NextHop_eq_Face, _1, face));
-  if (it == m_nextHops.end()) {
-    return;
+  auto it = this->findNextHop(*face);
+  if (it != m_nextHops.end()) {
+    m_nextHops.erase(it);
   }
-
-  m_nextHops.erase(it);
-}
-
-static inline bool
-compare_NextHop_cost(const NextHop& a, const NextHop& b)
-{
-  return a.getCost() < b.getCost();
 }
 
 void
 Entry::sortNextHops()
 {
-  std::sort(m_nextHops.begin(), m_nextHops.end(), &compare_NextHop_cost);
+  std::sort(m_nextHops.begin(), m_nextHops.end(),
+            [] (const NextHop& a, const NextHop& b) { return a.getCost() < b.getCost(); });
 }
 
 

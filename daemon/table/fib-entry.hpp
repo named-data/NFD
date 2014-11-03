@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_TABLE_FIB_ENTRY_HPP
 #define NFD_DAEMON_TABLE_FIB_ENTRY_HPP
@@ -38,7 +39,8 @@ namespace fib {
 
 /** \class NextHopList
  *  \brief represents a collection of nexthops
- *  This type has these methods:
+ *
+ *  This type has these methods as public API:
  *    iterator<NextHop> begin()
  *    iterator<NextHop> end()
  *    size_t size()
@@ -60,22 +62,41 @@ public:
   const NextHopList&
   getNextHops() const;
 
-  /// whether this Entry has any nexthop
+  /** \return whether this Entry has any NextHop record
+   */
   bool
   hasNextHops() const;
 
+  /** \return whether there is a NextHop record for face
+   *
+   *  \todo change parameter type to Face&
+   */
   bool
   hasNextHop(shared_ptr<Face> face) const;
 
-  /// adds a nexthop
+  /** \brief adds a NextHop record
+   *
+   *  If a NextHop record for face already exists, its cost is updated.
+   *  \note shared_ptr is passed by value because this function will take shared ownership
+   */
   void
   addNextHop(shared_ptr<Face> face, uint64_t cost);
 
-  /// removes a nexthop
+  /** \brief removes a NextHop record
+   *
+   *  If no NextHop record for face exists, do nothing.
+   *
+   *  \todo change parameter type to Face&
+   */
   void
   removeNextHop(shared_ptr<Face> face);
 
 private:
+  /** @note This method is non-const because normal iterator is needed by callers.
+   */
+  NextHopList::iterator
+  findNextHop(Face& face);
+
   /// sorts the nexthop list
   void
   sortNextHops();

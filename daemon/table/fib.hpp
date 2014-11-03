@@ -44,20 +44,15 @@ class Entry;
 class Fib : noncopyable
 {
 public:
-  class const_iterator;
-
   explicit
   Fib(NameTree& nameTree);
 
   ~Fib();
 
-  /** \brief inserts a FIB entry for prefix
-   *  If an entry for exact same prefix exists, that entry is returned.
-   *  \return{ the entry, and true for new entry, false for existing entry }
-   */
-  std::pair<shared_ptr<fib::Entry>, bool>
-  insert(const Name& prefix);
+  size_t
+  size() const;
 
+public: // lookup
   /// performs a longest prefix match
   shared_ptr<fib::Entry>
   findLongestPrefixMatch(const Name& prefix) const;
@@ -73,6 +68,14 @@ public:
   shared_ptr<fib::Entry>
   findExactMatch(const Name& prefix) const;
 
+public: // mutation
+  /** \brief inserts a FIB entry for prefix
+   *  If an entry for exact same prefix exists, that entry is returned.
+   *  \return{ the entry, and true for new entry, false for existing entry }
+   */
+  std::pair<shared_ptr<fib::Entry>, bool>
+  insert(const Name& prefix);
+
   void
   erase(const Name& prefix);
 
@@ -80,14 +83,17 @@ public:
   erase(const fib::Entry& entry);
 
   /** \brief removes the NextHop record for face in all entrites
+   *
    *  This is usually invoked when face goes away.
-   *  Removing all NextHops in a FIB entry will not remove the FIB entry.
+   *  Removing the last NextHop in a FIB entry will erase the FIB entry.
+   *
+   *  \todo change parameter type to Face&
    */
   void
   removeNextHopFromAllEntries(shared_ptr<Face> face);
 
-  size_t
-  size() const;
+public: // enumeration
+  class const_iterator;
 
   const_iterator
   begin() const;
@@ -140,8 +146,8 @@ private:
    *
    *  This entry has no nexthops.
    *  It is returned by findLongestPrefixMatch if nothing is matched.
+   *  Returning empty entry instead of nullptr makes forwarding and strategy implementation easier.
    */
-  // Returning empty entry instead of nullptr makes forwarding and strategy implementation easier.
   static const shared_ptr<fib::Entry> s_emptyEntry;
 };
 
