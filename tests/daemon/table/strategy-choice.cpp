@@ -49,7 +49,12 @@ BOOST_AUTO_TEST_CASE(Get)
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
 
-  BOOST_CHECK_EQUAL(*table.get("ndn:/"), nameP);
+  auto getRoot = table.get("ndn:/");
+  BOOST_CHECK_EQUAL(getRoot.first, true);
+  BOOST_CHECK_EQUAL(getRoot.second, nameP);
+
+  auto getA = table.get("ndn:/A");
+  BOOST_CHECK_EQUAL(getA.first, false);
 }
 
 BOOST_AUTO_TEST_CASE(Effective)

@@ -57,11 +57,11 @@ public:
   getStrategy() const;
 
   void
-  setStrategy(shared_ptr<fw::Strategy> strategy);
+  setStrategy(fw::Strategy& strategy);
 
 private:
   Name m_prefix;
-  shared_ptr<fw::Strategy> m_strategy;
+  fw::Strategy* m_strategy;
 
   shared_ptr<name_tree::Entry> m_nameTreeEntry;
   friend class nfd::NameTree;
@@ -78,8 +78,14 @@ Entry::getPrefix() const
 inline fw::Strategy&
 Entry::getStrategy() const
 {
-  BOOST_ASSERT(static_cast<bool>(m_strategy));
+  BOOST_ASSERT(m_strategy != nullptr);
   return *m_strategy;
+}
+
+inline void
+Entry::setStrategy(fw::Strategy& strategy)
+{
+  m_strategy = &strategy;
 }
 
 } // namespace strategy_choice

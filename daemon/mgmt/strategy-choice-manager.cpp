@@ -162,7 +162,9 @@ StrategyChoiceManager::setStrategy(ControlParameters& parameters,
   if (m_strategyChoice.insert(prefix, selectedStrategy))
     {
       NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
-      parameters.setStrategy(*m_strategyChoice.get(prefix));
+      auto currentStrategyChoice = m_strategyChoice.get(prefix);
+      BOOST_ASSERT(currentStrategyChoice.first);
+      parameters.setStrategy(currentStrategyChoice.second);
       setResponse(response, 200, "Success", parameters.wireEncode());
     }
   else

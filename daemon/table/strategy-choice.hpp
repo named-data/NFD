@@ -57,6 +57,7 @@ public: // available Strategy types
 
   /** \brief install a strategy
    *  \return true if installed; false if not installed due to duplicate strategyName
+   *  \note shared_ptr is passed by value because StrategyChoice takes ownership of strategy
    */
   bool
   install(shared_ptr<fw::Strategy> strategy);
@@ -82,9 +83,9 @@ public: // Strategy Choice table
   erase(const Name& prefix);
 
   /** \brief get strategy Name of prefix
-   *  \return strategyName at exact match, or nullptr
+   *  \return true and strategyName at exact match, or false
    */
-  shared_ptr<const Name>
+  std::pair<bool, Name>
   get(const Name& prefix) const;
 
 public: // effective strategy
@@ -146,19 +147,19 @@ private:
   /** \brief get Strategy instance by strategyName
    *  \param strategyName a versioned or unversioned strategyName
    */
-  shared_ptr<fw::Strategy>
+  fw::Strategy*
   getStrategy(const Name& strategyName) const;
 
   void
   setDefaultStrategy(shared_ptr<fw::Strategy> strategy);
 
   void
-  changeStrategy(shared_ptr<strategy_choice::Entry> entry,
-                 shared_ptr<fw::Strategy> oldStrategy,
-                 shared_ptr<fw::Strategy> newStrategy);
+  changeStrategy(strategy_choice::Entry& entry,
+                 fw::Strategy& oldStrategy,
+                 fw::Strategy& newStrategy);
 
   fw::Strategy&
-  findEffectiveStrategy(shared_ptr<name_tree::Entry> nameTreeEntry) const;
+  findEffectiveStrategy(shared_ptr<name_tree::Entry> nte) const;
 
 private:
   NameTree& m_nameTree;
