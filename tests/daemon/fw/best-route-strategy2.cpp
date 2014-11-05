@@ -63,58 +63,64 @@ BOOST_AUTO_TEST_CASE(Forward)
   Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
-  const time::nanoseconds RETRANSMISSION60  = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.6); // 60%
-  const time::nanoseconds RETRANSMISSION120 = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 1.2); // 120%
+  const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
+    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
+  const time::nanoseconds RETRANSMISSION_2 = time::duration_cast<time::nanoseconds>(
+    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 2.0); // x2
 
+  // first Interest goes to nexthop with lowest FIB cost,
+  // however face1 is downstream so it cannot be used
   pitEntry->insertOrUpdateInRecord(face1, *interest);
   strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
   BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face2);
-  // face1 is downstream so it cannot be used at this time
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION60);
-  pitEntry->insertOrUpdateInRecord(face4, *interest);
-  strategy.afterReceiveInterest(*face4, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 1);
-  // ignored similar Interest
+  // downstream retransmits frequently, but the strategy should not send Interests
+  // more often than MIN_RETRANSMISSION_INTERVAL
+  scheduler::EventId retxFrom4Evt;
+  size_t nSentLast = strategy.m_sendInterestHistory.size();
+  time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
+  function<void()> periodicalRetxFrom4 = [&] {
+    pitEntry->insertOrUpdateInRecord(face4, *interest);
+    strategy.afterReceiveInterest(*face4, *interest, fibEntry, pitEntry);
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION60);
-  pitEntry->insertOrUpdateInRecord(face4, *interest);
-  strategy.afterReceiveInterest(*face4, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 2);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face1);
-  // accepted retransmission, forward to an unused upstream
+    size_t nSent = strategy.m_sendInterestHistory.size();
+    if (nSent > nSentLast) {
+      BOOST_CHECK_EQUAL(nSent - nSentLast, 1);
+      time::steady_clock::TimePoint timeSent = time::steady_clock::now();
+      BOOST_CHECK_GE(timeSent - timeSentLast,
+                     fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL);
+      nSentLast = nSent;
+      timeSentLast = timeSent;
+    }
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION120);
-  pitEntry->insertOrUpdateInRecord(face5, *interest);
-  strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 3);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face3);
-  // accepted similar Interest from new downstream, forward to an unused upstream
+    retxFrom4Evt = scheduler::schedule(RETRANSMISSION_10P, periodicalRetxFrom4);
+  };
+  periodicalRetxFrom4();
+  limitedIo.defer(fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 16);
+  scheduler::cancel(retxFrom4Evt);
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION120);
-  pitEntry->insertOrUpdateInRecord(face4, *interest);
-  strategy.afterReceiveInterest(*face4, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 4);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face2);
-  // accepted retransmission, forward to an eligible upstream with earliest OutRecord
-
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION60);
-  pitEntry->insertOrUpdateInRecord(face5, *interest);
-  strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 4);
-  // ignored retransmission
+  // nexthops for accepted retransmissions: follow FIB cost,
+  // later forward to an eligible upstream with earliest OutRecord
+  BOOST_REQUIRE_GE(strategy.m_sendInterestHistory.size(), 6);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[1].get<1>(), face1);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[2].get<1>(), face3);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[3].get<1>(), face2);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[4].get<1>(), face1);
+  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[5].get<1>(), face3);
 
   fibEntry->removeNextHop(face1);
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, RETRANSMISSION60);
-  pitEntry->insertOrUpdateInRecord(face5, *interest);
-  strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 5);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face3);
-  // accepted retransmission, forward to an eligible upstream with earliest OutRecord
+  strategy.m_sendInterestHistory.clear();
+  for (int i = 0; i < 3; ++i) {
+    limitedIo.defer(RETRANSMISSION_2);
+    pitEntry->insertOrUpdateInRecord(face5, *interest);
+    strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
+  }
+  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 3);
+  BOOST_CHECK_NE(strategy.m_sendInterestHistory[0].get<1>(), face1);
+  BOOST_CHECK_NE(strategy.m_sendInterestHistory[1].get<1>(), face1);
+  BOOST_CHECK_NE(strategy.m_sendInterestHistory[2].get<1>(), face1);
   // face1 cannot be used because it's gone from FIB entry
 }
 
