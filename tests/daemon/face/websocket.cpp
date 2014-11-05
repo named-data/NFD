@@ -246,9 +246,14 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
   shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
+  std::string bigName("ndn:/");
+  bigName.append(9000, 'a');
+  shared_ptr<Interest> bigInterest = makeInterest(bigName);
+
   client1_sendInterest(*interest1);
   client1_sendInterest(*interest1);
   client1_sendInterest(*interest1);
+  client1_sendInterest(*bigInterest);  // This one should be ignored by face1
   face1->sendData     (*data1);
   face1->sendInterest (*interest2);
   client1_sendData    (*data2);

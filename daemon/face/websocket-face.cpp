@@ -99,7 +99,13 @@ void
 WebSocketFace::handleReceive(const std::string& msg)
 {
   // Copy message into Face internal buffer
-  BOOST_ASSERT(msg.size() <= MAX_NDN_PACKET_SIZE);
+  if (msg.size() > MAX_NDN_PACKET_SIZE)
+    {
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << "] Received WebSocket message size ["
+                   << msg.size() << "] is too big");
+      return;
+    }
 
   this->getMutableCounters().getNInBytes() += msg.size();
 
@@ -109,9 +115,9 @@ WebSocketFace::handleReceive(const std::string& msg)
   isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()), msg.size(), element);
   if (!isOk)
     {
-      NFD_LOG_TRACE("[id:" << this->getId()
-                    << "] Received invalid NDN packet of length ["
-                    << msg.size() << "]");
+      NFD_LOG_WARN("[id:" << this->getId()
+                   << "] Received invalid NDN packet of length ["
+                   << msg.size() << "]");
       return;
     }
 
