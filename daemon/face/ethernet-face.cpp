@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "ethernet-face.hpp"
 #include "core/logger.hpp"
@@ -78,7 +78,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   char filter[100];
   ::snprintf(filter, sizeof(filter),
              "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
-             ETHERTYPE_NDN,
+             ethernet::ETHERTYPE_NDN,
              m_destAddress.toString().c_str(),
              m_srcAddress.toString().c_str());
   setPacketFilter(filter);
@@ -199,7 +199,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
     }
 
   // construct and prepend the ethernet header
-  static uint16_t ethertype = htons(ETHERTYPE_NDN);
+  static uint16_t ethertype = htons(ethernet::ETHERTYPE_NDN);
   buffer.prependByteArray(reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN);
   buffer.prependByteArray(m_srcAddress.data(), m_srcAddress.size());
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
@@ -245,7 +245,7 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
         throw Error("Received packet is too short");
 
       const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
-      if (ntohs(eh->ether_type) != ETHERTYPE_NDN)
+      if (ntohs(eh->ether_type) != ethernet::ETHERTYPE_NDN)
         throw Error("Unrecognized ethertype");
 
       packet += ethernet::HDR_LEN;

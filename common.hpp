@@ -50,6 +50,7 @@
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/util/event-emitter.hpp>
+#include <ndn-cxx/util/ethernet.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -96,6 +97,7 @@ using namespace ndn::tlv;
 
 namespace name = ndn::name;
 namespace time = ndn::time;
+namespace ethernet = ndn::util::ethernet;
 
 } // namespace nfd
 
