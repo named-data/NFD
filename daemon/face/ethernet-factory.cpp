@@ -26,7 +26,6 @@
 #include "ethernet-factory.hpp"
 #include "core/logger.hpp"
 #include "core/global-io.hpp"
-#include "core/network-interface.hpp"
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <pcap/pcap.h>

@@ -27,6 +27,7 @@
 #include <ndn-cxx/name.hpp>
 
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
@@ -37,17 +38,19 @@
 #include <boost/program_options/parsers.hpp>
 
 #include "version.hpp"
-#include "core/face-uri.hpp"
 #include "core/network.hpp"
-
-namespace po = boost::program_options;
-
-namespace nfd {
 
 using namespace ndn::nfd;
 using ndn::Face;
 using ndn::KeyChain;
 using ndn::nfd::FaceEventNotification;
+using ndn::util::FaceUri;
+using ::nfd::Network;
+
+namespace ndn {
+namespace nfd_autoreg {
+
+namespace po = boost::program_options;
 
 class AutoregServer : boost::noncopyable
 {
@@ -250,17 +253,14 @@ public:
     uint64_t currentSegment = data.getName().get(-1).toSegment();
 
     const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
-    if (finalBlockId.empty() ||
-        finalBlockId.toSegment() > currentSegment)
-      {
-        m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
-                               bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
-                               ndn::OnTimeout());
-      }
-    else
-      {
-        return processFaceStatusDataset(buffer);
-      }
+    if (finalBlockId.empty() || finalBlockId.toSegment() > currentSegment) {
+      m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment + 1),
+                             bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
+                             ndn::OnTimeout());
+    }
+    else {
+      return processFaceStatusDataset(buffer);
+    }
   }
 
   void
@@ -389,11 +389,12 @@ private:
   std::vector<Network> m_blackList;
 };
 
-} // namespace nfd
+} // namespace nfd_autoreg
+} // namespace ndn
 
 int
 main(int argc, char* argv[])
 {
-  nfd::AutoregServer server;
+  ndn::nfd_autoreg::AutoregServer server;
   return server.main(argc, argv);
 }

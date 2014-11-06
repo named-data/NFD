@@ -25,16 +25,16 @@
 
 #include "version.hpp"
 
-#include "core/face-uri.hpp"
-
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/encoding/buffer-stream.hpp>
+#include <ndn-cxx/util/face-uri.hpp>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/noncopyable.hpp>
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -59,7 +59,7 @@ usage(const char* programName)
             << std::endl;
 }
 
-class NdnAutoconfig
+class NdnAutoconfig : boost::noncopyable
 {
 public:
   union QueryAnswer
@@ -149,7 +149,7 @@ public:
 
         nfd::FaceStatus faceStatus(block);
 
-        ::nfd::FaceUri uri(faceStatus.getRemoteUri());
+        ndn::util::FaceUri uri(faceStatus.getRemoteUri());
         if (uri.getScheme() == "udp4") {
           namespace ip = boost::asio::ip;
           boost::system::error_code ec;

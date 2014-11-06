@@ -27,9 +27,9 @@
 #define NFD_DAEMON_FACE_FACE_HPP
 
 #include "common.hpp"
-#include "core/face-uri.hpp"
 #include "face-counters.hpp"
 
+#include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
@@ -52,6 +52,7 @@ const FaceId FACEID_NULL = 255;
 /// upper bound of reserved FaceIds
 const FaceId FACEID_RESERVED_MAX = 255;
 
+using ndn::util::FaceUri;
 
 /** \brief represents a face
  */

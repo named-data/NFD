@@ -26,12 +26,10 @@
 #ifndef NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
-#include "common.hpp"
-#include "core/face-uri.hpp"
+#include "face.hpp"
 
 namespace nfd {
 
-class Face;
 class Channel;
 
 /**

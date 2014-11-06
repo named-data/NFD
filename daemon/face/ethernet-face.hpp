@@ -28,6 +28,7 @@
 
 #include "config.hpp"
 #include "face.hpp"
+#include "core/network-interface.hpp"
 
 #ifndef HAVE_LIBPCAP
 #error "Cannot include this file when libpcap is not available"
@@ -38,8 +39,6 @@ struct pcap;
 typedef pcap pcap_t;
 
 namespace nfd {
-
-class NetworkInterfaceInfo;
 
 /**
  * \brief Implementation of Face abstraction that uses raw

@@ -30,8 +30,14 @@
 
 #include <net/if.h>
 
+#include <ndn-cxx/util/ethernet.hpp>
+
 namespace nfd {
 
+namespace ethernet = ndn::util::ethernet;
+
+/** \brief contains information about a network interface
+ */
 class NetworkInterfaceInfo
 {
 public:

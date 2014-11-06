@@ -25,7 +25,6 @@
 
 #include "udp-channel.hpp"
 #include "core/global-io.hpp"
-#include "core/face-uri.hpp"
 
 namespace nfd {
 
