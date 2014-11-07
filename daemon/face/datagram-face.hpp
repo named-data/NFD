@@ -98,7 +98,7 @@ protected:
 
 protected:
   shared_ptr<typename protocol::socket> m_socket;
-  uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
+  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
   bool m_hasBeenUsedRecently;
 
   NFD_LOG_INCLASS_DECLARE();
@@ -115,7 +115,7 @@ DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localU
 {
   setOnDemand(isOnDemand);
 
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
+  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
 }
 
@@ -211,7 +211,7 @@ DatagramFace<T, U>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_DEBUG("handleReceive: " << nBytesReceived);
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
   if (m_socket->is_open())
-    m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
+    m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                             bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
 }
 

@@ -76,7 +76,7 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
   onFaceCreatedNewPeerCallback = onFaceCreated;
   onConnectFailedNewPeerCallback = onListenFailed;
 
-  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE),
+  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
                                m_newRemoteEndpoint,
                                bind(&UdpChannel::newPeer, this,
                                     boost::asio::placeholders::error,
@@ -240,7 +240,7 @@ UdpChannel::newPeer(const boost::system::error_code& error,
   // dispatch the datagram to the face for processing
   face->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
-  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE),
+  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
                                m_newRemoteEndpoint,
                                bind(&UdpChannel::newPeer, this,
                                     boost::asio::placeholders::error,

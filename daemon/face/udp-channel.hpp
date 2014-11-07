@@ -157,7 +157,7 @@ private:
    **/
   shared_ptr<boost::asio::ip::udp::socket> m_socket;
 
-  uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
+  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
 
   typedef std::map< udp::Endpoint, shared_ptr<UdpFace> > ChannelFaceMap;
   ChannelFaceMap m_channelFaces;

@@ -86,7 +86,7 @@ protected:
   shared_ptr<typename protocol::socket> m_socket;
 
 private:
-  uint8_t m_inputBuffer[MAX_NDN_PACKET_SIZE];
+  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
   size_t m_inputBufferSize;
   std::queue<Block> m_sendQueue;
 
@@ -128,7 +128,7 @@ StreamFace<T, FaceBase>::StreamFace(const FaceUri& remoteUri, const FaceUri& loc
 {
   FaceBase::setOnDemand(isOnDemand);
   StreamFaceValidator<T, FaceBase>::validateSocket(*socket);
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, MAX_NDN_PACKET_SIZE), 0,
+  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                           bind(&StreamFace<T, FaceBase>::handleReceive, this, _1, _2));
 }
 
@@ -312,7 +312,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
           // ignore unknown packet and proceed
         }
     }
-  if (!isOk && m_inputBufferSize == MAX_NDN_PACKET_SIZE && offset == 0)
+  if (!isOk && m_inputBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0)
     {
       NFD_LOG_WARN("[id:" << this->getId()
                    << ",uri:" << this->getRemoteUri()
@@ -339,7 +339,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
     }
 
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer + m_inputBufferSize,
-                                              MAX_NDN_PACKET_SIZE - m_inputBufferSize), 0,
+                                              ndn::MAX_NDN_PACKET_SIZE - m_inputBufferSize), 0,
                           bind(&StreamFace<T, U>::handleReceive, this, _1, _2));
 }
 

@@ -21,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "websocket-face.hpp"
 #include "core/global-io.hpp"
@@ -99,7 +99,7 @@ void
 WebSocketFace::handleReceive(const std::string& msg)
 {
   // Copy message into Face internal buffer
-  if (msg.size() > MAX_NDN_PACKET_SIZE)
+  if (msg.size() > ndn::MAX_NDN_PACKET_SIZE)
     {
       NFD_LOG_WARN("[id:" << this->getId()
                    << "] Received WebSocket message size ["

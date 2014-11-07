@@ -687,7 +687,7 @@ BOOST_FIXTURE_TEST_CASE(Bug1856, EndToEndFixture)
 
   std::ostringstream hugeName;
   hugeName << "/huge-name/";
-  for (size_t i = 0; i < MAX_NDN_PACKET_SIZE; i++)
+  for (size_t i = 0; i < ndn::MAX_NDN_PACKET_SIZE; i++)
     hugeName << 'a';
 
   shared_ptr<Interest> interest = makeInterest("ndn:/KfczhUqVix");

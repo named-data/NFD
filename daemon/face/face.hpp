@@ -53,10 +53,6 @@ const FaceId FACEID_NULL = 255;
 const FaceId FACEID_RESERVED_MAX = 255;
 
 
-/// pratical limit of packet size in octets
-const size_t MAX_NDN_PACKET_SIZE = 8800;
-
-
 /** \brief represents a face
  */
 class Face : noncopyable, public enable_shared_from_this<Face>
