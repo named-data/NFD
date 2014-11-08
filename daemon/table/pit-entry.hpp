@@ -130,7 +130,7 @@ public: // InRecord
    *  \return an iterator to the InRecord, or .end if it does not exist
    */
   InRecordCollection::const_iterator
-  getInRecord(shared_ptr<Face> face) const;
+  getInRecord(const Face& face) const;
 
   /// deletes all InRecords
   void
@@ -152,11 +152,11 @@ public: // OutRecord
    *  \return an iterator to the OutRecord, or .end if it does not exist
    */
   OutRecordCollection::const_iterator
-  getOutRecord(shared_ptr<Face> face) const;
+  getOutRecord(const Face& face) const;
 
   /// deletes one OutRecord for face if exists
   void
-  deleteOutRecord(shared_ptr<Face> face);
+  deleteOutRecord(const Face& face);
 
   /** \return true if there is one or more unexpired OutRecords
    */
@@ -185,6 +185,18 @@ inline const Interest&
 Entry::getInterest() const
 {
   return *m_interest;
+}
+
+inline const InRecordCollection&
+Entry::getInRecords() const
+{
+  return m_inRecords;
+}
+
+inline const OutRecordCollection&
+Entry::getOutRecords() const
+{
+  return m_outRecords;
 }
 
 } // namespace pit

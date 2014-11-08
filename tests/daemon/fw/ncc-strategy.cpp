@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   shared_ptr<Data> data1 = makeData("ndn:/M4mBXCsd");
   data1->setFreshnessPeriod(time::milliseconds(5));
   strategy->beforeSatisfyInterest(pitEntry1, *face2, *data1);
-  pitEntry1->deleteOutRecord(face2);
+  pitEntry1->deleteOutRecord(*face2);
   pitEntry1->deleteInRecords();
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(10));
 

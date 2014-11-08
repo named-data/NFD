@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_TABLE_PIT_HPP
 #define NFD_DAEMON_TABLE_PIT_HPP
@@ -33,16 +34,16 @@ namespace pit {
 
 /** \class DataMatchResult
  *  \brief an unordered iterable of all PIT entries matching Data
+ *
  *  This type shall support:
  *    iterator<shared_ptr<pit::Entry>> begin()
  *    iterator<shared_ptr<pit::Entry>> end()
  */
-typedef std::vector<shared_ptr<pit::Entry> > DataMatchResult;
+typedef std::vector<shared_ptr<pit::Entry>> DataMatchResult;
 
 } // namespace pit
 
-/** \class Pit
- *  \brief represents the PIT
+/** \brief represents the Interest Table
  */
 class Pit : noncopyable
 {
@@ -52,27 +53,27 @@ public:
 
   ~Pit();
 
-  /**
-   *  \brief Get the number of items stored in the PIT.
+  /** \return number of entries
    */
   size_t
   size() const;
 
-  /** \brief inserts a PIT entry for prefix
+  /** \brief inserts a PIT entry for Interest
+   *
    *  If an entry for exact same name and selectors exists, that entry is returned.
-   *  \return{ the entry, and true for new entry, false for existing entry }
+   *  \return the entry, and true for new entry, false for existing entry
    */
   std::pair<shared_ptr<pit::Entry>, bool>
   insert(const Interest& interest);
 
   /** \brief performs a Data match
-   *  \return{ an iterable of all PIT entries matching data }
+   *  \return an iterable of all PIT entries matching data
    */
-  shared_ptr<pit::DataMatchResult>
+  pit::DataMatchResult
   findAllDataMatches(const Data& data) const;
 
   /**
-   *  \brief Erase a PIT Entry
+   *  \brief erases a PIT Entry
    */
   void
   erase(shared_ptr<pit::Entry> pitEntry);

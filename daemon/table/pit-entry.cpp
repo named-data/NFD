@@ -43,61 +43,30 @@ Entry::getName() const
   return m_interest->getName();
 }
 
-const InRecordCollection&
-Entry::getInRecords() const
-{
-  return m_inRecords;
-}
-
-const OutRecordCollection&
-Entry::getOutRecords() const
-{
-  return m_outRecords;
-}
-
-static inline bool
-predicate_InRecord_isLocal(const InRecord& inRecord)
-{
-  return inRecord.getFace()->isLocal();
-}
-
 bool
 Entry::hasLocalInRecord() const
 {
-  InRecordCollection::const_iterator it = std::find_if(
-    m_inRecords.begin(), m_inRecords.end(), &predicate_InRecord_isLocal);
-  return it != m_inRecords.end();
-}
-
-static inline bool
-predicate_FaceRecord_Face(const FaceRecord& faceRecord, const Face* face)
-{
-  return faceRecord.getFace().get() == face;
-}
-
-static inline bool
-predicate_FaceRecord_ne_Face_and_unexpired(const FaceRecord& faceRecord,
-  const Face* face, const time::steady_clock::TimePoint& now)
-{
-  return faceRecord.getFace().get() != face && faceRecord.getExpiry() >= now;
+  return std::any_of(m_inRecords.begin(), m_inRecords.end(),
+                     [] (const InRecord& inRecord) { return inRecord.getFace()->isLocal(); });
 }
 
 bool
 Entry::canForwardTo(const Face& face) const
 {
-  OutRecordCollection::const_iterator outIt = std::find_if(
-    m_outRecords.begin(), m_outRecords.end(),
-    bind(&predicate_FaceRecord_Face, _1, &face));
-  bool hasUnexpiredOutRecord = outIt != m_outRecords.end() &&
-                               outIt->getExpiry() >= time::steady_clock::now();
+  time::steady_clock::TimePoint now = time::steady_clock::now();
+
+  bool hasUnexpiredOutRecord = std::any_of(m_outRecords.begin(), m_outRecords.end(),
+    [&face, &now] (const OutRecord& outRecord) {
+      return outRecord.getFace().get() == &face && outRecord.getExpiry() >= now;
+    });
   if (hasUnexpiredOutRecord) {
     return false;
   }
 
-  InRecordCollection::const_iterator inIt = std::find_if(
-    m_inRecords.begin(), m_inRecords.end(),
-    bind(&predicate_FaceRecord_ne_Face_and_unexpired, _1, &face, time::steady_clock::now()));
-  bool hasUnexpiredOtherInRecord = inIt != m_inRecords.end();
+  bool hasUnexpiredOtherInRecord = std::any_of(m_inRecords.begin(), m_inRecords.end(),
+    [&face, &now] (const InRecord& inRecord) {
+      return inRecord.getFace().get() != &face && inRecord.getExpiry() >= now;
+    });
   if (!hasUnexpiredOtherInRecord) {
     return false;
   }
@@ -133,10 +102,9 @@ Entry::findNonce(uint32_t nonce, const Face& face) const
 
   int dnw = DUPLICATE_NONCE_NONE;
 
-  for (InRecordCollection::const_iterator it = m_inRecords.begin();
-       it != m_inRecords.end(); ++it) {
-    if (it->getLastNonce() == nonce) {
-      if (it->getFace().get() == &face) {
+  for (const InRecord& inRecord : m_inRecords) {
+    if (inRecord.getLastNonce() == nonce) {
+      if (inRecord.getFace().get() == &face) {
         dnw |= DUPLICATE_NONCE_IN_SAME;
       }
       else {
@@ -145,10 +113,9 @@ Entry::findNonce(uint32_t nonce, const Face& face) const
     }
   }
 
-  for (OutRecordCollection::const_iterator it = m_outRecords.begin();
-       it != m_outRecords.end(); ++it) {
-    if (it->getLastNonce() == nonce) {
-      if (it->getFace().get() == &face) {
+  for (const OutRecord& outRecord : m_outRecords) {
+    if (outRecord.getLastNonce() == nonce) {
+      if (outRecord.getFace().get() == &face) {
         dnw |= DUPLICATE_NONCE_OUT_SAME;
       }
       else {
@@ -163,10 +130,10 @@ Entry::findNonce(uint32_t nonce, const Face& face) const
 InRecordCollection::iterator
 Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
 {
-  InRecordCollection::iterator it = std::find_if(m_inRecords.begin(),
-    m_inRecords.end(), bind(&predicate_FaceRecord_Face, _1, face.get()));
+  auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
+    [&face] (const InRecord& inRecord) { return inRecord.getFace() == face; });
   if (it == m_inRecords.end()) {
-    m_inRecords.push_front(InRecord(face));
+    m_inRecords.emplace_front(face);
     it = m_inRecords.begin();
   }
 
@@ -175,10 +142,10 @@ Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
 }
 
 InRecordCollection::const_iterator
-Entry::getInRecord(shared_ptr<Face> face) const
+Entry::getInRecord(const Face& face) const
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-                      bind(&predicate_FaceRecord_Face, _1, face.get()));
+    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
 }
 
 void
@@ -190,10 +157,10 @@ Entry::deleteInRecords()
 OutRecordCollection::iterator
 Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
 {
-  OutRecordCollection::iterator it = std::find_if(m_outRecords.begin(),
-    m_outRecords.end(), bind(&predicate_FaceRecord_Face, _1, face.get()));
+  auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
+    [&face] (const OutRecord& outRecord) { return outRecord.getFace() == face; });
   if (it == m_outRecords.end()) {
-    m_outRecords.push_front(OutRecord(face));
+    m_outRecords.emplace_front(face);
     it = m_outRecords.begin();
   }
 
@@ -202,34 +169,29 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
 }
 
 OutRecordCollection::const_iterator
-Entry::getOutRecord(shared_ptr<Face> face) const
+Entry::getOutRecord(const Face& face) const
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-                      bind(&predicate_FaceRecord_Face, _1, face.get()));
+    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
 }
 
 void
-Entry::deleteOutRecord(shared_ptr<Face> face)
+Entry::deleteOutRecord(const Face& face)
 {
-  OutRecordCollection::iterator it = std::find_if(m_outRecords.begin(),
-    m_outRecords.end(), bind(&predicate_FaceRecord_Face, _1, face.get()));
+  auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
+    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }
 }
 
-static inline bool
-predicate_FaceRecord_unexpired(const FaceRecord& faceRecord, const time::steady_clock::TimePoint& now)
-{
-  return faceRecord.getExpiry() >= now;
-}
-
 bool
 Entry::hasUnexpiredOutRecords() const
 {
-  OutRecordCollection::const_iterator it = std::find_if(m_outRecords.begin(),
-    m_outRecords.end(), bind(&predicate_FaceRecord_unexpired, _1, time::steady_clock::now()));
-  return it != m_outRecords.end();
+  time::steady_clock::TimePoint now = time::steady_clock::now();
+
+  return std::any_of(m_outRecords.begin(), m_outRecords.end(),
+    [&now] (const OutRecord& outRecord) { return outRecord.getExpiry() >= now; });
 }
 
 } // namespace pit

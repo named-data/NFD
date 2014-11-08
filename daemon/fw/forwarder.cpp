@@ -260,8 +260,8 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   }
 
   // PIT match
-  shared_ptr<pit::DataMatchResult> pitMatches = m_pit.findAllDataMatches(data);
-  if (pitMatches->begin() == pitMatches->end()) {
+  pit::DataMatchResult pitMatches = m_pit.findAllDataMatches(data);
+  if (pitMatches.begin() == pitMatches.end()) {
     // goto Data unsolicited pipeline
     this->onDataUnsolicited(inFace, data);
     return;
@@ -272,9 +272,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
   std::set<shared_ptr<Face> > pendingDownstreams;
   // foreach PitEntry
-  for (pit::DataMatchResult::iterator it = pitMatches->begin();
-       it != pitMatches->end(); ++it) {
-    shared_ptr<pit::Entry> pitEntry = *it;
+  for (const shared_ptr<pit::Entry>& pitEntry : pitMatches) {
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
 
     // cancel unsatisfy & straggler timer
@@ -298,7 +296,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
     // mark PIT satisfied
     pitEntry->deleteInRecords();
-    pitEntry->deleteOutRecord(inFace.shared_from_this());
+    pitEntry->deleteOutRecord(inFace);
 
     // set PIT straggler timer
     this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
@@ -437,8 +435,7 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
   }
   else {
     // insert outgoing Nonce of a specific face
-    pit::OutRecordCollection::const_iterator outRecord =
-      pitEntry.getOutRecord(upstream->shared_from_this());
+    pit::OutRecordCollection::const_iterator outRecord = pitEntry.getOutRecord(*upstream);
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }

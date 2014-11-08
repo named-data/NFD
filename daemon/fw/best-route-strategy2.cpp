@@ -63,7 +63,7 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
 
   if (wantUnused) {
     // NextHop must not have unexpired OutRecord
-    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(upstream);
+    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(*upstream);
     if (outRecord != pitEntry->getOutRecords().end() &&
         outRecord->getExpiry() > now) {
       return false;
@@ -92,7 +92,7 @@ findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     if (!predicate_NextHop_eligible(pitEntry, *it, currentDownstream))
       continue;
-    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(it->getFace());
+    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(*it->getFace());
     BOOST_ASSERT(outRecord != pitEntry->getOutRecords().end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;

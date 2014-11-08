@@ -24,8 +24,17 @@
  */
 
 #include "pit.hpp"
+#include <type_traits>
 
 namespace nfd {
+namespace pit {
+
+#if HAVE_IS_MOVE_CONSTRUCTIBLE
+static_assert(std::is_move_constructible<DataMatchResult>::value,
+              "DataMatchResult must be MoveConstructible");
+#endif // HAVE_IS_MOVE_CONSTRUCTIBLE
+
+} // namespace pit
 
 Pit::Pit(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -37,79 +46,48 @@ Pit::~Pit()
 {
 }
 
-static inline bool
-predicate_NameTreeEntry_hasPitEntry(const name_tree::Entry& entry)
-{
-  return entry.hasPitEntries();
-}
-
-static inline bool
-predicate_PitEntry_similar_Interest(const shared_ptr<pit::Entry>& entry,
-                                    const Interest& interest)
-{
-  const Interest& pi = entry->getInterest();
-  return pi.getName().equals(interest.getName()) &&
-         pi.getMinSuffixComponents() == interest.getMinSuffixComponents() &&
-         pi.getMaxSuffixComponents() == interest.getMaxSuffixComponents() &&
-         pi.getPublisherPublicKeyLocator() == interest.getPublisherPublicKeyLocator() &&
-         pi.getExclude() == interest.getExclude() &&
-         pi.getChildSelector() == interest.getChildSelector() &&
-         pi.getMustBeFresh() == interest.getMustBeFresh();
-}
-
 std::pair<shared_ptr<pit::Entry>, bool>
 Pit::insert(const Interest& interest)
 {
-  // - first lookup() the Interest Name in the NameTree, which will creates all
+  // first lookup() the Interest Name in the NameTree, which will creates all
   // the intermedia nodes, starting from the shortest prefix.
-  // - if it is guaranteed that this Interest already has a NameTree Entry, we
-  // could use findExactMatch() instead.
-  // - Alternatively, we could try to do findExactMatch() first, if not found,
-  // then do lookup().
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(interest.getName());
   BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
 
-  const std::vector<shared_ptr<pit::Entry> >& pitEntries = nameTreeEntry->getPitEntries();
+  const std::vector<shared_ptr<pit::Entry>>& pitEntries = nameTreeEntry->getPitEntries();
 
   // then check if this Interest is already in the PIT entries
-  std::vector<shared_ptr<pit::Entry> >::const_iterator it =
-    std::find_if(pitEntries.begin(), pitEntries.end(),
-                 bind(&predicate_PitEntry_similar_Interest, _1, cref(interest)));
+  auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
+                         [&interest] (const shared_ptr<pit::Entry>& entry) {
+                           return entry->getInterest().getName() == interest.getName() &&
+                                  entry->getInterest().getSelectors() == interest.getSelectors();
+                         });
+  if (it != pitEntries.end()) {
+    return { *it, false };
+  }
 
-  if (it != pitEntries.end())
-    {
-      return std::make_pair(*it, false);
-    }
-  else
-    {
-      shared_ptr<pit::Entry> entry = make_shared<pit::Entry>(interest);
-      nameTreeEntry->insertPitEntry(entry);
-
-      // Increase m_nItmes only if we create a new PIT Entry
-      m_nItems++;
-
-      return std::make_pair(entry, true);
-    }
+  shared_ptr<pit::Entry> entry = make_shared<pit::Entry>(interest);
+  nameTreeEntry->insertPitEntry(entry);
+  m_nItems++;
+  return { entry, true };
 }
 
-shared_ptr<pit::DataMatchResult>
+pit::DataMatchResult
 Pit::findAllDataMatches(const Data& data) const
 {
-  shared_ptr<pit::DataMatchResult> result = make_shared<pit::DataMatchResult>();
+  pit::DataMatchResult matches;
 
-  for (NameTree::const_iterator it =
-       m_nameTree.findAllMatches(data.getName(), &predicate_NameTreeEntry_hasPitEntry);
-       it != m_nameTree.end(); it++)
-    {
-      const std::vector<shared_ptr<pit::Entry> >& pitEntries = it->getPitEntries();
-      for (size_t i = 0; i < pitEntries.size(); i++)
-        {
-          if (pitEntries[i]->getInterest().matchesData(data))
-            result->push_back(pitEntries[i]);
-        }
+  auto allMatchesBegin = m_nameTree.findAllMatches(data.getName(),
+    [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); });
+  // TODO: change to range-based for, after #2155
+  for (auto it = allMatchesBegin; it != m_nameTree.end(); ++it) {
+    for (const shared_ptr<pit::Entry>& pitEntry : it->getPitEntries()) {
+      if (pitEntry->getInterest().matchesData(data))
+        matches.emplace_back(pitEntry);
     }
+  }
 
-  return result;
+  return matches;
 }
 
 void
