@@ -65,6 +65,8 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
     fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
+  const time::nanoseconds RETRANSMISSION_70P = time::duration_cast<time::nanoseconds>(
+    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.7); // 70%
   const time::nanoseconds RETRANSMISSION_2 = time::duration_cast<time::nanoseconds>(
     fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 2.0); // x2
 
@@ -88,8 +90,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     if (nSent > nSentLast) {
       BOOST_CHECK_EQUAL(nSent - nSentLast, 1);
       time::steady_clock::TimePoint timeSent = time::steady_clock::now();
-      BOOST_CHECK_GE(timeSent - timeSentLast,
-                     fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL);
+      BOOST_CHECK_GE(timeSent - timeSentLast, RETRANSMISSION_70P);
       nSentLast = nSent;
       timeSentLast = timeSent;
     }
