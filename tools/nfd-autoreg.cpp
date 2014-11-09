@@ -37,7 +37,7 @@
 
 #include "version.hpp"
 #include "core/face-uri.hpp"
-#include "network.hpp"
+#include "core/network.hpp"
 
 namespace po = boost::program_options;
 

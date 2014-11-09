@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -22,74 +23,45 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_TOOLS_NETWORK_HPP
-#define NFD_TOOLS_NETWORK_HPP
+#include "network.hpp"
 
-#include <boost/asio.hpp>
+namespace nfd {
 
-class Network
+void
+Network::print(std::ostream& os) const
 {
-public:
-  Network()
-  {
-  }
+  os << m_minAddress << " <-> " << m_maxAddress;
+}
 
-  Network(const boost::asio::ip::address& minAddress,
-          const boost::asio::ip::address& maxAddress)
-    : m_minAddress(minAddress)
-    , m_maxAddress(maxAddress)
-  {
-  }
+const Network&
+Network::getMaxRangeV4()
+{
+  using boost::asio::ip::address_v4;
+  static Network range = Network(address_v4(0), address_v4(0xFFFFFFFF));
+  return range;
+}
 
-  void
-  print(std::ostream& os) const
-  {
-    os << m_minAddress << " <-> " << m_maxAddress;
-  }
+const Network&
+Network::getMaxRangeV6()
+{
+  using boost::asio::ip::address_v6;
+  static address_v6::bytes_type maxV6 = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                                          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
+  static Network range = Network(address_v6(), address_v6(maxV6));
+  return range;
+}
 
-  bool
-  doesContain(const boost::asio::ip::address& address) const
-  {
-    return (m_minAddress <= address && address <= m_maxAddress);
-  }
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
 
-  static const Network&
-  getMaxRangeV4()
-  {
-    using boost::asio::ip::address_v4;
-    static Network range = Network(address_v4(0), address_v4(0xFFFFFFFF));
-    return range;
-  }
-
-  static const Network&
-  getMaxRangeV6()
-  {
-    using boost::asio::ip::address_v6;
-    static address_v6::bytes_type maxV6 = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-                                            0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
-    static Network range = Network(address_v6(), address_v6(maxV6));
-    return range;
-  }
-
-private:
-  boost::asio::ip::address m_minAddress;
-  boost::asio::ip::address m_maxAddress;
-
-  friend std::istream&
-  operator>>(std::istream& is, Network& network);
-
-  friend std::ostream&
-  operator<<(std::ostream& os, const Network& network);
-};
-
-inline std::ostream&
+std::ostream&
 operator<<(std::ostream& os, const Network& network)
 {
   network.print(os);
   return os;
 }
 
-inline std::istream&
+std::istream&
 operator>>(std::istream& is, Network& network)
 {
   using namespace boost::asio;
@@ -158,4 +130,4 @@ operator>>(std::istream& is, Network& network)
   return is;
 }
 
-#endif // NFD_TOOLS_NETWORK_HPP
+} // namespace nfd
