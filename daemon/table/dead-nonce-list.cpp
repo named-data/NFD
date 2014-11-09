@@ -68,14 +68,16 @@ DeadNonceList::~DeadNonceList()
   scheduler::cancel(m_markEvent);
   scheduler::cancel(m_adjustCapacityEvent);
 
-  BOOST_ASSERT(MIN_LIFETIME <= DEFAULT_LIFETIME);
-  BOOST_ASSERT(INITIAL_CAPACITY >= MIN_CAPACITY);
-  BOOST_ASSERT(INITIAL_CAPACITY <= MAX_CAPACITY);
-  BOOST_ASSERT(static_cast<size_t>(MIN_CAPACITY * CAPACITY_UP) > MIN_CAPACITY);
-  BOOST_ASSERT(static_cast<size_t>(MAX_CAPACITY * CAPACITY_DOWN) < MAX_CAPACITY);
-  BOOST_ASSERT(CAPACITY_UP > 1.0);
-  BOOST_ASSERT(CAPACITY_DOWN < 1.0);
-  BOOST_ASSERT(EVICT_LIMIT >= 1);
+  BOOST_ASSERT_MSG(DEFAULT_LIFETIME >= MIN_LIFETIME, "DEFAULT_LIFETIME is too small");
+  static_assert(INITIAL_CAPACITY >= MIN_CAPACITY, "INITIAL_CAPACITY is too small");
+  static_assert(INITIAL_CAPACITY <= MAX_CAPACITY, "INITIAL_CAPACITY is too large");
+  BOOST_ASSERT_MSG(static_cast<size_t>(MIN_CAPACITY * CAPACITY_UP) > MIN_CAPACITY,
+                   "CAPACITY_UP must be able to increase from MIN_CAPACITY");
+  BOOST_ASSERT_MSG(static_cast<size_t>(MAX_CAPACITY * CAPACITY_DOWN) < MAX_CAPACITY,
+                   "CAPACITY_DOWN must be able to decrease from MAX_CAPACITY");
+  BOOST_ASSERT_MSG(CAPACITY_UP > 1.0, "CAPACITY_UP must adjust up");
+  BOOST_ASSERT_MSG(CAPACITY_DOWN < 1.0, "CAPACITY_DOWN must adjust down");
+  static_assert(EVICT_LIMIT >= 1, "EVICT_LIMIT must be at least 1");
 }
 
 size_t
@@ -94,7 +96,7 @@ DeadNonceList::has(const Name& name, uint32_t nonce) const
 void
 DeadNonceList::add(const Name& name, uint32_t nonce)
 {
-  Entry entry = this->makeEntry(name, nonce);
+  Entry entry = DeadNonceList::makeEntry(name, nonce);
   m_queue.push_back(entry);
 
   this->evictEntries();
