@@ -27,6 +27,7 @@
 #define NFD_TOOLS_NFDC_HPP
 
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/util/time.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
@@ -207,6 +208,7 @@ public:
 
 
 private:
+  ndn::KeyChain m_keyChain;
   Controller m_controller;
   boost::asio::io_service& m_ioService;
 };

@@ -28,6 +28,7 @@
 #include "core/face-uri.hpp"
 
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
@@ -79,7 +80,7 @@ public:
 
   explicit
   NdnAutoconfig()
-    : m_controller(m_face)
+    : m_controller(m_face, m_keyChain)
   {
   }
 
@@ -491,6 +492,7 @@ public:
 
 private:
   Face m_face;
+  KeyChain m_keyChain;
   nfd::Controller m_controller;
 };
 

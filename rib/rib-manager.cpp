@@ -75,7 +75,7 @@ const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
 RibManager::RibManager(ndn::Face& face)
   : m_face(face)
-  , m_nfdController(m_face)
+  , m_nfdController(m_face, m_keyChain)
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)

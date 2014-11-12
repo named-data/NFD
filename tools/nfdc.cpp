@@ -82,7 +82,7 @@ Nfdc::Nfdc(ndn::Face& face)
   , m_cost(DEFAULT_COST)
   , m_origin(ROUTE_ORIGIN_STATIC)
   , m_expires(DEFAULT_EXPIRATION_PERIOD)
-  , m_controller(face)
+  , m_controller(face, m_keyChain)
   , m_ioService(face.getIoService())
 {
 }

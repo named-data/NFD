@@ -26,6 +26,7 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
 
+#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
@@ -45,13 +46,14 @@ namespace nfd {
 
 using namespace ndn::nfd;
 using ndn::Face;
+using ndn::KeyChain;
 using ndn::nfd::FaceEventNotification;
 
 class AutoregServer : boost::noncopyable
 {
 public:
   AutoregServer()
-    : m_controller(m_face)
+    : m_controller(m_face, m_keyChain)
     , m_faceMonitor(m_face)
     , m_cost(255)
   {
@@ -377,6 +379,7 @@ public:
 
 private:
   Face m_face;
+  KeyChain m_keyChain;
   Controller m_controller;
   FaceMonitor m_faceMonitor;
   std::vector<ndn::Name> m_autoregPrefixes;
