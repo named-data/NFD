@@ -34,9 +34,6 @@
 
 namespace ndntlvpoke {
 
-using ndn::_1;
-using ndn::_2;
-
 class NdnTlvPoke : boost::noncopyable
 {
 public:

@@ -70,9 +70,7 @@ usage(const char* programName)
 
 namespace nfdc {
 
-using ndn::bind;
-using ndn::_1;
-using ndn::_2;
+using std::bind;
 
 const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds::max();
 const uint64_t Nfdc::DEFAULT_COST = 0;

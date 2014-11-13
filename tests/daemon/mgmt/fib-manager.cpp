@@ -241,9 +241,9 @@ BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
 
   shared_ptr<Interest> command = makeInterest("/localhost/nfd/fib");
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this,  _1,
-         command->getName(), 400, "Malformed command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   face->sendInterest(*command);
   g_io.run_one();
@@ -259,9 +259,9 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 
   Interest command("/localhost/nfd/fib");
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command.getName(), 400, "Malformed command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command.getName(), 400, "Malformed command");
+  };
 
   getFibManager().onFibRequest(command);
 
@@ -286,9 +286,9 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 501, "Unsupported command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 501, "Unsupported command");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -314,10 +314,9 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 
   Interest command(commandName);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse,
-         this, _1, command.getName(), 401, "Signature required");
-
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command.getName(), 401, "Signature required");
+  };
 
   getFibManager().onFibRequest(command);
 
@@ -345,9 +344,9 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FibManag
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse,
-         this, _1, command->getName(), 403, "Unauthorized command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 403, "Unauthorized command");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -368,9 +367,9 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -397,9 +396,9 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 410, "Face not found");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 410, "Face not found");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -437,9 +436,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbImplicitFaceId)
     command->setIncomingFaceId(1);
     generateCommand(*command);
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedExpectedParameters);
+    face->onReceiveData += [this, command, encodedExpectedParameters] (const Data& response) {
+      this->validateControlResponse(response, command->getName(),
+                                    200, "Success", encodedExpectedParameters);
+    };
 
     getFibManager().onFibRequest(*command);
 
@@ -472,9 +472,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -506,9 +507,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbImplicitCost)
   resultParameters.setFaceId(1);
   resultParameters.setCost(0);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", resultParameters.wireEncode());
+  face->onReceiveData += [this, command, resultParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", resultParameters.wireEncode());
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -538,9 +540,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
       shared_ptr<Interest> command(make_shared<Interest>(commandName));
       generateCommand(*command);
 
-      face->onReceiveData +=
-        bind(&FibManagerFixture::validateControlResponse, this, _1,
-             command->getName(), 200, "Success", encodedParameters);
+      face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+        this->validateControlResponse(response, command->getName(),
+                                      200, "Success", encodedParameters);
+      };
 
       getFibManager().onFibRequest(*command);
       BOOST_REQUIRE(didCallbackFire());
@@ -586,9 +589,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedParameters);
+    face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+      this->validateControlResponse(response, command->getName(),
+                                    200, "Success", encodedParameters);
+    };
 
     getFibManager().onFibRequest(*command);
 
@@ -610,9 +614,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", encodedParameters);
+    face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+      this->validateControlResponse(response, command->getName(),
+                                    200, "Success", encodedParameters);
+    };
 
     getFibManager().onFibRequest(*command);
 
@@ -656,9 +661,9 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbMissingPrefix)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -700,9 +705,10 @@ testRemoveNextHop(CommandFixture<FibManagerFixture>* fixture,
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   fixture->generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, fixture, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  face->onReceiveData += [fixture, command, encodedParameters] (const Data& response) {
+    fixture->validateControlResponse(response, command->getName(),
+                                     200, "Success", encodedParameters);
+  };
 
   manager.onFibRequest(*command);
 
@@ -761,9 +767,10 @@ BOOST_AUTO_TEST_CASE(RemoveFaceNotFound)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -789,9 +796,10 @@ BOOST_AUTO_TEST_CASE(RemovePrefixNotFound)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -816,9 +824,9 @@ BOOST_AUTO_TEST_CASE(RemoveMissingPrefix)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData +=
-    bind(&FibManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  face->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getFibManager().onFibRequest(*command);
 
@@ -851,9 +859,10 @@ BOOST_AUTO_TEST_CASE(RemoveImplicitFaceId)
     resultParameters.setFaceId(1);
     resultParameters.setName("/hello");
 
-    face->onReceiveData +=
-      bind(&FibManagerFixture::validateControlResponse, this, _1,
-           command->getName(), 200, "Success", resultParameters.wireEncode());
+    face->onReceiveData += [this, command, resultParameters] (const Data& response) {
+      this->validateControlResponse(response, command->getName(),
+                                    200, "Success", resultParameters.wireEncode());
+    };
 
     getFibManager().onFibRequest(*command);
 

@@ -225,9 +225,9 @@ BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, AllStrategiesFixture)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/strategy-choice"));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this,  _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getFace()->sendInterest(*command);
   g_io.run_one();
@@ -239,9 +239,9 @@ BOOST_FIXTURE_TEST_CASE(MalformedCommmand, AllStrategiesFixture)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/strategy-choice"));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getManager().onStrategyChoiceRequest(*command);
 
@@ -262,9 +262,9 @@ BOOST_FIXTURE_TEST_CASE(UnsignedCommand, AllStrategiesFixture)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 401, "Signature required");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 401, "Signature required");
+  };
 
   getManager().onStrategyChoiceRequest(*command);
 
@@ -287,9 +287,9 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand,
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 403, "Unauthorized command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 403, "Unauthorized command");
+  };
 
   getManager().onStrategyChoiceRequest(*command);
 
@@ -311,9 +311,9 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 501, "Unsupported command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 501, "Unsupported command");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -329,9 +329,9 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -352,9 +352,10 @@ BOOST_AUTO_TEST_CASE(SetStrategies)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  getFace()->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -377,9 +378,10 @@ BOOST_AUTO_TEST_CASE(SetStrategySpecifiedVersion)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  getFace()->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -406,9 +408,10 @@ BOOST_AUTO_TEST_CASE(SetStrategyLatestVersion)
   responseParameters.setName("/test");
   responseParameters.setStrategy("/localhost/nfd/strategy/test-strategy-c/%FD%02");
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", responseParameters.wireEncode());
+  getFace()->onReceiveData += [this, command, responseParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", responseParameters.wireEncode());
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -430,9 +433,9 @@ BOOST_AUTO_TEST_CASE(SetStrategiesMissingName)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -452,9 +455,9 @@ BOOST_AUTO_TEST_CASE(SetStrategiesMissingStrategy)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -478,9 +481,9 @@ BOOST_AUTO_TEST_CASE(SetUnsupportedStrategy)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 504, "Unsupported strategy");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 504, "Unsupported strategy");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -552,9 +555,10 @@ BOOST_AUTO_TEST_CASE(Unset)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 200, "Success", encodedParameters);
+  getFace()->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  200, "Success", encodedParameters);
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -578,9 +582,10 @@ BOOST_AUTO_TEST_CASE(UnsetRoot)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 403, "Cannot unset root prefix strategy");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(),
+                                  403, "Cannot unset root prefix strategy");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 
@@ -607,9 +612,9 @@ BOOST_AUTO_TEST_CASE(UnsetMissingName)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData +=
-    bind(&StrategyChoiceManagerFixture::validateControlResponse, this, _1,
-         command->getName(), 400, "Malformed command");
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
 
   getManager().onValidatedStrategyChoiceRequest(command);
 

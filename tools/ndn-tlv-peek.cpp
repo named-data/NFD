@@ -33,9 +33,6 @@
 
 namespace ndntlvpeek {
 
-using ndn::_1;
-using ndn::_2;
-
 class NdnTlvPeek : boost::noncopyable
 {
 public:

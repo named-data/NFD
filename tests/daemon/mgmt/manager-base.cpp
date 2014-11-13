@@ -166,9 +166,9 @@ BOOST_AUTO_TEST_CASE(SendResponse4Arg)
   ndn::nfd::ControlParameters parameters;
   parameters.setName("/test/body");
 
-  getInternalFace()->onReceiveData +=
-    bind(&ManagerBaseTest::validateControlResponse, this, _1,
-         "/response", 100, "test", parameters.wireEncode());
+  getInternalFace()->onReceiveData += [this, parameters] (const Data& response) {
+    this->validateControlResponse(response, "/response", 100, "test", parameters.wireEncode());
+  };
 
   testSendResponse("/response", 100, "test", parameters.wireEncode());
   BOOST_REQUIRE(didCallbackFire());
@@ -177,9 +177,9 @@ BOOST_AUTO_TEST_CASE(SendResponse4Arg)
 
 BOOST_AUTO_TEST_CASE(SendResponse3Arg)
 {
-  getInternalFace()->onReceiveData +=
-    bind(&ManagerBaseTest::validateControlResponse, this, _1,
-         "/response", 100, "test");
+  getInternalFace()->onReceiveData += [this] (const Data& response) {
+    this->validateControlResponse(response, "/response", 100, "test");
+  };
 
   testSendResponse("/response", 100, "test");
   BOOST_REQUIRE(didCallbackFire());
@@ -187,9 +187,9 @@ BOOST_AUTO_TEST_CASE(SendResponse3Arg)
 
 BOOST_AUTO_TEST_CASE(SendResponse2Arg)
 {
-  getInternalFace()->onReceiveData +=
-    bind(&ManagerBaseTest::validateControlResponse, this, _1,
-         "/response", 100, "test");
+  getInternalFace()->onReceiveData += [this] (const Data& response) {
+    this->validateControlResponse(response, "/response", 100, "test");
+  };
 
   ControlResponse response(100, "test");
 
