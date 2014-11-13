@@ -58,14 +58,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/scoped_ptr.hpp>
 
 namespace nfd {
 
 using std::size_t;
 
 using boost::noncopyable;
-using boost::scoped_ptr;
 
 using std::shared_ptr;
 using std::unique_ptr;
