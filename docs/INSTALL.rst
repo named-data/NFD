@@ -201,23 +201,13 @@ The following basic commands should be used to build NFD on Ubuntu:
     ./waf
     sudo ./waf install
 
-Some platforms, such as OS X with MacPorts and certain Linux distributions (e.g., Fedora)
-require setting the ``PKG_CONFIG_PATH`` before running configure.
-
-For example, on OS X with MacPorts (assuming the default ``/opt/local`` MacPorts path):
-
-::
-
-    export PKG_CONFIG_PATH=/opt/local/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:$PKG_CONFIG_PATH
-    ./waf configure
-    ./waf
-    sudo ./waf install
-
-or some Linux distributions:
+If you have installed `ndn-cxx` library and/or other dependencies into a non-standard paths, you
+may need to modify ``PKG_CONFIG_PATH`` environment variable before running ``./waf configure``.
+For example,
 
 ::
 
-    export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$PKG_CONFIG_PATH
+    export PKG_CONFIG_PATH=/custom/lib/pkgconfig:$PKG_CONFIG_PATH
     ./waf configure
     ./waf
     sudo ./waf install
