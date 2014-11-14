@@ -82,7 +82,8 @@ BOOST_AUTO_TEST_CASE(Forward)
   scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.m_sendInterestHistory.size();
   time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
-  function<void()> periodicalRetxFrom4 = [&] {
+  function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
+  periodicalRetxFrom4 = [&] {
     pitEntry->insertOrUpdateInRecord(face4, *interest);
     strategy.afterReceiveInterest(*face4, *interest, fibEntry, pitEntry);
 
