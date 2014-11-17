@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,19 +21,18 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_CORE_LOGGER_HPP
 #define NFD_CORE_LOGGER_HPP
 
 #include "common.hpp"
-#include <ndn-cxx/util/time.hpp>
-
-/// \todo use when we enable C++11 (see todo in now())
-// #include <cinttypes>
 
 namespace nfd {
 
+/** \brief indicates a log level
+ *  \note This type is internal. Logger should be accessed through NFD_LOG_* macros.
+ */
 enum LogLevel {
   LOG_NONE           = 0, // no messages
   LOG_ERROR          = 1, // serious error messages
@@ -44,15 +44,15 @@ enum LogLevel {
   LOG_ALL            = 255 // all messages
 };
 
+/** \brief provides logging for a module
+ *  \note This type is internal. Logger should be accessed through NFD_LOG_* macros.
+ *  \note This type is copyable because logger can be declared as a field of
+ *        (usually template) classes, and shouldn't prevent those classes to be copyable.
+ */
 class Logger
 {
 public:
-
-  Logger(const std::string& name, LogLevel level)
-    : m_moduleName(name)
-    , m_enabledLogLevel(level)
-  {
-  }
+  Logger(const std::string& name, LogLevel level);
 
   bool
   isEnabled(LogLevel level) const
@@ -81,29 +81,12 @@ public:
     m_moduleName = name;
   }
 
-  /// \brief return a string representation of time since epoch: seconds.microseconds
-  static std::string
-  now()
-  {
-    using namespace ndn::time;
-
-    static const microseconds::rep ONE_SECOND = 1000000;
-    microseconds::rep microseconds_since_epoch =
-      duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
-
-    // 10 (whole seconds) + '.' + 6 (fraction) + 1 (\0)
-    char buffer[10 + 1 + 6 + 1];
-    ::snprintf(buffer, sizeof(buffer), "%lld.%06lld",
-               static_cast<long long int>(microseconds_since_epoch / ONE_SECOND),
-               static_cast<long long int>(microseconds_since_epoch % ONE_SECOND));
-
-    /// \todo use this version when we enable C++11 to avoid casting
-    // ::snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
-    //            microseconds_since_epoch / ONE_SECOND,
-    //            microseconds_since_epoch % ONE_SECOND);
-
-    return std::string(buffer);
-  }
+  /** \return string representation of time since epoch: seconds.microseconds
+   *  \warning Return value is in a statically allocated buffer,
+   *           which subsequent calls will overwrite.
+   */
+  static const char*
+  now();
 
 private:
   std::string m_moduleName;
@@ -145,32 +128,25 @@ template<>                                                                 \
 nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name)
 
 
-#define NFD_LOG(level, expression)                                      \
-do {                                                                    \
-  if (g_logger.isEnabled(::nfd::LOG_##level))                           \
-    std::clog << ::nfd::Logger::now() << " "#level": "                  \
-              << "[" << g_logger << "] " << expression << "\n";         \
+#define NFD_LOG(level, msg, expression)                          \
+do {                                                             \
+  if (g_logger.isEnabled(::nfd::LOG_##level))                    \
+    std::clog << ::nfd::Logger::now() << " "#msg": "             \
+              << "[" << g_logger << "] " << expression << "\n";  \
 } while (false)
 
-#define NFD_LOG_TRACE(expression) NFD_LOG(TRACE, expression)
-#define NFD_LOG_DEBUG(expression) NFD_LOG(DEBUG, expression)
-#define NFD_LOG_INFO(expression) NFD_LOG(INFO, expression)
-#define NFD_LOG_ERROR(expression) NFD_LOG(ERROR, expression)
+#define NFD_LOG_TRACE(expression) NFD_LOG(TRACE, TRACE,   expression)
+#define NFD_LOG_DEBUG(expression) NFD_LOG(DEBUG, DEBUG,   expression)
+#define NFD_LOG_INFO(expression)  NFD_LOG(INFO,  INFO,    expression)
+#define NFD_LOG_WARN(expression)  NFD_LOG(WARN,  WARNING, expression)
+#define NFD_LOG_ERROR(expression) NFD_LOG(ERROR, ERROR,   expression)
 
-// specialize WARN because the message is "WARNING" instead of "WARN"
-#define NFD_LOG_WARN(expression)                                        \
-do {                                                                    \
-  if (g_logger.isEnabled(::nfd::LOG_WARN))                              \
-    std::clog << ::nfd::Logger::now() << " WARNING: "                   \
-              << "[" << g_logger << "] " << expression << "\n";         \
+#define NFD_LOG_FATAL(expression)                             \
+do {                                                          \
+  std::clog << ::nfd::Logger::now() << " FATAL: "             \
+            << "[" << g_logger << "] " << expression << "\n"; \
 } while (false)
 
-#define NFD_LOG_FATAL(expression)                                       \
-do {                                                                    \
-  std::clog << ::nfd::Logger::now() << " FATAL: "                       \
-            << "[" << g_logger << "] " << expression << "\n";           \
-} while (false)
+} // namespace nfd
 
-} //namespace nfd
-
-#endif
+#endif // NFD_CORE_LOGGER_HPP
