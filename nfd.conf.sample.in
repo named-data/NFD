@@ -64,11 +64,12 @@ tables
 ; The face_system section defines what faces and channels are created.
 face_system
 {
-  ; The unix section contains settings of UNIX stream faces and channels.
+  ; The unix section contains settings of Unix stream faces and channels.
+  ; Unix channel is always listening; delete unix section to disable
+  ; Unix stream faces and channels.
   unix
   {
-    listen yes ; set to 'no' to disable UNIX stream listener, default 'yes'
-    path /var/run/nfd.sock ; UNIX stream listener path
+    path /var/run/nfd.sock ; Unix stream listener path
   }
 
   ; The tcp section contains settings of TCP faces and channels.

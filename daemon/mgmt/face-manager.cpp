@@ -222,16 +222,14 @@ FaceManager::onConfig(const ConfigSection& configSection,
 void
 FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRun)
 {
-  // ; the unix section contains settings of UNIX stream faces and channels
+  // ; the unix section contains settings of Unix stream faces and channels
   // unix
   // {
-  //   listen yes ; set to 'no' to disable UNIX stream listener, default 'yes'
-  //   path /var/run/nfd.sock ; UNIX stream listener path
+  //   path /var/run/nfd.sock ; Unix stream listener path
   // }
 
 #if defined(HAVE_UNIX_SOCKETS)
 
-  bool needToListen = true;
   std::string path = "/var/run/nfd.sock";
 
   for (ConfigSection::const_iterator i = configSection.begin();
@@ -241,10 +239,6 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
       if (i->first == "path")
         {
           path = i->second.get_value<std::string>();
-        }
-      else if (i->first == "listen")
-        {
-          needToListen = parseYesNo(i, i->first, "unix");
         }
       else
         {
@@ -270,17 +264,14 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
       shared_ptr<UnixStreamFactory> factory = make_shared<UnixStreamFactory>();
       shared_ptr<UnixStreamChannel> unixChannel = factory->createChannel(path);
 
-      if (needToListen)
-        {
-          // Should acceptFailed callback be used somehow?
-          unixChannel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                              UnixStreamChannel::ConnectFailedCallback());
-        }
+      // Should acceptFailed callback be used somehow?
+      unixChannel->listen(bind(&FaceTable::add, &m_faceTable, _1),
+                          UnixStreamChannel::ConnectFailedCallback());
 
       m_factories.insert(std::make_pair("unix", factory));
     }
 #else
-  throw ConfigFile::Error("NFD was compiled without UNIX sockets support, "
+  throw ConfigFile::Error("NFD was compiled without Unix sockets support, "
                           "cannot process \"unix\" section");
 #endif // HAVE_UNIX_SOCKETS
 

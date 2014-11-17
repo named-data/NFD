@@ -342,7 +342,6 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUnix)
     "{\n"
     "  unix\n"
     "  {\n"
-    "    listen yes\n"
     "    path /tmp/nfd.sock\n"
     "  }\n"
     "}\n";
@@ -357,27 +356,11 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionUnixDryRun)
     "{\n"
     "  unix\n"
     "  {\n"
-    "    listen yes\n"
     "    path /var/run/nfd.sock\n"
     "  }\n"
     "}\n";
 
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-}
-
-BOOST_AUTO_TEST_CASE(TestProcessSectionUnixBadListen)
-{
-  const std::string CONFIG =
-    "face_system\n"
-    "{\n"
-    "  unix\n"
-    "  {\n"
-    "    listen hello\n"
-    "  }\n"
-    "}\n";
-  BOOST_CHECK_EXCEPTION(parseConfig(CONFIG, false), ConfigFile::Error,
-                        bind(&isExpectedException, _1,
-                             "Invalid value for option \"listen\" in \"unix\" section"));
 }
 
 BOOST_AUTO_TEST_CASE(TestProcessSectionUnixUnknownOption)
