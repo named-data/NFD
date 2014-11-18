@@ -101,7 +101,7 @@ public:
   void
   decodeFaceStatusBlock(const Data& data)
   {
-    BOOST_REQUIRE_EQUAL(data.getContentType(), ndn::MetaInfo::TYPE_BLOB);
+    BOOST_REQUIRE_EQUAL(data.getContentType(), tlv::ContentType_Blob);
 
     Block payload = data.getContent();
     m_buffer.appendByteArray(payload.value(), payload.value_size());
