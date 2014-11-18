@@ -8,13 +8,14 @@ from waflib import Configure
 
 BOOST_ASIO_HAS_KQUEUE_CHECK = '''
 #include <boost/asio.hpp>
-#if defined(BOOST_ASIO_HAS_KQUEUE) and BOOST_VERSION >= 105600
-#error "Ethernet face support cannot be enabled on this platform"
+#if defined(BOOST_ASIO_HAS_KQUEUE) and BOOST_VERSION == 105600
+#error "Ethernet face support cannot be enabled on this platform with boost 1.56"
 #endif
 '''
 
 @Configure.conf
 def check_asio_pcap_support(conf):
+    # https://svn.boost.org/trac/boost/ticket/10367
     if conf.check_cxx(msg='Checking if Ethernet face support can be enabled',
                       fragment=BOOST_ASIO_HAS_KQUEUE_CHECK,
                       features='cxx', use='BOOST', mandatory=False):
