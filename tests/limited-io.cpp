@@ -41,7 +41,7 @@ LimitedIo::LimitedIo()
 }
 
 LimitedIo::StopReason
-LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
+LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit)
 {
   BOOST_ASSERT(!m_isRunning);
 
@@ -53,8 +53,8 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& nTimeLimit)
 
   m_reason = NO_WORK;
   m_nOpsRemaining = nOpsLimit;
-  if (nTimeLimit >= time::nanoseconds::zero()) {
-    m_timeout = scheduler::schedule(nTimeLimit, bind(&LimitedIo::afterTimeout, this));
+  if (timeLimit >= time::nanoseconds::zero()) {
+    m_timeout = scheduler::schedule(timeLimit, bind(&LimitedIo::afterTimeout, this));
   }
 
   try {

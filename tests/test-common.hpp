@@ -31,6 +31,7 @@
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 
+#include <ndn-cxx/util/time-unit-test-clock.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
@@ -59,6 +60,48 @@ protected:
   boost::asio::io_service& g_io;
 };
 
+/** \brief a base test fixture that overrides steady clock and system clock
+ */
+class UnitTestTimeFixture : public BaseFixture
+{
+public:
+  UnitTestTimeFixture()
+    : steadyClock(make_shared<time::UnitTestSteadyClock>())
+    , systemClock(make_shared<time::UnitTestSystemClock>())
+  {
+    time::setCustomClocks(steadyClock, systemClock);
+  }
+
+  ~UnitTestTimeFixture()
+  {
+    time::setCustomClocks(nullptr, nullptr);
+  }
+
+  /** \brief advance steady and system clocks
+   *
+   *  Clocks are advanced in increments of \p tick for \p nTicks ticks.
+   *  After each tick, global io_service is polled to process pending I/O events.
+   *
+   *  Exceptions thrown during I/O events are propagated to the caller.
+   *  Clock advancing would stop in case of an exception.
+   */
+  void
+  advanceClocks(const time::nanoseconds& tick, size_t nTicks = 1)
+  {
+    for (size_t i = 0; i < nTicks; ++i) {
+      steadyClock->advance(tick);
+      systemClock->advance(tick);
+
+      if (g_io.stopped())
+        g_io.reset();
+      g_io.poll();
+    }
+  }
+
+protected:
+  shared_ptr<time::UnitTestSteadyClock> steadyClock;
+  shared_ptr<time::UnitTestSystemClock> systemClock;
+};
 
 inline shared_ptr<Interest>
 makeInterest(const Name& name)
@@ -71,7 +114,7 @@ signData(const shared_ptr<Data>& data)
 {
   ndn::SignatureSha256WithRsa fakeSignature;
   fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
-                                        reinterpret_cast<const uint8_t*>(0), 0));
+                                        static_cast<const uint8_t*>(nullptr), 0));
   data->setSignature(fakeSignature);
   data->wireEncode();
 

@@ -55,10 +55,13 @@ public:
   /** \brief g_io.run() with operation count and/or time limit
    *
    *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
-   *  \param nTimeLimit time limit, pass UNLIMITED_TIME for no limit
+   *  \param timeLimit time limit, pass UNLIMITED_TIME for no limit
+   *
+   *  \warning if timeLimit is used with UnitTestTimeFixture,
+   *           some other code must advance steady clock in order to exceed time limit
    */
   StopReason
-  run(int nOpsLimit, const time::nanoseconds& nTimeLimit);
+  run(int nOpsLimit, const time::nanoseconds& timeLimit);
 
   /// count an operation
   void
