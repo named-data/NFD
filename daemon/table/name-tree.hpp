@@ -80,6 +80,7 @@ class NameTree : noncopyable
 {
 public:
   class const_iterator;
+  class Range;
 
   explicit
   NameTree(size_t nBuckets = 1024);
@@ -173,10 +174,19 @@ public: // matching
                          const name_tree::EntrySelector& entrySelector =
                          name_tree::AnyEntry()) const;
 
-  /**
-   * \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
+  /** \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
+   *  \return an unspecified type that have .begin() and .end() methods
+   *          and is usable with range-based for
+   *
+   *  Example:
+   *  \code{.cpp}
+   *  auto&& allMatches = nt.findAllMatches(Name("/A/B/C"));
+   *  for (const name_tree::Entry& nte : allMatches) {
+   *    ...
+   *  }
+   *  \endcode
    */
-  const_iterator
+  Range
   findAllMatches(const Name& prefix,
                  const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
@@ -246,6 +256,32 @@ public: // enumeration
     shared_ptr<name_tree::EntrySubTreeSelector> m_entrySubTreeSelector;
     NameTree::IteratorType                      m_type;
     bool                                        m_shouldVisitChildren;
+  };
+
+  /** \brief contains a pair of begin and end iterators
+   *
+   *  This is to be used with range-based for.
+   */
+  class Range
+  {
+  public:
+    Range(const_iterator begin, const_iterator end);
+
+    const_iterator
+    begin() const
+    {
+      return m_begin;
+    }
+
+    const_iterator
+    end() const
+    {
+      return m_end;
+    }
+
+  private:
+    const_iterator m_begin;
+    const_iterator m_end;
   };
 
 private:

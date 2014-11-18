@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,9 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
-
-// Name Tree (Name Prefix Hash Table)
+ */
 
 #include "name-tree.hpp"
 #include "core/logger.hpp"
@@ -443,7 +442,7 @@ NameTree::partialEnumerate(const Name& prefix,
     }
 }
 
-NameTree::const_iterator
+NameTree::Range
 NameTree::findAllMatches(const Name& prefix,
                          const name_tree::EntrySelector& entrySelector) const
 {
@@ -457,13 +456,12 @@ NameTree::findAllMatches(const Name& prefix,
 
   shared_ptr<name_tree::Entry> entry = findLongestPrefixMatch(prefix, entrySelector);
 
-  if (static_cast<bool>(entry))
-    {
-      const_iterator it(FIND_ALL_MATCHES_TYPE, *this, entry, entrySelector);
-      return it;
-    }
+  if (static_cast<bool>(entry)) {
+    const_iterator begin(FIND_ALL_MATCHES_TYPE, *this, entry, entrySelector);
+    return { begin, end() };
+  }
   // If none of the entry satisfies the requirements, then return the end() iterator.
-  return end();
+  return { end(), end() };
 }
 
 // Hash Table Resize
@@ -760,6 +758,12 @@ NameTree::const_iterator::operator++()
 
   BOOST_ASSERT(false); // unknown type
   return *this;
+}
+
+NameTree::Range::Range(const_iterator begin, const_iterator end)
+  : m_begin(begin)
+  , m_end(end)
+{
 }
 
 } // namespace nfd

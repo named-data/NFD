@@ -75,13 +75,12 @@ Pit::insert(const Interest& interest)
 pit::DataMatchResult
 Pit::findAllDataMatches(const Data& data) const
 {
-  pit::DataMatchResult matches;
-
-  auto allMatchesBegin = m_nameTree.findAllMatches(data.getName(),
+  auto&& ntMatches = m_nameTree.findAllMatches(data.getName(),
     [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); });
-  // TODO: change to range-based for, after #2155
-  for (auto it = allMatchesBegin; it != m_nameTree.end(); ++it) {
-    for (const shared_ptr<pit::Entry>& pitEntry : it->getPitEntries()) {
+
+  pit::DataMatchResult matches;
+  for (const name_tree::Entry& nte : ntMatches) {
+    for (const shared_ptr<pit::Entry>& pitEntry : nte.getPitEntries()) {
       if (pitEntry->getInterest().matchesData(data))
         matches.emplace_back(pitEntry);
     }

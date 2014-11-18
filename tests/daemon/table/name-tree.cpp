@@ -737,34 +737,33 @@ BOOST_AUTO_TEST_CASE(IteratorFindAllMatches)
 
   counter = 0;
 
-  for (NameTree::const_iterator it = nt.findAllMatches(nameABCDEF);
-      it != nt.end(); it++)
-  {
+  auto&& allMatches = nt.findAllMatches(nameABCDEF);
+  for (const name_tree::Entry& entry : allMatches) {
     counter++;
 
-    if (it->getPrefix() == nameRoot)
+    if (entry.getPrefix() == nameRoot)
       hasRoot   = true;
-    if (it->getPrefix() == nameA)
+    if (entry.getPrefix() == nameA)
       hasA      = true;
-    if (it->getPrefix() == nameAB)
+    if (entry.getPrefix() == nameAB)
       hasAB     = true;
-    if (it->getPrefix() == nameABC)
+    if (entry.getPrefix() == nameABC)
       hasABC    = true;
-    if (it->getPrefix() == nameABCD)
+    if (entry.getPrefix() == nameABCD)
       hasABCD   = true;
-    if (it->getPrefix() == nameABCDE)
+    if (entry.getPrefix() == nameABCDE)
       hasABCDE  = true;
-    if (it->getPrefix() == nameABCDEF)
+    if (entry.getPrefix() == nameABCDEF)
       hasABCDEF = true;
-    if (it->getPrefix() == nameAA)
+    if (entry.getPrefix() == nameAA)
       hasAA     = true;
-    if (it->getPrefix() == nameAAC)
+    if (entry.getPrefix() == nameAAC)
       hasAAC    = true;
-    if (it->getPrefix() == nameAAD)
+    if (entry.getPrefix() == nameAAD)
       hasAAD    = true;
-    if (it->getPrefix() == nameAAD1)
+    if (entry.getPrefix() == nameAAD1)
       hasAAD1   = true;
-    if (it->getPrefix() == nameAAD2)
+    if (entry.getPrefix() == nameAAD2)
       hasAAD2   = true;
   }
 
