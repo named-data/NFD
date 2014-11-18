@@ -24,9 +24,10 @@
  */
 
 #include "rib/rib-status-publisher.hpp"
-
 #include "rib-status-publisher-common.hpp"
-#include "tests/dummy-client-face.hpp"
+
+#include "tests/test-common.hpp"
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace rib {
@@ -47,14 +48,14 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.insert(name, entry);
 
   ndn::KeyChain keyChain;
-  shared_ptr<nfd::tests::DummyClientFace> face = nfd::tests::makeDummyClientFace();
+  shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
   RibStatusPublisher publisher(rib, *face, "/localhost/nfd/rib/list", keyChain);
 
   publisher.publish();
   face->processEvents(time::milliseconds(1));
 
-  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
-  decodeRibEntryBlock(face->m_sentDatas[0], name, entry);
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  decodeRibEntryBlock(face->sentDatas[0], name, entry);
 }
 
 

@@ -27,8 +27,7 @@
 #include "simple-notification.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/dummy-client-face.hpp"
-
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
@@ -37,29 +36,29 @@ BOOST_FIXTURE_TEST_SUITE(CoreNotificationStream, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Post)
 {
-  shared_ptr<DummyClientFace> face = makeDummyClientFace();
+  shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
   ndn::KeyChain keyChain;
-  NotificationStream<DummyClientFace> notificationStream(*face,
+  NotificationStream<ndn::util::DummyClientFace> notificationStream(*face,
     "/localhost/nfd/NotificationStreamTest", keyChain);
 
   SimpleNotification event1("msg1");
   notificationStream.postNotification(event1);
   face->processEvents();
-  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
-  BOOST_CHECK_EQUAL(face->m_sentDatas[0].getName(),
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  BOOST_CHECK_EQUAL(face->sentDatas[0].getName(),
                     "/localhost/nfd/NotificationStreamTest/%FE%00");
   SimpleNotification decoded1;
-  BOOST_CHECK_NO_THROW(decoded1.wireDecode(face->m_sentDatas[0].getContent().blockFromValue()));
+  BOOST_CHECK_NO_THROW(decoded1.wireDecode(face->sentDatas[0].getContent().blockFromValue()));
   BOOST_CHECK_EQUAL(decoded1.getMessage(), "msg1");
 
   SimpleNotification event2("msg2");
   notificationStream.postNotification(event2);
   face->processEvents();
-  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 2);
-  BOOST_CHECK_EQUAL(face->m_sentDatas[1].getName(),
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 2);
+  BOOST_CHECK_EQUAL(face->sentDatas[1].getName(),
                     "/localhost/nfd/NotificationStreamTest/%FE%01");
   SimpleNotification decoded2;
-  BOOST_CHECK_NO_THROW(decoded2.wireDecode(face->m_sentDatas[1].getContent().blockFromValue()));
+  BOOST_CHECK_NO_THROW(decoded2.wireDecode(face->sentDatas[1].getContent().blockFromValue()));
   BOOST_CHECK_EQUAL(decoded2.getMessage(), "msg2");
 }
 

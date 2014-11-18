@@ -24,14 +24,12 @@
  */
 
 #include "rib/rib-manager.hpp"
-
-#include "tests/test-common.hpp"
-#include "tests/dummy-client-face.hpp"
-#include "tests/limited-io.hpp"
-
+#include <ndn-cxx/management/nfd-face-status.hpp>
 #include "rib/rib-status-publisher-common.hpp"
 
-#include <ndn-cxx/management/nfd-face-status.hpp>
+#include "tests/test-common.hpp"
+#include "tests/limited-io.hpp"
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace rib {
@@ -45,13 +43,13 @@ public:
     , ADD_NEXTHOP_VERB("add-nexthop")
     , REMOVE_NEXTHOP_VERB("remove-nexthop")
   {
-    face = nfd::tests::makeDummyClientFace();
+    face = ndn::util::makeDummyClientFace();
 
     manager = make_shared<RibManager>(ndn::ref(*face));
     manager->registerWithNfd();
 
     face->processEvents(time::milliseconds(1));
-    face->m_sentInterests.clear();
+    face->sentInterests.clear();
   }
 
   ~RibManagerFixture()
@@ -83,7 +81,7 @@ public:
 
 public:
   shared_ptr<RibManager> manager;
-  shared_ptr<nfd::tests::DummyClientFace> face;
+  shared_ptr<ndn::util::DummyClientFace> face;
 
   const Name COMMAND_PREFIX;
   const Name::Component ADD_NEXTHOP_VERB;
@@ -133,7 +131,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AuthorizedRibManager)
 
   receiveCommandInterest(commandName, parameters);
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 }
 
 BOOST_FIXTURE_TEST_CASE(Register, AuthorizedRibManager)
@@ -151,9 +149,9 @@ BOOST_FIXTURE_TEST_CASE(Register, AuthorizedRibManager)
 
   receiveCommandInterest(commandName, parameters);
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 
-  Interest& request = face->m_sentInterests[0];
+  Interest& request = face->sentInterests[0];
 
   ControlParameters extractedParameters;
   Name::Component verb;
@@ -179,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
   Name registerName("/localhost/nfd/rib/register");
 
   receiveCommandInterest(registerName, addParameters);
-  face->m_sentInterests.clear();
+  face->sentInterests.clear();
 
   ControlParameters removeParameters;
   removeParameters
@@ -191,9 +189,9 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
 
   receiveCommandInterest(unregisterName, removeParameters);
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 
-  Interest& request = face->m_sentInterests[0];
+  Interest& request = face->sentInterests[0];
 
   ControlParameters extractedParameters;
   Name::Component verb;
@@ -217,11 +215,11 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
 
   Name commandName("/localhost/nfd/rib/register");
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 0);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
 
   receiveCommandInterest(commandName, parameters);
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 0);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
@@ -244,17 +242,17 @@ BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
 
   Name commandName("/localhost/nfd/rib/register");
 
-  BOOST_REQUIRE_EQUAL(face->m_sentInterests.size(), 0);
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
 
   receiveCommandInterest(commandName, parameters);
-  face->m_sentInterests.clear();
-  face->m_sentDatas.clear();
+  face->sentInterests.clear();
+  face->sentDatas.clear();
 
   face->receive(Interest("/localhost/nfd/rib/list"));
   face->processEvents(time::milliseconds(1));
 
-  BOOST_REQUIRE_EQUAL(face->m_sentDatas.size(), 1);
-  RibStatusPublisherFixture::decodeRibEntryBlock(face->m_sentDatas[0], name, entry);
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], name, entry);
 }
 
 BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
@@ -272,7 +270,7 @@ BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
   Name registerName("/localhost/nfd/rib/register");
 
   receiveCommandInterest(registerName, addParameters);
-  face->m_sentInterests.clear();
+  face->sentInterests.clear();
 
   // Unregister face
   ControlParameters removeParameters;

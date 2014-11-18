@@ -24,13 +24,10 @@
  */
 
 #include "core/segment-publisher.hpp"
-
-#include "tests/test-common.hpp"
-#include "tests/dummy-client-face.hpp"
-
 #include <ndn-cxx/encoding/tlv.hpp>
 
-#include <boost/foreach.hpp>
+#include "tests/test-common.hpp"
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
@@ -38,10 +35,10 @@ namespace tests {
 NFD_LOG_INIT("SegmentPublisherTest");
 
 template<int64_t N=10000>
-class TestSegmentPublisher : public SegmentPublisher<DummyClientFace>
+class TestSegmentPublisher : public SegmentPublisher<ndn::util::DummyClientFace>
 {
 public:
-  TestSegmentPublisher(DummyClientFace& face,
+  TestSegmentPublisher(ndn::util::DummyClientFace& face,
                        const Name& prefix,
                        ndn::KeyChain& keyChain)
     : SegmentPublisher(face, prefix, keyChain)
@@ -90,7 +87,7 @@ class SegmentPublisherFixture : public BaseFixture
 {
 public:
   SegmentPublisherFixture()
-    : m_face(makeDummyClientFace())
+    : m_face(ndn::util::makeDummyClientFace())
     , m_publisher(*m_face, "/localhost/nfd/SegmentPublisherFixture", m_keyChain)
   {
   }
@@ -134,7 +131,7 @@ public:
   }
 
 protected:
-  shared_ptr<DummyClientFace> m_face;
+  shared_ptr<ndn::util::DummyClientFace> m_face;
   TestSegmentPublisher<N> m_publisher;
   ndn::EncodingBuffer m_buffer;
   ndn::KeyChain m_keyChain;
@@ -151,13 +148,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Generate, T, DatasetSizes, SegmentPublisherFixt
   this->m_face->processEvents();
 
   size_t nSegments = this->m_publisher.getTotalPayloadLength() /
-                       this->m_publisher.getMaxSegmentSize();
+                     this->m_publisher.getMaxSegmentSize();
   if (this->m_publisher.getTotalPayloadLength() % this->m_publisher.getMaxSegmentSize() != 0 ||
       nSegments == 0)
     ++nSegments;
 
-  BOOST_CHECK_EQUAL(this->m_face->m_sentDatas.size(), nSegments);
-  BOOST_FOREACH(const Data& data, this->m_face->m_sentDatas) {
+  BOOST_CHECK_EQUAL(this->m_face->sentDatas.size(), nSegments);
+  for (const Data& data : this->m_face->sentDatas) {
     this->validate(data);
   }
 }
