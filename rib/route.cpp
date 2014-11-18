@@ -23,34 +23,38 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fib-update.hpp"
+#include "route.hpp"
 
 namespace nfd {
 namespace rib {
 
-FibUpdate
-FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
+bool
+Route::operator==(const Route& other) const
 {
-  FibUpdate update;
-
-  update.name = name;
-  update.faceId = faceId;
-  update.cost = cost;
-  update.action = ADD_NEXTHOP;
-
-  return update;
+  return (this->faceId == other.faceId &&
+          this->origin == other.origin &&
+          this->flags == other.flags &&
+          this->cost == other.cost &&
+          this->expires == other.expires);
 }
 
-FibUpdate
-FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
+std::ostream&
+operator<<(std::ostream& os, const Route& route)
 {
-  FibUpdate update;
+  os << "Route("
+     << "faceid: " << route.faceId
+     << ", origin: " << route.origin
+     << ", cost: " << route.cost
+     << ", flags: " << route.flags;
+  if (route.expires != time::steady_clock::TimePoint::max()) {
+    os << ", expires in: " << (route.expires - time::steady_clock::now());
+  }
+  else {
+    os << ", never expires";
+  }
+  os << ")";
 
-  update.name = name;
-  update.faceId = faceId;
-  update.action = REMOVE_NEXTHOP;
-
-  return update;
+  return os;
 }
 
 } // namespace rib

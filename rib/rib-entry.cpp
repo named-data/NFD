@@ -40,25 +40,29 @@ RibEntry::findRoute(const Route& route)
   return std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, route));
 }
 
+RibEntry::RouteList::const_iterator
+RibEntry::findRoute(const Route& route) const
+{
+  return std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, route));
+}
+
 bool
 RibEntry::insertRoute(const Route& route)
 {
   iterator it = findRoute(route);
 
-  if (it == end())
-    {
-      if (route.flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
-        {
-          m_nRoutesWithCaptureSet++;
-        }
+  if (it == end()) {
+    if (route.flags & ndn::nfd::ROUTE_FLAG_CAPTURE) {
+      m_nRoutesWithCaptureSet++;
+    }
 
-      m_routes.push_back(route);
-      return true;
-    }
-  else
-    {
-      return false;
-    }
+    m_routes.push_back(route);
+
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 void
@@ -84,6 +88,12 @@ RibEntry::hasFaceId(const uint64_t faceId) const
   return it != end();
 }
 
+size_t
+RibEntry::getNRoutes() const
+{
+  return m_routes.size();
+}
+
 void
 RibEntry::addChild(shared_ptr<RibEntry> child)
 {
@@ -103,19 +113,17 @@ RibEntry::removeChild(shared_ptr<RibEntry> child)
 RibEntry::RouteList::iterator
 RibEntry::eraseRoute(RouteList::iterator route)
 {
-  if (route != m_routes.end())
-    {
-      if (route->flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
-        {
-          m_nRoutesWithCaptureSet--;
-        }
-
-      //cancel any scheduled event
-      NFD_LOG_TRACE("Cancelling expiration eventId: " << route->getExpirationEvent());
-      scheduler::cancel(route->getExpirationEvent());
-
-      return m_routes.erase(route);
+  if (route != m_routes.end()) {
+    if (route->flags & ndn::nfd::ROUTE_FLAG_CAPTURE) {
+      m_nRoutesWithCaptureSet--;
     }
+
+    // Cancel any scheduled event
+    NFD_LOG_TRACE("Cancelling expiration eventId: " << route->getExpirationEvent());
+    scheduler::cancel(route->getExpirationEvent());
+
+    return m_routes.erase(route);
+  }
 
   return m_routes.end();
 }
@@ -129,19 +137,20 @@ RibEntry::addInheritedRoute(const Route& route)
 void
 RibEntry::removeInheritedRoute(const Route& route)
 {
-  RouteList::iterator it = findInheritedRoute(route);
+  RouteList::iterator it = std::find_if(m_inheritedRoutes.begin(), m_inheritedRoutes.end(),
+                                        bind(&compareFaceId, _1, route.faceId));
   m_inheritedRoutes.erase(it);
 }
 
-RibEntry::RouteList::iterator
-RibEntry::findInheritedRoute(const Route& route)
+RibEntry::RouteList::const_iterator
+RibEntry::findInheritedRoute(const Route& route) const
 {
   return std::find_if(m_inheritedRoutes.begin(), m_inheritedRoutes.end(),
                       bind(&compareFaceId, _1, route.faceId));
 }
 
 bool
-RibEntry::hasInheritedRoute(const Route& route)
+RibEntry::hasInheritedRoute(const Route& route) const
 {
   RouteList::const_iterator it = findInheritedRoute(route);
 
@@ -157,85 +166,80 @@ RibEntry::hasCapture() const
 bool
 RibEntry::hasChildInheritOnFaceId(uint64_t faceId) const
 {
-  for (RibEntry::const_iterator it = m_routes.begin(); it != m_routes.end(); ++it)
-    {
-      if (it->faceId == faceId && (it->flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT))
-        {
-          return true;
-        }
+  for (const Route& route : m_routes) {
+    if (route.faceId == faceId && (route.flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)) {
+      return true;
     }
+  }
 
   return false;
 }
 
-shared_ptr<Route>
-RibEntry::getRouteWithLowestCostByFaceId(uint64_t faceId)
+shared_ptr<const Route>
+RibEntry::getRouteWithLowestCostByFaceId(uint64_t faceId) const
 {
   shared_ptr<Route> candidate;
 
-  for (const Route& route : m_routes)
-    {
-      // Correct face ID
-      if (route.faceId == faceId)
-        {
-          // If this is the first route with this Face ID found
-          if (candidate == nullptr)
-            {
-              candidate = make_shared<Route>(route);
-            }
-          else if (route.cost < candidate->cost) // Found a route with a lower cost
-            {
-              candidate = make_shared<Route>(route);
-            }
-        }
+  for (const Route& route : m_routes) {
+    // Matching face ID
+    if (route.faceId == faceId) {
+      // If this is the first route with this Face ID found
+      if (candidate == nullptr) {
+        candidate = make_shared<Route>(route);
+      }
+      else if (route.cost < candidate->cost) {
+        // Found a route with a lower cost
+        candidate = make_shared<Route>(route);
+      }
     }
+  }
 
   return candidate;
 }
 
-shared_ptr<Route>
-RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId)
+const Route*
+RibEntry::getRouteWithSecondLowestCostByFaceId(uint64_t faceId) const
+{
+  std::vector<Route> matches;
+
+  // Copy routes which have faceId
+  std::copy_if(m_routes.begin(), m_routes.end(), std::back_inserter(matches),
+    [faceId] (const Route& route) { return route.faceId == faceId; });
+
+  // If there are not at least 2 routes, there is no second lowest
+  if (matches.size() < 2) {
+    return nullptr;
+  }
+
+  // Get second lowest cost
+  std::nth_element(matches.begin(), matches.begin() + 1, matches.end(),
+    [] (const Route& lhs, const Route& rhs) { return lhs.cost < rhs.cost; });
+
+  return &matches.at(1);
+}
+
+shared_ptr<const Route>
+RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const
 {
   shared_ptr<Route> candidate;
 
-  for (const Route& route : m_routes)
+  for (const Route& route : m_routes) {
+    // Correct face ID and Child Inherit flag set
+    if (route.faceId == faceId &&
+        (route.flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT) == ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
     {
-      // Correct face ID and Child Inherit flag set
-      if (route.faceId == faceId &&
-          (route.flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT) == ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
-        {
-          // If this is the first route with this Face ID found
-          if (candidate == nullptr)
-            {
-              candidate = make_shared<Route>(route);
-            }
-          else if (route.cost < candidate->cost) // Found a route with a lower cost
-            {
-              candidate = make_shared<Route>(route);
-            }
-        }
+      // If this is the first route with this Face ID found
+      if (candidate == nullptr) {
+        candidate = make_shared<Route>(route);
+      }
+      else if (route.cost < candidate->cost) {
+        // Found a route with a lower cost
+        candidate = make_shared<Route>(route);
+      }
     }
+  }
 
   return candidate;
-}
-
-std::ostream&
-operator<<(std::ostream& os, const Route& route)
-{
-  os << "Route("
-     << "faceid: " << route.faceId
-     << ", origin: " << route.origin
-     << ", cost: " << route.cost
-     << ", flags: " << route.flags;
-  if (route.expires != time::steady_clock::TimePoint::max()) {
-    os << ", expires in: " << (route.expires - time::steady_clock::now());
-  }
-  else {
-    os << ", never expires";
-  }
-  os << ")";
-
-  return os;
 }
 
 std::ostream&
@@ -244,10 +248,9 @@ operator<<(std::ostream& os, const RibEntry& entry)
   os << "RibEntry {\n";
   os << "\tName: " << entry.getName() << "\n";
 
-  for (const Route& route : entry)
-    {
-      os << "\t" << route << "\n";
-    }
+  for (const Route& route : entry) {
+    os << "\t" << route << "\n";
+  }
 
   os << "}";
 

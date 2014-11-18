@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -43,14 +43,22 @@ public:
   {
   }
 
-  static shared_ptr<FibUpdate>
+  bool
+  operator==(const FibUpdate& other) const
+  {
+    return (this->name == other.name &&
+            this->faceId == other.faceId &&
+            this->cost == other.cost &&
+            this->action == other.action);
+  }
+
+  static FibUpdate
   createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost);
 
-  static shared_ptr<FibUpdate>
+  static FibUpdate
   createRemoveUpdate(const Name& name, const uint64_t faceId);
 
-  enum Action
-  {
+  enum Action {
     ADD_NEXTHOP    = 0,
     REMOVE_NEXTHOP = 1
   };
@@ -69,15 +77,13 @@ operator<<(std::ostream& os, const FibUpdate& update)
      << " Name: " << update.name << ", "
      << "faceId: " << update.faceId << ", ";
 
-  if (update.action == FibUpdate::ADD_NEXTHOP)
-    {
-      os << "cost: " << update.cost << ", "
-         << "action: ADD_NEXTHOP";
-    }
-  else
-    {
-      os << "action: REMOVE_NEXTHOP";
-    }
+  if (update.action == FibUpdate::ADD_NEXTHOP) {
+    os << "cost: " << update.cost << ", "
+       << "action: ADD_NEXTHOP";
+  }
+  else {
+    os << "action: REMOVE_NEXTHOP";
+  }
 
   os << ")";
 

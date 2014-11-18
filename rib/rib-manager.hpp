@@ -30,6 +30,7 @@
 #include "core/config-file.hpp"
 #include "rib-status-publisher.hpp"
 #include "remote-registrator.hpp"
+#include "fib-updater.hpp"
 
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
@@ -74,9 +75,13 @@ public:
   void
   setConfigFile(ConfigFile& configFile);
 
-private:
-  typedef uint32_t TransactionId;
+  void
+  onRibUpdateSuccess(const RibUpdate& update);
 
+  void
+  onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error);
+
+private:
   void
   onConfig(const ConfigSection& configSection,
            bool isDryRun,
@@ -116,9 +121,7 @@ private:
   unregisterEntry(const shared_ptr<const Interest>& request,
                   ControlParameters& parameters);
 
-  void
-  expireEntry(const shared_ptr<const Interest>& request, ControlParameters& params);
-
+private:
   void
   onCommandValidated(const shared_ptr<const Interest>& request);
 
@@ -152,28 +155,6 @@ private:
   onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
 
   void
-  onAddNextHopSuccess(const shared_ptr<const Interest>& request,
-                      const ControlParameters& parameters,
-                      const TransactionId transactionId,
-                      const bool shouldSendResponse);
-
-  void
-  onAddNextHopError(uint32_t code, const std::string& error,
-                    const shared_ptr<const Interest>& request,
-                    const TransactionId transactionId, const bool shouldSendResponse);
-
-  void
-  onRemoveNextHopSuccess(const shared_ptr<const Interest>& request,
-                         const ControlParameters& parameters,
-                         const TransactionId transactionId,
-                         const bool shouldSendResponse);
-
-  void
-  onRemoveNextHopError(uint32_t code, const std::string& error,
-                       const shared_ptr<const Interest>& request,
-                       const TransactionId transactionId, const bool shouldSendResponse);
-
-  void
   onControlHeaderSuccess();
 
   void
@@ -190,27 +171,11 @@ private:
   void
   onNotification(const FaceEventNotification& notification);
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  processErasureAfterNotification(uint64_t faceId);
+  onFaceDestroyedEvent(uint64_t faceId);
 
-  void
-  sendUpdatesToFib(const shared_ptr<const Interest>& request,
-                   const ControlParameters& parameters);
-
-  void
-  sendUpdatesToFibAfterFaceDestroyEvent();
-
-  /** \brief Checks if the transaction has received all of the expected responses
-   *         from the FIB.
-   *  \return{ True if the transaction with the passed transactionId has applied
-   *           all of its FIB updates successfully; otherwise, false }
-   */
-  bool
-  isTransactionComplete(const TransactionId transactionId);
-
-  void
-  invalidateTransaction(const TransactionId transactionId);
-
+private:
   void
   listEntries(const Interest& request);
 
@@ -247,22 +212,10 @@ private:
 
   RibStatusPublisher m_ribStatusPublisher;
 
-  /** \brief The last transaction ID for FIB update response messages.
-   *         Each group of FIB updates applied to the FIB is assigned an incrementing
-   *         ID that is used to track the number of successfully applied updates.
-   */
-  TransactionId m_lastTransactionId;
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  FibUpdater m_fibUpdater;
 
-  /// table of FIB update transactions => count of pending FIB updates
-  typedef std::map<TransactionId, int> FibTransactionTable;
-
-  /** \brief Table used to track the number of FIB updates that have not yet received
-   *         a response from the FIB.
-   *         The table maps a transaction ID to the number of updates remaining for that
-   *         specific transaction.
-   */
-  FibTransactionTable m_pendingFibTransactions;
-
+private:
   typedef function<void(RibManager*,
                         const shared_ptr<const Interest>& request,
                         ControlParameters& parameters)> SignedVerbProcessor;

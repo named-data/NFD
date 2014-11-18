@@ -23,35 +23,46 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fib-update.hpp"
+#include "rib-update.hpp"
 
 namespace nfd {
 namespace rib {
 
-FibUpdate
-FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
+RibUpdate::RibUpdate()
 {
-  FibUpdate update;
 
-  update.name = name;
-  update.faceId = faceId;
-  update.cost = cost;
-  update.action = ADD_NEXTHOP;
-
-  return update;
 }
 
-FibUpdate
-FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
+std::ostream&
+operator<<(std::ostream& os, const RibUpdate::Action action)
 {
-  FibUpdate update;
+  switch (action) {
+  case RibUpdate::REGISTER:
+    os << "REGISTER";
+    break;
+  case RibUpdate::UNREGISTER:
+    os << "UNREGISTER";
+    break;
+  case RibUpdate::REMOVE_FACE:
+    os << "REMOVE_FACE";
+    break;
+  }
 
-  update.name = name;
-  update.faceId = faceId;
-  update.action = REMOVE_NEXTHOP;
-
-  return update;
+  return os;
 }
+
+std::ostream&
+operator<<(std::ostream& os, const RibUpdate& update)
+{
+  os << "RibUpdate {\n";
+  os << "  Name: " << update.getName() << "\n";
+  os << "  Action: " << update.getAction() << "\n";
+  os << "  " << update.getRoute() << "\n";
+  os << "}";
+
+  return os;
+}
+
 
 } // namespace rib
 } // namespace nfd

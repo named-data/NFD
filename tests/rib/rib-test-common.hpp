@@ -23,35 +23,24 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fib-update.hpp"
+#include "rib/route.hpp"
 
 namespace nfd {
 namespace rib {
+namespace tests {
 
-FibUpdate
-FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
+inline Route
+createRoute(uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
 {
-  FibUpdate update;
+  Route temp;
+  temp.faceId = faceId;
+  temp.origin = origin;
+  temp.cost = cost;
+  temp.flags = flags;
 
-  update.name = name;
-  update.faceId = faceId;
-  update.cost = cost;
-  update.action = ADD_NEXTHOP;
-
-  return update;
+  return temp;
 }
 
-FibUpdate
-FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
-{
-  FibUpdate update;
-
-  update.name = name;
-  update.faceId = faceId;
-  update.action = REMOVE_NEXTHOP;
-
-  return update;
-}
-
+} // namespace tests
 } // namespace rib
 } // namespace nfd

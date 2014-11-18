@@ -23,35 +23,54 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fib-update.hpp"
+#ifndef NFD_RIB_RIB_UPDATE_BATCH_HPP
+#define NFD_RIB_RIB_UPDATE_BATCH_HPP
+
+#include "common.hpp"
+#include "rib-update.hpp"
 
 namespace nfd {
 namespace rib {
 
-FibUpdate
-FibUpdate::createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost)
+typedef std::list<RibUpdate> RibUpdateList;
+
+/** \brief represents a collection of RibUpdates to be applied to a single FaceId
+ */
+class RibUpdateBatch
 {
-  FibUpdate update;
+public:
+  typedef RibUpdateList::const_iterator const_iterator;
 
-  update.name = name;
-  update.faceId = faceId;
-  update.cost = cost;
-  update.action = ADD_NEXTHOP;
+  explicit
+  RibUpdateBatch(uint64_t faceId);
 
-  return update;
-}
+  uint64_t
+  getFaceId() const;
 
-FibUpdate
-FibUpdate::createRemoveUpdate(const Name& name, const uint64_t faceId)
+  void
+  add(const RibUpdate& update);
+
+  const_iterator
+  begin() const;
+
+  const_iterator
+  end() const;
+
+  size_t
+  size() const;
+
+private:
+  uint64_t m_faceId;
+  RibUpdateList m_updates;
+};
+
+inline uint64_t
+RibUpdateBatch::getFaceId() const
 {
-  FibUpdate update;
-
-  update.name = name;
-  update.faceId = faceId;
-  update.action = REMOVE_NEXTHOP;
-
-  return update;
+  return m_faceId;
 }
 
 } // namespace rib
 } // namespace nfd
+
+#endif // NFD_RIB_RIB_UPDATE_BATCH_HPP

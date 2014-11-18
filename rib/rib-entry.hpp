@@ -63,8 +63,8 @@ public:
   void
   removeChild(shared_ptr<RibEntry> child);
 
-  std::list<shared_ptr<RibEntry>>&
-  getChildren();
+  const std::list<shared_ptr<RibEntry>>&
+  getChildren() const;
 
   bool
   hasChildren() const;
@@ -94,8 +94,14 @@ public:
   RouteList&
   getRoutes();
 
+  size_t
+  getNRoutes() const;
+
   iterator
   findRoute(const Route& route);
+
+  const_iterator
+  findRoute(const Route& route) const;
 
   bool
   hasRoute(const Route& route);
@@ -110,22 +116,22 @@ public:
    *  The inherited routes returned represent inherited routes this namespace has in the FIB.
    *  \return{ routes inherited by this namespace }
    */
-  RouteList&
-  getInheritedRoutes();
+  const RouteList&
+  getInheritedRoutes() const;
 
   /** \brief Finds an inherited route with a matching face ID.
    *  \return{ An iterator to the matching route if one is found;
    *           otherwise, an iterator to the end of the entry's
    *           inherited route list }
    */
-  RouteList::iterator
-  findInheritedRoute(const Route& route);
+  RouteList::const_iterator
+  findInheritedRoute(const Route& route) const;
 
   /** \brief Determines if the entry has an inherited route with a matching face ID.
    *  \return{ True, if a matching inherited route is found; otherwise, false. }
    */
   bool
-  hasInheritedRoute(const Route& route);
+  hasInheritedRoute(const Route& route) const;
 
   bool
   hasCapture() const;
@@ -140,16 +146,19 @@ public:
   /** \brief Returns the route with the lowest cost that has the passed face ID.
    *  \return{ The route with the lowest cost that has the passed face ID}
    */
-  shared_ptr<Route>
-  getRouteWithLowestCostByFaceId(uint64_t faceId);
+  shared_ptr<const Route>
+  getRouteWithLowestCostByFaceId(uint64_t faceId) const;
+
+const Route*
+  getRouteWithSecondLowestCostByFaceId(uint64_t faceId) const;
 
   /** \brief Returns the route with the lowest cost that has the passed face ID
    *         and its child inherit flag set.
    *  \return{ The route with the lowest cost that has the passed face ID
    *           and its child inherit flag set }
    */
-  shared_ptr<Route>
-  getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId);
+  shared_ptr<const Route>
+  getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const;
 
   const_iterator
   begin() const;
@@ -207,8 +216,8 @@ RibEntry::getParent() const
   return m_parent;
 }
 
-inline std::list<shared_ptr<RibEntry>>&
-RibEntry::getChildren()
+inline const std::list<shared_ptr<RibEntry> >&
+RibEntry::getChildren() const
 {
   return m_children;
 }
@@ -219,8 +228,8 @@ RibEntry::getRoutes()
   return m_routes;
 }
 
-inline RibEntry::RouteList&
-RibEntry::getInheritedRoutes()
+inline const RibEntry::RouteList&
+RibEntry::getInheritedRoutes() const
 {
   return m_inheritedRoutes;
 }

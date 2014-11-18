@@ -43,18 +43,18 @@ BOOST_AUTO_TEST_CASE(WithInheritedFace_Root)
   insertRoute("/a/b", 2, 0, 75, 0);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to remove face 1 from /
   eraseRoute("/", 1, 0);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(WithInheritedFace)
@@ -69,23 +69,23 @@ BOOST_AUTO_TEST_CASE(WithInheritedFace)
   eraseRoute("/a", 5, 255);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 1 to remove face 3 from /a/b and one to remove inherited route
   eraseRoute("/a/b", 3, 0);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 3);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 3);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(MultipleFaces)
@@ -94,19 +94,19 @@ BOOST_AUTO_TEST_CASE(MultipleFaces)
   insertRoute("/a", 5, 255, 5, 0);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to update cost to 10 for /a
   eraseRoute("/a", 5, 255);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 5);
-  BOOST_CHECK_EQUAL((*update)->cost, 10);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 5);
+  BOOST_CHECK_EQUAL(update->cost, 10);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(NoFlags_NoCaptureChange_NoCaptureOnRoute)
@@ -118,19 +118,19 @@ BOOST_AUTO_TEST_CASE(NoFlags_NoCaptureChange_NoCaptureOnRoute)
   insertRoute("/a", 1, 128, 50, 0);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to update cost for /a
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(MakeRibEmpty)
@@ -138,18 +138,18 @@ BOOST_AUTO_TEST_CASE(MakeRibEmpty)
   insertRoute("/", 1, 0, 5, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to remove route from /
   eraseRoute("/", 1, 0);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(NoFlags_NoCaptureChange_CaptureOnRoute)
@@ -161,18 +161,18 @@ BOOST_AUTO_TEST_CASE(NoFlags_NoCaptureChange_CaptureOnRoute)
   insertRoute("/a", 1, 128, 50, 0);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to remove route from /a
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(BothFlags_NoCaptureChange_CaptureOnRoute)
@@ -185,24 +185,24 @@ BOOST_AUTO_TEST_CASE(BothFlags_NoCaptureChange_CaptureOnRoute)
                                      ndn::nfd::ROUTE_FLAG_CAPTURE));
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 1 to remove face1 from /a and
   // 1 to remove face1 from /a/b
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(BothFlags_CaptureChange_NoCaptureOnRoute)
@@ -215,26 +215,26 @@ BOOST_AUTO_TEST_CASE(BothFlags_CaptureChange_NoCaptureOnRoute)
                                      ndn::nfd::ROUTE_FLAG_CAPTURE));
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 1 to add face1 to /a and
   // 1 to add face1 to /a/b
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(ChildInherit_NoCaptureChange_NoCaptureOnRoute)
@@ -246,25 +246,25 @@ BOOST_AUTO_TEST_CASE(ChildInherit_NoCaptureChange_NoCaptureOnRoute)
   insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 2 to add face1 to /a and /a/b
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(ChildInherit_NoCaptureChange_CaptureOnRoute)
@@ -276,23 +276,23 @@ BOOST_AUTO_TEST_CASE(ChildInherit_NoCaptureChange_CaptureOnRoute)
   insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 2 to remove face 1 from /a and /a/b
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(Capture_CaptureChange_NoCaptureOnRoute)
@@ -304,26 +304,26 @@ BOOST_AUTO_TEST_CASE(Capture_CaptureChange_NoCaptureOnRoute)
   insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 2 updates: 1 to update cost on /a and
   // 1 to add face1 to /a/b
   eraseRoute("/a", 1 ,128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->cost, 5);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::ADD_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->cost, 5);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(Capture_NoCaptureChange_CaptureOnRoute)
@@ -335,56 +335,46 @@ BOOST_AUTO_TEST_CASE(Capture_NoCaptureChange_CaptureOnRoute)
   insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
   // Should generate 1 updates: 1 to remove route from /a
   eraseRoute("/a", 1, 128);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_CASE(EraseFaceById)
 {
   insertRoute("/", 1, 0, 5, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertRoute("/a", 2, 0, 10, 0);
-  insertRoute("/a/b", 3, 0, 10, 0);
-  insertRoute("/a/c", 4, 0, 100, 0);
-  insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a", 3, 0, 10, 0);
+  insertRoute("/a/b", 4, 0, 10, 0);
+  insertRoute("/a/c", 1, 0, 100, 0);
+  insertRoute("/a", 2, 128, 50, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   // Clear updates generated from previous insertions
-  rib.clearFibUpdates();
+  clearFibUpdates();
 
-  // Should generate 4 updates: 4 to remove face ID 1 from /, /a, /a/b, and /a/c
-  rib.erase(1);
+  // Should generate 2 updates: 2 to add face ID 1 to /a and /a/b
+  destroyFace(2);
 
-  Rib::FibUpdateList updates = getSortedFibUpdates();
-  BOOST_REQUIRE_EQUAL(updates.size(), 4);
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
+  BOOST_REQUIRE_EQUAL(updates.size(), 2);
 
-  Rib::FibUpdateList::const_iterator update = updates.begin();
-  BOOST_CHECK_EQUAL((*update)->name,  "/");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
-
-  ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/a");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 
   ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/b");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
-
-  ++update;
-  BOOST_CHECK_EQUAL((*update)->name,  "/a/c");
-  BOOST_CHECK_EQUAL((*update)->faceId, 1);
-  BOOST_CHECK_EQUAL((*update)->action, FibUpdate::REMOVE_NEXTHOP);
+  BOOST_CHECK_EQUAL(update->name,  "/a/b");
+  BOOST_CHECK_EQUAL(update->faceId, 1);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // EraseFace

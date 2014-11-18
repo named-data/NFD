@@ -42,6 +42,8 @@ public:
     : COMMAND_PREFIX("/localhost/nfd/rib")
     , ADD_NEXTHOP_VERB("add-nexthop")
     , REMOVE_NEXTHOP_VERB("remove-nexthop")
+    , REGISTER_COMMAND("/localhost/nfd/rib/register")
+    , UNREGISTER_COMMAND("/localhost/nfd/rib/unregister")
   {
     face = ndn::util::makeDummyClientFace();
 
@@ -58,8 +60,9 @@ public:
     face.reset();
   }
 
-  void extractParameters(Interest& interest, Name::Component& verb,
-                         ControlParameters& extractedParameters)
+  void
+  extractParameters(Interest& interest, Name::Component& verb,
+                    ControlParameters& extractedParameters)
   {
     const Name& name = interest.getName();
     verb = name[COMMAND_PREFIX.size()];
@@ -69,18 +72,37 @@ public:
     extractedParameters.wireDecode(rawParameters);
   }
 
-  void receiveCommandInterest(Name& name, ControlParameters& parameters)
+  void
+  receiveCommandInterest(const Name& name, ControlParameters& parameters)
   {
-    receiveCommandInterest(name.append(parameters.wireEncode()));
-  }
+    Name commandName = name;
+    commandName.append(parameters.wireEncode());
 
-  void receiveCommandInterest(const Name& name)
-  {
-    Interest command(name);
+    Interest commandInterest(commandName);
 
-    face->receive(command);
+    manager->m_managedRib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue,
+                                                        this, _1, parameters);
+
+    face->receive(commandInterest);
     face->processEvents(time::milliseconds(1));
   }
+
+  void
+  onSendBatchFromQueue(const RibUpdateBatch& batch, const ControlParameters parameters)
+  {
+    BOOST_REQUIRE(batch.begin() != batch.end());
+    RibUpdate update = *(batch.begin());
+
+    Rib::UpdateSuccessCallback managerCallback =
+      bind(&RibManager::onRibUpdateSuccess, manager, update);
+
+    Rib& rib = manager->m_managedRib;
+
+    // Simulate a successful response from NFD
+    FibUpdater& updater = manager->m_fibUpdater;
+    rib.onFibUpdateSuccess(batch, updater.m_inheritedRoutes, managerCallback);
+  }
+
 
 public:
   shared_ptr<RibManager> manager;
@@ -89,6 +111,9 @@ public:
   const Name COMMAND_PREFIX;
   const Name::Component ADD_NEXTHOP_VERB;
   const Name::Component REMOVE_NEXTHOP_VERB;
+
+  const Name REGISTER_COMMAND;
+  const Name UNREGISTER_COMMAND;
 };
 
 class AuthorizedRibManager : public RibManagerFixture
@@ -122,7 +147,9 @@ BOOST_FIXTURE_TEST_SUITE(TestRibManager, RibManagerFixture)
 BOOST_FIXTURE_TEST_CASE(ShortName, AuthorizedRibManager)
 {
   Name commandName("/localhost/nfd/rib");
-  receiveCommandInterest(commandName);
+  ndn::nfd::ControlParameters parameters;
+
+  receiveCommandInterest(commandName, parameters);
   // TODO verify error response
 }
 
@@ -137,9 +164,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AuthorizedRibManager)
     .setOrigin(128)
     .setExpirationPeriod(ndn::time::milliseconds::max());
 
-  Name commandName("/localhost/nfd/rib/register");
-
-  receiveCommandInterest(commandName, parameters);
+  receiveCommandInterest(REGISTER_COMMAND, parameters);
 
   BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 }
@@ -155,9 +180,7 @@ BOOST_FIXTURE_TEST_CASE(Register, AuthorizedRibManager)
     .setOrigin(128)
     .setExpirationPeriod(ndn::time::milliseconds::max());
 
-  Name commandName("/localhost/nfd/rib/register");
-
-  receiveCommandInterest(commandName, parameters);
+  receiveCommandInterest(REGISTER_COMMAND, parameters);
 
   BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 
@@ -184,9 +207,7 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
     .setOrigin(128)
     .setExpirationPeriod(ndn::time::milliseconds::max());
 
-  Name registerName("/localhost/nfd/rib/register");
-
-  receiveCommandInterest(registerName, addParameters);
+  receiveCommandInterest(REGISTER_COMMAND, addParameters);
   face->sentInterests.clear();
 
   ControlParameters removeParameters;
@@ -195,9 +216,7 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
     .setFaceId(1)
     .setOrigin(128);
 
-  Name unregisterName("/localhost/nfd/rib/unregister");
-
-  receiveCommandInterest(unregisterName, removeParameters);
+  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters);
 
   BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
 
@@ -212,6 +231,7 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
   BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), removeParameters.getFaceId());
 }
 
+
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
 {
   ControlParameters parameters;
@@ -223,51 +243,35 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
     .setOrigin(128)
     .setExpirationPeriod(ndn::time::milliseconds::max());
 
-  Name commandName("/localhost/nfd/rib/register");
-
   BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
 
-  receiveCommandInterest(commandName, parameters);
+  receiveCommandInterest(REGISTER_COMMAND, parameters);
 
   BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
 {
+  Name prefix("/");
+
   Route route;
-  Name name("/");
   route.faceId = 1;
   route.origin = 128;
   route.cost = 32;
   route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
 
-  ControlParameters parameters;
-  parameters
-    .setName(name)
-    .setFaceId(route.faceId)
-    .setOrigin(route.origin)
-    .setCost(route.cost)
-    .setFlags(route.flags)
-    .setExpirationPeriod(ndn::time::milliseconds::max());
-
-  Name commandName("/localhost/nfd/rib/register");
-
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
-
-  receiveCommandInterest(commandName, parameters);
-  face->sentInterests.clear();
-  face->sentDatas.clear();
+  manager->m_managedRib.insert(prefix, route);
 
   face->receive(Interest("/localhost/nfd/rib/list"));
   face->processEvents(time::milliseconds(1));
 
   BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
-  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], name, route);
+  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], prefix, route);
 }
 
 BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
 {
-  // Register face
+  // Register route
   ControlParameters addParameters;
   addParameters
     .setName("/expire")
@@ -277,26 +281,21 @@ BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
     .setOrigin(128)
     .setExpirationPeriod(ndn::time::milliseconds(500));
 
-  Name registerName("/localhost/nfd/rib/register");
-
-  receiveCommandInterest(registerName, addParameters);
+  receiveCommandInterest(REGISTER_COMMAND, addParameters);
   face->sentInterests.clear();
 
-  // Unregister face
+  // Unregister route
   ControlParameters removeParameters;
   removeParameters
     .setName("/expire")
     .setFaceId(1)
     .setOrigin(128);
 
-  Name unregisterName("/localhost/nfd/rib/unregister");
+  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters);
 
-  receiveCommandInterest(unregisterName, removeParameters);
-
-  // Reregister face
-  Name reRegisterName("/localhost/nfd/rib/register");
+  // Reregister route
   addParameters.setExpirationPeriod(ndn::time::milliseconds::max());
-  receiveCommandInterest(reRegisterName, addParameters);
+  receiveCommandInterest(REGISTER_COMMAND, addParameters);
 
   nfd::tests::LimitedIo limitedIo;
   limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
@@ -312,8 +311,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
     .setName("/test")
     .setFaceId(1);
 
-  Name validName("/localhost/nfd/rib/register");
-  receiveCommandInterest(validName, validParameters);
+  receiveCommandInterest(REGISTER_COMMAND, validParameters);
 
   // Register invalid face
   ControlParameters invalidParameters;
@@ -321,8 +319,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
     .setName("/test")
     .setFaceId(2);
 
-  Name invalidName("/localhost/nfd/rib/register");
-  receiveCommandInterest(invalidName, invalidParameters);
+  receiveCommandInterest(REGISTER_COMMAND, invalidParameters);
 
   BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 2);
 
@@ -386,6 +383,44 @@ BOOST_FIXTURE_TEST_CASE(LocalHopInherit, AuthorizedRibManager)
 
   BOOST_CHECK_EQUAL(routeIt->faceId, 262);
   BOOST_CHECK_EQUAL(routeIt->cost, 25);
+}
+
+BOOST_FIXTURE_TEST_CASE(RouteExpiration, AuthorizedRibManager)
+{
+  // Register route
+  ControlParameters parameters;
+  parameters.setName("/expire")
+            .setExpirationPeriod(ndn::time::milliseconds(500));
+
+  receiveCommandInterest(REGISTER_COMMAND, parameters);
+  face->sentInterests.clear();
+
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
+
+  // Route should expire
+  nfd::tests::LimitedIo limitedIo;
+  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+
+  BOOST_CHECK_EQUAL(manager->m_managedRib.size(), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(FaceDestroyEvent, AuthorizedRibManager)
+{
+  uint64_t faceToDestroy = 128;
+
+  // Register valid face
+  ControlParameters parameters;
+  parameters.setName("/test")
+            .setFaceId(faceToDestroy);
+
+  receiveCommandInterest(REGISTER_COMMAND, parameters);
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
+
+  // Don't respond with a success message from the FIB
+  manager->m_managedRib.m_onSendBatchFromQueue = nullptr;
+
+  manager->onFaceDestroyedEvent(faceToDestroy);
+  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

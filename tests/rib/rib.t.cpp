@@ -231,41 +231,6 @@ BOOST_AUTO_TEST_CASE(EraseRibEntry)
   BOOST_CHECK(ribEntry3->getParent() == ribEntry1);
 }
 
-BOOST_AUTO_TEST_CASE(EraseByFaceId)
-{
-  rib::Rib rib;
-
-  Route route1;
-  Name name1("/");
-  route1.faceId = 1;
-  route1.origin = 20;
-  rib.insert(name1, route1);
-
-  Route route2;
-  Name name2("/hello/world");
-  route2.faceId = 2;
-  route2.origin = 20;
-  rib.insert(name2, route2);
-
-  Route route3;
-  Name name3("/hello/world");
-  route3.faceId = 1;
-  route3.origin = 20;
-  rib.insert(name3, route3);
-
-  rib.erase(1);
-  BOOST_CHECK(rib.find(name1) == rib.end());
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 1);
-
-  rib.erase(3);
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 1);
-
-  rib.erase(2);
-  BOOST_CHECK(rib.find(name2) == rib.end());
-
-  rib.erase(3);
-}
-
 BOOST_AUTO_TEST_CASE(Basic)
 {
   rib::Rib rib;

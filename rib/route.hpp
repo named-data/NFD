@@ -47,6 +47,9 @@ public:
   {
   }
 
+  bool
+  operator==(const Route& other) const;
+
 public:
   void
   setExpirationEvent(const scheduler::EventId eid)
@@ -58,6 +61,18 @@ public:
   getExpirationEvent() const
   {
     return m_expirationEvent;
+  }
+
+  bool
+  isChildInherit() const
+  {
+    return flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+  }
+
+  bool
+  isCapture() const
+  {
+    return flags & ndn::nfd::ROUTE_FLAG_CAPTURE;
   }
 
 public:
@@ -83,7 +98,6 @@ compareFaceId(const Route& route, const uint64_t faceId)
   return (route.faceId == faceId);
 }
 
-// Method definition in rib-entry.cpp
 std::ostream&
 operator<<(std::ostream& os, const Route& route);
 

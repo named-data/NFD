@@ -63,32 +63,30 @@ public:
                              bind(&RemoteRegistrator::loadConfig, remoteRegistrator, _1));
 
 
-    if (isSetRetry)
-      {
-        const std::string CONFIG_STRING =
-        "remote_register\n"
-        "{\n"
-        "  cost 15\n"
-        "  timeout 1000\n"
-        "  retry 1\n"
-        "  refresh_interval 5\n"
-        "}";
+    if (isSetRetry) {
+      const std::string CONFIG_STRING =
+      "remote_register\n"
+      "{\n"
+      "  cost 15\n"
+      "  timeout 1000\n"
+      "  retry 1\n"
+      "  refresh_interval 5\n"
+      "}";
 
-        config.parse(CONFIG_STRING, true, "test-remote-register");
-      }
-    else
-      {
-        const std::string CONFIG_STRING =
-        "remote_register\n"
-        "{\n"
-        "  cost 15\n"
-        "  timeout 100000\n"
-        "  retry 0\n"
-        "  refresh_interval 5\n"
-        "}";
+      config.parse(CONFIG_STRING, true, "test-remote-register");
+    }
+    else {
+      const std::string CONFIG_STRING =
+      "remote_register\n"
+      "{\n"
+      "  cost 15\n"
+      "  timeout 100000\n"
+      "  retry 0\n"
+      "  refresh_interval 5\n"
+      "}";
 
-        config.parse(CONFIG_STRING, true, "test-remote-register");
-      }
+      config.parse(CONFIG_STRING, true, "test-remote-register");
+    }
   }
 
   void
@@ -156,7 +154,9 @@ public:
   void
   eraseFace(uint64_t faceId)
   {
-    rib.erase(faceId);
+    for (const Rib::NameAndRoute& item : rib.findRoutesWithFaceId(faceId)) {
+      rib.erase(item.first, item.second);
+    }
 
     advanceClocks(time::milliseconds(1));
   }

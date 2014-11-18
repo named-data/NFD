@@ -26,14 +26,19 @@
 #ifndef NFD_RIB_RIB_HPP
 #define NFD_RIB_RIB_HPP
 
-#include "rib-entry.hpp"
-#include "fib-update.hpp"
 #include "common.hpp"
-#include <ndn-cxx/management/nfd-control-command.hpp>
-#include <ndn-cxx/util/signal.hpp>
+
+#include "rib-entry.hpp"
+#include "rib-update-batch.hpp"
+
+#include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 namespace rib {
+
+using ndn::nfd::ControlParameters;
+
+class FibUpdater;
 
 /** \brief represents the RIB
  */
@@ -46,24 +51,19 @@ public:
   typedef std::map<uint64_t, std::list<shared_ptr<RibEntry>>> FaceLookupTable;
   typedef bool (*RouteComparePredicate)(const Route&, const Route&);
   typedef std::set<Route, RouteComparePredicate> RouteSet;
-  typedef std::list<shared_ptr<const FibUpdate>> FibUpdateList;
 
   Rib();
+
+  ~Rib();
+
+  void
+  setFibUpdater(FibUpdater* updater);
 
   const_iterator
   find(const Name& prefix) const;
 
   Route*
   find(const Name& prefix, const Route& route) const;
-
-  void
-  insert(const Name& prefix, const Route& route);
-
-  void
-  erase(const Name& prefix, const Route& route);
-
-  void
-  erase(const uint64_t faceId);
 
   const_iterator
   begin() const;
@@ -86,56 +86,123 @@ public:
   std::list<shared_ptr<RibEntry>>
   findDescendants(const Name& prefix) const;
 
-  const std::list<shared_ptr<const FibUpdate>>&
-  getFibUpdates() const;
+  /** \brief finds namespaces under the passed prefix
+   *
+   *  \note Unlike findDescendants, needs to find where prefix would fit in tree
+   *  before collecting list of descendant prefixes
+   *
+   *  \return{ a list of entries which would be under the passed prefix if the prefix
+   *  existed in the RIB }
+   */
+  std::list<shared_ptr<RibEntry>>
+  findDescendantsForNonInsertedName(const Name& prefix) const;
+
+public:
+  typedef function<void()> UpdateSuccessCallback;
+  typedef function<void(uint32_t code, const std::string& error)> UpdateFailureCallback;
+
+  /** \brief passes the provided RibUpdateBatch to FibUpdater to calculate and send FibUpdates.
+   *
+   *  If the FIB is updated successfully, onFibUpdateSuccess() will be called, and the
+   *  RIB will be updated
+   *
+   *  If the FIB update fails, onFibUpdateFailure() will be called, and the RIB will not
+   *  be updated.
+   */
+  void
+  beginApplyUpdate(const RibUpdate& update,
+                   const UpdateSuccessCallback& onSuccess,
+                   const UpdateFailureCallback& onFailure);
+
+  /** \brief starts the FIB update process when a face has been destroyed
+   */
+  void
+  beginRemoveFace(uint64_t faceId);
 
   void
-  clearFibUpdates();
+  onFibUpdateSuccess(const RibUpdateBatch& batch,
+                     const RibUpdateList& inheritedRoutes,
+                     const Rib::UpdateSuccessCallback& onSuccess);
+
+  void
+  onFibUpdateFailure(const Rib::UpdateFailureCallback& onFailure,
+                     uint32_t code, const std::string& error);
+
+  void
+  onRouteExpiration(const Name& prefix, const Route& route);
+
+private:
+  /** \brief adds the passed update to a RibUpdateBatch and adds the batch to
+  *          the end of the update queue.
+  *
+  *   If an update is not in progress, the front update batch in the queue will be
+  *   processed by the RIB.
+  *
+  *   If an update is in progress, the added update will eventually be processed
+  *   when it reaches the front of the queue; after other update batches are
+  *   processed, the queue is advanced.
+  */
+  void
+  addUpdateToQueue(const RibUpdate& update,
+                   const Rib::UpdateSuccessCallback& onSuccess,
+                   const Rib::UpdateFailureCallback& onFailure);
+
+  /** \brief Attempts to send the front update batch in the queue.
+  *
+  *   If an update is not in progress, the front update batch in the queue will be
+  *   sent to the RIB for processing.
+  *
+  *   If an update is in progress, nothing will be done.
+  */
+  void
+  sendBatchFromQueue();
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  // Used by RibManager unit-tests to get sent batch to simulate successful FIB update
+  function<void(RibUpdateBatch)> m_onSendBatchFromQueue;
+
+public:
+  void
+  insert(const Name& prefix, const Route& route);
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  void
+  erase(const Name& prefix, const Route& route);
 
 private:
   RibTable::iterator
   eraseEntry(RibTable::iterator it);
 
   void
-  insertFibUpdate(shared_ptr<FibUpdate> update);
+  updateRib(const RibUpdateBatch& batch);
 
-  void
-  createFibUpdatesForNewRibEntry(RibEntry& entry, const Route& route);
-
-  void
-  createFibUpdatesForNewRoute(RibEntry& entry, const Route& route,
-                              const bool captureWasTurnedOn);
-
-  void
-  createFibUpdatesForUpdatedRoute(RibEntry& entry, const Route& route,
-                                  const uint64_t previousFlags, const uint64_t previousCost);
-  void
-  createFibUpdatesForErasedRoute(RibEntry& entry, const Route& route,
-                                 const bool captureWasTurnedOff);
-
-  void
-  createFibUpdatesForErasedRibEntry(RibEntry& entry);
-
+  /** \brief returns routes inherited from the entry's ancestors
+   *
+   *  \return{ a list of inherited routes }
+   */
   RouteSet
   getAncestorRoutes(const RibEntry& entry) const;
 
-  void
-  modifyChildrensInheritedRoutes(RibEntry& entry, const Rib::RouteSet& routesToAdd,
-                                                  const Rib::RouteSet& routesToRemove);
+  /** \brief returns routes inherited from the parent of the name and the parent's ancestors
+   *
+   *  \note A parent is first found for the passed name before inherited routes are collected
+   *
+   *  \return{ a list of inherited routes }
+   */
+  RouteSet
+  getAncestorRoutes(const Name& name) const;
 
-  void
-  traverseSubTree(RibEntry& entry, Rib::RouteSet routesToAdd,
-                                   Rib::RouteSet routesToRemove);
-
-  /** \brief Adds passed routes to the entry's inherited routes list
+  /** \brief applies the passed inheritedRoutes and their actions to the corresponding RibEntries'
+   *  inheritedRoutes lists
    */
   void
-  addInheritedRoutesToEntry(RibEntry& entry, const Rib::RouteSet& routesToAdd);
+  modifyInheritedRoutes(const RibUpdateList& inheritedRoutes);
 
-  /** \brief Removes passed routes from the entry's inherited routes list
-   */
-  void
-  removeInheritedRoutesFromEntry(RibEntry& entry, const Rib::RouteSet& routesToRemove);
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  typedef std::pair<const Name&,const Route&> NameAndRoute;
+
+  std::list<NameAndRoute>
+  findRoutesWithFaceId(uint64_t faceId);
 
 public:
   ndn::util::signal::Signal<Rib, Name> afterInsertEntry;
@@ -144,9 +211,26 @@ public:
 private:
   RibTable m_rib;
   FaceLookupTable m_faceMap;
-  FibUpdateList m_fibUpdateList;
+  FibUpdater* m_fibUpdater;
 
   size_t m_nItems;
+
+  friend class FibUpdater;
+
+private:
+  struct UpdateQueueItem
+  {
+    RibUpdateBatch batch;
+    const Rib::UpdateSuccessCallback managerSuccessCallback;
+    const Rib::UpdateFailureCallback managerFailureCallback;
+  };
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  typedef std::list<UpdateQueueItem> UpdateQueue;
+  UpdateQueue m_updateBatches;
+
+private:
+  bool m_isUpdateInProgress;
 };
 
 inline Rib::const_iterator
@@ -171,18 +255,6 @@ inline bool
 Rib::empty() const
 {
   return m_rib.empty();
-}
-
-inline const Rib::FibUpdateList&
-Rib::getFibUpdates() const
-{
-  return m_fibUpdateList;
-}
-
-inline void
-Rib::clearFibUpdates()
-{
-  m_fibUpdateList.clear();
 }
 
 std::ostream&
