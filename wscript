@@ -66,6 +66,9 @@ def configure(conf):
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
                    uselib_store='NDN_CXX', mandatory=True)
 
+    conf.checkDependency(name='librt', lib='rt', mandatory=False)
+    conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
+
     boost_libs = 'system chrono program_options random'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
@@ -84,9 +87,6 @@ def configure(conf):
 
     conf.load('unix-socket')
     conf.checkWebsocket(mandatory=True)
-
-    conf.checkDependency(name='librt', lib='rt', mandatory=False)
-    conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
     if not conf.options.without_libpcap:
         conf.check_asio_pcap_support()

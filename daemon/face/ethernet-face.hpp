@@ -56,7 +56,7 @@ public:
   };
 
   EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
-               const shared_ptr<NetworkInterfaceInfo>& interface,
+               const NetworkInterfaceInfo& interface,
                const ethernet::Address& address);
 
   virtual

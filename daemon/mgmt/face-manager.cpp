@@ -166,55 +166,53 @@ FaceManager::onConfig(const ConfigSection& configSection,
   bool hasSeenEther = false;
   bool hasSeenWebSocket = false;
 
-  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
+  const std::vector<NetworkInterfaceInfo> nicList(listNetworkInterfaces());
 
-  for (ConfigSection::const_iterator item = configSection.begin();
-       item != configSection.end();
-       ++item)
+  for (const auto& item : configSection)
     {
-      if (item->first == "unix")
+      if (item.first == "unix")
         {
           if (hasSeenUnix)
             throw Error("Duplicate \"unix\" section");
           hasSeenUnix = true;
 
-          processSectionUnix(item->second, isDryRun);
+          processSectionUnix(item.second, isDryRun);
         }
-      else if (item->first == "tcp")
+      else if (item.first == "tcp")
         {
           if (hasSeenTcp)
             throw Error("Duplicate \"tcp\" section");
           hasSeenTcp = true;
 
-          processSectionTcp(item->second, isDryRun);
+          processSectionTcp(item.second, isDryRun);
         }
-      else if (item->first == "udp")
+      else if (item.first == "udp")
         {
           if (hasSeenUdp)
             throw Error("Duplicate \"udp\" section");
           hasSeenUdp = true;
 
-          processSectionUdp(item->second, isDryRun, nicList);
+          processSectionUdp(item.second, isDryRun, nicList);
         }
-      else if (item->first == "ether")
+      else if (item.first == "ether")
         {
           if (hasSeenEther)
             throw Error("Duplicate \"ether\" section");
           hasSeenEther = true;
 
-          processSectionEther(item->second, isDryRun, nicList);
+          processSectionEther(item.second, isDryRun, nicList);
         }
-      else if (item->first == "websocket")
+      else if (item.first == "websocket")
         {
           if (hasSeenWebSocket)
             throw Error("Duplicate \"websocket\" section");
           hasSeenWebSocket = true;
 
-          processSectionWebSocket(item->second, isDryRun);
+          processSectionWebSocket(item.second, isDryRun);
         }
       else
         {
-          throw Error("Unrecognized option \"" + item->first + "\"");
+          throw Error("Unrecognized option \"" + item.first + "\"");
         }
     }
 }
@@ -342,7 +340,7 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
           return;
         }
 
-      shared_ptr<TcpFactory> factory = ndn::make_shared<TcpFactory>(port);
+      shared_ptr<TcpFactory> factory = make_shared<TcpFactory>(port);
       m_factories.insert(std::make_pair("tcp", factory));
 
       if (enableV4)
@@ -376,7 +374,7 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 void
 FaceManager::processSectionUdp(const ConfigSection& configSection,
                                bool isDryRun,
-                               const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList)
+                               const std::vector<NetworkInterfaceInfo>& nicList)
 {
   // ; the udp section contains settings of UDP faces and channels
   // udp
@@ -520,7 +518,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
         factory = static_pointer_cast<UdpFactory>(m_factories["udp"]);
       }
       else {
-        factory = ndn::make_shared<UdpFactory>(port);
+        factory = make_shared<UdpFactory>(port);
         m_factories.insert(std::make_pair("udp", factory));
       }
 
@@ -547,25 +545,21 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 
       if (useMcast && enableV4)
         {
-          std::list<shared_ptr<NetworkInterfaceInfo> > ipv4MulticastInterfaces;
-          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-               i != nicList.end();
-               ++i)
+          std::vector<NetworkInterfaceInfo> ipv4MulticastInterfaces;
+          for (const auto& nic : nicList)
             {
-              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-              if (nic->isUp() && nic->isMulticastCapable() && !nic->ipv4Addresses.empty())
+              if (nic.isUp() && nic.isMulticastCapable() && !nic.ipv4Addresses.empty())
                 {
                   ipv4MulticastInterfaces.push_back(nic);
                 }
             }
 
           bool isNicNameNecessary = false;
-
 #if defined(__linux__)
           if (ipv4MulticastInterfaces.size() > 1)
             {
-              //On Linux, if we have more than one MulticastUdpFace we need to specify
-              //the name of the interface
+              // On Linux if we have more than one MulticastUdpFace
+              // we need to specify the name of the interface
               isNicNameNecessary = true;
             }
 #endif
@@ -579,18 +573,13 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
               multicastFacesToRemove.push_back(i->second);
             }
 
-          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i =
-                 ipv4MulticastInterfaces.begin();
-               i != ipv4MulticastInterfaces.end();
-               ++i)
+          for (const auto& nic : ipv4MulticastInterfaces)
             {
-              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
               shared_ptr<MulticastUdpFace> newFace;
-              newFace = factory->createMulticastFace(nic->ipv4Addresses[0].to_string(),
+              newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
                                                      mcastGroup,
                                                      mcastPort,
-                                                     isNicNameNecessary ? nic->name : "");
-
+                                                     isNicNameNecessary ? nic.name : "");
               addCreatedFaceToForwarder(newFace);
               multicastFacesToRemove.remove(newFace);
             }
@@ -628,7 +617,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
 void
 FaceManager::processSectionEther(const ConfigSection& configSection,
                                  bool isDryRun,
-                                 const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList)
+                                 const std::vector<NetworkInterfaceInfo>& nicList)
 {
   // ; the ether section contains settings of Ethernet faces and channels
   // ether
@@ -639,11 +628,8 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
   // }
 
 #if defined(HAVE_LIBPCAP)
-
-  using ethernet::Address;
-
   bool useMcast = true;
-  Address mcastGroup(ethernet::getDefaultMulticastAddress());
+  ethernet::Address mcastGroup(ethernet::getDefaultMulticastAddress());
 
   for (ConfigSection::const_iterator i = configSection.begin();
        i != configSection.end();
@@ -656,7 +642,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
 
       else if (i->first == "mcast_group")
         {
-          mcastGroup = Address::fromString(i->second.get_value<std::string>());
+          mcastGroup = ethernet::Address::fromString(i->second.get_value<std::string>());
           if (mcastGroup.isNull())
             {
               throw ConfigFile::Error("Invalid value for option \"" +
@@ -676,7 +662,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
         factory = static_pointer_cast<EthernetFactory>(m_factories["ether"]);
       }
       else {
-        factory = ndn::make_shared<EthernetFactory>();
+        factory = make_shared<EthernetFactory>();
         m_factories.insert(std::make_pair("ether", factory));
       }
 
@@ -691,12 +677,9 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
               multicastFacesToRemove.push_back(i->second);
             }
 
-          for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-               i != nicList.end();
-               ++i)
+          for (const auto& nic : nicList)
             {
-              const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-              if (nic->isUp() && nic->isMulticastCapable())
+              if (nic.isUp() && nic.isMulticastCapable())
                 {
                   try
                     {
@@ -825,7 +808,7 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
           return;
         }
 
-      shared_ptr<WebSocketFactory> factory = ndn::make_shared<WebSocketFactory>(port);
+      shared_ptr<WebSocketFactory> factory = make_shared<WebSocketFactory>(port);
       m_factories.insert(std::make_pair("websocket", factory));
 
       if (enableV6 && enableV4)
@@ -1189,6 +1172,5 @@ FaceManager::findFactory(const std::string& protocol)
   else
     return shared_ptr<ProtocolFactory>();
 }
-
 
 } // namespace nfd

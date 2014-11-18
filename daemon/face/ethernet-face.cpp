@@ -49,12 +49,12 @@ namespace nfd {
 NFD_LOG_INIT("EthernetFace");
 
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
-                           const shared_ptr<NetworkInterfaceInfo>& interface,
+                           const NetworkInterfaceInfo& interface,
                            const ethernet::Address& address)
-  : Face(FaceUri(address), FaceUri::fromDev(interface->name))
+  : Face(FaceUri(address), FaceUri::fromDev(interface.name))
   , m_socket(socket)
-  , m_interfaceName(interface->name)
-  , m_srcAddress(interface->etherAddress)
+  , m_interfaceName(interface.name)
+  , m_srcAddress(interface.etherAddress)
   , m_destAddress(address)
 {
   NFD_LOG_INFO("Creating ethernet face on " << m_interfaceName << ": "

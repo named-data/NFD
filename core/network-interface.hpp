@@ -28,9 +28,9 @@
 
 #include "common.hpp"
 
-#include <net/if.h>
-
 #include <ndn-cxx/util/ethernet.hpp>
+
+#include <net/if.h>
 
 namespace nfd {
 
@@ -88,7 +88,7 @@ NetworkInterfaceInfo::isUp() const
   return (flags & IFF_UP) != 0;
 }
 
-std::list< shared_ptr<NetworkInterfaceInfo> >
+std::vector<NetworkInterfaceInfo>
 listNetworkInterfaces();
 
 } // namespace nfd

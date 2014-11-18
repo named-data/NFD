@@ -35,14 +35,13 @@ namespace nfd {
 NFD_LOG_INIT("EthernetFactory");
 
 shared_ptr<EthernetFace>
-EthernetFactory::createMulticastFace(const shared_ptr<NetworkInterfaceInfo> &interface,
+EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
                                      const ethernet::Address &address)
 {
   if (!address.isMulticast())
     throw Error(address.toString() + " is not a multicast address");
 
-  const std::string& name = interface->name;
-  shared_ptr<EthernetFace> face = findMulticastFace(name, address);
+  shared_ptr<EthernetFace> face = findMulticastFace(interface.name, address);
   if (face)
     return face;
 
@@ -51,8 +50,8 @@ EthernetFactory::createMulticastFace(const shared_ptr<NetworkInterfaceInfo> &int
 
   face = make_shared<EthernetFace>(socket, interface, address);
   face->onFail += bind(&EthernetFactory::afterFaceFailed,
-                       this, name, address);
-  m_multicastFaces[std::make_pair(name, address)] = face;
+                       this, interface.name, address);
+  m_multicastFaces[std::make_pair(interface.name, address)] = face;
 
   return face;
 }

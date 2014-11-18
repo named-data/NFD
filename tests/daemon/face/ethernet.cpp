@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 {
   EthernetFactory factory;
 
-  std::list<shared_ptr<const Channel> > channels = factory.getChannels();
+  auto channels = factory.getChannels();
   BOOST_CHECK_EQUAL(channels.empty(), true);
 }
 
@@ -48,27 +48,22 @@ protected:
   {
     EthernetFactory factory;
 
-    std::list< shared_ptr<NetworkInterfaceInfo> > ifs = listNetworkInterfaces();
-    for (std::list< shared_ptr<NetworkInterfaceInfo> >::const_iterator i = ifs.begin();
-         i != ifs.end();
-         ++i)
-      {
-        if (!(*i)->isLoopback() && (*i)->isUp())
-          {
-            try {
-              factory.createMulticastFace(*i, ethernet::getBroadcastAddress());
-            }
-            catch (Face::Error&) {
-              continue;
-            }
+    for (const auto& netif : listNetworkInterfaces()) {
+      if (!netif.isLoopback() && netif.isUp()) {
+        try {
+          factory.createMulticastFace(netif, ethernet::getBroadcastAddress());
+        }
+        catch (Face::Error&) {
+          continue;
+        }
 
-            m_interfaces.push_back(*i);
-          }
+        m_interfaces.push_back(netif);
       }
+    }
   }
 
 protected:
-  std::list< shared_ptr<NetworkInterfaceInfo> > m_interfaces;
+  std::vector<NetworkInterfaceInfo> m_interfaces;
 };
 
 
@@ -88,17 +83,15 @@ BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
                                                                   ethernet::getBroadcastAddress());
   BOOST_CHECK_EQUAL(face1, face1bis);
 
-  if (m_interfaces.size() > 1)
-    {
-      shared_ptr<EthernetFace> face2 = factory.createMulticastFace(m_interfaces.back(),
-                                                                   ethernet::getBroadcastAddress());
-      BOOST_CHECK_NE(face1, face2);
-    }
-  else
-    {
-      BOOST_WARN_MESSAGE(false, "Cannot test second EthernetFace creation, "
-                         "only one interface available");
-    }
+  if (m_interfaces.size() > 1) {
+    shared_ptr<EthernetFace> face2 = factory.createMulticastFace(m_interfaces.back(),
+                                                                 ethernet::getBroadcastAddress());
+    BOOST_CHECK_NE(face1, face2);
+  }
+  else {
+    BOOST_WARN_MESSAGE(false, "Cannot test second EthernetFace creation, "
+                       "only one interface available");
+  }
 
   shared_ptr<EthernetFace> face3 = factory.createMulticastFace(m_interfaces.front(),
                                      ethernet::getDefaultMulticastAddress());
@@ -117,15 +110,14 @@ BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
 
   shared_ptr<EthernetFace> face = factory.createMulticastFace(m_interfaces.front(),
                                     ethernet::getDefaultMulticastAddress());
-
   BOOST_REQUIRE(static_cast<bool>(face));
 
   BOOST_CHECK(!face->isOnDemand());
   BOOST_CHECK_EQUAL(face->isLocal(), false);
   BOOST_CHECK_EQUAL(face->getRemoteUri().toString(),
-                    "ether://[" + ethernet::getDefaultMulticastAddress().toString()+"]");
+                    "ether://[" + ethernet::getDefaultMulticastAddress().toString() + "]");
   BOOST_CHECK_EQUAL(face->getLocalUri().toString(),
-                    "dev://" + m_interfaces.front()->name);
+                    "dev://" + m_interfaces.front().name);
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");

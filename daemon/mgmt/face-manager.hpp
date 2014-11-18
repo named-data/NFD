@@ -60,7 +60,6 @@ public:
   /**
    * \throws FaceManager::Error if localPort is an invalid port number
    */
-
   FaceManager(FaceTable& faceTable,
               shared_ptr<InternalFace> face,
               ndn::KeyChain& keyChain);
@@ -90,7 +89,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   findFactory(const std::string& protocol);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
-
   void
   onValidatedFaceRequest(const shared_ptr<const Interest>& request);
 
@@ -150,12 +148,12 @@ private:
   void
   processSectionUdp(const ConfigSection& configSection,
                     bool isDryRun,
-                    const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList);
+                    const std::vector<NetworkInterfaceInfo>& nicList);
 
   void
   processSectionEther(const ConfigSection& configSection,
                       bool isDryRun,
-                      const std::list<shared_ptr<NetworkInterfaceInfo> >& nicList);
+                      const std::vector<NetworkInterfaceInfo>& nicList);
 
   void
   processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
@@ -170,8 +168,7 @@ private:
              const std::string& sectionName);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::map< std::string/*protocol*/, shared_ptr<ProtocolFactory> > FactoryMap;
-
+  typedef std::map<std::string/*protocol*/, shared_ptr<ProtocolFactory>> FactoryMap;
   FactoryMap m_factories;
 
 private:
@@ -191,7 +188,6 @@ private:
 
   typedef std::map<Name::Component, UnsignedVerbProcessor> UnsignedVerbDispatchTable;
   typedef std::pair<Name::Component, UnsignedVerbProcessor> UnsignedVerbAndProcessor;
-
 
   const SignedVerbDispatchTable m_signedVerbDispatch;
   const UnsignedVerbDispatchTable m_unsignedVerbDispatch;
@@ -239,7 +235,6 @@ FaceManager::parseYesNo(const ConfigSection::const_iterator& i,
   throw ConfigFile::Error("Invalid value for option \"" +
                           optionName + "\" in \"" +
                           sectionName + "\" section");
-
 }
 
 inline void

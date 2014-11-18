@@ -72,7 +72,7 @@ public:
    * \throws EthernetFactory::Error or EthernetFace::Error
    */
   shared_ptr<EthernetFace>
-  createMulticastFace(const shared_ptr<NetworkInterfaceInfo>& interface,
+  createMulticastFace(const NetworkInterfaceInfo& interface,
                       const ethernet::Address& address);
 
   /**

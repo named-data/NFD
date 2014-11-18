@@ -35,7 +35,6 @@ namespace nfd {
 TcpFactory::TcpFactory(const std::string& defaultPort/* = "6363"*/)
   : m_defaultPort(defaultPort)
 {
-
 }
 
 void
@@ -68,22 +67,11 @@ TcpFactory::prohibitAllIpv4Endpoints(const uint16_t port)
 {
   using namespace boost::asio::ip;
 
-  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
-
-  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-       i != nicList.end();
-       ++i)
-    {
-      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-      const std::vector<address_v4>& ipv4Addresses = nic->ipv4Addresses;
-
-      for (std::vector<address_v4>::const_iterator j = ipv4Addresses.begin();
-           j != ipv4Addresses.end();
-           ++j)
-        {
-          prohibitEndpoint(tcp::Endpoint(*j, port));
-        }
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const address_v4& addr : nic.ipv4Addresses) {
+      prohibitEndpoint(tcp::Endpoint(addr, port));
     }
+  }
 }
 
 void
@@ -91,29 +79,18 @@ TcpFactory::prohibitAllIpv6Endpoints(const uint16_t port)
 {
   using namespace boost::asio::ip;
 
-  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
-
-  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-       i != nicList.end();
-       ++i)
-    {
-      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-      const std::vector<address_v6>& ipv6Addresses = nic->ipv6Addresses;
-
-      for (std::vector<address_v6>::const_iterator j = ipv6Addresses.begin();
-           j != ipv6Addresses.end();
-           ++j)
-        {
-          prohibitEndpoint(tcp::Endpoint(*j, port));
-        }
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const address_v6& addr : nic.ipv6Addresses) {
+      prohibitEndpoint(tcp::Endpoint(addr, port));
     }
+  }
 }
 
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 {
   shared_ptr<TcpChannel> channel = findChannel(endpoint);
-  if(static_cast<bool>(channel))
+  if (static_cast<bool>(channel))
     return channel;
 
   channel = make_shared<TcpChannel>(endpoint);

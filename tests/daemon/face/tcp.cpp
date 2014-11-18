@@ -60,22 +60,16 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   TcpFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
-  std::vector<shared_ptr<const Channel> > expectedChannels;
+  std::vector<shared_ptr<const Channel>> expectedChannels;
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
   expectedChannels.push_back(factory.createChannel("::1", "20071"));
 
-  std::list<shared_ptr<const Channel> > channels = factory.getChannels();
-  for (std::list<shared_ptr<const Channel> >::const_iterator i = channels.begin();
-       i != channels.end(); ++i)
-    {
-      std::vector<shared_ptr<const Channel> >::iterator pos =
-        std::find(expectedChannels.begin(), expectedChannels.end(), *i);
-
-      BOOST_REQUIRE(pos != expectedChannels.end());
-      expectedChannels.erase(pos);
-    }
-
+  for (const auto& ch : factory.getChannels()) {
+    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), ch);
+    BOOST_REQUIRE(pos != expectedChannels.end());
+    expectedChannels.erase(pos);
+  }
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
@@ -115,7 +109,6 @@ BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
   factory.createFace(FaceUri("tcp4://127.0.0.1/path"),
                      bind(&FaceCreateFixture::ignore, this),
                      bind(&FaceCreateFixture::checkError, this, _1, "Invalid URI"));
-
 }
 
 class EndToEndFixture : protected BaseFixture
@@ -254,7 +247,7 @@ public:
   std::vector<Interest> face2_receivedInterests;
   std::vector<Data> face2_receivedDatas;
 
-  std::list< shared_ptr<Face> > faces;
+  std::list<shared_ptr<Face>> faces;
 };
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
@@ -493,8 +486,6 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
 }
 
 
-
-
 class SimpleEndToEndFixture : protected BaseFixture
 {
 public:
@@ -580,23 +571,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
 {
   // tests with non-local Face
   std::string someIpv4Address;
-  std::list< shared_ptr<NetworkInterfaceInfo> > ifs = listNetworkInterfaces();
-  for (std::list< shared_ptr<NetworkInterfaceInfo> >::const_iterator i = ifs.begin();
-       i != ifs.end();
-       ++i)
-    {
-      if (!(*i)->isLoopback() && (*i)->isUp() && !(*i)->ipv4Addresses.empty())
-        {
-          someIpv4Address = (*i)->ipv4Addresses[0].to_string();
-          break;
-        }
+  for (const auto& netif : listNetworkInterfaces()) {
+    if (!netif.isLoopback() && netif.isUp() && !netif.ipv4Addresses.empty()) {
+      someIpv4Address = netif.ipv4Addresses[0].to_string();
+      break;
     }
-  if (someIpv4Address.empty())
-    {
-      BOOST_TEST_MESSAGE("Test with non-local Face cannot be run "
-                         "(no non-local interface with IPv4 address available)");
-      return;
-    }
+  }
+  if (someIpv4Address.empty()) {
+    BOOST_TEST_MESSAGE("Test with non-local Face cannot be run "
+                       "(no non-local interface with IPv4 address available)");
+    return;
+  }
 
   TcpFactory factory;
 
@@ -604,7 +589,6 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
   channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
                   bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
   BOOST_REQUIRE_EQUAL(channel->isListening(), true);
-
 
   DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
   sender.start(Resolver<boost::asio::ip::tcp>::syncResolve(someIpv4Address, "20070"));

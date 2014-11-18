@@ -43,8 +43,6 @@ UdpFactory::UdpFactory(const std::string& defaultPort/* = "6363"*/)
 {
 }
 
-
-
 void
 UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
 {
@@ -77,28 +75,17 @@ UdpFactory::prohibitAllIpv4Endpoints(const uint16_t port)
 
   static const address_v4 INVALID_BROADCAST(address_v4::from_string("0.0.0.0"));
 
-  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
-
-  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-       i != nicList.end();
-       ++i)
-    {
-      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-      const std::vector<address_v4>& ipv4Addresses = nic->ipv4Addresses;
-
-      for (std::vector<address_v4>::const_iterator j = ipv4Addresses.begin();
-           j != ipv4Addresses.end();
-           ++j)
-        {
-          prohibitEndpoint(udp::Endpoint(*j, port));
-        }
-
-      if (nic->isBroadcastCapable() && nic->broadcastAddress != INVALID_BROADCAST)
-        {
-          NFD_LOG_TRACE("prohibiting broadcast address: " << nic->broadcastAddress.to_string());
-          prohibitEndpoint(udp::Endpoint(nic->broadcastAddress, port));
-        }
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const address_v4& addr : nic.ipv4Addresses) {
+      prohibitEndpoint(udp::Endpoint(addr, port));
     }
+
+    if (nic.isBroadcastCapable() && nic.broadcastAddress != INVALID_BROADCAST)
+    {
+      NFD_LOG_TRACE("prohibiting broadcast address: " << nic.broadcastAddress.to_string());
+      prohibitEndpoint(udp::Endpoint(nic.broadcastAddress, port));
+    }
+  }
 
   prohibitEndpoint(udp::Endpoint(address::from_string("255.255.255.255"), port));
 }
@@ -108,34 +95,22 @@ UdpFactory::prohibitAllIpv6Endpoints(const uint16_t port)
 {
   using namespace boost::asio::ip;
 
-  const std::list<shared_ptr<NetworkInterfaceInfo> > nicList(listNetworkInterfaces());
-
-  for (std::list<shared_ptr<NetworkInterfaceInfo> >::const_iterator i = nicList.begin();
-       i != nicList.end();
-       ++i)
-    {
-      const shared_ptr<NetworkInterfaceInfo>& nic = *i;
-      const std::vector<address_v6>& ipv6Addresses = nic->ipv6Addresses;
-
-      for (std::vector<address_v6>::const_iterator j = ipv6Addresses.begin();
-           j != ipv6Addresses.end();
-           ++j)
-        {
-          prohibitEndpoint(udp::Endpoint(*j, port));
-        }
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const address_v6& addr : nic.ipv6Addresses) {
+      prohibitEndpoint(udp::Endpoint(addr, port));
     }
+  }
 }
 
 shared_ptr<UdpChannel>
 UdpFactory::createChannel(const udp::Endpoint& endpoint,
                           const time::seconds& timeout)
 {
-  NFD_LOG_DEBUG("Creating unicast " << endpoint);
+  NFD_LOG_DEBUG("Creating unicast channel " << endpoint);
 
   shared_ptr<UdpChannel> channel = findChannel(endpoint);
   if (static_cast<bool>(channel))
     return channel;
-
 
   //checking if the endpoint is already in use for multicast face
   shared_ptr<MulticastUdpFace> multicast = findMulticastFace(endpoint);
@@ -161,8 +136,7 @@ UdpFactory::createChannel(const std::string& localHost,
                           const std::string& localPort,
                           const time::seconds& timeout)
 {
-  return createChannel(UdpResolver::syncResolve(localHost, localPort),
-                       timeout);
+  return createChannel(UdpResolver::syncResolve(localHost, localPort), timeout);
 }
 
 shared_ptr<MulticastUdpFace>
