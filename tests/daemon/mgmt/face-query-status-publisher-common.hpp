@@ -133,13 +133,13 @@ public:
     m_finished = true;
   }
 
-  //void
-  //decodeNackBlock(const Data& data)
-  //{
-  //  BOOST_REQUIRE_EQUAL(data.getContentType(), ndn::tlv::ContentType_Nack);
+  void
+  decodeNackBlock(const Data& data)
+  {
+    BOOST_REQUIRE_EQUAL(data.getContentType(), tlv::ContentType_Nack);
 
-  //  m_finished = true;
-  //}
+    m_finished = true;
+  }
 
 protected:
   Forwarder m_forwarder;

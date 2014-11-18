@@ -99,21 +99,20 @@ ManagerBase::sendResponse(const Name& name,
   m_face->put(*responseData);
 }
 
-// for future commit
-//void
-//ManagerBase::sendNack(const Name& name)
-//{
-//  NFD_LOG_DEBUG("responding NACK to " << name);
-//
-//  ndn::MetaInfo meta;
-//  meta.setType(ndn::tlv::ContentType_Nack);
-//
-//  shared_ptr<Data> responseData(make_shared<Data>(name));
-//  responseData->setMetaInfo(meta);
-//
-//  m_keyChain.sign(*responseData);
-//  m_face->put(*responseData);
-//}
+void
+ManagerBase::sendNack(const Name& name)
+{
+  NFD_LOG_DEBUG("responding NACK to " << name);
+
+  ndn::MetaInfo meta;
+  meta.setType(tlv::ContentType_Nack);
+
+  shared_ptr<Data> responseData(make_shared<Data>(name));
+  responseData->setMetaInfo(meta);
+
+  m_keyChain.sign(*responseData);
+  m_face->put(*responseData);
+}
 
 bool
 ManagerBase::validateParameters(const ControlCommand& command,

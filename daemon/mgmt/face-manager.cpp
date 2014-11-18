@@ -1158,7 +1158,7 @@ FaceManager::listQueriedFaces(const Interest& request)
       !FACES_QUERY_DATASET_PREFIX.isPrefixOf(query))
     {
       NFD_LOG_DEBUG("query result: malformed");
-      //sendNack(query);
+      sendNack(query);
       return;
     }
 
@@ -1170,7 +1170,7 @@ FaceManager::listQueriedFaces(const Interest& request)
   catch (tlv::Error&)
     {
       NFD_LOG_DEBUG("query result: malformed filter");
-      //sendNack(query);
+      sendNack(query);
       return;
     }
 

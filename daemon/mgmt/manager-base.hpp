@@ -94,8 +94,8 @@ protected:
                const std::string& text,
                const Block& body);
 
-  //void
-  //sendNack(const Name& name);
+  void
+  sendNack(const Name& name);
 
   virtual bool
   validateParameters(const ControlCommand& command,

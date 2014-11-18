@@ -1813,23 +1813,23 @@ BOOST_FIXTURE_TEST_CASE(TestValidQueryFilter, FaceQueryListFixture)
   BOOST_REQUIRE(m_finished);
 }
 
-//BOOST_FIXTURE_TEST_CASE(TestInvalidQueryFilter, FaceQueryListFixture)
-//{
-//  Name queryName("/localhost/nfd/faces/query");
-//  ndn::nfd::FaceStatus queryFilter;
-//  queryName.append(queryFilter.wireEncode());
-//
-//  shared_ptr<Interest> query(make_shared<Interest>(queryName));
-//
-//  shared_ptr<DummyLocalFace> face(make_shared<DummyLocalFace>());
-//  add(face);
-//
-//  m_face->onReceiveData +=
-//    bind(&FaceQueryStatusPublisherFixture::decodeNackBlock, this, _1);
-//
-//  m_manager.listQueriedFaces(*query);
-//  BOOST_REQUIRE(m_finished);
-//}
+BOOST_FIXTURE_TEST_CASE(TestInvalidQueryFilter, FaceQueryListFixture)
+{
+  Name queryName("/localhost/nfd/faces/query");
+  ndn::nfd::FaceStatus queryFilter;
+  queryName.append(queryFilter.wireEncode());
+
+  shared_ptr<Interest> query(make_shared<Interest>(queryName));
+
+  shared_ptr<DummyLocalFace> face(make_shared<DummyLocalFace>());
+  add(face);
+
+  m_face->onReceiveData +=
+    bind(&FaceQueryStatusPublisherFixture::decodeNackBlock, this, _1);
+
+  m_manager.listQueriedFaces(*query);
+  BOOST_REQUIRE(m_finished);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
