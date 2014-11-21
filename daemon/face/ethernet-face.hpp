@@ -28,7 +28,11 @@
 
 #include "common.hpp"
 #include "face.hpp"
+#include "ndnlp-partial-message-store.hpp"
+#include "ndnlp-slicer.hpp"
 #include "core/network-interface.hpp"
+
+#include <unordered_map>
 
 #ifndef HAVE_LIBPCAP
 #error "Cannot include this file when libpcap is not available"
@@ -136,6 +140,12 @@ private:
   getInterfaceMtu() const;
 
 private:
+  struct Reassembler
+  {
+    unique_ptr<ndnlp::PartialMessageStore> pms;
+    EventId expireEvent;
+  };
+
   unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
   shared_ptr<boost::asio::posix::stream_descriptor> m_socket;
 
@@ -145,7 +155,11 @@ private:
   std::string m_interfaceName;
   ethernet::Address m_srcAddress;
   ethernet::Address m_destAddress;
+
   size_t m_interfaceMtu;
+  unique_ptr<ndnlp::Slicer> m_slicer;
+  std::unordered_map<ethernet::Address, Reassembler> m_reassemblers;
+  static const time::nanoseconds REASSEMBLER_LIFETIME;
 };
 
 } // namespace nfd

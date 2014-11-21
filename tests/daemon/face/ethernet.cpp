@@ -133,10 +133,12 @@ BOOST_AUTO_TEST_CASE(SendPacket)
   face->sendInterest(*interest2);
   face->sendData    (*data2    );
 
-  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(), interest1->wireEncode().size() +
-                                                        data1->wireEncode().size() +
-                                                        interest2->wireEncode().size() +
-                                                        data2->wireEncode().size());
+  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(),
+                    14 * 4 + // 4 NDNLP headers
+                    interest1->wireEncode().size() +
+                    data1->wireEncode().size() +
+                    interest2->wireEncode().size() +
+                    data2->wireEncode().size());
 
 //  m_ioRemaining = 4;
 //  m_ioService.run();
@@ -191,11 +193,11 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   // valid frame, but TLV block has invalid length
   static const pcap_pkthdr header3{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
   static const uint8_t packet3[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
-    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x01, 0x00, 0x5e, 0x00, 0x17, 0xaa, // destination address
     0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
     0x86, 0x24,       // NDN ethertype
-    tlv::Data,        // TLV type
-    0xFD, 0xFF, 0xFF  // TLV length (invalid because greater than packet size)
+    tlv::NdnlpData,   // TLV type
+    0xfd, 0xff, 0xff  // TLV length (invalid because greater than buffer size)
   };
   face->processIncomingPacket(&header3, packet3);
   BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
@@ -205,7 +207,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   // valid frame, but TLV block has invalid type
   static const pcap_pkthdr header4{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
   static const uint8_t packet4[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
-    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x01, 0x00, 0x5e, 0x00, 0x17, 0xaa, // destination address
     0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
     0x86, 0x24,       // NDN ethertype
     0x00,             // TLV type (invalid)
@@ -216,21 +218,41 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
-  // valid frame and valid TLV block
+  // valid frame and valid NDNLP header, but invalid payload
   static const pcap_pkthdr header5{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
   static const uint8_t packet5[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
-    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x01, 0x00, 0x5e, 0x00, 0x17, 0xaa, // destination address
     0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
-    0x86, 0x24,       // NDN ethertype
-    tlv::Interest,    // TLV type
-    0x16,             // TLV length
+    0x86, 0x24,                   // NDN ethertype
+    tlv::NdnlpData,     0x0e,     // NDNLP header
+    tlv::NdnlpSequence, 0x08,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    tlv::NdnlpPayload,  0x02,
+    0x00,             // NDN TLV type (invalid)
+    0x00              // NDN TLV length
+  };
+  face->processIncomingPacket(&header5, packet5);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 18);
+  BOOST_CHECK_EQUAL(recInterests.size(), 0);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
+
+  // valid frame, valid NDNLP header, and valid NDN (interest) packet
+  static const pcap_pkthdr header6{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
+  static const uint8_t packet6[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
+    0x01, 0x00, 0x5e, 0x00, 0x17, 0xaa, // destination address
+    0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
+    0x86, 0x24,                         // NDN ethertype
+    tlv::NdnlpData, 0x24,               // NDNLP TLV type and length
+    0x51, 0x08, 0x00, 0x00, 0x00, 0x00, // rest of NDNLP header
+    0x00, 0x00, 0x00, 0x00, 0x54, 0x18,
+    tlv::Interest, 0x16,                // NDN TLV type and length
     0x07, 0x0e, 0x08, 0x07, 0x65, 0x78, // payload
     0x61, 0x6d, 0x70, 0x6c, 0x65, 0x08,
     0x03, 0x66, 0x6f, 0x6f, 0x0a, 0x04,
     0x03, 0xef, 0xe9, 0x7c
   };
-  face->processIncomingPacket(&header5, packet5);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 26);
+  face->processIncomingPacket(&header6, packet6);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 56);
   BOOST_CHECK_EQUAL(recInterests.size(), 1);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 }
