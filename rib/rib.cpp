@@ -67,11 +67,6 @@ Rib::Rib()
 {
 }
 
-
-Rib::~Rib()
-{
-}
-
 Rib::const_iterator
 Rib::find(const Name& prefix) const
 {
@@ -193,6 +188,9 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
       m_faceMap[face.faceId].push_back(entry);
 
       createFibUpdatesForNewRibEntry(*entry, face);
+
+      // do something after inserting an entry
+      afterInsertEntry(prefix);
     }
 }
 
@@ -384,6 +382,9 @@ Rib::eraseEntry(RibTable::iterator it)
   nextIt++;
 
   m_rib.erase(it);
+
+  // do something after erasing an entry.
+  afterEraseEntry(entry->getName());
 
   return nextIt;
 }

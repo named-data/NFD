@@ -29,6 +29,7 @@
 #include "rib.hpp"
 #include "core/config-file.hpp"
 #include "rib-status-publisher.hpp"
+#include "remote-registrator.hpp"
 
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
@@ -239,6 +240,7 @@ private:
   ndn::ValidatorConfig m_localhopValidator;
   ndn::nfd::FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
+  RemoteRegistrator m_remoteRegistrator;
 
   RibStatusPublisher m_ribStatusPublisher;
 

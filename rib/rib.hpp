@@ -29,7 +29,6 @@
 #include "rib-entry.hpp"
 #include "fib-update.hpp"
 #include "common.hpp"
-#include "rib-entry.hpp"
 #include <ndn-cxx/management/nfd-control-command.hpp>
 
 namespace nfd {
@@ -49,8 +48,6 @@ public:
   typedef std::list<shared_ptr<const FibUpdate> > FibUpdateList;
 
   Rib();
-
-  ~Rib();
 
   const_iterator
   find(const Name& prefix) const;
@@ -138,6 +135,10 @@ private:
    */
   void
   removeInheritedFacesFromEntry(RibEntry& entry, const Rib::FaceSet& facesToRemove);
+
+public:
+  ndn::util::EventEmitter<Name> afterInsertEntry;
+  ndn::util::EventEmitter<Name> afterEraseEntry;
 
 private:
   RibTable m_rib;

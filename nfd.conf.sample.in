@@ -287,4 +287,15 @@ rib
   ;   ;   file-name keys/ndn-testbed.ndncert
   ;   ; }
   ; }
+
+  remote_register
+  {
+    cost 15 ; forwarding cost of prefix registered on remote router
+    timeout 10000 ; timeout (in milliseconds) of remote prefix registration command
+    retry 0 ; maximum number of retries for each remote prefix registration command
+
+    refresh_interval 300 ; interval (in seconds) before refreshing the registration
+    ; This setting should be less than face_system.udp.idle_time,
+    ; so that the face is kept alive on the remote router.
+  }
 }

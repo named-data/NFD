@@ -80,6 +80,7 @@ RibManager::RibManager(ndn::Face& face)
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
   , m_isLocalhopEnabled(false)
+  , m_remoteRegistrator(m_nfdController, m_keyChain, m_managedRib)
   , m_ribStatusPublisher(m_managedRib, face, LIST_COMMAND_PREFIX, m_keyChain)
   , m_lastTransactionId(0)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
@@ -152,6 +153,21 @@ RibManager::onConfig(const ConfigSection& configSection,
         {
           m_localhopValidator.load(i->second, filename);
           m_isLocalhopEnabled = true;
+        }
+      else if (i->first == "remote_register")
+        {
+          m_remoteRegistrator.loadConfig(i->second);
+
+          // register callback to the RIB.
+          // do remote registration after an entry is inserted into the RIB.
+          // do remote unregistration after an entry is erased from the RIB.
+          m_managedRib.afterInsertEntry += [this] (const Name& prefix) {
+            m_remoteRegistrator.registerPrefix(prefix);
+          };
+
+          m_managedRib.afterEraseEntry += [this] (const Name& prefix) {
+            m_remoteRegistrator.unregisterPrefix(prefix);
+          };
         }
       else
         throw Error("Unrecognized rib property: " + i->first);
