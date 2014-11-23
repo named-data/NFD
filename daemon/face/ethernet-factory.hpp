@@ -47,8 +47,8 @@ public:
     }
   };
 
-  typedef std::map< std::pair<std::string, ethernet::Address>,
-                    shared_ptr<EthernetFace> > MulticastFaceMap;
+  typedef std::map<std::pair<std::string, ethernet::Address>,
+                   shared_ptr<EthernetFace>> MulticastFaceMap;
 
   // from ProtocolFactory
   virtual void
@@ -81,14 +81,10 @@ public:
   const MulticastFaceMap&
   getMulticastFaces() const;
 
-  virtual std::list<shared_ptr<const Channel> >
+  virtual std::list<shared_ptr<const Channel>>
   getChannels() const;
 
 private:
-  void
-  afterFaceFailed(const std::string& interfaceName,
-                  const ethernet::Address& address);
-
   /**
    * \brief Look up EthernetFace using specified interface and address
    *
@@ -105,13 +101,11 @@ private:
   MulticastFaceMap m_multicastFaces;
 };
 
-
 inline const EthernetFactory::MulticastFaceMap&
 EthernetFactory::getMulticastFaces() const
 {
   return m_multicastFaces;
 }
-
 
 } // namespace nfd
 

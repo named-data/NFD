@@ -64,6 +64,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
                            const NetworkInterfaceInfo& interface,
                            const ethernet::Address& address)
   : Face(FaceUri(address), FaceUri::fromDev(interface.name))
+  , m_pcap(nullptr, pcap_close)
   , m_socket(socket)
 #if defined(__linux__)
   , m_interfaceIndex(interface.index)
@@ -76,7 +77,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
                << m_srcAddress << " <--> " << m_destAddress);
   pcapInit();
 
-  int fd = pcap_get_selectable_fd(m_pcap);
+  int fd = pcap_get_selectable_fd(m_pcap.get());
   if (fd < 0)
     throw Error("pcap_get_selectable_fd() failed");
 
@@ -107,8 +108,6 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
 
 EthernetFace::~EthernetFace()
 {
-  onFail.clear(); // no reason to call onFail anymore
-  close();
 }
 
 void
@@ -128,23 +127,25 @@ EthernetFace::sendData(const Data& data)
 void
 EthernetFace::close()
 {
-  if (m_pcap)
-    {
-      boost::system::error_code error;
-      m_socket->close(error); // ignore errors
-      pcap_close(m_pcap);
-      m_pcap = 0;
+  if (!m_pcap)
+    return;
 
-      fail("Face closed");
-    }
+  NFD_LOG_INFO("[id:" << getId() << ",endpoint:" << m_interfaceName
+               << "] Closing face");
+
+  boost::system::error_code error;
+  m_socket->cancel(error); // ignore errors
+  m_socket->close(error);  // ignore errors
+  m_pcap.reset(nullptr);
+
+  fail("Face closed");
 }
 
 void
 EthernetFace::pcapInit()
 {
-  char errbuf[PCAP_ERRBUF_SIZE];
-  errbuf[0] = '\0';
-  m_pcap = pcap_create(m_interfaceName.c_str(), errbuf);
+  char errbuf[PCAP_ERRBUF_SIZE] = {};
+  m_pcap.reset(pcap_create(m_interfaceName.c_str(), errbuf));
   if (!m_pcap)
     throw Error("pcap_create(): " + std::string(errbuf));
 
@@ -153,31 +154,31 @@ EthernetFace::pcapInit()
   // This corresponds to the BIOCIMMEDIATE ioctl on BSD-like systems (including OS X)
   // where libpcap uses a BPF device. On Linux this forces libpcap not to use TPACKET_V3,
   // even if the kernel supports it, thus preventing bug #1511.
-  pcap_set_immediate_mode(m_pcap, 1);
+  pcap_set_immediate_mode(m_pcap.get(), 1);
 #endif
 
-  if (pcap_activate(m_pcap) < 0)
+  if (pcap_activate(m_pcap.get()) < 0)
     throw Error("pcap_activate() failed");
 
-  if (pcap_set_datalink(m_pcap, DLT_EN10MB) < 0)
-    throw Error("pcap_set_datalink(): " + std::string(pcap_geterr(m_pcap)));
+  if (pcap_set_datalink(m_pcap.get(), DLT_EN10MB) < 0)
+    throw Error("pcap_set_datalink(): " + std::string(pcap_geterr(m_pcap.get())));
 
-  if (pcap_setdirection(m_pcap, PCAP_D_IN) < 0)
+  if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
     // no need to throw on failure, BPF will filter unwanted packets anyway
-    NFD_LOG_WARN("pcap_setdirection(): " << pcap_geterr(m_pcap));
+    NFD_LOG_WARN("pcap_setdirection(): " << pcap_geterr(m_pcap.get()));
 }
 
 void
 EthernetFace::setPacketFilter(const char* filterString)
 {
   bpf_program filter;
-  if (pcap_compile(m_pcap, &filter, filterString, 1, PCAP_NETMASK_UNKNOWN) < 0)
-    throw Error("pcap_compile(): " + std::string(pcap_geterr(m_pcap)));
+  if (pcap_compile(m_pcap.get(), &filter, filterString, 1, PCAP_NETMASK_UNKNOWN) < 0)
+    throw Error("pcap_compile(): " + std::string(pcap_geterr(m_pcap.get())));
 
-  int ret = pcap_setfilter(m_pcap, &filter);
+  int ret = pcap_setfilter(m_pcap.get(), &filter);
   pcap_freecode(&filter);
   if (ret < 0)
-    throw Error("pcap_setfilter(): " + std::string(pcap_geterr(m_pcap)));
+    throw Error("pcap_setfilter(): " + std::string(pcap_geterr(m_pcap.get())));
 }
 
 void
@@ -242,7 +243,7 @@ EthernetFace::joinMulticastGroup()
     {
       NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
                     << "] Falling back to promiscuous mode");
-      pcap_set_promisc(m_pcap, 1);
+      pcap_set_promisc(m_pcap.get(), 1);
     }
 }
 
@@ -253,8 +254,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
     {
       NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                    << "] Trying to send on closed face");
-      fail("Face closed");
-      return;
+      return fail("Face closed");
     }
 
   /// \todo Fragmentation
@@ -283,14 +283,14 @@ EthernetFace::sendPacket(const ndn::Block& block)
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
 
   // send the packet
-  int sent = pcap_inject(m_pcap, buffer.buf(), buffer.size());
+  int sent = pcap_inject(m_pcap.get(), buffer.buf(), buffer.size());
   if (sent < 0)
     {
-      throw Error("pcap_inject(): " + std::string(pcap_geterr(m_pcap)));
+      return fail("pcap_inject(): " + std::string(pcap_geterr(m_pcap.get())));
     }
   else if (static_cast<size_t>(sent) < buffer.size())
     {
-      throw Error("Failed to send packet");
+      return fail("Failed to inject frame");
     }
 
   NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
@@ -301,56 +301,26 @@ EthernetFace::sendPacket(const ndn::Block& block)
 void
 EthernetFace::handleRead(const boost::system::error_code& error, size_t)
 {
+  if (!m_pcap)
+    return fail("Face closed");
+
   if (error)
     return processErrorCode(error);
 
-  pcap_pkthdr* pktHeader;
+  pcap_pkthdr* header;
   const uint8_t* packet;
-  int ret = pcap_next_ex(m_pcap, &pktHeader, &packet);
+  int ret = pcap_next_ex(m_pcap.get(), &header, &packet);
   if (ret < 0)
     {
-      throw Error("pcap_next_ex(): " + std::string(pcap_geterr(m_pcap)));
+      return fail("pcap_next_ex(): " + std::string(pcap_geterr(m_pcap.get())));
     }
   else if (ret == 0)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] pcap_next_ex() timed out");
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] Read timeout");
     }
   else
     {
-      size_t length = pktHeader->caplen;
-      if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN)
-        throw Error("Received packet is too short");
-
-      const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
-      if (ntohs(eh->ether_type) != ethernet::ETHERTYPE_NDN)
-        throw Error("Unrecognized ethertype");
-
-      packet += ethernet::HDR_LEN;
-      length -= ethernet::HDR_LEN;
-
-      /// \todo Reserve space in front and at the back
-      ///       of the underlying buffer
-      Block element;
-      bool isOk = Block::fromBuffer(packet, length, element);
-      if (isOk)
-        {
-          NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                        << "] Received: " << element.size() << " bytes");
-          this->getMutableCounters().getNInBytes() += element.size();
-
-          if (!decodeAndDispatchInput(element))
-            {
-              NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                           << "] Received unrecognized block of type " << element.type());
-              // ignore unknown packet
-            }
-        }
-      else
-        {
-          NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                       << "] Received block is invalid or too large to process");
-        }
+      processIncomingPacket(header, packet);
     }
 
   m_socket->async_read_some(boost::asio::null_buffers(),
@@ -360,17 +330,57 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
 }
 
 void
-EthernetFace::processErrorCode(const boost::system::error_code& error)
+EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* packet)
 {
-  if (error == boost::system::errc::operation_canceled)
-    // when socket is closed by someone
-    return;
-
-  if (!m_pcap)
+  size_t length = header->caplen;
+  if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN)
     {
-      fail("Face closed");
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                   << "] Received frame is too short (" << length << " bytes)");
       return;
     }
+
+  const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
+
+  // assert in case BPF fails to filter unwanted frames
+  BOOST_ASSERT_MSG(ethernet::Address(eh->ether_dhost) == m_destAddress,
+                   "Received frame addressed to a different multicast group");
+  BOOST_ASSERT_MSG(ethernet::Address(eh->ether_shost) != m_srcAddress,
+                   "Received frame sent by this host");
+  BOOST_ASSERT_MSG(ntohs(eh->ether_type) == ethernet::ETHERTYPE_NDN,
+                   "Received frame with unrecognized ethertype");
+
+  packet += ethernet::HDR_LEN;
+  length -= ethernet::HDR_LEN;
+
+  /// \todo Reserve space in front and at the back of the underlying buffer
+  Block element;
+  bool isOk = Block::fromBuffer(packet, length, element);
+  if (isOk)
+    {
+      NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
+                    << "] Received: " << element.size() << " bytes");
+      this->getMutableCounters().getNInBytes() += element.size();
+
+      if (!decodeAndDispatchInput(element))
+        {
+          NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                       << "] Received unrecognized block of type " << element.type());
+        }
+    }
+  else
+    {
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                   << "] Received block is invalid or too large to process");
+    }
+}
+
+void
+EthernetFace::processErrorCode(const boost::system::error_code& error)
+{
+  if (error == boost::asio::error::operation_aborted)
+    // cancel() has been called on the socket
+    return;
 
   std::string msg;
   if (error == boost::asio::error::eof)
@@ -380,11 +390,9 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
     }
   else
     {
-      msg = "Receive operation failed, closing face: " + error.message();
+      msg = "Receive operation failed: " + error.message();
       NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
-
-  close();
   fail(msg);
 }
 

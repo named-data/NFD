@@ -23,23 +23,16 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "face/ethernet-face.hpp"
 #include "face/ethernet-factory.hpp"
-#include "core/network-interface.hpp"
 
+#include "core/network-interface.hpp"
 #include "tests/test-common.hpp"
+
+#include <pcap/pcap.h>
 
 namespace nfd {
 namespace tests {
-
-BOOST_FIXTURE_TEST_SUITE(FaceEthernet, BaseFixture)
-
-BOOST_AUTO_TEST_CASE(GetChannels)
-{
-  EthernetFactory factory;
-
-  auto channels = factory.getChannels();
-  BOOST_CHECK_EQUAL(channels.empty(), true);
-}
 
 class InterfacesFixture : protected BaseFixture
 {
@@ -66,17 +59,25 @@ protected:
   std::vector<NetworkInterfaceInfo> m_interfaces;
 };
 
+BOOST_FIXTURE_TEST_SUITE(FaceEthernet, InterfacesFixture)
 
-BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
+BOOST_AUTO_TEST_CASE(GetChannels)
 {
   EthernetFactory factory;
 
-  if (m_interfaces.empty())
-    {
-      BOOST_WARN_MESSAGE(false, "No interfaces available, cannot perform MulticastFacesMap test");
-      return;
-    }
+  auto channels = factory.getChannels();
+  BOOST_CHECK_EQUAL(channels.empty(), true);
+}
 
+BOOST_AUTO_TEST_CASE(MulticastFacesMap)
+{
+  if (m_interfaces.empty()) {
+    BOOST_WARN_MESSAGE(false, "No interfaces available for pcap, "
+                              "cannot perform MulticastFacesMap test");
+    return;
+  }
+
+  EthernetFactory factory;
   shared_ptr<EthernetFace> face1 = factory.createMulticastFace(m_interfaces.front(),
                                                                ethernet::getBroadcastAddress());
   shared_ptr<EthernetFace> face1bis = factory.createMulticastFace(m_interfaces.front(),
@@ -89,8 +90,8 @@ BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
     BOOST_CHECK_NE(face1, face2);
   }
   else {
-    BOOST_WARN_MESSAGE(false, "Cannot test second EthernetFace creation, "
-                       "only one interface available");
+    BOOST_WARN_MESSAGE(false, "Only one interface available for pcap, "
+                              "cannot test second EthernetFace creation");
   }
 
   shared_ptr<EthernetFace> face3 = factory.createMulticastFace(m_interfaces.front(),
@@ -98,36 +99,44 @@ BOOST_FIXTURE_TEST_CASE(MulticastFacesMap, InterfacesFixture)
   BOOST_CHECK_NE(face1, face3);
 }
 
-BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
+BOOST_AUTO_TEST_CASE(SendPacket)
 {
+  if (m_interfaces.empty()) {
+    BOOST_WARN_MESSAGE(false, "No interfaces available for pcap, "
+                              "cannot perform SendPacket test");
+    return;
+  }
+
   EthernetFactory factory;
-
-  if (m_interfaces.empty())
-    {
-      BOOST_WARN_MESSAGE(false, "No interfaces available for pcap, cannot perform SendPacket test");
-      return;
-    }
-
   shared_ptr<EthernetFace> face = factory.createMulticastFace(m_interfaces.front(),
                                     ethernet::getDefaultMulticastAddress());
-  BOOST_REQUIRE(static_cast<bool>(face));
 
-  BOOST_CHECK(!face->isOnDemand());
+  BOOST_REQUIRE(static_cast<bool>(face));
   BOOST_CHECK_EQUAL(face->isLocal(), false);
+  BOOST_CHECK_EQUAL(face->isOnDemand(), false);
   BOOST_CHECK_EQUAL(face->getRemoteUri().toString(),
                     "ether://[" + ethernet::getDefaultMulticastAddress().toString() + "]");
   BOOST_CHECK_EQUAL(face->getLocalUri().toString(),
                     "dev://" + m_interfaces.front().name);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(), 0);
+
+  face->onFail += [] (const std::string& reason) { BOOST_FAIL(reason); };
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
   shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
   shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  BOOST_CHECK_NO_THROW(face->sendInterest(*interest1));
-  BOOST_CHECK_NO_THROW(face->sendData    (*data1    ));
-  BOOST_CHECK_NO_THROW(face->sendInterest(*interest2));
-  BOOST_CHECK_NO_THROW(face->sendData    (*data2    ));
+  face->sendInterest(*interest1);
+  face->sendData    (*data1    );
+  face->sendInterest(*interest2);
+  face->sendData    (*data2    );
+
+  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(), interest1->wireEncode().size() +
+                                                        data1->wireEncode().size() +
+                                                        interest2->wireEncode().size() +
+                                                        data2->wireEncode().size());
 
 //  m_ioRemaining = 4;
 //  m_ioService.run();
@@ -142,6 +151,88 @@ BOOST_FIXTURE_TEST_CASE(SendPacket, InterfacesFixture)
 //  BOOST_CHECK_EQUAL(m_face1_receivedDatas    [0].getName(), data2.getName());
 //  BOOST_CHECK_EQUAL(m_face2_receivedInterests[0].getName(), interest1.getName());
 //  BOOST_CHECK_EQUAL(m_face2_receivedDatas    [0].getName(), data1.getName());
+}
+
+BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
+{
+  if (m_interfaces.empty()) {
+    BOOST_WARN_MESSAGE(false, "No interfaces available for pcap, "
+                              "cannot perform ProcessIncomingPacket test");
+    return;
+  }
+
+  EthernetFactory factory;
+  shared_ptr<EthernetFace> face = factory.createMulticastFace(m_interfaces.front(),
+                                    ethernet::getDefaultMulticastAddress());
+  BOOST_REQUIRE(static_cast<bool>(face));
+
+  std::vector<Interest> recInterests;
+  std::vector<Data>     recDatas;
+
+  face->onFail            += [] (const std::string& reason) { BOOST_FAIL(reason); };
+  face->onReceiveInterest += [&recInterests] (const Interest& i) { recInterests.push_back(i); };
+  face->onReceiveData     += [&recDatas]     (const Data& d)     { recDatas.push_back(d);     };
+
+  // check that packet data is not accessed if pcap didn't capture anything (caplen == 0)
+  static const pcap_pkthdr header1{};
+  face->processIncomingPacket(&header1, nullptr);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(recInterests.size(), 0);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
+
+  // runt frame (too short)
+  static const pcap_pkthdr header2{{}, ethernet::HDR_LEN + 6};
+  static const uint8_t packet2[ethernet::HDR_LEN + 6]{};
+  face->processIncomingPacket(&header2, packet2);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(recInterests.size(), 0);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
+
+  // valid frame, but TLV block has invalid length
+  static const pcap_pkthdr header3{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
+  static const uint8_t packet3[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
+    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
+    0x86, 0x24,       // NDN ethertype
+    tlv::Data,        // TLV type
+    0xFD, 0xFF, 0xFF  // TLV length (invalid because greater than packet size)
+  };
+  face->processIncomingPacket(&header3, packet3);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(recInterests.size(), 0);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
+
+  // valid frame, but TLV block has invalid type
+  static const pcap_pkthdr header4{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
+  static const uint8_t packet4[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
+    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
+    0x86, 0x24,       // NDN ethertype
+    0x00,             // TLV type (invalid)
+    0x00              // TLV length
+  };
+  face->processIncomingPacket(&header4, packet4);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 2);
+  BOOST_CHECK_EQUAL(recInterests.size(), 0);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
+
+  // valid frame and valid TLV block
+  static const pcap_pkthdr header5{{}, ethernet::HDR_LEN + ethernet::MIN_DATA_LEN};
+  static const uint8_t packet5[ethernet::HDR_LEN + ethernet::MIN_DATA_LEN]{
+    0x01, 0x00, 0x5E, 0x00, 0x17, 0xAA, // destination address
+    0x02, 0x00, 0x00, 0x00, 0x00, 0x02, // source address
+    0x86, 0x24,       // NDN ethertype
+    tlv::Interest,    // TLV type
+    0x16,             // TLV length
+    0x07, 0x0e, 0x08, 0x07, 0x65, 0x78, // payload
+    0x61, 0x6d, 0x70, 0x6c, 0x65, 0x08,
+    0x03, 0x66, 0x6f, 0x6f, 0x0a, 0x04,
+    0x03, 0xef, 0xe9, 0x7c
+  };
+  face->processIncomingPacket(&header5, packet5);
+  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 26);
+  BOOST_CHECK_EQUAL(recInterests.size(), 1);
+  BOOST_CHECK_EQUAL(recDatas.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

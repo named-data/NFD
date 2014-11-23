@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_FACE_HPP
 #define NFD_DAEMON_FACE_ETHERNET_FACE_HPP
 
-#include "config.hpp"
+#include "common.hpp"
 #include "face.hpp"
 #include "core/network-interface.hpp"
 
@@ -37,18 +37,19 @@
 // forward declarations
 struct pcap;
 typedef pcap pcap_t;
+struct pcap_pkthdr;
 
 namespace nfd {
 
 /**
- * \brief Implementation of Face abstraction that uses raw
+ * @brief Implementation of Face abstraction that uses raw
  *        Ethernet frames as underlying transport mechanism
  */
 class EthernetFace : public Face
 {
 public:
   /**
-   * \brief EthernetFace-related error
+   * @brief EthernetFace-related error
    */
   struct Error : public Face::Error
   {
@@ -71,39 +72,73 @@ public:
   sendData(const Data& data);
 
   /**
-   * \brief Close the face
+   * @brief Closes the face
    *
-   * This terminates all communication on the face and cause
-   * onFail() method event to be invoked
+   * This terminates all communication on the face and triggers the onFail() event.
    */
   virtual void
   close();
 
 private:
+  /**
+   * @brief Allocates and initializes a libpcap context for live capture
+   */
   void
   pcapInit();
 
+  /**
+   * @brief Installs a BPF filter on the receiving socket
+   *
+   * @param filterString string containing the source BPF program
+   */
   void
   setPacketFilter(const char* filterString);
 
+  /**
+   * @brief Enables receiving frames addressed to our MAC multicast group
+   */
   void
   joinMulticastGroup();
 
+  /**
+   * @brief Sends the specified TLV block on the network wrapped in an Ethernet frame
+   */
   void
   sendPacket(const ndn::Block& block);
 
+  /**
+   * @brief Receive callback
+   */
   void
-  handleRead(const boost::system::error_code& error,
-             size_t nBytesRead);
+  handleRead(const boost::system::error_code& error, size_t nBytesRead);
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /**
+   * @brief Processes an incoming frame as captured by libpcap
+   *
+   * @param header pointer to capture metadata
+   * @param packet pointer to the received frame, including the link-layer header
+   */
+  void
+  processIncomingPacket(const pcap_pkthdr* header, const uint8_t* packet);
+
+private:
+  /**
+   * @brief Handles errors encountered by Boost.Asio on the receive path
+   */
   void
   processErrorCode(const boost::system::error_code& error);
 
+  /**
+   * @brief Returns the MTU of the underlying network interface
+   */
   size_t
   getInterfaceMtu() const;
 
 private:
+  unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
   shared_ptr<boost::asio::posix::stream_descriptor> m_socket;
+
 #if defined(__linux__)
   int m_interfaceIndex;
 #endif
@@ -111,7 +146,6 @@ private:
   ethernet::Address m_srcAddress;
   ethernet::Address m_destAddress;
   size_t m_interfaceMtu;
-  pcap_t* m_pcap;
 };
 
 } // namespace nfd

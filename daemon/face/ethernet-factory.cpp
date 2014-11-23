@@ -27,9 +27,6 @@
 #include "core/logger.hpp"
 #include "core/global-io.hpp"
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <pcap/pcap.h>
-
 namespace nfd {
 
 NFD_LOG_INIT("EthernetFactory");
@@ -45,35 +42,27 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
   if (face)
     return face;
 
-  shared_ptr<boost::asio::posix::stream_descriptor> socket =
-    make_shared<boost::asio::posix::stream_descriptor>(ref(getGlobalIoService()));
-
+  auto socket = make_shared<boost::asio::posix::stream_descriptor>(ref(getGlobalIoService()));
   face = make_shared<EthernetFace>(socket, interface, address);
-  face->onFail += bind(&EthernetFactory::afterFaceFailed,
-                       this, interface.name, address);
-  m_multicastFaces[std::make_pair(interface.name, address)] = face;
+
+  auto key = std::make_pair(interface.name, address);
+  face->onFail += [this, key] (const std::string& reason) {
+    m_multicastFaces.erase(key);
+  };
+  m_multicastFaces.insert({key, face});
 
   return face;
-}
-
-void
-EthernetFactory::afterFaceFailed(const std::string& interfaceName,
-                                 const ethernet::Address& address)
-{
-  NFD_LOG_DEBUG("afterFaceFailed: " << interfaceName << "/" << address);
-  m_multicastFaces.erase(std::make_pair(interfaceName, address));
 }
 
 shared_ptr<EthernetFace>
 EthernetFactory::findMulticastFace(const std::string& interfaceName,
                                    const ethernet::Address& address) const
 {
-  MulticastFaceMap::const_iterator i =
-    m_multicastFaces.find(std::make_pair(interfaceName, address));
-  if (i != m_multicastFaces.end())
-    return i->second;
+  auto it = m_multicastFaces.find({interfaceName, address});
+  if (it != m_multicastFaces.end())
+    return it->second;
   else
-    return shared_ptr<EthernetFace>();
+    return {};
 }
 
 void
@@ -84,10 +73,10 @@ EthernetFactory::createFace(const FaceUri& uri,
   throw Error("EthernetFactory does not support 'createFace' operation");
 }
 
-std::list<shared_ptr<const Channel> >
+std::list<shared_ptr<const Channel>>
 EthernetFactory::getChannels() const
 {
-  return std::list<shared_ptr<const Channel> >();
+  return {};
 }
 
 } // namespace nfd
