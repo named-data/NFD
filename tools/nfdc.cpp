@@ -31,6 +31,10 @@
 #include <boost/algorithm/string/regex_find_format.hpp>
 #include <boost/regex.hpp>
 
+#include <ndn-cxx/management/nfd-face-query-filter.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/util/segment-fetcher.hpp>
+
 void
 usage(const char* programName)
 {
@@ -48,7 +52,7 @@ usage(const char* programName)
     "               (by default the entry remains in FIB for the lifetime of the associated face)\n"
     "           -o: specify origin\n"
     "               0 for Local producer applications, 128 for NLSR, 255(default) for static routes\n"
-    "       unregister [-o origin] name <faceId>\n"
+    "       unregister [-o origin] name <faceId | faceUri>\n"
     "           unregister name from the given faceId\n"
     "       create <faceUri> \n"
     "           Create a face in one of the following formats:\n"
@@ -63,7 +67,7 @@ usage(const char* programName)
     "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
     "           Add a nexthop to a FIB entry\n"
     "           -c: specify cost (default 0)\n"
-    "       remove-nexthop <name> <faceId> \n"
+    "       remove-nexthop <name> <faceId | faceUri> \n"
     "           Remove a nexthop from a FIB entry\n"
     << std::endl;
 }
@@ -75,11 +79,181 @@ using std::bind;
 const ndn::time::milliseconds Nfdc::DEFAULT_EXPIRATION_PERIOD = ndn::time::milliseconds::max();
 const uint64_t Nfdc::DEFAULT_COST = 0;
 
+Nfdc::FaceIdFetcher::FaceIdFetcher(ndn::Face& face,
+                                   Controller& controller,
+                                   bool allowCreate,
+                                   const SuccessCallback& onSucceed,
+                                   const FailureCallback& onFail)
+  : m_face(face)
+  , m_controller(controller)
+  , m_allowCreate(allowCreate)
+  , m_onSucceed(onSucceed)
+  , m_onFail(onFail)
+{
+}
+
+void
+Nfdc::FaceIdFetcher::start(ndn::Face& face,
+                           Controller& controller,
+                           const std::string& input,
+                           bool allowCreate,
+                           const SuccessCallback& onSucceed,
+                           const FailureCallback& onFail)
+{
+  // 1. Try parse input as FaceId, if input is FaceId, succeed with parsed FaceId
+  // 2. Try parse input as FaceUri, if input is not FaceUri, fail
+  // 3. Canonize faceUri
+  // 4. If canonization fails, fail
+  // 5. Query for face
+  // 6. If query succeeds and finds a face, succeed with found FaceId
+  // 7. Create face
+  // 8. If face creation succeeds, succeed with created FaceId
+  // 9. Fail
+
+  boost::regex e("^[a-z0-9]+\\:.*");
+  if (!boost::regex_match(input, e)) {
+    try
+      {
+        u_int32_t faceId = boost::lexical_cast<uint32_t>(input);
+        onSucceed(faceId);
+        return;
+      }
+    catch (boost::bad_lexical_cast&)
+      {
+        onFail("No valid faceId or faceUri is provided");
+        return;
+      }
+  }
+  else {
+    ndn::util::FaceUri faceUri;
+    if (!faceUri.parse(input)) {
+      onFail("FaceUri parse failed");
+      return;
+    }
+
+    auto fetcher = new FaceIdFetcher(std::ref(face), std::ref(controller),
+                                     allowCreate, onSucceed, onFail);
+
+    fetcher->startGetFaceId(faceUri);
+  }
+}
+
+void
+Nfdc::FaceIdFetcher::startGetFaceId(const ndn::util::FaceUri& faceUri)
+{
+  faceUri.canonize(bind(&FaceIdFetcher::onCanonizeSuccess, this, _1),
+                   bind(&FaceIdFetcher::onCanonizeFailure, this, _1),
+                   m_face.getIoService(), ndn::time::seconds(4));
+}
+
+void
+Nfdc::FaceIdFetcher::onCanonizeSuccess(const ndn::util::FaceUri& canonicalUri)
+{
+  ndn::Name queryName("/localhost/nfd/faces/query");
+  ndn::nfd::FaceQueryFilter queryFilter;
+  queryFilter.setRemoteUri(canonicalUri.toString());
+  queryName.append(queryFilter.wireEncode());
+
+  ndn::Interest interestPacket(queryName);
+  interestPacket.setMustBeFresh(true);
+  interestPacket.setInterestLifetime(ndn::time::milliseconds(4000));
+  auto interest = std::make_shared<ndn::Interest>(interestPacket);
+
+  ndn::util::SegmentFetcher::fetch(m_face, *interest,
+                                   ndn::util::DontVerifySegment(),
+                                   bind(&FaceIdFetcher::onQuerySuccess,
+                                        this, _1, canonicalUri),
+                                   bind(&FaceIdFetcher::onQueryFailure,
+                                        this, _1, canonicalUri));
+}
+
+void
+Nfdc::FaceIdFetcher::onCanonizeFailure(const std::string& reason)
+{
+  fail("Canonize faceUri failed : " + reason);
+}
+
+void
+Nfdc::FaceIdFetcher::onQuerySuccess(const ndn::ConstBufferPtr& data,
+                                    const ndn::util::FaceUri& canonicalUri)
+{
+  size_t offset = 0;
+  ndn::Block block;
+  bool ok = ndn::Block::fromBuffer(data, offset, block);
+
+  if (!ok) {
+    if (m_allowCreate) {
+      startFaceCreate(canonicalUri);
+    }
+    else {
+      fail("Fail to find faceId");
+    }
+  }
+  else {
+    try {
+      FaceStatus status(block);
+      succeed(status.getFaceId());
+    }
+    catch (const ndn::tlv::Error& e) {
+      std::string errorMessage(e.what());
+      fail("ERROR: " + errorMessage);
+    }
+  }
+}
+
+void
+Nfdc::FaceIdFetcher::onQueryFailure(uint32_t errorCode,
+                                    const ndn::util::FaceUri& canonicalUri)
+{
+  std::stringstream ss;
+  ss << "Cannot fetch data (code " << errorCode << ")";
+  fail(ss.str());
+}
+
+void
+Nfdc::FaceIdFetcher::onFaceCreateError(uint32_t code,
+                                       const std::string& error,
+                                       const std::string& message)
+{
+  std::stringstream ss;
+  ss << message << " : " << error << " (code " << code << ")";
+  fail(ss.str());
+}
+
+void
+Nfdc::FaceIdFetcher::startFaceCreate(const ndn::util::FaceUri& canonicalUri)
+{
+  ControlParameters parameters;
+  parameters.setUri(canonicalUri.toString());
+
+  m_controller.start<FaceCreateCommand>(parameters,
+                                        [this] (const ControlParameters& result) {
+                                          succeed(result.getFaceId());
+                                        },
+                                        bind(&FaceIdFetcher::onFaceCreateError, this, _1, _2,
+                                             "Face creation failed"));
+}
+
+void
+Nfdc::FaceIdFetcher::succeed(uint32_t faceId)
+{
+  m_onSucceed(faceId);
+  delete this;
+}
+
+void
+Nfdc::FaceIdFetcher::fail(const std::string& reason)
+{
+  m_onFail(reason);
+  delete this;
+}
+
 Nfdc::Nfdc(ndn::Face& face)
   : m_flags(ROUTE_FLAG_CHILD_INHERIT)
   , m_cost(DEFAULT_COST)
   , m_origin(ROUTE_ORIGIN_STATIC)
   , m_expires(DEFAULT_EXPIRATION_PERIOD)
+  , m_face(face)
   , m_controller(face, m_keyChain)
   , m_ioService(face.getIoService())
 {
@@ -138,196 +312,104 @@ Nfdc::dispatch(const std::string& command)
   return true;
 }
 
-namespace {
-
-inline bool
-isValidUri(const std::string& input)
-{
-  // an extended regex to support the validation of uri structure
-  // boost::regex e("^[a-z0-9]+-?+[a-z0-9]+\\:\\/\\/.*");
-  boost::regex e("^[a-z0-9]+\\:.*");
-  return boost::regex_match(input, e);
-}
-
-} // anonymous namespace
-
 void
 Nfdc::fibAddNextHop()
 {
   m_name = m_commandLineArguments[0];
-  ControlParameters parameters;
-  parameters
-    .setName(m_name)
-    .setCost(m_cost);
+  const std::string& faceName = m_commandLineArguments[1];
 
-  if (!isValidUri(m_commandLineArguments[1])) {
-    try { //So the uri is not valid, may be a faceId is provided.
-      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
-    }
-    catch (const std::exception& e) {
-      std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
-      return;
-    }
-    parameters.setFaceId(m_faceId);
-    fibAddNextHop(parameters);
-  }
-  else {
-    ndn::util::FaceUri faceUri;
-    faceUri.parse(m_commandLineArguments[1]);
+  FaceIdFetcher::start(m_face, m_controller, faceName, true,
+                       [this] (const uint32_t faceId) {
+                         ControlParameters parameters;
+                         parameters
+                           .setName(m_name)
+                           .setCost(m_cost)
+                           .setFaceId(faceId);
 
-    faceUri.canonize(bind(&Nfdc::startFibAddNextHop, this, _1),
-                     bind(&Nfdc::onCanonizeFailure, this, _1),
-                     m_ioService, ndn::time::seconds(4));
-  }
-}
-
-void
-Nfdc::startFibAddNextHop(const ndn::util::FaceUri& canonicalUri)
-{
-  ControlParameters parameters;
-  parameters.setUri(canonicalUri.toString());
-
-  m_controller.start<FaceCreateCommand>(parameters,
-                                        [this](const ControlParameters& result) {
-                                          fibAddNextHop(result);
-                                        },
-                                        bind(&Nfdc::onError, this, _1, _2,
-                                                  "Face creation failed"));
-}
-
-void
-Nfdc::fibAddNextHop(const ControlParameters& faceCreateResult)
-{
-  ControlParameters ribParameters;
-  ribParameters
-    .setName(m_name)
-    .setCost(m_cost)
-    .setFaceId(faceCreateResult.getFaceId());
-
-  m_controller.start<FibAddNextHopCommand>(ribParameters,
-                                           bind(&Nfdc::onSuccess, this, _1,
-                                                "Nexthop insertion succeeded"),
-                                           bind(&Nfdc::onError, this, _1, _2,
-                                                "Nexthop insertion failed"));
+                         m_controller
+                           .start<FibAddNextHopCommand>(parameters,
+                                                        bind(&Nfdc::onSuccess, this, _1,
+                                                             "Nexthop insertion succeeded"),
+                                                        bind(&Nfdc::onError, this, _1, _2,
+                                                             "Nexthop insertion failed"));
+                       },
+                       bind(&Nfdc::onObtainFaceIdFailure, this, _1));
 }
 
 void
 Nfdc::fibRemoveNextHop()
 {
   m_name = m_commandLineArguments[0];
-  try {
-    m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
-  }
-  catch (const std::exception& e) {
-    std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
-    return;
-  }
+  const std::string& faceName = m_commandLineArguments[1];
 
-  ControlParameters parameters;
-  parameters
-    .setName(m_name)
-    .setFaceId(m_faceId);
+  FaceIdFetcher::start(m_face, m_controller, faceName, false,
+                       [this] (const uint32_t faceId) {
+                         ControlParameters parameters;
+                         parameters
+                           .setName(m_name)
+                           .setFaceId(faceId);
 
-  m_controller.start<FibRemoveNextHopCommand>(parameters,
-                                              bind(&Nfdc::onSuccess, this, _1,
-                                                   "Nexthop removal succeeded"),
-                                              bind(&Nfdc::onError, this, _1, _2,
-                                                   "Nexthop removal failed"));
+                         m_controller
+                           .start<FibRemoveNextHopCommand>(parameters,
+                                                           bind(&Nfdc::onSuccess, this, _1,
+                                                                "Nexthop removal succeeded"),
+                                                           bind(&Nfdc::onError, this, _1, _2,
+                                                                "Nexthop removal failed"));
+                       },
+                       bind(&Nfdc::onObtainFaceIdFailure, this, _1));
 }
 
 void
 Nfdc::ribRegisterPrefix()
 {
   m_name = m_commandLineArguments[0];
-  ControlParameters parameters;
-  parameters
-    .setName(m_name)
-    .setCost(m_cost)
-    .setFlags(m_flags)
-    .setOrigin(m_origin);
+  const std::string& faceName = m_commandLineArguments[1];
 
-  if (m_expires != DEFAULT_EXPIRATION_PERIOD)
-    parameters.setExpirationPeriod(m_expires);
+  FaceIdFetcher::start(m_face, m_controller, faceName, true,
+                       [this] (const uint32_t faceId) {
+                         ControlParameters parameters;
+                         parameters
+                           .setName(m_name)
+                           .setCost(m_cost)
+                           .setFlags(m_flags)
+                           .setOrigin(m_origin)
+                           .setFaceId(faceId);
 
-  if (!isValidUri(m_commandLineArguments[1])) {
-    try { //So the uri is not valid, may be a faceId is provided.
-      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
-    }
-    catch (const std::exception& e) {
-      std::cerr << "No valid faceUri or faceId is provided"<< std::endl;
-      return;
-    }
-    parameters.setFaceId(m_faceId);
-    ribRegisterPrefix(parameters);
-  }
-  else {
-    ndn::util::FaceUri faceUri;
-    faceUri.parse(m_commandLineArguments[1]);
+                         if (m_expires != DEFAULT_EXPIRATION_PERIOD)
+                           parameters.setExpirationPeriod(m_expires);
 
-    faceUri.canonize(bind(&Nfdc::startRibRegisterPrefix, this, _1),
-                     bind(&Nfdc::onCanonizeFailure, this, _1),
-                     m_ioService, ndn::time::seconds(4));
-  }
-}
-
-void
-Nfdc::startRibRegisterPrefix(const ndn::util::FaceUri& canonicalUri)
-{
-  ControlParameters parameters;
-  parameters.setUri(canonicalUri.toString());
-
-  m_controller.start<FaceCreateCommand>(parameters,
-                                        [this](const ControlParameters& result) {
-                                          ribRegisterPrefix(result);
-                                        },
-                                        bind(&Nfdc::onError, this, _1, _2,
-                                             "Face creation failed"));
-}
-
-void
-Nfdc::ribRegisterPrefix(const ControlParameters& faceCreateResult)
-{
-  ControlParameters ribParameters;
-  ribParameters
-    .setName(m_name)
-    .setCost(m_cost)
-    .setFlags(m_flags)
-    .setOrigin(m_origin)
-    .setFaceId(faceCreateResult.getFaceId());
-
-  if (m_expires != DEFAULT_EXPIRATION_PERIOD)
-    ribParameters.setExpirationPeriod(m_expires);
-
-  m_controller.start<RibRegisterCommand>(ribParameters,
-                                         bind(&Nfdc::onSuccess, this, _1,
-                                                "Successful in name registration"),
-                                         bind(&Nfdc::onError, this, _1, _2,
-                                                "Failed in name registration"));
+                         m_controller
+                           .start<RibRegisterCommand>(parameters,
+                                                      bind(&Nfdc::onSuccess, this, _1,
+                                                           "Successful in name registration"),
+                                                      bind(&Nfdc::onError, this, _1, _2,
+                                                           "Failed in name registration"));
+                       },
+                       bind(&Nfdc::onObtainFaceIdFailure, this, _1));
 }
 
 void
 Nfdc::ribUnregisterPrefix()
 {
   m_name = m_commandLineArguments[0];
-  try {
-    m_faceId = boost::lexical_cast<int>(m_commandLineArguments[1]);
-  }
-  catch (const std::exception& e) {
-    std::cerr << "No valid faceId is provided" << std::endl;
-    return;
-  }
+  const std::string& faceName = m_commandLineArguments[1];
 
-  ControlParameters parameters;
-  parameters
-    .setName(m_name)
-    .setFaceId(m_faceId)
-    .setOrigin(m_origin);
+  FaceIdFetcher::start(m_face, m_controller, faceName, false,
+                       [this] (const uint32_t faceId) {
+                         ControlParameters parameters;
+                         parameters
+                           .setName(m_name)
+                           .setFaceId(faceId)
+                           .setOrigin(m_origin);
 
-  m_controller.start<RibUnregisterCommand>(parameters,
-                                           bind(&Nfdc::onSuccess, this, _1,
-                                                "Successful in unregistering name"),
-                                           bind(&Nfdc::onError, this, _1, _2,
-                                                "Failed in unregistering name"));
+                         m_controller
+                           .start<RibUnregisterCommand>(parameters,
+                                                        bind(&Nfdc::onSuccess, this, _1,
+                                                             "Successful in unregistering name"),
+                                                        bind(&Nfdc::onError, this, _1, _2,
+                                                             "Failed in unregistering name"));
+                       },
+                       bind(&Nfdc::onObtainFaceIdFailure, this, _1));
 }
 
 void
@@ -337,9 +419,16 @@ Nfdc::onCanonizeFailure(const std::string& reason)
 }
 
 void
+Nfdc::onObtainFaceIdFailure(const std::string& message)
+{
+  std::cerr << "Obtain faceId failure: " << message << std::endl;
+}
+
+void
 Nfdc::faceCreate()
 {
-  if (!isValidUri(m_commandLineArguments[0]))
+  boost::regex e("^[a-z0-9]+\\:.*");
+  if (!boost::regex_match(m_commandLineArguments[0], e))
     throw Error("invalid uri format");
 
   ndn::util::FaceUri faceUri;
@@ -367,52 +456,20 @@ void
 Nfdc::faceDestroy()
 {
   ControlParameters parameters;
-  if (!isValidUri(m_commandLineArguments[0])) {
-    try { //So the uri is not valid, may be a faceId is provided.
-      m_faceId = boost::lexical_cast<int>(m_commandLineArguments[0]);
-    }
-    catch (const std::exception& e) {
-      std::cerr << "No valid faceUri or faceId is provided" << std::endl;
-      return;
-    }
-    parameters.setFaceId(m_faceId);
-    faceDestroy(parameters);
-  }
-  else{
-    ndn::util::FaceUri faceUri;
-    faceUri.parse(m_commandLineArguments[0]);
+  const std::string& faceName = m_commandLineArguments[0];
 
-    faceUri.canonize(bind(&Nfdc::startFaceDestroy, this, _1),
-                     bind(&Nfdc::onCanonizeFailure, this, _1),
-                     m_ioService, ndn::time::seconds(4));
-  }
-}
+  FaceIdFetcher::start(m_face, m_controller, faceName, false,
+                       [this] (const uint32_t faceId) {
+                         ControlParameters faceParameters;
+                         faceParameters.setFaceId(faceId);
 
-void
-Nfdc::startFaceDestroy(const ndn::util::FaceUri& canonicalUri)
-{
-  ControlParameters parameters;
-  parameters.setUri(canonicalUri.toString());
-
-  m_controller.start<FaceCreateCommand>(parameters,
-                                        [this](const ControlParameters& result) {
-                                          faceDestroy(result);
-                                        },
-                                        bind(&Nfdc::onError, this, _1, _2,
-                                             "Face destroy failed"));
-}
-
-void
-Nfdc::faceDestroy(const ControlParameters& faceCreateResult)
-{
-  ControlParameters faceParameters;
-  faceParameters.setFaceId(faceCreateResult.getFaceId());
-
-  m_controller.start<FaceDestroyCommand>(faceParameters,
-                                         bind(&Nfdc::onSuccess, this, _1,
-                                              "Face destroy succeeded"),
-                                         bind(&Nfdc::onError, this, _1, _2,
-                                              "Face destroy failed"));
+                         m_controller.start<FaceDestroyCommand>(faceParameters,
+                                                                bind(&Nfdc::onSuccess, this, _1,
+                                                                     "Face destroy succeeded"),
+                                                                bind(&Nfdc::onError, this, _1, _2,
+                                                                     "Face destroy failed"));
+                       },
+                       bind(&Nfdc::onObtainFaceIdFailure, this, _1));
 }
 
 void
@@ -461,8 +518,6 @@ Nfdc::onError(uint32_t code, const std::string& error, const std::string& messag
   os << message << ": " << error << " (code: " << code << ")";
   throw Error(os.str());
 }
-
-
 
 } // namespace nfdc
 

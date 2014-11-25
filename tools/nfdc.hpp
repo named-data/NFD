@@ -31,6 +31,7 @@
 #include <ndn-cxx/util/time.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
+#include <memory>
 
 namespace nfdc {
 
@@ -51,6 +52,74 @@ public:
       : std::runtime_error(what)
     {
     }
+  };
+
+  class FaceIdFetcher
+  {
+  public:
+    typedef std::function<void(uint32_t)> SuccessCallback;
+    typedef std::function<void(const std::string&)> FailureCallback;
+
+    /** \brief obtain FaceId from input
+     *  \param face Reference to the Face that should be used to fetch data
+     *  \param controller Reference to the controller that should be used to sign the Interest
+     *  \param input User input, either FaceId or FaceUri
+     *  \param allowCreate Whether creating face is allowed
+     *  \param onSucceed Callback to be fired when faceId is obtained
+     *  \param onFail Callback to be fired when an error occurs
+     */
+    static void
+    start(ndn::Face& face,
+          Controller& controller,
+          const std::string& input,
+          bool allowCreate,
+          const SuccessCallback& onSucceed,
+          const FailureCallback& onFail);
+
+  private:
+    FaceIdFetcher(ndn::Face& face,
+                  Controller& controller,
+                  bool allowCreate,
+                  const SuccessCallback& onSucceed,
+                  const FailureCallback& onFail);
+
+    void
+    onQuerySuccess(const ndn::ConstBufferPtr& data,
+                   const ndn::util::FaceUri& canonicalUri);
+
+    void
+    onQueryFailure(uint32_t errorCode,
+                   const ndn::util::FaceUri& canonicalUri);
+
+    void
+    onCanonizeSuccess(const ndn::util::FaceUri& canonicalUri);
+
+    void
+    onCanonizeFailure(const std::string& reason);
+
+    void
+    startGetFaceId(const ndn::util::FaceUri& faceUri);
+
+    void
+    startFaceCreate(const ndn::util::FaceUri& canonicalUri);
+
+    void
+    onFaceCreateError(uint32_t code,
+                      const std::string& error,
+                      const std::string& message);
+
+    void
+    succeed(uint32_t faceId);
+
+    void
+    fail(const std::string& reason);
+
+  private:
+    ndn::Face& m_face;
+    Controller& m_controller;
+    bool m_allowCreate;
+    SuccessCallback m_onSucceed;
+    FailureCallback m_onFail;
   };
 
   explicit
@@ -74,13 +143,6 @@ public:
   fibAddNextHop();
 
   /**
-   * \brief Adds a nexthop to a FIB entry using faceId provided in the faceCreateResult
-   *
-   */
-  void
-  fibAddNextHop(const ControlParameters& faceCreateResult);
-
-  /**
    * \brief Removes a nexthop from an existing FIB entry
    *
    * If the last nexthop record in a FIB entry is removed, the FIB entry is also deleted
@@ -102,17 +164,10 @@ public:
   ribRegisterPrefix();
 
   /**
-   * \brief Registers name to the faceId provided in faceCreateResult
-   *
-   */
-  void
-  ribRegisterPrefix(const ControlParameters& faceCreateResult);
-
-  /**
-   * \brief Unregisters name from the given faceId
+   * \brief Unregisters name from the given faceId/faceUri
    *
    * cmd format:
-   *  name faceId
+   *  name faceId/faceUri
    */
   void
   ribUnregisterPrefix();
@@ -138,16 +193,6 @@ public:
    */
   void
   faceDestroy();
-
-  /**
-   * \brief Destroys face based on faceId provided in faceCreateResult
-   *
-   * cmd format:
-   *  faceId|faceUri
-   *
-   */
-  void
-  faceDestroy(const ControlParameters& faceCreateResult);
 
   /**
    * \brief Sets the strategy for a namespace
@@ -185,13 +230,7 @@ private:
   startFaceCreate(const ndn::util::FaceUri& canonicalUri);
 
   void
-  startFaceDestroy(const ndn::util::FaceUri& canonicalUri);
-
-  void
-  startFibAddNextHop(const ndn::util::FaceUri& canonicalUri);
-
-  void
-  startRibRegisterPrefix(const ndn::util::FaceUri& canonicalUri);
+  onObtainFaceIdFailure(const std::string& message);
 
 public:
   const char* m_programName;
@@ -206,9 +245,9 @@ public:
   ndn::time::milliseconds m_expires;
   std::string m_name;
 
-
 private:
   ndn::KeyChain m_keyChain;
+  ndn::Face& m_face;
   Controller m_controller;
   boost::asio::io_service& m_ioService;
 };
