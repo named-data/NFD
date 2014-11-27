@@ -143,23 +143,33 @@ Fib::erase(const fib::Entry& entry)
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  for (NameTree::const_iterator it = m_nameTree.fullEnumerate(
-       &predicate_NameTreeEntry_hasFibEntry); it != m_nameTree.end();) {
-    shared_ptr<fib::Entry> entry = it->getFibEntry();
+  shared_ptr<fib::Entry> toErase;
 
-    ++it; // advance the iterator before `erase` invalidates it
+  auto&& enumerable = m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
+  for (const name_tree::Entry& nte : enumerable) {
+    if (toErase != nullptr) {
+      this->erase(*toErase);
+      toErase.reset();
+    }
 
+    shared_ptr<fib::Entry> entry = nte.getFibEntry();
     entry->removeNextHop(face);
     if (!entry->hasNextHops()) {
-      this->erase(*entry);
+      toErase = entry;
+      // entry needs to be erased, but we must wait until next iteration
+      // to erase it because otherwise it would invalidate the iterator
     }
+  }
+
+  if (toErase != nullptr) {
+    this->erase(*toErase);
   }
 }
 
 Fib::const_iterator
 Fib::begin() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry));
+  return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry).begin());
 }
 
 } // namespace nfd

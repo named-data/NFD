@@ -387,38 +387,34 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
   return false; // if this entry is not empty
 }
 
-NameTree::const_iterator
+NameTree::Range
 NameTree::fullEnumerate(const name_tree::EntrySelector& entrySelector) const
 {
   NFD_LOG_TRACE("fullEnumerate");
 
   // find the first eligible entry
-  for (size_t i = 0; i < m_nBuckets; i++)
-    {
-      for (name_tree::Node* node = m_buckets[i]; node != 0; node = node->m_next)
-        {
-          if (static_cast<bool>(node->m_entry) && entrySelector(*node->m_entry))
-            {
-              const_iterator it(FULL_ENUMERATE_TYPE, *this, node->m_entry, entrySelector);
-              return it;
-            }
-        }
+  for (size_t i = 0; i < m_nBuckets; i++) {
+    for (name_tree::Node* node = m_buckets[i]; node != 0; node = node->m_next) {
+      if (static_cast<bool>(node->m_entry) && entrySelector(*node->m_entry)) {
+        const_iterator it(FULL_ENUMERATE_TYPE, *this, node->m_entry, entrySelector);
+        return {it, end()};
+      }
     }
+  }
 
   // If none of the entry satisfies the requirements, then return the end() iterator.
-  return end();
+  return {end(), end()};
 }
 
-NameTree::const_iterator
+NameTree::Range
 NameTree::partialEnumerate(const Name& prefix,
                            const name_tree::EntrySubTreeSelector& entrySubTreeSelector) const
 {
   // the first step is to process the root node
   shared_ptr<name_tree::Entry> entry = findExactMatch(prefix);
-  if (!static_cast<bool>(entry))
-    {
-      return end();
-    }
+  if (!static_cast<bool>(entry)) {
+    return {end(), end()};
+  }
 
   std::pair<bool, bool>result = entrySubTreeSelector(*entry);
   const_iterator it(PARTIAL_ENUMERATE_TYPE,
@@ -429,17 +425,14 @@ NameTree::partialEnumerate(const Name& prefix,
 
   it.m_shouldVisitChildren = (result.second && entry->hasChildren());
 
-  if (result.first)
-    {
-      // root node is acceptable
-      return it;
-    }
-  else
-    {
-      // let the ++ operator handle it
-      ++it;
-      return it;
-    }
+  if (result.first) {
+    // root node is acceptable
+  }
+  else {
+    // let the ++ operator handle it
+    ++it;
+  }
+  return {it, end()};
 }
 
 NameTree::Range
@@ -458,10 +451,10 @@ NameTree::findAllMatches(const Name& prefix,
 
   if (static_cast<bool>(entry)) {
     const_iterator begin(FIND_ALL_MATCHES_TYPE, *this, entry, entrySelector);
-    return { begin, end() };
+    return {begin, end()};
   }
   // If none of the entry satisfies the requirements, then return the end() iterator.
-  return { end(), end() };
+  return {end(), end()};
 }
 
 // Hash Table Resize

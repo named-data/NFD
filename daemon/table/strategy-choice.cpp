@@ -259,26 +259,29 @@ StrategyChoice::changeStrategy(strategy_choice::Entry& entry,
   // reset StrategyInfo on a portion of NameTree,
   // where entry's effective strategy is covered by the changing StrategyChoice entry
   const name_tree::Entry* rootNte = m_nameTree.get(entry).get();
-  auto ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
+  auto&& ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
     [&rootNte] (const name_tree::Entry& nte) -> std::pair<bool, bool> {
       if (&nte == rootNte) {
-        return { true, true };
+        return {true, true};
       }
       if (static_cast<bool>(nte.getStrategyChoiceEntry())) {
-        return { false, false };
+        return {false, false};
       }
-      return { true, true };
+      return {true, true};
     });
-  std::for_each(ntChanged, m_nameTree.end(), &clearStrategyInfo);
+  for (const name_tree::Entry& nte : ntChanged) {
+    clearStrategyInfo(nte);
+  }
 }
 
 StrategyChoice::const_iterator
 StrategyChoice::begin() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(
+  auto&& enumerable = m_nameTree.fullEnumerate(
     [] (const name_tree::Entry& entry) {
       return static_cast<bool>(entry.getStrategyChoiceEntry());
-    }));
+    });
+  return const_iterator(enumerable.begin());
 }
 
 } // namespace nfd

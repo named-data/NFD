@@ -191,16 +191,34 @@ public: // matching
                  const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
 public: // enumeration
-  /**
-   * \brief Enumerate all the name prefixes stored in the Name Tree.
+  /** \brief Enumerate all entries, optionally filtered by an EntrySelector.
+   *  \return an unspecified type that have .begin() and .end() methods
+   *          and is usable with range-based for
+   *
+   *  Example:
+   *  \code{.cpp}
+   *  auto&& enumerable = nt.fullEnumerate();
+   *  for (const name_tree::Entry& nte : enumerable) {
+   *    ...
+   *  }
+   *  \endcode
    */
-  const_iterator
+  Range
   fullEnumerate(const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
-  /**
-   * \brief Enumerate all the name prefixes that satisfies the EntrySubTreeSelector.
-  */
-  const_iterator
+  /** \brief Enumerate all entries under a prefix, optionally filtered by an EntrySubTreeSelector.
+   *  \return an unspecified type that have .begin() and .end() methods
+   *          and is usable with range-based for
+   *
+   *  Example:
+   *  \code{.cpp}
+   *  auto&& enumerable = nt.partialEnumerate(Name("/A/B/C"));
+   *  for (const name_tree::Entry& nte : enumerable) {
+   *    ...
+   *  }
+   *  \endcode
+   */
+  Range
   partialEnumerate(const Name& prefix,
                    const name_tree::EntrySubTreeSelector& entrySubTreeSelector =
                          name_tree::AnyEntrySubTree()) const;
@@ -364,7 +382,7 @@ NameTree::get(const strategy_choice::Entry& strategyChoiceEntry) const
 inline NameTree::const_iterator
 NameTree::begin() const
 {
-  return fullEnumerate();
+  return fullEnumerate().begin();
 }
 
 inline NameTree::const_iterator
