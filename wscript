@@ -105,6 +105,10 @@ def configure(conf):
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 
+    # disable assertions in release builds
+    if not conf.options.debug:
+        conf.define('NDEBUG', 1)
+
     conf.write_config_header('config.hpp')
 
 def build(bld):
