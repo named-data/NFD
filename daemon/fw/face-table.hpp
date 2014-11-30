@@ -27,7 +27,7 @@
 #define NFD_DAEMON_FW_FACE_TABLE_HPP
 
 #include "face/face.hpp"
-#include "core/map-value-iterator.hpp"
+#include <boost/range/adaptor/map.hpp>
 
 namespace nfd
 {
@@ -59,27 +59,19 @@ public:
   size() const;
 
 public: // enumeration
-  typedef std::map<FaceId, shared_ptr<Face> > FaceMap;
+  typedef std::map<FaceId, shared_ptr<Face>> FaceMap;
+
+  typedef boost::select_second_const_range<FaceMap> ForwardRange;
 
   /** \brief ForwardIterator for shared_ptr<Face>
    */
-  typedef MapValueIterator<FaceMap> const_iterator;
-
-  /** \brief ReverseIterator for shared_ptr<Face>
-   */
-  typedef MapValueReverseIterator<FaceMap> const_reverse_iterator;
+  typedef boost::range_iterator<ForwardRange>::type const_iterator;
 
   const_iterator
   begin() const;
 
   const_iterator
   end() const;
-
-  const_reverse_iterator
-  rbegin() const;
-
-  const_reverse_iterator
-  rend() const;
 
 public: // events
   /** \brief fires after a Face is added
@@ -101,48 +93,14 @@ private:
   void
   remove(shared_ptr<Face> face);
 
+  ForwardRange
+  getForwardRange() const;
+
 private:
   Forwarder& m_forwarder;
   FaceId m_lastFaceId;
   FaceMap m_faces;
 };
-
-inline shared_ptr<Face>
-FaceTable::get(FaceId id) const
-{
-  std::map<FaceId, shared_ptr<Face> >::const_iterator i = m_faces.find(id);
-  return (i == m_faces.end()) ? (shared_ptr<Face>()) : (i->second);
-}
-
-inline size_t
-FaceTable::size() const
-{
-  return m_faces.size();
-}
-
-inline FaceTable::const_iterator
-FaceTable::begin() const
-{
-  return const_iterator(m_faces.begin());
-}
-
-inline FaceTable::const_iterator
-FaceTable::end() const
-{
-  return const_iterator(m_faces.end());
-}
-
-inline FaceTable::const_reverse_iterator
-FaceTable::rbegin() const
-{
-  return const_reverse_iterator(m_faces.rbegin());
-}
-
-inline FaceTable::const_reverse_iterator
-FaceTable::rend() const
-{
-  return const_reverse_iterator(m_faces.rend());
-}
 
 } // namespace nfd
 

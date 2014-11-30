@@ -42,6 +42,19 @@ FaceTable::~FaceTable()
 
 }
 
+shared_ptr<Face>
+FaceTable::get(FaceId id) const
+{
+  std::map<FaceId, shared_ptr<Face> >::const_iterator i = m_faces.find(id);
+  return (i == m_faces.end()) ? (shared_ptr<Face>()) : (i->second);
+}
+
+size_t
+FaceTable::size() const
+{
+  return m_faces.size();
+}
+
 void
 FaceTable::add(shared_ptr<Face> face)
 {
@@ -104,6 +117,22 @@ FaceTable::remove(shared_ptr<Face> face)
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 }
 
+FaceTable::ForwardRange
+FaceTable::getForwardRange() const
+{
+  return m_faces | boost::adaptors::map_values;
+}
 
+FaceTable::const_iterator
+FaceTable::begin() const
+{
+  return this->getForwardRange().begin();
+}
+
+FaceTable::const_iterator
+FaceTable::end() const
+{
+  return this->getForwardRange().end();
+}
 
 } // namespace nfd

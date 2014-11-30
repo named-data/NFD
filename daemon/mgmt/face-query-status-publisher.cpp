@@ -25,6 +25,7 @@
 
 #include "face-query-status-publisher.hpp"
 #include "core/logger.hpp"
+#include <boost/range/adaptor/reversed.hpp>
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
@@ -95,10 +96,7 @@ FaceQueryStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
 {
   size_t totalLength = 0;
 
-  for (FaceTable::const_reverse_iterator i = m_faceTable.rbegin();
-       i != m_faceTable.rend(); ++i) {
-    const shared_ptr<Face>& face = *i;
-
+  for (const shared_ptr<Face>& face : m_faceTable | boost::adaptors::reversed) {
     if (doesMatchFilter(face)) {
       ndn::nfd::FaceStatus status = face->getFaceStatus();
       totalLength += status.wireEncode(outBuffer);
