@@ -164,6 +164,12 @@ BOOST_AUTO_TEST_CASE(Enumerate)
 
 class PStrategyInfo : public fw::StrategyInfo
 {
+public:
+  static constexpr int
+  getTypeId()
+  {
+    return 10;
+  }
 };
 
 BOOST_AUTO_TEST_CASE(ClearStrategyInfo)

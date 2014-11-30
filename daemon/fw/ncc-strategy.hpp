@@ -56,6 +56,12 @@ protected:
   class MeasurementsEntryInfo : public StrategyInfo
   {
   public:
+    static constexpr int
+    getTypeId()
+    {
+      return 1000;
+    }
+
     MeasurementsEntryInfo();
 
     void
@@ -93,6 +99,12 @@ protected:
   class PitEntryInfo : public StrategyInfo
   {
   public:
+    static constexpr int
+    getTypeId()
+    {
+      return 1001;
+    }
+
     virtual
     ~PitEntryInfo();
 
