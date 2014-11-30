@@ -37,6 +37,8 @@ BOOST_FIXTURE_TEST_SUITE(FwForwarder, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
+  LimitedIo limitedIo;
+  auto afterOp = bind(&LimitedIo::afterOp, &limitedIo);;
   Forwarder forwarder;
 
   Name nameA  ("ndn:/A");
@@ -48,8 +50,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  face1->afterSend += bind(&boost::asio::io_service::stop, &g_io);
-  face2->afterSend += bind(&boost::asio::io_service::stop, &g_io);
+  face1->afterSend += afterOp;
+  face2->afterSend += afterOp;
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
@@ -59,22 +61,20 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 0);
-  face1->receiveInterest(*interestAB);
-  g_io.run();
-  g_io.reset();
+  g_io.post([&] { face1->receiveInterest(*interestAB); });
+  BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
-  BOOST_CHECK(face2->m_sentInterests[0].getName().equals(nameAB));
+  BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getName(), nameAB);
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 1);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 0);
-  face2->receiveData(*dataABC);
-  g_io.run();
-  g_io.reset();
+  g_io.post([&] { face2->receiveData(*dataABC); });
+  BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
-  BOOST_CHECK(face1->m_sentDatas[0].getName().equals(nameABC));
+  BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getName(), nameABC);
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 1);
