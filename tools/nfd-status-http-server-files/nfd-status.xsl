@@ -29,13 +29,6 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   </html>
 </xsl:template>
 
-<xsl:template match="nfd:version">
-  <xsl:variable name="major"><xsl:value-of select="floor(. div 1000000) mod 1000"/></xsl:variable>
-  <xsl:variable name="minor"><xsl:value-of select="floor(. div 1000) mod 1000"/></xsl:variable>
-  <xsl:variable name="patch"><xsl:value-of select=". mod 1000"/></xsl:variable>
-
-  <xsl:value-of select="$major"/>.<xsl:value-of select="$minor"/>.<xsl:value-of select="$patch"/>
-</xsl:template>
 
 <xsl:template name="formatDate">
   <xsl:param name="date" />
@@ -100,7 +93,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
     <tbody>
       <tr class="center">
         <td><xsl:apply-templates select="nfd:nfdId"/></td>
-        <td><xsl:apply-templates select="nfd:version"/></td>
+        <td><xsl:value-of select="nfd:version"/></td>
         <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:startTime" /></xsl:call-template></td>
         <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:currentTime" /></xsl:call-template></td>
         <td><xsl:call-template name="formatDuration"><xsl:with-param name="duration" select="nfd:uptime" /></xsl:call-template></td>

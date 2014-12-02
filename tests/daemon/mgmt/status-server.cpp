@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(Status)
   ndn::nfd::ForwarderStatus status;
   BOOST_REQUIRE_NO_THROW(status.wireDecode(g_response->getContent()));
 
-  BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION);
+  BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));
   BOOST_CHECK_LE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t2));
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t3));

@@ -63,7 +63,7 @@ StatusServer::collectStatus() const
 {
   shared_ptr<ndn::nfd::ForwarderStatus> status = make_shared<ndn::nfd::ForwarderStatus>();
 
-  status->setNfdVersion(NFD_VERSION);
+  status->setNfdVersion(NFD_VERSION_BUILD_STRING);
   status->setStartTimestamp(m_startTimestamp);
   status->setCurrentTimestamp(time::system_clock::now());
 
