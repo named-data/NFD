@@ -264,6 +264,22 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
 }
 
+BOOST_AUTO_TEST_CASE(RemoveNextHopFromManyEntries)
+{
+  NameTree nameTree(16);
+  Fib fib(nameTree);
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+
+  for (uint64_t i = 0; i < 300; ++i) {
+    shared_ptr<fib::Entry> entry = fib.insert(Name("/P").appendVersion(i)).first;
+    entry->addNextHop(face1, 0);
+  }
+  BOOST_CHECK_EQUAL(fib.size(), 300);
+
+  fib.removeNextHopFromAllEntries(face1);
+  BOOST_CHECK_EQUAL(fib.size(), 0);
+}
+
 void
 validateFindExactMatch(const Fib& fib, const Name& target)
 {

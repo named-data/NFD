@@ -143,26 +143,21 @@ Fib::erase(const fib::Entry& entry)
 void
 Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
 {
-  shared_ptr<fib::Entry> toErase;
+  std::list<fib::Entry*> toErase;
 
   auto&& enumerable = m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
   for (const name_tree::Entry& nte : enumerable) {
-    if (toErase != nullptr) {
-      this->erase(*toErase);
-      toErase.reset();
-    }
-
     shared_ptr<fib::Entry> entry = nte.getFibEntry();
     entry->removeNextHop(face);
     if (!entry->hasNextHops()) {
-      toErase = entry;
-      // entry needs to be erased, but we must wait until next iteration
-      // to erase it because otherwise it would invalidate the iterator
+      toErase.push_back(entry.get());
+      // entry needs to be erased, but we must wait until the enumeration ends,
+      // because otherwise NameTree iterator would be invalidated
     }
   }
 
-  if (toErase != nullptr) {
-    this->erase(*toErase);
+  for (fib::Entry* entry : toErase) {
+    this->erase(*entry);
   }
 }
 
