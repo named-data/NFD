@@ -387,7 +387,7 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
   return false; // if this entry is not empty
 }
 
-NameTree::Range
+boost::iterator_range<NameTree::const_iterator>
 NameTree::fullEnumerate(const name_tree::EntrySelector& entrySelector) const
 {
   NFD_LOG_TRACE("fullEnumerate");
@@ -406,7 +406,7 @@ NameTree::fullEnumerate(const name_tree::EntrySelector& entrySelector) const
   return {end(), end()};
 }
 
-NameTree::Range
+boost::iterator_range<NameTree::const_iterator>
 NameTree::partialEnumerate(const Name& prefix,
                            const name_tree::EntrySubTreeSelector& entrySubTreeSelector) const
 {
@@ -435,7 +435,7 @@ NameTree::partialEnumerate(const Name& prefix,
   return {it, end()};
 }
 
-NameTree::Range
+boost::iterator_range<NameTree::const_iterator>
 NameTree::findAllMatches(const Name& prefix,
                          const name_tree::EntrySelector& entrySelector) const
 {
@@ -751,12 +751,6 @@ NameTree::const_iterator::operator++()
 
   BOOST_ASSERT(false); // unknown type
   return *this;
-}
-
-NameTree::Range::Range(const_iterator begin, const_iterator end)
-  : m_begin(begin)
-  , m_end(end)
-{
 }
 
 } // namespace nfd

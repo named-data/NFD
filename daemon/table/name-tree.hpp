@@ -80,7 +80,6 @@ class NameTree : noncopyable
 {
 public:
   class const_iterator;
-  class Range;
 
   explicit
   NameTree(size_t nBuckets = 1024);
@@ -186,7 +185,7 @@ public: // matching
    *  }
    *  \endcode
    */
-  Range
+  boost::iterator_range<const_iterator>
   findAllMatches(const Name& prefix,
                  const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
@@ -203,7 +202,7 @@ public: // enumeration
    *  }
    *  \endcode
    */
-  Range
+  boost::iterator_range<const_iterator>
   fullEnumerate(const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
 
   /** \brief Enumerate all entries under a prefix, optionally filtered by an EntrySubTreeSelector.
@@ -218,7 +217,7 @@ public: // enumeration
    *  }
    *  \endcode
    */
-  Range
+  boost::iterator_range<const_iterator>
   partialEnumerate(const Name& prefix,
                    const name_tree::EntrySubTreeSelector& entrySubTreeSelector =
                          name_tree::AnyEntrySubTree()) const;
@@ -274,32 +273,6 @@ public: // enumeration
     shared_ptr<name_tree::EntrySubTreeSelector> m_entrySubTreeSelector;
     NameTree::IteratorType                      m_type;
     bool                                        m_shouldVisitChildren;
-  };
-
-  /** \brief contains a pair of begin and end iterators
-   *
-   *  This is to be used with range-based for.
-   */
-  class Range
-  {
-  public:
-    Range(const_iterator begin, const_iterator end);
-
-    const_iterator
-    begin() const
-    {
-      return m_begin;
-    }
-
-    const_iterator
-    end() const
-    {
-      return m_end;
-    }
-
-  private:
-    const_iterator m_begin;
-    const_iterator m_end;
   };
 
 private:
