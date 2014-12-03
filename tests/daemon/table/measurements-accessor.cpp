@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "table/measurements-accessor.hpp"
 #include "fw/strategy.hpp"
@@ -67,10 +68,8 @@ BOOST_AUTO_TEST_CASE(Access)
 {
   Forwarder forwarder;
 
-  shared_ptr<MeasurementsAccessorTestStrategy> strategy1 =
-    make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy1");
-  shared_ptr<MeasurementsAccessorTestStrategy> strategy2 =
-    make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy2");
+  auto strategy1 = make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy1");
+  auto strategy2 = make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy2");
 
   Name nameRoot("ndn:/");
   Name nameA   ("ndn:/A");
@@ -95,7 +94,7 @@ BOOST_AUTO_TEST_CASE(Access)
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor1.get(nameAD  )), false);
 
   shared_ptr<measurements::Entry> entryRoot = forwarder.getMeasurements().get(nameRoot);
-  BOOST_CHECK_NO_THROW(accessor1.getParent(entryRoot));
+  BOOST_CHECK_NO_THROW(accessor1.getParent(*entryRoot));
 
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor2.get(nameRoot)), false);
   BOOST_CHECK_EQUAL(static_cast<bool>(accessor2.get(nameA   )), true);

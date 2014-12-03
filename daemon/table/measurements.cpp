@@ -36,30 +36,20 @@ Measurements::Measurements(NameTree& nameTree)
 {
 }
 
-Measurements::~Measurements()
-{
-}
-
-static inline bool
-predicate_NameTreeEntry_hasMeasurementsEntry(const name_tree::Entry& entry)
-{
-  return static_cast<bool>(entry.getMeasurementsEntry());
-}
-
 shared_ptr<measurements::Entry>
-Measurements::get(shared_ptr<name_tree::Entry> nameTreeEntry)
+Measurements::get(name_tree::Entry& nte)
 {
-  shared_ptr<measurements::Entry> entry = nameTreeEntry->getMeasurementsEntry();
-  if (static_cast<bool>(entry))
+  shared_ptr<measurements::Entry> entry = nte.getMeasurementsEntry();
+  if (entry != nullptr)
     return entry;
 
-  entry = make_shared<measurements::Entry>(nameTreeEntry->getPrefix());
-  nameTreeEntry->setMeasurementsEntry(entry);
+  entry = make_shared<measurements::Entry>(nte.getPrefix());
+  nte.setMeasurementsEntry(entry);
   ++m_nItems;
 
   entry->m_expiry = time::steady_clock::now() + getInitialLifetime();
   entry->m_cleanup = scheduler::schedule(getInitialLifetime(),
-                                         bind(&Measurements::cleanup, this, entry));
+                                         bind(&Measurements::cleanup, this, ref(*entry)));
 
   return entry;
 }
@@ -67,101 +57,86 @@ Measurements::get(shared_ptr<name_tree::Entry> nameTreeEntry)
 shared_ptr<measurements::Entry>
 Measurements::get(const Name& name)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
-  return get(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
+  return this->get(*nte);
 }
 
 shared_ptr<measurements::Entry>
 Measurements::get(const fib::Entry& fibEntry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(fibEntry);
-
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
-
-  return get(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.get(fibEntry);
+  return this->get(*nte);
 }
 
 shared_ptr<measurements::Entry>
 Measurements::get(const pit::Entry& pitEntry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(pitEntry);
-
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
-
-  return get(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
+  return this->get(*nte);
 }
 
 shared_ptr<measurements::Entry>
-Measurements::getParent(shared_ptr<measurements::Entry> child)
+Measurements::getParent(const measurements::Entry& child)
 {
-  BOOST_ASSERT(child);
-
-  if (child->getName().size() == 0) {
-    return shared_ptr<measurements::Entry>();
+  if (child.getName().size() == 0) { // the root entry
+    return nullptr;
   }
 
-  shared_ptr<name_tree::Entry> nameTreeChild = m_nameTree.get(*child);
-  shared_ptr<name_tree::Entry> nameTreeEntry = nameTreeChild->getParent();
-  if (static_cast<bool>(nameTreeEntry)) {
-    return this->get(nameTreeEntry);
-  }
-  else {
-    BOOST_ASSERT(nameTreeChild->getPrefix().size() == 0); // root entry has no parent
-    return shared_ptr<measurements::Entry>();
-  }
+  shared_ptr<name_tree::Entry> nteChild = m_nameTree.get(child);
+  shared_ptr<name_tree::Entry> nte = nteChild->getParent();
+  BOOST_ASSERT(nte != nullptr);
+  return this->get(*nte);
 }
 
 shared_ptr<measurements::Entry>
 Measurements::findLongestPrefixMatch(const Name& name) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry =
-    m_nameTree.findLongestPrefixMatch(name, &predicate_NameTreeEntry_hasMeasurementsEntry);
-  if (static_cast<bool>(nameTreeEntry)) {
-    return nameTreeEntry->getMeasurementsEntry();
+  shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(name,
+      [] (const name_tree::Entry& nte) { return nte.getMeasurementsEntry() != nullptr; });
+  if (nte != nullptr) {
+    return nte->getMeasurementsEntry();
   }
-  return shared_ptr<measurements::Entry>();
+  return nullptr;
 }
 
 shared_ptr<measurements::Entry>
 Measurements::findExactMatch(const Name& name) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(name);
-  if (static_cast<bool>(nameTreeEntry))
-    return nameTreeEntry->getMeasurementsEntry();
-  return shared_ptr<measurements::Entry>();
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
+  if (nte != nullptr)
+    return nte->getMeasurementsEntry();
+  return nullptr;
 }
 
 void
-Measurements::extendLifetime(shared_ptr<measurements::Entry> entry,
+Measurements::extendLifetime(measurements::Entry& entry,
                              const time::nanoseconds& lifetime)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(*entry);
-  if (!static_cast<bool>(nameTreeEntry) ||
-      nameTreeEntry->getMeasurementsEntry().get() != entry.get()) {
+  shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
+  if (nte == nullptr ||
+      nte->getMeasurementsEntry().get() != &entry) {
     // entry is already gone; it is a dangling reference
     return;
   }
 
   time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
-  if (entry->m_expiry >= expiry) {
+  if (entry.m_expiry >= expiry) {
     // has longer lifetime, not extending
     return;
   }
 
-  scheduler::cancel(entry->m_cleanup);
-  entry->m_expiry = expiry;
-  entry->m_cleanup = scheduler::schedule(lifetime, bind(&Measurements::cleanup, this, entry));
+  scheduler::cancel(entry.m_cleanup);
+  entry.m_expiry = expiry;
+  entry.m_cleanup = scheduler::schedule(lifetime, bind(&Measurements::cleanup, this, ref(entry)));
 }
 
 void
-Measurements::cleanup(shared_ptr<measurements::Entry> entry)
+Measurements::cleanup(measurements::Entry& entry)
 {
-  BOOST_ASSERT(static_cast<bool>(entry));
-
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(*entry);
-  if (static_cast<bool>(nameTreeEntry)) {
-    nameTreeEntry->setMeasurementsEntry(shared_ptr<measurements::Entry>());
-    m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
+  if (nte != nullptr) {
+    nte->setMeasurementsEntry(nullptr);
+    m_nameTree.eraseEntryIfEmpty(nte);
     m_nItems--;
   }
 }

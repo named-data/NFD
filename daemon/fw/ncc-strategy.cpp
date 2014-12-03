@@ -171,13 +171,13 @@ NccStrategy::timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak)
       // going out of this strategy's namespace
       return;
     }
-    this->getMeasurements().extendLifetime(measurementsEntry, MEASUREMENTS_LIFETIME);
+    this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
 
     shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
       this->getMeasurementsEntryInfo(measurementsEntry);
     measurementsEntryInfo->adjustPredictUp();
 
-    measurementsEntry = this->getMeasurements().getParent(measurementsEntry);
+    measurementsEntry = this->getMeasurements().getParent(*measurementsEntry);
   }
 }
 
@@ -198,13 +198,13 @@ NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
       // going out of this strategy's namespace
       return;
     }
-    this->getMeasurements().extendLifetime(measurementsEntry, MEASUREMENTS_LIFETIME);
+    this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
 
     shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
       this->getMeasurementsEntryInfo(measurementsEntry);
     measurementsEntryInfo->updateBestFace(inFace);
 
-    measurementsEntry = this->getMeasurements().getParent(measurementsEntry);
+    measurementsEntry = this->getMeasurements().getParent(*measurementsEntry);
   }
 
   shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
@@ -231,7 +231,7 @@ NccStrategy::getMeasurementsEntryInfo(shared_ptr<measurements::Entry> entry)
   info = make_shared<MeasurementsEntryInfo>();
   entry->setStrategyInfo(info);
 
-  shared_ptr<measurements::Entry> parentEntry = this->getMeasurements().getParent(entry);
+  shared_ptr<measurements::Entry> parentEntry = this->getMeasurements().getParent(*entry);
   if (static_cast<bool>(parentEntry)) {
     shared_ptr<MeasurementsEntryInfo> parentInfo = this->getMeasurementsEntryInfo(parentEntry);
     BOOST_ASSERT(static_cast<bool>(parentInfo));

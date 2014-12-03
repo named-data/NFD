@@ -64,7 +64,7 @@ protected:
  */
 class UnitTestTimeFixture : public BaseFixture
 {
-public:
+protected:
   UnitTestTimeFixture()
     : steadyClock(make_shared<time::UnitTestSteadyClock>())
     , systemClock(make_shared<time::UnitTestSystemClock>())
@@ -88,9 +88,38 @@ public:
   void
   advanceClocks(const time::nanoseconds& tick, size_t nTicks = 1)
   {
-    for (size_t i = 0; i < nTicks; ++i) {
-      steadyClock->advance(tick);
-      systemClock->advance(tick);
+    BOOST_ASSERT(nTicks >= 0);
+
+    this->advanceClocks(tick, tick * nTicks);
+  }
+
+  /** \brief advance steady and system clocks
+   *
+   *  Clocks are advanced in increments of \p tick for \p total time.
+   *  The last increment might be shorter than \p tick.
+   *  After each tick, global io_service is polled to process pending I/O events.
+   *
+   *  Exceptions thrown during I/O events are propagated to the caller.
+   *  Clock advancing would stop in case of an exception.
+   */
+  void
+  advanceClocks(const time::nanoseconds& tick, const time::nanoseconds& total)
+  {
+    BOOST_ASSERT(tick > time::nanoseconds::zero());
+    BOOST_ASSERT(total >= time::nanoseconds::zero());
+
+    time::nanoseconds remaining = total;
+    while (remaining > time::nanoseconds::zero()) {
+      if (remaining >= tick) {
+        steadyClock->advance(tick);
+        systemClock->advance(tick);
+        remaining -= tick;
+      }
+      else {
+        steadyClock->advance(remaining);
+        systemClock->advance(remaining);
+        remaining = time::nanoseconds::zero();
+      }
 
       if (g_io.stopped())
         g_io.reset();

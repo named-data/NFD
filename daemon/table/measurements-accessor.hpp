@@ -45,36 +45,37 @@ public:
 
   ~MeasurementsAccessor();
 
-  /// find or insert a Measurements entry for name
+  /** \brief find or insert a Measurements entry for name
+   */
   shared_ptr<measurements::Entry>
   get(const Name& name);
 
-  /// find or insert a Measurements entry for fibEntry->getPrefix()
+  /** \brief find or insert a Measurements entry for fibEntry->getPrefix()
+   */
   shared_ptr<measurements::Entry>
   get(const fib::Entry& fibEntry);
 
-  /// find or insert a Measurements entry for pitEntry->getName()
+  /** \brief find or insert a Measurements entry for pitEntry->getName()
+   */
   shared_ptr<measurements::Entry>
   get(const pit::Entry& pitEntry);
 
   /** \brief find or insert a Measurements entry for child's parent
-   *
-   *  If child is the root entry, returns null.
+   *  \retval nullptr if child is the root entry
    */
   shared_ptr<measurements::Entry>
-  getParent(shared_ptr<measurements::Entry> child);
+  getParent(const measurements::Entry& child);
 
   /** \brief extend lifetime of an entry
    *
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(shared_ptr<measurements::Entry> entry, const time::nanoseconds& lifetime);
+  extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime);
 
 private:
   /** \brief perform access control to Measurements entry
-   *
-   *  \return entry if strategy has access to namespace, otherwise 0
+   *  \return entry if strategy has access to namespace, otherwise nullptr
    */
   shared_ptr<measurements::Entry>
   filter(const shared_ptr<measurements::Entry>& entry);
@@ -104,13 +105,13 @@ MeasurementsAccessor::get(const pit::Entry& pitEntry)
 }
 
 inline shared_ptr<measurements::Entry>
-MeasurementsAccessor::getParent(shared_ptr<measurements::Entry> child)
+MeasurementsAccessor::getParent(const measurements::Entry& child)
 {
   return this->filter(m_measurements.getParent(child));
 }
 
 inline void
-MeasurementsAccessor::extendLifetime(shared_ptr<measurements::Entry> entry,
+MeasurementsAccessor::extendLifetime(measurements::Entry& entry,
                                      const time::nanoseconds& lifetime)
 {
   m_measurements.extendLifetime(entry, lifetime);

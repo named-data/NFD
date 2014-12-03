@@ -43,23 +43,22 @@ BOOST_AUTO_TEST_CASE(Get_Parent)
   Name nameAB("ndn:/A/B");
 
   shared_ptr<measurements::Entry> entryAB = measurements.get(nameAB);
-  BOOST_REQUIRE(static_cast<bool>(entryAB));
+  BOOST_REQUIRE(entryAB != nullptr);
   BOOST_CHECK_EQUAL(entryAB->getName(), nameAB);
 
   shared_ptr<measurements::Entry> entry0 = measurements.get(name0);
-  BOOST_REQUIRE(static_cast<bool>(entry0));
+  BOOST_REQUIRE(entry0 != nullptr);
 
-  shared_ptr<measurements::Entry> entryA = measurements.getParent(entryAB);
-  BOOST_REQUIRE(static_cast<bool>(entryA));
+  shared_ptr<measurements::Entry> entryA = measurements.getParent(*entryAB);
+  BOOST_REQUIRE(entryA != nullptr);
   BOOST_CHECK_EQUAL(entryA->getName(), nameA);
 
-  shared_ptr<measurements::Entry> entry0c = measurements.getParent(entryA);
+  shared_ptr<measurements::Entry> entry0c = measurements.getParent(*entryA);
   BOOST_CHECK_EQUAL(entry0, entry0c);
 }
 
-BOOST_AUTO_TEST_CASE(Lifetime)
+BOOST_FIXTURE_TEST_CASE(Lifetime, UnitTestTimeFixture)
 {
-  LimitedIo limitedIo;
   NameTree nameTree;
   Measurements measurements(nameTree);
   Name nameA("ndn:/A");
@@ -78,14 +77,14 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   const time::nanoseconds CHECK2 = time::seconds(5);
   const time::nanoseconds EXTEND_C = time::seconds(6);
   const time::nanoseconds CHECK3 = time::seconds(7);
-  BOOST_ASSERT(EXTEND_A < CHECK1 &&
-               CHECK1 < Measurements::getInitialLifetime() &&
-               Measurements::getInitialLifetime() < CHECK2 &&
-               CHECK2 < EXTEND_C &&
-               EXTEND_C < CHECK3);
+  BOOST_ASSERT(EXTEND_A < CHECK1);
+  BOOST_ASSERT(CHECK1 < Measurements::getInitialLifetime());
+  BOOST_ASSERT(Measurements::getInitialLifetime() < CHECK2);
+  BOOST_ASSERT(CHECK2 < EXTEND_C);
+  BOOST_ASSERT(EXTEND_C < CHECK3);
 
-  measurements.extendLifetime(entryA, EXTEND_A);
-  measurements.extendLifetime(entryC, EXTEND_C);
+  measurements.extendLifetime(*entryA, EXTEND_A);
+  measurements.extendLifetime(*entryC, EXTEND_C);
   // remaining lifetime:
   //   A = initial lifetime, because it's extended by less duration
   //   B = initial lifetime
@@ -94,39 +93,33 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   entryB.reset();
   entryC.reset();
 
-  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK1), LimitedIo::EXCEED_TIME);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), true);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), true);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), true);
+  this->advanceClocks(time::milliseconds(100), CHECK1);
+  BOOST_CHECK(measurements.findExactMatch(nameA) != nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameB) != nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameC) != nullptr);
   BOOST_CHECK_EQUAL(measurements.size(), 3);
 
-  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK2 - CHECK1),
-                    LimitedIo::EXCEED_TIME);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), false);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), false);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), true);
+  this->advanceClocks(time::milliseconds(100), CHECK2 - CHECK1);
+  BOOST_CHECK(measurements.findExactMatch(nameA) == nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameB) == nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameC) != nullptr);
   BOOST_CHECK_EQUAL(measurements.size(), 1);
 
-  BOOST_CHECK_EQUAL(limitedIo.run(LimitedIo::UNLIMITED_OPS, CHECK3 - CHECK2),
-                    LimitedIo::EXCEED_TIME);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameA)), false);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameB)), false);
-  BOOST_CHECK_EQUAL(static_cast<bool>(measurements.findExactMatch(nameC)), false);
+  this->advanceClocks(time::milliseconds(100), CHECK3 - CHECK2);
+  BOOST_CHECK(measurements.findExactMatch(nameA) == nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameB) == nullptr);
+  BOOST_CHECK(measurements.findExactMatch(nameC) == nullptr);
   BOOST_CHECK_EQUAL(measurements.size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
+BOOST_FIXTURE_TEST_CASE(EraseNameTreeEntry, UnitTestTimeFixture)
 {
-  LimitedIo limitedIo;
   NameTree nameTree;
   Measurements measurements(nameTree);
   size_t nNameTreeEntriesBefore = nameTree.size();
 
   shared_ptr<measurements::Entry> entry = measurements.get("/A");
-  BOOST_CHECK_EQUAL(
-    limitedIo.run(LimitedIo::UNLIMITED_OPS,
-                  Measurements::getInitialLifetime() + time::milliseconds(10)),
-    LimitedIo::EXCEED_TIME);
+  this->advanceClocks(Measurements::getInitialLifetime() + time::milliseconds(10));
   BOOST_CHECK_EQUAL(measurements.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
