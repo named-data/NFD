@@ -71,8 +71,11 @@ public:
 
   void receiveCommandInterest(Name& name, ControlParameters& parameters)
   {
-    name.append(parameters.wireEncode());
+    receiveCommandInterest(name.append(parameters.wireEncode()));
+  }
 
+  void receiveCommandInterest(const Name& name)
+  {
     Interest command(name);
 
     face->receive(command);
@@ -115,6 +118,13 @@ public:
 typedef RibManagerFixture UnauthorizedRibManager;
 
 BOOST_FIXTURE_TEST_SUITE(RibManager, RibManagerFixture)
+
+BOOST_FIXTURE_TEST_CASE(ShortName, AuthorizedRibManager)
+{
+  Name commandName("/localhost/nfd/rib");
+  receiveCommandInterest(commandName);
+  // TODO verify error response
+}
 
 BOOST_FIXTURE_TEST_CASE(Basic, AuthorizedRibManager)
 {

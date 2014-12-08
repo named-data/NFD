@@ -235,7 +235,7 @@ addedNextHopWithFace(const Fib& fib, const Name& prefix, size_t oldSize,
   return false;
 }
 
-BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
+BOOST_AUTO_TEST_CASE(ShortName)
 {
   shared_ptr<InternalFace> face = getInternalFace();
 

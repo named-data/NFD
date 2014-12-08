@@ -104,9 +104,18 @@ FibManager::onFibRequest(const Interest& request)
 {
   const Name& command = request.getName();
   const size_t commandNComps = command.size();
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
-  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
+  if (commandNComps <= COMMAND_PREFIX.size())
+    {
+      // command is too short to have a verb
+      NFD_LOG_DEBUG("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  const Name::Component& verb = command.at(COMMAND_PREFIX.size());
+
+  const auto unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
   if (unsignedVerbProcessor != m_unsignedVerbDispatch.end())
     {
       NFD_LOG_DEBUG("command result: processing verb: " << verb);

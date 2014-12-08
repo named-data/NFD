@@ -200,7 +200,16 @@ void
 RibManager::onLocalhostRequest(const Interest& request)
 {
   const Name& command = request.getName();
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
+
+  if (command.size() <= COMMAND_PREFIX.size())
+    {
+      // command is too short to have a verb
+      NFD_LOG_DEBUG("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
+
+  const Name::Component& verb = command.at(COMMAND_PREFIX.size());
 
   UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
 

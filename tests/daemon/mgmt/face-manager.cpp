@@ -793,7 +793,7 @@ BOOST_AUTO_TEST_CASE(TestProcessSectionEtherMulticastReinit)
 
 #endif // HAVE_LIBPCAP
 
-BOOST_AUTO_TEST_CASE(TestFireInterestFilter)
+BOOST_AUTO_TEST_CASE(ShortName)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/faces"));
 

@@ -221,7 +221,7 @@ public:
 BOOST_FIXTURE_TEST_SUITE(MgmtStrategyChoiceManager,
                          AuthorizedCommandFixture<AllStrategiesFixture>)
 
-BOOST_FIXTURE_TEST_CASE(TestFireInterestFilter, AllStrategiesFixture)
+BOOST_FIXTURE_TEST_CASE(ShortName, AllStrategiesFixture)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/strategy-choice"));
 

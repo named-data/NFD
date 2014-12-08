@@ -72,6 +72,13 @@ StrategyChoiceManager::onStrategyChoiceRequest(const Interest& request)
       listStrategies(request);
       return;
     }
+  else if (commandNComps <= COMMAND_PREFIX.size())
+    {
+      // command is too short to have a verb
+      NFD_LOG_DEBUG("command result: malformed");
+      sendResponse(command, 400, "Malformed command");
+      return;
+    }
 
   if (COMMAND_UNSIGNED_NCOMPS <= commandNComps &&
       commandNComps < COMMAND_SIGNED_NCOMPS)
@@ -116,7 +123,7 @@ StrategyChoiceManager::onValidatedStrategyChoiceRequest(const shared_ptr<const I
       return;
     }
 
-  const Name::Component& verb = command[COMMAND_PREFIX.size()];
+  const Name::Component& verb = command.at(COMMAND_PREFIX.size());
   ControlResponse response;
   if (verb == VERB_SET)
     {
