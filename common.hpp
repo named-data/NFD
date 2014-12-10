@@ -40,6 +40,15 @@
 #define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
 #endif
 
+/** \def DECL_OVERRIDE
+ *  \brief expands to 'override' if compiler supports this feature, otherwise expands to nothing
+ */
+#ifdef HAVE_CXX_OVERRIDE
+#define DECL_OVERRIDE override
+#else
+#define DECL_OVERRIDE
+#endif
+
 #include <cstddef>
 #include <list>
 #include <set>

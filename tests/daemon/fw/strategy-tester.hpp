@@ -54,16 +54,16 @@ protected:
   virtual void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
                shared_ptr<Face> outFace,
-               bool wantNewNonce = false);
+               bool wantNewNonce = false) DECL_OVERRIDE;
 
   virtual void
-  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
+  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
 
 public:
-  typedef boost::tuple<shared_ptr<pit::Entry>, shared_ptr<Face> > SendInterestArgs;
+  typedef boost::tuple<shared_ptr<pit::Entry>, shared_ptr<Face>> SendInterestArgs;
   std::vector<SendInterestArgs> m_sendInterestHistory;
 
-  typedef boost::tuple<shared_ptr<pit::Entry> > RejectPendingInterestArgs;
+  typedef boost::tuple<shared_ptr<pit::Entry>> RejectPendingInterestArgs;
   std::vector<RejectPendingInterestArgs> m_rejectPendingInterestHistory;
 };
 

@@ -54,7 +54,7 @@ public:
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry);
+                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
 
 public:
   static const Name STRATEGY_NAME;

@@ -36,7 +36,7 @@ def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
     opt.load(['boost', 'unix-socket', 'dependency-checker', 'websocket',
               'default-compiler-flags', 'coverage', 'pch', 'boost-kqueue',
-              'doxygen', 'sphinx_build', 'type_traits'],
+              'doxygen', 'sphinx_build', 'type_traits', 'compiler-features'],
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
@@ -59,7 +59,7 @@ def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'pch', 'boost-kqueue',
                'boost', 'dependency-checker', 'websocket',
-               'doxygen', 'sphinx_build', 'type_traits'])
+               'doxygen', 'sphinx_build', 'type_traits', 'compiler-features'])
 
     conf.find_program('bash', var='BASH')
 

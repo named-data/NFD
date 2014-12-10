@@ -47,7 +47,7 @@ public:
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry)
+                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
   {
     ++m_afterReceiveInterest_count;
 
@@ -61,13 +61,13 @@ public:
 
   virtual void
   beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
-                        const Face& inFace, const Data& data)
+                        const Face& inFace, const Data& data) DECL_OVERRIDE
   {
     ++m_beforeSatisfyInterest_count;
   }
 
   virtual void
-  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
+  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
   {
     ++m_beforeExpirePendingInterest_count;
   }

@@ -27,33 +27,24 @@
 #include "fw/strategy.hpp"
 
 #include "tests/test-common.hpp"
+#include "../fw/dummy-strategy.hpp"
 
 namespace nfd {
 namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TableMeasurementsAccessor, BaseFixture)
 
-class MeasurementsAccessorTestStrategy : public fw::Strategy
+class MeasurementsAccessorTestStrategy : public DummyStrategy
 {
 public:
   MeasurementsAccessorTestStrategy(Forwarder& forwarder, const Name& name)
-    : Strategy(forwarder, name)
+    : DummyStrategy(forwarder, name)
   {
   }
 
   virtual
   ~MeasurementsAccessorTestStrategy()
-
   {
-  }
-
-  virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry)
-  {
-    BOOST_ASSERT(false);
   }
 
 public: // accessors
