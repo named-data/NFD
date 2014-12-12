@@ -3,7 +3,8 @@ set -e
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-for i in $( find "$DIR/.jenkins.d" -type f -perm +111 | sort ); do
-    echo "Run: $i"
-    "$i"
+for file in "$DIR"/.jenkins.d/*; do
+    [[ -f $file && -x $file ]] || continue
+    echo "Run: $file"
+    "$file"
 done

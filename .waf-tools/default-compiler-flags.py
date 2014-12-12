@@ -27,6 +27,7 @@ def configure(conf):
                          '-Werror',
                          '-Wno-error=maybe-uninitialized', # Bug #1560
                          '-Wno-error=unneeded-internal-declaration', # Bug #1588
+                         '-Wno-error=deprecated-register', # Bug #2288
                         ]
         if areCustomCxxflagsPresent:
             missingFlags = [x for x in defaultFlags if x not in conf.env.CXXFLAGS]
