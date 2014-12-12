@@ -35,10 +35,9 @@ NFD_LOG_INIT("RemoteRegistrator");
 using ndn::nfd::ControlParameters;
 using ndn::nfd::CommandOptions;
 
-
-const Name RemoteRegistrator::RM_LOCAL_PREFIX = "/localhost";
-const Name RemoteRegistrator::RM_HUB_PREFIX = "/localhop/nfd";
-const name::Component RemoteRegistrator::RM_IGNORE_COMMPONENT("rib");
+const Name RemoteRegistrator::LOCAL_REGISTRATION_PREFIX = "/localhost";
+const Name RemoteRegistrator::REMOTE_HUB_PREFIX = "/localhop/nfd/rib";
+const name::Component RemoteRegistrator::IGNORE_COMMPONENT("rib");
 
 RemoteRegistrator::RemoteRegistrator(ndn::nfd::Controller& controller,
                                      ndn::KeyChain& keyChain,
@@ -100,8 +99,14 @@ RemoteRegistrator::loadConfig(const ConfigSection& configSection)
      .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)// set origin to client.
      .setFaceId(0);// the remote hub will take the input face as the faceId.
 
+   Name commandPrefix = REMOTE_HUB_PREFIX;
+   if (IGNORE_COMMPONENT == commandPrefix.at(-1))
+     {
+       commandPrefix = commandPrefix.getPrefix(-1);
+     }
+
    m_commandOptions
-     .setPrefix(RM_HUB_PREFIX)
+     .setPrefix(commandPrefix)
      .setTimeout(time::milliseconds(timeout));
 
    m_nRetries = retry;
@@ -117,15 +122,38 @@ RemoteRegistrator::loadConfig(const ConfigSection& configSection)
 }
 
 void
+RemoteRegistrator::enable()
+{
+  // do remote registration after an entry is inserted into the RIB.
+  m_afterInsertConnection =
+    m_rib.afterInsertEntry.connect([this] (const Name& prefix) {
+        registerPrefix(prefix);
+      });
+
+  // do remote unregistration after an entry is erased from the RIB.
+  m_afterEraseConnection =
+    m_rib.afterEraseEntry.connect([this] (const Name& prefix) {
+        unregisterPrefix(prefix);
+      });
+}
+
+void
+RemoteRegistrator::disable()
+{
+  m_afterInsertConnection.disconnect();
+  m_afterEraseConnection.disconnect();
+}
+
+void
 RemoteRegistrator::registerPrefix(const Name& prefix)
 {
-  if (RM_LOCAL_PREFIX.isPrefixOf(prefix))
+  if (LOCAL_REGISTRATION_PREFIX.isPrefixOf(prefix))
     {
       NFD_LOG_INFO("local registration only for " << prefix);
       return;
     }
 
-  bool isHubPrefix = prefix == RM_HUB_PREFIX;
+  bool isHubPrefix = prefix == REMOTE_HUB_PREFIX;
 
   if (isHubPrefix)
     {
@@ -181,7 +209,7 @@ RemoteRegistrator::registerPrefix(const Name& prefix)
 void
 RemoteRegistrator::unregisterPrefix(const Name& prefix)
 {
-  if (prefix == RM_HUB_PREFIX)
+  if (prefix == REMOTE_HUB_PREFIX)
     {
       NFD_LOG_INFO("disconnected to hub with prefix: " << prefix);
 
@@ -267,7 +295,7 @@ RemoteRegistrator::findIdentityForRegistration(const Name& prefix)
   // longest prefix matching to all indenties.
   for (auto&& i : identities)
     {
-      if (!i.empty() && RM_IGNORE_COMMPONENT == i.at(-1))
+      if (!i.empty() && IGNORE_COMMPONENT == i.at(-1))
         {
           isPrefix = i.getPrefix(-1).isPrefixOf(prefix);
           curLength = i.size() - 1;
@@ -360,9 +388,9 @@ RemoteRegistrator::onRegFailure(uint32_t code, const std::string& reason,
                                 const CommandOptions& options,
                                 int nRetries)
 {
-  NFD_LOG_INFO("fail to unregister " << parameters.getName()
-                                     << "\n\t reason:" << reason
-                                     << "\n\t remain retries:" << nRetries);
+  NFD_LOG_INFO("fail to register " << parameters.getName()
+                                   << "\n\t reason:" << reason
+                                   << "\n\t remain retries:" << nRetries);
 
   if (nRetries > 0)
     {

@@ -34,10 +34,11 @@ namespace rib {
 namespace tests {
 
 class RemoteRegistratorFixture : public nfd::tests::IdentityManagementFixture
+                               , public nfd::tests::UnitTestTimeFixture
 {
 public:
   RemoteRegistratorFixture()
-    : face(ndn::util::makeDummyClientFace())
+    : face(ndn::util::makeDummyClientFace(getGlobalIoService()))
     , controller(make_shared<ndn::nfd::Controller>(std::ref(*face), m_keyChain))
     , remoteRegistrator(make_shared<RemoteRegistrator>(std::ref(*controller),
                                                        m_keyChain,
@@ -48,41 +49,52 @@ public:
   {
     readConfig();
 
-    registerCallback();
+    remoteRegistrator->enable();
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
     face->sentInterests.clear();
   }
 
   void
-  readConfig()
+  readConfig(bool isSetRetry = false)
   {
     ConfigFile config;
     config.addSectionHandler("remote_register",
                              bind(&RemoteRegistrator::loadConfig, remoteRegistrator, _1));
 
-    const std::string CONFIG_STRING =
-    "remote_register\n"
-    "{\n"
-    "  cost 15\n"
-    "  timeout 10000\n"
-    "  retry 2\n"
-    "  refresh_interval 5\n"
-    "}";
 
-    config.parse(CONFIG_STRING, true, "test-remote-register");
+    if (isSetRetry)
+      {
+        const std::string CONFIG_STRING =
+        "remote_register\n"
+        "{\n"
+        "  cost 15\n"
+        "  timeout 1000\n"
+        "  retry 1\n"
+        "  refresh_interval 5\n"
+        "}";
+
+        config.parse(CONFIG_STRING, true, "test-remote-register");
+      }
+    else
+      {
+        const std::string CONFIG_STRING =
+        "remote_register\n"
+        "{\n"
+        "  cost 15\n"
+        "  timeout 100000\n"
+        "  retry 0\n"
+        "  refresh_interval 5\n"
+        "}";
+
+        config.parse(CONFIG_STRING, true, "test-remote-register");
+      }
   }
 
   void
-  registerCallback()
+  waitForTimeout()
   {
-    rib.afterInsertEntry += [this] (const Name& prefix) {
-      remoteRegistrator->registerPrefix(prefix);
-    };
-
-    rib.afterEraseEntry += [this] (const Name& prefix) {
-      remoteRegistrator->unregisterPrefix(prefix);
-    };
+    advanceClocks(time::milliseconds(100), time::seconds(1));
   }
 
   void
@@ -97,7 +109,7 @@ public:
 
     rib.insert(identity.append(appName), faceEntry);
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -110,7 +122,7 @@ public:
 
     rib.insert(identity.append(appName), faceEntry);
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -125,7 +137,7 @@ public:
 
     rib.erase(identity.append(appName), faceEntry);
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -138,7 +150,7 @@ public:
 
     rib.erase(identity.append(appName), faceEntry);
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -146,23 +158,23 @@ public:
   {
     rib.erase(faceId);
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
   connectToHub()
   {
-    rib.insert(Name("/localhop/nfd"), FaceEntry());
+    rib.insert(COMMAND_PREFIX, FaceEntry());
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
   disconnectToHub()
   {
-    rib.erase(Name("/localhop/nfd"), FaceEntry());
+    rib.erase(COMMAND_PREFIX, FaceEntry());
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -268,6 +280,55 @@ BOOST_FIXTURE_TEST_CASE(RegisterAdvanced, RemoteRegistratorFixture)
 
   BOOST_CHECK_EQUAL(verb, REGISTER_VERB);
   BOOST_CHECK_EQUAL(extractedParameters.getName(), identity);
+}
+
+BOOST_FIXTURE_TEST_CASE(RegisterWithRedundantCallback, RemoteRegistratorFixture)
+{
+  remoteRegistrator->enable();
+
+  connectToHub();
+
+  Name identity("/remote/register");
+  insertEntryWithIdentity(identity);
+
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+
+  Interest& request = face->sentInterests[0];
+
+  ndn::nfd::ControlParameters extractedParameters;
+  Name::Component verb;
+  extractParameters(request, verb, extractedParameters);
+
+  BOOST_CHECK_EQUAL(verb, REGISTER_VERB);
+  BOOST_CHECK_EQUAL(extractedParameters.getName(), identity);
+}
+
+BOOST_FIXTURE_TEST_CASE(RegisterRetry, RemoteRegistratorFixture)
+{
+  // setRetry
+  readConfig(true);
+
+  connectToHub();
+
+  Name identity("/remote/register");
+  insertEntryWithIdentity(identity);
+
+  waitForTimeout();
+
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 2);
+
+  Interest& requestFirst  = face->sentInterests[0];
+  Interest& requestSecond = face->sentInterests[1];
+
+  ndn::nfd::ControlParameters extractedParametersFirst, extractedParametersSecond;
+  Name::Component verbFirst, verbSecond;
+  extractParameters(requestFirst,  verbFirst,  extractedParametersFirst);
+  extractParameters(requestSecond, verbSecond, extractedParametersSecond);
+
+  BOOST_CHECK_EQUAL(verbFirst,  REGISTER_VERB);
+  BOOST_CHECK_EQUAL(verbSecond, REGISTER_VERB);
+  BOOST_CHECK_EQUAL(extractedParametersFirst.getName(),  identity);
+  BOOST_CHECK_EQUAL(extractedParametersSecond.getName(), identity);
 }
 
 BOOST_FIXTURE_TEST_CASE(UnregisterWithoutInsert, RemoteRegistratorFixture)

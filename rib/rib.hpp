@@ -30,6 +30,7 @@
 #include "fib-update.hpp"
 #include "common.hpp"
 #include <ndn-cxx/management/nfd-control-command.hpp>
+#include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {
 namespace rib {
@@ -137,8 +138,8 @@ private:
   removeInheritedFacesFromEntry(RibEntry& entry, const Rib::FaceSet& facesToRemove);
 
 public:
-  ndn::util::EventEmitter<Name> afterInsertEntry;
-  ndn::util::EventEmitter<Name> afterEraseEntry;
+  ndn::util::signal::Signal<Rib, Name> afterInsertEntry;
+  ndn::util::signal::Signal<Rib, Name> afterEraseEntry;
 
 private:
   RibTable m_rib;

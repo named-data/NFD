@@ -288,6 +288,16 @@ rib
   ;   ; }
   ; }
 
+  ; The following localhop_security should be enabled when NFD runs on a hub,
+  ; which accepts all remote registrations and is a short-term solution.
+  ; localhop_security
+  ; {
+  ;   trust-anchor
+  ;   {
+  ;     type any
+  ;   }
+  ; }
+
   remote_register
   {
     cost 15 ; forwarding cost of prefix registered on remote router

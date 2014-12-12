@@ -144,6 +144,8 @@ RibManager::onConfig(const ConfigSection& configSection,
                      bool isDryRun,
                      const std::string& filename)
 {
+  bool isRemoteRegisterEnabled = false;
+
   for (ConfigSection::const_iterator i = configSection.begin();
        i != configSection.end(); ++i)
     {
@@ -157,20 +159,22 @@ RibManager::onConfig(const ConfigSection& configSection,
       else if (i->first == "remote_register")
         {
           m_remoteRegistrator.loadConfig(i->second);
+          isRemoteRegisterEnabled = true;
+          // avoid other actions when isDryRun == true
+          if (isDryRun)
+            {
+              continue;
+            }
 
-          // register callback to the RIB.
-          // do remote registration after an entry is inserted into the RIB.
-          // do remote unregistration after an entry is erased from the RIB.
-          m_managedRib.afterInsertEntry += [this] (const Name& prefix) {
-            m_remoteRegistrator.registerPrefix(prefix);
-          };
-
-          m_managedRib.afterEraseEntry += [this] (const Name& prefix) {
-            m_remoteRegistrator.unregisterPrefix(prefix);
-          };
+          m_remoteRegistrator.enable();
         }
       else
         throw Error("Unrecognized rib property: " + i->first);
+    }
+
+  if (!isRemoteRegisterEnabled)
+    {
+      m_remoteRegistrator.disable();
     }
 }
 
@@ -200,16 +204,7 @@ void
 RibManager::onLocalhostRequest(const Interest& request)
 {
   const Name& command = request.getName();
-
-  if (command.size() <= COMMAND_PREFIX.size())
-    {
-      // command is too short to have a verb
-      NFD_LOG_DEBUG("command result: malformed");
-      sendResponse(command, 400, "Malformed command");
-      return;
-    }
-
-  const Name::Component& verb = command.at(COMMAND_PREFIX.size());
+  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
 
   UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
 

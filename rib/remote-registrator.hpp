@@ -36,6 +36,7 @@
 #include <ndn-cxx/management/nfd-control-command.hpp>
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
 #include <ndn-cxx/management/nfd-command-options.hpp>
+#include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {
 namespace rib {
@@ -70,6 +71,20 @@ public:
    */
   void
   loadConfig(const ConfigSection& configSection);
+
+  /**
+   * @brief enable remote registration/unregistration.
+   *
+   */
+  void
+  enable();
+
+  /**
+   * @brief disable remote registration/unregistration.
+   *
+   */
+  void
+  disable();
 
   /**
    * @brief register a prefix to remote hub(s).
@@ -197,7 +212,6 @@ private:
   void
   clearRefreshEvents();
 
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
    * When a locally registered prefix triggles remote
@@ -217,16 +231,17 @@ private:
   ndn::nfd::Controller& m_nfdController;
   ndn::KeyChain& m_keyChain;
   Rib& m_rib;
-
+  ndn::util::signal::ScopedConnection m_afterInsertConnection;
+  ndn::util::signal::ScopedConnection m_afterEraseConnection;
   ndn::nfd::ControlParameters m_controlParameters;
   ndn::nfd::CommandOptions m_commandOptions;
   time::seconds m_refreshInterval;
   bool m_hasConnectedHub;
   int m_nRetries;
 
-  static const Name RM_LOCAL_PREFIX; // /localhost
-  static const Name RM_HUB_PREFIX; // /localhop/nfd
-  static const name::Component RM_IGNORE_COMMPONENT; // rib
+  static const Name LOCAL_REGISTRATION_PREFIX; // /localhost
+  static const Name REMOTE_HUB_PREFIX; // /localhop/nfd/rib
+  static const name::Component IGNORE_COMMPONENT; // rib
 };
 
 } // namespace rib
