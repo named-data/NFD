@@ -54,9 +54,25 @@ static_assert(std::is_default_constructible<NetworkInterfaceInfo>::value,
               "NetworkInterfaceInfo must provide a default constructor");
 #endif
 
+#ifdef WITH_TESTS
+static shared_ptr<std::vector<NetworkInterfaceInfo>> s_debugNetworkInterfaces = nullptr;
+
+void
+setDebugNetworkInterfaces(shared_ptr<std::vector<NetworkInterfaceInfo>> interfaces)
+{
+  s_debugNetworkInterfaces = interfaces;
+}
+#endif
+
 std::vector<NetworkInterfaceInfo>
 listNetworkInterfaces()
 {
+#ifdef WITH_TESTS
+  if (s_debugNetworkInterfaces != nullptr) {
+    return *s_debugNetworkInterfaces;
+  }
+#endif
+
   using namespace boost::asio::ip;
   using std::strerror;
 

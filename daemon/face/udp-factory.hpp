@@ -160,7 +160,7 @@ public:
   const MulticastFaceMap&
   getMulticastFaces() const;
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
   prohibitEndpoint(const udp::Endpoint& endpoint);
@@ -202,7 +202,7 @@ private:
                                  const FaceCreatedCallback& onCreated,
                                  const FaceConnectFailedCallback& onConnectFailed);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   typedef std::map< udp::Endpoint, shared_ptr<UdpChannel> > ChannelMap;
 
   ChannelMap m_channels;

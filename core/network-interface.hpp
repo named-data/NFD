@@ -88,8 +88,18 @@ NetworkInterfaceInfo::isUp() const
   return (flags & IFF_UP) != 0;
 }
 
+/** \brief List configured network interfaces on the system and their info
+ */
 std::vector<NetworkInterfaceInfo>
 listNetworkInterfaces();
+
+#ifdef WITH_TESTS
+/** \brief Set a list of network interfaces to be returned by subsequent listNetworkInterfaces call
+ *  \note To reset to normal behavior, use `setDebugNetworkInterfaces(nullptr);`
+ */
+void
+setDebugNetworkInterfaces(shared_ptr<std::vector<NetworkInterfaceInfo>> interfaces);
+#endif
 
 } // namespace nfd
 

@@ -38,6 +38,12 @@ using namespace boost::asio;
 
 NFD_LOG_INIT("UdpFactory");
 
+static const boost::asio::ip::address_v4 ALL_V4_ENDPOINT(
+  boost::asio::ip::address_v4::from_string("0.0.0.0"));
+
+static const boost::asio::ip::address_v6 ALL_V6_ENDPOINT(
+  boost::asio::ip::address_v6::from_string("::"));
+
 UdpFactory::UdpFactory(const std::string& defaultPort/* = "6363"*/)
   : m_defaultPort(defaultPort)
 {
@@ -47,9 +53,6 @@ void
 UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
 {
   using namespace boost::asio::ip;
-
-  static const address_v4 ALL_V4_ENDPOINT(address_v4::from_string("0.0.0.0"));
-  static const address_v6 ALL_V6_ENDPOINT(address_v6::from_string("::"));
 
   const address& address = endpoint.address();
 
@@ -62,8 +65,7 @@ UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
       prohibitAllIpv6Endpoints(endpoint.port());
     }
 
-  NFD_LOG_TRACE("prohibiting UDP " <<
-                endpoint.address().to_string() << ":" << endpoint.port());
+  NFD_LOG_TRACE("prohibiting UDP " << endpoint);
 
   m_prohibitedEndpoints.insert(endpoint);
 }
@@ -73,14 +75,14 @@ UdpFactory::prohibitAllIpv4Endpoints(const uint16_t port)
 {
   using namespace boost::asio::ip;
 
-  static const address_v4 INVALID_BROADCAST(address_v4::from_string("0.0.0.0"));
-
   for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
     for (const address_v4& addr : nic.ipv4Addresses) {
-      prohibitEndpoint(udp::Endpoint(addr, port));
+      if (addr != ALL_V4_ENDPOINT) {
+        prohibitEndpoint(udp::Endpoint(addr, port));
+      }
     }
 
-    if (nic.isBroadcastCapable() && nic.broadcastAddress != INVALID_BROADCAST)
+    if (nic.isBroadcastCapable() && nic.broadcastAddress != ALL_V4_ENDPOINT)
     {
       NFD_LOG_TRACE("prohibiting broadcast address: " << nic.broadcastAddress.to_string());
       prohibitEndpoint(udp::Endpoint(nic.broadcastAddress, port));
@@ -97,7 +99,9 @@ UdpFactory::prohibitAllIpv6Endpoints(const uint16_t port)
 
   for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
     for (const address_v6& addr : nic.ipv6Addresses) {
-      prohibitEndpoint(udp::Endpoint(addr, port));
+      if (addr != ALL_V6_ENDPOINT) {
+        prohibitEndpoint(udp::Endpoint(addr, port));
+      }
     }
   }
 }

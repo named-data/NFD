@@ -30,7 +30,7 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(CoreNetworkInterface, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ListNetworkInterfaces)
+BOOST_AUTO_TEST_CASE(ListRealNetworkInterfaces)
 {
   std::vector<NetworkInterfaceInfo> netifs;
   BOOST_CHECK_NO_THROW(netifs = listNetworkInterfaces());
@@ -46,6 +46,64 @@ BOOST_AUTO_TEST_CASE(ListNetworkInterfaces)
     BOOST_TEST_MESSAGE("\tmulticast : " << netif.isMulticastCapable());
     BOOST_TEST_MESSAGE("\tup        : " << netif.isUp());
   }
+}
+
+class FakeNetworkInterfaceFixture : public BaseFixture
+{
+public:
+  FakeNetworkInterfaceFixture()
+  {
+    using namespace boost::asio::ip;
+
+    auto fakeInterfaces = make_shared<std::vector<NetworkInterfaceInfo>>();
+
+    fakeInterfaces->push_back(
+      NetworkInterfaceInfo {0, "lo0",
+        ethernet::Address(),
+        {address_v4::from_string("127.0.0.1")},
+        {address_v6::from_string("fe80::1")},
+        address_v4::from_string("127.255.255.255"),
+        IFF_LOOPBACK | IFF_UP});
+    fakeInterfaces->push_back(
+      NetworkInterfaceInfo {1, "eth0",
+        ethernet::Address::fromString("3e:15:c2:8b:65:00"),
+        {address_v4::from_string("192.168.2.1")},
+        {},
+        address_v4::from_string("192.168.2.255"),
+        0});
+    fakeInterfaces->push_back(
+      NetworkInterfaceInfo {2, "eth1",
+        ethernet::Address::fromString("3e:15:c2:8b:65:00"),
+        {address_v4::from_string("198.51.100.1")},
+        {address_v6::from_string("2001:db8::1")},
+        address_v4::from_string("198.51.100.255"),
+        IFF_MULTICAST | IFF_BROADCAST | IFF_UP});
+
+    setDebugNetworkInterfaces(fakeInterfaces);
+  }
+
+  ~FakeNetworkInterfaceFixture()
+  {
+    setDebugNetworkInterfaces(nullptr);
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(ListFakeNetworkInterfaces, FakeNetworkInterfaceFixture)
+{
+  std::vector<NetworkInterfaceInfo> netifs;
+  BOOST_CHECK_NO_THROW(netifs = listNetworkInterfaces());
+
+  BOOST_REQUIRE_EQUAL(netifs.size(), 3);
+
+  BOOST_CHECK_EQUAL(netifs[0].index, 0);
+  BOOST_CHECK_EQUAL(netifs[1].index, 1);
+  BOOST_CHECK_EQUAL(netifs[2].index, 2);
+
+  BOOST_CHECK_EQUAL(netifs[0].name, "lo0");
+  BOOST_CHECK_EQUAL(netifs[1].name, "eth0");
+  BOOST_CHECK_EQUAL(netifs[2].name, "eth1");
+
+  // no real value of testing other parameters
 }
 
 BOOST_AUTO_TEST_SUITE_END()

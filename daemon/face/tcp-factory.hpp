@@ -88,7 +88,7 @@ public:
   virtual std::list<shared_ptr<const Channel> >
   getChannels() const;
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
   prohibitEndpoint(const tcp::Endpoint& endpoint);
@@ -115,7 +115,7 @@ private:
                                  const FaceCreatedCallback& onCreated,
                                  const FaceConnectFailedCallback& onConnectFailed);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   typedef std::map< tcp::Endpoint, shared_ptr<TcpChannel> > ChannelMap;
   ChannelMap m_channels;
 
