@@ -27,17 +27,15 @@
 #include "strategy-tester.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FwBestRouteStrategy2, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(FwBestRouteStrategy2, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Forward)
 {
-  LimitedIo limitedIo;
   Forwarder forwarder;
   typedef StrategyTester<fw::BestRouteStrategy2> BestRouteStrategy2Tester;
   BestRouteStrategy2Tester strategy(forwarder);
@@ -63,6 +61,8 @@ BOOST_AUTO_TEST_CASE(Forward)
   Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
+  const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
+    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.01);
   const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
     fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
   const time::nanoseconds RETRANSMISSION_70P = time::duration_cast<time::nanoseconds>(
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = scheduler::schedule(RETRANSMISSION_10P, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  limitedIo.defer(fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 16);
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   strategy.m_sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
-    limitedIo.defer(RETRANSMISSION_2);
+    this->advanceClocks(TICK, RETRANSMISSION_2);
     pitEntry->insertOrUpdateInRecord(face5, *interest);
     strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
   }
