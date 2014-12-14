@@ -16,7 +16,7 @@ upstart.
 On OS X, NFD can be installed with MacPorts.  Refer to :ref:`Install NFD Using the NDN
 MacPorts Repository on OS X` for more details.
 
-On Ubuntu 12.04, 13.10, or 14.04, NFD can be installed from NDN PPA repository.  Refer to
+On Ubuntu 12.04, 14.04, or 14.10 NFD can be installed from NDN PPA repository.  Refer to
 :ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.
 
 Future releases could include support for other platforms.  Please send us feedback on the
@@ -72,7 +72,7 @@ the latest version.  The following commands will do this job:
 Install NFD Using the NDN PPA Repository on Ubuntu Linux
 --------------------------------------------------------
 
-NFD binaries and related tools for Ubuntu 12.04 and 14.04 can be installed using PPA
+NFD binaries and related tools for Ubuntu 12.04, 14.04, or 14.10 can be installed using PPA
 packages from named-data repository.  First, you will need to add ``named-data/ppa``
 repository to binary package sources and update list of available packages.
 
@@ -88,7 +88,7 @@ On Ubuntu **12.04**:
 
     sudo apt-get install python-software-properties
 
-On Ubuntu **14.04**:
+On Ubuntu **14.04** or **14.10**:
 
 ::
 
@@ -153,9 +153,23 @@ Prerequisites
 -  Install the `ndn-cxx library <http://named-data.net/doc/ndn-cxx/current/INSTALL.html>`_
    and its requirements
 
+-  ``pkg-config``
+
+   On OS X 10.8, 10.9, and 10.10 with MacPorts:
+
+   ::
+
+       sudo port install pkgconfig
+
+   On Ubuntu >= 12.04:
+
+   ::
+
+       sudo apt-get install pkg-config
+
 -  ``libpcap``
 
-   Comes with the base system on OS X 10.8 and 10.9.
+   Comes with the base system on OS X 10.8, 10.9, and 10.10.
 
    On Ubuntu >= 12.04:
 
@@ -169,7 +183,7 @@ To build manpages and API documentation:
 -  ``graphviz``
 -  ``python-sphinx``
 
-   On OS X 10.8 and 10.9 with MacPorts:
+   On OS X 10.8, 10.9, and 10.10 with MacPorts:
 
    ::
 
@@ -183,7 +197,7 @@ To build manpages and API documentation:
        sudo apt-get install doxygen graphviz python-sphinx
 
 
-Besides officially supported platforms, NFD is known to work on: Fedora 20, CentOS 6, Gentoo Linux,
+Besides officially supported platforms, NFD is known to work on: Fedora 20, CentOS 6/7, Gentoo Linux,
 Raspberry Pi, OpenWRT, FreeBSD 10.0, and several other platforms.  We are soliciting help
 with documenting common problems / pitfalls in installing/using NFD on different platforms
 on `NFD Wiki
