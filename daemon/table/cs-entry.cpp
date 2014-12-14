@@ -21,64 +21,121 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- *
- * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
- * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
- * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
 #include "cs-entry.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace cs {
 
-NFD_LOG_INIT("CsEntry");
-
-void
-Entry::release()
+Entry::Entry(const Name& name)
+  : m_queryName(name)
 {
-  BOOST_ASSERT(m_layerIterators.empty());
+  BOOST_ASSERT(this->isQuery());
+}
 
-  m_dataPacket.reset();
+Entry::Entry(shared_ptr<const Data> data, bool isUnsolicited)
+  : queueType(Cs::QUEUE_NONE)
+  , m_data(data)
+  , m_isUnsolicited(isUnsolicited)
+{
+  BOOST_ASSERT(!this->isQuery());
+}
+
+bool
+Entry::isQuery() const
+{
+  return m_data == nullptr;
+}
+
+shared_ptr<const Data>
+Entry::getData() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return m_data;
+}
+
+const Name&
+Entry::getFullName() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return m_data->getFullName();
+}
+
+bool
+Entry::canStale() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return m_data->getFreshnessPeriod() >= time::milliseconds::zero();
+}
+
+bool
+Entry::isStale() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return time::steady_clock::now() > m_staleAt;
 }
 
 void
-Entry::setData(const Data& data, bool isUnsolicited)
+Entry::refresh()
 {
-  m_isUnsolicited = isUnsolicited;
-  m_dataPacket = data.shared_from_this();
+  BOOST_ASSERT(!this->isQuery());
+  if (this->canStale()) {
+    m_staleAt = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
+  }
+  else {
+    m_staleAt = time::steady_clock::TimePoint::max();
+  }
+}
 
-  updateStaleTime();
+bool
+Entry::isUnsolicited() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return m_isUnsolicited;
 }
 
 void
-Entry::updateStaleTime()
+Entry::unsetUnsolicited()
 {
-  m_staleAt = time::steady_clock::now() + m_dataPacket->getFreshnessPeriod();
+  BOOST_ASSERT(!this->isQuery());
+  m_isUnsolicited = false;
 }
 
-void
-Entry::setIterator(int layer, const Entry::LayerIterators::mapped_type& layerIterator)
+bool
+Entry::canSatisfy(const Interest& interest) const
 {
-  m_layerIterators[layer] = layerIterator;
+  BOOST_ASSERT(!this->isQuery());
+  if (!interest.matchesData(*m_data)) {
+    return false;
+  }
+
+  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
+    return false;
+  }
+
+  return true;
 }
 
-void
-Entry::removeIterator(int layer)
+bool
+Entry::operator<(const Entry& other) const
 {
-  m_layerIterators.erase(layer);
-}
-
-void
-Entry::printIterators() const
-{
-  for (LayerIterators::const_iterator it = m_layerIterators.begin();
-       it != m_layerIterators.end();
-       ++it)
-    {
-      NFD_LOG_TRACE("[" << it->first << "]" << " " << &(*it->second));
+  if (this->isQuery()) {
+    if (other.isQuery()) {
+      return m_queryName < other.m_queryName;
     }
+    else {
+      return m_queryName < other.m_queryName;
+    }
+  }
+  else {
+    if (other.isQuery()) {
+      return this->getFullName() < other.m_queryName;
+    }
+    else {
+      return this->getFullName() < other.getFullName();
+    }
+  }
 }
 
 } // namespace cs

@@ -24,7 +24,6 @@
  */
 
 #include "table/cs.hpp"
-#include "table/cs-entry.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {

@@ -21,148 +21,81 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- *
- * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
- * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
- * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
 #ifndef NFD_DAEMON_TABLE_CS_ENTRY_HPP
 #define NFD_DAEMON_TABLE_CS_ENTRY_HPP
 
-#include "common.hpp"
+#include "cs.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace cs {
 
-class Entry;
-
-/** \brief represents a CS entry
+/** \brief an Entry in ContentStore
+ *  \note This type is internal to ContentStore.
+ *
+ *  An Entry is either a stored Entry which contains a Data packet and related attributes,
+ *  or a query Entry which contains a Name that is LessComparable to other stored/query Entry
+ *  and is used to lookup a container of entries.
  */
-class Entry : noncopyable
+class Entry
 {
 public:
-  typedef std::map<int, std::list<Entry*>::iterator > LayerIterators;
-
-  Entry();
-
-  /** \brief releases reference counts on shared objects
+  /** \brief construct Entry for query
+   *  \note Name is implicitly convertible to Entry, so that Name can be passed to
+   *        lookup functions on a container of Entry
    */
-  void
-  release();
+  Entry(const Name& name);
 
-  /** \brief returns the name of the Data packet stored in the CS entry
-   *  \return{ NDN name }
+  /** \brief construct Entry for storage
    */
-  const Name&
-  getName() const;
+  Entry(shared_ptr<const Data> data, bool isUnsolicited);
 
-  /** \brief returns the full name (including implicit digest) of the Data packet stored
-   *         in the CS entry
-   *  \return{ NDN name }
-   */
+  shared_ptr<const Data>
+  getData() const;
+
   const Name&
   getFullName() const;
 
-  /** \brief Data packet is unsolicited if this particular NDN node
-   *  did not receive an Interest packet for it, or the Interest packet has already expired
-   *  \return{ True if the Data packet is unsolicited; otherwise False  }
+  /** \return true if entry can become stale, false if entry is never stale
    */
+  bool
+  canStale() const;
+
+  bool
+  isStale() const;
+
+  void
+  refresh();
+
   bool
   isUnsolicited() const;
 
-  /** \brief returns the absolute time when Data becomes expired
-   *  \return{ Time (resolution up to time::milliseconds) }
-   */
-  const time::steady_clock::TimePoint&
-  getStaleTime() const;
-
-  /** \brief returns the Data packet stored in the CS entry
-   */
-  const Data&
-  getData() const;
-
-  /** \brief changes the content of CS entry and recomputes digest
-   */
   void
-  setData(const Data& data, bool isUnsolicited);
+  unsetUnsolicited();
 
-  /** \brief refreshes the time when Data becomes expired
-   *  according to the current absolute time.
-   */
-  void
-  updateStaleTime();
+  bool
+  canSatisfy(const Interest& interest) const;
 
-  /** \brief saves the iterator pointing to the CS entry on a specific layer of skip list
-   */
-  void
-  setIterator(int layer, const LayerIterators::mapped_type& layerIterator);
-
-  /** \brief removes the iterator pointing to the CS entry on a specific layer of skip list
-   */
-  void
-  removeIterator(int layer);
-
-  /** \brief returns the table containing <layer, iterator> pairs.
-   */
-  const LayerIterators&
-  getIterators() const;
+  bool
+  operator<(const Entry& other) const;
 
 private:
-  /** \brief prints <layer, iterator> pairs.
-   */
-  void
-  printIterators() const;
+  bool
+  isQuery() const;
+
+public:
+  Cs::QueueType queueType;
+  Cs::QueueIt queueIt;
+  scheduler::EventId moveStaleEvent;
 
 private:
+  Name m_queryName;
+  shared_ptr<const Data> m_data;
   time::steady_clock::TimePoint m_staleAt;
-  shared_ptr<const Data> m_dataPacket;
-
   bool m_isUnsolicited;
-
-  LayerIterators m_layerIterators;
 };
-
-inline
-Entry::Entry()
-{
-}
-
-inline const Name&
-Entry::getName() const
-{
-  return m_dataPacket->getName();
-}
-
-inline const Name&
-Entry::getFullName() const
-{
-  return m_dataPacket->getFullName();
-}
-
-inline const Data&
-Entry::getData() const
-{
-  return *m_dataPacket;
-}
-
-inline bool
-Entry::isUnsolicited() const
-{
-  return m_isUnsolicited;
-}
-
-inline const time::steady_clock::TimePoint&
-Entry::getStaleTime() const
-{
-  return m_staleAt;
-}
-
-inline const Entry::LayerIterators&
-Entry::getIterators() const
-{
-  return m_layerIterators;
-}
 
 } // namespace cs
 } // namespace nfd
