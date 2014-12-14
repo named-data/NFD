@@ -339,7 +339,7 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
                 }
             }
 
-          BOOST_ASSERT(isFound == true);
+          BOOST_VERIFY(isFound == true);
         }
 
       // remove this Entry and its Name Tree Node
@@ -625,7 +625,7 @@ NameTree::const_iterator::operator++()
               node = node->m_next;
             }
         }
-      BOOST_ASSERT(isFound == false);
+      BOOST_VERIFY(isFound == false);
       // Reach to the end()
       m_entry = m_nameTree.m_end;
       return *this;
@@ -702,7 +702,7 @@ NameTree::const_iterator::operator++()
                     }
                 }
 
-              BOOST_ASSERT(isFound == true);
+              BOOST_VERIFY(isFound == true);
               if (i < parentChildrenList.size() - 1) // m_entry not the last child
                 {
                   m_entry = parentChildrenList[i + 1];

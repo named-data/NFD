@@ -118,7 +118,7 @@ Slicer::slice(const Block& block)
     size_t pktSize = Slicer_encodeFragment(buffer,
       seqBlock[fragIndex], fragIndex, fragCount, payload, payloadSize);
 
-    BOOST_ASSERT(pktSize <= m_mtu);
+    BOOST_VERIFY(pktSize <= m_mtu);
 
     pa->push_back(buffer.block());
   }
