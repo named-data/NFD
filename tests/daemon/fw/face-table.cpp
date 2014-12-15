@@ -34,12 +34,6 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(FwFaceTable, BaseFixture)
 
-static inline void
-saveFaceId(std::vector<FaceId>& faceIds, shared_ptr<Face> face)
-{
-  faceIds.push_back(face->getId());
-}
-
 BOOST_AUTO_TEST_CASE(AddRemove)
 {
   Forwarder forwarder;
@@ -47,8 +41,12 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   FaceTable& faceTable = forwarder.getFaceTable();
   std::vector<FaceId> onAddHistory;
   std::vector<FaceId> onRemoveHistory;
-  faceTable.onAdd    += bind(&saveFaceId, ndn::ref(onAddHistory   ), _1);
-  faceTable.onRemove += bind(&saveFaceId, ndn::ref(onRemoveHistory), _1);
+  faceTable.onAdd.connect([&] (shared_ptr<Face> face) {
+    onAddHistory.push_back(face->getId());
+  });
+  faceTable.onRemove.connect([&] (shared_ptr<Face> face) {
+    onRemoveHistory.push_back(face->getId());
+  });
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();

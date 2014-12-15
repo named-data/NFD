@@ -29,8 +29,7 @@
 #include "face/face.hpp"
 #include <boost/range/adaptor/map.hpp>
 
-namespace nfd
-{
+namespace nfd {
 
 class Forwarder;
 
@@ -73,16 +72,16 @@ public: // enumeration
   const_iterator
   end() const;
 
-public: // events
+public: // signals
   /** \brief fires after a Face is added
    */
-  EventEmitter<shared_ptr<Face> > onAdd;
+  signal::Signal<FaceTable, shared_ptr<Face>> onAdd;
 
   /** \brief fires before a Face is removed
    *
    *  FaceId is valid when this event is fired
    */
-  EventEmitter<shared_ptr<Face> > onRemove;
+  signal::Signal<FaceTable, shared_ptr<Face>> onRemove;
 
 private:
   void

@@ -124,6 +124,8 @@ FaceManager::FaceManager(FaceTable& faceTable,
                          ndn::KeyChain& keyChain)
   : ManagerBase(face, FACE_MANAGER_PRIVILEGE, keyChain)
   , m_faceTable(faceTable)
+  , m_faceAddConn(m_faceTable.onAdd.connect(bind(&FaceManager::onAddFace, this, _1)))
+  , m_faceRemoveConn(m_faceTable.onRemove.connect(bind(&FaceManager::onRemoveFace, this, _1)))
   , m_faceStatusPublisher(m_faceTable, *m_face, FACES_LIST_DATASET_PREFIX, keyChain)
   , m_channelStatusPublisher(m_factories, *m_face, CHANNELS_LIST_DATASET_PREFIX, keyChain)
   , m_notificationStream(*m_face, FACE_EVENTS_PREFIX, keyChain)
@@ -137,9 +139,6 @@ FaceManager::FaceManager(FaceTable& faceTable,
 {
   face->setInterestFilter("/localhost/nfd/faces",
                           bind(&FaceManager::onFaceRequest, this, _2));
-
-  m_faceTable.onAdd    += bind(&FaceManager::onAddFace, this, _1);
-  m_faceTable.onRemove += bind(&FaceManager::onRemoveFace, this, _1);
 }
 
 FaceManager::~FaceManager()

@@ -173,6 +173,8 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   FaceTable& m_faceTable;
+  signal::ScopedConnection m_faceAddConn;
+  signal::ScopedConnection m_faceRemoveConn;
   FaceStatusPublisher m_faceStatusPublisher;
   ChannelStatusPublisher m_channelStatusPublisher;
   NotificationStream<AppFace> m_notificationStream;
