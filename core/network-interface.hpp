@@ -89,6 +89,7 @@ NetworkInterfaceInfo::isUp() const
 }
 
 /** \brief List configured network interfaces on the system and their info
+ *  \warning invalid IP addresses (e.g., 0.0.0.0) may be returned in some environments
  */
 std::vector<NetworkInterfaceInfo>
 listNetworkInterfaces();
