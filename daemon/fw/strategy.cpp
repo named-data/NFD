@@ -33,7 +33,9 @@ namespace fw {
 NFD_LOG_INIT("Strategy");
 
 Strategy::Strategy(Forwarder& forwarder, const Name& name)
-  : m_name(name)
+  : afterAddFace(forwarder.getFaceTable().onAdd)
+  , beforeRemoveFace(forwarder.getFaceTable().onRemove)
+  , m_name(name)
   , m_forwarder(forwarder)
   , m_measurements(m_forwarder.getMeasurements(),
                    m_forwarder.getStrategyChoice(), this)

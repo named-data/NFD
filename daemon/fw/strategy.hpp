@@ -131,6 +131,13 @@ protected: // accessors
   shared_ptr<Face>
   getFace(FaceId id);
 
+  const FaceTable&
+  getFaceTable();
+
+protected: // accessors
+  signal::Signal<FaceTable, shared_ptr<Face>>& afterAddFace;
+  signal::Signal<FaceTable, shared_ptr<Face>>& beforeRemoveFace;
+
 private:
   Name m_name;
 
@@ -173,6 +180,12 @@ inline shared_ptr<Face>
 Strategy::getFace(FaceId id)
 {
   return m_forwarder.getFace(id);
+}
+
+inline const FaceTable&
+Strategy::getFaceTable()
+{
+  return m_forwarder.getFaceTable();
 }
 
 } // namespace fw
