@@ -111,6 +111,49 @@ BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
   BOOST_REQUIRE_NO_THROW(g_io.run());
 }
 
+BOOST_FIXTURE_TEST_CASE(ScopedEventIdDestruct, UnitTestTimeFixture)
+{
+  int hit = 0;
+  {
+    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+  } // se goes out of scope
+  this->advanceClocks(time::milliseconds(1), 15);
+  BOOST_CHECK_EQUAL(hit, 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(ScopedEventIdAssign, UnitTestTimeFixture)
+{
+  int hit1 = 0, hit2 = 0;
+  scheduler::ScopedEventId se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit1; });
+  se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit2; });
+  this->advanceClocks(time::milliseconds(1), 15);
+  BOOST_CHECK_EQUAL(hit1, 0);
+  BOOST_CHECK_EQUAL(hit2, 1);
+}
+
+BOOST_FIXTURE_TEST_CASE(ScopedEventIdRelease, UnitTestTimeFixture)
+{
+  int hit = 0;
+  {
+    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+    se.release();
+  } // se goes out of scope
+  this->advanceClocks(time::milliseconds(1), 15);
+  BOOST_CHECK_EQUAL(hit, 1);
+}
+
+BOOST_FIXTURE_TEST_CASE(ScopedEventIdMove, UnitTestTimeFixture)
+{
+  int hit = 0;
+  unique_ptr<scheduler::ScopedEventId> se2;
+  {
+    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+    se2.reset(new scheduler::ScopedEventId(std::move(se)));
+  } // se goes out of scope
+  this->advanceClocks(time::milliseconds(1), 15);
+  BOOST_CHECK_EQUAL(hit, 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

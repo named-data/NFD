@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "scheduler.hpp"
 #include "global-io.hpp"
@@ -55,6 +56,48 @@ void
 resetGlobalScheduler()
 {
   g_scheduler.reset();
+}
+
+ScopedEventId::ScopedEventId()
+{
+}
+
+ScopedEventId::ScopedEventId(const EventId& event)
+  : m_event(event)
+{
+}
+
+ScopedEventId::ScopedEventId(ScopedEventId&& other)
+  : m_event(other.m_event)
+{
+  other.release();
+}
+
+ScopedEventId&
+ScopedEventId::operator=(const EventId& event)
+{
+  if (m_event != event) {
+    scheduler::cancel(m_event);
+    m_event = event;
+  }
+  return *this;
+}
+
+ScopedEventId::~ScopedEventId()
+{
+  scheduler::cancel(m_event);
+}
+
+void
+ScopedEventId::cancel()
+{
+  scheduler::cancel(m_event);
+}
+
+void
+ScopedEventId::release()
+{
+  m_event.reset();
 }
 
 } // namespace scheduler
