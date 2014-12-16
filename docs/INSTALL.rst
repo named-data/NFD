@@ -134,18 +134,10 @@ sure you checkout the correct release tag (e.g., ``*-0.2.0``) for both repositor
 ::
 
     # Download ndn-cxx
-
     git clone https://github.com/named-data/ndn-cxx
-    cd ndn-cxx
-    git checkout ndn-cxx-0.2.0
-
-    cd ..
 
     # Download NFD
-
     git clone --recursive https://github.com/named-data/NFD
-    cd NFD
-    git checkout NFD-0.2.0
 
 Prerequisites
 ~~~~~~~~~~~~~
@@ -229,6 +221,11 @@ For example,
 
 Refer to ``./waf --help`` for more options that can be used during ``configure`` stage and
 how to properly configure and run NFD.
+
+.. note::
+   If you are working on a source repository that has been compiled before, and you have
+   upgraded one of the dependencies, please execute ``./waf distclean`` to clear object files
+   and start over.
 
 Debug symbols
 ~~~~~~~~~~~~~
@@ -362,7 +359,7 @@ with the following:
 Sample applications:
 
 -  `Simple examples in ndn-cxx
-   library <http://named-data.net/doc/ndn-cxx/0.2.0/examples.html>`__.
+   library <http://named-data.net/doc/ndn-cxx/current/examples.html>`__.
    If you have installed ndn-cxx from source, you already have compiled
    these:
 
