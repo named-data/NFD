@@ -957,6 +957,13 @@ FaceManager::createFace(const Interest& request,
       return;
     }
 
+  if (!uri.isCanonical())
+    {
+      sendResponse(requestName, 400, "Non-canonical URI");
+      NFD_LOG_TRACE("received non-canonical URI");
+      return;
+    }
+
   FactoryMap::iterator factory = m_factories.find(uri.getScheme());
   if (factory == m_factories.end())
     {

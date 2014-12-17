@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 BOOST_AUTO_TEST_CASE(UnsignedCommand)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FaceManagerFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -977,7 +977,7 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestCreateFace,
                         AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -996,7 +996,7 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestDestroyFace,
                         AuthorizedCommandFixture<ValidatedFaceRequestFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -1503,7 +1503,7 @@ protected:
 BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp:/127.0.0.1");
+  parameters.setUri("tcp4:/127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -1516,6 +1516,28 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
 
   getFace()->onReceiveData += [this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
+  };
+
+  createFace(*command, parameters);
+
+  BOOST_REQUIRE(didCallbackFire());
+}
+BOOST_FIXTURE_TEST_CASE(CreateFaceNoncanonicalUri, AuthorizedCommandFixture<FaceFixture>)
+{
+  ControlParameters parameters;
+  parameters.setUri("tcp://127.0.0.1");
+
+  Block encodedParameters(parameters.wireEncode());
+
+  Name commandName("/localhost/nfd/faces");
+  commandName.append("create");
+  commandName.append(encodedParameters);
+
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  generateCommand(*command);
+
+  getFace()->onReceiveData += [this, command] (const Data& response) {
+    this->validateControlResponse(response, command->getName(), 400, "Non-canonical URI");
   };
 
   createFace(*command, parameters);
@@ -1550,7 +1572,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFi
   ControlParameters parameters;
   // this will be an unsupported protocol because no factories have been
   // added to the face manager
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -1573,7 +1595,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFi
 BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
@@ -1615,7 +1637,7 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
 {
   ControlParameters parameters;
-  parameters.setUri("tcp://127.0.0.1");
+  parameters.setUri("tcp4://127.0.0.1:6363");
 
   Block encodedParameters(parameters.wireEncode());
 
