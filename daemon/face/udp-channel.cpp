@@ -229,7 +229,13 @@ UdpChannel::newPeer(const boost::system::error_code& error,
     clientSocket->open(m_localEndpoint.protocol());
     clientSocket->set_option(ip::udp::socket::reuse_address(true));
     clientSocket->bind(m_localEndpoint);
-    clientSocket->connect(m_newRemoteEndpoint);
+    boost::system::error_code ec;
+    clientSocket->connect(m_newRemoteEndpoint, ec);
+    if (ec) {
+      NFD_LOG_WARN("Error while creating on-demand UDP face from " << m_newRemoteEndpoint << ": "
+                   << boost::system::system_error(ec).what());
+      return;
+    }
 
     face = createFace(clientSocket,
                       onFaceCreatedNewPeerCallback,
