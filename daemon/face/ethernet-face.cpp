@@ -276,7 +276,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
   // pad with zeroes if the payload is too short
   if (block.size() < ethernet::MIN_DATA_LEN)
     {
-      static const uint8_t padding[ethernet::MIN_DATA_LEN] = {0};
+      static const uint8_t padding[ethernet::MIN_DATA_LEN] = {};
       buffer.appendByteArray(padding, ethernet::MIN_DATA_LEN - block.size());
     }
 
@@ -430,24 +430,18 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
 size_t
 EthernetFace::getInterfaceMtu() const
 {
-  size_t mtu = ethernet::MAX_DATA_LEN;
-
 #ifdef SIOCGIFMTU
   ifreq ifr{};
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
-  if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) < 0)
-    {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Failed to get interface MTU: " << std::strerror(errno));
-    }
-  else
-    {
-      mtu = std::min(mtu, static_cast<size_t>(ifr.ifr_mtu));
-    }
+  if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) >= 0)
+    return static_cast<size_t>(ifr.ifr_mtu);
+
+  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+               << "] Failed to get interface MTU: " << std::strerror(errno));
 #endif
 
-  return mtu;
+  return ethernet::MAX_DATA_LEN;
 }
 
 } // namespace nfd
