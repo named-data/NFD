@@ -67,6 +67,11 @@ face_system
   ; The unix section contains settings of Unix stream faces and channels.
   ; Unix channel is always listening; delete unix section to disable
   ; Unix stream faces and channels.
+  ;
+  ; The ndn-cxx library expects unix:///var/run/nfd.sock
+  ; to be used as the default transport option. Please change
+  ; the "transport" field in client.conf to an appropriate tcp4 FaceUri
+  ; if you need to disable unix sockets.
   unix
   {
     path /var/run/nfd.sock ; Unix stream listener path
