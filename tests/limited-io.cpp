@@ -35,13 +35,21 @@ const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
 LimitedIo::LimitedIo()
-  : m_isRunning(false)
+  : m_uttf(nullptr)
+  , m_isRunning(false)
+  , m_nOpsRemaining(0)
+{
+}
+
+LimitedIo::LimitedIo(UnitTestTimeFixture* uttf)
+  : m_uttf(uttf)
+  , m_isRunning(false)
   , m_nOpsRemaining(0)
 {
 }
 
 LimitedIo::StopReason
-LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit)
+LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::nanoseconds& tick)
 {
   BOOST_ASSERT(!m_isRunning);
 
@@ -58,7 +66,15 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit)
   }
 
   try {
-    getGlobalIoService().run();
+    if (m_uttf == nullptr) {
+      getGlobalIoService().run();
+    }
+    else {
+      // timeLimit is enforced by afterTimeout
+      m_uttf->advanceClocks(tick, time::nanoseconds::max());
+    }
+  }
+  catch (StopException&) {
   }
   catch (std::exception& ex) {
     m_reason = EXCEPTION;
@@ -77,7 +93,6 @@ LimitedIo::afterOp()
 {
   if (!m_isRunning) {
     // Do not proceed further if .afterOp() is invoked out of .run(),
-    // because io_service.stop() without io_service.reset() would leave it unusable.
     return;
   }
 
@@ -85,6 +100,9 @@ LimitedIo::afterOp()
   if (m_nOpsRemaining <= 0) {
     m_reason = EXCEED_OPS;
     getGlobalIoService().stop();
+    if (m_uttf != nullptr) {
+      throw StopException();
+    }
   }
 }
 
@@ -93,6 +111,9 @@ LimitedIo::afterTimeout()
 {
   m_reason = EXCEED_TIME;
   getGlobalIoService().stop();
+  if (m_uttf != nullptr) {
+    throw StopException();
+  }
 }
 
 const std::exception&

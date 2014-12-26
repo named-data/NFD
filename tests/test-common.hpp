@@ -127,6 +127,8 @@ protected:
     }
   }
 
+  friend class LimitedIo;
+
 protected:
   shared_ptr<time::UnitTestSteadyClock> steadyClock;
   shared_ptr<time::UnitTestSystemClock> systemClock;

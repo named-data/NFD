@@ -26,6 +26,7 @@
 #ifndef NFD_TESTS_LIMITED_IO_HPP
 #define NFD_TESTS_LIMITED_IO_HPP
 
+#include "test-common.hpp"
 #include "core/global-io.hpp"
 #include "core/scheduler.hpp"
 
@@ -38,6 +39,10 @@ class LimitedIo : noncopyable
 {
 public:
   LimitedIo();
+
+  /** \brief construct with UnitTestTimeFixture
+   */
+  LimitedIo(UnitTestTimeFixture* uttf);
 
   /// indicates why .run returns
   enum StopReason
@@ -53,15 +58,14 @@ public:
   };
 
   /** \brief g_io.run() with operation count and/or time limit
-   *
    *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
    *  \param timeLimit time limit, pass UNLIMITED_TIME for no limit
-   *
-   *  \warning if timeLimit is used with UnitTestTimeFixture,
-   *           some other code must advance steady clock in order to exceed time limit
+   *  \param tick if this LimitedIo is constructed with UnitTestTimeFixture,
+   *              this is passed to .advanceClocks(), otherwise ignored
    */
   StopReason
-  run(int nOpsLimit, const time::nanoseconds& timeLimit);
+  run(int nOpsLimit, const time::nanoseconds& timeLimit,
+      const time::nanoseconds& tick = time::milliseconds(1));
 
   /// count an operation
   void
@@ -81,6 +85,12 @@ public:
   }
 
 private:
+  /** \brief an exception to stop IO operation
+   */
+  class StopException
+  {
+  };
+
   void
   afterTimeout();
 
@@ -89,6 +99,7 @@ public:
   static const time::nanoseconds UNLIMITED_TIME;
 
 private:
+  UnitTestTimeFixture* m_uttf;
   bool m_isRunning;
   int m_nOpsRemaining;
   EventId m_timeout;

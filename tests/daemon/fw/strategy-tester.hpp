@@ -48,7 +48,7 @@ public:
   }
 
   /// fires after each Action
-  EventEmitter<> onAction;
+  signal::Signal<StrategyTester<S>> onAction;
 
 protected:
   virtual void
