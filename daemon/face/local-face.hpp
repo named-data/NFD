@@ -156,7 +156,7 @@ LocalFace::decodeAndDispatchInput(const Block& element)
               this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
           }
 
-        this->onReceiveInterest(*i);
+        this->emitSignal(onReceiveInterest, *i);
       }
     else if (payload.type() == tlv::Data)
       {
@@ -174,7 +174,7 @@ LocalFace::decodeAndDispatchInput(const Block& element)
         //       false);
         //   }
 
-        this->onReceiveData(*d);
+        this->emitSignal(onReceiveData, *d);
       }
     else
       return false;

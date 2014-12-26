@@ -123,7 +123,7 @@ EthernetFace::~EthernetFace()
 void
 EthernetFace::sendInterest(const Interest& interest)
 {
-  onSendInterest(interest);
+  this->emitSignal(onSendInterest, interest);
   ndnlp::PacketArray pa = m_slicer->slice(interest.wireEncode());
   for (const auto& packet : *pa) {
     sendPacket(packet);
@@ -133,7 +133,7 @@ EthernetFace::sendInterest(const Interest& interest)
 void
 EthernetFace::sendData(const Data& data)
 {
-  onSendData(data);
+  this->emitSignal(onSendData, data);
   ndnlp::PacketArray pa = m_slicer->slice(data.wireEncode());
   for (const auto& packet : *pa) {
     sendPacket(packet);
@@ -387,7 +387,7 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
     {
       // new sender, setup a PartialMessageStore for it
       reassembler.pms.reset(new ndnlp::PartialMessageStore);
-      reassembler.pms->onReceive +=
+      reassembler.pms->onReceive.connect(
         [this, sourceAddress] (const Block& block) {
           NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
                         << "] All fragments received from " << sourceAddress.toString());
@@ -395,7 +395,7 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
             NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                          << "] Received unrecognized TLV block of type " << block.type()
                          << " from " << sourceAddress.toString());
-        };
+        });
     }
 
   scheduler::cancel(reassembler.expireEvent);

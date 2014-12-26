@@ -259,12 +259,9 @@ public:
   channel1_onFaceCreatedNoCheck(const shared_ptr<Face>& newFace)
   {
     face1 = newFace;
-    face1->onReceiveInterest +=
-      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-    face1->onReceiveData +=
-      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
-    face1->onFail +=
-      bind(&EndToEndFixture::face1_onFail, this);
+    face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
+    face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
+    face1->onFail.connect(bind(&EndToEndFixture::face1_onFail, this));
     BOOST_CHECK_MESSAGE(true, "channel 1 face created");
 
     faces.push_back(face1);
@@ -308,12 +305,9 @@ public:
   {
     BOOST_CHECK(!static_cast<bool>(face2));
     face2 = newFace;
-    face2->onReceiveInterest +=
-      bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-    face2->onReceiveData +=
-      bind(&EndToEndFixture::face2_onReceiveData, this, _1);
-    face2->onFail +=
-      bind(&EndToEndFixture::face2_onFail, this);
+    face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
+    face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
+    face2->onFail.connect(bind(&EndToEndFixture::face2_onFail, this));
 
     faces.push_back(face2);
 

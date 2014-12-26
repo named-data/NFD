@@ -153,8 +153,7 @@ BOOST_AUTO_TEST_CASE(Publish)
   m_expectedEntries["/test/a"] = expectedEntryA;
   m_expectedEntries["/test/b"] = expectedEntryB;
 
-  m_face->onReceiveData +=
-    bind(&StrategyChoicePublisherFixture::validatePublish, this, _1);
+  m_face->onReceiveData.connect(bind(&StrategyChoicePublisherFixture::validatePublish, this, _1));
 
   m_publisher.publish();
   BOOST_REQUIRE(m_finished);

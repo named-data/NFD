@@ -78,19 +78,19 @@ public:
   ~Face();
 
   /// fires when an Interest is received
-  EventEmitter<Interest> onReceiveInterest;
+  signal::Signal<Face, Interest> onReceiveInterest;
 
   /// fires when a Data is received
-  EventEmitter<Data> onReceiveData;
+  signal::Signal<Face, Data> onReceiveData;
 
   /// fires when an Interest is sent out
-  EventEmitter<Interest> onSendInterest;
+  signal::Signal<Face, Interest> onSendInterest;
 
   /// fires when a Data is sent out
-  EventEmitter<Data> onSendData;
+  signal::Signal<Face, Data> onSendData;
 
   /// fires when face disconnects or fails to perform properly
-  EventEmitter<std::string/*reason*/> onFail;
+  signal::Signal<Face, std::string/*reason*/> onFail;
 
   /// send an Interest
   virtual void
@@ -186,6 +186,11 @@ protected:
    */
   void
   fail(const std::string& reason);
+
+  DECLARE_SIGNAL_EMIT(onReceiveInterest)
+  DECLARE_SIGNAL_EMIT(onReceiveData)
+  DECLARE_SIGNAL_EMIT(onSendInterest)
+  DECLARE_SIGNAL_EMIT(onSendData)
 
 private:
   void

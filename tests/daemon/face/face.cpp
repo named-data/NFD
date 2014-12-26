@@ -65,7 +65,7 @@ public:
   FaceFailTestFace()
     : failCount(0)
   {
-    this->onFail += bind(&FaceFailTestFace::failHandler, this, _1);
+    this->onFail.connect(bind(&FaceFailTestFace::failHandler, this, _1));
   }
 
   void

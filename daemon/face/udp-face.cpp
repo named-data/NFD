@@ -24,6 +24,7 @@
  */
 
 #include "udp-face.hpp"
+// #include "core/global-io.hpp" // for #1718 manual test below
 
 #ifdef __linux__
 #include <netinet/in.h> // for IP_MTU_DISCOVER and IP_PMTUDISC_DONT
@@ -112,6 +113,12 @@ UdpFace::closeIfIdle()
                    << ",uri:" << this->getRemoteUri()
                    << "] Idle for more than " << m_idleTimeout << ", closing");
       close();
+
+      // #1718 manual test: uncomment, run NFD in valgrind, send in a UDP packet
+      //                    expect read-after-free error and crash
+      // getGlobalIoService().post([this] {
+      //   NFD_LOG_ERROR("Remaining references: " << this->shared_from_this().use_count());
+      // });
     }
     else {
       resetRecentUsage();

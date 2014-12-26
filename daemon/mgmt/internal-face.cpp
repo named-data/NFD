@@ -39,7 +39,7 @@ InternalFace::InternalFace()
 void
 InternalFace::sendInterest(const Interest& interest)
 {
-  onSendInterest(interest);
+  this->emitSignal(onSendInterest, interest);
 
   // Invoke .processInterest a bit later,
   // to avoid potential problems in forwarding pipelines.
@@ -122,7 +122,7 @@ InternalFace::processInterest(const shared_ptr<const Interest>& interest)
 void
 InternalFace::sendData(const Data& data)
 {
-  onSendData(data);
+  this->emitSignal(onSendData, data);
 }
 
 void
@@ -142,7 +142,7 @@ InternalFace::setInterestFilter(const Name& filter,
 void
 InternalFace::put(const Data& data)
 {
-  onReceiveData(data);
+  this->emitSignal(onReceiveData, data);
 }
 
 InternalFace::~InternalFace()

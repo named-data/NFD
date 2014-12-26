@@ -797,9 +797,9 @@ BOOST_AUTO_TEST_CASE(ShortName)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/faces"));
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   getFace()->sendInterest(*command);
   g_io.run_one();
@@ -811,9 +811,9 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 {
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/faces"));
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   getManager().onFaceRequest(*command);
 
@@ -833,9 +833,9 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 401, "Signature required");
-  };
+  });
 
   getManager().onFaceRequest(*command);
 
@@ -856,9 +856,9 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FaceMana
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 403, "Unauthorized command");
-  };
+  });
 
   getManager().onFaceRequest(*command);
 
@@ -894,9 +894,9 @@ BOOST_FIXTURE_TEST_CASE(UnsupportedCommand, AuthorizedCommandFixture<FaceManager
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 501, "Unsupported command");
-  };
+  });
 
   getManager().onFaceRequest(*command);
 
@@ -910,7 +910,7 @@ class ValidatedFaceRequestFixture : public TestFaceTableFixture,
 public:
 
   ValidatedFaceRequestFixture()
-    : FaceManager(TestFaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain),
+    : FaceManager(TestFaceTableFixture::m_faceTable, getFace(), m_testKeyChain),
       m_createFaceFired(false),
       m_destroyFaceFired(false)
   {
@@ -964,9 +964,9 @@ BOOST_FIXTURE_TEST_CASE(ValidatedFaceRequestBadOptionParse,
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   onValidatedFaceRequest(command);
 
@@ -1035,7 +1035,7 @@ class LocalControlFixture : public FaceTableFixture,
 {
 public:
   LocalControlFixture()
-    : FaceManager(FaceTableFixture::m_faceTable, TestFaceManagerCommon::m_face, m_testKeyChain)
+    : FaceManager(FaceTableFixture::m_faceTable, getFace(), m_testKeyChain)
   {
   }
 };
@@ -1060,11 +1060,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceId,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData +=
-  [this, enableCommand, encodedParameters] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(),
-                                  200, "Success", encodedParameters);
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand, encodedParameters] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(),
+                                      200, "Success", encodedParameters);
+      });
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1072,7 +1072,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceId,
   BOOST_REQUIRE(dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1083,11 +1083,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceId,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData +=
-  [this, disableCommand, encodedParameters] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(),
-                                  200, "Success", encodedParameters);
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand, encodedParameters] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      200, "Success", encodedParameters);
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1116,9 +1116,10 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, enableCommand] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(), 410, "Face not found");
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(), 410, "Face not found");
+      });
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1126,7 +1127,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
   BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1137,9 +1138,10 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdFaceNotFound,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, disableCommand] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(), 410, "Face not found");
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(), 410, "Face not found");
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1167,9 +1169,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlMissingFeature,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, enableCommand] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(), 400, "Malformed command");
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(),
+                                      400, "Malformed command");
+      });
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1177,7 +1181,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlMissingFeature,
   BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
   BOOST_REQUIRE(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1188,9 +1192,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlMissingFeature,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, disableCommand] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(), 400, "Malformed command");
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      400, "Malformed command");
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1219,15 +1225,17 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, enableCommand] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(), 412, "Face is non-local");
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(),
+                                      412, "Face is non-local");
+      });
 
   onValidatedFaceRequest(enableCommand);
 
   BOOST_REQUIRE(didCallbackFire());
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1238,9 +1246,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlInFaceIdNonLocal,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, disableCommand] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(), 412, "Face is non-local");
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      412, "Face is non-local");
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1267,11 +1277,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceId,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData +=
-  [this, enableCommand, encodedParameters] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(),
-                                  200, "Success", encodedParameters);
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand, encodedParameters] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(),
+                                      200, "Success", encodedParameters);
+      });
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1280,7 +1290,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceId,
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
 
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1291,11 +1301,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceId,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData +=
-  [this, disableCommand, encodedParameters] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(),
-                                  200, "Success", encodedParameters);
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand, encodedParameters] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      200, "Success", encodedParameters);
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1324,9 +1334,10 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, enableCommand] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(), 410, "Face not found");
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(), 410, "Face not found");
+      });
 
   onValidatedFaceRequest(enableCommand);
 
@@ -1335,7 +1346,7 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
   BOOST_CHECK(!dummy->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID));
 
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1346,9 +1357,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdFaceNotFound,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, disableCommand] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(), 410, "Face not found");
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      410, "Face not found");
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1377,15 +1390,17 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
 
   generateCommand(*enableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, enableCommand] (const Data& response) {
-    this->validateControlResponse(response, enableCommand->getName(), 412, "Face is non-local");
-  };
+  signal::Connection conn = getFace()->onReceiveData.connect(
+      [this, enableCommand] (const Data& response) {
+        this->validateControlResponse(response, enableCommand->getName(),
+                                      412, "Face is non-local");
+      });
 
   onValidatedFaceRequest(enableCommand);
 
   BOOST_REQUIRE(didCallbackFire());
 
-  TestFaceManagerCommon::m_face->onReceiveData.clear();
+  conn.disconnect();
   resetCallbackFired();
 
   Name disable("/localhost/nfd/faces/disable-local-control");
@@ -1396,9 +1411,11 @@ BOOST_FIXTURE_TEST_CASE(LocalControlNextHopFaceIdNonLocal,
 
   generateCommand(*disableCommand);
 
-  TestFaceManagerCommon::m_face->onReceiveData += [this, disableCommand] (const Data& response) {
-    this->validateControlResponse(response, disableCommand->getName(), 412, "Face is non-local");
-  };
+  getFace()->onReceiveData.connect(
+      [this, disableCommand] (const Data& response) {
+        this->validateControlResponse(response, disableCommand->getName(),
+                                      412, "Face is non-local");
+      });
 
   onValidatedFaceRequest(disableCommand);
 
@@ -1412,7 +1429,7 @@ class FaceFixture : public FaceTableFixture,
 public:
   FaceFixture()
     : FaceManager(FaceTableFixture::m_faceTable,
-                  TestFaceManagerCommon::m_face,
+                  getFace(),
                   m_testKeyChain)
     , m_receivedNotification(false)
   {
@@ -1514,9 +1531,9 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceBadUri, AuthorizedCommandFixture<FaceFixture>)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   createFace(*command, parameters);
 
@@ -1536,9 +1553,9 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceNoncanonicalUri, AuthorizedCommandFixture<Face
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Non-canonical URI");
-  };
+  });
 
   createFace(*command, parameters);
 
@@ -1558,9 +1575,9 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceMissingUri, AuthorizedCommandFixture<FaceFixtu
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   createFace(*command, parameters);
 
@@ -1583,9 +1600,9 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceUnknownScheme, AuthorizedCommandFixture<FaceFi
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 501, "Unsupported protocol");
-  };
+  });
 
   createFace(*command, parameters);
 
@@ -1622,11 +1639,11 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
 
   Block encodedResultParameters(resultParameters.wireEncode());
 
-  getFace()->onReceiveData +=
-  [this, command, encodedResultParameters, expectedFaceEvent] (const Data& response) {
-    this->callbackDispatch(response,command->getName(), 200, "Success",
-                           encodedResultParameters, expectedFaceEvent);
-  };
+  getFace()->onReceiveData.connect(
+      [this, command, encodedResultParameters, expectedFaceEvent] (const Data& response) {
+        this->callbackDispatch(response,command->getName(), 200, "Success",
+                               encodedResultParameters, expectedFaceEvent);
+      });
 
   onCreated(command->getName(), parameters, dummy);
 
@@ -1648,9 +1665,9 @@ BOOST_FIXTURE_TEST_CASE(OnConnectFailed, AuthorizedCommandFixture<FaceFixture>)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  getFace()->onReceiveData += [this, command] (const Data& response) {
+  getFace()->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 408, "unit-test-reason");
-  };
+  });
 
   onConnectFailed(command->getName(), "unit-test-reason");
 
@@ -1684,11 +1701,11 @@ BOOST_FIXTURE_TEST_CASE(DestroyFace, AuthorizedCommandFixture<FaceFixture>)
                    .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
                    .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 
-  getFace()->onReceiveData +=
-  [this, command, encodedParameters, expectedFaceEvent] (const Data& response) {
-    this->callbackDispatch(response,command->getName(), 200, "Success",
-                           encodedParameters, expectedFaceEvent);
-  };
+  getFace()->onReceiveData.connect(
+      [this, command, encodedParameters, expectedFaceEvent] (const Data& response) {
+        this->callbackDispatch(response,command->getName(), 200, "Success",
+                               encodedParameters, expectedFaceEvent);
+      });
 
   destroyFace(*command, parameters);
 
@@ -1737,8 +1754,8 @@ BOOST_FIXTURE_TEST_CASE(TestFaceList, FaceListFixture)
 
   ndn::EncodingBuffer buffer;
 
-  m_face->onReceiveData +=
-    bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1);
+  m_face->onReceiveData.connect(bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock,
+                                     this, _1));
 
   m_manager.listFaces(*command);
   BOOST_REQUIRE(m_finished);
@@ -1777,8 +1794,8 @@ BOOST_FIXTURE_TEST_CASE(TestChannelStatus, ChannelStatusFixture)
   ndn::nfd::ChannelStatus expectedEntry;
   expectedEntry.setLocalUri(DummyChannel("dummy://").getUri().toString());
 
-  m_face->onReceiveData +=
-    bind(&ChannelStatusFixture::validatePublish, this, _1, expectedEntry);
+  m_face->onReceiveData.connect(bind(&ChannelStatusFixture::validatePublish,
+                                     this, _1, expectedEntry));
 
   m_manager.listChannels(*request);
   BOOST_REQUIRE(m_callbackFired);
@@ -1828,8 +1845,8 @@ BOOST_FIXTURE_TEST_CASE(TestValidQueryFilter, FaceQueryListFixture)
   shared_ptr<DummyLocalFace> face2(make_shared<DummyLocalFace>("tcp://", "tcp://"));
   add(face2);
 
-  m_face->onReceiveData +=
-    bind(&FaceQueryStatusPublisherFixture::decodeFaceStatusBlock, this, _1);
+  m_face->onReceiveData.connect(bind(&FaceQueryStatusPublisherFixture::decodeFaceStatusBlock,
+                                     this, _1));
 
   m_manager.listQueriedFaces(*query);
   BOOST_REQUIRE(m_finished);
@@ -1846,8 +1863,7 @@ BOOST_FIXTURE_TEST_CASE(TestInvalidQueryFilter, FaceQueryListFixture)
   shared_ptr<DummyLocalFace> face(make_shared<DummyLocalFace>());
   add(face);
 
-  m_face->onReceiveData +=
-    bind(&FaceQueryStatusPublisherFixture::decodeNackBlock, this, _1);
+  m_face->onReceiveData.connect(bind(&FaceQueryStatusPublisherFixture::decodeNackBlock, this, _1));
 
   m_manager.listQueriedFaces(*query);
   BOOST_REQUIRE(m_finished);

@@ -241,9 +241,9 @@ BOOST_AUTO_TEST_CASE(ShortName)
 
   shared_ptr<Interest> command = makeInterest("/localhost/nfd/fib");
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   face->sendInterest(*command);
   g_io.run_one();
@@ -259,9 +259,9 @@ BOOST_AUTO_TEST_CASE(MalformedCommmand)
 
   Interest command("/localhost/nfd/fib");
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command.getName(), 400, "Malformed command");
-  };
+  });
 
   getFibManager().onFibRequest(command);
 
@@ -286,9 +286,9 @@ BOOST_AUTO_TEST_CASE(UnsupportedVerb)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 501, "Unsupported command");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -314,9 +314,9 @@ BOOST_AUTO_TEST_CASE(UnsignedCommand)
 
   Interest command(commandName);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command.getName(), 401, "Signature required");
-  };
+  });
 
   getFibManager().onFibRequest(command);
 
@@ -344,9 +344,9 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedCommandFixture<FibManag
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 403, "Unauthorized command");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -367,9 +367,9 @@ BOOST_AUTO_TEST_CASE(BadOptionParse)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -396,9 +396,9 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 410, "Face not found");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -436,17 +436,18 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbImplicitFaceId)
     command->setIncomingFaceId(1);
     generateCommand(*command);
 
-    face->onReceiveData += [this, command, encodedExpectedParameters] (const Data& response) {
-      this->validateControlResponse(response, command->getName(),
-                                    200, "Success", encodedExpectedParameters);
-    };
+    signal::Connection conn = face->onReceiveData.connect(
+        [this, command, encodedExpectedParameters] (const Data& response) {
+          this->validateControlResponse(response, command->getName(),
+                                        200, "Success", encodedExpectedParameters);
+        });
 
     getFibManager().onFibRequest(*command);
 
     BOOST_REQUIRE(didCallbackFire());
     BOOST_REQUIRE(addedNextHopWithFace(getFib(), "/hello", 0, 101, getFace(1)));
 
-    face->onReceiveData.clear();
+    conn.disconnect();
     getFib().erase("/hello");
     BOOST_REQUIRE_EQUAL(getFib().size(), 0);
   }
@@ -472,10 +473,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbInitialAdd)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+  face->onReceiveData.connect([this, command, encodedParameters] (const Data& response) {
     this->validateControlResponse(response, command->getName(),
                                   200, "Success", encodedParameters);
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -507,10 +508,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbImplicitCost)
   resultParameters.setFaceId(1);
   resultParameters.setCost(0);
 
-  face->onReceiveData += [this, command, resultParameters] (const Data& response) {
+  face->onReceiveData.connect([this, command, resultParameters] (const Data& response) {
     this->validateControlResponse(response, command->getName(),
                                   200, "Success", resultParameters.wireEncode());
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -540,10 +541,11 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
       shared_ptr<Interest> command(make_shared<Interest>(commandName));
       generateCommand(*command);
 
-      face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
-        this->validateControlResponse(response, command->getName(),
-                                      200, "Success", encodedParameters);
-      };
+      signal::Connection conn = face->onReceiveData.connect(
+          [this, command, encodedParameters] (const Data& response) {
+            this->validateControlResponse(response, command->getName(),
+                                          200, "Success", encodedParameters);
+          });
 
       getFibManager().onFibRequest(*command);
       BOOST_REQUIRE(didCallbackFire());
@@ -564,7 +566,7 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbAddToExisting)
           BOOST_FAIL("Failed to find expected fib entry");
         }
 
-      face->onReceiveData.clear();
+      conn.disconnect();
     }
 }
 
@@ -589,18 +591,19 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
-    face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
-      this->validateControlResponse(response, command->getName(),
-                                    200, "Success", encodedParameters);
-    };
+    signal::Connection conn = face->onReceiveData.connect(
+        [this, command, encodedParameters] (const Data& response) {
+          this->validateControlResponse(response, command->getName(),
+                                        200, "Success", encodedParameters);
+        });
 
     getFibManager().onFibRequest(*command);
 
     BOOST_REQUIRE(didCallbackFire());
-  }
 
-  resetCallbackFired();
-  face->onReceiveData.clear();
+    resetCallbackFired();
+    conn.disconnect();
+  }
 
   {
     parameters.setCost(102);
@@ -614,10 +617,10 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbUpdateFaceCost)
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     generateCommand(*command);
 
-    face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+    face->onReceiveData.connect([this, command, encodedParameters] (const Data& response) {
       this->validateControlResponse(response, command->getName(),
                                     200, "Success", encodedParameters);
-    };
+    });
 
     getFibManager().onFibRequest(*command);
 
@@ -661,9 +664,9 @@ BOOST_AUTO_TEST_CASE(AddNextHopVerbMissingPrefix)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -705,17 +708,18 @@ testRemoveNextHop(CommandFixture<FibManagerFixture>* fixture,
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   fixture->generateCommand(*command);
 
-  face->onReceiveData += [fixture, command, encodedParameters] (const Data& response) {
-    fixture->validateControlResponse(response, command->getName(),
-                                     200, "Success", encodedParameters);
-  };
+  signal::Connection conn = face->onReceiveData.connect(
+      [fixture, command, encodedParameters] (const Data& response) {
+        fixture->validateControlResponse(response, command->getName(),
+                                         200, "Success", encodedParameters);
+      });
 
   manager.onFibRequest(*command);
 
   BOOST_REQUIRE(fixture->didCallbackFire());
 
   fixture->resetCallbackFired();
-  face->onReceiveData.clear();
+  conn.disconnect();
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHop)
@@ -767,10 +771,10 @@ BOOST_AUTO_TEST_CASE(RemoveFaceNotFound)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+  face->onReceiveData.connect([this, command, encodedParameters] (const Data& response) {
     this->validateControlResponse(response, command->getName(),
                                   200, "Success", encodedParameters);
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -796,10 +800,10 @@ BOOST_AUTO_TEST_CASE(RemovePrefixNotFound)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command, encodedParameters] (const Data& response) {
+  face->onReceiveData.connect([this, command, encodedParameters] (const Data& response) {
     this->validateControlResponse(response, command->getName(),
                                   200, "Success", encodedParameters);
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -824,9 +828,9 @@ BOOST_AUTO_TEST_CASE(RemoveMissingPrefix)
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
   generateCommand(*command);
 
-  face->onReceiveData += [this, command] (const Data& response) {
+  face->onReceiveData.connect([this, command] (const Data& response) {
     this->validateControlResponse(response, command->getName(), 400, "Malformed command");
-  };
+  });
 
   getFibManager().onFibRequest(*command);
 
@@ -859,16 +863,17 @@ BOOST_AUTO_TEST_CASE(RemoveImplicitFaceId)
     resultParameters.setFaceId(1);
     resultParameters.setName("/hello");
 
-    face->onReceiveData += [this, command, resultParameters] (const Data& response) {
-      this->validateControlResponse(response, command->getName(),
-                                    200, "Success", resultParameters.wireEncode());
-    };
+    signal::Connection conn = face->onReceiveData.connect(
+        [this, command, resultParameters] (const Data& response) {
+          this->validateControlResponse(response, command->getName(),
+                                        200, "Success", resultParameters.wireEncode());
+        });
 
     getFibManager().onFibRequest(*command);
 
     BOOST_REQUIRE(didCallbackFire());
 
-    face->onReceiveData.clear();
+    conn.disconnect();
   }
 }
 
@@ -905,8 +910,8 @@ BOOST_FIXTURE_TEST_CASE(TestFibEnumerationRequest, FibManagerFixture)
 
   ndn::EncodingBuffer buffer;
 
-  m_face->onReceiveData +=
-    bind(&FibEnumerationPublisherFixture::decodeFibEntryBlock, this, _1);
+  m_face->onReceiveData.connect(bind(&FibEnumerationPublisherFixture::decodeFibEntryBlock,
+                                     this, _1));
 
   shared_ptr<Interest> command(make_shared<Interest>("/localhost/nfd/fib/list"));
 

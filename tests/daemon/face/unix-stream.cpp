@@ -96,10 +96,8 @@ public:
   {
     BOOST_CHECK(!static_cast<bool>(face1));
     face1 = static_pointer_cast<UnixStreamFace>(newFace);
-    face1->onReceiveInterest +=
-      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-    face1->onReceiveData +=
-      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
+    face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
+    face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
 
     limitedIo.afterOp();
   }
@@ -199,10 +197,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                     face1localUri.size() - std::string(CHANNEL_PATH1).size());
 
   face2 = make_shared<UnixStreamFace>(client);
-  face2->onReceiveInterest +=
-    bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  face2->onReceiveData +=
-    bind(&EndToEndFixture::face2_onReceiveData, this, _1);
+  face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
+  face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
@@ -282,12 +278,12 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
 
   // we should still be able to send/receive with the other one
   face1 = faces.back();
-  face1->onReceiveInterest += bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-  face1->onReceiveData += bind(&EndToEndFixture::face1_onReceiveData, this, _1);
+  face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
+  face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
 
   face2 = make_shared<UnixStreamFace>(client2);
-  face2->onReceiveInterest += bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  face2->onReceiveData += bind(&EndToEndFixture::face2_onReceiveData, this, _1);
+  face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
+  face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
@@ -336,10 +332,8 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   BOOST_REQUIRE(static_cast<bool>(face1));
 
   face2 = make_shared<UnixStreamFace>(client);
-  face2->onReceiveInterest +=
-    bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-  face2->onReceiveData +=
-    bind(&EndToEndFixture::face2_onReceiveData, this, _1);
+  face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
+  face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
@@ -425,12 +419,9 @@ public:
   void
   onFaceCreated(const shared_ptr<Face>& face)
   {
-    face->onReceiveInterest +=
-      bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1);
-    face->onReceiveData +=
-      bind(&SimpleEndToEndFixture::onReceiveData, this, _1);
-    face->onFail +=
-      bind(&SimpleEndToEndFixture::onFail, this, face);
+    face->onReceiveInterest.connect(bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1));
+    face->onReceiveData.connect(bind(&SimpleEndToEndFixture::onReceiveData, this, _1));
+    face->onFail.connect(bind(&SimpleEndToEndFixture::onFail, this, face));
 
     if (static_cast<bool>(dynamic_pointer_cast<LocalFace>(face))) {
       static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(

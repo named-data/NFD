@@ -237,7 +237,8 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
 
   multicastFace = make_shared<MulticastUdpFace>(receiveSocket, sendSocket,
                                                 localEndpoint, multicastEndpoint);
-  multicastFace->onFail += bind(&UdpFactory::afterFaceFailed, this, localEndpoint);
+
+  multicastFace->onFail.connectSingleShot(bind(&UdpFactory::afterFaceFailed, this, localEndpoint));
 
   m_multicastFaces[localEndpoint] = multicastFace;
 

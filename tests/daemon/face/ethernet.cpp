@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(SendPacket)
   BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
   BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(), 0);
 
-  face->onFail += [] (const std::string& reason) { BOOST_FAIL(reason); };
+  face->onFail.connect([] (const std::string& reason) { BOOST_FAIL(reason); });
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");
@@ -171,9 +171,10 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   std::vector<Interest> recInterests;
   std::vector<Data>     recDatas;
 
-  face->onFail            += [] (const std::string& reason) { BOOST_FAIL(reason); };
-  face->onReceiveInterest += [&recInterests] (const Interest& i) { recInterests.push_back(i); };
-  face->onReceiveData     += [&recDatas]     (const Data& d)     { recDatas.push_back(d);     };
+  face->onFail.connect([] (const std::string& reason) { BOOST_FAIL(reason); });
+  face->onReceiveInterest.connect(
+      [&recInterests] (const Interest& i) { recInterests.push_back(i); });
+  face->onReceiveData.connect([&recDatas] (const Data& d) { recDatas.push_back(d); });
 
   // check that packet data is not accessed if pcap didn't capture anything (caplen == 0)
   static const pcap_pkthdr header1{};

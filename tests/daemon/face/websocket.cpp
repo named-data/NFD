@@ -70,12 +70,9 @@ public:
   {
     BOOST_CHECK(!static_cast<bool>(face1));
     face1 = newFace;
-    face1->onReceiveInterest +=
-      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-    face1->onReceiveData +=
-      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
-    face1->onFail +=
-      bind(&EndToEndFixture::face1_onFail, this);
+    face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
+    face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
+    face1->onFail.connect(bind(&EndToEndFixture::face1_onFail, this));
 
     limitedIo.afterOp();
   }

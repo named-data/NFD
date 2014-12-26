@@ -53,8 +53,8 @@ BOOST_AUTO_TEST_CASE(EncodingDecoding)
 
   ndn::EncodingBuffer buffer;
 
-  m_face->onReceiveData +=
-    bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1);
+  m_face->onReceiveData.connect(
+      bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1));
 
   m_publisher.publish();
   BOOST_REQUIRE(m_finished);

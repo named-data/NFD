@@ -77,8 +77,8 @@ BOOST_AUTO_TEST_CASE(TestFibEnumerationPublisher)
 
   ndn::EncodingBuffer buffer;
 
-  m_face->onReceiveData +=
-    bind(&FibEnumerationPublisherFixture::decodeFibEntryBlock, this, _1);
+  m_face->onReceiveData.connect(
+      bind(&FibEnumerationPublisherFixture::decodeFibEntryBlock, this, _1));
 
   m_publisher.publish();
   BOOST_REQUIRE(m_finished);

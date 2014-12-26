@@ -129,7 +129,7 @@ template<class T, class U>
 inline void
 DatagramFace<T, U>::sendInterest(const Interest& interest)
 {
-  this->onSendInterest(interest);
+  this->emitSignal(onSendInterest, interest);
   const Block& payload = interest.wireEncode();
   m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
                        bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
@@ -141,7 +141,7 @@ template<class T, class U>
 inline void
 DatagramFace<T, U>::sendData(const Data& data)
 {
-  this->onSendData(data);
+  this->emitSignal(onSendData, data);
   const Block& payload = data.wireEncode();
   m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
                        bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
@@ -176,8 +176,7 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
       fail("Tunnel closed");
     }
     else {
-      fail("Send operation failed, closing socket: " +
-             error.category().message(error.value()));
+      fail("Send operation failed, closing socket: " + error.message());
     }
     return;
   }

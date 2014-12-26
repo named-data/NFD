@@ -36,10 +36,10 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
   , m_isOnDemand(false)
   , m_isFailed(false)
 {
-  onReceiveInterest += [this](const ndn::Interest&) { ++m_counters.getNInInterests(); };
-  onReceiveData     += [this](const ndn::Data&) {     ++m_counters.getNInDatas(); };
-  onSendInterest    += [this](const ndn::Interest&) { ++m_counters.getNOutInterests(); };
-  onSendData        += [this](const ndn::Data&) {     ++m_counters.getNOutDatas(); };
+  onReceiveInterest.connect([this] (const ndn::Interest&) { ++m_counters.getNInInterests(); });
+  onReceiveData    .connect([this] (const ndn::Data&)     { ++m_counters.getNInDatas(); });
+  onSendInterest   .connect([this] (const ndn::Interest&) { ++m_counters.getNOutInterests(); });
+  onSendData       .connect([this] (const ndn::Data&)     { ++m_counters.getNOutDatas(); });
 }
 
 Face::~Face()
@@ -120,8 +120,6 @@ Face::fail(const std::string& reason)
 
   m_isFailed = true;
   this->onFail(reason);
-
-  this->onFail.clear();
 }
 
 template<typename FaceTraits>

@@ -47,7 +47,7 @@ WebSocketFace::sendInterest(const Interest& interest)
   if (m_closed)
     return;
 
-  this->onSendInterest(interest);
+  this->emitSignal(onSendInterest, interest);
   const Block& payload = interest.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 
@@ -67,7 +67,7 @@ WebSocketFace::sendData(const Data& data)
   if (m_closed)
     return;
 
-  this->onSendData(data);
+  this->emitSignal(onSendData, data);
   const Block& payload = data.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 

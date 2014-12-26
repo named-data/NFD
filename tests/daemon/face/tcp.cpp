@@ -119,12 +119,9 @@ public:
   {
     BOOST_CHECK(!static_cast<bool>(face1));
     face1 = newFace;
-    face1->onReceiveInterest +=
-      bind(&EndToEndFixture::face1_onReceiveInterest, this, _1);
-    face1->onReceiveData +=
-      bind(&EndToEndFixture::face1_onReceiveData, this, _1);
-    face1->onFail +=
-      bind(&EndToEndFixture::face1_onFail, this);
+    face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
+    face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
+    face1->onFail.connect(bind(&EndToEndFixture::face1_onFail, this));
 
     limitedIo.afterOp();
   }
@@ -165,12 +162,9 @@ public:
   {
     BOOST_CHECK(!static_cast<bool>(face2));
     face2 = newFace;
-    face2->onReceiveInterest +=
-      bind(&EndToEndFixture::face2_onReceiveInterest, this, _1);
-    face2->onReceiveData +=
-      bind(&EndToEndFixture::face2_onReceiveData, this, _1);
-    face2->onFail +=
-      bind(&EndToEndFixture::face2_onFail, this);
+    face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
+    face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
+    face2->onFail.connect(bind(&EndToEndFixture::face2_onFail, this));
 
     limitedIo.afterOp();
   }
@@ -492,12 +486,9 @@ public:
   void
   onFaceCreated(const shared_ptr<Face>& face)
   {
-    face->onReceiveInterest +=
-      bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1);
-    face->onReceiveData +=
-      bind(&SimpleEndToEndFixture::onReceiveData, this, _1);
-    face->onFail +=
-      bind(&SimpleEndToEndFixture::onFail, this, face);
+    face->onReceiveInterest.connect(bind(&SimpleEndToEndFixture::onReceiveInterest, this, _1));
+    face->onReceiveData.connect(bind(&SimpleEndToEndFixture::onReceiveData, this, _1));
+    face->onFail.connect(bind(&SimpleEndToEndFixture::onFail, this, face));
 
     if (static_cast<bool>(dynamic_pointer_cast<LocalFace>(face))) {
       static_pointer_cast<LocalFace>(face)->setLocalControlHeaderFeature(

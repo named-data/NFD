@@ -50,8 +50,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  face1->afterSend += afterOp;
-  face2->afterSend += afterOp;
+  face1->afterSend.connect(afterOp);
+  face2->afterSend.connect(afterOp);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
@@ -433,9 +433,9 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   forwarder.addFace(face2);
 
   // cause an Interest sent out of face2 to loop back into face1 after a delay
-  face2->onSendInterest += [&face1] (const Interest& interest) {
+  face2->onSendInterest.connect([&face1] (const Interest& interest) {
     scheduler::schedule(time::milliseconds(170), [&] { face1->receiveInterest(interest); });
-  };
+  });
 
   Fib& fib = forwarder.getFib();
   shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;

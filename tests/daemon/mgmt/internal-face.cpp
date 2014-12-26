@@ -31,8 +31,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("InternalFaceTest");
-
 class InternalFaceFixture : protected BaseFixture
 {
 public:
@@ -112,7 +110,7 @@ BOOST_AUTO_TEST_CASE(PutData)
 
   bool didPutData = false;
   Name dataName("/hello");
-  face->onReceiveData += bind(&validatePutData, ref(didPutData), dataName, _1);
+  face->onReceiveData.connect(bind(&validatePutData, ref(didPutData), dataName, _1));
 
   Data testData(dataName);
   m_keyChain.sign(testData);

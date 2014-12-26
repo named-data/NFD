@@ -48,9 +48,9 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
   face = make_shared<EthernetFace>(socket, interface, address);
 
   auto key = std::make_pair(interface.name, address);
-  face->onFail += [this, key] (const std::string& reason) {
+  face->onFail.connectSingleShot([this, key] (const std::string& reason) {
     m_multicastFaces.erase(key);
-  };
+  });
   m_multicastFaces.insert({key, face});
 
   return face;

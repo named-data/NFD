@@ -140,7 +140,7 @@ TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
       else
         face = make_shared<TcpFace>(socket, isOnDemand);
 
-      face->onFail += bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint);
+      face->onFail.connectSingleShot(bind(&TcpChannel::afterFaceFailed, this, remoteEndpoint));
 
       m_channelFaces[remoteEndpoint] = face;
     }

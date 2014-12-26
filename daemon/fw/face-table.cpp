@@ -85,12 +85,9 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
   NFD_LOG_INFO("Added face id=" << faceId << " remote=" << face->getRemoteUri()
                                           << " local=" << face->getLocalUri());
 
-  face->onReceiveInterest += bind(&Forwarder::onInterest,
-                                  &m_forwarder, ref(*face), _1);
-  face->onReceiveData     += bind(&Forwarder::onData,
-                                  &m_forwarder, ref(*face), _1);
-  face->onFail            += bind(&FaceTable::remove,
-                                  this, face);
+  face->onReceiveInterest.connect(bind(&Forwarder::onInterest, &m_forwarder, ref(*face), _1));
+  face->onReceiveData.connect(bind(&Forwarder::onData, &m_forwarder, ref(*face), _1));
+  face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face));
 
   this->onAdd(face);
 }
@@ -104,15 +101,7 @@ FaceTable::remove(shared_ptr<Face> face)
   m_faces.erase(faceId);
   face->setId(INVALID_FACEID);
   NFD_LOG_INFO("Removed face id=" << faceId << " remote=" << face->getRemoteUri() <<
-                                                 " local=" << face->getLocalUri());
-
-  // XXX This clears all subscriptions, because EventEmitter
-  //     does not support only removing Forwarder's subscription
-  face->onReceiveInterest.clear();
-  face->onReceiveData    .clear();
-  face->onSendInterest   .clear();
-  face->onSendData       .clear();
-  // don't clear onFail because other functions may need to execute
+                                                " local=" << face->getLocalUri());
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 }

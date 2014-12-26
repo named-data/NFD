@@ -52,7 +52,7 @@ public:
   virtual void
   sendInterest(const Interest& interest)
   {
-    this->onSendInterest(interest);
+    this->emitSignal(onSendInterest, interest);
     m_sentInterests.push_back(interest);
     this->afterSend();
   }
@@ -60,7 +60,7 @@ public:
   virtual void
   sendData(const Data& data)
   {
-    this->onSendData(data);
+    this->emitSignal(onSendData, data);
     m_sentDatas.push_back(data);
     this->afterSend();
   }
@@ -68,22 +68,22 @@ public:
   virtual void
   close()
   {
-    this->onFail("close");
+    this->fail("close");
   }
 
   void
   receiveInterest(const Interest& interest)
   {
-    this->onReceiveInterest(interest);
+    this->emitSignal(onReceiveInterest, interest);
   }
 
   void
   receiveData(const Data& data)
   {
-    this->onReceiveData(data);
+    this->emitSignal(onReceiveData, data);
   }
 
-  EventEmitter<> afterSend;
+  signal::Signal<DummyFaceImpl<FaceBase>> afterSend;
 
 public:
   std::vector<Interest> m_sentInterests;

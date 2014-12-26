@@ -61,7 +61,7 @@ MulticastUdpFace::sendBlock(const Block& block)
 void
 MulticastUdpFace::sendInterest(const Interest& interest)
 {
-  onSendInterest(interest);
+  this->emitSignal(onSendInterest, interest);
 
   NFD_LOG_DEBUG("Sending interest");
   sendBlock(interest.wireEncode());
@@ -70,9 +70,9 @@ MulticastUdpFace::sendInterest(const Interest& interest)
 void
 MulticastUdpFace::sendData(const Data& data)
 {
-  /// \todo After this method implements duplicate suppression, onSendData event should
-  ///       be triggered only when data is actually sent out
-  onSendData(data);
+  /// \todo After this method implements duplicate suppression, onSendData signal should
+  ///       be emitted only when data is actually sent out
+  this->emitSignal(onSendData, data);
 
   NFD_LOG_DEBUG("Sending data");
   sendBlock(data.wireEncode());

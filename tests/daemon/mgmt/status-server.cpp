@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Status)
   time::system_clock::TimePoint t1 = time::system_clock::now();
   Forwarder forwarder;
   shared_ptr<InternalFace> internalFace = make_shared<InternalFace>();
-  internalFace->onReceiveData += &interceptResponse;
+  internalFace->onReceiveData.connect(&interceptResponse);
   ndn::KeyChain keyChain;
   StatusServer statusServer(internalFace, ref(forwarder), keyChain);
   time::system_clock::TimePoint t2 = time::system_clock::now();

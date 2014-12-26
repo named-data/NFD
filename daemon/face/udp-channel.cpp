@@ -177,7 +177,8 @@ UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
   if (faceMapPos == m_channelFaces.end())
     {
       face = make_shared<UdpFace>(socket, isOnDemand, m_idleFaceTimeout);
-      face->onFail += bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint);
+
+      face->onFail.connectSingleShot(bind(&UdpChannel::afterFaceFailed, this, remoteEndpoint));
 
       m_channelFaces[remoteEndpoint] = face;
     }
