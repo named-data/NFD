@@ -100,8 +100,10 @@ private:
 
   /**
    * @brief Enables receiving frames addressed to our MAC multicast group
+   *
+   * @return true if successful, false otherwise
    */
-  void
+  bool
   joinMulticastGroup();
 
   /**

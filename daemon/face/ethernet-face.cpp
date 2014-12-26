@@ -24,6 +24,7 @@
  */
 
 #include "ethernet-face.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 #include <pcap/pcap.h>
@@ -81,7 +82,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
 
   int fd = pcap_get_selectable_fd(m_pcap.get());
   if (fd < 0)
-    throw Error("pcap_get_selectable_fd() failed");
+    throw Error("pcap_get_selectable_fd failed");
 
   // need to duplicate the fd, otherwise both pcap_close()
   // and stream_descriptor::close() will try to close the
@@ -102,7 +103,12 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
                 m_srcAddress.toString().c_str());
   setPacketFilter(filter);
 
-  joinMulticastGroup();
+  if (!m_destAddress.isBroadcast() && !joinMulticastGroup())
+    {
+      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                   << "] Falling back to promiscuous mode");
+      pcap_set_promisc(m_pcap.get(), 1);
+    }
 
   m_socket->async_read_some(boost::asio::null_buffers(),
                             bind(&EthernetFace::handleRead, this,
@@ -157,7 +163,7 @@ EthernetFace::pcapInit()
   char errbuf[PCAP_ERRBUF_SIZE] = {};
   m_pcap.reset(pcap_create(m_interfaceName.c_str(), errbuf));
   if (!m_pcap)
-    throw Error("pcap_create(): " + std::string(errbuf));
+    throw Error("pcap_create: " + std::string(errbuf));
 
 #ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
   // Enable "immediate mode", effectively disabling any read buffering in the kernel.
@@ -168,14 +174,14 @@ EthernetFace::pcapInit()
 #endif
 
   if (pcap_activate(m_pcap.get()) < 0)
-    throw Error("pcap_activate() failed");
+    throw Error("pcap_activate failed");
 
   if (pcap_set_datalink(m_pcap.get(), DLT_EN10MB) < 0)
-    throw Error("pcap_set_datalink(): " + std::string(pcap_geterr(m_pcap.get())));
+    throw Error("pcap_set_datalink: " + std::string(pcap_geterr(m_pcap.get())));
 
   if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
     // no need to throw on failure, BPF will filter unwanted packets anyway
-    NFD_LOG_WARN("pcap_setdirection(): " << pcap_geterr(m_pcap.get()));
+    NFD_LOG_WARN("pcap_setdirection: " << pcap_geterr(m_pcap.get()));
 }
 
 void
@@ -183,15 +189,15 @@ EthernetFace::setPacketFilter(const char* filterString)
 {
   bpf_program filter;
   if (pcap_compile(m_pcap.get(), &filter, filterString, 1, PCAP_NETMASK_UNKNOWN) < 0)
-    throw Error("pcap_compile(): " + std::string(pcap_geterr(m_pcap.get())));
+    throw Error("pcap_compile: " + std::string(pcap_geterr(m_pcap.get())));
 
   int ret = pcap_setfilter(m_pcap.get(), &filter);
   pcap_freecode(&filter);
   if (ret < 0)
-    throw Error("pcap_setfilter(): " + std::string(pcap_geterr(m_pcap.get())));
+    throw Error("pcap_setfilter: " + std::string(pcap_geterr(m_pcap.get())));
 }
 
-void
+bool
 EthernetFace::joinMulticastGroup()
 {
 #if defined(__linux__)
@@ -203,7 +209,7 @@ EthernetFace::joinMulticastGroup()
 
   if (::setsockopt(m_socket->native_handle(), SOL_PACKET,
                    PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) == 0)
-    return; // success
+    return true; // success
 
   NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                << "] setsockopt(PACKET_ADD_MEMBERSHIP) failed: " << std::strerror(errno));
@@ -214,6 +220,11 @@ EthernetFace::joinMulticastGroup()
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
+  // see bug #2327
+  using boost::asio::ip::udp;
+  udp::socket sock(ref(getGlobalIoService()), udp::v4());
+  int fd = sock.native_handle();
+
   /*
    * Differences between Linux and the BSDs (including OS X):
    *   o BSD does not have ifr_hwaddr; use ifr_addr instead.
@@ -235,6 +246,8 @@ EthernetFace::joinMulticastGroup()
   static_assert(sizeof(ifr.ifr_addr) >= offsetof(sockaddr_dl, sdl_data) + ethernet::ADDR_LEN,
                 "ifr_addr in struct ifreq is too small on this platform");
 #else
+  int fd = m_socket->native_handle();
+
   ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
   std::copy(m_destAddress.begin(), m_destAddress.end(), ifr.ifr_hwaddr.sa_data);
 
@@ -242,19 +255,14 @@ EthernetFace::joinMulticastGroup()
                 "ifr_hwaddr in struct ifreq is too small on this platform");
 #endif
 
-  if (::ioctl(m_socket->native_handle(), SIOCADDMULTI, &ifr) >= 0)
-    return; // success
+  if (::ioctl(fd, SIOCADDMULTI, &ifr) == 0)
+    return true; // success
 
   NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
                << "] ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
 #endif
 
-  if (!m_destAddress.isBroadcast())
-    {
-      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
-                    << "] Falling back to promiscuous mode");
-      pcap_set_promisc(m_pcap.get(), 1);
-    }
+  return false;
 }
 
 void
@@ -290,7 +298,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
   int sent = pcap_inject(m_pcap.get(), buffer.buf(), buffer.size());
   if (sent < 0)
     {
-      return fail("pcap_inject(): " + std::string(pcap_geterr(m_pcap.get())));
+      return fail("pcap_inject: " + std::string(pcap_geterr(m_pcap.get())));
     }
   else if (static_cast<size_t>(sent) < buffer.size())
     {
@@ -316,7 +324,7 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
   int ret = pcap_next_ex(m_pcap.get(), &header, &packet);
   if (ret < 0)
     {
-      return fail("pcap_next_ex(): " + std::string(pcap_geterr(m_pcap.get())));
+      return fail("pcap_next_ex: " + std::string(pcap_geterr(m_pcap.get())));
     }
   else if (ret == 0)
     {
@@ -417,7 +425,7 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
   if (error == boost::asio::error::eof)
     {
       msg = "Face closed";
-      NFD_LOG_INFO("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
+      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
   else
     {
@@ -431,10 +439,19 @@ size_t
 EthernetFace::getInterfaceMtu() const
 {
 #ifdef SIOCGIFMTU
+#if defined(__APPLE__) || defined(__FreeBSD__)
+  // see bug #2328
+  using boost::asio::ip::udp;
+  udp::socket sock(ref(getGlobalIoService()), udp::v4());
+  int fd = sock.native_handle();
+#else
+  int fd = m_socket->native_handle();
+#endif
+
   ifreq ifr{};
   std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
 
-  if (::ioctl(m_socket->native_handle(), SIOCGIFMTU, &ifr) >= 0)
+  if (::ioctl(fd, SIOCGIFMTU, &ifr) == 0)
     return static_cast<size_t>(ifr.ifr_mtu);
 
   NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
