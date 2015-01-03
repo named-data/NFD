@@ -27,9 +27,24 @@
 #include "pit-entry.hpp"
 #include "measurements-entry.hpp"
 
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+#include <type_traits>
+
 namespace nfd {
 
 const shared_ptr<fib::Entry> Fib::s_emptyEntry = make_shared<fib::Entry>(Name());
+
+// http://en.cppreference.com/w/cpp/concept/ForwardIterator
+BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Fib::const_iterator>));
+// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
+// which doesn't require DefaultConstructible
+#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
+static_assert(std::is_default_constructible<Fib::const_iterator>::value,
+              "Fib::const_iterator must be default-constructible");
+#else
+BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Fib::const_iterator>));
+#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
 
 Fib::Fib(NameTree& nameTree)
   : m_nameTree(nameTree)

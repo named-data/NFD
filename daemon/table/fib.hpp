@@ -95,15 +95,26 @@ public: // mutation
 public: // enumeration
   class const_iterator;
 
+  /** \brief returns an iterator pointing to the first FIB entry
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated if FIB or another NameTree-based
+   *        table is modified
+   */
   const_iterator
   begin() const;
 
+  /** \brief returns an iterator referring to the past-the-end FIB entry
+   *  \note The returned iterator may get invalidated if FIB or another NameTree-based
+   *        table is modified
+   */
   const_iterator
   end() const;
 
-  class const_iterator : public std::iterator<std::forward_iterator_tag, fib::Entry>
+  class const_iterator : public std::iterator<std::forward_iterator_tag, const fib::Entry>
   {
   public:
+    const_iterator() = default;
+
     explicit
     const_iterator(const NameTree::const_iterator& it);
 
@@ -193,7 +204,7 @@ Fib::const_iterator::operator++()
 inline const fib::Entry&
 Fib::const_iterator::operator*() const
 {
-  return *(m_nameTreeIterator->getFibEntry());
+  return *this->operator->();
 }
 
 inline shared_ptr<fib::Entry>

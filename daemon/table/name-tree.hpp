@@ -184,6 +184,8 @@ public: // matching
    *    ...
    *  }
    *  \endcode
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated when NameTree is modified
    */
   boost::iterator_range<const_iterator>
   findAllMatches(const Name& prefix,
@@ -201,6 +203,8 @@ public: // enumeration
    *    ...
    *  }
    *  \endcode
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated when NameTree is modified
    */
   boost::iterator_range<const_iterator>
   fullEnumerate(const name_tree::EntrySelector& entrySelector = name_tree::AnyEntry()) const;
@@ -216,15 +220,25 @@ public: // enumeration
    *    ...
    *  }
    *  \endcode
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated when NameTree is modified
    */
   boost::iterator_range<const_iterator>
   partialEnumerate(const Name& prefix,
                    const name_tree::EntrySubTreeSelector& entrySubTreeSelector =
                          name_tree::AnyEntrySubTree()) const;
 
+  /** \brief Get an iterator pointing to the first NameTree entry
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated when NameTree is modified
+   */
   const_iterator
   begin() const;
 
+  /** \brief Get an iterator referring to the past-the-end FIB entry
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated when NameTree is modified
+   */
   const_iterator
   end() const;
 
@@ -234,10 +248,12 @@ public: // enumeration
     FIND_ALL_MATCHES_TYPE
   };
 
-  class const_iterator : public std::iterator<std::forward_iterator_tag, name_tree::Entry>
+  class const_iterator : public std::iterator<std::forward_iterator_tag, const name_tree::Entry>
   {
   public:
     friend class NameTree;
+
+    const_iterator();
 
     const_iterator(NameTree::IteratorType type,
       const NameTree& nameTree,
@@ -266,7 +282,7 @@ public: // enumeration
     operator!=(const const_iterator& other) const;
 
   private:
-    const NameTree&                             m_nameTree;
+    const NameTree*                             m_nameTree;
     shared_ptr<name_tree::Entry>                m_entry;
     shared_ptr<name_tree::Entry>                m_subTreeRoot;
     shared_ptr<name_tree::EntrySelector>        m_entrySelector;
