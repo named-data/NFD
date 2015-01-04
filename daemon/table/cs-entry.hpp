@@ -37,19 +37,12 @@ namespace cs {
 
 class Entry;
 
-/** \brief represents a CS entry
+/** \brief represents a base class for CS entry
  */
 class Entry : noncopyable
 {
 public:
-  typedef std::map<int, std::list<Entry*>::iterator > LayerIterators;
-
   Entry();
-
-  /** \brief releases reference counts on shared objects
-   */
-  void
-  release();
 
   /** \brief returns the name of the Data packet stored in the CS entry
    *  \return{ NDN name }
@@ -71,12 +64,6 @@ public:
   bool
   isUnsolicited() const;
 
-  /** \brief returns the absolute time when Data becomes expired
-   *  \return{ Time (resolution up to time::milliseconds) }
-   */
-  const time::steady_clock::TimePoint&
-  getStaleTime() const;
-
   /** \brief returns the Data packet stored in the CS entry
    */
   const Data&
@@ -87,62 +74,54 @@ public:
   void
   setData(const Data& data, bool isUnsolicited);
 
+  /** \brief returns the absolute time when Data becomes expired
+   *  \return{ Time (resolution up to time::milliseconds) }
+   */
+  const time::steady_clock::TimePoint&
+  getStaleTime() const;
+
   /** \brief refreshes the time when Data becomes expired
    *  according to the current absolute time.
    */
   void
   updateStaleTime();
 
-  /** \brief saves the iterator pointing to the CS entry on a specific layer of skip list
+  /** \brief checks if the stored Data is stale
+   */
+  bool
+  isStale() const;
+
+  /** \brief clears CS entry
+   *  After reset, *this == Entry()
    */
   void
-  setIterator(int layer, const LayerIterators::mapped_type& layerIterator);
-
-  /** \brief removes the iterator pointing to the CS entry on a specific layer of skip list
-   */
-  void
-  removeIterator(int layer);
-
-  /** \brief returns the table containing <layer, iterator> pairs.
-   */
-  const LayerIterators&
-  getIterators() const;
-
-private:
-  /** \brief prints <layer, iterator> pairs.
-   */
-  void
-  printIterators() const;
+  reset();
 
 private:
   time::steady_clock::TimePoint m_staleAt;
   shared_ptr<const Data> m_dataPacket;
 
   bool m_isUnsolicited;
-
-  LayerIterators m_layerIterators;
 };
-
-inline
-Entry::Entry()
-{
-}
 
 inline const Name&
 Entry::getName() const
 {
+  BOOST_ASSERT(m_dataPacket != nullptr);
   return m_dataPacket->getName();
 }
 
 inline const Name&
 Entry::getFullName() const
 {
+  BOOST_ASSERT(m_dataPacket != nullptr);
   return m_dataPacket->getFullName();
 }
 
 inline const Data&
 Entry::getData() const
 {
+  BOOST_ASSERT(m_dataPacket != nullptr);
   return *m_dataPacket;
 }
 
@@ -156,12 +135,6 @@ inline const time::steady_clock::TimePoint&
 Entry::getStaleTime() const
 {
   return m_staleAt;
-}
-
-inline const Entry::LayerIterators&
-Entry::getIterators() const
-{
-  return m_layerIterators;
 }
 
 } // namespace cs

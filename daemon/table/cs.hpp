@@ -31,7 +31,7 @@
 #define NFD_DAEMON_TABLE_CS_HPP
 
 #include "common.hpp"
-#include "cs-entry.hpp"
+#include "cs-skip-list-entry.hpp"
 
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index_container.hpp>
@@ -43,14 +43,14 @@
 
 namespace nfd {
 
-typedef std::list<cs::Entry*> SkipListLayer;
+typedef std::list<cs::skip_list::Entry*> SkipListLayer;
 typedef std::list<SkipListLayer*> SkipList;
 
 class StalenessComparator
 {
 public:
   bool
-  operator()(const cs::Entry* entry1, const cs::Entry* entry2) const
+  operator()(const cs::skip_list::Entry* entry1, const cs::skip_list::Entry* entry2) const
   {
     return entry1->getStaleTime() < entry2->getStaleTime();
   }
@@ -60,13 +60,13 @@ class UnsolicitedComparator
 {
 public:
   bool
-  operator()(const cs::Entry* entry1, const cs::Entry* entry2) const
+  operator()(const cs::skip_list::Entry* entry1, const cs::skip_list::Entry* entry2) const
   {
     return entry1->isUnsolicited();
   }
 
   bool
-  operator()(bool isUnsolicited, const cs::Entry* entry) const
+  operator()(bool isUnsolicited, const cs::skip_list::Entry* entry) const
   {
     if (isUnsolicited)
       return true;
@@ -81,7 +81,7 @@ class byStaleness;
 class byArrival;
 
 typedef boost::multi_index_container<
-  cs::Entry*,
+  cs::skip_list::Entry*,
   boost::multi_index::indexed_by<
 
     // by arrival (FIFO)
@@ -92,14 +92,14 @@ typedef boost::multi_index_container<
     // index by staleness time
     boost::multi_index::ordered_non_unique<
       boost::multi_index::tag<byStaleness>,
-      boost::multi_index::identity<cs::Entry*>,
+      boost::multi_index::identity<cs::skip_list::Entry*>,
       StalenessComparator
     >,
 
     // unsolicited Data is in the front
     boost::multi_index::ordered_non_unique<
       boost::multi_index::tag<unsolicited>,
-      boost::multi_index::identity<cs::Entry*>,
+      boost::multi_index::identity<cs::skip_list::Entry*>,
       UnsolicitedComparator
     >
 
@@ -155,6 +155,53 @@ public:
   size_t
   size() const;
 
+public: // enumeration
+  class const_iterator;
+
+  /** \brief returns an iterator pointing to the first CS entry
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated if CS is modified
+   */
+  const_iterator
+  begin() const;
+
+  /** \brief returns an iterator referring to the past-the-end CS entry
+   *  \note The returned iterator may get invalidated if CS is modified
+   */
+  const_iterator
+  end() const;
+
+  class const_iterator : public std::iterator<std::forward_iterator_tag, const cs::Entry>
+  {
+  public:
+    const_iterator() = default;
+
+    const_iterator(SkipListLayer::const_iterator it);
+
+    ~const_iterator();
+
+    reference
+    operator*() const;
+
+    pointer
+    operator->() const;
+
+    const_iterator&
+    operator++();
+
+    const_iterator
+    operator++(int);
+
+    bool
+    operator==(const const_iterator& other) const;
+
+    bool
+    operator!=(const const_iterator& other) const;
+
+  private:
+    SkipListLayer::const_iterator m_skipListIterator;
+  };
+
 protected:
   /** \brief removes one Data packet from Content Store based on replacement policy
    *  \return{ whether the Data was removed }
@@ -181,14 +228,14 @@ private:
    *  \return{ returns a pair containing a pointer to the CS Entry,
    *  and a flag indicating if the entry was newly created (True) or refreshed (False) }
    */
-  std::pair<cs::Entry*, bool>
+  std::pair<cs::skip_list::Entry*, bool>
   insertToSkipList(const Data& data, bool isUnsolicited = false);
 
   /** \brief Removes a specific CS Entry from all layers of a skip list
    *  \return{ returns True if CS Entry was succesfully removed and False if CS Entry was not found}
    */
   bool
-  eraseFromSkipList(cs::Entry* entry);
+  eraseFromSkipList(cs::skip_list::Entry* entry);
 
   /** \brief Prints contents of the skip list, starting from the top layer
    */
@@ -216,7 +263,7 @@ private:
    */
   bool
   doesComplyWithSelectors(const Interest& interest,
-                          cs::Entry* entry,
+                          cs::skip_list::Entry* entry,
                           bool doesInterestContainDigest) const;
 
   /** \brief interprets minSuffixComponent and name lengths to understand if Interest contains
@@ -224,15 +271,77 @@ private:
    *  \return{ True if Interest name contains digest; False otherwise }
    */
   bool
-  recognizeInterestWithDigest(const Interest& interest, cs::Entry* entry) const;
+  recognizeInterestWithDigest(const Interest& interest, cs::skip_list::Entry* entry) const;
 
 private:
   SkipList m_skipList;
   CleanupIndex m_cleanupIndex;
   size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
   size_t m_nPackets;    // current number of packets in Content Store
-  std::queue<cs::Entry*> m_freeCsEntries; // memory pool
+  std::queue<cs::skip_list::Entry*> m_freeCsEntries; // memory pool
 };
+
+inline Cs::const_iterator
+Cs::begin() const
+{
+  return const_iterator(m_skipList.front()->begin());
+}
+
+inline Cs::const_iterator
+Cs::end() const
+{
+  return const_iterator(m_skipList.front()->end());
+}
+
+inline
+Cs::const_iterator::const_iterator(SkipListLayer::const_iterator it)
+  : m_skipListIterator(it)
+{
+}
+
+inline
+Cs::const_iterator::~const_iterator()
+{
+}
+
+inline Cs::const_iterator&
+Cs::const_iterator::operator++()
+{
+  ++m_skipListIterator;
+  return *this;
+}
+
+inline Cs::const_iterator
+Cs::const_iterator::operator++(int)
+{
+  Cs::const_iterator temp(*this);
+  ++(*this);
+  return temp;
+}
+
+inline Cs::const_iterator::reference
+Cs::const_iterator::operator*() const
+{
+  return *(this->operator->());
+}
+
+inline Cs::const_iterator::pointer
+Cs::const_iterator::operator->() const
+{
+  return *m_skipListIterator;
+}
+
+inline bool
+Cs::const_iterator::operator==(const Cs::const_iterator& other) const
+{
+  return m_skipListIterator == other.m_skipListIterator;
+}
+
+inline bool
+Cs::const_iterator::operator!=(const Cs::const_iterator& other) const
+{
+  return !(*this == other);
+}
 
 } // namespace nfd
 

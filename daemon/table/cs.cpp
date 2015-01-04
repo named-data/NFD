@@ -35,6 +35,9 @@
 #include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
 
 #include <boost/random/bernoulli_distribution.hpp>
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+#include <type_traits>
 
 /// max skip list layers
 static const size_t SKIPLIST_MAX_LAYERS = 32;
@@ -45,6 +48,17 @@ NFD_LOG_INIT("ContentStore");
 
 namespace nfd {
 
+// http://en.cppreference.com/w/cpp/concept/ForwardIterator
+BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Cs::const_iterator>));
+// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
+// which doesn't require DefaultConstructible
+#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
+static_assert(std::is_default_constructible<Cs::const_iterator>::value,
+              "Cs::const_iterator must be default-constructible");
+#else
+BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Cs::const_iterator>));
+#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
+
 Cs::Cs(size_t nMaxPackets)
   : m_nMaxPackets(nMaxPackets)
   , m_nPackets(0)
@@ -53,7 +67,7 @@ Cs::Cs(size_t nMaxPackets)
   m_skipList.push_back(zeroLayer);
 
   for (size_t i = 0; i < m_nMaxPackets; i++)
-    m_freeCsEntries.push(new cs::Entry());
+    m_freeCsEntries.push(new cs::skip_list::Entry());
 }
 
 Cs::~Cs()
@@ -89,7 +103,7 @@ Cs::setLimit(size_t nMaxPackets)
 
   if (m_nMaxPackets >= oldNMaxPackets) {
     for (size_t i = oldNMaxPackets; i < m_nMaxPackets; i++) {
-      m_freeCsEntries.push(new cs::Entry());
+      m_freeCsEntries.push(new cs::skip_list::Entry());
     }
   }
   else {
@@ -107,7 +121,7 @@ Cs::getLimit() const
 }
 
 //Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
-std::pair<cs::Entry*, bool>
+std::pair<cs::skip_list::Entry*, bool>
 Cs::insertToSkipList(const Data& data, bool isUnsolicited)
 {
   NFD_LOG_TRACE("insertToSkipList() " << data.getFullName() << ", "
@@ -117,7 +131,7 @@ Cs::insertToSkipList(const Data& data, bool isUnsolicited)
   BOOST_ASSERT(m_freeCsEntries.size() > 0);
 
   // take entry for the memory pool
-  cs::Entry* entry = m_freeCsEntries.front();
+  cs::skip_list::Entry* entry = m_freeCsEntries.front();
   m_freeCsEntries.pop();
   m_nPackets++;
   entry->setData(data, isUnsolicited);
@@ -258,7 +272,7 @@ Cs::insert(const Data& data, bool isUnsolicited)
     }
 
   //pointer and insertion status
-  std::pair<cs::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
+  std::pair<cs::skip_list::Entry*, bool> entry = insertToSkipList(data, isUnsolicited);
 
   //new entry
   if (static_cast<bool>(entry.first) && (entry.second == true))
@@ -294,14 +308,14 @@ Cs::isFull() const
 }
 
 bool
-Cs::eraseFromSkipList(cs::Entry* entry)
+Cs::eraseFromSkipList(cs::skip_list::Entry* entry)
 {
   NFD_LOG_TRACE("eraseFromSkipList() "  << entry->getFullName());
   NFD_LOG_TRACE("SkipList size " << size());
 
   bool isErased = false;
 
-  const std::map<int, std::list<cs::Entry*>::iterator>& iterators = entry->getIterators();
+  const std::map<int, std::list<cs::skip_list::Entry*>::iterator>& iterators = entry->getIterators();
 
   if (!iterators.empty())
     {
@@ -309,7 +323,7 @@ Cs::eraseFromSkipList(cs::Entry* entry)
 
       for (SkipList::iterator it = m_skipList.begin(); it != m_skipList.end(); )
         {
-          std::map<int, std::list<cs::Entry*>::iterator>::const_iterator i = iterators.find(layer);
+          std::map<int, std::list<cs::skip_list::Entry*>::iterator>::const_iterator i = iterators.find(layer);
 
           if (i != iterators.end())
             {
@@ -605,7 +619,7 @@ Cs::selectChild(const Interest& interest, SkipListLayer::iterator startingPoint)
 
 bool
 Cs::doesComplyWithSelectors(const Interest& interest,
-                            cs::Entry* entry,
+                            cs::skip_list::Entry* entry,
                             bool doesInterestContainDigest) const
 {
   NFD_LOG_TRACE("doesComplyWithSelectors()");
@@ -711,7 +725,7 @@ Cs::doesComplyWithSelectors(const Interest& interest,
 }
 
 bool
-Cs::recognizeInterestWithDigest(const Interest& interest, cs::Entry* entry) const
+Cs::recognizeInterestWithDigest(const Interest& interest, cs::skip_list::Entry* entry) const
 {
   // only when min selector is not specified or specified with value of 0
   // and Interest's name length is exactly the length of the name of CS entry
@@ -757,7 +771,7 @@ Cs::erase(const Name& exactName)
               // it can happen when begin() contains the element we want to remove
               if (!isIterated && ((*head)->getFullName() == exactName))
                 {
-                  cs::Entry* entryToDelete = *head;
+                  cs::skip_list::Entry* entryToDelete = *head;
                   NFD_LOG_TRACE("Found target " << entryToDelete->getFullName());
                   eraseFromSkipList(entryToDelete);
                   // head can become invalid after eraseFromSkipList
@@ -806,7 +820,7 @@ Cs::erase(const Name& exactName)
 
   if (isNameIdentical)
     {
-      cs::Entry* entryToDelete = *head;
+      cs::skip_list::Entry* entryToDelete = *head;
       NFD_LOG_TRACE("Found target " << entryToDelete->getFullName());
       eraseFromSkipList(entryToDelete);
       // head can become invalid after eraseFromSkipList

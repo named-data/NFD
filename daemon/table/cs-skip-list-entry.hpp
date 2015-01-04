@@ -27,47 +27,63 @@
  * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
+#ifndef NFD_DAEMON_TABLE_CS_SKIP_LIST_ENTRY_HPP
+#define NFD_DAEMON_TABLE_CS_SKIP_LIST_ENTRY_HPP
+
+#include "common.hpp"
 #include "cs-entry.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace cs {
+namespace skip_list {
 
-NFD_LOG_INIT("CsEntry");
-
-Entry::Entry()
-  : m_isUnsolicited(false)
+/** \brief represents an entry in a CS with skip list implementation
+ */
+class Entry : public cs::Entry
 {
+public:
+  typedef std::map<int, std::list<Entry*>::iterator > LayerIterators;
+
+  Entry() = default;
+
+  /** \brief releases reference counts on shared objects
+   */
+  void
+  release();
+
+  /** \brief saves the iterator pointing to the CS entry on a specific layer of skip list
+   */
+  void
+  setIterator(int layer, const LayerIterators::mapped_type& layerIterator);
+
+  /** \brief removes the iterator pointing to the CS entry on a specific layer of skip list
+   */
+  void
+  removeIterator(int layer);
+
+  /** \brief returns the table containing <layer, iterator> pairs.
+   */
+  const LayerIterators&
+  getIterators() const;
+
+private:
+  /** \brief prints <layer, iterator> pairs.
+   */
+  void
+  printIterators() const;
+
+private:
+  LayerIterators m_layerIterators;
+};
+
+inline const Entry::LayerIterators&
+Entry::getIterators() const
+{
+  return m_layerIterators;
 }
 
-void
-Entry::setData(const Data& data, bool isUnsolicited)
-{
-  m_isUnsolicited = isUnsolicited;
-  m_dataPacket = data.shared_from_this();
-
-  updateStaleTime();
-}
-
-void
-Entry::updateStaleTime()
-{
-  m_staleAt = time::steady_clock::now() + m_dataPacket->getFreshnessPeriod();
-}
-
-bool
-Entry::isStale() const
-{
-  return m_staleAt < time::steady_clock::now();
-}
-
-void
-Entry::reset()
-{
-  m_staleAt = time::steady_clock::TimePoint();
-  m_dataPacket.reset();
-  m_isUnsolicited = false;
-}
-
+} // namespace skip_list
 } // namespace cs
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_CS_SKIP_LIST_ENTRY_HPP

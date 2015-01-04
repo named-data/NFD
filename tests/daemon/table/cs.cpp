@@ -986,6 +986,42 @@ BOOST_AUTO_TEST_CASE(MaxSuffixComponents32)
 
 BOOST_AUTO_TEST_SUITE_END() // Find
 
+BOOST_AUTO_TEST_CASE(Iterator)
+{
+  Cs cs;
+
+  Name nameA("/A");
+  Name nameAB("/A/B");
+  Name nameABC("/A/B/C");
+  Name nameD("/D");
+
+  BOOST_CHECK_EQUAL(cs.size(), 0);
+  BOOST_CHECK(cs.begin() == cs.end());
+
+  cs.insert(*makeData(nameABC));
+  BOOST_CHECK_EQUAL(cs.size(), 1);
+  BOOST_CHECK(cs.begin() != cs.end());
+  BOOST_CHECK(cs.begin()->getName() == nameABC);
+  BOOST_CHECK((*cs.begin()).getName() == nameABC);
+
+  auto i = cs.begin();
+  auto j = cs.begin();
+  BOOST_CHECK(++i == cs.end());
+  BOOST_CHECK(j++ == cs.begin());
+  BOOST_CHECK(j == cs.end());
+
+  cs.insert(*makeData(nameA));
+  cs.insert(*makeData(nameAB));
+  cs.insert(*makeData(nameD));
+
+  std::set<Name> expected = {nameA, nameAB, nameABC, nameD};
+  std::set<Name> actual;
+  for (const auto& csEntry : cs) {
+    actual.insert(csEntry.getName());
+  }
+  BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
+}
+
 BOOST_AUTO_TEST_SUITE_END() // TableCs
 
 } // namespace tests

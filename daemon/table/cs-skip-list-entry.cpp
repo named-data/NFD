@@ -27,47 +27,46 @@
  * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
  */
 
-#include "cs-entry.hpp"
+#include "cs-skip-list-entry.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
 namespace cs {
+namespace skip_list {
 
-NFD_LOG_INIT("CsEntry");
+NFD_LOG_INIT("CsSkipListEntry");
 
-Entry::Entry()
-  : m_isUnsolicited(false)
+void
+Entry::release()
 {
+  BOOST_ASSERT(m_layerIterators.empty());
+
+  reset();
 }
 
 void
-Entry::setData(const Data& data, bool isUnsolicited)
+Entry::setIterator(int layer, const Entry::LayerIterators::mapped_type& layerIterator)
 {
-  m_isUnsolicited = isUnsolicited;
-  m_dataPacket = data.shared_from_this();
-
-  updateStaleTime();
+  m_layerIterators[layer] = layerIterator;
 }
 
 void
-Entry::updateStaleTime()
+Entry::removeIterator(int layer)
 {
-  m_staleAt = time::steady_clock::now() + m_dataPacket->getFreshnessPeriod();
-}
-
-bool
-Entry::isStale() const
-{
-  return m_staleAt < time::steady_clock::now();
+  m_layerIterators.erase(layer);
 }
 
 void
-Entry::reset()
+Entry::printIterators() const
 {
-  m_staleAt = time::steady_clock::TimePoint();
-  m_dataPacket.reset();
-  m_isUnsolicited = false;
+  for (LayerIterators::const_iterator it = m_layerIterators.begin();
+       it != m_layerIterators.end();
+       ++it)
+    {
+      NFD_LOG_TRACE("[" << it->first << "]" << " " << &(*it->second));
+    }
 }
 
+} // namespace skip_list
 } // namespace cs
 } // namespace nfd
