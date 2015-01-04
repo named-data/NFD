@@ -78,6 +78,62 @@ public:
   void
   erase(shared_ptr<pit::Entry> pitEntry);
 
+public: // enumeration
+  class const_iterator;
+
+  /** \brief returns an iterator pointing to the first PIT entry
+   *  \note Iteration order is implementation-specific and is undefined
+   *  \note The returned iterator may get invalidated if PIT or another NameTree-based
+   *        table is modified
+   */
+  const_iterator
+  begin() const;
+
+  /** \brief returns an iterator referring to the past-the-end PIT entry
+   *  \note The returned iterator may get invalidated if PIT or another NameTree-based
+   *        table is modified
+   */
+  const_iterator
+  end() const;
+
+  class const_iterator : public std::iterator<std::forward_iterator_tag, const pit::Entry>
+  {
+  public:
+    const_iterator();
+
+    explicit
+    const_iterator(const NameTree::const_iterator& it);
+
+    ~const_iterator();
+
+    const pit::Entry&
+    operator*() const;
+
+    shared_ptr<pit::Entry>
+    operator->() const;
+
+    const_iterator&
+    operator++();
+
+    const_iterator
+    operator++(int);
+
+    bool
+    operator==(const const_iterator& other) const;
+
+    bool
+    operator!=(const const_iterator& other) const;
+
+  private:
+    NameTree::const_iterator m_nameTreeIterator;
+    /** \brief Index of the current visiting PIT entry in NameTree node
+     *
+     * Index is used to ensure that dereferencing of m_nameTreeIterator happens only when
+     * const_iterator is dereferenced or advanced.
+     */
+    size_t m_iPitEntry;
+  };
+
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
@@ -87,6 +143,76 @@ inline size_t
 Pit::size() const
 {
   return m_nItems;
+}
+
+inline Pit::const_iterator
+Pit::end() const
+{
+  return const_iterator(m_nameTree.end());
+}
+
+inline
+Pit::const_iterator::const_iterator()
+  : m_iPitEntry(0)
+{
+}
+
+inline
+Pit::const_iterator::const_iterator(const NameTree::const_iterator& it)
+  : m_nameTreeIterator(it)
+  , m_iPitEntry(0)
+{
+}
+
+inline
+Pit::const_iterator::~const_iterator()
+{
+}
+
+inline Pit::const_iterator
+Pit::const_iterator::operator++(int)
+{
+  Pit::const_iterator temp(*this);
+  ++(*this);
+  return temp;
+}
+
+inline Pit::const_iterator&
+Pit::const_iterator::operator++()
+{
+  ++m_iPitEntry;
+  if (m_iPitEntry < m_nameTreeIterator->getPitEntries().size()) {
+    return *this;
+  }
+
+  ++m_nameTreeIterator;
+  m_iPitEntry = 0;
+  return *this;
+}
+
+inline const pit::Entry&
+Pit::const_iterator::operator*() const
+{
+  return *(this->operator->());
+}
+
+inline shared_ptr<pit::Entry>
+Pit::const_iterator::operator->() const
+{
+  return m_nameTreeIterator->getPitEntries().at(m_iPitEntry);
+}
+
+inline bool
+Pit::const_iterator::operator==(const Pit::const_iterator& other) const
+{
+  return m_nameTreeIterator == other.m_nameTreeIterator &&
+         m_iPitEntry == other.m_iPitEntry;
+}
+
+inline bool
+Pit::const_iterator::operator!=(const Pit::const_iterator& other) const
+{
+  return !(*this == other);
 }
 
 } // namespace nfd

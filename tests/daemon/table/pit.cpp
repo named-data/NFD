@@ -450,6 +450,48 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
 }
 
+BOOST_AUTO_TEST_CASE(Iterator)
+{
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
+  shared_ptr<Interest> interestA    = makeInterest("/A");
+  shared_ptr<Interest> interestABC1 = makeInterest("/A/B/C");
+  shared_ptr<Interest> interestABC2 = makeInterest("/A/B/C");
+  interestABC2->setSelectors(ndn::Selectors().setMinSuffixComponents(10));
+  shared_ptr<Interest> interestD    = makeInterest("/D");
+
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+  BOOST_CHECK(pit.begin() == pit.end());
+
+  pit.insert(*interestABC1);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+  BOOST_CHECK(pit.begin() != pit.end());
+  BOOST_CHECK(pit.begin()->getInterest() == *interestABC1);
+  BOOST_CHECK((*pit.begin()).getInterest() == *interestABC1);
+
+  auto i = pit.begin();
+  auto j = pit.begin();
+  BOOST_CHECK(++i == pit.end());
+  BOOST_CHECK(j++ == pit.begin());
+  BOOST_CHECK(j == pit.end());
+
+  pit.insert(*interestA);
+  pit.insert(*interestABC2);
+  pit.insert(*interestD);
+
+  std::set<const Interest*> expected = {&*interestA, &*interestABC1, &*interestABC2, &*interestD};
+  std::set<const Interest*> actual;
+  for (const auto& pitEntry : pit) {
+    actual.insert(&pitEntry.getInterest());
+  }
+  BOOST_CHECK(actual == expected);
+  for (auto actualIt = actual.begin(), expectedIt = expected.begin();
+       actualIt != actual.end() && expectedIt != expected.end(); ++actualIt, ++expectedIt) {
+    BOOST_CHECK_EQUAL(**actualIt, **expectedIt);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

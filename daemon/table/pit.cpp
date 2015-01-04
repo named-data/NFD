@@ -26,6 +26,10 @@
 #include "pit.hpp"
 #include <type_traits>
 
+#include <boost/concept/assert.hpp>
+#include <boost/concept_check.hpp>
+#include <type_traits>
+
 namespace nfd {
 namespace pit {
 
@@ -35,6 +39,17 @@ static_assert(std::is_move_constructible<DataMatchResult>::value,
 #endif // HAVE_IS_MOVE_CONSTRUCTIBLE
 
 } // namespace pit
+
+// http://en.cppreference.com/w/cpp/concept/ForwardIterator
+BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Pit::const_iterator>));
+// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
+// which doesn't require DefaultConstructible
+#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
+static_assert(std::is_default_constructible<Pit::const_iterator>::value,
+              "Pit::const_iterator must be default-constructible");
+#else
+BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Pit::const_iterator>));
+#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
 
 Pit::Pit(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -99,6 +114,13 @@ Pit::erase(shared_ptr<pit::Entry> pitEntry)
   m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
 
   --m_nItems;
+}
+
+Pit::const_iterator
+Pit::begin() const
+{
+  return const_iterator(m_nameTree.fullEnumerate(
+    [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); }).begin());
 }
 
 } // namespace nfd
