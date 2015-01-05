@@ -757,7 +757,11 @@ Cs::erase(const Name& exactName)
               // it can happen when begin() contains the element we want to remove
               if (!isIterated && ((*head)->getFullName() == exactName))
                 {
-                  eraseFromSkipList(*head);
+                  cs::Entry* entryToDelete = *head;
+                  NFD_LOG_TRACE("Found target " << entryToDelete->getFullName());
+                  eraseFromSkipList(entryToDelete);
+                  // head can become invalid after eraseFromSkipList
+                  m_cleanupIndex.remove(entryToDelete);
                   return;
                 }
               else
@@ -802,8 +806,11 @@ Cs::erase(const Name& exactName)
 
   if (isNameIdentical)
     {
-      NFD_LOG_TRACE("Found target " << (*head)->getFullName());
-      eraseFromSkipList(*head);
+      cs::Entry* entryToDelete = *head;
+      NFD_LOG_TRACE("Found target " << entryToDelete->getFullName());
+      eraseFromSkipList(entryToDelete);
+      // head can become invalid after eraseFromSkipList
+      m_cleanupIndex.remove(entryToDelete);
     }
 }
 
