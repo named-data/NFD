@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "ndnlp-slicer.hpp"
 
@@ -40,10 +41,10 @@ Slicer::~Slicer()
 }
 
 template<bool T>
-static inline size_t
-Slicer_encodeFragment(ndn::EncodingImpl<T>& blk,
-                      uint64_t seq, uint16_t fragIndex, uint16_t fragCount,
-                      const uint8_t* payload, size_t payloadSize)
+size_t
+Slicer::encodeFragment(ndn::EncodingImpl<T>& blk,
+                       uint64_t seq, uint16_t fragIndex, uint16_t fragCount,
+                       const uint8_t* payload, size_t payloadSize)
 {
   size_t totalLength = 0;
 
@@ -86,11 +87,15 @@ Slicer_encodeFragment(ndn::EncodingImpl<T>& blk,
 void
 Slicer::estimateOverhead()
 {
+  // estimate fragment size with all header fields at largest possible size
   ndn::EncodingEstimator estimator;
-  size_t estimatedSize = Slicer_encodeFragment(estimator,
-                         0, 0, 2, 0, m_mtu);
+  size_t estimatedSize = this->encodeFragment(estimator,
+                                              std::numeric_limits<uint64_t>::max(),
+                                              std::numeric_limits<uint16_t>::max() - 1,
+                                              std::numeric_limits<uint16_t>::max(),
+                                              nullptr, m_mtu);
 
-  size_t overhead = estimatedSize - m_mtu;
+  size_t overhead = estimatedSize - m_mtu; // minus payload length in estimation
   m_maxPayload = m_mtu - overhead;
 }
 
@@ -105,7 +110,7 @@ Slicer::slice(const Block& block)
                          (networkPacketSize / m_maxPayload) +
                          (networkPacketSize % m_maxPayload == 0 ? 0 : 1)
                        );
-  PacketArray pa = make_shared<std::vector<Block> >();
+  PacketArray pa = make_shared<std::vector<Block>>();
   pa->reserve(fragCount);
   SequenceBlock seqBlock = m_seqgen.nextBlock(fragCount);
 
@@ -115,7 +120,7 @@ Slicer::slice(const Block& block)
     size_t payloadSize = std::min(m_maxPayload, networkPacketSize - payloadOffset);
 
     ndn::EncodingBuffer buffer(m_mtu, 0);
-    size_t pktSize = Slicer_encodeFragment(buffer,
+    size_t pktSize = this->encodeFragment(buffer,
       seqBlock[fragIndex], fragIndex, fragCount, payload, payloadSize);
 
     BOOST_VERIFY(pktSize <= m_mtu);
