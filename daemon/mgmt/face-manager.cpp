@@ -38,6 +38,7 @@
 
 #ifdef HAVE_LIBPCAP
 #include "face/ethernet-factory.hpp"
+#include "face/ethernet-face.hpp"
 #endif // HAVE_LIBPCAP
 
 #ifdef HAVE_WEBSOCKET

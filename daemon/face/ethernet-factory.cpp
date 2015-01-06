@@ -24,6 +24,8 @@
  */
 
 #include "ethernet-factory.hpp"
+#include "face/ethernet-face.hpp"
+
 #include "core/logger.hpp"
 #include "core/global-io.hpp"
 

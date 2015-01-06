@@ -26,10 +26,12 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
 #define NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
 
-#include "ethernet-face.hpp"
 #include "protocol-factory.hpp"
+#include "core/network-interface.hpp"
 
 namespace nfd {
+
+class EthernetFace;
 
 class EthernetFactory : public ProtocolFactory
 {
