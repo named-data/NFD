@@ -27,6 +27,7 @@
 #include "tests/test-common.hpp"
 
 #include <fstream>
+#include <boost/property_tree/info_parser.hpp>
 
 namespace nfd {
 namespace tests {
@@ -236,6 +237,18 @@ BOOST_AUTO_TEST_CASE(OnConfigStreamEmptyStream)
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
+BOOST_AUTO_TEST_CASE(OnConfigSection)
+{
+  ConfigFile file;
+  DummyAllSubscriber sub(file);
+
+  std::istringstream input(CONFIG);
+  ConfigSection section;
+  boost::property_tree::read_info(input, section);
+
+  file.parse(section, false, "dummy-config");
+  BOOST_CHECK(sub.allCallbacksFired());
+}
 
 BOOST_AUTO_TEST_CASE(OnConfigString)
 {

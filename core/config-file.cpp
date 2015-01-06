@@ -109,6 +109,13 @@ ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filenam
 }
 
 void
+ConfigFile::parse(const ConfigSection& config, bool isDryRun, const std::string& filename)
+{
+  m_global = config;
+  process(isDryRun, filename);
+}
+
+void
 ConfigFile::process(bool isDryRun, const std::string& filename)
 {
   BOOST_ASSERT(!filename.empty());
