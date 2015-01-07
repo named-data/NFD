@@ -33,15 +33,44 @@ namespace nfd {
 
 namespace fib {
 class Entry;
-}
+} // namespace fib
 
 namespace pit {
 class Entry;
-}
+} // namespace pit
 
+namespace measurements {
 
-/** \class Measurement
- *  \brief represents the Measurements table
+/** \brief a predicate that accepts or rejects a \p Entry
+ */
+typedef std::function<bool(const Entry&)> EntryPredicate;
+
+/** \brief an \p EntryPredicate that accepts any \p Entry
+ */
+class AnyEntry
+{
+public:
+  bool
+  operator()(const Entry& entry)
+  {
+    return true;
+  }
+};
+
+template<typename T>
+class EntryWithStrategyInfo
+{
+public:
+  bool
+  operator()(const Entry& entry)
+  {
+    return entry.getStrategyInfo<T>() != nullptr;
+  }
+};
+
+} // namespace measurements
+
+/** \brief represents the Measurements table
  */
 class Measurements : noncopyable
 {
@@ -73,7 +102,9 @@ public:
   /** \brief perform a longest prefix match
    */
   shared_ptr<measurements::Entry>
-  findLongestPrefixMatch(const Name& name) const;
+  findLongestPrefixMatch(const Name& name,
+                         const measurements::EntryPredicate& pred =
+                             measurements::AnyEntry()) const;
 
   /** \brief perform an exact match
    */
@@ -103,7 +134,6 @@ private:
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
-  static const time::nanoseconds s_defaultLifetime;
 };
 
 inline time::nanoseconds

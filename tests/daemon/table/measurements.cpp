@@ -57,6 +57,49 @@ BOOST_AUTO_TEST_CASE(Get_Parent)
   BOOST_CHECK_EQUAL(entry0, entry0c);
 }
 
+class DummyStrategyInfo1 : public fw::StrategyInfo
+{
+public:
+  static constexpr int
+  getTypeId()
+  {
+    return 21;
+  }
+};
+
+class DummyStrategyInfo2 : public fw::StrategyInfo
+{
+public:
+  static constexpr int
+  getTypeId()
+  {
+    return 22;
+  }
+};
+
+BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
+{
+  NameTree nameTree;
+  Measurements measurements(nameTree);
+
+  measurements.get("/A");
+  measurements.get("/A/B/C")->getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C/D");
+
+  shared_ptr<measurements::Entry> found1 = measurements.findLongestPrefixMatch("/A/B/C/D/E");
+  BOOST_REQUIRE(found1 != nullptr);
+  BOOST_CHECK_EQUAL(found1->getName(), "/A/B/C/D");
+
+  shared_ptr<measurements::Entry> found2 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
+      measurements::EntryWithStrategyInfo<DummyStrategyInfo1>());
+  BOOST_REQUIRE(found2 != nullptr);
+  BOOST_CHECK_EQUAL(found2->getName(), "/A/B/C");
+
+  shared_ptr<measurements::Entry> found3 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
+      measurements::EntryWithStrategyInfo<DummyStrategyInfo2>());
+  BOOST_CHECK(found3 == nullptr);
+}
+
 BOOST_FIXTURE_TEST_CASE(Lifetime, UnitTestTimeFixture)
 {
   NameTree nameTree;

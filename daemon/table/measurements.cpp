@@ -30,20 +30,22 @@
 
 namespace nfd {
 
+using measurements::Entry;
+
 Measurements::Measurements(NameTree& nameTree)
   : m_nameTree(nameTree)
   , m_nItems(0)
 {
 }
 
-shared_ptr<measurements::Entry>
+shared_ptr<Entry>
 Measurements::get(name_tree::Entry& nte)
 {
-  shared_ptr<measurements::Entry> entry = nte.getMeasurementsEntry();
+  shared_ptr<Entry> entry = nte.getMeasurementsEntry();
   if (entry != nullptr)
     return entry;
 
-  entry = make_shared<measurements::Entry>(nte.getPrefix());
+  entry = make_shared<Entry>(nte.getPrefix());
   nte.setMeasurementsEntry(entry);
   ++m_nItems;
 
@@ -54,29 +56,29 @@ Measurements::get(name_tree::Entry& nte)
   return entry;
 }
 
-shared_ptr<measurements::Entry>
+shared_ptr<Entry>
 Measurements::get(const Name& name)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
   return this->get(*nte);
 }
 
-shared_ptr<measurements::Entry>
+shared_ptr<Entry>
 Measurements::get(const fib::Entry& fibEntry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(fibEntry);
   return this->get(*nte);
 }
 
-shared_ptr<measurements::Entry>
+shared_ptr<Entry>
 Measurements::get(const pit::Entry& pitEntry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
   return this->get(*nte);
 }
 
-shared_ptr<measurements::Entry>
-Measurements::getParent(const measurements::Entry& child)
+shared_ptr<Entry>
+Measurements::getParent(const Entry& child)
 {
   if (child.getName().size() == 0) { // the root entry
     return nullptr;
@@ -88,18 +90,22 @@ Measurements::getParent(const measurements::Entry& child)
   return this->get(*nte);
 }
 
-shared_ptr<measurements::Entry>
-Measurements::findLongestPrefixMatch(const Name& name) const
+shared_ptr<Entry>
+Measurements::findLongestPrefixMatch(const Name& name,
+                                     const measurements::EntryPredicate& pred) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(name,
-      [] (const name_tree::Entry& nte) { return nte.getMeasurementsEntry() != nullptr; });
+      [pred] (const name_tree::Entry& nte) -> bool {
+        shared_ptr<Entry> entry = nte.getMeasurementsEntry();
+        return entry != nullptr && pred(*entry);
+      });
   if (nte != nullptr) {
     return nte->getMeasurementsEntry();
   }
   return nullptr;
 }
 
-shared_ptr<measurements::Entry>
+shared_ptr<Entry>
 Measurements::findExactMatch(const Name& name) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
@@ -109,7 +115,7 @@ Measurements::findExactMatch(const Name& name) const
 }
 
 void
-Measurements::extendLifetime(measurements::Entry& entry,
+Measurements::extendLifetime(Entry& entry,
                              const time::nanoseconds& lifetime)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
@@ -131,7 +137,7 @@ Measurements::extendLifetime(measurements::Entry& entry,
 }
 
 void
-Measurements::cleanup(measurements::Entry& entry)
+Measurements::cleanup(Entry& entry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
   if (nte != nullptr) {
