@@ -4,17 +4,15 @@ Notes for NFD developers
 Requirements
 ------------
 
+Contributions to NFD must be licensed under GPL 3.0 or compatible license.  If you are
+choosing GPL 3.0, please use the following license boilerplate in all `.hpp` and `.cpp`
+files:
+
 Include the following license boilerplate into all `.hpp` and `.cpp` files:
 
     /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
     /**
-     * Copyright (c) 2014,  Regents of the University of California,
-     *                      Arizona Board of Regents,
-     *                      Colorado State University,
-     *                      University Pierre & Marie Curie, Sorbonne University,
-     *                      Washington University in St. Louis,
-     *                      Beijing Institute of Technology,
-     *                      The University of Memphis
+     * Copyright (c) [Year(s)],  [Copyright Holder(s)].
      *
      * This file is part of NFD (Named Data Networking Forwarding Daemon).
      * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -29,12 +27,10 @@ Include the following license boilerplate into all `.hpp` and `.cpp` files:
      *
      * You should have received a copy of the GNU General Public License along with
      * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
-     ////// [optional part] //////
-     *
-     * \author Author's Name <email@domain>
-     * \author Other Author's Name <another.email@domain>
-     ////// [end of optional part] //////
      */
+
+If you are affiliated to an NSF-supported NDN project institution, please use the [NDN Team License
+Boilerplate](http://redmine.named-data.net/projects/nfd/wiki/NDN_Team_License_Boilerplate_(NFD)).
 
 Recommendations
 ---------------
