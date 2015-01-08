@@ -3,7 +3,7 @@
  * Copyright (c) 2014-2015,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
- *                           University Pierre & Marie Curie, Sorbonne Universit
+ *                           University Pierre & Marie Curie, Sorbonne University,
  *                           Washington University in St. Louis,
  *                           Beijing Institute of Technology,
  *                           The University of Memphis.

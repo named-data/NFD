@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -40,22 +40,22 @@ class Strategy;
 class MeasurementsAccessor : noncopyable
 {
 public:
-  MeasurementsAccessor(Measurements& measurements, StrategyChoice& strategyChoice,
-                       fw::Strategy* strategy);
+  MeasurementsAccessor(Measurements& measurements, const StrategyChoice& strategyChoice,
+                       const fw::Strategy& strategy);
 
   ~MeasurementsAccessor();
 
-  /** \brief find or insert a Measurements entry for name
+  /** \brief find or insert a Measurements entry for \p name
    */
   shared_ptr<measurements::Entry>
   get(const Name& name);
 
-  /** \brief find or insert a Measurements entry for fibEntry->getPrefix()
+  /** \brief find or insert a Measurements entry for \p fibEntry->getPrefix()
    */
   shared_ptr<measurements::Entry>
   get(const fib::Entry& fibEntry);
 
-  /** \brief find or insert a Measurements entry for pitEntry->getName()
+  /** \brief find or insert a Measurements entry for \p pitEntry->getName()
    */
   shared_ptr<measurements::Entry>
   get(const pit::Entry& pitEntry);
@@ -65,6 +65,25 @@ public:
    */
   shared_ptr<measurements::Entry>
   getParent(const measurements::Entry& child);
+
+  /** \brief perform a longest prefix match for \p name
+   */
+  shared_ptr<measurements::Entry>
+  findLongestPrefixMatch(const Name& name,
+                         const measurements::EntryPredicate& pred =
+                             measurements::AnyEntry()) const;
+
+  /** \brief perform a longest prefix match for \p pitEntry.getName()
+   */
+  shared_ptr<measurements::Entry>
+  findLongestPrefixMatch(const pit::Entry& pitEntry,
+                         const measurements::EntryPredicate& pred =
+                             measurements::AnyEntry()) const;
+
+  /** \brief perform an exact match
+   */
+  shared_ptr<measurements::Entry>
+  findExactMatch(const Name& name) const;
 
   /** \brief extend lifetime of an entry
    *
@@ -78,12 +97,12 @@ private:
    *  \return entry if strategy has access to namespace, otherwise nullptr
    */
   shared_ptr<measurements::Entry>
-  filter(const shared_ptr<measurements::Entry>& entry);
+  filter(const shared_ptr<measurements::Entry>& entry) const;
 
 private:
   Measurements& m_measurements;
-  StrategyChoice& m_strategyChoice;
-  fw::Strategy* m_strategy;
+  const StrategyChoice& m_strategyChoice;
+  const fw::Strategy* m_strategy;
 };
 
 inline shared_ptr<measurements::Entry>
@@ -108,6 +127,26 @@ inline shared_ptr<measurements::Entry>
 MeasurementsAccessor::getParent(const measurements::Entry& child)
 {
   return this->filter(m_measurements.getParent(child));
+}
+
+inline shared_ptr<measurements::Entry>
+MeasurementsAccessor::findLongestPrefixMatch(const Name& name,
+                                             const measurements::EntryPredicate& pred) const
+{
+  return this->filter(m_measurements.findLongestPrefixMatch(name, pred));
+}
+
+inline shared_ptr<measurements::Entry>
+MeasurementsAccessor::findLongestPrefixMatch(const pit::Entry& pitEntry,
+                                             const measurements::EntryPredicate& pred) const
+{
+  return this->filter(m_measurements.findLongestPrefixMatch(pitEntry, pred));
+}
+
+inline shared_ptr<measurements::Entry>
+MeasurementsAccessor::findExactMatch(const Name& name) const
+{
+  return this->filter(m_measurements.findExactMatch(name));
 }
 
 inline void
