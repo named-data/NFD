@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -26,6 +26,7 @@
 #include "cs.hpp"
 #include "cs-entry.hpp"
 #include "core/logger.hpp"
+#include "core/algorithm.hpp"
 #include <numeric>
 
 NFD_LOG_INIT("ContentStore");
@@ -62,7 +63,7 @@ Cs::size() const
 bool
 Cs::insert(const Data& data, bool isUnsolicited)
 {
-  NFD_LOG_DEBUG("insert " << data.getFullName());
+  NFD_LOG_DEBUG("insert " << data.getName());
 
   bool isNewEntry = false; TableIt it;
   // use .insert because gcc46 does not support .emplace
@@ -88,50 +89,77 @@ Cs::insert(const Data& data, bool isUnsolicited)
   return true;
 }
 
-bool
-Cs::isNewRightmostCandidate(const Name& prefix, TableIt a, TableIt b)
-{
-  if (a->getFullName().size() == prefix.size()) {
-    return true;
-  }
-  return b->getFullName().at(prefix.size()) > a->getFullName().at(prefix.size());
-}
-
 const Data*
 Cs::find(const Interest& interest) const
 {
   const Name& prefix = interest.getName();
   bool isRightmost = interest.getChildSelector() == 1;
   NFD_LOG_DEBUG("find " << prefix << (isRightmost ? " R" : " L"));
-  TableIt rightmostCandidate = m_table.end();
 
-  TableIt left = m_table.lower_bound(prefix);
-  TableIt right = m_table.end();
+  TableIt first = m_table.lower_bound(prefix);
+  TableIt last = m_table.end();
   if (prefix.size() > 0) {
-    right = m_table.lower_bound(prefix.getSuccessor());
+    last = m_table.lower_bound(prefix.getSuccessor());
   }
-  for (TableIt it = left; it != right; ++it) {
-    const Entry& entry = *it;
-    if (!entry.canSatisfy(interest)) {
-      NFD_LOG_TRACE("cannotSatisfy " << entry.getFullName());
-      continue;
-    }
-    NFD_LOG_TRACE("canSatisfy " << entry.getFullName());
-    if (!isRightmost) {
-      return entry.getData().get();
+
+  TableIt match = last;
+  if (isRightmost) {
+    match = this->findRightmost(interest, first, last);
+  }
+  else {
+    match = this->findLeftmost(interest, first, last);
+  }
+
+  if (match == last) {
+    NFD_LOG_DEBUG("  no-match");
+    return nullptr;
+  }
+  NFD_LOG_DEBUG("  matching " << match->getName());
+  return match->getData().get();
+}
+
+Cs::TableIt
+Cs::findLeftmost(const Interest& interest, TableIt first, TableIt last) const
+{
+  return std::find_if(first, last, bind(&cs::Entry::canSatisfy, _1, interest));
+}
+
+Cs::TableIt
+Cs::findRightmost(const Interest& interest, TableIt first, TableIt last) const
+{
+  // Each loop visits a sub-namespace under a prefix one component longer than Interest Name.
+  // If there is a match in that sub-namespace, the leftmost match is returned;
+  // otherwise, loop continues.
+
+  size_t interestNameLength = interest.getName().size();
+  for (TableIt right = last; right != first;) {
+    TableIt prev = std::prev(right);
+
+    // special case: [first,prev] have exact Names
+    if (prev->getName().size() == interestNameLength) {
+      NFD_LOG_TRACE("  find-among-exact " << prev->getName());
+      TableIt matchExact = this->findRightmostAmongExact(interest, first, right);
+      return matchExact == right ? last : matchExact;
     }
 
-    if (rightmostCandidate == m_table.end() ||
-        isNewRightmostCandidate(prefix, rightmostCandidate, it)) {
-      NFD_LOG_TRACE("rightmostCandidate=" << entry.getFullName());
-      rightmostCandidate = it;
+    Name prefix = prev->getName().getPrefix(interestNameLength + 1);
+    TableIt left = m_table.lower_bound(prefix);
+
+    // normal case: [left,right) are under one-component-longer prefix
+    NFD_LOG_TRACE("  find-under-prefix " << prefix);
+    TableIt match = this->findLeftmost(interest, left, right);
+    if (match != right) {
+      return match;
     }
+    right = left;
   }
-  if (isRightmost) {
-    return rightmostCandidate == m_table.end() ? nullptr :
-                                 rightmostCandidate->getData().get();
-  }
-  return nullptr;
+  return last;
+}
+
+Cs::TableIt
+Cs::findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const
+{
+  return find_last_if(first, last, bind(&Entry::canSatisfy, _1, interest));
 }
 
 void
@@ -215,7 +243,7 @@ Cs::evict()
     TableIt it; std::string reason;
     std::tie(it, reason) = this->evictPick();
 
-    NFD_LOG_DEBUG("evict " << it->getFullName() << " " << reason);
+    NFD_LOG_DEBUG("evict " << it->getName() << " " << reason);
     this->detachQueue(it);
     m_table.erase(it);
   }

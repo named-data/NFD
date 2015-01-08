@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -118,10 +118,23 @@ public:
   };
 
 private:
-  /** \brief determines whether b should be the rightmost candidate instead of a
+  /** \brief find leftmost match in [first,last)
+   *  \return the leftmost match, or last if not found
    */
-  static bool
-  isNewRightmostCandidate(const Name& prefix, TableIt a, TableIt b);
+  TableIt
+  findLeftmost(const Interest& interest, TableIt left, TableIt right) const;
+
+  /** \brief find rightmost match in [first,last)
+   *  \return the rightmost match, or last if not found
+   */
+  TableIt
+  findRightmost(const Interest& interest, TableIt first, TableIt last) const;
+
+  /** \brief find rightmost match among entries with exact Names in [first,last)
+   *  \return the rightmost match, or last if not found
+   */
+  TableIt
+  findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const;
 
   /** \brief attaches an entry to a suitable cleanup queue
    *  \note if the entry is already attached to a queue, it's automatically detached
