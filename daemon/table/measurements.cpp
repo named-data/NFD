@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne Universit
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -90,19 +90,35 @@ Measurements::getParent(const Entry& child)
   return this->get(*nte);
 }
 
+template<typename K>
 shared_ptr<Entry>
-Measurements::findLongestPrefixMatch(const Name& name,
-                                     const measurements::EntryPredicate& pred) const
+Measurements::findLongestPrefixMatchImpl(const K& key,
+                                         const measurements::EntryPredicate& pred) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(name,
+  shared_ptr<name_tree::Entry> match = m_nameTree.findLongestPrefixMatch(key,
       [pred] (const name_tree::Entry& nte) -> bool {
         shared_ptr<Entry> entry = nte.getMeasurementsEntry();
         return entry != nullptr && pred(*entry);
       });
-  if (nte != nullptr) {
-    return nte->getMeasurementsEntry();
+  if (match != nullptr) {
+    return match->getMeasurementsEntry();
   }
   return nullptr;
+}
+
+shared_ptr<Entry>
+Measurements::findLongestPrefixMatch(const Name& name,
+                                     const measurements::EntryPredicate& pred) const
+{
+  return this->findLongestPrefixMatchImpl(name, pred);
+}
+
+shared_ptr<Entry>
+Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry,
+                                     const measurements::EntryPredicate& pred) const
+{
+  shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
+  return this->findLongestPrefixMatchImpl(nte, pred);
 }
 
 shared_ptr<Entry>

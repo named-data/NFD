@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne Universit
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,9 +24,9 @@
  */
 
 #include "table/measurements.hpp"
+#include "table/pit.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
@@ -96,6 +96,33 @@ BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
   BOOST_CHECK_EQUAL(found2->getName(), "/A/B/C");
 
   shared_ptr<measurements::Entry> found3 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
+      measurements::EntryWithStrategyInfo<DummyStrategyInfo2>());
+  BOOST_CHECK(found3 == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(FindLongestPrefixMatchWithPitEntry)
+{
+  NameTree nameTree;
+  Measurements measurements(nameTree);
+  Pit pit(nameTree);
+
+  measurements.get("/A");
+  measurements.get("/A/B/C")->getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C/D");
+
+  shared_ptr<Interest> interest = makeInterest("/A/B/C/D/E");
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+
+  shared_ptr<measurements::Entry> found1 = measurements.findLongestPrefixMatch(*pitEntry);
+  BOOST_REQUIRE(found1 != nullptr);
+  BOOST_CHECK_EQUAL(found1->getName(), "/A/B/C/D");
+
+  shared_ptr<measurements::Entry> found2 = measurements.findLongestPrefixMatch(*pitEntry,
+      measurements::EntryWithStrategyInfo<DummyStrategyInfo1>());
+  BOOST_REQUIRE(found2 != nullptr);
+  BOOST_CHECK_EQUAL(found2->getName(), "/A/B/C");
+
+  shared_ptr<measurements::Entry> found3 = measurements.findLongestPrefixMatch(*pitEntry,
       measurements::EntryWithStrategyInfo<DummyStrategyInfo2>());
   BOOST_CHECK(found3 == nullptr);
 }

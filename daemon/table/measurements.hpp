@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne Universit
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -78,17 +78,17 @@ public:
   explicit
   Measurements(NameTree& nametree);
 
-  /** \brief find or insert a Measurements entry for name
+  /** \brief find or insert a Measurements entry for \p name
    */
   shared_ptr<measurements::Entry>
   get(const Name& name);
 
-  /** \brief find or insert a Measurements entry for fibEntry->getPrefix()
+  /** \brief find or insert a Measurements entry for \p fibEntry.getPrefix()
    */
   shared_ptr<measurements::Entry>
   get(const fib::Entry& fibEntry);
 
-  /** \brief find or insert a Measurements entry for pitEntry->getName()
+  /** \brief find or insert a Measurements entry for \p pitEntry.getName()
    */
   shared_ptr<measurements::Entry>
   get(const pit::Entry& pitEntry);
@@ -99,10 +99,17 @@ public:
   shared_ptr<measurements::Entry>
   getParent(const measurements::Entry& child);
 
-  /** \brief perform a longest prefix match
+  /** \brief perform a longest prefix match for \p name
    */
   shared_ptr<measurements::Entry>
   findLongestPrefixMatch(const Name& name,
+                         const measurements::EntryPredicate& pred =
+                             measurements::AnyEntry()) const;
+
+  /** \brief perform a longest prefix match for \p pitEntry.getName()
+   */
+  shared_ptr<measurements::Entry>
+  findLongestPrefixMatch(const pit::Entry& pitEntry,
                          const measurements::EntryPredicate& pred =
                              measurements::AnyEntry()) const;
 
@@ -130,6 +137,12 @@ private:
 
   shared_ptr<measurements::Entry>
   get(name_tree::Entry& nte);
+
+  /** \tparam K Name or shared_ptr<name_tree::Entry>
+   */
+  template<typename K>
+  shared_ptr<measurements::Entry>
+  findLongestPrefixMatchImpl(const K& key, const measurements::EntryPredicate& pred) const;
 
 private:
   NameTree& m_nameTree;
