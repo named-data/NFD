@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -26,7 +26,6 @@
 #include "table/dead-nonce-list.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
@@ -57,7 +56,7 @@ BOOST_AUTO_TEST_CASE(MinLifetime)
 }
 
 /// A Fixture that periodically inserts Nonces
-class PeriodicalInsertionFixture : public BaseFixture
+class PeriodicalInsertionFixture : public UnitTestTimeFixture
 {
 protected:
   PeriodicalInsertionFixture()
@@ -65,13 +64,9 @@ protected:
     , name("ndn:/N")
     , addNonceBatch(0)
     , addNonceInterval(LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT)
+    , timeUnit(addNonceInterval / 2)
   {
     this->addNonce();
-  }
-
-  ~PeriodicalInsertionFixture()
-  {
-    scheduler::cancel(addNonceEvent);
   }
 
   void
@@ -87,11 +82,18 @@ protected:
       dnl.add(name, ++lastNonce);
     }
 
-    scheduler::cancel(addNonceEvent); // avoid double schedules
     if (addNonceInterval > time::nanoseconds::zero()) {
       addNonceEvent = scheduler::schedule(addNonceInterval,
                                           bind(&PeriodicalInsertionFixture::addNonce, this));
     }
+  }
+
+  /** \brief advance clocks by LIFETIME*t
+   */
+  void
+  advanceClocksByLifetime(float t)
+  {
+    this->advanceClocks(timeUnit, time::duration_cast<time::nanoseconds>(LIFETIME * t));
   }
 
 protected:
@@ -101,7 +103,8 @@ protected:
   uint32_t lastNonce;
   size_t addNonceBatch;
   time::nanoseconds addNonceInterval;
-  scheduler::EventId addNonceEvent;
+  time::nanoseconds timeUnit;
+  scheduler::ScopedEventId addNonceEvent;
 };
 const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = time::milliseconds(200);
 
@@ -109,11 +112,9 @@ BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
 {
   BOOST_CHECK_EQUAL(dnl.getLifetime(), LIFETIME);
 
-  LimitedIo limitedIo;
-
   const int RATE = DeadNonceList::INITIAL_CAPACITY / 2;
   this->setRate(RATE);
-  limitedIo.defer(LIFETIME * 10);
+  this->advanceClocksByLifetime(10.0);
 
   Name nameC("ndn:/C");
   const uint32_t nonceC = 0x25390656;
@@ -121,22 +122,20 @@ BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
   dnl.add(nameC, nonceC);
   BOOST_CHECK_EQUAL(dnl.has(nameC, nonceC), true);
 
-  limitedIo.defer(LIFETIME / 2); // -50%, entry should exist
+  this->advanceClocksByLifetime(0.5); // -50%, entry should exist
   BOOST_CHECK_EQUAL(dnl.has(nameC, nonceC), true);
 
-  limitedIo.defer(LIFETIME); // +50%, entry should be gone
+  this->advanceClocksByLifetime(1.0); // +50%, entry should be gone
   BOOST_CHECK_EQUAL(dnl.has(nameC, nonceC), false);
 }
 
 BOOST_FIXTURE_TEST_CASE(CapacityDown, PeriodicalInsertionFixture)
 {
-  LimitedIo limitedIo;
-
   ssize_t cap0 = dnl.m_capacity;
 
   const int RATE = DeadNonceList::INITIAL_CAPACITY / 3;
   this->setRate(RATE);
-  limitedIo.defer(LIFETIME * 10);
+  this->advanceClocksByLifetime(10.0);
 
   ssize_t cap1 = dnl.m_capacity;
   BOOST_CHECK_LT(std::abs(cap1 - RATE), std::abs(cap0 - RATE));
@@ -144,13 +143,11 @@ BOOST_FIXTURE_TEST_CASE(CapacityDown, PeriodicalInsertionFixture)
 
 BOOST_FIXTURE_TEST_CASE(CapacityUp, PeriodicalInsertionFixture)
 {
-  LimitedIo limitedIo;
-
   ssize_t cap0 = dnl.m_capacity;
 
   const int RATE = DeadNonceList::INITIAL_CAPACITY * 3;
   this->setRate(RATE);
-  limitedIo.defer(LIFETIME * 10);
+  this->advanceClocksByLifetime(10.0);
 
   ssize_t cap1 = dnl.m_capacity;
   BOOST_CHECK_LT(std::abs(cap1 - RATE), std::abs(cap0 - RATE));
