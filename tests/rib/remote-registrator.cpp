@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -348,7 +348,7 @@ BOOST_FIXTURE_TEST_CASE(UnregisterWithoutConnection, RemoteRegistratorFixture)
 
   Name indentity("/remote/register");
   remoteRegistrator->m_regEntries.insert(
-            nfd::rib::RemoteRegistrator::RegisteredEntry(indentity, EventId()));
+            nfd::rib::RemoteRegistrator::RegisteredEntry(indentity, scheduler::EventId()));
 
   eraseEntryWithIdentity(indentity);
 
@@ -386,7 +386,7 @@ BOOST_FIXTURE_TEST_CASE(UnregisterBasic, RemoteRegistratorFixture)
 
   insertEntryWithIdentity(identity);
 
-  EventId event;
+  scheduler::EventId event;
 
   remoteRegistrator->m_regEntries.insert(
           nfd::rib::RemoteRegistrator::RegisteredEntry(identity, event));
@@ -412,8 +412,8 @@ BOOST_FIXTURE_TEST_CASE(UnregisterAdvanced, RemoteRegistratorFixture)
   Name identityShort("/remote/register");
   Name identityLong("/remote/register/long");
 
-  EventId eventShort;
-  EventId eventLong;
+  scheduler::EventId eventShort;
+  scheduler::EventId eventLong;
 
   insertEntryWithIdentity(identityShort, name::Component("appA"));
 
@@ -461,7 +461,7 @@ BOOST_FIXTURE_TEST_CASE(EraseFace, RemoteRegistratorFixture)
 
   insertEntryWithIdentity(identity, DEFAULT_APP_NAME, faceId);
 
-  EventId event;
+  scheduler::EventId event;
 
   remoteRegistrator->m_regEntries.insert(
           nfd::rib::RemoteRegistrator::RegisteredEntry(identity, event));
@@ -488,7 +488,7 @@ BOOST_FIXTURE_TEST_CASE(RebuildConnection, RemoteRegistratorFixture)
 
   insertEntryWithIdentity(identity);
 
-  EventId event;
+  scheduler::EventId event;
 
   remoteRegistrator->m_regEntries.insert(
           nfd::rib::RemoteRegistrator::RegisteredEntry(identity, event));

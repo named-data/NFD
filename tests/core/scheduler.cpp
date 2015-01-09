@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "core/scheduler.hpp"
 
@@ -28,6 +29,9 @@
 
 namespace nfd {
 namespace tests {
+
+using scheduler::EventId;
+using scheduler::ScopedEventId;
 
 BOOST_FIXTURE_TEST_SUITE(CoreScheduler, BaseFixture)
 
@@ -115,7 +119,7 @@ BOOST_FIXTURE_TEST_CASE(ScopedEventIdDestruct, UnitTestTimeFixture)
 {
   int hit = 0;
   {
-    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
   } // se goes out of scope
   this->advanceClocks(time::milliseconds(1), 15);
   BOOST_CHECK_EQUAL(hit, 0);
@@ -124,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(ScopedEventIdDestruct, UnitTestTimeFixture)
 BOOST_FIXTURE_TEST_CASE(ScopedEventIdAssign, UnitTestTimeFixture)
 {
   int hit1 = 0, hit2 = 0;
-  scheduler::ScopedEventId se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit1; });
+  ScopedEventId se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit1; });
   se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit2; });
   this->advanceClocks(time::milliseconds(1), 15);
   BOOST_CHECK_EQUAL(hit1, 0);
@@ -135,7 +139,7 @@ BOOST_FIXTURE_TEST_CASE(ScopedEventIdRelease, UnitTestTimeFixture)
 {
   int hit = 0;
   {
-    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
     se.release();
   } // se goes out of scope
   this->advanceClocks(time::milliseconds(1), 15);
@@ -147,8 +151,8 @@ BOOST_FIXTURE_TEST_CASE(ScopedEventIdMove, UnitTestTimeFixture)
   int hit = 0;
   unique_ptr<scheduler::ScopedEventId> se2;
   {
-    scheduler::ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
-    se2.reset(new scheduler::ScopedEventId(std::move(se)));
+    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
+    se2.reset(new ScopedEventId(std::move(se)));
   } // se goes out of scope
   this->advanceClocks(time::milliseconds(1), 15);
   BOOST_CHECK_EQUAL(hit, 1);

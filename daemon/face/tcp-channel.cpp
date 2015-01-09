@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -83,9 +83,8 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   shared_ptr<ip::tcp::socket> clientSocket =
     make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
-  EventId connectTimeoutEvent = scheduler::schedule(timeout,
-                                                    bind(&TcpChannel::handleFailedConnect, this,
-                                                         clientSocket, onConnectFailed));
+  scheduler::EventId connectTimeoutEvent = scheduler::schedule(timeout,
+      bind(&TcpChannel::handleFailedConnect, this, clientSocket, onConnectFailed));
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleSuccessfulConnect, this, _1,
@@ -106,9 +105,8 @@ TcpChannel::connect(const std::string& remoteHost, const std::string& remotePort
   shared_ptr<ip::tcp::resolver> resolver =
     make_shared<ip::tcp::resolver>(ref(getGlobalIoService()));
 
-  EventId connectTimeoutEvent = scheduler::schedule(timeout,
-                                                    bind(&TcpChannel::handleFailedConnect, this,
-                                                         clientSocket, onConnectFailed));
+  scheduler::EventId connectTimeoutEvent = scheduler::schedule(timeout,
+      bind(&TcpChannel::handleFailedConnect, this, clientSocket, onConnectFailed));
 
   resolver->async_resolve(query,
                           bind(&TcpChannel::handleEndpointResolution, this, _1, _2,
@@ -201,7 +199,7 @@ TcpChannel::handleSuccessfulAccept(const boost::system::error_code& error,
 void
 TcpChannel::handleSuccessfulConnect(const boost::system::error_code& error,
                                     const shared_ptr<ip::tcp::socket>& socket,
-                                    const EventId& connectTimeoutEvent,
+                                    const scheduler::EventId& connectTimeoutEvent,
                                     const FaceCreatedCallback& onFaceCreated,
                                     const ConnectFailedCallback& onConnectFailed)
 {
@@ -249,7 +247,7 @@ void
 TcpChannel::handleEndpointResolution(const boost::system::error_code& error,
                                      ip::tcp::resolver::iterator remoteEndpoint,
                                      const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                                     const EventId& connectTimeoutEvent,
+                                     const scheduler::EventId& connectTimeoutEvent,
                                      const FaceCreatedCallback& onFaceCreated,
                                      const ConnectFailedCallback& onConnectFailed,
                                      const shared_ptr<ip::tcp::resolver>& resolver)

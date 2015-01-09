@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -298,10 +298,8 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
 
       // Schedule a new event, the old one will be cancelled during rib insertion.
-      EventId eventId;
-      eventId = scheduler::schedule(parameters.getExpirationPeriod(),
-                                    bind(&RibManager::expireEntry,
-                                    this, shared_ptr<Interest>(), parameters));
+      scheduler::EventId eventId = scheduler::schedule(parameters.getExpirationPeriod(),
+          bind(&RibManager::expireEntry, this, shared_ptr<Interest>(), parameters));
       NFD_LOG_TRACE("Scheduled unregistration at: " << faceEntry.expires <<
                     " with EventId: " << eventId);
 

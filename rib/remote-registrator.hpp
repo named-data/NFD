@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -222,7 +222,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * to Route Name. So it needs seperate sotrage instead
    * of storing within the RIB.
    */
-  typedef std::unordered_map<Name, EventId> RegisteredList;
+  typedef std::unordered_map<Name, scheduler::EventId> RegisteredList;
   typedef RegisteredList::iterator RegisteredEntryIt;
   typedef RegisteredList::value_type RegisteredEntry;
   RegisteredList m_regEntries;
