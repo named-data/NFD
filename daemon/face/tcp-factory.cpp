@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,9 +24,10 @@
  */
 
 #include "tcp-factory.hpp"
-#include "core/resolver.hpp"
 #include "core/logger.hpp"
 #include "core/network-interface.hpp"
+#include "core/global-io.hpp"
+#include <ndn-cxx/util/dns.hpp>
 
 NFD_LOG_INIT("TcpFactory");
 
@@ -110,7 +111,9 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const std::string& localHost, const std::string& localPort)
 {
-  return createChannel(TcpResolver::syncResolve(localHost, localPort));
+  tcp::Endpoint endpoint(ndn::dns::syncResolve(localHost, getGlobalIoService()),
+                         boost::lexical_cast<uint16_t>(localPort));
+  return createChannel(endpoint);
 }
 
 shared_ptr<TcpChannel>
@@ -128,30 +131,10 @@ TcpFactory::createFace(const FaceUri& uri,
                        const FaceCreatedCallback& onCreated,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
-  resolver::AddressSelector addressSelector = resolver::AnyAddress();
-  if (uri.getScheme() == "tcp4")
-    addressSelector = resolver::Ipv4Address();
-  else if (uri.getScheme() == "tcp6")
-    addressSelector = resolver::Ipv6Address();
+  BOOST_ASSERT(uri.isCanonical());
+  boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(uri.getHost());
+  tcp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(uri.getPort()));
 
-  if (!uri.getPath().empty() && uri.getPath() != "/")
-    {
-      onConnectFailed("Invalid URI");
-    }
-
-  TcpResolver::asyncResolve(uri.getHost(),
-                            uri.getPort().empty() ? m_defaultPort : uri.getPort(),
-                            bind(&TcpFactory::continueCreateFaceAfterResolve, this, _1,
-                                 onCreated, onConnectFailed),
-                            onConnectFailed,
-                            addressSelector);
-}
-
-void
-TcpFactory::continueCreateFaceAfterResolve(const tcp::Endpoint& endpoint,
-                                           const FaceCreatedCallback& onCreated,
-                                           const FaceConnectFailedCallback& onConnectFailed)
-{
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end())
     {
       onConnectFailed("Requested endpoint is prohibited "
@@ -160,7 +143,6 @@ TcpFactory::continueCreateFaceAfterResolve(const tcp::Endpoint& endpoint,
     }
 
   // very simple logic for now
-
   for (ChannelMap::iterator channel = m_channels.begin();
        channel != m_channels.end();
        ++channel)

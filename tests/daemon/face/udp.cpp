@@ -28,6 +28,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
+#include "face-history.hpp"
 
 namespace nfd {
 namespace tests {
@@ -231,756 +232,373 @@ BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
 {
   UdpFactory factory = UdpFactory();
 
-  factory.createFace(FaceUri("udp4://127.0.0.1"),
+  factory.createFace(FaceUri("udp4://127.0.0.1:6363"),
                      bind(&FaceCreateFixture::ignore, this),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
-
-  factory.createFace(FaceUri("udp4://127.0.0.1/"),
-                     bind(&FaceCreateFixture::ignore, this),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
-
-  factory.createFace(FaceUri("udp4://127.0.0.1/path"),
-                     bind(&FaceCreateFixture::ignore, this),
-                     bind(&FaceCreateFixture::checkError, this, _1, "Invalid URI"));
-
-}
-
-class EndToEndFixture : protected BaseFixture
-{
-public:
-  void
-  channel1_onFaceCreated(const shared_ptr<Face>& newFace)
-  {
-    BOOST_CHECK(!static_cast<bool>(face1));
-    channel1_onFaceCreatedNoCheck(newFace);
-  }
-
-  void
-  channel1_onFaceCreatedNoCheck(const shared_ptr<Face>& newFace)
-  {
-    face1 = newFace;
-    face1->onReceiveInterest.connect(bind(&EndToEndFixture::face1_onReceiveInterest, this, _1));
-    face1->onReceiveData.connect(bind(&EndToEndFixture::face1_onReceiveData, this, _1));
-    face1->onFail.connect(bind(&EndToEndFixture::face1_onFail, this));
-    BOOST_CHECK_MESSAGE(true, "channel 1 face created");
-
-    faces.push_back(face1);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  channel1_onConnectFailed(const std::string& reason)
-  {
-    BOOST_CHECK_MESSAGE(false, reason);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face1_onReceiveInterest(const Interest& interest)
-  {
-    face1_receivedInterests.push_back(interest);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face1_onReceiveData(const Data& data)
-  {
-    face1_receivedDatas.push_back(data);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face1_onFail()
-  {
-    face1.reset();
-    limitedIo.afterOp();
-  }
-
-  void
-  channel2_onFaceCreated(const shared_ptr<Face>& newFace)
-  {
-    BOOST_CHECK(!static_cast<bool>(face2));
-    face2 = newFace;
-    face2->onReceiveInterest.connect(bind(&EndToEndFixture::face2_onReceiveInterest, this, _1));
-    face2->onReceiveData.connect(bind(&EndToEndFixture::face2_onReceiveData, this, _1));
-    face2->onFail.connect(bind(&EndToEndFixture::face2_onFail, this));
-
-    faces.push_back(face2);
-
-    BOOST_CHECK_MESSAGE(true, "channel 2 face created");
-    limitedIo.afterOp();
-  }
-
-  void
-  channel2_onConnectFailed(const std::string& reason)
-  {
-    BOOST_CHECK_MESSAGE(false, reason);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face2_onReceiveInterest(const Interest& interest)
-  {
-    face2_receivedInterests.push_back(interest);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face2_onReceiveData(const Data& data)
-  {
-    face2_receivedDatas.push_back(data);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  face2_onFail()
-  {
-    face2.reset();
-    limitedIo.afterOp();
-  }
-
-  void
-  channel3_onFaceCreated(const shared_ptr<Face>& newFace)
-  {
-    BOOST_CHECK(!static_cast<bool>(face1));
-    face3 = newFace;
-    faces.push_back(newFace);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  channel_onFaceCreated(const shared_ptr<Face>& newFace)
-  {
-    faces.push_back(newFace);
-    limitedIo.afterOp();
-  }
-
-  void
-  channel_onConnectFailed(const std::string& reason)
-  {
-    BOOST_CHECK_MESSAGE(false, reason);
-
-    limitedIo.afterOp();
-  }
-
-  void
-  channel_onConnectFailedOk(const std::string& reason)
-  {
-    // it's ok, it was supposed to fail
-    limitedIo.afterOp();
-  }
-
-  void
-  checkFaceList(size_t shouldBe)
-  {
-    BOOST_CHECK_EQUAL(faces.size(), shouldBe);
-  }
-
-  void
-  connect(const shared_ptr<UdpChannel>& channel,
-          const std::string& remoteHost,
-          const std::string& remotePort)
-  {
-    channel->connect(remoteHost, remotePort,
-                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
-                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-  }
-
-public:
-  LimitedIo limitedIo;
-
-  shared_ptr<Face> face1;
-  std::vector<Interest> face1_receivedInterests;
-  std::vector<Data> face1_receivedDatas;
-  shared_ptr<Face> face2;
-  std::vector<Interest> face2_receivedInterests;
-  std::vector<Data> face2_receivedDatas;
-  shared_ptr<Face> face3;
-
-  std::list< shared_ptr<Face> > faces;
-};
-
-
-BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
-{
-  UdpFactory factory;
+                     bind(&FaceCreateFixture::checkError, this, _1,
+                          "No channels available to connect to 127.0.0.1:6363"));
 
   factory.createChannel("127.0.0.1", "20071");
 
   factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+}
 
+class EndToEndIpv4
+{
+public:
+  static const std::string
+  getScheme()
+  {
+    return "udp4";
+  }
 
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept connection");
+  static const std::string
+  getLocalIp()
+  {
+    return "127.0.0.1";
+  }
 
-  BOOST_REQUIRE(static_cast<bool>(face2));
-  BOOST_CHECK_EQUAL(face2->getRemoteUri().toString(), "udp4://127.0.0.1:20070");
-  BOOST_CHECK_EQUAL(face2->getLocalUri().toString(), "udp4://127.0.0.1:20071");
-  BOOST_CHECK_EQUAL(face2->isLocal(), false);
+  static const std::string
+  getPort1()
+  {
+    return "20071";
+  }
+
+  static const std::string
+  getPort2()
+  {
+    return "20072";
+  }
+
+  static const std::string
+  getPort3()
+  {
+    return "20073";
+  }
+
+  static const FaceUri
+  getFaceUri1()
+  {
+    return FaceUri("udp4://127.0.0.1:20071");
+  }
+
+  static const FaceUri
+  getFaceUri2()
+  {
+    return FaceUri("udp4://127.0.0.1:20072");
+  }
+
+  static const FaceUri
+  getFaceUri3()
+  {
+    return FaceUri("udp4://127.0.0.1:20073");
+  }
+};
+
+class EndToEndIpv6
+{
+public:
+  static const std::string
+  getScheme()
+  {
+    return "udp6";
+  }
+
+  static const std::string
+  getLocalIp()
+  {
+    return "::1";
+  }
+
+  static const std::string
+  getPort1()
+  {
+    return "20071";
+  }
+
+  static const std::string
+  getPort2()
+  {
+    return "20072";
+  }
+
+  static const std::string
+  getPort3()
+  {
+    return "20073";
+  }
+
+  static const FaceUri
+  getFaceUri1()
+  {
+    return FaceUri("udp6://[::1]:20071");
+  }
+
+  static const FaceUri
+  getFaceUri2()
+  {
+    return FaceUri("udp6://[::1]:20072");
+  }
+
+  static const FaceUri
+  getFaceUri3()
+  {
+    return FaceUri("udp6://[::1]:20073");
+  }
+};
+
+typedef boost::mpl::list<EndToEndIpv4, EndToEndIpv6> EndToEndAddresses;
+
+// end to end communication
+BOOST_AUTO_TEST_CASE_TEMPLATE(EndToEnd, A, EndToEndAddresses)
+{
+  LimitedIo limitedIo;
+  UdpFactory factory;
+
+  shared_ptr<UdpChannel> channel1 = factory.createChannel(A::getLocalIp(), A::getPort1());
+
+  // face1 (on channel1) connects to face2 (on channel2, to be created)
+  shared_ptr<Face> face1;
+  unique_ptr<FaceHistory> history1;
+  factory.createFace(A::getFaceUri2(),
+                     [&] (shared_ptr<Face> newFace) {
+                       face1 = newFace;
+                       history1.reset(new FaceHistory(*face1, limitedIo));
+                       limitedIo.afterOp();
+                     },
+                     [] (const std::string& reason) { BOOST_ERROR(reason); });
+
+  limitedIo.run(1, time::seconds(1));
+  BOOST_REQUIRE(face1 != nullptr);
+  BOOST_CHECK_EQUAL(face1->getRemoteUri(), A::getFaceUri2());
+  BOOST_CHECK_EQUAL(face1->getLocalUri(), A::getFaceUri1());
+  BOOST_CHECK_EQUAL(face1->isLocal(), false); // UdpFace is never local
+  BOOST_CHECK_EQUAL(face1->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(face1->getCounters().getNOutBytes(), 0);
+
+  // channel2 creation must be after face1 creation,
+  // otherwise channel2's endpoint would be prohibited
+  shared_ptr<UdpChannel> channel2 = factory.createChannel(A::getLocalIp(), A::getPort2());
+  shared_ptr<Face> face2;
+  unique_ptr<FaceHistory> history2;
+  channel2->listen([&] (shared_ptr<Face> newFace) {
+                     BOOST_CHECK(face2 == nullptr);
+                     face2 = newFace;
+                     history2.reset(new FaceHistory(*face2, limitedIo));
+                     limitedIo.afterOp();
+                   },
+                   [] (const std::string& reason) { BOOST_ERROR(reason); });
+
+  limitedIo.run(1, time::seconds(1));
+  BOOST_CHECK(face2 == nullptr); // face2 shouldn't be created until face1 sends something
+
+  shared_ptr<Interest> interest1 = makeInterest("/I1");
+  shared_ptr<Interest> interest2 = makeInterest("/I2");
+  shared_ptr<Data> data1 = makeData("/D1");
+  shared_ptr<Data> data2 = makeData("/D2");
+
+  // face1 sends to channel2, creates face2
+  face1->sendInterest(*interest1);
+  face1->sendData(*data1);
+  face1->sendData(*data1);
+  face1->sendData(*data1);
+  size_t nBytesSent1 = interest1->wireEncode().size() + 3 * data1->wireEncode().size();
+
+  limitedIo.run(5, time::seconds(1)); // 1 accept, 4 receives
+
+  BOOST_REQUIRE(face2 != nullptr);
+  BOOST_CHECK_EQUAL(face2->getRemoteUri(), A::getFaceUri1());
+  BOOST_CHECK_EQUAL(face2->getLocalUri(), A::getFaceUri2());
+  BOOST_CHECK_EQUAL(face2->isLocal(), false); // UdpFace is never local
+  BOOST_CHECK_EQUAL(face2->getCounters().getNInBytes(), nBytesSent1);
   BOOST_CHECK_EQUAL(face2->getCounters().getNOutBytes(), 0);
-  BOOST_CHECK_EQUAL(face2->getCounters().getNInBytes(), 0);
-  // face1 is not created yet
 
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+  BOOST_REQUIRE_EQUAL(history2->receivedInterests.size(), 1);
+  BOOST_CHECK_EQUAL(history2->receivedInterests.front().getName(), interest1->getName());
+  BOOST_REQUIRE_EQUAL(history2->receivedData.size(), 3);
+  BOOST_CHECK_EQUAL(history2->receivedData.front().getName(), data1->getName());
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
-  Interest interest3("ndn:/QWiIhjgkj5sL");
-  Data     data3    ("ndn:/XNBV794f");
-  data3.setContent(0, 0);
+  // face2 sends to face1
+  face2->sendInterest(*interest2);
+  face2->sendInterest(*interest2);
+  face2->sendInterest(*interest2);
+  face2->sendData(*data2);
+  size_t nBytesSent2 = 3 * interest2->wireEncode().size() + data2->wireEncode().size();
 
+  limitedIo.run(4, time::seconds(1)); // 4 receives
 
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
-                                        reinterpret_cast<const uint8_t*>(0),
-                                        0));
+  BOOST_REQUIRE_EQUAL(history1->receivedInterests.size(), 3);
+  BOOST_CHECK_EQUAL(history1->receivedInterests.front().getName(), interest2->getName());
+  BOOST_REQUIRE_EQUAL(history1->receivedData.size(), 1);
+  BOOST_CHECK_EQUAL(history1->receivedData.front().getName(), data2->getName());
 
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-  data3.setSignature(fakeSignature);
-
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
-  face2->sendData    (data2    );
-  size_t nBytesSent2 = interest2.wireEncode().size() + data2.wireEncode().size() * 3;
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(5,//4 send + 1 listen return
-                      time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_REQUIRE(static_cast<bool>(face1));
-  BOOST_CHECK_EQUAL(face1->getRemoteUri().toString(), "udp4://127.0.0.1:20071");
-  BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "udp4://127.0.0.1:20070");
-  BOOST_CHECK_EQUAL(face1->isLocal(), false);
-
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(4, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 3);
-  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 3);
-  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
-
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
-
-
-
-  //checking if the connection accepting mechanism works properly.
-
-  face2->sendData    (data3    );
-  face2->sendInterest(interest3);
-  nBytesSent2 += data3.wireEncode().size() + interest3.wireEncode().size();
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 2);
-  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 4);
-
-  BOOST_CHECK_EQUAL(face1_receivedInterests[1].getName(), interest3.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [3].getName(), data3.getName());
-
+  // counters
   const FaceCounters& counters1 = face1->getCounters();
-  BOOST_CHECK_EQUAL(counters1.getNInInterests() , 2);
-  BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 4);
-  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
-  BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
+  BOOST_CHECK_EQUAL(counters1.getNInInterests(), 3);
+  BOOST_CHECK_EQUAL(counters1.getNInDatas(), 1);
+  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 1);
+  BOOST_CHECK_EQUAL(counters1.getNOutDatas(), 3);
   BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesSent2);
+  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent1);
 
   const FaceCounters& counters2 = face2->getCounters();
-  BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);
-  BOOST_CHECK_EQUAL(counters2.getNInDatas()     , 1);
-  BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 2);
-  BOOST_CHECK_EQUAL(counters2.getNOutDatas()    , 4);
+  BOOST_CHECK_EQUAL(counters2.getNInInterests(), 1);
+  BOOST_CHECK_EQUAL(counters2.getNInDatas(), 3);
+  BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 3);
+  BOOST_CHECK_EQUAL(counters2.getNOutDatas(), 1);
+  BOOST_CHECK_EQUAL(counters2.getNInBytes(), nBytesSent1);
   BOOST_CHECK_EQUAL(counters2.getNOutBytes(), nBytesSent2);
 }
 
-BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
+// channel accepting multiple incoming connections
+BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, EndToEndAddresses)
 {
+  LimitedIo limitedIo;
   UdpFactory factory;
 
-  factory.createChannel("::1", "20071");
+  // channel1 is listening
+  shared_ptr<UdpChannel> channel1 = factory.createChannel(A::getLocalIp(), A::getPort1());
+  std::vector<shared_ptr<Face>> faces1;
+  channel1->listen([&] (shared_ptr<Face> newFace) {
+                     faces1.push_back(newFace);
+                     limitedIo.afterOp();
+                   },
+                   [] (const std::string& reason) { BOOST_ERROR(reason); });
 
-  factory.createFace(FaceUri("udp://[::1]:20070"),
-                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
+  // face2 (on channel2) connects to channel1
+  shared_ptr<UdpChannel> channel2 = factory.createChannel(A::getLocalIp(), A::getPort2());
+  BOOST_CHECK_NE(channel1, channel2);
+  shared_ptr<Face> face2;
+  boost::asio::ip::address ipAddress2 = boost::asio::ip::address::from_string(A::getLocalIp());
+  udp::Endpoint endpoint2(ipAddress2, boost::lexical_cast<uint16_t>(A::getPort1()));
+  channel2->connect(endpoint2,
+                    [&] (shared_ptr<Face> newFace) {
+                      face2 = newFace;
+                      limitedIo.afterOp();
+                    },
+                    [] (const std::string& reason) { BOOST_ERROR(reason); });
 
+  limitedIo.run(1, time::seconds(1)); // 1 create (on channel2)
+  BOOST_REQUIRE(face2 != nullptr);
+  BOOST_CHECK_EQUAL(faces1.size(), 0); // channel1 won't create face until face2 sends something
 
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept connection");
+  // face3 (on channel3) connects to channel1
+  shared_ptr<UdpChannel> channel3 = factory.createChannel(A::getLocalIp(), A::getPort3());
+  BOOST_CHECK_NE(channel1, channel3);
+  shared_ptr<Face> face3;
+  boost::asio::ip::address ipAddress3 = boost::asio::ip::address::from_string(A::getLocalIp());
+  udp::Endpoint endpoint3(ipAddress3, boost::lexical_cast<uint16_t>(A::getPort1()));
+  channel3->connect(endpoint3,
+                    [&] (shared_ptr<Face> newFace) {
+                      face3 = newFace;
+                      limitedIo.afterOp();
+                    },
+                    [] (const std::string& reason) { BOOST_ERROR(reason); });
 
-  BOOST_REQUIRE(static_cast<bool>(face2));
-  BOOST_CHECK_EQUAL(face2->getRemoteUri().toString(), "udp6://[::1]:20070");
-  BOOST_CHECK_EQUAL(face2->getLocalUri().toString(), "udp6://[::1]:20071");
-  BOOST_CHECK_EQUAL(face2->isLocal(), false);
-  // face1 is not created yet
+  limitedIo.run(1, time::seconds(1)); // 1 create (on channel3)
+  BOOST_REQUIRE(face3 != nullptr);
+  BOOST_CHECK_EQUAL(faces1.size(), 0); // channel1 won't create face until face3 sends something
 
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("::1", "20070");
-  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+  // face2 sends to channel1
+  shared_ptr<Interest> interest2 = makeInterest("/I2");
+  face2->sendInterest(*interest2);
+  limitedIo.run(1, time::milliseconds(100)); // 1 accept (on channel1)
+  BOOST_REQUIRE_EQUAL(faces1.size(), 1);
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
+  BOOST_CHECK_EQUAL(faces1.at(0)->getRemoteUri(), A::getFaceUri2());
 
-  Interest interest1("ndn:/TpnzGvW9R");
-  Data     data1    ("ndn:/KfczhUqVix");
-  data1.setContent(0, 0);
-  Interest interest2("ndn:/QWiIMfj5sL");
-  Data     data2    ("ndn:/XNBV796f");
-  data2.setContent(0, 0);
-  Interest interest3("ndn:/QWiIhjgkj5sL");
-  Data     data3    ("ndn:/XNBV794f");
-  data3.setContent(0, 0);
-
-
-  ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
-                                        reinterpret_cast<const uint8_t*>(0),
-                                        0));
-
-  // set fake signature on data1 and data2
-  data1.setSignature(fakeSignature);
-  data2.setSignature(fakeSignature);
-  data3.setSignature(fakeSignature);
-
-  face2->sendInterest(interest2);
-  face2->sendData    (data2    );
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(3,//2 send + 1 listen return
-                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_REQUIRE(static_cast<bool>(face1));
-  BOOST_CHECK_EQUAL(face1->getRemoteUri().toString(), "udp6://[::1]:20071");
-  BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "udp6://[::1]:20070");
-  BOOST_CHECK_EQUAL(face1->isLocal(), false);
-
-  face1->sendInterest(interest1);
-  face1->sendData    (data1    );
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-
-  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 1);
-  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
-  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
-
-  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
-
-
-
-  //checking if the connection accepting mechanism works properly.
-
-  face2->sendData    (data3    );
-  face2->sendInterest(interest3);
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 2);
-  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 2);
-
-  BOOST_CHECK_EQUAL(face1_receivedInterests[1].getName(), interest3.getName());
-  BOOST_CHECK_EQUAL(face1_receivedDatas    [1].getName(), data3.getName());
+  // face3 sends to channel1
+  shared_ptr<Data> data3 = makeData("/D3");
+  face3->sendData(*data3);
+  limitedIo.run(1, time::milliseconds(100)); // 1 accept (on channel1)
+  BOOST_REQUIRE_EQUAL(faces1.size(), 2);
+  BOOST_CHECK_EQUAL(channel1->size(), 2);
+  BOOST_CHECK_EQUAL(faces1.at(1)->getRemoteUri(), A::getFaceUri3());
 }
 
-BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
+// manually close a face
+BOOST_AUTO_TEST_CASE_TEMPLATE(ManualClose, A, EndToEndAddresses)
 {
-  Interest interest1("ndn:/TpnzGvW9R");
-  Interest interest2("ndn:/QWiIMfj5sL");
-
+  LimitedIo limitedIo;
   UdpFactory factory;
 
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
+  shared_ptr<UdpChannel> channel1 = factory.createChannel(A::getLocalIp(), A::getPort1());
+  shared_ptr<Face> face1;
+  unique_ptr<FaceHistory> history1;
+  factory.createFace(A::getFaceUri2(),
+                     [&] (shared_ptr<Face> newFace) {
+                       face1 = newFace;
+                       history1.reset(new FaceHistory(*face1, limitedIo));
+                       limitedIo.afterOp();
+                     },
+                     [] (const std::string& reason) { BOOST_ERROR(reason); });
 
-  channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
-                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
+  limitedIo.run(1, time::milliseconds(100));
+  BOOST_REQUIRE(face1 != nullptr);
+  BOOST_CHECK_EQUAL(channel1->size(), 1);
 
-  channel2->connect("127.0.0.1", "20070",
-                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept connection");
-
-  BOOST_CHECK_EQUAL(faces.size(), 1);
-
-  shared_ptr<UdpChannel> channel3 = factory.createChannel("127.0.0.1", "20072");
-  channel3->connect("127.0.0.1", "20070",
-                    bind(&EndToEndFixture::channel3_onFaceCreated, this, _1),
-                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-
-  shared_ptr<UdpChannel> channel4 = factory.createChannel("127.0.0.1", "20073");
-
-  BOOST_CHECK_NE(channel3, channel4);
-
-  scheduler::schedule(time::milliseconds(500),
-                      bind(&EndToEndFixture::connect, this, channel4, "127.0.0.1", "20070"));
-
-  scheduler::schedule(time::milliseconds(400), bind(&EndToEndFixture::checkFaceList, this, 2));
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(2,// 2 connects
-                      time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept multiple connections");
-
-  BOOST_CHECK_EQUAL(faces.size(), 3);
-
-
-  face2->sendInterest(interest1);
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_CHECK_EQUAL(faces.size(), 4);
-
-  face3->sendInterest(interest2);
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  //channel1 should have created 2 faces, one when face2 sent an interest, one when face3 sent an interest
-  BOOST_CHECK_EQUAL(faces.size(), 5);
-  BOOST_CHECK_THROW(channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,     this, _1),
-                                     bind(&EndToEndFixture::channel_onConnectFailedOk, this, _1)),
-                    UdpChannel::Error);
-}
-
-//Test commented because it required to be run in a machine that can resolve ipv6 query
-//BOOST_FIXTURE_TEST_CASE(EndToEndIpv6, EndToEndFixture)
-//{
-//  UdpFactory factory = UdpFactory();
-//  Scheduler scheduler(g_io); // to limit the amount of time the test may take
-//
-//  EventId abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                              "UdpChannel error: cannot connect or cannot accept connection"));
-//
-//  limitedIoRemaining = 1;
-//
-//  shared_ptr<UdpChannel> channel1 = factory.createChannel("::1", "20070");
-//  shared_ptr<UdpChannel> channel2 = factory.createChannel("::1", "20071");
-//
-//  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-//                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
-//
-//  channel2->connect("::1", "20070",
-//                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-//                    bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_REQUIRE(static_cast<bool>(face2));
-//
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot send or receive Interest/Data packets"));
-//
-//  Interest interest1("ndn:/TpnzGvW9R");
-//  Data     data1    ("ndn:/KfczhUqVix");
-//  data1.setContent(0, 0);
-//  Interest interest2("ndn:/QWiIMfj5sL");
-//  Data     data2    ("ndn:/XNBV796f");
-//  data2.setContent(0, 0);
-//  Interest interest3("ndn:/QWiIhjgkj5sL");
-//  Data     data3    ("ndn:/XNBV794f");
-//  data3.setContent(0, 0);
-//
-//  ndn::SignatureSha256WithRsa fakeSignature;
-//  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue, reinterpret_cast<const uint8_t*>(0), 0));
-//
-//  // set fake signature on data1 and data2
-//  data1.setSignature(fakeSignature);
-//  data2.setSignature(fakeSignature);
-//  data3.setSignature(fakeSignature);
-//
-//  face2->sendInterest(interest2);
-//  face2->sendData    (data2    );
-//
-//  limitedIoRemaining = 3; //2 send + 1 listen return
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_REQUIRE(static_cast<bool>(face1));
-//
-//  face1->sendInterest(interest1);
-//  face1->sendData    (data1    );
-//
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot send or receive Interest/Data packets"));
-//  limitedIoRemaining = 2;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 1);
-//  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 1);
-//  BOOST_REQUIRE_EQUAL(face2_receivedInterests.size(), 1);
-//  BOOST_REQUIRE_EQUAL(face2_receivedDatas    .size(), 1);
-//
-//  BOOST_CHECK_EQUAL(face1_receivedInterests[0].getName(), interest2.getName());
-//  BOOST_CHECK_EQUAL(face1_receivedDatas    [0].getName(), data2.getName());
-//  BOOST_CHECK_EQUAL(face2_receivedInterests[0].getName(), interest1.getName());
-//  BOOST_CHECK_EQUAL(face2_receivedDatas    [0].getName(), data1.getName());
-//
-//  //checking if the connection accepting mechanism works properly.
-//
-//  face2->sendData    (data3    );
-//  face2->sendInterest(interest3);
-//
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot send or receive Interest/Data packets"));
-//  limitedIoRemaining = 2;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_REQUIRE_EQUAL(face1_receivedInterests.size(), 2);
-//  BOOST_REQUIRE_EQUAL(face1_receivedDatas    .size(), 2);
-//
-//  BOOST_CHECK_EQUAL(face1_receivedInterests[1].getName(), interest3.getName());
-//  BOOST_CHECK_EQUAL(face1_receivedDatas    [1].getName(), data3.getName());
-//
-//}
-
-
-//Test commented because it required to be run in a machine that can resolve ipv6 query
-//BOOST_FIXTURE_TEST_CASE(MultipleAcceptsIpv6, EndToEndFixture)
-//{
-//  Interest interest1("ndn:/TpnzGvW9R");
-//  Interest interest2("ndn:/QWiIMfj5sL");
-//  Interest interest3("ndn:/QWiIhjgkj5sL");
-//
-//  UdpFactory factory = UdpFactory();
-//  Scheduler scheduler(g_io); // to limit the amount of time the test may take
-//
-//  EventId abortEvent =
-//  scheduler.scheduleEvent(time::seconds(4),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot connect or cannot accept connection"));
-//
-//  shared_ptr<UdpChannel> channel1 = factory.createChannel("::1", "20070");
-//  shared_ptr<UdpChannel> channel2 = factory.createChannel("::1", "20071");
-//
-//  channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
-//                   bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-//
-//  channel2->connect("::1", "20070",
-//                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-//                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-//
-//  limitedIoRemaining = 1;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_CHECK_EQUAL(faces.size(), 1);
-//
-//  shared_ptr<UdpChannel> channel3 = factory.createChannel("::1", "20072");
-//  channel3->connect("::1", "20070",
-//                    bind(&EndToEndFixture::channel3_onFaceCreated, this, _1),
-//                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
-//
-//  shared_ptr<UdpChannel> channel4 = factory.createChannel("::1", "20073");
-//
-//  BOOST_CHECK_NE(channel3, channel4);
-//
-//  scheduler
-//  .scheduleEvent(time::milliseconds(500),
-//                 bind(&UdpChannel::connect, channel4,
-//                      "::1", "20070",
-//                      static_cast<UdpChannel::FaceCreatedCallback>(bind(&EndToEndFixture::
-//                                                                        channel_onFaceCreated, this, _1)),
-//                      static_cast<UdpChannel::ConnectFailedCallback>(bind(&EndToEndFixture::
-//                                                                          channel_onConnectFailed, this, _1))));
-//
-//  limitedIoRemaining = 2; // 2 connects
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(4),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot connect or cannot accept multiple connections"));
-//
-//  scheduler.scheduleEvent(time::seconds(0.4),
-//                          bind(&EndToEndFixture::checkFaceList, this, 2));
-//
-//  g_io.run();
-//  g_io.reset();
-//
-//  BOOST_CHECK_EQUAL(faces.size(), 3);
-//
-//
-//  face2->sendInterest(interest1);
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot send or receive Interest/Data packets"));
-//  limitedIoRemaining = 1;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  BOOST_CHECK_EQUAL(faces.size(), 4);
-//
-//  face3->sendInterest(interest2);
-//  abortEvent =
-//  scheduler.scheduleEvent(time::seconds(1),
-//                          bind(&EndToEndFixture::abortTestCase, this,
-//                               "UdpChannel error: cannot send or receive Interest/Data packets"));
-//  limitedIoRemaining = 1;
-//  g_io.run();
-//  g_io.reset();
-//  scheduler.cancelEvent(abortEvent);
-//
-//  //channel1 should have created 2 faces, one when face2 sent an interest, one when face3 sent an interest
-//  BOOST_CHECK_EQUAL(faces.size(), 5);
-//  BOOST_CHECK_THROW(channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,
-//                                          this,
-//                                          _1),
-//                                      bind(&EndToEndFixture::channel_onConnectFailedOk,
-//                                          this,
-//                                          _1)),
-//                    UdpChannel::Error);
-//}
-
-
-BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
-{
-  UdpFactory factory = UdpFactory();
-
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
-
-  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
-
-  channel2->connect("127.0.0.1", "20070",
-                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                    bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept connection");
-
-  BOOST_CHECK_EQUAL(channel2->size(), 1);
-
-  BOOST_CHECK(static_cast<bool>(face2));
-
-  // Face::close must be invoked during io run to be counted as an op
-  scheduler::schedule(time::milliseconds(100), bind(&Face::close, face2));
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "FaceClosing error: cannot properly close faces");
-
-  BOOST_CHECK(!static_cast<bool>(face2));
-
-  BOOST_CHECK_EQUAL(channel2->size(), 0);
-}
-
-BOOST_FIXTURE_TEST_CASE(ClosingIdleFace, EndToEndFixture)
-{
-  Interest interest1("ndn:/TpnzGvW9R");
-  Interest interest2("ndn:/QWiIMfj5sL");
-
-  UdpFactory factory;
-
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070",
-                                                          time::seconds(2));
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071",
-                                                          time::seconds(2));
-
-  channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
-                   bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
-
-  channel2->connect("127.0.0.1", "20070",
-                    bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
-                    bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect or cannot accept connection");
-
-  face2->sendInterest(interest1);
-  BOOST_CHECK(!face2->isOnDemand());
-
-  BOOST_CHECK_MESSAGE(limitedIo.run(2,//1 send + 1 listen return
-                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-
-  BOOST_CHECK_EQUAL(faces.size(), 2);
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(2)) == LimitedIo::EXCEED_TIME,
-                      "Idle face should be still open because has been used recently");
-  BOOST_CHECK_EQUAL(faces.size(), 2);
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_OPS,
-                      "Closing idle face error: face should be closed by now");
-
-  //the face on listen should be closed now
+  face1->close();
+  getGlobalIoService().poll();
+  BOOST_CHECK_EQUAL(history1->failures.size(), 1);
   BOOST_CHECK_EQUAL(channel1->size(), 0);
-  //checking that face2 has not been closed
-  BOOST_CHECK_EQUAL(channel2->size(), 1);
-  BOOST_REQUIRE(static_cast<bool>(face2));
+}
 
-  face2->sendInterest(interest2);
-  BOOST_CHECK_MESSAGE(limitedIo.run(2,//1 send + 1 listen return
-                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot send or receive Interest/Data packets");
-  //channel1 should have created a new face by now
+// automatically close an idle incoming face
+BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
+{
+  LimitedIo limitedIo;
+  UdpFactory factory;
+
+  // channel1 is listening
+  shared_ptr<UdpChannel> channel1 = factory.createChannel(A::getLocalIp(), A::getPort1(),
+                                                          time::seconds(2));
+  shared_ptr<Face> face1;
+  unique_ptr<FaceHistory> history1;
+  channel1->listen([&] (shared_ptr<Face> newFace) {
+                     BOOST_CHECK(face1 == nullptr);
+                     face1 = newFace;
+                     history1.reset(new FaceHistory(*face1, limitedIo));
+                     limitedIo.afterOp();
+                   },
+                   [] (const std::string& reason) { BOOST_ERROR(reason); });
+
+  // face2 (on channel2) connects to channel1
+  shared_ptr<UdpChannel> channel2 = factory.createChannel(A::getLocalIp(), A::getPort2(),
+                                                          time::seconds(2));
+  shared_ptr<Face> face2;
+  unique_ptr<FaceHistory> history2;
+  boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(A::getLocalIp());
+  udp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(A::getPort1()));
+  channel2->connect(endpoint,
+                    [&] (shared_ptr<Face> newFace) {
+                      face2 = newFace;
+                      history2.reset(new FaceHistory(*face2, limitedIo));
+                      limitedIo.afterOp();
+                    },
+                    [] (const std::string& reason) { BOOST_ERROR(reason); });
+
+  limitedIo.run(1, time::milliseconds(100)); // 1 create (on channel2)
+  BOOST_REQUIRE(face2 != nullptr);
+  BOOST_CHECK_EQUAL(face2->isOnDemand(), false);
+
+  // face2 sends to channel1, creates face1
+  shared_ptr<Interest> interest2 = makeInterest("/I2");
+  face2->sendInterest(*interest2);
+
+  limitedIo.run(2, time::seconds(1)); // 1 accept (on channel1), 1 receive (on face1)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
-  BOOST_CHECK_EQUAL(channel2->size(), 1);
-  BOOST_REQUIRE(static_cast<bool>(face1));
-  BOOST_CHECK(face1->isOnDemand());
+  BOOST_REQUIRE(face1 != nullptr);
+  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
 
-  channel1->connect("127.0.0.1", "20071",
-                    bind(&EndToEndFixture::channel1_onFaceCreatedNoCheck, this, _1),
-                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
+  limitedIo.defer(time::seconds(1));
+  BOOST_CHECK_EQUAL(history1->failures.size(), 0); // face1 is not idle
+  BOOST_CHECK_EQUAL(history2->failures.size(), 0); // face2 is outgoing face and never closed
 
-  BOOST_CHECK_MESSAGE(limitedIo.run(1,//1 connect
-                                      time::seconds(1)) == LimitedIo::EXCEED_OPS,
-                      "UdpChannel error: cannot connect");
-
-  BOOST_CHECK(!face1->isOnDemand());
-
-  //the connect should have set face1 as permanent face,
-  //but it shouln't have created any additional faces
-  BOOST_CHECK_EQUAL(channel1->size(), 1);
-  BOOST_CHECK_EQUAL(channel2->size(), 1);
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(4)) == LimitedIo::EXCEED_TIME,
-                      "Idle face should be still open because it's permanent now");
-  //both faces are permanent, nothing should have changed
-  BOOST_CHECK_EQUAL(channel1->size(), 1);
-  BOOST_CHECK_EQUAL(channel2->size(), 1);
+  limitedIo.defer(time::seconds(4));
+  BOOST_CHECK_EQUAL(history1->failures.size(), 1); // face1 is idle and automatically closed
+  BOOST_CHECK_EQUAL(channel1->size(), 0);
+  BOOST_CHECK_EQUAL(history2->failures.size(), 0); // face2 is outgoing face and never closed
 }
 
 class FakeNetworkInterfaceFixture : public BaseFixture

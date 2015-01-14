@@ -24,7 +24,7 @@
  */
 
 #include "face/tcp-factory.hpp"
-#include "core/resolver.hpp"
+#include <ndn-cxx/util/dns.hpp>
 #include "core/network-interface.hpp"
 #include <ndn-cxx/security/key-chain.hpp>
 
@@ -98,17 +98,16 @@ BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
 {
   TcpFactory factory = TcpFactory();
 
-  factory.createFace(FaceUri("tcp4://127.0.0.1"),
+  factory.createFace(FaceUri("tcp4://127.0.0.1:6363"),
+                     bind(&FaceCreateFixture::ignore, this),
+                     bind(&FaceCreateFixture::checkError, this, _1,
+                          "No channels available to connect to 127.0.0.1:6363"));
+
+  factory.createChannel("127.0.0.1", "20071");
+
+  factory.createFace(FaceUri("tcp4://127.0.0.1:20070"),
                      bind(&FaceCreateFixture::ignore, this),
                      bind(&FaceCreateFixture::failIfError, this, _1));
-
-  factory.createFace(FaceUri("tcp4://127.0.0.1/"),
-                     bind(&FaceCreateFixture::ignore, this),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
-
-  factory.createFace(FaceUri("tcp4://127.0.0.1/path"),
-                     bind(&FaceCreateFixture::ignore, this),
-                     bind(&FaceCreateFixture::checkError, this, _1, "Invalid URI"));
 }
 
 class EndToEndFixture : protected BaseFixture
@@ -263,7 +262,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   shared_ptr<TcpChannel> channel2 = factory2.createChannel("127.0.0.2", "20070");
   factory2.createChannel("127.0.0.2", "20071");
 
-  factory2.createFace(FaceUri("tcp://127.0.0.1:20070"),
+  factory2.createFace(FaceUri("tcp4://127.0.0.1:20070"),
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
@@ -348,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
 
   factory2.createChannel("::2", "20070");
 
-  factory2.createFace(FaceUri("tcp://[::1]:20070"),
+  factory2.createFace(FaceUri("tcp6://[::1]:20070"),
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
@@ -550,7 +549,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalFaceCorruptedInput, Dataset,
   BOOST_REQUIRE_EQUAL(channel->isListening(), true);
 
   DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
-  sender.start(Resolver<boost::asio::ip::tcp>::syncResolve("127.0.0.1", "20070"));
+  tcp::Endpoint endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 20070);
+  sender.start(endpoint);
 
   BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
                                     time::seconds(1)) == LimitedIo::EXCEED_TIME,
@@ -582,7 +582,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
   BOOST_REQUIRE_EQUAL(channel->isListening(), true);
 
   DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
-  sender.start(Resolver<boost::asio::ip::tcp>::syncResolve(someIpv4Address, "20070"));
+  tcp::Endpoint endpoint(ndn::dns::syncResolve(someIpv4Address, getGlobalIoService()), 20070);
+  sender.start(endpoint);
 
   BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
                                     time::seconds(1)) == LimitedIo::EXCEED_TIME,
@@ -621,7 +622,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   TcpFactory factory;
   shared_ptr<TcpChannel> channel = factory.createChannel("0.0.0.0", "20070");
 
-  factory.createFace(FaceUri("tcp://192.0.2.1:20070"),
+  factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
                      bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _1));
 
@@ -650,7 +651,7 @@ BOOST_FIXTURE_TEST_CASE(Bug1856, EndToEndFixture)
   shared_ptr<TcpChannel> channel2 = factory2.createChannel("127.0.0.2", "20070");
   factory2.createChannel("127.0.0.2", "20071");
 
-  factory2.createFace(FaceUri("tcp://127.0.0.1:20070"),
+  factory2.createFace(FaceUri("tcp4://127.0.0.1:20070"),
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 

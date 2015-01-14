@@ -25,8 +25,8 @@
 
 #include "udp-factory.hpp"
 #include "core/global-io.hpp"
-#include "core/resolver.hpp"
 #include "core/network-interface.hpp"
+#include <ndn-cxx/util/dns.hpp>
 
 #if defined(__linux__)
 #include <sys/socket.h>
@@ -140,7 +140,9 @@ UdpFactory::createChannel(const std::string& localHost,
                           const std::string& localPort,
                           const time::seconds& timeout)
 {
-  return createChannel(UdpResolver::syncResolve(localHost, localPort), timeout);
+  udp::Endpoint endPoint(ndn::dns::syncResolve(localHost, getGlobalIoService()),
+                         boost::lexical_cast<uint16_t>(localPort));
+  return createChannel(endPoint, timeout);
 }
 
 shared_ptr<MulticastUdpFace>
@@ -251,12 +253,13 @@ UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastPort,
                                 const std::string& networkInterfaceName /* "" */)
 {
+  udp::Endpoint localEndpoint(ndn::dns::syncResolve(localIp, getGlobalIoService()),
+                              boost::lexical_cast<uint16_t>(multicastPort));
 
-  return createMulticastFace(UdpResolver::syncResolve(localIp,
-                                                      multicastPort),
-                             UdpResolver::syncResolve(multicastIp,
-                                                      multicastPort),
-                             networkInterfaceName);
+  udp::Endpoint multicastEndpoint(ndn::dns::syncResolve(multicastIp, getGlobalIoService()),
+                                  boost::lexical_cast<uint16_t>(multicastPort));
+
+  return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
 }
 
 void
@@ -264,31 +267,10 @@ UdpFactory::createFace(const FaceUri& uri,
                        const FaceCreatedCallback& onCreated,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
-  resolver::AddressSelector addressSelector = resolver::AnyAddress();
-  if (uri.getScheme() == "udp4")
-    addressSelector = resolver::Ipv4Address();
-  else if (uri.getScheme() == "udp6")
-    addressSelector = resolver::Ipv6Address();
+  BOOST_ASSERT(uri.isCanonical());
+  boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(uri.getHost());
+  udp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(uri.getPort()));
 
-  if (!uri.getPath().empty() && uri.getPath() != "/")
-    {
-      onConnectFailed("Invalid URI");
-    }
-
-  UdpResolver::asyncResolve(uri.getHost(),
-                            uri.getPort().empty() ? m_defaultPort : uri.getPort(),
-                            bind(&UdpFactory::continueCreateFaceAfterResolve, this, _1,
-                                 onCreated, onConnectFailed),
-                            onConnectFailed,
-                            addressSelector);
-
-}
-
-void
-UdpFactory::continueCreateFaceAfterResolve(const udp::Endpoint& endpoint,
-                                           const FaceCreatedCallback& onCreated,
-                                           const FaceConnectFailedCallback& onConnectFailed)
-{
   if (endpoint.address().is_multicast()) {
     onConnectFailed("The provided address is multicast. Please use createMulticastFace method");
     return;

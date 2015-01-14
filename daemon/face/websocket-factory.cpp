@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,7 +24,7 @@
  */
 
 #include "websocket-factory.hpp"
-#include "core/resolver.hpp"
+#include <ndn-cxx/util/dns.hpp>
 
 namespace nfd {
 
@@ -53,7 +53,8 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 shared_ptr<WebSocketChannel>
 WebSocketFactory::createChannel(const std::string& host, const std::string& port)
 {
-  ip::tcp::endpoint tcpEndpoint = TcpResolver::syncResolve(host, port);
+  ip::tcp::endpoint tcpEndpoint(ndn::dns::syncResolve(host, getGlobalIoService()),
+                                boost::lexical_cast<uint16_t>(port));
   websocket::Endpoint endpoint(tcpEndpoint.address(), tcpEndpoint.port());
   return createChannel(endpoint);
 }
