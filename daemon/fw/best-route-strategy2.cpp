@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -32,8 +32,6 @@ namespace fw {
 NFD_LOG_INIT("BestRouteStrategy2");
 
 const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%02");
-/// \todo don't use fixed interval; make it adaptive or use exponential back-off #1913
-const time::milliseconds BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL(100);
 
 BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)
@@ -73,12 +71,6 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
   return true;
 }
 
-static inline bool
-compare_OutRecord_lastRenewed(const pit::OutRecord& a, const pit::OutRecord& b)
-{
-  return a.getLastRenewed() < b.getLastRenewed();
-}
-
 /** \brief pick an eligible NextHop with earliest OutRecord
  *  \note It is assumed that every nexthop has an OutRecord
  */
@@ -111,8 +103,9 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
   fib::NextHopList::const_iterator it = nexthops.end();
 
-  bool isNewPitEntry = !pitEntry->hasUnexpiredOutRecords();
-  if (isNewPitEntry) {
+  RetransmissionSuppression::Result suppression =
+      m_retransmissionSuppression.decide(inFace, interest, *pitEntry);
+  if (suppression == RetransmissionSuppression::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(),
       bind(&predicate_NextHop_eligible, pitEntry, _1, inFace.getId(),
@@ -131,24 +124,16 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  // when was the last outgoing Interest?
-  const pit::OutRecordCollection& outRecords = pitEntry->getOutRecords();
-  pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
-    outRecords.begin(), outRecords.end(), &compare_OutRecord_lastRenewed);
-  BOOST_ASSERT(lastOutgoing != outRecords.end()); // otherwise it's new PIT entry
-
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing->getLastRenewed();
-  bool shouldRetransmit = sinceLastOutgoing >= MIN_RETRANSMISSION_INTERVAL;
-  if (!shouldRetransmit) {
+  if (suppression == RetransmissionSuppression::SUPPRESS) {
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " dontRetransmit sinceLastOutgoing=" << sinceLastOutgoing.count());
+                           << " suppressed");
     return;
   }
 
   // find an unused upstream with lowest cost except downstream
   it = std::find_if(nexthops.begin(), nexthops.end(),
-    bind(&predicate_NextHop_eligible, pitEntry, _1, inFace.getId(), true, now));
+                    bind(&predicate_NextHop_eligible, pitEntry, _1, inFace.getId(),
+                         true, time::steady_clock::now()));
   if (it != nexthops.end()) {
     shared_ptr<Face> outFace = it->getFace();
     this->sendInterest(pitEntry, outFace);

@@ -23,42 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
-#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
-
-#include "strategy.hpp"
 #include "retransmission-suppression.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \brief Best Route strategy version 2
- *
- *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
- *  After that, it recognizes consumer retransmission:
- *  if a similar Interest arrives from any downstream after MIN_RETRANSMISSION_INTERVAL,
- *  the strategy forwards the Interest again to the lowest-cost nexthop (except downstream)
- *  that is not previously used. If all nexthops have been used, the strategy starts over.
- */
-class BestRouteStrategy2 : public Strategy
+/// \todo don't use fixed interval; make it adaptive or use exponential back-off #1913
+const time::milliseconds RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL(100);
+
+RetransmissionSuppression::Result
+RetransmissionSuppression::decide(const Face& inFace, const Interest& interest,
+                                  const pit::Entry& pitEntry)
 {
-public:
-  BestRouteStrategy2(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  bool isNewPitEntry = !pitEntry.hasUnexpiredOutRecords();
+  if (isNewPitEntry) {
+    return NEW;
+  }
 
-  virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
+  // when was the last outgoing Interest?
+  const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
+  pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
+      outRecords.begin(), outRecords.end(),
+      [] (const pit::OutRecord& a, const pit::OutRecord& b) {
+        return a.getLastRenewed() < b.getLastRenewed();
+      });
+  BOOST_ASSERT(lastOutgoing != outRecords.end()); // otherwise it's new PIT entry
 
-public:
-  static const Name STRATEGY_NAME;
-
-private:
-  RetransmissionSuppression m_retransmissionSuppression;
-};
+  time::steady_clock::TimePoint now = time::steady_clock::now();
+  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing->getLastRenewed();
+  bool shouldSuppress = sinceLastOutgoing < MIN_RETRANSMISSION_INTERVAL;
+  return shouldSuppress ? SUPPRESS : FORWARD;
+}
 
 } // namespace fw
 } // namespace nfd
-
-#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP

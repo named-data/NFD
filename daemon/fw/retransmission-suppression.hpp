@@ -23,42 +23,44 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
-#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+#ifndef NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP
+#define NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP
 
 #include "strategy.hpp"
-#include "retransmission-suppression.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \brief Best Route strategy version 2
- *
- *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
- *  After that, it recognizes consumer retransmission:
- *  if a similar Interest arrives from any downstream after MIN_RETRANSMISSION_INTERVAL,
- *  the strategy forwards the Interest again to the lowest-cost nexthop (except downstream)
- *  that is not previously used. If all nexthops have been used, the strategy starts over.
+/** \brief helper for consumer retransmission suppression
  */
-class BestRouteStrategy2 : public Strategy
+class RetransmissionSuppression : noncopyable
 {
 public:
-  BestRouteStrategy2(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  enum Result {
+    /** \brief Interest is new (not a retransmission)
+     */
+    NEW,
 
-  virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
+    /** \brief Interest is retransmission and should be forwarded
+     */
+    FORWARD,
 
-public:
-  static const Name STRATEGY_NAME;
+    /** \brief Interest is retransmission and should be suppressed
+     */
+    SUPPRESS
+  };
 
-private:
-  RetransmissionSuppression m_retransmissionSuppression;
+  /** \brief determines whether Interest is a retransmission,
+   *         and if so, whether it shall be forwarded or suppressed
+   */
+  Result
+  decide(const Face& inFace, const Interest& interest, const pit::Entry& pitEntry);
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  static const time::milliseconds MIN_RETRANSMISSION_INTERVAL;
 };
 
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
+#endif // NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP

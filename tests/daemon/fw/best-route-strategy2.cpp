@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -62,13 +62,13 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.01);
+    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.01);
   const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
+    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
   const time::nanoseconds RETRANSMISSION_70P = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 0.7); // 70%
+    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.7); // 70%
   const time::nanoseconds RETRANSMISSION_2 = time::duration_cast<time::nanoseconds>(
-    fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 2.0); // x2
+    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 2.0); // x2
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = scheduler::schedule(RETRANSMISSION_10P, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, fw::BestRouteStrategy2::MIN_RETRANSMISSION_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 16);
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
