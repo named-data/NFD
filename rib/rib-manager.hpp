@@ -130,17 +130,17 @@ private:
   void
   onCommandError(uint32_t code, const std::string& error,
                  const shared_ptr<const Interest>& request,
-                 const FaceEntry& faceEntry);
+                 const Route& route);
 
   void
   onRegSuccess(const shared_ptr<const Interest>& request,
                const ControlParameters& parameters,
-               const FaceEntry& faceEntry);
+               const Route& route);
 
   void
   onUnRegSuccess(const shared_ptr<const Interest>& request,
                  const ControlParameters& parameters,
-                 const FaceEntry& faceEntry);
+                 const Route& route);
 
   void
   onNrdCommandPrefixAddNextHopSuccess(const Name& prefix);

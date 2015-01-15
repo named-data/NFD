@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_FACE_ENTRY_HPP
-#define NFD_RIB_FACE_ENTRY_HPP
+#ifndef NFD_RIB_ROUTE_HPP
+#define NFD_RIB_ROUTE_HPP
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
@@ -32,13 +32,12 @@
 namespace nfd {
 namespace rib {
 
-/** \class FaceEntry
- *  \brief represents a route for a name prefix
+/** \brief represents a route for a name prefix
  */
-class FaceEntry
+class Route
 {
 public:
-  FaceEntry()
+  Route()
     : faceId(0)
     , origin(0)
     , flags(0)
@@ -73,22 +72,22 @@ private:
 };
 
 inline bool
-compareFaceIdAndOrigin(const FaceEntry& entry1, const FaceEntry& entry2)
+compareFaceIdAndOrigin(const Route& lhs, const Route& rhs)
 {
-  return (entry1.faceId == entry2.faceId && entry1.origin == entry2.origin);
+  return (lhs.faceId == rhs.faceId && lhs.origin == rhs.origin);
 }
 
 inline bool
-compareFaceId(const FaceEntry& entry, const uint64_t faceId)
+compareFaceId(const Route& route, const uint64_t faceId)
 {
-  return (entry.faceId == faceId);
+  return (route.faceId == faceId);
 }
 
 // Method definition in rib-entry.cpp
 std::ostream&
-operator<<(std::ostream& os, const FaceEntry& entry);
+operator<<(std::ostream& os, const Route& route);
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_RIB_ENTRY_HPP
+#endif // NFD_RIB_ROUTE_HPP

@@ -27,10 +27,10 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
-inline FaceEntry
-createFaceEntry(uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
+inline Route
+createRoute(uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
 {
-  FaceEntry temp;
+  Route temp;
   temp.faceId = faceId;
   temp.origin = origin;
   temp.cost = cost;
@@ -73,25 +73,25 @@ class FibUpdatesFixture : public nfd::tests::BaseFixture
 {
 public:
   void
-  insertFaceEntry(const Name& name, uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
+  insertRoute(const Name& name, uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
   {
-    rib::FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
-    faceEntry.origin = origin;
-    faceEntry.cost = cost;
-    faceEntry.flags = flags;
+    rib::Route route;
+    route.faceId = faceId;
+    route.origin = origin;
+    route.cost = cost;
+    route.flags = flags;
 
-    rib.insert(name, faceEntry);
+    rib.insert(name, route);
   }
 
   void
-  eraseFaceEntry(const Name& name, uint64_t faceId, uint64_t origin)
+  eraseRoute(const Name& name, uint64_t faceId, uint64_t origin)
   {
-    rib::FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
-    faceEntry.origin = origin;
+    rib::Route route;
+    route.faceId = faceId;
+    route.origin = origin;
 
-    rib.erase(name, faceEntry);
+    rib.erase(name, route);
   }
 
 

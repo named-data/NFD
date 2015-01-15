@@ -61,24 +61,21 @@ RibStatusPublisher::generate(ndn::EncodingBuffer& outBuffer)
       size_t ribEntryLength = 0;
 
       ndn::nfd::RibEntry tlvEntry;
-      const RibEntry::FaceList& faces = entry.getFaces();
 
-      for (RibEntry::FaceList::const_iterator faceIt = faces.begin();
-           faceIt != faces.end(); ++faceIt)
+      for (const Route& route : entry)
         {
-          const FaceEntry& face = *faceIt;
+          ndn::nfd::Route routeEle;
+          routeEle.setFaceId(route.faceId)
+                  .setOrigin(route.origin)
+                  .setCost(route.cost)
+                  .setFlags(route.flags);
 
-          ndn::nfd::Route route;
-          route
-            .setFaceId(face.faceId)
-            .setOrigin(face.origin)
-            .setCost(face.cost)
-            .setFlags(face.flags);
-          if (face.expires < time::steady_clock::TimePoint::max()) {
-            route.setExpirationPeriod(time::duration_cast<time::milliseconds>
-                                      (face.expires - time::steady_clock::now()));
+          if (route.expires < time::steady_clock::TimePoint::max()) {
+            routeEle.setExpirationPeriod(time::duration_cast<time::milliseconds>(
+              route.expires - time::steady_clock::now()));
           }
-          tlvEntry.addRoute(route);
+
+          tlvEntry.addRoute(routeEle);
         }
 
       tlvEntry.setName(prefix);

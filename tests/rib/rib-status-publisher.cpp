@@ -39,13 +39,13 @@ BOOST_AUTO_TEST_CASE(Basic)
 {
   Rib rib;
 
-  FaceEntry entry;
+  Route route;
   Name name("/");
-  entry.faceId = 1;
-  entry.origin = 128;
-  entry.cost = 32;
-  entry.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
-  rib.insert(name, entry);
+  route.faceId = 1;
+  route.origin = 128;
+  route.cost = 32;
+  route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
+  rib.insert(name, route);
 
   ndn::KeyChain keyChain;
   shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   face->processEvents(time::milliseconds(1));
 
   BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
-  decodeRibEntryBlock(face->sentDatas[0], name, entry);
+  decodeRibEntryBlock(face->sentDatas[0], name, route);
 }
 
 

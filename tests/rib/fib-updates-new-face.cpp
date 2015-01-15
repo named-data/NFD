@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_SUITE(NewFace)
 BOOST_AUTO_TEST_CASE(Basic)
 {
   // should generate 1 update
-  insertFaceEntry("/", 1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/", 1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   Rib::FibUpdateList updates = rib.getFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.clearFibUpdates();
 
   // should generate 2 updates
-  insertFaceEntry("/a", 2, 0, 50, 0);
+  insertRoute("/a", 2, 0, 50, 0);
 
   updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.clearFibUpdates();
 
   // should generate 2 updates
-  insertFaceEntry("/a/b", 3, 0, 10, 0);
+  insertRoute("/a/b", 3, 0, 10, 0);
 
   updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
@@ -96,27 +96,27 @@ BOOST_AUTO_TEST_CASE(Basic)
 
 BOOST_AUTO_TEST_CASE(UpdateOnLowerCostNoChildInherit)
 {
-  insertFaceEntry("/", 1, 0, 50, 0);
+  insertRoute("/", 1, 0, 50, 0);
 
   // Clear any updates generated from previous insertions
   rib.clearFibUpdates();
 
   // Should generate 0 updates
-  insertFaceEntry("/", 1, 128, 75, 0);
+  insertRoute("/", 1, 128, 75, 0);
 
   BOOST_CHECK_EQUAL(rib.getFibUpdates().size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(UpdateOnLowerCostOnly)
 {
-  insertFaceEntry("/",  1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a", 2, 0, 10, 0);
+  insertRoute("/",  1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a", 2, 0, 10, 0);
 
   // Clear updates generated from previous insertions
   rib.clearFibUpdates();
 
   // Should generate 2 updates: to update cost for face 1 on / and /a
-  insertFaceEntry("/", 1, 0, 25, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/", 1, 0, 25, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   Rib::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
@@ -137,23 +137,23 @@ BOOST_AUTO_TEST_CASE(UpdateOnLowerCostOnly)
   rib.clearFibUpdates();
 
   // Should generate 0 updates
-  insertFaceEntry("/", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   BOOST_CHECK_EQUAL(rib.getFibUpdates().size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(NoCaptureChangeWithoutChildInherit)
 {
-  insertFaceEntry("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a/b", 3, 0, 10, 0);
-  insertFaceEntry("/a/c", 4, 0, 10, ndn::nfd::ROUTE_FLAG_CAPTURE);
+  insertRoute("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a/b", 3, 0, 10, 0);
+  insertRoute("/a/c", 4, 0, 10, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   // Clear updates generated from previous insertions
   rib.clearFibUpdates();
 
   // Should generate 1 update: 1 to add face 5 to /a
-  insertFaceEntry("/a", 5, 128, 50, 0);
+  insertRoute("/a", 5, 128, 50, 0);
 
   const Rib::FibUpdateList& updates = rib.getFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 1);
@@ -168,17 +168,17 @@ BOOST_AUTO_TEST_CASE(NoCaptureChangeWithoutChildInherit)
 
 BOOST_AUTO_TEST_CASE(NoCaptureChangeWithChildInherit)
 {
-  insertFaceEntry("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a/b", 3, 0, 10, 0);
-  insertFaceEntry("/a/c", 4, 0, 10, ndn::nfd::ROUTE_FLAG_CAPTURE);
+  insertRoute("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a/b", 3, 0, 10, 0);
+  insertRoute("/a/c", 4, 0, 10, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   // Clear updates generated from previous insertions
   rib.clearFibUpdates();
 
-  // Should generate 2 updates: one for the inserted face and
-  // one to add face to /a/b
-  insertFaceEntry("/a", 4, 128, 5, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  // Should generate 2 updates: one for the inserted route and
+  // one to add route to /a/b
+  insertRoute("/a", 4, 128, 5, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
 
   Rib::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 2);
@@ -198,18 +198,18 @@ BOOST_AUTO_TEST_CASE(NoCaptureChangeWithChildInherit)
 
 BOOST_AUTO_TEST_CASE(CaptureTurnedOnWithoutChildInherit)
 {
-  insertFaceEntry("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a/b", 3, 0, 10, 0);
-  insertFaceEntry("/a/c", 4, 0, 10, 0);
+  insertRoute("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a/b", 3, 0, 10, 0);
+  insertRoute("/a/c", 4, 0, 10, 0);
 
   // Clear updates generated from previous insertions
   rib.clearFibUpdates();
 
   // Should generate 3 updates:
-  // - one for the inserted face for /a and
+  // - one for the inserted route for /a and
   // - two to remove face1 from /a/b and /a/c
-  insertFaceEntry("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CAPTURE);
+  insertRoute("/a", 1, 128, 50, ndn::nfd::ROUTE_FLAG_CAPTURE);
 
   Rib::FibUpdateList updates = getSortedFibUpdates();
   BOOST_REQUIRE_EQUAL(updates.size(), 3);
@@ -233,18 +233,18 @@ BOOST_AUTO_TEST_CASE(CaptureTurnedOnWithoutChildInherit)
 
 BOOST_AUTO_TEST_CASE(CaptureTurnedOnWithChildInherit)
 {
-  insertFaceEntry("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-  insertFaceEntry("/a/b", 3, 0, 10, 0);
-  insertFaceEntry("/a/c", 4, 0, 10, 0);
+  insertRoute("/",    1, 0, 50, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a",   2, 0, 10, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  insertRoute("/a/b", 3, 0, 10, 0);
+  insertRoute("/a/c", 4, 0, 10, 0);
 
   // Clear updates generated from previous insertions
   rib.clearFibUpdates();
 
   // Should generate 2 updates:
-  // - one for the inserted face for /a and
+  // - one for the inserted route for /a and
   // - one to update /a/b with the new cost
-  insertFaceEntry("/a", 1, 128, 50, (ndn::nfd::ROUTE_FLAG_CAPTURE |
+  insertRoute("/a", 1, 128, 50, (ndn::nfd::ROUTE_FLAG_CAPTURE |
                                      ndn::nfd::ROUTE_FLAG_CHILD_INHERIT));
 
   Rib::FibUpdateList updates = getSortedFibUpdates();

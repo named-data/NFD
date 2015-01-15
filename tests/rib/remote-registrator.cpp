@@ -104,10 +104,10 @@ public:
   {
     BOOST_CHECK_EQUAL(addIdentity(identity), true);
 
-    FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
+    Route route;
+    route.faceId = faceId;
 
-    rib.insert(identity.append(appName), faceEntry);
+    rib.insert(identity.append(appName), route);
 
     advanceClocks(time::milliseconds(1));
   }
@@ -117,10 +117,10 @@ public:
                              name::Component appName = DEFAULT_APP_NAME,
                              uint64_t faceId = 0)
   {
-    FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
+    Route route;
+    route.faceId = faceId;
 
-    rib.insert(identity.append(appName), faceEntry);
+    rib.insert(identity.append(appName), route);
 
     advanceClocks(time::milliseconds(1));
   }
@@ -132,10 +132,10 @@ public:
   {
     BOOST_CHECK_EQUAL(addIdentity(identity), true);
 
-    FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
+    Route route;
+    route.faceId = faceId;
 
-    rib.erase(identity.append(appName), faceEntry);
+    rib.erase(identity.append(appName), route);
 
     advanceClocks(time::milliseconds(1));
   }
@@ -145,10 +145,10 @@ public:
                             name::Component appName = DEFAULT_APP_NAME,
                             uint64_t faceId = 0)
   {
-    FaceEntry faceEntry;
-    faceEntry.faceId = faceId;
+    Route route;
+    route.faceId = faceId;
 
-    rib.erase(identity.append(appName), faceEntry);
+    rib.erase(identity.append(appName), route);
 
     advanceClocks(time::milliseconds(1));
   }
@@ -164,7 +164,7 @@ public:
   void
   connectToHub()
   {
-    rib.insert(COMMAND_PREFIX, FaceEntry());
+    rib.insert(COMMAND_PREFIX, Route());
 
     advanceClocks(time::milliseconds(1));
   }
@@ -172,7 +172,7 @@ public:
   void
   disconnectToHub()
   {
-    rib.erase(COMMAND_PREFIX, FaceEntry());
+    rib.erase(COMMAND_PREFIX, Route());
 
     advanceClocks(time::milliseconds(1));
   }

@@ -45,7 +45,7 @@ class RibStatusPublisherFixture : public nfd::tests::BaseFixture
 {
 public:
   static void
-  validateRibEntry(const Block& block, const Name& referenceName, const FaceEntry& referenceFace)
+  validateRibEntry(const Block& block, const Name& referenceName, const Route& referenceRoute)
   {
     ndn::nfd::RibEntry entry;
     BOOST_REQUIRE_NO_THROW(entry.wireDecode(block));
@@ -55,14 +55,14 @@ public:
     std::list<ndn::nfd::Route> routes = entry.getRoutes();
 
     std::list<ndn::nfd::Route>::iterator it = routes.begin();
-    BOOST_CHECK_EQUAL(it->getFaceId(), referenceFace.faceId);
-    BOOST_CHECK_EQUAL(it->getOrigin(), referenceFace.origin);
-    BOOST_CHECK_EQUAL(it->getCost(), referenceFace.cost);
-    BOOST_CHECK_EQUAL(it->getFlags(), referenceFace.flags);
+    BOOST_CHECK_EQUAL(it->getFaceId(), referenceRoute.faceId);
+    BOOST_CHECK_EQUAL(it->getOrigin(), referenceRoute.origin);
+    BOOST_CHECK_EQUAL(it->getCost(), referenceRoute.cost);
+    BOOST_CHECK_EQUAL(it->getFlags(), referenceRoute.flags);
   }
 
   static void
-  decodeRibEntryBlock(const Data& data, const Name& referenceName, const FaceEntry& referenceFace)
+  decodeRibEntryBlock(const Data& data, const Name& referenceName, const Route& referenceRoute)
   {
     ndn::EncodingBuffer buffer;
 
@@ -81,7 +81,7 @@ public:
       BOOST_FAIL("expected RibEntry, got type #" << i->type());
     }
     else {
-      validateRibEntry(*i, referenceName, referenceFace);
+      validateRibEntry(*i, referenceName, referenceRoute);
     }
   }
 };

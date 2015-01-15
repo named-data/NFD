@@ -33,9 +33,9 @@ namespace nfd {
 namespace rib {
 
 static inline bool
-sortFace(const FaceEntry& entry1, const FaceEntry& entry2)
+sortRoutes(const Route& lhs, const Route& rhs)
 {
-  return entry1.faceId < entry2.faceId;
+  return lhs.faceId < rhs.faceId;
 }
 
 static inline bool
@@ -73,29 +73,29 @@ Rib::find(const Name& prefix) const
   return m_rib.find(prefix);
 }
 
-FaceEntry*
-Rib::find(const Name& prefix, const FaceEntry& face) const
+Route*
+Rib::find(const Name& prefix, const Route& route) const
 {
   RibTable::const_iterator ribIt = m_rib.find(prefix);
 
   // Name prefix exists
   if (ribIt != m_rib.end())
     {
-      shared_ptr<RibEntry> entry(ribIt->second);
+      shared_ptr<RibEntry> entry = ribIt->second;
 
-      RibEntry::iterator faceIt = std::find_if(entry->begin(), entry->end(),
-                                                     bind(&compareFaceIdAndOrigin, _1, face));
+      RibEntry::iterator routeIt = entry->findRoute(route);
 
-      if (faceIt != entry->end())
+      if (routeIt != entry->end())
         {
-          return &((*faceIt));
+          return &((*routeIt));
         }
     }
-  return 0;
+
+  return nullptr;
 }
 
 void
-Rib::insert(const Name& prefix, const FaceEntry& face)
+Rib::insert(const Name& prefix, const Route& route)
 {
   RibTable::iterator ribIt = m_rib.find(prefix);
 
@@ -104,49 +104,47 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
     {
       shared_ptr<RibEntry> entry(ribIt->second);
 
-      RibEntry::iterator faceIt = std::find_if(entry->getFaces().begin(),
-                                               entry->getFaces().end(),
-                                               bind(&compareFaceIdAndOrigin, _1, face));
+      RibEntry::iterator routeIt = entry->findRoute(route);
 
-      if (faceIt == entry->end())
+      if (routeIt == entry->end())
         {
-          // Will the new face change the namespace's capture flag?
-          bool captureWasTurnedOn = (entry->hasCapture() == false && isCaptureFlagSet(face.flags));
+          // Will the new route change the namespace's capture flag?
+          bool captureWasTurnedOn = (entry->hasCapture() == false && isCaptureFlagSet(route.flags));
 
-          // New face
-          entry->insertFace(face);
+          // New route
+          entry->insertRoute(route);
           m_nItems++;
 
           // Register with face lookup table
-          m_faceMap[face.faceId].push_back(entry);
+          m_faceMap[route.faceId].push_back(entry);
 
-          createFibUpdatesForNewFaceEntry(*entry, face, captureWasTurnedOn);
+          createFibUpdatesForNewRoute(*entry, route, captureWasTurnedOn);
         }
-      else // Entry exists, update fields
+      else // Route exists, update fields
         {
           // First cancel old scheduled event, if any, then set the EventId to new one
-          if (static_cast<bool>(faceIt->getExpirationEvent()))
+          if (static_cast<bool>(routeIt->getExpirationEvent()))
             {
               NFD_LOG_TRACE("Cancelling expiration event for " << entry->getName() << " "
-                                                               << *faceIt);
-              scheduler::cancel(faceIt->getExpirationEvent());
+                                                               << *routeIt);
+              scheduler::cancel(routeIt->getExpirationEvent());
             }
 
           // No checks are required here as the iterator needs to be updated in all cases.
-          faceIt->setExpirationEvent(face.getExpirationEvent());
+          routeIt->setExpirationEvent(route.getExpirationEvent());
 
           // Save flags for update processing
-          uint64_t previousFlags = faceIt->flags;
+          uint64_t previousFlags = routeIt->flags;
 
-          // If the entry's cost didn't change and child inherit is not set,
+          // If the route's cost didn't change and child inherit is not set,
           // no need to traverse subtree.
-          uint64_t previousCost = faceIt->cost;
+          uint64_t previousCost = routeIt->cost;
 
-          faceIt->flags = face.flags;
-          faceIt->cost = face.cost;
-          faceIt->expires = face.expires;
+          routeIt->flags = route.flags;
+          routeIt->cost = route.cost;
+          routeIt->expires = route.expires;
 
-          createFibUpdatesForUpdatedEntry(*entry, face, previousFlags, previousCost);
+          createFibUpdatesForUpdatedRoute(*entry, route, previousFlags, previousCost);
         }
     }
   else // New name prefix
@@ -157,7 +155,7 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
       m_nItems++;
 
       entry->setName(prefix);
-      entry->insertFace(face);
+      entry->insertRoute(route);
 
       // Find prefix's parent
       shared_ptr<RibEntry> parent = findParent(prefix);
@@ -185,9 +183,9 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
         }
 
       // Register with face lookup table
-      m_faceMap[face.faceId].push_back(entry);
+      m_faceMap[route.faceId].push_back(entry);
 
-      createFibUpdatesForNewRibEntry(*entry, face);
+      createFibUpdatesForNewRibEntry(*entry, route);
 
       // do something after inserting an entry
       afterInsertEntry(prefix);
@@ -195,7 +193,7 @@ Rib::insert(const Name& prefix, const FaceEntry& face)
 }
 
 void
-Rib::erase(const Name& prefix, const FaceEntry& face)
+Rib::erase(const Name& prefix, const Route& route)
 {
   RibTable::iterator ribIt = m_rib.find(prefix);
 
@@ -206,42 +204,42 @@ Rib::erase(const Name& prefix, const FaceEntry& face)
 
       const bool hadCapture = entry->hasCapture();
 
-      // Need to copy face to do FIB updates with correct cost and flags since nfdc does not
+      // Need to copy route to do FIB updates with correct cost and flags since nfdc does not
       // pass flags or cost
-      RibEntry::iterator faceIt = entry->findFace(face);
+      RibEntry::iterator routeIt = entry->findRoute(route);
 
-      if (faceIt != entry->end())
+      if (routeIt != entry->end())
         {
-          FaceEntry faceToErase = *faceIt;
-          faceToErase.flags = faceIt->flags;
-          faceToErase.cost = faceIt->cost;
+          Route routeToErase = *routeIt;
+          routeToErase.flags = routeIt->flags;
+          routeToErase.cost = routeIt->cost;
 
-          entry->eraseFace(faceIt);
+          entry->eraseRoute(routeIt);
 
           m_nItems--;
 
           const bool captureWasTurnedOff = (hadCapture && !entry->hasCapture());
 
-          createFibUpdatesForErasedFaceEntry(*entry, faceToErase, captureWasTurnedOff);
+          createFibUpdatesForErasedRoute(*entry, routeToErase, captureWasTurnedOff);
 
           // If this RibEntry no longer has this faceId, unregister from face lookup table
-          if (!entry->hasFaceId(face.faceId))
+          if (!entry->hasFaceId(route.faceId))
             {
-              m_faceMap[face.faceId].remove(entry);
+              m_faceMap[route.faceId].remove(entry);
             }
           else
             {
               // The RibEntry still has the face ID; need to update FIB
-              // with lowest cost for the same face instead of removing the face from the FIB
-              shared_ptr<FaceEntry> lowCostFace = entry->getFaceWithLowestCostByFaceId(face.faceId);
+              // with lowest cost for the same route instead of removing the route from the FIB
+              shared_ptr<Route> lowCostRoute = entry->getRouteWithLowestCostByFaceId(route.faceId);
 
-              BOOST_ASSERT(static_cast<bool>(lowCostFace));
+              BOOST_ASSERT(static_cast<bool>(lowCostRoute));
 
-              createFibUpdatesForNewFaceEntry(*entry, *lowCostFace, false);
+              createFibUpdatesForNewRoute(*entry, *lowCostRoute, false);
             }
 
-          // If a RibEntry's facelist is empty, remove it from the tree
-          if (entry->getFaces().size() == 0)
+          // If a RibEntry's route list is empty, remove it from the tree
+          if (entry->getRoutes().size() == 0)
             {
               eraseEntry(ribIt);
             }
@@ -263,41 +261,34 @@ Rib::erase(const uint64_t faceId)
   RibEntryList& ribEntries = lookupIt->second;
 
   // For each RIB entry that has faceId, remove the face from the entry
-  for (RibEntryList::iterator entryIt = ribEntries.begin(); entryIt != ribEntries.end(); ++entryIt)
+  for (shared_ptr<RibEntry>& entry : ribEntries)
     {
-      shared_ptr<RibEntry> entry = *entryIt;
-
       const bool hadCapture = entry->hasCapture();
 
-      // Find the faces in the entry
-      for (RibEntry::iterator faceIt = entry->begin(); faceIt != entry->end(); ++faceIt)
+      // Find the routes in the entry
+      for (RibEntry::iterator routeIt = entry->begin(); routeIt != entry->end(); ++routeIt)
         {
-          if (faceIt->faceId == faceId)
+          if (routeIt->faceId == faceId)
             {
-              FaceEntry copy = *faceIt;
+              Route copy = *routeIt;
 
-              faceIt = entry->eraseFace(faceIt);
+              routeIt = entry->eraseRoute(routeIt);
               m_nItems--;
 
               const bool captureWasTurnedOff = (hadCapture && !entry->hasCapture());
-              createFibUpdatesForErasedFaceEntry(*entry, copy, captureWasTurnedOff);
+              createFibUpdatesForErasedRoute(*entry, copy, captureWasTurnedOff);
             }
         }
 
-        // If a RibEntry's facelist is empty, remove it from the tree
-        if (entry->getFaces().size() == 0)
+        // If a RibEntry's route list is empty, remove it from the tree
+        if (entry->getRoutes().size() == 0)
           {
             eraseEntry(m_rib.find(entry->getName()));
           }
     }
 
   // Face no longer exists, remove from face lookup table
-  FaceLookupTable::iterator entryToDelete = m_faceMap.find(faceId);
-
-  if (entryToDelete != m_faceMap.end())
-    {
-      m_faceMap.erase(entryToDelete);
-    }
+  m_faceMap.erase(lookupIt);
 }
 
 shared_ptr<RibEntry>
@@ -399,8 +390,7 @@ compareFibUpdates(const shared_ptr<const FibUpdate> lhs, const shared_ptr<const 
 void
 Rib::insertFibUpdate(shared_ptr<FibUpdate> update)
 {
-  // If an update with the same name and face already exists,
-  // replace it
+  // If an update with the same name and Face ID already exists, replace it
   FibUpdateList::iterator it = std::find_if(m_fibUpdateList.begin(), m_fibUpdateList.end(),
                                             bind(&compareFibUpdates, _1, update));
 
@@ -419,108 +409,107 @@ Rib::insertFibUpdate(shared_ptr<FibUpdate> update)
 }
 
 void
-Rib::createFibUpdatesForNewRibEntry(RibEntry& entry, const FaceEntry& face)
+Rib::createFibUpdatesForNewRibEntry(RibEntry& entry, const Route& route)
 {
   // Create FIB update for new entry
-  insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), face.faceId, face.cost));
+  insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), route.faceId, route.cost));
 
   // No flags are set
-  if (!isAnyFlagSet(face.flags))
+  if (!isAnyFlagSet(route.flags))
     {
-      // Add ancestor faces to self
-      addInheritedFacesToEntry(entry, getAncestorFaces(entry));
+      // Add ancestor routes to self
+      addInheritedRoutesToEntry(entry, getAncestorRoutes(entry));
     }
-  else if (areBothFlagsSet(face.flags))
+  else if (areBothFlagsSet(route.flags))
     {
-      // Add face to children
-      FaceSet facesToAdd;
-      facesToAdd.insert(face);
+      // Add route to children
+      RouteSet routesToAdd;
+      routesToAdd.insert(route);
 
-      // Remove faces blocked by capture and add self to children
-      modifyChildrensInheritedFaces(entry, facesToAdd, getAncestorFaces(entry));
+      // Remove routes blocked by capture and add self to children
+      modifyChildrensInheritedRoutes(entry, routesToAdd, getAncestorRoutes(entry));
     }
-  else if (isChildInheritFlagSet(face.flags))
+  else if (isChildInheritFlagSet(route.flags))
     {
-      FaceSet ancestorFaces = getAncestorFaces(entry);
+      RouteSet ancestorRoutes = getAncestorRoutes(entry);
 
-      // Add ancestor faces to self
-      addInheritedFacesToEntry(entry, ancestorFaces);
+      // Add ancestor routes to self
+      addInheritedRoutesToEntry(entry, ancestorRoutes);
 
-      // If there is an ancestor face which is the same as the new face, replace it
-      // with the new face
-      FaceSet::iterator it = ancestorFaces.find(face);
+      // If there is an ancestor route with the same Face ID as the new route, replace it
+      // with the new route
+      RouteSet::iterator it = ancestorRoutes.find(route);
 
-      // There is a face that needs to be overwritten, erase and then replace
-      if (it != ancestorFaces.end())
+      // There is a route that needs to be overwritten, erase and then replace
+      if (it != ancestorRoutes.end())
         {
-          ancestorFaces.erase(it);
+          ancestorRoutes.erase(it);
         }
 
-      // Add new face to ancestor list so it can be added to children
-      ancestorFaces.insert(face);
+      // Add new route to ancestor list so it can be added to children
+      ancestorRoutes.insert(route);
 
-      // Add ancestor faces to children
-      modifyChildrensInheritedFaces(entry, ancestorFaces, FaceSet());
+      // Add ancestor routes to children
+      modifyChildrensInheritedRoutes(entry, ancestorRoutes, RouteSet());
     }
-  else if (isCaptureFlagSet(face.flags))
+  else if (isCaptureFlagSet(route.flags))
     {
-      // Remove faces blocked by capture
-      modifyChildrensInheritedFaces(entry, FaceSet(), getAncestorFaces(entry));
+      // Remove routes blocked by capture
+      modifyChildrensInheritedRoutes(entry, RouteSet(), getAncestorRoutes(entry));
     }
 }
 
 void
-Rib::createFibUpdatesForNewFaceEntry(RibEntry& entry, const FaceEntry& face,
-                                     bool captureWasTurnedOn)
+Rib::createFibUpdatesForNewRoute(RibEntry& entry, const Route& route, bool captureWasTurnedOn)
 {
-  // Only update if the new face has a lower cost than a previously installed face
-  shared_ptr<FaceEntry> prevFace = entry.getFaceWithLowestCostAndChildInheritByFaceId(face.faceId);
+  // Only update if the new route has a lower cost than a previously installed route
+  shared_ptr<Route> prevRoute = entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
 
-  FaceSet facesToAdd;
-  if (isChildInheritFlagSet(face.flags))
+  RouteSet routesToAdd;
+  if (isChildInheritFlagSet(route.flags))
     {
-      // Add to children if this new face doesn't override a previous lower cost, or
-      // add to children if this new is lower cost than a previous face.
-      // Less than equal, since entry may find this face
-      if (!static_cast<bool>(prevFace) || face.cost <= prevFace->cost)
+      // Add to children if this new route doesn't override a previous lower cost, or
+      // add to children if this new route is lower cost than a previous route.
+      // Less than equal, since entry may find this route
+      if (prevRoute == nullptr || route.cost <= prevRoute->cost)
         {
           // Add self to children
-          facesToAdd.insert(face);
+          routesToAdd.insert(route);
         }
     }
 
-  FaceSet facesToRemove;
+  RouteSet routesToRemove;
   if (captureWasTurnedOn)
     {
       // Capture flag on
-      facesToRemove = getAncestorFaces(entry);
+      routesToRemove = getAncestorRoutes(entry);
 
-      // Remove ancestor faces from self
-      removeInheritedFacesFromEntry(entry, facesToRemove);
+      // Remove ancestor routes from self
+      removeInheritedRoutesFromEntry(entry, routesToRemove);
     }
 
-  modifyChildrensInheritedFaces(entry, facesToAdd, facesToRemove);
+  modifyChildrensInheritedRoutes(entry, routesToAdd, routesToRemove);
 
-  // If another face with same faceId and lower cost, don't update.
+  // If another route with same faceId and lower cost, don't update.
   // Must be done last so that add updates replace removal updates
   // Create FIB update for new entry
-  if (face.cost <= entry.getFaceWithLowestCostByFaceId(face.faceId)->cost)
+  if (route.cost <= entry.getRouteWithLowestCostByFaceId(route.faceId)->cost)
     {
-      insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), face.faceId, face.cost));
+      insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), route.faceId, route.cost));
     }
 }
 
 void
-Rib::createFibUpdatesForUpdatedEntry(RibEntry& entry, const FaceEntry& face,
+Rib::createFibUpdatesForUpdatedRoute(RibEntry& entry, const Route& route,
                                      const uint64_t previousFlags, const uint64_t previousCost)
 {
-  const bool costDidChange = (face.cost != previousCost);
+  const bool costDidChange = (route.cost != previousCost);
 
-  // Look for an installed face with the lowest cost and child inherit set
-  shared_ptr<FaceEntry> prevFace = entry.getFaceWithLowestCostAndChildInheritByFaceId(face.faceId);
+  // Look for the installed route with the lowest cost and child inherit set
+  shared_ptr<Route> prevRoute = entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
 
   // No flags changed and cost didn't change, no change in FIB
-  if (face.flags == previousFlags && !costDidChange)
+  if (route.flags == previousFlags && !costDidChange)
     {
       return;
     }
@@ -528,32 +517,32 @@ Rib::createFibUpdatesForUpdatedEntry(RibEntry& entry, const FaceEntry& face,
   // Cost changed so create update for the entry itself
   if (costDidChange)
     {
-      // Create update if this face's cost is lower than other faces
-       if (face.cost <= entry.getFaceWithLowestCostByFaceId(face.faceId)->cost)
+      // Create update if this route's cost is lower than other routes
+       if (route.cost <= entry.getRouteWithLowestCostByFaceId(route.faceId)->cost)
         {
           // Create FIB update for the updated entry
-         insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), face.faceId, face.cost));
+         insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), route.faceId, route.cost));
         }
-      else if (previousCost < entry.getFaceWithLowestCostByFaceId(face.faceId)->cost)
+      else if (previousCost < entry.getRouteWithLowestCostByFaceId(route.faceId)->cost)
         {
-          // Create update if this face used to be the lowest face but is no longer
-          // the lowest cost face.
-          insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), prevFace->faceId,
-                                                                          prevFace->cost));
+          // Create update if this route used to be the lowest cost route but is no longer
+          // the lowest cost route.
+          insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), prevRoute->faceId,
+                                                                      prevRoute->cost));
         }
 
-      // If another face with same faceId and lower cost and ChildInherit exists,
+      // If another route with same faceId and lower cost and ChildInherit exists,
       // don't update children.
-      if (!static_cast<bool>(prevFace) || face.cost <= prevFace->cost)
+      if (prevRoute == nullptr || route.cost <= prevRoute->cost)
         {
           // If no flags changed but child inheritance is set, need to update children
           // with new cost
-          if ((face.flags == previousFlags) && isChildInheritFlagSet(face.flags))
+          if ((route.flags == previousFlags) && isChildInheritFlagSet(route.flags))
           {
             // Add self to children
-            FaceSet facesToAdd;
-            facesToAdd.insert(face);
-            modifyChildrensInheritedFaces(entry, facesToAdd, FaceSet());
+            RouteSet routesToAdd;
+            routesToAdd.insert(route);
+            modifyChildrensInheritedRoutes(entry, routesToAdd, RouteSet());
 
             return;
           }
@@ -561,140 +550,140 @@ Rib::createFibUpdatesForUpdatedEntry(RibEntry& entry, const FaceEntry& face,
     }
 
   // Child inherit was turned on
-  if (!isChildInheritFlagSet(previousFlags) && isChildInheritFlagSet(face.flags))
+  if (!isChildInheritFlagSet(previousFlags) && isChildInheritFlagSet(route.flags))
     {
-      // If another face with same faceId and lower cost and ChildInherit exists,
+      // If another route with same faceId and lower cost and ChildInherit exists,
       // don't update children.
-      if (!static_cast<bool>(prevFace) || face.cost <= prevFace->cost)
+      if (prevRoute == nullptr || route.cost <= prevRoute->cost)
         {
           // Add self to children
-          FaceSet facesToAdd;
-          facesToAdd.insert(face);
-          modifyChildrensInheritedFaces(entry, facesToAdd, FaceSet());
+          RouteSet routesToAdd;
+          routesToAdd.insert(route);
+          modifyChildrensInheritedRoutes(entry, routesToAdd, RouteSet());
         }
 
     } // Child inherit was turned off
-  else if (isChildInheritFlagSet(previousFlags) && !isChildInheritFlagSet(face.flags))
+  else if (isChildInheritFlagSet(previousFlags) && !isChildInheritFlagSet(route.flags))
     {
       // Remove self from children
-      FaceSet facesToRemove;
-      facesToRemove.insert(face);
+      RouteSet routesToRemove;
+      routesToRemove.insert(route);
 
-      FaceSet facesToAdd;
-      // If another face with same faceId and ChildInherit exists, update children with this face.
-      if (static_cast<bool>(prevFace))
+      RouteSet routesToAdd;
+      // If another route with same faceId and ChildInherit exists, update children with this route.
+      if (prevRoute != nullptr)
         {
-          facesToAdd.insert(*prevFace);
+          routesToAdd.insert(*prevRoute);
         }
       else
         {
           // Look for an ancestor that was blocked previously
-          const FaceSet ancestorFaces = getAncestorFaces(entry);
-          FaceSet::iterator it = ancestorFaces.find(face);
+          const RouteSet ancestorRoutes = getAncestorRoutes(entry);
+          RouteSet::iterator it = ancestorRoutes.find(route);
 
           // If an ancestor is found, add it to children
-          if (it != ancestorFaces.end())
+          if (it != ancestorRoutes.end())
             {
-              facesToAdd.insert(*it);
+              routesToAdd.insert(*it);
             }
         }
 
-      modifyChildrensInheritedFaces(entry, facesToAdd, facesToRemove);
+      modifyChildrensInheritedRoutes(entry, routesToAdd, routesToRemove);
     }
 
   // Capture was turned on
-  if (!isCaptureFlagSet(previousFlags) && isCaptureFlagSet(face.flags))
+  if (!isCaptureFlagSet(previousFlags) && isCaptureFlagSet(route.flags))
     {
-      FaceSet ancestorFaces = getAncestorFaces(entry);
+      RouteSet ancestorRoutes = getAncestorRoutes(entry);
 
-      // Remove ancestor faces from self
-      removeInheritedFacesFromEntry(entry, ancestorFaces);
+      // Remove ancestor routes from self
+      removeInheritedRoutesFromEntry(entry, ancestorRoutes);
 
-      // Remove ancestor faces from children
-      modifyChildrensInheritedFaces(entry, FaceSet(), ancestorFaces);
+      // Remove ancestor routes from children
+      modifyChildrensInheritedRoutes(entry, RouteSet(), ancestorRoutes);
     }  // Capture was turned off
-  else if (isCaptureFlagSet(previousFlags) && !isCaptureFlagSet(face.flags))
+  else if (isCaptureFlagSet(previousFlags) && !isCaptureFlagSet(route.flags))
     {
-      FaceSet ancestorFaces = getAncestorFaces(entry);
+      RouteSet ancestorRoutes = getAncestorRoutes(entry);
 
-      // Add ancestor faces to self
-      addInheritedFacesToEntry(entry, ancestorFaces);
+      // Add ancestor routes to self
+      addInheritedRoutesToEntry(entry, ancestorRoutes);
 
-      // Add ancestor faces to children
-      modifyChildrensInheritedFaces(entry, ancestorFaces, FaceSet());
+      // Add ancestor routes to children
+      modifyChildrensInheritedRoutes(entry, ancestorRoutes, RouteSet());
     }
 }
 
 void
-Rib::createFibUpdatesForErasedFaceEntry(RibEntry& entry, const FaceEntry& face,
-                                        const bool captureWasTurnedOff)
+Rib::createFibUpdatesForErasedRoute(RibEntry& entry, const Route& route,
+                                    const bool captureWasTurnedOff)
 {
-  insertFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), face.faceId));
+  insertFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), route.faceId));
 
-  if (areBothFlagsSet(face.flags))
+  if (areBothFlagsSet(route.flags))
     {
       // Remove self from children
-      FaceSet facesToRemove;
-      facesToRemove.insert(face);
+      RouteSet routesToRemove;
+      routesToRemove.insert(route);
 
       // If capture is turned off for the route, need to add ancestors
       // to self and children
-      FaceSet facesToAdd;
+      RouteSet routesToAdd;
       if (captureWasTurnedOff)
         {
-          // Look for an ancestors that were blocked previously
-          facesToAdd = getAncestorFaces(entry);
+          // Look for ancestors that were blocked previously
+          routesToAdd = getAncestorRoutes(entry);
 
-          // Add ancestor faces to self
-          addInheritedFacesToEntry(entry, facesToAdd);
+          // Add ancestor routes to self
+          addInheritedRoutesToEntry(entry, routesToAdd);
         }
 
-      modifyChildrensInheritedFaces(entry, facesToAdd, facesToRemove);
+      modifyChildrensInheritedRoutes(entry, routesToAdd, routesToRemove);
     }
-  else if (isChildInheritFlagSet(face.flags))
+  else if (isChildInheritFlagSet(route.flags))
     {
       // If not blocked by capture, add inherited routes to children
-      FaceSet facesToAdd;
+      RouteSet routesToAdd;
       if (!entry.hasCapture())
         {
-          facesToAdd = getAncestorFaces(entry);
+          routesToAdd = getAncestorRoutes(entry);
         }
 
-      FaceSet facesToRemove;
-      facesToRemove.insert(face);
+      RouteSet routesToRemove;
+      routesToRemove.insert(route);
 
-      // Add ancestor faces to children
-      modifyChildrensInheritedFaces(entry, facesToAdd, facesToRemove);
+      // Add ancestor routes to children
+      modifyChildrensInheritedRoutes(entry, routesToAdd, routesToRemove);
     }
-  else if (isCaptureFlagSet(face.flags))
+  else if (isCaptureFlagSet(route.flags))
     {
       // If capture is turned off for the route, need to add ancestors
       // to self and children
-      FaceSet facesToAdd;
+      RouteSet routesToAdd;
       if (captureWasTurnedOff)
         {
           // Look for an ancestors that were blocked previously
-          facesToAdd = getAncestorFaces(entry);
+          routesToAdd = getAncestorRoutes(entry);
 
-          // Add ancestor faces to self
-          addInheritedFacesToEntry(entry, facesToAdd);
+          // Add ancestor routes to self
+          addInheritedRoutesToEntry(entry, routesToAdd);
         }
 
-      modifyChildrensInheritedFaces(entry, facesToAdd, FaceSet());
+      modifyChildrensInheritedRoutes(entry, routesToAdd, RouteSet());
     }
 
-  // Need to check if the removed face was blocking an inherited route
-  FaceSet ancestorFaces = getAncestorFaces(entry);
+  // Need to check if the removed route was blocking an inherited route
+  RouteSet ancestorRoutes = getAncestorRoutes(entry);
 
   if (!entry.hasCapture())
   {
-    // If there is an ancestor face which is the same as the erased face, add that face
+    // If there is an ancestor route with the same Face ID as the erased route, add that route
     // to the current entry
-    FaceSet::iterator it = ancestorFaces.find(face);
+    RouteSet::iterator it = ancestorRoutes.find(route);
 
-    if (it != ancestorFaces.end())
+    if (it != ancestorRoutes.end())
       {
-        entry.addInheritedFace(*it);
+        entry.addInheritedRoute(*it);
         insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), it->faceId, it->cost));
       }
   }
@@ -703,28 +692,28 @@ Rib::createFibUpdatesForErasedFaceEntry(RibEntry& entry, const FaceEntry& face,
 void
 Rib::createFibUpdatesForErasedRibEntry(RibEntry& entry)
 {
-  for (RibEntry::FaceList::iterator it = entry.getInheritedFaces().begin();
-       it != entry.getInheritedFaces().end(); ++it)
+  for (RibEntry::RouteList::iterator it = entry.getInheritedRoutes().begin();
+       it != entry.getInheritedRoutes().end(); ++it)
     {
       insertFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), it->faceId));
     }
 }
 
-Rib::FaceSet
-Rib::getAncestorFaces(const RibEntry& entry) const
+Rib::RouteSet
+Rib::getAncestorRoutes(const RibEntry& entry) const
 {
-  FaceSet ancestorFaces(&sortFace);
+  RouteSet ancestorRoutes(&sortRoutes);
 
   shared_ptr<RibEntry> parent = entry.getParent();
 
   while (static_cast<bool>(parent))
     {
-      for (RibEntry::iterator it = parent->getFaces().begin();
-           it != parent->getFaces().end(); ++it)
+      for (RibEntry::iterator it = parent->getRoutes().begin();
+           it != parent->getRoutes().end(); ++it)
         {
           if (isChildInheritFlagSet(it->flags))
             {
-              ancestorFaces.insert(*it);
+              ancestorRoutes.insert(*it);
             }
         }
 
@@ -736,52 +725,51 @@ Rib::getAncestorFaces(const RibEntry& entry) const
       parent = parent->getParent();
     }
 
-    return ancestorFaces;
+    return ancestorRoutes;
 }
 
 void
-Rib::addInheritedFacesToEntry(RibEntry& entry, const Rib::FaceSet& facesToAdd)
+Rib::addInheritedRoutesToEntry(RibEntry& entry, const Rib::RouteSet& routesToAdd)
 {
-  for (FaceSet::const_iterator it = facesToAdd.begin(); it != facesToAdd.end(); ++it)
+  for (RouteSet::const_iterator it = routesToAdd.begin(); it != routesToAdd.end(); ++it)
     {
-      // Don't add an ancestor faceId if the namespace has an entry for that faceId
+      // Don't add an ancestor route if the namespace has a route with that Face ID
       if (!entry.hasFaceId(it->faceId))
         {
-          entry.addInheritedFace(*it);
+          entry.addInheritedRoute(*it);
           insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), it->faceId, it->cost));
         }
     }
 }
 
 void
-Rib::removeInheritedFacesFromEntry(RibEntry& entry, const Rib::FaceSet& facesToRemove)
+Rib::removeInheritedRoutesFromEntry(RibEntry& entry, const Rib::RouteSet& routesToRemove)
 {
-  for (FaceSet::const_iterator it = facesToRemove.begin(); it != facesToRemove.end(); ++it)
+  for (RouteSet::const_iterator it = routesToRemove.begin(); it != routesToRemove.end(); ++it)
     {
-      // Only remove if the face has been inherited
-      if (entry.hasInheritedFace(*it))
+      // Only remove if the route has been inherited
+      if (entry.hasInheritedRoute(*it))
         {
-          entry.removeInheritedFace(*it);
+          entry.removeInheritedRoute(*it);
           insertFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), it->faceId));
         }
     }
 }
 
 void
-Rib::modifyChildrensInheritedFaces(RibEntry& entry, const Rib::FaceSet& facesToAdd,
-                                                    const Rib::FaceSet& facesToRemove)
+Rib::modifyChildrensInheritedRoutes(RibEntry& entry, const Rib::RouteSet& routesToAdd,
+                                                     const Rib::RouteSet& routesToRemove)
 {
   RibEntryList children = entry.getChildren();
 
   for (RibEntryList::iterator child = children.begin(); child != children.end(); ++child)
     {
-      traverseSubTree(*(*child), facesToAdd, facesToRemove);
+      traverseSubTree(*(*child), routesToAdd, routesToRemove);
     }
 }
 
 void
-Rib::traverseSubTree(RibEntry& entry, Rib::FaceSet facesToAdd,
-                                      Rib::FaceSet facesToRemove)
+Rib::traverseSubTree(RibEntry& entry, Rib::RouteSet routesToAdd, Rib::RouteSet routesToRemove)
 {
   // If a route on the namespace has the capture flag set, ignore self and children
   if (entry.hasCapture())
@@ -789,51 +777,50 @@ Rib::traverseSubTree(RibEntry& entry, Rib::FaceSet facesToAdd,
       return;
     }
 
-  // Remove inherited faces from current namespace
-  for (Rib::FaceSet::const_iterator removeIt = facesToRemove.begin();
-       removeIt != facesToRemove.end(); )
+  // Remove inherited routes from current namespace
+  for (Rib::RouteSet::const_iterator removeIt = routesToRemove.begin();
+       removeIt != routesToRemove.end(); )
     {
-      // If a route on the namespace has the same face and child inheritance set, ignore this face
+      // If a route on the namespace has the same face and child inheritance set, ignore this route
       if (entry.hasChildInheritOnFaceId(removeIt->faceId))
         {
-          facesToRemove.erase(removeIt++);
+          routesToRemove.erase(removeIt++);
           continue;
         }
 
-      // Only remove face if it removes an existing inherited route
-      if (entry.hasInheritedFace(*removeIt))
+      // Only remove route if it removes an existing inherited route
+      if (entry.hasInheritedRoute(*removeIt))
         {
-          entry.removeInheritedFace(*removeIt);
+          entry.removeInheritedRoute(*removeIt);
           insertFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), removeIt->faceId));
         }
 
       ++removeIt;
     }
 
-  // Add inherited faces to current namespace
-  for (Rib::FaceSet::const_iterator addIt = facesToAdd.begin();
-       addIt != facesToAdd.end(); )
+  // Add inherited routes to current namespace
+  for (Rib::RouteSet::const_iterator addIt = routesToAdd.begin(); addIt != routesToAdd.end(); )
     {
-      // If a route on the namespace has the same face and child inherit set, ignore this face
+      // If a route on the namespace has the same face and child inherit set, ignore this route
       if (entry.hasChildInheritOnFaceId(addIt->faceId))
       {
-        facesToAdd.erase(addIt++);
+        routesToAdd.erase(addIt++);
         continue;
       }
 
-      // Only add face if it does not override an existing route
+      // Only add route if it does not override an existing route
       if (!entry.hasFaceId(addIt->faceId))
         {
-          RibEntry::FaceList::iterator faceIt = entry.findInheritedFace(*addIt);
+          RibEntry::RouteList::iterator routeIt = entry.findInheritedRoute(*addIt);
 
-          // If the entry already has the inherited face, just update the face
-          if (faceIt != entry.getInheritedFaces().end())
+          // If the entry already has the inherited route, just update the route
+          if (routeIt != entry.getInheritedRoutes().end())
             {
-              faceIt->cost = addIt->cost;
+              routeIt->cost = addIt->cost;
             }
-          else // Otherwise, this is a newly inherited face
+          else // Otherwise, this is a newly inherited route
             {
-              entry.addInheritedFace(*addIt);
+              entry.addInheritedRoute(*addIt);
             }
 
           insertFibUpdate(FibUpdate::createAddUpdate(entry.getName(), addIt->faceId, addIt->cost));
@@ -844,10 +831,10 @@ Rib::traverseSubTree(RibEntry& entry, Rib::FaceSet facesToAdd,
 
   Rib::RibEntryList children = entry.getChildren();
 
-  // Apply face operations to current namespace's children
+  // Apply route operations to current namespace's children
   for (Rib::RibEntryList::iterator child = children.begin(); child != children.end(); ++child)
     {
-      traverseSubTree(*(*child), facesToAdd, facesToRemove);
+      traverseSubTree(*(*child), routesToAdd, routesToRemove);
     }
 }
 

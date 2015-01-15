@@ -234,20 +234,20 @@ BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
 
 BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
 {
-  FaceEntry entry;
+  Route route;
   Name name("/");
-  entry.faceId = 1;
-  entry.origin = 128;
-  entry.cost = 32;
-  entry.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
+  route.faceId = 1;
+  route.origin = 128;
+  route.cost = 32;
+  route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
 
   ControlParameters parameters;
   parameters
     .setName(name)
-    .setFaceId(entry.faceId)
-    .setOrigin(entry.origin)
-    .setCost(entry.cost)
-    .setFlags(entry.flags)
+    .setFaceId(route.faceId)
+    .setOrigin(route.origin)
+    .setCost(route.cost)
+    .setFlags(route.flags)
     .setExpirationPeriod(ndn::time::milliseconds::max());
 
   Name commandName("/localhost/nfd/rib/register");
@@ -262,7 +262,7 @@ BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
   face->processEvents(time::milliseconds(1));
 
   BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
-  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], name, entry);
+  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], name, route);
 }
 
 BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)

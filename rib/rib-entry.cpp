@@ -34,25 +34,25 @@ NFD_LOG_INIT("RibEntry");
 namespace nfd {
 namespace rib {
 
-RibEntry::FaceList::iterator
-RibEntry::findFace(const FaceEntry& face)
+RibEntry::RouteList::iterator
+RibEntry::findRoute(const Route& route)
 {
-  return std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, face));
+  return std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, route));
 }
 
 bool
-RibEntry::insertFace(const FaceEntry& entry)
+RibEntry::insertRoute(const Route& route)
 {
-  iterator it = findFace(entry);
+  iterator it = findRoute(route);
 
   if (it == end())
     {
-      if (entry.flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
+      if (route.flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
         {
-          m_nFacesWithCaptureSet++;
+          m_nRoutesWithCaptureSet++;
         }
 
-      m_faces.push_back(entry);
+      m_routes.push_back(route);
       return true;
     }
   else
@@ -62,27 +62,26 @@ RibEntry::insertFace(const FaceEntry& entry)
 }
 
 void
-RibEntry::eraseFace(const FaceEntry& face)
+RibEntry::eraseRoute(const Route& route)
 {
-  RibEntry::iterator it = std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, face));
-  eraseFace(it);
+  RibEntry::iterator it = findRoute(route);
+  eraseRoute(it);
 }
 
 bool
-RibEntry::hasFace(const FaceEntry& face)
+RibEntry::hasRoute(const Route& route)
 {
-  RibEntry::const_iterator it = std::find_if(cbegin(), cend(),
-                                             bind(&compareFaceIdAndOrigin, _1, face));
+  RibEntry::const_iterator it = findRoute(route);
 
-  return it != cend();
+  return it != end();
 }
 
 bool
 RibEntry::hasFaceId(const uint64_t faceId) const
 {
-  RibEntry::const_iterator it = std::find_if(cbegin(), cend(), bind(&compareFaceId, _1, faceId));
+  RibEntry::const_iterator it = std::find_if(begin(), end(), bind(&compareFaceId, _1, faceId));
 
-  return it != cend();
+  return it != end();
 }
 
 void
@@ -101,64 +100,64 @@ RibEntry::removeChild(shared_ptr<RibEntry> child)
   m_children.remove(child);
 }
 
-RibEntry::FaceList::iterator
-RibEntry::eraseFace(FaceList::iterator face)
+RibEntry::RouteList::iterator
+RibEntry::eraseRoute(RouteList::iterator route)
 {
-  if (face != m_faces.end())
+  if (route != m_routes.end())
     {
-      if (face->flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
+      if (route->flags & ndn::nfd::ROUTE_FLAG_CAPTURE)
         {
-          m_nFacesWithCaptureSet--;
+          m_nRoutesWithCaptureSet--;
         }
 
       //cancel any scheduled event
-      NFD_LOG_TRACE("Cancelling expiration eventId: " << face->getExpirationEvent());
-      scheduler::cancel(face->getExpirationEvent());
+      NFD_LOG_TRACE("Cancelling expiration eventId: " << route->getExpirationEvent());
+      scheduler::cancel(route->getExpirationEvent());
 
-      return m_faces.erase(face);
+      return m_routes.erase(route);
     }
 
-  return m_faces.end();
+  return m_routes.end();
 }
 
 void
-RibEntry::addInheritedFace(const FaceEntry& face)
+RibEntry::addInheritedRoute(const Route& route)
 {
-  m_inheritedFaces.push_back(face);
+  m_inheritedRoutes.push_back(route);
 }
 
 void
-RibEntry::removeInheritedFace(const FaceEntry& face)
+RibEntry::removeInheritedRoute(const Route& route)
 {
-  FaceList::iterator it = findInheritedFace(face);
-  m_inheritedFaces.erase(it);
+  RouteList::iterator it = findInheritedRoute(route);
+  m_inheritedRoutes.erase(it);
 }
 
-RibEntry::FaceList::iterator
-RibEntry::findInheritedFace(const FaceEntry& face)
+RibEntry::RouteList::iterator
+RibEntry::findInheritedRoute(const Route& route)
 {
-  return std::find_if(m_inheritedFaces.begin(), m_inheritedFaces.end(),
-                      bind(&compareFaceId, _1, face.faceId));
+  return std::find_if(m_inheritedRoutes.begin(), m_inheritedRoutes.end(),
+                      bind(&compareFaceId, _1, route.faceId));
 }
 
 bool
-RibEntry::hasInheritedFace(const FaceEntry& face)
+RibEntry::hasInheritedRoute(const Route& route)
 {
-  FaceList::const_iterator it = findInheritedFace(face);
+  RouteList::const_iterator it = findInheritedRoute(route);
 
-  return (it != m_inheritedFaces.end());
+  return (it != m_inheritedRoutes.end());
 }
 
 bool
 RibEntry::hasCapture() const
 {
-  return m_nFacesWithCaptureSet > 0;
+  return m_nRoutesWithCaptureSet > 0;
 }
 
 bool
 RibEntry::hasChildInheritOnFaceId(uint64_t faceId) const
 {
-  for (RibEntry::const_iterator it = m_faces.begin(); it != m_faces.end(); ++it)
+  for (RibEntry::const_iterator it = m_routes.begin(); it != m_routes.end(); ++it)
     {
       if (it->faceId == faceId && (it->flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT))
         {
@@ -169,66 +168,67 @@ RibEntry::hasChildInheritOnFaceId(uint64_t faceId) const
   return false;
 }
 
-shared_ptr<FaceEntry>
-RibEntry::getFaceWithLowestCostByFaceId(uint64_t faceId)
+shared_ptr<Route>
+RibEntry::getRouteWithLowestCostByFaceId(uint64_t faceId)
 {
-  shared_ptr<FaceEntry> face;
+  shared_ptr<Route> candidate;
 
-  for (FaceList::iterator it = begin(); it != end(); ++it)
+  for (const Route& route : m_routes)
     {
       // Correct face ID
-      if (it->faceId == faceId)
+      if (route.faceId == faceId)
         {
-          // If this is the first face with this ID found
-          if (!static_cast<bool>(face))
+          // If this is the first route with this Face ID found
+          if (candidate == nullptr)
             {
-              face = make_shared<FaceEntry>(*it);
+              candidate = make_shared<Route>(route);
             }
-          else if (it->cost < face->cost) // Found a face with a lower cost
+          else if (route.cost < candidate->cost) // Found a route with a lower cost
             {
-              face = make_shared<FaceEntry>(*it);
+              candidate = make_shared<Route>(route);
             }
         }
     }
 
-    return face;
+  return candidate;
 }
 
-shared_ptr<FaceEntry>
-RibEntry::getFaceWithLowestCostAndChildInheritByFaceId(uint64_t faceId)
+shared_ptr<Route>
+RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId)
 {
-  shared_ptr<FaceEntry> face;
+  shared_ptr<Route> candidate;
 
-  for (FaceList::iterator it = begin(); it != end(); ++it)
+  for (const Route& route : m_routes)
     {
       // Correct face ID and Child Inherit flag set
-      if (it->faceId == faceId && it->flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
+      if (route.faceId == faceId &&
+          (route.flags & ndn::nfd::ROUTE_FLAG_CHILD_INHERIT) == ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
         {
-          // If this is the first face with this ID found
-          if (!static_cast<bool>(face))
+          // If this is the first route with this Face ID found
+          if (candidate == nullptr)
             {
-              face = make_shared<FaceEntry>(*it);
+              candidate = make_shared<Route>(route);
             }
-          else if (it->cost < face->cost) // Found a face with a lower cost
+          else if (route.cost < candidate->cost) // Found a route with a lower cost
             {
-              face = make_shared<FaceEntry>(*it);
+              candidate = make_shared<Route>(route);
             }
         }
     }
 
-    return face;
+  return candidate;
 }
 
 std::ostream&
-operator<<(std::ostream& os, const FaceEntry& entry)
+operator<<(std::ostream& os, const Route& route)
 {
-  os << "FaceEntry("
-     << "faceid: " << entry.faceId
-     << ", origin: " << entry.origin
-     << ", cost: " << entry.cost
-     << ", flags: " << entry.flags;
-  if (entry.expires != time::steady_clock::TimePoint::max()) {
-    os << ", expires in: " << (entry.expires - time::steady_clock::now());
+  os << "Route("
+     << "faceid: " << route.faceId
+     << ", origin: " << route.origin
+     << ", cost: " << route.cost
+     << ", flags: " << route.flags;
+  if (route.expires != time::steady_clock::TimePoint::max()) {
+    os << ", expires in: " << (route.expires - time::steady_clock::now());
   }
   else {
     os << ", never expires";
@@ -244,9 +244,9 @@ operator<<(std::ostream& os, const RibEntry& entry)
   os << "RibEntry {\n";
   os << "\tName: " << entry.getName() << "\n";
 
-  for (RibEntry::FaceList::const_iterator faceIt = entry.cbegin(); faceIt != entry.cend(); ++faceIt)
+  for (const Route& route : entry)
     {
-      os << "\t" << (*faceIt) << "\n";
+      os << "\t" << route << "\n";
     }
 
   os << "}";

@@ -26,23 +26,22 @@
 #ifndef NFD_RIB_RIB_ENTRY_HPP
 #define NFD_RIB_RIB_ENTRY_HPP
 
-#include "face-entry.hpp"
+#include "route.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \class RibEntry
- *  \brief represents a namespace
+/** \brief represents a RIB entry, which contains one or more Routes with the same prefix
  */
 class RibEntry : public enable_shared_from_this<RibEntry>
 {
 public:
-  typedef std::list<FaceEntry> FaceList;
-  typedef FaceList::iterator iterator;
-  typedef FaceList::const_iterator const_iterator;
+  typedef std::list<Route> RouteList;
+  typedef RouteList::iterator iterator;
+  typedef RouteList::const_iterator const_iterator;
 
   RibEntry()
-    : m_nFacesWithCaptureSet(0)
+    : m_nRoutesWithCaptureSet(0)
   {
   }
 
@@ -64,99 +63,99 @@ public:
   void
   removeChild(shared_ptr<RibEntry> child);
 
-  std::list<shared_ptr<RibEntry> >&
+  std::list<shared_ptr<RibEntry>>&
   getChildren();
 
   bool
   hasChildren() const;
 
-  /** \brief inserts a new face into the entry's face list
-   *  If another entry already exists with the same faceId and origin,
-   *  the new face is not inserted.
-   *  \return{ true if the face is inserted, false otherwise }
+  /** \brief inserts a new route into the entry's route list
+   *  If another route already exists with the same faceId and origin,
+   *  the new route is not inserted.
+   *  \return{ true if the route is inserted, false otherwise }
    */
   bool
-  insertFace(const FaceEntry& face);
+  insertRoute(const Route& route);
 
-  /** \brief erases a FaceEntry with the same faceId and origin
+  /** \brief erases a Route with the same faceId and origin
    */
   void
-  eraseFace(const FaceEntry& face);
+  eraseRoute(const Route& route);
 
-  /** \brief erases a FaceEntry with the passed iterator
+  /** \brief erases a Route with the passed iterator
    *  \return{ an iterator to the element that followed the erased iterator }
    */
   iterator
-  eraseFace(FaceList::iterator face);
+  eraseRoute(RouteList::iterator route);
 
   bool
   hasFaceId(const uint64_t faceId) const;
 
-  FaceList&
-  getFaces();
+  RouteList&
+  getRoutes();
 
   iterator
-  findFace(const FaceEntry& face);
+  findRoute(const Route& route);
 
   bool
-  hasFace(const FaceEntry& face);
+  hasRoute(const Route& route);
 
   void
-  addInheritedFace(const FaceEntry& face);
+  addInheritedRoute(const Route& route);
 
   void
-  removeInheritedFace(const FaceEntry& face);
+  removeInheritedRoute(const Route& route);
 
-  /** \brief Returns the faces this namespace has inherited.
-   *  The inherited faces returned represent inherited entries this namespace has in the FIB.
-   *  \return{ faces inherited by this namespace }
+  /** \brief Returns the routes this namespace has inherited.
+   *  The inherited routes returned represent inherited routes this namespace has in the FIB.
+   *  \return{ routes inherited by this namespace }
    */
-  FaceList&
-  getInheritedFaces();
+  RouteList&
+  getInheritedRoutes();
 
-  /** \brief Finds an inherited face with a matching face ID.
-   *  \return{ An iterator to the matching face if one is found;
+  /** \brief Finds an inherited route with a matching face ID.
+   *  \return{ An iterator to the matching route if one is found;
    *           otherwise, an iterator to the end of the entry's
-   *           inherited face list }
+   *           inherited route list }
    */
-  FaceList::iterator
-  findInheritedFace(const FaceEntry& face);
+  RouteList::iterator
+  findInheritedRoute(const Route& route);
 
-  /** \brief Determines if the entry has an inherited face with a matching face ID.
-   *  \return{ True, if a matching inherited face is found; otherwise, false. }
+  /** \brief Determines if the entry has an inherited route with a matching face ID.
+   *  \return{ True, if a matching inherited route is found; otherwise, false. }
    */
   bool
-  hasInheritedFace(const FaceEntry& face);
+  hasInheritedRoute(const Route& route);
 
   bool
   hasCapture() const;
 
-  /** \brief Determines if the entry has an inherited face with the passed
+  /** \brief Determines if the entry has an inherited route with the passed
    *         face ID and its child inherit flag set.
-   *  \return{ True, if a matching inherited face is found; otherwise, false. }
+   *  \return{ True, if a matching inherited route is found; otherwise, false. }
    */
   bool
   hasChildInheritOnFaceId(uint64_t faceId) const;
 
-  /** \brief Returns the face with the lowest cost that has the passed face ID.
-   *  \return{ The face with with the lowest cost that has the passed face ID}
+  /** \brief Returns the route with the lowest cost that has the passed face ID.
+   *  \return{ The route with the lowest cost that has the passed face ID}
    */
-  shared_ptr<FaceEntry>
-  getFaceWithLowestCostByFaceId(uint64_t faceId);
+  shared_ptr<Route>
+  getRouteWithLowestCostByFaceId(uint64_t faceId);
 
-  /** \brief Returns the face with the lowest cost that has the passed face ID
+  /** \brief Returns the route with the lowest cost that has the passed face ID
    *         and its child inherit flag set.
-   *  \return{ The face with with the lowest cost that has the passed face ID
+   *  \return{ The route with the lowest cost that has the passed face ID
    *           and its child inherit flag set }
    */
-  shared_ptr<FaceEntry>
-  getFaceWithLowestCostAndChildInheritByFaceId(uint64_t faceId);
+  shared_ptr<Route>
+  getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId);
 
   const_iterator
-  cbegin() const;
+  begin() const;
 
   const_iterator
-  cend() const;
+  end() const;
 
   iterator
   begin();
@@ -170,18 +169,18 @@ private:
 
 private:
   Name m_name;
-  std::list<shared_ptr<RibEntry> > m_children;
+  std::list<shared_ptr<RibEntry>> m_children;
   shared_ptr<RibEntry> m_parent;
-  FaceList m_faces;
-  FaceList m_inheritedFaces;
+  RouteList m_routes;
+  RouteList m_inheritedRoutes;
 
-  /** \brief The number of faces on this namespace with the capture flag set.
+  /** \brief The number of routes on this namespace with the capture flag set.
    *
-   *  This count is used to check if the namespace will block inherited faces.
+   *  This count is used to check if the namespace will block inherited routes.
    *  If the number is greater than zero, a route on the namespace has it's capture
-   *  flag set which means the namespace should not inherit any faces.
+   *  flag set which means the namespace should not inherit any routes.
    */
-  uint64_t m_nFacesWithCaptureSet;
+  uint64_t m_nRoutesWithCaptureSet;
 };
 
 inline void
@@ -208,46 +207,46 @@ RibEntry::getParent() const
   return m_parent;
 }
 
-inline std::list<shared_ptr<RibEntry> >&
+inline std::list<shared_ptr<RibEntry>>&
 RibEntry::getChildren()
 {
   return m_children;
 }
 
-inline RibEntry::FaceList&
-RibEntry::getFaces()
+inline RibEntry::RouteList&
+RibEntry::getRoutes()
 {
-  return m_faces;
+  return m_routes;
 }
 
-inline RibEntry::FaceList&
-RibEntry::getInheritedFaces()
+inline RibEntry::RouteList&
+RibEntry::getInheritedRoutes()
 {
-  return m_inheritedFaces;
-}
-
-inline RibEntry::const_iterator
-RibEntry::cbegin() const
-{
-  return m_faces.begin();
+  return m_inheritedRoutes;
 }
 
 inline RibEntry::const_iterator
-RibEntry::cend() const
+RibEntry::begin() const
 {
-  return m_faces.end();
+  return m_routes.begin();
+}
+
+inline RibEntry::const_iterator
+RibEntry::end() const
+{
+  return m_routes.end();
 }
 
 inline RibEntry::iterator
 RibEntry::begin()
 {
-  return m_faces.begin();
+  return m_routes.begin();
 }
 
 inline RibEntry::iterator
 RibEntry::end()
 {
-  return m_faces.end();
+  return m_routes.end();
 }
 
 std::ostream&

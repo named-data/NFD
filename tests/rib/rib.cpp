@@ -37,102 +37,102 @@ BOOST_AUTO_TEST_CASE(RibEntry)
 {
   rib::RibEntry entry;
 
-  rib::FaceEntry face1;
-  face1.faceId = 1;
-  face1.origin = 0;
+  rib::Route route1;
+  route1.faceId = 1;
+  route1.origin = 0;
 
-  entry.insertFace(face1);
-  BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
+  entry.insertRoute(route1);
+  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
 
-  FaceEntry face2;
-  face2.faceId = 1;
-  face2.origin = 128;
+  Route route2;
+  route2.faceId = 1;
+  route2.origin = 128;
 
-  entry.insertFace(face2);
-  BOOST_CHECK_EQUAL(entry.getFaces().size(), 2);
+  entry.insertRoute(route2);
+  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 2);
 
-  entry.eraseFace(face1);
-  BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
+  entry.eraseRoute(route1);
+  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
 
-  BOOST_CHECK(entry.findFace(face1) == entry.getFaces().end());
-  BOOST_CHECK(entry.findFace(face2) != entry.getFaces().end());
+  BOOST_CHECK(entry.findRoute(route1) == entry.getRoutes().end());
+  BOOST_CHECK(entry.findRoute(route2) != entry.getRoutes().end());
 
-  entry.insertFace(face2);
-  BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
+  entry.insertRoute(route2);
+  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
 
-  entry.eraseFace(face1);
-  BOOST_CHECK_EQUAL(entry.getFaces().size(), 1);
-  BOOST_CHECK(entry.findFace(face2) != entry.getFaces().end());
+  entry.eraseRoute(route1);
+  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
+  BOOST_CHECK(entry.findRoute(route2) != entry.getRoutes().end());
 }
 
 BOOST_AUTO_TEST_CASE(Parent)
 {
   rib::Rib rib;
 
-  FaceEntry root;
+  Route root;
   Name name1("/");
   root.faceId = 1;
   root.origin = 20;
   rib.insert(name1, root);
 
-  FaceEntry entry1;
+  Route route1;
   Name name2("/hello");
-  entry1.faceId = 2;
-  entry1.origin = 20;
-  rib.insert(name2, entry1);
+  route1.faceId = 2;
+  route1.origin = 20;
+  rib.insert(name2, route1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name3("/hello/world");
-  entry2.faceId = 3;
-  entry2.origin = 20;
-  rib.insert(name3, entry2);
+  route2.faceId = 3;
+  route2.origin = 20;
+  rib.insert(name3, route2);
 
   shared_ptr<rib::RibEntry> ribEntry = rib.findParent(name3);
   BOOST_REQUIRE(static_cast<bool>(ribEntry));
-  BOOST_CHECK_EQUAL(ribEntry->getFaces().front().faceId, 2);
+  BOOST_CHECK_EQUAL(ribEntry->getRoutes().front().faceId, 2);
 
   ribEntry = rib.findParent(name2);
   BOOST_REQUIRE(static_cast<bool>(ribEntry));
-  BOOST_CHECK_EQUAL(ribEntry->getFaces().front().faceId, 1);
+  BOOST_CHECK_EQUAL(ribEntry->getRoutes().front().faceId, 1);
 
-  FaceEntry entry3;
+  Route route3;
   Name name4("/hello/test/foo/bar");
-  entry2.faceId = 3;
-  entry2.origin = 20;
-  rib.insert(name4, entry3);
+  route2.faceId = 3;
+  route2.origin = 20;
+  rib.insert(name4, route3);
 
   ribEntry = rib.findParent(name4);
   BOOST_CHECK(ribEntry != shared_ptr<rib::RibEntry>());
-  BOOST_CHECK(ribEntry->getFaces().front().faceId == 2);
+  BOOST_CHECK(ribEntry->getRoutes().front().faceId == 2);
 }
 
 BOOST_AUTO_TEST_CASE(Children)
 {
   rib::Rib rib;
 
-  FaceEntry entry1;
+  Route route1;
   Name name1("/");
-  entry1.faceId = 1;
-  entry1.origin = 20;
-  rib.insert(name1, entry1);
+  route1.faceId = 1;
+  route1.origin = 20;
+  rib.insert(name1, route1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name2("/hello/world");
-  entry2.faceId = 2;
-  entry2.origin = 20;
-  rib.insert(name2, entry2);
+  route2.faceId = 2;
+  route2.origin = 20;
+  rib.insert(name2, route2);
 
-  FaceEntry entry3;
+  Route route3;
   Name name3("/hello/test/foo/bar");
-  entry3.faceId = 3;
-  entry3.origin = 20;
-  rib.insert(name3, entry3);
+  route3.faceId = 3;
+  route3.origin = 20;
+  rib.insert(name3, route3);
 
   BOOST_CHECK_EQUAL((rib.find(name1)->second)->getChildren().size(), 2);
   BOOST_CHECK_EQUAL((rib.find(name2)->second)->getChildren().size(), 0);
   BOOST_CHECK_EQUAL((rib.find(name3)->second)->getChildren().size(), 0);
 
-  FaceEntry entry4;
+  Route entry4;
   Name name4("/hello");
   entry4.faceId = 4;
   entry4.origin = 20;
@@ -156,41 +156,41 @@ BOOST_AUTO_TEST_CASE(EraseFace)
 {
   rib::Rib rib;
 
-  FaceEntry entry1;
+  Route route1;
   Name name1("/");
-  entry1.faceId = 1;
-  entry1.origin = 20;
-  rib.insert(name1, entry1);
+  route1.faceId = 1;
+  route1.origin = 20;
+  rib.insert(name1, route1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name2("/hello/world");
-  entry2.faceId = 2;
-  entry2.origin = 20;
-  rib.insert(name2, entry2);
+  route2.faceId = 2;
+  route2.origin = 20;
+  rib.insert(name2, route2);
 
-  FaceEntry entry3;
+  Route route3;
   Name name3("/hello/world");
-  entry3.faceId = 1;
-  entry3.origin = 20;
-  rib.insert(name3, entry3);
+  route3.faceId = 1;
+  route3.origin = 20;
+  rib.insert(name3, route3);
 
-  FaceEntry entry4;
+  Route entry4;
   Name name4("/not/inserted");
   entry4.faceId = 1;
   entry4.origin = 20;
 
   rib.erase(name4, entry4);
-  rib.erase(name1, entry1);
+  rib.erase(name1, route1);
 
   BOOST_CHECK(rib.find(name1) == rib.end());
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getFaces().size(), 2);
+  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 2);
 
-  rib.erase(name2, entry2);
+  rib.erase(name2, route2);
 
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getFaces().size(), 1);
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getFaces().front().faceId, 1);
+  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 1);
+  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().front().faceId, 1);
 
-  rib.erase(name3, entry3);
+  rib.erase(name3, route3);
 
   BOOST_CHECK(rib.find(name2) == rib.end());
 
@@ -201,23 +201,23 @@ BOOST_AUTO_TEST_CASE(EraseRibEntry)
 {
   rib::Rib rib;
 
-  FaceEntry entry1;
+  Route route1;
   Name name1("/");
-  entry1.faceId = 1;
-  entry1.origin = 20;
-  rib.insert(name1, entry1);
+  route1.faceId = 1;
+  route1.origin = 20;
+  rib.insert(name1, route1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name2("/hello");
-  entry2.faceId = 2;
-  entry2.origin = 20;
-  rib.insert(name2, entry2);
+  route2.faceId = 2;
+  route2.origin = 20;
+  rib.insert(name2, route2);
 
-  FaceEntry entry3;
+  Route route3;
   Name name3("/hello/world");
-  entry3.faceId = 1;
-  entry3.origin = 20;
-  rib.insert(name3, entry3);
+  route3.faceId = 1;
+  route3.origin = 20;
+  rib.insert(name3, route3);
 
   shared_ptr<rib::RibEntry> ribEntry1 = rib.find(name1)->second;
   shared_ptr<rib::RibEntry> ribEntry2 = rib.find(name2)->second;
@@ -226,7 +226,7 @@ BOOST_AUTO_TEST_CASE(EraseRibEntry)
   BOOST_CHECK(ribEntry1->getChildren().front() == ribEntry2);
   BOOST_CHECK(ribEntry3->getParent() == ribEntry2);
 
-  rib.erase(name2, entry2);
+  rib.erase(name2, route2);
   BOOST_CHECK(ribEntry1->getChildren().front() == ribEntry3);
   BOOST_CHECK(ribEntry3->getParent() == ribEntry1);
 }
@@ -235,30 +235,30 @@ BOOST_AUTO_TEST_CASE(EraseByFaceId)
 {
   rib::Rib rib;
 
-  FaceEntry entry1;
+  Route route1;
   Name name1("/");
-  entry1.faceId = 1;
-  entry1.origin = 20;
-  rib.insert(name1, entry1);
+  route1.faceId = 1;
+  route1.origin = 20;
+  rib.insert(name1, route1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name2("/hello/world");
-  entry2.faceId = 2;
-  entry2.origin = 20;
-  rib.insert(name2, entry2);
+  route2.faceId = 2;
+  route2.origin = 20;
+  rib.insert(name2, route2);
 
-  FaceEntry entry3;
+  Route route3;
   Name name3("/hello/world");
-  entry3.faceId = 1;
-  entry3.origin = 20;
-  rib.insert(name3, entry3);
+  route3.faceId = 1;
+  route3.origin = 20;
+  rib.insert(name3, route3);
 
   rib.erase(1);
   BOOST_CHECK(rib.find(name1) == rib.end());
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getFaces().size(), 1);
+  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 1);
 
   rib.erase(3);
-  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getFaces().size(), 1);
+  BOOST_CHECK_EQUAL((rib.find(name2)->second)->getRoutes().size(), 1);
 
   rib.erase(2);
   BOOST_CHECK(rib.find(name2) == rib.end());
@@ -270,61 +270,61 @@ BOOST_AUTO_TEST_CASE(Basic)
 {
   rib::Rib rib;
 
-  FaceEntry entry1;
+  Route route1;
   Name name1("/hello/world");
-  entry1.faceId = 1;
-  entry1.origin = 20;
-  entry1.cost = 10;
-  entry1.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE;
-  entry1.expires = time::steady_clock::now() + time::milliseconds(1500);
+  route1.faceId = 1;
+  route1.origin = 20;
+  route1.cost = 10;
+  route1.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE;
+  route1.expires = time::steady_clock::now() + time::milliseconds(1500);
 
-  rib.insert(name1, entry1);
+  rib.insert(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  rib.insert(name1, entry1);
+  rib.insert(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  FaceEntry entry2;
+  Route route2;
   Name name2("/hello/world");
-  entry2.faceId = 1;
-  entry2.origin = 20;
-  entry2.cost = 100;
-  entry2.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
-  entry2.expires = time::steady_clock::now() + time::seconds(0);
+  route2.faceId = 1;
+  route2.origin = 20;
+  route2.cost = 100;
+  route2.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+  route2.expires = time::steady_clock::now() + time::seconds(0);
 
-  rib.insert(name2, entry2);
+  rib.insert(name2, route2);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 
-  entry2.faceId = 2;
-  rib.insert(name2, entry2);
+  route2.faceId = 2;
+  rib.insert(name2, route2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  BOOST_CHECK(rib.find(name1)->second->hasFaceId(entry1.faceId));
-  BOOST_CHECK(rib.find(name1)->second->hasFaceId(entry2.faceId));
+  BOOST_CHECK(rib.find(name1)->second->hasFaceId(route1.faceId));
+  BOOST_CHECK(rib.find(name1)->second->hasFaceId(route2.faceId));
 
   Name name3("/foo/bar");
-  rib.insert(name3, entry2);
+  rib.insert(name3, route2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
-  entry2.origin = 1;
-  rib.insert(name3, entry2);
+  route2.origin = 1;
+  rib.insert(name3, route2);
   BOOST_CHECK_EQUAL(rib.size(), 4);
 
-  rib.erase(name3, entry2);
+  rib.erase(name3, route2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
   Name name4("/hello/world");
-  rib.erase(name4, entry2);
+  rib.erase(name4, route2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
-  entry2.origin = 20;
-  rib.erase(name4, entry2);
+  route2.origin = 20;
+  rib.erase(name4, route2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  BOOST_CHECK_EQUAL(rib.find(name2, entry2), static_cast<FaceEntry*>(0));
-  BOOST_CHECK_NE(rib.find(name1, entry1), static_cast<FaceEntry*>(0));
+  BOOST_CHECK_EQUAL(rib.find(name2, route2), static_cast<Route*>(0));
+  BOOST_CHECK_NE(rib.find(name1, route1), static_cast<Route*>(0));
 
-  rib.erase(name1, entry1);
+  rib.erase(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 }
 

@@ -40,27 +40,27 @@ namespace rib {
 class Rib : noncopyable
 {
 public:
-  typedef std::list<shared_ptr<RibEntry> > RibEntryList;
-  typedef std::map<Name, shared_ptr<RibEntry> > RibTable;
+  typedef std::list<shared_ptr<RibEntry>> RibEntryList;
+  typedef std::map<Name, shared_ptr<RibEntry>> RibTable;
   typedef RibTable::const_iterator const_iterator;
-  typedef std::map<uint64_t, std::list<shared_ptr<RibEntry> > > FaceLookupTable;
-  typedef bool (*FaceComparePredicate)(const FaceEntry&, const FaceEntry&);
-  typedef std::set<FaceEntry, FaceComparePredicate> FaceSet;
-  typedef std::list<shared_ptr<const FibUpdate> > FibUpdateList;
+  typedef std::map<uint64_t, std::list<shared_ptr<RibEntry>>> FaceLookupTable;
+  typedef bool (*RouteComparePredicate)(const Route&, const Route&);
+  typedef std::set<Route, RouteComparePredicate> RouteSet;
+  typedef std::list<shared_ptr<const FibUpdate>> FibUpdateList;
 
   Rib();
 
   const_iterator
   find(const Name& prefix) const;
 
-  FaceEntry*
-  find(const Name& prefix, const FaceEntry& face) const;
+  Route*
+  find(const Name& prefix, const Route& route) const;
 
   void
-  insert(const Name& prefix, const FaceEntry& face);
+  insert(const Name& prefix, const Route& route);
 
   void
-  erase(const Name& prefix, const FaceEntry& face);
+  erase(const Name& prefix, const Route& route);
 
   void
   erase(const uint64_t faceId);
@@ -83,10 +83,10 @@ public:
   /** \brief finds namespaces under the passed prefix
    *  \return{ a list of entries which are under the passed prefix }
    */
-  std::list<shared_ptr<RibEntry> >
+  std::list<shared_ptr<RibEntry>>
   findDescendants(const Name& prefix) const;
 
-  const std::list<shared_ptr<const FibUpdate> >&
+  const std::list<shared_ptr<const FibUpdate>>&
   getFibUpdates() const;
 
   void
@@ -100,42 +100,42 @@ private:
   insertFibUpdate(shared_ptr<FibUpdate> update);
 
   void
-  createFibUpdatesForNewRibEntry(RibEntry& entry, const FaceEntry& face);
+  createFibUpdatesForNewRibEntry(RibEntry& entry, const Route& route);
 
   void
-  createFibUpdatesForNewFaceEntry(RibEntry& entry, const FaceEntry& face,
-                                  const bool captureWasTurnedOn);
+  createFibUpdatesForNewRoute(RibEntry& entry, const Route& route,
+                              const bool captureWasTurnedOn);
 
   void
-  createFibUpdatesForUpdatedEntry(RibEntry& entry, const FaceEntry& face,
+  createFibUpdatesForUpdatedRoute(RibEntry& entry, const Route& route,
                                   const uint64_t previousFlags, const uint64_t previousCost);
   void
-  createFibUpdatesForErasedFaceEntry(RibEntry& entry, const FaceEntry& face,
-                                     const bool captureWasTurnedOff);
+  createFibUpdatesForErasedRoute(RibEntry& entry, const Route& route,
+                                 const bool captureWasTurnedOff);
 
   void
   createFibUpdatesForErasedRibEntry(RibEntry& entry);
 
-  FaceSet
-  getAncestorFaces(const RibEntry& entry) const;
+  RouteSet
+  getAncestorRoutes(const RibEntry& entry) const;
 
   void
-  modifyChildrensInheritedFaces(RibEntry& entry, const Rib::FaceSet& facesToAdd,
-                                                 const Rib::FaceSet& facesToRemove);
+  modifyChildrensInheritedRoutes(RibEntry& entry, const Rib::RouteSet& routesToAdd,
+                                                  const Rib::RouteSet& routesToRemove);
 
   void
-  traverseSubTree(RibEntry& entry, Rib::FaceSet facesToAdd,
-                                   Rib::FaceSet facesToRemove);
+  traverseSubTree(RibEntry& entry, Rib::RouteSet routesToAdd,
+                                   Rib::RouteSet routesToRemove);
 
-  /** \brief Adds passed faces to the entry's inherited faces list
+  /** \brief Adds passed routes to the entry's inherited routes list
    */
   void
-  addInheritedFacesToEntry(RibEntry& entry, const Rib::FaceSet& facesToAdd);
+  addInheritedRoutesToEntry(RibEntry& entry, const Rib::RouteSet& routesToAdd);
 
-  /** \brief Removes passed faces from the entry's inherited faces list
+  /** \brief Removes passed routes from the entry's inherited routes list
    */
   void
-  removeInheritedFacesFromEntry(RibEntry& entry, const Rib::FaceSet& facesToRemove);
+  removeInheritedRoutesFromEntry(RibEntry& entry, const Rib::RouteSet& routesToRemove);
 
 public:
   ndn::util::signal::Signal<Rib, Name> afterInsertEntry;

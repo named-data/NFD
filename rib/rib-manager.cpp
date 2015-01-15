@@ -286,35 +286,35 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       parameters.setFaceId(request->getIncomingFaceId());
     }
 
-  FaceEntry faceEntry;
-  faceEntry.faceId = parameters.getFaceId();
-  faceEntry.origin = parameters.getOrigin();
-  faceEntry.cost = parameters.getCost();
-  faceEntry.flags = parameters.getFlags();
+  Route route;
+  route.faceId = parameters.getFaceId();
+  route.origin = parameters.getOrigin();
+  route.cost = parameters.getCost();
+  route.flags = parameters.getFlags();
 
   if (parameters.hasExpirationPeriod() &&
       parameters.getExpirationPeriod() != time::milliseconds::max())
     {
-      faceEntry.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
+      route.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
 
       // Schedule a new event, the old one will be cancelled during rib insertion.
       scheduler::EventId eventId = scheduler::schedule(parameters.getExpirationPeriod(),
           bind(&RibManager::expireEntry, this, shared_ptr<Interest>(), parameters));
-      NFD_LOG_TRACE("Scheduled unregistration at: " << faceEntry.expires <<
+      NFD_LOG_TRACE("Scheduled unregistration at: " << route.expires <<
                     " with EventId: " << eventId);
 
       //set the  NewEventId of this entry
-      faceEntry.setExpirationEvent(eventId);
+      route.setExpirationEvent(eventId);
     }
   else
     {
-      faceEntry.expires = time::steady_clock::TimePoint::max();
+      route.expires = time::steady_clock::TimePoint::max();
     }
 
-  NFD_LOG_TRACE("register prefix: " << faceEntry);
+  NFD_LOG_TRACE("register prefix: " << route);
 
-  m_managedRib.insert(parameters.getName(), faceEntry);
-  m_registeredFaces.insert(faceEntry.faceId);
+  m_managedRib.insert(parameters.getName(), route);
+  m_registeredFaces.insert(route.faceId);
 
   sendUpdatesToFib(request, parameters);
 }
@@ -322,13 +322,13 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 void
 RibManager::expireEntry(const shared_ptr<const Interest>& request, ControlParameters& params)
 {
-  FaceEntry face;
-  face.faceId = params.getFaceId();
-  face.origin = params.getOrigin();
-  face.cost = params.getCost();
-  face.flags = params.getFlags();
+  Route route;
+  route.faceId = params.getFaceId();
+  route.origin = params.getOrigin();
+  route.cost = params.getCost();
+  route.flags = params.getFlags();
 
-  NFD_LOG_DEBUG(face << " for " << params.getName() << " has expired");
+  NFD_LOG_DEBUG(route << " for " << params.getName() << " has expired");
   unregisterEntry(request, params);
 }
 
@@ -361,13 +361,13 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
       parameters.setFaceId(request->getIncomingFaceId());
     }
 
-  FaceEntry faceEntry;
-  faceEntry.faceId = parameters.getFaceId();
-  faceEntry.origin = parameters.getOrigin();
+  Route route;
+  route.faceId = parameters.getFaceId();
+  route.origin = parameters.getOrigin();
 
-  NFD_LOG_TRACE("unregister prefix: " << faceEntry);
+  NFD_LOG_TRACE("unregister prefix: " << route);
 
-  m_managedRib.erase(parameters.getName(), faceEntry);
+  m_managedRib.erase(parameters.getName(), route);
 
   sendUpdatesToFib(request, parameters);
 }
@@ -421,7 +421,7 @@ RibManager::validateParameters(const ControlCommand& command,
 void
 RibManager::onCommandError(uint32_t code, const std::string& error,
                            const shared_ptr<const Interest>& request,
-                           const FaceEntry& faceEntry)
+                           const Route& route)
 {
   NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
 
@@ -447,7 +447,7 @@ RibManager::onCommandError(uint32_t code, const std::string& error,
 void
 RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
                          const ControlParameters& parameters,
-                         const FaceEntry& faceEntry)
+                         const Route& route)
 {
   ControlResponse response;
 
@@ -455,7 +455,7 @@ RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
   response.setText("Success");
   response.setBody(parameters.wireEncode());
 
-  NFD_LOG_TRACE("onRegSuccess: registered " << faceEntry);
+  NFD_LOG_TRACE("onRegSuccess: registered " << route);
 
   if (static_cast<bool>(request))
     sendResponse(request->getName(), response);
@@ -465,7 +465,7 @@ RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
 void
 RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
                            const ControlParameters& parameters,
-                           const FaceEntry& faceEntry)
+                           const Route& route)
 {
   ControlResponse response;
 
@@ -473,7 +473,7 @@ RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
   response.setText("Success");
   response.setBody(parameters.wireEncode());
 
-  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << faceEntry);
+  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << route);
 
   if (static_cast<bool>(request))
     sendResponse(request->getName(), response);
@@ -717,15 +717,15 @@ RibManager::sendUpdatesToFib(const shared_ptr<const Interest>& request,
 
       if (update->action == FibUpdate::ADD_NEXTHOP)
         {
-          FaceEntry faceEntry;
-          faceEntry.faceId = update->faceId;
-          faceEntry.cost = update->cost;
+          Route route;
+          route.faceId = update->faceId;
+          route.cost = update->cost;
 
           m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
             ControlParameters()
               .setName(update->name)
-              .setFaceId(faceEntry.faceId)
-              .setCost(faceEntry.cost),
+              .setFaceId(route.faceId)
+              .setCost(route.cost),
             bind(&RibManager::onAddNextHopSuccess, this, request,
                                                          parameters,
                                                          currentTransactionId,
@@ -735,13 +735,13 @@ RibManager::sendUpdatesToFib(const shared_ptr<const Interest>& request,
         }
       else if (update->action == FibUpdate::REMOVE_NEXTHOP)
         {
-          FaceEntry faceEntry;
-          faceEntry.faceId = update->faceId;
+          Route route;
+          route.faceId = update->faceId;
 
           m_nfdController.start<ndn::nfd::FibRemoveNextHopCommand>(
             ControlParameters()
               .setName(update->name)
-              .setFaceId(faceEntry.faceId),
+              .setFaceId(route.faceId),
             bind(&RibManager::onRemoveNextHopSuccess, this, request,
                                                             parameters,
                                                             currentTransactionId,
