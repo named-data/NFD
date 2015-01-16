@@ -23,61 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs-entry.hpp"
+/** \file
+ *  \brief declares ContentStore internal types
+ */
+
+#ifndef NFD_DAEMON_TABLE_CS_INTERNAL_HPP
+#define NFD_DAEMON_TABLE_CS_INTERNAL_HPP
+
+#include "common.hpp"
 
 namespace nfd {
 namespace cs {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
-{
-  m_data = data;
-  m_isUnsolicited = isUnsolicited;
+class EntryImpl;
 
-  updateStaleTime();
-}
+typedef std::set<EntryImpl> Table;
+typedef Table::const_iterator TableIt;
 
-bool
-Entry::isStale() const
-{
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
-}
+typedef std::list<TableIt> Queue;
+typedef Queue::iterator QueueIt;
 
-void
-Entry::updateStaleTime()
-{
-  BOOST_ASSERT(this->hasData());
-  if (m_data->getFreshnessPeriod() >= time::milliseconds::zero()) {
-    m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
-  }
-  else {
-    m_staleTime = time::steady_clock::TimePoint::max();
-  }
-}
-
-bool
-Entry::canSatisfy(const Interest& interest) const
-{
-  BOOST_ASSERT(this->hasData());
-  if (!interest.matchesData(*m_data)) {
-    return false;
-  }
-
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
-    return false;
-  }
-
-  return true;
-}
-
-void
-Entry::reset()
-{
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
-}
+enum QueueType {
+  QUEUE_UNSOLICITED,
+  QUEUE_STALE,
+  QUEUE_FIFO,
+  QUEUE_MAX,
+  QUEUE_NONE = QUEUE_MAX
+};
 
 } // namespace cs
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_CS_INTERNAL_HPP

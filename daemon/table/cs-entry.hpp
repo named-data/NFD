@@ -26,81 +26,117 @@
 #ifndef NFD_DAEMON_TABLE_CS_ENTRY_HPP
 #define NFD_DAEMON_TABLE_CS_ENTRY_HPP
 
-#include "cs.hpp"
-#include "core/scheduler.hpp"
+#include "common.hpp"
 
 namespace nfd {
 namespace cs {
 
-/** \brief an Entry in ContentStore
- *  \note This type is internal to ContentStore.
- *
- *  An Entry is either a stored Entry which contains a Data packet and related attributes,
- *  or a query Entry which contains a Name that is LessComparable to other stored/query Entry
- *  and is used to lookup a container of entries.
+/** \brief represents a base class for CS entry
  */
 class Entry
 {
-public:
-  /** \brief construct Entry for query
-   *  \note Name is implicitly convertible to Entry, so that Name can be passed to
-   *        lookup functions on a container of Entry
+public: // exposed through ContentStore enumeration
+  /** \return the stored Data
+   *  \pre hasData()
    */
-  Entry(const Name& name);
+  const Data&
+  getData() const
+  {
+    BOOST_ASSERT(this->hasData());
+    return *m_data;
+  }
 
-  /** \brief construct Entry for storage
+  /** \return Name of the stored Data
+   *  \pre hasData()
    */
-  Entry(shared_ptr<const Data> data, bool isUnsolicited);
-
-  shared_ptr<const Data>
-  getData() const;
-
   const Name&
-  getName() const;
+  getName() const
+  {
+    BOOST_ASSERT(this->hasData());
+    return m_data->getName();
+  }
 
+  /** \return full name (including implicit digest) of the stored Data
+   *  \pre hasData()
+   */
   const Name&
-  getFullName() const;
+  getFullName() const
+  {
+    BOOST_ASSERT(this->hasData());
+    return m_data->getFullName();
+  }
 
-  /** \return true if entry can become stale, false if entry is never stale
+  /** \return whether the stored Data is unsolicited
+   *  \pre hasData()
    */
   bool
-  canStale() const;
+  isUnsolicited() const
+  {
+    BOOST_ASSERT(this->hasData());
+    return m_isUnsolicited;
+  }
 
+  /** \return the absolute time when the stored Data becomes expired
+   *  \retval time::steady_clock::TimePoint::max() if the stored Data never expires
+   *  \pre hasData()
+   */
+  const time::steady_clock::TimePoint&
+  getStaleTime() const
+  {
+    BOOST_ASSERT(this->hasData());
+    return m_staleTime;
+  }
+
+  /** \brief checks if the stored Data is stale now
+   *  \pre hasData()
+   */
   bool
   isStale() const;
 
-  void
-  refresh();
-
-  bool
-  isUnsolicited() const;
-
-  void
-  unsetUnsolicited();
-
-  /** \brief determines whether Interest can be satisified by this cached Data
+  /** \brief determines whether Interest can be satisified by the stored Data
    *  \note ChildSelector is not considered
+   *  \pre hasData()
    */
   bool
   canSatisfy(const Interest& interest) const;
 
+public: // used by generic ContentStore implementation
+  /** \return true if a Data packet is stored
+   */
   bool
-  operator<(const Entry& other) const;
+  hasData() const
+  {
+    return m_data != nullptr;
+  }
+
+  /** \brief replaces the stored Data
+   */
+  void
+  setData(shared_ptr<const Data> data, bool isUnsolicited);
+
+  /** \brief replaces the stored Data
+   */
+  void
+  setData(const Data& data, bool isUnsolicited)
+  {
+    this->setData(data.shared_from_this(), isUnsolicited);
+  }
+
+  /** \brief refreshes stale time relative to current time
+   */
+  void
+  updateStaleTime();
+
+  /** \brief clears the entry
+   *  \post !hasData()
+   */
+  void
+  reset();
 
 private:
-  bool
-  isQuery() const;
-
-public:
-  Cs::QueueType queueType;
-  Cs::QueueIt queueIt;
-  scheduler::EventId moveStaleEvent;
-
-private:
-  Name m_queryName;
   shared_ptr<const Data> m_data;
-  time::steady_clock::TimePoint m_staleAt;
   bool m_isUnsolicited;
+  time::steady_clock::TimePoint m_staleTime;
 };
 
 } // namespace cs

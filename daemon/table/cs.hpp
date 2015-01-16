@@ -48,12 +48,11 @@
 #ifndef NFD_DAEMON_TABLE_CS_HPP
 #define NFD_DAEMON_TABLE_CS_HPP
 
-#include "common.hpp"
+#include "cs-entry-impl.hpp"
+#include <boost/iterator/transform_iterator.hpp>
 
 namespace nfd {
 namespace cs {
-
-class Entry;
 
 /** \brief represents the ContentStore
  */
@@ -62,8 +61,6 @@ class Cs : noncopyable
 public:
   explicit
   Cs(size_t nMaxPackets = 10);
-
-  ~Cs();
 
   /** \brief inserts a Data packet
    *  \return true
@@ -98,26 +95,44 @@ public:
   /** \return number of stored packets
    */
   size_t
-  size() const;
+  size() const
+  {
+    return m_table.size();
+  }
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   dump();
 
-public:
-  typedef std::set<Entry> Table;
-  typedef Table::const_iterator TableIt;
-  typedef std::list<TableIt> Queue;
-  typedef Queue::iterator QueueIt;
-  enum QueueType {
-    QUEUE_UNSOLICITED,
-    QUEUE_STALE,
-    QUEUE_FIFO,
-    QUEUE_UBOUND,
-    QUEUE_NONE = QUEUE_UBOUND
+public: // enumeration
+  struct EntryFromEntryImpl
+  {
+    typedef const Entry& result_type;
+
+    const Entry&
+    operator()(const EntryImpl& entry) const
+    {
+      return entry;
+    }
   };
 
-private:
+  /** \brief ContentStore iterator (public API)
+   */
+  typedef boost::transform_iterator<EntryFromEntryImpl, TableIt, const Entry&> const_iterator;
+
+  const_iterator
+  begin() const
+  {
+    return boost::make_transform_iterator(m_table.begin(), EntryFromEntryImpl());
+  }
+
+  const_iterator
+  end() const
+  {
+    return boost::make_transform_iterator(m_table.end(), EntryFromEntryImpl());
+  }
+
+private: // find
   /** \brief find leftmost match in [first,last)
    *  \return the leftmost match, or last if not found
    */
@@ -136,6 +151,7 @@ private:
   TableIt
   findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const;
 
+private: // cleanup
   /** \brief attaches an entry to a suitable cleanup queue
    *  \note if the entry is already attached to a queue, it's automatically detached
    */
@@ -167,7 +183,7 @@ private:
 private:
   size_t m_limit;
   Table m_table;
-  Queue m_queues[QUEUE_UBOUND];
+  Queue m_queues[QUEUE_MAX];
 };
 
 } // namespace cs

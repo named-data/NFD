@@ -24,7 +24,6 @@
  */
 
 #include "cs.hpp"
-#include "cs-entry.hpp"
 #include "core/logger.hpp"
 #include "core/algorithm.hpp"
 #include <numeric>
@@ -34,16 +33,21 @@ NFD_LOG_INIT("ContentStore");
 namespace nfd {
 namespace cs {
 
+// http://en.cppreference.com/w/cpp/concept/ForwardIterator
+BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Cs::const_iterator>));
+// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
+// which doesn't require DefaultConstructible
+#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
+static_assert(std::is_default_constructible<Cs::const_iterator>::value,
+              "Cs::const_iterator must be default-constructible");
+#else
+BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Cs::const_iterator>));
+#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
+
 Cs::Cs(size_t nMaxPackets)
   : m_limit(nMaxPackets)
 {
   BOOST_ASSERT(nMaxPackets > 0);
-}
-
-Cs::~Cs()
-{
-  // It's necessary to put this empty destructor in cs.cpp,
-  // because cs::Entry has incomplete type in cs.hpp.
 }
 
 void
@@ -54,12 +58,6 @@ Cs::setLimit(size_t nMaxPackets)
   this->evict();
 }
 
-size_t
-Cs::size() const
-{
-  return m_table.size();
-}
-
 bool
 Cs::insert(const Data& data, bool isUnsolicited)
 {
@@ -67,8 +65,8 @@ Cs::insert(const Data& data, bool isUnsolicited)
 
   bool isNewEntry = false; TableIt it;
   // use .insert because gcc46 does not support .emplace
-  std::tie(it, isNewEntry) = m_table.insert(Entry(data.shared_from_this(), isUnsolicited));
-  Entry& entry = const_cast<Entry&>(*it);
+  std::tie(it, isNewEntry) = m_table.insert(EntryImpl(data.shared_from_this(), isUnsolicited));
+  EntryImpl& entry = const_cast<EntryImpl&>(*it);
 
   if (!isNewEntry) { // existing entry
     this->detachQueue(it);
@@ -77,11 +75,11 @@ Cs::insert(const Data& data, bool isUnsolicited)
       entry.unsetUnsolicited();
     }
   }
-  entry.refresh();
+  entry.updateStaleTime();
   this->attachQueue(it);
 
   // check there are same amount of entries in the table and in queues
-  BOOST_ASSERT(m_table.size() == std::accumulate(m_queues, m_queues + QUEUE_UBOUND, 0U,
+  BOOST_ASSERT(m_table.size() == std::accumulate(m_queues, m_queues + QUEUE_MAX, 0U,
       [] (size_t sum, const Queue queue) { return sum + queue.size(); }));
 
   this->evict(); // XXX The new entry could be evicted, but it shouldn't matter.
@@ -115,16 +113,16 @@ Cs::find(const Interest& interest) const
     return nullptr;
   }
   NFD_LOG_DEBUG("  matching " << match->getName());
-  return match->getData().get();
+  return &match->getData();
 }
 
-Cs::TableIt
+TableIt
 Cs::findLeftmost(const Interest& interest, TableIt first, TableIt last) const
 {
-  return std::find_if(first, last, bind(&cs::Entry::canSatisfy, _1, interest));
+  return std::find_if(first, last, bind(&cs::EntryImpl::canSatisfy, _1, interest));
 }
 
-Cs::TableIt
+TableIt
 Cs::findRightmost(const Interest& interest, TableIt first, TableIt last) const
 {
   // Each loop visits a sub-namespace under a prefix one component longer than Interest Name.
@@ -156,16 +154,16 @@ Cs::findRightmost(const Interest& interest, TableIt first, TableIt last) const
   return last;
 }
 
-Cs::TableIt
+TableIt
 Cs::findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const
 {
-  return find_last_if(first, last, bind(&Entry::canSatisfy, _1, interest));
+  return find_last_if(first, last, bind(&EntryImpl::canSatisfy, _1, interest));
 }
 
 void
 Cs::attachQueue(TableIt it)
 {
-  Entry& entry = const_cast<Entry&>(*it);
+  EntryImpl& entry = const_cast<EntryImpl&>(*it);
 
   if (entry.queueType != QUEUE_NONE) {
     this->detachQueue(it);
@@ -181,7 +179,7 @@ Cs::attachQueue(TableIt it)
     entry.queueType = QUEUE_FIFO;
 
     if (entry.canStale()) {
-      entry.moveStaleEvent = scheduler::schedule(entry.getData()->getFreshnessPeriod(),
+      entry.moveStaleEvent = scheduler::schedule(entry.getData().getFreshnessPeriod(),
                              bind(&Cs::moveToStaleQueue, this, it));
     }
   }
@@ -193,7 +191,7 @@ Cs::attachQueue(TableIt it)
 void
 Cs::detachQueue(TableIt it)
 {
-  Entry& entry = const_cast<Entry&>(*it);
+  EntryImpl& entry = const_cast<EntryImpl&>(*it);
 
   BOOST_ASSERT(entry.queueType != QUEUE_NONE);
 
@@ -208,7 +206,7 @@ Cs::detachQueue(TableIt it)
 void
 Cs::moveToStaleQueue(TableIt it)
 {
-  Entry& entry = const_cast<Entry&>(*it);
+  EntryImpl& entry = const_cast<EntryImpl&>(*it);
 
   BOOST_ASSERT(entry.queueType == QUEUE_FIFO);
   m_queues[QUEUE_FIFO].erase(entry.queueIt);
@@ -218,7 +216,7 @@ Cs::moveToStaleQueue(TableIt it)
   entry.queueIt = queue.insert(queue.end(), it);
 }
 
-std::tuple<Cs::TableIt, std::string>
+std::tuple<TableIt, std::string>
 Cs::evictPick()
 {
   if (!m_queues[QUEUE_UNSOLICITED].empty()) {
@@ -253,7 +251,7 @@ void
 Cs::dump()
 {
   NFD_LOG_DEBUG("dump table");
-  for (const Entry& entry : m_table) {
+  for (const EntryImpl& entry : m_table) {
     NFD_LOG_TRACE(entry.getFullName());
   }
 }

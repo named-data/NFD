@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -395,6 +395,42 @@ BOOST_FIXTURE_TEST_CASE(Refresh, UnitTestTimeFixture)
   cs.insert(*dataD);
   BOOST_CHECK_EQUAL(cs.size(), 3);
   BOOST_CHECK(cs.find(Interest("ndn:/C")) == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(Enumeration)
+{
+  Cs cs;
+
+  Name nameA("/A");
+  Name nameAB("/A/B");
+  Name nameABC("/A/B/C");
+  Name nameD("/D");
+
+  BOOST_CHECK_EQUAL(cs.size(), 0);
+  BOOST_CHECK(cs.begin() == cs.end());
+
+  cs.insert(*makeData(nameABC));
+  BOOST_CHECK_EQUAL(cs.size(), 1);
+  BOOST_CHECK(cs.begin() != cs.end());
+  BOOST_CHECK(cs.begin()->getName() == nameABC);
+  BOOST_CHECK((*cs.begin()).getName() == nameABC);
+
+  auto i = cs.begin();
+  auto j = cs.begin();
+  BOOST_CHECK(++i == cs.end());
+  BOOST_CHECK(j++ == cs.begin());
+  BOOST_CHECK(j == cs.end());
+
+  cs.insert(*makeData(nameA));
+  cs.insert(*makeData(nameAB));
+  cs.insert(*makeData(nameD));
+
+  std::set<Name> expected = {nameA, nameAB, nameABC, nameD};
+  std::set<Name> actual;
+  for (const auto& csEntry : cs) {
+    actual.insert(csEntry.getName());
+  }
+  BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

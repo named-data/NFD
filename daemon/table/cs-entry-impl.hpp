@@ -23,61 +23,62 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef NFD_DAEMON_TABLE_CS_ENTRY_IMPL_HPP
+#define NFD_DAEMON_TABLE_CS_ENTRY_IMPL_HPP
+
+#include "cs-internal.hpp"
 #include "cs-entry.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace cs {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
+/** \brief an Entry in ContentStore implementation
+ *
+ *  An Entry is either a stored Entry which contains a Data packet and related attributes,
+ *  or a query Entry which contains a Name that is LessComparable to other stored/query Entry
+ *  and is used to lookup a container of entries.
+ *
+ *  \note This type is internal to this specific ContentStore implementation.
+ */
+class EntryImpl : public Entry
 {
-  m_data = data;
-  m_isUnsolicited = isUnsolicited;
+public:
+  /** \brief construct Entry for query
+   *  \note Name is implicitly convertible to Entry, so that Name can be passed to
+   *        lookup functions on a container of Entry
+   */
+  EntryImpl(const Name& name);
 
-  updateStaleTime();
-}
+  /** \brief construct Entry for storage
+   */
+  EntryImpl(shared_ptr<const Data> data, bool isUnsolicited);
 
-bool
-Entry::isStale() const
-{
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
-}
+  /** \return true if entry can become stale, false if entry is never stale
+   */
+  bool
+  canStale() const;
 
-void
-Entry::updateStaleTime()
-{
-  BOOST_ASSERT(this->hasData());
-  if (m_data->getFreshnessPeriod() >= time::milliseconds::zero()) {
-    m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
-  }
-  else {
-    m_staleTime = time::steady_clock::TimePoint::max();
-  }
-}
+  void
+  unsetUnsolicited();
 
-bool
-Entry::canSatisfy(const Interest& interest) const
-{
-  BOOST_ASSERT(this->hasData());
-  if (!interest.matchesData(*m_data)) {
-    return false;
-  }
+  bool
+  operator<(const EntryImpl& other) const;
 
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
-    return false;
-  }
+private:
+  bool
+  isQuery() const;
 
-  return true;
-}
+public:
+  QueueType queueType;
+  QueueIt queueIt;
+  scheduler::EventId moveStaleEvent;
 
-void
-Entry::reset()
-{
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
-}
+private:
+  Name m_queryName;
+};
 
 } // namespace cs
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_CS_ENTRY_IMPL_HPP
