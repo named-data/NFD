@@ -273,8 +273,7 @@ public:
 
     // Get Uri
     Block::element_const_iterator blockValue = content.find(tlv::nfd::Uri);
-    if (blockValue == content.elements_end())
-    {
+    if (blockValue == content.elements_end()) {
       discoverHubStage2("Incorrect reply to stage1");
       return;
     }
@@ -302,15 +301,13 @@ public:
                                 sizeof(queryAnswer));
 
     // 2nd stage failed - move on to the third stage
-    if (answerSize < 0)
-    {
+    if (answerSize < 0) {
       discoverHubStage3("Failed to find NDN router using default suffix DNS query");
     }
     else
     {
       bool isParsed = parseHostAndConnectToHub(queryAnswer, answerSize);
-      if (isParsed == false)
-      {
+      if (isParsed == false) {
         // Failed to parse DNS response, try stage 3
         discoverHubStage3("Failed to parse DNS response");
       }
@@ -328,8 +325,7 @@ public:
     Name identity = keyChain.getDefaultIdentity();
     std::string serverName = "_ndn._udp.";
 
-    for (Name::const_reverse_iterator i = identity.rbegin(); i != identity.rend(); i++)
-    {
+    for (Name::const_reverse_iterator i = identity.rbegin(); i != identity.rend(); i++) {
       serverName.append(i->toUri());
       serverName.append(".");
     }
@@ -346,16 +342,14 @@ public:
 
 
     // 3rd stage failed - abort
-    if (answerSize < 0)
-    {
+    if (answerSize < 0) {
       std::cerr << "Failed to find a home router" << std::endl;
       std::cerr << "exit" << std::endl;
     }
     else
     {
       bool isParsed = parseHostAndConnectToHub(queryAnswer, answerSize);
-      if (isParsed == false)
-      {
+      if (isParsed == false) {
         // Failed to parse DNS response
         throw Error("Failed to parse DNS response");
       }
@@ -363,17 +357,104 @@ public:
 
   }
 
+  bool
+  parseHostAndConnectToHub(QueryAnswer& queryAnswer, int answerSize)
+  {
+    // The references of the next classes are:
+    // http://www.diablotin.com/librairie/networking/dnsbind/ch14_02.htm
+    // https://gist.github.com/mologie/6027597
+
+    struct rechdr
+    {
+      uint16_t type;
+      uint16_t iclass;
+      uint32_t ttl;
+      uint16_t length;
+    };
+
+    struct srv_t
+    {
+      uint16_t priority;
+      uint16_t weight;
+      uint16_t port;
+      uint8_t* target;
+    };
+
+    if (ntohs(queryAnswer.header.ancount) == 0) {
+      std::cerr << "No records found\n" << std::endl;
+      return false;
+    }
+
+    uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
+
+    blob += dn_skipname(blob, queryAnswer.buf + answerSize) + NS_QFIXEDSZ;
+
+    for (int i = 0; i < ntohs(queryAnswer.header.ancount); i++) {
+      char srvName[NS_MAXDNAME];
+      int serverNameSize = dn_expand(queryAnswer.buf,               // message pointer
+                                     queryAnswer.buf + answerSize,  // end of message
+                                     blob,                          // compressed server name
+                                     srvName,                       // expanded server name
+                                     NS_MAXDNAME);
+      if (serverNameSize < 0) {
+        return false;
+      }
+
+      srv_t* server = reinterpret_cast<srv_t*>(&blob[sizeof(rechdr)]);
+      uint16_t convertedPort = be16toh(server->port);
+
+      blob += serverNameSize + NS_HFIXEDSZ + NS_QFIXEDSZ;
+
+      char hostName[NS_MAXDNAME];
+      int hostNameSize = dn_expand(queryAnswer.buf,               // message pointer
+                                   queryAnswer.buf + answerSize,  // end of message
+                                   blob,                          // compressed host name
+                                   hostName,                      // expanded host name
+                                   NS_MAXDNAME);
+      if (hostNameSize < 0) {
+        return false;
+      }
+
+      std::string uri = "udp://";
+      uri.append(hostName);
+      uri.append(":");
+      uri.append(boost::lexical_cast<std::string>(convertedPort));
+
+      connectToHub(uri);
+
+      return true;
+    }
+    return false;
+  }
+
   void
   connectToHub(const std::string& uri)
   {
-    std::cerr << "about to connect to: " << uri << std::endl;
+    ndn::util::FaceUri faceUri(uri);
+
+    faceUri.canonize(bind(&NdnAutoconfig::onCanonizeSuccess, this, _1),
+                     bind(&NdnAutoconfig::onCanonizeFailure, this, _1),
+                     m_face.getIoService(), ndn::time::seconds(4));
+
+  }
+
+  void onCanonizeSuccess(const ndn::util::FaceUri& canonicalUri)
+  {
+    std::cerr << "about to connect to: " << canonicalUri.toString() << std::endl;
 
     m_controller.start<nfd::FaceCreateCommand>(
       nfd::ControlParameters()
-        .setUri(uri),
+        .setUri(canonicalUri.toString()),
       bind(&NdnAutoconfig::onHubConnectSuccess, this, _1),
-      bind(&NdnAutoconfig::onHubConnectError, this, _1, _2)
-    );
+      bind(&NdnAutoconfig::onHubConnectError, this, _1, _2));
+  }
+
+  void
+  onCanonizeFailure(const std::string& reason)
+  {
+    std::ostringstream os;
+    os << "Canonize faceUri failed: " << reason;
+    throw Error(os.str());
   }
 
   void
@@ -400,80 +481,6 @@ public:
     std::ostringstream os;
     os << "Failed to create face: " << error << " (code: " << code << ")";
     throw Error(os.str());
-  }
-
-
-  bool parseHostAndConnectToHub(QueryAnswer& queryAnswer, int answerSize)
-  {
-    // The references of the next classes are:
-    // http://www.diablotin.com/librairie/networking/dnsbind/ch14_02.htm
-    // https://gist.github.com/mologie/6027597
-
-    struct rechdr
-    {
-      uint16_t type;
-      uint16_t iclass;
-      uint32_t ttl;
-      uint16_t length;
-    };
-
-    struct srv_t
-    {
-      uint16_t priority;
-      uint16_t weight;
-      uint16_t port;
-      uint8_t* target;
-    };
-
-    if (ntohs(queryAnswer.header.ancount) == 0)
-    {
-      std::cerr << "No records found\n" << std::endl;
-      return false;
-    }
-
-    uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
-
-    blob += dn_skipname(blob, queryAnswer.buf + answerSize) + NS_QFIXEDSZ;
-
-    for (int i = 0; i < ntohs(queryAnswer.header.ancount); i++)
-    {
-      char srvName[NS_MAXDNAME];
-      int serverNameSize = dn_expand(queryAnswer.buf,               // message pointer
-                                     queryAnswer.buf + answerSize,  // end of message
-                                     blob,                          // compressed server name
-                                     srvName,                       // expanded server name
-                                     NS_MAXDNAME);
-      if (serverNameSize < 0)
-      {
-        return false;
-      }
-
-      srv_t* server = reinterpret_cast<srv_t*>(&blob[sizeof(rechdr)]);
-      uint16_t convertedPort = be16toh(server->port);
-
-      blob += serverNameSize + NS_HFIXEDSZ + NS_QFIXEDSZ;
-
-      char hostName[NS_MAXDNAME];
-      int hostNameSize = dn_expand(queryAnswer.buf,               // message pointer
-                                   queryAnswer.buf + answerSize,  // end of message
-                                   blob,                          // compressed host name
-                                   hostName,                      // expanded host name
-                                   NS_MAXDNAME);
-      if (hostNameSize < 0)
-      {
-        return false;
-      }
-
-      std::string uri = "udp://";
-      uri.append(hostName);
-      uri.append(":");
-      uri.append(boost::lexical_cast<std::string>(convertedPort));
-
-      connectToHub(uri);
-      return true;
-    }
-
-    return false;
   }
 
   void
