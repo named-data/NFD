@@ -18,7 +18,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- General configuration ------------------------------------------------
 
@@ -30,6 +30,7 @@ import os
 # ones.
 extensions = [
     'sphinx.ext.todo',
+    'redmine_issue',
 ]
 
 def addExtensionIfExists(extension):
@@ -266,3 +267,5 @@ doxylink = {
 if os.getenv('GOOGLE_ANALYTICS', None):
     googleanalytics_id = os.environ['GOOGLE_ANALYTICS']
     googleanalytics_enabled = True
+
+redmine_project_url = "http://redmine.named-data.net/"

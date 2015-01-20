@@ -53,7 +53,7 @@ public:
   /** \brief get or create a StrategyInfo item
    *  \tparam T type of StrategyInfo, must be a subclass of from nfd::fw::StrategyInfo
    *
-   *  If no StrategyInfo of type T is stored, it's created with \p{args};
+   *  If no StrategyInfo of type T is stored, it's created with \p args;
    *  otherwise, the existing item is returned.
    */
   template<typename T, typename ...A>

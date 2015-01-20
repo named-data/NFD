@@ -1931,7 +1931,10 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = NFD_LOG_INIT(x)= \
                          NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(x,y)= \
                          NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(x,y,z)= \
-                         BOOST_STATIC_ASSERT(x)=
+                         BOOST_STATIC_ASSERT(x)= \
+                         BOOST_CONCEPT_ASSERT \
+                         BOOST_CONCEPT_REQUIRES \
+                         DECL_OVERRIDE=override
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

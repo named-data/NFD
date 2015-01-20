@@ -243,6 +243,17 @@ with configuration in ``/etc`` folder.
     ./waf
     sudo ./waf install
 
+Customize Compiler
+~~~~~~~~~~~~~~~~~~
+
+To customize compiler, set ``CXX`` environment variable to point to compiler binary and, in
+some case, specify type of the compiler using ``--check-cxx-compiler``.  For example, when
+using clang compiler on Linux system, use the following:
+
+::
+
+    CXX=clang++ ./waf configure --check-cxx-compiler=clang++
+
 Building documentation
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -358,10 +369,9 @@ with the following:
 
 Sample applications:
 
--  `Simple examples in ndn-cxx
-   library <http://named-data.net/doc/ndn-cxx/current/examples.html>`__.
-   If you have installed ndn-cxx from source, you already have compiled
-   these:
+- `Simple examples in ndn-cxx library <http://named-data.net/doc/ndn-cxx/current/examples.html>`_
+
+   If you have installed ndn-cxx from source, you already have compiled these:
 
    +  examples/producer
    +  examples/consumer
@@ -370,18 +380,16 @@ Sample applications:
    +  tools/ndncatchunks3
    +  tools/ndnputchunks3
 
--  `Introductory examples of
-   NDN-CCL <http://redmine.named-data.net/projects/nfd/wiki/Getting_Started_-_Common_Client_Libraries#Install-the-Common-Client-Library>`__
+- `Introductory examples of NDN-CCL
+  <http://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
 
 Real applications and libraries:
 
    + `ndn-tlv-ping - Reachability Testing Tool for NDN
-      <https://github.com/named-data/ndn-tlv-ping>`__
-   +  `ndn-traffic-generator - Traffic Generator For
-      NDN <https://github.com/named-data/ndn-traffic-generator>`__
-   +  `repo-ng - Next generation of NDN
-      repository <https://github.com/named-data/repo-ng>`__
-   +  `ChronoChat - Multi-user NDN chat
-      application <https://github.com/named-data/ChronoChat>`__
-   +  `ChronoSync - Sync library for multiuser realtime applications for
-      NDN <https://github.com/named-data/ChronoSync>`__
+     <https://github.com/named-data/ndn-tlv-ping>`_
+   + `ndn-traffic-generator - Traffic Generator For NDN
+     <https://github.com/named-data/ndn-traffic-generator>`_
+   + `repo-ng - Next generation of NDN repository <https://github.com/named-data/repo-ng>`_
+   + `ChronoChat - Multi-user NDN chat application <https://github.com/named-data/ChronoChat>`_
+   + `ChronoSync - Sync library for multiuser realtime applications for NDN
+     <https://github.com/named-data/ChronoSync>`_

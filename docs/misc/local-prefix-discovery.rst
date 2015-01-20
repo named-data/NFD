@@ -24,9 +24,9 @@ interest contains a list of prefixes and should be encoded as:
     ResponseContent ::= Name+
 
 .. note::
-ResponseContent should contain at least one Name, which should be routable
-towards the face from which the request has been received.  The requester may
-process list of the returned names and pick whichever it wants to use.
+    ResponseContent should contain at least one Name, which should be routable
+    towards the face from which the request has been received.  The requester may
+    process list of the returned names and pick whichever it wants to use.
 
 For now, the ``/localhop/ndn-autoconf/routable-prefixes`` data is served by
 :ref:`ndn-autoconfig-server`.
