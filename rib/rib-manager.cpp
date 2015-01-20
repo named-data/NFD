@@ -106,7 +106,7 @@ RibManager::startListening(const Name& commandPrefix, const ndn::OnInterest& onR
     ControlParameters()
       .setName(commandPrefix)
       .setFaceId(0),
-    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(commandPrefix)),
+    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(commandPrefix), _1),
     bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(commandPrefix), _2));
 
   m_face.setInterestFilter(commandPrefix, onRequest);
@@ -529,9 +529,22 @@ RibManager::sendErrorResponse(uint32_t code, const std::string& error,
 }
 
 void
-RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix)
+RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
+                                                const ndn::nfd::ControlParameters& result)
 {
   NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
+
+  // Routes must be inserted into the RIB so route flags can be applied
+  Route route;
+  route.faceId = result.getFaceId();
+  route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
+  route.expires = time::steady_clock::TimePoint::max();
+  route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+
+  m_managedRib.insert(prefix, route);
+
+  m_registeredFaces.insert(route.faceId);
+  m_managedRib.clearFibUpdates();
 }
 
 void

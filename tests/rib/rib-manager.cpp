@@ -353,6 +353,41 @@ BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
   BOOST_CHECK_EQUAL(entry->hasFaceId(2), false);
 }
 
+BOOST_FIXTURE_TEST_CASE(LocalHopInherit, AuthorizedRibManager)
+{
+  using nfd::rib::RibManager;
+
+  // Simulate NFD response
+  ControlParameters result;
+  result.setFaceId(261);
+
+  manager->onNrdCommandPrefixAddNextHopSuccess(RibManager::REMOTE_COMMAND_PREFIX, result);
+
+  // Register route that localhop prefix should inherit
+  ControlParameters parameters;
+  parameters
+    .setName("/localhop/nfd")
+    .setFaceId(262)
+    .setCost(25)
+    .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+
+  Name commandName("/localhost/nfd/rib/register");
+
+  receiveCommandInterest(commandName, parameters);
+
+  // REMOTE_COMMAND_PREFIX should have its original route and the inherited route
+  auto it = manager->m_managedRib.find(RibManager::REMOTE_COMMAND_PREFIX);
+
+  BOOST_REQUIRE(it != manager->m_managedRib.end());
+  const RibEntry::RouteList& inheritedRoutes = (*(it->second)).getInheritedRoutes();
+
+  BOOST_CHECK_EQUAL(inheritedRoutes.size(), 1);
+  auto routeIt = inheritedRoutes.begin();
+
+  BOOST_CHECK_EQUAL(routeIt->faceId, 262);
+  BOOST_CHECK_EQUAL(routeIt->cost, 25);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

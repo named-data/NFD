@@ -142,9 +142,12 @@ private:
                  const ControlParameters& parameters,
                  const Route& route);
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  onNrdCommandPrefixAddNextHopSuccess(const Name& prefix);
+  onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
+                                      const ndn::nfd::ControlParameters& result);
 
+private:
   void
   onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
 
@@ -272,8 +275,11 @@ private:
   const SignedVerbDispatchTable m_signedVerbDispatch;
 
   static const Name COMMAND_PREFIX; // /localhost/nrd
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   static const Name REMOTE_COMMAND_PREFIX; // /localhop/nrd
 
+private:
   // number of components in an invalid, but not malformed, unsigned command.
   // (/localhost/nrd + verb + options) = 4
   static const size_t COMMAND_UNSIGNED_NCOMPS;
