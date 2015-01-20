@@ -415,13 +415,13 @@ Nfdc::ribUnregisterPrefix()
 void
 Nfdc::onCanonizeFailure(const std::string& reason)
 {
-  std::cerr << reason << std::endl;
+  throw Error(reason);
 }
 
 void
 Nfdc::onObtainFaceIdFailure(const std::string& message)
 {
-  std::cerr << "Obtain faceId failure: " << message << std::endl;
+  throw Error(message);
 }
 
 void
