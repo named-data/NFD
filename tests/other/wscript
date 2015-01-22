@@ -1,12 +1,13 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014  Regents of the University of California,
-                    Arizona Board of Regents,
-                    Colorado State University,
-                    University Pierre & Marie Curie, Sorbonne University,
-                    Washington University in St. Louis,
-                    Beijing Institute of Technology
+Copyright (c) 2014-2015,  Regents of the University of California,
+                          Arizona Board of Regents,
+                          Colorado State University,
+                          University Pierre & Marie Curie, Sorbonne University,
+                          Washington University in St. Louis,
+                          Beijing Institute of Technology,
+                          The University of Memphis.
 
 This file is part of NFD (Named Data Networking Forwarding Daemon).
 See AUTHORS.md for complete list of NFD authors and contributors.
@@ -26,8 +27,8 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 top = '../..'
 
 def build(bld):
-    bld.program(target="../../cs-smoketest",
-                source="cs-smoketest.cpp",
-                use='daemon-objects',
+    bld.program(target="../../cs-benchmark",
+                source="cs-benchmark.cpp",
+                use='daemon-objects unit-tests-main',
                 install_path=None,
                 )
