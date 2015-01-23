@@ -23,61 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs-entry.hpp"
+#include "core/algorithm.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
-namespace cs {
+namespace tests {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
+BOOST_FIXTURE_TEST_SUITE(CoreAlgorithm, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(FindLastIf)
 {
-  m_data = data;
-  m_isUnsolicited = isUnsolicited;
+  std::vector<int> vec{1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-  updateStaleTime();
+  int hit1 = 0;
+  std::vector<int>::const_iterator found1 = find_last_if(vec.begin(), vec.end(),
+      [&hit1] (int n) -> bool {
+        ++hit1;
+        return n % 2 == 0;
+      });
+  BOOST_REQUIRE(found1 != vec.end());
+  BOOST_CHECK_EQUAL(*found1, 8);
+  BOOST_CHECK_LE(hit1, vec.size());
+
+  int hit2 = 0;
+  std::vector<int>::const_iterator found2 = find_last_if(vec.begin(), vec.end(),
+      [&hit2] (int n) -> bool {
+        ++hit2;
+        return n < 0;
+      });
+  BOOST_CHECK(found2 == vec.end());
+  BOOST_CHECK_LE(hit2, vec.size());
 }
 
-bool
-Entry::isStale() const
-{
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
-}
+BOOST_AUTO_TEST_SUITE_END()
 
-void
-Entry::updateStaleTime()
-{
-  BOOST_ASSERT(this->hasData());
-  if (m_data->getFreshnessPeriod() >= time::milliseconds::zero()) {
-    m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
-  }
-  else {
-    m_staleTime = time::steady_clock::TimePoint::max();
-  }
-}
-
-bool
-Entry::canSatisfy(const Interest& interest) const
-{
-  BOOST_ASSERT(this->hasData());
-  if (!interest.matchesData(*m_data)) {
-    return false;
-  }
-
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
-    return false;
-  }
-
-  return true;
-}
-
-void
-Entry::reset()
-{
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
-}
-
-} // namespace cs
+} // namespace tests
 } // namespace nfd

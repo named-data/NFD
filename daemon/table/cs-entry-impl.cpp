@@ -23,60 +23,63 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs-entry.hpp"
+#include "cs-entry-impl.hpp"
 
 namespace nfd {
 namespace cs {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
+EntryImpl::EntryImpl(const Name& name)
+  : m_queryName(name)
 {
-  m_data = data;
-  m_isUnsolicited = isUnsolicited;
+  BOOST_ASSERT(this->isQuery());
+}
 
-  updateStaleTime();
+EntryImpl::EntryImpl(shared_ptr<const Data> data, bool isUnsolicited)
+  : queueType(QUEUE_NONE)
+{
+  this->setData(data, isUnsolicited);
+  BOOST_ASSERT(!this->isQuery());
 }
 
 bool
-Entry::isStale() const
+EntryImpl::isQuery() const
 {
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
+  return !this->hasData();
+}
+
+bool
+EntryImpl::canStale() const
+{
+  BOOST_ASSERT(!this->isQuery());
+  return this->getStaleTime() < time::steady_clock::TimePoint::max();
 }
 
 void
-Entry::updateStaleTime()
+EntryImpl::unsetUnsolicited()
 {
-  BOOST_ASSERT(this->hasData());
-  if (m_data->getFreshnessPeriod() >= time::milliseconds::zero()) {
-    m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
+  BOOST_ASSERT(!this->isQuery());
+  this->setData(this->getData(), false);
+}
+
+bool
+EntryImpl::operator<(const EntryImpl& other) const
+{
+  if (this->isQuery()) {
+    if (other.isQuery()) {
+      return m_queryName < other.m_queryName;
+    }
+    else {
+      return m_queryName < other.m_queryName;
+    }
   }
   else {
-    m_staleTime = time::steady_clock::TimePoint::max();
+    if (other.isQuery()) {
+      return this->getFullName() < other.m_queryName;
+    }
+    else {
+      return this->getFullName() < other.getFullName();
+    }
   }
-}
-
-bool
-Entry::canSatisfy(const Interest& interest) const
-{
-  BOOST_ASSERT(this->hasData());
-  if (!interest.matchesData(*m_data)) {
-    return false;
-  }
-
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
-    return false;
-  }
-
-  return true;
-}
-
-void
-Entry::reset()
-{
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
 }
 
 } // namespace cs

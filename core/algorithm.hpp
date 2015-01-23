@@ -23,61 +23,36 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cs-entry.hpp"
+#ifndef NFD_CORE_ALGORITHM_HPP
+#define NFD_CORE_ALGORITHM_HPP
+
+#include "common.hpp"
+#include <boost/concept/requires.hpp>
 
 namespace nfd {
-namespace cs {
 
-void
-Entry::setData(shared_ptr<const Data> data, bool isUnsolicited)
+/** \brief finds the last element satisfying a predicate
+ *  \tparam It BidirectionalIterator
+ *  \tparam Pred UnaryPredicate
+ *
+ *  \return Iterator to the last element satisfying the condition,
+ *          or \p last if no such element is found.
+ *
+ *  Complexity: at most \p last-first invocations of \p p
+ */
+template<typename It, typename Pred>
+BOOST_CONCEPT_REQUIRES(
+  ((boost::BidirectionalIterator<It>))
+  ((boost::UnaryPredicate<Pred, typename std::iterator_traits<It>::value_type>)),
+  (It)
+)
+find_last_if(It first, It last, Pred p)
 {
-  m_data = data;
-  m_isUnsolicited = isUnsolicited;
-
-  updateStaleTime();
+  std::reverse_iterator<It> firstR(first), lastR(last);
+  auto found = std::find_if(lastR, firstR, p);
+  return found == firstR ? last : std::prev(found.base());
 }
 
-bool
-Entry::isStale() const
-{
-  BOOST_ASSERT(this->hasData());
-  return m_staleTime < time::steady_clock::now();
-}
-
-void
-Entry::updateStaleTime()
-{
-  BOOST_ASSERT(this->hasData());
-  if (m_data->getFreshnessPeriod() >= time::milliseconds::zero()) {
-    m_staleTime = time::steady_clock::now() + time::milliseconds(m_data->getFreshnessPeriod());
-  }
-  else {
-    m_staleTime = time::steady_clock::TimePoint::max();
-  }
-}
-
-bool
-Entry::canSatisfy(const Interest& interest) const
-{
-  BOOST_ASSERT(this->hasData());
-  if (!interest.matchesData(*m_data)) {
-    return false;
-  }
-
-  if (interest.getMustBeFresh() == static_cast<int>(true) && this->isStale()) {
-    return false;
-  }
-
-  return true;
-}
-
-void
-Entry::reset()
-{
-  m_data.reset();
-  m_isUnsolicited = false;
-  m_staleTime = time::steady_clock::TimePoint();
-}
-
-} // namespace cs
 } // namespace nfd
+
+#endif // NFD_CORE_ALGORITHM_HPP

@@ -21,92 +21,40 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** \file
  *
- * \author Ilya Moiseenko <http://ilyamoiseenko.com/>
- * \author Junxiao Shi <http://www.cs.arizona.edu/people/shijunxiao/>
- * \author Alexander Afanasyev <http://lasr.cs.ucla.edu/afanasyev/index.html>
+ *  \brief implements the ContentStore
+ *
+ *  This ContentStore implementation consists of two data structures,
+ *  a Table, and a set of cleanup queues.
+ *
+ *  The Table is a container (std::set) sorted by full Names of stored Data packets.
+ *  Data packets are wrapped in Entry objects.
+ *  Each Entry contain the Data packet itself,
+ *  and a few addition attributes such as the staleness of the Data packet.
+ *
+ *  The cleanup queues are three doubly linked lists which stores Table iterators.
+ *  The three queues keep track of unsolicited, stale, and fresh Data packet, respectively.
+ *  Table iterator is placed into, removed from, and moved between suitable queues
+ *  whenever an Entry is added, removed, or has other attribute changes.
+ *  The Table iterator of an Entry should be in exactly one queue at any moment.
+ *  Within each queue, the iterators are kept in first-in-first-out order.
+ *  Eviction procedure exhausts the first queue before moving onto the next queue,
+ *  in the order of unsolicited, stale, and fresh queue.
  */
 
 #ifndef NFD_DAEMON_TABLE_CS_HPP
 #define NFD_DAEMON_TABLE_CS_HPP
 
-#include "common.hpp"
-#include "cs-skip-list-entry.hpp"
-
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/identity.hpp>
-
-#include <queue>
+#include "cs-entry-impl.hpp"
+#include <boost/iterator/transform_iterator.hpp>
 
 namespace nfd {
+namespace cs {
 
-typedef std::list<cs::skip_list::Entry*> SkipListLayer;
-typedef std::list<SkipListLayer*> SkipList;
-
-class StalenessComparator
-{
-public:
-  bool
-  operator()(const cs::skip_list::Entry* entry1, const cs::skip_list::Entry* entry2) const
-  {
-    return entry1->getStaleTime() < entry2->getStaleTime();
-  }
-};
-
-class UnsolicitedComparator
-{
-public:
-  bool
-  operator()(const cs::skip_list::Entry* entry1, const cs::skip_list::Entry* entry2) const
-  {
-    return entry1->isUnsolicited();
-  }
-
-  bool
-  operator()(bool isUnsolicited, const cs::skip_list::Entry* entry) const
-  {
-    if (isUnsolicited)
-      return true;
-    else
-      return !entry->isUnsolicited();
-  }
-};
-
-// tags
-class unsolicited;
-class byStaleness;
-class byArrival;
-
-typedef boost::multi_index_container<
-  cs::skip_list::Entry*,
-  boost::multi_index::indexed_by<
-
-    // by arrival (FIFO)
-    boost::multi_index::sequenced<
-      boost::multi_index::tag<byArrival>
-    >,
-
-    // index by staleness time
-    boost::multi_index::ordered_non_unique<
-      boost::multi_index::tag<byStaleness>,
-      boost::multi_index::identity<cs::skip_list::Entry*>,
-      StalenessComparator
-    >,
-
-    // unsolicited Data is in the front
-    boost::multi_index::ordered_non_unique<
-      boost::multi_index::tag<unsolicited>,
-      boost::multi_index::identity<cs::skip_list::Entry*>,
-      UnsolicitedComparator
-    >
-
-  >
-> CleanupIndex;
-
-/** \brief represents Content Store
+/** \brief represents the ContentStore
  */
 class Cs : noncopyable
 {
@@ -114,234 +62,133 @@ public:
   explicit
   Cs(size_t nMaxPackets = 10);
 
-  ~Cs();
-
   /** \brief inserts a Data packet
-   *  This method does not consider the payload of the Data packet.
-   *
-   *  Packets are considered duplicate if the name matches.
-   *  The new Data packet with the identical name, but a different payload
-   *  is not placed in the Content Store
-   *  \return{ whether the Data is added }
+   *  \return true
    */
   bool
   insert(const Data& data, bool isUnsolicited = false);
 
-  /** \brief finds the best match Data for an Interest
-   *  \return{ the best match, if any; otherwise 0 }
+  /** \brief finds the best matching Data packet
    */
   const Data*
   find(const Interest& interest) const;
 
-  /** \brief deletes CS entry by the exact name
-   */
   void
-  erase(const Name& exactName);
+  erase(const Name& exactName)
+  {
+    BOOST_ASSERT_MSG(false, "not implemented");
+  }
 
-  /** \brief sets maximum allowed size of Content Store (in packets)
+  /** \brief changes capacity (in number of packets)
    */
   void
   setLimit(size_t nMaxPackets);
 
-  /** \brief returns maximum allowed size of Content Store (in packets)
-   *  \return{ number of packets that can be stored in Content Store }
+  /** \return capacity (in number of packets)
    */
   size_t
-  getLimit() const;
+  getLimit() const
+  {
+    return m_limit;
+  }
 
-  /** \brief returns current size of Content Store measured in packets
-   *  \return{ number of packets located in Content Store }
+  /** \return number of stored packets
    */
   size_t
-  size() const;
+  size() const
+  {
+    return m_table.size();
+  }
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  void
+  dump();
 
 public: // enumeration
-  class const_iterator;
-
-  /** \brief returns an iterator pointing to the first CS entry
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated if CS is modified
-   */
-  const_iterator
-  begin() const;
-
-  /** \brief returns an iterator referring to the past-the-end CS entry
-   *  \note The returned iterator may get invalidated if CS is modified
-   */
-  const_iterator
-  end() const;
-
-  class const_iterator : public std::iterator<std::forward_iterator_tag, const cs::Entry>
+  struct EntryFromEntryImpl
   {
-  public:
-    const_iterator() = default;
+    typedef const Entry& result_type;
 
-    const_iterator(SkipListLayer::const_iterator it);
-
-    ~const_iterator();
-
-    reference
-    operator*() const;
-
-    pointer
-    operator->() const;
-
-    const_iterator&
-    operator++();
-
-    const_iterator
-    operator++(int);
-
-    bool
-    operator==(const const_iterator& other) const;
-
-    bool
-    operator!=(const const_iterator& other) const;
-
-  private:
-    SkipListLayer::const_iterator m_skipListIterator;
+    const Entry&
+    operator()(const EntryImpl& entry) const
+    {
+      return entry;
+    }
   };
 
-protected:
-  /** \brief removes one Data packet from Content Store based on replacement policy
-   *  \return{ whether the Data was removed }
+  /** \brief ContentStore iterator (public API)
    */
-  bool
-  evictItem();
+  typedef boost::transform_iterator<EntryFromEntryImpl, TableIt, const Entry&> const_iterator;
 
-private:
-  /** \brief returns True if the Content Store is at its maximum capacity
-   *  \return{ True if Content Store is full; otherwise False}
+  const_iterator
+  begin() const
+  {
+    return boost::make_transform_iterator(m_table.begin(), EntryFromEntryImpl());
+  }
+
+  const_iterator
+  end() const
+  {
+    return boost::make_transform_iterator(m_table.end(), EntryFromEntryImpl());
+  }
+
+private: // find
+  /** \brief find leftmost match in [first,last)
+   *  \return the leftmost match, or last if not found
    */
-  bool
-  isFull() const;
+  TableIt
+  findLeftmost(const Interest& interest, TableIt left, TableIt right) const;
 
-  /** \brief Computes the layer where new Content Store Entry is placed
-   *
-   *  Reference: "Skip Lists: A Probabilistic Alternative to Balanced Trees" by W.Pugh
-   *  \return{ returns random layer (number) in a skip list}
+  /** \brief find rightmost match in [first,last)
+   *  \return the rightmost match, or last if not found
    */
-  size_t
-  pickRandomLayer() const;
+  TableIt
+  findRightmost(const Interest& interest, TableIt first, TableIt last) const;
 
-  /** \brief Inserts a new Content Store Entry in a skip list
-   *  \return{ returns a pair containing a pointer to the CS Entry,
-   *  and a flag indicating if the entry was newly created (True) or refreshed (False) }
+  /** \brief find rightmost match among entries with exact Names in [first,last)
+   *  \return the rightmost match, or last if not found
    */
-  std::pair<cs::skip_list::Entry*, bool>
-  insertToSkipList(const Data& data, bool isUnsolicited = false);
+  TableIt
+  findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const;
 
-  /** \brief Removes a specific CS Entry from all layers of a skip list
-   *  \return{ returns True if CS Entry was succesfully removed and False if CS Entry was not found}
-   */
-  bool
-  eraseFromSkipList(cs::skip_list::Entry* entry);
-
-  /** \brief Prints contents of the skip list, starting from the top layer
+private: // cleanup
+  /** \brief attaches an entry to a suitable cleanup queue
+   *  \note if the entry is already attached to a queue, it's automatically detached
    */
   void
-  printSkipList() const;
+  attachQueue(TableIt it);
 
-  /** \brief Implements child selector (leftmost, rightmost, undeclared).
-   *  Operates on the first layer of a skip list.
-   *
-   *  startingPoint must be less than Interest Name.
-   *  startingPoint can be equal to Interest Name only when the item is in the begin() position.
-   *
-   *  Iterates toward greater Names, terminates when CS entry falls out of Interest prefix.
-   *  When childSelector = leftmost, returns first CS entry that satisfies other selectors.
-   *  When childSelector = rightmost, it goes till the end, and returns CS entry that satisfies
-   *  other selectors. Returned CS entry is the leftmost child of the rightmost child.
-   *  \return{ the best match, if any; otherwise 0 }
+  /** \brief detaches an entry from its current cleanup queue
+   *  \warning if the entry is unattached, this will cause undefined behavior
    */
-  const Data*
-  selectChild(const Interest& interest, SkipListLayer::iterator startingPoint) const;
+  void
+  detachQueue(TableIt it);
 
-  /** \brief checks if Content Store entry satisfies Interest selectors (MinSuffixComponents,
-   *  MaxSuffixComponents, Implicit Digest, MustBeFresh)
-   *  \return{ true if satisfies all selectors; false otherwise }
+  /** \brief moves an entry from FIFO queue to STALE queue
    */
-  bool
-  doesComplyWithSelectors(const Interest& interest,
-                          cs::skip_list::Entry* entry,
-                          bool doesInterestContainDigest) const;
+  void
+  moveToStaleQueue(TableIt it);
 
-  /** \brief interprets minSuffixComponent and name lengths to understand if Interest contains
-   *  implicit digest of the data
-   *  \return{ True if Interest name contains digest; False otherwise }
+  /** \brief picks an entry for eviction
    */
-  bool
-  recognizeInterestWithDigest(const Interest& interest, cs::skip_list::Entry* entry) const;
+  std::tuple<TableIt, std::string/*reason*/>
+  evictPick();
+
+  /** \brief evicts zero or more entries so that number of stored entries
+   *         is not greater than capacity
+   */
+  void
+  evict();
 
 private:
-  SkipList m_skipList;
-  CleanupIndex m_cleanupIndex;
-  size_t m_nMaxPackets; // user defined maximum size of the Content Store in packets
-  size_t m_nPackets;    // current number of packets in Content Store
-  std::queue<cs::skip_list::Entry*> m_freeCsEntries; // memory pool
+  size_t m_limit;
+  Table m_table;
+  Queue m_queues[QUEUE_MAX];
 };
 
-inline Cs::const_iterator
-Cs::begin() const
-{
-  return const_iterator(m_skipList.front()->begin());
-}
+} // namespace cs
 
-inline Cs::const_iterator
-Cs::end() const
-{
-  return const_iterator(m_skipList.front()->end());
-}
-
-inline
-Cs::const_iterator::const_iterator(SkipListLayer::const_iterator it)
-  : m_skipListIterator(it)
-{
-}
-
-inline
-Cs::const_iterator::~const_iterator()
-{
-}
-
-inline Cs::const_iterator&
-Cs::const_iterator::operator++()
-{
-  ++m_skipListIterator;
-  return *this;
-}
-
-inline Cs::const_iterator
-Cs::const_iterator::operator++(int)
-{
-  Cs::const_iterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-inline Cs::const_iterator::reference
-Cs::const_iterator::operator*() const
-{
-  return *(this->operator->());
-}
-
-inline Cs::const_iterator::pointer
-Cs::const_iterator::operator->() const
-{
-  return *m_skipListIterator;
-}
-
-inline bool
-Cs::const_iterator::operator==(const Cs::const_iterator& other) const
-{
-  return m_skipListIterator == other.m_skipListIterator;
-}
-
-inline bool
-Cs::const_iterator::operator!=(const Cs::const_iterator& other) const
-{
-  return !(*this == other);
-}
+using cs::Cs;
 
 } // namespace nfd
 
