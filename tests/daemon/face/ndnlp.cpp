@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(SequenceGenerator)
   BOOST_CHECK_NE(sb1[1], sb2[0]);
 }
 
-// slice a Block to one NDNLP packet
+// slice a Block to one fragment
 BOOST_AUTO_TEST_CASE(Slice1)
 {
   uint8_t blockValue[60];
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(Slice1)
                                 block.begin(),                block.end());
 }
 
-// slice a Block to four NDNLP packets
+// slice a Block to four fragments
 BOOST_AUTO_TEST_CASE(Slice4)
 {
   uint8_t blockValue[5050];
@@ -151,14 +151,15 @@ BOOST_AUTO_TEST_CASE(Slice4)
   BOOST_CHECK_EQUAL(totalPayloadSize, block.size());
 }
 
-class ReassembleFixture : protected BaseFixture
+class ReassembleFixture : protected UnitTestTimeFixture
 {
 protected:
   ReassembleFixture()
-    : m_slicer(1500)
+    : slicer(1500)
+    , pms(time::milliseconds(100))
   {
-    m_partialMessageStore.onReceive.connect([this] (const Block& block) {
-      m_received.push_back(block);
+    pms.onReceive.connect([this] (const Block& block) {
+      received.push_back(block);
     });
   }
 
@@ -171,59 +172,118 @@ protected:
   }
 
 protected:
-  ndnlp::Slicer m_slicer;
-  ndnlp::PartialMessageStore m_partialMessageStore;
+  ndnlp::Slicer slicer;
+  ndnlp::PartialMessageStore pms;
+
+  static const time::nanoseconds IDLE_DURATION;
 
   // received network layer packets
-  std::vector<Block> m_received;
+  std::vector<Block> received;
 };
 
-// reassemble one NDNLP packets into one Block
+// reassemble one fragment into one Block
 BOOST_FIXTURE_TEST_CASE(Reassemble1, ReassembleFixture)
 {
   Block block = makeBlock(60);
-  ndnlp::PacketArray pa = m_slicer.slice(block);
+  ndnlp::PacketArray pa = slicer.slice(block);
   BOOST_REQUIRE_EQUAL(pa->size(), 1);
 
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa->at(0));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  pms.receiveNdnlpData(pa->at(0));
 
-  BOOST_REQUIRE_EQUAL(m_received.size(), 1);
-  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(0).begin(), m_received.at(0).end(),
-                                block.begin(),            block.end());
+  BOOST_REQUIRE_EQUAL(received.size(), 1);
+  BOOST_CHECK_EQUAL_COLLECTIONS(received.at(0).begin(), received.at(0).end(),
+                                block.begin(),          block.end());
 }
 
-// reassemble four and two NDNLP packets into two Blocks
+// reassemble four and two fragments into two Blocks
 BOOST_FIXTURE_TEST_CASE(Reassemble4and2, ReassembleFixture)
 {
   Block block = makeBlock(5050);
-  ndnlp::PacketArray pa = m_slicer.slice(block);
+  ndnlp::PacketArray pa = slicer.slice(block);
   BOOST_REQUIRE_EQUAL(pa->size(), 4);
 
   Block block2 = makeBlock(2000);
-  ndnlp::PacketArray pa2 = m_slicer.slice(block2);
+  ndnlp::PacketArray pa2 = slicer.slice(block2);
   BOOST_REQUIRE_EQUAL(pa2->size(), 2);
 
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa->at(0));
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa->at(1));
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa2->at(1));
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa->at(1));
-  BOOST_CHECK_EQUAL(m_received.size(), 0);
-  m_partialMessageStore.receiveNdnlpData(pa2->at(0));
-  BOOST_CHECK_EQUAL(m_received.size(), 1);
-  m_partialMessageStore.receiveNdnlpData(pa->at(3));
-  BOOST_CHECK_EQUAL(m_received.size(), 1);
-  m_partialMessageStore.receiveNdnlpData(pa->at(2));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  pms.receiveNdnlpData(pa->at(0));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
 
-  BOOST_REQUIRE_EQUAL(m_received.size(), 2);
-  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(1).begin(), m_received.at(1).end(),
-                                block.begin(),            block.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(m_received.at(0).begin(), m_received.at(0).end(),
-                                block2.begin(),           block2.end());
+  pms.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa2->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa2->at(0));
+  BOOST_CHECK_EQUAL(received.size(), 1);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(3));
+  BOOST_CHECK_EQUAL(received.size(), 1);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(2));
+
+  BOOST_REQUIRE_EQUAL(received.size(), 2);
+  BOOST_CHECK_EQUAL_COLLECTIONS(received.at(1).begin(), received.at(1).end(),
+                                block.begin(),          block.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(received.at(0).begin(), received.at(0).end(),
+                                block2.begin(),         block2.end());
+}
+
+// reassemble four fragments into one Block, but another two fragments are expired
+BOOST_FIXTURE_TEST_CASE(ReassembleTimeout, ReassembleFixture)
+{
+  Block block = makeBlock(5050);
+  ndnlp::PacketArray pa = slicer.slice(block);
+  BOOST_REQUIRE_EQUAL(pa->size(), 4);
+
+  Block block2 = makeBlock(2000);
+  ndnlp::PacketArray pa2 = slicer.slice(block2);
+  BOOST_REQUIRE_EQUAL(pa2->size(), 2);
+
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  pms.receiveNdnlpData(pa->at(0));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa2->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(1));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(3));
+  BOOST_CHECK_EQUAL(received.size(), 0);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa->at(2));
+  BOOST_CHECK_EQUAL(received.size(), 1);
+  this->advanceClocks(time::milliseconds(40));
+
+  pms.receiveNdnlpData(pa2->at(0)); // last fragment was received 160ms ago, expired
+  BOOST_CHECK_EQUAL(received.size(), 1);
+  this->advanceClocks(time::milliseconds(40));
+
+  BOOST_REQUIRE_EQUAL(received.size(), 1);
+  BOOST_CHECK_EQUAL_COLLECTIONS(received.at(0).begin(), received.at(0).end(),
+                                block.begin(),          block.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

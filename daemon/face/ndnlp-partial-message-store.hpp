@@ -34,10 +34,20 @@ namespace ndnlp {
 
 /** \brief represents a partially received message
  */
-class PartialMessage : noncopyable
+class PartialMessage
 {
 public:
   PartialMessage();
+
+  PartialMessage(const PartialMessage&) = delete;
+
+  PartialMessage&
+  operator=(const PartialMessage&) = delete;
+
+  PartialMessage(PartialMessage&&) = default;
+
+  PartialMessage&
+  operator=(PartialMessage&&) = default;
 
   bool
   add(uint16_t fragIndex, uint16_t fragCount, const Block& payload);
@@ -56,7 +66,7 @@ public:
   reassemble();
 
 public:
-  scheduler::EventId m_expiry;
+  scheduler::ScopedEventId expiry;
 
 private:
   size_t m_fragCount;
@@ -84,18 +94,19 @@ public:
   void
   receiveNdnlpData(const Block& pkt);
 
-  /// fires when network layer packet is received
+  /** \brief fires when network layer packet is received
+   */
   signal::Signal<PartialMessageStore, Block> onReceive;
 
 private:
   void
-  scheduleCleanup(uint64_t messageIdentifier, shared_ptr<PartialMessage> partialMessage);
+  scheduleCleanup(uint64_t messageIdentifier, PartialMessage& partialMessage);
 
   void
   cleanup(uint64_t messageIdentifier);
 
 private:
-  std::map<uint64_t, shared_ptr<PartialMessage> > m_partialMessages;
+  std::unordered_map<uint64_t, PartialMessage> m_partialMessages;
 
   time::nanoseconds m_idleDuration;
 };
