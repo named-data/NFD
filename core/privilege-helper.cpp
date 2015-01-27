@@ -32,15 +32,18 @@ namespace nfd {
 
 NFD_LOG_INIT("PrivilegeHelper");
 
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
 uid_t PrivilegeHelper::s_normalUid = ::geteuid();
 gid_t PrivilegeHelper::s_normalGid = ::getegid();
 
 uid_t PrivilegeHelper::s_privilegedUid = ::geteuid();
 gid_t PrivilegeHelper::s_privilegedGid = ::getegid();
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 void
 PrivilegeHelper::initialize(const std::string& userName, const std::string& groupName)
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   static const size_t MAX_GROUP_BUFFER_SIZE = 16384; // 16kB
   static const size_t MAX_PASSWD_BUFFER_SIZE = 16384;
 
@@ -126,11 +129,15 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
 
       s_normalUid = passwd.pw_uid;
     }
+#else
+  throw Error("Dropping and raising privileges is not supported on this platform");
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void
 PrivilegeHelper::drop()
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("dropping to effective gid=" << s_normalGid);
   if (::setegid(s_normalGid) != 0)
     {
@@ -150,11 +157,15 @@ PrivilegeHelper::drop()
     }
 
   NFD_LOG_INFO("dropped to effective uid=" << ::geteuid() << " gid=" << ::getegid());
+#else
+  throw Error("Dropping privileges is not supported on this platform");
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void
 PrivilegeHelper::raise()
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("elevating to effective uid=" << s_privilegedUid);
   if (::seteuid(s_privilegedUid) != 0)
     {
@@ -173,6 +184,9 @@ PrivilegeHelper::raise()
       throw PrivilegeHelper::Error(error.str());
     }
   NFD_LOG_INFO("elevated to effective uid=" << ::geteuid() << " gid=" << ::getegid());
+#else
+  throw Error("Elevating privileges is not supported on this platform");
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void

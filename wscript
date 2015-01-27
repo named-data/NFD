@@ -73,6 +73,15 @@ def configure(conf):
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
+    conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
+    try:
+        for function in ['setegid', 'seteuid', 'sysconf', 'getgrnam_r', 'getpwnam_r']:
+            conf.check_cxx(function_name=function,
+                           header_name=['unistd.h', 'pwd.h', 'grp.h'], mandatory=True)
+        conf.define('HAVE_PRIVILEGE_DROP_AND_ELEVATE', 1)
+    except:
+        Logs.warn('Dropping privileges is not supported on this platform')
+
     boost_libs = 'system chrono program_options random'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1

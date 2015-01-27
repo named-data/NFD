@@ -31,9 +31,11 @@
 #include <type_traits>
 #include <unordered_map>
 
+#ifdef HAVE_IFADDRS_H
+#include <ifaddrs.h>     // for getifaddrs()
+
 #include <arpa/inet.h>   // for inet_ntop()
 #include <netinet/in.h>  // for struct sockaddr_in{,6}
-#include <ifaddrs.h>     // for getifaddrs()
 
 #if defined(__linux__)
 #include <net/if_arp.h>        // for ARPHRD_* constants
@@ -42,6 +44,9 @@
 #include <net/if_dl.h>         // for struct sockaddr_dl
 #include <net/if_types.h>      // for IFT_* constants
 #endif
+
+#endif // HAVE_IFADDRS_H
+
 
 NFD_LOG_INIT("NetworkInterfaceInfo");
 
@@ -73,6 +78,7 @@ listNetworkInterfaces()
   }
 #endif
 
+#ifdef HAVE_IFADDRS_H
   using namespace boost::asio::ip;
   using std::strerror;
 
@@ -170,6 +176,9 @@ listNetworkInterfaces()
   }
 
   return v;
+#else
+  return {};
+#endif // HAVE_IFADDRS_H
 }
 
 } // namespace nfd

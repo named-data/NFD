@@ -65,18 +65,19 @@ public:
   static void
   runElevated(function<void()> f);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   static void
   raise();
 
 private:
-
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   static uid_t s_normalUid;
   static gid_t s_normalGid;
 
   static uid_t s_privilegedUid;
   static gid_t s_privilegedGid;
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 };
 
 } // namespace nfd
