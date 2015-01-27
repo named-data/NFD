@@ -26,7 +26,7 @@
 #include "logger.hpp"
 #include <ndn-cxx/util/time.hpp>
 #include <cinttypes>
-#include <cstdio>
+#include <stdio.h>
 #include <type_traits>
 
 namespace nfd {
@@ -53,9 +53,11 @@ Logger::now()
 
   static_assert(std::is_same<microseconds::rep, int_least64_t>::value,
                 "PRIdLEAST64 is incompatible with microseconds::rep");
-  std::snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
-                microsecondsSinceEpoch / ONE_SECOND,
-                microsecondsSinceEpoch % ONE_SECOND);
+  // - std::snprintf not found in some environments
+  //   http://redmine.named-data.net/issues/2299 for more information
+  snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
+           microsecondsSinceEpoch / ONE_SECOND,
+           microsecondsSinceEpoch % ONE_SECOND);
 
   // It's okay to return a statically allocated buffer, because Logger::now() is invoked
   // only once per log macro.
