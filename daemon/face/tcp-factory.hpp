@@ -67,17 +67,15 @@ public:
   createChannel(const tcp::Endpoint& localEndpoint);
 
   /**
-   * \brief Create TCP-based channel using specified host and port number
+   * \brief Create TCP-based channel using specified IP address and port number
    *
-   * This method will attempt to resolve the provided host and port numbers
-   * and will throw TcpFactory::Error when channel cannot be created.
-   *
-   * Note that this call will **BLOCK** until resolution is done or failed.
+   * This method is just a helper that converts a string representation of localIp and port to
+   * tcp::Endpoint and calls the other createChannel overload.
    *
    * \throws TcpFactory::Error or std::runtime_error
    */
   shared_ptr<TcpChannel>
-  createChannel(const std::string& localHost, const std::string& localPort);
+  createChannel(const std::string& localIp, const std::string& localPort);
 
   // from Factory
 

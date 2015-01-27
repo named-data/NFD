@@ -26,7 +26,6 @@
 #include "udp-factory.hpp"
 #include "core/global-io.hpp"
 #include "core/network-interface.hpp"
-#include <ndn-cxx/util/dns.hpp>
 
 #if defined(__linux__)
 #include <sys/socket.h>
@@ -136,13 +135,13 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
 }
 
 shared_ptr<UdpChannel>
-UdpFactory::createChannel(const std::string& localHost,
+UdpFactory::createChannel(const std::string& localIp,
                           const std::string& localPort,
                           const time::seconds& timeout)
 {
-  udp::Endpoint endPoint(ndn::dns::syncResolve(localHost, getGlobalIoService()),
-                         boost::lexical_cast<uint16_t>(localPort));
-  return createChannel(endPoint, timeout);
+  using namespace boost::asio::ip;
+  udp::Endpoint endpoint(address::from_string(localIp), boost::lexical_cast<uint16_t>(localPort));
+  return createChannel(endpoint, timeout);
 }
 
 shared_ptr<MulticastUdpFace>
@@ -253,10 +252,11 @@ UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastPort,
                                 const std::string& networkInterfaceName /* "" */)
 {
-  udp::Endpoint localEndpoint(ndn::dns::syncResolve(localIp, getGlobalIoService()),
+  using namespace boost::asio::ip;
+  udp::Endpoint localEndpoint(address::from_string(localIp),
                               boost::lexical_cast<uint16_t>(multicastPort));
 
-  udp::Endpoint multicastEndpoint(ndn::dns::syncResolve(multicastIp, getGlobalIoService()),
+  udp::Endpoint multicastEndpoint(address::from_string(multicastIp),
                                   boost::lexical_cast<uint16_t>(multicastPort));
 
   return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);

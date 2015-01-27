@@ -70,12 +70,15 @@ public:
   createChannel(const websocket::Endpoint& localEndpoint);
 
   /**
-   * \brief Create WebSocket-based channel using specified ip address and port number
+   * \brief Create WebSocket-based channel using specified IP address and port number
+   *
+   * This method is just a helper that converts a string representation of localIp and port to
+   * websocket::Endpoint and calls the other createChannel overload.
    *
    * \throws WebSocketFactory::Error
    */
   shared_ptr<WebSocketChannel>
-  createChannel(const std::string& ipAddress, const std::string& port);
+  createChannel(const std::string& localIp, const std::string& port);
 
   // from Factory
   virtual void

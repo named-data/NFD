@@ -24,7 +24,6 @@
  */
 
 #include "websocket-factory.hpp"
-#include <ndn-cxx/util/dns.hpp>
 
 namespace nfd {
 
@@ -51,11 +50,10 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 }
 
 shared_ptr<WebSocketChannel>
-WebSocketFactory::createChannel(const std::string& host, const std::string& port)
+WebSocketFactory::createChannel(const std::string& localIp, const std::string& port)
 {
-  ip::tcp::endpoint tcpEndpoint(ndn::dns::syncResolve(host, getGlobalIoService()),
-                                boost::lexical_cast<uint16_t>(port));
-  websocket::Endpoint endpoint(tcpEndpoint.address(), tcpEndpoint.port());
+  using namespace boost::asio::ip;
+  websocket::Endpoint endpoint(address::from_string(localIp), boost::lexical_cast<uint16_t>(port));
   return createChannel(endpoint);
 }
 

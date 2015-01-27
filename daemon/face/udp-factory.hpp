@@ -85,12 +85,10 @@ public:
                 const time::seconds& timeout = time::seconds(600));
 
   /**
-   * \brief Create UDP-based channel using specified host and port number
+   * \brief Create UDP-based channel using specified IP address and port number
    *
-   * This method will attempt to resolve the provided host and port numbers
-   * and will throw UdpFactory::Error when channel cannot be created.
-   *
-   * Note that this call will **BLOCK** until resolution is done or failed.
+   * This method is just a helper that converts a string representation of localIp and port to
+   * udp::Endpoint and calls the other createChannel overload.
    *
    * If localHost is a IPv6 address of a specific device, it must be in the form:
    * ip address%interface name
@@ -101,7 +99,7 @@ public:
    * \throws UdpFactory::Error
    */
   shared_ptr<UdpChannel>
-  createChannel(const std::string& localHost,
+  createChannel(const std::string& localIp,
                 const std::string& localPort,
                 const time::seconds& timeout = time::seconds(600));
 

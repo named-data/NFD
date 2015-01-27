@@ -27,7 +27,6 @@
 #include "core/logger.hpp"
 #include "core/network-interface.hpp"
 #include "core/global-io.hpp"
-#include <ndn-cxx/util/dns.hpp>
 
 NFD_LOG_INIT("TcpFactory");
 
@@ -109,10 +108,10 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 }
 
 shared_ptr<TcpChannel>
-TcpFactory::createChannel(const std::string& localHost, const std::string& localPort)
+TcpFactory::createChannel(const std::string& localIp, const std::string& localPort)
 {
-  tcp::Endpoint endpoint(ndn::dns::syncResolve(localHost, getGlobalIoService()),
-                         boost::lexical_cast<uint16_t>(localPort));
+  using namespace boost::asio::ip;
+  tcp::Endpoint endpoint(address::from_string(localIp), boost::lexical_cast<uint16_t>(localPort));
   return createChannel(endpoint);
 }
 
