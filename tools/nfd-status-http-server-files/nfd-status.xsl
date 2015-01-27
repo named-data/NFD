@@ -23,7 +23,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
     <xsl:variable name="version">
       <xsl:apply-templates select="nfd:nfdStatus/nfd:generalStatus/nfd:version"/>
     </xsl:variable>
-    <span class="grey">Powered by </span><a target="_blank" href="http://named-data.net/doc/NFD/{$version}/"><span class="green">NFD version <xsl:value-of select="$version"/></span></a><span class="grey">.</span>
+    <span class="grey">Powered by </span><a target="_blank" href="http://named-data.net/doc/NFD/"><span class="green">NFD version <xsl:value-of select="$version"/></span></a><span class="grey">.</span>
   </footer>
   </body>
   </html>
