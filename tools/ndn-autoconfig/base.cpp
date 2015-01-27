@@ -75,6 +75,9 @@ Base::onHubConnectSuccess(const nfd::ControlParameters& resp)
 
   static const Name TESTBED_PREFIX = "/ndn";
   registerPrefix(TESTBED_PREFIX, resp.getFaceId());
+
+  static const Name LOCALHOP_NFD_PREFIX = "/localhop/nfd";
+  registerPrefix(LOCALHOP_NFD_PREFIX, resp.getFaceId());
 }
 
 void
