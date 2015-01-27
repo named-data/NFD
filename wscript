@@ -198,13 +198,7 @@ def build(bld):
         use='rib-objects',
         )
 
-    for app in bld.path.ant_glob('tools/*.cpp'):
-        bld(features=['cxx', 'cxxprogram'],
-            target='bin/%s' % (str(app.change_ext(''))),
-            source=['tools/%s' % (str(app))],
-            use='core-objects LIBRESOLV',
-            )
-
+    bld.recurse("tools")
     bld.recurse("tests")
 
     bld(features="subst",
@@ -222,17 +216,6 @@ def build(bld):
             source=bld.path.ant_glob('docs/manpages/**/*.rst'),
             install_path="${MANDIR}/",
             VERSION=VERSION)
-
-    for script in bld.path.ant_glob(['tools/*.sh', 'tools/*.py']):
-        bld(features='subst',
-            source='tools/%s' % (str(script)),
-            target='bin/%s' % (str(script.change_ext(''))),
-            install_path="${BINDIR}",
-            chmod=Utils.O755,
-            VERSION=VERSION)
-
-    bld.install_files("${DATAROOTDIR}/ndn",
-                      bld.path.ant_glob('tools/nfd-status-http-server-files/*'))
 
 def docs(bld):
     from waflib import Options

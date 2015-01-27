@@ -1,0 +1,38 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+from waflib import Utils, Context
+
+top = '..'
+
+def build(bld):
+    # List all .cpp files (whole tool should be in one .cpp)
+    for i in bld.path.ant_glob(['*.cpp']):
+        name = str(i)[:-len(".cpp")]
+        bld(features=['cxx', 'cxxprogram'],
+            target="../bin/%s" % name,
+            source=[i] + bld.path.ant_glob(['%s/**/*.cpp' % name]),
+            use='ndn-cxx core-objects LIBRESOLV BOOST'
+            )
+
+    # List all directories files (tool can has multiple .cpp in the directory)
+    for name in bld.path.ant_glob(['*'], dir=True, src=False):
+        srcFiles = bld.path.ant_glob(['%s/**/*.cpp' % name])
+        if len(srcFiles) > 0:
+            bld(features=['cxx', 'cxxprogram'],
+                target="../bin/%s" % name,
+                source=srcFiles,
+                use='ndn-cxx core-objects LIBRESOLV BOOST',
+                includes='%s' % name,
+                )
+
+    bld(features="subst",
+        source=bld.path.ant_glob(['*.sh', '*.py']),
+        target=['../bin/%s' % node.change_ext('')
+                for node in bld.path.ant_glob(['*.sh', '*.py'])],
+        install_path="${BINDIR}",
+        chmod=Utils.O755,
+        VERSION=Context.g_module.VERSION
+       )
+
+    bld.install_files("${DATAROOTDIR}/ndn",
+                      bld.path.ant_glob('nfd-status-http-server-files/*'))
