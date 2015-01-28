@@ -73,14 +73,29 @@ def configure(conf):
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
+    if not conf.check_cxx(msg='Checking if privilege drop/elevation is supported', mandatory=False,
+                          define_name='HAVE_PRIVILEGE_DROP_AND_ELEVATE', fragment='''
+#include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
+int
+main(int, char**)
+{
+  ::sysconf(_SC_GETGR_R_SIZE_MAX);
+  group grp;
+  getgrnam_r("nogroup", &grp, nullptr, 0, nullptr);
+  passwd pwd;
+  getpwnam_r("nobody", &pwd, nullptr, 0, nullptr);
+
+  int ret = setegid(grp.gr_gid);
+  ret = seteuid(pwd.pw_uid);
+  (void)(ret);
+  return 0;
+}
+'''):
+      Logs.warn('Dropping privileges is not supported on this platform')
+
     conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
-    try:
-        for function in ['setegid', 'seteuid', 'sysconf', 'getgrnam_r', 'getpwnam_r']:
-            conf.check_cxx(function_name=function,
-                           header_name=['unistd.h', 'pwd.h', 'grp.h'], mandatory=True)
-        conf.define('HAVE_PRIVILEGE_DROP_AND_ELEVATE', 1)
-    except:
-        Logs.warn('Dropping privileges is not supported on this platform')
 
     boost_libs = 'system chrono program_options random'
     if conf.options.with_tests:
