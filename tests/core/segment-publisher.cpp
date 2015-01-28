@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -40,8 +40,9 @@ class TestSegmentPublisher : public SegmentPublisher<ndn::util::DummyClientFace>
 public:
   TestSegmentPublisher(ndn::util::DummyClientFace& face,
                        const Name& prefix,
-                       ndn::KeyChain& keyChain)
-    : SegmentPublisher(face, prefix, keyChain)
+                       ndn::KeyChain& keyChain,
+                       const time::milliseconds freshnessPeriod)
+    : SegmentPublisher(face, prefix, keyChain, freshnessPeriod)
     , m_totalPayloadLength(0)
   {
 
@@ -88,13 +89,17 @@ class SegmentPublisherFixture : public BaseFixture
 public:
   SegmentPublisherFixture()
     : m_face(ndn::util::makeDummyClientFace())
-    , m_publisher(*m_face, "/localhost/nfd/SegmentPublisherFixture", m_keyChain)
+    , m_expectedFreshnessPeriod(time::milliseconds(111))
+    , m_publisher(*m_face, "/localhost/nfd/SegmentPublisherFixture",
+                  m_keyChain, m_expectedFreshnessPeriod)
   {
   }
 
   void
   validate(const Data& data)
   {
+    BOOST_CHECK_EQUAL(data.getFreshnessPeriod(), m_expectedFreshnessPeriod);
+
     Block payload = data.getContent();
     NFD_LOG_DEBUG("payload size (w/o Content TLV): " << payload.value_size());
 
@@ -132,6 +137,7 @@ public:
 
 protected:
   shared_ptr<ndn::util::DummyClientFace> m_face;
+  const time::milliseconds m_expectedFreshnessPeriod;
   TestSegmentPublisher<N> m_publisher;
   ndn::EncodingBuffer m_buffer;
   ndn::KeyChain m_keyChain;
