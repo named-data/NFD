@@ -103,9 +103,9 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
   fib::NextHopList::const_iterator it = nexthops.end();
 
-  RetransmissionSuppression::Result suppression =
-      m_retransmissionSuppression.decide(inFace, interest, *pitEntry);
-  if (suppression == RetransmissionSuppression::NEW) {
+  RetxSuppression::Result suppression =
+      m_retxSuppression.decide(inFace, interest, *pitEntry);
+  if (suppression == RetxSuppression::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(),
       bind(&predicate_NextHop_eligible, pitEntry, _1, inFace.getId(),
@@ -124,7 +124,7 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  if (suppression == RetransmissionSuppression::SUPPRESS) {
+  if (suppression == RetxSuppression::SUPPRESS) {
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
                            << " suppressed");
     return;

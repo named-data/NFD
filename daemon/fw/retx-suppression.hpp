@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP
-#define NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP
+#ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
+#define NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
 
 #include "strategy.hpp"
 
@@ -33,7 +33,7 @@ namespace fw {
 
 /** \brief helper for consumer retransmission suppression
  */
-class RetransmissionSuppression : noncopyable
+class RetxSuppression : noncopyable
 {
 public:
   enum Result {
@@ -53,14 +53,11 @@ public:
   /** \brief determines whether Interest is a retransmission,
    *         and if so, whether it shall be forwarded or suppressed
    */
-  Result
-  decide(const Face& inFace, const Interest& interest, const pit::Entry& pitEntry);
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  static const time::milliseconds MIN_RETRANSMISSION_INTERVAL;
+  virtual Result
+  decide(const Face& inFace, const Interest& interest, const pit::Entry& pitEntry) const = 0;
 };
 
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_RETRANSMISSION_SUPPRESSION_HPP
+#endif // NFD_DAEMON_FW_RETX_SUPPRESSION_HPP

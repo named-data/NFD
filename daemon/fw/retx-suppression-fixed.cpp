@@ -23,17 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "retransmission-suppression.hpp"
+#include "retx-suppression-fixed.hpp"
 
 namespace nfd {
 namespace fw {
 
-/// \todo don't use fixed interval; make it adaptive or use exponential back-off #1913
-const time::milliseconds RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL(100);
+const time::milliseconds RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL(100);
 
-RetransmissionSuppression::Result
-RetransmissionSuppression::decide(const Face& inFace, const Interest& interest,
-                                  const pit::Entry& pitEntry)
+RetxSuppressionFixed::RetxSuppressionFixed(const time::milliseconds& minRetxInterval)
+  : m_minRetxInterval(minRetxInterval)
+{
+  BOOST_ASSERT(minRetxInterval > time::milliseconds::zero());
+}
+
+RetxSuppression::Result
+RetxSuppressionFixed::decide(const Face& inFace, const Interest& interest,
+                             const pit::Entry& pitEntry) const
 {
   bool isNewPitEntry = !pitEntry.hasUnexpiredOutRecords();
   if (isNewPitEntry) {
@@ -51,7 +56,7 @@ RetransmissionSuppression::decide(const Face& inFace, const Interest& interest,
 
   time::steady_clock::TimePoint now = time::steady_clock::now();
   time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing->getLastRenewed();
-  bool shouldSuppress = sinceLastOutgoing < MIN_RETRANSMISSION_INTERVAL;
+  bool shouldSuppress = sinceLastOutgoing < m_minRetxInterval;
   return shouldSuppress ? SUPPRESS : FORWARD;
 }
 

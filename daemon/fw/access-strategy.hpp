@@ -28,7 +28,7 @@
 
 #include "strategy.hpp"
 #include "rtt-estimator.hpp"
-#include "retransmission-suppression.hpp"
+#include "retx-suppression-fixed.hpp"
 #include <unordered_set>
 #include <unordered_map>
 
@@ -167,7 +167,7 @@ public:
 
 private:
   FaceInfoTable m_fit;
-  RetransmissionSuppression m_retransmissionSuppression;
+  RetxSuppressionFixed m_retxSuppression;
   signal::ScopedConnection m_removeFaceInfoConn;
 };
 

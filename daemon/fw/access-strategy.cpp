@@ -50,16 +50,15 @@ AccessStrategy::afterReceiveInterest(const Face& inFace,
                                      shared_ptr<fib::Entry> fibEntry,
                                      shared_ptr<pit::Entry> pitEntry)
 {
-  RetransmissionSuppression::Result suppressResult =
-      m_retransmissionSuppression.decide(inFace, interest, *pitEntry);
+  RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
   switch (suppressResult) {
-  case RetransmissionSuppression::NEW:
+  case RetxSuppression::NEW:
     this->afterReceiveNewInterest(inFace, interest, fibEntry, pitEntry);
     break;
-  case RetransmissionSuppression::FORWARD:
+  case RetxSuppression::FORWARD:
     this->afterReceiveRetxInterest(inFace, interest, fibEntry, pitEntry);
     break;
-  case RetransmissionSuppression::SUPPRESS:
+  case RetxSuppression::SUPPRESS:
     NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-suppress");
     break;
   default:

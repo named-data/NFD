@@ -62,13 +62,13 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
-    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.01);
+    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.01);
   const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
-    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.1); // 10%
+    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.1); // 10%
   const time::nanoseconds RETRANSMISSION_70P = time::duration_cast<time::nanoseconds>(
-    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 0.7); // 70%
+    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.7); // 70%
   const time::nanoseconds RETRANSMISSION_2 = time::duration_cast<time::nanoseconds>(
-    fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 2.0); // x2
+    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 2.0); // x2
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.back().get<1>(), face2);
 
   // downstream retransmits frequently, but the strategy should not send Interests
-  // more often than MIN_RETRANSMISSION_INTERVAL
+  // more often than DEFAULT_MIN_RETX_INTERVAL
   scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.m_sendInterestHistory.size();
   time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = scheduler::schedule(RETRANSMISSION_10P, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, fw::RetransmissionSuppression::MIN_RETRANSMISSION_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 16);
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
