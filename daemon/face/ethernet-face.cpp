@@ -75,6 +75,9 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   , m_interfaceName(interface.name)
   , m_srcAddress(interface.etherAddress)
   , m_destAddress(address)
+#ifdef _DEBUG
+  , m_nDropped(0)
+#endif
 {
   NFD_LOG_INFO("Creating ethernet face on " << m_interfaceName << ": "
                << m_srcAddress << " <--> " << m_destAddress);
@@ -181,7 +184,8 @@ EthernetFace::pcapInit()
 
   if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
     // no need to throw on failure, BPF will filter unwanted packets anyway
-    NFD_LOG_WARN("pcap_setdirection: " << pcap_geterr(m_pcap.get()));
+    NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
+                 << "] pcap_setdirection failed: " << pcap_geterr(m_pcap.get()));
 }
 
 void
@@ -334,6 +338,23 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
     {
       processIncomingPacket(header, packet);
     }
+
+#ifdef _DEBUG
+  pcap_stat ps{};
+  ret = pcap_stats(m_pcap.get(), &ps);
+  if (ret < 0)
+    {
+      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
+                    << "] pcap_stats failed: " << pcap_geterr(m_pcap.get()));
+    }
+  else if (ret == 0)
+    {
+      if (ps.ps_drop - m_nDropped > 0)
+        NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
+                      << "] Detected " << ps.ps_drop - m_nDropped << " dropped packet(s)");
+      m_nDropped = ps.ps_drop;
+    }
+#endif
 
   m_socket->async_read_some(boost::asio::null_buffers(),
                             bind(&EthernetFace::handleRead, this,

@@ -162,6 +162,11 @@ private:
   unique_ptr<ndnlp::Slicer> m_slicer;
   std::unordered_map<ethernet::Address, Reassembler> m_reassemblers;
   static const time::nanoseconds REASSEMBLER_LIFETIME;
+
+#ifdef _DEBUG
+  /// number of packets dropped by the kernel, as reported by libpcap
+  unsigned int m_nDropped;
+#endif
 };
 
 } // namespace nfd
