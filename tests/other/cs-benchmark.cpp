@@ -110,43 +110,47 @@ BOOST_FIXTURE_TEST_SUITE(TableCsBenchmark, CsBenchmarkFixture)
 // find miss, then insert
 BOOST_AUTO_TEST_CASE(FindMissInsert)
 {
-  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(CS_CAPACITY);
+  const size_t N_WORKLOAD = CS_CAPACITY * 2;
   const size_t REPEAT = 4;
+
+  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(N_WORKLOAD);
   std::vector<shared_ptr<Data>> dataWorkload[REPEAT];
   for (size_t j = 0; j < REPEAT; ++j) {
-    dataWorkload[j] = makeDataWorkload(CS_CAPACITY);
+    dataWorkload[j] = makeDataWorkload(N_WORKLOAD);
   }
 
   time::microseconds d = timedRun([&] {
     for (size_t j = 0; j < REPEAT; ++j) {
-      for (size_t i = 0; i < CS_CAPACITY; ++i) {
+      for (size_t i = 0; i < N_WORKLOAD; ++i) {
         cs.find(*interestWorkload[i]);
         cs.insert(*dataWorkload[j][i], false);
       }
     }
   });
-  BOOST_TEST_MESSAGE("find(miss)-insert " << (CS_CAPACITY * REPEAT) << ": " << d);
+  BOOST_TEST_MESSAGE("find(miss)-insert " << (N_WORKLOAD * REPEAT) << ": " << d);
 }
 
 // insert, then find hit
 BOOST_AUTO_TEST_CASE(InsertFindHit)
 {
-  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(CS_CAPACITY);
+  const size_t N_WORKLOAD = CS_CAPACITY * 2;
   const size_t REPEAT = 4;
+
+  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(N_WORKLOAD);
   std::vector<shared_ptr<Data>> dataWorkload[REPEAT];
   for (size_t j = 0; j < REPEAT; ++j) {
-    dataWorkload[j] = makeDataWorkload(CS_CAPACITY);
+    dataWorkload[j] = makeDataWorkload(N_WORKLOAD);
   }
 
   time::microseconds d = timedRun([&] {
     for (size_t j = 0; j < REPEAT; ++j) {
-      for (size_t i = 0; i < CS_CAPACITY; ++i) {
+      for (size_t i = 0; i < N_WORKLOAD; ++i) {
         cs.insert(*dataWorkload[j][i], false);
         cs.find(*interestWorkload[i]);
       }
     }
   });
-  BOOST_TEST_MESSAGE("insert-find(hit) " << (CS_CAPACITY * REPEAT) << ": " << d);
+  BOOST_TEST_MESSAGE("insert-find(hit) " << (N_WORKLOAD * REPEAT) << ": " << d);
 }
 
 // find(leftmost) hit
