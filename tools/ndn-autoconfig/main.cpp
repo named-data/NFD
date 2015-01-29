@@ -29,6 +29,10 @@
 #include "guess-from-search-domains.hpp"
 #include "guess-from-identity-name.hpp"
 
+#include <ndn-cxx/util/network-monitor.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
+#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
+
 #include <boost/noncopyable.hpp>
 
 namespace ndn {
@@ -47,8 +51,14 @@ public:
     }
   };
 
-  NdnAutoconfig()
-    : m_stage1(m_face, m_keyChain,
+  explicit
+  NdnAutoconfig(bool isDaemonMode)
+    : m_face(m_io)
+    , m_scheduler(m_io)
+    , m_startStagesEvent(m_scheduler)
+    , m_isDaemonMode(isDaemonMode)
+    , m_terminationSignalSet(m_io)
+    , m_stage1(m_face, m_keyChain,
                [&] (const std::string& errorMessage) {
                  std::cerr << "Stage 1 failed: " << errorMessage << std::endl;
                  m_stage2.start();
@@ -61,16 +71,44 @@ public:
     , m_stage3(m_face, m_keyChain,
                [&] (const std::string& errorMessage) {
                  std::cerr << "Stage 3 failed: " << errorMessage << std::endl;
-                 throw Error("No more stages, automatic discovery failed");
+                 if (!m_isDaemonMode)
+                   throw Error("No more stages, automatic discovery failed");
+                 else
+                   std::cerr << "No more stages, automatic discovery failed" << std::endl;
                })
   {
-    m_stage1.start();
+    if (m_isDaemonMode) {
+      m_networkMonitor.reset(new util::NetworkMonitor(m_io));
+      m_networkMonitor->onNetworkStateChanged.connect([this] {
+          // delay stages, so if multiple events are triggered in short sequence,
+          // only one auto-detection procedure is triggered
+          m_startStagesEvent = m_scheduler.scheduleEvent(time::seconds(5),
+                                                         bind(&NdnAutoconfig::startStages, this));
+        });
+    }
+
+    // Delay a little bit
+    m_startStagesEvent = m_scheduler.scheduleEvent(time::milliseconds(100),
+                                                   bind(&NdnAutoconfig::startStages, this));
   }
 
   void
   run()
   {
-    m_face.processEvents();
+    m_terminationSignalSet.add(SIGINT);
+    m_terminationSignalSet.add(SIGTERM);
+    m_terminationSignalSet.async_wait(bind(&NdnAutoconfig::terminate, this, _1, _2));
+
+    m_io.run();
+  }
+
+  void
+  terminate(const boost::system::error_code& error, int signalNo)
+  {
+    if (error)
+      return;
+
+    m_io.stop();
   }
 
   static void
@@ -81,13 +119,35 @@ public:
               << "\n"
               << "Options:\n"
               << "  [-h]  - print usage and exit\n"
+              << "  [-d]  - run in daemon mode.  In daemon mode, " << programName << " will try \n"
+              << "          to detect network change events and re-run auto-discovery procedure.\n"
+              << "          In addition, the auto-discovery procedure is unconditionally re-run\n"
+              << "          every hour.\n"
+              << "          NOTE: if connection to NFD fails, the daemon will be terminated.\n"
               << "  [-V]  - print version number and exit\n"
               << std::endl;
   }
 
 private:
+  void
+  startStages()
+  {
+    m_stage1.start();
+    if (m_isDaemonMode) {
+      m_startStagesEvent = m_scheduler.scheduleEvent(time::hours(1),
+                                                     bind(&NdnAutoconfig::startStages, this));
+    }
+  }
+
+private:
+  boost::asio::io_service m_io;
   Face m_face;
   KeyChain m_keyChain;
+  unique_ptr<util::NetworkMonitor> m_networkMonitor;
+  util::Scheduler m_scheduler;
+  util::scheduler::ScopedEventId m_startStagesEvent;
+  bool m_isDaemonMode;
+  boost::asio::signal_set m_terminationSignalSet;
 
   autoconfig::MulticastDiscovery m_stage1;
   autoconfig::GuessFromSearchDomains m_stage2;
@@ -102,9 +162,13 @@ main(int argc, char** argv)
 {
   int opt;
   const char* programName = argv[0];
+  bool isDaemonMode = false;
 
-  while ((opt = getopt(argc, argv, "hV")) != -1) {
+  while ((opt = getopt(argc, argv, "dhV")) != -1) {
     switch (opt) {
+    case 'd':
+      isDaemonMode = true;
+      break;
     case 'h':
       ndn::tools::NdnAutoconfig::usage(programName);
       return 0;
@@ -115,7 +179,7 @@ main(int argc, char** argv)
   }
 
   try {
-    ndn::tools::NdnAutoconfig autoConfigInstance;
+    ndn::tools::NdnAutoconfig autoConfigInstance(isDaemonMode);
     autoConfigInstance.run();
   }
   catch (const std::exception& error) {

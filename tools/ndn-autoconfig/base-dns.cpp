@@ -55,6 +55,12 @@ BaseDns::querySrvRr(const std::string& fqdn)
   std::string srvDomain = "_ndn._udp." + fqdn;
   std::cerr << "Sending DNS query for SRV record for " << srvDomain << std::endl;
 
+  res_init();
+
+  _res.retrans = 1;
+  _res.retry = 2;
+  _res.ndots = 10;
+
   QueryAnswer queryAnswer;
   int answerSize = res_query(srvDomain.c_str(),
                              ns_c_in,
@@ -77,6 +83,9 @@ BaseDns::querySrvRrSearch()
 
   QueryAnswer queryAnswer;
 
+  res_init();
+
+  _res.retrans = 1;
   _res.retry = 2;
   _res.ndots = 10;
 
