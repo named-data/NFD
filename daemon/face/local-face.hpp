@@ -182,7 +182,7 @@ LocalFace::decodeAndDispatchInput(const Block& element)
 
     return true;
   }
-  catch (tlv::Error&) {
+  catch (const tlv::Error&) {
     return false;
   }
 }

@@ -87,21 +87,24 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
 
   face->onReceiveInterest.connect(bind(&Forwarder::onInterest, &m_forwarder, ref(*face), _1));
   face->onReceiveData.connect(bind(&Forwarder::onData, &m_forwarder, ref(*face), _1));
-  face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face));
+  face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face, _1));
 
   this->onAdd(face);
 }
 
 void
-FaceTable::remove(shared_ptr<Face> face)
+FaceTable::remove(shared_ptr<Face> face, const std::string& reason)
 {
   this->onRemove(face);
 
   FaceId faceId = face->getId();
   m_faces.erase(faceId);
   face->setId(INVALID_FACEID);
-  NFD_LOG_INFO("Removed face id=" << faceId << " remote=" << face->getRemoteUri() <<
-                                                " local=" << face->getLocalUri());
+
+  NFD_LOG_INFO("Removed face id=" << faceId <<
+               " remote=" << face->getRemoteUri() <<
+               " local=" << face->getLocalUri() <<
+               " (" << reason << ")");
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 }

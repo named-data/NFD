@@ -24,7 +24,6 @@
  */
 
 #include "websocket-face.hpp"
-#include "core/global-io.hpp"
 
 namespace nfd {
 
@@ -48,6 +47,7 @@ WebSocketFace::sendInterest(const Interest& interest)
     return;
 
   this->emitSignal(onSendInterest, interest);
+
   const Block& payload = interest.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 
@@ -56,8 +56,7 @@ WebSocketFace::sendInterest(const Interest& interest)
                   websocketpp::frame::opcode::binary);
   }
   catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_DEBUG("Failed to send Interest because: " << e
-                  << "(" << e.message() << ")");
+    NFD_LOG_WARN("Failed to send Interest: " << e << " (" << e.message() << ")");
   }
 }
 
@@ -68,6 +67,7 @@ WebSocketFace::sendData(const Data& data)
     return;
 
   this->emitSignal(onSendData, data);
+
   const Block& payload = data.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 
@@ -76,8 +76,7 @@ WebSocketFace::sendData(const Data& data)
                   websocketpp::frame::opcode::binary);
   }
   catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_DEBUG("Failed to send Data because: " << e
-                  << "(" << e.message() << ")");
+    NFD_LOG_WARN("Failed to send Data: " << e << " (" << e.message() << ")");
   }
 }
 
@@ -102,30 +101,29 @@ WebSocketFace::handleReceive(const std::string& msg)
   if (msg.size() > ndn::MAX_NDN_PACKET_SIZE)
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received WebSocket message size ["
-                   << msg.size() << "] is too big");
+                   << "] Received WebSocket message is too big (" << msg.size() << " bytes)");
       return;
     }
 
+  NFD_LOG_TRACE("[id:" << this->getId()
+                << "] Received: " << msg.size() << " bytes");
   this->getMutableCounters().getNInBytes() += msg.size();
 
   // Try to parse message data
-  bool isOk = true;
   Block element;
-  isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()), msg.size(), element);
+  bool isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()),
+                                msg.size(), element);
   if (!isOk)
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received invalid NDN packet of length ["
-                   << msg.size() << "]");
+                   << "] Received block is invalid or too large to process");
       return;
     }
 
   if (!this->decodeAndDispatchInput(element))
     {
       NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received unrecognized block of type ["
-                   << element.type() << "]");
+                   << "] Received unrecognized TLV block of type " << element.type());
       // ignore unknown packet and proceed
     }
 }

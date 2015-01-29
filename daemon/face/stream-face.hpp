@@ -28,6 +28,7 @@
 
 #include "face.hpp"
 #include "local-face.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -48,18 +49,17 @@ public:
              const shared_ptr<typename protocol::socket>& socket,
              bool isOnDemand);
 
-  virtual
-  ~StreamFace();
+  ~StreamFace() DECL_OVERRIDE;
 
-  // from Face
-  virtual void
-  sendInterest(const Interest& interest);
+  // from FaceBase
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
-  virtual void
-  close();
+  void
+  close() DECL_OVERRIDE;
 
 protected:
   void
@@ -197,12 +197,11 @@ StreamFace<T, U>::close()
   if (!m_socket->is_open())
     return;
 
-  NFD_LOG_INFO("[id:" << this->getId()
-               << ",uri:" << this->getRemoteUri()
-               << "] Close connection");
+  NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+               << "] Closing face");
 
   shutdownSocket();
-  this->fail("Close connection");
+  this->fail("Face closed");
 }
 
 template<class T, class U>
@@ -219,19 +218,10 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
       return;
     }
 
-  if (error == boost::asio::error::eof)
-    {
-      NFD_LOG_INFO("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
-                   << "] Connection closed");
-    }
-  else
-    {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
-                   << "] Send or receive operation failed, closing face: "
-                   << error.message());
-    }
+  if (error != boost::asio::error::eof)
+    NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+                 << "] Send or receive operation failed, closing face: "
+                 << error.message());
 
   shutdownSocket();
 
@@ -241,7 +231,7 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
     }
   else
     {
-      this->fail("Send or receive operation failed, closing face: " + error.message());
+      this->fail("Send or receive operation failed: " + error.message());
     }
 }
 
@@ -264,8 +254,7 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
 
   BOOST_ASSERT(!m_sendQueue.empty());
 
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
+  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                 << "] Successfully sent: " << nBytesSent << " bytes");
   this->getMutableCounters().getNOutBytes() += nBytesSent;
 
@@ -282,8 +271,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
+  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                 << "] Received: " << nBytesReceived << " bytes");
   this->getMutableCounters().getNInBytes() += nBytesReceived;
 
@@ -305,8 +293,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
 
       if (!this->decodeAndDispatchInput(element))
         {
-          NFD_LOG_WARN("[id:" << this->getId()
-                       << ",uri:" << this->getRemoteUri()
+          NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                        << "] Received unrecognized block of type ["
                        << element.type() << "]");
           // ignore unknown packet and proceed
@@ -314,13 +301,11 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
     }
   if (!isOk && m_inputBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
+      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                    << "] Failed to parse incoming packet or packet too large to process, "
-                   << "closing down the face");
+                   << "closing face");
       shutdownSocket();
-      this->fail("Failed to parse incoming packet or packet too large to process, "
-                 "closing down the face");
+      this->fail("Failed to parse incoming packet or packet too large to process");
       return;
     }
 
@@ -354,10 +339,10 @@ StreamFace<T, U>::shutdownSocket()
   m_socket->cancel(error);
   m_socket->shutdown(protocol::socket::shutdown_both, error);
 
-  boost::asio::io_service& io = m_socket->get_io_service();
   // ensure that the Face object is alive at least until all pending
   // handlers are dispatched
-  io.post(bind(&StreamFace<T, U>::deferredClose, this, this->shared_from_this()));
+  getGlobalIoService().post(bind(&StreamFace<T, U>::deferredClose,
+                                 this, this->shared_from_this()));
 
   // Some bug or feature of Boost.Asio (see http://redmine.named-data.net/issues/1856):
   //
@@ -376,8 +361,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::deferredClose(const shared_ptr<Face>& face)
 {
-  NFD_LOG_DEBUG("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
+  NFD_LOG_DEBUG("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                 << "] Clearing send queue");
 
   // clear send queue

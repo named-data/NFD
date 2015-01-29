@@ -49,24 +49,24 @@ public:
   {
   }
 
-  virtual void
-  sendInterest(const Interest& interest)
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE
   {
     this->emitSignal(onSendInterest, interest);
     m_sentInterests.push_back(interest);
     this->afterSend();
   }
 
-  virtual void
-  sendData(const Data& data)
+  void
+  sendData(const Data& data) DECL_OVERRIDE
   {
     this->emitSignal(onSendData, data);
     m_sentDatas.push_back(data);
     this->afterSend();
   }
 
-  virtual void
-  close()
+  void
+  close() DECL_OVERRIDE
   {
     this->fail("close");
   }

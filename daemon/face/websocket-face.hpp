@@ -55,20 +55,24 @@ public:
                 websocketpp::connection_hdl hdl, websocket::Server& server);
 
   // from Face
-  virtual void
-  sendInterest(const Interest& interest);
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
-  virtual void
-  close();
+  void
+  close() DECL_OVERRIDE;
 
   void
   setPingEventId(scheduler::EventId& id)
   {
     m_pingEventId = id;
   }
+
+protected:
+  // friend because it needs to invoke protected handleReceive
+  friend class WebSocketChannel;
 
   void
   handleReceive(const std::string& msg);

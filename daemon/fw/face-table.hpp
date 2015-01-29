@@ -87,10 +87,10 @@ private:
   void
   addImpl(shared_ptr<Face> face, FaceId faceId);
 
-  // remove is private because it's a subscriber of face.onFail event.
-  // face->close() closes a face and triggers .remove(face)
+  // remove is private because it's a handler of face.onFail signal.
+  // face->close() closes the face and triggers .remove()
   void
-  remove(shared_ptr<Face> face);
+  remove(shared_ptr<Face> face, const std::string& reason);
 
   ForwardRange
   getForwardRange() const;

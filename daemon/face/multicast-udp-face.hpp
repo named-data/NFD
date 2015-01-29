@@ -49,14 +49,14 @@ public:
   getMulticastGroup() const;
 
   // from Face
-  virtual void
-  sendInterest(const Interest& interest);
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
-  virtual bool
-  isMultiAccess() const;
+  bool
+  isMultiAccess() const DECL_OVERRIDE;
 
 private:
   void

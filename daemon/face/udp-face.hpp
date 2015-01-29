@@ -42,11 +42,10 @@ public:
           bool isOnDemand,
           const time::seconds& idleTimeout);
 
-  virtual
-  ~UdpFace();
+  ~UdpFace() DECL_OVERRIDE;
 
-  virtual ndn::nfd::FaceStatus
-  getFaceStatus() const;
+  ndn::nfd::FaceStatus
+  getFaceStatus() const DECL_OVERRIDE;
 
 private:
   void

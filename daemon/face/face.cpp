@@ -24,7 +24,6 @@
  */
 
 #include "face.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 
@@ -106,7 +105,7 @@ Face::decodeAndDispatchInput(const Block& element)
 
     return true;
   }
-  catch (tlv::Error&) {
+  catch (const tlv::Error&) {
     return false;
   }
 }

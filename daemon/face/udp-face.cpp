@@ -27,6 +27,8 @@
 // #include "core/global-io.hpp" // for #1718 manual test below
 
 #ifdef __linux__
+#include <cerrno>       // for errno
+#include <cstring>      // for std::strerror()
 #include <netinet/in.h> // for IP_MTU_DISCOVER and IP_PMTUDISC_DONT
 #include <sys/socket.h> // for setsockopt()
 #endif
@@ -61,9 +63,8 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
   if (::setsockopt(socket->native_handle(), IPPROTO_IP,
                    IP_MTU_DISCOVER, &value, sizeof(value)) < 0)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
-                   << "] Failed to disable path MTU discovery");
+      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+                   << "] Failed to disable path MTU discovery: " << std::strerror(errno));
     }
 #endif
 
@@ -81,7 +82,8 @@ UdpFace::~UdpFace()
 ndn::nfd::FaceStatus
 UdpFace::getFaceStatus() const
 {
-  ndn::nfd::FaceStatus status = Face::getFaceStatus();
+  auto status = Face::getFaceStatus();
+
   if (isOnDemand()) {
     time::milliseconds left = m_idleTimeout - time::duration_cast<time::milliseconds>(
       time::steady_clock::now() - m_lastIdleCheck);
@@ -95,6 +97,7 @@ UdpFace::getFaceStatus() const
       status.setExpirationPeriod(left);
     }
   }
+
   return status;
 }
 
@@ -105,12 +108,7 @@ UdpFace::closeIfIdle()
   // (non-on-demand -> on-demand transition is not allowed)
   if (isOnDemand()) {
     if (!hasBeenUsedRecently()) {
-      // face has been idle since the last time closeIfIdle
-      // has been called. Going to close it
-      NFD_LOG_DEBUG("Found idle face id: " << getId());
-
-      NFD_LOG_INFO("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
+      NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                    << "] Idle for more than " << m_idleTimeout << ", closing");
       close();
 

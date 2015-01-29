@@ -64,24 +64,23 @@ public:
                const NetworkInterfaceInfo& interface,
                const ethernet::Address& address);
 
-  virtual
-  ~EthernetFace();
+  ~EthernetFace() DECL_OVERRIDE;
 
   /// send an Interest
-  virtual void
-  sendInterest(const Interest& interest);
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
   /// send a Data
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
   /**
    * @brief Closes the face
    *
    * This terminates all communication on the face and triggers the onFail() event.
    */
-  virtual void
-  close();
+  void
+  close() DECL_OVERRIDE;
 
 private:
   /**

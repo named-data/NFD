@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_DATAGRAM_FACE_HPP
 
 #include "face.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -50,18 +51,17 @@ public:
                const shared_ptr<typename protocol::socket>& socket,
                bool isOnDemand);
 
-  virtual
-  ~DatagramFace();
+  ~DatagramFace() DECL_OVERRIDE;
 
   // from Face
-  virtual void
-  sendInterest(const Interest& interest);
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
-  virtual void
-  close();
+  void
+  close() DECL_OVERRIDE;
 
   void
   receiveDatagram(const uint8_t* buffer,
@@ -81,6 +81,9 @@ public:
   setOnDemand(bool isOnDemand);
 
 protected:
+  void
+  processErrorCode(const boost::system::error_code& error);
+
   void
   handleSend(const boost::system::error_code& error,
              size_t nBytesSent,
@@ -151,55 +154,57 @@ DatagramFace<T, U>::sendData(const Data& data)
 
 template<class T, class U>
 inline void
-DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
-                               size_t nBytesSent,
-                               const Block& payload)
-// 'payload' is unused; it's needed to retain the underlying Buffer
-{
-  if (error != 0) {
-    if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
-      return;
-
-    if (!m_socket->is_open()) {
-      fail("Tunnel closed");
-      return;
-    }
-
-    NFD_LOG_WARN("[id:" << this->getId()
-                  << ",uri:" << this->getRemoteUri()
-                  << "] Send operation failed, closing socket: "
-                  << error.category().message(error.value()));
-
-    closeSocket();
-
-    if (error == boost::asio::error::eof) {
-      fail("Tunnel closed");
-    }
-    else {
-      fail("Send operation failed, closing socket: " + error.message());
-    }
-    return;
-  }
-
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << nBytesSent << " bytes");
-  this->getMutableCounters().getNOutBytes() += nBytesSent;
-}
-
-template<class T, class U>
-inline void
 DatagramFace<T, U>::close()
 {
   if (!m_socket->is_open())
     return;
 
-  NFD_LOG_INFO("[id:" << this->getId()
-               << ",uri:" << this->getRemoteUri()
-               << "] Close tunnel");
+  NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+               << "] Closing face");
 
   closeSocket();
-  fail("Close tunnel");
+  fail("Face closed");
+}
+
+template<class T, class U>
+inline void
+DatagramFace<T, U>::processErrorCode(const boost::system::error_code& error)
+{
+  if (error == boost::asio::error::operation_aborted) // when socket is closed by someone
+    return;
+
+  // this should be unnecessary, but just in case
+  if (!m_socket->is_open()) {
+    this->fail("Tunnel closed");
+    return;
+  }
+
+  if (error != boost::asio::error::eof)
+    NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+                 << "] Send or receive operation failed, closing face: "
+                 << error.message());
+
+  closeSocket();
+
+  if (error == boost::asio::error::eof)
+    this->fail("Tunnel closed");
+  else
+    this->fail("Send or receive operation failed: " + error.message());
+}
+
+template<class T, class U>
+inline void
+DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
+                               size_t nBytesSent,
+                               const Block& payload)
+// 'payload' is unused; it's needed to retain the underlying Buffer
+{
+  if (error)
+    return processErrorCode(error);
+
+  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
+                << "] Successfully sent: " << nBytesSent << " bytes");
+  this->getMutableCounters().getNOutBytes() += nBytesSent;
 }
 
 template<class T, class U>
@@ -207,8 +212,8 @@ inline void
 DatagramFace<T, U>::handleReceive(const boost::system::error_code& error,
                                   size_t nBytesReceived)
 {
-  NFD_LOG_DEBUG("handleReceive: " << nBytesReceived);
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
+
   if (m_socket->is_open())
     m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                             bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
@@ -220,35 +225,10 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
                                     size_t nBytesReceived,
                                     const boost::system::error_code& error)
 {
-  if (error != 0 || nBytesReceived == 0) {
-    if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
-      return;
+  if (error || nBytesReceived == 0)
+    return processErrorCode(error);
 
-    // this should be unnecessary, but just in case
-    if (!m_socket->is_open()) {
-      fail("Tunnel closed");
-      return;
-    }
-
-    NFD_LOG_WARN("[id:" << this->getId()
-                 << ",uri:" << this->getRemoteUri()
-                 << "] Receive operation failed: "
-                 << error.category().message(error.value()));
-
-    closeSocket();
-
-    if (error == boost::asio::error::eof) {
-      fail("Tunnel closed");
-    }
-    else {
-      fail("Receive operation failed, closing socket: " +
-             error.category().message(error.value()));
-    }
-    return;
-  }
-
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
+  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                 << "] Received: " << nBytesReceived << " bytes");
   this->getMutableCounters().getNInBytes() += nBytesReceived;
 
@@ -256,8 +236,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   bool isOk = Block::fromBuffer(buffer, nBytesReceived, element);
   if (!isOk)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
+      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                    << "] Failed to parse incoming packet");
       // This message won't extend the face lifetime
       return;
@@ -265,8 +244,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
 
   if (element.size() != nBytesReceived)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
+      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                    << "] Received datagram size and decoded "
                    << "element size don't match");
       // This message won't extend the face lifetime
@@ -275,8 +253,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
 
   if (!this->decodeAndDispatchInput(element))
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << ",uri:" << this->getRemoteUri()
+      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
                    << "] Received unrecognized block of type ["
                    << element.type() << "]");
       // This message won't extend the face lifetime
@@ -285,7 +262,6 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
 
   m_hasBeenUsedRecently = true;
 }
-
 
 template<class T, class U>
 inline void
@@ -297,12 +273,6 @@ template<class T, class U>
 inline void
 DatagramFace<T, U>::closeSocket()
 {
-  NFD_LOG_DEBUG("[id:" << this->getId()
-                << ",uri:" << this->getRemoteUri()
-                << "] closeSocket");
-
-  boost::asio::io_service& io = m_socket->get_io_service();
-
   // use the non-throwing variants and ignore errors, if any
   boost::system::error_code error;
   m_socket->shutdown(protocol::socket::shutdown_both, error);
@@ -311,8 +281,8 @@ DatagramFace<T, U>::closeSocket()
 
   // ensure that the Face object is alive at least until all pending
   // handlers are dispatched
-  io.post(bind(&DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted,
-               this, this->shared_from_this()));
+  getGlobalIoService().post(bind(&DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted,
+                                 this, this->shared_from_this()));
 }
 
 template<class T, class U>

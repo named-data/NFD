@@ -39,20 +39,14 @@ public:
   explicit
   NullFace(const FaceUri& uri = FaceUri("null://"));
 
-  virtual void
-  sendInterest(const Interest& interest);
+  void
+  sendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  /// send a Data
-  virtual void
-  sendData(const Data& data);
+  void
+  sendData(const Data& data) DECL_OVERRIDE;
 
-  /** \brief Close the face
-   *
-   *  This terminates all communication on the face and cause
-   *  onFail() method event to be invoked
-   */
-  virtual void
-  close();
+  void
+  close() DECL_OVERRIDE;
 };
 
 } // namespace nfd
