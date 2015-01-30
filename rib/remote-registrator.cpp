@@ -36,7 +36,7 @@ using ndn::nfd::ControlParameters;
 using ndn::nfd::CommandOptions;
 
 const Name RemoteRegistrator::LOCAL_REGISTRATION_PREFIX = "/localhost";
-const Name RemoteRegistrator::REMOTE_HUB_PREFIX = "/localhop/nfd/rib";
+const Name RemoteRegistrator::REMOTE_HUB_PREFIX = "/localhop/nfd";
 const name::Component RemoteRegistrator::IGNORE_COMMPONENT("rib");
 
 RemoteRegistrator::RemoteRegistrator(ndn::nfd::Controller& controller,
@@ -99,14 +99,8 @@ RemoteRegistrator::loadConfig(const ConfigSection& configSection)
      .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)// set origin to client.
      .setFaceId(0);// the remote hub will take the input face as the faceId.
 
-   Name commandPrefix = REMOTE_HUB_PREFIX;
-   if (IGNORE_COMMPONENT == commandPrefix.at(-1))
-     {
-       commandPrefix = commandPrefix.getPrefix(-1);
-     }
-
    m_commandOptions
-     .setPrefix(commandPrefix)
+     .setPrefix(REMOTE_HUB_PREFIX)
      .setTimeout(time::milliseconds(timeout));
 
    m_nRetries = retry;

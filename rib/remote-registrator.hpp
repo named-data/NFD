@@ -240,7 +240,7 @@ private:
   int m_nRetries;
 
   static const Name LOCAL_REGISTRATION_PREFIX; // /localhost
-  static const Name REMOTE_HUB_PREFIX; // /localhop/nfd/rib
+  static const Name REMOTE_HUB_PREFIX; // /localhop/nfd
   static const name::Component IGNORE_COMMPONENT; // rib
 };
 

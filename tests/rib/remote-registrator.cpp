@@ -164,7 +164,7 @@ public:
   void
   connectToHub()
   {
-    rib.insert(COMMAND_PREFIX, Route());
+    rib.insert(Name("/localhop/nfd"), Route());
 
     advanceClocks(time::milliseconds(1));
   }
@@ -172,7 +172,7 @@ public:
   void
   disconnectToHub()
   {
-    rib.erase(COMMAND_PREFIX, Route());
+    rib.erase(Name("/localhop/nfd"), Route());
 
     advanceClocks(time::milliseconds(1));
   }
