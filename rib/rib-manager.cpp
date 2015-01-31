@@ -81,7 +81,7 @@ RibManager::RibManager(ndn::Face& face, ndn::KeyChain& keyChain)
   , m_localhopValidator(m_face)
   , m_faceMonitor(m_face)
   , m_isLocalhopEnabled(false)
-  , m_remoteRegistrator(m_nfdController, m_keyChain, m_managedRib)
+  , m_prefixPropagator(m_nfdController, m_keyChain, m_managedRib)
   , m_ribStatusPublisher(m_managedRib, face, LIST_COMMAND_PREFIX, m_keyChain)
   , m_fibUpdater(m_managedRib, m_nfdController)
   , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
@@ -145,7 +145,7 @@ RibManager::onConfig(const ConfigSection& configSection,
                      bool isDryRun,
                      const std::string& filename)
 {
-  bool isRemoteRegisterEnabled = false;
+  bool isAutoPrefixPropagatorEnabled = false;
 
   for (const auto& item : configSection) {
     if (item.first == "localhost_security") {
@@ -155,24 +155,24 @@ RibManager::onConfig(const ConfigSection& configSection,
       m_localhopValidator.load(item.second, filename);
       m_isLocalhopEnabled = true;
     }
-    else if (item.first == "remote_register") {
-      m_remoteRegistrator.loadConfig(item.second);
-      isRemoteRegisterEnabled = true;
+    else if (item.first == "auto_prefix_propagate") {
+      m_prefixPropagator.loadConfig(item.second);
+      isAutoPrefixPropagatorEnabled = true;
 
       // Avoid other actions when isDryRun == true
       if (isDryRun) {
         continue;
       }
 
-      m_remoteRegistrator.enable();
+      m_prefixPropagator.enable();
     }
     else {
       BOOST_THROW_EXCEPTION(Error("Unrecognized rib property: " + item.first));
     }
   }
 
-  if (!isRemoteRegisterEnabled) {
-    m_remoteRegistrator.disable();
+  if (!isAutoPrefixPropagatorEnabled) {
+    m_prefixPropagator.disable();
   }
 }
 

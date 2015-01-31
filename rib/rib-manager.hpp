@@ -29,7 +29,7 @@
 #include "rib.hpp"
 #include "core/config-file.hpp"
 #include "rib-status-publisher.hpp"
-#include "remote-registrator.hpp"
+#include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
 
 #include <ndn-cxx/security/validator-config.hpp>
@@ -207,7 +207,7 @@ private:
   ndn::ValidatorConfig m_localhopValidator;
   ndn::nfd::FaceMonitor m_faceMonitor;
   bool m_isLocalhopEnabled;
-  RemoteRegistrator m_remoteRegistrator;
+  AutoPrefixPropagator m_prefixPropagator;
 
   RibStatusPublisher m_ribStatusPublisher;
 
