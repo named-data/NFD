@@ -95,9 +95,11 @@ public:
   void
   run()
   {
-    m_terminationSignalSet.add(SIGINT);
-    m_terminationSignalSet.add(SIGTERM);
-    m_terminationSignalSet.async_wait(bind(&NdnAutoconfig::terminate, this, _1, _2));
+    if (m_isDaemonMode) {
+      m_terminationSignalSet.add(SIGINT);
+      m_terminationSignalSet.add(SIGTERM);
+      m_terminationSignalSet.async_wait(bind(&NdnAutoconfig::terminate, this, _1, _2));
+    }
 
     m_io.run();
   }
