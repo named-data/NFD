@@ -34,7 +34,7 @@ NFD Documentation
 
 **Additional documentation**
 
-* `NFD Developer's Guide <http://named-data.net/wp-content/uploads/2014/07/NFD-developer-guide.pdf>`_
+* `NFD Developer's Guide <http://named-data.net/techreport/ndn-0021-3-nfd-developer-guide.pdf>`_
 
   A comprehensive guide to the design and implementation of NFD. The developer's guide also contains
   suggestions and hints for anyone wanting to modify or extend NFD.
