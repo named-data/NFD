@@ -25,6 +25,7 @@
 
 #include "fw/retx-suppression.hpp"
 #include "fw/retx-suppression-fixed.hpp"
+#include "fw/retx-suppression-exponential.hpp"
 #include "strategy-tester.hpp"
 
 #include "tests/test-common.hpp"
@@ -35,6 +36,7 @@ namespace tests {
 
 using fw::RetxSuppression;
 using fw::RetxSuppressionFixed;
+using fw::RetxSuppressionExponential;
 
 BOOST_FIXTURE_TEST_SUITE(FwRetxSuppression, UnitTestTimeFixture)
 
@@ -85,6 +87,74 @@ BOOST_AUTO_TEST_CASE(Fixed)
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
   pitEntry->insertOrUpdateInRecord(face2, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face2, *interest, *pitEntry), RetxSuppression::SUPPRESS);
+}
+
+BOOST_AUTO_TEST_CASE(Exponential)
+{
+  Forwarder forwarder;
+  Pit& pit = forwarder.getPit();
+  RetxSuppressionExponential rs(time::milliseconds(10), 3.0, time::milliseconds(100));
+
+  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
+  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/smuVeQSW6q");
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+
+  // @ 0ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::NEW);
+  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  // suppression interval is 10ms, until 10ms
+
+  this->advanceClocks(time::milliseconds(5)); // @ 5ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
+  // suppression interval is 10ms, until 10ms
+
+  this->advanceClocks(time::milliseconds(6)); // @ 11ms
+  // note: what happens at *exactly* 10ms does not matter so it's untested,
+  // because in reality network timing won't be exact:
+  // incoming Interest is processed either before or after 10ms point
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
+  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  // suppression interval is 30ms, until 41ms
+
+  this->advanceClocks(time::milliseconds(25)); // @ 36ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
+  // suppression interval is 30ms, until 41ms
+
+  this->advanceClocks(time::milliseconds(6)); // @ 42ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
+  // strategy decides not to forward, but suppression interval is increased nevertheless
+  // suppression interval is 90ms, until 101ms
+
+  this->advanceClocks(time::milliseconds(58)); // @ 100ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
+  // suppression interval is 90ms, until 101ms
+
+  this->advanceClocks(time::milliseconds(3)); // @ 103ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
+  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  // suppression interval is 100ms, until 203ms
+
+  this->advanceClocks(time::milliseconds(99)); // @ 202ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
+  // suppression interval is 100ms, until 203ms
+
+  this->advanceClocks(time::milliseconds(2)); // @ 204ms
+  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
+  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  // suppression interval is 100ms, until 304ms
 }
 
 BOOST_AUTO_TEST_SUITE_END()

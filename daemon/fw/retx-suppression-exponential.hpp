@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
-#define NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
+#ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
+#define NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
 
 #include "retx-suppression.hpp"
 
@@ -32,13 +32,22 @@ namespace nfd {
 namespace fw {
 
 /** \brief a retransmission suppression decision algorithm that
- *         suppresses retransmissions within a fixed duration
+ *         suppresses retransmissions using exponential backoff
+ *
+ *  The i-th retransmission will be suppressed if the last transmission (out-record)
+ *  occurred within MIN(initialInterval * multiplier^(i-1), maxInterval)
  */
-class RetxSuppressionFixed : public RetxSuppression
+class RetxSuppressionExponential : public RetxSuppression
 {
 public:
+  /** \brief time granularity
+   */
+  typedef time::microseconds Duration;
+
   explicit
-  RetxSuppressionFixed(const time::milliseconds& minRetxInterval = DEFAULT_MIN_RETX_INTERVAL);
+  RetxSuppressionExponential(const Duration& initialInterval = DEFAULT_INITIAL_INTERVAL,
+                             float multiplier = DEFAULT_MULTIPLIER,
+                             const Duration& maxInterval = DEFAULT_MAX_INTERVAL);
 
   /** \brief determines whether Interest is a retransmission,
    *         and if so, whether it shall be forwarded or suppressed
@@ -48,13 +57,22 @@ public:
          pit::Entry& pitEntry) const DECL_OVERRIDE;
 
 public:
-  static const time::milliseconds DEFAULT_MIN_RETX_INTERVAL;
+  /** \brief StrategyInfo on pit::Entry
+   */
+  class PitInfo;
+
+public:
+  static const Duration DEFAULT_INITIAL_INTERVAL;
+  static const float DEFAULT_MULTIPLIER;
+  static const Duration DEFAULT_MAX_INTERVAL;
 
 private:
-  const time::milliseconds m_minRetxInterval;
+  const Duration m_initialInterval;
+  const float m_multiplier;
+  const Duration m_maxInterval;
 };
 
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
+#endif // NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP

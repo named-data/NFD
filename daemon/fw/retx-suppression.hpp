@@ -54,7 +54,14 @@ public:
    *         and if so, whether it shall be forwarded or suppressed
    */
   virtual Result
-  decide(const Face& inFace, const Interest& interest, const pit::Entry& pitEntry) const = 0;
+  decide(const Face& inFace, const Interest& interest, pit::Entry& pitEntry) const = 0;
+
+protected:
+  /** \return last out-record time
+   *  \pre pitEntry has one or more unexpired out-records
+   */
+  time::steady_clock::TimePoint
+  getLastOutgoing(const pit::Entry& pitEntry) const;
 };
 
 } // namespace fw

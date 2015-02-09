@@ -23,33 +23,23 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "retx-suppression-fixed.hpp"
+#include "retx-suppression.hpp"
 
 namespace nfd {
 namespace fw {
 
-const time::milliseconds RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL(100);
-
-RetxSuppressionFixed::RetxSuppressionFixed(const time::milliseconds& minRetxInterval)
-  : m_minRetxInterval(minRetxInterval)
+time::steady_clock::TimePoint
+RetxSuppression::getLastOutgoing(const pit::Entry& pitEntry) const
 {
-  BOOST_ASSERT(minRetxInterval > time::milliseconds::zero());
-}
+  const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
+  pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
+      outRecords.begin(), outRecords.end(),
+      [] (const pit::OutRecord& a, const pit::OutRecord& b) {
+        return a.getLastRenewed() < b.getLastRenewed();
+      });
+  BOOST_ASSERT(lastOutgoing != outRecords.end()); // otherwise it's new PIT entry
 
-RetxSuppression::Result
-RetxSuppressionFixed::decide(const Face& inFace, const Interest& interest,
-                             pit::Entry& pitEntry) const
-{
-  bool isNewPitEntry = !pitEntry.hasUnexpiredOutRecords();
-  if (isNewPitEntry) {
-    return NEW;
-  }
-
-  time::steady_clock::TimePoint lastOutgoing = this->getLastOutgoing(pitEntry);
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
-  bool shouldSuppress = sinceLastOutgoing < m_minRetxInterval;
-  return shouldSuppress ? SUPPRESS : FORWARD;
+  return lastOutgoing->getLastRenewed();
 }
 
 } // namespace fw
