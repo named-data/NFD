@@ -28,9 +28,8 @@
 
 namespace ndn {
 
-const static Name AUTOCONFIG_PREFIX          = "/localhop/ndn-autoconf";
 const static Name LOCALHOP_HUB               = "/localhop/ndn-autoconf/hub";
-const static Name LOCALHOP_ROUTABLE_PREFIXES = "/localhop/ndn-autoconf/routable-prefixes";
+const static Name LOCALHOP_ROUTABLE_PREFIXES = "/localhop/nfd/rib/routable-prefixes";
 
 static void
 usage(const char* programName)
@@ -110,8 +109,12 @@ public:
 
     // pre-create routable prefix Data
     if (!routablePrefixes.empty()) {
-      m_routablePrefixesData = make_shared<Data>(Name(LOCALHOP_ROUTABLE_PREFIXES).appendVersion());
+      Name routablePrefixesDataName(LOCALHOP_ROUTABLE_PREFIXES);
+      routablePrefixesDataName.appendVersion();
+      routablePrefixesDataName.appendSegment(0);
+      m_routablePrefixesData = make_shared<Data>(routablePrefixesDataName);
       m_routablePrefixesData->setContent(routablePrefixes.wireEncode());
+      m_routablePrefixesData->setFinalBlockId(routablePrefixesDataName.get(-1));
       m_routablePrefixesData->setFreshnessPeriod(time::seconds(5)); // 5s
       m_keyChain.sign(*m_routablePrefixesData);
     }
@@ -138,26 +141,19 @@ public:
   }
 
   void
-  afterPrefixRegistered()
-  {
-    BOOST_ASSERT(AUTOCONFIG_PREFIX.isPrefixOf(LOCALHOP_HUB));
-    m_face.setInterestFilter(LOCALHOP_HUB,
-                             bind(&NdnAutoconfigServer::onHubInterest, this, _1, _2));
-
-    if (static_cast<bool>(m_routablePrefixesData)) {
-      BOOST_ASSERT(AUTOCONFIG_PREFIX.isPrefixOf(LOCALHOP_ROUTABLE_PREFIXES));
-      m_face.setInterestFilter(LOCALHOP_ROUTABLE_PREFIXES,
-                               bind(&NdnAutoconfigServer::onRoutablePrefixesInterest,
-                                    this, _1, _2));
-    }
-  }
-
-  void
   run()
   {
-    m_face.registerPrefix(AUTOCONFIG_PREFIX,
-                          bind(&NdnAutoconfigServer::afterPrefixRegistered, this),
-                          bind(&NdnAutoconfigServer::onRegisterFailed, this, _1, _2));
+    m_face.setInterestFilter(LOCALHOP_HUB,
+                             bind(&NdnAutoconfigServer::onHubInterest, this, _1, _2),
+                             RegisterPrefixSuccessCallback(),
+                             bind(&NdnAutoconfigServer::onRegisterFailed, this, _1, _2));
+
+    if (static_cast<bool>(m_routablePrefixesData)) {
+      m_face.setInterestFilter(LOCALHOP_ROUTABLE_PREFIXES,
+                               bind(&NdnAutoconfigServer::onRoutablePrefixesInterest, this, _1, _2),
+                               RegisterPrefixSuccessCallback(),
+                               bind(&NdnAutoconfigServer::onRegisterFailed, this, _1, _2));
+    }
 
     m_face.processEvents();
   }

@@ -62,6 +62,7 @@ volunteers.
 
     * Syed Obaid Amin     <http://obaidamin.weebly.com/>
     * Vince Lehman        <vslehman@memphis.edu>
+    * Minsheng Zhang      <mzhang4@memphis.edu>
     * Lan Wang            <http://www.cs.memphis.edu/~lanwang/>
 
 ## Project contributors
