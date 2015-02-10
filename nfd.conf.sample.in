@@ -92,7 +92,11 @@ face_system
     port 6363 ; UDP unicast port number
     enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
     enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
-    idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
+
+    ; idle time (seconds) before closing a UDP unicast face, the actual timeout would be
+    ; anywhere within [idle_timeout, 2*idle_timeout), default is 600
+    idle_timeout 600
+
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
     ; UDP multicast settings

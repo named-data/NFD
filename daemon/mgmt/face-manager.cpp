@@ -380,8 +380,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
   // udp
   // {
   //   port 6363 ; UDP unicast port number
-  //   idle_timeout 30 ; idle time (seconds) before closing a UDP unicast face
-  //   keep_alive_interval 25; interval (seconds) between keep-alive refreshes
+  //   idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
+  //   keep_alive_interval 25 ; interval (seconds) between keep-alive refreshes
 
   //   ; NFD creates one UDP multicast face per NIC
   //   mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
@@ -392,7 +392,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
   std::string port = "6363";
   bool enableV4 = true;
   bool enableV6 = true;
-  size_t timeout = 30;
+  size_t timeout = 600;
   size_t keepAliveInterval = 25;
   bool useMcast = true;
   std::string mcastGroup = "224.0.23.170";
