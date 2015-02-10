@@ -208,25 +208,18 @@ def build(bld):
     if bld.env['HAVE_WEBSOCKET']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/websocket-*.cpp')
 
-    bld(target='bin/nfd',
-        features='cxx cxxprogram',
-        source='daemon/main.cpp',
-        use='daemon-objects',
-        )
-
     rib_objects = bld(
         target='rib-objects',
         name='rib-objects',
         features='cxx',
-        source=bld.path.ant_glob(['rib/**/*.cpp'],
-                                 excl=['rib/main.cpp']),
+        source=bld.path.ant_glob(['rib/**/*.cpp']),
         use='core-objects',
         )
 
-    bld(target='bin/nrd',
+    bld(target='bin/nfd',
         features='cxx cxxprogram',
-        source='rib/main.cpp',
-        use='rib-objects',
+        source='daemon/main.cpp',
+        use='daemon-objects rib-objects',
         )
 
     bld.recurse("tools")

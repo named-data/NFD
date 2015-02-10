@@ -7,23 +7,17 @@ when they die.
 Initial setup
 -------------
 
-Edit `net.named-data.nfd` and `net.named-data.nrd` correcting paths for `nfd` and `nfd`
-binaries, configuration file, and log files.
+Edit `net.named-data.nfd` correcting paths for `nfd` binary, configuration and log files.
 
-    # Copy launchd.plist for nfd (forwarding daemon)
+    # Copy launchd.plist for NFD
     sudo cp net.named-data.nfd.plist /Library/LaunchDaemons/
     sudo chown root /Library/LaunchDaemons/net.named-data.nfd.plist
 
-    # Copy launchd.plist for nrd (RIB management daemon)
-    sudo cp net.named-data.nrd.plist /Library/LaunchDaemons/
-    sudo chown root /Library/LaunchDaemons/net.named-data.nrd.plist
-
 ### Assumptions in the default scripts
 
-* `nfd` and `nrd` are installed into `/usr/local/bin`
+* `nfd` is installed into `/usr/local/bin`
 * Configuration file is `/usr/local/etc/ndn/nfd.conf`
 * `nfd` will be run as root
-* `nrd` will be run as user `ndn` and group `ndn`
 * Log files will be written to `/usr/local/var/log/ndn` folder, which is owned by user `ndn`
 
 ### Creating users
@@ -62,29 +56,24 @@ Folder `/usr/local/var/log/ndn` should be created and assigned proper user and g
     sudo mkdir -p /usr/local/var/log/ndn
     sudo chown -R ndn:ndn /usr/local/var/log/ndn
 
-`HOME` directories for `nfd` and `nrd` should be created and configured with correct
-library's config file and contain proper NDN security credentials for signing Data
-packets.  This is necessary since default private key storage on OSX (`osx-keychain`) does
-not support non-interactive access, and file-based private key storage needs to be used:
+`HOME` directory for `nfd` should be created and configured with correct library's config file
+and contain proper NDN security credentials for signing Data packets.  This is necessary since
+default private key storage on OSX (`osx-keychain`) does not support non-interactive access,
+and file-based private key storage needs to be used:
 
-    # Generate self-signed NDN certificate for nfd (owned by root)
-    sudo mkdir -p /usr/local/var/lib/ndn/nfd/.ndn
-    sudo sh -c 'echo tpm=file > /usr/local/var/lib/ndn/nfd/.ndn/client.conf'
-    sudo HOME=/usr/local/var/lib/ndn/nfd ndnsec-keygen /localhost/daemons/nfd | \
-      sudo HOME=/usr/local/var/lib/ndn/nfd ndnsec-install-cert -
-
-    # Generate self-signed NDN certificate for nrd (owned by ndn)
-    sudo mkdir -p /usr/local/var/lib/ndn/nrd/.ndn
-    sudo chown -R ndn:ndn /usr/local/var/lib/ndn/nrd
-    sudo -u ndn -g ndn sh -c 'echo tpm=file > /usr/local/var/lib/ndn/nrd/.ndn/client.conf'
-    sudo -u ndn -g ndn HOME=/usr/local/var/lib/ndn/nrd ndnsec-keygen /localhost/daemons/nrd | \
-      sudo -u ndn -g ndn HOME=/usr/local/var/lib/ndn/nrd ndnsec-install-cert -
+    # Create HOME and generate self-signed NDN certificate for nfd
+    sudo -s -- ' \
+      mkdir -p /usr/local/var/lib/ndn/nfd/.ndn; \
+      export HOME=/usr/local/var/lib/ndn/nfd; \
+      echo tpm=tpm-file > /usr/local/var/lib/ndn/nfd/.ndn/client.conf; \
+      ndnsec-keygen /localhost/daemons/nfd | ndnsec-install-cert -; \
+    '
 
 ### Configuring NFD's security
 
-NFD sample configuration allows anybody to create faces, add nexthops to FIB,
-and set strategy choice for namespaces.  While such settings could be a good start, it is
-generally not a good idea to run NFD in this mode.
+NFD sample configuration allows anybody to create faces, add nexthops to FIB, and set strategy
+choice for namespaces.  While such settings could be a good start, it is generally not a good
+idea to run NFD in this mode.
 
 While thorough discussion about security configuration of NFD is outside the scope of this
 document, at least the following change should be done to nfd.conf in authorize section:
@@ -93,7 +82,7 @@ document, at least the following change should be done to nfd.conf in authorize 
     {
       authorize
       {
-        certfile certs/localhost_daemons_nrd.ndncert
+        certfile certs/localhost_daemons_nfd.ndncert
         privileges
         {
             faces
@@ -114,25 +103,25 @@ document, at least the following change should be done to nfd.conf in authorize 
     }
 
 While this configuration still allows management of faces and updating strategy choice by
-anybody, only NFD's RIB Manager Daemon (`nrd`) is allowed to manage FIB.
+anybody, only NFD's RIB Manager (i.e., NFD itself) is allowed to manage FIB.
 
-As the final step to make this configuration work, nrd's self-signed certificate needs to
-be exported into `localhost_daemons_nrd.ndncert` file:
+As the final step to make this configuration work, NFD's self-signed certificate needs to
+be exported into `localhost_daemons_nfd.ndncert` file:
 
-    sudo mkdir /usr/local/etc/ndn/certs
-    sudo sh -c 'sudo -u ndn -g ndn HOME=/usr/local/var/lib/ndn/nrd \
-      ndnsec-dump-certificate -i /localhost/daemons/nrd \
-      > /usr/local/etc/ndn/certs/localhost_daemons_nrd.ndncert'
+    sudo -s -- '\
+      mkdir -p /usr/local/etc/ndn/certs || true; \
+      export HOME=/usr/local/var/lib/ndn/nfd; \
+      ndnsec-dump-certificate -i /localhost/daemons/nfd > \
+        /usr/local/etc/ndn/certs/localhost_daemons_nfd.ndncert; \
+      '
 
 
 Enable auto-start
 -----------------
 
     sudo launchctl load -w /Library/LaunchDaemons/net.named-data.nfd.plist
-    sudo launchctl load -w /Library/LaunchDaemons/net.named-data.nrd.plist
 
 Disable auto-start
 ------------------
 
     sudo launchctl unload -w /Library/LaunchDaemons/net.named-data.nfd.plist
-    sudo launchctl unload -w /Library/LaunchDaemons/net.named-data.nrd.plist

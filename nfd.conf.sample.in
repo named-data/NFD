@@ -32,7 +32,6 @@ log
   ;
   ; Run:
   ;   nfd --modules
-  ;   nrd --modules
   ;
   ; Or look for NFD_LOG_INIT(<module name>) statements in .cpp files
   ;

@@ -24,6 +24,7 @@
  */
 
 #include "nfd.hpp"
+#include "rib/nrd.hpp"
 
 #include "version.hpp"
 #include "core/global-io.hpp"
@@ -37,16 +38,33 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
+// boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
+// see http://www.boost.org/doc/libs/1_48_0/doc/html/thread/thread_local_storage.html
+#include <boost/thread.hpp>
+
+#include <atomic>
+#include <condition_variable>
+
 namespace nfd {
 
 NFD_LOG_INIT("NFD");
 
+/** \brief Executes NFD with RIB manager
+ *
+ *  NFD (main forwarding procedure) and RIB manager execute in two different threads.
+ *  Each thread has its own instances global io_service and global scheduler.
+ *
+ *  When either of the daemons fails, execution of non-failed daemon will be terminated as
+ *  well.  In other words, when NFD fails, RIB manager will be terminated; when RIB manager
+ *  fails, NFD will be terminated.
+ */
 class NfdRunner : noncopyable
 {
 public:
   explicit
   NfdRunner(const std::string& configFile)
-    : m_nfd(configFile, m_keyChain)
+    : m_nfd(configFile, m_nfdKeyChain)
+    , m_configFile(configFile)
     , m_terminationSignalSet(getGlobalIoService())
     , m_reloadSignalSet(getGlobalIoService())
   {
@@ -86,6 +104,91 @@ public:
   }
 
   void
+  initialize()
+  {
+    m_nfd.initialize();
+  }
+
+  int
+  run()
+  {
+    /** \brief return value
+     *  A non-zero value is assigned when either NFD or RIB manager (running in a separate
+     *  thread) fails.
+     */
+    std::atomic_int retval(0);
+
+    boost::asio::io_service* const mainIo = &getGlobalIoService();
+    boost::asio::io_service* nrdIo = nullptr;
+
+    // Mutex and conditional variable to implement synchronization between main and RIB manager
+    // threads:
+    // - to block main thread until RIB manager thread starts and initializes nrdIo (to allow
+    //   stopping it later)
+    std::mutex m;
+    std::condition_variable cv;
+
+    std::string configFile = this->m_configFile; // c++11 lambda cannot capture member variables
+    boost::thread nrdThread([configFile, &retval, &nrdIo, mainIo, &cv, &m] {
+        {
+          std::lock_guard<std::mutex> lock(m);
+          nrdIo = &getGlobalIoService();
+          BOOST_ASSERT(nrdIo != mainIo);
+        }
+        cv.notify_all(); // notify that nrdIo has been assigned
+
+        try {
+          ndn::KeyChain nrdKeyChain;
+          // must be created inside a separate thread
+          rib::Nrd nrd(configFile, nrdKeyChain);
+          nrd.initialize();
+          getGlobalIoService().run(); // nrdIo is not thread-safe to use here
+        }
+        catch (const std::exception& e) {
+          NFD_LOG_FATAL(e.what());
+          retval = 6;
+          mainIo->stop();
+        }
+
+        {
+          std::lock_guard<std::mutex> lock(m);
+          nrdIo = nullptr;
+        }
+      });
+
+    {
+      // Wait to guarantee that nrdIo is properly initialized, so it can be used to terminate
+      // RIB manager thread.
+      std::unique_lock<std::mutex> lock(m);
+      cv.wait(lock, [&nrdIo] { return nrdIo != nullptr; });
+    }
+
+    try {
+      mainIo->run();
+    }
+    catch (const std::exception& e) {
+      NFD_LOG_FATAL(e.what());
+      retval = 4;
+    }
+    catch (const PrivilegeHelper::Error& e) {
+      NFD_LOG_FATAL(e.what());
+      retval = 5;
+    }
+
+    {
+      // nrdIo is guaranteed to be alive at this point
+      std::lock_guard<std::mutex> lock(m);
+      if (nrdIo != nullptr) {
+        nrdIo->stop();
+        nrdIo = nullptr;
+      }
+    }
+    nrdThread.join();
+
+    return retval;
+  }
+
+  void
   terminate(const boost::system::error_code& error, int signalNo)
   {
     if (error)
@@ -93,12 +196,6 @@ public:
 
     NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', exiting...");
     getGlobalIoService().stop();
-  }
-
-  void
-  initialize()
-  {
-    m_nfd.initialize();
   }
 
   void
@@ -114,8 +211,10 @@ public:
   }
 
 private:
-  ndn::KeyChain           m_keyChain;
+  ndn::KeyChain           m_nfdKeyChain;
   Nfd                     m_nfd;
+  std::string             m_configFile;
+
   boost::asio::signal_set m_terminationSignalSet;
   boost::asio::signal_set m_reloadSignalSet;
 };
@@ -192,17 +291,5 @@ main(int argc, char** argv)
     return 3;
   }
 
-  try {
-    getGlobalIoService().run();
-  }
-  catch (const std::exception& e) {
-    NFD_LOG_FATAL(e.what());
-    return 4;
-  }
-  catch (const PrivilegeHelper::Error& e) {
-    NFD_LOG_FATAL(e.what());
-    return 5;
-  }
-
-  return 0;
+  return runner.run();
 }

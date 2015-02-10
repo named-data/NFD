@@ -6,7 +6,7 @@ case "$1" in
   -h)
     echo Usage
     echo $0
-    echo "  Stop NFD and RIB Management daemon"
+    echo "  Stop NFD"
     exit 0
     ;;
   -V)
@@ -20,5 +20,4 @@ case "$1" in
     ;;
 esac
 
-sudo killall nrd
 sudo killall nfd

@@ -6,7 +6,7 @@ case "$1" in
   -h)
     echo Usage
     echo $0
-    echo "  Start NFD and RIB Management daemon"
+    echo "  Start NFD"
     exit 0
     ;;
   -V)
@@ -30,11 +30,10 @@ hasProcess() {
 }
 
 hasNFD=$(hasProcess nfd)
-hasNRD=$(hasProcess nrd)
 
-if [[ -n $hasNFD$hasNRD ]]
+if [[ -n $hasNFD ]]
 then
-  echo 'NFD or NRD is already running...'
+  echo 'NFD is already running...'
   exit 1
 fi
 
@@ -49,7 +48,10 @@ then
   exit 2
 fi
 
-sudo nfd &
-sleep 2
-nrd &
-sleep 2
+sudo @BINDIR@/nfd &
+
+if [ -f @SYSCONFDIR@/ndn/nfd-init.sh ]; then
+    sleep 2 # post-start is executed just after nfd process starts, but there is no guarantee
+    # that all initialization has been finished
+    . @SYSCONFDIR@/ndn/nfd-init.sh
+fi
