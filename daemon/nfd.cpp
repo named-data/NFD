@@ -54,12 +54,19 @@ Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
 {
 }
 
+Nfd::~Nfd()
+{
+  // It is necessary to explicitly define the destructor, because some member variables (e.g.,
+  // unique_ptr<Forwarder>) are forward-declared, but implicitly declared destructor requires
+  // complete types for all members when instantiated.
+}
+
 void
 Nfd::initialize()
 {
   initializeLogging();
 
-  m_forwarder = make_shared<Forwarder>();
+  m_forwarder.reset(new Forwarder());
 
   initializeManagement();
 
@@ -107,23 +114,16 @@ Nfd::initializeManagement()
 {
   m_internalFace = make_shared<InternalFace>();
 
-  m_fibManager = make_shared<FibManager>(ref(m_forwarder->getFib()),
-                                         bind(&Forwarder::getFace, m_forwarder.get(), _1),
-                                         m_internalFace,
-                                         ndn::ref(m_keyChain));
+  m_fibManager.reset(new FibManager(m_forwarder->getFib(),
+                                    bind(&Forwarder::getFace, m_forwarder.get(), _1),
+                                    m_internalFace, m_keyChain));
 
-  m_faceManager = make_shared<FaceManager>(ref(m_forwarder->getFaceTable()),
-                                           m_internalFace,
-                                           ndn::ref(m_keyChain));
+  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(), m_internalFace, m_keyChain));
 
-  m_strategyChoiceManager =
-    make_shared<StrategyChoiceManager>(ref(m_forwarder->getStrategyChoice()),
-                                       m_internalFace,
-                                       ndn::ref(m_keyChain));
+  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
+                                                          m_internalFace, m_keyChain));
 
-  m_statusServer = make_shared<StatusServer>(m_internalFace,
-                                             ref(*m_forwarder),
-                                             ndn::ref(m_keyChain));
+  m_statusServer.reset(new StatusServer(m_internalFace, *m_forwarder, m_keyChain));
 
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);

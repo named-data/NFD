@@ -62,6 +62,11 @@ public:
   Nfd(const ConfigSection& config, ndn::KeyChain& keyChain);
 
   /**
+   * \brief Destructor
+   */
+  ~Nfd();
+
+  /**
    * \brief Perform initialization of NFD instance
    * After initialization, NFD instance can be started by invoking run on globalIoService
    */
@@ -85,13 +90,13 @@ private:
   std::string m_configFile;
   ConfigSection m_configSection;
 
-  shared_ptr<Forwarder> m_forwarder;
+  unique_ptr<Forwarder> m_forwarder;
 
   shared_ptr<InternalFace>          m_internalFace;
-  shared_ptr<FibManager>            m_fibManager;
-  shared_ptr<FaceManager>           m_faceManager;
-  shared_ptr<StrategyChoiceManager> m_strategyChoiceManager;
-  shared_ptr<StatusServer>          m_statusServer;
+  unique_ptr<FibManager>            m_fibManager;
+  unique_ptr<FaceManager>           m_faceManager;
+  unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
+  unique_ptr<StatusServer>          m_statusServer;
 
   ndn::KeyChain&                    m_keyChain;
 };
