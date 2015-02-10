@@ -55,6 +55,11 @@ def options(opt):
     nfdopt.add_option('--with-other-tests', action='store_true', default=False,
                       dest='with_other_tests', help='''Build other tests''')
 
+    nfdopt.add_option('--with-custom-logger', type='string', default=None,
+                      dest='with_custom_logger',
+                      help='''Path to custom-logger.hpp and custom-logger-factory.hpp '''
+                           '''implementing Logger and LoggerFactory interfaces''')
+
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'pch', 'boost-kqueue',
@@ -129,6 +134,11 @@ main(int, char**)
         conf.check_cxx(function_name='pcap_set_immediate_mode', header_name='pcap/pcap.h',
                        cxxflags='-Wno-error', use='LIBPCAP', mandatory=False)
 
+    if conf.options.with_custom_logger:
+        conf.define('HAVE_CUSTOM_LOGGER', 1)
+        conf.env['INCLUDES_CUSTOM_LOGGER'] = [conf.options.with_custom_logger]
+        conf.env['HAVE_CUSTOM_LOGGER'] = 1
+
     conf.load('coverage')
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
@@ -161,12 +171,18 @@ def build(bld):
         target='core-objects',
         name='core-objects',
         features='cxx pch',
-        source=bld.path.ant_glob(['core/**/*.cpp']),
+        source=bld.path.ant_glob(['core/**/*.cpp'],
+                                 excl=['core/logger*.cpp']),
         use='version BOOST NDN_CXX LIBRT',
         includes='. core',
         export_includes='. core',
         headers='common.hpp',
         )
+
+    if bld.env['HAVE_CUSTOM_LOGGER']:
+        core.use += " CUSTOM_LOGGER"
+    else:
+        core.source += bld.path.ant_glob(['core/logger*.cpp'])
 
     nfd_objects = bld(
         target='daemon-objects',

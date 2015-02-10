@@ -24,6 +24,11 @@
  */
 
 #include "logger.hpp"
+
+#ifdef HAVE_CUSTOM_LOGGER
+#error "This file should not be compiled when custom logger is used"
+#endif
+
 #include <ndn-cxx/util/time.hpp>
 #include <cinttypes>
 #include <stdio.h>

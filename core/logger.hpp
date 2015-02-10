@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -28,19 +28,23 @@
 
 #include "common.hpp"
 
+#ifdef HAVE_CUSTOM_LOGGER
+#include "custom-logger.hpp"
+#else
+
 namespace nfd {
 
 /** \brief indicates a log level
  *  \note This type is internal. Logger should be accessed through NFD_LOG_* macros.
  */
 enum LogLevel {
+  LOG_FATAL          = -1, // fatal (will be logged unconditionally)
   LOG_NONE           = 0, // no messages
   LOG_ERROR          = 1, // serious error messages
   LOG_WARN           = 2, // warning messages
   LOG_INFO           = 3, // informational messages
   LOG_DEBUG          = 4, // debug messages
   LOG_TRACE          = 5, // trace messages (most verbose)
-  // LOG_FATAL is not a level and is logged unconditionally
   LOG_ALL            = 255 // all messages
 };
 
@@ -57,10 +61,7 @@ public:
   bool
   isEnabled(LogLevel level) const
   {
-    // std::cerr << m_moduleName <<
-    //   " enabled = " << m_enabledLogLevel
-    //           << " level = " << level << std::endl;
-    return (m_enabledLogLevel >= level);
+    return m_enabledLogLevel >= level;
   }
 
   void
@@ -140,13 +141,10 @@ do {                                                             \
 #define NFD_LOG_INFO(expression)  NFD_LOG(INFO,  INFO,    expression)
 #define NFD_LOG_WARN(expression)  NFD_LOG(WARN,  WARNING, expression)
 #define NFD_LOG_ERROR(expression) NFD_LOG(ERROR, ERROR,   expression)
-
-#define NFD_LOG_FATAL(expression)                             \
-do {                                                          \
-  std::clog << ::nfd::Logger::now() << " FATAL: "             \
-            << "[" << g_logger << "] " << expression << "\n"; \
-} while (false)
+#define NFD_LOG_FATAL(expression) NFD_LOG(FATAL, FATAL,   expression)
 
 } // namespace nfd
+
+#endif // HAVE_CUSTOM_LOGGER
 
 #endif // NFD_CORE_LOGGER_HPP
