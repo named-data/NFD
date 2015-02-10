@@ -41,7 +41,7 @@ namespace nfd {
 
 NFD_LOG_INIT("NFD");
 
-class NfdRunner
+class NfdRunner : noncopyable
 {
 public:
   explicit

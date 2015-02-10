@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -23,86 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <getopt.h>
+#include "nrd.hpp"
 
 #include "version.hpp"
-#include "common.hpp"
-#include "rib-manager.hpp"
-#include "core/config-file.hpp"
-#include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "core/global-io.hpp"
+
+#include <string.h>
+
+#include <boost/filesystem.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
 
 namespace nfd {
 namespace rib {
 
 NFD_LOG_INIT("NRD");
 
-struct ProgramOptions
-{
-  bool showUsage;
-  bool showVersion;
-  bool showModules;
-  std::string config;
-};
-
-class Nrd : noncopyable
+class NrdRunner : noncopyable
 {
 public:
-  class IgnoreNfdAndLogSections
+  explicit
+  NrdRunner(const std::string& configFile)
+    : m_nrd(configFile, m_keyChain)
+    , m_terminationSignalSet(getGlobalIoService())
   {
-  public:
-    void
-    operator()(const std::string& filename,
-               const std::string& sectionName,
-               const ConfigSection& section,
-               bool isDryRun)
-    {
-      // Ignore "log" and sections belonging to NFD,
-      // but raise an error if we're missing a handler for an "rib_" section.
-
-      if (sectionName.find("rib_") != 0 || sectionName == "log")
-        {
-          // do nothing
-        }
-      else
-        {
-          // missing NRD section
-          ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
-        }
-    }
-  };
-
-  Nrd()
-    : m_face(getGlobalIoService())
-  {
-  }
-
-  void
-  initialize(const std::string& configFile)
-  {
-    initializeLogging(configFile);
-
-    m_ribManager = make_shared<RibManager>(ndn::ref(m_face));
-
-    ConfigFile config((IgnoreNfdAndLogSections()));
-    m_ribManager->setConfigFile(config);
-
-    // parse config file
-    config.parse(configFile, true);
-    config.parse(configFile, false);
-
-    m_ribManager->registerWithNfd();
-    m_ribManager->enableLocalControlHeader();
-  }
-
-  void
-  initializeLogging(const std::string& configFile)
-  {
-    ConfigFile config(&ConfigFile::ignoreUnknownSection);
-    LoggerFactory::getInstance().setConfigFile(config);
-
-    config.parse(configFile, true);
-    config.parse(configFile, false);
+    m_terminationSignalSet.add(SIGINT);
+    m_terminationSignalSet.add(SIGTERM);
+    m_terminationSignalSet.async_wait(bind(&NrdRunner::terminate, this, _1, _2));
   }
 
   static void
@@ -125,125 +74,93 @@ public:
   static void
   printModules(std::ostream& os)
   {
-    using namespace std;
-
     os << "Available logging modules: \n";
 
-    list<string> modules(LoggerFactory::getInstance().getModules());
-    for (list<string>::const_iterator i = modules.begin(); i != modules.end(); ++i)
-      {
-        os << *i << "\n";
-      }
-  }
-
-  static bool
-  parseCommandLine(int argc, char** argv, ProgramOptions& options)
-  {
-    options.showUsage = false;
-    options.showVersion = false;
-    options.showModules = false;
-    options.config = DEFAULT_CONFIG_FILE;
-
-    while (true) {
-      int optionIndex = 0;
-      static ::option longOptions[] = {
-        { "help"   , no_argument      , 0, 0 },
-        { "modules", no_argument      , 0, 0 },
-        { "config" , required_argument, 0, 0 },
-        { "version", no_argument      , 0, 0 },
-        { 0        , 0                , 0, 0 }
-      };
-      int c = getopt_long_only(argc, argv, "", longOptions, &optionIndex);
-      if (c == -1)
-        break;
-
-      switch (c) {
-      case 0:
-        switch (optionIndex) {
-        case 0: // help
-          options.showUsage = true;
-          break;
-        case 1: // modules
-          options.showModules = true;
-          break;
-        case 2: // config
-          options.config = ::optarg;
-          break;
-        case 3: // version
-          options.showVersion = true;
-          break;
-        default:
-          return false;
-        }
-        break;
-      }
+    for (const auto& module : LoggerFactory::getInstance().getModules()) {
+      os << module << "\n";
     }
-    return true;
   }
-
 
   void
-  terminate(const boost::system::error_code& error,
-            int signalNo,
-            boost::asio::signal_set& signalSet)
+  run()
+  {
+    getGlobalIoService().run();
+  }
+
+  void
+  initialize()
+  {
+    m_nrd.initialize();
+  }
+
+  void
+  terminate(const boost::system::error_code& error, int signalNo)
   {
     if (error)
       return;
 
-    if (signalNo == SIGINT ||
-        signalNo == SIGTERM)
-      {
-        getGlobalIoService().stop();
-        NFD_LOG_INFO("Caught signal '" << strsignal(signalNo) << "', exiting...");
-      }
-    else
-      {
-        /// \todo May be try to reload config file
-        signalSet.async_wait(bind(&Nrd::terminate, this, _1, _2,
-                                  ref(signalSet)));
-      }
+    NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', exiting...");
+    getGlobalIoService().stop();
   }
 
 private:
-  shared_ptr<RibManager> m_ribManager;
-  ndn::Face m_face;
+  ndn::KeyChain           m_keyChain;
+  Nrd                     m_nrd; // must be after m_io and m_keyChain
+  boost::asio::signal_set m_terminationSignalSet;
 };
 
-} // namespace rib
 } // namespace nfd
+} // namespace rib
 
 int
 main(int argc, char** argv)
 {
   using namespace nfd::rib;
 
-  ProgramOptions options;
-  bool isCommandLineValid = Nrd::parseCommandLine(argc, argv, options);
-  if (!isCommandLineValid) {
-    Nrd::printUsage(std::cerr, argv[0]);
+  namespace po = boost::program_options;
+
+  po::options_description description;
+
+  std::string configFile = DEFAULT_CONFIG_FILE;
+  description.add_options()
+    ("help,h",    "print this help message")
+    ("version,V", "print version and exit")
+    ("modules,m", "list available logging modules")
+    ("config,c",  po::value<std::string>(&configFile), "path to configuration file")
+    ;
+
+  po::variables_map vm;
+  try {
+      po::store(po::command_line_parser(argc, argv).options(description).run(), vm);
+      po::notify(vm);
+  }
+  catch (const std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
+    NrdRunner::printUsage(std::cerr, argv[0]);
     return 1;
   }
-  if (options.showUsage) {
-    Nrd::printUsage(std::cout, argv[0]);
+
+  if (vm.count("help") > 0) {
+    NrdRunner::printUsage(std::cout, argv[0]);
     return 0;
   }
 
-  if (options.showModules) {
-    Nrd::printModules(std::cout);
-    return 0;
-  }
-
-  if (options.showVersion) {
+  if (vm.count("version") > 0) {
     std::cout << NFD_VERSION_BUILD_STRING << std::endl;
     return 0;
   }
 
-  Nrd nrdInstance;
+  if (vm.count("modules") > 0) {
+    NrdRunner::printModules(std::cout);
+    return 0;
+  }
+
+  NrdRunner runner(configFile);
 
   try {
-    nrdInstance.initialize(options.config);
+    runner.initialize();
   }
-  catch (boost::filesystem::filesystem_error& e) {
+  catch (const boost::filesystem::filesystem_error& e) {
     if (e.code() == boost::system::errc::permission_denied) {
       NFD_LOG_FATAL("Permissions denied for " << e.path1() << ". " <<
                     argv[0] << " should be run as superuser");
@@ -258,21 +175,12 @@ main(int argc, char** argv)
     return 2;
   }
 
-  boost::asio::signal_set signalSet(nfd::getGlobalIoService());
-  signalSet.add(SIGINT);
-  signalSet.add(SIGTERM);
-  signalSet.add(SIGHUP);
-  signalSet.add(SIGUSR1);
-  signalSet.add(SIGUSR2);
-  signalSet.async_wait(bind(&Nrd::terminate, &nrdInstance, _1, _2,
-                            ndn::ref(signalSet)));
-
   try {
-    nfd::getGlobalIoService().run();
+    runner.run();
   }
-  catch (std::exception& e) {
+  catch (const std::exception& e) {
     NFD_LOG_FATAL(e.what());
-    return 3;
+    return 4;
   }
 
   return 0;
