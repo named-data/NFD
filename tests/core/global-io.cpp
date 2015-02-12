@@ -23,85 +23,33 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scheduler.hpp"
-#include "global-io.hpp"
+#include "core/global-io.hpp"
 
-#include <boost/thread/tss.hpp>
+#include "tests/test-common.hpp"
+
+#include <boost/thread.hpp>
 
 namespace nfd {
-namespace scheduler {
+namespace tests {
 
-static boost::thread_specific_ptr<Scheduler> g_scheduler;
+BOOST_FIXTURE_TEST_SUITE(CoreGlobalIo, BaseFixture)
 
-Scheduler&
-getGlobalScheduler()
+BOOST_AUTO_TEST_CASE(ThreadLocalGlobalIoService)
 {
-  if (g_scheduler.get() == nullptr) {
-    g_scheduler.reset(new Scheduler(getGlobalIoService()));
-  }
+  boost::asio::io_service* s1 = &getGlobalIoService();
+  boost::asio::io_service* s2 = nullptr;
+  boost::thread t([&s2] {
+      s2 = &getGlobalIoService();
+    });
 
-  return *g_scheduler;
+  t.join();
+
+  BOOST_CHECK(s1 != nullptr);
+  BOOST_CHECK(s2 != nullptr);
+  BOOST_CHECK(s1 != s2);
 }
 
-EventId
-schedule(const time::nanoseconds& after, const Scheduler::Event& event)
-{
-  return getGlobalScheduler().scheduleEvent(after, event);
-}
+BOOST_AUTO_TEST_SUITE_END()
 
-void
-cancel(const EventId& eventId)
-{
-  getGlobalScheduler().cancelEvent(eventId);
-}
-
-void
-resetGlobalScheduler()
-{
-  g_scheduler.reset();
-}
-
-ScopedEventId::ScopedEventId()
-{
-}
-
-ScopedEventId::ScopedEventId(const EventId& event)
-  : m_event(event)
-{
-}
-
-ScopedEventId::ScopedEventId(ScopedEventId&& other)
-  : m_event(other.m_event)
-{
-  other.release();
-}
-
-ScopedEventId&
-ScopedEventId::operator=(const EventId& event)
-{
-  if (m_event != event) {
-    scheduler::cancel(m_event);
-    m_event = event;
-  }
-  return *this;
-}
-
-ScopedEventId::~ScopedEventId()
-{
-  scheduler::cancel(m_event);
-}
-
-void
-ScopedEventId::cancel()
-{
-  scheduler::cancel(m_event);
-}
-
-void
-ScopedEventId::release()
-{
-  m_event.reset();
-}
-
-} // namespace scheduler
+} // namespace tests
 } // namespace nfd

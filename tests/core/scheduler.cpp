@@ -27,7 +27,16 @@
 
 #include "tests/test-common.hpp"
 
+#include <boost/thread.hpp>
+
 namespace nfd {
+
+namespace scheduler {
+// defined in scheduler.cpp
+Scheduler&
+getGlobalScheduler();
+} // namespace scheduler
+
 namespace tests {
 
 using scheduler::EventId;
@@ -156,6 +165,21 @@ BOOST_FIXTURE_TEST_CASE(ScopedEventIdMove, UnitTestTimeFixture)
   } // se goes out of scope
   this->advanceClocks(time::milliseconds(1), 15);
   BOOST_CHECK_EQUAL(hit, 1);
+}
+
+BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
+{
+  scheduler::Scheduler* s1 = &scheduler::getGlobalScheduler();
+  scheduler::Scheduler* s2 = nullptr;
+  boost::thread t([&s2] {
+      s2 = &scheduler::getGlobalScheduler();
+    });
+
+  t.join();
+
+  BOOST_CHECK(s1 != nullptr);
+  BOOST_CHECK(s2 != nullptr);
+  BOOST_CHECK(s1 != s2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

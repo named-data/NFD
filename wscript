@@ -102,7 +102,7 @@ main(int, char**)
 
     conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
 
-    boost_libs = 'system chrono program_options random'
+    boost_libs = 'system chrono program_options random thread'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
