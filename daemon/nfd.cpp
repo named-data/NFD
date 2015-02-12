@@ -67,9 +67,7 @@ Nfd::initialize()
   m_forwarder->getFaceTable().addReserved(make_shared<NullFace>(FaceUri("contentstore://")),
                                           FACEID_CONTENT_STORE);
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   PrivilegeHelper::drop();
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 void

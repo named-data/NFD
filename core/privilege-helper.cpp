@@ -159,7 +159,7 @@ PrivilegeHelper::drop()
 
   NFD_LOG_INFO("dropped to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
-  throw Error("Dropping privileges is not supported on this platform");
+  NFD_LOG_WARN("Dropping privileges is not supported on this platform");
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
@@ -186,7 +186,7 @@ PrivilegeHelper::raise()
     }
   NFD_LOG_INFO("elevated to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
-  throw Error("Elevating privileges is not supported on this platform");
+  NFD_LOG_WARN("Elevating privileges is not supported on this platform");
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
