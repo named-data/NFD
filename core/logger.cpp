@@ -36,6 +36,8 @@
 
 namespace nfd {
 
+std::mutex g_logMutex;
+
 Logger::Logger(const std::string& name, LogLevel level)
   : m_moduleName(name)
   , m_enabledLogLevel(level)

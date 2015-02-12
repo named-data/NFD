@@ -864,6 +864,24 @@ BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
     }
 }
 
+BOOST_FIXTURE_TEST_CASE(LoggerFactoryListModules, LoggerFixture)
+{
+  std::set<std::string> testCaseLoggers{"LoggerFactoryListModules1", "LoggerFactoryListModules2"};
+
+  for (const auto& name : testCaseLoggers) {
+    LoggerFactory::create(name);
+  }
+
+  auto&& modules = LoggerFactory::getInstance().getModules();
+  BOOST_CHECK_GE(modules.size(), 2);
+
+  for (const auto& name : modules) {
+    testCaseLoggers.erase(name);
+  }
+
+  BOOST_CHECK_EQUAL(testCaseLoggers.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

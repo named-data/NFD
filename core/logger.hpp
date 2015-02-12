@@ -32,6 +32,8 @@
 #include "custom-logger.hpp"
 #else
 
+#include <mutex>
+
 namespace nfd {
 
 /** \brief indicates a log level
@@ -128,12 +130,15 @@ nfd::Logger& cls<specialization>::g_logger = nfd::LoggerFactory::create(name)
 template<>                                                                 \
 nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name)
 
+extern std::mutex g_logMutex;
 
 #define NFD_LOG(level, msg, expression)                          \
 do {                                                             \
-  if (g_logger.isEnabled(::nfd::LOG_##level))                    \
+  if (g_logger.isEnabled(::nfd::LOG_##level)) {                  \
+    std::lock_guard<std::mutex> lock(::nfd::g_logMutex);         \
     std::clog << ::nfd::Logger::now() << " "#msg": "             \
               << "[" << g_logger << "] " << expression << "\n";  \
+  }                                                              \
 } while (false)
 
 #define NFD_LOG_TRACE(expression) NFD_LOG(TRACE, TRACE,   expression)

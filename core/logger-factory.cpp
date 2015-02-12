@@ -25,6 +25,8 @@
 
 #include "logger-factory.hpp"
 
+#include <boost/range/adaptor/map.hpp>
+
 #ifdef HAVE_CUSTOM_LOGGER
 #error "This file should not be compiled when custom logger is used"
 #endif
@@ -70,44 +72,37 @@ LoggerFactory::parseLevel(const std::string& level)
   // std::cerr << m_levelNames.begin()->first << std::endl;
 
   LevelMap::const_iterator levelIt = m_levelNames.find(upperLevel);
-  if (levelIt != m_levelNames.end())
-    {
-      return levelIt->second;
-    }
-  try
-    {
-      uint32_t levelNo = boost::lexical_cast<uint32_t>(level);
+  if (levelIt != m_levelNames.end()) {
+    return levelIt->second;
+  }
+  try {
+    uint32_t levelNo = boost::lexical_cast<uint32_t>(level);
 
-      if ((boost::lexical_cast<uint32_t>(LOG_NONE) <= levelNo &&
-           levelNo <= boost::lexical_cast<uint32_t>(LOG_TRACE)) ||
-          levelNo == LOG_ALL)
-        {
-          return static_cast<LogLevel>(levelNo);
-        }
+    if ((boost::lexical_cast<uint32_t>(LOG_NONE) <= levelNo &&
+         levelNo <= boost::lexical_cast<uint32_t>(LOG_TRACE)) ||
+        levelNo == LOG_ALL) {
+      return static_cast<LogLevel>(levelNo);
     }
-  catch (const boost::bad_lexical_cast& error)
-    {
-    }
-  throw LoggerFactory::Error("Unsupported logging level \"" +
-                             level + "\"");
+  }
+  catch (const boost::bad_lexical_cast& error) {
+  }
+
+  throw LoggerFactory::Error("Unsupported logging level \"" + level + "\"");
 }
 
 LogLevel
 LoggerFactory::extractLevel(const ConfigSection& item, const std::string& key)
 {
   std::string levelString;
-  try
-    {
-      levelString = item.get_value<std::string>();
-    }
-  catch (const boost::property_tree::ptree_error& error)
-    {
-    }
+  try {
+    levelString = item.get_value<std::string>();
+  }
+  catch (const boost::property_tree::ptree_error& error) {
+  }
 
-  if (levelString.empty())
-    {
-      throw LoggerFactory::Error("No logging level found for option \"" + key + "\"");
-    }
+  if (levelString.empty()) {
+    throw LoggerFactory::Error("No logging level found for option \"" + key + "\"");
+  }
 
   return parseLevel(levelString);
 }
@@ -131,58 +126,51 @@ LoggerFactory::onConfig(const ConfigSection& section,
 //   Forwarder WARN
 // }
 
-  if (!isDryRun)
-    {
-      ConfigSection::const_assoc_iterator item = section.find("default_level");
-      if (item != section.not_found())
-        {
-          LogLevel level = extractLevel(item->second, "default_level");
-          setDefaultLevel(level);
-        }
-      else
-        {
-          setDefaultLevel(LOG_INFO);
-        }
+  if (!isDryRun) {
+    ConfigSection::const_assoc_iterator item = section.find("default_level");
+    if (item != section.not_found()) {
+      LogLevel level = extractLevel(item->second, "default_level");
+      setDefaultLevel(level);
     }
-
-  for (ConfigSection::const_iterator item = section.begin();
-       item != section.end();
-       ++item)
-    {
-      LogLevel level = extractLevel(item->second, item->first);
-
-      if (item->first == "default_level")
-        {
-          // do nothing
-        }
-      else
-        {
-          LoggerMap::iterator loggerIt = m_loggers.find(item->first);
-          if (loggerIt == m_loggers.end())
-            {
-              NFD_LOG_DEBUG("Failed to configure logging level for module \"" <<
-                            item->first << "\" (module not found)");
-            }
-          else if (!isDryRun)
-            {
-              // std::cerr << "changing level for module " << item->first << " to " << level << std::endl;
-              loggerIt->second.setLogLevel(level);
-            }
-        }
+    else {
+      setDefaultLevel(LOG_INFO);
     }
+  }
+
+  for (const auto& i : section) {
+    LogLevel level = extractLevel(i.second, i.first);
+
+    if (i.first == "default_level") {
+      // do nothing
+    }
+    else {
+      std::unique_lock<std::mutex> lock(m_loggersGuard);
+      LoggerMap::iterator loggerIt = m_loggers.find(i.first);
+      if (loggerIt == m_loggers.end()) {
+        lock.unlock();
+        NFD_LOG_DEBUG("Failed to configure logging level for module \"" <<
+                      i.first << "\" (module not found)");
+      }
+      else if (!isDryRun) {
+        loggerIt->second.setLogLevel(level);
+        lock.unlock();
+        NFD_LOG_DEBUG("Changing level for module " << i.first << " to " << level);
+      }
+    }
+  }
 }
 
 void
 LoggerFactory::setDefaultLevel(LogLevel level)
 {
   // std::cerr << "changing to default_level " << level << std::endl;
+  std::lock_guard<std::mutex> lock(m_loggersGuard);
 
   m_defaultLevel = level;
-  for (LoggerMap::iterator i = m_loggers.begin(); i != m_loggers.end(); ++i)
-    {
-      // std::cerr << "changing " << i->first << " to default " << m_defaultLevel << std::endl;
-      i->second.setLogLevel(m_defaultLevel);
-    }
+  for (auto&& logger : m_loggers) {
+    // std::cerr << "changing " << i->first << " to default " << m_defaultLevel << std::endl;
+    logger.second.setLogLevel(m_defaultLevel);
+  }
 }
 
 Logger&
@@ -197,6 +185,8 @@ LoggerFactory::createLogger(const std::string& moduleName)
   // std::cerr << "creating logger for " << moduleName
   //           << " with level " << m_defaultLevel << std::endl;
 
+  std::lock_guard<std::mutex> lock(m_loggersGuard);
+
   std::pair<LoggerMap::iterator, bool> loggerIt =
     m_loggers.insert(NameAndLogger(moduleName, Logger(moduleName, m_defaultLevel)));
 
@@ -206,11 +196,12 @@ LoggerFactory::createLogger(const std::string& moduleName)
 std::list<std::string>
 LoggerFactory::getModules() const
 {
+  std::lock_guard<std::mutex> lock(m_loggersGuard);
+
   std::list<std::string> modules;
-  for (LoggerMap::const_iterator i = m_loggers.begin(); i != m_loggers.end(); ++i)
-    {
-      modules.push_back(i->first);
-    }
+  for (const auto& loggerName : m_loggers | boost::adaptors::map_keys) {
+    modules.push_back(loggerName);
+  }
 
   return modules;
 }

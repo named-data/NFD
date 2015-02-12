@@ -101,6 +101,7 @@ private:
   typedef std::pair<std::string, Logger> NameAndLogger;
 
   LoggerMap m_loggers;
+  mutable std::mutex m_loggersGuard;
 
   LogLevel m_defaultLevel;
 };
