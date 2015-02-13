@@ -163,7 +163,15 @@ void
 UdpChannel::newPeer(const boost::system::error_code& error,
                     size_t nBytesReceived)
 {
-  NFD_LOG_DEBUG("UdpChannel::newPeer from " << m_newRemoteEndpoint);
+  if (error) {
+    if (error == boost::asio::error::operation_aborted)
+      return;
+
+    NFD_LOG_ERROR("newPeer: " << error.message());
+    return;
+  }
+
+  NFD_LOG_DEBUG("newPeer from " << m_newRemoteEndpoint);
 
   shared_ptr<UdpFace> face;
 
