@@ -382,13 +382,17 @@ BOOST_FIXTURE_TEST_CASE(UnixStreamFaceLocalControlHeader, EndToEndFixture)
   using namespace boost::asio;
 
   std::vector<const_buffer> interestWithHeader;
-  Block iHeader  = interest1->getLocalControlHeader().wireEncode(*interest1, true, true);
+  Block iHeader  = interest1->getLocalControlHeader().wireEncode(*interest1,
+    ndn::nfd::LocalControlHeader::ENCODE_INCOMING_FACE_ID |
+    ndn::nfd::LocalControlHeader::ENCODE_NEXT_HOP);
   Block iPayload = interest1->wireEncode();
   interestWithHeader.push_back(buffer(iHeader.wire(),  iHeader.size()));
   interestWithHeader.push_back(buffer(iPayload.wire(), iPayload.size()));
 
   std::vector<const_buffer> dataWithHeader;
-  Block dHeader  = data1->getLocalControlHeader().wireEncode(*data1, true, true);
+  Block dHeader  = data1->getLocalControlHeader().wireEncode(*data1,
+    ndn::nfd::LocalControlHeader::ENCODE_INCOMING_FACE_ID |
+    ndn::nfd::LocalControlHeader::ENCODE_NEXT_HOP);
   Block dPayload = data1->wireEncode();
   dataWithHeader.push_back(buffer(dHeader.wire(),  dHeader.size()));
   dataWithHeader.push_back(buffer(dPayload.wire(), dPayload.size()));

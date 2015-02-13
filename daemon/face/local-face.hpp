@@ -152,9 +152,11 @@ LocalFace::decodeAndDispatchInput(const Block& element)
         i->wireDecode(payload);
         if (&payload != &element)
           {
-            i->getLocalControlHeader().wireDecode(element,
-              false,
-              this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID));
+            uint8_t mask = 0;
+            if (this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID)) {
+              mask |= ndn::nfd::LocalControlHeader::ENCODE_NEXT_HOP;
+            }
+            i->getLocalControlHeader().wireDecode(element, mask);
           }
 
         this->emitSignal(onReceiveInterest, *i);
@@ -193,17 +195,22 @@ LocalFace::isEmptyFilteredLocalControlHeader(const ndn::nfd::LocalControlHeader&
   if (!this->isLocalControlHeaderEnabled())
     return true;
 
-  return header.empty(this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
-                      false);
+  uint8_t mask = 0;
+  if (this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID)) {
+    mask |= ndn::nfd::LocalControlHeader::ENCODE_INCOMING_FACE_ID;
+  }
+  return header.empty(mask);
 }
 
 template<class Packet>
 inline Block
 LocalFace::filterAndEncodeLocalControlHeader(const Packet& packet)
 {
-  return packet.getLocalControlHeader().wireEncode(packet,
-           this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
-           false);
+  uint8_t mask = 0;
+  if (this->isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID)) {
+    mask |= ndn::nfd::LocalControlHeader::ENCODE_INCOMING_FACE_ID;
+  }
+  return packet.getLocalControlHeader().wireEncode(packet, mask);
 }
 
 } // namespace nfd
