@@ -52,6 +52,13 @@ Nrd::Nrd(const ConfigSection& config, ndn::KeyChain& keyChain)
 {
 }
 
+Nrd::~Nrd()
+{
+  // It is necessary to explicitly define the destructor, because some member variables
+  // (e.g., unique_ptr<RibManager>) are forward-declared, but implicitly declared destructor
+  // requires complete types for all members when instantiated.
+}
+
 void
 Nrd::initialize()
 {

@@ -28,7 +28,6 @@
 
 #include "common.hpp"
 #include "core/config-file.hpp"
-#include "rib-manager.hpp"
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
@@ -36,6 +35,8 @@
 
 namespace nfd {
 namespace rib {
+
+class RibManager;
 
 /**
  * \brief Class representing NRD (NFD RIB Manager) instance
@@ -67,6 +68,11 @@ public:
    *      "internal://nfd.conf" when referring to configuration errors.
    */
   Nrd(const ConfigSection& config, ndn::KeyChain& keyChain);
+
+  /**
+   * \brief Destructor
+   */
+  ~Nrd();
 
   /**
    * \brief Perform initialization of NFD instance
