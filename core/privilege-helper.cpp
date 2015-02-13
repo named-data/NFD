@@ -131,7 +131,9 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
       s_normalUid = passwd.pw_uid;
     }
 #else
-  throw Error("Dropping and raising privileges is not supported on this platform");
+  if (!userName.empty() || !groupName.empty()) {
+    throw Error("Dropping and raising privileges is not supported on this platform");
+  }
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
