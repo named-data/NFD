@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,13 +24,25 @@
  */
 
 #include "mgmt/general-config-section.hpp"
+#include "core/privilege-helper.hpp"
 
 #include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(MgmtGeneralConfigSection, BaseFixture)
+class GeneralConfigSectionFixture : public BaseFixture
+{
+public:
+  ~GeneralConfigSectionFixture()
+  {
+    // revert changes to s_normalUid/s_normalGid, if any
+    PrivilegeHelper::s_normalUid = ::geteuid();
+    PrivilegeHelper::s_normalGid = ::getegid();
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(MgmtGeneralConfigSection, GeneralConfigSectionFixture)
 
 BOOST_AUTO_TEST_CASE(UserAndGroupConfig)
 {

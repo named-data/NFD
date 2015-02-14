@@ -71,7 +71,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   static void
   raise();
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   static uid_t s_normalUid;
   static gid_t s_normalGid;
