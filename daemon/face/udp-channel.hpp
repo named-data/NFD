@@ -90,21 +90,6 @@ public:
   connect(const udp::Endpoint& remoteEndpoint,
           const FaceCreatedCallback& onFaceCreated,
           const ConnectFailedCallback& onConnectFailed);
-  /**
-   * \brief Create a face by establishing connection to the specified
-   *        remote host and remote port
-   *
-   * This method will never block and will return immediately. All
-   * necessary hostname and port resolution and connection will happen
-   * in asynchronous mode.
-   *
-   * If connection cannot be established within specified timeout, it
-   * will be aborted.
-   */
-  void
-  connect(const std::string& remoteHost, const std::string& remotePort,
-          const FaceCreatedCallback& onFaceCreated,
-          const ConnectFailedCallback& onConnectFailed);
 
   /**
    * \brief Get number of faces in the channel
@@ -126,13 +111,6 @@ private:
    */
   void
   newPeer(const boost::system::error_code& error, size_t nBytesReceived);
-
-  void
-  handleEndpointResolution(const boost::system::error_code& error,
-                           boost::asio::ip::udp::resolver::iterator remoteEndpoint,
-                           const FaceCreatedCallback& onFaceCreated,
-                           const ConnectFailedCallback& onConnectFailed,
-                           const shared_ptr<boost::asio::ip::udp::resolver>& resolver);
 
 private:
   udp::Endpoint m_localEndpoint;

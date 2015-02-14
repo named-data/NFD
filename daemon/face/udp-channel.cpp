@@ -117,46 +117,6 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
   createFace(clientSocket, onFaceCreated, false);
 }
 
-void
-UdpChannel::connect(const std::string& remoteHost,
-                    const std::string& remotePort,
-                    const FaceCreatedCallback& onFaceCreated,
-                    const ConnectFailedCallback& onConnectFailed)
-{
-  ip::udp::resolver::query query(remoteHost, remotePort);
-  shared_ptr<ip::udp::resolver> resolver =
-    make_shared<ip::udp::resolver>(ref(getGlobalIoService()));
-
-  resolver->async_resolve(query,
-                          bind(&UdpChannel::handleEndpointResolution, this, _1, _2,
-                               onFaceCreated, onConnectFailed,
-                               resolver));
-}
-
-void
-UdpChannel::handleEndpointResolution(const boost::system::error_code& error,
-                                      ip::udp::resolver::iterator remoteEndpoint,
-                                      const FaceCreatedCallback& onFaceCreated,
-                                      const ConnectFailedCallback& onConnectFailed,
-                                      const shared_ptr<ip::udp::resolver>& resolver)
-{
-  if (error != 0 ||
-      remoteEndpoint == ip::udp::resolver::iterator())
-  {
-    if (error == boost::system::errc::operation_canceled) // when socket is closed by someone
-      return;
-
-    NFD_LOG_DEBUG("Remote endpoint hostname or port cannot be resolved: "
-                    << error.category().message(error.value()));
-
-    onConnectFailed("Remote endpoint hostname or port cannot be resolved: " +
-                      error.category().message(error.value()));
-      return;
-  }
-
-  connect(*remoteEndpoint, onFaceCreated, onConnectFailed);
-}
-
 size_t
 UdpChannel::size() const
 {

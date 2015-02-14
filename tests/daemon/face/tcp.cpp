@@ -225,7 +225,8 @@ public:
           const std::string& remoteHost,
           const std::string& remotePort)
   {
-    channel->connect(remoteHost, remotePort,
+    channel->connect(tcp::Endpoint(boost::asio::ip::address::from_string(remoteHost),
+                                   boost::lexical_cast<uint16_t>(remotePort)),
                      bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                      bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
   }
@@ -404,7 +405,8 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   channel1->listen(bind(&EndToEndFixture::channel_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel_onConnectFailed, this, _1));
 
-  channel2->connect("127.0.0.1", "20070",
+  using namespace boost::asio;
+  channel2->connect(tcp::Endpoint(ip::address::from_string("127.0.0.1"), 20070),
                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout
@@ -416,7 +418,7 @@ BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)
   BOOST_CHECK_EQUAL(faces.size(), 2);
 
   shared_ptr<TcpChannel> channel3 = factory.createChannel("127.0.0.1", "20072");
-  channel3->connect("127.0.0.1", "20070",
+  channel3->connect(tcp::Endpoint(ip::address::from_string("127.0.0.1"), 20070),
                     bind(&EndToEndFixture::channel_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout
@@ -450,7 +452,8 @@ BOOST_FIXTURE_TEST_CASE(FaceClosing, EndToEndFixture)
   channel1->listen(bind(&EndToEndFixture::channel1_onFaceCreated,   this, _1),
                    bind(&EndToEndFixture::channel1_onConnectFailed, this, _1));
 
-  channel2->connect("127.0.0.1", "20070",
+  using namespace boost::asio;
+  channel2->connect(tcp::Endpoint(ip::address::from_string("127.0.0.1"), 20070),
                     bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                     bind(&EndToEndFixture::channel2_onConnectFailed, this, _1),
                     time::seconds(4)); // very short timeout

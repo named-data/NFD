@@ -82,23 +82,6 @@ public:
           const time::seconds& timeout = time::seconds(4));
 
   /**
-   * \brief Create a face by establishing connection to the specified
-   *        remote host and remote port
-   *
-   * This method will never block and will return immediately. All
-   * necessary hostname and port resolution and connection will happen
-   * in asynchronous mode.
-   *
-   * If connection cannot be established within specified timeout, it
-   * will be aborted.
-   */
-  void
-  connect(const std::string& remoteHost, const std::string& remotePort,
-          const FaceCreatedCallback& onFaceCreated,
-          const ConnectFailedCallback& onConnectFailed,
-          const time::seconds& timeout = time::seconds(4));
-
-  /**
    * \brief Get number of faces in the channel
    */
   size_t
@@ -132,15 +115,6 @@ private:
   void
   handleFailedConnect(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                       const ConnectFailedCallback& onConnectFailed);
-
-  void
-  handleEndpointResolution(const boost::system::error_code& error,
-                           boost::asio::ip::tcp::resolver::iterator remoteEndpoint,
-                           const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                           const scheduler::EventId& connectTimeoutEvent,
-                           const FaceCreatedCallback& onFaceCreated,
-                           const ConnectFailedCallback& onConnectFailed,
-                           const shared_ptr<boost::asio::ip::tcp::resolver>& resolver);
 
 private:
   tcp::Endpoint m_localEndpoint;
