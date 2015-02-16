@@ -23,42 +23,56 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "best-route-strategy.hpp"
-#include "broadcast-strategy.hpp"
-#include "client-control-strategy.hpp"
-#include "ncc-strategy.hpp"
-#include "best-route-strategy2.hpp"
-#include "access-strategy.hpp"
+#ifndef NFD_DAEMON_FW_STRATEGY_REGISTRY_HPP
+#define NFD_DAEMON_FW_STRATEGY_REGISTRY_HPP
+
+#include "common.hpp"
 
 namespace nfd {
+
+class Forwarder;
+
 namespace fw {
 
-shared_ptr<Strategy>
-makeDefaultStrategy(Forwarder& forwarder)
-{
-  return make_shared<BestRouteStrategy2>(ref(forwarder));
-}
+class Strategy;
 
-template<typename S>
-inline void
-installStrategy(Forwarder& forwarder)
-{
-  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
-  if (!strategyChoice.hasStrategy(S::STRATEGY_NAME)) {
-    strategyChoice.install(make_shared<S>(ref(forwarder)));
-  }
-}
+shared_ptr<Strategy>
+makeDefaultStrategy(Forwarder& forwarder);
 
 void
-installStrategies(Forwarder& forwarder)
+installStrategies(Forwarder& forwarder);
+
+
+typedef std::function<shared_ptr<Strategy>(Forwarder&)> StrategyCreateFunc;
+
+void
+registerStrategyImpl(const Name& strategyName, const StrategyCreateFunc& createFunc);
+
+/** \brief registers a strategy to be installed later
+ */
+template<typename S>
+void
+registerStrategy()
 {
-  installStrategy<BestRouteStrategy>(forwarder);
-  installStrategy<BroadcastStrategy>(forwarder);
-  installStrategy<ClientControlStrategy>(forwarder);
-  installStrategy<NccStrategy>(forwarder);
-  installStrategy<BestRouteStrategy2>(forwarder);
-  installStrategy<AccessStrategy>(forwarder);
+  registerStrategyImpl(S::STRATEGY_NAME,
+                       [] (Forwarder& forwarder) { return make_shared<S>(ref(forwarder)); });
 }
+
+/** \brief registers a built-in strategy
+ *
+ *  This macro should appear once in .cpp of each built-in strategy.
+ */
+#define NFD_REGISTER_STRATEGY(StrategyType)                       \
+static class NfdAuto ## StrategyType ## StrategyRegistrationClass \
+{                                                                 \
+public:                                                           \
+  NfdAuto ## StrategyType ## StrategyRegistrationClass()          \
+  {                                                               \
+    ::nfd::fw::registerStrategy<StrategyType>();                  \
+  }                                                               \
+} g_nfdAuto ## StrategyType ## StrategyRegistrationVariable
 
 } // namespace fw
 } // namespace nfd
+
+#endif // NFD_DAEMON_FW_STRATEGY_REGISTRY_HPP

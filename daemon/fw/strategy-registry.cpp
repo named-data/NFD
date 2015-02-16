@@ -23,52 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "best-route-strategy.hpp"
+#include "strategy-registry.hpp"
+#include "best-route-strategy2.hpp"
 
 namespace nfd {
 namespace fw {
 
-const Name BestRouteStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%01");
-NFD_REGISTER_STRATEGY(BestRouteStrategy);
-
-BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+shared_ptr<Strategy>
+makeDefaultStrategy(Forwarder& forwarder)
 {
+  return make_shared<BestRouteStrategy2>(ref(forwarder));
 }
 
-BestRouteStrategy::~BestRouteStrategy()
+static std::map<Name, StrategyCreateFunc>&
+getStrategyFactories()
 {
-}
-
-static inline bool
-predicate_PitEntry_canForwardTo_NextHop(shared_ptr<pit::Entry> pitEntry,
-                                        const fib::NextHop& nexthop)
-{
-  return pitEntry->canForwardTo(*nexthop.getFace());
+  static std::map<Name, StrategyCreateFunc> strategyFactories;
+  return strategyFactories;
 }
 
 void
-BestRouteStrategy::afterReceiveInterest(const Face& inFace,
-                   const Interest& interest,
-                   shared_ptr<fib::Entry> fibEntry,
-                   shared_ptr<pit::Entry> pitEntry)
+registerStrategyImpl(const Name& strategyName, const StrategyCreateFunc& createFunc)
 {
-  if (pitEntry->hasUnexpiredOutRecords()) {
-    // not a new Interest, don't forward
-    return;
+  getStrategyFactories().insert({strategyName, createFunc});
+}
+
+void
+installStrategies(Forwarder& forwarder)
+{
+  StrategyChoice& sc = forwarder.getStrategyChoice();
+  for (const auto& pair : getStrategyFactories()) {
+    if (!sc.hasStrategy(pair.first, true)) {
+      sc.install(pair.second(forwarder));
+    }
   }
-
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
-  fib::NextHopList::const_iterator it = std::find_if(nexthops.begin(), nexthops.end(),
-    bind(&predicate_PitEntry_canForwardTo_NextHop, pitEntry, _1));
-
-  if (it == nexthops.end()) {
-    this->rejectPendingInterest(pitEntry);
-    return;
-  }
-
-  shared_ptr<Face> outFace = it->getFace();
-  this->sendInterest(pitEntry, outFace);
 }
 
 } // namespace fw
