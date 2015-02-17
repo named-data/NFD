@@ -33,6 +33,7 @@ namespace cs {
 namespace tests {
 
 using namespace nfd::tests;
+using ndn::nfd::LocalControlHeader;
 
 BOOST_FIXTURE_TEST_SUITE(TableCs, BaseFixture)
 
@@ -314,6 +315,18 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_CASE(CachingPolicyNoCache)
+{
+  Cs cs(3);
+
+  shared_ptr<Data> dataA = makeData("ndn:/A");
+  dataA->getLocalControlHeader().setCachingPolicy(LocalControlHeader::CachingPolicy::NO_CACHE);
+  dataA->wireEncode();
+  BOOST_CHECK_EQUAL(cs.insert(*dataA), false);
+
+  BOOST_CHECK(cs.find(Interest("ndn:/A")) == nullptr);
+}
 
 BOOST_FIXTURE_TEST_CASE(Evict, UnitTestTimeFixture)
 {

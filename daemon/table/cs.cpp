@@ -63,6 +63,16 @@ Cs::insert(const Data& data, bool isUnsolicited)
 {
   NFD_LOG_DEBUG("insert " << data.getName());
 
+  // recognize CachingPolicy
+  using ndn::nfd::LocalControlHeader;
+  const LocalControlHeader& lch = data.getLocalControlHeader();
+  if (lch.hasCachingPolicy()) {
+    LocalControlHeader::CachingPolicy policy = lch.getCachingPolicy();
+    if (policy == LocalControlHeader::CachingPolicy::NO_CACHE) {
+      return false;
+    }
+  }
+
   bool isNewEntry = false; TableIt it;
   // use .insert because gcc46 does not support .emplace
   std::tie(it, isNewEntry) = m_table.insert(EntryImpl(data.shared_from_this(), isUnsolicited));
