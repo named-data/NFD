@@ -36,8 +36,8 @@ def checkWebsocket(self, **kw):
 
         # Looking for the following:
         # static int const major_version = 0;
-        # static int const minor_version = 3;
-        # static int const patch_version = 0;
+        # static int const minor_version = 5;
+        # static int const patch_version = 1;
 
         version = [None, None, None]
 
@@ -71,7 +71,7 @@ def checkWebsocket(self, **kw):
             Logs.warn('    git submodule init && git submodule update')
             Logs.warn('Otherwise, manually download and extract websocketpp library:')
             Logs.warn('    mkdir websocketpp')
-            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/tarball/4309749dd98937b8a7be5dc0bfe679ba201c5512 > websocket.tar.gz')
+            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/archive/0.5.1.tar.gz > websocket.tar.gz')
             Logs.warn('    tar zxf websocket.tar.gz -C websocketpp/ --strip 1')
             Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
             self.fatal("The configuration failed")
