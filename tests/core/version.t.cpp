@@ -23,30 +23,38 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "version.hpp"
+#include "core/logger.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestVersion, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+NFD_LOG_INIT("VersionTest");
+
+BOOST_AUTO_TEST_CASE(Version)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  NFD_LOG_INFO("NFD_VERSION " << NFD_VERSION);
 
-  t.join();
+  BOOST_CHECK_EQUAL(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
+                                 NFD_VERSION_MINOR * 1000 +
+                                 NFD_VERSION_PATCH);
+}
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+BOOST_AUTO_TEST_CASE(VersionString)
+{
+  NFD_LOG_INFO("NFD_VERSION_STRING " << NFD_VERSION_STRING);
+
+  BOOST_STATIC_ASSERT(NFD_VERSION_MAJOR < 1000);
+  BOOST_STATIC_ASSERT(NFD_VERSION_MINOR < 1000);
+  BOOST_STATIC_ASSERT(NFD_VERSION_PATCH < 1000);
+  char buf[12];
+  snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
+
+  BOOST_CHECK_EQUAL(std::string(NFD_VERSION_STRING), std::string(buf));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

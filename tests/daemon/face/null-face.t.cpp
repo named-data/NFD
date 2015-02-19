@@ -23,30 +23,26 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "face/null-face.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(FaceNullFace, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(Send)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  shared_ptr<NullFace> face = make_shared<NullFace>();
 
-  t.join();
+  shared_ptr<Interest> interest = makeInterest("/A");
+  BOOST_CHECK_NO_THROW(face->sendInterest(*interest));
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+  shared_ptr<Data> data = makeData("/B");
+  BOOST_CHECK_NO_THROW(face->sendData(*data));
+
+  BOOST_CHECK_NO_THROW(face->close());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

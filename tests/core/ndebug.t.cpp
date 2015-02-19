@@ -23,30 +23,32 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "common.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_AUTO_TEST_SUITE(TestNdebug)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(AssertFalse)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+#ifndef _DEBUG
+  // in release builds, assertion shouldn't execute
+  BOOST_ASSERT(false);
+#endif
+}
 
-  t.join();
-
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+BOOST_AUTO_TEST_CASE(SideEffect)
+{
+  int a = 1;
+  BOOST_ASSERT((a = 2) > 0);
+#ifdef _DEBUG
+  BOOST_CHECK_EQUAL(a, 2);
+#else
+  BOOST_CHECK_EQUAL(a, 1);
+#endif
 }
 
 BOOST_AUTO_TEST_SUITE_END()

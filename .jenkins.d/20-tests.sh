@@ -25,7 +25,7 @@ ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 # Run unit tests
 # Core
 ./build/unit-tests-core -l test_suite
-sudo ./build/unit-tests-core -t CorePrivilegeHelper -l test_suite
+sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
 
 # Daemon
 ./build/unit-tests-daemon -l test_suite

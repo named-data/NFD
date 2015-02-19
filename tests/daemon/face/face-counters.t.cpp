@@ -23,30 +23,54 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "face/face-counters.hpp"
+#include "dummy-face.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(FaceFaceCounters, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(PacketCnt)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  PacketCounter counter;
 
-  t.join();
+  uint64_t observation = counter;//implicit convertible
+  BOOST_CHECK_EQUAL(observation, 0);
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+  ++counter;
+  BOOST_CHECK_EQUAL(static_cast<int>(counter), 1);
+  ++counter;
+  ++counter;
+  BOOST_CHECK_EQUAL(static_cast<int>(counter), 3);
+}
+
+BOOST_AUTO_TEST_CASE(ByteCnt)
+{
+  ByteCounter counter;
+
+  uint64_t observation = counter;//implicit convertible
+  BOOST_CHECK_EQUAL(observation, 0);
+
+  counter += 20;
+  BOOST_CHECK_EQUAL(static_cast<int>(counter), 20);
+  counter += 80;
+  counter += 90;
+  BOOST_CHECK_EQUAL(static_cast<int>(counter), 190);
+}
+
+BOOST_AUTO_TEST_CASE(Counters)
+{
+  DummyFace face;
+  const FaceCounters& counters = face.getCounters();
+  BOOST_CHECK_EQUAL(counters.getNInInterests() , 0);
+  BOOST_CHECK_EQUAL(counters.getNInDatas()     , 0);
+  BOOST_CHECK_EQUAL(counters.getNOutInterests(), 0);
+  BOOST_CHECK_EQUAL(counters.getNOutDatas()    , 0);
+  BOOST_CHECK_EQUAL(counters.getNInBytes()     , 0);
+  BOOST_CHECK_EQUAL(counters.getNOutBytes()    , 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

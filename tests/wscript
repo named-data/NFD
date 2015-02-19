@@ -62,8 +62,8 @@ def build(bld):
             target='../unit-tests-daemon',
             features='cxx cxxprogram',
             source=bld.path.ant_glob(['daemon/**/*.cpp'],
-                                     excl=['daemon/face/ethernet.cpp',
-                                           'daemon/face/unix-*.cpp',
+                                     excl=['daemon/face/ethernet*.cpp',
+                                           'daemon/face/unix*.cpp',
                                            'daemon/face/websocket*.cpp']),
             use='daemon-objects unit-tests-base unit-tests-main',
             includes='.',
@@ -71,10 +71,10 @@ def build(bld):
           )
 
         if bld.env['HAVE_LIBPCAP']:
-            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/ethernet.cpp')
+            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/ethernet*.cpp')
 
         if bld.env['HAVE_UNIX_SOCKETS']:
-            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/unix-*.cpp')
+            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/unix*.cpp')
 
         if bld.env['HAVE_WEBSOCKET']:
             unit_tests_nfd.source += bld.path.ant_glob('daemon/face/websocket*.cpp')

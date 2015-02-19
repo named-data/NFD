@@ -23,30 +23,41 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
-
-#include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
+#include "face-status-publisher-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+NFD_LOG_INIT("FaceStatusPublisherTest");
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_FIXTURE_TEST_SUITE(MgmtFaceStatusPublisher, FaceStatusPublisherFixture)
+
+BOOST_AUTO_TEST_CASE(EncodingDecoding)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  Name commandName("/localhost/nfd/faces/list");
+  shared_ptr<Interest> command(make_shared<Interest>(commandName));
 
-  t.join();
+  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 75
+  // use 59 FaceStatuses to force a FaceStatus to span Data packets
+  for (int i = 0; i < 59; i++)
+    {
+      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+      uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
+      dummy->setCounters(filler, filler, filler, filler, filler, filler);
+
+      m_referenceFaces.push_back(dummy);
+
+      add(dummy);
+    }
+
+  ndn::EncodingBuffer buffer;
+
+  m_face->onReceiveData.connect(
+      bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1));
+
+  m_publisher.publish();
+  BOOST_REQUIRE(m_finished);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

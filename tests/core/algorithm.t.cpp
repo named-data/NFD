@@ -23,30 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "core/algorithm.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestAlgorithm, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(FindLastIf)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  std::vector<int> vec{1, 2, 3, 4, 5, 6, 7, 8, 9};
 
-  t.join();
+  int hit1 = 0;
+  std::vector<int>::const_iterator found1 = find_last_if(vec.begin(), vec.end(),
+      [&hit1] (int n) -> bool {
+        ++hit1;
+        return n % 2 == 0;
+      });
+  BOOST_REQUIRE(found1 != vec.end());
+  BOOST_CHECK_EQUAL(*found1, 8);
+  BOOST_CHECK_LE(hit1, vec.size());
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+  int hit2 = 0;
+  std::vector<int>::const_iterator found2 = find_last_if(vec.begin(), vec.end(),
+      [&hit2] (int n) -> bool {
+        ++hit2;
+        return n < 0;
+      });
+  BOOST_CHECK(found2 == vec.end());
+  BOOST_CHECK_LE(hit2, vec.size());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

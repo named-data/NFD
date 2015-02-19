@@ -72,3 +72,4 @@ people who have reported bugs, submitted patches, and implemented new features
 in the library:
 
 * Tai-Lin Chu             <https://www.linkedin.com/pub/tai-lin-chu/55/5b2/669>
+* Spyridon Mastorakis     <http://cs.ucla.edu/~mastorakis/>

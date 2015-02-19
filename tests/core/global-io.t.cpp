@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "core/global-io.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -32,14 +32,14 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestGlobalIo, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(ThreadLocalGlobalIoService)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
+  boost::asio::io_service* s1 = &getGlobalIoService();
+  boost::asio::io_service* s2 = nullptr;
   boost::thread t([&s2] {
-      s2 = &getGlobalRng();
+      s2 = &getGlobalIoService();
     });
 
   t.join();

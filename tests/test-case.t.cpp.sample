@@ -1,0 +1,66 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (c) 2014,  Regents of the University of California,
+ *                      Arizona Board of Regents,
+ *                      Colorado State University,
+ *                      University Pierre & Marie Curie, Sorbonne University,
+ *                      Washington University in St. Louis,
+ *                      Beijing Institute of Technology,
+ *                      The University of Memphis
+ *
+ * This file is part of NFD (Named Data Networking Forwarding Daemon).
+ * See AUTHORS.md for complete list of NFD authors and contributors.
+ *
+ * NFD is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// #include "unit-under-test.hpp"
+// Unit being tested MUST be included first, to ensure header compiles on its own.
+// For further information about test naming conventions, see
+// http://redmine.named-data.net/projects/nfd/wiki/UnitTesting
+
+#include "tests/test-common.hpp"
+
+namespace nfd {
+namespace tests {
+// Unit tests SHOULD go inside nfd::tests namespace.
+
+// Test suite SHOULD use BaseFixture or a subclass of it.
+BOOST_FIXTURE_TEST_SUITE(TestSkeleton, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(Test1)
+{
+  int i = 0;
+
+  // For reference of available Boost.Test macros, see
+  // http://www.boost.org/doc/libs/1_48_0/libs/test/doc/html/utf/testing-tools/reference.html
+
+  BOOST_REQUIRE_NO_THROW(i = 1);
+  BOOST_REQUIRE_EQUAL(i, 1);
+}
+
+// Custom fixture SHOULD derive from BaseFixture.
+class Test2Fixture : protected BaseFixture
+{
+};
+
+BOOST_FIXTURE_TEST_CASE(Test2, Test2Fixture)
+{
+  // g_io is a shorthand of getGlobalIoService()
+  // resetGlobalIoService() is automatically called after each test case
+  g_io.run();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+} // namespace tests
+} // namespace nfd

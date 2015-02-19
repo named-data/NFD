@@ -37,9 +37,11 @@
 #include "../face/dummy-face.hpp"
 
 namespace nfd {
+namespace fw {
 namespace tests {
 
 using ndn::util::DummyClientFace;
+using namespace nfd::tests;
 
 /** \brief identifies a node (forwarder) in the topology
  */
@@ -361,6 +363,7 @@ private:
 };
 
 } // namespace tests
+} // namespace fw
 } // namespace nfd
 
 #endif // NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP

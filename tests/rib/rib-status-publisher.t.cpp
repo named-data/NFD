@@ -23,33 +23,44 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "rib/rib-status-publisher.hpp"
+#include "rib-status-publisher-common.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
+namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRibStatusPublisher, RibStatusPublisherFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(Basic)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  Rib rib;
 
-  t.join();
+  Route route;
+  Name name("/");
+  route.faceId = 1;
+  route.origin = 128;
+  route.cost = 32;
+  route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
+  rib.insert(name, route);
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+  ndn::KeyChain keyChain;
+  shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
+  RibStatusPublisher publisher(rib, *face, "/localhost/nfd/rib/list", keyChain);
+
+  publisher.publish();
+  face->processEvents(time::milliseconds(1));
+
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  decodeRibEntryBlock(face->sentDatas[0], name, route);
 }
+
 
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
+} // namespace rib
 } // namespace nfd

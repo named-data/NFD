@@ -23,30 +23,43 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/random.hpp"
+#include "core/notification-stream.hpp"
+#include "simple-notification.hpp"
 
 #include "tests/test-common.hpp"
-
-#include <boost/thread.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestNotificationStream, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(Post)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+  shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
+  ndn::KeyChain keyChain;
+  NotificationStream<ndn::util::DummyClientFace> notificationStream(*face,
+    "/localhost/nfd/NotificationStreamTest", keyChain);
 
-  t.join();
+  SimpleNotification event1("msg1");
+  notificationStream.postNotification(event1);
+  face->processEvents();
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  BOOST_CHECK_EQUAL(face->sentDatas[0].getName(),
+                    "/localhost/nfd/NotificationStreamTest/%FE%00");
+  SimpleNotification decoded1;
+  BOOST_CHECK_NO_THROW(decoded1.wireDecode(face->sentDatas[0].getContent().blockFromValue()));
+  BOOST_CHECK_EQUAL(decoded1.getMessage(), "msg1");
 
-  BOOST_CHECK(s1 != nullptr);
-  BOOST_CHECK(s2 != nullptr);
-  BOOST_CHECK(s1 != s2);
+  SimpleNotification event2("msg2");
+  notificationStream.postNotification(event2);
+  face->processEvents();
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 2);
+  BOOST_CHECK_EQUAL(face->sentDatas[1].getName(),
+                    "/localhost/nfd/NotificationStreamTest/%FE%01");
+  SimpleNotification decoded2;
+  BOOST_CHECK_NO_THROW(decoded2.wireDecode(face->sentDatas[1].getContent().blockFromValue()));
+  BOOST_CHECK_EQUAL(decoded2.getMessage(), "msg2");
 }
 
 BOOST_AUTO_TEST_SUITE_END()
