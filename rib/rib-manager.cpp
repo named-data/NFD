@@ -311,7 +311,9 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
       route.expires = time::steady_clock::TimePoint::max();
     }
 
-  NFD_LOG_TRACE("register prefix: " << route);
+  NFD_LOG_INFO("Adding route " << parameters.getName() << " nexthop=" << route.faceId
+                                                       << " origin=" << route.origin
+                                                       << " cost=" << route.cost);
 
   m_managedRib.insert(parameters.getName(), route);
   m_registeredFaces.insert(route.faceId);
@@ -365,7 +367,8 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
   route.faceId = parameters.getFaceId();
   route.origin = parameters.getOrigin();
 
-  NFD_LOG_TRACE("unregister prefix: " << route);
+  NFD_LOG_INFO("Removing route " << parameters.getName() << " nexthop=" << route.faceId
+                                                         << " origin=" << route.origin);
 
   m_managedRib.erase(parameters.getName(), route);
 
