@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_NDNLP_PARTIAL_MESSAGE_STORE_HPP
 #define NFD_DAEMON_FACE_NDNLP_PARTIAL_MESSAGE_STORE_HPP
 
-#include "ndnlp-parse.hpp"
+#include "ndnlp-data.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {
@@ -56,14 +56,18 @@ public:
   isComplete() const;
 
   /** \brief reassemble network layer packet
-   *
-   *  isComplete() must be true before calling this method
-   *
-   *  \exception ndn::Block::Error packet is malformated
-   *  \return network layer packet
+   *  \pre isComplete() == true
+   *  \return whether success, network layer packet
    */
-  Block
+  std::tuple<bool, Block>
   reassemble();
+
+  /** \brief reassemble network layer packet from a single fragment
+   *  \pre fragment.fragCount == 1
+   *  \return whether success, network layer packet
+   */
+  static std::tuple<bool, Block>
+  reassembleSingle(const NdnlpData& fragment);
 
 public:
   scheduler::ScopedEventId expiry;
@@ -83,16 +87,12 @@ public:
   explicit
   PartialMessageStore(const time::nanoseconds& idleDuration = time::milliseconds(100));
 
-  virtual
-  ~PartialMessageStore();
-
   /** \brief receive a NdnlpData packet
    *
-   *  \exception ParseError NDNLP packet is malformated
-   *  \exception ndn::Block::Error network layer packet is malformated
+   *  Reassembly errors will be ignored.
    */
   void
-  receiveNdnlpData(const Block& pkt);
+  receive(const NdnlpData& pkt);
 
   /** \brief fires when network layer packet is received
    */

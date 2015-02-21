@@ -24,9 +24,12 @@
  */
 
 #include "ndnlp-partial-message-store.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace ndnlp {
+
+NFD_LOG_INIT("NdnlpPartialMessageStore");
 
 PartialMessage::PartialMessage()
   : m_fragCount(0)
@@ -63,21 +66,32 @@ PartialMessage::isComplete() const
   return m_received == m_fragCount;
 }
 
-Block
+std::tuple<bool, Block>
 PartialMessage::reassemble()
 {
   BOOST_ASSERT(this->isComplete());
 
   ndn::BufferPtr buffer = make_shared<ndn::Buffer>(m_totalLength);
-  uint8_t* buf = buffer->get();
-  for (std::vector<Block>::const_iterator it = m_payloads.begin();
-       it != m_payloads.end(); ++it) {
-    const Block& payload = *it;
-    memcpy(buf, payload.value(), payload.value_size());
-    buf += payload.value_size();
+  ndn::Buffer::iterator buf = buffer->begin();
+  for (const Block& payload : m_payloads) {
+    buf = std::copy(payload.value_begin(), payload.value_end(), buf);
   }
+  BOOST_ASSERT(buf == buffer->end());
 
-  return Block(buffer);
+  Block reassembled;
+  bool isBlockOk = Block::fromBuffer(buffer, 0, reassembled);
+  return std::make_tuple(isBlockOk, reassembled);
+}
+
+std::tuple<bool, Block>
+PartialMessage::reassembleSingle(const NdnlpData& fragment)
+{
+  BOOST_ASSERT(fragment.fragCount == 1);
+
+  Block reassembled;
+  bool isBlockOk = Block::fromBuffer(fragment.payload.value(), fragment.payload.value_size(),
+                                     reassembled);
+  return std::make_tuple(isBlockOk, reassembled);
 }
 
 PartialMessageStore::PartialMessageStore(const time::nanoseconds& idleDuration)
@@ -85,28 +99,38 @@ PartialMessageStore::PartialMessageStore(const time::nanoseconds& idleDuration)
 {
 }
 
-PartialMessageStore::~PartialMessageStore()
-{
-}
-
 void
-PartialMessageStore::receiveNdnlpData(const Block& pkt)
+PartialMessageStore::receive(const NdnlpData& pkt)
 {
-  NdnlpData parsed;
-  parsed.wireDecode(pkt);
-  if (parsed.m_fragCount == 1) { // single fragment
-    this->onReceive(parsed.m_payload.blockFromValue());
+  bool isReassembled = false;
+  Block reassembled;
+  if (pkt.fragCount == 1) { // single fragment
+    std::tie(isReassembled, reassembled) = PartialMessage::reassembleSingle(pkt);
+    if (!isReassembled) {
+      NFD_LOG_TRACE(pkt.seq << " reassemble error");
+      return;
+    }
+
+    NFD_LOG_TRACE(pkt.seq << " deliver");
+    this->onReceive(reassembled);
     return;
   }
 
-  uint64_t messageIdentifier = parsed.m_seq - parsed.m_fragIndex;
+  uint64_t messageIdentifier = pkt.seq - pkt.fragIndex;
   PartialMessage& pm = m_partialMessages[messageIdentifier];
   this->scheduleCleanup(messageIdentifier, pm);
 
-  pm.add(parsed.m_fragIndex, parsed.m_fragCount, parsed.m_payload);
+  pm.add(pkt.fragIndex, pkt.fragCount, pkt.payload);
   if (pm.isComplete()) {
-    this->onReceive(pm.reassemble());
-    this->cleanup(messageIdentifier);
+    std::tie(isReassembled, reassembled) = pm.reassemble();
+    if (!isReassembled) {
+      NFD_LOG_TRACE(messageIdentifier << " reassemble error");
+      return;
+    }
+
+    NFD_LOG_TRACE(messageIdentifier << " deliver");
+    this->onReceive(reassembled);
+    m_partialMessages.erase(messageIdentifier);
   }
 }
 
@@ -121,6 +145,7 @@ PartialMessageStore::scheduleCleanup(uint64_t messageIdentifier,
 void
 PartialMessageStore::cleanup(uint64_t messageIdentifier)
 {
+  NFD_LOG_TRACE(messageIdentifier << " cleanup");
   m_partialMessages.erase(messageIdentifier);
 }
 

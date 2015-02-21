@@ -360,11 +360,10 @@ void
 EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* packet)
 {
   size_t length = header->caplen;
-  if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN)
-    {
-      NFD_LOG_FACE_WARN("Received frame is too short (" << length << " bytes)");
-      return;
-    }
+  if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN) {
+    NFD_LOG_FACE_WARN("Received frame is too short (" << length << " bytes)");
+    return;
+  }
 
   const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
   const ethernet::Address sourceAddress(eh->ether_shost);
@@ -382,31 +381,30 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
 
   /// \todo Reserve space in front and at the back of the underlying buffer
   bool isOk = false;
-  Block fragment;
-  std::tie(isOk, fragment) = Block::fromBuffer(packet, length);
-  if (!isOk)
-    {
-      NFD_LOG_FACE_WARN("Block received from " << sourceAddress.toString()
-                        << " is invalid or too large to process");
-      return;
-    }
+  Block fragmentBlock;
+  std::tie(isOk, fragmentBlock) = Block::fromBuffer(packet, length);
+  if (!isOk) {
+    NFD_LOG_FACE_WARN("Block received from " << sourceAddress.toString()
+                      << " is invalid or too large to process");
+    return;
+  }
 
-  NFD_LOG_FACE_TRACE("Received: " << fragment.size() << " bytes from " << sourceAddress.toString());
-  this->getMutableCounters().getNInBytes() += fragment.size();
+  NFD_LOG_FACE_TRACE("Received: " << fragmentBlock.size() << " bytes from "
+                     << sourceAddress.toString());
+  this->getMutableCounters().getNInBytes() += fragmentBlock.size();
 
   Reassembler& reassembler = m_reassemblers[sourceAddress];
-  if (!reassembler.pms)
-    {
-      // new sender, setup a PartialMessageStore for it
-      reassembler.pms.reset(new ndnlp::PartialMessageStore);
-      reassembler.pms->onReceive.connect(
-        [this, sourceAddress] (const Block& block) {
-          NFD_LOG_FACE_TRACE("All fragments received from " << sourceAddress.toString());
-          if (!decodeAndDispatchInput(block))
-            NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << block.type()
-                              << " from " << sourceAddress.toString());
-        });
-    }
+  if (!reassembler.pms) {
+    // new sender, setup a PartialMessageStore for it
+    reassembler.pms.reset(new ndnlp::PartialMessageStore);
+    reassembler.pms->onReceive.connect(
+      [this, sourceAddress] (const Block& block) {
+        NFD_LOG_FACE_TRACE("All fragments received from " << sourceAddress.toString());
+        if (!decodeAndDispatchInput(block))
+          NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << block.type()
+                            << " from " << sourceAddress.toString());
+      });
+  }
 
   scheduler::cancel(reassembler.expireEvent);
   reassembler.expireEvent = scheduler::schedule(REASSEMBLER_LIFETIME,
@@ -414,13 +412,15 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
       BOOST_VERIFY(m_reassemblers.erase(sourceAddress) == 1);
     });
 
-  try {
-    reassembler.pms->receiveNdnlpData(fragment);
-  }
-  catch (const ndnlp::ParseError& e) {
+  ndnlp::NdnlpData fragment;
+  std::tie(isOk, fragment) = ndnlp::NdnlpData::fromBlock(fragmentBlock);
+  if (!isOk) {
     NFD_LOG_FACE_WARN("Received invalid NDNLP fragment from "
-                      << sourceAddress.toString() << " : " << e.what());
+                      << sourceAddress.toString());
+    return;
   }
+
+  reassembler.pms->receive(fragment);
 }
 
 void

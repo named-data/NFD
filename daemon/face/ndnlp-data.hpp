@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_NDNLP_PARSE_HPP
 #define NFD_DAEMON_FACE_NDNLP_PARSE_HPP
@@ -30,14 +31,6 @@
 
 namespace nfd {
 namespace ndnlp {
-
-struct ParseError : public std::runtime_error
-{
-  ParseError(const std::string& what)
-    : std::runtime_error(what)
-  {
-  }
-};
 
 /** \brief represents a NdnlpData packet
  *
@@ -51,17 +44,16 @@ class NdnlpData
 {
 public:
   /** \brief parse a NdnlpData packet
-   *
-   *  \exception ParseError packet is malformated
+   *  \return whether \p wire has a valid NdnlpData packet, and the parsed packet
    */
-  void
-  wireDecode(const Block& wire);
+  static std::tuple<bool, NdnlpData>
+  fromBlock(const Block& wire);
 
 public:
-  uint64_t m_seq;
-  uint16_t m_fragIndex;
-  uint16_t m_fragCount;
-  Block m_payload;
+  uint64_t seq;
+  uint16_t fragIndex;
+  uint16_t fragCount;
+  Block payload;
 };
 
 } // namespace ndnlp
