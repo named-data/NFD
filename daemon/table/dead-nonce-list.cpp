@@ -123,7 +123,7 @@ DeadNonceList::mark()
   size_t nMarks = this->countMarks();
   m_actualMarkCounts.insert(nMarks);
 
-  NFD_LOG_DEBUG("mark nMarks=" << nMarks);
+  NFD_LOG_TRACE("mark nMarks=" << nMarks);
 
   scheduler::schedule(m_markInterval, bind(&DeadNonceList::mark, this));
 }
@@ -138,13 +138,13 @@ DeadNonceList::adjustCapacity()
     // all counts are above expected count, adjust down
     m_capacity = std::max(MIN_CAPACITY,
                           static_cast<size_t>(m_capacity * CAPACITY_DOWN));
-    NFD_LOG_DEBUG("adjustCapacity DOWN capacity=" << m_capacity);
+    NFD_LOG_TRACE("adjustCapacity DOWN capacity=" << m_capacity);
   }
   else if (equalRange.first == m_actualMarkCounts.end()) {
     // all counts are below expected count, adjust up
     m_capacity = std::min(MAX_CAPACITY,
                           static_cast<size_t>(m_capacity * CAPACITY_UP));
-    NFD_LOG_DEBUG("adjustCapacity UP capacity=" << m_capacity);
+    NFD_LOG_TRACE("adjustCapacity UP capacity=" << m_capacity);
   }
 
   m_actualMarkCounts.clear();
