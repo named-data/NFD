@@ -28,7 +28,6 @@
 
 #include "face.hpp"
 #include "core/global-io.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 
@@ -51,8 +50,6 @@ public:
                const shared_ptr<typename protocol::socket>& socket,
                bool isOnDemand);
 
-  ~DatagramFace() DECL_OVERRIDE;
-
   // from Face
   void
   sendInterest(const Interest& interest) DECL_OVERRIDE;
@@ -67,15 +64,6 @@ public:
   receiveDatagram(const uint8_t* buffer,
                   size_t nBytesReceived,
                   const boost::system::error_code& error);
-
-  /**
-   * \brief Set m_hasBeenUsedRecently to false
-   */
-  void
-  resetRecentUsage();
-
-  bool
-  hasBeenUsedRecently() const;
 
   void
   setOnDemand(bool isOnDemand);
@@ -99,12 +87,23 @@ protected:
   void
   closeSocket();
 
+  bool
+  hasBeenUsedRecently() const;
+
+  /**
+   * \brief Set m_hasBeenUsedRecently to false
+   */
+  void
+  resetRecentUsage();
+
 protected:
   shared_ptr<typename protocol::socket> m_socket;
-  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
-  bool m_hasBeenUsedRecently;
 
   NFD_LOG_INCLASS_DECLARE();
+
+private:
+  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
+  bool m_hasBeenUsedRecently;
 };
 
 
@@ -116,6 +115,8 @@ DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localU
   : Face(remoteUri, localUri)
   , m_socket(socket)
 {
+  NFD_LOG_FACE_INFO("Creating face");
+
   setOnDemand(isOnDemand);
 
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
@@ -123,33 +124,29 @@ DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localU
 }
 
 template<class T, class U>
-inline
-DatagramFace<T, U>::~DatagramFace()
-{
-}
-
-template<class T, class U>
 inline void
 DatagramFace<T, U>::sendInterest(const Interest& interest)
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   this->emitSignal(onSendInterest, interest);
+
   const Block& payload = interest.wireEncode();
   m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
                        bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
-
-  // anything else should be done here?
 }
 
 template<class T, class U>
 inline void
 DatagramFace<T, U>::sendData(const Data& data)
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   this->emitSignal(onSendData, data);
+
   const Block& payload = data.wireEncode();
   m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
                        bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
-
-  // anything else should be done here?
 }
 
 template<class T, class U>
@@ -159,18 +156,17 @@ DatagramFace<T, U>::close()
   if (!m_socket->is_open())
     return;
 
-  NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-               << "] Closing face");
+  NFD_LOG_FACE_INFO("Closing face");
 
   closeSocket();
-  fail("Face closed");
+  this->fail("Face closed");
 }
 
 template<class T, class U>
 inline void
 DatagramFace<T, U>::processErrorCode(const boost::system::error_code& error)
 {
-  if (error == boost::asio::error::operation_aborted) // when socket is closed by someone
+  if (error == boost::asio::error::operation_aborted) // when cancel() is called
     return;
 
   // this should be unnecessary, but just in case
@@ -180,16 +176,14 @@ DatagramFace<T, U>::processErrorCode(const boost::system::error_code& error)
   }
 
   if (error != boost::asio::error::eof)
-    NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                 << "] Send or receive operation failed, closing face: "
-                 << error.message());
+    NFD_LOG_FACE_WARN("Send or receive operation failed: " << error.message());
 
   closeSocket();
 
   if (error == boost::asio::error::eof)
     this->fail("Tunnel closed");
   else
-    this->fail("Send or receive operation failed: " + error.message());
+    this->fail(error.message());
 }
 
 template<class T, class U>
@@ -202,8 +196,7 @@ DatagramFace<T, U>::handleSend(const boost::system::error_code& error,
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << nBytesSent << " bytes");
+  NFD_LOG_FACE_TRACE("Successfully sent: " << nBytesSent << " bytes");
   this->getMutableCounters().getNOutBytes() += nBytesSent;
 }
 
@@ -228,34 +221,28 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   if (error || nBytesReceived == 0)
     return processErrorCode(error);
 
-  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                << "] Received: " << nBytesReceived << " bytes");
+  NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
   this->getMutableCounters().getNInBytes() += nBytesReceived;
 
   Block element;
   bool isOk = Block::fromBuffer(buffer, nBytesReceived, element);
   if (!isOk)
     {
-      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Failed to parse incoming packet");
+      NFD_LOG_FACE_WARN("Failed to parse incoming packet");
       // This message won't extend the face lifetime
       return;
     }
 
   if (element.size() != nBytesReceived)
     {
-      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Received datagram size and decoded "
-                   << "element size don't match");
+      NFD_LOG_FACE_WARN("Received datagram size and decoded element size don't match");
       // This message won't extend the face lifetime
       return;
     }
 
   if (!this->decodeAndDispatchInput(element))
     {
-      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Received unrecognized block of type ["
-                   << element.type() << "]");
+      NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << element.type());
       // This message won't extend the face lifetime
       return;
     }
@@ -267,12 +254,15 @@ template<class T, class U>
 inline void
 DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted(const shared_ptr<Face>& face)
 {
+  NFD_LOG_FACE_TRACE(__func__);
 }
 
 template<class T, class U>
 inline void
 DatagramFace<T, U>::closeSocket()
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   // use the non-throwing variants and ignore errors, if any
   boost::system::error_code error;
   m_socket->shutdown(protocol::socket::shutdown_both, error);
@@ -293,17 +283,17 @@ DatagramFace<T, U>::setOnDemand(bool isOnDemand)
 }
 
 template<class T, class U>
-inline void
-DatagramFace<T, U>::resetRecentUsage()
-{
-  m_hasBeenUsedRecently = false;
-}
-
-template<class T, class U>
 inline bool
 DatagramFace<T, U>::hasBeenUsedRecently() const
 {
   return m_hasBeenUsedRecently;
+}
+
+template<class T, class U>
+inline void
+DatagramFace<T, U>::resetRecentUsage()
+{
+  m_hasBeenUsedRecently = false;
 }
 
 } // namespace nfd

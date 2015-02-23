@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FACE_WEBSOCKET_FACE_HPP
 
 #include "face.hpp"
-#include "core/logger.hpp"
 #include "core/scheduler.hpp"
 
 #ifndef HAVE_WEBSOCKET

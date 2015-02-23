@@ -25,6 +25,8 @@
 
 #include "face.hpp"
 
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+
 namespace nfd {
 
 Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)

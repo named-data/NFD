@@ -52,9 +52,9 @@ private:
   closeIfIdle();
 
 private:
-  scheduler::EventId m_closeIfIdleEvent;
-  time::seconds m_idleTimeout;
+  const time::seconds m_idleTimeout;
   time::steady_clock::TimePoint m_lastIdleCheck;
+  scheduler::EventId m_closeIfIdleEvent;
 };
 
 } // namespace nfd

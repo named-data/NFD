@@ -29,7 +29,6 @@
 #include "face.hpp"
 #include "local-face.hpp"
 #include "core/global-io.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 
@@ -48,8 +47,6 @@ public:
   StreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
              const shared_ptr<typename protocol::socket>& socket,
              bool isOnDemand);
-
-  ~StreamFace() DECL_OVERRIDE;
 
   // from FaceBase
   void
@@ -85,6 +82,8 @@ protected:
 protected:
   shared_ptr<typename protocol::socket> m_socket;
 
+  NFD_LOG_INCLASS_DECLARE();
+
 private:
   uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
   size_t m_inputBufferSize;
@@ -92,8 +91,6 @@ private:
 
   friend struct StreamFaceSenderImpl<Protocol, FaceBase, Interest>;
   friend struct StreamFaceSenderImpl<Protocol, FaceBase, Data>;
-
-  NFD_LOG_INCLASS_DECLARE();
 };
 
 // All inherited classes must use
@@ -111,7 +108,7 @@ template<class Protocol, class U>
 struct StreamFaceValidator
 {
   static void
-  validateSocket(typename Protocol::socket& socket)
+  validateSocket(const typename Protocol::socket& socket)
   {
   }
 };
@@ -126,16 +123,13 @@ StreamFace<T, FaceBase>::StreamFace(const FaceUri& remoteUri, const FaceUri& loc
   , m_socket(socket)
   , m_inputBufferSize(0)
 {
+  NFD_LOG_FACE_INFO("Creating face");
+
   FaceBase::setOnDemand(isOnDemand);
   StreamFaceValidator<T, FaceBase>::validateSocket(*socket);
+
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                           bind(&StreamFace<T, FaceBase>::handleReceive, this, _1, _2));
-}
-
-template<class T, class U>
-inline
-StreamFace<T, U>::~StreamFace()
-{
 }
 
 
@@ -178,6 +172,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::sendInterest(const Interest& interest)
 {
+  NFD_LOG_FACE_TRACE(__func__);
   this->emitSignal(onSendInterest, interest);
   StreamFaceSenderImpl<T, U, Interest>::send(*this, interest);
 }
@@ -186,6 +181,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::sendData(const Data& data)
 {
+  NFD_LOG_FACE_TRACE(__func__);
   this->emitSignal(onSendData, data);
   StreamFaceSenderImpl<T, U, Data>::send(*this, data);
 }
@@ -197,8 +193,7 @@ StreamFace<T, U>::close()
   if (!m_socket->is_open())
     return;
 
-  NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-               << "] Closing face");
+  NFD_LOG_FACE_INFO("Closing face");
 
   shutdownSocket();
   this->fail("Face closed");
@@ -219,20 +214,14 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
     }
 
   if (error != boost::asio::error::eof)
-    NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                 << "] Send or receive operation failed, closing face: "
-                 << error.message());
+    NFD_LOG_FACE_WARN("Send or receive operation failed: " << error.message());
 
   shutdownSocket();
 
   if (error == boost::asio::error::eof)
-    {
-      this->fail("Connection closed");
-    }
+    this->fail("Connection closed");
   else
-    {
-      this->fail("Send or receive operation failed: " + error.message());
-    }
+    this->fail(error.message());
 }
 
 template<class T, class U>
@@ -254,8 +243,7 @@ StreamFace<T, U>::handleSend(const boost::system::error_code& error,
 
   BOOST_ASSERT(!m_sendQueue.empty());
 
-  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                << "] Successfully sent: " << nBytesSent << " bytes");
+  NFD_LOG_FACE_TRACE("Successfully sent: " << nBytesSent << " bytes");
   this->getMutableCounters().getNOutBytes() += nBytesSent;
 
   m_sendQueue.pop();
@@ -271,8 +259,7 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_TRACE("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                << "] Received: " << nBytesReceived << " bytes");
+  NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
   this->getMutableCounters().getNInBytes() += nBytesReceived;
 
   m_inputBufferSize += nBytesReceived;
@@ -293,17 +280,13 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
 
       if (!this->decodeAndDispatchInput(element))
         {
-          NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                       << "] Received unrecognized block of type ["
-                       << element.type() << "]");
+          NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << element.type());
           // ignore unknown packet and proceed
         }
     }
   if (!isOk && m_inputBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0)
     {
-      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Failed to parse incoming packet or packet too large to process, "
-                   << "closing face");
+      NFD_LOG_FACE_WARN("Failed to parse incoming packet or packet too large to process");
       shutdownSocket();
       this->fail("Failed to parse incoming packet or packet too large to process");
       return;
@@ -332,6 +315,8 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::shutdownSocket()
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   // Cancel all outstanding operations and shutdown the socket
   // so that no further sends or receives are possible.
   // Use the non-throwing variants and ignore errors, if any.
@@ -361,8 +346,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::deferredClose(const shared_ptr<Face>& face)
 {
-  NFD_LOG_DEBUG("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                << "] Clearing send queue");
+  NFD_LOG_FACE_TRACE(__func__);
 
   // clear send queue
   std::queue<Block> emptyQueue;

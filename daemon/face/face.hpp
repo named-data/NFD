@@ -27,11 +27,11 @@
 #define NFD_DAEMON_FACE_FACE_HPP
 
 #include "common.hpp"
+#include "core/logger.hpp"
 #include "face-counters.hpp"
 
 #include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 namespace nfd {
 
@@ -251,6 +251,39 @@ Face::isOnDemand() const
 {
   return m_isOnDemand;
 }
+
+
+/** \defgroup FaceLogging Face logging macros
+ *
+ * These macros augment the log message with some face-specific information,
+ * such as the face ID, that are useful to distinguish which face produced the
+ * message. It is strongly recommended to use these macros instead of the
+ * generic ones for all logging inside Face subclasses.
+ * @{
+ */
+
+#define NFD_LOG_FACE(level, msg)                        \
+  NFD_LOG_##level("[id=" << this->getId() <<            \
+                  ",local=" << this->getLocalUri() <<   \
+                  ",remote=" << this->getRemoteUri() << \
+                  "] " << msg)
+
+/** \brief Log a message at TRACE level */
+#define NFD_LOG_FACE_TRACE(msg) NFD_LOG_FACE(TRACE, msg)
+
+/** \brief Log a message at DEBUG level */
+#define NFD_LOG_FACE_DEBUG(msg) NFD_LOG_FACE(DEBUG, msg)
+
+/** \brief Log a message at INFO level */
+#define NFD_LOG_FACE_INFO(msg)  NFD_LOG_FACE(INFO,  msg)
+
+/** \brief Log a message at WARN level */
+#define NFD_LOG_FACE_WARN(msg)  NFD_LOG_FACE(WARN,  msg)
+
+/** \brief Log a message at ERROR level */
+#define NFD_LOG_FACE_ERROR(msg) NFD_LOG_FACE(ERROR, msg)
+
+/** @} */
 
 } // namespace nfd
 

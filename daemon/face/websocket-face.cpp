@@ -37,6 +37,7 @@ WebSocketFace::WebSocketFace(const FaceUri& remoteUri, const FaceUri& localUri,
   , m_server(server)
   , m_closed(false)
 {
+  NFD_LOG_FACE_INFO("Creating face");
   this->setOnDemand(true);
 }
 
@@ -45,6 +46,8 @@ WebSocketFace::sendInterest(const Interest& interest)
 {
   if (m_closed)
     return;
+
+  NFD_LOG_FACE_TRACE(__func__);
 
   this->emitSignal(onSendInterest, interest);
 
@@ -56,7 +59,7 @@ WebSocketFace::sendInterest(const Interest& interest)
                   websocketpp::frame::opcode::binary);
   }
   catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_WARN("Failed to send Interest: " << e << " (" << e.message() << ")");
+    NFD_LOG_FACE_WARN("Failed to send Interest: " << e << " (" << e.message() << ")");
   }
 }
 
@@ -65,6 +68,8 @@ WebSocketFace::sendData(const Data& data)
 {
   if (m_closed)
     return;
+
+  NFD_LOG_FACE_TRACE(__func__);
 
   this->emitSignal(onSendData, data);
 
@@ -76,22 +81,24 @@ WebSocketFace::sendData(const Data& data)
                   websocketpp::frame::opcode::binary);
   }
   catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_WARN("Failed to send Data: " << e << " (" << e.message() << ")");
+    NFD_LOG_FACE_WARN("Failed to send Data: " << e << " (" << e.message() << ")");
   }
 }
 
 void
 WebSocketFace::close()
 {
-  if (m_closed == false)
-    {
-      m_closed = true;
-      scheduler::cancel(m_pingEventId);
-      websocketpp::lib::error_code ecode;
-      m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ecode);
+  if (m_closed)
+    return;
 
-      fail("Face closed");
-    }
+  NFD_LOG_FACE_INFO("Closing face");
+
+  m_closed = true;
+  scheduler::cancel(m_pingEventId);
+  websocketpp::lib::error_code ecode;
+  m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ecode);
+
+  fail("Face closed");
 }
 
 void
@@ -100,13 +107,11 @@ WebSocketFace::handleReceive(const std::string& msg)
   // Copy message into Face internal buffer
   if (msg.size() > ndn::MAX_NDN_PACKET_SIZE)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received WebSocket message is too big (" << msg.size() << " bytes)");
+      NFD_LOG_FACE_WARN("Received WebSocket message is too big (" << msg.size() << " bytes)");
       return;
     }
 
-  NFD_LOG_TRACE("[id:" << this->getId()
-                << "] Received: " << msg.size() << " bytes");
+  NFD_LOG_FACE_TRACE("Received: " << msg.size() << " bytes");
   this->getMutableCounters().getNInBytes() += msg.size();
 
   // Try to parse message data
@@ -115,15 +120,13 @@ WebSocketFace::handleReceive(const std::string& msg)
                                 msg.size(), element);
   if (!isOk)
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received block is invalid or too large to process");
+      NFD_LOG_FACE_WARN("Received block is invalid or too large to process");
       return;
     }
 
   if (!this->decodeAndDispatchInput(element))
     {
-      NFD_LOG_WARN("[id:" << this->getId()
-                   << "] Received unrecognized TLV block of type " << element.type());
+      NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << element.type());
       // ignore unknown packet and proceed
     }
 }

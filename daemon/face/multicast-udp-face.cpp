@@ -41,7 +41,7 @@ MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::
   , m_multicastGroup(multicastEndpoint)
   , m_sendSocket(sendSocket)
 {
-  NFD_LOG_INFO("Creating multicast UDP face for group " << m_multicastGroup);
+  NFD_LOG_FACE_INFO("Creating face");
 }
 
 const MulticastUdpFace::protocol::endpoint&
@@ -61,20 +61,22 @@ MulticastUdpFace::sendBlock(const Block& block)
 void
 MulticastUdpFace::sendInterest(const Interest& interest)
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   this->emitSignal(onSendInterest, interest);
 
-  NFD_LOG_DEBUG("Sending interest");
   sendBlock(interest.wireEncode());
 }
 
 void
 MulticastUdpFace::sendData(const Data& data)
 {
-  /// \todo After this method implements duplicate suppression, onSendData signal should
-  ///       be emitted only when data is actually sent out
+  NFD_LOG_FACE_TRACE(__func__);
+
+  /// \todo After this face implements duplicate suppression, onSendData should
+  ///       be emitted only when data is actually sent out. See also #2555
   this->emitSignal(onSendData, data);
 
-  NFD_LOG_DEBUG("Sending data");
   sendBlock(data.wireEncode());
 }
 

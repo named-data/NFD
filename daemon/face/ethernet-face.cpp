@@ -25,7 +25,6 @@
 
 #include "ethernet-face.hpp"
 #include "core/global-io.hpp"
-#include "core/logger.hpp"
 
 #include <pcap/pcap.h>
 
@@ -79,8 +78,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   , m_nDropped(0)
 #endif
 {
-  NFD_LOG_INFO("Creating ethernet face on " << m_interfaceName << ": "
-               << m_srcAddress << " <--> " << m_destAddress);
+  NFD_LOG_FACE_INFO("Creating face on " << m_interfaceName << "/" << m_srcAddress);
   pcapInit();
 
   int fd = pcap_get_selectable_fd(m_pcap.get());
@@ -93,8 +91,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   m_socket->assign(::dup(fd));
 
   m_interfaceMtu = getInterfaceMtu();
-  NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
-                << "] Interface MTU is: " << m_interfaceMtu);
+  NFD_LOG_FACE_DEBUG("Interface MTU is: " << m_interfaceMtu);
 
   m_slicer.reset(new ndnlp::Slicer(m_interfaceMtu));
 
@@ -108,8 +105,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
 
   if (!m_destAddress.isBroadcast() && !joinMulticastGroup())
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Falling back to promiscuous mode");
+      NFD_LOG_FACE_WARN("Falling back to promiscuous mode");
       pcap_set_promisc(m_pcap.get(), 1);
     }
 
@@ -126,7 +122,10 @@ EthernetFace::~EthernetFace()
 void
 EthernetFace::sendInterest(const Interest& interest)
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   this->emitSignal(onSendInterest, interest);
+
   ndnlp::PacketArray pa = m_slicer->slice(interest.wireEncode());
   for (const auto& packet : *pa) {
     sendPacket(packet);
@@ -136,7 +135,10 @@ EthernetFace::sendInterest(const Interest& interest)
 void
 EthernetFace::sendData(const Data& data)
 {
+  NFD_LOG_FACE_TRACE(__func__);
+
   this->emitSignal(onSendData, data);
+
   ndnlp::PacketArray pa = m_slicer->slice(data.wireEncode());
   for (const auto& packet : *pa) {
     sendPacket(packet);
@@ -149,8 +151,7 @@ EthernetFace::close()
   if (!m_pcap)
     return;
 
-  NFD_LOG_INFO("[id:" << getId() << ",endpoint:" << m_interfaceName
-               << "] Closing face");
+  NFD_LOG_FACE_INFO("Closing face");
 
   boost::system::error_code error;
   m_socket->cancel(error); // ignore errors
@@ -184,8 +185,7 @@ EthernetFace::pcapInit()
 
   if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
     // no need to throw on failure, BPF will filter unwanted packets anyway
-    NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                 << "] pcap_setdirection failed: " << pcap_geterr(m_pcap.get()));
+    NFD_LOG_FACE_WARN("pcap_setdirection failed: " << pcap_geterr(m_pcap.get()));
 }
 
 void
@@ -215,8 +215,7 @@ EthernetFace::joinMulticastGroup()
                    PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) == 0)
     return true; // success
 
-  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-               << "] setsockopt(PACKET_ADD_MEMBERSHIP) failed: " << std::strerror(errno));
+  NFD_LOG_FACE_WARN("setsockopt(PACKET_ADD_MEMBERSHIP) failed: " << std::strerror(errno));
 #endif
 
 #if defined(SIOCADDMULTI)
@@ -262,8 +261,7 @@ EthernetFace::joinMulticastGroup()
   if (::ioctl(fd, SIOCADDMULTI, &ifr) == 0)
     return true; // success
 
-  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-               << "] ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
+  NFD_LOG_FACE_WARN("ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
 #endif
 
   return false;
@@ -274,8 +272,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
 {
   if (!m_pcap)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Trying to send on closed face");
+      NFD_LOG_FACE_WARN("Trying to send on closed face");
       return fail("Face closed");
     }
 
@@ -309,8 +306,7 @@ EthernetFace::sendPacket(const ndn::Block& block)
       return fail("Failed to inject frame");
     }
 
-  NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                << "] Successfully sent: " << block.size() << " bytes");
+  NFD_LOG_FACE_TRACE("Successfully sent: " << block.size() << " bytes");
   this->getMutableCounters().getNOutBytes() += block.size();
 }
 
@@ -332,7 +328,7 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
     }
   else if (ret == 0)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] Read timeout");
+      NFD_LOG_FACE_WARN("Read timeout");
     }
   else
     {
@@ -344,14 +340,12 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
   ret = pcap_stats(m_pcap.get(), &ps);
   if (ret < 0)
     {
-      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
-                    << "] pcap_stats failed: " << pcap_geterr(m_pcap.get()));
+      NFD_LOG_FACE_DEBUG("pcap_stats failed: " << pcap_geterr(m_pcap.get()));
     }
   else if (ret == 0)
     {
       if (ps.ps_drop - m_nDropped > 0)
-        NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName
-                      << "] Detected " << ps.ps_drop - m_nDropped << " dropped packet(s)");
+        NFD_LOG_FACE_DEBUG("Detected " << ps.ps_drop - m_nDropped << " dropped packet(s)");
       m_nDropped = ps.ps_drop;
     }
 #endif
@@ -368,8 +362,7 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
   size_t length = header->caplen;
   if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Received frame is too short (" << length << " bytes)");
+      NFD_LOG_FACE_WARN("Received frame is too short (" << length << " bytes)");
       return;
     }
 
@@ -392,15 +385,12 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
   bool isOk = Block::fromBuffer(packet, length, fragment);
   if (!isOk)
     {
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                   << "] Block received from " << sourceAddress.toString()
-                   << " is invalid or too large to process");
+      NFD_LOG_FACE_WARN("Block received from " << sourceAddress.toString()
+                        << " is invalid or too large to process");
       return;
     }
 
-  NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                << "] Received: " << fragment.size() << " bytes from "
-                << sourceAddress.toString());
+  NFD_LOG_FACE_TRACE("Received: " << fragment.size() << " bytes from " << sourceAddress.toString());
   this->getMutableCounters().getNInBytes() += fragment.size();
 
   Reassembler& reassembler = m_reassemblers[sourceAddress];
@@ -410,12 +400,10 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
       reassembler.pms.reset(new ndnlp::PartialMessageStore);
       reassembler.pms->onReceive.connect(
         [this, sourceAddress] (const Block& block) {
-          NFD_LOG_TRACE("[id:" << getId() << ",endpoint:" << m_interfaceName
-                        << "] All fragments received from " << sourceAddress.toString());
+          NFD_LOG_FACE_TRACE("All fragments received from " << sourceAddress.toString());
           if (!decodeAndDispatchInput(block))
-            NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                         << "] Received unrecognized TLV block of type " << block.type()
-                         << " from " << sourceAddress.toString());
+            NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << block.type()
+                              << " from " << sourceAddress.toString());
         });
     }
 
@@ -429,9 +417,8 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
     reassembler.pms->receiveNdnlpData(fragment);
   }
   catch (const ndnlp::ParseError& e) {
-    NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-                 << "] Received invalid NDNLP fragment from "
-                 << sourceAddress.toString() << " : " << e.what());
+    NFD_LOG_FACE_WARN("Received invalid NDNLP fragment from "
+                      << sourceAddress.toString() << " : " << e.what());
   }
 }
 
@@ -446,12 +433,11 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
   if (error == boost::asio::error::eof)
     {
       msg = "Face closed";
-      NFD_LOG_DEBUG("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
     }
   else
     {
       msg = "Receive operation failed: " + error.message();
-      NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName << "] " << msg);
+      NFD_LOG_FACE_WARN(msg);
     }
   fail(msg);
 }
@@ -475,8 +461,7 @@ EthernetFace::getInterfaceMtu() const
   if (::ioctl(fd, SIOCGIFMTU, &ifr) == 0)
     return static_cast<size_t>(ifr.ifr_mtu);
 
-  NFD_LOG_WARN("[id:" << getId() << ",endpoint:" << m_interfaceName
-               << "] Failed to get interface MTU: " << std::strerror(errno));
+  NFD_LOG_FACE_WARN("Failed to get interface MTU: " << std::strerror(errno));
 #endif
 
   return ethernet::MAX_DATA_LEN;

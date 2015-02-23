@@ -63,8 +63,7 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
   if (::setsockopt(socket->native_handle(), IPPROTO_IP,
                    IP_MTU_DISCOVER, &value, sizeof(value)) < 0)
     {
-      NFD_LOG_WARN("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Failed to disable path MTU discovery: " << std::strerror(errno));
+      NFD_LOG_FACE_WARN("Failed to disable path MTU discovery: " << std::strerror(errno));
     }
 #endif
 
@@ -108,14 +107,13 @@ UdpFace::closeIfIdle()
   // (non-on-demand -> on-demand transition is not allowed)
   if (isOnDemand()) {
     if (!hasBeenUsedRecently()) {
-      NFD_LOG_INFO("[id:" << this->getId() << ",uri:" << this->getRemoteUri()
-                   << "] Idle for more than " << m_idleTimeout << ", closing");
+      NFD_LOG_FACE_INFO("Closing for inactivity");
       close();
 
       // #1718 manual test: uncomment, run NFD in valgrind, send in a UDP packet
       //                    expect read-after-free error and crash
       // getGlobalIoService().post([this] {
-      //   NFD_LOG_ERROR("Remaining references: " << this->shared_from_this().use_count());
+      //   NFD_LOG_FACE_ERROR("Remaining references: " << this->shared_from_this().use_count());
       // });
     }
     else {
