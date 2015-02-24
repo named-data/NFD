@@ -65,13 +65,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
-    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.01);
-  const time::nanoseconds RETRANSMISSION_10P = time::duration_cast<time::nanoseconds>(
-    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.1); // 10%
-  const time::nanoseconds RETRANSMISSION_70P = time::duration_cast<time::nanoseconds>(
-    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 0.7); // 70%
-  const time::nanoseconds RETRANSMISSION_2 = time::duration_cast<time::nanoseconds>(
-    fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 2.0); // x2
+    fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL * 0.1);
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -94,15 +88,15 @@ BOOST_AUTO_TEST_CASE(Forward)
     if (nSent > nSentLast) {
       BOOST_CHECK_EQUAL(nSent - nSentLast, 1);
       time::steady_clock::TimePoint timeSent = time::steady_clock::now();
-      BOOST_CHECK_GE(timeSent - timeSentLast, RETRANSMISSION_70P);
+      BOOST_CHECK_GE(timeSent - timeSentLast, TICK * 8);
       nSentLast = nSent;
       timeSentLast = timeSent;
     }
 
-    retxFrom4Evt = scheduler::schedule(RETRANSMISSION_10P, periodicalRetxFrom4);
+    retxFrom4Evt = scheduler::schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, fw::RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL * 16);
+  this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
@@ -118,7 +112,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   strategy.m_sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
-    this->advanceClocks(TICK, RETRANSMISSION_2);
+    this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 2);
     pitEntry->insertOrUpdateInRecord(face5, *interest);
     strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
   }

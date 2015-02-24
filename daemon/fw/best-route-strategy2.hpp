@@ -27,18 +27,18 @@
 #define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY2_HPP
 
 #include "strategy.hpp"
-#include "retx-suppression-fixed.hpp"
+#include "retx-suppression-exponential.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \brief Best Route strategy version 2
+/** \brief Best Route strategy version 3
  *
  *  This strategy forwards a new Interest to the lowest-cost nexthop (except downstream).
- *  After that, it recognizes consumer retransmission:
- *  if a similar Interest arrives from any downstream after MIN_RETRANSMISSION_INTERVAL,
- *  the strategy forwards the Interest again to the lowest-cost nexthop (except downstream)
- *  that is not previously used. If all nexthops have been used, the strategy starts over.
+ *  After that, if consumer retransmits the Interest (and is not suppressed according to
+ *  exponential backoff algorithm), the strategy forwards the Interest again to
+ *  the lowest-cost nexthop (except downstream) that is not previously used.
+ *  If all nexthops have been used, the strategy starts over.
  */
 class BestRouteStrategy2 : public Strategy
 {
@@ -55,7 +55,7 @@ public:
   static const Name STRATEGY_NAME;
 
 private:
-  RetxSuppressionFixed m_retxSuppression;
+  RetxSuppressionExponential m_retxSuppression;
 };
 
 } // namespace fw
