@@ -91,23 +91,25 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
   bool isPending = inRecords.begin() != inRecords.end();
   if (!isPending) {
-    // CS lookup
-    const Data* csMatch = m_cs.find(interest);
-    if (csMatch != 0) {
-      const_cast<Data*>(csMatch)->setIncomingFaceId(FACEID_CONTENT_STORE);
-      // XXX should we lookup PIT for other Interests that also match csMatch?
-
-      // set PIT straggler timer
-      this->setStragglerTimer(pitEntry, true, csMatch->getFreshnessPeriod());
-
-      // goto outgoing Data pipeline
-      this->onOutgoingData(*csMatch, inFace);
-      return;
-    }
+    m_cs.find(interest,
+              bind(&Forwarder::onContentStoreHit, this, ref(inFace), pitEntry, _1, _2),
+              bind(&Forwarder::onContentStoreMiss, this, ref(inFace), pitEntry, _1));
   }
+  else {
+    this->onContentStoreMiss(inFace, pitEntry, interest);
+  }
+}
 
+void
+Forwarder::onContentStoreMiss(const Face& inFace,
+                              shared_ptr<pit::Entry> pitEntry,
+                              const Interest& interest)
+{
+  NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
+
+  shared_ptr<Face> face = const_pointer_cast<Face>(inFace.shared_from_this());
   // insert InRecord
-  pitEntry->insertOrUpdateInRecord(inFace.shared_from_this(), interest);
+  pitEntry->insertOrUpdateInRecord(face, interest);
 
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
@@ -118,6 +120,24 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // dispatch to strategy
   this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveInterest, _1,
                                           cref(inFace), cref(interest), fibEntry, pitEntry));
+}
+
+void
+Forwarder::onContentStoreHit(const Face& inFace,
+                             shared_ptr<pit::Entry> pitEntry,
+                             const Interest& interest,
+                             const Data& data)
+{
+  NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
+
+  const_pointer_cast<Data>(data.shared_from_this())->setIncomingFaceId(FACEID_CONTENT_STORE);
+  // XXX should we lookup PIT for other Interests that also match csMatch?
+
+  // set PIT straggler timer
+  this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
+
+  // goto outgoing Data pipeline
+  this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
 }
 
 void

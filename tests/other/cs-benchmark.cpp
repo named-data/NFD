@@ -53,6 +53,12 @@ protected:
     return time::duration_cast<time::microseconds>(t2 - t1);
   }
 
+  void
+  find(const Interest& interest)
+  {
+    cs.find(interest, bind([]{}), bind([]{}));
+  }
+
 protected:
   typedef std::function<Name(size_t)> NameGenerator;
 
@@ -122,7 +128,7 @@ BOOST_AUTO_TEST_CASE(FindMissInsert)
   time::microseconds d = timedRun([&] {
     for (size_t j = 0; j < REPEAT; ++j) {
       for (size_t i = 0; i < N_WORKLOAD; ++i) {
-        cs.find(*interestWorkload[i]);
+        find(*interestWorkload[i]);
         cs.insert(*dataWorkload[j][i], false);
       }
     }
@@ -146,7 +152,7 @@ BOOST_AUTO_TEST_CASE(InsertFindHit)
     for (size_t j = 0; j < REPEAT; ++j) {
       for (size_t i = 0; i < N_WORKLOAD; ++i) {
         cs.insert(*dataWorkload[j][i], false);
-        cs.find(*interestWorkload[i]);
+        find(*interestWorkload[i]);
       }
     }
   });
@@ -175,7 +181,7 @@ BOOST_AUTO_TEST_CASE(Leftmost)
   time::microseconds d = timedRun([&] {
     for (size_t j = 0; j < REPEAT; ++j) {
       for (const auto& interest : interestWorkload) {
-        cs.find(*interest);
+        find(*interest);
       }
     }
   });
@@ -204,7 +210,7 @@ BOOST_AUTO_TEST_CASE(Rightmost)
   time::microseconds d = timedRun([&] {
     for (size_t j = 0; j < REPEAT; ++j) {
       for (const auto& interest : interestWorkload) {
-        cs.find(*interest);
+        find(*interest);
       }
     }
   });

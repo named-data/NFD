@@ -110,6 +110,17 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onIncomingInterest(Face& inFace, const Interest& interest);
 
+  /** \brief Content Store miss pipeline
+  */
+  void
+  onContentStoreMiss(const Face& inFace, shared_ptr<pit::Entry> pitEntry, const Interest& interest);
+
+  /** \brief Content Store hit pipeline
+  */
+  void
+  onContentStoreHit(const Face& inFace, shared_ptr<pit::Entry> pitEntry,
+                    const Interest& interest, const Data& data);
+
   /** \brief Interest loop pipeline
    */
   VIRTUAL_WITH_TESTS void

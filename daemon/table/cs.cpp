@@ -97,9 +97,14 @@ Cs::insert(const Data& data, bool isUnsolicited)
   return true;
 }
 
-const Data*
-Cs::find(const Interest& interest) const
+void
+Cs::find(const Interest& interest,
+         const HitCallback& hitCallback,
+         const MissCallback& missCallback) const
 {
+  BOOST_ASSERT(static_cast<bool>(hitCallback));
+  BOOST_ASSERT(static_cast<bool>(missCallback));
+
   const Name& prefix = interest.getName();
   bool isRightmost = interest.getChildSelector() == 1;
   NFD_LOG_DEBUG("find " << prefix << (isRightmost ? " R" : " L"));
@@ -120,10 +125,11 @@ Cs::find(const Interest& interest) const
 
   if (match == last) {
     NFD_LOG_DEBUG("  no-match");
-    return nullptr;
+    missCallback(interest);
+    return;
   }
   NFD_LOG_DEBUG("  matching " << match->getName());
-  return &match->getData();
+  hitCallback(interest, match->getData());
 }
 
 TableIt

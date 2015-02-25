@@ -68,10 +68,20 @@ public:
   bool
   insert(const Data& data, bool isUnsolicited = false);
 
+  typedef std::function<void(const Interest&, const Data& data)> HitCallback;
+  typedef std::function<void(const Interest&)> MissCallback;
+
   /** \brief finds the best matching Data packet
+   *  \param interest the Interest for lookup
+   *  \param hitCallback a callback if a match is found; must not be empty
+   *  \param missCallback a callback if there's no match; must not be empty
+   *  \note A lookup invokes either callback exactly once.
+   *        The callback may be invoked either before or after find() returns
    */
-  const Data*
-  find(const Interest& interest) const;
+  void
+  find(const Interest& interest,
+       const HitCallback& hitCallback,
+       const MissCallback& missCallback) const;
 
   void
   erase(const Name& exactName)
