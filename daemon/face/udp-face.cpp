@@ -81,20 +81,19 @@ UdpFace::~UdpFace()
 ndn::nfd::FaceStatus
 UdpFace::getFaceStatus() const
 {
-  auto status = Face::getFaceStatus();
+  auto status = DatagramFace::getFaceStatus();
 
   if (isOnDemand()) {
-    time::milliseconds left = m_idleTimeout - time::duration_cast<time::milliseconds>(
-      time::steady_clock::now() - m_lastIdleCheck);
+    time::milliseconds left = m_idleTimeout;
+    left -= time::duration_cast<time::milliseconds>(time::steady_clock::now() - m_lastIdleCheck);
+
     if (left < time::milliseconds::zero())
       left = time::milliseconds::zero();
 
-    if (hasBeenUsedRecently()) {
-      status.setExpirationPeriod(left + m_idleTimeout);
-    }
-    else {
-      status.setExpirationPeriod(left);
-    }
+    if (hasBeenUsedRecently())
+      left += m_idleTimeout;
+
+    status.setExpirationPeriod(left);
   }
 
   return status;

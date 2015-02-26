@@ -128,22 +128,14 @@ void
 Face::copyStatusTo(FaceTraits& traits) const
 {
   traits.setFaceId(getId())
-    .setRemoteUri(getRemoteUri().toString())
-    .setLocalUri(getLocalUri().toString());
-
-  if (isLocal()) {
-    traits.setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL);
-  }
-  else {
-    traits.setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
-  }
-
-  if (isOnDemand()) {
-    traits.setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  }
-  else {
-    traits.setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  }
+        .setRemoteUri(getRemoteUri().toString())
+        .setLocalUri(getLocalUri().toString())
+        .setFaceScope(isLocal() ? ndn::nfd::FACE_SCOPE_LOCAL
+                                : ndn::nfd::FACE_SCOPE_NON_LOCAL)
+        .setFacePersistency(isOnDemand() ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND
+                                         : ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+        .setLinkType(isMultiAccess() ? ndn::nfd::LINK_TYPE_MULTI_ACCESS
+                                     : ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 }
 
 template void
@@ -156,11 +148,11 @@ ndn::nfd::FaceStatus
 Face::getFaceStatus() const
 {
   ndn::nfd::FaceStatus status;
-  copyStatusTo(status);
 
+  copyStatusTo(status);
   this->getCounters().copyTo(status);
 
   return status;
 }
 
-} //namespace nfd
+} // namespace nfd
