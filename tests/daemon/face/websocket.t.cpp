@@ -231,12 +231,11 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 
   BOOST_CHECK_EQUAL(channel1->size(), 1);
 
-  BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "ws://127.0.0.1:20070");
+  BOOST_REQUIRE(static_cast<bool>(face1));
+  BOOST_CHECK_EQUAL(face1->isLocal(), false);
   BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
-
-  //BOOST_CHECK_EQUAL(face1->isLocal(), true);
-
-  //BOOST_CHECK_EQUAL(static_cast<bool>(dynamic_pointer_cast<LocalFace>(face1)), false);
+  BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
+  BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "ws://127.0.0.1:20070");
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/TpnzGvW9R");
   shared_ptr<Data>     data1     = makeData("ndn:/KfczhUqVix");

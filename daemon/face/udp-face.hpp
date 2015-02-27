@@ -32,15 +32,14 @@
 namespace nfd {
 
 /**
- * \brief Implementation of Face abstraction that uses UDP
- *        as underlying transport mechanism
+ * \brief Implementation of Face abstraction that uses
+ *        unicast UDP as underlying transport mechanism
  */
 class UdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
   UdpFace(const shared_ptr<protocol::socket>& socket,
-          bool isOnDemand,
-          const time::seconds& idleTimeout);
+          bool isOnDemand, const time::seconds& idleTimeout);
 
   ~UdpFace() DECL_OVERRIDE;
 
@@ -55,6 +54,9 @@ private:
   const time::seconds m_idleTimeout;
   time::steady_clock::TimePoint m_lastIdleCheck;
   scheduler::EventId m_closeIfIdleEvent;
+
+  // friend because it needs to invoke protected Face::setOnDemand
+  friend class UdpChannel;
 };
 
 } // namespace nfd

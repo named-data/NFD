@@ -25,9 +25,11 @@
 #ifndef NFD_DAEMON_FACE_CHANNEL_HPP
 #define NFD_DAEMON_FACE_CHANNEL_HPP
 
-#include "face.hpp"
+#include "common.hpp"
 
 namespace nfd {
+
+class Face;
 
 class Channel : noncopyable
 {

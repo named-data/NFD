@@ -30,7 +30,6 @@
 #include "core/logger.hpp"
 #include "face-counters.hpp"
 
-#include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
@@ -52,7 +51,6 @@ const FaceId FACEID_NULL = 255;
 /// upper bound of reserved FaceIds
 const FaceId FACEID_RESERVED_MAX = 255;
 
-using ndn::util::FaceUri;
 
 /** \brief represents a face
  */
@@ -72,7 +70,8 @@ public:
     }
   };
 
-  Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal = false);
+  Face(const FaceUri& remoteUri, const FaceUri& localUri,
+       bool isLocal = false, bool isMultiAccess = false);
 
   virtual
   ~Face();
@@ -112,27 +111,31 @@ public: // attributes
   FaceId
   getId() const;
 
-  /** \brief Set the description
-   *
-   *  This is typically invoked by mgmt on set description command
+  /** \brief Get the description
    */
-  virtual void
-  setDescription(const std::string& description);
-
-  /// Get the description
-  virtual const std::string&
+  const std::string&
   getDescription() const;
+
+  /** \brief Set the face description
+   *
+   *  This is typically invoked by management on set description command
+   */
+  void
+  setDescription(const std::string& description);
 
   /** \brief Get whether face is connected to a local app
    */
   bool
   isLocal() const;
 
-  /** \brief Get whether packets sent this Face may reach multiple peers
-   *
-   *  In this base class this property is always false.
+  /** \brief Get whether face is created on demand or explicitly via FaceManagement protocol
    */
-  virtual bool
+  bool
+  isOnDemand() const;
+
+  /** \brief Get whether packets sent by this face may reach multiple peers
+   */
+  bool
   isMultiAccess() const;
 
   /** \brief Get whether underlying communication is up
@@ -141,11 +144,6 @@ public: // attributes
    */
   virtual bool
   isUp() const;
-
-  /** \brief Get whether face is created on demand or explicitly via FaceManagement protocol
-   */
-  bool
-  isOnDemand() const;
 
   const FaceCounters&
   getCounters() const;
@@ -171,21 +169,21 @@ public: // attributes
   virtual ndn::nfd::FaceStatus
   getFaceStatus() const;
 
-protected:
-  // this is a non-virtual method
-  bool
-  decodeAndDispatchInput(const Block& element);
-
-  FaceCounters&
-  getMutableCounters();
-
+PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   void
   setOnDemand(bool isOnDemand);
+
+protected:
+  bool
+  decodeAndDispatchInput(const Block& element);
 
   /** \brief fail the face and raise onFail event if it's UP; otherwise do nothing
    */
   void
   fail(const std::string& reason);
+
+  FaceCounters&
+  getMutableCounters();
 
   DECLARE_SIGNAL_EMIT(onReceiveInterest)
   DECLARE_SIGNAL_EMIT(onReceiveData)
@@ -193,27 +191,71 @@ protected:
   DECLARE_SIGNAL_EMIT(onSendData)
 
 private:
+  // this method should be used only by the FaceTable
   void
   setId(FaceId faceId);
 
 private:
   FaceId m_id;
   std::string m_description;
-  bool m_isLocal; // for scoping purposes
   FaceCounters m_counters;
-  FaceUri m_remoteUri;
-  FaceUri m_localUri;
+  const FaceUri m_remoteUri;
+  const FaceUri m_localUri;
+  const bool m_isLocal;
   bool m_isOnDemand;
+  const bool m_isMultiAccess;
   bool m_isFailed;
 
   // allow setting FaceId
   friend class FaceTable;
 };
 
+inline FaceId
+Face::getId() const
+{
+  return m_id;
+}
+
+inline void
+Face::setId(FaceId faceId)
+{
+  m_id = faceId;
+}
+
+inline const std::string&
+Face::getDescription() const
+{
+  return m_description;
+}
+
+inline void
+Face::setDescription(const std::string& description)
+{
+  m_description = description;
+}
+
 inline bool
 Face::isLocal() const
 {
   return m_isLocal;
+}
+
+inline bool
+Face::isOnDemand() const
+{
+  return m_isOnDemand;
+}
+
+inline void
+Face::setOnDemand(bool isOnDemand)
+{
+  m_isOnDemand = isOnDemand;
+}
+
+inline bool
+Face::isMultiAccess() const
+{
+  return m_isMultiAccess;
 }
 
 inline const FaceCounters&
@@ -238,18 +280,6 @@ inline const FaceUri&
 Face::getLocalUri() const
 {
   return m_localUri;
-}
-
-inline void
-Face::setOnDemand(bool isOnDemand)
-{
-  m_isOnDemand = isOnDemand;
-}
-
-inline bool
-Face::isOnDemand() const
-{
-  return m_isOnDemand;
 }
 
 

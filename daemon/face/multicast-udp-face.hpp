@@ -55,9 +55,6 @@ public:
   void
   sendData(const Data& data) DECL_OVERRIDE;
 
-  bool
-  isMultiAccess() const DECL_OVERRIDE;
-
 private:
   void
   sendBlock(const Block& block);

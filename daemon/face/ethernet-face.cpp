@@ -65,7 +65,7 @@ const time::nanoseconds EthernetFace::REASSEMBLER_LIFETIME = time::seconds(60);
 EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
                            const NetworkInterfaceInfo& interface,
                            const ethernet::Address& address)
-  : Face(FaceUri(address), FaceUri::fromDev(interface.name))
+  : Face(FaceUri(address), FaceUri::fromDev(interface.name), false, true)
   , m_pcap(nullptr, pcap_close)
   , m_socket(socket)
 #if defined(__linux__)

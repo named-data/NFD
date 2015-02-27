@@ -114,6 +114,7 @@ BOOST_AUTO_TEST_CASE(SendPacket)
   BOOST_REQUIRE(static_cast<bool>(face));
   BOOST_CHECK_EQUAL(face->isLocal(), false);
   BOOST_CHECK_EQUAL(face->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(face->isMultiAccess(), true);
   BOOST_CHECK_EQUAL(face->getRemoteUri().toString(),
                     "ether://[" + ethernet::getDefaultMulticastAddress().toString() + "]");
   BOOST_CHECK_EQUAL(face->getLocalUri().toString(),

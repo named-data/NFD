@@ -31,10 +31,10 @@
 
 namespace nfd {
 
-class Unicast {};
-class Multicast {};
+struct Unicast {};
+struct Multicast {};
 
-template<class Protocol, class Type = Unicast>
+template<class Protocol, class Addressing = Unicast>
 class DatagramFace : public Face
 {
 public:
@@ -43,12 +43,9 @@ public:
   /** \brief Construct datagram face
    *
    * \param socket      Protocol-specific socket for the created face
-   * \param isOnDemand  If true, the face can be closed after it remains
-   *                    unused for a certain amount of time
    */
   DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
-               const shared_ptr<typename protocol::socket>& socket,
-               bool isOnDemand);
+               const shared_ptr<typename protocol::socket>& socket);
 
   // from Face
   void
@@ -64,9 +61,6 @@ public:
   receiveDatagram(const uint8_t* buffer,
                   size_t nBytesReceived,
                   const boost::system::error_code& error);
-
-  void
-  setOnDemand(bool isOnDemand);
 
 protected:
   void
@@ -110,14 +104,11 @@ private:
 template<class T, class U>
 inline
 DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                                 const shared_ptr<typename DatagramFace::protocol::socket>& socket,
-                                 bool isOnDemand)
-  : Face(remoteUri, localUri)
+                                 const shared_ptr<typename DatagramFace::protocol::socket>& socket)
+  : Face(remoteUri, localUri, false, std::is_same<U, Multicast>::value)
   , m_socket(socket)
 {
   NFD_LOG_FACE_INFO("Creating face");
-
-  setOnDemand(isOnDemand);
 
   m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
                           bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
@@ -273,13 +264,6 @@ DatagramFace<T, U>::closeSocket()
   // handlers are dispatched
   getGlobalIoService().post(bind(&DatagramFace<T, U>::keepFaceAliveUntilAllHandlersExecuted,
                                  this, this->shared_from_this()));
-}
-
-template<class T, class U>
-inline void
-DatagramFace<T, U>::setOnDemand(bool isOnDemand)
-{
-  Face::setOnDemand(isOnDemand);
 }
 
 template<class T, class U>

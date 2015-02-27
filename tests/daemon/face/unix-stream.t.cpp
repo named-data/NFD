@@ -188,7 +188,9 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
                       "UnixStreamChannel error: cannot connect or cannot accept connection");
 
   BOOST_REQUIRE(static_cast<bool>(face1));
-
+  BOOST_CHECK_EQUAL(face1->isLocal(), true);
+  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
+  BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
   BOOST_CHECK_EQUAL(face1->getRemoteUri().getScheme(), "fd");
   BOOST_CHECK_NO_THROW(boost::lexical_cast<int>(face1->getRemoteUri().getHost()));
   std::string face1localUri = face1->getLocalUri().toString();

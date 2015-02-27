@@ -117,39 +117,26 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
   BOOST_CHECK_EQUAL(channel4->getUri().toString(), "udp6://[::1]:20071");
 
   //same endpoint of a unicast channel
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp,
-                                                    "224.0.0.1",
-                                                    "20070"),
-                        UdpFactory::Error,
-                        isTheSameUnicastEndpoint);
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "224.0.0.1", "20070"),
+                        UdpFactory::Error, isTheSameUnicastEndpoint);
 
-
-  shared_ptr<MulticastUdpFace> multicastFace1 = factory.createMulticastFace(interfaceIp,
-                                                                            "224.0.0.1",
-                                                                            "20072");
-  shared_ptr<MulticastUdpFace> multicastFace1a = factory.createMulticastFace(interfaceIp,
-                                                                            "224.0.0.1",
-                                                                            "20072");
+  auto multicastFace1  = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
+  auto multicastFace1a = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
-
+  BOOST_CHECK_EQUAL(multicastFace1->isLocal(), false);
+  BOOST_CHECK_EQUAL(multicastFace1->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(multicastFace1->isMultiAccess(), true);
 
   //same endpoint of a multicast face
   BOOST_CHECK_EXCEPTION(factory.createChannel(interfaceIp, "20072"),
-                        UdpFactory::Error,
-                        isTheSameMulticastEndpoint);
+                        UdpFactory::Error, isTheSameMulticastEndpoint);
 
   //same multicast endpoint, different group
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp,
-                                                    "224.0.0.42",
-                                                    "20072"),
-                        UdpFactory::Error,
-                        isLocalEndpointOnDifferentGroup);
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "224.0.0.42", "20072"),
+                        UdpFactory::Error, isLocalEndpointOnDifferentGroup);
 
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp,
-                                                    "192.168.10.15",
-                                                    "20025"),
-                        UdpFactory::Error,
-                        isNotMulticastAddress);
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "192.168.10.15", "20025"),
+                        UdpFactory::Error, isNotMulticastAddress);
 
 
 //  //Test commented because it required to be run in a machine that can resolve ipv6 query
@@ -581,6 +568,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
   limitedIo.run(1, time::milliseconds(100)); // 1 create (on channel2)
   BOOST_REQUIRE(face2 != nullptr);
   BOOST_CHECK_EQUAL(face2->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(face2->isMultiAccess(), false);
 
   // face2 sends to channel1, creates face1
   shared_ptr<Interest> interest2 = makeInterest("/I2");
@@ -590,6 +578,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
   BOOST_REQUIRE(face1 != nullptr);
   BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
+  BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
 
   limitedIo.defer(time::seconds(1));
   BOOST_CHECK_EQUAL(history1->failures.size(), 0); // face1 is not idle

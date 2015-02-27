@@ -29,12 +29,13 @@
 
 namespace nfd {
 
-Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
+Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal, bool isMultiAccess)
   : m_id(INVALID_FACEID)
-  , m_isLocal(isLocal)
   , m_remoteUri(remoteUri)
   , m_localUri(localUri)
+  , m_isLocal(isLocal)
   , m_isOnDemand(false)
+  , m_isMultiAccess(isMultiAccess)
   , m_isFailed(false)
 {
   onReceiveInterest.connect([this] (const ndn::Interest&) { ++m_counters.getNInInterests(); });
@@ -45,37 +46,6 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal)
 
 Face::~Face()
 {
-}
-
-FaceId
-Face::getId() const
-{
-  return m_id;
-}
-
-// this method is private and should be used only by the FaceTable
-void
-Face::setId(FaceId faceId)
-{
-  m_id = faceId;
-}
-
-void
-Face::setDescription(const std::string& description)
-{
-  m_description = description;
-}
-
-const std::string&
-Face::getDescription() const
-{
-  return m_description;
-}
-
-bool
-Face::isMultiAccess() const
-{
-  return false;
 }
 
 bool

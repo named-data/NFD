@@ -35,13 +35,10 @@ MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::
                                    const shared_ptr<MulticastUdpFace::protocol::socket>& sendSocket,
                                    const MulticastUdpFace::protocol::endpoint& localEndpoint,
                                    const MulticastUdpFace::protocol::endpoint& multicastEndpoint)
-  : DatagramFace<protocol, Multicast>(FaceUri(multicastEndpoint),
-                                      FaceUri(localEndpoint),
-                                      recvSocket, false)
+  : DatagramFace(FaceUri(multicastEndpoint), FaceUri(localEndpoint), recvSocket)
   , m_multicastGroup(multicastEndpoint)
   , m_sendSocket(sendSocket)
 {
-  NFD_LOG_FACE_INFO("Creating face");
 }
 
 const MulticastUdpFace::protocol::endpoint&
@@ -78,12 +75,6 @@ MulticastUdpFace::sendData(const Data& data)
   this->emitSignal(onSendData, data);
 
   sendBlock(data.wireEncode());
-}
-
-bool
-MulticastUdpFace::isMultiAccess() const
-{
-  return true;
 }
 
 } // namespace nfd

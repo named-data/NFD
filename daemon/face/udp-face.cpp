@@ -38,14 +38,13 @@ namespace nfd {
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
 
 UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
-                 bool isOnDemand,
-                 const time::seconds& idleTimeout)
-  : DatagramFace<protocol>(FaceUri(socket->remote_endpoint()),
-                           FaceUri(socket->local_endpoint()),
-                           socket, isOnDemand)
+                 bool isOnDemand, const time::seconds& idleTimeout)
+  : DatagramFace(FaceUri(socket->remote_endpoint()), FaceUri(socket->local_endpoint()), socket)
   , m_idleTimeout(idleTimeout)
   , m_lastIdleCheck(time::steady_clock::now())
 {
+  this->setOnDemand(isOnDemand);
+
 #ifdef __linux__
   //
   // By default, Linux does path MTU discovery on IPv4 sockets,
@@ -67,7 +66,7 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
     }
 #endif
 
-  if (isOnDemand && m_idleTimeout > time::seconds::zero()) {
+  if (this->isOnDemand() && m_idleTimeout > time::seconds::zero()) {
     m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout,
                                              bind(&UdpFace::closeIfIdle, this));
   }

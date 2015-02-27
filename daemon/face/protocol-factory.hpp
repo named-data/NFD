@@ -26,11 +26,12 @@
 #ifndef NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
-#include "face.hpp"
+#include "common.hpp"
 
 namespace nfd {
 
 class Channel;
+class Face;
 
 /**
  * \brief Prototype for the callback called when face is created
@@ -69,9 +70,8 @@ public:
              const FaceCreatedCallback& onCreated,
              const FaceConnectFailedCallback& onConnectFailed) = 0;
 
-  virtual std::list<shared_ptr<const Channel> >
+  virtual std::list<shared_ptr<const Channel>>
   getChannels() const = 0;
-
 };
 
 } // namespace nfd
