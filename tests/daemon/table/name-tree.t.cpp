@@ -275,7 +275,7 @@ public:
   void
   end()
   {
-    BOOST_CHECK_MESSAGE(m_names.empty(), "excess Names including " << *m_names.begin());
+    BOOST_CHECK(m_names.empty());
   }
 
 private:
