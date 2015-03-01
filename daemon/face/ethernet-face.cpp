@@ -381,8 +381,9 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
   length -= ethernet::HDR_LEN;
 
   /// \todo Reserve space in front and at the back of the underlying buffer
+  bool isOk = false;
   Block fragment;
-  bool isOk = Block::fromBuffer(packet, length, fragment);
+  std::tie(isOk, fragment) = Block::fromBuffer(packet, length);
   if (!isOk)
     {
       NFD_LOG_FACE_WARN("Block received from " << sourceAddress.toString()

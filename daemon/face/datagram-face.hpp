@@ -215,8 +215,9 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
   this->getMutableCounters().getNInBytes() += nBytesReceived;
 
+  bool isOk = false;
   Block element;
-  bool isOk = Block::fromBuffer(buffer, nBytesReceived, element);
+  std::tie(isOk, element) = Block::fromBuffer(buffer, nBytesReceived);
   if (!isOk)
     {
       NFD_LOG_FACE_WARN("Failed to parse incoming packet");

@@ -63,13 +63,13 @@ MulticastDiscovery::registerHubDiscoveryPrefix(const ConstBufferPtr& buffer)
 
   size_t offset = 0;
   while (offset < buffer->size()) {
+    bool isOk = false;
     Block block;
-    bool ok = Block::fromBuffer(buffer, offset, block);
-    if (!ok)
-      {
-        std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-        break;
-      }
+    std::tie(isOk, block) = Block::fromBuffer(buffer, offset);
+    if (!isOk) {
+      std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+      break;
+    }
 
     offset += block.size();
 

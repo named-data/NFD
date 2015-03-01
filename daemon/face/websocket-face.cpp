@@ -115,9 +115,10 @@ WebSocketFace::handleReceive(const std::string& msg)
   this->getMutableCounters().getNInBytes() += msg.size();
 
   // Try to parse message data
+  bool isOk = false;
   Block element;
-  bool isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()),
-                                msg.size(), element);
+  std::tie(isOk, element) = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()),
+                                              msg.size());
   if (!isOk)
     {
       NFD_LOG_FACE_WARN("Received block is invalid or too large to process");

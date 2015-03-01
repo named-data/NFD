@@ -853,19 +853,19 @@ RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
   size_t offset = 0;
   FaceIdSet activeFaces;
 
-  while (offset < buf->size())
-    {
-      if (!Block::fromBuffer(buf, offset, block))
-        {
-          std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-          break;
-        }
-
-      offset += block.size();
-
-      ndn::nfd::FaceStatus status(block);
-      activeFaces.insert(status.getFaceId());
+  while (offset < buf->size()) {
+    bool isOk = false;
+    std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+    if (!isOk) {
+      std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+      break;
     }
+
+    offset += block.size();
+
+    ndn::nfd::FaceStatus status(block);
+    activeFaces.insert(status.getFaceId());
+  }
 
   // Look for face IDs that were registered but not active to find missed
   // face destroyed events

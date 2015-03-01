@@ -144,11 +144,11 @@ public:
   client1_onMessage(websocketpp::connection_hdl hdl,
                     websocketpp::config::asio_client::message_type::ptr msg)
   {
-    bool isOk = true;
+    bool isOk = false;
     Block element;
     const std::string& payload = msg->get_payload();
-    isOk = Block::fromBuffer(reinterpret_cast<const uint8_t*>(payload.c_str()),
-                             payload.size(), element);
+    std::tie(isOk, element) = Block::fromBuffer(reinterpret_cast<const uint8_t*>(payload.c_str()),
+                                                payload.size());
     if (isOk)
       {
         try {

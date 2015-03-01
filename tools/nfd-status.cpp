@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -287,55 +287,51 @@ public:
   afterFetchedChannelStatusInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_isOutputXml)
-      {
-        std::cout << "<channels>";
+    if (m_isOutputXml) {
+      std::cout << "<channels>";
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
-                break;
-              }
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
+          break;
+        }
 
-            offset += block.size();
+        offset += block.size();
 
-            nfd::ChannelStatus channelStatus(block);
+        nfd::ChannelStatus channelStatus(block);
 
-            std::cout << "<channel>";
-
-            std::string localUri(channelStatus.getLocalUri());
-            escapeSpecialCharacters(&localUri);
-            std::cout << "<localUri>" << localUri << "</localUri>";
-            std::cout << "</channel>";
-          }
-        std::cout << "</channels>";
+        std::cout << "<channel>";
+        std::string localUri(channelStatus.getLocalUri());
+        escapeSpecialCharacters(&localUri);
+        std::cout << "<localUri>" << localUri << "</localUri>";
+        std::cout << "</channel>";
       }
-    else
-      {
-        std::cout << "Channels:" << std::endl;
 
+      std::cout << "</channels>";
+    }
+    else {
+      std::cout << "Channels:" << std::endl;
+
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
-                break;
-              }
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
+          break;
+        }
 
-            offset += block.size();
+        offset += block.size();
 
-            nfd::ChannelStatus channelStatus(block);
-            std::cout << "  " << channelStatus.getLocalUri() << std::endl;
-          }
-       }
+        nfd::ChannelStatus channelStatus(block);
+        std::cout << "  " << channelStatus.getLocalUri() << std::endl;
+      }
+    }
 
     runNextStep();
   }
@@ -362,117 +358,113 @@ public:
   afterFetchedFaceStatusInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_isOutputXml)
-      {
-        std::cout << "<faces>";
+    if (m_isOutputXml) {
+      std::cout << "<faces>";
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-                break;
-              }
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+          break;
+        }
 
-            offset += block.size();
+        offset += block.size();
 
-            nfd::FaceStatus faceStatus(block);
+        nfd::FaceStatus faceStatus(block);
 
-            std::cout << "<face>";
-            std::cout << "<faceId>" << faceStatus.getFaceId() << "</faceId>";
+        std::cout << "<face>";
+        std::cout << "<faceId>" << faceStatus.getFaceId() << "</faceId>";
 
-            std::string remoteUri(faceStatus.getRemoteUri());
-            escapeSpecialCharacters(&remoteUri);
-            std::cout << "<remoteUri>" << remoteUri << "</remoteUri>";
+        std::string remoteUri(faceStatus.getRemoteUri());
+        escapeSpecialCharacters(&remoteUri);
+        std::cout << "<remoteUri>" << remoteUri << "</remoteUri>";
 
-            std::string localUri(faceStatus.getLocalUri());
-            escapeSpecialCharacters(&localUri);
-            std::cout << "<localUri>" << localUri << "</localUri>";
+        std::string localUri(faceStatus.getLocalUri());
+        escapeSpecialCharacters(&localUri);
+        std::cout << "<localUri>" << localUri << "</localUri>";
 
-            if (faceStatus.hasExpirationPeriod()) {
-              std::cout << "<expirationPeriod>PT"
-                        << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
-                             .count() << "S"
-                        << "</expirationPeriod>";
-            }
+        if (faceStatus.hasExpirationPeriod()) {
+          std::cout << "<expirationPeriod>PT"
+                    << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
+                       .count() << "S"
+                    << "</expirationPeriod>";
+        }
 
-            std::cout << "<faceScope>" << faceStatus.getFaceScope()
-                      << "</faceScope>";
-            std::cout << "<facePersistency>" << faceStatus.getFacePersistency()
-                      << "</facePersistency>";
-            std::cout << "<linkType>" << faceStatus.getLinkType()
-                      << "</linkType>";
+        std::cout << "<faceScope>" << faceStatus.getFaceScope()
+                  << "</faceScope>";
+        std::cout << "<facePersistency>" << faceStatus.getFacePersistency()
+                  << "</facePersistency>";
+        std::cout << "<linkType>" << faceStatus.getLinkType()
+                  << "</linkType>";
 
-            std::cout << "<packetCounters>";
-            std::cout << "<incomingPackets>";
-            std::cout << "<nInterests>"       << faceStatus.getNInInterests()
-                      << "</nInterests>";
-            std::cout << "<nDatas>"           << faceStatus.getNInDatas()
-                      << "</nDatas>";
-            std::cout << "</incomingPackets>";
-            std::cout << "<outgoingPackets>";
-            std::cout << "<nInterests>"       << faceStatus.getNOutInterests()
-                      << "</nInterests>";
-            std::cout << "<nDatas>"           << faceStatus.getNOutDatas()
-                      << "</nDatas>";
-            std::cout << "</outgoingPackets>";
-            std::cout << "</packetCounters>";
+        std::cout << "<packetCounters>";
+        std::cout << "<incomingPackets>";
+        std::cout << "<nInterests>"       << faceStatus.getNInInterests()
+                  << "</nInterests>";
+        std::cout << "<nDatas>"           << faceStatus.getNInDatas()
+                  << "</nDatas>";
+        std::cout << "</incomingPackets>";
+        std::cout << "<outgoingPackets>";
+        std::cout << "<nInterests>"       << faceStatus.getNOutInterests()
+                  << "</nInterests>";
+        std::cout << "<nDatas>"           << faceStatus.getNOutDatas()
+                  << "</nDatas>";
+        std::cout << "</outgoingPackets>";
+        std::cout << "</packetCounters>";
 
-            std::cout << "<byteCounters>";
-            std::cout << "<incomingBytes>"    << faceStatus.getNInBytes()
-                      << "</incomingBytes>";
-            std::cout << "<outgoingBytes>"    << faceStatus.getNOutBytes()
-                      << "</outgoingBytes>";
-            std::cout << "</byteCounters>";
+        std::cout << "<byteCounters>";
+        std::cout << "<incomingBytes>"    << faceStatus.getNInBytes()
+                  << "</incomingBytes>";
+        std::cout << "<outgoingBytes>"    << faceStatus.getNOutBytes()
+                  << "</outgoingBytes>";
+        std::cout << "</byteCounters>";
 
-            std::cout << "</face>";
-          }
-        std::cout << "</faces>";
+        std::cout << "</face>";
       }
-    else
-      {
-        std::cout << "Faces:" << std::endl;
+      std::cout << "</faces>";
+    }
+    else {
+      std::cout << "Faces:" << std::endl;
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-                break;
-              }
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+          break;
+        }
 
-            offset += block.size();
+        offset += block.size();
 
-            nfd::FaceStatus faceStatus(block);
+        nfd::FaceStatus faceStatus(block);
 
-            std::cout << "  faceid=" << faceStatus.getFaceId()
-                      << " remote=" << faceStatus.getRemoteUri()
-                      << " local=" << faceStatus.getLocalUri();
-            if (faceStatus.hasExpirationPeriod()) {
-              std::cout  << " expires="
-                         << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
-                              .count() << "s";
-            }
-            std::cout << " counters={"
-                      << "in={" << faceStatus.getNInInterests() << "i "
-                      << faceStatus.getNInDatas() << "d "
-                      << faceStatus.getNInBytes() << "B}"
-                      << " out={" << faceStatus.getNOutInterests() << "i "
-                      << faceStatus.getNOutDatas() << "d "
-                      << faceStatus.getNOutBytes() << "B}"
-                      << "}";
-            std::cout << " " << faceStatus.getFaceScope()
-                      << " " << faceStatus.getFacePersistency()
-                      << " " << faceStatus.getLinkType();
-            std::cout << std::endl;
-          }
-       }
+        std::cout << "  faceid=" << faceStatus.getFaceId()
+                  << " remote=" << faceStatus.getRemoteUri()
+                  << " local=" << faceStatus.getLocalUri();
+        if (faceStatus.hasExpirationPeriod()) {
+          std::cout  << " expires="
+                     << time::duration_cast<time::seconds>(faceStatus.getExpirationPeriod())
+                        .count() << "s";
+        }
+        std::cout << " counters={"
+                  << "in={" << faceStatus.getNInInterests() << "i "
+                  << faceStatus.getNInDatas() << "d "
+                  << faceStatus.getNInBytes() << "B}"
+                  << " out={" << faceStatus.getNOutInterests() << "i "
+                  << faceStatus.getNOutDatas() << "d "
+                  << faceStatus.getNOutBytes() << "B}"
+                  << "}";
+        std::cout << " " << faceStatus.getFaceScope()
+                  << " " << faceStatus.getFacePersistency()
+                  << " " << faceStatus.getLinkType();
+        std::cout << std::endl;
+      }
+    }
 
     runNextStep();
   }
@@ -498,77 +490,69 @@ public:
   afterFetchedFibEnumerationInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_isOutputXml)
-      {
-        std::cout << "<fib>";
+    if (m_isOutputXml) {
+      std::cout << "<fib>";
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode FibEntry TLV";
-                break;
-              }
-            offset += block.size();
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode FibEntry TLV";
+          break;
+        }
+        offset += block.size();
 
-            nfd::FibEntry fibEntry(block);
+        nfd::FibEntry fibEntry(block);
 
-            std::cout << "<fibEntry>";
-            std::string prefix(fibEntry.getPrefix().toUri());
-            escapeSpecialCharacters(&prefix);
-            std::cout << "<prefix>" << prefix << "</prefix>";
-            std::cout << "<nextHops>";
-            for (std::list<nfd::NextHopRecord>::const_iterator
-                   nextHop = fibEntry.getNextHopRecords().begin();
-                 nextHop != fibEntry.getNextHopRecords().end();
-                 ++nextHop)
-              {
-                std::cout << "<nextHop>" ;
-                std::cout << "<faceId>"  << nextHop->getFaceId() << "</faceId>";
-                std::cout << "<cost>"    << nextHop->getCost()   << "</cost>";
-                std::cout << "</nextHop>";
-              }
-            std::cout << "</nextHops>";
-            std::cout << "</fibEntry>";
-          }
-
-        std::cout << "</fib>";
+        std::cout << "<fibEntry>";
+        std::string prefix(fibEntry.getPrefix().toUri());
+        escapeSpecialCharacters(&prefix);
+        std::cout << "<prefix>" << prefix << "</prefix>";
+        std::cout << "<nextHops>";
+        for (const nfd::NextHopRecord& nextHop : fibEntry.getNextHopRecords()) {
+          std::cout << "<nextHop>" ;
+          std::cout << "<faceId>"  << nextHop.getFaceId() << "</faceId>";
+          std::cout << "<cost>"    << nextHop.getCost()   << "</cost>";
+          std::cout << "</nextHop>";
+        }
+        std::cout << "</nextHops>";
+        std::cout << "</fibEntry>";
       }
-    else
-      {
-        std::cout << "FIB:" << std::endl;
 
+      std::cout << "</fib>";
+    }
+    else {
+      std::cout << "FIB:" << std::endl;
+
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
-                break;
-              }
-            offset += block.size();
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
+          break;
+        }
+        offset += block.size();
 
-            nfd::FibEntry fibEntry(block);
+        nfd::FibEntry fibEntry(block);
 
-            std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
-            for (std::list<nfd::NextHopRecord>::const_iterator
-                   nextHop = fibEntry.getNextHopRecords().begin();
-                 nextHop != fibEntry.getNextHopRecords().end();
-                 ++nextHop)
-              {
-                if (nextHop != fibEntry.getNextHopRecords().begin())
-                  std::cout << ", ";
-                std::cout << "faceid=" << nextHop->getFaceId()
-                          << " (cost=" << nextHop->getCost() << ")";
-              }
-            std::cout << "}" << std::endl;
-          }
+        std::cout << "  " << fibEntry.getPrefix() << " nexthops={";
+        bool isFirst = true;
+        for (const nfd::NextHopRecord& nextHop : fibEntry.getNextHopRecords()) {
+          if (isFirst)
+            isFirst = false;
+          else
+            std::cout << ", ";
+
+          std::cout << "faceid=" << nextHop.getFaceId()
+                    << " (cost=" << nextHop.getCost() << ")";
+        }
+        std::cout << "}" << std::endl;
       }
+    }
 
     runNextStep();
   }
@@ -594,63 +578,59 @@ public:
   afterFetchedStrategyChoiceInformationInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_isOutputXml)
-      {
-        std::cout << "<strategyChoices>";
+    if (m_isOutputXml) {
+      std::cout << "<strategyChoices>";
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode StrategyChoice TLV";
-                break;
-              }
-            offset += block.size();
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode StrategyChoice TLV";
+          break;
+        }
+        offset += block.size();
 
-            nfd::StrategyChoice strategyChoice(block);
+        nfd::StrategyChoice strategyChoice(block);
 
-            std::cout << "<strategyChoice>";
+        std::cout << "<strategyChoice>";
 
-            std::string name(strategyChoice.getName().toUri());
-            escapeSpecialCharacters(&name);
-            std::cout << "<namespace>" << name << "</namespace>";
-            std::cout << "<strategy>";
+        std::string name(strategyChoice.getName().toUri());
+        escapeSpecialCharacters(&name);
+        std::cout << "<namespace>" << name << "</namespace>";
+        std::cout << "<strategy>";
 
-            std::string strategy(strategyChoice.getStrategy().toUri());
-            escapeSpecialCharacters(&strategy);
+        std::string strategy(strategyChoice.getStrategy().toUri());
+        escapeSpecialCharacters(&strategy);
 
-            std::cout << "<name>" << strategy << "</name>";
-            std::cout << "</strategy>";
-            std::cout << "</strategyChoice>";
-          }
-
-        std::cout << "</strategyChoices>";
+        std::cout << "<name>" << strategy << "</name>";
+        std::cout << "</strategy>";
+        std::cout << "</strategyChoice>";
       }
-    else
-      {
-        std::cout << "Strategy choices:" << std::endl;
 
+      std::cout << "</strategyChoices>";
+    }
+    else {
+      std::cout << "Strategy choices:" << std::endl;
+
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode StrategyChoice TLV" << std::endl;
-                break;
-              }
-            offset += block.size();
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode StrategyChoice TLV" << std::endl;
+          break;
+        }
+        offset += block.size();
 
-            nfd::StrategyChoice strategyChoice(block);
+        nfd::StrategyChoice strategyChoice(block);
 
-            std::cout << "  " << strategyChoice.getName()
-                      << " strategy=" << strategyChoice.getStrategy() << std::endl;
-          }
+        std::cout << "  " << strategyChoice.getName()
+                  << " strategy=" << strategyChoice.getStrategy() << std::endl;
       }
+    }
 
     runNextStep();
   }
@@ -674,106 +654,98 @@ public:
   afterFetchedRibStatusInformation()
   {
     ConstBufferPtr buf = m_buffer->buf();
-    if (m_isOutputXml)
-      {
-        std::cout << "<rib>";
+    if (m_isOutputXml) {
+      std::cout << "<rib>";
 
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode RibEntry TLV";
-                break;
-              }
-            offset += block.size();
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode RibEntry TLV";
+          break;
+        }
+        offset += block.size();
 
-            nfd::RibEntry ribEntry(block);
+        nfd::RibEntry ribEntry(block);
 
-            std::cout << "<ribEntry>";
-            std::string prefix(ribEntry.getName().toUri());
-            escapeSpecialCharacters(&prefix);
-            std::cout << "<prefix>" << prefix << "</prefix>";
-            std::cout << "<routes>";
-            for (std::list<nfd::Route>::const_iterator
-                   nextRoute = ribEntry.begin();
-                 nextRoute != ribEntry.end();
-                 ++nextRoute)
-              {
-                std::cout << "<route>" ;
-                std::cout << "<faceId>"  << nextRoute->getFaceId() << "</faceId>";
-                std::cout << "<origin>"  << nextRoute->getOrigin() << "</origin>";
-                std::cout << "<cost>"    << nextRoute->getCost()   << "</cost>";
+        std::cout << "<ribEntry>";
+        std::string prefix(ribEntry.getName().toUri());
+        escapeSpecialCharacters(&prefix);
+        std::cout << "<prefix>" << prefix << "</prefix>";
+        std::cout << "<routes>";
+        for (const nfd::Route& nextRoute : ribEntry) {
+          std::cout << "<route>" ;
+          std::cout << "<faceId>"  << nextRoute.getFaceId() << "</faceId>";
+          std::cout << "<origin>"  << nextRoute.getOrigin() << "</origin>";
+          std::cout << "<cost>"    << nextRoute.getCost()   << "</cost>";
 
-                std::cout << "<flags>";
-                if (nextRoute->isChildInherit())
-                  std::cout << "<childInherit/>";
-                if (nextRoute->isRibCapture())
-                  std::cout << "<ribCapture/>";
-                std::cout << "</flags>";
+          std::cout << "<flags>";
+          if (nextRoute.isChildInherit())
+            std::cout << "<childInherit/>";
+          if (nextRoute.isRibCapture())
+            std::cout << "<ribCapture/>";
+          std::cout << "</flags>";
 
-                if (!nextRoute->hasInfiniteExpirationPeriod()) {
-                  std::cout << "<expirationPeriod>PT"
-                            << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
-                                 .count() << "S"
-                            << "</expirationPeriod>";
-                }
-                std::cout << "</route>";
-              }
-            std::cout << "</routes>";
-            std::cout << "</ribEntry>";
+          if (!nextRoute.hasInfiniteExpirationPeriod()) {
+            std::cout << "<expirationPeriod>PT"
+                      << time::duration_cast<time::seconds>(nextRoute.getExpirationPeriod())
+                         .count() << "S"
+                      << "</expirationPeriod>";
           }
-
-        std::cout << "</rib>";
+          std::cout << "</route>";
+        }
+        std::cout << "</routes>";
+        std::cout << "</ribEntry>";
       }
-    else
-      {
-        std::cout << "RIB:" << std::endl;
 
+      std::cout << "</rib>";
+    }
+    else {
+      std::cout << "RIB:" << std::endl;
+
+      size_t offset = 0;
+      while (offset < buf->size()) {
+        bool isOk = false;
         Block block;
-        size_t offset = 0;
-        while (offset < buf->size())
-          {
-            bool ok = Block::fromBuffer(buf, offset, block);
-            if (!ok)
-              {
-                std::cerr << "ERROR: cannot decode RibEntry TLV" << std::endl;
-                break;
-              }
+        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        if (!isOk) {
+          std::cerr << "ERROR: cannot decode RibEntry TLV" << std::endl;
+          break;
+        }
 
-            offset += block.size();
+        offset += block.size();
 
-            nfd::RibEntry ribEntry(block);
+        nfd::RibEntry ribEntry(block);
 
-            std::cout << "  " << ribEntry.getName().toUri() << " route={";
-            for (std::list<nfd::Route>::const_iterator
-                   nextRoute = ribEntry.begin();
-                 nextRoute != ribEntry.end();
-                 ++nextRoute)
-              {
-                if (nextRoute != ribEntry.begin())
-                  std::cout << ", ";
-                std::cout << "faceid="   << nextRoute->getFaceId()
-                          << " (origin="  << nextRoute->getOrigin()
-                          << " cost="    << nextRoute->getCost();
-                if (!nextRoute->hasInfiniteExpirationPeriod()) {
-                  std::cout << " expires="
-                            << time::duration_cast<time::seconds>(nextRoute->getExpirationPeriod())
-                               .count() << "s";
-                }
+        std::cout << "  " << ribEntry.getName().toUri() << " route={";
+        bool isFirst = true;
+        for (const nfd::Route& nextRoute : ribEntry) {
+          if (isFirst)
+            isFirst = false;
+          else
+            std::cout << ", ";
 
-                if (nextRoute->isChildInherit())
-                  std::cout << " ChildInherit";
-                if (nextRoute->isRibCapture())
-                  std::cout << " RibCapture";
-
-                std::cout << ")";
-              }
-            std::cout << "}" << std::endl;
+          std::cout << "faceid="   << nextRoute.getFaceId()
+                    << " (origin="  << nextRoute.getOrigin()
+                    << " cost="    << nextRoute.getCost();
+          if (!nextRoute.hasInfiniteExpirationPeriod()) {
+            std::cout << " expires="
+                      << time::duration_cast<time::seconds>(nextRoute.getExpirationPeriod())
+                         .count() << "s";
           }
-       }
+
+          if (nextRoute.isChildInherit())
+            std::cout << " ChildInherit";
+          if (nextRoute.isRibCapture())
+            std::cout << " RibCapture";
+
+          std::cout << ")";
+        }
+        std::cout << "}" << std::endl;
+      }
+    }
 
     runNextStep();
   }

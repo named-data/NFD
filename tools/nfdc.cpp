@@ -178,10 +178,11 @@ Nfdc::FaceIdFetcher::onQuerySuccess(const ndn::ConstBufferPtr& data,
                                     const ndn::util::FaceUri& canonicalUri)
 {
   size_t offset = 0;
+  bool isOk = false;
   ndn::Block block;
-  bool ok = ndn::Block::fromBuffer(data, offset, block);
+  std::tie(isOk, block) = ndn::Block::fromBuffer(data, offset);
 
-  if (!ok) {
+  if (!isOk) {
     if (m_allowCreate) {
       startFaceCreate(canonicalUri);
     }

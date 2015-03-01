@@ -284,22 +284,21 @@ public:
     std::vector<uint64_t> multicastFaces;
 
     size_t offset = 0;
-    while (offset < buf->size())
-      {
-        Block block;
-        bool ok = Block::fromBuffer(buf, offset, block);
-        if (!ok)
-          {
-            std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-            break;
-          }
-
-        offset += block.size();
-
-        nfd::FaceStatus faceStatus(block);
-        registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
-                                 faceStatus.getFacePersistency());
+    while (offset < buf->size()) {
+      bool isOk = false;
+      Block block;
+      std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+      if (!isOk) {
+        std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
+        break;
       }
+
+      offset += block.size();
+
+      nfd::FaceStatus faceStatus(block);
+      registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
+                               faceStatus.getFacePersistency());
+    }
   }
 
   int

@@ -268,22 +268,21 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
 
   bool isOk = true;
   Block element;
-  while (m_inputBufferSize - offset > 0)
-    {
-      isOk = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset, element);
-      if (!isOk)
-        break;
+  while (m_inputBufferSize - offset > 0) {
+    std::tie(isOk, element) = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset);
+    if (!isOk)
+      break;
 
-      offset += element.size();
+    offset += element.size();
 
-      BOOST_ASSERT(offset <= m_inputBufferSize);
+    BOOST_ASSERT(offset <= m_inputBufferSize);
 
-      if (!this->decodeAndDispatchInput(element))
-        {
-          NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << element.type());
-          // ignore unknown packet and proceed
-        }
+    if (!this->decodeAndDispatchInput(element)) {
+      NFD_LOG_FACE_WARN("Received unrecognized TLV block of type " << element.type());
+      // ignore unknown packet and proceed
     }
+  }
+
   if (!isOk && m_inputBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0)
     {
       NFD_LOG_FACE_WARN("Failed to parse incoming packet or packet too large to process");
