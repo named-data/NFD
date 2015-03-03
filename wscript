@@ -23,7 +23,7 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 APPNAME = "nfd"
 BUGREPORT = "http://redmine.named-data.net/projects/nfd"
 URL = "http://named-data.net/doc/NFD/"
