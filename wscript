@@ -1,12 +1,13 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014  Regents of the University of California,
-                    Arizona Board of Regents,
-                    Colorado State University,
-                    University Pierre & Marie Curie, Sorbonne University,
-                    Washington University in St. Louis,
-                    Beijing Institute of Technology
+Copyright (c) 2014-2015,  Regents of the University of California,
+                          Arizona Board of Regents,
+                          Colorado State University,
+                          University Pierre & Marie Curie, Sorbonne University,
+                          Washington University in St. Louis,
+                          Beijing Institute of Technology,
+                          The University of Memphis.
 
 This file is part of NFD (Named Data Networking Forwarding Daemon).
 See AUTHORS.md for complete list of NFD authors and contributors.
@@ -68,7 +69,7 @@ def configure(conf):
 
     conf.find_program('bash', var='BASH')
 
-    if not os.environ.has_key('PKG_CONFIG_PATH'):
+    if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = ':'.join([
             '/usr/local/lib/pkgconfig',
             '/opt/local/lib/pkgconfig'])
