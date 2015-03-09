@@ -27,8 +27,6 @@
 #define NFD_DAEMON_FACE_UDP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "core/global-io.hpp"
-#include "udp-face.hpp"
 
 namespace nfd {
 
@@ -36,10 +34,10 @@ namespace udp {
 typedef boost::asio::ip::udp::endpoint Endpoint;
 } // namespace udp
 
+class UdpFace;
+
 /**
  * \brief Class implementing UDP-based channel to create faces
- *
- *
  */
 class UdpChannel : public Channel
 {
@@ -79,7 +77,7 @@ public:
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
-         const ConnectFailedCallback& onAcceptFailed);
+         const ConnectFailedCallback& onReceiveFailed);
 
   /**
    * \brief Create a face by establishing connection to remote endpoint
@@ -97,22 +95,28 @@ public:
   size_t
   size() const;
 
+  bool
+  isListening() const;
+
 private:
   shared_ptr<UdpFace>
   createFace(const shared_ptr<boost::asio::ip::udp::socket>& socket,
              const FaceCreatedCallback& onFaceCreated,
              bool isOnDemand);
-  void
-  afterFaceFailed(udp::Endpoint& endpoint);
 
   /**
-   * \brief The UdpChannel has received a new pkt from a remote endpoint not yet
-   *        associated with any UdpFace
+   * \brief The channel has received a new packet from a remote
+   *        endpoint that is not associated with any UdpFace yet
    */
   void
-  newPeer(const boost::system::error_code& error, size_t nBytesReceived);
+  handleNewPeer(const boost::system::error_code& error,
+                size_t nBytesReceived,
+                const FaceCreatedCallback& onFaceCreated,
+                const ConnectFailedCallback& onReceiveFailed);
 
 private:
+  std::map<udp::Endpoint, shared_ptr<UdpFace>> m_channelFaces;
+
   udp::Endpoint m_localEndpoint;
 
   /**
@@ -121,24 +125,11 @@ private:
   udp::Endpoint m_newRemoteEndpoint;
 
   /**
-   * Callbacks for face creation.
-   * New communications are detected using async_receive_from.
-   * Its handler has a fixed signature. No space for the face callback
-   */
-  FaceCreatedCallback onFaceCreatedNewPeerCallback;
-
-  // @todo remove the onConnectFailedNewPeerCallback if it remains unused
-  ConnectFailedCallback onConnectFailedNewPeerCallback;
-
-  /**
    * \brief Socket used to "accept" new communication
    **/
   shared_ptr<boost::asio::ip::udp::socket> m_socket;
 
   uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
-
-  typedef std::map< udp::Endpoint, shared_ptr<UdpFace> > ChannelFaceMap;
-  ChannelFaceMap m_channelFaces;
 
   /**
    * \brief If true, it means the function listen has already been called
@@ -151,6 +142,12 @@ private:
    */
   time::seconds m_idleFaceTimeout;
 };
+
+inline bool
+UdpChannel::isListening() const
+{
+  return m_isListening;
+}
 
 } // namespace nfd
 

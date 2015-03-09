@@ -27,33 +27,16 @@
 #define NFD_DAEMON_FACE_WEBSOCKET_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "core/global-io.hpp"
-#include "core/scheduler.hpp"
 #include "websocket-face.hpp"
 
 namespace nfd {
 
 /**
  * \brief Class implementing WebSocket-based channel to create faces
- *
- *
  */
 class WebSocketChannel : public Channel
 {
 public:
-  /**
-   * \brief Exception of WebSocketChannel
-   */
-  class Error : public std::runtime_error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : runtime_error(what)
-    {
-    }
-  };
-
   /**
    * \brief Create WebSocket channel for the local endpoint
    *
@@ -65,9 +48,6 @@ public:
    */
   explicit
   WebSocketChannel(const websocket::Endpoint& localEndpoint);
-
-  virtual
-  ~WebSocketChannel();
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -88,11 +68,9 @@ public:
   bool
   isListening() const;
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
-  setPingInterval(time::milliseconds interval)
-  {
-    m_pingInterval = interval;
-  }
+  setPingInterval(time::milliseconds interval);
 
   void
   setPongTimeout(time::milliseconds timeout);
@@ -118,19 +96,15 @@ private:
 
 private:
   websocket::Endpoint m_localEndpoint;
-
   websocket::Server m_server;
 
+  std::map<websocketpp::connection_hdl, shared_ptr<WebSocketFace>,
+           std::owner_less<websocketpp::connection_hdl>> m_channelFaces;
+
   /**
-   * Callbacks for face creation.
-   * New communications are detected using async_receive_from.
-   * Its handler has a fixed signature. No space for the face callback
+   * Callback for face creation
    */
   FaceCreatedCallback m_onFaceCreatedCallback;
-
-  typedef std::map< websocketpp::connection_hdl, shared_ptr<WebSocketFace>,
-                    std::owner_less<websocketpp::connection_hdl> > ChannelFaceMap;
-  ChannelFaceMap m_channelFaces;
 
   /**
    * \brief If true, it means the function listen has already been called

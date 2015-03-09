@@ -23,6 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "face/unix-stream-channel.hpp"
+#include "face/unix-stream-face.hpp"
 #include "face/unix-stream-factory.hpp"
 
 #include "tests/test-common.hpp"

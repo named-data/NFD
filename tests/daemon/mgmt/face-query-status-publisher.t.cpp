@@ -28,8 +28,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("FaceQueryStatusPublisherTest");
-
 BOOST_FIXTURE_TEST_SUITE(MgmtFaceQueryStatusPublisher, FaceQueryStatusPublisherFixture)
 
 BOOST_AUTO_TEST_CASE(NoConditionFilter)

@@ -23,7 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "face/websocket-channel.hpp"
+#include "face/websocket-face.hpp"
 #include "face/websocket-factory.hpp"
+
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 

@@ -23,9 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "face/udp-channel.hpp"
+#include "face/udp-face.hpp"
 #include "face/udp-factory.hpp"
-#include "core/network-interface.hpp"
 
+#include "core/network-interface.hpp"
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 #include "face-history.hpp"

@@ -26,7 +26,6 @@
 #define NFD_DAEMON_FACE_UNIX_STREAM_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "unix-stream-face.hpp"
 
 namespace nfd {
 
@@ -60,8 +59,7 @@ public:
   explicit
   UnixStreamChannel(const unix_stream::Endpoint& endpoint);
 
-  virtual
-  ~UnixStreamChannel();
+  ~UnixStreamChannel() DECL_OVERRIDE;
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -77,18 +75,30 @@ public:
          const ConnectFailedCallback& onAcceptFailed,
          int backlog = boost::asio::local::stream_protocol::acceptor::max_connections);
 
-private:
-  void
-  handleSuccessfulAccept(const boost::system::error_code& error,
-                         const shared_ptr<boost::asio::local::stream_protocol::socket>& socket,
-                         const FaceCreatedCallback& onFaceCreated,
-                         const ConnectFailedCallback& onConnectFailed);
+  bool
+  isListening() const;
 
 private:
+  void
+  accept(const FaceCreatedCallback& onFaceCreated,
+         const ConnectFailedCallback& onAcceptFailed);
+
+  void
+  handleAccept(const boost::system::error_code& error,
+               const shared_ptr<boost::asio::local::stream_protocol::socket>& socket,
+               const FaceCreatedCallback& onFaceCreated,
+               const ConnectFailedCallback& onAcceptFailed);
+
+private:
+  boost::asio::local::stream_protocol::acceptor m_acceptor;
   unix_stream::Endpoint m_endpoint;
-  shared_ptr<boost::asio::local::stream_protocol::acceptor> m_acceptor;
-  bool m_isListening;
 };
+
+inline bool
+UnixStreamChannel::isListening() const
+{
+  return m_acceptor.is_open();
+}
 
 } // namespace nfd
 

@@ -23,15 +23,18 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "face/tcp-channel.hpp"
+#include "face/tcp-face.hpp"
 #include "face/tcp-factory.hpp"
-#include <ndn-cxx/util/dns.hpp>
-#include "core/network-interface.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
 
+#include "core/network-interface.hpp"
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 #include "dummy-stream-sender.hpp"
 #include "packet-datasets.hpp"
+
+#include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/dns.hpp>
 
 namespace nfd {
 namespace tests {
