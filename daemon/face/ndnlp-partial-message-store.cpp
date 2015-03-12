@@ -78,9 +78,7 @@ PartialMessage::reassemble()
   }
   BOOST_ASSERT(buf == buffer->end());
 
-  Block reassembled;
-  bool isBlockOk = Block::fromBuffer(buffer, 0, reassembled);
-  return std::make_tuple(isBlockOk, reassembled);
+  return Block::fromBuffer(buffer, 0);
 }
 
 std::tuple<bool, Block>
@@ -88,10 +86,12 @@ PartialMessage::reassembleSingle(const NdnlpData& fragment)
 {
   BOOST_ASSERT(fragment.fragCount == 1);
 
-  Block reassembled;
-  bool isBlockOk = Block::fromBuffer(fragment.payload.value(), fragment.payload.value_size(),
-                                     reassembled);
-  return std::make_tuple(isBlockOk, reassembled);
+  try {
+    return std::make_tuple(true, fragment.payload.blockFromValue());
+  }
+  catch (tlv::Error&) {
+    return std::make_tuple(false, Block());
+  }
 }
 
 PartialMessageStore::PartialMessageStore(const time::nanoseconds& idleDuration)
@@ -104,34 +104,33 @@ PartialMessageStore::receive(const NdnlpData& pkt)
 {
   bool isReassembled = false;
   Block reassembled;
+
   if (pkt.fragCount == 1) { // single fragment
     std::tie(isReassembled, reassembled) = PartialMessage::reassembleSingle(pkt);
-    if (!isReassembled) {
-      NFD_LOG_TRACE(pkt.seq << " reassemble error");
+  }
+  else {
+    uint64_t messageIdentifier = pkt.seq - pkt.fragIndex;
+    PartialMessage& pm = m_partialMessages[messageIdentifier];
+    this->scheduleCleanup(messageIdentifier, pm);
+
+    pm.add(pkt.fragIndex, pkt.fragCount, pkt.payload);
+
+    if (pm.isComplete()) {
+      std::tie(isReassembled, reassembled) = pm.reassemble();
+      m_partialMessages.erase(messageIdentifier);
+    }
+    else {
       return;
     }
+  }
 
-    NFD_LOG_TRACE(pkt.seq << " deliver");
-    this->onReceive(reassembled);
+  if (!isReassembled) {
+    NFD_LOG_TRACE(pkt.seq << " reassemble error");
     return;
   }
 
-  uint64_t messageIdentifier = pkt.seq - pkt.fragIndex;
-  PartialMessage& pm = m_partialMessages[messageIdentifier];
-  this->scheduleCleanup(messageIdentifier, pm);
-
-  pm.add(pkt.fragIndex, pkt.fragCount, pkt.payload);
-  if (pm.isComplete()) {
-    std::tie(isReassembled, reassembled) = pm.reassemble();
-    if (!isReassembled) {
-      NFD_LOG_TRACE(messageIdentifier << " reassemble error");
-      return;
-    }
-
-    NFD_LOG_TRACE(messageIdentifier << " deliver");
-    this->onReceive(reassembled);
-    m_partialMessages.erase(messageIdentifier);
-  }
+  NFD_LOG_TRACE(pkt.seq << " deliver");
+  this->onReceive(reassembled);
 }
 
 void
