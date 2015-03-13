@@ -33,10 +33,9 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 UnixStreamFace::protocol, LocalFace,
                                                 "UnixStreamFace");
 
-UnixStreamFace::UnixStreamFace(const shared_ptr<UnixStreamFace::protocol::socket>& socket)
-  : StreamFace<protocol, LocalFace>(FaceUri::fromFd(socket->native_handle()),
-                                    FaceUri(socket->local_endpoint()),
-                                    socket, true)
+UnixStreamFace::UnixStreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                               protocol::socket socket)
+  : StreamFace<protocol, LocalFace>(remoteUri, localUri, std::move(socket), true)
 {
   static_assert(
     std::is_same<std::remove_cv<protocol::socket::native_handle_type>::type, int>::value,

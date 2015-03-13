@@ -38,10 +38,9 @@ namespace nfd {
 class UdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
-  UdpFace(const shared_ptr<protocol::socket>& socket,
-          bool isOnDemand, const time::seconds& idleTimeout);
-
-  ~UdpFace() DECL_OVERRIDE;
+  UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
+          protocol::socket socket, bool isOnDemand,
+          const time::seconds& idleTimeout);
 
   ndn::nfd::FaceStatus
   getFaceStatus() const DECL_OVERRIDE;
@@ -53,7 +52,7 @@ private:
 private:
   const time::seconds m_idleTimeout;
   time::steady_clock::TimePoint m_lastIdleCheck;
-  scheduler::EventId m_closeIfIdleEvent;
+  scheduler::ScopedEventId m_closeIfIdleEvent;
 
   // friend because it needs to invoke protected Face::setOnDemand
   friend class UdpChannel;

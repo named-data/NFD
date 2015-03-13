@@ -32,18 +32,15 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
                                                 TcpLocalFace::protocol, LocalFace,
                                                 "TcpLocalFace");
 
-TcpFace::TcpFace(const shared_ptr<TcpFace::protocol::socket>& socket, bool isOnDemand)
-  : StreamFace<protocol>(FaceUri(socket->remote_endpoint()),
-                         FaceUri(socket->local_endpoint()),
-                         socket, isOnDemand)
+TcpFace::TcpFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                 protocol::socket socket, bool isOnDemand)
+  : StreamFace<protocol>(remoteUri, localUri, std::move(socket), isOnDemand)
 {
 }
 
-TcpLocalFace::TcpLocalFace(const shared_ptr<TcpLocalFace::protocol::socket>& socket,
-                           bool isOnDemand)
-  : StreamFace<protocol, LocalFace>(FaceUri(socket->remote_endpoint()),
-                                    FaceUri(socket->local_endpoint()),
-                                    socket, isOnDemand)
+TcpLocalFace::TcpLocalFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                           protocol::socket socket, bool isOnDemand)
+  : StreamFace<protocol, LocalFace>(remoteUri, localUri, std::move(socket), isOnDemand)
 {
 }
 

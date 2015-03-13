@@ -41,12 +41,8 @@ class StreamFace : public FaceBase
 public:
   typedef Protocol protocol;
 
-  /**
-   * \brief Create instance of StreamFace
-   */
   StreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
-             const shared_ptr<typename protocol::socket>& socket,
-             bool isOnDemand);
+             typename protocol::socket socket, bool isOnDemand);
 
   // from FaceBase
   void
@@ -80,7 +76,7 @@ protected:
   deferredClose(const shared_ptr<Face>& face);
 
 protected:
-  shared_ptr<typename protocol::socket> m_socket;
+  typename protocol::socket m_socket;
 
   NFD_LOG_INCLASS_DECLARE();
 
@@ -117,19 +113,20 @@ struct StreamFaceValidator
 template<class T, class FaceBase>
 inline
 StreamFace<T, FaceBase>::StreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                                    const shared_ptr<typename StreamFace::protocol::socket>& socket,
-                                    bool isOnDemand)
+                                    typename StreamFace::protocol::socket socket, bool isOnDemand)
   : FaceBase(remoteUri, localUri)
-  , m_socket(socket)
+  , m_socket(std::move(socket))
   , m_inputBufferSize(0)
 {
   NFD_LOG_FACE_INFO("Creating face");
 
   this->setOnDemand(isOnDemand);
-  StreamFaceValidator<T, FaceBase>::validateSocket(*socket);
+  StreamFaceValidator<T, FaceBase>::validateSocket(m_socket);
 
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
-                          bind(&StreamFace<T, FaceBase>::handleReceive, this, _1, _2));
+  m_socket.async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+                         bind(&StreamFace<T, FaceBase>::handleReceive, this,
+                              boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred));
 }
 
 
@@ -190,7 +187,7 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::close()
 {
-  if (!m_socket->is_open())
+  if (!m_socket.is_open())
     return;
 
   NFD_LOG_FACE_INFO("Closing face");
@@ -207,7 +204,7 @@ StreamFace<T, U>::processErrorCode(const boost::system::error_code& error)
       error == boost::asio::error::shut_down)             // after shutdown() is called
     return;
 
-  if (!m_socket->is_open())
+  if (!m_socket.is_open())
     {
       this->fail("Connection closed");
       return;
@@ -228,9 +225,10 @@ template<class T, class U>
 inline void
 StreamFace<T, U>::sendFromQueue()
 {
-  const Block& block = this->m_sendQueue.front();
-  boost::asio::async_write(*this->m_socket, boost::asio::buffer(block),
-                           bind(&StreamFace<T, U>::handleSend, this, _1, _2));
+  boost::asio::async_write(m_socket, boost::asio::buffer(m_sendQueue.front()),
+                           bind(&StreamFace<T, U>::handleSend, this,
+                                boost::asio::placeholders::error,
+                                boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -305,9 +303,11 @@ StreamFace<T, U>::handleReceive(const boost::system::error_code& error,
         }
     }
 
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer + m_inputBufferSize,
-                                              ndn::MAX_NDN_PACKET_SIZE - m_inputBufferSize), 0,
-                          bind(&StreamFace<T, U>::handleReceive, this, _1, _2));
+  m_socket.async_receive(boost::asio::buffer(m_inputBuffer + m_inputBufferSize,
+                                             ndn::MAX_NDN_PACKET_SIZE - m_inputBufferSize),
+                         bind(&StreamFace<T, U>::handleReceive, this,
+                              boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -320,8 +320,8 @@ StreamFace<T, U>::shutdownSocket()
   // so that no further sends or receives are possible.
   // Use the non-throwing variants and ignore errors, if any.
   boost::system::error_code error;
-  m_socket->cancel(error);
-  m_socket->shutdown(protocol::socket::shutdown_both, error);
+  m_socket.cancel(error);
+  m_socket.shutdown(protocol::socket::shutdown_both, error);
 
   // ensure that the Face object is alive at least until all pending
   // handlers are dispatched
@@ -331,7 +331,7 @@ StreamFace<T, U>::shutdownSocket()
   // Some bug or feature of Boost.Asio (see http://redmine.named-data.net/issues/1856):
   //
   // When shutdownSocket is called from within a socket event (e.g., from handleReceive),
-  // m_socket->shutdown() does not trigger the cancellation of the handleSend callback.
+  // m_socket.shutdown() does not trigger the cancellation of the handleSend callback.
   // Instead, handleSend is invoked as nothing bad happened.
   //
   // In order to prevent the assertion in handleSend from failing, we clear the queue
@@ -353,7 +353,7 @@ StreamFace<T, U>::deferredClose(const shared_ptr<Face>& face)
 
   // use the non-throwing variant and ignore errors, if any
   boost::system::error_code error;
-  m_socket->close(error);
+  m_socket.close(error);
 }
 
 } // namespace nfd

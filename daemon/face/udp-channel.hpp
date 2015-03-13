@@ -43,14 +43,6 @@ class UdpChannel : public Channel
 {
 public:
   /**
-   * \brief Exception of UdpChannel
-   */
-  struct Error : public std::runtime_error
-  {
-    Error(const std::string& what) : runtime_error(what) {}
-  };
-
-  /**
    * \brief Create UDP channel for the local endpoint
    *
    * To enable creation of faces upon incoming connections,
@@ -99,10 +91,8 @@ public:
   isListening() const;
 
 private:
-  shared_ptr<UdpFace>
-  createFace(const shared_ptr<boost::asio::ip::udp::socket>& socket,
-             const FaceCreatedCallback& onFaceCreated,
-             bool isOnDemand);
+  std::pair<bool, shared_ptr<UdpFace>>
+  createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand);
 
   /**
    * \brief The channel has received a new packet from a remote
@@ -120,33 +110,27 @@ private:
   udp::Endpoint m_localEndpoint;
 
   /**
-   * \brief Endpoint used to store the information about the last new remote endpoint
+   * \brief The latest peer that started communicating with us
    */
-  udp::Endpoint m_newRemoteEndpoint;
+  udp::Endpoint m_remoteEndpoint;
 
   /**
    * \brief Socket used to "accept" new communication
-   **/
-  shared_ptr<boost::asio::ip::udp::socket> m_socket;
-
-  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
-
-  /**
-   * \brief If true, it means the function listen has already been called
    */
-  bool m_isListening;
+  boost::asio::ip::udp::socket m_socket;
 
   /**
-   * \brief every time m_idleFaceTimeout expires all the idle (and on-demand)
-   *        faces will be removed
+   * \brief When this timeout expires, all idle on-demand faces will be closed
    */
   time::seconds m_idleFaceTimeout;
+
+  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
 };
 
 inline bool
 UdpChannel::isListening() const
 {
-  return m_isListening;
+  return m_socket.is_open();
 }
 
 } // namespace nfd

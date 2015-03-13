@@ -34,8 +34,9 @@ NFD_LOG_INIT("TcpChannel");
 using namespace boost::asio;
 
 TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint)
-  : m_acceptor(getGlobalIoService())
-  , m_localEndpoint(localEndpoint)
+  : m_localEndpoint(localEndpoint)
+  , m_acceptor(getGlobalIoService())
+  , m_acceptSocket(getGlobalIoService())
 {
   setUri(FaceUri(m_localEndpoint));
 }
@@ -74,11 +75,10 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
     return;
   }
 
-  shared_ptr<ip::tcp::socket> clientSocket =
-    make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
+  auto clientSocket = make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
 
   scheduler::EventId connectTimeoutEvent = scheduler::schedule(timeout,
-      bind(&TcpChannel::handleConnectTimeout, this, clientSocket, onConnectFailed));
+    bind(&TcpChannel::handleConnectTimeout, this, clientSocket, onConnectFailed));
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleConnect, this,
@@ -94,38 +94,39 @@ TcpChannel::size() const
 }
 
 void
-TcpChannel::createFace(const shared_ptr<ip::tcp::socket>& socket,
+TcpChannel::createFace(ip::tcp::socket socket,
                        const FaceCreatedCallback& onFaceCreated,
                        bool isOnDemand)
 {
-  tcp::Endpoint remoteEndpoint = socket->remote_endpoint();
-
   shared_ptr<Face> face;
+  tcp::Endpoint remoteEndpoint = socket.remote_endpoint();
 
   auto it = m_channelFaces.find(remoteEndpoint);
-  if (it == m_channelFaces.end())
-    {
-      if (socket->local_endpoint().address().is_loopback())
-        face = make_shared<TcpLocalFace>(socket, isOnDemand);
-      else
-        face = make_shared<TcpFace>(socket, isOnDemand);
+  if (it == m_channelFaces.end()) {
+    tcp::Endpoint localEndpoint = socket.local_endpoint();
 
-      face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
-        NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
-        m_channelFaces.erase(remoteEndpoint);
-      });
+    if (localEndpoint.address().is_loopback() &&
+        remoteEndpoint.address().is_loopback())
+      face = make_shared<TcpLocalFace>(FaceUri(remoteEndpoint), FaceUri(localEndpoint),
+                                       std::move(socket), isOnDemand);
+    else
+      face = make_shared<TcpFace>(FaceUri(remoteEndpoint), FaceUri(localEndpoint),
+                                  std::move(socket), isOnDemand);
 
-      m_channelFaces[remoteEndpoint] = face;
-    }
-  else
-    {
-      // we've already created a a face for this endpoint, just reuse it
-      face = it->second;
+    face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
+      NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
+      m_channelFaces.erase(remoteEndpoint);
+    });
+    m_channelFaces[remoteEndpoint] = face;
+  }
+  else {
+    // we already have a face for this endpoint, just reuse it
+    face = it->second;
 
-      boost::system::error_code error;
-      socket->shutdown(ip::tcp::socket::shutdown_both, error);
-      socket->close(error);
-    }
+    boost::system::error_code error;
+    socket.shutdown(ip::tcp::socket::shutdown_both, error);
+    socket.close(error);
+  }
 
   // Need to invoke the callback regardless of whether or not we have already created
   // the face so that control responses and such can be sent.
@@ -136,17 +137,13 @@ void
 TcpChannel::accept(const FaceCreatedCallback& onFaceCreated,
                    const ConnectFailedCallback& onAcceptFailed)
 {
-  auto socket = make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
-
-  m_acceptor.async_accept(*socket,
-                          bind(&TcpChannel::handleAccept, this,
-                               boost::asio::placeholders::error,
-                               socket, onFaceCreated, onAcceptFailed));
+  m_acceptor.async_accept(m_acceptSocket, bind(&TcpChannel::handleAccept, this,
+                                               boost::asio::placeholders::error,
+                                               onFaceCreated, onAcceptFailed));
 }
 
 void
 TcpChannel::handleAccept(const boost::system::error_code& error,
-                         const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                          const FaceCreatedCallback& onFaceCreated,
                          const ConnectFailedCallback& onAcceptFailed)
 {
@@ -160,12 +157,12 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
     return;
   }
 
-  NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connection from " << socket->remote_endpoint());
+  NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connection from " << m_acceptSocket.remote_endpoint());
+
+  createFace(std::move(m_acceptSocket), onFaceCreated, true);
 
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
-
-  createFace(socket, onFaceCreated, true);
 }
 
 void
@@ -189,9 +186,10 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
     if (error == boost::asio::error::operation_aborted) // when the socket is closed by someone
       return;
 
+    NFD_LOG_WARN("[" << m_localEndpoint << "] Connect failed: " << error.message());
+
     socket->close();
 
-    NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connect failed: " << error.message());
     if (onConnectFailed)
       onConnectFailed(error.message());
     return;
@@ -199,7 +197,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connected to " << socket->remote_endpoint());
 
-  createFace(socket, onFaceCreated, false);
+  createFace(std::move(*socket), onFaceCreated, false);
 }
 
 void

@@ -31,13 +31,12 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace,
                                                 MulticastUdpFace::protocol, Multicast,
                                                 "MulticastUdpFace");
 
-MulticastUdpFace::MulticastUdpFace(const shared_ptr<MulticastUdpFace::protocol::socket>& recvSocket,
-                                   const shared_ptr<MulticastUdpFace::protocol::socket>& sendSocket,
-                                   const MulticastUdpFace::protocol::endpoint& localEndpoint,
-                                   const MulticastUdpFace::protocol::endpoint& multicastEndpoint)
-  : DatagramFace(FaceUri(multicastEndpoint), FaceUri(localEndpoint), recvSocket)
-  , m_multicastGroup(multicastEndpoint)
-  , m_sendSocket(sendSocket)
+MulticastUdpFace::MulticastUdpFace(const protocol::endpoint& multicastGroup,
+                                   const FaceUri& localUri,
+                                   protocol::socket recvSocket, protocol::socket sendSocket)
+  : DatagramFace(FaceUri(multicastGroup), localUri, std::move(recvSocket))
+  , m_multicastGroup(multicastGroup)
+  , m_sendSocket(std::move(sendSocket))
 {
 }
 
@@ -48,20 +47,10 @@ MulticastUdpFace::getMulticastGroup() const
 }
 
 void
-MulticastUdpFace::sendBlock(const Block& block)
-{
-  m_sendSocket->async_send_to(boost::asio::buffer(block.wire(), block.size()),
-                              m_multicastGroup,
-                              bind(&MulticastUdpFace::handleSend, this, _1, _2, block));
-}
-
-void
 MulticastUdpFace::sendInterest(const Interest& interest)
 {
   NFD_LOG_FACE_TRACE(__func__);
-
   this->emitSignal(onSendInterest, interest);
-
   sendBlock(interest.wireEncode());
 }
 
@@ -69,12 +58,20 @@ void
 MulticastUdpFace::sendData(const Data& data)
 {
   NFD_LOG_FACE_TRACE(__func__);
-
   /// \todo After this face implements duplicate suppression, onSendData should
   ///       be emitted only when data is actually sent out. See also #2555
   this->emitSignal(onSendData, data);
-
   sendBlock(data.wireEncode());
+}
+
+void
+MulticastUdpFace::sendBlock(const Block& block)
+{
+  m_sendSocket.async_send_to(boost::asio::buffer(block.wire(), block.size()), m_multicastGroup,
+                             bind(&MulticastUdpFace::handleSend, this,
+                                  boost::asio::placeholders::error,
+                                  boost::asio::placeholders::bytes_transferred,
+                                  block));
 }
 
 } // namespace nfd

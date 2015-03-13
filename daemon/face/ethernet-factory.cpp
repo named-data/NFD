@@ -44,8 +44,8 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
   if (face)
     return face;
 
-  auto socket = make_shared<boost::asio::posix::stream_descriptor>(ref(getGlobalIoService()));
-  face = make_shared<EthernetFace>(socket, interface, address);
+  face = make_shared<EthernetFace>(boost::asio::posix::stream_descriptor(getGlobalIoService()),
+                                   interface, address);
 
   auto key = std::make_pair(interface.name, address);
   face->onFail.connectSingleShot([this, key] (const std::string& reason) {

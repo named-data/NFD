@@ -60,11 +60,9 @@ public:
     Error(const std::string& what) : Face::Error(what) {}
   };
 
-  EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
+  EthernetFace(boost::asio::posix::stream_descriptor socket,
                const NetworkInterfaceInfo& interface,
                const ethernet::Address& address);
-
-  ~EthernetFace() DECL_OVERRIDE;
 
   /// send an Interest
   void
@@ -138,7 +136,7 @@ private:
    * @brief Returns the MTU of the underlying network interface
    */
   size_t
-  getInterfaceMtu() const;
+  getInterfaceMtu();
 
 private:
   struct Reassembler
@@ -148,7 +146,7 @@ private:
   };
 
   unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
-  shared_ptr<boost::asio::posix::stream_descriptor> m_socket;
+  boost::asio::posix::stream_descriptor m_socket;
 
 #if defined(__linux__)
   int m_interfaceIndex;

@@ -85,13 +85,13 @@ private:
 
   void
   handleAccept(const boost::system::error_code& error,
-               const shared_ptr<boost::asio::local::stream_protocol::socket>& socket,
                const FaceCreatedCallback& onFaceCreated,
                const ConnectFailedCallback& onAcceptFailed);
 
 private:
-  boost::asio::local::stream_protocol::acceptor m_acceptor;
   unix_stream::Endpoint m_endpoint;
+  boost::asio::local::stream_protocol::acceptor m_acceptor;
+  boost::asio::local::stream_protocol::socket m_socket;
 };
 
 inline bool

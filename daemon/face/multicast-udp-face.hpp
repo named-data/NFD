@@ -40,10 +40,8 @@ public:
   /**
    * \brief Creates a UDP-based face for multicast communication
    */
-  MulticastUdpFace(const shared_ptr<protocol::socket>& recvSocket,
-                   const shared_ptr<protocol::socket>& sendSocket,
-                   const protocol::endpoint& localEndpoint,
-                   const protocol::endpoint& multicastEndpoint);
+  MulticastUdpFace(const protocol::endpoint& multicastGroup, const FaceUri& localUri,
+                   protocol::socket recvSocket, protocol::socket sendSocket);
 
   const protocol::endpoint&
   getMulticastGroup() const;
@@ -61,7 +59,7 @@ private:
 
 private:
   protocol::endpoint m_multicastGroup;
-  shared_ptr<protocol::socket> m_sendSocket;
+  protocol::socket m_sendSocket;
 };
 
 } // namespace nfd

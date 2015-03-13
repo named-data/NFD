@@ -88,7 +88,7 @@ public:
 
 private:
   void
-  createFace(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+  createFace(boost::asio::ip::tcp::socket socket,
              const FaceCreatedCallback& onFaceCreated,
              bool isOnDemand);
 
@@ -98,7 +98,6 @@ private:
 
   void
   handleAccept(const boost::system::error_code& error,
-               const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                const FaceCreatedCallback& onFaceCreated,
                const ConnectFailedCallback& onConnectFailed);
 
@@ -116,8 +115,9 @@ private:
 private:
   std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
 
-  boost::asio::ip::tcp::acceptor m_acceptor;
   tcp::Endpoint m_localEndpoint;
+  boost::asio::ip::tcp::acceptor m_acceptor;
+  boost::asio::ip::tcp::socket m_acceptSocket;
 };
 
 inline bool

@@ -27,8 +27,10 @@
 #include "core/global-io.hpp"
 #include "core/network-interface.hpp"
 
-#if defined(__linux__)
-#include <sys/socket.h>
+#ifdef __linux__
+#include <cerrno>       // for errno
+#include <cstring>      // for std::strerror()
+#include <sys/socket.h> // for setsockopt()
 #endif
 
 namespace nfd {
@@ -147,20 +149,20 @@ UdpFactory::createChannel(const std::string& localIp,
 shared_ptr<MulticastUdpFace>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                 const udp::Endpoint& multicastEndpoint,
-                                const std::string& networkInterfaceName /* "" */)
+                                const std::string& networkInterfaceName/* = ""*/)
 {
-  //checking if the local and multicast endpoint are already in use for a multicast face
-  shared_ptr<MulticastUdpFace> multicastFace = findMulticastFace(localEndpoint);
-  if (static_cast<bool>(multicastFace)) {
-    if (multicastFace->getMulticastGroup() == multicastEndpoint)
-      return multicastFace;
+  // checking if the local and multicast endpoints are already in use for a multicast face
+  shared_ptr<MulticastUdpFace> face = findMulticastFace(localEndpoint);
+  if (static_cast<bool>(face)) {
+    if (face->getMulticastGroup() == multicastEndpoint)
+      return face;
     else
       throw Error("Cannot create the requested UDP multicast face, local "
                   "endpoint is already allocated for a UDP multicast face "
                   "on a different multicast group");
   }
 
-  //checking if the local endpoint is already in use for an unicast channel
+  // checking if the local endpoint is already in use for a unicast channel
   shared_ptr<UdpChannel> unicast = findChannel(localEndpoint);
   if (static_cast<bool>(unicast)) {
     throw Error("Cannot create the requested UDP multicast face, local "
@@ -186,79 +188,63 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                 "the multicast group given as input is not a multicast address");
   }
 
-  shared_ptr<ip::udp::socket> receiveSocket =
-    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
+  ip::udp::socket receiveSocket(getGlobalIoService());
+  receiveSocket.open(multicastEndpoint.protocol());
+  receiveSocket.set_option(ip::udp::socket::reuse_address(true));
+  receiveSocket.bind(multicastEndpoint);
 
-  shared_ptr<ip::udp::socket> sendSocket =
-    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
+  ip::udp::socket sendSocket(getGlobalIoService());
+  sendSocket.open(multicastEndpoint.protocol());
+  sendSocket.set_option(ip::udp::socket::reuse_address(true));
+  sendSocket.set_option(ip::multicast::enable_loopback(false));
+  sendSocket.bind(udp::Endpoint(ip::address_v4::any(), multicastEndpoint.port()));
+  if (localEndpoint.address() != ALL_V4_ENDPOINT)
+    sendSocket.set_option(ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
 
-  receiveSocket->open(multicastEndpoint.protocol());
-  receiveSocket->set_option(ip::udp::socket::reuse_address(true));
-
-  sendSocket->open(multicastEndpoint.protocol());
-  sendSocket->set_option(ip::udp::socket::reuse_address(true));
-  sendSocket->set_option(ip::multicast::enable_loopback(false));
-
-  try {
-    sendSocket->bind(udp::Endpoint(ip::address_v4::any(), multicastEndpoint.port()));
-    receiveSocket->bind(multicastEndpoint);
-
-    if (localEndpoint.address() != ip::address::from_string("0.0.0.0")) {
-      sendSocket->set_option(ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
-    }
-    sendSocket->set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
+  sendSocket.set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
+                                                  localEndpoint.address().to_v4()));
+  receiveSocket.set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
                                                      localEndpoint.address().to_v4()));
 
-    receiveSocket->set_option(ip::multicast::join_group(multicastEndpoint.address().to_v4(),
-                                                        localEndpoint.address().to_v4()));
-  }
-  catch (boost::system::system_error& e) {
-    std::stringstream msg;
-    msg << "Failed to properly configure the socket, check the address (" << e.what() << ")";
-    throw Error(msg.str());
-  }
-
-#if defined(__linux__)
-  //On linux system, if there are more than one MulticastUdpFace for the same multicast group but
-  //bound on different network interfaces, the socket has to be bound with the specific interface
-  //using SO_BINDTODEVICE, otherwise the face will receive packets also from other interfaces.
-  //Without SO_BINDTODEVICE every MulticastUdpFace that have joined the same multicast group
-  //on different interfaces will receive the same packet.
-  //This applies only on linux, for OS X the ip::multicast::join_group is enough to get
-  //the desired behaviour
+#ifdef __linux__
+  /*
+   * On Linux, if there is more than one MulticastUdpFace for the same multicast
+   * group but they are bound to different network interfaces, the socket needs
+   * to be bound to the specific interface using SO_BINDTODEVICE, otherwise the
+   * face will receive all packets sent to the other interfaces as well.
+   * This happens only on Linux. On OS X, the ip::multicast::join_group option
+   * is enough to get the desired behaviour.
+   */
   if (!networkInterfaceName.empty()) {
-    if (::setsockopt(receiveSocket->native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
-                     networkInterfaceName.c_str(), networkInterfaceName.size()+1) == -1){
-      throw Error("Cannot bind multicast face to " + networkInterfaceName
-                  + " make sure you have CAP_NET_RAW capability" );
+    if (::setsockopt(receiveSocket.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
+                     networkInterfaceName.c_str(), networkInterfaceName.size() + 1) < 0) {
+      throw Error("Cannot bind multicast face to " + networkInterfaceName +
+                  ": " + std::strerror(errno));
     }
   }
-
 #endif
 
-  multicastFace = make_shared<MulticastUdpFace>(receiveSocket, sendSocket,
-                                                localEndpoint, multicastEndpoint);
+  face = make_shared<MulticastUdpFace>(multicastEndpoint, FaceUri(localEndpoint),
+                                       std::move(receiveSocket), std::move(sendSocket));
 
-  multicastFace->onFail.connectSingleShot(bind(&UdpFactory::afterFaceFailed, this, localEndpoint));
+  face->onFail.connectSingleShot([this, localEndpoint] (const std::string& reason) {
+    m_multicastFaces.erase(localEndpoint);
+  });
+  m_multicastFaces[localEndpoint] = face;
 
-  m_multicastFaces[localEndpoint] = multicastFace;
-
-  return multicastFace;
+  return face;
 }
 
 shared_ptr<MulticastUdpFace>
 UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastIp,
                                 const std::string& multicastPort,
-                                const std::string& networkInterfaceName /* "" */)
+                                const std::string& networkInterfaceName/* = ""*/)
 {
-  using namespace boost::asio::ip;
-  udp::Endpoint localEndpoint(address::from_string(localIp),
+  udp::Endpoint localEndpoint(ip::address::from_string(localIp),
                               boost::lexical_cast<uint16_t>(multicastPort));
-
-  udp::Endpoint multicastEndpoint(address::from_string(multicastIp),
+  udp::Endpoint multicastEndpoint(ip::address::from_string(multicastIp),
                                   boost::lexical_cast<uint16_t>(multicastPort));
-
   return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
 }
 
@@ -268,6 +254,7 @@ UdpFactory::createFace(const FaceUri& uri,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
   BOOST_ASSERT(uri.isCanonical());
+
   boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(uri.getHost());
   udp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(uri.getPort()));
 
@@ -276,15 +263,13 @@ UdpFactory::createFace(const FaceUri& uri,
     return;
   }
 
-  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end())
-    {
-      onConnectFailed("Requested endpoint is prohibited "
-                      "(reserved by this NFD or disallowed by face management protocol)");
-      return;
-    }
+  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
+    onConnectFailed("Requested endpoint is prohibited "
+                    "(reserved by this NFD or disallowed by face management protocol)");
+    return;
+  }
 
   // very simple logic for now
-
   for (ChannelMap::iterator channel = m_channels.begin();
        channel != m_channels.end();
        ++channel)
@@ -296,6 +281,7 @@ UdpFactory::createFace(const FaceUri& uri,
       return;
     }
   }
+
   onConnectFailed("No channels available to connect to " +
                   boost::lexical_cast<std::string>(endpoint));
 }
@@ -320,17 +306,10 @@ UdpFactory::findMulticastFace(const udp::Endpoint& localEndpoint)
     return shared_ptr<MulticastUdpFace>();
 }
 
-void
-UdpFactory::afterFaceFailed(udp::Endpoint& endpoint)
-{
-  NFD_LOG_DEBUG("afterFaceFailed: " << endpoint);
-  m_multicastFaces.erase(endpoint);
-}
-
-std::list<shared_ptr<const Channel> >
+std::list<shared_ptr<const Channel>>
 UdpFactory::getChannels() const
 {
-  std::list<shared_ptr<const Channel> > channels;
+  std::list<shared_ptr<const Channel>> channels;
   for (ChannelMap::const_iterator i = m_channels.begin(); i != m_channels.end(); ++i)
     {
       channels.push_back(i->second);
@@ -338,7 +317,5 @@ UdpFactory::getChannels() const
 
   return channels;
 }
-
-
 
 } // namespace nfd

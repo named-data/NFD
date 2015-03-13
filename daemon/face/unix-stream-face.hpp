@@ -40,8 +40,8 @@ namespace nfd {
 class UnixStreamFace : public StreamFace<boost::asio::local::stream_protocol, LocalFace>
 {
 public:
-  explicit
-  UnixStreamFace(const shared_ptr<protocol::socket>& socket);
+  UnixStreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                 protocol::socket socket);
 };
 
 } // namespace nfd

@@ -37,9 +37,10 @@ namespace nfd {
 
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
 
-UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
-                 bool isOnDemand, const time::seconds& idleTimeout)
-  : DatagramFace(FaceUri(socket->remote_endpoint()), FaceUri(socket->local_endpoint()), socket)
+UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
+                 protocol::socket socket, bool isOnDemand,
+                 const time::seconds& idleTimeout)
+  : DatagramFace(remoteUri, localUri, std::move(socket))
   , m_idleTimeout(idleTimeout)
   , m_lastIdleCheck(time::steady_clock::now())
 {
@@ -59,22 +60,15 @@ UdpFace::UdpFace(const shared_ptr<UdpFace::protocol::socket>& socket,
   // routers along the path to perform fragmentation as needed.
   //
   const int value = IP_PMTUDISC_DONT;
-  if (::setsockopt(socket->native_handle(), IPPROTO_IP,
-                   IP_MTU_DISCOVER, &value, sizeof(value)) < 0)
-    {
-      NFD_LOG_FACE_WARN("Failed to disable path MTU discovery: " << std::strerror(errno));
-    }
+  if (::setsockopt(m_socket.native_handle(), IPPROTO_IP,
+                   IP_MTU_DISCOVER, &value, sizeof(value)) < 0) {
+    NFD_LOG_FACE_WARN("Failed to disable path MTU discovery: " << std::strerror(errno));
+  }
 #endif
 
   if (this->isOnDemand() && m_idleTimeout > time::seconds::zero()) {
-    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout,
-                                             bind(&UdpFace::closeIfIdle, this));
+    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UdpFace::closeIfIdle, this));
   }
-}
-
-UdpFace::~UdpFace()
-{
-  scheduler::cancel(m_closeIfIdleEvent);
 }
 
 ndn::nfd::FaceStatus
@@ -118,8 +112,7 @@ UdpFace::closeIfIdle()
       resetRecentUsage();
 
       m_lastIdleCheck = time::steady_clock::now();
-      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout,
-                                               bind(&UdpFace::closeIfIdle, this));
+      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UdpFace::closeIfIdle, this));
     }
   }
   // else do nothing and do not reschedule the event

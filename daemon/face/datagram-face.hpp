@@ -45,7 +45,7 @@ public:
    * \param socket      Protocol-specific socket for the created face
    */
   DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
-               const shared_ptr<typename protocol::socket>& socket);
+               typename protocol::socket socket);
 
   // from Face
   void
@@ -91,7 +91,7 @@ protected:
   resetRecentUsage();
 
 protected:
-  shared_ptr<typename protocol::socket> m_socket;
+  typename protocol::socket m_socket;
 
   NFD_LOG_INCLASS_DECLARE();
 
@@ -104,14 +104,16 @@ private:
 template<class T, class U>
 inline
 DatagramFace<T, U>::DatagramFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                                 const shared_ptr<typename DatagramFace::protocol::socket>& socket)
+                                 typename DatagramFace::protocol::socket socket)
   : Face(remoteUri, localUri, false, std::is_same<U, Multicast>::value)
-  , m_socket(socket)
+  , m_socket(std::move(socket))
 {
   NFD_LOG_FACE_INFO("Creating face");
 
-  m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
-                          bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
+  m_socket.async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+                         bind(&DatagramFace<T, U>::handleReceive, this,
+                              boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -123,8 +125,11 @@ DatagramFace<T, U>::sendInterest(const Interest& interest)
   this->emitSignal(onSendInterest, interest);
 
   const Block& payload = interest.wireEncode();
-  m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
-                       bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
+  m_socket.async_send(boost::asio::buffer(payload.wire(), payload.size()),
+                      bind(&DatagramFace<T, U>::handleSend, this,
+                           boost::asio::placeholders::error,
+                           boost::asio::placeholders::bytes_transferred,
+                           payload));
 }
 
 template<class T, class U>
@@ -136,15 +141,18 @@ DatagramFace<T, U>::sendData(const Data& data)
   this->emitSignal(onSendData, data);
 
   const Block& payload = data.wireEncode();
-  m_socket->async_send(boost::asio::buffer(payload.wire(), payload.size()),
-                       bind(&DatagramFace<T, U>::handleSend, this, _1, _2, payload));
+  m_socket.async_send(boost::asio::buffer(payload.wire(), payload.size()),
+                      bind(&DatagramFace<T, U>::handleSend, this,
+                           boost::asio::placeholders::error,
+                           boost::asio::placeholders::bytes_transferred,
+                           payload));
 }
 
 template<class T, class U>
 inline void
 DatagramFace<T, U>::close()
 {
-  if (!m_socket->is_open())
+  if (!m_socket.is_open())
     return;
 
   NFD_LOG_FACE_INFO("Closing face");
@@ -161,7 +169,7 @@ DatagramFace<T, U>::processErrorCode(const boost::system::error_code& error)
     return;
 
   // this should be unnecessary, but just in case
-  if (!m_socket->is_open()) {
+  if (!m_socket.is_open()) {
     this->fail("Tunnel closed");
     return;
   }
@@ -198,9 +206,11 @@ DatagramFace<T, U>::handleReceive(const boost::system::error_code& error,
 {
   receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
-  if (m_socket->is_open())
-    m_socket->async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE), 0,
-                            bind(&DatagramFace<T, U>::handleReceive, this, _1, _2));
+  if (m_socket.is_open())
+    m_socket.async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+                           bind(&DatagramFace<T, U>::handleReceive, this,
+                                boost::asio::placeholders::error,
+                                boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -209,7 +219,7 @@ DatagramFace<T, U>::receiveDatagram(const uint8_t* buffer,
                                     size_t nBytesReceived,
                                     const boost::system::error_code& error)
 {
-  if (error || nBytesReceived == 0)
+  if (error)
     return processErrorCode(error);
 
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
@@ -257,8 +267,8 @@ DatagramFace<T, U>::closeSocket()
 
   // use the non-throwing variants and ignore errors, if any
   boost::system::error_code error;
-  m_socket->shutdown(protocol::socket::shutdown_both, error);
-  m_socket->close(error);
+  m_socket.shutdown(protocol::socket::shutdown_both, error);
+  m_socket.close(error);
   // after this, handlers will be called with an error code
 
   // ensure that the Face object is alive at least until all pending

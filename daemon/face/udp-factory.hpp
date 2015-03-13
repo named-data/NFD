@@ -30,10 +30,9 @@
 #include "udp-channel.hpp"
 #include "multicast-udp-face.hpp"
 
-
 namespace nfd {
 
-// @todo The multicast support for ipv6 must be implemented
+/// @todo IPv6 multicast support not implemented
 
 class UdpFactory : public ProtocolFactory
 {
@@ -51,7 +50,7 @@ public:
     }
   };
 
-  typedef std::map< udp::Endpoint, shared_ptr<MulticastUdpFace> > MulticastFaceMap;
+  typedef std::map<udp::Endpoint, shared_ptr<MulticastUdpFace>> MulticastFaceMap;
 
   explicit
   UdpFactory(const std::string& defaultPort = "6363");
@@ -143,13 +142,13 @@ public:
                       const std::string& multicastPort,
                       const std::string& networkInterfaceName = "");
 
-  // from Factory
+  // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              const FaceCreatedCallback& onCreated,
              const FaceConnectFailedCallback& onConnectFailed);
 
-  virtual std::list<shared_ptr<const Channel> >
+  virtual std::list<shared_ptr<const Channel>>
   getChannels() const;
 
   /**
@@ -159,7 +158,6 @@ public:
   getMulticastFaces() const;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-
   void
   prohibitEndpoint(const udp::Endpoint& endpoint);
 
@@ -183,7 +181,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   shared_ptr<UdpChannel>
   findChannel(const udp::Endpoint& localEndpoint);
 
-
   /**
    * \brief Look up multicast UdpFace using specified local endpoint
    *
@@ -196,7 +193,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   findMulticastFace(const udp::Endpoint& localEndpoint);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::map< udp::Endpoint, shared_ptr<UdpChannel> > ChannelMap;
+  typedef std::map<udp::Endpoint, shared_ptr<UdpChannel>> ChannelMap;
 
   ChannelMap m_channels;
   MulticastFaceMap m_multicastFaces;
@@ -205,13 +202,11 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
 
-
 inline const UdpFactory::MulticastFaceMap&
 UdpFactory::getMulticastFaces() const
 {
   return m_multicastFaces;
 }
-
 
 } // namespace nfd
 

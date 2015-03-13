@@ -36,25 +36,10 @@ using namespace boost::asio;
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
                        const time::seconds& timeout)
   : m_localEndpoint(localEndpoint)
-  , m_isListening(false)
+  , m_socket(getGlobalIoService())
   , m_idleFaceTimeout(timeout)
 {
   setUri(FaceUri(m_localEndpoint));
-
-  m_socket = make_shared<ip::udp::socket>(ref(getGlobalIoService()));
-  m_socket->open(m_localEndpoint.protocol());
-  m_socket->set_option(ip::udp::socket::reuse_address(true));
-  if (m_localEndpoint.address().is_v6())
-    m_socket->set_option(ip::v6_only(true));
-
-  try {
-    m_socket->bind(m_localEndpoint);
-  }
-  catch (const boost::system::system_error& e) {
-    // bind failed, so the socket is useless now
-    m_socket->close();
-    throw Error("bind failed: " + std::string(e.what()));
-  }
 }
 
 void
@@ -65,14 +50,19 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
     NFD_LOG_WARN("[" << m_localEndpoint << "] Already listening");
     return;
   }
-  m_isListening = true;
 
-  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
-                               m_newRemoteEndpoint,
-                               bind(&UdpChannel::handleNewPeer, this,
-                                    boost::asio::placeholders::error,
-                                    boost::asio::placeholders::bytes_transferred,
-                                    onFaceCreated, onReceiveFailed));
+  m_socket.open(m_localEndpoint.protocol());
+  m_socket.set_option(ip::udp::socket::reuse_address(true));
+  if (m_localEndpoint.address().is_v6())
+    m_socket.set_option(ip::v6_only(true));
+
+  m_socket.bind(m_localEndpoint);
+  m_socket.async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+                              m_remoteEndpoint,
+                              bind(&UdpChannel::handleNewPeer, this,
+                                   boost::asio::placeholders::error,
+                                   boost::asio::placeholders::bytes_transferred,
+                                   onFaceCreated, onReceiveFailed));
 }
 
 void
@@ -80,34 +70,20 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
                     const FaceCreatedCallback& onFaceCreated,
                     const ConnectFailedCallback& onConnectFailed)
 {
-  auto it = m_channelFaces.find(remoteEndpoint);
-  if (it != m_channelFaces.end()) {
-    it->second->setOnDemand(false);
-    onFaceCreated(it->second);
-    return;
-  }
-
-  // creating a new socket for the face that will be created soon
-  shared_ptr<ip::udp::socket> clientSocket =
-    make_shared<ip::udp::socket>(ref(getGlobalIoService()));
-
-  clientSocket->open(m_localEndpoint.protocol());
-  clientSocket->set_option(ip::udp::socket::reuse_address(true));
-
+  shared_ptr<UdpFace> face;
   try {
-    clientSocket->bind(m_localEndpoint);
-    clientSocket->connect(remoteEndpoint); //@todo connect or async_connect
-    //(since there is no handshake the connect shouldn't block). If we go for
-    //async_connect, make sure that if in the meantime we receive a UDP pkt from
-    //that endpoint nothing bad happen (it's difficult, but it could happen)
+    face = createFace(remoteEndpoint, false).second;
   }
   catch (const boost::system::system_error& e) {
-    clientSocket->close();
-    onConnectFailed("Failed to configure socket (" + std::string(e.what()) + ")");
+    NFD_LOG_WARN("[" << m_localEndpoint << "] Connect failed: " << e.what());
+    if (onConnectFailed)
+      onConnectFailed(e.what());
     return;
   }
 
-  createFace(clientSocket, onFaceCreated, false);
+  // Need to invoke the callback regardless of whether or not we had already
+  // created the face so that control responses and such can be sent
+  onFaceCreated(face);
 }
 
 size_t
@@ -116,42 +92,34 @@ UdpChannel::size() const
   return m_channelFaces.size();
 }
 
-shared_ptr<UdpFace>
-UdpChannel::createFace(const shared_ptr<ip::udp::socket>& socket,
-                       const FaceCreatedCallback& onFaceCreated,
-                       bool isOnDemand)
+std::pair<bool, shared_ptr<UdpFace>>
+UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand)
 {
-  udp::Endpoint remoteEndpoint = socket->remote_endpoint();
-
-  shared_ptr<UdpFace> face;
-
   auto it = m_channelFaces.find(remoteEndpoint);
-  if (it == m_channelFaces.end())
-    {
-      face = make_shared<UdpFace>(socket, isOnDemand, m_idleFaceTimeout);
+  if (it != m_channelFaces.end()) {
+    // we already have a face for this endpoint, just reuse it
+    if (!isOnDemand)
+      // only on-demand -> non-on-demand transition is allowed
+      it->second->setOnDemand(false);
+    return {false, it->second};
+  }
 
-      face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
-        NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
-        m_channelFaces.erase(remoteEndpoint);
-      });
+  // else, create a new face
+  ip::udp::socket socket(getGlobalIoService(), m_localEndpoint.protocol());
+  socket.set_option(ip::udp::socket::reuse_address(true));
+  socket.bind(m_localEndpoint);
+  socket.connect(remoteEndpoint);
 
-      m_channelFaces[remoteEndpoint] = face;
-    }
-  else
-    {
-      // we've already created a a face for this endpoint, just reuse it
-      face = it->second;
+  auto face = make_shared<UdpFace>(FaceUri(remoteEndpoint), FaceUri(m_localEndpoint),
+                                   std::move(socket), isOnDemand, m_idleFaceTimeout);
 
-      boost::system::error_code error;
-      socket->shutdown(ip::udp::socket::shutdown_both, error);
-      socket->close(error);
-    }
+  face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
+    NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
+    m_channelFaces.erase(remoteEndpoint);
+  });
+  m_channelFaces[remoteEndpoint] = face;
 
-  // Need to invoke the callback regardless of whether or not we have already created
-  // the face so that control responses and such can be sent.
-  onFaceCreated(face);
-
-  return face;
+  return {true, face};
 }
 
 void
@@ -170,52 +138,33 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     return;
   }
 
-  NFD_LOG_DEBUG("[" << m_localEndpoint << "] New peer " << m_newRemoteEndpoint);
+  NFD_LOG_DEBUG("[" << m_localEndpoint << "] New peer " << m_remoteEndpoint);
 
+  bool created;
   shared_ptr<UdpFace> face;
-
-  auto it = m_channelFaces.find(m_newRemoteEndpoint);
-  if (it != m_channelFaces.end()) {
-    //The face already exists.
-    //Usually this shouldn't happen, because the channel creates a Udpface
-    //as soon as it receives a pkt from a new endpoint and then the
-    //traffic is dispatched by the kernel directly to the face.
-    //However, if the node receives multiple packets from the same endpoint
-    //"at the same time", while the channel is creating the face the kernel
-    //could dispatch the other pkts to the channel because the face is not yet
-    //ready. In this case, the channel has to pass the pkt to the face
-
-    NFD_LOG_DEBUG("The creation of the face for the remote endpoint "
-                  << m_newRemoteEndpoint << " is already in progress");
-    face = it->second;
+  try {
+    std::tie(created, face) = createFace(m_remoteEndpoint, true);
   }
-  else {
-    shared_ptr<ip::udp::socket> clientSocket =
-      make_shared<ip::udp::socket>(ref(getGlobalIoService()));
-    clientSocket->open(m_localEndpoint.protocol());
-    clientSocket->set_option(ip::udp::socket::reuse_address(true));
-    clientSocket->bind(m_localEndpoint);
-
-    boost::system::error_code ec;
-    clientSocket->connect(m_newRemoteEndpoint, ec);
-    if (ec) {
-      NFD_LOG_WARN("Error while creating on-demand UDP face from " << m_newRemoteEndpoint << ": "
-                   << boost::system::system_error(ec).what());
-      return;
-    }
-
-    face = createFace(clientSocket, onFaceCreated, true);
+  catch (const boost::system::system_error& e) {
+    NFD_LOG_WARN("[" << m_localEndpoint << "] Failed to create face for peer "
+                 << m_remoteEndpoint << ": " << e.what());
+    if (onReceiveFailed)
+      onReceiveFailed(e.what());
+    return;
   }
+
+  if (created)
+    onFaceCreated(face);
 
   // dispatch the datagram to the face for processing
   face->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
-  m_socket->async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
-                               m_newRemoteEndpoint,
-                               bind(&UdpChannel::handleNewPeer, this,
-                                    boost::asio::placeholders::error,
-                                    boost::asio::placeholders::bytes_transferred,
-                                    onFaceCreated, onReceiveFailed));
+  m_socket.async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+                              m_remoteEndpoint,
+                              bind(&UdpChannel::handleNewPeer, this,
+                                   boost::asio::placeholders::error,
+                                   boost::asio::placeholders::bytes_transferred,
+                                   onFaceCreated, onReceiveFailed));
 }
 
 } // namespace nfd

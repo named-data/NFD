@@ -62,12 +62,12 @@ NFD_LOG_INIT("EthernetFace");
 
 const time::nanoseconds EthernetFace::REASSEMBLER_LIFETIME = time::seconds(60);
 
-EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descriptor>& socket,
+EthernetFace::EthernetFace(boost::asio::posix::stream_descriptor socket,
                            const NetworkInterfaceInfo& interface,
                            const ethernet::Address& address)
   : Face(FaceUri(address), FaceUri::fromDev(interface.name), false, true)
   , m_pcap(nullptr, pcap_close)
-  , m_socket(socket)
+  , m_socket(std::move(socket))
 #if defined(__linux__)
   , m_interfaceIndex(interface.index)
 #endif
@@ -88,7 +88,7 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
   // need to duplicate the fd, otherwise both pcap_close()
   // and stream_descriptor::close() will try to close the
   // same fd and one of them will fail
-  m_socket->assign(::dup(fd));
+  m_socket.assign(::dup(fd));
 
   m_interfaceMtu = getInterfaceMtu();
   NFD_LOG_FACE_DEBUG("Interface MTU is: " << m_interfaceMtu);
@@ -109,14 +109,10 @@ EthernetFace::EthernetFace(const shared_ptr<boost::asio::posix::stream_descripto
       pcap_set_promisc(m_pcap.get(), 1);
     }
 
-  m_socket->async_read_some(boost::asio::null_buffers(),
-                            bind(&EthernetFace::handleRead, this,
-                                 boost::asio::placeholders::error,
-                                 boost::asio::placeholders::bytes_transferred));
-}
-
-EthernetFace::~EthernetFace()
-{
+  m_socket.async_read_some(boost::asio::null_buffers(),
+                           bind(&EthernetFace::handleRead, this,
+                                boost::asio::placeholders::error,
+                                boost::asio::placeholders::bytes_transferred));
 }
 
 void
@@ -154,9 +150,9 @@ EthernetFace::close()
   NFD_LOG_FACE_INFO("Closing face");
 
   boost::system::error_code error;
-  m_socket->cancel(error); // ignore errors
-  m_socket->close(error);  // ignore errors
-  m_pcap.reset(nullptr);
+  m_socket.cancel(error); // ignore errors
+  m_socket.close(error);  // ignore errors
+  m_pcap.reset();
 
   fail("Face closed");
 }
@@ -211,7 +207,7 @@ EthernetFace::joinMulticastGroup()
   mr.mr_alen = m_destAddress.size();
   std::copy(m_destAddress.begin(), m_destAddress.end(), mr.mr_address);
 
-  if (::setsockopt(m_socket->native_handle(), SOL_PACKET,
+  if (::setsockopt(m_socket.native_handle(), SOL_PACKET,
                    PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) == 0)
     return true; // success
 
@@ -249,7 +245,7 @@ EthernetFace::joinMulticastGroup()
   static_assert(sizeof(ifr.ifr_addr) >= offsetof(sockaddr_dl, sdl_data) + ethernet::ADDR_LEN,
                 "ifr_addr in struct ifreq is too small on this platform");
 #else
-  int fd = m_socket->native_handle();
+  int fd = m_socket.native_handle();
 
   ifr.ifr_hwaddr.sa_family = AF_UNSPEC;
   std::copy(m_destAddress.begin(), m_destAddress.end(), ifr.ifr_hwaddr.sa_data);
@@ -350,10 +346,10 @@ EthernetFace::handleRead(const boost::system::error_code& error, size_t)
     }
 #endif
 
-  m_socket->async_read_some(boost::asio::null_buffers(),
-                            bind(&EthernetFace::handleRead, this,
-                                 boost::asio::placeholders::error,
-                                 boost::asio::placeholders::bytes_transferred));
+  m_socket.async_read_some(boost::asio::null_buffers(),
+                           bind(&EthernetFace::handleRead, this,
+                                boost::asio::placeholders::error,
+                                boost::asio::placeholders::bytes_transferred));
 }
 
 void
@@ -415,8 +411,7 @@ EthernetFace::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* pa
   ndnlp::NdnlpData fragment;
   std::tie(isOk, fragment) = ndnlp::NdnlpData::fromBlock(fragmentBlock);
   if (!isOk) {
-    NFD_LOG_FACE_WARN("Received invalid NDNLP fragment from "
-                      << sourceAddress.toString());
+    NFD_LOG_FACE_WARN("Received invalid NDNLP fragment from " << sourceAddress.toString());
     return;
   }
 
@@ -444,7 +439,7 @@ EthernetFace::processErrorCode(const boost::system::error_code& error)
 }
 
 size_t
-EthernetFace::getInterfaceMtu() const
+EthernetFace::getInterfaceMtu()
 {
 #ifdef SIOCGIFMTU
 #if defined(__APPLE__) || defined(__FreeBSD__)
@@ -453,7 +448,7 @@ EthernetFace::getInterfaceMtu() const
   udp::socket sock(ref(getGlobalIoService()), udp::v4());
   int fd = sock.native_handle();
 #else
-  int fd = m_socket->native_handle();
+  int fd = m_socket.native_handle();
 #endif
 
   ifreq ifr{};

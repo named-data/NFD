@@ -34,11 +34,10 @@ namespace nfd {
 
 NFD_LOG_INIT("UnixStreamChannel");
 
-using namespace boost::asio::local;
-
 UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint)
-  : m_acceptor(getGlobalIoService())
-  , m_endpoint(endpoint)
+  : m_endpoint(endpoint)
+  , m_acceptor(getGlobalIoService())
+  , m_socket(getGlobalIoService())
 {
   setUri(FaceUri(m_endpoint));
 }
@@ -72,7 +71,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
   if (type == fs::socket_file) {
     boost::system::error_code error;
-    stream_protocol::socket socket(getGlobalIoService());
+    boost::asio::local::stream_protocol::socket socket(getGlobalIoService());
     socket.connect(m_endpoint, error);
     NFD_LOG_TRACE("[" << m_endpoint << "] connect() on existing socket file returned: "
                   + error.message());
@@ -106,20 +105,16 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
 }
 
 void
-UnixStreamChannel::accept(const FaceCreatedCallback &onFaceCreated,
-                          const ConnectFailedCallback &onAcceptFailed)
+UnixStreamChannel::accept(const FaceCreatedCallback& onFaceCreated,
+                          const ConnectFailedCallback& onAcceptFailed)
 {
-  auto socket = make_shared<stream_protocol::socket>(ref(getGlobalIoService()));
-
-  m_acceptor.async_accept(*socket,
-                          bind(&UnixStreamChannel::handleAccept, this,
-                               boost::asio::placeholders::error,
-                               socket, onFaceCreated, onAcceptFailed));
+  m_acceptor.async_accept(m_socket, bind(&UnixStreamChannel::handleAccept, this,
+                                         boost::asio::placeholders::error,
+                                         onFaceCreated, onAcceptFailed));
 }
 
 void
 UnixStreamChannel::handleAccept(const boost::system::error_code& error,
-                                const shared_ptr<stream_protocol::socket>& socket,
                                 const FaceCreatedCallback& onFaceCreated,
                                 const ConnectFailedCallback& onAcceptFailed)
 {
@@ -135,11 +130,13 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_endpoint << "] Incoming connection");
 
+  auto remoteUri = FaceUri::fromFd(m_socket.native_handle());
+  auto localUri = FaceUri(m_socket.local_endpoint());
+  auto face = make_shared<UnixStreamFace>(remoteUri, localUri, std::move(m_socket));
+  onFaceCreated(face);
+
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
-
-  shared_ptr<UnixStreamFace> face = make_shared<UnixStreamFace>(socket);
-  onFaceCreated(face);
 }
 
 } // namespace nfd
