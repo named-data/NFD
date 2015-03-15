@@ -29,7 +29,6 @@
 #include "protocol-factory.hpp"
 #include "websocket-channel.hpp"
 
-
 namespace nfd {
 
 class WebSocketFactory : public ProtocolFactory
@@ -63,8 +62,7 @@ public:
    * \returns always a valid pointer to a WebSocketChannel object, an exception
    *          is thrown if it cannot be created.
    *
-   * \throws WebSocketFactory::Error, TcpResolver::Error
-   *
+   * \throws WebSocketFactory::Error
    */
   shared_ptr<WebSocketChannel>
   createChannel(const websocket::Endpoint& localEndpoint);
@@ -80,7 +78,7 @@ public:
   shared_ptr<WebSocketChannel>
   createChannel(const std::string& localIp, const std::string& port);
 
-  // from Factory
+  // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              const FaceCreatedCallback& onCreated,
@@ -90,7 +88,6 @@ public:
   getChannels() const;
 
 private:
-
   /**
    * \brief Look up WebSocketChannel using specified local endpoint
    *

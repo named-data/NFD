@@ -34,7 +34,6 @@
 #include "packet-datasets.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/util/dns.hpp>
 
 namespace nfd {
 namespace tests {
@@ -550,14 +549,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalFaceCorruptedInput, Dataset,
                                  CorruptedPackets, SimpleEndToEndFixture)
 {
   TcpFactory factory;
+  tcp::Endpoint endpoint(boost::asio::ip::address_v4::from_string("127.0.0.1"), 20070);
 
-  shared_ptr<TcpChannel> channel = factory.createChannel("127.0.0.1", "20070");
+  shared_ptr<TcpChannel> channel = factory.createChannel(endpoint);
   channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
                   bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
   BOOST_REQUIRE_EQUAL(channel->isListening(), true);
 
   DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
-  tcp::Endpoint endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 20070);
   sender.start(endpoint);
 
   BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
@@ -568,29 +567,29 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalFaceCorruptedInput, Dataset,
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceCorruptedInput, Dataset,
                                  CorruptedPackets, SimpleEndToEndFixture)
 {
-  // tests with non-local Face
-  std::string someIpv4Address;
+  // test with non-local Face
+  boost::asio::ip::address_v4 someIpv4Address;
   for (const auto& netif : listNetworkInterfaces()) {
     if (!netif.isLoopback() && netif.isUp() && !netif.ipv4Addresses.empty()) {
-      someIpv4Address = netif.ipv4Addresses[0].to_string();
+      someIpv4Address = netif.ipv4Addresses.front();
       break;
     }
   }
-  if (someIpv4Address.empty()) {
+  if (someIpv4Address.is_unspecified()) {
     BOOST_TEST_MESSAGE("Test with non-local Face cannot be run "
-                       "(no non-local interface with IPv4 address available)");
+                       "(no non-loopback interface with IPv4 address found)");
     return;
   }
 
   TcpFactory factory;
+  tcp::Endpoint endpoint(someIpv4Address, 20070);
 
-  shared_ptr<TcpChannel> channel = factory.createChannel(someIpv4Address, "20070");
+  shared_ptr<TcpChannel> channel = factory.createChannel(endpoint);
   channel->listen(bind(&SimpleEndToEndFixture::onFaceCreated,   this, _1),
                   bind(&SimpleEndToEndFixture::onConnectFailed, this, _1));
   BOOST_REQUIRE_EQUAL(channel->isListening(), true);
 
   DummyStreamSender<boost::asio::ip::tcp, Dataset> sender;
-  tcp::Endpoint endpoint(ndn::dns::syncResolve(someIpv4Address, getGlobalIoService()), 20070);
   sender.start(endpoint);
 
   BOOST_CHECK_MESSAGE(limitedIo.run(LimitedIo::UNLIMITED_OPS,
