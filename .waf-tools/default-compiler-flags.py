@@ -139,6 +139,7 @@ class ClangFlags(GccBasicFlags):
         flags['CXXFLAGS'] += ['-std=c++11',
                               '-Wno-error=unneeded-internal-declaration', # Bug #1588
                               '-Wno-error=deprecated-register',
+                              '-Wno-error=unused-local-typedef', # Bug #2657
                               ]
         if Utils.unversioned_sys_platform() == "darwin":
             flags['CXXFLAGS'] += ['-stdlib=libc++']
