@@ -307,9 +307,11 @@ Nfdc::dispatch(const std::string& command)
       return false;
     strategyChoiceUnset();
   }
-  else
+  else {
     usage(m_programName);
-
+    return false;
+  }
+  
   return true;
 }
 
