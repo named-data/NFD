@@ -175,21 +175,21 @@ RibEntry::hasChildInheritOnFaceId(uint64_t faceId) const
   return false;
 }
 
-shared_ptr<const Route>
+const Route*
 RibEntry::getRouteWithLowestCostByFaceId(uint64_t faceId) const
 {
-  shared_ptr<Route> candidate;
+  const Route* candidate = nullptr;
 
   for (const Route& route : m_routes) {
     // Matching face ID
     if (route.faceId == faceId) {
       // If this is the first route with this Face ID found
       if (candidate == nullptr) {
-        candidate = make_shared<Route>(route);
+        candidate = &route;
       }
       else if (route.cost < candidate->cost) {
         // Found a route with a lower cost
-        candidate = make_shared<Route>(route);
+        candidate = &route;
       }
     }
   }
@@ -218,10 +218,10 @@ RibEntry::getRouteWithSecondLowestCostByFaceId(uint64_t faceId) const
   return &matches.at(1);
 }
 
-shared_ptr<const Route>
+const Route*
 RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const
 {
-  shared_ptr<Route> candidate;
+  const Route* candidate = nullptr;
 
   for (const Route& route : m_routes) {
     // Correct face ID and Child Inherit flag set
@@ -230,11 +230,11 @@ RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const
     {
       // If this is the first route with this Face ID found
       if (candidate == nullptr) {
-        candidate = make_shared<Route>(route);
+        candidate = &route;
       }
       else if (route.cost < candidate->cost) {
         // Found a route with a lower cost
-        candidate = make_shared<Route>(route);
+        candidate = &route;
       }
     }
   }

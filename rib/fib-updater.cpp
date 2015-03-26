@@ -424,15 +424,14 @@ FibUpdater::createFibUpdatesForNewRoute(const RibEntry& entry, const Route& rout
                                         bool captureWasTurnedOn)
 {
   // Only update if the new route has a lower cost than a previously installed route
-  shared_ptr<const Route> prevRoute =
-    entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
+  const Route* prevRoute = entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
 
   Rib::RouteSet routesToAdd;
   if (route.isChildInherit()) {
     // Add to children if this new route doesn't override a previous lower cost, or
     // add to children if this new route is lower cost than a previous route.
     // Less than equal, since entry may find this route
-    if (!static_cast<bool>(prevRoute) || route.cost <= prevRoute->cost) {
+    if (prevRoute == nullptr || route.cost <= prevRoute->cost) {
       // Add self to children
       routesToAdd.insert(route);
     }
@@ -452,9 +451,9 @@ FibUpdater::createFibUpdatesForNewRoute(const RibEntry& entry, const Route& rout
   // If another route with same faceId and lower cost exists, don't update.
   // Must be done last so that add updates replace removal updates
   // Create FIB update for new entry
-  shared_ptr<const Route> other = entry.getRouteWithLowestCostByFaceId(route.faceId);
+  const Route* other = entry.getRouteWithLowestCostByFaceId(route.faceId);
 
-  if (!other || route.cost <= other->cost) {
+  if (other == nullptr || route.cost <= other->cost) {
     addFibUpdate(FibUpdate::createAddUpdate(entry.getName(), route.faceId, route.cost));
   }
 }
@@ -466,8 +465,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
   const bool costDidChange = (route.cost != existingRoute.cost);
 
   // Look for an installed route with the lowest cost and child inherit set
-  shared_ptr<const Route> prevRoute =
-    entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
+  const Route* prevRoute = entry.getRouteWithLowestCostAndChildInheritByFaceId(route.faceId);
 
   // No flags changed and cost didn't change, no change in FIB
   if (route.flags == existingRoute.flags && !costDidChange) {
@@ -489,7 +487,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
 
     // If another route with same faceId and lower cost and ChildInherit exists,
     // don't update children.
-    if (!static_cast<bool>(prevRoute) || route.cost <= prevRoute->cost) {
+    if (prevRoute == nullptr || route.cost <= prevRoute->cost) {
       // If no flags changed but child inheritance is set, need to update children
       // with new cost
       if ((route.flags == existingRoute.flags) && route.isChildInherit()) {
@@ -507,7 +505,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
   if (!existingRoute.isChildInherit() && route.isChildInherit()) {
     // If another route with same faceId and lower cost and ChildInherit exists,
     // don't update children.
-    if (!static_cast<bool>(prevRoute) || route.cost <= prevRoute->cost) {
+    if (prevRoute == nullptr || route.cost <= prevRoute->cost) {
       // Add self to children
       Rib::RouteSet routesToAdd;
       routesToAdd.insert(route);
@@ -521,7 +519,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
 
     Rib::RouteSet routesToAdd;
     // If another route with same faceId and ChildInherit exists, update children with this route.
-    if (static_cast<bool>(prevRoute)) {
+    if (prevRoute != nullptr) {
       routesToAdd.insert(*prevRoute);
     }
     else {

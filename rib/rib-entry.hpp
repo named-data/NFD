@@ -146,10 +146,10 @@ public:
   /** \brief Returns the route with the lowest cost that has the passed face ID.
    *  \return{ The route with the lowest cost that has the passed face ID}
    */
-  shared_ptr<const Route>
+  const Route*
   getRouteWithLowestCostByFaceId(uint64_t faceId) const;
 
-const Route*
+  const Route*
   getRouteWithSecondLowestCostByFaceId(uint64_t faceId) const;
 
   /** \brief Returns the route with the lowest cost that has the passed face ID
@@ -157,7 +157,7 @@ const Route*
    *  \return{ The route with the lowest cost that has the passed face ID
    *           and its child inherit flag set }
    */
-  shared_ptr<const Route>
+  const Route*
   getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const;
 
   const_iterator
