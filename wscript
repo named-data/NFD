@@ -70,9 +70,7 @@ def configure(conf):
     conf.find_program('bash', var='BASH')
 
     if 'PKG_CONFIG_PATH' not in os.environ:
-        os.environ['PKG_CONFIG_PATH'] = ':'.join([
-            '/usr/local/lib/pkgconfig',
-            '/opt/local/lib/pkgconfig'])
+        os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
     conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
                    uselib_store='NDN_CXX', mandatory=True)
 
