@@ -545,8 +545,9 @@ Planned Functions and Features for Next Releases
     For congestion control
 
 - Face enhancements
-    Add fragmentation support for Ethernet face, may add support for new types such as
-    WiFi direct and WebSockets.
+    Add faces for new underlying protocols such as WiFi direct.
+    Introduce the concept of "permanent faces" that can survive socket errors.
+    Design a new hop-by-hop header that supports fragmentation, reliability improvement, etc.
 
 - Tables
     Experiment and evaluate different data structures and algorithms.
