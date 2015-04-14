@@ -57,6 +57,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <string>
 
 #include <ndn-cxx/common.hpp>
 #include <ndn-cxx/interest.hpp>
@@ -109,5 +110,18 @@ namespace time = ndn::time;
 namespace signal = ndn::util::signal;
 
 } // namespace nfd
+
+// Some platforms are missing std::to_string (issue #2743)
+#ifndef HAVE_STD_TO_STRING
+namespace std {
+template<typename V>
+inline std::string
+to_string(const V& v)
+{
+  return boost::lexical_cast<std::string>(v);
+}
+} // namespace std
+#endif // HAVE_STD_TO_STRING
+
 
 #endif // NFD_COMMON_HPP
