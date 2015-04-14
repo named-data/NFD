@@ -29,8 +29,8 @@
 #include <pcap/pcap.h>
 
 #include <cerrno>         // for errno
-#include <cstdio>         // for std::snprintf()
 #include <cstring>        // for std::strerror() and std::strncpy()
+#include <stdio.h>        // for snprintf()
 #include <arpa/inet.h>    // for htons() and ntohs()
 #include <net/ethernet.h> // for struct ether_header
 #include <net/if.h>       // for struct ifreq
@@ -96,11 +96,13 @@ EthernetFace::EthernetFace(boost::asio::posix::stream_descriptor socket,
   m_slicer.reset(new ndnlp::Slicer(m_interfaceMtu));
 
   char filter[100];
-  std::snprintf(filter, sizeof(filter),
-                "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
-                ethernet::ETHERTYPE_NDN,
-                m_destAddress.toString().c_str(),
-                m_srcAddress.toString().c_str());
+  // std::snprintf not found in some environments
+  // http://redmine.named-data.net/issues/2299 for more information
+  snprintf(filter, sizeof(filter),
+           "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
+           ethernet::ETHERTYPE_NDN,
+           m_destAddress.toString().c_str(),
+           m_srcAddress.toString().c_str());
   setPacketFilter(filter);
 
   if (!m_destAddress.isBroadcast() && !joinMulticastGroup())
