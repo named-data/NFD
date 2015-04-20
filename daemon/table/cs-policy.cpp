@@ -23,24 +23,57 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- *  \brief declares ContentStore internal types
- */
-
-#ifndef NFD_DAEMON_TABLE_CS_INTERNAL_HPP
-#define NFD_DAEMON_TABLE_CS_INTERNAL_HPP
-
-#include "common.hpp"
+#include "cs-policy.hpp"
+#include "cs.hpp"
 
 namespace nfd {
 namespace cs {
 
-class EntryImpl;
+Policy::Policy(const std::string& policyName)
+  : m_policyName(policyName)
+{
+}
 
-typedef std::set<EntryImpl> Table;
-typedef Table::const_iterator iterator;
+Policy::~Policy()
+{
+}
+
+void
+Policy::setLimit(size_t nMaxEntries)
+{
+  BOOST_ASSERT(nMaxEntries > 0);
+  m_limit = nMaxEntries;
+
+  this->evictEntries();
+}
+
+void
+Policy::afterInsert(iterator i)
+{
+  BOOST_ASSERT(m_cs != nullptr);
+  this->doAfterInsert(i);
+}
+
+void
+Policy::afterRefresh(iterator i)
+{
+  BOOST_ASSERT(m_cs != nullptr);
+  this->doAfterRefresh(i);
+}
+
+void
+Policy::beforeErase(iterator i)
+{
+  BOOST_ASSERT(m_cs != nullptr);
+  this->doBeforeErase(i);
+}
+
+void
+Policy::beforeUse(iterator i)
+{
+  BOOST_ASSERT(m_cs != nullptr);
+  this->doBeforeUse(i);
+}
 
 } // namespace cs
 } // namespace nfd
-
-#endif // NFD_DAEMON_TABLE_CS_INTERNAL_HPP

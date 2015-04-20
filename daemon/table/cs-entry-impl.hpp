@@ -26,9 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_CS_ENTRY_IMPL_HPP
 #define NFD_DAEMON_TABLE_CS_ENTRY_IMPL_HPP
 
-#include "cs-internal.hpp"
 #include "cs-entry.hpp"
-#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace cs {
@@ -68,11 +66,6 @@ public:
 private:
   bool
   isQuery() const;
-
-public:
-  QueueType queueType;
-  QueueIt queueIt;
-  scheduler::EventId moveStaleEvent;
 
 private:
   Name m_queryName;

@@ -35,7 +35,6 @@ EntryImpl::EntryImpl(const Name& name)
 }
 
 EntryImpl::EntryImpl(shared_ptr<const Data> data, bool isUnsolicited)
-  : queueType(QUEUE_NONE)
 {
   this->setData(data, isUnsolicited);
   BOOST_ASSERT(!this->isQuery());

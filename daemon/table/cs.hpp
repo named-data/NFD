@@ -48,11 +48,17 @@
 #ifndef NFD_DAEMON_TABLE_CS_HPP
 #define NFD_DAEMON_TABLE_CS_HPP
 
+#include "cs-policy.hpp"
+#include "cs-internal.hpp"
 #include "cs-entry-impl.hpp"
+#include <ndn-cxx/util/signal.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 namespace nfd {
 namespace cs {
+
+unique_ptr<Policy>
+makeDefaultPolicy();
 
 /** \brief represents the ContentStore
  */
@@ -60,7 +66,7 @@ class Cs : noncopyable
 {
 public:
   explicit
-  Cs(size_t nMaxPackets = 10);
+  Cs(size_t nMaxPackets = 10, unique_ptr<Policy> policy = makeDefaultPolicy());
 
   /** \brief inserts a Data packet
    *  \return true
@@ -97,9 +103,20 @@ public:
   /** \return capacity (in number of packets)
    */
   size_t
-  getLimit() const
+  getLimit() const;
+
+  /** \brief changes cs replacement policy
+   *  \pre size() == 0
+   */
+  void
+  setPolicy(unique_ptr<Policy> policy);
+
+  /** \return cs replacement policy
+   */
+  Policy*
+  getPolicy() const
   {
-    return m_limit;
+    return m_policy.get();
   }
 
   /** \return number of stored packets
@@ -128,7 +145,7 @@ public: // enumeration
 
   /** \brief ContentStore iterator (public API)
    */
-  typedef boost::transform_iterator<EntryFromEntryImpl, TableIt, const Entry&> const_iterator;
+  typedef boost::transform_iterator<EntryFromEntryImpl, iterator, const Entry&> const_iterator;
 
   const_iterator
   begin() const
@@ -146,54 +163,28 @@ private: // find
   /** \brief find leftmost match in [first,last)
    *  \return the leftmost match, or last if not found
    */
-  TableIt
-  findLeftmost(const Interest& interest, TableIt left, TableIt right) const;
+  iterator
+  findLeftmost(const Interest& interest, iterator left, iterator right) const;
 
   /** \brief find rightmost match in [first,last)
    *  \return the rightmost match, or last if not found
    */
-  TableIt
-  findRightmost(const Interest& interest, TableIt first, TableIt last) const;
+  iterator
+  findRightmost(const Interest& interest, iterator first, iterator last) const;
 
   /** \brief find rightmost match among entries with exact Names in [first,last)
    *  \return the rightmost match, or last if not found
    */
-  TableIt
-  findRightmostAmongExact(const Interest& interest, TableIt first, TableIt last) const;
+  iterator
+  findRightmostAmongExact(const Interest& interest, iterator first, iterator last) const;
 
-private: // cleanup
-  /** \brief attaches an entry to a suitable cleanup queue
-   *  \note if the entry is already attached to a queue, it's automatically detached
-   */
   void
-  attachQueue(TableIt it);
-
-  /** \brief detaches an entry from its current cleanup queue
-   *  \warning if the entry is unattached, this will cause undefined behavior
-   */
-  void
-  detachQueue(TableIt it);
-
-  /** \brief moves an entry from FIFO queue to STALE queue
-   */
-  void
-  moveToStaleQueue(TableIt it);
-
-  /** \brief picks an entry for eviction
-   */
-  std::tuple<TableIt, std::string/*reason*/>
-  evictPick();
-
-  /** \brief evicts zero or more entries so that number of stored entries
-   *         is not greater than capacity
-   */
-  void
-  evict();
+  setPolicyImpl(unique_ptr<Policy>& policy);
 
 private:
-  size_t m_limit;
   Table m_table;
-  Queue m_queues[QUEUE_MAX];
+  unique_ptr<Policy> m_policy;
+  ndn::util::signal::ScopedConnection m_beforeEvictConnection;
 };
 
 } // namespace cs
