@@ -38,8 +38,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("TestFibEnumerationPublisher");
-
 BOOST_FIXTURE_TEST_SUITE(MgmtFibEnumerationPublisher, FibEnumerationPublisherFixture)
 
 BOOST_AUTO_TEST_CASE(TestFibEnumerationPublisher)

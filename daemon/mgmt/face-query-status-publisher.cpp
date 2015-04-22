@@ -24,15 +24,11 @@
  **/
 
 #include "face-query-status-publisher.hpp"
-#include "core/logger.hpp"
-#include <boost/range/adaptor/reversed.hpp>
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
-
-NFD_LOG_INIT("FaceQueryStatusPublisher");
-
 
 FaceQueryStatusPublisher::FaceQueryStatusPublisher(const FaceTable& faceTable,
                                                    AppFace& face,

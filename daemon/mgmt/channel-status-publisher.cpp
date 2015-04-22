@@ -24,17 +24,12 @@
  */
 
 #include "channel-status-publisher.hpp"
-
-#include "core/logger.hpp"
 #include "face/protocol-factory.hpp"
 #include "face/channel.hpp"
 
 #include <ndn-cxx/management/nfd-channel-status.hpp>
 
 namespace nfd {
-
-NFD_LOG_INIT("ChannelStatusPublisher");
-
 
 ChannelStatusPublisher::ChannelStatusPublisher(const FactoryMap& factories,
                                                AppFace& face,
@@ -43,13 +38,10 @@ ChannelStatusPublisher::ChannelStatusPublisher(const FactoryMap& factories,
   : SegmentPublisher(face, prefix, keyChain)
   , m_factories(factories)
 {
-
 }
-
 
 ChannelStatusPublisher::~ChannelStatusPublisher()
 {
-
 }
 
 size_t

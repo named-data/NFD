@@ -79,9 +79,9 @@ FibEnumerationPublisher::generate(ndn::EncodingBuffer& outBuffer)
 
       totalLength += fibEntryLength;
     }
+
   NFD_LOG_DEBUG("generate: Total length = " << totalLength);
   return totalLength;
 }
-
 
 } // namespace nfd

@@ -24,15 +24,11 @@
  **/
 
 #include "strategy-choice-publisher.hpp"
-#include "core/logger.hpp"
 #include "table/strategy-choice.hpp"
 
 #include <ndn-cxx/management/nfd-strategy-choice.hpp>
 
 namespace nfd {
-
-NFD_LOG_INIT("StrategyChoicePublisher");
-
 
 StrategyChoicePublisher::StrategyChoicePublisher(const StrategyChoice& strategyChoice,
                                                  AppFace& face,
@@ -41,12 +37,10 @@ StrategyChoicePublisher::StrategyChoicePublisher(const StrategyChoice& strategyC
   : SegmentPublisher(face, prefix, keyChain)
   , m_strategyChoice(strategyChoice)
 {
-
 }
 
 StrategyChoicePublisher::~StrategyChoicePublisher()
 {
-
 }
 
 size_t

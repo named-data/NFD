@@ -30,8 +30,6 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("ConfigFile");
-
 void
 ConfigFile::throwErrorOnUnknownSection(const std::string& filename,
                                        const std::string& sectionName,

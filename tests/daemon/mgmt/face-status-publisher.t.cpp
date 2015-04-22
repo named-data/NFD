@@ -28,8 +28,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("FaceStatusPublisherTest");
-
 BOOST_FIXTURE_TEST_SUITE(MgmtFaceStatusPublisher, FaceStatusPublisherFixture)
 
 BOOST_AUTO_TEST_CASE(EncodingDecoding)

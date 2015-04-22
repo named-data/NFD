@@ -29,8 +29,6 @@ namespace nfd {
 
 using namespace boost::asio;
 
-NFD_LOG_INIT("WebSocketFactory");
-
 WebSocketFactory::WebSocketFactory(const std::string& defaultPort)
   : m_defaultPort(defaultPort)
 {

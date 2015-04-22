@@ -33,8 +33,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("ConfigFileTest");
-
 BOOST_FIXTURE_TEST_SUITE(TestConfigFile, BaseFixture)
 
 // a

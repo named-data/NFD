@@ -28,9 +28,6 @@
 
 #include "channel-status-common.hpp"
 
-#include "core/logger.hpp"
-NFD_LOG_INIT("TestChannelStatusPublisher");
-
 namespace nfd {
 namespace tests {
 
@@ -90,8 +87,6 @@ public:
           }
 
         ndn::nfd::ChannelStatus entry(*i);
-
-        NFD_LOG_DEBUG("looking for channelstatus " << entry.getLocalUri());
 
         std::map<std::string, ndn::nfd::ChannelStatus>::const_iterator expectedEntryPos =
           m_expectedEntries.find(entry.getLocalUri());

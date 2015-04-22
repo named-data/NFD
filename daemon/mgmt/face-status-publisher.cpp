@@ -23,16 +23,12 @@
  **/
 
 #include "face-status-publisher.hpp"
-#include "core/logger.hpp"
 #include "fw/face-table.hpp"
-#include <boost/range/adaptor/reversed.hpp>
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
 namespace nfd {
-
-NFD_LOG_INIT("FaceStatusPublisher");
-
 
 FaceStatusPublisher::FaceStatusPublisher(const FaceTable& faceTable,
                                          AppFace& face,
@@ -41,13 +37,10 @@ FaceStatusPublisher::FaceStatusPublisher(const FaceTable& faceTable,
   : SegmentPublisher(face, prefix, keyChain)
   , m_faceTable(faceTable)
 {
-
 }
-
 
 FaceStatusPublisher::~FaceStatusPublisher()
 {
-
 }
 
 size_t

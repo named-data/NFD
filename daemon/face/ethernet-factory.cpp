@@ -31,8 +31,6 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("EthernetFactory");
-
 shared_ptr<EthernetFace>
 EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
                                      const ethernet::Address &address)
