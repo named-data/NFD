@@ -612,7 +612,8 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
   // Need to check if the removed route was blocking an inherited route
   Rib::RouteSet ancestorRoutes = m_rib.getAncestorRoutes(entry);
 
-  if (!entry.hasCapture()) {
+  // If the current entry has capture set or is pending removal, don't add inherited route
+  if (!entry.hasCapture() && entry.getNRoutes() != 0) {
     // If there is an ancestor route which is the same as the erased route, add that route
     // to the current entry
     Rib::RouteSet::iterator it = ancestorRoutes.find(route);

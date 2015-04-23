@@ -377,6 +377,33 @@ BOOST_AUTO_TEST_CASE(EraseFaceById)
   BOOST_CHECK_EQUAL(update->action, FibUpdate::ADD_NEXTHOP);
 }
 
+BOOST_AUTO_TEST_CASE(RemoveNamespaceWithAncestorFace) // Bug #2757
+{
+  uint64_t faceId = 263;
+
+  // Register route back to laptop
+  insertRoute("/", faceId, ndn::nfd::ROUTE_ORIGIN_STATIC, 0, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+
+  // Register remote prefix
+  insertRoute("/Z/A", faceId, ndn::nfd::ROUTE_ORIGIN_CLIENT, 15, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+
+  // Clear updates generated from previous insertions
+  clearFibUpdates();
+
+  // Unregister remote prefix
+  // Should create an update to remove the remote prefix but should not create
+  // an update to add the ancestor route to the remote prefix's namespace
+  eraseRoute("/Z/A", faceId, ndn::nfd::ROUTE_ORIGIN_CLIENT);
+
+  FibUpdater::FibUpdateList updates = getSortedFibUpdates();
+  BOOST_REQUIRE_EQUAL(updates.size(), 1);
+
+  FibUpdater::FibUpdateList::const_iterator update = updates.begin();
+  BOOST_CHECK_EQUAL(update->name,  "/Z/A");
+  BOOST_CHECK_EQUAL(update->faceId, faceId);
+  BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // EraseFace
 
 BOOST_AUTO_TEST_SUITE_END() // FibUpdates
