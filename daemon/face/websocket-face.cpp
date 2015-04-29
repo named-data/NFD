@@ -54,13 +54,11 @@ WebSocketFace::sendInterest(const Interest& interest)
   const Block& payload = interest.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 
-  try {
-    m_server.send(m_handle, payload.wire(), payload.size(),
-                  websocketpp::frame::opcode::binary);
-  }
-  catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_FACE_WARN("Failed to send Interest: " << e << " (" << e.message() << ")");
-  }
+  websocketpp::lib::error_code ec;
+  m_server.send(m_handle, payload.wire(), payload.size(),
+                websocketpp::frame::opcode::binary, ec);
+  if (ec)
+    NFD_LOG_FACE_WARN("Failed to send Interest: " << ec.message());
 }
 
 void
@@ -76,13 +74,11 @@ WebSocketFace::sendData(const Data& data)
   const Block& payload = data.wireEncode();
   this->getMutableCounters().getNOutBytes() += payload.size();
 
-  try {
-    m_server.send(m_handle, payload.wire(), payload.size(),
-                  websocketpp::frame::opcode::binary);
-  }
-  catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_FACE_WARN("Failed to send Data: " << e << " (" << e.message() << ")");
-  }
+  websocketpp::lib::error_code ec;
+  m_server.send(m_handle, payload.wire(), payload.size(),
+                websocketpp::frame::opcode::binary, ec);
+  if (ec)
+    NFD_LOG_FACE_WARN("Failed to send Data: " << ec.message());
 }
 
 void
@@ -95,9 +91,9 @@ WebSocketFace::close()
 
   m_closed = true;
   scheduler::cancel(m_pingEventId);
-  websocketpp::lib::error_code ecode;
-  m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ecode);
-
+  websocketpp::lib::error_code ec;
+  m_server.close(m_handle, websocketpp::close::status::normal, "closed by nfd", ec);
+  // ignore error on close
   fail("Face closed");
 }
 

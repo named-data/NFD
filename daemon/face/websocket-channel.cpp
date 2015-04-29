@@ -102,26 +102,30 @@ WebSocketChannel::handleMessage(websocketpp::connection_hdl hdl,
 void
 WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
 {
-  std::string remote;
   try {
-    remote = "wsclient://" + m_server.get_con_from_hdl(hdl)->get_remote_endpoint();
+    std::string remote = "wsclient://" + m_server.get_con_from_hdl(hdl)->get_remote_endpoint();
+    auto face = make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
+                                           hdl, ref(m_server));
+    m_onFaceCreatedCallback(face);
+    m_channelFaces[hdl] = face;
+    // Schedule ping message
+    scheduler::EventId pingEvent = scheduler::schedule(m_pingInterval,
+                                                       bind(&WebSocketChannel::sendPing,
+                                                            this, hdl));
+    face->setPingEventId(pingEvent);
   }
-  catch (const websocketpp::lib::error_code& e) {
-    NFD_LOG_WARN("Cannot get remote URI");
-    websocketpp::lib::error_code error;
-    m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", error);
-    return;
+  catch (const FaceUri::Error& e) {
+    NFD_LOG_WARN(e.what());
+    websocketpp::lib::error_code ec;
+    m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ec);
+    // ignore error on close
   }
-
-  auto face = make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
-                                         hdl, ref(m_server));
-  m_onFaceCreatedCallback(face);
-  m_channelFaces[hdl] = face;
-
-  // Schedule ping message
-  scheduler::EventId pingEvent = scheduler::schedule(m_pingInterval,
-                                                     bind(&WebSocketChannel::sendPing, this, hdl));
-  face->setPingEventId(pingEvent);
+  catch (const websocketpp::exception& e) {
+    NFD_LOG_WARN("Cannot get remote connection: " << e.what());
+    websocketpp::lib::error_code ec;
+    m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ec);
+    // ignore error on close
+  }
 }
 
 void
@@ -131,19 +135,20 @@ WebSocketChannel::sendPing(websocketpp::connection_hdl hdl)
   if (it != m_channelFaces.end()) {
     NFD_LOG_TRACE("Sending ping to " << it->second->getRemoteUri());
 
-    try {
-      m_server.ping(hdl, "NFD-WebSocket");
-    }
-    catch (const websocketpp::lib::error_code& e) {
-      NFD_LOG_WARN("Failed to ping " << it->second->getRemoteUri());
-      it->second->close();
-      m_channelFaces.erase(it);
-      return;
-    }
+    websocketpp::lib::error_code ec;
+    m_server.ping(hdl, "NFD-WebSocket", ec);
+    if (ec)
+      {
+        NFD_LOG_WARN("Failed to ping " << it->second->getRemoteUri() << ": " << ec.message());
+        it->second->close();
+        m_channelFaces.erase(it);
+        return;
+      }
 
     // Schedule next ping message
     scheduler::EventId pingEvent = scheduler::schedule(m_pingInterval,
-                                                       bind(&WebSocketChannel::sendPing, this, hdl));
+                                                       bind(&WebSocketChannel::sendPing,
+                                                            this, hdl));
     it->second->setPingEventId(pingEvent);
   }
 }
