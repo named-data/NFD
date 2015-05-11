@@ -264,6 +264,9 @@ AccessStrategy::addPrefixMeasurements(const Data& data)
     BOOST_ASSERT(me != nullptr);
   }
 
+  static const time::nanoseconds ME_LIFETIME = time::seconds(8);
+  this->getMeasurements().extendLifetime(*me, ME_LIFETIME);
+
   return me->getOrCreateStrategyInfo<MtInfo>();
 }
 
