@@ -67,6 +67,11 @@ def options(opt):
 
 def configure(conf):
 	if (conf.options.with_pch and conf.env['COMPILER_CXX'] in PCH_COMPILER_OPTIONS.keys()):
+		if Utils.unversioned_sys_platform() == "darwin" and conf.env['CXX_NAME'] == 'clang':
+			version = tuple(int(i) for i in conf.env['CC_VERSION'])
+			if version < (6, 1, 0):
+				# Issue #2804
+				return
 		conf.env.WITH_PCH = True
 		flags = PCH_COMPILER_OPTIONS[conf.env['COMPILER_CXX']]
 		conf.env.CXXPCH_F = flags[0]
