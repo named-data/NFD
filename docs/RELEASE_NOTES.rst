@@ -69,6 +69,8 @@ Updates and bug fixes:
 
   * Fix several "defined but not used" warnings with gcc-5 (:issue:`2767`)
 
+  * Disable precompiled headers on OS X with clang < 6.1.0 (:issue:`2804`)
+
 ****************************************************************************
 
 NFD version 0.3.1 (changes since version 0.3.0)
