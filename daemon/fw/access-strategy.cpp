@@ -97,8 +97,8 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace,
 
   // no measurements, or last working nexthop unavailable
 
-  // multicast to all nexthops
-  this->multicast(pitEntry, fibEntry);
+  // multicast to all nexthops except incoming face
+  this->multicast(pitEntry, fibEntry, {inFace.getId()});
 }
 
 void
@@ -108,7 +108,7 @@ AccessStrategy::afterReceiveRetxInterest(const Face& inFace,
                                          shared_ptr<pit::Entry> pitEntry)
 {
   NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-forward");
-  this->multicast(pitEntry, fibEntry, std::unordered_set<FaceId>{inFace.getId()});
+  this->multicast(pitEntry, fibEntry, {inFace.getId()});
 }
 
 bool
@@ -167,7 +167,7 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, weak_ptr<fib::Entr
 
   NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFace <<
                 " multicast-except " << inFace << ',' << firstOutFace);
-  this->multicast(pitEntry, fibEntry, std::unordered_set<FaceId>{inFace, firstOutFace});
+  this->multicast(pitEntry, fibEntry, {inFace, firstOutFace});
 }
 
 void

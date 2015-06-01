@@ -350,6 +350,23 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   BOOST_CHECK_EQUAL(hasData2c, true);
 }
 
+BOOST_FIXTURE_TEST_CASE(Bug2831, TwoLaptopsFixture)
+{
+  // make a two-node loop
+  topo.registerPrefix(laptopA, linkA->getFace(laptopA), "ndn:/net");
+  topo.registerPrefix(router, linkA->getFace(router), "ndn:/net");
+
+  // send Interests from laptopA to router
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(laptopA);
+  topo.addIntervalConsumer(*consumer->getClientFace(), "ndn:/net",
+                           time::milliseconds(100), 10);
+
+  this->advanceClocks(time::milliseconds(5), time::seconds(2));
+
+  // Interest shouldn't loop back from router
+  BOOST_CHECK_EQUAL(linkA->getFace(router)->m_sentInterests.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
