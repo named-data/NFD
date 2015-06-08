@@ -1,6 +1,12 @@
 ndn-tlv-peek
 ============
 
+Deprecated
+----------
+
+ndn-tlv-peek is deprecated and will be removed in a future release of NFD.
+Please use ``ndnpeek`` program from ndn-tools repository `<https://github.com/named-data/ndn-tools>`__.
+
 Usage
 -----
 

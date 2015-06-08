@@ -1,6 +1,12 @@
 ndn-tlv-poke
 ============
 
+Deprecated
+----------
+
+ndn-tlv-poke is deprecated and will be removed in a future release of NFD.
+Please use ``ndnpoke`` program from ndn-tools repository `<https://github.com/named-data/ndn-tools>`__.
+
 Usage
 -----
 
