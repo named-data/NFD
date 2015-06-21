@@ -38,11 +38,14 @@
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
 #include <ndn-cxx/management/nfd-rib-entry.hpp>
 #include <ndn-cxx/management/nfd-strategy-choice.hpp>
+#include <ndn-cxx/util/segment-fetcher.hpp>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <list>
 
 namespace ndn {
+
+using util::SegmentFetcher;
 
 class NfdStatus
 {
@@ -132,26 +135,13 @@ public:
     runNextStep();
   }
 
+
   void
-  fetchSegments(const Data& data, void (NfdStatus::*onDone)())
+  onErrorFetch(uint32_t errorCode, const std::string& errorMsg)
   {
-    m_buffer->write((const char*)data.getContent().value(),
-                    data.getContent().value_size());
+    std::cerr << "Error code:" << errorCode << ", message:" << errorMsg << std::endl;
 
-    uint64_t currentSegment = data.getName().get(-1).toSegment();
-
-    const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
-    if (finalBlockId.empty() ||
-        finalBlockId.toSegment() > currentSegment)
-      {
-        m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
-                               bind(&NfdStatus::fetchSegments, this, _2, onDone),
-                               bind(&NfdStatus::onTimeout, this));
-      }
-    else
-      {
-        return (this->*onDone)();
-      }
+    runNextStep();
   }
 
   void
@@ -277,24 +267,23 @@ public:
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
 
-    m_face.expressInterest(interest,
-                           bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedChannelStatusInformation),
-                           bind(&NfdStatus::onTimeout, this));
+    SegmentFetcher::fetch(m_face, interest,
+                          util::DontVerifySegment(),
+                          bind(&NfdStatus::afterFetchedChannelStatusInformation, this, _1),
+                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
 
   void
-  afterFetchedChannelStatusInformation()
+  afterFetchedChannelStatusInformation(const ConstBufferPtr& dataset)
   {
-    ConstBufferPtr buf = m_buffer->buf();
     if (m_isOutputXml) {
       std::cout << "<channels>";
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
           break;
@@ -317,10 +306,10 @@ public:
       std::cout << "Channels:" << std::endl;
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode ChannelStatus TLV" << std::endl;
           break;
@@ -348,24 +337,23 @@ public:
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
 
-    m_face.expressInterest(interest,
-                           bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedFaceStatusInformation),
-                           bind(&NfdStatus::onTimeout, this));
+    SegmentFetcher::fetch(m_face, interest,
+                          util::DontVerifySegment(),
+                          bind(&NfdStatus::afterFetchedFaceStatusInformation, this, _1),
+                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
 
   void
-  afterFetchedFaceStatusInformation()
+  afterFetchedFaceStatusInformation(const ConstBufferPtr& dataset)
   {
-    ConstBufferPtr buf = m_buffer->buf();
     if (m_isOutputXml) {
       std::cout << "<faces>";
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
           break;
@@ -430,10 +418,10 @@ public:
       std::cout << "Faces:" << std::endl;
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
           break;
@@ -480,24 +468,24 @@ public:
     Interest interest("/localhost/nfd/fib/list");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
-    m_face.expressInterest(interest,
-                           bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedFibEnumerationInformation),
-                           bind(&NfdStatus::onTimeout, this));
+
+    SegmentFetcher::fetch(m_face, interest,
+                          util::DontVerifySegment(),
+                          bind(&NfdStatus::afterFetchedFibEnumerationInformation, this, _1),
+                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
 
   void
-  afterFetchedFibEnumerationInformation()
+  afterFetchedFibEnumerationInformation(const ConstBufferPtr& dataset)
   {
-    ConstBufferPtr buf = m_buffer->buf();
     if (m_isOutputXml) {
       std::cout << "<fib>";
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode FibEntry TLV";
           break;
@@ -527,10 +515,10 @@ public:
       std::cout << "FIB:" << std::endl;
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode FibEntry TLV" << std::endl;
           break;
@@ -568,24 +556,24 @@ public:
     Interest interest("/localhost/nfd/strategy-choice/list");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
-    m_face.expressInterest(interest,
-                           bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedStrategyChoiceInformationInformation),
-                           bind(&NfdStatus::onTimeout, this));
+
+    SegmentFetcher::fetch(m_face, interest,
+                          util::DontVerifySegment(),
+                          bind(&NfdStatus::afterFetchedStrategyChoiceInformationInformation, this, _1),
+                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
 
   void
-  afterFetchedStrategyChoiceInformationInformation()
+  afterFetchedStrategyChoiceInformationInformation(const ConstBufferPtr& dataset)
   {
-    ConstBufferPtr buf = m_buffer->buf();
     if (m_isOutputXml) {
       std::cout << "<strategyChoices>";
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode StrategyChoice TLV";
           break;
@@ -615,10 +603,10 @@ public:
       std::cout << "Strategy choices:" << std::endl;
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode StrategyChoice TLV" << std::endl;
           break;
@@ -644,24 +632,23 @@ public:
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
 
-    m_face.expressInterest(interest,
-                           bind(&NfdStatus::fetchSegments, this, _2,
-                                &NfdStatus::afterFetchedRibStatusInformation),
-                           bind(&NfdStatus::onTimeout, this));
+    SegmentFetcher::fetch(m_face, interest,
+                          util::DontVerifySegment(),
+                          bind(&NfdStatus::afterFetchedRibStatusInformation, this, _1),
+                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
 
   void
-  afterFetchedRibStatusInformation()
+  afterFetchedRibStatusInformation(const ConstBufferPtr& dataset)
   {
-    ConstBufferPtr buf = m_buffer->buf();
     if (m_isOutputXml) {
       std::cout << "<rib>";
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode RibEntry TLV";
           break;
@@ -706,10 +693,10 @@ public:
       std::cout << "RIB:" << std::endl;
 
       size_t offset = 0;
-      while (offset < buf->size()) {
+      while (offset < dataset->size()) {
         bool isOk = false;
         Block block;
-        std::tie(isOk, block) = Block::fromBuffer(buf, offset);
+        std::tie(isOk, block) = Block::fromBuffer(dataset, offset);
         if (!isOk) {
           std::cerr << "ERROR: cannot decode RibEntry TLV" << std::endl;
           break;
