@@ -26,6 +26,7 @@
 #include "remote-registrator.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace rib {
@@ -196,7 +197,7 @@ RemoteRegistrator::registerPrefix(const Name& prefix)
   CommandOptions    options    = m_commandOptions;
 
   startRegistration(parameters.setName(prefixForRegistration),
-                    options.setSigningIdentity(identity.first),
+                    options.setSigningInfo(signingByIdentity(identity.first)),
                     m_nRetries);
 }
 
@@ -268,7 +269,7 @@ RemoteRegistrator::unregisterPrefix(const Name& prefix)
   CommandOptions    options    = m_commandOptions;
 
   startUnregistration(parameters.setName(prefixForRegistration).unsetCost(),
-                      options.setSigningIdentity(identity.first),
+                      options.setSigningInfo(signingByIdentity(identity.first)),
                       m_nRetries);
 }
 
@@ -427,7 +428,7 @@ RemoteRegistrator::redoRegistration()
       ControlParameters parameters = m_controlParameters;
       CommandOptions    options    = m_commandOptions;
       startRegistration(parameters.setName(entry.first),
-                        options.setSigningIdentity(entry.first),
+                        options.setSigningInfo(signingByIdentity(entry.first)),
                         m_nRetries);
     }
 }
