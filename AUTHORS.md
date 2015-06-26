@@ -73,3 +73,7 @@ in the library:
 
 * Tai-Lin Chu             <https://www.linkedin.com/pub/tai-lin-chu/55/5b2/669>
 * Spyridon Mastorakis     <http://cs.ucla.edu/~mastorakis/>
+* Eric Newberry           <http://ericnewberry.com>
+* Yukai Tu                <tuyukai1994@gmail.com>
+* João Pereira            <http://website.jpereira.co.uk>
+* Mathias Gibbens         <gibmat@cs.arizona.edu>
