@@ -53,10 +53,7 @@ public:
   wireEncode() const
   {
     ndn::EncodingBuffer buffer;
-    ndn::prependByteArrayBlock(buffer,
-                               0x8888,
-                               reinterpret_cast<const uint8_t*>(m_message.c_str()),
-                               m_message.size());
+    prependStringBlock(buffer, 0x8888, m_message);
     return buffer.block();
   }
 
