@@ -28,8 +28,10 @@
 
 #include "common.hpp"
 #include "core/config-file.hpp"
+#include "core/scheduler.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/network-monitor.hpp>
 
 namespace nfd {
 
@@ -86,6 +88,9 @@ private:
   void
   initializeManagement();
 
+  void
+  reloadConfigFileFaceSection();
+
 private:
   std::string m_configFile;
   ConfigSection m_configSection;
@@ -99,6 +104,9 @@ private:
   unique_ptr<StatusServer>          m_statusServer;
 
   ndn::KeyChain&                    m_keyChain;
+
+  ndn::util::NetworkMonitor         m_networkMonitor;
+  scheduler::ScopedEventId          m_reloadConfigEvent;
 };
 
 } // namespace nfd

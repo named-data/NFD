@@ -25,8 +25,10 @@
 
 #include "nfd.hpp"
 
+#include "core/global-io.hpp"
 #include "core/logger-factory.hpp"
 #include "core/privilege-helper.hpp"
+#include "core/config-file.hpp"
 #include "fw/forwarder.hpp"
 #include "face/null-face.hpp"
 #include "mgmt/internal-face.hpp"
@@ -34,23 +36,26 @@
 #include "mgmt/face-manager.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/status-server.hpp"
-#include "core/config-file.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
 
 namespace nfd {
+
+NFD_LOG_INIT("Nfd");
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
   , m_keyChain(keyChain)
+  , m_networkMonitor(getGlobalIoService())
 {
 }
 
 Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
   , m_keyChain(keyChain)
+  , m_networkMonitor(getGlobalIoService())
 {
 }
 
@@ -75,6 +80,16 @@ Nfd::initialize()
                                           FACEID_CONTENT_STORE);
 
   PrivilegeHelper::drop();
+
+  m_networkMonitor.onNetworkStateChanged.connect([this] {
+      // delay stages, so if multiple events are triggered in short sequence,
+      // only one auto-detection procedure is triggered
+      m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
+        [this] {
+          NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
+          this->reloadConfigFileFaceSection();
+        });
+    });
 }
 
 void
@@ -179,6 +194,21 @@ Nfd::reloadConfigFile()
   tablesConfig.setConfigFile(config);
 
   m_internalFace->getValidator().setConfigFile(config);
+  m_faceManager->setConfigFile(config);
+
+  if (!m_configFile.empty()) {
+    config.parse(m_configFile, false);
+  }
+  else {
+    config.parse(m_configSection, false, INTERNAL_CONFIG);
+  }
+}
+
+void
+Nfd::reloadConfigFileFaceSection()
+{
+  // reload only face_system section of the config file to re-initialize multicast faces
+  ConfigFile config(&ConfigFile::ignoreUnknownSection);
   m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
