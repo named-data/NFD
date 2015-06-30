@@ -42,7 +42,7 @@ Options
         Expiration time of the RIB entry in milliseconds. If not specified, the entry remains in FIB
         for the lifetime of the associated face.
 
-       ``-o <origin>``
+      ``-o <origin>``
         Origin of the registration request (default is 255).
         0 for Local producer applications, 128 for NLSR, 255 for static routes.
 
@@ -62,10 +62,10 @@ Options
 
     ``unregister [-o origin] <prefix> <faceId>``
 
-       ``-o <origin>``
+      ``-o <origin>``
         Origin of the unregistration request (default is 255).
 
-       ``prefix``
+      ``prefix``
         A prefix of an existing RIB entry, from which routing entry is requested to be
         removed.
 
