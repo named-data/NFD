@@ -275,8 +275,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_REQUIRE(static_cast<bool>(face1));
   BOOST_REQUIRE(static_cast<bool>(face2));
 
-  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
-  BOOST_CHECK_EQUAL(face2->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(face2->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
   BOOST_CHECK_EQUAL(face2->isMultiAccess(), false);
 

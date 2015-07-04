@@ -128,10 +128,10 @@ public: // attributes
   bool
   isLocal() const;
 
-  /** \brief Get whether face is created on demand or explicitly via FaceManagement protocol
+  /** \brief Get the persistency setting
    */
-  bool
-  isOnDemand() const;
+  ndn::nfd::FacePersistency
+  getPersistency() const;
 
   /** \brief Get whether packets sent by this face may reach multiple peers
    */
@@ -171,7 +171,7 @@ public: // attributes
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   void
-  setOnDemand(bool isOnDemand);
+  setPersistency(ndn::nfd::FacePersistency persistency);
 
 protected:
   bool
@@ -202,7 +202,7 @@ private:
   const FaceUri m_remoteUri;
   const FaceUri m_localUri;
   const bool m_isLocal;
-  bool m_isOnDemand;
+  ndn::nfd::FacePersistency m_persistency;
   const bool m_isMultiAccess;
   bool m_isFailed;
 
@@ -240,16 +240,16 @@ Face::isLocal() const
   return m_isLocal;
 }
 
-inline bool
-Face::isOnDemand() const
+inline ndn::nfd::FacePersistency
+Face::getPersistency() const
 {
-  return m_isOnDemand;
+  return m_persistency;
 }
 
 inline void
-Face::setOnDemand(bool isOnDemand)
+Face::setPersistency(ndn::nfd::FacePersistency persistency)
 {
-  m_isOnDemand = isOnDemand;
+  m_persistency = persistency;
 }
 
 inline bool

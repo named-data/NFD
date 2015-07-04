@@ -126,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
   auto multicastFace1a = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
   BOOST_CHECK_EQUAL(multicastFace1->isLocal(), false);
-  BOOST_CHECK_EQUAL(multicastFace1->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(multicastFace1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(multicastFace1->isMultiAccess(), true);
 
   //same endpoint of a multicast face
@@ -569,7 +569,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
 
   limitedIo.run(1, time::milliseconds(100)); // 1 create (on channel2)
   BOOST_REQUIRE(face2 != nullptr);
-  BOOST_CHECK_EQUAL(face2->isOnDemand(), false);
+  BOOST_CHECK_EQUAL(face2->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(face2->isMultiAccess(), false);
 
   // face2 sends to channel1, creates face1
@@ -579,7 +579,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
   limitedIo.run(2, time::seconds(1)); // 1 accept (on channel1), 1 receive (on face1)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
   BOOST_REQUIRE(face1 != nullptr);
-  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
+  BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
 
   limitedIo.defer(time::seconds(1));

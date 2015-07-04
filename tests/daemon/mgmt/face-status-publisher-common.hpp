@@ -142,12 +142,7 @@ public:
       BOOST_CHECK_EQUAL(status.getFaceScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
     }
 
-    if (reference->isOnDemand()) {
-      BOOST_CHECK_EQUAL(status.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-    }
-    else {
-      BOOST_CHECK_EQUAL(status.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-    }
+    BOOST_CHECK_EQUAL(status.getFacePersistency(), reference->getPersistency());
 
     if (reference->isMultiAccess()) {
       BOOST_CHECK_EQUAL(status.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);

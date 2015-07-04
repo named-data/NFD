@@ -98,9 +98,10 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand)
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
     // we already have a face for this endpoint, just reuse it
-    if (!isOnDemand)
-      // only on-demand -> non-on-demand transition is allowed
-      it->second->setOnDemand(false);
+    if (!isOnDemand) {
+      // only on-demand -> persistent transition is allowed
+      it->second->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+    }
     return {false, it->second};
   }
 

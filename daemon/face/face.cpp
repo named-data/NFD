@@ -34,7 +34,7 @@ Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal, bool
   , m_remoteUri(remoteUri)
   , m_localUri(localUri)
   , m_isLocal(isLocal)
-  , m_isOnDemand(false)
+  , m_persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   , m_isMultiAccess(isMultiAccess)
   , m_isFailed(false)
 {
@@ -102,8 +102,7 @@ Face::copyStatusTo(FaceTraits& traits) const
         .setLocalUri(getLocalUri().toString())
         .setFaceScope(isLocal() ? ndn::nfd::FACE_SCOPE_LOCAL
                                 : ndn::nfd::FACE_SCOPE_NON_LOCAL)
-        .setFacePersistency(isOnDemand() ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND
-                                         : ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+        .setFacePersistency(getPersistency())
         .setLinkType(isMultiAccess() ? ndn::nfd::LINK_TYPE_MULTI_ACCESS
                                      : ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 }

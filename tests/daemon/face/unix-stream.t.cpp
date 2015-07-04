@@ -190,7 +190,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
 
   BOOST_REQUIRE(static_cast<bool>(face1));
   BOOST_CHECK_EQUAL(face1->isLocal(), true);
-  BOOST_CHECK_EQUAL(face1->isOnDemand(), true);
+  BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
   BOOST_CHECK_EQUAL(face1->getRemoteUri().getScheme(), "fd");
   BOOST_CHECK_NO_THROW(std::stoi(face1->getRemoteUri().getHost()));

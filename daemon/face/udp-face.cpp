@@ -44,7 +44,7 @@ UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
   , m_idleTimeout(idleTimeout)
   , m_lastIdleCheck(time::steady_clock::now())
 {
-  this->setOnDemand(isOnDemand);
+  this->setPersistency(isOnDemand ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND : ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 
 #ifdef __linux__
   //
@@ -66,7 +66,7 @@ UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
   }
 #endif
 
-  if (this->isOnDemand() && m_idleTimeout > time::seconds::zero()) {
+  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND && m_idleTimeout > time::seconds::zero()) {
     m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UdpFace::closeIfIdle, this));
   }
 }
@@ -76,7 +76,7 @@ UdpFace::getFaceStatus() const
 {
   auto status = DatagramFace::getFaceStatus();
 
-  if (isOnDemand()) {
+  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     time::milliseconds left = m_idleTimeout;
     left -= time::duration_cast<time::milliseconds>(time::steady_clock::now() - m_lastIdleCheck);
 
@@ -97,7 +97,7 @@ UdpFace::closeIfIdle()
 {
   // Face can be switched from on-demand to non-on-demand mode
   // (non-on-demand -> on-demand transition is not allowed)
-  if (isOnDemand()) {
+  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     if (!hasBeenUsedRecently()) {
       NFD_LOG_FACE_INFO("Closing for inactivity");
       close();

@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(PersistencyFilter)
                                                     "/localhost/nfd/FaceStatusPublisherFixture",
                                                     filter, m_keyChain);
   BOOST_CHECK_EQUAL(faceQueryStatusPublisher.doesMatchFilter(m_dummyFace), false);
-  multicastFace->setOnDemand(true);
+  multicastFace->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(faceQueryStatusPublisher.doesMatchFilter(multicastFace), true);
 }
 

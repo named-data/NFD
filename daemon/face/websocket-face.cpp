@@ -38,7 +38,7 @@ WebSocketFace::WebSocketFace(const FaceUri& remoteUri, const FaceUri& localUri,
   , m_closed(false)
 {
   NFD_LOG_FACE_INFO("Creating face");
-  this->setOnDemand(true);
+  this->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
 }
 
 void

@@ -120,7 +120,7 @@ StreamFace<T, FaceBase>::StreamFace(const FaceUri& remoteUri, const FaceUri& loc
 {
   NFD_LOG_FACE_INFO("Creating face");
 
-  this->setOnDemand(isOnDemand);
+  this->setPersistency(isOnDemand ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND : ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   StreamFaceValidator<T, FaceBase>::validateSocket(m_socket);
 
   m_socket.async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),

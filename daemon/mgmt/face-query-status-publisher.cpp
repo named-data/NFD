@@ -74,8 +74,7 @@ FaceQueryStatusPublisher::doesMatchFilter(const shared_ptr<Face>& face)
   }
 
   if (m_faceFilter.hasFacePersistency() &&
-      (m_faceFilter.getFacePersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) !=
-      face->isOnDemand()) {
+      m_faceFilter.getFacePersistency() != face->getPersistency()) {
     return false;
   }
 
