@@ -1,4 +1,4 @@
-# For Ubuntu only
+sudo: true
 language: cpp
 os:
   - linux
@@ -8,8 +8,8 @@ notifications:
   email:
     on_success: always
     on_failure: always
-before_install:
-  - travis_retry sudo apt-get update
-  - travis_retry sudo apt-get install -qq libssl-dev libpcap-dev libboost1.48-all-dev libcrypto++-dev libsqlite3-dev
 script:
+  - [[ $TRAVIS_OS_NAME == linux ]] && export NODE_LABELS="Linux Ubuntu Ubuntu-12.04"
+  - [[ $TRAVIS_OS_NAME == osx ]] && export NODE_LABELS="OSX OSX-10.10"
+  - echo $NODE_LABELS
   - ./.jenkins
