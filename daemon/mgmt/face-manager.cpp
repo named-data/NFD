@@ -975,6 +975,7 @@ FaceManager::createFace(const Interest& request,
   try
     {
       factory->second->createFace(uri,
+                                  ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                                   bind(&FaceManager::onCreated,
                                        this, requestName, parameters, _1),
                                   bind(&FaceManager::onConnectFailed,

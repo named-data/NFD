@@ -200,11 +200,6 @@ class FaceCreateFixture : protected BaseFixture
 {
 public:
   void
-  ignore()
-  {
-  }
-
-  void
   checkError(const std::string& errorActual, const std::string& errorExpected)
   {
     BOOST_CHECK_EQUAL(errorActual, errorExpected);
@@ -222,15 +217,37 @@ BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
   UdpFactory factory = UdpFactory();
 
   factory.createFace(FaceUri("udp4://127.0.0.1:6363"),
-                     bind(&FaceCreateFixture::ignore, this),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     bind([]{}),
                      bind(&FaceCreateFixture::checkError, this, _1,
                           "No channels available to connect to 127.0.0.1:6363"));
 
   factory.createChannel("127.0.0.1", "20071");
 
   factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                     bind(&FaceCreateFixture::ignore, this),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     bind([]{}),
                      bind(&FaceCreateFixture::failIfError, this, _1));
+}
+
+BOOST_FIXTURE_TEST_CASE(UnsupportedFaceCreate, FaceCreateFixture)
+{
+  UdpFactory factory;
+
+  factory.createChannel("127.0.0.1", "20070");
+  factory.createChannel("127.0.0.1", "20071");
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("udp4://127.0.0.1:20071"),
+                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
 }
 
 class EndToEndIpv4
@@ -351,6 +368,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(EndToEnd, A, EndToEndAddresses)
   shared_ptr<Face> face1;
   unique_ptr<FaceHistory> history1;
   factory.createFace(A::getFaceUri2(),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      [&] (shared_ptr<Face> newFace) {
                        face1 = newFace;
                        history1.reset(new FaceHistory(*face1, limitedIo));
@@ -516,6 +534,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ManualClose, A, EndToEndAddresses)
   shared_ptr<Face> face1;
   unique_ptr<FaceHistory> history1;
   factory.createFace(A::getFaceUri2(),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      [&] (shared_ptr<Face> newFace) {
                        face1 = newFace;
                        history1.reset(new FaceHistory(*face1, limitedIo));

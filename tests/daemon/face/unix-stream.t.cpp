@@ -74,6 +74,29 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+{
+  UnixStreamFactory factory;
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("unix:///var/run/nfd.sock"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("unix:///var/run/nfd.sock"),
+                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("unix:///var/run/nfd.sock"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+}
+
 class EndToEndFixture : protected BaseFixture
 {
 public:

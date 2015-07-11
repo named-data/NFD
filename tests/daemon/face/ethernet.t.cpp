@@ -99,6 +99,29 @@ BOOST_AUTO_TEST_CASE(MulticastFacesMap)
   BOOST_CHECK_NE(face1, face3);
 }
 
+BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+{
+  EthernetFactory factory;
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
+                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+}
+
 BOOST_AUTO_TEST_CASE(SendPacket)
 {
   if (m_interfaces.empty()) {

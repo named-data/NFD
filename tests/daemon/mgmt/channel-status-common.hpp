@@ -64,6 +64,7 @@ public:
 
   virtual void
   createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
              const FaceConnectFailedCallback& onConnectFailed)
   {

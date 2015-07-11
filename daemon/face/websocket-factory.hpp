@@ -81,8 +81,9 @@ public:
   // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed);
+             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE;
 
   virtual std::list<shared_ptr<const Channel> >
   getChannels() const;

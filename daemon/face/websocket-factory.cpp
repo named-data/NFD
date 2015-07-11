@@ -67,6 +67,7 @@ WebSocketFactory::findChannel(const websocket::Endpoint& localEndpoint)
 
 void
 WebSocketFactory::createFace(const FaceUri& uri,
+                             ndn::nfd::FacePersistency persistency,
                              const FaceCreatedCallback& onCreated,
                              const FaceConnectFailedCallback& onConnectFailed)
 {

@@ -55,8 +55,9 @@ public:
   // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed);
+             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE;
 
   /**
    * \brief Create an EthernetFace to communicate with the given multicast group

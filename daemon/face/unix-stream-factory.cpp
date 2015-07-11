@@ -57,6 +57,7 @@ UnixStreamFactory::findChannel(const unix_stream::Endpoint& endpoint)
 
 void
 UnixStreamFactory::createFace(const FaceUri& uri,
+                              ndn::nfd::FacePersistency persistency,
                               const FaceCreatedCallback& onCreated,
                               const FaceConnectFailedCallback& onConnectFailed)
 {

@@ -250,9 +250,14 @@ UdpFactory::createMulticastFace(const std::string& localIp,
 
 void
 UdpFactory::createFace(const FaceUri& uri,
+                       ndn::nfd::FacePersistency persistency,
                        const FaceCreatedCallback& onCreated,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
+  if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
+    throw Error("UdpFactory only supports persistent face");
+  }
+
   BOOST_ASSERT(uri.isCanonical());
 
   boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(uri.getHost());

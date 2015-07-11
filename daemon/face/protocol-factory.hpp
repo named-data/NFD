@@ -58,15 +58,17 @@ public:
     Error(const std::string& what) : std::runtime_error(what) {}
   };
 
-  /** \brief Try to create Face using the supplied Face URI
+  /** \brief Try to create Face using the supplied FaceUri
    *
-   * This method should automatically choose channel, based on supplied Face URI
+   * This method should automatically choose channel, based on supplied FaceUri
    * and create face.
    *
-   * \throws Factory::Error if Factory does not support connect operation
+   * \throw Error Factory does not support connect operation
+   * \throw Error specified \p persistency is not supported
    */
   virtual void
   createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
              const FaceConnectFailedCallback& onConnectFailed) = 0;
 

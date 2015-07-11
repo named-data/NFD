@@ -127,9 +127,14 @@ TcpFactory::findChannel(const tcp::Endpoint& localEndpoint)
 
 void
 TcpFactory::createFace(const FaceUri& uri,
+                       ndn::nfd::FacePersistency persistency,
                        const FaceCreatedCallback& onCreated,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
+  if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
+    throw Error("TcpFactory only supports persistent face");
+  }
+
   BOOST_ASSERT(uri.isCanonical());
   boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(uri.getHost());
   tcp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(uri.getPort()));

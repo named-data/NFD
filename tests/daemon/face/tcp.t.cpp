@@ -79,11 +79,6 @@ class FaceCreateFixture : protected BaseFixture
 {
 public:
   void
-  ignore()
-  {
-  }
-
-  void
   checkError(const std::string& errorActual, const std::string& errorExpected)
   {
     BOOST_CHECK_EQUAL(errorActual, errorExpected);
@@ -98,18 +93,40 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
 {
-  TcpFactory factory = TcpFactory();
+  TcpFactory factory;
 
   factory.createFace(FaceUri("tcp4://127.0.0.1:6363"),
-                     bind(&FaceCreateFixture::ignore, this),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     bind([]{}),
                      bind(&FaceCreateFixture::checkError, this, _1,
                           "No channels available to connect to 127.0.0.1:6363"));
 
   factory.createChannel("127.0.0.1", "20071");
-
+  
   factory.createFace(FaceUri("tcp4://127.0.0.1:20070"),
-                     bind(&FaceCreateFixture::ignore, this),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     bind([]{}),
                      bind(&FaceCreateFixture::failIfError, this, _1));
+}
+
+BOOST_FIXTURE_TEST_CASE(UnsupportedFaceCreate, FaceCreateFixture)
+{
+  TcpFactory factory;
+
+  factory.createChannel("127.0.0.1", "20070");
+  factory.createChannel("127.0.0.1", "20071");
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("tcp4://127.0.0.1:20070"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("tcp4://127.0.0.1:20071"),
+                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
 }
 
 class EndToEndFixture : protected BaseFixture
@@ -266,6 +283,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   factory2.createChannel("127.0.0.2", "20071");
 
   factory2.createFace(FaceUri("tcp4://127.0.0.1:20070"),
+                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
@@ -353,6 +371,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd6, EndToEndFixture)
   factory2.createChannel("::2", "20070");
 
   factory2.createFace(FaceUri("tcp6://[::1]:20070"),
+                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 
@@ -630,6 +649,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   shared_ptr<TcpChannel> channel = factory.createChannel("0.0.0.0", "20070");
 
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
+                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
                      bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _1));
 
@@ -659,6 +679,7 @@ BOOST_FIXTURE_TEST_CASE(Bug1856, EndToEndFixture)
   factory2.createChannel("127.0.0.2", "20071");
 
   factory2.createFace(FaceUri("tcp4://127.0.0.1:20070"),
+                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                       bind(&EndToEndFixture::channel2_onFaceCreated, this, _1),
                       bind(&EndToEndFixture::channel2_onConnectFailed, this, _1));
 

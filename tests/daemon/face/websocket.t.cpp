@@ -65,6 +65,29 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+{
+  WebSocketFactory factory("19596");
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ws://127.0.0.1:20070"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ws://127.0.0.1:20070"),
+                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+
+  BOOST_CHECK_THROW(factory.createFace(FaceUri("ws://127.0.0.1:20070"),
+                                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                       bind([]{}),
+                                       bind([]{})),
+                    ProtocolFactory::Error);
+}
+
 class EndToEndFixture : protected BaseFixture
 {
 public:
