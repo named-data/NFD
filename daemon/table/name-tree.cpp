@@ -614,14 +614,12 @@ NameTree::const_iterator::operator++()
 
   if (m_type == FULL_ENUMERATE_TYPE) // fullEnumerate
     {
-      bool isFound = false;
       // process the entries in the same bucket first
       while (m_entry->m_node->m_next != 0)
         {
           m_entry = m_entry->m_node->m_next->m_entry;
           if ((*m_entrySelector)(*m_entry))
             {
-              isFound = true;
               return *this;
             }
         }
@@ -639,14 +637,13 @@ NameTree::const_iterator::operator++()
               m_entry = node->m_entry;
               if ((*m_entrySelector)(*m_entry))
                 {
-                  isFound = true;
                   return *this;
                 }
               node = node->m_next;
             }
         }
-      BOOST_VERIFY(isFound == false);
-      // Reach to the end()
+
+      // Reach the end()
       m_entry = m_nameTree->m_end;
       return *this;
     }
