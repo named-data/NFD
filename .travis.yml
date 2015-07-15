@@ -9,7 +9,7 @@ notifications:
     on_success: always
     on_failure: always
 script:
-  - [[ $TRAVIS_OS_NAME == linux ]] && export NODE_LABELS="Linux Ubuntu Ubuntu-12.04"
-  - [[ $TRAVIS_OS_NAME == osx ]] && export NODE_LABELS="OSX OSX-10.10"
+  - if [[ $TRAVIS_OS_NAME == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-12.04"; fi
+  - if [[ $TRAVIS_OS_NAME == osx ]]; then export NODE_LABELS="OSX OSX-10.10"; fi
   - echo $NODE_LABELS
   - ./.jenkins
