@@ -47,7 +47,7 @@ public:
   {
     face = ndn::util::makeDummyClientFace();
 
-    manager = make_shared<RibManager>(ndn::ref(*face));
+    manager = make_shared<RibManager>(*face, keyChain);
     manager->registerWithNfd();
 
     face->processEvents(time::milliseconds(1));
@@ -107,6 +107,7 @@ public:
 public:
   shared_ptr<RibManager> manager;
   shared_ptr<ndn::util::DummyClientFace> face;
+  ndn::KeyChain keyChain;
 
   const Name COMMAND_PREFIX;
   const Name::Component ADD_NEXTHOP_VERB;

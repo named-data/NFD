@@ -66,7 +66,7 @@ Nrd::initialize()
 
   initializeLogging();
 
-  m_ribManager.reset(new RibManager(*m_face));
+  m_ribManager.reset(new RibManager(*m_face, m_keyChain));
 
   ConfigFile config([] (const std::string& filename, const std::string& sectionName,
                         const ConfigSection& section, bool isDryRun) {

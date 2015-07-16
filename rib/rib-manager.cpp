@@ -73,8 +73,9 @@ const size_t RibManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
 
 const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
-RibManager::RibManager(ndn::Face& face)
+RibManager::RibManager(ndn::Face& face, ndn::KeyChain& keyChain)
   : m_face(face)
+  , m_keyChain(keyChain)
   , m_nfdController(m_face, m_keyChain)
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)
