@@ -74,6 +74,8 @@ BOOST_AUTO_TEST_CASE(DefaultConfig)
 
   general::setConfigFile(configFile);
   BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
+
+  BOOST_CHECK(getRouterName().getName().empty());
 }
 
 BOOST_AUTO_TEST_CASE(NoUserConfig)
@@ -139,6 +141,159 @@ BOOST_AUTO_TEST_CASE(InvalidGroupConfig)
   general::setConfigFile(configFile);
 
   const std::string expected = "Invalid value for \"group\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(RouterNameConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network ndn\n"
+    "    site    edu/site\n"
+    "    router  router/name\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
+
+  BOOST_CHECK_EQUAL(getRouterName().network, ndn::PartialName("ndn"));
+  BOOST_CHECK_EQUAL(getRouterName().site, ndn::PartialName("edu/site"));
+  BOOST_CHECK_EQUAL(getRouterName().router, ndn::PartialName("router/name"));
+  BOOST_CHECK_EQUAL(getRouterName().getName(), ndn::Name("/ndn/edu/site/%C1.Router/router/name"));
+}
+
+BOOST_AUTO_TEST_CASE(NoNetworkConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    site    edu/site\n"
+    "    router  router/name\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.network\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(NoSiteConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network ndn\n"
+    "    router  router/name\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.site\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(NoRouterConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network ndn\n"
+    "    site    edu/site\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.router\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(InvalidNetworkConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network\n"
+    "    site    edu/site\n"
+    "    router  router/name\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.network\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(InvalidSiteConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network ndn\n"
+    "    site\n"
+    "    router  router/name\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.site\" in \"general\" section";
+  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                          ConfigFile::Error,
+                          bind(&checkExceptionMessage, _1, expected));
+}
+
+BOOST_AUTO_TEST_CASE(InvalidRouterConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  router_name\n"
+    "  {\n"
+    "    network ndn\n"
+    "    site    edu/site\n"
+    "    router\n"
+    "  }\n"
+    "}\n";
+
+  ConfigFile configFile;
+  general::setConfigFile(configFile);
+
+  const std::string expected = "Invalid value for \"router_name.router\" in \"general\" section";
   BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
                           ConfigFile::Error,
                           bind(&checkExceptionMessage, _1, expected));

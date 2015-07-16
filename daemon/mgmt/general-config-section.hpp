@@ -25,6 +25,8 @@
 #ifndef NFD_MGMT_GENERAL_CONFIG_SECTION_HPP
 #define NFD_MGMT_GENERAL_CONFIG_SECTION_HPP
 
+#include <ndn-cxx/name.hpp>
+
 namespace nfd {
 
 class ConfigFile;
@@ -33,6 +35,33 @@ namespace general {
 
 void
 setConfigFile(ConfigFile& configFile);
+
+class RouterName
+{
+public:
+  /**
+   * \brief Return the router name constructed from the network, site, and
+   *        router variables.
+   *
+   *        The router name is constructed in the following manner:
+   *        /<network>/<site>/<ROUTER_MARKER>/<router>
+   *
+   * \return The constructed router name if the network, site, and router
+   *         configuration options are non-empty; otherwise, an empty ndn::Name.
+   */
+  const ndn::Name
+  getName() const;
+
+public:
+  ndn::PartialName network;
+  ndn::PartialName site;
+  ndn::PartialName router;
+
+  static const ndn::PartialName ROUTER_MARKER;
+};
+
+const RouterName&
+getRouterName();
 
 } // namespace general
 
