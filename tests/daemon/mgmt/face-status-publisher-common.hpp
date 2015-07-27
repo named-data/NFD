@@ -82,7 +82,7 @@ readNonNegativeIntegerType(const Block& block,
     }
   std::stringstream error;
   error << "expected type " << type << " got " << block.type();
-  throw tlv::Error(error.str());
+  BOOST_THROW_EXCEPTION(tlv::Error(error.str()));
 }
 
 static inline uint64_t
@@ -96,7 +96,7 @@ checkedReadNonNegativeIntegerType(Block::element_const_iterator& i,
       ++i;
       return readNonNegativeIntegerType(block, type);
     }
-  throw tlv::Error("Unexpected end of FaceStatus");
+  BOOST_THROW_EXCEPTION(tlv::Error("Unexpected end of FaceStatus"));
 }
 
 class FaceStatusPublisherFixture : public BaseFixture

@@ -86,7 +86,8 @@ listNetworkInterfaces()
   ifaddrs* ifa_list = nullptr;
 
   if (::getifaddrs(&ifa_list) < 0)
-    throw std::runtime_error(std::string("getifaddrs() failed: ") + strerror(errno));
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string("getifaddrs() failed: ") +
+                                             strerror(errno)));
 
   for (ifaddrs* ifa = ifa_list; ifa != nullptr; ifa = ifa->ifa_next) {
     std::string ifname(ifa->ifa_name);

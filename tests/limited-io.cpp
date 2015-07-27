@@ -101,7 +101,7 @@ LimitedIo::afterOp()
     m_reason = EXCEED_OPS;
     getGlobalIoService().stop();
     if (m_uttf != nullptr) {
-      throw StopException();
+      BOOST_THROW_EXCEPTION(StopException());
     }
   }
 }
@@ -112,7 +112,7 @@ LimitedIo::afterTimeout()
   m_reason = EXCEED_TIME;
   getGlobalIoService().stop();
   if (m_uttf != nullptr) {
-    throw StopException();
+    BOOST_THROW_EXCEPTION(StopException());
   }
 }
 

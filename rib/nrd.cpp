@@ -143,7 +143,7 @@ Nrd::getLocalNfdTransport()
     return make_shared<ndn::TcpTransport>("localhost", port);
   }
   else {
-    throw Error("No transport is available to communicate with NFD");
+    BOOST_THROW_EXCEPTION(Error("No transport is available to communicate with NFD"));
   }
 }
 

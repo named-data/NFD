@@ -54,7 +54,7 @@ inline uint64_t
 SequenceBlock::operator[](size_t pos) const
 {
   if (pos >= m_count)
-    throw std::out_of_range("pos");
+    BOOST_THROW_EXCEPTION(std::out_of_range("pos"));
   return m_start + static_cast<uint64_t>(pos);
 }
 

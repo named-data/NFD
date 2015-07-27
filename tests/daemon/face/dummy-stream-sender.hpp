@@ -67,7 +67,7 @@ public:
   {
     if (error)
       {
-        throw Error("Connection aborted");
+        BOOST_THROW_EXCEPTION(Error("Connection aborted"));
       }
 
     // This value may need to be adjusted if some dataset exceeds 100k
@@ -88,7 +88,7 @@ public:
   onSendFinished(const boost::system::error_code& error, bool isFinal)
   {
     if (error) {
-      throw Error("Connection aborted");
+      BOOST_THROW_EXCEPTION(Error("Connection aborted"));
     }
 
     if (isFinal) {

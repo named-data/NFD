@@ -416,13 +416,13 @@ Nfdc::ribUnregisterPrefix()
 void
 Nfdc::onCanonizeFailure(const std::string& reason)
 {
-  throw Error(reason);
+  BOOST_THROW_EXCEPTION(Error(reason));
 }
 
 void
 Nfdc::onObtainFaceIdFailure(const std::string& message)
 {
-  throw Error(message);
+  BOOST_THROW_EXCEPTION(Error(message));
 }
 
 void
@@ -430,7 +430,7 @@ Nfdc::faceCreate()
 {
   boost::regex e("^[a-z0-9]+\\:.*");
   if (!boost::regex_match(m_commandLineArguments[0], e))
-    throw Error("invalid uri format");
+    BOOST_THROW_EXCEPTION(Error("invalid uri format"));
 
   ndn::util::FaceUri faceUri;
   faceUri.parse(m_commandLineArguments[0]);
@@ -517,7 +517,7 @@ Nfdc::onError(uint32_t code, const std::string& error, const std::string& messag
 {
   std::ostringstream os;
   os << message << ": " << error << " (code: " << code << ")";
-  throw Error(os.str());
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 } // namespace nfdc

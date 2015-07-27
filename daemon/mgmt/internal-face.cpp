@@ -128,7 +128,7 @@ InternalFace::sendData(const Data& data)
 void
 InternalFace::close()
 {
-  throw Error("Internal face cannot be closed");
+  BOOST_THROW_EXCEPTION(Error("Internal face cannot be closed"));
 }
 
 void

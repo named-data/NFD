@@ -167,7 +167,7 @@ RibManager::onConfig(const ConfigSection& configSection,
       m_remoteRegistrator.enable();
     }
     else {
-      throw Error("Unrecognized rib property: " + item.first);
+      BOOST_THROW_EXCEPTION(Error("Unrecognized rib property: " + item.first));
     }
   }
 
@@ -571,7 +571,7 @@ RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
 void
 RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
 {
-  throw Error("Error in setting interest filter (" + name.toUri() + "): " + msg);
+  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() + "): " + msg));
 }
 
 void
@@ -586,7 +586,7 @@ RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
   std::ostringstream os;
   os << "Couldn't enable local control header "
      << "(code: " << code << ", info: " << reason << ")";
-  throw Error(os.str());
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 void

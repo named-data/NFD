@@ -102,8 +102,8 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
 
       if (!valCsMaxPackets)
         {
-          throw ConfigFile::Error("Invalid value for option \"cs_max_packets\""
-                                  " in \"tables\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"cs_max_packets\""
+                                                  " in \"tables\" section"));
         }
 
       nCsMaxPackets = *valCsMaxPackets;
@@ -145,23 +145,26 @@ TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSec
       const Name prefix(prefixAndStrategy.first);
       if (choices.find(prefix) != choices.end())
         {
-          throw ConfigFile::Error("Duplicate strategy choice for prefix \"" +
-                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate strategy choice for prefix \"" +
+                                                  prefix.toUri() + "\" in \"strategy_choice\" "
+                                                  "section"));
         }
 
       const std::string strategyString(prefixAndStrategy.second.get_value<std::string>());
       if (strategyString.empty())
         {
-          throw ConfigFile::Error("Invalid strategy choice \"\" for prefix \"" +
-                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"\" for prefix \"" +
+                                                  prefix.toUri() + "\" in \"strategy_choice\" "
+                                                  "section"));
         }
 
       const Name strategyName(strategyString);
       if (!m_strategyChoice.hasStrategy(strategyName))
         {
-          throw ConfigFile::Error("Invalid strategy choice \"" +
-                                  strategyName.toUri() + "\" for prefix \"" +
-                                  prefix.toUri() + "\" in \"strategy_choice\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"" +
+                                                  strategyName.toUri() + "\" for prefix \"" +
+                                                  prefix.toUri() + "\" in \"strategy_choice\" "
+                                                  "section"));
         }
 
       choices[prefix] = strategyName;
@@ -172,9 +175,10 @@ TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSec
     {
       if (!isDryRun && !m_strategyChoice.insert(prefixAndStrategy.first, prefixAndStrategy.second))
         {
-          throw ConfigFile::Error("Failed to set strategy \"" +
-                                  prefixAndStrategy.second.toUri() + "\" for prefix \"" +
-                                  prefixAndStrategy.first.toUri() + "\" in \"strategy_choicev\"");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Failed to set strategy \"" +
+                                                  prefixAndStrategy.second.toUri() + "\" for "
+                                                  "prefix \"" + prefixAndStrategy.first.toUri() +
+                                                  "\" in \"strategy_choicev\""));
         }
     }
 }

@@ -83,7 +83,7 @@ EthernetFace::EthernetFace(boost::asio::posix::stream_descriptor socket,
 
   int fd = pcap_get_selectable_fd(m_pcap.get());
   if (fd < 0)
-    throw Error("pcap_get_selectable_fd failed");
+    BOOST_THROW_EXCEPTION(Error("pcap_get_selectable_fd failed"));
 
   // need to duplicate the fd, otherwise both pcap_close()
   // and stream_descriptor::close() will try to close the
@@ -165,7 +165,7 @@ EthernetFace::pcapInit()
   char errbuf[PCAP_ERRBUF_SIZE] = {};
   m_pcap.reset(pcap_create(m_interfaceName.c_str(), errbuf));
   if (!m_pcap)
-    throw Error("pcap_create: " + std::string(errbuf));
+    BOOST_THROW_EXCEPTION(Error("pcap_create: " + std::string(errbuf)));
 
 #ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
   // Enable "immediate mode", effectively disabling any read buffering in the kernel.
@@ -176,10 +176,10 @@ EthernetFace::pcapInit()
 #endif
 
   if (pcap_activate(m_pcap.get()) < 0)
-    throw Error("pcap_activate failed");
+    BOOST_THROW_EXCEPTION(Error("pcap_activate failed"));
 
   if (pcap_set_datalink(m_pcap.get(), DLT_EN10MB) < 0)
-    throw Error("pcap_set_datalink: " + std::string(pcap_geterr(m_pcap.get())));
+    BOOST_THROW_EXCEPTION(Error("pcap_set_datalink: " + std::string(pcap_geterr(m_pcap.get()))));
 
   if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
     // no need to throw on failure, BPF will filter unwanted packets anyway
@@ -191,12 +191,12 @@ EthernetFace::setPacketFilter(const char* filterString)
 {
   bpf_program filter;
   if (pcap_compile(m_pcap.get(), &filter, filterString, 1, PCAP_NETMASK_UNKNOWN) < 0)
-    throw Error("pcap_compile: " + std::string(pcap_geterr(m_pcap.get())));
+    BOOST_THROW_EXCEPTION(Error("pcap_compile: " + std::string(pcap_geterr(m_pcap.get()))));
 
   int ret = pcap_setfilter(m_pcap.get(), &filter);
   pcap_freecode(&filter);
   if (ret < 0)
-    throw Error("pcap_setfilter: " + std::string(pcap_geterr(m_pcap.get())));
+    BOOST_THROW_EXCEPTION(Error("pcap_setfilter: " + std::string(pcap_geterr(m_pcap.get()))));
 }
 
 bool

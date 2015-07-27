@@ -73,14 +73,14 @@ loadPartialNameFromSection(const ConfigSection& section, const std::string& key)
 
       if (value.empty())
         {
-          throw ConfigFile::Error("Invalid value for \"router_name." + key + "\""
-                                  " in \"general\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"router_name." + key + "\""
+                                                  " in \"general\" section"));
         }
     }
   catch (const boost::property_tree::ptree_error& error)
     {
-      throw ConfigFile::Error("Invalid value for \"router_name." + key + "\""
-                              " in \"general\" section");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"router_name." + key + "\""
+                                              " in \"general\" section"));
     }
 
   return value;
@@ -129,14 +129,14 @@ onConfig(const ConfigSection& configSection,
 
               if (user.empty())
                 {
-                  throw ConfigFile::Error("Invalid value for \"user\""
-                                          " in \"general\" section");
+                  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\""
+                                                          " in \"general\" section"));
                 }
             }
           catch (const boost::property_tree::ptree_error& error)
             {
-              throw ConfigFile::Error("Invalid value for \"user\""
-                                      " in \"general\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\""
+                                                      " in \"general\" section"));
             }
         }
       else if (i->first == "group")
@@ -147,14 +147,14 @@ onConfig(const ConfigSection& configSection,
 
               if (group.empty())
                 {
-                  throw ConfigFile::Error("Invalid value for \"group\""
-                                          " in \"general\" section");
+                  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\""
+                                                          " in \"general\" section"));
                 }
             }
           catch (const boost::property_tree::ptree_error& error)
             {
-              throw ConfigFile::Error("Invalid value for \"group\""
-                                      " in \"general\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\""
+                                                      " in \"general\" section"));
             }
         }
     }

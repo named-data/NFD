@@ -234,9 +234,9 @@ FaceManager::parseYesNo(const ConfigSection::const_iterator& i,
       return false;
     }
 
-  throw ConfigFile::Error("Invalid value for option \"" +
-                          optionName + "\" in \"" +
-                          sectionName + "\" section");
+   BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                           optionName + "\" in \"" +
+                                           sectionName + "\" section"));
 }
 
 inline void

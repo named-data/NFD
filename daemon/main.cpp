@@ -240,10 +240,12 @@ main(int argc, char** argv)
 
   po::variables_map vm;
   try {
-      po::store(po::command_line_parser(argc, argv).options(description).run(), vm);
-      po::notify(vm);
+    po::store(po::command_line_parser(argc, argv).options(description).run(), vm);
+    po::notify(vm);
   }
   catch (const std::exception& e) {
+    // avoid NFD_LOG_FATAL to ensure that errors related to command-line parsing always appear on the
+    // terminal and are not littered with timestamps and other things added by the logging subsystem
     std::cerr << "ERROR: " << e.what() << std::endl;
     NfdRunner::printUsage(std::cerr, argv[0]);
     return 1;
@@ -273,11 +275,12 @@ main(int argc, char** argv)
     if (e.code() == boost::system::errc::permission_denied) {
       NFD_LOG_FATAL("Permissions denied for " << e.path1() << ". " <<
                     argv[0] << " should be run as superuser");
+      return 3;
     }
     else {
       NFD_LOG_FATAL(e.what());
+      return 2;
     }
-    return 1;
   }
   catch (const std::exception& e) {
     NFD_LOG_FATAL(e.what());

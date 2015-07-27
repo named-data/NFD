@@ -132,7 +132,7 @@ TcpFactory::createFace(const FaceUri& uri,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
   if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
-    throw Error("TcpFactory only supports persistent face");
+    BOOST_THROW_EXCEPTION(Error("TcpFactory only supports persistent face"));
   }
 
   BOOST_ASSERT(uri.isCanonical());

@@ -65,7 +65,7 @@ Base::onCanonizeFailure(const std::string& reason)
 {
   std::ostringstream os;
   os << "FaceUri canonization failed: " << reason;
-  throw Error(os.str());
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 void
@@ -85,7 +85,7 @@ Base::onHubConnectError(uint32_t code, const std::string& error)
 {
   std::ostringstream os;
   os << "Failed to create face: " << error << " (code: " << code << ")";
-  throw Error(os.str());
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 void
@@ -113,7 +113,7 @@ Base::onPrefixRegistrationError(uint32_t code, const std::string& error)
 {
   std::ostringstream os;
   os << "Failed in name registration, " << error << " (code: " << code << ")";
-  throw Error(os.str());
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 

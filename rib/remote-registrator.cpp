@@ -90,8 +90,8 @@ RemoteRegistrator::loadConfig(const ConfigSection& configSection)
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" + i.first +
-                                  "\" in \"remote-registrator\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + i.first +
+                                                  "\" in \"remote-registrator\" section"));
         }
     }
 

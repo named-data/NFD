@@ -120,13 +120,13 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
   //checking if the endpoint is already in use for multicast face
   shared_ptr<MulticastUdpFace> multicast = findMulticastFace(endpoint);
   if (static_cast<bool>(multicast))
-    throw Error("Cannot create the requested UDP unicast channel, local "
-                "endpoint is already allocated for a UDP multicast face");
+    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP unicast channel, local "
+                                "endpoint is already allocated for a UDP multicast face"));
 
   if (endpoint.address().is_multicast()) {
-    throw Error("This method is only for unicast channel. The provided "
-                "endpoint is multicast. Use createMulticastFace to "
-                "create a multicast face");
+    BOOST_THROW_EXCEPTION(Error("This method is only for unicast channel. The provided "
+                                "endpoint is multicast. Use createMulticastFace to "
+                                "create a multicast face"));
   }
 
   channel = make_shared<UdpChannel>(endpoint, timeout);
@@ -157,35 +157,36 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
     if (face->getMulticastGroup() == multicastEndpoint)
       return face;
     else
-      throw Error("Cannot create the requested UDP multicast face, local "
-                  "endpoint is already allocated for a UDP multicast face "
-                  "on a different multicast group");
+      BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
+                                  "endpoint is already allocated for a UDP multicast face "
+                                  "on a different multicast group"));
   }
 
   // checking if the local endpoint is already in use for a unicast channel
   shared_ptr<UdpChannel> unicast = findChannel(localEndpoint);
   if (static_cast<bool>(unicast)) {
-    throw Error("Cannot create the requested UDP multicast face, local "
-                "endpoint is already allocated for a UDP unicast channel");
+    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
+                                "endpoint is already allocated for a UDP unicast channel"));
   }
 
   if (m_prohibitedEndpoints.find(multicastEndpoint) != m_prohibitedEndpoints.end()) {
-    throw Error("Cannot create the requested UDP multicast face, "
-                "remote endpoint is owned by this NFD instance");
+    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
+                                "remote endpoint is owned by this NFD instance"));
   }
 
   if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {
-    throw Error("IPv6 multicast is not supported yet. Please provide an IPv4 address");
+    BOOST_THROW_EXCEPTION(Error("IPv6 multicast is not supported yet. Please provide an IPv4 "
+                                "address"));
   }
 
   if (localEndpoint.port() != multicastEndpoint.port()) {
-    throw Error("Cannot create the requested UDP multicast face, "
-                "both endpoints should have the same port number. ");
+    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
+                                "both endpoints should have the same port number. "));
   }
 
   if (!multicastEndpoint.address().is_multicast()) {
-    throw Error("Cannot create the requested UDP multicast face, "
-                "the multicast group given as input is not a multicast address");
+    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
+                                "the multicast group given as input is not a multicast address"));
   }
 
   ip::udp::socket receiveSocket(getGlobalIoService());
@@ -218,8 +219,8 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   if (!networkInterfaceName.empty()) {
     if (::setsockopt(receiveSocket.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
                      networkInterfaceName.c_str(), networkInterfaceName.size() + 1) < 0) {
-      throw Error("Cannot bind multicast face to " + networkInterfaceName +
-                  ": " + std::strerror(errno));
+      BOOST_THROW_EXCEPTION(Error("Cannot bind multicast face to " + networkInterfaceName +
+                                  ": " + std::strerror(errno)));
     }
   }
 #endif
@@ -255,7 +256,7 @@ UdpFactory::createFace(const FaceUri& uri,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
   if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
-    throw Error("UdpFactory only supports persistent face");
+    BOOST_THROW_EXCEPTION(Error("UdpFactory only supports persistent face"));
   }
 
   BOOST_ASSERT(uri.isCanonical());

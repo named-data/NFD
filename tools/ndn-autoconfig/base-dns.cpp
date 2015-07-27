@@ -68,7 +68,7 @@ BaseDns::querySrvRr(const std::string& fqdn)
                              queryAnswer.buf,
                              sizeof(queryAnswer));
   if (answerSize == 0) {
-    throw Error("No DNS SRV records found for " + srvDomain);
+    BOOST_THROW_EXCEPTION(Error("No DNS SRV records found for " + srvDomain));
   }
   return parseSrvRr(queryAnswer, answerSize);
 }
@@ -96,7 +96,7 @@ BaseDns::querySrvRrSearch()
                               sizeof(queryAnswer));
 
   if (answerSize == 0) {
-    throw Error("No DNS SRV records found for _ndn._udp");
+    BOOST_THROW_EXCEPTION(Error("No DNS SRV records found for _ndn._udp"));
   }
 
   return parseSrvRr(queryAnswer, answerSize);
@@ -125,7 +125,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
   };
 
   if (ntohs(queryAnswer.header.ancount) == 0) {
-    throw Error("SRV record cannot be parsed");
+    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed"));
   }
 
   const uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
@@ -139,7 +139,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                  srvName,                       // expanded server name
                                  NS_MAXDNAME);
   if (serverNameSize <= 0) {
-    throw Error("SRV record cannot be parsed (error decoding domain name)");
+    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed (error decoding domain name)"));
   }
 
   const srv_t* server = reinterpret_cast<const srv_t*>(&blob[sizeof(rechdr)]);
@@ -154,7 +154,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                hostName,                      // expanded host name
                                NS_MAXDNAME);
   if (hostNameSize <= 0) {
-    throw Error("SRV record cannot be parsed (error decoding host name)");
+    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed (error decoding host name)"));
   }
 
   std::string uri = "udp://";

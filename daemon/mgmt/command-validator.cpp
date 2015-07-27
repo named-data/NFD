@@ -75,7 +75,7 @@ CommandValidator::onConfig(const ConfigSection& section,
 
   if (section.begin() == section.end())
     {
-      throw ConfigFile::Error("No authorize sections found");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("No authorize sections found"));
     }
 
   std::stringstream dryRunErrors;
@@ -92,7 +92,7 @@ CommandValidator::onConfig(const ConfigSection& section,
           std::string msg = "No certfile specified";
           if (!isDryRun)
             {
-              throw ConfigFile::Error(msg);
+              BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
             }
           aggregateErrors(dryRunErrors, msg);
           continue;
@@ -112,7 +112,7 @@ CommandValidator::onConfig(const ConfigSection& section,
               std::string msg = "Unable to open certificate file " + certfilePath.native();
               if (!isDryRun)
                 {
-                  throw ConfigFile::Error(msg);
+                  BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
                 }
               aggregateErrors(dryRunErrors, msg);
               continue;
@@ -131,7 +131,7 @@ CommandValidator::onConfig(const ConfigSection& section,
             std::string msg = "Malformed certificate file " + certfilePath.native();
             if (!isDryRun)
               {
-                throw ConfigFile::Error(msg);
+                BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
               }
             aggregateErrors(dryRunErrors, msg);
             continue;
@@ -160,7 +160,7 @@ CommandValidator::onConfig(const ConfigSection& section,
             certfile + " (" + keyNameForLogging + ")";
           if (!isDryRun)
             {
-              throw ConfigFile::Error(msg);
+              BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
             }
           aggregateErrors(dryRunErrors, msg);
           continue;
@@ -196,7 +196,7 @@ CommandValidator::onConfig(const ConfigSection& section,
                 "\" for certificate file " + certfile + " (" + keyNameForLogging + ")";
               if (!isDryRun)
                 {
-                  throw ConfigFile::Error(msg);
+                  BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
                 }
               aggregateErrors(dryRunErrors, msg);
             }
@@ -205,7 +205,7 @@ CommandValidator::onConfig(const ConfigSection& section,
 
   if (!dryRunErrors.str().empty())
     {
-      throw ConfigFile::Error(dryRunErrors.str());
+      BOOST_THROW_EXCEPTION(ConfigFile::Error(dryRunErrors.str()));
     }
 }
 
@@ -214,7 +214,7 @@ CommandValidator::addSupportedPrivilege(const std::string& privilege)
 {
   if (m_supportedPrivileges.find(privilege) != m_supportedPrivileges.end())
     {
-      throw CommandValidator::Error("Duplicated privilege: " + privilege);
+      BOOST_THROW_EXCEPTION(CommandValidator::Error("Duplicated privilege: " + privilege));
     }
   m_supportedPrivileges.insert(privilege);
 }

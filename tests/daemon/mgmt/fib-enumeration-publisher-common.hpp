@@ -51,7 +51,7 @@ readNonNegativeIntegerType(const Block& block,
     }
   std::stringstream error;
   error << "Expected type " << type << " got " << block.type();
-  throw tlv::Error(error.str());
+  BOOST_THROW_EXCEPTION(tlv::Error(error.str()));
 }
 
 static inline uint64_t
@@ -68,7 +68,7 @@ checkedReadNonNegativeIntegerType(Block::element_const_iterator& i,
   std::stringstream error;
   error << "Unexpected end of Block while attempting to read type #"
         << type;
-  throw tlv::Error(error.str());
+  BOOST_THROW_EXCEPTION(tlv::Error(error.str()));
 }
 
 class FibEnumerationPublisherFixture : public BaseFixture

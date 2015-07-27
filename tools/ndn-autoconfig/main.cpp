@@ -72,7 +72,7 @@ public:
                [&] (const std::string& errorMessage) {
                  std::cerr << "Stage 3 failed: " << errorMessage << std::endl;
                  if (!m_isDaemonMode)
-                   throw Error("No more stages, automatic discovery failed");
+                   BOOST_THROW_EXCEPTION(Error("No more stages, automatic discovery failed"));
                  else
                    std::cerr << "No more stages, automatic discovery failed" << std::endl;
                })

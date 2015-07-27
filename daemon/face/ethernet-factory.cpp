@@ -36,7 +36,7 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
                                      const ethernet::Address &address)
 {
   if (!address.isMulticast())
-    throw Error(address.toString() + " is not a multicast address");
+    BOOST_THROW_EXCEPTION(Error(address.toString() + " is not a multicast address"));
 
   shared_ptr<EthernetFace> face = findMulticastFace(interface.name, address);
   if (face)
@@ -71,7 +71,7 @@ EthernetFactory::createFace(const FaceUri& uri,
                             const FaceCreatedCallback& onCreated,
                             const FaceConnectFailedCallback& onConnectFailed)
 {
-  throw Error("EthernetFactory does not support 'createFace' operation");
+  BOOST_THROW_EXCEPTION(Error("EthernetFactory does not support 'createFace' operation"));
 }
 
 std::list<shared_ptr<const Channel>>

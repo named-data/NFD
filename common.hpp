@@ -71,6 +71,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
+#include <boost/throw_exception.hpp>
 
 namespace nfd {
 

@@ -87,7 +87,7 @@ public:
 private:
   /** \brief an exception to stop IO operation
    */
-  class StopException
+  class StopException : public std::exception
   {
   };
 

@@ -87,7 +87,7 @@ LoggerFactory::parseLevel(const std::string& level)
   catch (const boost::bad_lexical_cast& error) {
   }
 
-  throw LoggerFactory::Error("Unsupported logging level \"" + level + "\"");
+  BOOST_THROW_EXCEPTION(LoggerFactory::Error("Unsupported logging level \"" + level + "\""));
 }
 
 LogLevel
@@ -101,7 +101,7 @@ LoggerFactory::extractLevel(const ConfigSection& item, const std::string& key)
   }
 
   if (levelString.empty()) {
-    throw LoggerFactory::Error("No logging level found for option \"" + key + "\"");
+    BOOST_THROW_EXCEPTION(LoggerFactory::Error("No logging level found for option \"" + key + "\""));
   }
 
   return parseLevel(levelString);

@@ -51,7 +51,7 @@ DeadNonceList::DeadNonceList(const time::nanoseconds& lifetime)
   , m_adjustCapacityInterval(m_lifetime)
 {
   if (m_lifetime < MIN_LIFETIME) {
-    throw std::invalid_argument("lifetime is less than MIN_LIFETIME");
+    BOOST_THROW_EXCEPTION(std::invalid_argument("lifetime is less than MIN_LIFETIME"));
   }
 
   for (size_t i = 0; i < EXPECTED_MARK_COUNT; ++i) {

@@ -65,7 +65,7 @@ public:
 
     // error for testing
     if (!m_message.empty() && m_message[0] == '\x07')
-      throw tlv::Error("0x07 error");
+      BOOST_THROW_EXCEPTION(tlv::Error("0x07 error"));
   }
 
 public:

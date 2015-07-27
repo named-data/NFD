@@ -71,7 +71,7 @@ WebSocketFactory::createFace(const FaceUri& uri,
                              const FaceCreatedCallback& onCreated,
                              const FaceConnectFailedCallback& onConnectFailed)
 {
-  throw Error("WebSocketFactory does not support 'createFace' operation");
+  BOOST_THROW_EXCEPTION(Error("WebSocketFactory does not support 'createFace' operation"));
 }
 
 std::list<shared_ptr<const Channel> >

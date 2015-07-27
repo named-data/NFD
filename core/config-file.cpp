@@ -40,7 +40,7 @@ ConfigFile::throwErrorOnUnknownSection(const std::string& filename,
   msg += filename;
   msg += ": no module subscribed for section \"" + sectionName + "\"";
 
-  throw ConfigFile::Error(msg);
+  BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
 }
 
 void
@@ -73,7 +73,7 @@ ConfigFile::parse(const std::string& filename, bool isDryRun)
     {
       std::string msg = "Failed to read configuration file: ";
       msg += filename;
-      throw Error(msg);
+      BOOST_THROW_EXCEPTION(Error(msg));
     }
   parse(inputFile, isDryRun, filename);
   inputFile.close();
@@ -100,7 +100,7 @@ ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filenam
       msg << "Failed to parse configuration file";
       msg << " " << filename;
       msg << " " << error.message() << " line " << error.line();
-      throw Error(msg.str());
+      BOOST_THROW_EXCEPTION(Error(msg.str()));
     }
 
   process(isDryRun, filename);
@@ -124,7 +124,7 @@ ConfigFile::process(bool isDryRun, const std::string& filename)
       std::string msg = "Error processing configuration file: ";
       msg += filename;
       msg += " no data";
-      throw Error(msg);
+      BOOST_THROW_EXCEPTION(Error(msg));
     }
 
   for (ConfigSection::const_iterator i = m_global.begin(); i != m_global.end(); ++i)

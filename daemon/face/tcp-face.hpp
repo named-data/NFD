@@ -69,7 +69,8 @@ struct StreamFaceValidator<TcpLocalFace::protocol, LocalFace>
     if (!socket.local_endpoint().address().is_loopback() ||
         !socket.remote_endpoint().address().is_loopback())
       {
-        throw Face::Error("TcpLocalFace can be created only on a loopback address");
+        BOOST_THROW_EXCEPTION(Face::Error("TcpLocalFace can be created only on a loopback "
+                                          "address"));
       }
   }
 };

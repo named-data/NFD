@@ -173,7 +173,7 @@ FaceManager::onConfig(const ConfigSection& configSection,
       if (item.first == "unix")
         {
           if (hasSeenUnix)
-            throw Error("Duplicate \"unix\" section");
+            BOOST_THROW_EXCEPTION(Error("Duplicate \"unix\" section"));
           hasSeenUnix = true;
 
           processSectionUnix(item.second, isDryRun);
@@ -181,7 +181,7 @@ FaceManager::onConfig(const ConfigSection& configSection,
       else if (item.first == "tcp")
         {
           if (hasSeenTcp)
-            throw Error("Duplicate \"tcp\" section");
+            BOOST_THROW_EXCEPTION(Error("Duplicate \"tcp\" section"));
           hasSeenTcp = true;
 
           processSectionTcp(item.second, isDryRun);
@@ -189,7 +189,7 @@ FaceManager::onConfig(const ConfigSection& configSection,
       else if (item.first == "udp")
         {
           if (hasSeenUdp)
-            throw Error("Duplicate \"udp\" section");
+            BOOST_THROW_EXCEPTION(Error("Duplicate \"udp\" section"));
           hasSeenUdp = true;
 
           processSectionUdp(item.second, isDryRun, nicList);
@@ -197,7 +197,7 @@ FaceManager::onConfig(const ConfigSection& configSection,
       else if (item.first == "ether")
         {
           if (hasSeenEther)
-            throw Error("Duplicate \"ether\" section");
+            BOOST_THROW_EXCEPTION(Error("Duplicate \"ether\" section"));
           hasSeenEther = true;
 
           processSectionEther(item.second, isDryRun, nicList);
@@ -205,14 +205,14 @@ FaceManager::onConfig(const ConfigSection& configSection,
       else if (item.first == "websocket")
         {
           if (hasSeenWebSocket)
-            throw Error("Duplicate \"websocket\" section");
+            BOOST_THROW_EXCEPTION(Error("Duplicate \"websocket\" section"));
           hasSeenWebSocket = true;
 
           processSectionWebSocket(item.second, isDryRun);
         }
       else
         {
-          throw Error("Unrecognized option \"" + item.first + "\"");
+          BOOST_THROW_EXCEPTION(Error("Unrecognized option \"" + item.first + "\""));
         }
     }
 }
@@ -240,7 +240,8 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"unix\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + i->first + "\" in "
+                                                  "\"unix\" section"));
         }
     }
 
@@ -269,8 +270,8 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
       m_factories.insert(std::make_pair("unix", factory));
     }
 #else
-  throw ConfigFile::Error("NFD was compiled without Unix sockets support, "
-                          "cannot process \"unix\" section");
+  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without Unix sockets support, "
+                                          "cannot process \"unix\" section"));
 #endif // HAVE_UNIX_SOCKETS
 
 }
@@ -304,8 +305,8 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
             }
           catch (const std::bad_cast& error)
             {
-              throw ConfigFile::Error("Invalid value for option " +
-                                      i->first + "\" in \"tcp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
+                                                      i->first + "\" in \"tcp\" section"));
             }
         }
       else if (i->first == "listen")
@@ -322,15 +323,16 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"tcp\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + i->first + "\" in "
+                                                  "\"tcp\" section"));
         }
     }
 
   if (!enableV4 && !enableV6)
     {
-      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
-                              " Remove \"tcp\" section to disable TCP channels or"
-                              " re-enable at least one channel type.");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                                              " Remove \"tcp\" section to disable TCP channels or"
+                                              " re-enable at least one channel type."));
     }
 
   if (!isDryRun)
@@ -413,8 +415,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
             }
           catch (const std::bad_cast& error)
             {
-              throw ConfigFile::Error("Invalid value for option " +
-                                      i->first + "\" in \"udp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
+                                                      i->first + "\" in \"udp\" section"));
             }
         }
       else if (i->first == "enable_v4")
@@ -433,8 +435,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
             }
           catch (const std::exception& e)
             {
-              throw ConfigFile::Error("Invalid value for option \"" +
-                                      i->first + "\" in \"udp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                                      i->first + "\" in \"udp\" section"));
             }
         }
       else if (i->first == "keep_alive_interval")
@@ -448,8 +450,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
             }
           catch (const std::exception& e)
             {
-              throw ConfigFile::Error("Invalid value for option \"" +
-                                      i->first + "\" in \"udp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                                      i->first + "\" in \"udp\" section"));
             }
         }
       else if (i->first == "mcast")
@@ -466,8 +468,8 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
             }
           catch (const std::bad_cast& error)
             {
-              throw ConfigFile::Error("Invalid value for option " +
-                                      i->first + "\" in \"udp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
+                                                      i->first + "\" in \"udp\" section"));
             }
         }
       else if (i->first == "mcast_group")
@@ -479,32 +481,34 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
               address mcastGroupTest = address::from_string(mcastGroup);
               if (!mcastGroupTest.is_v4())
                 {
-                  throw ConfigFile::Error("Invalid value for option \"" +
-                                          i->first + "\" in \"udp\" section");
+                  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                                          i->first + "\" in \"udp\" section"));
                 }
             }
           catch(const std::runtime_error& e)
             {
-              throw ConfigFile::Error("Invalid value for option \"" +
-                                      i->first + "\" in \"udp\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                                      i->first + "\" in \"udp\" section"));
             }
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"udp\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + i->first + "\" in "
+                                                  "\"udp\" section"));
         }
     }
 
   if (!enableV4 && !enableV6)
     {
-      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
-                              " Remove \"udp\" section to disable UDP channels or"
-                              " re-enable at least one channel type.");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                                              " Remove \"udp\" section to disable UDP channels or"
+                                              " re-enable at least one channel type."));
     }
   else if (useMcast && !enableV4)
     {
-      throw ConfigFile::Error("IPv4 multicast requested, but IPv4 channels"
-                              " have been disabled (conflicting configuration options set)");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 multicast requested, but IPv4 channels"
+                                              " have been disabled (conflicting configuration"
+                                              " options set)"));
     }
 
   /// \todo what is keep alive interval used for?
@@ -645,13 +649,14 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
           mcastGroup = ethernet::Address::fromString(i->second.get_value<std::string>());
           if (mcastGroup.isNull())
             {
-              throw ConfigFile::Error("Invalid value for option \"" +
-                                      i->first + "\" in \"ether\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                                      i->first + "\" in \"ether\" section"));
             }
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" + i->first + "\" in \"ether\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + i->first +
+                                                  "\" in \"ether\" section"));
         }
     }
 
@@ -729,7 +734,8 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
         }
     }
 #else
-  throw ConfigFile::Error("NFD was compiled without libpcap, cannot process \"ether\" section");
+  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without libpcap, cannot "
+                                          "process \"ether\" section"));
 #endif // HAVE_LIBPCAP
 }
 
@@ -766,8 +772,8 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
             }
           catch (const std::bad_cast& error)
             {
-              throw ConfigFile::Error("Invalid value for option " +
-                                      i->first + "\" in \"websocket\" section");
+              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
+                                                      i->first + "\" in \"websocket\" section"));
             }
         }
       else if (i->first == "listen")
@@ -784,21 +790,21 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
         }
       else
         {
-          throw ConfigFile::Error("Unrecognized option \"" +
-                                  i->first + "\" in \"websocket\" section");
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
+                                                  i->first + "\" in \"websocket\" section"));
         }
     }
 
   if (!enableV4 && !enableV6)
     {
-      throw ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
-                              " Remove \"websocket\" section to disable WebSocket channels or"
-                              " re-enable at least one channel type.");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+                                              " Remove \"websocket\" section to disable WebSocket"
+                                              " channels or re-enable at least one channel type."));
     }
 
   if (!enableV4 && enableV6)
     {
-      throw ConfigFile::Error("NFD does not allow pure IPv6 WebSocket channel.");
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD does not allow pure IPv6 WebSocket channel."));
     }
 
   if (!isDryRun)
@@ -833,8 +839,8 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
         }
     }
 #else
-  throw ConfigFile::Error("NFD was compiled without WebSocket, "
-                          "cannot process \"websocket\" section");
+  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without WebSocket, "
+                                          "cannot process \"websocket\" section"));
 #endif // HAVE_WEBSOCKET
 }
 
