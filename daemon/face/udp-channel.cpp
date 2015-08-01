@@ -67,12 +67,13 @@ UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
+                    ndn::nfd::FacePersistency persistency,
                     const FaceCreatedCallback& onFaceCreated,
                     const ConnectFailedCallback& onConnectFailed)
 {
   shared_ptr<UdpFace> face;
   try {
-    face = createFace(remoteEndpoint, false).second;
+    face = createFace(remoteEndpoint, persistency).second;
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_WARN("[" << m_localEndpoint << "] Connect failed: " << e.what());
@@ -93,16 +94,20 @@ UdpChannel::size() const
 }
 
 std::pair<bool, shared_ptr<UdpFace>>
-UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand)
+UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
     // we already have a face for this endpoint, just reuse it
-    if (!isOnDemand) {
-      // only on-demand -> persistent transition is allowed
-      it->second->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+    auto face = it->second;
+    // only on-demand -> persistent -> permanent transition is allowed
+    bool isTransitionAllowed = persistency != face->getPersistency() &&
+                               (face->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND ||
+                                persistency == ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+    if (isTransitionAllowed) {
+      face->setPersistency(persistency);
     }
-    return {false, it->second};
+    return {false, face};
   }
 
   // else, create a new face
@@ -112,7 +117,7 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand)
   socket.connect(remoteEndpoint);
 
   auto face = make_shared<UdpFace>(FaceUri(remoteEndpoint), FaceUri(m_localEndpoint),
-                                   std::move(socket), isOnDemand, m_idleFaceTimeout);
+                                   std::move(socket), persistency, m_idleFaceTimeout);
 
   face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
     NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
@@ -144,7 +149,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
   bool created;
   shared_ptr<UdpFace> face;
   try {
-    std::tie(created, face) = createFace(m_remoteEndpoint, true);
+    std::tie(created, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_WARN("[" << m_localEndpoint << "] Failed to create face for peer "

@@ -255,8 +255,8 @@ UdpFactory::createFace(const FaceUri& uri,
                        const FaceCreatedCallback& onCreated,
                        const FaceConnectFailedCallback& onConnectFailed)
 {
-  if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
-    BOOST_THROW_EXCEPTION(Error("UdpFactory only supports persistent face"));
+  if (persistency == ndn::nfd::FacePersistency::FACE_PERSISTENCY_ON_DEMAND) {
+    BOOST_THROW_EXCEPTION(Error("UdpFactory::createFace does not support creating on-demand face"));
   }
 
   BOOST_ASSERT(uri.isCanonical());
@@ -283,7 +283,7 @@ UdpFactory::createFace(const FaceUri& uri,
     if ((channel->first.address().is_v4() && endpoint.address().is_v4()) ||
         (channel->first.address().is_v6() && endpoint.address().is_v6()))
     {
-      channel->second->connect(endpoint, onCreated, onConnectFailed);
+      channel->second->connect(endpoint, persistency, onCreated, onConnectFailed);
       return;
     }
   }

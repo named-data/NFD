@@ -78,6 +78,7 @@ public:
    */
   void
   connect(const udp::Endpoint& remoteEndpoint,
+          ndn::nfd::FacePersistency persistency,
           const FaceCreatedCallback& onFaceCreated,
           const ConnectFailedCallback& onConnectFailed);
 
@@ -92,7 +93,7 @@ public:
 
 private:
   std::pair<bool, shared_ptr<UdpFace>>
-  createFace(const udp::Endpoint& remoteEndpoint, bool isOnDemand);
+  createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency);
 
   /**
    * \brief The channel has received a new packet from a remote

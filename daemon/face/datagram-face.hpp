@@ -168,7 +168,11 @@ DatagramFace<T, U>::processErrorCode(const boost::system::error_code& error)
   if (error == boost::asio::error::operation_aborted) // when cancel() is called
     return;
 
-  // this should be unnecessary, but just in case
+  if (getPersistency() == ndn::nfd::FacePersistency::FACE_PERSISTENCY_PERMANENT) {
+    NFD_LOG_FACE_DEBUG("Permanent face ignores error: " << error.message());
+    return;
+  }
+
   if (!m_socket.is_open()) {
     this->fail("Tunnel closed");
     return;

@@ -39,7 +39,7 @@ class UdpFace : public DatagramFace<boost::asio::ip::udp>
 {
 public:
   UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
-          protocol::socket socket, bool isOnDemand,
+          protocol::socket socket, ndn::nfd::FacePersistency persistency,
           const time::seconds& idleTimeout);
 
   ndn::nfd::FaceStatus

@@ -228,22 +228,25 @@ BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      bind([]{}),
                      bind(&FaceCreateFixture::failIfError, this, _1));
+  //test the upgrade
+  factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
+                     ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                     bind([]{}),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
+
+  factory.createFace(FaceUri("udp4://127.0.0.1:20072"),
+                     ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+                     bind([]{}),
+                     bind(&FaceCreateFixture::failIfError, this, _1));
 }
 
-BOOST_FIXTURE_TEST_CASE(UnsupportedFaceCreate, FaceCreateFixture)
+BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   UdpFactory factory;
 
   factory.createChannel("127.0.0.1", "20070");
-  factory.createChannel("127.0.0.1", "20071");
 
   BOOST_CHECK_THROW(factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
-
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("udp4://127.0.0.1:20071"),
                                        ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
                                        bind([]{}),
                                        bind([]{})),
@@ -480,6 +483,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, EndToEndAddresses)
   boost::asio::ip::address ipAddress2 = boost::asio::ip::address::from_string(A::getLocalIp());
   udp::Endpoint endpoint2(ipAddress2, boost::lexical_cast<uint16_t>(A::getPort1()));
   channel2->connect(endpoint2,
+                    ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     [&] (shared_ptr<Face> newFace) {
                       face2 = newFace;
                       limitedIo.afterOp();
@@ -497,6 +501,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, EndToEndAddresses)
   boost::asio::ip::address ipAddress3 = boost::asio::ip::address::from_string(A::getLocalIp());
   udp::Endpoint endpoint3(ipAddress3, boost::lexical_cast<uint16_t>(A::getPort1()));
   channel3->connect(endpoint3,
+                    ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     [&] (shared_ptr<Face> newFace) {
                       face3 = newFace;
                       limitedIo.afterOp();
@@ -579,6 +584,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IdleClose, A, EndToEndAddresses)
   boost::asio::ip::address ipAddress = boost::asio::ip::address::from_string(A::getLocalIp());
   udp::Endpoint endpoint(ipAddress, boost::lexical_cast<uint16_t>(A::getPort1()));
   channel2->connect(endpoint,
+                    ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     [&] (shared_ptr<Face> newFace) {
                       face2 = newFace;
                       history2.reset(new FaceHistory(*face2, limitedIo));

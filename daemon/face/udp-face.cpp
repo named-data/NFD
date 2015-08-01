@@ -38,13 +38,13 @@ namespace nfd {
 NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
 
 UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                 protocol::socket socket, bool isOnDemand,
+                 protocol::socket socket, ndn::nfd::FacePersistency persistency,
                  const time::seconds& idleTimeout)
   : DatagramFace(remoteUri, localUri, std::move(socket))
   , m_idleTimeout(idleTimeout)
   , m_lastIdleCheck(time::steady_clock::now())
 {
-  this->setPersistency(isOnDemand ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND : ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  this->setPersistency(persistency);
 
 #ifdef __linux__
   //
