@@ -38,6 +38,11 @@ This procedure contains three methods to discover a NDN router:
 3.  Connect to the home NDN router according to user certificate.
     This ensures connectivity from anywhere.
 
+After connecting to an NDN router, two prefixes will be automatically registered:
+
+- /ndn
+- /localhop/nfd --- this to inform RIB manager that there is connectivity to the hub
+
 Stage 1: multicast discovery
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
