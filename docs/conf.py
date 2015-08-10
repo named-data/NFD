@@ -241,7 +241,6 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('manpages/nfd', 'nfd', u'Named Data Networking Forwarding Daemon', None, 1),
-    ('manpages/nrd', 'nrd', u'NFD RIB Daemon', None, 1),
     ('manpages/ndn-autoconfig-server', 'ndn-autoconfig-server',
         u'NFD Auto-configuration Server', None, 1),
     ('manpages/ndn-autoconfig', 'ndn-autoconfig',
