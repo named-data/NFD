@@ -39,29 +39,15 @@ class GeneralConfigSectionFixture : public BaseFixture
 public:
   ~GeneralConfigSectionFixture()
   {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
     // revert changes to s_normalUid/s_normalGid, if any
     PrivilegeHelper::s_normalUid = ::geteuid();
     PrivilegeHelper::s_normalGid = ::getegid();
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
   }
 };
 
 BOOST_FIXTURE_TEST_SUITE(MgmtGeneralConfigSection, GeneralConfigSectionFixture)
-
-BOOST_AUTO_TEST_CASE(UserAndGroupConfig)
-{
-  const std::string CONFIG =
-    "general\n"
-    "{\n"
-    "  user nobody\n"
-    "  group nogroup\n"
-    "}\n";
-
-  ConfigFile configFile;
-
-  general::setConfigFile(configFile);
-  BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
-
-}
 
 BOOST_AUTO_TEST_CASE(DefaultConfig)
 {
@@ -76,6 +62,23 @@ BOOST_AUTO_TEST_CASE(DefaultConfig)
   BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
 
   BOOST_CHECK(getRouterName().getName().empty());
+}
+
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+
+BOOST_AUTO_TEST_CASE(UserAndGroupConfig)
+{
+  const std::string CONFIG =
+    "general\n"
+    "{\n"
+    "  user nobody\n"
+    "  group nogroup\n"
+    "}\n";
+
+  ConfigFile configFile;
+
+  general::setConfigFile(configFile);
+  BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
 }
 
 BOOST_AUTO_TEST_CASE(NoUserConfig)
@@ -105,6 +108,8 @@ BOOST_AUTO_TEST_CASE(NoGroupConfig)
   general::setConfigFile(configFile);
   BOOST_CHECK_NO_THROW(configFile.parse(CONFIG, true, "test-general-config-section"));
 }
+
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 static bool
 checkExceptionMessage(const ConfigFile::Error& error, const std::string& expected)
