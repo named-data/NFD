@@ -128,7 +128,7 @@ Forwarder::onContentStoreHit(const Face& inFace,
                              const Interest& interest,
                              const Data& data)
 {
-  NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
+  NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName());
 
   const_pointer_cast<Data>(data.shared_from_this())->setIncomingFaceId(FACEID_CONTENT_STORE);
   // XXX should we lookup PIT for other Interests that also match csMatch?
