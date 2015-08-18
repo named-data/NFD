@@ -35,67 +35,6 @@ namespace general {
 
 NFD_LOG_INIT("GeneralConfigSection");
 
-const ndn::Name
-RouterName::getName() const
-{
-  ndn::Name routerName;
-
-  if (network.empty() || site.empty() || router.empty())
-    {
-      return routerName;
-    }
-
-  routerName = network;
-  routerName.append(site);
-  routerName.append(ROUTER_MARKER);
-  routerName.append(router);
-
-  return routerName;
-}
-
-const ndn::PartialName RouterName::ROUTER_MARKER("%C1.Router");
-
-static RouterName&
-getRouterNameInstance()
-{
-  static RouterName routerName;
-  return routerName;
-}
-
-ndn::PartialName
-loadPartialNameFromSection(const ConfigSection& section, const std::string& key)
-{
-  ndn::PartialName value;
-
-  try
-    {
-      value = section.get<ndn::PartialName>(key);
-
-      if (value.empty())
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"router_name." + key + "\""
-                                                  " in \"general\" section"));
-        }
-    }
-  catch (const boost::property_tree::ptree_error& error)
-    {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"router_name." + key + "\""
-                                              " in \"general\" section"));
-    }
-
-  return value;
-}
-
-void
-processSectionRouterName(const ConfigSection& section, bool isDryRun)
-{
-  RouterName& routerName = getRouterNameInstance();
-
-  routerName.network = loadPartialNameFromSection(section, "network");
-  routerName.site = loadPartialNameFromSection(section, "site");
-  routerName.router = loadPartialNameFromSection(section, "router");
-}
-
 static void
 onConfig(const ConfigSection& configSection,
          bool isDryRun,
@@ -105,13 +44,6 @@ onConfig(const ConfigSection& configSection,
   // {
   //    ; user "ndn-user"
   //    ; group "ndn-user"
-  //
-  //    ; router_name
-  //    ; {
-  //    ;   network ndn
-  //    ;   site    edu/site
-  //    ;   router  router/name
-  //    ; }
   // }
 
   std::string user;
@@ -161,26 +93,12 @@ onConfig(const ConfigSection& configSection,
   NFD_LOG_TRACE("using user \"" << user << "\" group \"" << group << "\"");
 
   PrivilegeHelper::initialize(user, group);
-
-  boost::optional<const ConfigSection&> routerNameSection =
-    configSection.get_child_optional("router_name");
-
-  if (routerNameSection)
-    {
-      processSectionRouterName(*routerNameSection, isDryRun);
-    }
 }
 
 void
 setConfigFile(ConfigFile& configFile)
 {
   configFile.addSectionHandler("general", &onConfig);
-}
-
-const RouterName&
-getRouterName()
-{
-  return getRouterNameInstance();
 }
 
 } // namespace general

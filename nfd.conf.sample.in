@@ -7,18 +7,6 @@ general
 
   ; user ndn-user
   ; group ndn-user
-
-  ; The router_name section specifies the name components used
-  ; to build this router's name. The router name is constructed
-  ; using the configuration options in the following manner:
-  ;   /<network>/<site>/<%C1.Router>/<router>
-
-  ; router_name
-  ; {
-  ;   network ndn ; the network to which this router belongs
-  ;   site    edu/site ; the site to which this router belongs
-  ;   router  router/name ; name used to uniquely identify this router under the site
-  ; }
 }
 
 log
