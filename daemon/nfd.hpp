@@ -48,7 +48,7 @@ class InternalFace;
 class FibManager;
 class FaceManager;
 class StrategyChoiceManager;
-class StatusServer;
+class ForwarderStatusManager;
 class InternalClientFace;
 class CommandValidator;
 
@@ -107,19 +107,19 @@ private:
 
   unique_ptr<Forwarder> m_forwarder;
 
-  ndn::KeyChain&                    m_keyChain;
-  shared_ptr<InternalFace>          m_internalFace;
-  shared_ptr<InternalClientFace>    m_internalClientFace;
-  unique_ptr<CommandValidator>      m_validator;
+  ndn::KeyChain&                     m_keyChain;
+  shared_ptr<InternalFace>           m_internalFace;
+  shared_ptr<InternalClientFace>     m_internalClientFace;
+  unique_ptr<CommandValidator>       m_validator;
 
-  unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
-  unique_ptr<FibManager>            m_fibManager;
-  unique_ptr<FaceManager>           m_faceManager;
+  unique_ptr<ndn::mgmt::Dispatcher>  m_dispatcher;
+  unique_ptr<FibManager>             m_fibManager;
+  unique_ptr<FaceManager>            m_faceManager;
   // unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
-  // unique_ptr<StatusServer>          m_statusServer;
+  unique_ptr<ForwarderStatusManager> m_forwarderStatusManager;
 
-  ndn::util::NetworkMonitor         m_networkMonitor;
-  scheduler::ScopedEventId          m_reloadConfigEvent;
+  ndn::util::NetworkMonitor          m_networkMonitor;
+  scheduler::ScopedEventId           m_reloadConfigEvent;
 };
 
 } // namespace nfd
