@@ -33,7 +33,7 @@
 #include "face/null-face.hpp"
 #include "face/internal-face.hpp"
 #include "face/internal-client-face.hpp"
-// #include "mgmt/fib-manager.hpp"
+#include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
 // #include "mgmt/strategy-choice-manager.hpp"
 // #include "mgmt/status-server.hpp"
@@ -138,9 +138,10 @@ Nfd::initializeManagement()
 
   m_validator.reset(new CommandValidator());
 
-  // m_fibManager.reset(new FibManager(m_forwarder->getFib(),
-  //                                   bind(&Forwarder::getFace, m_forwarder.get(), _1),
-  //                                   m_internalFace, m_keyChain));
+  m_fibManager.reset(new FibManager(m_forwarder->getFib(),
+                                    bind(&Forwarder::getFace, m_forwarder.get(), _1),
+                                    *m_dispatcher,
+                                    *m_validator));
 
   m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
                                       *m_dispatcher,
