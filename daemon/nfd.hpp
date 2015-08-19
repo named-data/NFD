@@ -33,6 +33,14 @@
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/util/network-monitor.hpp>
 
+namespace ndn {
+namespace mgmt {
+
+class Dispatcher;
+
+}
+}
+
 namespace nfd {
 
 class Forwarder;
@@ -42,6 +50,7 @@ class FaceManager;
 class StrategyChoiceManager;
 class StatusServer;
 class InternalClientFace;
+class CommandValidator;
 
 /**
  * \brief Class representing NFD instance
@@ -101,6 +110,9 @@ private:
   ndn::KeyChain&                    m_keyChain;
   shared_ptr<InternalFace>          m_internalFace;
   shared_ptr<InternalClientFace>    m_internalClientFace;
+  unique_ptr<CommandValidator>      m_validator;
+
+  unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
   // unique_ptr<FibManager>            m_fibManager;
   // unique_ptr<FaceManager>           m_faceManager;
   // unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;

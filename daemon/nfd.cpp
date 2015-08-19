@@ -39,6 +39,9 @@
 // #include "mgmt/status-server.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
+#include "mgmt/command-validator.hpp"
+
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 
@@ -131,6 +134,9 @@ Nfd::initializeManagement()
   m_internalFace = make_shared<InternalFace>();
   m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
   m_internalClientFace = makeInternalClientFace(m_internalFace, m_keyChain);
+  m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
+
+  m_validator.reset(new CommandValidator());
 
   // m_fibManager.reset(new FibManager(m_forwarder->getFib(),
   //                                   bind(&Forwarder::getFace, m_forwarder.get(), _1),
@@ -153,9 +159,7 @@ Nfd::initializeManagement()
                                    m_forwarder->getMeasurements());
   tablesConfig.setConfigFile(config);
 
-  // m_internalFace->getValidator().setConfigFile(config);
-
-  m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
+  m_validator->setConfigFile(config);
 
   // m_faceManager->setConfigFile(config);
 
@@ -172,8 +176,10 @@ Nfd::initializeManagement()
   tablesConfig.ensureTablesAreConfigured();
 
   // add FIB entry for NFD Management Protocol
-  shared_ptr<fib::Entry> entry = m_forwarder->getFib().insert("/localhost/nfd").first;
+  Name topPrefix("/localhost/nfd");
+  auto entry = m_forwarder->getFib().insert(topPrefix).first;
   entry->addNextHop(m_internalFace, 0);
+  m_dispatcher->addTopPrefix(topPrefix, false);
 }
 
 void
@@ -196,8 +202,8 @@ Nfd::reloadConfigFile()
 
   tablesConfig.setConfigFile(config);
 
-  // m_internalFace->getValidator().setConfigFile(config);
   // m_faceManager->setConfigFile(config);
+  m_validator->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);

@@ -52,6 +52,25 @@ ConfigFile::ignoreUnknownSection(const std::string& filename,
   // do nothing
 }
 
+bool
+ConfigFile::parseYesNo(const ConfigSection::const_iterator& i,
+                        const std::string& optionName,
+                        const std::string& sectionName)
+{
+  const std::string value = i->second.get_value<std::string>();
+  if (value == "yes") {
+    return true;
+  }
+
+  if (value == "no") {
+    return false;
+  }
+
+  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
+                                          optionName + "\" in \"" +
+                                          sectionName + "\" section"));
+}
+
 ConfigFile::ConfigFile(UnknownConfigSectionHandler unknownSectionCallback)
   : m_unknownSectionCallback(unknownSectionCallback)
 {
