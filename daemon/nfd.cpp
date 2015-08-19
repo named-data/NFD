@@ -35,7 +35,7 @@
 #include "face/internal-client-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
-// #include "mgmt/strategy-choice-manager.hpp"
+#include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/forwarder-status-manager.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
@@ -147,8 +147,9 @@ Nfd::initializeManagement()
                                       *m_dispatcher,
                                       *m_validator));
 
-  // m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
-  //                                                         m_internalFace, m_keyChain));
+  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
+                                                          *m_dispatcher,
+                                                          *m_validator));
 
   m_forwarderStatusManager.reset(new ForwarderStatusManager(*m_forwarder, *m_dispatcher));
 
