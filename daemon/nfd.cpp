@@ -31,7 +31,8 @@
 #include "core/config-file.hpp"
 #include "fw/forwarder.hpp"
 #include "face/null-face.hpp"
-#include "mgmt/internal-face.hpp"
+#include "face/internal-face.hpp"
+#include "face/internal-client-face.hpp"
 // #include "mgmt/fib-manager.hpp"
 // #include "mgmt/face-manager.hpp"
 // #include "mgmt/strategy-choice-manager.hpp"
@@ -47,14 +48,14 @@ static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
-  // , m_keyChain(keyChain)
+  , m_keyChain(keyChain)
   , m_networkMonitor(getGlobalIoService())
 {
 }
 
 Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
-  // , m_keyChain(keyChain)
+  , m_keyChain(keyChain)
   , m_networkMonitor(getGlobalIoService())
 {
 }
@@ -128,6 +129,8 @@ void
 Nfd::initializeManagement()
 {
   m_internalFace = make_shared<InternalFace>();
+  m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
+  m_internalClientFace = makeInternalClientFace(m_internalFace, m_keyChain);
 
   // m_fibManager.reset(new FibManager(m_forwarder->getFib(),
   //                                   bind(&Forwarder::getFace, m_forwarder.get(), _1),
@@ -150,7 +153,7 @@ Nfd::initializeManagement()
                                    m_forwarder->getMeasurements());
   tablesConfig.setConfigFile(config);
 
-  m_internalFace->getValidator().setConfigFile(config);
+  // m_internalFace->getValidator().setConfigFile(config);
 
   m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
 
@@ -193,7 +196,7 @@ Nfd::reloadConfigFile()
 
   tablesConfig.setConfigFile(config);
 
-  m_internalFace->getValidator().setConfigFile(config);
+  // m_internalFace->getValidator().setConfigFile(config);
   // m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {

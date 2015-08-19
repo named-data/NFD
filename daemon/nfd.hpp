@@ -41,6 +41,7 @@ class FibManager;
 class FaceManager;
 class StrategyChoiceManager;
 class StatusServer;
+class InternalClientFace;
 
 /**
  * \brief Class representing NFD instance
@@ -97,13 +98,13 @@ private:
 
   unique_ptr<Forwarder> m_forwarder;
 
+  ndn::KeyChain&                    m_keyChain;
   shared_ptr<InternalFace>          m_internalFace;
+  shared_ptr<InternalClientFace>    m_internalClientFace;
   // unique_ptr<FibManager>            m_fibManager;
   // unique_ptr<FaceManager>           m_faceManager;
   // unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
   // unique_ptr<StatusServer>          m_statusServer;
-
-  // ndn::KeyChain&                    m_keyChain;
 
   ndn::util::NetworkMonitor         m_networkMonitor;
   scheduler::ScopedEventId          m_reloadConfigEvent;
