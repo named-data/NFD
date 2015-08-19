@@ -34,7 +34,7 @@
 #include "face/internal-face.hpp"
 #include "face/internal-client-face.hpp"
 // #include "mgmt/fib-manager.hpp"
-// #include "mgmt/face-manager.hpp"
+#include "mgmt/face-manager.hpp"
 // #include "mgmt/strategy-choice-manager.hpp"
 // #include "mgmt/status-server.hpp"
 #include "mgmt/general-config-section.hpp"
@@ -142,7 +142,9 @@ Nfd::initializeManagement()
   //                                   bind(&Forwarder::getFace, m_forwarder.get(), _1),
   //                                   m_internalFace, m_keyChain));
 
-  // m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(), m_internalFace, m_keyChain));
+  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
+                                      *m_dispatcher,
+                                      *m_validator));
 
   // m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
   //                                                         m_internalFace, m_keyChain));
@@ -161,7 +163,7 @@ Nfd::initializeManagement()
 
   m_validator->setConfigFile(config);
 
-  // m_faceManager->setConfigFile(config);
+  m_faceManager->setConfigFile(config);
 
   // parse config file
   if (!m_configFile.empty()) {
@@ -202,8 +204,8 @@ Nfd::reloadConfigFile()
 
   tablesConfig.setConfigFile(config);
 
-  // m_faceManager->setConfigFile(config);
   m_validator->setConfigFile(config);
+  m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);
@@ -218,7 +220,7 @@ Nfd::reloadConfigFileFaceSection()
 {
   // reload only face_system section of the config file to re-initialize multicast faces
   ConfigFile config(&ConfigFile::ignoreUnknownSection);
-  // m_faceManager->setConfigFile(config);
+  m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);

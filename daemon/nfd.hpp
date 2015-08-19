@@ -114,7 +114,7 @@ private:
 
   unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
   // unique_ptr<FibManager>            m_fibManager;
-  // unique_ptr<FaceManager>           m_faceManager;
+  unique_ptr<FaceManager>           m_faceManager;
   // unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
   // unique_ptr<StatusServer>          m_statusServer;
 
