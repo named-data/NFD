@@ -32,10 +32,10 @@
 #include "fw/forwarder.hpp"
 #include "face/null-face.hpp"
 #include "mgmt/internal-face.hpp"
-#include "mgmt/fib-manager.hpp"
-#include "mgmt/face-manager.hpp"
-#include "mgmt/strategy-choice-manager.hpp"
-#include "mgmt/status-server.hpp"
+// #include "mgmt/fib-manager.hpp"
+// #include "mgmt/face-manager.hpp"
+// #include "mgmt/strategy-choice-manager.hpp"
+// #include "mgmt/status-server.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
 
@@ -47,14 +47,14 @@ static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
-  , m_keyChain(keyChain)
+  // , m_keyChain(keyChain)
   , m_networkMonitor(getGlobalIoService())
 {
 }
 
 Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
-  , m_keyChain(keyChain)
+  // , m_keyChain(keyChain)
   , m_networkMonitor(getGlobalIoService())
 {
 }
@@ -129,16 +129,16 @@ Nfd::initializeManagement()
 {
   m_internalFace = make_shared<InternalFace>();
 
-  m_fibManager.reset(new FibManager(m_forwarder->getFib(),
-                                    bind(&Forwarder::getFace, m_forwarder.get(), _1),
-                                    m_internalFace, m_keyChain));
+  // m_fibManager.reset(new FibManager(m_forwarder->getFib(),
+  //                                   bind(&Forwarder::getFace, m_forwarder.get(), _1),
+  //                                   m_internalFace, m_keyChain));
 
-  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(), m_internalFace, m_keyChain));
+  // m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(), m_internalFace, m_keyChain));
 
-  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
-                                                          m_internalFace, m_keyChain));
+  // m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
+  //                                                         m_internalFace, m_keyChain));
 
-  m_statusServer.reset(new StatusServer(m_internalFace, *m_forwarder, m_keyChain));
+  // m_statusServer.reset(new StatusServer(m_internalFace, *m_forwarder, m_keyChain));
 
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);
@@ -154,7 +154,7 @@ Nfd::initializeManagement()
 
   m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
 
-  m_faceManager->setConfigFile(config);
+  // m_faceManager->setConfigFile(config);
 
   // parse config file
   if (!m_configFile.empty()) {
@@ -194,7 +194,7 @@ Nfd::reloadConfigFile()
   tablesConfig.setConfigFile(config);
 
   m_internalFace->getValidator().setConfigFile(config);
-  m_faceManager->setConfigFile(config);
+  // m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);
@@ -209,7 +209,7 @@ Nfd::reloadConfigFileFaceSection()
 {
   // reload only face_system section of the config file to re-initialize multicast faces
   ConfigFile config(&ConfigFile::ignoreUnknownSection);
-  m_faceManager->setConfigFile(config);
+  // m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);

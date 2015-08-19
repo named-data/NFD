@@ -98,12 +98,12 @@ private:
   unique_ptr<Forwarder> m_forwarder;
 
   shared_ptr<InternalFace>          m_internalFace;
-  unique_ptr<FibManager>            m_fibManager;
-  unique_ptr<FaceManager>           m_faceManager;
-  unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
-  unique_ptr<StatusServer>          m_statusServer;
+  // unique_ptr<FibManager>            m_fibManager;
+  // unique_ptr<FaceManager>           m_faceManager;
+  // unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
+  // unique_ptr<StatusServer>          m_statusServer;
 
-  ndn::KeyChain&                    m_keyChain;
+  // ndn::KeyChain&                    m_keyChain;
 
   ndn::util::NetworkMonitor         m_networkMonitor;
   scheduler::ScopedEventId          m_reloadConfigEvent;
