@@ -145,7 +145,7 @@ MulticastDiscovery::setStrategy()
   nfd::ControlParameters parameters;
   parameters
     .setName(LOCALHOP_HUB_DISCOVERY_PREFIX)
-    .setStrategy("/localhost/nfd/strategy/broadcast");
+    .setStrategy("/localhost/nfd/strategy/multicast");
 
   m_controller.start<nfd::StrategyChoiceSetCommand>(parameters,
                                                     bind(&MulticastDiscovery::requestHubData, this),
@@ -156,7 +156,7 @@ MulticastDiscovery::setStrategy()
 void
 MulticastDiscovery::onSetStrategyFailure(const std::string& error)
 {
-  m_nextStageOnFailure("Failed to set broadcast strategy for " +
+  m_nextStageOnFailure("Failed to set multicast strategy for " +
                        LOCALHOP_HUB_DISCOVERY_PREFIX.toUri() + " namespace (" + error + "). "
                        "Skipping multicast discovery stage");
 }

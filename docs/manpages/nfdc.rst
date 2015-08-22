@@ -119,9 +119,10 @@ Options
         Currently, NFD supports the following strategies::
 
             ndn:/localhost/nfd/strategy/best-route
-            ndn:/localhost/nfd/strategy/broadcast
+            ndn:/localhost/nfd/strategy/multicast
             ndn:/localhost/nfd/strategy/client-control
             ndn:/localhost/nfd/strategy/ncc
+            ndn:/localhost/nfd/strategy/access
 
   ``unset-strategy``
     Unset the strategy for a given ``namespace``.

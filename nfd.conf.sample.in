@@ -54,9 +54,9 @@ tables
   strategy_choice
   {
     /               /localhost/nfd/strategy/best-route
-    /localhost      /localhost/nfd/strategy/broadcast
+    /localhost      /localhost/nfd/strategy/multicast
     /localhost/nfd  /localhost/nfd/strategy/best-route
-    /ndn/broadcast  /localhost/nfd/strategy/broadcast
+    /ndn/broadcast  /localhost/nfd/strategy/multicast
   }
 }
 

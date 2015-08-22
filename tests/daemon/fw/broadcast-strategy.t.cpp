@@ -24,8 +24,6 @@
  */
 
 #include "fw/broadcast-strategy.hpp"
-#include "strategy-tester.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -37,94 +35,20 @@ using namespace nfd::tests;
 
 BOOST_FIXTURE_TEST_SUITE(FwBroadcastStrategy, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Forward2)
+BOOST_AUTO_TEST_CASE(Registry)
 {
   Forwarder forwarder;
-  typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
-  BroadcastStrategyTester strategy(forwarder);
+  StrategyChoice& sc = forwarder.getStrategyChoice();
 
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
-
-  Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 0);
-  fibEntry->addNextHop(face2, 0);
-  fibEntry->addNextHop(face3, 0);
-
-  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
-  Pit& pit = forwarder.getPit();
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face3, *interest);
-
-  strategy.afterReceiveInterest(*face3, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 0);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 2);
-  bool hasFace1 = false;
-  bool hasFace2 = false;
-  for (std::vector<BroadcastStrategyTester::SendInterestArgs>::iterator it =
-       strategy.m_sendInterestHistory.begin();
-       it != strategy.m_sendInterestHistory.end(); ++it) {
-    if (it->get<1>() == face1) {
-      hasFace1 = true;
-    }
-    if (it->get<1>() == face2) {
-      hasFace2 = true;
-    }
-  }
-  BOOST_CHECK(hasFace1 && hasFace2);
+  BOOST_CHECK(sc.hasStrategy("ndn:/localhost/nfd/strategy/broadcast"));
+  BOOST_CHECK(sc.hasStrategy("ndn:/localhost/nfd/strategy/multicast"));
 }
 
-BOOST_AUTO_TEST_CASE(RejectScope)
+BOOST_AUTO_TEST_CASE(StrategyName)
 {
   Forwarder forwarder;
-  typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
-  BroadcastStrategyTester strategy(forwarder);
-
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-
-  Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert("ndn:/localhop/uS09bub6tm").first;
-  fibEntry->addNextHop(face2, 0);
-
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
-  Pit& pit = forwarder.getPit();
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
-
-  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(RejectLoopback)
-{
-  Forwarder forwarder;
-  typedef StrategyTester<fw::BroadcastStrategy> BroadcastStrategyTester;
-  BroadcastStrategyTester strategy(forwarder);
-
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-
-  Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 0);
-
-  shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
-  Pit& pit = forwarder.getPit();
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
-
-  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
+  fw::BroadcastStrategy strategy(forwarder);
+  BOOST_CHECK_EQUAL(strategy.getName(), fw::BroadcastStrategy::STRATEGY_NAME);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

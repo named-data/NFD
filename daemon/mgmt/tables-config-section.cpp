@@ -84,9 +84,9 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
   //    strategy_choice
   //    {
   //       /               /localhost/nfd/strategy/best-route
-  //       /localhost      /localhost/nfd/strategy/broadcast
+  //       /localhost      /localhost/nfd/strategy/multicast
   //       /localhost/nfd  /localhost/nfd/strategy/best-route
-  //       /ndn/broadcast  /localhost/nfd/strategy/broadcast
+  //       /ndn/broadcast  /localhost/nfd/strategy/multicast
   //    }
   // }
 
@@ -133,9 +133,9 @@ TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSec
   // strategy_choice
   // {
   //   /               /localhost/nfd/strategy/best-route
-  //   /localhost      /localhost/nfd/strategy/broadcast
+  //   /localhost      /localhost/nfd/strategy/multicast
   //   /localhost/nfd  /localhost/nfd/strategy/best-route
-  //   /ndn/broadcast  /localhost/nfd/strategy/broadcast
+  //   /ndn/broadcast  /localhost/nfd/strategy/multicast
   // }
 
   std::map<Name, Name> choices;

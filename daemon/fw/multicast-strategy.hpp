@@ -23,36 +23,32 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "broadcast-strategy.hpp"
+#ifndef NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
+#define NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
+
+#include "strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT("BroadcastStrategy");
-
-const Name BroadcastStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/broadcast/%FD%02");
-NFD_REGISTER_STRATEGY(BroadcastStrategy);
-
-BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder, const Name& name)
-  : MulticastStrategy(forwarder, name)
-  , m_isFirstUse(true)
+/** \brief a forwarding strategy that forwards Interest to all FIB nexthops
+ */
+class MulticastStrategy : public Strategy
 {
-}
+public:
+  MulticastStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
-void
-BroadcastStrategy::afterReceiveInterest(const Face& inFace,
-                   const Interest& interest,
-                   shared_ptr<fib::Entry> fibEntry,
-                   shared_ptr<pit::Entry> pitEntry)
-{
-  if (m_isFirstUse) {
-    NFD_LOG_WARN("The broadcast strategy has been renamed as multicast strategy. "
-                 "Use ndn:/localhost/nfd/strategy/multicast to select the multicast strategy.");
-    m_isFirstUse = false;
-  }
+  virtual void
+  afterReceiveInterest(const Face& inFace,
+                       const Interest& interest,
+                       shared_ptr<fib::Entry> fibEntry,
+                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
 
-  this->MulticastStrategy::afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
-}
+public:
+  static const Name STRATEGY_NAME;
+};
 
 } // namespace fw
 } // namespace nfd
+
+#endif // NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP

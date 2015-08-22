@@ -23,35 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "broadcast-strategy.hpp"
+#include "multicast-strategy.hpp"
 
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT("BroadcastStrategy");
+const Name MulticastStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/multicast/%FD%01");
+NFD_REGISTER_STRATEGY(MulticastStrategy);
 
-const Name BroadcastStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/broadcast/%FD%02");
-NFD_REGISTER_STRATEGY(BroadcastStrategy);
-
-BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder, const Name& name)
-  : MulticastStrategy(forwarder, name)
-  , m_isFirstUse(true)
+MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
+  : Strategy(forwarder, name)
 {
 }
 
 void
-BroadcastStrategy::afterReceiveInterest(const Face& inFace,
+MulticastStrategy::afterReceiveInterest(const Face& inFace,
                    const Interest& interest,
                    shared_ptr<fib::Entry> fibEntry,
                    shared_ptr<pit::Entry> pitEntry)
 {
-  if (m_isFirstUse) {
-    NFD_LOG_WARN("The broadcast strategy has been renamed as multicast strategy. "
-                 "Use ndn:/localhost/nfd/strategy/multicast to select the multicast strategy.");
-    m_isFirstUse = false;
+  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+
+  for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
+    shared_ptr<Face> outFace = it->getFace();
+    if (pitEntry->canForwardTo(*outFace)) {
+      this->sendInterest(pitEntry, outFace);
+    }
   }
 
-  this->MulticastStrategy::afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
+  if (!pitEntry->hasUnexpiredOutRecords()) {
+    this->rejectPendingInterest(pitEntry);
+  }
 }
 
 } // namespace fw
