@@ -85,8 +85,10 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
   NFD_LOG_INFO("Added face id=" << faceId << " remote=" << face->getRemoteUri()
                                           << " local=" << face->getLocalUri());
 
-  face->onReceiveInterest.connect(bind(&Forwarder::onInterest, &m_forwarder, ref(*face), _1));
-  face->onReceiveData.connect(bind(&Forwarder::onData, &m_forwarder, ref(*face), _1));
+  face->onReceiveInterest.connect(bind(&Forwarder::startProcessInterest,
+                                       &m_forwarder, ref(*face), _1));
+  face->onReceiveData.connect(bind(&Forwarder::startProcessData,
+                                   &m_forwarder, ref(*face), _1));
   face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face, _1));
 
   this->onAdd(face);

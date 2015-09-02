@@ -40,6 +40,10 @@ class DummyStrategy : public fw::Strategy
 public:
   DummyStrategy(Forwarder& forwarder, const Name& name)
     : Strategy(forwarder, name)
+    , afterReceiveInterest_count(0)
+    , wantAfterReceiveInterestCalls(false)
+    , beforeSatisfyInterest_count(0)
+    , beforeExpirePendingInterest_count(0)
   {
   }
 
@@ -49,10 +53,14 @@ public:
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
   {
-    ++m_afterReceiveInterest_count;
+    ++afterReceiveInterest_count;
+    if (wantAfterReceiveInterestCalls) {
+      afterReceiveInterestCalls.push_back(std::make_tuple(inFace.getId(),
+        interest, fibEntry, pitEntry));
+    }
 
-    if (static_cast<bool>(m_interestOutFace)) {
-      this->sendInterest(pitEntry, m_interestOutFace);
+    if (static_cast<bool>(interestOutFace)) {
+      this->sendInterest(pitEntry, interestOutFace);
     }
     else {
       this->rejectPendingInterest(pitEntry);
@@ -63,22 +71,25 @@ public:
   beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
                         const Face& inFace, const Data& data) DECL_OVERRIDE
   {
-    ++m_beforeSatisfyInterest_count;
+    ++beforeSatisfyInterest_count;
   }
 
   virtual void
   beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
   {
-    ++m_beforeExpirePendingInterest_count;
+    ++beforeExpirePendingInterest_count;
   }
 
 public:
-  int m_afterReceiveInterest_count;
-  int m_beforeSatisfyInterest_count;
-  int m_beforeExpirePendingInterest_count;
+  int afterReceiveInterest_count;
+  bool wantAfterReceiveInterestCalls;
+  std::vector<std::tuple<FaceId, Interest, shared_ptr<fib::Entry>,
+              shared_ptr<pit::Entry>>> afterReceiveInterestCalls;
+  int beforeSatisfyInterest_count;
+  int beforeExpirePendingInterest_count;
 
   /// outFace to use in afterReceiveInterest, nullptr to reject
-  shared_ptr<Face> m_interestOutFace;
+  shared_ptr<Face> interestOutFace;
 };
 
 } // namespace tests

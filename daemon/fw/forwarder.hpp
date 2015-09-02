@@ -36,6 +36,7 @@
 #include "table/measurements.hpp"
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
+#include "table/network-region-table.hpp"
 
 namespace nfd {
 
@@ -77,11 +78,17 @@ public: // faces
   addFace(shared_ptr<Face> face);
 
 public: // forwarding entrypoints and tables
+  /** \brief start incoming Interest processing
+   *  \param interest the incoming Interest, must be created with make_shared
+   */
   void
-  onInterest(Face& face, const Interest& interest);
+  startProcessInterest(Face& face, const Interest& interest);
 
+  /** \brief start incoming Data processing
+   *  \param data the incoming Data, must be created with make_shared
+   */
   void
-  onData(Face& face, const Data& data);
+  startProcessData(Face& face, const Data& data);
 
   NameTree&
   getNameTree();
@@ -104,11 +111,20 @@ public: // forwarding entrypoints and tables
   DeadNonceList&
   getDeadNonceList();
 
+  NetworkRegionTable&
+  getNetworkRegionTable();
+
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
   onIncomingInterest(Face& inFace, const Interest& interest);
+
+  /** \brief Interest loop pipeline
+   */
+  VIRTUAL_WITH_TESTS void
+  onInterestLoop(Face& inFace, const Interest& interest,
+                 shared_ptr<pit::Entry> pitEntry);
 
   /** \brief Content Store miss pipeline
   */
@@ -120,12 +136,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   void
   onContentStoreHit(const Face& inFace, shared_ptr<pit::Entry> pitEntry,
                     const Interest& interest, const Data& data);
-
-  /** \brief Interest loop pipeline
-   */
-  VIRTUAL_WITH_TESTS void
-  onInterestLoop(Face& inFace, const Interest& interest,
-                 shared_ptr<pit::Entry> pitEntry);
 
   /** \brief outgoing Interest pipeline
    */
@@ -202,13 +212,14 @@ private:
   FaceTable m_faceTable;
 
   // tables
-  NameTree       m_nameTree;
-  Fib            m_fib;
-  Pit            m_pit;
-  Cs             m_cs;
-  Measurements   m_measurements;
-  StrategyChoice m_strategyChoice;
-  DeadNonceList  m_deadNonceList;
+  NameTree           m_nameTree;
+  Fib                m_fib;
+  Pit                m_pit;
+  Cs                 m_cs;
+  Measurements       m_measurements;
+  StrategyChoice     m_strategyChoice;
+  DeadNonceList      m_deadNonceList;
+  NetworkRegionTable m_networkRegionTable;
 
   static const Name LOCALHOST_NAME;
 
@@ -238,18 +249,6 @@ inline void
 Forwarder::addFace(shared_ptr<Face> face)
 {
   m_faceTable.add(face);
-}
-
-inline void
-Forwarder::onInterest(Face& face, const Interest& interest)
-{
-  this->onIncomingInterest(face, interest);
-}
-
-inline void
-Forwarder::onData(Face& face, const Data& data)
-{
-  this->onIncomingData(face, data);
 }
 
 inline NameTree&
@@ -292,6 +291,12 @@ inline DeadNonceList&
 Forwarder::getDeadNonceList()
 {
   return m_deadNonceList;
+}
+
+inline NetworkRegionTable&
+Forwarder::getNetworkRegionTable()
+{
+  return m_networkRegionTable;
 }
 
 #ifdef WITH_TESTS

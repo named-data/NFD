@@ -98,6 +98,7 @@ using ndn::Interest;
 using ndn::Data;
 using ndn::Name;
 using ndn::Exclude;
+using ndn::Link;
 using ndn::Block;
 using ndn::util::FaceUri;
 

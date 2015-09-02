@@ -141,11 +141,10 @@ makeInterest(const Name& name)
 }
 
 inline shared_ptr<Data>
-signData(const shared_ptr<Data>& data)
+signData(shared_ptr<Data> data)
 {
   ndn::SignatureSha256WithRsa fakeSignature;
-  fakeSignature.setValue(ndn::dataBlock(tlv::SignatureValue,
-                                        static_cast<const uint8_t*>(nullptr), 0));
+  fakeSignature.setValue(ndn::encoding::makeEmptyBlock(tlv::SignatureValue));
   data->setSignature(fakeSignature);
   data->wireEncode();
 
@@ -155,11 +154,17 @@ signData(const shared_ptr<Data>& data)
 inline shared_ptr<Data>
 makeData(const Name& name)
 {
-  shared_ptr<Data> data = make_shared<Data>(name);
-
+  auto data = make_shared<Data>(name);
   return signData(data);
 }
 
+inline shared_ptr<Link>
+makeLink(const Name& name, std::initializer_list<std::pair<uint32_t, Name>> delegations)
+{
+  auto link = make_shared<Link>(name, delegations);
+  signData(link);
+  return link;
+}
 
 } // namespace tests
 } // namespace nfd

@@ -33,7 +33,8 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FwForwarder, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestForwarder, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
@@ -129,21 +130,21 @@ public:
   }
 
   virtual void
-  onDataUnsolicited(Face& inFace, const Data& data)
+  onDataUnsolicited(Face& inFace, const Data& data) DECL_OVERRIDE
   {
-    ++m_onDataUnsolicited_count;
+    ++onDataUnsolicited_count;
   }
 
 protected:
   virtual void
-  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f)
+  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f) DECL_OVERRIDE
   {
-    ++m_dispatchToStrategy_count;
+    ++dispatchToStrategy_count;
   }
 
 public:
-  int m_dispatchToStrategy_count;
-  int m_onDataUnsolicited_count;
+  int dispatchToStrategy_count;
+  int onDataUnsolicited_count;
 };
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
@@ -155,52 +156,52 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)
   forwarder.addFace(face2);
 
   // local face, /localhost: OK
-  forwarder.m_dispatchToStrategy_count = 0;
+  forwarder.dispatchToStrategy_count = 0;
   shared_ptr<Interest> i1 = makeInterest("/localhost/A1");
   forwarder.onIncomingInterest(*face1, *i1);
-  BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // non-local face, /localhost: violate
-  forwarder.m_dispatchToStrategy_count = 0;
+  forwarder.dispatchToStrategy_count = 0;
   shared_ptr<Interest> i2 = makeInterest("/localhost/A2");
   forwarder.onIncomingInterest(*face2, *i2);
-  BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 0);
+  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 0);
 
   // local face, non-/localhost: OK
-  forwarder.m_dispatchToStrategy_count = 0;
+  forwarder.dispatchToStrategy_count = 0;
   shared_ptr<Interest> i3 = makeInterest("/A3");
   forwarder.onIncomingInterest(*face1, *i3);
-  BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // non-local face, non-/localhost: OK
-  forwarder.m_dispatchToStrategy_count = 0;
+  forwarder.dispatchToStrategy_count = 0;
   shared_ptr<Interest> i4 = makeInterest("/A4");
   forwarder.onIncomingInterest(*face2, *i4);
-  BOOST_CHECK_EQUAL(forwarder.m_dispatchToStrategy_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.dispatchToStrategy_count, 1);
 
   // local face, /localhost: OK
-  forwarder.m_onDataUnsolicited_count = 0;
+  forwarder.onDataUnsolicited_count = 0;
   shared_ptr<Data> d1 = makeData("/localhost/B1");
   forwarder.onIncomingData(*face1, *d1);
-  BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 
   // non-local face, /localhost: OK
-  forwarder.m_onDataUnsolicited_count = 0;
+  forwarder.onDataUnsolicited_count = 0;
   shared_ptr<Data> d2 = makeData("/localhost/B2");
   forwarder.onIncomingData(*face2, *d2);
-  BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 0);
+  BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 0);
 
   // local face, non-/localhost: OK
-  forwarder.m_onDataUnsolicited_count = 0;
+  forwarder.onDataUnsolicited_count = 0;
   shared_ptr<Data> d3 = makeData("/B3");
   forwarder.onIncomingData(*face1, *d3);
-  BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 
   // non-local face, non-/localhost: OK
-  forwarder.m_onDataUnsolicited_count = 0;
+  forwarder.onDataUnsolicited_count = 0;
   shared_ptr<Data> d4 = makeData("/B4");
   forwarder.onIncomingData(*face2, *d4);
-  BOOST_CHECK_EQUAL(forwarder.m_onDataUnsolicited_count, 1);
+  BOOST_CHECK_EQUAL(forwarder.onDataUnsolicited_count, 1);
 }
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
@@ -331,7 +332,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   BOOST_CHECK_EQUAL(face4->m_sentInterests.size(), 1);
 }
 
-BOOST_AUTO_TEST_CASE(StrategyDispatch)
+BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 {
   LimitedIo limitedIo;
   Forwarder forwarder;
@@ -351,41 +352,41 @@ BOOST_AUTO_TEST_CASE(StrategyDispatch)
   strategyChoice.insert("ndn:/B", strategyQ->getName());
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/A/1");
-  strategyP->m_afterReceiveInterest_count = 0;
-  strategyP->m_interestOutFace = face2;
-  forwarder.onInterest(*face1, *interest1);
-  BOOST_CHECK_EQUAL(strategyP->m_afterReceiveInterest_count, 1);
+  strategyP->afterReceiveInterest_count = 0;
+  strategyP->interestOutFace = face2;
+  forwarder.startProcessInterest(*face1, *interest1);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveInterest_count, 1);
 
   shared_ptr<Interest> interest2 = makeInterest("ndn:/B/2");
-  strategyQ->m_afterReceiveInterest_count = 0;
-  strategyQ->m_interestOutFace = face2;
-  forwarder.onInterest(*face1, *interest2);
-  BOOST_CHECK_EQUAL(strategyQ->m_afterReceiveInterest_count, 1);
+  strategyQ->afterReceiveInterest_count = 0;
+  strategyQ->interestOutFace = face2;
+  forwarder.startProcessInterest(*face1, *interest2);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveInterest_count, 1);
 
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
 
   shared_ptr<Data> data1 = makeData("ndn:/A/1/a");
-  strategyP->m_beforeSatisfyInterest_count = 0;
-  forwarder.onData(*face2, *data1);
-  BOOST_CHECK_EQUAL(strategyP->m_beforeSatisfyInterest_count, 1);
+  strategyP->beforeSatisfyInterest_count = 0;
+  forwarder.startProcessData(*face2, *data1);
+  BOOST_CHECK_EQUAL(strategyP->beforeSatisfyInterest_count, 1);
 
   shared_ptr<Data> data2 = makeData("ndn:/B/2/b");
-  strategyQ->m_beforeSatisfyInterest_count = 0;
-  forwarder.onData(*face2, *data2);
-  BOOST_CHECK_EQUAL(strategyQ->m_beforeSatisfyInterest_count, 1);
+  strategyQ->beforeSatisfyInterest_count = 0;
+  forwarder.startProcessData(*face2, *data2);
+  BOOST_CHECK_EQUAL(strategyQ->beforeSatisfyInterest_count, 1);
 
   shared_ptr<Interest> interest3 = makeInterest("ndn:/A/3");
   interest3->setInterestLifetime(time::milliseconds(30));
-  forwarder.onInterest(*face1, *interest3);
+  forwarder.startProcessInterest(*face1, *interest3);
   shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
   interest4->setInterestLifetime(time::milliseconds(5000));
-  forwarder.onInterest(*face1, *interest4);
+  forwarder.startProcessInterest(*face1, *interest4);
 
-  strategyP->m_beforeExpirePendingInterest_count = 0;
-  strategyQ->m_beforeExpirePendingInterest_count = 0;
+  strategyP->beforeExpirePendingInterest_count = 0;
+  strategyQ->beforeExpirePendingInterest_count = 0;
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(100));
-  BOOST_CHECK_EQUAL(strategyP->m_beforeExpirePendingInterest_count, 1);
-  BOOST_CHECK_EQUAL(strategyQ->m_beforeExpirePendingInterest_count, 0);
+  BOOST_CHECK_EQUAL(strategyP->beforeExpirePendingInterest_count, 1);
+  BOOST_CHECK_EQUAL(strategyQ->beforeExpirePendingInterest_count, 0);
 }
 
 BOOST_AUTO_TEST_CASE(IncomingData)
@@ -460,6 +461,191 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   // an Interest if its Name+Nonce has appeared any point in the past.
 }
 
+BOOST_AUTO_TEST_CASE(LinkDelegation)
+{
+  Forwarder forwarder;
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  auto strategyP = make_shared<DummyStrategy>(ref(forwarder), "ndn:/strategyP");
+  strategyP->wantAfterReceiveInterestCalls = true;
+  strategyChoice.install(strategyP);
+  strategyChoice.insert("ndn:/" , strategyP->getName());
+
+  Fib& fib = forwarder.getFib();
+  Pit& pit = forwarder.getPit();
+  NetworkRegionTable& nrt = forwarder.getNetworkRegionTable();
+
+  // returns prefix of FIB entry during last afterReceiveInterest trigger
+  auto getLastFibPrefix = [strategyP] () -> Name {
+    BOOST_REQUIRE(!strategyP->afterReceiveInterestCalls.empty());
+    return std::get<2>(strategyP->afterReceiveInterestCalls.back())->getPrefix();
+  };
+
+  shared_ptr<Link> link = makeLink("/net/ndnsim", {{10, "/telia/terabits"}, {20, "/ucla/cs"}});
+
+  // consumer region
+  nrt.clear();
+  nrt.insert("/arizona/cs/avenir");
+  shared_ptr<fib::Entry> fibRoot = fib.insert("/").first;
+  fibRoot->addNextHop(face2, 10);
+
+  auto interest1 = makeInterest("/net/ndnsim/www/1.html");
+  interest1->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateInRecord(face1, *interest1);
+
+  forwarder.onContentStoreMiss(*face1, pit1, *interest1);
+  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/");
+  BOOST_CHECK_EQUAL(interest1->hasSelectedDelegation(), false);
+
+  fibRoot->removeNextHop(face2);
+
+  // first default-free router, both delegations are available
+  nrt.clear();
+  nrt.insert("/arizona/cs/hobo");
+  shared_ptr<fib::Entry> fibTelia = fib.insert("/telia").first;
+  fibTelia->addNextHop(face2, 10);
+  shared_ptr<fib::Entry> fibUcla = fib.insert("/ucla").first;
+  fibUcla->addNextHop(face2, 10);
+
+  auto interest2 = makeInterest("/net/ndnsim/www/2.html");
+  interest2->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
+  pit2->insertOrUpdateInRecord(face1, *interest2);
+
+  forwarder.onContentStoreMiss(*face1, pit2, *interest2);
+  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/telia");
+  BOOST_REQUIRE_EQUAL(interest2->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest2->getSelectedDelegation(), "/telia/terabits");
+
+  fib.erase(*fibTelia);
+  fib.erase(*fibUcla);
+
+  // first default-free router, only second delegation is available
+  nrt.clear();
+  nrt.insert("/arizona/cs/hobo");
+  fibUcla = fib.insert("/ucla").first;
+  fibUcla->addNextHop(face2, 10);
+
+  auto interest3 = makeInterest("/net/ndnsim/www/3.html");
+  interest3->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
+  pit3->insertOrUpdateInRecord(face1, *interest3);
+
+  forwarder.onContentStoreMiss(*face1, pit3, *interest3);
+  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/ucla");
+  BOOST_REQUIRE_EQUAL(interest3->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest3->getSelectedDelegation(), "/ucla/cs");
+
+  fib.erase(*fibUcla);
+
+  // default-free router, chosen SelectedDelegation
+  nrt.clear();
+  nrt.insert("/ucsd/caida/click");
+  fibTelia = fib.insert("/telia").first;
+  fibTelia->addNextHop(face2, 10);
+  fibUcla = fib.insert("/ucla").first;
+  fibUcla->addNextHop(face2, 10);
+
+  auto interest4 = makeInterest("/net/ndnsim/www/4.html");
+  interest4->setLink(link->wireEncode());
+  interest4->setSelectedDelegation("/ucla/cs");
+  shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
+  pit4->insertOrUpdateInRecord(face1, *interest4);
+
+  forwarder.onContentStoreMiss(*face1, pit4, *interest4);
+  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/ucla");
+  BOOST_REQUIRE_EQUAL(interest4->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest4->getSelectedDelegation(), "/ucla/cs");
+
+  fib.erase(*fibTelia);
+  fib.erase(*fibUcla);
+
+  // producer region
+  nrt.clear();
+  nrt.insert("/ucla/cs/spurs");
+  fibRoot->addNextHop(face2, 10);
+  fibUcla = fib.insert("/ucla").first;
+  fibUcla->addNextHop(face2, 10);
+  shared_ptr<fib::Entry> fibNdnsim = fib.insert("/net/ndnsim").first;
+  fibNdnsim->addNextHop(face2, 10);
+
+  auto interest5 = makeInterest("/net/ndnsim/www/5.html");
+  interest5->setLink(link->wireEncode());
+  interest5->setSelectedDelegation("/ucla/cs");
+  shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
+  pit5->insertOrUpdateInRecord(face1, *interest5);
+
+  forwarder.onContentStoreMiss(*face1, pit5, *interest5);
+  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/net/ndnsim");
+  BOOST_REQUIRE_EQUAL(interest5->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest5->getSelectedDelegation(), "/ucla/cs");
+
+  fibRoot->removeNextHop(face2);
+  fib.erase(*fibUcla);
+  fib.erase(*fibNdnsim);
+}
+
+
+class MalformedPacketFixture : public UnitTestTimeFixture
+{
+protected:
+  MalformedPacketFixture()
+    : face1(make_shared<DummyFace>())
+    , face2(make_shared<DummyFace>())
+  {
+    forwarder.addFace(face1);
+    forwarder.addFace(face2);
+  }
+
+  void
+  processInterest(shared_ptr<Interest> badInterest)
+  {
+    forwarder.startProcessInterest(*face1, *badInterest);
+    this->continueProcessPacket();
+  }
+
+  // processData
+
+  // processNack
+
+private:
+  void
+  continueProcessPacket()
+  {
+    this->advanceClocks(time::milliseconds(10), time::seconds(6));
+  }
+
+protected:
+  Forwarder forwarder;
+  shared_ptr<DummyFace> face1; // face of incoming bad packet
+  shared_ptr<DummyFace> face2; // another face for setting up states
+};
+
+BOOST_FIXTURE_TEST_SUITE(MalformedPacket, MalformedPacketFixture)
+
+BOOST_AUTO_TEST_CASE(BadLink)
+{
+  shared_ptr<Interest> goodInterest = makeInterest("ndn:/");
+  Block wire = goodInterest->wireEncode();
+  wire.push_back(ndn::encoding::makeEmptyBlock(tlv::Data)); // bad Link
+  wire.encode();
+
+  auto badInterest = make_shared<Interest>();
+  BOOST_REQUIRE_NO_THROW(badInterest->wireDecode(wire));
+  BOOST_REQUIRE(badInterest->hasLink());
+  BOOST_REQUIRE_THROW(badInterest->getLink(), tlv::Error);
+
+  BOOST_CHECK_NO_THROW(this->processInterest(badInterest));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // MalformedPacket
+
+BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

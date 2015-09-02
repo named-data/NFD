@@ -49,7 +49,34 @@ Forwarder::Forwarder()
 
 Forwarder::~Forwarder()
 {
+}
 
+void
+Forwarder::startProcessInterest(Face& face, const Interest& interest)
+{
+  // check fields used by forwarding are well-formed
+  try {
+    if (interest.hasLink()) {
+      interest.getLink();
+    }
+  }
+  catch (tlv::Error&) {
+    NFD_LOG_DEBUG("startProcessInterest face=" << face.getId() <<
+                  " interest=" << interest.getName() << " malformed");
+    // It's safe to call interest.getName() because Name has been fully parsed
+    return;
+  }
+
+  this->onIncomingInterest(face, interest);
+}
+
+void
+Forwarder::startProcessData(Face& face, const Data& data)
+{
+  // check fields used by forwarding are well-formed
+  // (none needed)
+
+  this->onIncomingData(face, data);
 }
 
 void
@@ -101,6 +128,16 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 }
 
 void
+Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
+                          shared_ptr<pit::Entry> pitEntry)
+{
+  NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() <<
+                " interest=" << interest.getName());
+
+  // (drop)
+}
+
+void
 Forwarder::onContentStoreMiss(const Face& inFace,
                               shared_ptr<pit::Entry> pitEntry,
                               const Interest& interest)
@@ -114,10 +151,55 @@ Forwarder::onContentStoreMiss(const Face& inFace,
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
 
-  // FIB lookup
-  shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
+  shared_ptr<fib::Entry> fibEntry;
+  // has Link object?
+  if (!interest.hasLink()) {
+    // FIB lookup with Interest name
+    fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
+    NFD_LOG_TRACE("onContentStoreMiss noLinkObject");
+  }
+  else {
+    const Link& link = interest.getLink();
+
+    // in producer region?
+    if (m_networkRegionTable.isInProducerRegion(link)) {
+      // FIB lookup with Interest name
+      fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
+      NFD_LOG_TRACE("onContentStoreMiss inProducerRegion");
+    }
+    // has SelectedDelegation?
+    else if (interest.hasSelectedDelegation()) {
+      // FIB lookup with SelectedDelegation
+      fibEntry = m_fib.findLongestPrefixMatch(interest.getSelectedDelegation());
+      NFD_LOG_TRACE("onContentStoreMiss hasSelectedDelegation=" << interest.getSelectedDelegation());
+    }
+    else {
+      // FIB lookup with first delegation Name
+      fibEntry = m_fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
+
+      // in default-free zone?
+      bool isDefaultFreeZone = !(fibEntry->getPrefix().size() == 0 && fibEntry->hasNextHops());
+      if (isDefaultFreeZone) {
+        // choose and set SelectedDelegation
+        for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
+          const Name& delegationName = delegation.second;
+          fibEntry = m_fib.findLongestPrefixMatch(delegationName);
+          if (fibEntry->hasNextHops()) {
+            const_cast<Interest&>(interest).setSelectedDelegation(delegationName);
+            NFD_LOG_TRACE("onContentStoreMiss enterDefaultFreeZone"
+                          << " setSelectedDelegation=" << delegationName);
+            break;
+          }
+        }
+      }
+      else {
+        NFD_LOG_TRACE("onContentStoreMiss inConsumerRegion");
+      }
+    }
+  }
 
   // dispatch to strategy
+  BOOST_ASSERT(fibEntry != nullptr);
   this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveInterest, _1,
                                           cref(inFace), cref(interest), fibEntry, pitEntry));
 }
@@ -138,16 +220,6 @@ Forwarder::onContentStoreHit(const Face& inFace,
 
   // goto outgoing Data pipeline
   this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
-}
-
-void
-Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
-                          shared_ptr<pit::Entry> pitEntry)
-{
-  NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() <<
-                " interest=" << interest.getName());
-
-  // (drop)
 }
 
 /** \brief compare two InRecords for picking outgoing Interest
