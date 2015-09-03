@@ -931,6 +931,7 @@ FaceManager::onCreated(const Name& requestName,
   addCreatedFaceToForwarder(newFace);
   parameters.setFaceId(newFace->getId());
   parameters.setUri(newFace->getRemoteUri().toString());
+  parameters.setFacePersistency(newFace->getPersistency());
 
   sendResponse(requestName, 200, "Success", parameters.wireEncode());
 }
@@ -981,7 +982,7 @@ FaceManager::createFace(const Interest& request,
   try
     {
       factory->second->createFace(uri,
-                                  ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                  parameters.getFacePersistency(),
                                   bind(&FaceManager::onCreated,
                                        this, requestName, parameters, _1),
                                   bind(&FaceManager::onConnectFailed,

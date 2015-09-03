@@ -1626,6 +1626,7 @@ BOOST_FIXTURE_TEST_CASE(OnCreated, AuthorizedCommandFixture<FaceFixture>)
   ControlParameters resultParameters;
   resultParameters.setUri("dummy://");
   resultParameters.setFaceId(FACEID_RESERVED_MAX + 1);
+  resultParameters.setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 
   shared_ptr<DummyFace> dummy(make_shared<DummyFace>());
 
