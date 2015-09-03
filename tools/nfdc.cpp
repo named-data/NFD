@@ -54,10 +54,11 @@ usage(const char* programName)
     "               0 for Local producer applications, 128 for NLSR, 255(default) for static routes\n"
     "       unregister [-o origin] name <faceId | faceUri>\n"
     "           unregister name from the given faceId\n"
-    "       create <faceUri> \n"
+    "       create [-P] <faceUri> \n"
     "           Create a face in one of the following formats:\n"
     "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
     "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
+    "           -P: create permanent (instead of persistent) face\n"
     "       destroy <faceId | faceUri> \n"
     "           Destroy a face\n"
     "       set-strategy <name> <strategy> \n"
@@ -254,6 +255,7 @@ Nfdc::Nfdc(ndn::Face& face)
   , m_cost(DEFAULT_COST)
   , m_origin(ROUTE_ORIGIN_STATIC)
   , m_expires(DEFAULT_EXPIRATION_PERIOD)
+  , m_facePersistency(ndn::nfd::FacePersistency::FACE_PERSISTENCY_PERSISTENT)
   , m_face(face)
   , m_controller(face, m_keyChain)
   , m_ioService(face.getIoService())
@@ -445,6 +447,7 @@ Nfdc::startFaceCreate(const ndn::util::FaceUri& canonicalUri)
 {
   ControlParameters parameters;
   parameters.setUri(canonicalUri.toString());
+  parameters.setFacePersistency(m_facePersistency);
 
   m_controller.start<FaceCreateCommand>(parameters,
                                         bind(&Nfdc::onSuccess, this, _1,
@@ -547,51 +550,55 @@ main(int argc, char** argv)
 
   ::optind = 2; //start reading options from 2nd argument i.e. Command
   int opt;
-  while ((opt = ::getopt(argc, argv, "ICc:e:o:")) != -1) {
+  while ((opt = ::getopt(argc, argv, "ICc:e:o:P")) != -1) {
     switch (opt) {
-    case 'I':
-      p.m_flags =  p.m_flags & ~(nfdc::ROUTE_FLAG_CHILD_INHERIT);
-      break;
+      case 'I':
+        p.m_flags = p.m_flags & ~(nfdc::ROUTE_FLAG_CHILD_INHERIT);
+        break;
 
-    case 'C':
-      p.m_flags =  p.m_flags | nfdc::ROUTE_FLAG_CAPTURE;
-      break;
+      case 'C':
+        p.m_flags = p.m_flags | nfdc::ROUTE_FLAG_CAPTURE;
+        break;
 
-    case 'c':
-      try {
-        p.m_cost = boost::lexical_cast<uint64_t>(::optarg);
-      }
-      catch (boost::bad_lexical_cast&) {
-        std::cerr << "Error: cost must be in unsigned integer format" << std::endl;
+      case 'c':
+        try {
+          p.m_cost = boost::lexical_cast<uint64_t>(::optarg);
+        }
+        catch (boost::bad_lexical_cast&) {
+          std::cerr << "Error: cost must be in unsigned integer format" << std::endl;
+          return 1;
+        }
+        break;
+
+      case 'e':
+        uint64_t expires;
+        try {
+          expires = boost::lexical_cast<uint64_t>(::optarg);
+        }
+        catch (boost::bad_lexical_cast&) {
+          std::cerr << "Error: expiration time must be in unsigned integer format" << std::endl;
+          return 1;
+        }
+        p.m_expires = ndn::time::milliseconds(expires);
+        break;
+
+      case 'o':
+        try {
+          p.m_origin = boost::lexical_cast<uint64_t>(::optarg);
+        }
+        catch (boost::bad_lexical_cast&) {
+          std::cerr << "Error: origin must be in unsigned integer format" << std::endl;
+          return 1;
+        }
+        break;
+
+      case 'P':
+        p.m_facePersistency = ndn::nfd::FacePersistency::FACE_PERSISTENCY_PERMANENT;
+        break;
+
+      default:
+        usage(p.m_programName);
         return 1;
-      }
-      break;
-
-    case 'e':
-      uint64_t expires;
-      try {
-        expires = boost::lexical_cast<uint64_t>(::optarg);
-      }
-      catch (boost::bad_lexical_cast&) {
-        std::cerr << "Error: expiration time must be in unsigned integer format" << std::endl;
-        return 1;
-      }
-      p.m_expires = ndn::time::milliseconds(expires);
-      break;
-
-    case 'o':
-      try {
-        p.m_origin = boost::lexical_cast<uint64_t>(::optarg);
-      }
-      catch (boost::bad_lexical_cast&) {
-        std::cerr << "Error: origin must be in unsigned integer format" << std::endl;
-        return 1;
-      }
-      break;
-
-    default:
-      usage(p.m_programName);
-      return 1;
     }
   }
 

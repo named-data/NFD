@@ -76,7 +76,15 @@ Options
   ``create``
     Create a UDP unicast or TCP Face
 
-    ``create <faceUri>``
+    ``create [-P] <faceUri>``
+
+      ``-P``
+        create permanent (instead of persistent) face:
+
+        .. note::
+          Persistent (default) faces remain open until they are explicitly destroyed or
+          there is a transport failure.  Permanent faces remain open until they are
+          explicitly destroyed; any transport failures will be recovered internally.
 
       ``faceUri``
         UDP unicast or TCP Face URI::

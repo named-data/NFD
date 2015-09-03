@@ -244,6 +244,7 @@ public:
   uint64_t m_origin;
   ndn::time::milliseconds m_expires;
   std::string m_name;
+  FacePersistency m_facePersistency;
 
 private:
   ndn::KeyChain m_keyChain;
