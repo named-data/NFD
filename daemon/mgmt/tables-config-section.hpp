@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -30,12 +30,19 @@
 #include "table/pit.hpp"
 #include "table/cs.hpp"
 #include "table/measurements.hpp"
+#include "table/network-region-table.hpp"
 #include "table/strategy-choice.hpp"
 
 #include "core/config-file.hpp"
 
 namespace nfd {
 
+/**
+ * \brief Provides parsing for `tables` configuration file section.
+ *
+ * This class enables configuration of CS, PIT, FIB, Strategy Choice, Measurements, and
+ * Network Region tables.
+ */
 class TablesConfigSection
 {
 public:
@@ -43,7 +50,8 @@ public:
                       Pit& pit,
                       Fib& fib,
                       StrategyChoice& strategyChoice,
-                      Measurements& measurements);
+                      Measurements& measurements,
+                      NetworkRegionTable& networkRegionTable);
 
   void
   setConfigFile(ConfigFile& configFile);
@@ -54,13 +62,17 @@ public:
 private:
 
   void
-  onConfig(const ConfigSection& configSection,
-           bool isDryRun,
-           const std::string& filename);
+  processConfig(const ConfigSection& configSection,
+                bool isDryRun,
+                const std::string& filename);
 
   void
-  processSectionStrategyChoice(const ConfigSection& configSection,
+  processStrategyChoiceSection(const ConfigSection& configSection,
                                bool isDryRun);
+
+  void
+  processNetworkRegionSection(const ConfigSection& configSection,
+                              bool isDryRun);
 
 private:
   Cs& m_cs;
@@ -68,6 +80,7 @@ private:
   // Fib& m_fib;
   StrategyChoice& m_strategyChoice;
   // Measurements& m_measurements;
+  NetworkRegionTable& m_networkRegionTable;
 
   bool m_areTablesConfigured;
 

@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -39,12 +39,14 @@ TablesConfigSection::TablesConfigSection(Cs& cs,
                                          Pit& pit,
                                          Fib& fib,
                                          StrategyChoice& strategyChoice,
-                                         Measurements& measurements)
+                                         Measurements& measurements,
+                                         NetworkRegionTable& networkRegionTable)
   : m_cs(cs)
   // , m_pit(pit)
   // , m_fib(fib)
   , m_strategyChoice(strategyChoice)
   // , m_measurements(measurements)
+  , m_networkRegionTable(networkRegionTable)
   , m_areTablesConfigured(false)
 {
 
@@ -54,17 +56,16 @@ void
 TablesConfigSection::setConfigFile(ConfigFile& configFile)
 {
   configFile.addSectionHandler("tables",
-                               bind(&TablesConfigSection::onConfig, this, _1, _2, _3));
+                               bind(&TablesConfigSection::processConfig, this, _1, _2, _3));
 }
 
 
 void
 TablesConfigSection::ensureTablesAreConfigured()
 {
-  if (m_areTablesConfigured)
-    {
-      return;
-    }
+  if (m_areTablesConfigured) {
+    return;
+  }
 
   NFD_LOG_INFO("Setting CS max packets to " << DEFAULT_CS_MAX_PACKETS);
   m_cs.setLimit(DEFAULT_CS_MAX_PACKETS);
@@ -73,9 +74,9 @@ TablesConfigSection::ensureTablesAreConfigured()
 }
 
 void
-TablesConfigSection::onConfig(const ConfigSection& configSection,
-                              bool isDryRun,
-                              const std::string& filename)
+TablesConfigSection::processConfig(const ConfigSection& configSection,
+                                   bool isDryRun,
+                                   const std::string& filename)
 {
   // tables
   // {
@@ -83,10 +84,16 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
   //
   //    strategy_choice
   //    {
-  //       /               /localhost/nfd/strategy/best-route
-  //       /localhost      /localhost/nfd/strategy/multicast
-  //       /localhost/nfd  /localhost/nfd/strategy/best-route
-  //       /ndn/broadcast  /localhost/nfd/strategy/multicast
+  //        /               /localhost/nfd/strategy/best-route
+  //        /localhost      /localhost/nfd/strategy/multicast
+  //        /localhost/nfd  /localhost/nfd/strategy/best-route
+  //        /ndn/broadcast  /localhost/nfd/strategy/multicast
+  //    }
+  //
+  //    network_region
+  //    {
+  //       /example/region1
+  //       /example/region2
   //    }
   // }
 
@@ -95,39 +102,42 @@ TablesConfigSection::onConfig(const ConfigSection& configSection,
   boost::optional<const ConfigSection&> csMaxPacketsNode =
     configSection.get_child_optional("cs_max_packets");
 
-  if (csMaxPacketsNode)
-    {
-      boost::optional<size_t> valCsMaxPackets =
-        configSection.get_optional<size_t>("cs_max_packets");
+  if (csMaxPacketsNode) {
+    boost::optional<size_t> valCsMaxPackets =
+      configSection.get_optional<size_t>("cs_max_packets");
 
-      if (!valCsMaxPackets)
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"cs_max_packets\""
-                                                  " in \"tables\" section"));
-        }
-
-      nCsMaxPackets = *valCsMaxPackets;
+    if (!valCsMaxPackets) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"cs_max_packets\""
+                                              " in \"tables\" section"));
     }
+
+    nCsMaxPackets = *valCsMaxPackets;
+  }
 
   boost::optional<const ConfigSection&> strategyChoiceSection =
     configSection.get_child_optional("strategy_choice");
 
-  if (strategyChoiceSection)
-    {
-      processSectionStrategyChoice(*strategyChoiceSection, isDryRun);
-    }
+  if (strategyChoiceSection) {
+    processStrategyChoiceSection(*strategyChoiceSection, isDryRun);
+  }
 
-  if (!isDryRun)
-    {
-      NFD_LOG_INFO("Setting CS max packets to " << nCsMaxPackets);
+  boost::optional<const ConfigSection&> networkRegionSection =
+    configSection.get_child_optional("network_region");
 
-      m_cs.setLimit(nCsMaxPackets);
-      m_areTablesConfigured = true;
-    }
+  if (networkRegionSection) {
+    processNetworkRegionSection(*networkRegionSection, isDryRun);
+  }
+
+  if (!isDryRun) {
+    NFD_LOG_INFO("Setting CS max packets to " << nCsMaxPackets);
+
+    m_cs.setLimit(nCsMaxPackets);
+    m_areTablesConfigured = true;
+  }
 }
 
 void
-TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSection,
+TablesConfigSection::processStrategyChoiceSection(const ConfigSection& configSection,
                                                   bool isDryRun)
 {
   // strategy_choice
@@ -140,49 +150,65 @@ TablesConfigSection::processSectionStrategyChoice(const ConfigSection& configSec
 
   std::map<Name, Name> choices;
 
-  for (const auto& prefixAndStrategy : configSection)
-    {
-      const Name prefix(prefixAndStrategy.first);
-      if (choices.find(prefix) != choices.end())
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate strategy choice for prefix \"" +
-                                                  prefix.toUri() + "\" in \"strategy_choice\" "
-                                                  "section"));
-        }
-
-      const std::string strategyString(prefixAndStrategy.second.get_value<std::string>());
-      if (strategyString.empty())
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"\" for prefix \"" +
-                                                  prefix.toUri() + "\" in \"strategy_choice\" "
-                                                  "section"));
-        }
-
-      const Name strategyName(strategyString);
-      if (!m_strategyChoice.hasStrategy(strategyName))
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"" +
-                                                  strategyName.toUri() + "\" for prefix \"" +
-                                                  prefix.toUri() + "\" in \"strategy_choice\" "
-                                                  "section"));
-        }
-
-      choices[prefix] = strategyName;
+  for (const auto& prefixAndStrategy : configSection) {
+    const Name prefix(prefixAndStrategy.first);
+    if (choices.find(prefix) != choices.end()) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate strategy choice for prefix \"" +
+                                              prefix.toUri() + "\" in \"strategy_choice\" "
+                                              "section"));
     }
 
-
-  for (const auto& prefixAndStrategy : choices)
-    {
-      if (!isDryRun && !m_strategyChoice.insert(prefixAndStrategy.first, prefixAndStrategy.second))
-        {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Failed to set strategy \"" +
-                                                  prefixAndStrategy.second.toUri() + "\" for "
-                                                  "prefix \"" + prefixAndStrategy.first.toUri() +
-                                                  "\" in \"strategy_choicev\""));
-        }
+    const std::string strategyString(prefixAndStrategy.second.get_value<std::string>());
+    if (strategyString.empty()) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"\" for prefix \"" +
+                                              prefix.toUri() + "\" in \"strategy_choice\" "
+                                              "section"));
     }
+
+    const Name strategyName(strategyString);
+    if (!m_strategyChoice.hasStrategy(strategyName)) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid strategy choice \"" +
+                                              strategyName.toUri() + "\" for prefix \"" +
+                                              prefix.toUri() + "\" in \"strategy_choice\" "
+                                              "section"));
+    }
+
+    choices[prefix] = strategyName;
+  }
+
+
+  for (const auto& prefixAndStrategy : choices) {
+    if (!isDryRun && !m_strategyChoice.insert(prefixAndStrategy.first, prefixAndStrategy.second)) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Failed to set strategy \"" +
+                                              prefixAndStrategy.second.toUri() + "\" for "
+                                              "prefix \"" + prefixAndStrategy.first.toUri() +
+                                              "\" in \"strategy_choicev\""));
+    }
+  }
 }
 
+void
+TablesConfigSection::processNetworkRegionSection(const ConfigSection& configSection,
+                                                 bool isDryRun)
+{
+  // network_region
+  // {
+  //    /example/region1
+  //    /example/region2
+  // }
+
+  if (!isDryRun) {
+    m_networkRegionTable.clear();
+  }
+
+  for (const auto& pair : configSection) {
+    const Name region(pair.first);
+
+    if (!isDryRun)  {
+      m_networkRegionTable.insert(region);
+    }
+  }
+}
 
 
 } // namespace nfd

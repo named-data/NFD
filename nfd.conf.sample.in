@@ -58,6 +58,16 @@ tables
     /localhost/nfd  /localhost/nfd/strategy/best-route
     /ndn/broadcast  /localhost/nfd/strategy/multicast
   }
+
+  ; Declare network region names
+  ; These are used for mobility support.  An Interest carrying a Link object is
+  ; assumed to have reached the producer region if any delegation name in the
+  ; Link object is a prefix of any region name.
+  network_region
+  {
+    ; /example/region1
+    ; /example/region2
+  }
 }
 
 ; The face_system section defines what faces and channels are created.

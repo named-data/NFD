@@ -147,7 +147,8 @@ Nfd::initializeManagement()
                                    m_forwarder->getPit(),
                                    m_forwarder->getFib(),
                                    m_forwarder->getStrategyChoice(),
-                                   m_forwarder->getMeasurements());
+                                   m_forwarder->getMeasurements(),
+                                   m_forwarder->getNetworkRegionTable());
   tablesConfig.setConfigFile(config);
 
   m_internalFace->getValidator().setConfigFile(config);
@@ -189,7 +190,8 @@ Nfd::reloadConfigFile()
                                    m_forwarder->getPit(),
                                    m_forwarder->getFib(),
                                    m_forwarder->getStrategyChoice(),
-                                   m_forwarder->getMeasurements());
+                                   m_forwarder->getMeasurements(),
+                                   m_forwarder->getNetworkRegionTable());
 
   tablesConfig.setConfigFile(config);
 

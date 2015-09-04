@@ -33,6 +33,9 @@ namespace nfd {
 /** \brief stores a collection of producer region names
  *
  *  This table is used in forwarding to process Interests with Link objects.
+ *
+ *  NetworkRegionTable exposes a set-like API, including methods `insert`, `clear`,
+ *  `find`, `size`, `begin`, and `end`.
  */
 class NetworkRegionTable : public std::set<Name>
 {

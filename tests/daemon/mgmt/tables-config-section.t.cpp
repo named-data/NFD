@@ -33,8 +33,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("MgmtTablesConfigSection");
-
 class TablesConfigSectionFixture : protected BaseFixture
 {
 public:
@@ -45,7 +43,8 @@ public:
     , m_fib(m_forwarder.getFib())
     , m_strategyChoice(m_forwarder.getStrategyChoice())
     , m_measurements(m_forwarder.getMeasurements())
-    , m_tablesConfig(m_cs, m_pit, m_fib, m_strategyChoice, m_measurements)
+    , m_networkRegionTable(m_forwarder.getNetworkRegionTable())
+    , m_tablesConfig(m_cs, m_pit, m_fib, m_strategyChoice, m_measurements, m_networkRegionTable)
   {
     m_tablesConfig.setConfigFile(m_config);
   }
@@ -56,19 +55,6 @@ public:
     m_config.parse(CONFIG, isDryRun, "dummy-config");
   }
 
-  bool
-  validateException(const std::runtime_error& exception, const std::string& expectedMsg)
-  {
-    if (exception.what() != expectedMsg)
-      {
-        NFD_LOG_DEBUG("exception.what(): " << exception.what());
-        NFD_LOG_DEBUG("msg:            : " << expectedMsg);
-
-        return false;
-      }
-    return true;
-  }
-
 protected:
   Forwarder m_forwarder;
 
@@ -77,12 +63,14 @@ protected:
   Fib& m_fib;
   StrategyChoice& m_strategyChoice;
   Measurements& m_measurements;
+  NetworkRegionTable& m_networkRegionTable;
 
   TablesConfigSection m_tablesConfig;
   ConfigFile m_config;
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtTableConfigSection, TablesConfigSectionFixture)
+BOOST_FIXTURE_TEST_SUITE(Mgmt, TablesConfigSectionFixture)
+BOOST_AUTO_TEST_SUITE(TestTablesConfigSection)
 
 BOOST_AUTO_TEST_CASE(ConfigureTablesWithDefaults)
 {
@@ -113,6 +101,30 @@ BOOST_AUTO_TEST_CASE(EmptyTablesSection)
   BOOST_CHECK_EQUAL(defaultLimit, m_cs.getLimit());
 }
 
+BOOST_AUTO_TEST_CASE(MissingTablesSection)
+{
+  const std::string CONFIG =
+    "not_tables\n"
+    "{\n"
+    "  some_other_field 0\n"
+    "}\n";
+
+  ConfigFile passiveConfig(&ConfigFile::ignoreUnknownSection);
+
+  const size_t initialLimit = m_cs.getLimit();
+
+  passiveConfig.parse(CONFIG, true, "dummy-config");
+  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
+
+  passiveConfig.parse(CONFIG, false, "dummy-config");
+  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
+
+  m_tablesConfig.ensureTablesAreConfigured();
+  BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
+}
+
+BOOST_AUTO_TEST_SUITE(Cs)
+
 BOOST_AUTO_TEST_CASE(ValidCsMaxPackets)
 {
   const std::string CONFIG =
@@ -141,18 +153,8 @@ BOOST_AUTO_TEST_CASE(MissingValueCsMaxPackets)
     "  cs_max_packets\n"
     "}\n";
 
-  const std::string expectedMsg =
-    "Invalid value for option \"cs_max_packets\" in \"tables\" section";
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(InvalidValueCsMaxPackets)
@@ -163,31 +165,24 @@ BOOST_AUTO_TEST_CASE(InvalidValueCsMaxPackets)
     "  cs_max_packets invalid\n"
     "}\n";
 
-  const std::string expectedMsg =
-    "Invalid value for option \"cs_max_packets\" in \"tables\" section";
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
-
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(ConfigStrategy)
+BOOST_AUTO_TEST_SUITE_END() // Cs
+
+BOOST_AUTO_TEST_SUITE(ConfigStrategy)
+
+BOOST_AUTO_TEST_CASE(Unversioned)
 {
   const std::string CONFIG =
     "tables\n"
     "{\n"
-    "strategy_choice\n"
-    "{\n"
-    "  / /localhost/nfd/strategy/test-strategy-a\n"
-    "  /a /localhost/nfd/strategy/test-strategy-b\n"
-    "}\n"
+    "  strategy_choice\n"
+    "  {\n"
+    "    / /localhost/nfd/strategy/test-strategy-a\n"
+    "    /a /localhost/nfd/strategy/test-strategy-b\n"
+    "  }\n"
     "}\n";
 
   m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
@@ -195,7 +190,7 @@ BOOST_AUTO_TEST_CASE(ConfigStrategy)
   m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
                                                       "/localhost/nfd/strategy/test-strategy-b"));
 
-  runConfig(CONFIG, true);
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& rootStrategy = m_strategyChoice.findEffectiveStrategy("/");
     BOOST_REQUIRE_NE(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
@@ -206,7 +201,7 @@ BOOST_AUTO_TEST_CASE(ConfigStrategy)
     BOOST_REQUIRE_NE(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
   }
 
-  runConfig(CONFIG, false);
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& rootStrategy = m_strategyChoice.findEffectiveStrategy("/");
     BOOST_REQUIRE_EQUAL(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
@@ -216,7 +211,7 @@ BOOST_AUTO_TEST_CASE(ConfigStrategy)
   }
 }
 
-BOOST_AUTO_TEST_CASE(ConfigVersionedStrategy)
+BOOST_AUTO_TEST_CASE(Versioned)
 {
   const std::string CONFIG =
     "tables\n"
@@ -237,7 +232,7 @@ BOOST_AUTO_TEST_CASE(ConfigVersionedStrategy)
   m_strategyChoice.install(version1);
   m_strategyChoice.install(version2);
 
-  runConfig(CONFIG, true);
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& testLatestStrategy = m_strategyChoice.findEffectiveStrategy("/test/latest");
     BOOST_REQUIRE_NE(testLatestStrategy.getName(),
@@ -252,7 +247,7 @@ BOOST_AUTO_TEST_CASE(ConfigVersionedStrategy)
                      "/localhost/nfd/strategy/test-strategy-a/%FD%02");
   }
 
-  runConfig(CONFIG, false);
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& testLatestStrategy = m_strategyChoice.findEffectiveStrategy("/test/latest");
     BOOST_REQUIRE_EQUAL(testLatestStrategy.getName(),
@@ -264,74 +259,52 @@ BOOST_AUTO_TEST_CASE(ConfigVersionedStrategy)
   }
 }
 
-BOOST_AUTO_TEST_CASE(InvalidStrategy)
+BOOST_AUTO_TEST_CASE(NonExisting)
 {
   const std::string CONFIG =
     "tables\n"
     "{\n"
-    "strategy_choice\n"
-    "{\n"
-    "  / /localhost/nfd/strategy/test-doesnotexist\n"
-    "}\n"
+    "  strategy_choice\n"
+    "  {\n"
+    "    / /localhost/nfd/strategy/test-doesnotexist\n"
+    "  }\n"
     "}\n";
 
 
-  const std::string expectedMsg =
-    "Invalid strategy choice \"/localhost/nfd/strategy/test-doesnotexist\" "
-    "for prefix \"/\" in \"strategy_choice\" section";
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(MissingStrategyPrefix)
+BOOST_AUTO_TEST_CASE(MissingPrefix)
 {
   const std::string CONFIG =
     "tables\n"
     "{\n"
-    "strategy_choice\n"
-    "{\n"
-    "  /localhost/nfd/strategy/test-strategy-a\n"
-    "}\n"
+    "  strategy_choice\n"
+    "  {\n"
+    "    /localhost/nfd/strategy/test-strategy-a\n"
+    "  }\n"
     "}\n";
 
 
   m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
                                                       "/localhost/nfd/strategy/test-strategy-a"));
 
-
-  const std::string expectedMsg = "Invalid strategy choice \"\" for prefix "
-    "\"/localhost/nfd/strategy/test-strategy-a\" in \"strategy_choice\" section";
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(DuplicateStrategy)
+BOOST_AUTO_TEST_CASE(Duplicate)
 {
   const std::string CONFIG =
     "tables\n"
     "{\n"
-    "strategy_choice\n"
-    "{\n"
-    "  / /localhost/nfd/strategy/test-strategy-a\n"
-    "  /a /localhost/nfd/strategy/test-strategy-b\n"
-    "  / /localhost/nfd/strategy/test-strategy-b\n"
-    "}\n"
+    "  strategy_choice\n"
+    "  {\n"
+    "    / /localhost/nfd/strategy/test-strategy-a\n"
+    "    /a /localhost/nfd/strategy/test-strategy-b\n"
+    "    / /localhost/nfd/strategy/test-strategy-b\n"
+    "  }\n"
     "}\n";
 
   m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
@@ -339,61 +312,77 @@ BOOST_AUTO_TEST_CASE(DuplicateStrategy)
   m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
                                                       "/localhost/nfd/strategy/test-strategy-b"));
 
-  const std::string expectedMsg =
-    "Duplicate strategy choice for prefix \"/\" in \"strategy_choice\" section";
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, true),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
-
-  BOOST_CHECK_EXCEPTION(runConfig(CONFIG, false),
-                        ConfigFile::Error,
-                        bind(&TablesConfigSectionFixture::validateException,
-                             this, _1, expectedMsg));
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
-class IgnoreNotTablesSection
-{
-public:
-  void
-  operator()(const std::string& filename,
-             const std::string& sectionName,
-             const ConfigSection& section,
-             bool isDryRun)
+BOOST_AUTO_TEST_SUITE_END() // StrategyChoice
 
-  {
-    // Ignore "not_tables" section
-    if (sectionName == "not_tables")
-      {
-        // do nothing
-      }
-  }
-};
+BOOST_AUTO_TEST_SUITE(NetworkRegion)
 
-BOOST_AUTO_TEST_CASE(MissingTablesSection)
+BOOST_AUTO_TEST_CASE(Basic)
 {
   const std::string CONFIG =
-    "not_tables\n"
+    "tables\n"
     "{\n"
-    "  some_other_field 0\n"
+    "  network_region\n"
+    "  {\n"
+    "    /test/regionA\n"
+    "    /test/regionB/component\n"
+    "  }\n"
     "}\n";
 
-  ConfigFile passiveConfig((IgnoreNotTablesSection()));
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
+  BOOST_CHECK_EQUAL(m_networkRegionTable.size(), 0);
 
-  const size_t initialLimit = m_cs.getLimit();
+  BOOST_CHECK(m_networkRegionTable.find("/test/regionA") == m_networkRegionTable.end());
+  BOOST_CHECK(m_networkRegionTable.find("/test/regionB/component") == m_networkRegionTable.end());
 
-  passiveConfig.parse(CONFIG, true, "dummy-config");
-  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  BOOST_CHECK_EQUAL(m_networkRegionTable.size(), 2);
 
-  passiveConfig.parse(CONFIG, false, "dummy-config");
-  BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
-
-  m_tablesConfig.ensureTablesAreConfigured();
-  BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
+  BOOST_CHECK(m_networkRegionTable.find("/test/regionA") != m_networkRegionTable.end());
+  BOOST_CHECK(m_networkRegionTable.find("/test/regionB/component") != m_networkRegionTable.end());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_CASE(Reload)
+{
+  const std::string CONFIG1 =
+    "tables\n"
+    "{\n"
+    "  network_region\n"
+    "  {\n"
+    "    /some/region\n"
+    "  }\n"
+    "}\n";
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG1, true));
+  BOOST_CHECK(m_networkRegionTable.find("/some/region") == m_networkRegionTable.end());
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG1, false));
+  BOOST_CHECK(m_networkRegionTable.find("/some/region") != m_networkRegionTable.end());
+
+  const std::string CONFIG2 =
+    "tables\n"
+    "{\n"
+    "  network_region\n"
+    "  {\n"
+    "    /different/region\n"
+    "  }\n"
+    "}\n";
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG2, true));
+  BOOST_CHECK(m_networkRegionTable.find("/some/region") != m_networkRegionTable.end());
+  BOOST_CHECK(m_networkRegionTable.find("/different/region") == m_networkRegionTable.end());
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG2, false));
+  BOOST_CHECK(m_networkRegionTable.find("/some/region") == m_networkRegionTable.end());
+  BOOST_CHECK(m_networkRegionTable.find("/different/region") != m_networkRegionTable.end());
+}
+
+BOOST_AUTO_TEST_SUITE_END() // NetworkRegion
+
+BOOST_AUTO_TEST_SUITE_END() // TestTableConfigSection
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
 } // namespace nfd
