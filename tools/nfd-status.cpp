@@ -39,6 +39,7 @@
 #include <ndn-cxx/management/nfd-rib-entry.hpp>
 #include <ndn-cxx/management/nfd-strategy-choice.hpp>
 #include <ndn-cxx/util/segment-fetcher.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <list>
@@ -268,7 +269,7 @@ public:
     interest.setMustBeFresh(true);
 
     SegmentFetcher::fetch(m_face, interest,
-                          util::DontVerifySegment(),
+                          m_validator,
                           bind(&NfdStatus::afterFetchedChannelStatusInformation, this, _1),
                           bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
@@ -338,7 +339,7 @@ public:
     interest.setMustBeFresh(true);
 
     SegmentFetcher::fetch(m_face, interest,
-                          util::DontVerifySegment(),
+                          m_validator,
                           bind(&NfdStatus::afterFetchedFaceStatusInformation, this, _1),
                           bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
@@ -470,7 +471,7 @@ public:
     interest.setMustBeFresh(true);
 
     SegmentFetcher::fetch(m_face, interest,
-                          util::DontVerifySegment(),
+                          m_validator,
                           bind(&NfdStatus::afterFetchedFibEnumerationInformation, this, _1),
                           bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
@@ -558,7 +559,7 @@ public:
     interest.setMustBeFresh(true);
 
     SegmentFetcher::fetch(m_face, interest,
-                          util::DontVerifySegment(),
+                          m_validator,
                           bind(&NfdStatus::afterFetchedStrategyChoiceInformationInformation, this, _1),
                           bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
@@ -633,7 +634,7 @@ public:
     interest.setMustBeFresh(true);
 
     SegmentFetcher::fetch(m_face, interest,
-                          util::DontVerifySegment(),
+                          m_validator,
                           bind(&NfdStatus::afterFetchedRibStatusInformation, this, _1),
                           bind(&NfdStatus::onErrorFetch, this, _1, _2));
   }
@@ -828,6 +829,8 @@ private:
   shared_ptr<OBufferStream> m_buffer;
 
   std::deque<function<void()> > m_fetchSteps;
+
+  ndn::ValidatorNull m_validator;
 };
 
 }

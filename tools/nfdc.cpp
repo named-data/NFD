@@ -161,7 +161,7 @@ Nfdc::FaceIdFetcher::onCanonizeSuccess(const ndn::util::FaceUri& canonicalUri)
   auto interest = std::make_shared<ndn::Interest>(interestPacket);
 
   ndn::util::SegmentFetcher::fetch(m_face, *interest,
-                                   ndn::util::DontVerifySegment(),
+                                   m_validator,
                                    bind(&FaceIdFetcher::onQuerySuccess,
                                         this, _1, canonicalUri),
                                    bind(&FaceIdFetcher::onQueryFailure,

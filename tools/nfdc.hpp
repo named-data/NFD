@@ -31,6 +31,7 @@
 #include <ndn-cxx/util/time.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 #include <memory>
 
 namespace nfdc {
@@ -120,6 +121,7 @@ public:
     bool m_allowCreate;
     SuccessCallback m_onSucceed;
     FailureCallback m_onFail;
+    ndn::ValidatorNull m_validator;
   };
 
   explicit

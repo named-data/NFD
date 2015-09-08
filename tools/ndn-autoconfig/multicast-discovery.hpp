@@ -28,6 +28,8 @@
 
 #include "base.hpp"
 
+#include <ndn-cxx/security/validator-null.hpp>
+
 namespace ndn {
 namespace tools {
 namespace autoconfig {
@@ -85,6 +87,8 @@ private:
 private:
   size_t nRequestedRegs;
   size_t nFinishedRegs;
+
+  ndn::ValidatorNull m_validator;
 };
 
 } // namespace autoconfig

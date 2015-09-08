@@ -47,7 +47,7 @@ MulticastDiscovery::start()
   std::cerr << "Trying multicast discovery..." << std::endl;
 
   util::SegmentFetcher::fetch(m_face, Interest("/localhost/nfd/faces/list"),
-                              ndn::util::DontVerifySegment(),
+                              m_validator,
                               [this] (const ConstBufferPtr& data) {
                                 registerHubDiscoveryPrefix(data);
                               },
