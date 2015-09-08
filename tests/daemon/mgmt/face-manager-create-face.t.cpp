@@ -24,27 +24,34 @@
  */
 
 #include "mgmt/face-manager.hpp"
-#include "mgmt/internal-face.hpp"
 #include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"
+
+#include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 #include <boost/property_tree/info_parser.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(MgmtFaceManager, BaseFixture)
 
-BOOST_AUTO_TEST_SUITE(CreateFace)
+BOOST_AUTO_TEST_SUITE(Mgmt)
+BOOST_AUTO_TEST_SUITE(TestFaceManager)
+
+BOOST_FIXTURE_TEST_SUITE(CreateFace, BaseFixture)
 
 class FaceManagerNode
 {
 public:
   FaceManagerNode(ndn::KeyChain& keyChain, const std::string& port = "6363")
-    : face(make_shared<InternalFace>())
-    , manager(forwarder.getFaceTable(), face, keyChain)
+    : face(ndn::util::makeDummyClientFace(getGlobalIoService(), {true, true}))
+    , dispatcher(*face, keyChain, ndn::security::SigningInfo())
+    , manager(forwarder.getFaceTable(), dispatcher, validator)
   {
+    dispatcher.addTopPrefix("/localhost/nfd");
+
     std::string basicConfig =
       "face_system\n"
       "{\n"
@@ -75,7 +82,7 @@ public:
 
     ConfigFile config;
     manager.setConfigFile(config);
-    face->getValidator().setConfigFile(config);
+    validator.setConfigFile(config);
     config.parse(configSection, false, "dummy-config");
   }
 
@@ -92,7 +99,9 @@ public:
 
 public:
   Forwarder forwarder;
-  shared_ptr<InternalFace> face;
+  shared_ptr<ndn::util::DummyClientFace> face;
+  ndn::mgmt::Dispatcher dispatcher;
+  CommandValidator validator;
   FaceManager manager;
 };
 
@@ -103,6 +112,7 @@ public:
     : node1(keyChain, "16363")
     , node2(keyChain, "26363")
   {
+    advanceClocks(time::milliseconds(1), 100);
   }
 
   ~FaceManagerFixture()
@@ -166,6 +176,18 @@ public:
   }
 };
 
+class UdpFaceCannotConnect // face that will cause afterCreateFaceFailure to be invoked
+{
+public:
+  ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://0.0.0.0:16363"); // cannot connect to self
+  }
+};
+
+
 class UdpFacePersistent
 {
 public:
@@ -198,7 +220,7 @@ public:
   {
     return ControlResponse()
       .setCode(200)
-      .setText("Success");
+      .setText("OK");
   }
 };
 
@@ -223,7 +245,8 @@ typedef mpl::vector<mpl::pair<TcpFaceOnDemand, Failure<500>>,
                     mpl::pair<TcpFacePermanent, Failure<500>>,
                     mpl::pair<UdpFaceOnDemand, Failure<500>>,
                     mpl::pair<UdpFacePersistent, Success>,
-                    mpl::pair<UdpFacePermanent, Success>> Faces;
+                    mpl::pair<UdpFacePermanent, Success>,
+                    mpl::pair<UdpFaceCannotConnect, Failure<408>>> Faces;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
 {
@@ -238,7 +261,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
   this->keyChain.sign(*command);
 
   bool hasCallbackFired = false;
-  this->node1.face->onReceiveData.connect([this, command, &hasCallbackFired] (const Data& response) {
+  this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
+      // std::cout << response << std::endl;
       if (!command->getName().isPrefixOf(response.getName())) {
         return;
       }
@@ -258,8 +282,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
       hasCallbackFired = true;
     });
 
-  this->node1.face->sendInterest(*command);
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->node1.face->receive(*command);
+  this->advanceClocks(time::milliseconds(1), 100);
 
   BOOST_CHECK(hasCallbackFired);
 }
@@ -287,7 +311,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
     this->keyChain.sign(*command);
 
-    this->node1.face->sendInterest(*command);
+    this->node1.face->receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
   }
 
@@ -303,7 +327,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     this->keyChain.sign(*command);
 
     bool hasCallbackFired = false;
-    this->node1.face->onReceiveData.connect([this, command, &hasCallbackFired] (const Data& response) {
+    this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
         if (!command->getName().isPrefixOf(response.getName())) {
           return;
         }
@@ -318,25 +342,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
         hasCallbackFired = true;
       });
 
-    this->node1.face->sendInterest(*command);
+    this->node1.face->receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
 
     BOOST_CHECK(hasCallbackFired);
   }
 }
 
-
-// class TcpFace
-// {
-// public:
-//   ControlParameters
-//   getParameters()
-//   {
-//     return ControlParameters()
-//       .setUri("tcp4://127.0.0.1:16363")
-//       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-//   }
-// };
 
 class UdpFace
 {
@@ -376,13 +388,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     this->keyChain.sign(*command);
 
     ndn::util::signal::ScopedConnection connection =
-      this->node2.face->onReceiveData.connect([this, command] (const Data& response) {
+      this->node2.face->onSendData.connect([this, command] (const Data& response) {
           if (!command->getName().isPrefixOf(response.getName())) {
             return;
           }
 
           ControlResponse controlResponse(response.getContent().blockFromValue());
-          BOOST_REQUIRE_EQUAL(controlResponse.getText(), "Success");
+          BOOST_REQUIRE_EQUAL(controlResponse.getText(), "OK");
           BOOST_REQUIRE_EQUAL(controlResponse.getCode(), 200);
           uint64_t faceId = ControlParameters(controlResponse.getBody()).getFaceId();
           auto face = this->node2.forwarder.getFace(static_cast<FaceId>(faceId));
@@ -392,7 +404,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
           face->sendInterest(*dummyInterest);
         });
 
-    this->node2.face->sendInterest(*command);
+    this->node2.face->receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
   }
 
@@ -419,7 +431,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     this->keyChain.sign(*command);
 
     bool hasCallbackFired = false;
-    this->node1.face->onReceiveData.connect([this, command, &hasCallbackFired] (const Data& response) {
+    this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
         if (!command->getName().isPrefixOf(response.getName())) {
           return;
         }
@@ -434,7 +446,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
         hasCallbackFired = true;
       });
 
-    this->node1.face->sendInterest(*command);
+    this->node1.face->receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
 
     BOOST_CHECK(hasCallbackFired);
@@ -442,8 +454,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
 }
 
 BOOST_AUTO_TEST_SUITE_END() // CreateFace
-
-BOOST_AUTO_TEST_SUITE_END() // MgmtFaceManager
+BOOST_AUTO_TEST_SUITE_END() // TestFaceManager
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // tests
 } // nfd

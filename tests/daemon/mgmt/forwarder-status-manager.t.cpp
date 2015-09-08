@@ -23,39 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mgmt/status-server.hpp"
+#include "mgmt/forwarder-status-manager.hpp"
 #include "fw/forwarder.hpp"
 #include "version.hpp"
-#include "mgmt/internal-face.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+#include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(MgmtStatusServer, BaseFixture)
-
-shared_ptr<const Data> g_response;
-
-void
-interceptResponse(const Data& data)
-{
-  g_response = data.shared_from_this();
-}
+BOOST_FIXTURE_TEST_SUITE(Mgmt, UnitTestTimeFixture)
+BOOST_AUTO_TEST_SUITE(TestForwarderStatusManager)
 
 BOOST_AUTO_TEST_CASE(Status)
 {
   // initialize
   time::system_clock::TimePoint t1 = time::system_clock::now();
   Forwarder forwarder;
-  shared_ptr<InternalFace> internalFace = make_shared<InternalFace>();
-  internalFace->onReceiveData.connect(&interceptResponse);
+  auto face = ndn::util::makeDummyClientFace(g_io, {true, true});
   ndn::KeyChain keyChain;
-  StatusServer statusServer(internalFace, ref(forwarder), keyChain);
-  time::system_clock::TimePoint t2 = time::system_clock::now();
+  ndn::mgmt::Dispatcher dispatcher(*face, ref(keyChain));
+  ForwarderStatusManager statusServer(ref(forwarder), ref(dispatcher));
+  dispatcher.addTopPrefix("/localhost/nfd");
+  advanceClocks(time::milliseconds(1));
 
   // populate tables
+  time::system_clock::TimePoint t2 = time::system_clock::now();
   forwarder.getFib().insert("ndn:/fib1");
   forwarder.getPit().insert(*makeInterest("ndn:/pit1"));
   forwarder.getPit().insert(*makeInterest("ndn:/pit2"));
@@ -69,20 +65,19 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_CHECK_GE(forwarder.getMeasurements().size(), 3);
 
   // request
-  shared_ptr<Interest> request = makeInterest("ndn:/localhost/nfd/status");
+  time::system_clock::TimePoint t3 = time::system_clock::now();
+  auto request = makeInterest("ndn:/localhost/nfd/status");
   request->setMustBeFresh(true);
   request->setChildSelector(1);
 
-  g_response.reset();
-  time::system_clock::TimePoint t3 = time::system_clock::now();
-  internalFace->sendInterest(*request);
-  g_io.run_one();
-  time::system_clock::TimePoint t4 = time::system_clock::now();
-  BOOST_REQUIRE(static_cast<bool>(g_response));
+  face->receive<Interest>(*request);
+  advanceClocks(time::milliseconds(1));
 
   // verify
+  time::system_clock::TimePoint t4 = time::system_clock::now();
+  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
   ndn::nfd::ForwarderStatus status;
-  BOOST_REQUIRE_NO_THROW(status.wireDecode(g_response->getContent()));
+  BOOST_REQUIRE_NO_THROW(status.wireDecode(face->sentDatas[0].getContent()));
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));
@@ -90,7 +85,7 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t3));
   BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t4));
 
-  // StatusServer under test isn't added to Forwarder,
+  // Interest/Data toward ForwarderStatusManager don't go through Forwarder,
   // so request and response won't affect table size
   BOOST_CHECK_EQUAL(status.getNNameTreeEntries(), forwarder.getNameTree().size());
   BOOST_CHECK_EQUAL(status.getNFibEntries(), forwarder.getFib().size());
@@ -99,7 +94,8 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_CHECK_EQUAL(status.getNCsEntries(), forwarder.getCs().size());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestForwarderStatusManager
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
 } // namespace nfd

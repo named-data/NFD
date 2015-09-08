@@ -24,177 +24,164 @@
  */
 
 #include "mgmt/manager-base.hpp"
-#include "mgmt/internal-face.hpp"
+#include "manager-common-fixture.hpp"
 
-#include "tests/test-common.hpp"
+#include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/management/nfd-control-command.hpp>
 
 namespace nfd {
 namespace tests {
 
 NFD_LOG_INIT("ManagerBaseTest");
 
-class ManagerBaseTest : public ManagerBase, protected BaseFixture
+class TestCommandVoidParameters : public ndn::nfd::ControlCommand
 {
-
 public:
-
-  ManagerBaseTest()
-    : ManagerBase(make_shared<InternalFace>(), "TEST-PRIVILEGE", m_keyChain),
-      m_callbackFired(false)
+  TestCommandVoidParameters()
+    : ndn::nfd::ControlCommand("test-module", "test-void-parameters")
   {
-
   }
-
-  void
-  testSetResponse(ControlResponse& response,
-                  uint32_t code,
-                  const std::string& text)
-  {
-    setResponse(response, code, text);
-  }
-
-  void
-  testSendResponse(const Name& name,
-                   uint32_t code,
-                   const std::string& text,
-                   const Block& body)
-  {
-    sendResponse(name, code, text, body);
-  }
-
-  void
-  testSendResponse(const Name& name,
-                   uint32_t code,
-                   const std::string& text)
-  {
-    sendResponse(name, code, text);
-  }
-
-  void
-  testSendResponse(const Name& name,
-                   const ControlResponse& response)
-  {
-    sendResponse(name, response);
-  }
-
-  shared_ptr<InternalFace>
-  getInternalFace()
-  {
-    return static_pointer_cast<InternalFace>(m_face);
-  }
-
-  void
-  validateControlResponse(const Data& response,
-                          const Name& expectedName,
-                          uint32_t expectedCode,
-                          const std::string& expectedText)
-  {
-    m_callbackFired = true;
-    Block controlRaw = response.getContent().blockFromValue();
-
-    ControlResponse control;
-    control.wireDecode(controlRaw);
-
-    NFD_LOG_DEBUG("received control response"
-                  << " name: " << response.getName()
-                  << " code: " << control.getCode()
-                  << " text: " << control.getText());
-
-    BOOST_REQUIRE(response.getName() == expectedName);
-    BOOST_REQUIRE(control.getCode() == expectedCode);
-    BOOST_REQUIRE(control.getText() == expectedText);
-  }
-
-  void
-  validateControlResponse(const Data& response,
-                          const Name& expectedName,
-                          uint32_t expectedCode,
-                          const std::string& expectedText,
-                          const Block& expectedBody)
-  {
-    m_callbackFired = true;
-    Block controlRaw = response.getContent().blockFromValue();
-
-    ControlResponse control;
-    control.wireDecode(controlRaw);
-
-    NFD_LOG_DEBUG("received control response"
-                  << " name: " << response.getName()
-                  << " code: " << control.getCode()
-                  << " text: " << control.getText());
-
-    BOOST_REQUIRE(response.getName() == expectedName);
-    BOOST_REQUIRE(control.getCode() == expectedCode);
-    BOOST_REQUIRE(control.getText() == expectedText);
-
-    BOOST_REQUIRE(control.getBody().value_size() == expectedBody.value_size());
-
-    BOOST_CHECK(memcmp(control.getBody().value(), expectedBody.value(),
-                       expectedBody.value_size()) == 0);
-  }
-
-  bool
-  didCallbackFire()
-  {
-    return m_callbackFired;
-  }
-
-private:
-
-  bool m_callbackFired;
-  ndn::KeyChain m_keyChain;
-
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtManagerBase, ManagerBaseTest)
-
-BOOST_AUTO_TEST_CASE(SetResponse)
+class TestCommandRequireName : public ndn::nfd::ControlCommand
 {
-  ControlResponse response(200, "OK");
+public:
+  TestCommandRequireName()
+    : ndn::nfd::ControlCommand("test-module", "test-require-name")
+  {
+    m_requestValidator.required(ndn::nfd::CONTROL_PARAMETER_NAME);
+  }
+};
 
-  BOOST_CHECK_EQUAL(response.getCode(), 200);
-  BOOST_CHECK_EQUAL(response.getText(), "OK");
+class ManagerBaseFixture : public ManagerCommonFixture
+{
+public:
+  ManagerBaseFixture()
+    : m_manager(m_dispatcher, m_validator, "test-module")
+  {
+  }
 
-  testSetResponse(response, 100, "test");
+protected:
+  ManagerBase m_manager;
+};
 
-  BOOST_CHECK_EQUAL(response.getCode(), 100);
-  BOOST_CHECK_EQUAL(response.getText(), "test");
+BOOST_FIXTURE_TEST_SUITE(MgmtManagerBase, ManagerBaseFixture)
+
+BOOST_AUTO_TEST_CASE(AddSupportedPrivilegeInConstructor)
+{
+  BOOST_CHECK_NO_THROW(m_validator.addSupportedPrivilege("other-module"));
+  // test-module has already been added by the constructor of ManagerBase
+  BOOST_CHECK_THROW(m_validator.addSupportedPrivilege("test-module"), CommandValidator::Error);
 }
 
-BOOST_AUTO_TEST_CASE(SendResponse4Arg)
+BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 {
-  ndn::nfd::ControlParameters parameters;
-  parameters.setName("/test/body");
+  bool wasCommandHandlerCalled = false;
+  auto handler = bind([&] { wasCommandHandlerCalled = true; });
 
-  getInternalFace()->onReceiveData.connect([this, parameters] (const Data& response) {
-    this->validateControlResponse(response, "/response", 100, "test", parameters.wireEncode());
-  });
+  m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
+  m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
+  setTopPrefixAndPrivilege("/localhost/nfd", "test-module");
 
-  testSendResponse("/response", 100, "test", parameters.wireEncode());
-  BOOST_REQUIRE(didCallbackFire());
+  auto testRegisterCommandHandler = [&wasCommandHandlerCalled, this] (const Name& commandName) {
+    wasCommandHandlerCalled = false;
+    receiveInterest(makeControlCommandRequest(commandName, ControlParameters()));
+  };
+
+  testRegisterCommandHandler("/localhost/nfd/test-module/test-void");
+  BOOST_CHECK(wasCommandHandlerCalled);
+
+  testRegisterCommandHandler("/localhost/nfd/test-module/test-require-name");
+  BOOST_CHECK(!wasCommandHandlerCalled);
 }
 
-
-BOOST_AUTO_TEST_CASE(SendResponse3Arg)
+BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
 {
-  getInternalFace()->onReceiveData.connect([this] (const Data& response) {
-    this->validateControlResponse(response, "/response", 100, "test");
-  });
+  bool isStatusDatasetCalled = false;
+  auto handler = bind([&] { isStatusDatasetCalled = true; });
 
-  testSendResponse("/response", 100, "test");
-  BOOST_REQUIRE(didCallbackFire());
+  m_manager.registerStatusDatasetHandler("test-status", handler);
+  m_dispatcher.addTopPrefix("/localhost/nfd");
+  advanceClocks(time::milliseconds(1));
+
+  receiveInterest(makeInterest("/localhost/nfd/test-module/test-status"));
+  BOOST_CHECK(isStatusDatasetCalled);
 }
 
-BOOST_AUTO_TEST_CASE(SendResponse2Arg)
+BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
 {
-  getInternalFace()->onReceiveData.connect([this] (const Data& response) {
-    this->validateControlResponse(response, "/response", 100, "test");
-  });
+  auto post = m_manager.registerNotificationStream("test-notification");
+  m_dispatcher.addTopPrefix("/localhost/nfd");
+  advanceClocks(time::milliseconds(1));
 
-  ControlResponse response(100, "test");
+  post(Block("\x82\x01\x02", 3));
+  advanceClocks(time::milliseconds(1));
 
-  testSendResponse("/response", 100, "test");
-  BOOST_REQUIRE(didCallbackFire());
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
+  BOOST_CHECK_EQUAL(m_responses[0].getName(),
+                    Name("/localhost/nfd/test-module/test-notification/%FE%00"));
+}
+
+BOOST_AUTO_TEST_CASE(CommandAuthorization)
+{
+  bool didAcceptCallbackFire = false;
+  bool didRejectCallbackFire = false;
+  auto testAuthorization = [&] {
+    didAcceptCallbackFire = false;
+    didRejectCallbackFire = false;
+
+    auto command = makeControlCommandRequest("/localhost/nfd/test-module/test-verb",
+                                             ControlParameters());
+    ndn::nfd::ControlParameters params;
+    m_manager.authorize("/top/prefix", *command, &params,
+                        bind([&] { didAcceptCallbackFire = true; }),
+                        bind([&] { didRejectCallbackFire = true; }));
+  };
+
+  testAuthorization();
+  BOOST_CHECK(!didAcceptCallbackFire);
+  BOOST_CHECK(didRejectCallbackFire);
+
+  m_validator.addInterestRule("^<localhost><nfd><test-module>", *m_certificate);
+  testAuthorization();
+  BOOST_CHECK(didAcceptCallbackFire);
+  BOOST_CHECK(!didRejectCallbackFire);
+}
+
+BOOST_AUTO_TEST_CASE(ExtractRequester)
+{
+  std::string requesterName;
+  auto testAccept = [&] (const std::string& requester) { requesterName = requester; };
+
+  auto unsignedCommand = makeInterest("/test/interest/unsigned");
+  auto signedCommand = makeControlCommandRequest("/test/interest/signed", ControlParameters());
+
+  m_manager.extractRequester(*unsignedCommand, testAccept);
+  BOOST_CHECK(requesterName.empty());
+
+  requesterName = "";
+  m_manager.extractRequester(*signedCommand, testAccept);
+  auto keyLocator = m_keyChain.getDefaultCertificateNameForIdentity(m_identityName).getPrefix(-1);
+  BOOST_CHECK_EQUAL(requesterName, keyLocator.toUri());
+}
+
+BOOST_AUTO_TEST_CASE(ValidateParameters)
+{
+  ControlParameters params;
+  TestCommandVoidParameters commandVoidParams;
+  TestCommandRequireName commandRequireName;
+
+  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandVoidParams, params), true); // succeeds
+  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandRequireName, params), false); // fails
+
+  params.setName("test-name");
+  BOOST_CHECK_EQUAL(ManagerBase::validateParameters(commandRequireName, params), true); // succeeds
+}
+
+BOOST_AUTO_TEST_CASE(MakeRelPrefix)
+{
+  auto generatedRelPrefix = m_manager.makeRelPrefix("test-verb");
+  BOOST_CHECK_EQUAL(generatedRelPrefix, PartialName("/test-module/test-verb"));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

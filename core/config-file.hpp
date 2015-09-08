@@ -73,6 +73,16 @@ public:
                        const ConfigSection& section,
                        bool isDryRun);
 
+  /** @brief parse a config option that can be either "yes" or "no"
+   *
+   *  @throw ConfigFile::Error value is neither "yes" nor "no"
+   *  @return true if "yes", false if "no"
+   */
+  static bool
+  parseYesNo(const ConfigSection::const_iterator& i,
+             const std::string& optionName,
+             const std::string& sectionName);
+
   /// \brief setup notification of configuration file sections
   void
   addSectionHandler(const std::string& sectionName,

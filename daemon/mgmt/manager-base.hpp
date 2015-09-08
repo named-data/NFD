@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -27,142 +27,153 @@
 #define NFD_DAEMON_MGMT_MANAGER_BASE_HPP
 
 #include "common.hpp"
-
 #include "mgmt/command-validator.hpp"
-#include "mgmt/internal-face.hpp"
 
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/management/nfd-control-command.hpp>
 #include <ndn-cxx/management/nfd-control-response.hpp>
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
 
 namespace nfd {
 
+using ndn::mgmt::Dispatcher;
+
 using ndn::nfd::ControlCommand;
 using ndn::nfd::ControlResponse;
 using ndn::nfd::ControlParameters;
 
-class InternalFace;
-
-class ManagerBase
+/**
+ * @brief a collection of common functions shared by all NFD managers,
+ *        such as communicating with the dispatcher and command validator.
+ */
+class ManagerBase : public noncopyable
 {
 public:
-
-  struct Error : public std::runtime_error
+  class Error : public std::runtime_error
   {
-    Error(const std::string& what) : std::runtime_error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
   };
 
-  ManagerBase(shared_ptr<InternalFace> face,
-              const std::string& privilege,
-              ndn::KeyChain& keyChain);
+public:
+  ManagerBase(Dispatcher& dispatcher,
+              CommandValidator& validator,
+              const std::string& module);
 
-  virtual
-  ~ManagerBase();
+PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
+
+  // difference from mgmt::ControlCommand: accepts nfd::ControlParameters
+  typedef function<void(const ControlCommand& command,
+                        const Name& prefix, const Interest& interest,
+                        const ControlParameters& parameters,
+                        const ndn::mgmt::CommandContinuation done)> ControlCommandHandler;
+
+  template<typename Command>
+  void
+  registerCommandHandler(const std::string& verb,
+                         const ControlCommandHandler& handler);
 
   void
-  onCommandValidationFailed(const shared_ptr<const Interest>& command,
-                            const std::string& error);
+  registerStatusDatasetHandler(const std::string& verb,
+                               const ndn::mgmt::StatusDatasetHandler& handler);
 
-protected:
+  ndn::mgmt::PostNotification
+  registerNotificationStream(const std::string& verb);
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
+  /**
+   * @brief validate a request for ControlCommand.
+   *
+   * This is called by the dispatcher.
+   *
+   * @pre params != null
+   * @pre typeid(*params) == typeid(ndn::nfd::ControlParameters)
+   *
+   * @param prefix the top prefix
+   * @param interest a request for ControlCommand
+   * @param params the parameters for ControlCommand
+   * @param accept callback of successful validation, take the requester string as a argument
+   * @param reject callback of failure in validation, take the action code as a argument
+   */
+  void
+  authorize(const Name& prefix, const Interest& interest,
+            const ndn::mgmt::ControlParameters* params,
+            ndn::mgmt::AcceptContinuation accept,
+            ndn::mgmt::RejectContinuation reject);
+
+  /**
+   * @brief extract a requester from a ControlCommand request
+   *
+   * This is called after the signature is validated.
+   *
+   * @param interest a request for ControlCommand
+   * @param accept callback of successful validation, take the requester string as a argument
+   */
+  void
+  extractRequester(const Interest& interest,
+                   ndn::mgmt::AcceptContinuation accept);
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers
+  /**
+   * @brief validate the @p parameters for a given @p command
+   *
+   * @param parameters the original ControlParameters
+   *
+   * @return whether the original ControlParameters can be validated
+   */
   static bool
-  extractParameters(const Name::Component& parameterComponent,
-                    ControlParameters& extractedParameters);
+  validateParameters(const nfd::ControlCommand& command,
+                     const ndn::mgmt::ControlParameters& parameters);
 
-  void
-  setResponse(ControlResponse& response,
-              uint32_t code,
-              const std::string& text);
-  void
-  setResponse(ControlResponse& response,
-              uint32_t code,
-              const std::string& text,
-              const Block& body);
+  /** @brief Handle control command
+   */
+  static void
+  handleCommand(shared_ptr<nfd::ControlCommand> command,
+                const ControlCommandHandler& handler,
+                const Name& prefix, const Interest& interest,
+                const ndn::mgmt::ControlParameters& params,
+                ndn::mgmt::CommandContinuation done);
 
-  void
-  sendResponse(const Name& name,
-               const ControlResponse& response);
+  /**
+   * @brief generate the relative prefix for a handler,
+   *        by appending the verb name to the module name.
+   *
+   * @param verb the verb name
+   *
+   * @return the generated relative prefix
+   */
+  PartialName
+  makeRelPrefix(const std::string& verb);
 
-  void
-  sendResponse(const Name& name,
-               uint32_t code,
-               const std::string& text);
-
-  void
-  sendResponse(const Name& name,
-               uint32_t code,
-               const std::string& text,
-               const Block& body);
-
-  void
-  sendNack(const Name& name);
-
-  virtual bool
-  validateParameters(const ControlCommand& command,
-                     ControlParameters& parameters);
-
-PUBLIC_WITH_TESTS_ELSE_PROTECTED:
-  void
-  addInterestRule(const std::string& regex,
-                  const ndn::IdentityCertificate& certificate);
-
-  void
-  addInterestRule(const std::string& regex,
-                  const Name& keyName,
-                  const ndn::PublicKey& publicKey);
-
-  void
-  validate(const Interest& interest,
-           const ndn::OnInterestValidated& onValidated,
-           const ndn::OnInterestValidationFailed& onValidationFailed);
-
-protected:
-  shared_ptr<InternalFace> m_face;
-  ndn::KeyChain& m_keyChain;
+private:
+  Dispatcher&       m_dispatcher;
+  CommandValidator& m_validator;
+  std::string       m_mgmtModuleName;
 };
 
-inline void
-ManagerBase::setResponse(ControlResponse& response,
-                         uint32_t code,
-                         const std::string& text)
+inline PartialName
+ManagerBase::makeRelPrefix(const std::string& verb)
 {
-  response.setCode(code);
-  response.setText(text);
+  return PartialName(m_mgmtModuleName).append(verb);
 }
 
+template<typename Command>
 inline void
-ManagerBase::setResponse(ControlResponse& response,
-                         uint32_t code,
-                         const std::string& text,
-                         const Block& body)
+ManagerBase::registerCommandHandler(const std::string& verb,
+                                    const ControlCommandHandler& handler)
 {
-  setResponse(response, code, text);
-  response.setBody(body);
-}
+  auto command = make_shared<Command>();
 
-inline void
-ManagerBase::addInterestRule(const std::string& regex,
-                             const ndn::IdentityCertificate& certificate)
-{
-  m_face->getValidator().addInterestRule(regex, certificate);
+  m_dispatcher.addControlCommand<ControlParameters>(
+    makeRelPrefix(verb),
+    bind(&ManagerBase::authorize, this, _1, _2, _3, _4, _5),
+    bind(&ManagerBase::validateParameters, cref(*command), _1),
+    bind(&ManagerBase::handleCommand, command, handler, _1, _2, _3, _4));
 }
-
-inline void
-ManagerBase::addInterestRule(const std::string& regex,
-                             const Name& keyName,
-                             const ndn::PublicKey& publicKey)
-{
-  m_face->getValidator().addInterestRule(regex, keyName, publicKey);
-}
-
-inline void
-ManagerBase::validate(const Interest& interest,
-                      const ndn::OnInterestValidated& onValidated,
-                      const ndn::OnInterestValidationFailed& onValidationFailed)
-{
-  m_face->getValidator().validate(interest, onValidated, onValidationFailed);
-}
-
 
 } // namespace nfd
 

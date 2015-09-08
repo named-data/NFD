@@ -23,42 +23,36 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face-status-publisher-common.hpp"
+#ifndef NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP
+#define NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP
+
+#include "manager-base.hpp"
+#include <ndn-cxx/management/nfd-forwarder-status.hpp>
 
 namespace nfd {
-namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(MgmtFaceStatusPublisher, FaceStatusPublisherFixture)
+class Forwarder;
 
-BOOST_AUTO_TEST_CASE(EncodingDecoding)
+/**
+ * @brief implement the Forwarder Status of NFD Management Protocol.
+ * @sa http://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
+ */
+class ForwarderStatusManager : noncopyable
 {
-  Name commandName("/localhost/nfd/faces/list");
-  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+public:
+  ForwarderStatusManager(Forwarder& forwarder, Dispatcher& dispatcher);
 
-  // MAX_SEGMENT_SIZE == 4400, FaceStatus size with filler counters is 75
-  // use 59 FaceStatuses to force a FaceStatus to span Data packets
-  for (int i = 0; i < 59; i++)
-    {
-      shared_ptr<TestCountersFace> dummy(make_shared<TestCountersFace>());
+private:
+  void
+  listStatus(const Name& topPrefix, const Interest& interest,
+             ndn::mgmt::StatusDatasetContext& context);
 
-      uint64_t filler = std::numeric_limits<uint64_t>::max() - 1;
-      dummy->setCounters(filler, filler, filler, filler, filler, filler);
+private:
+  Forwarder&  m_forwarder;
+  Dispatcher& m_dispatcher;
+  time::system_clock::TimePoint m_startTimestamp;
+};
 
-      m_referenceFaces.push_back(dummy);
-
-      add(dummy);
-    }
-
-  ndn::EncodingBuffer buffer;
-
-  m_face->onReceiveData.connect(
-      bind(&FaceStatusPublisherFixture::decodeFaceStatusBlock, this, _1));
-
-  m_publisher.publish();
-  BOOST_REQUIRE(m_finished);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-} // namespace tests
 } // namespace nfd
+
+#endif // NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP

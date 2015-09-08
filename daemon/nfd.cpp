@@ -31,13 +31,17 @@
 #include "core/config-file.hpp"
 #include "fw/forwarder.hpp"
 #include "face/null-face.hpp"
-#include "mgmt/internal-face.hpp"
+#include "face/internal-face.hpp"
+#include "face/internal-client-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
-#include "mgmt/status-server.hpp"
+#include "mgmt/forwarder-status-manager.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
+#include "mgmt/command-validator.hpp"
+
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 
@@ -128,17 +132,26 @@ void
 Nfd::initializeManagement()
 {
   m_internalFace = make_shared<InternalFace>();
+  m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
+  m_internalClientFace = makeInternalClientFace(m_internalFace, m_keyChain);
+  m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
+
+  m_validator.reset(new CommandValidator());
 
   m_fibManager.reset(new FibManager(m_forwarder->getFib(),
                                     bind(&Forwarder::getFace, m_forwarder.get(), _1),
-                                    m_internalFace, m_keyChain));
+                                    *m_dispatcher,
+                                    *m_validator));
 
-  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(), m_internalFace, m_keyChain));
+  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
+                                      *m_dispatcher,
+                                      *m_validator));
 
   m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
-                                                          m_internalFace, m_keyChain));
+                                                          *m_dispatcher,
+                                                          *m_validator));
 
-  m_statusServer.reset(new StatusServer(m_internalFace, *m_forwarder, m_keyChain));
+  m_forwarderStatusManager.reset(new ForwarderStatusManager(*m_forwarder, *m_dispatcher));
 
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);
@@ -151,9 +164,7 @@ Nfd::initializeManagement()
                                    m_forwarder->getNetworkRegionTable());
   tablesConfig.setConfigFile(config);
 
-  m_internalFace->getValidator().setConfigFile(config);
-
-  m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
+  m_validator->setConfigFile(config);
 
   m_faceManager->setConfigFile(config);
 
@@ -170,8 +181,10 @@ Nfd::initializeManagement()
   tablesConfig.ensureTablesAreConfigured();
 
   // add FIB entry for NFD Management Protocol
-  shared_ptr<fib::Entry> entry = m_forwarder->getFib().insert("/localhost/nfd").first;
+  Name topPrefix("/localhost/nfd");
+  auto entry = m_forwarder->getFib().insert(topPrefix).first;
   entry->addNextHop(m_internalFace, 0);
+  m_dispatcher->addTopPrefix(topPrefix, false);
 }
 
 void
@@ -195,7 +208,7 @@ Nfd::reloadConfigFile()
 
   tablesConfig.setConfigFile(config);
 
-  m_internalFace->getValidator().setConfigFile(config);
+  m_validator->setConfigFile(config);
   m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {
