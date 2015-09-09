@@ -30,6 +30,7 @@
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/privilege-helper.hpp"
+#include "core/extended-error-message.hpp"
 
 #include <string.h>
 
@@ -278,12 +279,12 @@ main(int argc, char** argv)
       return 3;
     }
     else {
-      NFD_LOG_FATAL(e.what());
+      NFD_LOG_FATAL(getExtendedErrorMessage(e));
       return 2;
     }
   }
   catch (const std::exception& e) {
-    NFD_LOG_FATAL(e.what());
+    NFD_LOG_FATAL(getExtendedErrorMessage(e));
     return 2;
   }
   catch (const PrivilegeHelper::Error& e) {
