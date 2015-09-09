@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(Status)
   time::system_clock::TimePoint t4 = time::system_clock::now();
   BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
   ndn::nfd::ForwarderStatus status;
-  BOOST_REQUIRE_NO_THROW(status.wireDecode(face->sentDatas[0].getContent().blockFromValue()));
+  BOOST_REQUIRE_NO_THROW(status.wireDecode(face->sentDatas[0].getContent()));
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));

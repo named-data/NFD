@@ -59,7 +59,11 @@ ForwarderStatusManager::listStatus(const Name& topPrefix, const Interest& intere
   m_forwarder.getCounters().copyTo(status);
 
   context.setExpiry(STATUS_SERVER_DEFAULT_FRESHNESS);
-  context.append(status.wireEncode());
+
+  status.wireEncode().parse();
+  for (const auto& subblock : status.wireEncode().elements()) {
+    context.append(subblock);
+  }
   context.end();
 }
 
