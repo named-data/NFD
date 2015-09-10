@@ -5,7 +5,6 @@ Manpages
 
 .. toctree::
    manpages/nfd
-   manpages/nrd
    manpages/nfdc
    manpages/nfd-status
    schema
