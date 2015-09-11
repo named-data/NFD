@@ -49,17 +49,29 @@ NFD_LOG_INIT("Nfd");
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
+static inline ndn::util::NetworkMonitor*
+makeNetworkMonitor()
+{
+  try {
+    return new ndn::util::NetworkMonitor(getGlobalIoService());
+  }
+  catch (const ndn::util::NetworkMonitor::Error& e) {
+    NFD_LOG_WARN(e.what());
+    return nullptr;
+  }
+}
+
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
   , m_keyChain(keyChain)
-  , m_networkMonitor(getGlobalIoService())
+  , m_networkMonitor(makeNetworkMonitor())
 {
 }
 
 Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
   , m_keyChain(keyChain)
-  , m_networkMonitor(getGlobalIoService())
+  , m_networkMonitor(makeNetworkMonitor())
 {
 }
 
@@ -85,15 +97,17 @@ Nfd::initialize()
 
   PrivilegeHelper::drop();
 
-  m_networkMonitor.onNetworkStateChanged.connect([this] {
-      // delay stages, so if multiple events are triggered in short sequence,
-      // only one auto-detection procedure is triggered
-      m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
-        [this] {
-          NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
-          this->reloadConfigFileFaceSection();
-        });
-    });
+  if (m_networkMonitor) {
+    m_networkMonitor->onNetworkStateChanged.connect([this] {
+        // delay stages, so if multiple events are triggered in short sequence,
+        // only one auto-detection procedure is triggered
+        m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
+          [this] {
+            NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
+            this->reloadConfigFileFaceSection();
+          });
+      });
+  }
 }
 
 void

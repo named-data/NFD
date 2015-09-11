@@ -107,10 +107,10 @@ private:
 
   unique_ptr<Forwarder> m_forwarder;
 
-  ndn::KeyChain&                     m_keyChain;
-  shared_ptr<InternalFace>           m_internalFace;
-  shared_ptr<InternalClientFace>     m_internalClientFace;
-  unique_ptr<CommandValidator>       m_validator;
+  ndn::KeyChain&                 m_keyChain;
+  shared_ptr<InternalFace>       m_internalFace;
+  shared_ptr<InternalClientFace> m_internalClientFace;
+  unique_ptr<CommandValidator>   m_validator;
 
   unique_ptr<ndn::mgmt::Dispatcher>  m_dispatcher;
   unique_ptr<FibManager>             m_fibManager;
@@ -118,8 +118,8 @@ private:
   unique_ptr<StrategyChoiceManager>  m_strategyChoiceManager;
   unique_ptr<ForwarderStatusManager> m_forwarderStatusManager;
 
-  ndn::util::NetworkMonitor          m_networkMonitor;
-  scheduler::ScopedEventId           m_reloadConfigEvent;
+  unique_ptr<ndn::util::NetworkMonitor> m_networkMonitor;
+  scheduler::ScopedEventId              m_reloadConfigEvent;
 };
 
 } // namespace nfd
