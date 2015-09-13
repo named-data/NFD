@@ -279,8 +279,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpConflictingMcast)
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
-
-
 BOOST_AUTO_TEST_CASE(ProcessSectionUdpUnknownOption)
 {
   const std::string CONFIG =
@@ -294,7 +292,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpUnknownOption)
   BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
-
 
 BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
 {
@@ -317,7 +314,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
                        "no UDP multicast faces are available");
     return;
   }
-  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
 
   const std::string CONFIG_WITHOUT_MCAST =
     "face_system\n"
@@ -328,6 +324,7 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
     "  }\n"
     "}\n";
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  BOOST_REQUIRE_NO_THROW(g_io.poll());
   BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
 }
 

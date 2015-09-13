@@ -23,27 +23,24 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_UDP_FACE_HPP
-#define NFD_DAEMON_FACE_UDP_FACE_HPP
+#ifndef NFD_DAEMON_FACE_UDP_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_UDP_TRANSPORT_HPP
 
-#include "datagram-face.hpp"
+#include "datagram-transport.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {
+namespace face {
 
 /**
- * \brief Implementation of Face abstraction that uses
- *        unicast UDP as underlying transport mechanism
+ * \brief A Transport that communicates on a unicast UDP socket
  */
-class UdpFace : public DatagramFace<boost::asio::ip::udp>
+class UnicastUdpTransport : public DatagramTransport<boost::asio::ip::udp>
 {
 public:
-  UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
-          protocol::socket socket, ndn::nfd::FacePersistency persistency,
-          const time::seconds& idleTimeout);
-
-  ndn::nfd::FaceStatus
-  getFaceStatus() const DECL_OVERRIDE;
+  UnicastUdpTransport(protocol::socket&& socket,
+                      ndn::nfd::FacePersistency persistency,
+                      const time::seconds& idleTimeout);
 
 private:
   void
@@ -53,11 +50,9 @@ private:
   const time::seconds m_idleTimeout;
   time::steady_clock::TimePoint m_lastIdleCheck;
   scheduler::ScopedEventId m_closeIfIdleEvent;
-
-  // friend because it needs to invoke protected Face::setOnDemand
-  friend class UdpChannel;
 };
 
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_UDP_FACE_HPP
+#endif // NFD_DAEMON_FACE_UDP_TRANSPORT_HPP

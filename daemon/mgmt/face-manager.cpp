@@ -26,9 +26,10 @@
 #include "face-manager.hpp"
 
 #include "core/network-interface.hpp"
-#include "fw/face-table.hpp"
+#include "face/lp-face-wrapper.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
+#include "fw/face-table.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-channel-status.hpp>
@@ -685,7 +686,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       }
 #endif
 
-      std::list<shared_ptr<MulticastUdpFace> > multicastFacesToRemove;
+      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
       for (auto i = factory->getMulticastFaces().begin();
            i != factory->getMulticastFaces().end();
            ++i) {
@@ -693,33 +694,27 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       }
 
       for (const auto& nic : ipv4MulticastInterfaces) {
-        shared_ptr<MulticastUdpFace> newFace;
-        newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
-                                               mcastGroup,
-                                               mcastPort,
-                                               isNicNameNecessary ? nic.name : "");
+        auto newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
+                                                    mcastGroup, mcastPort,
+                                                    isNicNameNecessary ? nic.name : "");
         addCreatedFaceToForwarder(newFace);
         multicastFacesToRemove.remove(newFace);
       }
 
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
+      for (const auto& face : multicastFacesToRemove) {
+        face->close();
       }
     }
     else {
-      std::list<shared_ptr<MulticastUdpFace>> multicastFacesToRemove;
+      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
       for (auto i = factory->getMulticastFaces().begin();
            i != factory->getMulticastFaces().end();
            ++i) {
         multicastFacesToRemove.push_back(i->second);
       }
 
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
+      for (const auto& face : multicastFacesToRemove) {
+        face->close();
       }
     }
   }

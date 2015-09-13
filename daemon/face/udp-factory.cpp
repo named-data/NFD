@@ -24,6 +24,9 @@
  */
 
 #include "udp-factory.hpp"
+#include "generic-link-service.hpp"
+#include "lp-face-wrapper.hpp"
+#include "multicast-udp-transport.hpp"
 #include "core/global-io.hpp"
 #include "core/network-interface.hpp"
 
@@ -117,11 +120,12 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
   if (static_cast<bool>(channel))
     return channel;
 
-  //checking if the endpoint is already in use for multicast face
-  shared_ptr<MulticastUdpFace> multicast = findMulticastFace(endpoint);
-  if (static_cast<bool>(multicast))
+  // check if the endpoint is already used by a multicast face
+  auto face = findMulticastFace(endpoint);
+  if (face) {
     BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP unicast channel, local "
                                 "endpoint is already allocated for a UDP multicast face"));
+  }
 
   if (endpoint.address().is_multicast()) {
     BOOST_THROW_EXCEPTION(Error("This method is only for unicast channel. The provided "
@@ -146,15 +150,15 @@ UdpFactory::createChannel(const std::string& localIp,
   return createChannel(endpoint, timeout);
 }
 
-shared_ptr<MulticastUdpFace>
+shared_ptr<face::LpFaceWrapper>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                 const udp::Endpoint& multicastEndpoint,
                                 const std::string& networkInterfaceName/* = ""*/)
 {
   // checking if the local and multicast endpoints are already in use for a multicast face
-  shared_ptr<MulticastUdpFace> face = findMulticastFace(localEndpoint);
-  if (static_cast<bool>(face)) {
-    if (face->getMulticastGroup() == multicastEndpoint)
+  auto face = findMulticastFace(localEndpoint);
+  if (face) {
+    if (face->getRemoteUri() == FaceUri(multicastEndpoint))
       return face;
     else
       BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
@@ -225,8 +229,12 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   }
 #endif
 
-  face = make_shared<MulticastUdpFace>(multicastEndpoint, FaceUri(localEndpoint),
-                                       std::move(receiveSocket), std::move(sendSocket));
+  auto linkService = make_unique<face::GenericLinkService>();
+  auto transport = make_unique<face::MulticastUdpTransport>(localEndpoint, multicastEndpoint,
+                                                            std::move(receiveSocket),
+                                                            std::move(sendSocket));
+  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
+  face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
 
   face->onFail.connectSingleShot([this, localEndpoint] (const std::string& reason) {
     m_multicastFaces.erase(localEndpoint);
@@ -236,7 +244,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   return face;
 }
 
-shared_ptr<MulticastUdpFace>
+shared_ptr<face::LpFaceWrapper>
 UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastIp,
                                 const std::string& multicastPort,
@@ -302,14 +310,14 @@ UdpFactory::findChannel(const udp::Endpoint& localEndpoint)
     return shared_ptr<UdpChannel>();
 }
 
-shared_ptr<MulticastUdpFace>
+shared_ptr<face::LpFaceWrapper>
 UdpFactory::findMulticastFace(const udp::Endpoint& localEndpoint)
 {
   MulticastFaceMap::iterator i = m_multicastFaces.find(localEndpoint);
   if (i != m_multicastFaces.end())
     return i->second;
   else
-    return shared_ptr<MulticastUdpFace>();
+    return nullptr;
 }
 
 std::list<shared_ptr<const Channel>>

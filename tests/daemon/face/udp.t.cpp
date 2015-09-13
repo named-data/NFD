@@ -24,7 +24,6 @@
  */
 
 #include "face/udp-channel.hpp"
-#include "face/udp-face.hpp"
 #include "face/udp-factory.hpp"
 
 #include "core/network-interface.hpp"
@@ -35,7 +34,10 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FaceUdp, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestUdp, BaseFixture)
+
+using nfd::Face;
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
@@ -126,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
   auto multicastFace1a = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
   BOOST_CHECK_EQUAL(multicastFace1->isLocal(), false);
-  BOOST_CHECK_EQUAL(multicastFace1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(multicastFace1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_CHECK_EQUAL(multicastFace1->isMultiAccess(), true);
 
   //same endpoint of a multicast face
@@ -701,7 +703,8 @@ BOOST_FIXTURE_TEST_CASE(Bug2292, FakeNetworkInterfaceFixture)
                }));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestUdp
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace nfd
