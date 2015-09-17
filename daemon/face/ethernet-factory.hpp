@@ -85,7 +85,7 @@ public:
   getMulticastFaces() const;
 
   virtual std::list<shared_ptr<const Channel>>
-  getChannels() const;
+  getChannels() const DECL_OVERRIDE;
 
 private:
   /**
