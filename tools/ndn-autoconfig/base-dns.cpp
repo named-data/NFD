@@ -160,7 +160,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
   std::string uri = "udp://";
   uri.append(hostName);
   uri.append(":");
-  uri.append(std::to_string(convertedPort));
+  uri.append(to_string(convertedPort));
 
   return uri;
 }

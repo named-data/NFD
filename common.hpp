@@ -101,6 +101,8 @@ using std::bind;
 using std::ref;
 using std::cref;
 
+using ndn::to_string;
+
 using ndn::Interest;
 using ndn::Data;
 using ndn::Name;
@@ -120,17 +122,5 @@ namespace time = ndn::time;
 namespace signal = ndn::util::signal;
 
 } // namespace nfd
-
-// Some platforms are missing std::to_string (issue #2743)
-#ifndef HAVE_STD_TO_STRING
-namespace std {
-template<typename V>
-inline std::string
-to_string(const V& v)
-{
-  return boost::lexical_cast<std::string>(v);
-}
-} // namespace std
-#endif // HAVE_STD_TO_STRING
 
 #endif // NFD_COMMON_HPP

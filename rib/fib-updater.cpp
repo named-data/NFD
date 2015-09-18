@@ -305,8 +305,7 @@ FibUpdater::onUpdateError(const FibUpdate update,
     }
   }
   else {
-    BOOST_THROW_EXCEPTION(Error("Non-recoverable error: " + error + " code: " +
-                                std::to_string(code)));
+    BOOST_THROW_EXCEPTION(Error("Non-recoverable error: " + error + " code: " + to_string(code)));
   }
 }
 
