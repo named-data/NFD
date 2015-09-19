@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_SUITE(CsPriorityFifo)
 BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
 {
   Cs cs(3);
-  cs.setPolicy(unique_ptr<Policy>(new PriorityFifoPolicy()));
+  cs.setPolicy(make_unique<PriorityFifoPolicy>());
 
   shared_ptr<Data> dataA = makeData("ndn:/A");
   dataA->setFreshnessPeriod(time::milliseconds(99999));
@@ -94,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
 BOOST_FIXTURE_TEST_CASE(Refresh, UnitTestTimeFixture)
 {
   Cs cs(3);
-  cs.setPolicy(unique_ptr<Policy>(new PriorityFifoPolicy()));
+  cs.setPolicy(make_unique<PriorityFifoPolicy>());
 
   shared_ptr<Data> dataA = makeData("ndn:/A");
   dataA->setFreshnessPeriod(time::milliseconds(99999));

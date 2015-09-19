@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_SUITE(CsLru)
 BOOST_FIXTURE_TEST_CASE(EvictOneLRU, UnitTestTimeFixture)
 {
   Cs cs(3);
-  cs.setPolicy(unique_ptr<Policy>(new LruPolicy()));
+  cs.setPolicy(make_unique<LruPolicy>());
 
   cs.insert(*makeData("ndn:/A"));
   cs.insert(*makeData("ndn:/B"));

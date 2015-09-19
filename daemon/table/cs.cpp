@@ -47,7 +47,7 @@ BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Cs::const_iterator>));
 unique_ptr<Policy>
 makeDefaultPolicy()
 {
-  return unique_ptr<Policy>(new PriorityFifoPolicy());
+  return make_unique<PriorityFifoPolicy>();
 }
 
 Cs::Cs(size_t nMaxPackets, unique_ptr<Policy> policy)

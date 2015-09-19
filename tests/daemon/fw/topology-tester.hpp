@@ -247,7 +247,7 @@ public:
   addForwarder()
   {
     size_t i = m_forwarders.size();
-    m_forwarders.push_back(std::move(unique_ptr<Forwarder>(new Forwarder())));
+    m_forwarders.push_back(make_unique<Forwarder>());
     return i;
   }
 

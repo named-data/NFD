@@ -67,6 +67,7 @@
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
+#include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
@@ -88,6 +89,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
 using std::make_shared;
+using ndn::make_unique;
 using std::enable_shared_from_this;
 
 using std::static_pointer_cast;
