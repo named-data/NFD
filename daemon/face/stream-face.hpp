@@ -30,6 +30,8 @@
 #include "local-face.hpp"
 #include "core/global-io.hpp"
 
+#include <queue>
+
 namespace nfd {
 
 // forward declaration

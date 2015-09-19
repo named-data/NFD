@@ -50,18 +50,23 @@
 #endif
 
 #include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <limits>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
-#include <queue>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
-#include <string>
 
-#include <ndn-cxx/common.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/name.hpp>
+#include <ndn-cxx/encoding/block.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
@@ -125,6 +130,5 @@ to_string(const V& v)
 }
 } // namespace std
 #endif // HAVE_STD_TO_STRING
-
 
 #endif // NFD_COMMON_HPP
