@@ -135,9 +135,13 @@ protected:
 };
 
 inline shared_ptr<Interest>
-makeInterest(const Name& name)
+makeInterest(const Name& name, uint32_t nonce = 0)
 {
-  return make_shared<Interest>(name);
+  auto interest = make_shared<Interest>(name);
+  if (nonce != 0) {
+    interest->setNonce(nonce);
+  }
+  return interest;
 }
 
 inline shared_ptr<Data>
@@ -164,6 +168,16 @@ makeLink(const Name& name, std::initializer_list<std::pair<uint32_t, Name>> dele
   auto link = make_shared<Link>(name, delegations);
   signData(link);
   return link;
+}
+
+inline lp::Nack
+makeNack(const Name& name, uint32_t nonce, lp::NackReason reason)
+{
+  Interest interest(name);
+  interest.setNonce(nonce);
+  lp::Nack nack(std::move(interest));
+  nack.setReason(reason);
+  return nack;
 }
 
 } // namespace tests

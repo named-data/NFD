@@ -29,6 +29,7 @@
 #include "common.hpp"
 #include "core/logger.hpp"
 #include "face-counters.hpp"
+#include "face-log.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
 
@@ -82,11 +83,17 @@ public:
   /// fires when a Data is received
   signal::Signal<Face, Data> onReceiveData;
 
+  /// fires when a Nack is received
+  signal::Signal<Face, lp::Nack> onReceiveNack;
+
   /// fires when an Interest is sent out
   signal::Signal<Face, Interest> onSendInterest;
 
   /// fires when a Data is sent out
   signal::Signal<Face, Data> onSendData;
+
+  /// fires when a Nack is sent out
+  signal::Signal<Face, lp::Nack> onSendNack;
 
   /// fires when face disconnects or fails to perform properly
   signal::Signal<Face, std::string/*reason*/> onFail;
@@ -98,6 +105,12 @@ public:
   /// send a Data
   virtual void
   sendData(const Data& data) = 0;
+
+  /// send a Nack
+  virtual void
+  sendNack(const ndn::lp::Nack& nack)
+  {
+  }
 
   /** \brief Close the face
    *
@@ -133,6 +146,10 @@ public: // attributes
   ndn::nfd::FacePersistency
   getPersistency() const;
 
+  // 'virtual' to allow override in LpFaceWrapper
+  virtual void
+  setPersistency(ndn::nfd::FacePersistency persistency);
+
   /** \brief Get whether packets sent by this face may reach multiple peers
    */
   bool
@@ -145,7 +162,8 @@ public: // attributes
   virtual bool
   isUp() const;
 
-  const FaceCounters&
+  // 'virtual' to allow override in LpFaceWrapper
+  virtual const FaceCounters&
   getCounters() const;
 
   /** \return a FaceUri that represents the remote endpoint
@@ -169,10 +187,6 @@ public: // attributes
   virtual ndn::nfd::FaceStatus
   getFaceStatus() const;
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED:
-  void
-  setPersistency(ndn::nfd::FacePersistency persistency);
-
 protected:
   bool
   decodeAndDispatchInput(const Block& element);
@@ -187,12 +201,14 @@ protected:
 
   DECLARE_SIGNAL_EMIT(onReceiveInterest)
   DECLARE_SIGNAL_EMIT(onReceiveData)
+  DECLARE_SIGNAL_EMIT(onReceiveNack)
   DECLARE_SIGNAL_EMIT(onSendInterest)
   DECLARE_SIGNAL_EMIT(onSendData)
+  DECLARE_SIGNAL_EMIT(onSendNack)
 
-private:
   // this method should be used only by the FaceTable
-  void
+  // 'virtual' to allow override in LpFaceWrapper
+  virtual void
   setId(FaceId faceId);
 
 private:
@@ -282,38 +298,15 @@ Face::getLocalUri() const
   return m_localUri;
 }
 
-
-/** \defgroup FaceLogging Face logging macros
- *
- * These macros augment the log message with some face-specific information,
- * such as the face ID, that are useful to distinguish which face produced the
- * message. It is strongly recommended to use these macros instead of the
- * generic ones for all logging inside Face subclasses.
- * @{
- */
-
-#define NFD_LOG_FACE(level, msg)                        \
-  NFD_LOG_##level("[id=" << this->getId() <<            \
-                  ",local=" << this->getLocalUri() <<   \
-                  ",remote=" << this->getRemoteUri() << \
-                  "] " << msg)
-
-/** \brief Log a message at TRACE level */
-#define NFD_LOG_FACE_TRACE(msg) NFD_LOG_FACE(TRACE, msg)
-
-/** \brief Log a message at DEBUG level */
-#define NFD_LOG_FACE_DEBUG(msg) NFD_LOG_FACE(DEBUG, msg)
-
-/** \brief Log a message at INFO level */
-#define NFD_LOG_FACE_INFO(msg)  NFD_LOG_FACE(INFO,  msg)
-
-/** \brief Log a message at WARN level */
-#define NFD_LOG_FACE_WARN(msg)  NFD_LOG_FACE(WARN,  msg)
-
-/** \brief Log a message at ERROR level */
-#define NFD_LOG_FACE_ERROR(msg) NFD_LOG_FACE(ERROR, msg)
-
-/** @} */
+template<typename T>
+typename std::enable_if<std::is_base_of<Face, T>::value, std::ostream&>::type
+operator<<(std::ostream& os, const face::FaceLogHelper<T>& flh)
+{
+  const Face& face = flh.obj;
+  os << "[id=" << face.getId() << ",local=" << face.getLocalUri() <<
+        ",remote=" << face.getRemoteUri() << "] ";
+  return os;
+}
 
 } // namespace nfd
 
