@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,27 +21,31 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#include "unix-stream-face.hpp"
+#include "unix-stream-transport.hpp"
 
 namespace nfd {
+namespace face {
 
-// The whole purpose of this file is to specialize the logger,
-// otherwise, everything could be put into the header file.
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamTransport, UnixStreamTransport::protocol,
+                                               "UnixStreamTransport");
 
-NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
-                                                UnixStreamFace::protocol, LocalFace,
-                                                "UnixStreamFace");
-
-UnixStreamFace::UnixStreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                               protocol::socket socket)
-  : StreamFace<protocol, LocalFace>(remoteUri, localUri, std::move(socket), true)
+UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
+  : StreamTransport(std::move(socket))
 {
   static_assert(
     std::is_same<std::remove_cv<protocol::socket::native_handle_type>::type, int>::value,
     "The native handle type for UnixStreamFace sockets must be 'int'"
   );
+
+  this->setLocalUri(FaceUri(m_socket.local_endpoint()));
+  this->setRemoteUri(FaceUri::fromFd(m_socket.native_handle()));
+  this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
+  this->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+
+  NFD_LOG_FACE_INFO("Creating Transport");
 }
 
+} // namespace face
 } // namespace nfd

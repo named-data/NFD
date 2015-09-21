@@ -24,7 +24,9 @@
  */
 
 #include "unix-stream-channel.hpp"
-#include "unix-stream-face.hpp"
+#include "generic-link-service.hpp"
+#include "lp-face-wrapper.hpp"
+#include "unix-stream-transport.hpp"
 #include "core/global-io.hpp"
 
 #include <boost/filesystem.hpp>
@@ -131,9 +133,10 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_endpoint << "] Incoming connection");
 
-  auto remoteUri = FaceUri::fromFd(m_socket.native_handle());
-  auto localUri = FaceUri(m_socket.local_endpoint());
-  auto face = make_shared<UnixStreamFace>(remoteUri, localUri, std::move(m_socket));
+  auto linkService = make_unique<face::GenericLinkService>();
+  auto transport = make_unique<face::UnixStreamTransport>(std::move(m_socket));
+  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
+  auto face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
   onFaceCreated(face);
 
   // prepare accepting the next connection
