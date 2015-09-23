@@ -44,17 +44,15 @@ protected:
     : service(nullptr)
     , transport(nullptr)
   {
-    this->initialize();
+    this->initialize(GenericLinkService::Options());
     // By default, GenericLinkService is created with default options.
     // Test cases may invoke .initialize with alternate options.
   }
 
   void
-  initialize()
+  initialize(const GenericLinkService::Options& options)
   {
-    // TODO#3104 add GenericLinkService::Options parameter,
-    //           and create GenericLinkService with options
-    face.reset(new LpFace(make_unique<GenericLinkService>(),
+    face.reset(new LpFace(make_unique<GenericLinkService>(options),
                           make_unique<DummyTransport>()));
     service = static_cast<GenericLinkService*>(face->getLinkService());
     transport = static_cast<DummyTransport*>(face->getTransport());
@@ -83,7 +81,10 @@ BOOST_AUTO_TEST_SUITE(SimpleSendReceive) // send and receive without other field
 
 BOOST_AUTO_TEST_CASE(SendInterest)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Interest> interest1 = makeInterest("/localhost/test");
 
@@ -95,7 +96,10 @@ BOOST_AUTO_TEST_CASE(SendInterest)
 
 BOOST_AUTO_TEST_CASE(SendData)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Data> data1 = makeData("/localhost/test");
 
@@ -107,7 +111,10 @@ BOOST_AUTO_TEST_CASE(SendData)
 
 BOOST_AUTO_TEST_CASE(SendNack)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
 
@@ -122,7 +129,10 @@ BOOST_AUTO_TEST_CASE(SendNack)
 
 BOOST_AUTO_TEST_CASE(ReceiveBareInterest)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Interest> interest1 = makeInterest("/23Rd9hEiR");
 
@@ -134,7 +144,10 @@ BOOST_AUTO_TEST_CASE(ReceiveBareInterest)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterest)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Interest> interest1 = makeInterest("/23Rd9hEiR");
   lp::Packet lpPacket;
@@ -150,7 +163,10 @@ BOOST_AUTO_TEST_CASE(ReceiveInterest)
 
 BOOST_AUTO_TEST_CASE(ReceiveBareData)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Data> data1 = makeData("/12345678");
 
@@ -162,7 +178,10 @@ BOOST_AUTO_TEST_CASE(ReceiveBareData)
 
 BOOST_AUTO_TEST_CASE(ReceiveData)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   shared_ptr<Data> data1 = makeData("/12345689");
   lp::Packet lpPacket;
@@ -178,7 +197,10 @@ BOOST_AUTO_TEST_CASE(ReceiveData)
 
 BOOST_AUTO_TEST_CASE(ReceiveNack)
 {
-  // TODO#3104 initialize with Options that disables all services
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
 
   lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
   lp::Packet lpPacket;
@@ -194,91 +216,277 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 BOOST_AUTO_TEST_SUITE_END() // SimpleSendReceive
 
 
+BOOST_AUTO_TEST_SUITE(Fragmentation)
+
+BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragIndex)
+{
+  // TODO#3171 Initialize with Options that disables reassembly
+
+  shared_ptr<Interest> interest = makeInterest("/IgFe6NvH");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::FragIndexField>(140);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedInterests.empty());
+}
+
+BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragCount)
+{
+  // TODO#3171 Initialize with Options that disables reassembly
+
+  shared_ptr<Interest> interest = makeInterest("/SeGmEjvIVX");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::FragCountField>(276);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedInterests.empty());
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Fragmentation
+
+
 BOOST_AUTO_TEST_SUITE(LocalFields)
-
-BOOST_AUTO_TEST_CASE(SendIncomingFaceId)
-{
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 send Interest with IncomingFaceId
-  //           expect transport->sentPackets.back() has IncomingFaceId field
-}
-
-BOOST_AUTO_TEST_CASE(SendIncomingFaceIdDisabled)
-{
-  // TODO#3104 initialize with Options that disables local fields
-  // TODO#3104 send Interest with IncomingFaceId
-  //           expect transport->sentPackets.back() has no IncomingFaceId field
-}
-
-BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnore)
-{
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Interest with IncomingFaceId
-  //           expect receivedInterests.back() has no IncomingFaceId tag
-}
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceId)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Interest with NextHopFaceId
-  //           expect receivedInterests.back() has NextHopFaceId tag
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::NextHopFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  BOOST_REQUIRE(receivedInterests.back().getLocalControlHeader().hasNextHopFaceId());
+  BOOST_CHECK_EQUAL(receivedInterests.back().getNextHopFaceId(), 1000);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDisabled)
 {
-  // TODO#3104 initialize with Options that disables local fields
-  // TODO#3104 receive Interest with NextHopFaceId
-  //           expect receivedInterests.empty()
-  //       or, expect receivedInterests.back() has no NextHopFaceId tag
+  // Initialize with Options that disables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::NextHopFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedInterests.empty());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropData)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Data with NextHopFaceId
-  //           expect receivedData.empty()
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::NextHopFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedData.empty());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropNack)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Nack with NextHopFaceId
-  //           expect receivedNacks.empty()
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Packet packet;
+  packet.set<lp::FragmentField>(std::make_pair(
+    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::NackField>(nack.getHeader());
+  packet.set<lp::NextHopFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedNacks.empty());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControl)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Data with CacheControl
-  //           expect receivedData.back() has CacheControl tag
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::Packet packet(data->wireEncode());
+  lp::CachePolicy policy;
+  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
+  packet.set<lp::CachePolicyField>(policy);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  BOOST_REQUIRE(receivedData.back().getLocalControlHeader().hasCachingPolicy());
+  BOOST_CHECK_EQUAL(receivedData.back().getCachingPolicy(),
+                    ndn::nfd::LocalControlHeader::CachingPolicy::NO_CACHE);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControlDisabled)
 {
-  // TODO#3104 initialize with Options that disables local fields
-  // TODO#3104 receive Data with CacheControl
-  //           expect receivedData.back() has no CacheControl tag
+  // Initialize with Options that disables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::Packet packet(data->wireEncode());
+  lp::CachePolicy policy;
+  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
+  packet.set<lp::CachePolicyField>(policy);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  BOOST_CHECK(!receivedData.back().getLocalControlHeader().hasCachingPolicy());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropInterest)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Interest with CacheControl
-  //           expect receivedInterests.empty()
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  lp::CachePolicy policy;
+  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
+  packet.set<lp::CachePolicyField>(policy);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedInterests.empty());
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropNack)
 {
-  // TODO#3104 initialize with Options that enables local fields
-  // TODO#3104 receive Nack with CacheControl
-  //           expect receivedNacks.empty()
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Packet packet(nack.getInterest().wireEncode());
+  packet.set<lp::NackField>(nack.getHeader());
+  lp::CachePolicy policy;
+  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
+  packet.set<lp::CachePolicyField>(policy);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK(receivedNacks.empty());
+}
+
+BOOST_AUTO_TEST_CASE(SendIncomingFaceId)
+{
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  interest->setIncomingFaceId(1000);
+
+  face->sendInterest(*interest);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_REQUIRE(sent.has<lp::IncomingFaceIdField>());
+  BOOST_CHECK_EQUAL(sent.get<lp::IncomingFaceIdField>(), 1000);
+}
+
+BOOST_AUTO_TEST_CASE(SendIncomingFaceIdDisabled)
+{
+  // Initialize with Options that disables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  interest->setIncomingFaceId(1000);
+
+  face->sendInterest(*interest);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_CHECK(!sent.has<lp::IncomingFaceIdField>());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreInterest)
+{
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::IncomingFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  BOOST_CHECK(!receivedInterests.back().getLocalControlHeader().hasIncomingFaceId());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreData)
+{
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/z1megUh9Bj");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::IncomingFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  BOOST_CHECK(!receivedData.back().getLocalControlHeader().hasIncomingFaceId());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
+{
+  // Initialize with Options that enables local fields
+  GenericLinkService::Options options;
+  options.allowLocalFields = true;
+  initialize(options);
+
+  lp::Nack nack = makeNack("/TPAhdiHz", 278, lp::NackReason::CONGESTION);
+  lp::Packet packet(nack.getInterest().wireEncode());
+  packet.set<lp::NackField>(nack.getHeader());
+  packet.set<lp::IncomingFaceIdField>(1000);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
+  BOOST_CHECK(!receivedNacks.back().getLocalControlHeader().hasIncomingFaceId());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // LocalFields
 
 
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestGenericLinkService
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace face

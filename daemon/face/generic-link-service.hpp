@@ -36,10 +36,40 @@
 namespace nfd {
 namespace face {
 
-/** \brief generic LinkService
+/** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
+ *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class GenericLinkService : public LinkService
 {
+public:
+  /** \brief Options that control the behavior of GenericLinkService
+   */
+  class Options
+  {
+  public:
+    Options();
+
+  public:
+    // TODO #3171: fragmentation and reassembly options
+
+    /** \brief enables encoding of IncomingFaceId, and decoding of NextHopFaceId and CachePolicy
+     */
+    bool allowLocalFields;
+  };
+
+  explicit
+  GenericLinkService(const Options& options = Options());
+
+  /** \brief get Options used by GenericLinkService
+   */
+  const Options&
+  getOptions() const;
+
+  /** \brief sets Options used by GenericLinkService
+   */
+  void
+  setOptions(const Options& options);
+
 private: // send path entrypoint
   /** \brief sends Interest
    */
@@ -62,7 +92,69 @@ private: // receive path entrypoint
    */
   void
   doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE;
+
+private: // encoding and decoding
+  /** \brief encode IncomingFaceId into LpPacket and verify local fields
+   */
+  static bool
+  encodeLocalFields(const Interest& interest, lp::Packet& lpPacket);
+
+  /** \brief encode CachingPolicy and IncomingFaceId into LpPacket and verify local fields
+   */
+  static bool
+  encodeLocalFields(const Data& data, lp::Packet& lpPacket);
+
+  /** \brief decode incoming Interest
+   *  \param netPkt reassembled network-layer packet; TLV-TYPE must be Interest
+   *  \param firstPkt LpPacket of first fragment; must not have Nack field
+   *
+   *  If decoding is successful, receiveInterest signal is emitted;
+   *  otherwise, a warning is logged.
+   *
+   *  \throw tlv::Error parse error in an LpHeader field
+   */
+  void
+  decodeInterest(const Block& netPkt, const lp::Packet& firstPkt);
+
+  /** \brief decode incoming Interest
+   *  \param netPkt reassembled network-layer packet; TLV-TYPE must be Data
+   *  \param firstPkt LpPacket of first fragment
+   *
+   *  If decoding is successful, receiveData signal is emitted;
+   *  otherwise, a warning is logged.
+   *
+   *  \throw tlv::Error parse error in an LpHeader field
+   */
+  void
+  decodeData(const Block& netPkt, const lp::Packet& firstPkt);
+
+  /** \brief decode incoming Interest
+   *  \param netPkt reassembled network-layer packet; TLV-TYPE must be Interest
+   *  \param firstPkt LpPacket of first fragment; must have Nack field
+   *
+   *  If decoding is successful, receiveNack signal is emitted;
+   *  otherwise, a warning is logged.
+   *
+   *  \throw tlv::Error parse error in an LpHeader field
+   */
+  void
+  decodeNack(const Block& netPkt, const lp::Packet& firstPkt);
+
+private:
+  Options m_options;
 };
+
+inline const GenericLinkService::Options&
+GenericLinkService::getOptions() const
+{
+  return m_options;
+}
+
+inline void
+GenericLinkService::setOptions(const GenericLinkService::Options& options)
+{
+  m_options = options;
+}
 
 } // namespace face
 } // namespace nfd
