@@ -36,6 +36,10 @@ class FaceTable;
 class NetworkInterfaceInfo;
 class ProtocolFactory;
 
+namespace face {
+class LpFace;
+} // namespace face
+
 /**
  * @brief implement the Face Management of NFD Management Protocol.
  * @sa http://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
@@ -88,6 +92,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   {
     bool isValid;
     shared_ptr<LocalFace> face;
+    face::LpFace* lpFace;
     LocalControlFeature feature;
   };
 

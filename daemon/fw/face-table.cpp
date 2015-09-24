@@ -25,6 +25,7 @@
 
 #include "face-table.hpp"
 #include "forwarder.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -111,6 +112,9 @@ FaceTable::remove(shared_ptr<Face> face, const std::string& reason)
                " (" << reason << ")");
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
+
+  // defer Face deallocation, so that Transport isn't deallocated during afterStateChange signal
+  getGlobalIoService().post([face] {});
 }
 
 FaceTable::ForwardRange
