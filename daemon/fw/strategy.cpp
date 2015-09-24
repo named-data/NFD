@@ -60,23 +60,36 @@ Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
   NFD_LOG_DEBUG("beforeExpirePendingInterest pitEntry=" << pitEntry->getName());
 }
 
-//void
-//Strategy::afterAddFibEntry(shared_ptr<fib::Entry> fibEntry)
-//{
-//  NFD_LOG_DEBUG("afterAddFibEntry fibEntry=" << fibEntry->getPrefix());
-//}
-//
-//void
-//Strategy::afterUpdateFibEntry(shared_ptr<fib::Entry> fibEntry)
-//{
-//  NFD_LOG_DEBUG("afterUpdateFibEntry fibEntry=" << fibEntry->getPrefix());
-//}
-//
-//void
-//Strategy::beforeRemoveFibEntry(shared_ptr<fib::Entry> fibEntry)
-//{
-//  NFD_LOG_DEBUG("beforeRemoveFibEntry fibEntry=" << fibEntry->getPrefix());
-//}
+void
+Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                           shared_ptr<fib::Entry> fibEntry, shared_ptr<pit::Entry> pitEntry)
+{
+  NFD_LOG_DEBUG("afterReceiveNack inFace=" << inFace.getId() <<
+                " pitEntry=" << pitEntry->getName());
+}
+
+void
+Strategy::sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& header,
+                    std::initializer_list<const Face*> exceptFaces)
+{
+  // populate downstreams with all downstreams faces
+  std::unordered_set<const Face*> downstreams;
+  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
+  std::transform(inRecords.begin(), inRecords.end(), std::inserter(downstreams, downstreams.end()),
+                 [] (const pit::InRecord& inR) { return inR.getFace().get(); });
+
+  // delete excluded faces
+  // .erase in a loop is more efficient than std::set_difference between that requires sorted range
+  for (const Face* exceptFace : exceptFaces) {
+    downstreams.erase(exceptFace);
+  }
+
+  // send Nacks
+  for (const Face* downstream : downstreams) {
+    this->sendNack(pitEntry, *downstream, header);
+  }
+  // warning: don't loop on pitEntry->getInRecords(), because InRecord is erased when sending Nack
+}
 
 } // namespace fw
 } // namespace nfd

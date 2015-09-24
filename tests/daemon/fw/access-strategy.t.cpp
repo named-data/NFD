@@ -47,7 +47,8 @@ using namespace nfd::tests;
 // code style rule 3.25. This is necessary because some lines ends with '\' which
 // would cause "multi-line comment" compiler warning if '//' comments are used.
 
-BOOST_FIXTURE_TEST_SUITE(FwAccessStrategy, UnitTestTimeFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestAccessStrategy, UnitTestTimeFixture)
 
 class TwoLaptopsFixture : public UnitTestTimeFixture
 {
@@ -65,14 +66,14 @@ protected:
      *      +---------+             +---------+
      */
 
-    router = topo.addForwarder();
-    laptopA = topo.addForwarder();
-    laptopB = topo.addForwarder();
+    router = topo.addForwarder("R");
+    laptopA = topo.addForwarder("A");
+    laptopB = topo.addForwarder("B");
 
     topo.setStrategy<fw::AccessStrategy>(router);
 
-    linkA = topo.addLink(time::milliseconds(10), {router, laptopA});
-    linkB = topo.addLink(time::milliseconds(20), {router, laptopB});
+    linkA = topo.addLink("RA", time::milliseconds(10), {router, laptopA});
+    linkB = topo.addLink("RB", time::milliseconds(20), {router, laptopB});
   }
 
 protected:
@@ -115,19 +116,19 @@ BOOST_FIXTURE_TEST_CASE(OneProducer, TwoLaptopsFixture)
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/laptops");
   topo.registerPrefix(router, linkB->getFace(router), "ndn:/laptops");
 
-  shared_ptr<TopologyAppLink> producer = topo.addAppFace(laptopA, "ndn:/laptops/A");
-  topo.addEchoProducer(*producer->getClientFace());
+  shared_ptr<TopologyAppLink> producer = topo.addAppFace("p", laptopA, "ndn:/laptops/A");
+  topo.addEchoProducer(producer->getClientFace());
 
-  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(router);
-  topo.addIntervalConsumer(*consumer->getClientFace(), "ndn:/laptops/A",
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/A",
                            time::milliseconds(100), 100);
 
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied, and few Interests can go to wrong laptop
-  BOOST_CHECK_GE(consumer->getForwarderFace()->m_sentDatas.size(), 97);
-  BOOST_CHECK_GE(linkA->getFace(router)->m_sentInterests.size(), 97);
-  BOOST_CHECK_LE(linkB->getFace(router)->m_sentInterests.size(), 5);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
+  BOOST_CHECK_GE(linkA->getFace(router).getCounters().getNOutInterests(), 97);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 5);
 }
 
 BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
@@ -160,21 +161,21 @@ BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/laptops");
   topo.registerPrefix(router, linkB->getFace(router), "ndn:/laptops");
 
-  shared_ptr<TopologyAppLink> producerA = topo.addAppFace(laptopA, "ndn:/laptops/BOTH");
-  topo.addEchoProducer(*producerA->getClientFace());
-  shared_ptr<TopologyAppLink> producerB = topo.addAppFace(laptopB, "ndn:/laptops/BOTH");
-  topo.addEchoProducer(*producerB->getClientFace());
+  shared_ptr<TopologyAppLink> producerA = topo.addAppFace("pA", laptopA, "ndn:/laptops/BOTH");
+  topo.addEchoProducer(producerA->getClientFace());
+  shared_ptr<TopologyAppLink> producerB = topo.addAppFace("pB", laptopB, "ndn:/laptops/BOTH");
+  topo.addEchoProducer(producerB->getClientFace());
 
-  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(router);
-  topo.addIntervalConsumer(*consumer->getClientFace(), "ndn:/laptops/BOTH",
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/BOTH",
                            time::milliseconds(100), 100);
 
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied, and few Interests can go to slower laptopB
-  BOOST_CHECK_GE(consumer->getForwarderFace()->m_sentDatas.size(), 97);
-  BOOST_CHECK_GE(linkA->getFace(router)->m_sentInterests.size(), 90);
-  BOOST_CHECK_LE(linkB->getFace(router)->m_sentInterests.size(), 15);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
+  BOOST_CHECK_GE(linkA->getFace(router).getCounters().getNOutInterests(), 90);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 15);
 }
 
 BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
@@ -207,13 +208,13 @@ BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/laptops");
   topo.registerPrefix(router, linkB->getFace(router), "ndn:/laptops");
 
-  shared_ptr<TopologyAppLink> producerA = topo.addAppFace(laptopA, "ndn:/laptops/M");
-  topo.addEchoProducer(*producerA->getClientFace());
-  shared_ptr<TopologyAppLink> producerB = topo.addAppFace(laptopB, "ndn:/laptops/M");
-  topo.addEchoProducer(*producerB->getClientFace());
+  shared_ptr<TopologyAppLink> producerA = topo.addAppFace("pA", laptopA, "ndn:/laptops/M");
+  topo.addEchoProducer(producerA->getClientFace());
+  shared_ptr<TopologyAppLink> producerB = topo.addAppFace("pB", laptopB, "ndn:/laptops/M");
+  topo.addEchoProducer(producerB->getClientFace());
 
-  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(router);
-  topo.addIntervalConsumer(*consumer->getClientFace(), "ndn:/laptops/M",
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/M",
                            time::milliseconds(100), 100);
 
   // producer is initially on laptopA
@@ -221,19 +222,19 @@ BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(6));
 
   // few Interests can go to laptopB
-  BOOST_CHECK_LE(linkB->getFace(router)->m_sentInterests.size(), 5);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 5);
 
   // producer moves to laptopB
   producerA->fail();
   producerB->recover();
-  linkA->getFace(router)->m_sentInterests.clear();
+  const_cast<FaceCounters&>(linkA->getFace(router).getCounters()).getNOutInterests().set(0);
   this->advanceClocks(time::milliseconds(5), time::seconds(6));
 
   // few additional Interests can go to laptopA
-  BOOST_CHECK_LE(linkA->getFace(router)->m_sentInterests.size(), 5);
+  BOOST_CHECK_LE(linkA->getFace(router).getCounters().getNOutInterests(), 5);
 
   // most Interests should be satisfied
-  BOOST_CHECK_GE(consumer->getForwarderFace()->m_sentDatas.size(), 97);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
 }
 
 BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
@@ -263,23 +264,23 @@ BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/laptops");
   topo.registerPrefix(router, linkB->getFace(router), "ndn:/laptops");
 
-  shared_ptr<TopologyAppLink> producerA = topo.addAppFace(laptopA, "ndn:/laptops/A");
-  topo.addEchoProducer(*producerA->getClientFace());
-  shared_ptr<TopologyAppLink> producerB = topo.addAppFace(laptopB, "ndn:/laptops/B");
-  topo.addEchoProducer(*producerB->getClientFace());
+  shared_ptr<TopologyAppLink> producerA = topo.addAppFace("pA", laptopA, "ndn:/laptops/A");
+  topo.addEchoProducer(producerA->getClientFace());
+  shared_ptr<TopologyAppLink> producerB = topo.addAppFace("pB", laptopB, "ndn:/laptops/B");
+  topo.addEchoProducer(producerB->getClientFace());
 
-  shared_ptr<TopologyAppLink> consumerAB = topo.addAppFace(laptopA);
-  topo.addIntervalConsumer(*consumerAB->getClientFace(), "ndn:/laptops/B",
+  shared_ptr<TopologyAppLink> consumerAB = topo.addAppFace("cAB", laptopA);
+  topo.addIntervalConsumer(consumerAB->getClientFace(), "ndn:/laptops/B",
                            time::milliseconds(100), 100);
-  shared_ptr<TopologyAppLink> consumerBA = topo.addAppFace(laptopB);
-  topo.addIntervalConsumer(*consumerBA->getClientFace(), "ndn:/laptops/A",
+  shared_ptr<TopologyAppLink> consumerBA = topo.addAppFace("cBA", laptopB);
+  topo.addIntervalConsumer(consumerBA->getClientFace(), "ndn:/laptops/A",
                            time::milliseconds(100), 100);
 
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied
-  BOOST_CHECK_GE(consumerAB->getForwarderFace()->m_sentDatas.size(), 97);
-  BOOST_CHECK_GE(consumerBA->getForwarderFace()->m_sentDatas.size(), 97);
+  BOOST_CHECK_GE(consumerAB->getForwarderFace().getCounters().getNOutDatas(), 97);
+  BOOST_CHECK_GE(consumerBA->getForwarderFace().getCounters().getNOutDatas(), 97);
 }
 
 BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
@@ -308,25 +309,25 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   // laptopA has prefix in router FIB; laptopB is unused in this test case
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/laptops");
 
-  shared_ptr<TopologyAppLink> producerA = topo.addAppFace(laptopA, "ndn:/laptops/A");
-  topo.addEchoProducer(*producerA->getClientFace());
+  shared_ptr<TopologyAppLink> producerA = topo.addAppFace("pA", laptopA, "ndn:/laptops/A");
+  topo.addEchoProducer(producerA->getClientFace());
 
-  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(router);
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
 
   // Interest 1 completes normally
   shared_ptr<Interest> interest1 = makeInterest("ndn:/laptops/A/1");
   bool hasData1 = false;
-  consumer->getClientFace()->expressInterest(*interest1,
-                                             bind([&hasData1] { hasData1 = true; }));
+  consumer->getClientFace().expressInterest(*interest1,
+                                            bind([&hasData1] { hasData1 = true; }));
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData1, true);
 
   // Interest 2 experiences a packet loss on initial transmission
   shared_ptr<Interest> interest2a = makeInterest("ndn:/laptops/A/2");
   bool hasData2a = false, hasTimeout2a = false;
-  consumer->getClientFace()->expressInterest(*interest2a,
-                                             bind([&hasData2a] { hasData2a = true; }),
-                                             bind([&hasTimeout2a] { hasTimeout2a = true; }));
+  consumer->getClientFace().expressInterest(*interest2a,
+                                            bind([&hasData2a] { hasData2a = true; }),
+                                            bind([&hasTimeout2a] { hasTimeout2a = true; }));
   producerA->fail();
   this->advanceClocks(time::milliseconds(5), time::milliseconds(60));
   BOOST_CHECK_EQUAL(hasData2a, false);
@@ -335,8 +336,8 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   // Interest 2 retransmission is suppressed
   shared_ptr<Interest> interest2b = makeInterest("ndn:/laptops/A/2");
   bool hasData2b = false;
-  consumer->getClientFace()->expressInterest(*interest2b,
-                                             bind([&hasData2b] { hasData2b = true; }));
+  consumer->getClientFace().expressInterest(*interest2b,
+                                            bind([&hasData2b] { hasData2b = true; }));
   producerA->recover();
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData2b, false);
@@ -344,8 +345,8 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   // Interest 2 retransmission gets through, and is answered
   shared_ptr<Interest> interest2c = makeInterest("ndn:/laptops/A/2");
   bool hasData2c = false;
-  consumer->getClientFace()->expressInterest(*interest2c,
-                                             bind([&hasData2c] { hasData2c = true; }));
+  consumer->getClientFace().expressInterest(*interest2c,
+                                            bind([&hasData2c] { hasData2c = true; }));
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData2c, true);
 }
@@ -357,17 +358,18 @@ BOOST_FIXTURE_TEST_CASE(Bug2831, TwoLaptopsFixture)
   topo.registerPrefix(router, linkA->getFace(router), "ndn:/net");
 
   // send Interests from laptopA to router
-  shared_ptr<TopologyAppLink> consumer = topo.addAppFace(laptopA);
-  topo.addIntervalConsumer(*consumer->getClientFace(), "ndn:/net",
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", laptopA);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/net",
                            time::milliseconds(100), 10);
 
   this->advanceClocks(time::milliseconds(5), time::seconds(2));
 
   // Interest shouldn't loop back from router
-  BOOST_CHECK_EQUAL(linkA->getFace(router)->m_sentInterests.size(), 0);
+  BOOST_CHECK_EQUAL(linkA->getFace(router).getCounters().getNOutInterests(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestAccessStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

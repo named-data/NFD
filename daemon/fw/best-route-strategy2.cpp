@@ -31,7 +31,7 @@ namespace fw {
 
 NFD_LOG_INIT("BestRouteStrategy2");
 
-const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%03");
+const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%04");
 NFD_REGISTER_STRATEGY(BestRouteStrategy2);
 
 BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
@@ -104,8 +104,7 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
   fib::NextHopList::const_iterator it = nexthops.end();
 
-  RetxSuppression::Result suppression =
-      m_retxSuppression.decide(inFace, interest, *pitEntry);
+  RetxSuppression::Result suppression = m_retxSuppression.decide(inFace, interest, *pitEntry);
   if (suppression == RetxSuppression::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(),
@@ -114,6 +113,11 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
 
     if (it == nexthops.end()) {
       NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
+
+      lp::NackHeader nackHeader;
+      nackHeader.setReason(lp::NackReason::NO_ROUTE);
+      this->sendNack(pitEntry, inFace, nackHeader);
+
       this->rejectPendingInterest(pitEntry);
       return;
     }
@@ -154,6 +158,73 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
                            << " retransmit-retry-to=" << outFace->getId());
   }
+}
+
+/** \return less severe NackReason between x and y
+ *
+ *  lp::NackReason::NONE is treated as most severe
+ */
+inline lp::NackReason
+compareLessSevere(lp::NackReason x, lp::NackReason y)
+{
+  if (x == lp::NackReason::NONE) {
+    return y;
+  }
+  if (y == lp::NackReason::NONE) {
+    return x;
+  }
+  return static_cast<lp::NackReason>(std::min(static_cast<int>(x), static_cast<int>(y)));
+}
+
+void
+BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                                     shared_ptr<fib::Entry> fibEntry,
+                                     shared_ptr<pit::Entry> pitEntry)
+{
+  int nOutRecordsNotNacked = 0;
+  Face* lastFaceNotNacked = nullptr;
+  lp::NackReason leastSevereReason = lp::NackReason::NONE;
+  for (const pit::OutRecord& outR : pitEntry->getOutRecords()) {
+    const lp::NackHeader* inNack = outR.getIncomingNack();
+    if (inNack == nullptr) {
+      ++nOutRecordsNotNacked;
+      lastFaceNotNacked = outR.getFace().get();
+      continue;
+    }
+
+    leastSevereReason = compareLessSevere(leastSevereReason, inNack->getReason());
+  }
+
+  lp::NackHeader outNack;
+  outNack.setReason(leastSevereReason);
+
+  if (nOutRecordsNotNacked == 1) {
+    BOOST_ASSERT(lastFaceNotNacked != nullptr);
+    pit::InRecordCollection::const_iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
+    if (inR != pitEntry->getInRecords().end()) {
+      // one out-record not Nacked, which is also a downstream
+      NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
+                    " nack=" << nack.getReason() <<
+                    " nack-to(bidirectional)=" << lastFaceNotNacked->getId() <<
+                    " out-nack=" << outNack.getReason());
+      this->sendNack(pitEntry, *lastFaceNotNacked, outNack);
+      return;
+    }
+  }
+
+  if (nOutRecordsNotNacked > 0) {
+    NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
+                  " nack=" << nack.getReason() <<
+                  " waiting=" << nOutRecordsNotNacked);
+    // continue waiting
+    return;
+  }
+
+
+  NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
+                " nack=" << nack.getReason() <<
+                " nack-to=all out-nack=" << outNack.getReason());
+  this->sendNacks(pitEntry, outNack);
 }
 
 } // namespace fw

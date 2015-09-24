@@ -58,10 +58,17 @@ public:
   size_t
   size() const;
 
+  /** \brief finds a PIT entry for Interest
+   *  \param interest the Interest
+   *  \return an existing entry with same Name and Selectors; otherwise nullptr
+   */
+  shared_ptr<pit::Entry>
+  find(const Interest& interest) const;
+
   /** \brief inserts a PIT entry for Interest
-   *
-   *  If an entry for exact same name and selectors exists, that entry is returned.
-   *  \return the entry, and true for new entry, false for existing entry
+   *  \param interest the Interest; must be created with make_shared
+   *  \return a new or existing entry with same Name and Selectors,
+   *          and true for new entry, false for existing entry
    */
   std::pair<shared_ptr<pit::Entry>, bool>
   insert(const Interest& interest);
@@ -135,6 +142,18 @@ public: // enumeration
   };
 
 private:
+  /** \brief finds or inserts a PIT entry for Interest
+   *  \param interest the Interest; must be created with make_shared if allowInsert
+   *  \param allowInsert whether inserting new entry is allowed.
+   *  \return if allowInsert, a new or existing entry with same Name+Selectors,
+   *          and true for new entry, false for existing entry;
+   *          if not allowInsert, an existing entry with same Name+Selectors and false,
+   *          or {nullptr, true} if there's no existing entry
+   */
+  std::pair<shared_ptr<pit::Entry>, bool>
+  findOrInsert(const Interest& interest, bool allowInsert);
+
+private:
   NameTree& m_nameTree;
   size_t m_nItems;
 };
@@ -143,6 +162,18 @@ inline size_t
 Pit::size() const
 {
   return m_nItems;
+}
+
+inline shared_ptr<pit::Entry>
+Pit::find(const Interest& interest) const
+{
+  return const_cast<Pit*>(this)->findOrInsert(interest, false).first;
+}
+
+inline std::pair<shared_ptr<pit::Entry>, bool>
+Pit::insert(const Interest& interest)
+{
+  return this->findOrInsert(interest, true);
 }
 
 inline Pit::const_iterator

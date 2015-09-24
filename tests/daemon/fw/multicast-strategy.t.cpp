@@ -35,7 +35,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(FwMulticastStrategy, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Forward2)
 {
@@ -62,21 +63,17 @@ BOOST_AUTO_TEST_CASE(Forward2)
   pitEntry->insertOrUpdateInRecord(face3, *interest);
 
   strategy.afterReceiveInterest(*face3, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 0);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 2);
-  bool hasFace1 = false;
-  bool hasFace2 = false;
-  for (std::vector<MulticastStrategyTester::SendInterestArgs>::iterator it =
-       strategy.m_sendInterestHistory.begin();
-       it != strategy.m_sendInterestHistory.end(); ++it) {
-    if (it->get<1>() == face1) {
-      hasFace1 = true;
-    }
-    if (it->get<1>() == face2) {
-      hasFace2 = true;
-    }
-  }
-  BOOST_CHECK(hasFace1 && hasFace2);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
+  std::set<FaceId> sentInterestFaceIds;
+  std::transform(strategy.sendInterestHistory.begin(), strategy.sendInterestHistory.end(),
+                 std::inserter(sentInterestFaceIds, sentInterestFaceIds.end()),
+                 [] (const MulticastStrategyTester::SendInterestArgs& args) {
+                   return args.outFaceId;
+                 });
+  std::set<FaceId> expectedInterestFaceIds{face1->getId(), face2->getId()};
+  BOOST_CHECK_EQUAL_COLLECTIONS(sentInterestFaceIds.begin(), sentInterestFaceIds.end(),
+                                expectedInterestFaceIds.begin(), expectedInterestFaceIds.end());
 }
 
 BOOST_AUTO_TEST_CASE(RejectScope)
@@ -100,8 +97,8 @@ BOOST_AUTO_TEST_CASE(RejectScope)
   pitEntry->insertOrUpdateInRecord(face1, *interest);
 
   strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(RejectLoopback)
@@ -123,11 +120,12 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   pitEntry->insertOrUpdateInRecord(face1, *interest);
 
   strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory.size(), 0);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestMulticastStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

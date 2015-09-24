@@ -149,6 +149,16 @@ Entry::getInRecord(const Face& face) const
 }
 
 void
+Entry::deleteInRecord(const Face& face)
+{
+  auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
+    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
+  if (it != m_inRecords.end()) {
+    m_inRecords.erase(it);
+  }
+}
+
+void
 Entry::deleteInRecords()
 {
   m_inRecords.clear();
@@ -168,8 +178,8 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
   return it;
 }
 
-OutRecordCollection::const_iterator
-Entry::getOutRecord(const Face& face) const
+OutRecordCollection::iterator
+Entry::getOutRecord(const Face& face)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
     [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });

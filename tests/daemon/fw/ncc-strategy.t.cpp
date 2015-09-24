@@ -36,7 +36,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(FwNccStrategy, UnitTestTimeFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
 
 // NccStrategy is fairly complex.
 // The most important property is:
@@ -48,7 +49,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   Forwarder forwarder;
   typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
-  strategy->onAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
+  strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -79,13 +80,13 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
   // forwards to face1 because routing says it's best
   // (no io run here: afterReceiveInterest has already sent the Interest)
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face1);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face1->getId());
 
   // forwards to face2 because face1 doesn't respond
   limitedIo.run(1, time::milliseconds(500), time::milliseconds(10));
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 2);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[1].outFaceId, face2->getId());
 
   // face2 responds
   shared_ptr<Data> data1p = makeData("ndn:/0Jm1ajrW/%00");
@@ -104,8 +105,8 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 
   // forwards to face2 because it responds previously
   this->advanceClocks(time::milliseconds(1));
-  BOOST_REQUIRE_GE(strategy->m_sendInterestHistory.size(), 3);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[2].get<1>(), face2);
+  BOOST_REQUIRE_GE(strategy->sendInterestHistory.size(), 3);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[2].outFaceId, face2->getId());
 }
 
 BOOST_AUTO_TEST_CASE(Bug1853)
@@ -140,8 +141,8 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   strategy->afterReceiveInterest(*face3, *interest1, fibEntry, pitEntry1);
 
   this->advanceClocks(time::milliseconds(1));
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face1);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face1->getId());
 
   // face1 responds
   shared_ptr<Data> data1 = makeData("ndn:/nztwIvHX/%00");
@@ -168,7 +169,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   Forwarder forwarder;
   typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
-  strategy->onAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
+  strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -195,11 +196,11 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 
   pitEntry1->insertOrUpdateInRecord(face3, *interest1);
   strategy->afterReceiveInterest(*face3, *interest1, fibEntry, pitEntry1);
-  limitedIo.run(2 - strategy->m_sendInterestHistory.size(),
+  limitedIo.run(2 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face1);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 2);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face1->getId());
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[1].outFaceId, face2->getId());
 
   // face1 responds
   shared_ptr<Data> data1 = makeData("ndn:/seRMz5a6/%00");
@@ -217,11 +218,11 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 
   pitEntry2->insertOrUpdateInRecord(face3, *interest2);
   strategy->afterReceiveInterest(*face3, *interest2, fibEntry, pitEntry2);
-  limitedIo.run(3 - strategy->m_sendInterestHistory.size(),
+  limitedIo.run(3 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
 
-  BOOST_REQUIRE_GE(strategy->m_sendInterestHistory.size(), 3);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[2].get<1>(), face1);
+  BOOST_REQUIRE_GE(strategy->sendInterestHistory.size(), 3);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[2].outFaceId, face1->getId());
 }
 
 BOOST_AUTO_TEST_CASE(Bug1971)
@@ -230,7 +231,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   Forwarder forwarder;
   typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
-  strategy->onAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
+  strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -254,10 +255,10 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 
   pitEntry1->insertOrUpdateInRecord(face1, *interest1);
   strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
-  limitedIo.run(1 - strategy->m_sendInterestHistory.size(),
+  limitedIo.run(1 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face2->getId());
 
   // face2 responds
   shared_ptr<Data> data1 = makeData("ndn:/M4mBXCsd");
@@ -270,10 +271,10 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   // similar Interest: strategy should still forward it
   pitEntry1->insertOrUpdateInRecord(face1, *interest1);
   strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
-  limitedIo.run(2 - strategy->m_sendInterestHistory.size(),
+  limitedIo.run(2 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 2);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[1].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 2);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[1].outFaceId, face2->getId());
 }
 
 BOOST_AUTO_TEST_CASE(Bug1998)
@@ -306,11 +307,12 @@ BOOST_AUTO_TEST_CASE(Bug1998)
   strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
 
   // Interest shall go to face2, not loop back to face1
-  BOOST_REQUIRE_EQUAL(strategy->m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy->m_sendInterestHistory[0].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face2->getId());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestNccStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

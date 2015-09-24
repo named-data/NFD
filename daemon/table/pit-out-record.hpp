@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_TABLE_PIT_OUT_RECORD_HPP
 #define NFD_DAEMON_TABLE_PIT_OUT_RECORD_HPP
@@ -30,14 +31,49 @@
 namespace nfd {
 namespace pit {
 
-/** \class OutRecord
- *  \brief contains information about an Interest toward an outgoing face
+/** \brief contains information about an Interest toward an outgoing face
  */
 class OutRecord : public FaceRecord
 {
 public:
   explicit
   OutRecord(shared_ptr<Face> face);
+
+  /** \return last NACK returned by \p getFace()
+   *
+   *  A nullptr return value means the Interest is still pending or has timed out.
+   *  A non-null return value means the last outgoing Interest has been NACKed.
+   */
+  const lp::NackHeader*
+  getIncomingNack() const
+  {
+    return m_incomingNack.get();
+  }
+
+  /** \brief sets a NACK received from \p getFace()
+   *  \return whether incoming NACK is accepted
+   *
+   *  This is invoked in incoming NACK pipeline.
+   *  An incoming NACK is accepted if its Nonce matches \p getLastNonce().
+   *  If accepted, \p nack.getHeader() will be copied,
+   *  and any pointer previously returned by \p .getIncomingNack() .
+   */
+  bool
+  setIncomingNack(const lp::Nack& nack);
+
+  /** \brief clears last NACK
+   *
+   *  This is invoked in outgoing Interest pipeline.
+   *  This invalidates any pointer previously returned by \p .getIncomingNack() .
+   */
+  void
+  clearIncomingNack()
+  {
+    m_incomingNack.reset();
+  }
+
+private:
+  unique_ptr<lp::NackHeader> m_incomingNack;
 };
 
 } // namespace pit

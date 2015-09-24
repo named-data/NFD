@@ -70,7 +70,7 @@ public: // triggers
    *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
    *
    *  \note The strategy is permitted to store a weak reference to fibEntry.
-   *        Do not store a shared reference, because PIT entry may be deleted at any moment.
+   *        Do not store a shared reference, because FIB entry may be deleted at any moment.
    *        fibEntry is passed by value to allow obtaining a weak reference from it.
    *  \note The strategy is permitted to store a shared reference to pitEntry.
    *        pitEntry is passed by value to reflect this fact.
@@ -110,11 +110,33 @@ public: // triggers
   virtual void
   beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry);
 
+  /** \brief trigger after Nack is received
+   *
+   *  This trigger is invoked when an incoming Nack is received in response to
+   *  an forwarded Interest.
+   *  The Nack has been confirmed to be a response to the last Interest forwarded
+   *  to that upstream, i.e. the PIT out-record exists and has a matching Nonce.
+   *  The NackHeader has been recorded in the PIT out-record.
+   *
+   *  In this base class this method does nothing.
+   *
+   *  \note The strategy is permitted to store a weak reference to fibEntry.
+   *        Do not store a shared reference, because PIT entry may be deleted at any moment.
+   *        fibEntry is passed by value to allow obtaining a weak reference from it.
+   *  \note The strategy is permitted to store a shared reference to pitEntry.
+   *        pitEntry is passed by value to reflect this fact.
+   */
+  virtual void
+  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                   shared_ptr<fib::Entry> fibEntry, shared_ptr<pit::Entry> pitEntry);
+
 protected: // actions
-  /// send Interest to outFace
+  /** \brief send Interest to outFace
+   *  \param wantNewNonce if true, a new Nonce will be generated,
+   *                      rather than reusing a Nonce from one of the PIT in-records
+   */
   VIRTUAL_WITH_TESTS void
-  sendInterest(shared_ptr<pit::Entry> pitEntry,
-               shared_ptr<Face> outFace,
+  sendInterest(shared_ptr<pit::Entry> pitEntry, shared_ptr<Face> outFace,
                bool wantNewNonce = false);
 
   /** \brief decide that a pending Interest cannot be forwarded
@@ -124,6 +146,22 @@ protected: // actions
    */
   VIRTUAL_WITH_TESTS void
   rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
+
+  /** \brief send Nack to outFace
+   *
+   *  The outFace must have a PIT in-record, otherwise this method has no effect.
+   */
+  VIRTUAL_WITH_TESTS void
+  sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
+           const lp::NackHeader& header);
+
+  /** \brief send Nack to every face that has an in-record,
+   *         except those in \p exceptFaces
+   *  \note This is not an action, but a helper that invokes the sendNack action.
+   */
+  void
+  sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& header,
+            std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
 
 protected: // accessors
   MeasurementsAccessor&
@@ -169,6 +207,13 @@ inline void
 Strategy::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
   m_forwarder.onInterestReject(pitEntry);
+}
+
+inline void
+Strategy::sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
+                   const lp::NackHeader& header)
+{
+  m_forwarder.onOutgoingNack(pitEntry, outFace, header);
 }
 
 inline MeasurementsAccessor&

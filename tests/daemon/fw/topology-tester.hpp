@@ -30,18 +30,85 @@
 #ifndef NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
 #define NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
 
-#include <unordered_map>
-#include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/transport/transport.hpp>
+#include "face/lp-face-wrapper.hpp"
 #include "fw/strategy.hpp"
 #include "tests/test-common.hpp"
-#include "../face/dummy-face.hpp"
 
 namespace nfd {
 namespace fw {
 namespace tests {
 
-using ndn::util::DummyClientFace;
 using namespace nfd::tests;
+
+/** \brief abstracts a Transport used in TopologyTester
+ */
+class TopologyTransportBase
+{
+public:
+  /** \brief causes the transport to receive a link-layer packet
+   */
+  virtual void
+  receiveFromTopology(const Block& packet) = 0;
+
+  signal::Signal<TopologyTransportBase, Block> afterSend;
+
+protected:
+  DECLARE_SIGNAL_EMIT(afterSend)
+};
+
+/** \brief implements a forwarder-side Transport used in TopologyTester
+ */
+class TopologyForwarderTransport : public face::Transport, public TopologyTransportBase
+{
+public:
+  TopologyForwarderTransport(const FaceUri& localUri, const FaceUri& remoteUri,
+                             ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType);
+
+  virtual void
+  receiveFromTopology(const Block& packet) DECL_OVERRIDE;
+
+protected:
+  virtual void
+  doClose() DECL_OVERRIDE
+  {
+  }
+
+private:
+  virtual void
+  doSend(Packet&& packet) DECL_OVERRIDE;
+};
+
+/** \brief implements a client-side Transport used in TopologyTester
+ */
+class TopologyClientTransport : public ndn::Transport, public TopologyTransportBase
+{
+public:
+  virtual void
+  receiveFromTopology(const Block& packet) DECL_OVERRIDE;
+
+  virtual void
+  close() DECL_OVERRIDE
+  {
+  }
+
+  virtual void
+  pause() DECL_OVERRIDE
+  {
+  }
+
+  virtual void
+  resume() DECL_OVERRIDE
+  {
+  }
+
+  virtual void
+  send(const Block& wire) DECL_OVERRIDE;
+
+  virtual void
+  send(const Block& header, const Block& payload) DECL_OVERRIDE;
+};
 
 /** \brief identifies a node (forwarder) in the topology
  */
@@ -52,10 +119,7 @@ typedef size_t TopologyNode;
 class TopologyLinkBase : noncopyable
 {
 public:
-  TopologyLinkBase()
-    : m_isUp(true)
-  {
-  }
+  TopologyLinkBase();
 
   /** \brief fail the link, cause packets to be dropped silently
    */
@@ -74,7 +138,21 @@ public:
   }
 
 protected:
+  /** \brief attach a Transport onto this link
+   */
+  void
+  attachTransport(TopologyNode i, TopologyTransportBase* transport);
+
+private:
+  void
+  transmit(TopologyNode i, const Block& packet);
+
+  virtual void
+  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) = 0;
+
+protected:
   bool m_isUp;
+  std::unordered_map<TopologyNode, TopologyTransportBase*> m_transports;
 };
 
 /** \brief represents a network link in the topology which connects two or more nodes
@@ -82,90 +160,27 @@ protected:
 class TopologyLink : public TopologyLinkBase
 {
 public:
+  explicit
+  TopologyLink(const time::nanoseconds& delay);
+
+  void
+  addFace(TopologyNode i, shared_ptr<face::LpFaceWrapper> face);
+
   /** \return a face of forwarder \p i which is attached to this link
    */
-  shared_ptr<DummyFace>
+  Face&
   getFace(TopologyNode i)
   {
-    return m_faces.at(i)->face;
+    return *m_faces.at(i);
   }
 
 private:
-  explicit
-  TopologyLink(const time::nanoseconds& delay)
-    : m_delay(delay)
-  {
-    BOOST_ASSERT(delay >= time::nanoseconds::zero());
-  }
-
-  struct LinkFace
-  {
-    shared_ptr<DummyFace> face;
-  };
-
-  void
-  addFace(TopologyNode i, shared_ptr<DummyFace> face)
-  {
-    BOOST_ASSERT(m_faces.count(i) == 0);
-
-    LinkFace* lf = new LinkFace();
-    lf->face = face;
-    face->onSendInterest.connect(bind(&TopologyLink::transmitInterest, this, i, _1));
-    face->onSendData.connect(bind(&TopologyLink::transmitData, this, i, _1));
-
-    m_faces[i].reset(lf);
-  }
-
-  friend class TopologyTester;
-
-private:
-  void
-  transmitInterest(TopologyNode i, const Interest& interest)
-  {
-    if (!m_isUp) {
-      return;
-    }
-
-    // Interest object cannot be shared between faces because
-    // Forwarder can set different IncomingFaceId.
-    Block wire = interest.wireEncode();
-    for (auto&& p : m_faces) {
-      if (p.first == i) {
-        continue;
-      }
-      shared_ptr<DummyFace> face = p.second->face;
-      scheduler::schedule(m_delay, [wire, face] {
-        auto interest = make_shared<Interest>(wire);
-        face->receiveInterest(*interest);
-      });
-    }
-  }
-
-  void
-  transmitData(TopologyNode i, const Data& data)
-  {
-    if (!m_isUp) {
-      return;
-    }
-
-    // Data object cannot be shared between faces because
-    // Forwarder can set different IncomingFaceId.
-    Block wire = data.wireEncode();
-    for (auto&& p : m_faces) {
-      if (p.first == i) {
-        continue;
-      }
-      shared_ptr<DummyFace> face = p.second->face;
-      scheduler::schedule(m_delay, [wire, face] {
-        auto data = make_shared<Data>(wire);
-        face->receiveData(*data);
-      });
-    }
-  }
+  virtual void
+  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) DECL_OVERRIDE;
 
 private:
   time::nanoseconds m_delay;
-  std::unordered_map<TopologyNode, unique_ptr<LinkFace>> m_faces;
+  std::unordered_map<TopologyNode, shared_ptr<face::LpFaceWrapper>> m_faces;
 };
 
 /** \brief represents a link to a local application
@@ -173,66 +188,32 @@ private:
 class TopologyAppLink : public TopologyLinkBase
 {
 public:
+  explicit
+  TopologyAppLink(shared_ptr<face::LpFaceWrapper> face);
+
   /** \return face on forwarder side
    */
-  shared_ptr<DummyLocalFace>
+  Face&
   getForwarderFace()
   {
-    return m_face;
+    return *m_face;
   }
 
   /** \return face on application side
    */
-  shared_ptr<DummyClientFace>
+  ndn::Face&
   getClientFace()
   {
-    return m_client;
+    return *m_client;
   }
 
 private:
-  explicit
-  TopologyAppLink(shared_ptr<DummyLocalFace> face)
-    : m_face(face)
-    , m_client(ndn::util::makeDummyClientFace(getGlobalIoService(), {false, false}))
-  {
-    m_client->onSendInterest.connect([this] (const Interest& interest) {
-      if (!m_isUp) {
-        return;
-      }
-      auto interest2 = interest.shared_from_this();
-      getGlobalIoService().post([=] { m_face->receiveInterest(*interest2); });
-    });
-
-    m_client->onSendData.connect([this] (const Data& data) {
-      if (!m_isUp) {
-        return;
-      }
-      auto data2 = data.shared_from_this();
-      getGlobalIoService().post([=] { m_face->receiveData(*data2); });
-    });
-
-    m_face->onSendInterest.connect([this] (const Interest& interest) {
-      if (!m_isUp) {
-        return;
-      }
-      auto interest2 = interest.shared_from_this();
-      getGlobalIoService().post([=] { m_client->receive(*interest2); });
-    });
-
-    m_face->onSendData.connect([this] (const Data& data) {
-      if (!m_isUp) {
-        return;
-      }
-      auto data2 = data.shared_from_this();
-      getGlobalIoService().post([=] { m_client->receive(*data2); });
-    });
-  }
-
-  friend class TopologyTester;
+  virtual void
+  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) DECL_OVERRIDE;
 
 private:
-  shared_ptr<DummyLocalFace> m_face;
-  shared_ptr<DummyClientFace> m_client;
+  shared_ptr<face::LpFaceWrapper> m_face;
+  shared_ptr<ndn::Face> m_client;
 };
 
 /** \brief builds a topology for forwarding tests
@@ -244,12 +225,7 @@ public:
    *  \return index of new forwarder
    */
   TopologyNode
-  addForwarder()
-  {
-    size_t i = m_forwarders.size();
-    m_forwarders.push_back(make_unique<Forwarder>());
-    return i;
-  }
+  addForwarder(const std::string& label);
 
   /** \return forwarder instance \p i
    */
@@ -281,85 +257,42 @@ public:
    *  this packet will be received by all other faces on this link after \p delay .
    */
   shared_ptr<TopologyLink>
-  addLink(const time::nanoseconds& delay, std::initializer_list<TopologyNode> forwarders)
-  {
-    auto link = shared_ptr<TopologyLink>(new TopologyLink(delay));
-    for (TopologyNode i : forwarders) {
-      Forwarder& forwarder = this->getForwarder(i);
-      shared_ptr<DummyFace> face = make_shared<DummyFace>();
-      forwarder.addFace(face);
-      link->addFace(i, face);
-    }
-    return link;
-  }
+  addLink(const std::string& label, const time::nanoseconds& delay,
+          std::initializer_list<TopologyNode> forwarders,
+          bool forceMultiAccessFace = false);
 
   /** \brief makes a link to local application
    */
   shared_ptr<TopologyAppLink>
-  addAppFace(TopologyNode i)
-  {
-    Forwarder& forwarder = this->getForwarder(i);
-    auto face = make_shared<DummyLocalFace>();
-    forwarder.addFace(face);
-
-    return shared_ptr<TopologyAppLink>(new TopologyAppLink(face));
-  }
+  addAppFace(const std::string& label, TopologyNode i);
 
   /** \brief makes a link to local application, and register a prefix
    */
   shared_ptr<TopologyAppLink>
-  addAppFace(TopologyNode i, const Name& prefix, uint64_t cost = 0)
-  {
-    shared_ptr<TopologyAppLink> al = this->addAppFace(i);
-    this->registerPrefix(i, al->getForwarderFace(), prefix, cost);
-    return al;
-  }
+  addAppFace(const std::string& label, TopologyNode i, const Name& prefix, uint64_t cost = 0);
 
-  /** \brief registers a prefix on a face
-   *  \tparam F either DummyFace or DummyLocalFace
+  /** \brief registers a prefix on a forwarder face
    */
-  template<typename F>
   void
-  registerPrefix(TopologyNode i, shared_ptr<F> face, const Name& prefix, uint64_t cost = 0)
-  {
-    Forwarder& forwarder = this->getForwarder(i);
-    Fib& fib = forwarder.getFib();
-    shared_ptr<fib::Entry> fibEntry = fib.insert(prefix).first;
-    fibEntry->addNextHop(face, cost);
-  }
+  registerPrefix(TopologyNode i, const Face& face, const Name& prefix, uint64_t cost = 0);
 
   /** \brief creates a producer application that answers every Interest with Data of same Name
    */
   void
-  addEchoProducer(DummyClientFace& face, const Name& prefix = "/")
-  {
-    face.setInterestFilter(prefix,
-        [&face] (const ndn::InterestFilter&, const Interest& interest) {
-          shared_ptr<Data> data = makeData(interest.getName());
-          face.put(*data);
-        });
-  }
+  addEchoProducer(ndn::Face& face, const Name& prefix = "/");
 
   /** \brief creates a consumer application that sends \p n Interests under \p prefix
    *         at \p interval fixed rate.
    */
   void
-  addIntervalConsumer(DummyClientFace& face, const Name& prefix,
-                      const time::nanoseconds& interval, size_t n)
-  {
-    Name name(prefix);
-    name.appendTimestamp();
-    shared_ptr<Interest> interest = makeInterest(name);
-    face.expressInterest(*interest, bind([]{}));
-
-    if (n > 1) {
-      scheduler::schedule(interval, bind(&TopologyTester::addIntervalConsumer, this,
-                                         ref(face), prefix, interval, n - 1));
-    }
-  }
+  addIntervalConsumer(ndn::Face& face, const Name& prefix,
+                      const time::nanoseconds& interval, size_t n);
 
 private:
   std::vector<unique_ptr<Forwarder>> m_forwarders;
+  std::vector<std::string> m_forwarderLabels;
+  std::vector<shared_ptr<TopologyLink>> m_links;
+  std::vector<shared_ptr<TopologyAppLink>> m_appLinks;
 };
 
 } // namespace tests
