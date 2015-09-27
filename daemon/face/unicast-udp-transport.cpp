@@ -23,8 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "udp-face.hpp"
-// #include "core/global-io.hpp" // for #1718 manual test below
+#include "unicast-udp-transport.hpp"
 
 #ifdef __linux__
 #include <cerrno>       // for errno
@@ -34,17 +33,24 @@
 #endif
 
 namespace nfd {
+namespace face {
 
-NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramFace, UdpFace::protocol, "UdpFace");
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramTransport, UnicastUdpTransport::protocol,
+                                               "UnicastUdpTransport");
 
-UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                 protocol::socket socket, ndn::nfd::FacePersistency persistency,
-                 const time::seconds& idleTimeout)
-  : DatagramFace(remoteUri, localUri, std::move(socket))
+UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
+                                         ndn::nfd::FacePersistency persistency,
+                                         const time::seconds& idleTimeout)
+  : DatagramTransport(std::move(socket))
   , m_idleTimeout(idleTimeout)
   , m_lastIdleCheck(time::steady_clock::now())
 {
+  this->setLocalUri(FaceUri(m_socket.local_endpoint()));
+  this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
   this->setPersistency(persistency);
+  this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+
+  NFD_LOG_FACE_INFO("Creating transport");
 
 #ifdef __linux__
   //
@@ -66,56 +72,31 @@ UdpFace::UdpFace(const FaceUri& remoteUri, const FaceUri& localUri,
   }
 #endif
 
-  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND && m_idleTimeout > time::seconds::zero()) {
-    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UdpFace::closeIfIdle, this));
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&
+      m_idleTimeout > time::seconds::zero()) {
+    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UnicastUdpTransport::closeIfIdle, this));
   }
-}
-
-ndn::nfd::FaceStatus
-UdpFace::getFaceStatus() const
-{
-  auto status = DatagramFace::getFaceStatus();
-
-  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    time::milliseconds left = m_idleTimeout;
-    left -= time::duration_cast<time::milliseconds>(time::steady_clock::now() - m_lastIdleCheck);
-
-    if (left < time::milliseconds::zero())
-      left = time::milliseconds::zero();
-
-    if (hasBeenUsedRecently())
-      left += m_idleTimeout;
-
-    status.setExpirationPeriod(left);
-  }
-
-  return status;
 }
 
 void
-UdpFace::closeIfIdle()
+UnicastUdpTransport::closeIfIdle()
 {
-  // Face can be switched from on-demand to non-on-demand mode
+  // transport can be switched from on-demand to non-on-demand mode
   // (non-on-demand -> on-demand transition is not allowed)
-  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     if (!hasBeenUsedRecently()) {
-      NFD_LOG_FACE_INFO("Closing for inactivity");
-      close();
-
-      // #1718 manual test: uncomment, run NFD in valgrind, send in a UDP packet
-      //                    expect read-after-free error and crash
-      // getGlobalIoService().post([this] {
-      //   NFD_LOG_FACE_ERROR("Remaining references: " << this->shared_from_this().use_count());
-      // });
+      NFD_LOG_FACE_INFO("Closing due to inactivity");
+      this->close();
     }
     else {
       resetRecentUsage();
 
       m_lastIdleCheck = time::steady_clock::now();
-      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UdpFace::closeIfIdle, this));
+      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UnicastUdpTransport::closeIfIdle, this));
     }
   }
   // else do nothing and do not reschedule the event
 }
 
+} // namespace face
 } // namespace nfd

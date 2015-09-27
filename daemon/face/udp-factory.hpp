@@ -28,7 +28,6 @@
 
 #include "protocol-factory.hpp"
 #include "udp-channel.hpp"
-#include "multicast-udp-face.hpp"
 
 namespace nfd {
 
@@ -50,7 +49,7 @@ public:
     }
   };
 
-  typedef std::map<udp::Endpoint, shared_ptr<MulticastUdpFace>> MulticastFaceMap;
+  typedef std::map<udp::Endpoint, shared_ptr<face::LpFaceWrapper>> MulticastFaceMap;
 
   explicit
   UdpFactory(const std::string& defaultPort = "6363");
@@ -131,12 +130,12 @@ public:
    * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__udp/endpoint.html
    *      for details on ways to create udp::Endpoint
    */
-  shared_ptr<MulticastUdpFace>
+  shared_ptr<face::LpFaceWrapper>
   createMulticastFace(const udp::Endpoint& localEndpoint,
                       const udp::Endpoint& multicastEndpoint,
                       const std::string& networkInterfaceName = "");
 
-  shared_ptr<MulticastUdpFace>
+  shared_ptr<face::LpFaceWrapper>
   createMulticastFace(const std::string& localIp,
                       const std::string& multicastIp,
                       const std::string& multicastPort,
@@ -186,11 +185,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * \brief Look up multicast UdpFace using specified local endpoint
    *
    * \returns shared pointer to the existing multicast MulticastUdpFace object
-   *          or empty shared pointer when such face does not exist
-   *
-   * \throws never
+   *          or nullptr when such face does not exist
    */
-  shared_ptr<MulticastUdpFace>
+  shared_ptr<face::LpFaceWrapper>
   findMulticastFace(const udp::Endpoint& localEndpoint);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:

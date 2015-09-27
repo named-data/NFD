@@ -25,6 +25,7 @@
 
 #include "face-table.hpp"
 #include "forwarder.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -89,6 +90,8 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
                                        &m_forwarder, ref(*face), _1));
   face->onReceiveData.connect(bind(&Forwarder::startProcessData,
                                    &m_forwarder, ref(*face), _1));
+  face->onReceiveNack.connect(bind(&Forwarder::startProcessNack,
+                                   &m_forwarder, ref(*face), _1));
   face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face, _1));
 
   this->onAdd(face);
@@ -109,6 +112,9 @@ FaceTable::remove(shared_ptr<Face> face, const std::string& reason)
                " (" << reason << ")");
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
+
+  // defer Face deallocation, so that Transport isn't deallocated during afterStateChange signal
+  getGlobalIoService().post([face] {});
 }
 
 FaceTable::ForwardRange

@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,30 +21,31 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#ifndef NFD_DAEMON_FACE_UNIX_STREAM_FACE_HPP
-#define NFD_DAEMON_FACE_UNIX_STREAM_FACE_HPP
+#ifndef NFD_DAEMON_FACE_UNIX_STREAM_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_UNIX_STREAM_TRANSPORT_HPP
 
-#include "stream-face.hpp"
+#include "stream-transport.hpp"
 
 #ifndef HAVE_UNIX_SOCKETS
 #error "Cannot include this file when UNIX sockets are not available"
 #endif
 
 namespace nfd {
+namespace face {
 
 /**
- * \brief Implementation of Face abstraction that uses stream-oriented
- *        Unix domain sockets as underlying transport mechanism
+ * \brief A Transport that communicates on a stream-oriented Unix domain socket
  */
-class UnixStreamFace : public StreamFace<boost::asio::local::stream_protocol, LocalFace>
+class UnixStreamTransport : public StreamTransport<boost::asio::local::stream_protocol>
 {
 public:
-  UnixStreamFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                 protocol::socket socket);
+  explicit
+  UnixStreamTransport(protocol::socket&& socket);
 };
 
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_UNIX_STREAM_FACE_HPP
+#endif // NFD_DAEMON_FACE_UNIX_STREAM_TRANSPORT_HPP

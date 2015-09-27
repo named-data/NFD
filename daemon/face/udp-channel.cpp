@@ -24,7 +24,8 @@
  */
 
 #include "udp-channel.hpp"
-#include "udp-face.hpp"
+#include "generic-link-service.hpp"
+#include "unicast-udp-transport.hpp"
 #include "core/global-io.hpp"
 
 namespace nfd {
@@ -71,7 +72,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
                     const FaceCreatedCallback& onFaceCreated,
                     const ConnectFailedCallback& onConnectFailed)
 {
-  shared_ptr<UdpFace> face;
+  shared_ptr<face::LpFaceWrapper> face;
   try {
     face = createFace(remoteEndpoint, persistency).second;
   }
@@ -93,7 +94,7 @@ UdpChannel::size() const
   return m_channelFaces.size();
 }
 
-std::pair<bool, shared_ptr<UdpFace>>
+std::pair<bool, shared_ptr<face::LpFaceWrapper>>
 UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
@@ -116,15 +117,18 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   socket.bind(m_localEndpoint);
   socket.connect(remoteEndpoint);
 
-  auto face = make_shared<UdpFace>(FaceUri(remoteEndpoint), FaceUri(m_localEndpoint),
-                                   std::move(socket), persistency, m_idleFaceTimeout);
+  auto linkService = make_unique<face::GenericLinkService>();
+  auto transport = make_unique<face::UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
+  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
+  auto face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
 
+  face->setPersistency(persistency);
   face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
     NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
     m_channelFaces.erase(remoteEndpoint);
   });
-  m_channelFaces[remoteEndpoint] = face;
 
+  m_channelFaces[remoteEndpoint] = face;
   return {true, face};
 }
 
@@ -147,7 +151,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] New peer " << m_remoteEndpoint);
 
   bool created;
-  shared_ptr<UdpFace> face;
+  shared_ptr<face::LpFaceWrapper> face;
   try {
     std::tie(created, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   }
@@ -163,7 +167,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     onFaceCreated(face);
 
   // dispatch the datagram to the face for processing
-  face->receiveDatagram(m_inputBuffer, nBytesReceived, error);
+  static_cast<face::UnicastUdpTransport*>(face->getLpFace()->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
   m_socket.async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
                               m_remoteEndpoint,

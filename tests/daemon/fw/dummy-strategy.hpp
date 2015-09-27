@@ -33,7 +33,7 @@ namespace tests {
 
 /** \brief strategy for unit testing
  *
- *  Triggers on DummyStrategy are recorded but does nothing
+ *  Unless otherwise indicated, triggers are recorded but does nothing.
  */
 class DummyStrategy : public fw::Strategy
 {
@@ -47,9 +47,13 @@ public:
   {
   }
 
+  /** \brief after receive Interest trigger
+   *
+   *  If \p interestOutFace is not null, send Interest action is invoked with that face;
+   *  otherwise, reject pending Interest action is invoked.
+   */
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
   {
@@ -59,7 +63,7 @@ public:
         interest, fibEntry, pitEntry));
     }
 
-    if (static_cast<bool>(interestOutFace)) {
+    if (interestOutFace) {
       this->sendInterest(pitEntry, interestOutFace);
     }
     else {
@@ -80,16 +84,25 @@ public:
     ++beforeExpirePendingInterest_count;
   }
 
+  virtual void
+  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                   shared_ptr<fib::Entry> fibEntry,
+                   shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
+  {
+    ++afterReceiveNack_count;
+  }
+
 public:
   int afterReceiveInterest_count;
   bool wantAfterReceiveInterestCalls;
   std::vector<std::tuple<FaceId, Interest, shared_ptr<fib::Entry>,
               shared_ptr<pit::Entry>>> afterReceiveInterestCalls;
+  shared_ptr<Face> interestOutFace;
+
   int beforeSatisfyInterest_count;
   int beforeExpirePendingInterest_count;
+  int afterReceiveNack_count;
 
-  /// outFace to use in afterReceiveInterest, nullptr to reject
-  shared_ptr<Face> interestOutFace;
 };
 
 } // namespace tests

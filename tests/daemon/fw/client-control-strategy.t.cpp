@@ -35,7 +35,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(FwClientControlStrategy, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestClientControlStrategy, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Forward3)
 {
@@ -65,20 +66,20 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
   pitEntry1->insertOrUpdateInRecord(face4, *interest1);
 
-  strategy.m_sendInterestHistory.clear();
+  strategy.sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest1, fibEntry, pitEntry1);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[0].get<1>(), face1);
+  BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face1->getId());
 
   // Interest without NextHopFaceId
   shared_ptr<Interest> interest2 = makeInterest("ndn:/y6JQADGVz");
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
   pitEntry2->insertOrUpdateInRecord(face4, *interest2);
 
-  strategy.m_sendInterestHistory.clear();
+  strategy.sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest2, fibEntry, pitEntry2);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.m_sendInterestHistory[0].get<1>(), face2);
+  BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
+  BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face2->getId());
 
   // Interest with invalid NextHopFaceId
   shared_ptr<Interest> interest3 = makeInterest("ndn:/0z8r6yDDe");
@@ -87,14 +88,15 @@ BOOST_AUTO_TEST_CASE(Forward3)
   pitEntry3->insertOrUpdateInRecord(face4, *interest3);
 
   face3->close(); // face3 is closed and its FaceId becomes invalid
-  strategy.m_sendInterestHistory.clear();
-  strategy.m_rejectPendingInterestHistory.clear();
+  strategy.sendInterestHistory.clear();
+  strategy.rejectPendingInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest3, fibEntry, pitEntry3);
-  BOOST_REQUIRE_EQUAL(strategy.m_sendInterestHistory.size(), 0);
-  BOOST_REQUIRE_EQUAL(strategy.m_rejectPendingInterestHistory.size(), 1);
+  BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 0);
+  BOOST_REQUIRE_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestClientControlStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

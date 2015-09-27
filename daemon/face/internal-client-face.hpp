@@ -31,6 +31,7 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/transport/transport.hpp>
+#include <ndn-cxx/lp/packet.hpp>
 
 namespace nfd {
 
@@ -95,22 +96,19 @@ template<typename Packet>
 void
 InternalClientFace::receive(const Packet& packet)
 {
-  if (!packet.getLocalControlHeader().empty(ndn::nfd::LocalControlHeader::ENCODE_ALL)) {
+  lp::Packet lpPacket(packet.wireEncode());
 
-    Block header = packet.getLocalControlHeader()
-                         .wireEncode(packet, ndn::nfd::LocalControlHeader::ENCODE_ALL);
-    Block payload = packet.wireEncode();
+  ndn::nfd::LocalControlHeader localControlHeader = packet.getLocalControlHeader();
 
-    ndn::EncodingBuffer encoder(header.size() + payload.size(),
-                                header.size() + payload.size());
-    encoder.appendByteArray(header.wire(), header.size());
-    encoder.appendByteArray(payload.wire(), payload.size());
-
-    m_transport->receive(encoder.block());
+  if (localControlHeader.hasIncomingFaceId()) {
+    lpPacket.add<lp::IncomingFaceIdField>(localControlHeader.getIncomingFaceId());
   }
-  else {
-    m_transport->receive(packet.wireEncode());
+
+  if (localControlHeader.hasNextHopFaceId()) {
+    lpPacket.add<lp::NextHopFaceIdField>(localControlHeader.getNextHopFaceId());
   }
+
+  m_transport->receive(lpPacket.wireEncode());
 }
 
 } // namespace nfd

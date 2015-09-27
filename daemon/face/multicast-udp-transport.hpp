@@ -23,26 +23,42 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-out-record.hpp"
+#ifndef NFD_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_HPP
+
+#include "datagram-transport.hpp"
 
 namespace nfd {
-namespace pit {
+namespace face {
 
-OutRecord::OutRecord(shared_ptr<Face> face)
-  : FaceRecord(face)
+/**
+ * \brief A Transport that communicates on a UDP multicast group
+ */
+class MulticastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
-}
+public:
+  /**
+   * \brief Creates a UDP-based transport for multicast communication
+   * \param recvSocket socket used to receive packets
+   * \param sendSocket socket used to send to the multicast address
+   */
+  MulticastUdpTransport(const protocol::endpoint& localEndpoint,
+                        const protocol::endpoint& multicastGroup,
+                        protocol::socket&& recvSocket, protocol::socket&& sendSocket);
 
-bool
-OutRecord::setIncomingNack(const lp::Nack& nack)
-{
-  if (nack.getInterest().getNonce() != this->getLastNonce()) {
-    return false;
-  }
+private:
+  virtual void
+  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
 
-  m_incomingNack.reset(new lp::NackHeader(nack.getHeader()));
-  return true;
-}
+  virtual void
+  doClose() DECL_OVERRIDE;
 
-} // namespace pit
+private:
+  protocol::endpoint m_multicastGroup;
+  protocol::socket m_sendSocket;
+};
+
+} // namespace face
 } // namespace nfd
+
+#endif // NFD_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_HPP

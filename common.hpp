@@ -41,12 +41,33 @@
 #endif
 
 /** \def DECL_OVERRIDE
- *  \brief expands to 'override' if compiler supports this feature, otherwise expands to nothing
+ *  \brief expands to 'override' if compiler supports 'override' specifier,
+ *         otherwise expands to nothing
  */
 #ifdef HAVE_CXX_OVERRIDE
 #define DECL_OVERRIDE override
 #else
 #define DECL_OVERRIDE
+#endif
+
+/** \def DECL_FINAL
+ *  \brief expands to 'final' if compiler supports 'final' specifier on method,
+ *         otherwise expands to nothing
+ */
+#ifdef HAVE_CXX_FINAL
+#define DECL_FINAL final
+#else
+#define DECL_FINAL
+#endif
+
+/** \def DECL_CLASS_FINAL
+ *  \brief expands to 'final' if compiler supports 'final' specifier on class,
+ *         otherwise expands to nothing
+ */
+#ifdef HAVE_CXX_CLASS_FINAL
+#define DECL_CLASS_FINAL final
+#else
+#define DECL_CLASS_FINAL
 #endif
 
 #include <cstddef>
@@ -67,6 +88,7 @@
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
+#include <ndn-cxx/lp/nack.hpp>
 #include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
@@ -117,6 +139,7 @@ namespace tlv {
 using namespace ndn::tlv;
 } // namespace tlv
 
+namespace lp = ndn::lp;
 namespace name = ndn::name;
 namespace time = ndn::time;
 namespace signal = ndn::util::signal;

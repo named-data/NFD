@@ -23,26 +23,36 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-out-record.hpp"
+#ifndef NFD_DAEMON_FACE_UDP_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_UDP_TRANSPORT_HPP
+
+#include "datagram-transport.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
-namespace pit {
+namespace face {
 
-OutRecord::OutRecord(shared_ptr<Face> face)
-  : FaceRecord(face)
+/**
+ * \brief A Transport that communicates on a unicast UDP socket
+ */
+class UnicastUdpTransport : public DatagramTransport<boost::asio::ip::udp>
 {
-}
+public:
+  UnicastUdpTransport(protocol::socket&& socket,
+                      ndn::nfd::FacePersistency persistency,
+                      const time::seconds& idleTimeout);
 
-bool
-OutRecord::setIncomingNack(const lp::Nack& nack)
-{
-  if (nack.getInterest().getNonce() != this->getLastNonce()) {
-    return false;
-  }
+private:
+  void
+  closeIfIdle();
 
-  m_incomingNack.reset(new lp::NackHeader(nack.getHeader()));
-  return true;
-}
+private:
+  const time::seconds m_idleTimeout;
+  time::steady_clock::TimePoint m_lastIdleCheck;
+  scheduler::ScopedEventId m_closeIfIdleEvent;
+};
 
-} // namespace pit
+} // namespace face
 } // namespace nfd
+
+#endif // NFD_DAEMON_FACE_UDP_TRANSPORT_HPP

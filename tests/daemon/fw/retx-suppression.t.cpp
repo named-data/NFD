@@ -26,7 +26,6 @@
 #include "fw/retx-suppression.hpp"
 #include "fw/retx-suppression-fixed.hpp"
 #include "fw/retx-suppression-exponential.hpp"
-#include "strategy-tester.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"

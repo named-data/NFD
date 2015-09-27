@@ -34,9 +34,12 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TablePit, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestPit, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(EntryInOutRecords)
+BOOST_AUTO_TEST_SUITE(PitEntry)
+
+BOOST_AUTO_TEST_CASE(InOutRecords)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
@@ -151,7 +154,7 @@ BOOST_AUTO_TEST_CASE(EntryInOutRecords)
   BOOST_CHECK(entry.getOutRecord(*face2) == entry.getOutRecords().end());
 }
 
-BOOST_AUTO_TEST_CASE(EntryNonce)
+BOOST_AUTO_TEST_CASE(Nonce)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
@@ -210,7 +213,7 @@ BOOST_AUTO_TEST_CASE(EntryNonce)
   BOOST_CHECK_EQUAL(entry5.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
 }
 
-BOOST_AUTO_TEST_CASE(EntryLifetime)
+BOOST_AUTO_TEST_CASE(Lifetime)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
   // library uses -1 to indicate unset lifetime
@@ -226,7 +229,7 @@ BOOST_AUTO_TEST_CASE(EntryLifetime)
   BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
 }
 
-BOOST_AUTO_TEST_CASE(EntryCanForwardTo)
+BOOST_AUTO_TEST_CASE(CanForwardTo)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/WDsuBLIMG");
   pit::Entry entry(*interest);
@@ -246,6 +249,37 @@ BOOST_AUTO_TEST_CASE(EntryCanForwardTo)
   BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), false);
   BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
 }
+
+BOOST_AUTO_TEST_CASE(OutRecordNack)
+{
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  pit::OutRecord outR(face1);
+  BOOST_CHECK(outR.getIncomingNack() == nullptr);
+
+  shared_ptr<Interest> interest1 = makeInterest("ndn:/uWiapGjYL");
+  interest1->setNonce(165);
+  outR.update(*interest1);
+  BOOST_CHECK(outR.getIncomingNack() == nullptr);
+
+  shared_ptr<Interest> interest2 = makeInterest("ndn:/uWiapGjYL");
+  interest2->setNonce(996);
+  lp::Nack nack2(*interest2);
+  nack2.setReason(lp::NackReason::CONGESTION);
+  BOOST_CHECK_EQUAL(outR.setIncomingNack(nack2), false);
+  BOOST_CHECK(outR.getIncomingNack() == nullptr);
+
+  lp::Nack nack1(*interest1);
+  nack1.setReason(lp::NackReason::DUPLICATE);
+  BOOST_CHECK_EQUAL(outR.setIncomingNack(nack1), true);
+  BOOST_REQUIRE(outR.getIncomingNack() != nullptr);
+  BOOST_CHECK_EQUAL(outR.getIncomingNack()->getReason(), lp::NackReason::DUPLICATE);
+
+  outR.clearIncomingNack();
+  BOOST_CHECK(outR.getIncomingNack() == nullptr);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // PitEntry
+
 
 BOOST_AUTO_TEST_CASE(Insert)
 {
@@ -368,18 +402,21 @@ BOOST_AUTO_TEST_CASE(Erase)
   insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
+  BOOST_CHECK(pit.find(*interest) != nullptr);
 
   insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, false);
   BOOST_CHECK_EQUAL(pit.size(), 1);
+  BOOST_CHECK(pit.find(*interest) != nullptr);
 
   pit.erase(insertResult.first);
   BOOST_CHECK_EQUAL(pit.size(), 0);
+  BOOST_CHECK(pit.find(*interest) == nullptr);
 
   insertResult = pit.insert(*interest);
   BOOST_CHECK_EQUAL(insertResult.second, true);
   BOOST_CHECK_EQUAL(pit.size(), 1);
-
+  BOOST_CHECK(pit.find(*interest) != nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
@@ -495,6 +532,7 @@ BOOST_AUTO_TEST_CASE(Iterator)
   }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests

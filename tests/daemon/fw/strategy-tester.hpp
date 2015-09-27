@@ -33,8 +33,7 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-/** \class StrategyTester
- *  \brief extends strategy S for unit testing
+/** \brief extends strategy S for unit testing
  *
  *  Actions invoked by S are recorded but not passed to forwarder
  */
@@ -49,7 +48,7 @@ public:
   }
 
   /// fires after each Action
-  signal::Signal<StrategyTester<S>> onAction;
+  signal::Signal<StrategyTester<S>> afterAction;
 
 protected:
   virtual void
@@ -60,12 +59,32 @@ protected:
   virtual void
   rejectPendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
 
-public:
-  typedef boost::tuple<shared_ptr<pit::Entry>, shared_ptr<Face>> SendInterestArgs;
-  std::vector<SendInterestArgs> m_sendInterestHistory;
+  virtual void
+  sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
+           const lp::NackHeader& header) DECL_OVERRIDE;
 
-  typedef boost::tuple<shared_ptr<pit::Entry>> RejectPendingInterestArgs;
-  std::vector<RejectPendingInterestArgs> m_rejectPendingInterestHistory;
+public:
+  struct SendInterestArgs
+  {
+    shared_ptr<pit::Entry> pitEntry;
+    FaceId outFaceId;
+    bool wantNewNonce;
+  };
+  std::vector<SendInterestArgs> sendInterestHistory;
+
+  struct RejectPendingInterestArgs
+  {
+    shared_ptr<pit::Entry> pitEntry;
+  };
+  std::vector<RejectPendingInterestArgs> rejectPendingInterestHistory;
+
+  struct SendNackArgs
+  {
+    shared_ptr<pit::Entry> pitEntry;
+    FaceId outFaceId;
+    lp::NackHeader header;
+  };
+  std::vector<SendNackArgs> sendNackHistory;
 };
 
 
@@ -75,17 +94,30 @@ StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
                                 shared_ptr<Face> outFace,
                                 bool wantNewNonce)
 {
-  m_sendInterestHistory.push_back(SendInterestArgs(pitEntry, outFace));
+  SendInterestArgs args{pitEntry, outFace->getId()};
+  sendInterestHistory.push_back(args);
   pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
-  onAction();
+  afterAction();
 }
 
 template<typename S>
 inline void
 StrategyTester<S>::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
 {
-  m_rejectPendingInterestHistory.push_back(RejectPendingInterestArgs(pitEntry));
-  onAction();
+  RejectPendingInterestArgs args{pitEntry};
+  rejectPendingInterestHistory.push_back(args);
+  afterAction();
+}
+
+template<typename S>
+inline void
+StrategyTester<S>::sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
+                            const lp::NackHeader& header)
+{
+  SendNackArgs args{pitEntry, outFace.getId(), header};
+  sendNackHistory.push_back(args);
+  pitEntry->deleteInRecord(outFace);
+  afterAction();
 }
 
 } // namespace tests

@@ -90,6 +90,12 @@ public: // forwarding entrypoints and tables
   void
   startProcessData(Face& face, const Data& data);
 
+  /** \brief start incoming Nack processing
+   *  \param nack the incoming Nack, must be created with make_shared
+   */
+  void
+  startProcessNack(Face& face, const lp::Nack& nack);
+
   NameTree&
   getNameTree();
 
@@ -128,12 +134,12 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
 
   /** \brief Content Store miss pipeline
   */
-  void
+  VIRTUAL_WITH_TESTS void
   onContentStoreMiss(const Face& inFace, shared_ptr<pit::Entry> pitEntry, const Interest& interest);
 
   /** \brief Content Store hit pipeline
   */
-  void
+  VIRTUAL_WITH_TESTS void
   onContentStoreHit(const Face& inFace, shared_ptr<pit::Entry> pitEntry,
                     const Interest& interest, const Data& data);
 
@@ -175,6 +181,16 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
    */
   VIRTUAL_WITH_TESTS void
   onOutgoingData(const Data& data, Face& outFace);
+
+  /** \brief incoming Nack pipeline
+   */
+  VIRTUAL_WITH_TESTS void
+  onIncomingNack(Face& inFace, const lp::Nack& nack);
+
+  /** \brief outgoing Nack pipeline
+   */
+  VIRTUAL_WITH_TESTS void
+  onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace, const lp::NackHeader& nack);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void

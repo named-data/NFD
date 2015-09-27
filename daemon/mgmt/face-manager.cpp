@@ -26,9 +26,11 @@
 #include "face-manager.hpp"
 
 #include "core/network-interface.hpp"
-#include "fw/face-table.hpp"
+#include "face/generic-link-service.hpp"
+#include "face/lp-face-wrapper.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
+#include "fw/face-table.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-channel-status.hpp>
@@ -132,43 +134,6 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
 }
 
 void
-FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
-                         const ControlParameters& parameters,
-                         const ndn::mgmt::CommandContinuation& done)
-{
-  shared_ptr<Face> target = m_faceTable.get(parameters.getFaceId());
-  if (target) {
-    target->close();
-  }
-
-  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-}
-
-void
-FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
-                                const ControlParameters& parameters,
-                                const ndn::mgmt::CommandContinuation& done)
-{
-  auto result = extractLocalControlParameters(interest, parameters, done);
-  if (result.isValid) {
-    result.face->setLocalControlHeaderFeature(result.feature, true);
-    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-  }
-}
-
-void
-FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest,
-                                 const ControlParameters& parameters,
-                                 const ndn::mgmt::CommandContinuation& done)
-{
-  auto result = extractLocalControlParameters(interest, parameters, done);
-  if (result.isValid) {
-    result.face->setLocalControlHeaderFeature(result.feature, false);
-    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-  }
-}
-
-void
 FaceManager::afterCreateFaceSuccess(ControlParameters& parameters,
                                     const shared_ptr<Face>& newFace,
                                     const ndn::mgmt::CommandContinuation& done)
@@ -182,12 +147,87 @@ FaceManager::afterCreateFaceSuccess(ControlParameters& parameters,
 }
 
 void
+FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
+                         const ControlParameters& parameters,
+                         const ndn::mgmt::CommandContinuation& done)
+{
+  shared_ptr<Face> target = m_faceTable.get(parameters.getFaceId());
+  if (target) {
+    target->close();
+  }
+
+  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
+}
+
+void
 FaceManager::afterCreateFaceFailure(const std::string& reason,
                                     const ndn::mgmt::CommandContinuation& done)
 {
   NFD_LOG_DEBUG("Failed to create face: " << reason);
 
   done(ControlResponse(408, "Failed to create face: " + reason));
+}
+
+void
+FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
+                                const ControlParameters& parameters,
+                                const ndn::mgmt::CommandContinuation& done)
+{
+  auto result = extractLocalControlParameters(interest, parameters, done);
+  if (!result.isValid) {
+    return;
+  }
+
+  if (result.face) {
+    result.face->setLocalControlHeaderFeature(result.feature, true);
+    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
+  }
+
+  // TODO#3226 redesign enable-local-control
+  // For now, enable-local-control will enable all local fields in GenericLinkService.
+  BOOST_ASSERT(result.lpFace != nullptr);
+  auto service = dynamic_cast<face::GenericLinkService*>(result.lpFace->getLinkService());
+  if (service == nullptr) {
+    return done(ControlResponse(503, "LinkService type not supported"));
+  }
+
+  face::GenericLinkService::Options options = service->getOptions();
+  options.allowLocalFields = true;
+  service->setOptions(options);
+
+  return done(ControlResponse(200, "OK: enable all local fields on GenericLinkService")
+              .setBody(parameters.wireEncode()));
+}
+
+void
+FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest,
+                                 const ControlParameters& parameters,
+                                 const ndn::mgmt::CommandContinuation& done)
+{
+  auto result = extractLocalControlParameters(interest, parameters, done);
+  if (!result.isValid) {
+    return;
+  }
+
+  if (result.face) {
+    result.face->setLocalControlHeaderFeature(result.feature, false);
+    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
+  }
+
+  // TODO#3226 redesign disable-local-control
+  // For now, disable-local-control will disable all local fields in GenericLinkService.
+  BOOST_ASSERT(result.lpFace != nullptr);
+  auto service = dynamic_cast<face::GenericLinkService*>(result.lpFace->getLinkService());
+  if (service == nullptr) {
+    return done(ControlResponse(503, "LinkService type not supported"));
+  }
+
+  face::GenericLinkService::Options options = service->getOptions();
+  options.allowLocalFields = false;
+  service->setOptions(options);
+
+  return done(ControlResponse(200, "OK: disable all local fields on GenericLinkService")
+              .setBody(parameters.wireEncode()));
 }
 
 FaceManager::ExtractLocalControlParametersResult
@@ -197,6 +237,7 @@ FaceManager::extractLocalControlParameters(const Interest& request,
 {
   ExtractLocalControlParametersResult result;
   result.isValid = false;
+  result.lpFace = nullptr;
 
   auto face = m_faceTable.get(request.getIncomingFaceId());
   if (!static_cast<bool>(face)) {
@@ -214,6 +255,11 @@ FaceManager::extractLocalControlParameters(const Interest& request,
 
   result.isValid = true;
   result.face = dynamic_pointer_cast<LocalFace>(face);
+  if (result.face == nullptr) {
+    auto lpFaceW = dynamic_pointer_cast<face::LpFaceWrapper>(face);
+    BOOST_ASSERT(lpFaceW != nullptr);
+    result.lpFace = lpFaceW->getLpFace();
+  }
   result.feature = static_cast<LocalControlFeature>(parameters.getLocalControlFeature());
 
   return result;
@@ -685,7 +731,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       }
 #endif
 
-      std::list<shared_ptr<MulticastUdpFace> > multicastFacesToRemove;
+      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
       for (auto i = factory->getMulticastFaces().begin();
            i != factory->getMulticastFaces().end();
            ++i) {
@@ -693,33 +739,27 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       }
 
       for (const auto& nic : ipv4MulticastInterfaces) {
-        shared_ptr<MulticastUdpFace> newFace;
-        newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
-                                               mcastGroup,
-                                               mcastPort,
-                                               isNicNameNecessary ? nic.name : "");
+        auto newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
+                                                    mcastGroup, mcastPort,
+                                                    isNicNameNecessary ? nic.name : "");
         addCreatedFaceToForwarder(newFace);
         multicastFacesToRemove.remove(newFace);
       }
 
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
+      for (const auto& face : multicastFacesToRemove) {
+        face->close();
       }
     }
     else {
-      std::list<shared_ptr<MulticastUdpFace>> multicastFacesToRemove;
+      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
       for (auto i = factory->getMulticastFaces().begin();
            i != factory->getMulticastFaces().end();
            ++i) {
         multicastFacesToRemove.push_back(i->second);
       }
 
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
+      for (const auto& face : multicastFacesToRemove) {
+        face->close();
       }
     }
   }

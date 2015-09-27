@@ -25,6 +25,8 @@
 
 #include "fw/forwarder.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+#include "tests/daemon/face/dummy-lp-face.hpp"
+#include "face/lp-face-wrapper.hpp"
 #include "dummy-strategy.hpp"
 
 #include "tests/test-common.hpp"
@@ -423,6 +425,225 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   BOOST_CHECK_EQUAL(face2->m_sentDatas.size(), 1);
   BOOST_CHECK_EQUAL(face3->m_sentDatas.size(), 0);
   BOOST_CHECK_EQUAL(face4->m_sentDatas.size(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(IncomingNack)
+{
+  Forwarder forwarder;
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>(
+               "dummy://", "dummy://",
+               ndn::nfd::FACE_SCOPE_NON_LOCAL,
+               ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+               ndn::nfd::LINK_TYPE_MULTI_ACCESS));
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
+  shared_ptr<DummyStrategy> strategyP = make_shared<DummyStrategy>(
+                                        ref(forwarder), "ndn:/strategyP");
+  shared_ptr<DummyStrategy> strategyQ = make_shared<DummyStrategy>(
+                                        ref(forwarder), "ndn:/strategyQ");
+  strategyChoice.install(strategyP);
+  strategyChoice.install(strategyQ);
+  strategyChoice.insert("ndn:/" , strategyP->getName());
+  strategyChoice.insert("ndn:/B", strategyQ->getName());
+
+  Pit& pit = forwarder.getPit();
+
+  // dispatch to the correct strategy
+  shared_ptr<Interest> interest1 = makeInterest("/A/AYJqayrzF", 562);
+  shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateOutRecord(face1, *interest1);
+  shared_ptr<Interest> interest2 = makeInterest("/B/EVyP73ru", 221);
+  shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
+  pit2->insertOrUpdateOutRecord(face1, *interest2);
+
+  lp::Nack nack1 = makeNack("/A/AYJqayrzF", 562, lp::NackReason::CONGESTION);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face1, nack1);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 1);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 0);
+
+  lp::Nack nack2 = makeNack("/B/EVyP73ru", 221, lp::NackReason::CONGESTION);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face1, nack2);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 0);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 1);
+
+  // record Nack on PIT out-record
+  pit::OutRecordCollection::const_iterator outRecord1 = pit1->getOutRecord(*face1);
+  BOOST_REQUIRE(outRecord1 != pit1->getOutRecords().end());
+  BOOST_REQUIRE(outRecord1->getIncomingNack() != nullptr);
+  BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
+
+  // drop if no PIT entry
+  lp::Nack nack3 = makeNack("/yEcw5HhdM", 243, lp::NackReason::CONGESTION);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face1, nack3);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 0);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 0);
+
+  // drop if no out-record
+  shared_ptr<Interest> interest4 = makeInterest("/Etab4KpY", 157);
+  shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
+  pit4->insertOrUpdateOutRecord(face1, *interest4);
+
+  lp::Nack nack4a = makeNack("/Etab4KpY", 157, lp::NackReason::CONGESTION);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face2, nack4a);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 0);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 0);
+
+  // drop if Nonce does not match out-record
+  lp::Nack nack4b = makeNack("/Etab4KpY", 294, lp::NackReason::CONGESTION);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face1, nack4b);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 0);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 0);
+
+  // drop if inFace is multi-access
+  pit4->insertOrUpdateOutRecord(face3, *interest4);
+  strategyP->afterReceiveNack_count = 0;
+  strategyQ->afterReceiveNack_count = 0;
+  forwarder.onIncomingNack(*face3, nack4a);
+  BOOST_CHECK_EQUAL(strategyP->afterReceiveNack_count, 0);
+  BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 0);
+}
+
+BOOST_AUTO_TEST_CASE(OutgoingNack)
+{
+  Forwarder forwarder;
+  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
+  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
+  auto face2w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
+  auto face2 = static_cast<DummyLpFace*>(face2w->getLpFace());
+  auto face3w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>(
+                "dummy://", "dummy://",
+                ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                ndn::nfd::LINK_TYPE_MULTI_ACCESS));
+  auto face3 = static_cast<DummyLpFace*>(face3w->getLpFace());
+  forwarder.addFace(face1w);
+  forwarder.addFace(face2w);
+  forwarder.addFace(face3w);
+  // TODO#3172 eliminate wrapper
+
+  Pit& pit = forwarder.getPit();
+
+  lp::NackHeader nackHeader;
+  nackHeader.setReason(lp::NackReason::CONGESTION);
+
+  // don't send Nack if there's no in-record
+  shared_ptr<Interest> interest1 = makeInterest("/fM5IVEtC", 719);
+  shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateInRecord(face1w, *interest1);
+
+  face2->sentNacks.clear();
+  forwarder.onOutgoingNack(pit1, *face2w, nackHeader);
+  BOOST_CHECK_EQUAL(face2->sentNacks.size(), 0);
+
+  // send Nack with correct Nonce
+  shared_ptr<Interest> interest2a = makeInterest("/Vi8tRm9MG3", 152);
+  shared_ptr<pit::Entry> pit2 = pit.insert(*interest2a).first;
+  pit2->insertOrUpdateInRecord(face1w, *interest2a);
+  shared_ptr<Interest> interest2b = makeInterest("/Vi8tRm9MG3", 808);
+  pit2->insertOrUpdateInRecord(face2w, *interest2b);
+
+  face1->sentNacks.clear();
+  forwarder.onOutgoingNack(pit2, *face1w, nackHeader);
+  BOOST_REQUIRE_EQUAL(face1->sentNacks.size(), 1);
+  BOOST_CHECK_EQUAL(face1->sentNacks.back().getReason(), lp::NackReason::CONGESTION);
+  BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest().getNonce(), 152);
+
+  // erase in-record
+  pit::InRecordCollection::const_iterator inRecord2a = pit2->getInRecord(*face1w);
+  BOOST_CHECK(inRecord2a == pit2->getInRecords().end());
+
+  // send Nack with correct Nonce
+  face2->sentNacks.clear();
+  forwarder.onOutgoingNack(pit2, *face2w, nackHeader);
+  BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
+  BOOST_CHECK_EQUAL(face2->sentNacks.back().getReason(), lp::NackReason::CONGESTION);
+  BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().getNonce(), 808);
+
+  // erase in-record
+  pit::InRecordCollection::const_iterator inRecord2b = pit2->getInRecord(*face1w);
+  BOOST_CHECK(inRecord2b == pit2->getInRecords().end());
+
+  // don't send Nack to multi-access face
+  shared_ptr<Interest> interest2c = makeInterest("/Vi8tRm9MG3", 228);
+  pit2->insertOrUpdateInRecord(face3w, *interest2c);
+
+  face3->sentNacks.clear();
+  forwarder.onOutgoingNack(pit1, *face3w, nackHeader);
+  BOOST_CHECK_EQUAL(face3->sentNacks.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(InterestLoopNack)
+{
+  Forwarder forwarder;
+  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
+  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
+  auto face2w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
+  auto face2 = static_cast<DummyLpFace*>(face2w->getLpFace());
+  auto face3w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>(
+                "dummy://", "dummy://",
+                ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                ndn::nfd::LINK_TYPE_MULTI_ACCESS));
+  auto face3 = static_cast<DummyLpFace*>(face3w->getLpFace());
+  auto face4 = make_shared<DummyFace>();
+  forwarder.addFace(face1w);
+  forwarder.addFace(face2w);
+  forwarder.addFace(face3w);
+  forwarder.addFace(face4);
+  // TODO#3172 eliminate wrapper
+
+  Fib& fib = forwarder.getFib();
+  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("/zT4XwK0Hnx")).first;
+  fibEntry->addNextHop(face4, 0);
+
+  // receive Interest on face1
+  face1->sentNacks.clear();
+  shared_ptr<Interest> interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  face1->receiveInterest(*interest1a);
+  BOOST_CHECK(face1->sentNacks.empty());
+
+  // receive Interest with duplicate Nonce on face1
+  face1->sentNacks.clear();
+  shared_ptr<Interest> interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  face1->receiveInterest(*interest1b);
+  BOOST_REQUIRE_EQUAL(face1->sentNacks.size(), 1);
+  BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest(), *interest1b);
+  BOOST_CHECK_EQUAL(face1->sentNacks.back().getReason(), lp::NackReason::DUPLICATE);
+
+  // receive Interest with duplicate Nonce on face2
+  face2->sentNacks.clear();
+  shared_ptr<Interest> interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  face2->receiveInterest(*interest2a);
+  BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
+  BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest(), *interest2a);
+  BOOST_CHECK_EQUAL(face2->sentNacks.back().getReason(), lp::NackReason::DUPLICATE);
+
+  // receive Interest with new Nonce on face2
+  face2->sentNacks.clear();
+  shared_ptr<Interest> interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 944);
+  face2->receiveInterest(*interest2b);
+  BOOST_CHECK(face2->sentNacks.empty());
+
+  // receive Interest with duplicate Nonce on face3, don't send Nack to multi-access face
+  face3->sentNacks.clear();
+  shared_ptr<Interest> interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
+  face3->receiveInterest(*interest3a);
+  BOOST_CHECK(face3->sentNacks.empty());
 }
 
 BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // Bug 1953
