@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # ones.
 extensions = [
     'sphinx.ext.todo',
-    'redmine_issue',
+    'redmine_issue'
 ]
 
 def addExtensionIfExists(extension):
@@ -260,7 +260,7 @@ man_pages = [
 #man_show_urls = False
 
 doxylink = {
-  'NFD' : ('NFD.tag', 'doxygen/'),
+  'nfd' : ('NFD.tag', 'doxygen/'),
 }
 
 if os.getenv('GOOGLE_ANALYTICS', None):

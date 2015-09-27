@@ -1,11 +1,6 @@
 NFD Overview
 ============
 
-.. toctree::
-   :maxdepth: 2
-
-   RELEASE_NOTES
-
 NDN Forwarding Daemon (NFD) is a network forwarder that implements and evolves together
 with the Named Data Networking (NDN) `protocol
 <http://named-data.net/doc/ndn-tlv/>`__. After the initial release, NFD will become a core
