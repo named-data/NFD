@@ -48,6 +48,9 @@ public:
 };
 
 BOOST_GLOBAL_FIXTURE(GlobalConfigurationFixture)
+#if BOOST_VERSION >= 105900
+;
+#endif // BOOST_VERSION >= 105900
 
 } // namespace tests
 } // namespace nfd
