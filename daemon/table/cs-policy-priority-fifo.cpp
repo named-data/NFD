@@ -38,6 +38,13 @@ PriorityFifoPolicy::PriorityFifoPolicy()
 {
 }
 
+PriorityFifoPolicy::~PriorityFifoPolicy()
+{
+  for (auto entryInfoMapPair : m_entryInfoMap) {
+    delete entryInfoMapPair.second;
+  }
+}
+
 void
 PriorityFifoPolicy::doAfterInsert(iterator i)
 {
@@ -134,6 +141,7 @@ PriorityFifoPolicy::detachQueue(iterator i)
 
   m_queues[entryInfo->queueType].erase(entryInfo->queueIt);
   m_entryInfoMap.erase(i);
+  delete entryInfo;
 }
 
 void
