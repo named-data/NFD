@@ -130,6 +130,8 @@ class GccFlags(GccBasicFlags):
             flags['CXXFLAGS'] += ['-std=c++0x']
         else:
             flags['CXXFLAGS'] += ['-std=c++11']
+        if version < (4, 8, 0):
+            flags['DEFINES'] += ['_GLIBCXX_USE_NANOSLEEP'] # Bug #2499
         return flags
 
     def getDebugFlags(self, conf):
@@ -159,6 +161,7 @@ class ClangFlags(GccBasicFlags):
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               '-Wno-error=unneeded-internal-declaration', # Bug #1588
                               '-Wno-error=deprecated-register',
+                              '-Wno-error=keyword-macro', # Bug #3235
                               ]
         return flags
 
