@@ -22,26 +22,29 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#include "tcp-face.hpp"
+#ifndef NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
+
+#include "stream-transport.hpp"
 
 namespace nfd {
+namespace face {
 
-NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamFace, TcpFace::protocol, "TcpFace");
-
-NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(StreamFace,
-                                                TcpLocalFace::protocol, LocalFace,
-                                                "TcpLocalFace");
-
-TcpFace::TcpFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                 protocol::socket socket, bool isOnDemand)
-  : StreamFace<protocol>(remoteUri, localUri, std::move(socket), isOnDemand)
+/**
+ * \brief A Transport that communicates on a connected TCP socket
+ */
+class TcpTransport : public StreamTransport<boost::asio::ip::tcp>
 {
-}
+public:
+  TcpTransport(protocol::socket&& socket,
+               ndn::nfd::FacePersistency persistency);
 
-TcpLocalFace::TcpLocalFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                           protocol::socket socket, bool isOnDemand)
-  : StreamFace<protocol, LocalFace>(remoteUri, localUri, std::move(socket), isOnDemand)
-{
-}
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+};
 
+} // namespace face
 } // namespace nfd
+
+#endif // NFD_DAEMON_FACE_TCP_TRANSPORT_HPP

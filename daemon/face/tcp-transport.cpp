@@ -23,30 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "unix-stream-transport.hpp"
+#include "tcp-transport.hpp"
 
 namespace nfd {
 namespace face {
 
-NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamTransport, UnixStreamTransport::protocol,
-                                               "UnixStreamTransport");
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamTransport, TcpTransport::protocol,
+                                               "TcpTransport");
 
-UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
+TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency)
   : StreamTransport(std::move(socket))
 {
-  static_assert(
-    std::is_same<std::remove_cv<protocol::socket::native_handle_type>::type, int>::value,
-    "The native handle type for UnixStreamTransport sockets must be 'int'"
-  );
-
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
-  this->setRemoteUri(FaceUri::fromFd(m_socket.native_handle()));
-  this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
-  this->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
+
+  if (m_socket.local_endpoint().address().is_loopback() &&
+      m_socket.remote_endpoint().address().is_loopback())
+    this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
+  else
+    this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
+
+  this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   this->setMtu(MTU_UNLIMITED);
 
   NFD_LOG_FACE_INFO("Creating transport");
+}
+
+void
+TcpTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
+{
+  if (newPersistency == ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
+    BOOST_THROW_EXCEPTION(
+      std::invalid_argument("TcpTransport does not support FACE_PERSISTENCY_PERMANENT"));
+  }
 }
 
 } // namespace face

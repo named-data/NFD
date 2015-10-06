@@ -46,18 +46,6 @@ BOOST_AUTO_TEST_CASE(Corrupted)
         BOOST_CHECK_THROW((Interest(block)), tlv::Error);
       }
   }
-
-  {
-    typedef CorruptedInterestWithLocalControlHeader Dataset;
-    Dataset dataset;
-
-    BOOST_FOREACH(Dataset::Container::value_type& data, dataset.data)
-      {
-        Block block(data.buf(), data.size());
-
-        BOOST_CHECK_THROW(ndn::nfd::LocalControlHeader::getPayload(block), tlv::Error);
-      }
-  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

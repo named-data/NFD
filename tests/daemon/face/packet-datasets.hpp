@@ -31,31 +31,6 @@
 namespace nfd {
 namespace tests {
 
-class CorruptedInterestWithLocalControlHeader
-{
-public:
-  typedef std::vector<ndn::Buffer> Container;
-
-  static std::string
-  getName()
-  {
-    return "CorruptedInterestWithLocalControlHeader";
-  }
-
-  CorruptedInterestWithLocalControlHeader()
-  {
-    static const uint8_t interest[] = {
-      0x50, 0x22, 0x51, 0x81, 0x0a, 0x05, 0x1d, 0x07, 0x14, 0x08, 0x05, 0x6c, 0x6f, 0x63, 0x61,
-      0x6c, 0x08, 0x03, 0x6e, 0x64, 0x6e, 0x08, 0x06, 0x70, 0x72, 0x65, 0x66, 0x69, 0x78, 0x09,
-      0x02, 0x12, 0x00, 0x0a, 0x01, 0x01
-    };
-
-    data.push_back(ndn::Buffer(interest, sizeof(interest)));
-  }
-public:
-  Container data;
-};
-
 class CorruptedInterest
 {
 public:
@@ -81,9 +56,7 @@ public:
   Container data;
 };
 
-
-typedef boost::mpl::vector< CorruptedInterestWithLocalControlHeader,
-                            CorruptedInterest> CorruptedPackets;
+typedef boost::mpl::vector<CorruptedInterest> CorruptedPackets;
 
 } // namespace tests
 } // namespace nfd
