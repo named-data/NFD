@@ -32,7 +32,6 @@
 #include "fw/forwarder.hpp"
 #include "face/null-face.hpp"
 #include "face/internal-face.hpp"
-#include "face/internal-client-face.hpp"
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/face-manager.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
@@ -145,9 +144,8 @@ ignoreRibAndLogSections(const std::string& filename, const std::string& sectionN
 void
 Nfd::initializeManagement()
 {
-  m_internalFace = make_shared<InternalFace>();
+  std::tie(m_internalFace, m_internalClientFace) = face::makeInternalFace(m_keyChain);
   m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
-  m_internalClientFace = makeInternalClientFace(m_internalFace, m_keyChain);
   m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
 
   m_validator.reset(new CommandValidator());

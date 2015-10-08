@@ -31,7 +31,7 @@
 #define NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
 
 #include <ndn-cxx/face.hpp>
-#include <ndn-cxx/transport/transport.hpp>
+#include "face/internal-transport.hpp"
 #include "face/lp-face-wrapper.hpp"
 #include "fw/strategy.hpp"
 #include "tests/test-common.hpp"
@@ -42,84 +42,17 @@ namespace tests {
 
 using namespace nfd::tests;
 
-/** \brief abstracts a Transport used in TopologyTester
- */
-class TopologyTransportBase
-{
-public:
-  /** \brief causes the transport to receive a link-layer packet
-   */
-  virtual void
-  receiveFromTopology(const Block& packet) = 0;
-
-  signal::Signal<TopologyTransportBase, Block> afterSend;
-
-protected:
-  DECLARE_SIGNAL_EMIT(afterSend)
-};
-
-/** \brief implements a forwarder-side Transport used in TopologyTester
- */
-class TopologyForwarderTransport : public face::Transport, public TopologyTransportBase
-{
-public:
-  TopologyForwarderTransport(const FaceUri& localUri, const FaceUri& remoteUri,
-                             ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType);
-
-  virtual void
-  receiveFromTopology(const Block& packet) DECL_OVERRIDE;
-
-protected:
-  virtual void
-  doClose() DECL_OVERRIDE
-  {
-  }
-
-private:
-  virtual void
-  doSend(Packet&& packet) DECL_OVERRIDE;
-};
-
-/** \brief implements a client-side Transport used in TopologyTester
- */
-class TopologyClientTransport : public ndn::Transport, public TopologyTransportBase
-{
-public:
-  virtual void
-  receiveFromTopology(const Block& packet) DECL_OVERRIDE;
-
-  virtual void
-  close() DECL_OVERRIDE
-  {
-  }
-
-  virtual void
-  pause() DECL_OVERRIDE
-  {
-  }
-
-  virtual void
-  resume() DECL_OVERRIDE
-  {
-  }
-
-  virtual void
-  send(const Block& wire) DECL_OVERRIDE;
-
-  virtual void
-  send(const Block& header, const Block& payload) DECL_OVERRIDE;
-};
-
 /** \brief identifies a node (forwarder) in the topology
  */
 typedef size_t TopologyNode;
 
-/** \brief represents a network or local-app link
+/** \brief represents a network link in the topology which connects two or more nodes
  */
-class TopologyLinkBase : noncopyable
+class TopologyLink : noncopyable
 {
 public:
-  TopologyLinkBase();
+  explicit
+  TopologyLink(const time::nanoseconds& delay);
 
   /** \brief fail the link, cause packets to be dropped silently
    */
@@ -137,32 +70,6 @@ public:
     m_isUp = true;
   }
 
-protected:
-  /** \brief attach a Transport onto this link
-   */
-  void
-  attachTransport(TopologyNode i, TopologyTransportBase* transport);
-
-private:
-  void
-  transmit(TopologyNode i, const Block& packet);
-
-  virtual void
-  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) = 0;
-
-protected:
-  bool m_isUp;
-  std::unordered_map<TopologyNode, TopologyTransportBase*> m_transports;
-};
-
-/** \brief represents a network link in the topology which connects two or more nodes
- */
-class TopologyLink : public TopologyLinkBase
-{
-public:
-  explicit
-  TopologyLink(const time::nanoseconds& delay);
-
   void
   addFace(TopologyNode i, shared_ptr<face::LpFaceWrapper> face);
 
@@ -174,22 +81,43 @@ public:
     return *m_faces.at(i);
   }
 
-private:
-  virtual void
-  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) DECL_OVERRIDE;
+protected:
+  /** \brief attach a Transport onto this link
+   */
+  void
+  attachTransport(TopologyNode i, face::InternalTransportBase* transport);
 
 private:
+  void
+  transmit(TopologyNode i, const Block& packet);
+
+  void
+  scheduleReceive(face::InternalTransportBase* recipient, const Block& packet);
+
+private:
+  bool m_isUp;
   time::nanoseconds m_delay;
+  std::unordered_map<TopologyNode, face::InternalTransportBase*> m_transports;
   std::unordered_map<TopologyNode, shared_ptr<face::LpFaceWrapper>> m_faces;
 };
 
 /** \brief represents a link to a local application
  */
-class TopologyAppLink : public TopologyLinkBase
+class TopologyAppLink : noncopyable
 {
 public:
   explicit
-  TopologyAppLink(shared_ptr<face::LpFaceWrapper> face);
+  TopologyAppLink(shared_ptr<face::LpFaceWrapper> forwarderFace);
+
+  /** \brief fail the link, cause packets to be dropped silently
+   */
+  void
+  fail();
+
+  /** \brief recover the link from a failure
+   */
+  void
+  recover();
 
   /** \return face on forwarder side
    */
@@ -208,11 +136,9 @@ public:
   }
 
 private:
-  virtual void
-  scheduleReceive(TopologyTransportBase* recipient, const Block& packet) DECL_OVERRIDE;
-
-private:
-  shared_ptr<face::LpFaceWrapper> m_face;
+  shared_ptr<Face> m_face;
+  face::InternalForwarderTransport* m_forwarderTransport;
+  shared_ptr<face::InternalClientTransport> m_clientTransport;
   shared_ptr<ndn::Face> m_client;
 };
 

@@ -27,76 +27,25 @@
 #define NFD_DAEMON_FACE_INTERNAL_FACE_HPP
 
 #include "face.hpp"
+#include <ndn-cxx/face.hpp>
 
 namespace nfd {
+namespace face {
 
-/**
- * @brief represents a face for internal use in NFD.
+/** \brief make a pair of forwarder-side face and client-side face
+ *         that are connected with each other
+ *
+ *  Network-layer packets sent by one face will be received by the other face
+ *  after io.poll().
+ *
+ *  \param clientKeyChain A KeyChain used by client-side face to sign
+ *                        prefix registration commands.
+ *  \return a forwarder-side face and a client-side face connected with each other
  */
-class InternalFace : public Face
-{
-public:
+std::tuple<shared_ptr<Face>, shared_ptr<ndn::Face>>
+makeInternalFace(ndn::KeyChain& clientKeyChain);
 
-  InternalFace();
-
-  virtual void
-  sendInterest(const Interest& interest) DECL_OVERRIDE;
-
-  virtual void
-  sendData(const Data& data) DECL_OVERRIDE;
-
-  virtual void
-  close() DECL_OVERRIDE;
-
-  /**
-   * @brief receive a block from a client face
-   *
-   * step1. extracte the packet payload from the received block.
-   * step2. check the type (either Interest or Data) through the payload.
-   * step3. call receiveInterest / receiveData respectively according to the type.
-   *
-   * @param blockFromClient the block from a client face
-   */
-  void
-  receive(const Block& blockFromClient);
-
-  /**
-   * @brief receive an Interest from a client face
-   *
-   * emit the onReceiveInterest signal.
-   *
-   * @param interest the received Interest packet
-   */
-  void
-  receiveInterest(const Interest& interest);
-
-  /**
-   * @brief receive a Data from a client face
-   *
-   * emit the onReceiveData signal.
-   *
-   * @param data the received Data packet
-   */
-  void
-  receiveData(const Data& data);
-
-  /**
-   * @brief compose the whole packet from the received block after payload is extracted
-   *
-   * construct a packet from the extracted payload, and then decode the localControlHeader if the
-   * received block holds more information than the payload.
-   *
-   * @tparam Packet the type of packet, Interest or Data
-   * @param blockFromClient the received block
-   * @param payLoad the extracted payload
-   *
-   * @return a complete packet
-   */
-  template<typename Packet>
-  static shared_ptr<Packet>
-  extractPacketFromBlock(const Block& blockFromClient, const Block& payLoad);
-};
-
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_INTERNAL_FACE_HPP

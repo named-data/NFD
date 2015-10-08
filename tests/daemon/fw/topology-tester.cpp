@@ -31,64 +31,29 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
+using face::InternalTransportBase;
+using face::InternalForwarderTransport;
+using face::InternalClientTransport;
 using face::LpFaceWrapper;
+using face::GenericLinkService;
 
-TopologyForwarderTransport::TopologyForwarderTransport(
-    const FaceUri& localUri, const FaceUri& remoteUri,
-    ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType)
-{
-  this->setLocalUri(localUri);
-  this->setRemoteUri(remoteUri);
-  this->setScope(scope);
-  this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-  this->setLinkType(linkType);
-}
-
-void
-TopologyForwarderTransport::receiveFromTopology(const Block& packet)
-{
-  Packet p;
-  p.packet = packet;
-  this->receive(std::move(p));
-}
-
-void
-TopologyForwarderTransport::doSend(Packet&& packet)
-{
-  this->emitSignal(afterSend, packet.packet);
-}
-
-void
-TopologyClientTransport::receiveFromTopology(const Block& packet)
-{
-  if (m_receiveCallback) {
-    m_receiveCallback(packet);
-  }
-}
-
-void
-TopologyClientTransport::send(const Block& wire)
-{
-  this->emitSignal(afterSend, wire);
-}
-
-void
-TopologyClientTransport::send(const Block& header, const Block& payload)
-{
-  ndn::EncodingBuffer encoder(header.size() + payload.size(), header.size() + payload.size());
-  encoder.appendByteArray(header.wire(), header.size());
-  encoder.appendByteArray(payload.wire(), payload.size());
-
-  this->send(encoder.block());
-}
-
-TopologyLinkBase::TopologyLinkBase()
+TopologyLink::TopologyLink(const time::nanoseconds& delay)
   : m_isUp(true)
+  , m_delay(delay)
 {
+  BOOST_ASSERT(delay > time::nanoseconds::zero());
+  // zero delay does not work on OSX
 }
 
 void
-TopologyLinkBase::attachTransport(TopologyNode i, TopologyTransportBase* transport)
+TopologyLink::addFace(TopologyNode i, shared_ptr<LpFaceWrapper> face)
+{
+  this->attachTransport(i, dynamic_cast<InternalTransportBase*>(face->getLpFace()->getTransport()));
+  m_faces[i] = face;
+}
+
+void
+TopologyLink::attachTransport(TopologyNode i, InternalTransportBase* transport)
 {
   BOOST_ASSERT(transport != nullptr);
   BOOST_ASSERT(m_transports.count(i) == 0);
@@ -98,7 +63,7 @@ TopologyLinkBase::attachTransport(TopologyNode i, TopologyTransportBase* transpo
 }
 
 void
-TopologyLinkBase::transmit(TopologyNode i, const Block& packet)
+TopologyLink::transmit(TopologyNode i, const Block& packet)
 {
   if (!m_isUp) {
     return;
@@ -109,49 +74,38 @@ TopologyLinkBase::transmit(TopologyNode i, const Block& packet)
       continue;
     }
 
-    TopologyTransportBase* recipient = p.second;
+    InternalTransportBase* recipient = p.second;
     this->scheduleReceive(recipient, packet);
   }
 }
 
-TopologyLink::TopologyLink(const time::nanoseconds& delay)
-  : m_delay(delay)
-{
-  BOOST_ASSERT(delay > time::nanoseconds::zero());
-  // zero delay does not work on OSX
-}
-
 void
-TopologyLink::addFace(TopologyNode i, shared_ptr<LpFaceWrapper> face)
-{
-  this->attachTransport(i, dynamic_cast<TopologyTransportBase*>(face->getLpFace()->getTransport()));
-  m_faces[i] = face;
-}
-
-void
-TopologyLink::scheduleReceive(TopologyTransportBase* recipient, const Block& packet)
+TopologyLink::scheduleReceive(InternalTransportBase* recipient, const Block& packet)
 {
   scheduler::schedule(m_delay, [packet, recipient] {
-    recipient->receiveFromTopology(packet);
+    recipient->receiveFromLink(packet);
   });
 }
 
-TopologyAppLink::TopologyAppLink(shared_ptr<LpFaceWrapper> face)
-  : m_face(face)
+TopologyAppLink::TopologyAppLink(shared_ptr<LpFaceWrapper> forwarderFace)
+  : m_face(forwarderFace)
+  , m_forwarderTransport(static_cast<InternalForwarderTransport*>(forwarderFace->getLpFace()->getTransport()))
+  , m_clientTransport(make_shared<InternalClientTransport>())
+  , m_client(make_shared<ndn::Face>(m_clientTransport, getGlobalIoService()))
 {
-  this->attachTransport(0, dynamic_cast<TopologyTransportBase*>(face->getLpFace()->getTransport()));
-
-  auto clientTransport = make_shared<TopologyClientTransport>();
-  m_client = make_shared<ndn::Face>(clientTransport, getGlobalIoService());
-  this->attachTransport(1, clientTransport.get());
+  this->recover();
 }
 
 void
-TopologyAppLink::scheduleReceive(TopologyTransportBase* recipient, const Block& packet)
+TopologyAppLink::fail()
 {
-  getGlobalIoService().post([packet, recipient] {
-    recipient->receiveFromTopology(packet);
-  });
+  m_clientTransport->connectToForwarder(nullptr);
+}
+
+void
+TopologyAppLink::recover()
+{
+  m_clientTransport->connectToForwarder(m_forwarderTransport);
 }
 
 TopologyNode
@@ -179,8 +133,8 @@ TopologyTester::addLink(const std::string& label, const time::nanoseconds& delay
     Forwarder& forwarder = this->getForwarder(i);
     FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/" + label);
 
-    auto service = make_unique<face::GenericLinkService>();
-    auto transport = make_unique<TopologyForwarderTransport>(localUri, remoteUri,
+    auto service = make_unique<GenericLinkService>();
+    auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                      ndn::nfd::FACE_SCOPE_NON_LOCAL, linkType);
     auto face = make_unique<LpFace>(std::move(service), std::move(transport));
     auto faceW = make_shared<LpFaceWrapper>(std::move(face));
@@ -200,8 +154,8 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i)
   FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/local/" + label);
   FaceUri remoteUri("topology://" + m_forwarderLabels.at(i) + "/app/" + label);
 
-  auto service = make_unique<face::GenericLinkService>();
-  auto transport = make_unique<TopologyForwarderTransport>(localUri, remoteUri,
+  auto service = make_unique<GenericLinkService>();
+  auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                    ndn::nfd::FACE_SCOPE_LOCAL, ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   auto face = make_unique<LpFace>(std::move(service), std::move(transport));
   auto faceW = make_shared<LpFaceWrapper>(std::move(face));

@@ -24,70 +24,34 @@
  */
 
 #include "internal-face.hpp"
+#include "generic-link-service.hpp"
+#include "internal-transport.hpp"
+#include "lp-face-wrapper.hpp"
+#include "core/global-io.hpp"
 
 namespace nfd {
+namespace face {
 
-InternalFace::InternalFace()
-  : Face(FaceUri("internal://"), FaceUri("internal://"), true)
+std::tuple<shared_ptr<Face>, shared_ptr<ndn::Face>>
+makeInternalFace(ndn::KeyChain& clientKeyChain)
 {
+  GenericLinkService::Options serviceOpts;
+  serviceOpts.allowLocalFields = true;
+
+  auto face = make_unique<LpFace>(make_unique<GenericLinkService>(serviceOpts),
+                                  make_unique<InternalForwarderTransport>());
+  auto faceW = make_shared<LpFaceWrapper>(std::move(face));
+  // TODO#3172 eliminate wrapper
+
+  InternalForwarderTransport* forwarderTransport =
+    static_cast<InternalForwarderTransport*>(faceW->getLpFace()->getTransport());
+  auto clientTransport = make_shared<InternalClientTransport>();
+  clientTransport->connectToForwarder(forwarderTransport);
+
+  auto clientFace = make_shared<ndn::Face>(clientTransport, getGlobalIoService(), clientKeyChain);
+
+  return std::make_tuple(faceW, clientFace);
 }
 
-void
-InternalFace::sendInterest(const Interest& interest)
-{
-  this->emitSignal(onSendInterest, interest);
-}
-
-void
-InternalFace::sendData(const Data& data)
-{
-  this->emitSignal(onSendData, data);
-}
-
-void
-InternalFace::close()
-{
-}
-
-void
-InternalFace::receive(const Block& blockFromClient)
-{
-  const Block& payLoad = ndn::nfd::LocalControlHeader::getPayload(blockFromClient);
-  if (payLoad.type() == ndn::tlv::Interest) {
-    receiveInterest(*extractPacketFromBlock<Interest>(blockFromClient, payLoad));
-  }
-  else if (payLoad.type() == ndn::tlv::Data) {
-    receiveData(*extractPacketFromBlock<Data>(blockFromClient, payLoad));
-  }
-}
-
-void
-InternalFace::receiveInterest(const Interest& interest)
-{
-  this->emitSignal(onReceiveInterest, interest);
-}
-
-void
-InternalFace::receiveData(const Data& data)
-{
-  this->emitSignal(onReceiveData, data);
-}
-
-template<typename Packet>
-shared_ptr<Packet>
-InternalFace::extractPacketFromBlock(const Block& blockFromClient, const Block& payLoad)
-{
-  auto packet = make_shared<Packet>(payLoad);
-  if (&payLoad != &blockFromClient) {
-    packet->getLocalControlHeader().wireDecode(blockFromClient);
-  }
-  return packet;
-}
-
-template shared_ptr<Interest>
-InternalFace::extractPacketFromBlock<Interest>(const Block& blockFromClient, const Block& payLoad);
-
-template shared_ptr<Data>
-InternalFace::extractPacketFromBlock<Data>(const Block& blockFromClient, const Block& payLoad);
-
+} // namespace face
 } // namespace nfd

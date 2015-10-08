@@ -24,120 +24,194 @@
  */
 
 #include "face/internal-face.hpp"
+#include "face/lp-face-wrapper.hpp"
 #include "tests/test-common.hpp"
+#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
-class InternalFaceFixture : protected BaseFixture
+using namespace nfd::tests;
+
+BOOST_AUTO_TEST_SUITE(Face)
+
+class InternalFaceFixture : public UnitTestTimeFixture
+                          , public IdentityManagementFixture
 {
 public:
   InternalFaceFixture()
   {
-    m_face.onReceiveInterest.connect([this] (const Interest& interest) {
-        inInterests.push_back(interest);
-      });
-    m_face.onSendInterest.connect([this] (const Interest& interest) {
-        outInterests.push_back(interest);
-      });
-    m_face.onReceiveData.connect([this] (const Data& data) {
-        inData.push_back(data);
-      });
-    m_face.onSendData.connect([this] (const Data& data) {
-        outData.push_back(data);
-      });
+    std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);;
+
+    // TODO#3172 connect to afterReceive* signals
+    forwarderFace->onReceiveInterest.connect(
+      [this] (const Interest& interest) { receivedInterests.push_back(interest); } );
+    forwarderFace->onReceiveData.connect(
+      [this] (const Data& data) { receivedData.push_back(data); } );
+    forwarderFace->onReceiveNack.connect(
+      [this] (const lp::Nack& nack) { receivedNacks.push_back(nack); } );
   }
 
 protected:
-  InternalFace m_face;
-  std::vector<Interest> inInterests;
-  std::vector<Interest> outInterests;
-  std::vector<Data> inData;
-  std::vector<Data> outData;
+  shared_ptr<nfd::Face> forwarderFace;
+  shared_ptr<ndn::Face> clientFace;
+
+  std::vector<Interest> receivedInterests;
+  std::vector<Data> receivedData;
+  std::vector<lp::Nack> receivedNacks;
 };
 
-BOOST_FIXTURE_TEST_SUITE(FaceInternalFace, InternalFaceFixture)
+BOOST_FIXTURE_TEST_SUITE(TestInternalFace, InternalFaceFixture)
 
-BOOST_AUTO_TEST_CASE(SendInterest)
+// note: "send" and "receive" in test case names refer to the direction seen on forwarderFace.
+// i.e. "send" means transmission from forwarder to client,
+//      "receive" means transmission client to forwarder.
+
+BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 {
-  BOOST_CHECK(outInterests.empty());
+  shared_ptr<Interest> interest = makeInterest("/TLETccRv");
+  interest->setInterestLifetime(time::milliseconds(100));
 
-  auto interest = makeInterest("/test/send/interest");
-  Block expectedBlock = interest->wireEncode(); // assign a value to nonce
-  m_face.sendInterest(*interest);
+  bool hasTimeout = false;
+  clientFace->expressInterest(*interest,
+    bind([] { BOOST_ERROR("unexpected Data"); }),
+    bind([] { BOOST_ERROR("unexpected Nack"); }),
+    bind([&hasTimeout] { hasTimeout = true; }));
+  this->advanceClocks(time::milliseconds(1), 10);
 
-  BOOST_CHECK_EQUAL(outInterests.size(), 1);
-  BOOST_CHECK(outInterests[0].wireEncode() == expectedBlock);
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/TLETccRv");
+
+  this->advanceClocks(time::milliseconds(1), 100);
+
+  BOOST_CHECK(hasTimeout);
 }
 
-BOOST_AUTO_TEST_CASE(SendData)
+BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
 {
-  BOOST_CHECK(outData.empty());
+  shared_ptr<Interest> interest = makeInterest("/PQstEJGdL");
 
-  auto data = makeData("/test/send/data");
-  m_face.sendData(*data);
+  bool hasReceivedData = false;
+  clientFace->expressInterest(*interest,
+    [&hasReceivedData] (const Interest&, const Data& data) {
+      hasReceivedData = true;
+      BOOST_CHECK_EQUAL(data.getName(), "/PQstEJGdL/aI7oCrDXNX");
+    },
+    bind([] { BOOST_ERROR("unexpected Nack"); }),
+    bind([] { BOOST_ERROR("unexpected timeout"); }));
+  this->advanceClocks(time::milliseconds(1), 10);
 
-  BOOST_CHECK_EQUAL(outData.size(), 1);
-  BOOST_CHECK(outData[0].wireEncode() == data->wireEncode());
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/PQstEJGdL");
+
+  shared_ptr<Data> data = makeData("/PQstEJGdL/aI7oCrDXNX");
+  forwarderFace->sendData(*data);
+  this->advanceClocks(time::milliseconds(1), 10);
+
+  BOOST_CHECK(hasReceivedData);
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveInterest)
+BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
 {
-  BOOST_CHECK(inInterests.empty());
+  shared_ptr<Interest> interest = makeInterest("/1HrsRM1X", 152);
 
-  auto interest = makeInterest("/test/receive/interest");
-  Block expectedBlock = interest->wireEncode(); // assign a value to nonce
-  m_face.receiveInterest(*interest);
+  bool hasReceivedNack = false;
+  clientFace->expressInterest(*interest,
+    bind([] { BOOST_ERROR("unexpected Data"); }),
+    [&hasReceivedNack] (const Interest&, const lp::Nack& nack) {
+      hasReceivedNack = true;
+      BOOST_CHECK_EQUAL(nack.getReason(), lp::NackReason::NO_ROUTE);
+    },
+    bind([] { BOOST_ERROR("unexpected timeout"); }));
+  this->advanceClocks(time::milliseconds(1), 10);
 
-  BOOST_CHECK_EQUAL(inInterests.size(), 1);
-  BOOST_CHECK(inInterests[0].wireEncode() == expectedBlock);
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/1HrsRM1X");
+
+  lp::Nack nack = makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE);
+  forwarderFace->sendNack(nack);
+  this->advanceClocks(time::milliseconds(1), 10);
+
+  BOOST_CHECK(hasReceivedNack);
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveData)
+BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
 {
-  BOOST_CHECK(inData.empty());
+  bool hasDeliveredInterest = false;
+  clientFace->setInterestFilter("/Wpc8TnEeoF",
+    [this, &hasDeliveredInterest] (const ndn::InterestFilter&, const Interest& interest) {
+      hasDeliveredInterest = true;
+      BOOST_CHECK_EQUAL(interest.getName(), "/Wpc8TnEeoF/f6SzV8hD");
 
-  auto data = makeData("/test/send/data");
-  m_face.receiveData(*data);
+      shared_ptr<Data> data = makeData("/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi");
+      clientFace->put(*data);
+    });
 
-  BOOST_CHECK_EQUAL(inData.size(), 1);
-  BOOST_CHECK(inData[0].wireEncode() == data->wireEncode());
+  shared_ptr<Interest> interest = makeInterest("/Wpc8TnEeoF/f6SzV8hD");
+  forwarderFace->sendInterest(*interest);
+  this->advanceClocks(time::milliseconds(1), 10);
+
+  BOOST_CHECK(hasDeliveredInterest);
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  BOOST_CHECK_EQUAL(receivedData.back().getName(), "/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi");
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveBlock)
+BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
 {
-  BOOST_CHECK(inInterests.empty());
-  BOOST_CHECK(inData.empty());
+  bool hasDeliveredInterest = false;
+  clientFace->setInterestFilter("/4YgJKWcXN",
+    [this, &hasDeliveredInterest] (const ndn::InterestFilter&, const Interest& interest) {
+      hasDeliveredInterest = true;
+      BOOST_CHECK_EQUAL(interest.getName(), "/4YgJKWcXN/5oaTe05o");
 
-  Block interestBlock = makeInterest("test/receive/interest")->wireEncode();
-  m_face.receive(interestBlock);
-  BOOST_CHECK_EQUAL(inInterests.size(), 1);
-  BOOST_CHECK(inInterests[0].wireEncode() == interestBlock);
+      lp::Nack nack = makeNack("/4YgJKWcXN/5oaTe05o", 191, lp::NackReason::NO_ROUTE);
+      clientFace->put(nack);
+    });
 
-  Block dataBlock = makeData("test/receive/data")->wireEncode();
-  m_face.receive(dataBlock);
-  BOOST_CHECK_EQUAL(inData.size(), 1);
-  BOOST_CHECK(inData[0].wireEncode() == dataBlock);
+  shared_ptr<Interest> interest = makeInterest("/4YgJKWcXN/5oaTe05o", 191);
+  forwarderFace->sendInterest(*interest);
+  this->advanceClocks(time::milliseconds(1), 10);
+
+  BOOST_CHECK(hasDeliveredInterest);
+  BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
+  BOOST_CHECK_EQUAL(receivedNacks.back().getReason(), lp::NackReason::NO_ROUTE);
 }
 
-BOOST_AUTO_TEST_CASE(ExtractPacketFromBlock)
+BOOST_AUTO_TEST_CASE(CloseForwarderFace)
 {
-  {
-    Block block = makeInterest("/test/interest")->wireEncode();
-    const Block& payload = ndn::nfd::LocalControlHeader::getPayload(block);
-    auto interest = m_face.extractPacketFromBlock<Interest>(block, payload);
-    BOOST_CHECK(interest->wireEncode() == block);
-  }
+  forwarderFace->close();
+  this->advanceClocks(time::milliseconds(1), 10);
+  BOOST_CHECK_EQUAL(static_pointer_cast<face::LpFaceWrapper>(forwarderFace)->getLpFace()->getState(), FaceState::CLOSED);
+  forwarderFace.reset();
 
-  {
-    Block block = makeData("/test/data")->wireEncode();
-    const Block& payload = ndn::nfd::LocalControlHeader::getPayload(block);
-    auto data = m_face.extractPacketFromBlock<Data>(block, payload);
-    BOOST_CHECK(data->wireEncode() == block);
-  }
+  shared_ptr<Interest> interest = makeInterest("/zpHsVesu0B");
+  interest->setInterestLifetime(time::milliseconds(100));
+
+  bool hasTimeout = false;
+  clientFace->expressInterest(*interest,
+    bind([] { BOOST_ERROR("unexpected Data"); }),
+    bind([] { BOOST_ERROR("unexpected Nack"); }),
+    bind([&hasTimeout] { hasTimeout = true; }));
+  BOOST_CHECK_NO_THROW(this->advanceClocks(time::milliseconds(1), 200));
+
+  BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
+  BOOST_CHECK(hasTimeout);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_CASE(CloseClientFace)
+{
+  g_io.poll(); // #3248 workaround
+  clientFace.reset();
+
+  shared_ptr<Interest> interest = makeInterest("/aau42XQqb");
+  forwarderFace->sendInterest(*interest);
+  BOOST_CHECK_NO_THROW(this->advanceClocks(time::milliseconds(1), 10));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestInternalFace
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
