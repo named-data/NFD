@@ -270,7 +270,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
       ControlResponse actual(response.getContent().blockFromValue());
       ControlResponse expected(CreateResult().getExpected());
       BOOST_CHECK_EQUAL(expected.getCode(), actual.getCode());
-      BOOST_MESSAGE(actual.getText());
+      BOOST_TEST_MESSAGE(actual.getText());
 
       if (actual.getBody().hasWire()) {
         ControlParameters expectedParams(FaceType().getParameters());
