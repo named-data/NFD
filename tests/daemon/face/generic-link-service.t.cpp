@@ -213,6 +213,24 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
   BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
 }
 
+BOOST_AUTO_TEST_CASE(ReceiveIdlePacket)
+{
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  lp::Packet lpPacket;
+  lpPacket.set<lp::SequenceField>(0);
+
+  BOOST_CHECK_NO_THROW(transport->receivePacket(lpPacket.wireEncode()));
+
+  // IDLE packet should be ignored
+  BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
+  BOOST_CHECK_EQUAL(receivedData.size(), 0);
+  BOOST_CHECK_EQUAL(receivedNacks.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // SimpleSendReceive
 
 
@@ -483,6 +501,44 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // LocalFields
+
+
+BOOST_AUTO_TEST_SUITE(Malformed) // receive malformed packets
+
+BOOST_AUTO_TEST_CASE(WrongTlvType)
+{
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  Block packet = ndn::encoding::makeEmptyBlock(tlv::Name);
+
+  BOOST_CHECK_NO_THROW(transport->receivePacket(packet));
+
+  BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
+  BOOST_CHECK_EQUAL(receivedData.size(), 0);
+  BOOST_CHECK_EQUAL(receivedNacks.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(Unparsable)
+{
+  // Initialize with Options that disables all services
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  initialize(options);
+
+  Block packet = ndn::encoding::makeStringBlock(lp::tlv::LpPacket, "x");
+  BOOST_CHECK_THROW(packet.parse(), tlv::Error);
+
+  BOOST_CHECK_NO_THROW(transport->receivePacket(packet));
+
+  BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
+  BOOST_CHECK_EQUAL(receivedData.size(), 0);
+  BOOST_CHECK_EQUAL(receivedNacks.size(), 0);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Malformed
 
 
 BOOST_AUTO_TEST_SUITE_END() // TestGenericLinkService

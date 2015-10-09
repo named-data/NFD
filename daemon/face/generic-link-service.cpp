@@ -119,14 +119,19 @@ GenericLinkService::encodeLocalFields(const Data& data, lp::Packet& lpPacket)
 void
 GenericLinkService::doReceivePacket(Transport::Packet&& packet)
 {
-  lp::Packet pkt(packet.packet);
-
-  if (pkt.has<lp::FragIndexField>() || pkt.has<lp::FragCountField>()) {
-    NFD_LOG_FACE_WARN("received fragment, but reassembly not implemented: DROP");
-    return;
-  }
-
   try {
+    lp::Packet pkt(packet.packet);
+
+    if (!pkt.has<lp::FragmentField>()) {
+      NFD_LOG_FACE_TRACE("received IDLE packet: DROP");
+      return;
+    }
+
+    if (pkt.has<lp::FragIndexField>() || pkt.has<lp::FragCountField>()) {
+      NFD_LOG_FACE_WARN("received fragment, but reassembly not implemented: DROP");
+      return;
+    }
+
     ndn::Buffer::const_iterator fragBegin, fragEnd;
     std::tie(fragBegin, fragEnd) = pkt.get<lp::FragmentField>();
     Block netPkt(&*fragBegin, std::distance(fragBegin, fragEnd));
