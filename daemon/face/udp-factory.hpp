@@ -51,9 +51,6 @@ public:
 
   typedef std::map<udp::Endpoint, shared_ptr<face::LpFaceWrapper>> MulticastFaceMap;
 
-  explicit
-  UdpFactory(const std::string& defaultPort = "6363");
-
   /**
    * \brief Create UDP-based channel using udp::Endpoint
    *
@@ -97,8 +94,7 @@ public:
    * \throws UdpFactory::Error
    */
   shared_ptr<UdpChannel>
-  createChannel(const std::string& localIp,
-                const std::string& localPort,
+  createChannel(const std::string& localIp, const std::string& localPort,
                 const time::seconds& timeout = time::seconds(600));
 
   /**
@@ -141,62 +137,56 @@ public:
                       const std::string& multicastPort,
                       const std::string& networkInterfaceName = "");
 
-  // from ProtocolFactory
-  virtual void
-  createFace(const FaceUri& uri,
-             ndn::nfd::FacePersistency persistency,
-             const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE;
-
-  virtual std::list<shared_ptr<const Channel>>
-  getChannels() const DECL_OVERRIDE;
-
   /**
    * \brief Get map of configured multicast faces
    */
   const MulticastFaceMap&
   getMulticastFaces() const;
 
+public: // from ProtocolFactory
+  virtual void
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onConnectFailed) DECL_OVERRIDE;
+
+  virtual std::vector<shared_ptr<const Channel>>
+  getChannels() const DECL_OVERRIDE;
+
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   prohibitEndpoint(const udp::Endpoint& endpoint);
 
   void
-  prohibitAllIpv4Endpoints(const uint16_t port);
+  prohibitAllIpv4Endpoints(uint16_t port);
 
   void
-  prohibitAllIpv6Endpoints(const uint16_t port);
+  prohibitAllIpv6Endpoints(uint16_t port);
 
-  void
-  afterFaceFailed(udp::Endpoint& endpoint);
-
+private:
   /**
    * \brief Look up UdpChannel using specified local endpoint
    *
    * \returns shared pointer to the existing UdpChannel object
-   *          or empty shared pointer when such channel does not exist
-   *
-   * \throws never
+   *          or nullptr when such channel does not exist
    */
   shared_ptr<UdpChannel>
-  findChannel(const udp::Endpoint& localEndpoint);
+  findChannel(const udp::Endpoint& localEndpoint) const;
 
   /**
    * \brief Look up multicast UdpFace using specified local endpoint
    *
-   * \returns shared pointer to the existing multicast MulticastUdpFace object
+   * \returns shared pointer to the existing multicast UdpFace object
    *          or nullptr when such face does not exist
    */
   shared_ptr<face::LpFaceWrapper>
-  findMulticastFace(const udp::Endpoint& localEndpoint);
+  findMulticastFace(const udp::Endpoint& localEndpoint) const;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::map<udp::Endpoint, shared_ptr<UdpChannel>> ChannelMap;
-
-  ChannelMap m_channels;
+private:
+  std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
   MulticastFaceMap m_multicastFaces;
 
-  std::string m_defaultPort;
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
 

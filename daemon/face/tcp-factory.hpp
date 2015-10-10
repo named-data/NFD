@@ -29,7 +29,6 @@
 #include "protocol-factory.hpp"
 #include "tcp-channel.hpp"
 
-
 namespace nfd {
 
 class TcpFactory : public ProtocolFactory
@@ -38,13 +37,15 @@ public:
   /**
    * \brief Exception of TcpFactory
    */
-  struct Error : public ProtocolFactory::Error
+  class Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ProtocolFactory::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : ProtocolFactory::Error(what)
+    {
+    }
   };
-
-  explicit
-  TcpFactory(const std::string& defaultPort = "6363");
 
   /**
    * \brief Create TCP-based channel using tcp::Endpoint
@@ -77,45 +78,40 @@ public:
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort);
 
-  // from ProtocolFactory
-
+public: // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE;
+             const FaceCreationFailedCallback& onConnectFailed) DECL_OVERRIDE;
 
-  virtual std::list<shared_ptr<const Channel> >
+  virtual std::vector<shared_ptr<const Channel>>
   getChannels() const DECL_OVERRIDE;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-
   void
   prohibitEndpoint(const tcp::Endpoint& endpoint);
 
   void
-  prohibitAllIpv4Endpoints(const uint16_t port);
+  prohibitAllIpv4Endpoints(uint16_t port);
 
   void
-  prohibitAllIpv6Endpoints(const uint16_t port);
+  prohibitAllIpv6Endpoints(uint16_t port);
 
+private:
   /**
    * \brief Look up TcpChannel using specified local endpoint
    *
    * \returns shared pointer to the existing TcpChannel object
    *          or empty shared pointer when such channel does not exist
-   *
-   * \throws never
    */
   shared_ptr<TcpChannel>
-  findChannel(const tcp::Endpoint& localEndpoint);
+  findChannel(const tcp::Endpoint& localEndpoint) const;
+
+private:
+  std::map<tcp::Endpoint, shared_ptr<TcpChannel>> m_channels;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::map< tcp::Endpoint, shared_ptr<TcpChannel> > ChannelMap;
-  ChannelMap m_channels;
-
-  std::string m_defaultPort;
-
   std::set<tcp::Endpoint> m_prohibitedEndpoints;
 };
 

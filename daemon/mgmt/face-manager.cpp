@@ -32,8 +32,8 @@
 #include "face/udp-factory.hpp"
 #include "fw/face-table.hpp"
 
-#include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-channel-status.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -104,7 +104,7 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
     return done(ControlResponse(400, "Non-canonical URI"));
   }
 
-  FactoryMap::iterator factory = m_factories.find(uri.getScheme());
+  auto factory = m_factories.find(uri.getScheme());
   if (factory == m_factories.end()) {
     return done(ControlResponse(501, "Unsupported protocol"));
   }
@@ -138,7 +138,7 @@ FaceManager::afterCreateFaceSuccess(ControlParameters& parameters,
                                     const shared_ptr<Face>& newFace,
                                     const ndn::mgmt::CommandContinuation& done)
 {
-  addCreatedFaceToForwarder(newFace);
+  m_faceTable.add(newFace);
   parameters.setFaceId(newFace->getId());
   parameters.setUri(newFace->getRemoteUri().toString());
   parameters.setFacePersistency(newFace->getPersistency());
@@ -240,15 +240,14 @@ FaceManager::extractLocalControlParameters(const Interest& request,
   result.lpFace = nullptr;
 
   auto face = m_faceTable.get(request.getIncomingFaceId());
-  if (!static_cast<bool>(face)) {
-    NFD_LOG_DEBUG("command result: faceid " << request.getIncomingFaceId() << " not found");
+  if (face == nullptr) {
+    NFD_LOG_DEBUG("FaceId " << request.getIncomingFaceId() << " not found");
     done(ControlResponse(410, "Face not found"));
     return result;
   }
 
   if (!face->isLocal()) {
-    NFD_LOG_DEBUG("command result: cannot enable local control on non-local faceid " <<
-                  face->getId());
+    NFD_LOG_DEBUG("Cannot enable local control on non-local FaceId " << face->getId());
     done(ControlResponse(412, "Face is non-local"));
     return result;
   }
@@ -260,7 +259,7 @@ FaceManager::extractLocalControlParameters(const Interest& request,
     BOOST_ASSERT(lpFaceW != nullptr);
     result.lpFace = lpFaceW->getLpFace();
   }
-  result.feature = static_cast<LocalControlFeature>(parameters.getLocalControlFeature());
+  result.feature = parameters.getLocalControlFeature();
 
   return result;
 }
@@ -279,22 +278,19 @@ void
 FaceManager::listChannels(const Name& topPrefix, const Interest& interest,
                           ndn::mgmt::StatusDatasetContext& context)
 {
-  std::set<shared_ptr<ProtocolFactory>> seenFactories;
+  std::set<const ProtocolFactory*> seenFactories;
 
-  for (auto i = m_factories.begin(); i != m_factories.end(); ++i) {
-    const shared_ptr<ProtocolFactory>& factory = i->second;
+  for (const auto& kv : m_factories) {
+    const ProtocolFactory* factory = kv.second.get();
+    bool inserted;
+    std::tie(std::ignore, inserted) = seenFactories.insert(factory);
 
-    if (seenFactories.find(factory) != seenFactories.end()) {
-      continue;
-    }
-    seenFactories.insert(factory);
-
-    std::list<shared_ptr<const Channel>> channels = factory->getChannels();
-
-    for (auto j = channels.begin(); j != channels.end(); ++j) {
-      ndn::nfd::ChannelStatus entry;
-      entry.setLocalUri((*j)->getUri().toString());
-      context.append(entry.wireEncode());
+    if (inserted) {
+      for (const auto& channel : factory->getChannels()) {
+        ndn::nfd::ChannelStatus entry;
+        entry.setLocalUri(channel->getUri().toString());
+        context.append(entry.wireEncode());
+      }
     }
   }
 
@@ -310,9 +306,9 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
   try {
     faceFilter.wireDecode(query[-1].blockFromValue());
   }
-  catch (const tlv::Error&) {
-    NFD_LOG_DEBUG("query result: malformed filter");
-    return context.reject(ControlResponse(400, "malformed filter"));
+  catch (const tlv::Error& e) {
+    NFD_LOG_DEBUG("Malformed query filter: " << e.what());
+    return context.reject(ControlResponse(400, "Malformed filter"));
   }
 
   for (const auto& face : m_faceTable) {
@@ -320,6 +316,7 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
       context.append(face->getFaceStatus().wireEncode());
     }
   }
+
   context.end();
 }
 
@@ -397,8 +394,7 @@ FaceManager::processConfig(const ConfigSection& configSection,
   bool hasSeenUdp = false;
   bool hasSeenEther = false;
   bool hasSeenWebSocket = false;
-
-  const std::vector<NetworkInterfaceInfo> nicList(listNetworkInterfaces());
+  auto nicList = listNetworkInterfaces();
 
   for (const auto& item : configSection) {
     if (item.first == "unix") {
@@ -457,16 +453,15 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
   // }
 
 #if defined(HAVE_UNIX_SOCKETS)
-
   std::string path = "/var/run/nfd.sock";
 
-  for (auto i = configSection.begin(); i != configSection.end(); ++i) {
-    if (i->first == "path") {
-      path = i->second.get_value<std::string>();
+  for (const auto& i : configSection) {
+    if (i.first == "path") {
+      path = i.second.get_value<std::string>();
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i->first + "\" in \"unix\" section"));
+                                              i.first + "\" in \"unix\" section"));
     }
   }
 
@@ -475,14 +470,11 @@ FaceManager::processSectionUnix(const ConfigSection& configSection, bool isDryRu
       return;
     }
 
-    shared_ptr<UnixStreamFactory> factory = make_shared<UnixStreamFactory>();
-    shared_ptr<UnixStreamChannel> unixChannel = factory->createChannel(path);
-
-    // Should acceptFailed callback be used somehow?
-    unixChannel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                        UnixStreamChannel::ConnectFailedCallback());
-
+    auto factory = make_shared<UnixStreamFactory>();
     m_factories.insert(std::make_pair("unix", factory));
+
+    auto channel = factory->createChannel(path);
+    channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
   }
 #else
   BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without Unix sockets support, "
@@ -500,40 +492,33 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
   //   port 6363 ; TCP listener port number
   // }
 
-  std::string port = "6363";
+  uint16_t port = 6363;
   bool needToListen = true;
   bool enableV4 = true;
   bool enableV6 = true;
 
-  for (auto i = configSection.begin(); i != configSection.end(); ++i) {
-    if (i->first == "port") {
-      port = i->second.get_value<std::string>();
-      try {
-        uint16_t portNo = boost::lexical_cast<uint16_t>(port);
-        NFD_LOG_TRACE("TCP port set to " << portNo);
-      }
-      catch (const std::bad_cast& error) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
-                                                i->first + "\" in \"tcp\" section"));
-      }
+  for (const auto& i : configSection) {
+    if (i.first == "port") {
+      port = ConfigFile::parseNumber<uint16_t>(i, "tcp");
+      NFD_LOG_TRACE("TCP port set to " << port);
     }
-    else if (i->first == "listen") {
-      needToListen = ConfigFile::parseYesNo(i, i->first, "tcp");
+    else if (i.first == "listen") {
+      needToListen = ConfigFile::parseYesNo(i, "tcp");
     }
-    else if (i->first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, i->first, "tcp");
+    else if (i.first == "enable_v4") {
+      enableV4 = ConfigFile::parseYesNo(i, "tcp");
     }
-    else if (i->first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, i->first, "tcp");
+    else if (i.first == "enable_v6") {
+      enableV6 = ConfigFile::parseYesNo(i, "tcp");
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i->first + "\" in \"tcp\" section"));
+                                              i.first + "\" in \"tcp\" section"));
     }
   }
 
   if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 TCP channels have been disabled."
                                             " Remove \"tcp\" section to disable TCP channels or"
                                             " re-enable at least one channel type."));
   }
@@ -543,26 +528,24 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
       return;
     }
 
-    shared_ptr<TcpFactory> factory = make_shared<TcpFactory>(port);
+    auto factory = make_shared<TcpFactory>();
     m_factories.insert(std::make_pair("tcp", factory));
 
     if (enableV4) {
-      shared_ptr<TcpChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
+      tcp::Endpoint endpoint(boost::asio::ip::tcp::v4(), port);
+      shared_ptr<TcpChannel> v4Channel = factory->createChannel(endpoint);
       if (needToListen) {
-        // Should acceptFailed callback be used somehow?
-        ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                            TcpChannel::ConnectFailedCallback());
+        v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
       }
 
       m_factories.insert(std::make_pair("tcp4", factory));
     }
 
     if (enableV6) {
-      shared_ptr<TcpChannel> ipv6Channel = factory->createChannel("::", port);
+      tcp::Endpoint endpoint(boost::asio::ip::tcp::v6(), port);
+      shared_ptr<TcpChannel> v6Channel = factory->createChannel(endpoint);
       if (needToListen) {
-        // Should acceptFailed callback be used somehow?
-        ipv6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                            TcpChannel::ConnectFailedCallback());
+        v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
       }
 
       m_factories.insert(std::make_pair("tcp6", factory));
@@ -571,8 +554,7 @@ FaceManager::processSectionTcp(const ConfigSection& configSection, bool isDryRun
 }
 
 void
-FaceManager::processSectionUdp(const ConfigSection& configSection,
-                               bool isDryRun,
+FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
                                const std::vector<NetworkInterfaceInfo>& nicList)
 {
   // ; the udp section contains settings of UDP faces and channels
@@ -588,93 +570,70 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
   //   mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
   // }
 
-  std::string port = "6363";
+  uint16_t port = 6363;
   bool enableV4 = true;
   bool enableV6 = true;
   size_t timeout = 600;
   size_t keepAliveInterval = 25;
   bool useMcast = true;
-  std::string mcastGroup = "224.0.23.170";
-  std::string mcastPort = "56363";
+  auto mcastGroup = boost::asio::ip::address_v4::from_string("224.0.23.170");
+  uint16_t mcastPort = 56363;
 
-
-  for (auto i = configSection.begin(); i != configSection.end(); ++i) {
-    if (i->first == "port") {
-      port = i->second.get_value<std::string>();
+  for (const auto& i : configSection) {
+    if (i.first == "port") {
+      port = ConfigFile::parseNumber<uint16_t>(i, "udp");
+      NFD_LOG_TRACE("UDP unicast port set to " << port);
+    }
+    else if (i.first == "enable_v4") {
+      enableV4 = ConfigFile::parseYesNo(i, "udp");
+    }
+    else if (i.first == "enable_v6") {
+      enableV6 = ConfigFile::parseYesNo(i, "udp");
+    }
+    else if (i.first == "idle_timeout") {
       try {
-        uint16_t portNo = boost::lexical_cast<uint16_t>(port);
-        NFD_LOG_TRACE("UDP port set to " << portNo);
+        timeout = i.second.get_value<size_t>();
       }
-      catch (const std::bad_cast& error) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
-                                                i->first + "\" in \"udp\" section"));
-      }
-    }
-    else if (i->first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, i->first, "udp");
-    }
-    else if (i->first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, i->first, "udp");
-    }
-    else if (i->first == "idle_timeout") {
-      try {
-        timeout = i->second.get_value<size_t>();
-      }
-      catch (const std::exception& e) {
+      catch (const boost::property_tree::ptree_bad_data&) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i->first + "\" in \"udp\" section"));
+                                                i.first + "\" in \"udp\" section"));
       }
     }
-    else if (i->first == "keep_alive_interval") {
+    else if (i.first == "keep_alive_interval") {
       try {
-        keepAliveInterval = i->second.get_value<size_t>();
-
+        keepAliveInterval = i.second.get_value<size_t>();
         /// \todo Make use of keepAliveInterval
-        /// \todo what is keep alive interval used for?
         (void)(keepAliveInterval);
       }
-      catch (const std::exception& e) {
+      catch (const boost::property_tree::ptree_bad_data&) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i->first + "\" in \"udp\" section"));
+                                                i.first + "\" in \"udp\" section"));
       }
     }
-    else if (i->first == "mcast") {
-      useMcast = ConfigFile::parseYesNo(i, i->first, "udp");
+    else if (i.first == "mcast") {
+      useMcast = ConfigFile::parseYesNo(i, "udp");
     }
-    else if (i->first == "mcast_port") {
-      mcastPort = i->second.get_value<std::string>();
-      try {
-        uint16_t portNo = boost::lexical_cast<uint16_t>(mcastPort);
-        NFD_LOG_TRACE("UDP multicast port set to " << portNo);
-      }
-      catch (const std::bad_cast& error) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
-                                                i->first + "\" in \"udp\" section"));
-      }
+    else if (i.first == "mcast_port") {
+      mcastPort = ConfigFile::parseNumber<uint16_t>(i, "udp");
+      NFD_LOG_TRACE("UDP multicast port set to " << mcastPort);
     }
-    else if (i->first == "mcast_group") {
-      using namespace boost::asio::ip;
-      mcastGroup = i->second.get_value<std::string>();
-      try {
-        address mcastGroupTest = address::from_string(mcastGroup);
-        if (!mcastGroupTest.is_v4()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                  i->first + "\" in \"udp\" section"));
-        }
-      }
-      catch(const std::runtime_error& e) {
+    else if (i.first == "mcast_group") {
+      boost::system::error_code ec;
+      mcastGroup = boost::asio::ip::address_v4::from_string(i.second.get_value<std::string>(), ec);
+      if (ec) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i->first + "\" in \"udp\" section"));
+                                                i.first + "\" in \"udp\" section"));
       }
+      NFD_LOG_TRACE("UDP multicast group set to " << mcastGroup);
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i->first + "\" in \"udp\" section"));
+                                              i.first + "\" in \"udp\" section"));
     }
   }
 
   if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 UDP channels have been disabled."
                                             " Remove \"udp\" section to disable UDP channels or"
                                             " re-enable at least one channel type."));
   }
@@ -691,27 +650,29 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       factory = static_pointer_cast<UdpFactory>(m_factories["udp"]);
     }
     else {
-      factory = make_shared<UdpFactory>(port);
+      factory = make_shared<UdpFactory>();
       m_factories.insert(std::make_pair("udp", factory));
     }
 
     if (!isReload && enableV4) {
-      shared_ptr<UdpChannel> v4Channel =
-        factory->createChannel("0.0.0.0", port, time::seconds(timeout));
-
-      v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                        UdpChannel::ConnectFailedCallback());
+      udp::Endpoint endpoint(boost::asio::ip::udp::v4(), port);
+      shared_ptr<UdpChannel> v4Channel = factory->createChannel(endpoint, time::seconds(timeout));
+      v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
 
       m_factories.insert(std::make_pair("udp4", factory));
     }
 
     if (!isReload && enableV6) {
-      shared_ptr<UdpChannel> v6Channel =
-        factory->createChannel("::", port, time::seconds(timeout));
+      udp::Endpoint endpoint(boost::asio::ip::udp::v6(), port);
+      shared_ptr<UdpChannel> v6Channel = factory->createChannel(endpoint, time::seconds(timeout));
+      v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
 
-      v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1),
-                        UdpChannel::ConnectFailedCallback());
       m_factories.insert(std::make_pair("udp6", factory));
+    }
+
+    std::set<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
+    for (const auto& i : factory->getMulticastFaces()) {
+      multicastFacesToRemove.insert(i.second);
     }
 
     if (useMcast && enableV4) {
@@ -731,43 +692,24 @@ FaceManager::processSectionUdp(const ConfigSection& configSection,
       }
 #endif
 
-      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
-      for (auto i = factory->getMulticastFaces().begin();
-           i != factory->getMulticastFaces().end();
-           ++i) {
-        multicastFacesToRemove.push_back(i->second);
-      }
-
+      udp::Endpoint mcastEndpoint(mcastGroup, mcastPort);
       for (const auto& nic : ipv4MulticastInterfaces) {
-        auto newFace = factory->createMulticastFace(nic.ipv4Addresses[0].to_string(),
-                                                    mcastGroup, mcastPort,
+        udp::Endpoint localEndpoint(nic.ipv4Addresses[0], mcastPort);
+        auto newFace = factory->createMulticastFace(localEndpoint, mcastEndpoint,
                                                     isNicNameNecessary ? nic.name : "");
-        addCreatedFaceToForwarder(newFace);
-        multicastFacesToRemove.remove(newFace);
-      }
-
-      for (const auto& face : multicastFacesToRemove) {
-        face->close();
+        m_faceTable.add(newFace);
+        multicastFacesToRemove.erase(newFace);
       }
     }
-    else {
-      std::list<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
-      for (auto i = factory->getMulticastFaces().begin();
-           i != factory->getMulticastFaces().end();
-           ++i) {
-        multicastFacesToRemove.push_back(i->second);
-      }
 
-      for (const auto& face : multicastFacesToRemove) {
-        face->close();
-      }
+    for (const auto& face : multicastFacesToRemove) {
+      face->close();
     }
   }
 }
 
 void
-FaceManager::processSectionEther(const ConfigSection& configSection,
-                                 bool isDryRun,
+FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryRun,
                                  const std::vector<NetworkInterfaceInfo>& nicList)
 {
   // ; the ether section contains settings of Ethernet faces and channels
@@ -782,20 +724,21 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
   bool useMcast = true;
   ethernet::Address mcastGroup(ethernet::getDefaultMulticastAddress());
 
-  for (auto i = configSection.begin(); i != configSection.end(); ++i) {
-    if (i->first == "mcast") {
-      useMcast = ConfigFile::parseYesNo(i, i->first, "ether");
+  for (const auto& i : configSection) {
+    if (i.first == "mcast") {
+      useMcast = ConfigFile::parseYesNo(i, "ether");
     }
-    else if (i->first == "mcast_group") {
-      mcastGroup = ethernet::Address::fromString(i->second.get_value<std::string>());
+    else if (i.first == "mcast_group") {
+      mcastGroup = ethernet::Address::fromString(i.second.get_value<std::string>());
       if (mcastGroup.isNull()) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i->first + "\" in \"ether\" section"));
+                                                i.first + "\" in \"ether\" section"));
       }
+      NFD_LOG_TRACE("Ethernet multicast group set to " << mcastGroup);
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i->first + "\" in \"ether\" section"));
+                                              i.first + "\" in \"ether\" section"));
     }
   }
 
@@ -809,22 +752,18 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
       m_factories.insert(std::make_pair("ether", factory));
     }
 
-    if (useMcast) {
-      std::list<shared_ptr<EthernetFace> > multicastFacesToRemove;
-      for (auto i = factory->getMulticastFaces().begin();
-           i != factory->getMulticastFaces().end();
-           ++i) {
-        multicastFacesToRemove.push_back(i->second);
-      }
+    std::set<shared_ptr<EthernetFace>> multicastFacesToRemove;
+    for (const auto& i : factory->getMulticastFaces()) {
+      multicastFacesToRemove.insert(i.second);
+    }
 
+    if (useMcast) {
       for (const auto& nic : nicList) {
         if (nic.isUp() && nic.isMulticastCapable()) {
           try {
-            shared_ptr<EthernetFace> newFace =
-            factory->createMulticastFace(nic, mcastGroup);
-
-            addCreatedFaceToForwarder(newFace);
-            multicastFacesToRemove.remove(newFace);
+            auto newFace = factory->createMulticastFace(nic, mcastGroup);
+            m_faceTable.add(newFace);
+            multicastFacesToRemove.erase(newFace);
           }
           catch (const EthernetFactory::Error& factoryError) {
             NFD_LOG_ERROR(factoryError.what() << ", continuing");
@@ -834,26 +773,10 @@ FaceManager::processSectionEther(const ConfigSection& configSection,
           }
         }
       }
-
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
-      }
     }
-    else {
-      std::list<shared_ptr<EthernetFace> > multicastFacesToRemove;
-      for (auto i = factory->getMulticastFaces().begin();
-           i != factory->getMulticastFaces().end();
-           ++i) {
-        multicastFacesToRemove.push_back(i->second);
-      }
 
-      for (auto i = multicastFacesToRemove.begin();
-           i != multicastFacesToRemove.end();
-           ++i) {
-        (*i)->close();
-      }
+    for (const auto& face : multicastFacesToRemove) {
+      face->close();
     }
   }
 #else
@@ -874,41 +797,33 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
   // }
 
 #if defined(HAVE_WEBSOCKET)
-
-  std::string port = "9696";
+  uint16_t port = 9696;
   bool needToListen = true;
   bool enableV4 = true;
   bool enableV6 = true;
 
-  for (auto i = configSection.begin(); i != configSection.end(); ++i) {
-    if (i->first == "port") {
-      port = i->second.get_value<std::string>();
-      try {
-        uint16_t portNo = boost::lexical_cast<uint16_t>(port);
-        NFD_LOG_TRACE("WebSocket port set to " << portNo);
-      }
-      catch (const std::bad_cast& error) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option " +
-                                                i->first + "\" in \"websocket\" section"));
-      }
+  for (const auto& i : configSection) {
+    if (i.first == "port") {
+      port = ConfigFile::parseNumber<uint16_t>(i, "websocket");
+      NFD_LOG_TRACE("WebSocket port set to " << port);
     }
-    else if (i->first == "listen") {
-      needToListen = ConfigFile::parseYesNo(i, i->first, "websocket");
+    else if (i.first == "listen") {
+      needToListen = ConfigFile::parseYesNo(i, "websocket");
     }
-    else if (i->first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, i->first, "websocket");
+    else if (i.first == "enable_v4") {
+      enableV4 = ConfigFile::parseYesNo(i, "websocket");
     }
-    else if (i->first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, i->first, "websocket");
+    else if (i.first == "enable_v6") {
+      enableV6 = ConfigFile::parseYesNo(i, "websocket");
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i->first + "\" in \"websocket\" section"));
+                                              i.first + "\" in \"websocket\" section"));
     }
   }
 
   if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 channels have been disabled."
+    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 WebSocket channels have been disabled."
                                             " Remove \"websocket\" section to disable WebSocket channels or"
                                             " re-enable at least one channel type."));
   }
@@ -922,24 +837,26 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
       return;
     }
 
-    shared_ptr<WebSocketFactory> factory = make_shared<WebSocketFactory>(port);
+    auto factory = make_shared<WebSocketFactory>();
     m_factories.insert(std::make_pair("websocket", factory));
 
+    shared_ptr<WebSocketChannel> channel;
+
     if (enableV6 && enableV4) {
-      shared_ptr<WebSocketChannel> ip46Channel = factory->createChannel("::", port);
-      if (needToListen) {
-        ip46Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
-      }
+      websocket::Endpoint endpoint(boost::asio::ip::address_v6::any(), port);
+      channel = factory->createChannel(endpoint);
 
       m_factories.insert(std::make_pair("websocket46", factory));
     }
     else if (enableV4) {
-      shared_ptr<WebSocketChannel> ipv4Channel = factory->createChannel("0.0.0.0", port);
-      if (needToListen) {
-        ipv4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
-      }
+      websocket::Endpoint endpoint(boost::asio::ip::address_v4::any(), port);
+      channel = factory->createChannel(endpoint);
 
       m_factories.insert(std::make_pair("websocket4", factory));
+    }
+
+    if (channel && needToListen) {
+      channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
     }
   }
 #else
@@ -948,10 +865,4 @@ FaceManager::processSectionWebSocket(const ConfigSection& configSection, bool is
 #endif // HAVE_WEBSOCKET
 }
 
-void
-FaceManager::addCreatedFaceToForwarder(shared_ptr<Face> newFace)
-{
-  m_faceTable.add(newFace);
-}
-
-} // namespace
+} // namespace nfd

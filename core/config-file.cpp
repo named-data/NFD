@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "config-file.hpp"
 #include "logger.hpp"
@@ -29,6 +30,11 @@
 #include <fstream>
 
 namespace nfd {
+
+ConfigFile::ConfigFile(UnknownConfigSectionHandler unknownSectionCallback)
+  : m_unknownSectionCallback(unknownSectionCallback)
+{
+}
 
 void
 ConfigFile::throwErrorOnUnknownSection(const std::string& filename,
@@ -53,27 +59,20 @@ ConfigFile::ignoreUnknownSection(const std::string& filename,
 }
 
 bool
-ConfigFile::parseYesNo(const ConfigSection::const_iterator& i,
-                        const std::string& optionName,
-                        const std::string& sectionName)
+ConfigFile::parseYesNo(const ConfigSection::value_type& option,
+                       const std::string& sectionName)
 {
-  const std::string value = i->second.get_value<std::string>();
+  auto value = option.second.get_value<std::string>();
+
   if (value == "yes") {
     return true;
   }
-
-  if (value == "no") {
+  else if (value == "no") {
     return false;
   }
 
-  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                          optionName + "\" in \"" +
-                                          sectionName + "\" section"));
-}
-
-ConfigFile::ConfigFile(UnknownConfigSectionHandler unknownSectionCallback)
-  : m_unknownSectionCallback(unknownSectionCallback)
-{
+  BOOST_THROW_EXCEPTION(Error("Invalid value \"" + value + "\" for option \"" +
+                              option.first + "\" in \"" + sectionName + "\" section"));
 }
 
 void
@@ -105,7 +104,6 @@ ConfigFile::parse(const std::string& input, bool isDryRun, const std::string& fi
   parse(inputStream, isDryRun, filename);
 }
 
-
 void
 ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filename)
 {
@@ -133,35 +131,26 @@ ConfigFile::parse(const ConfigSection& config, bool isDryRun, const std::string&
 }
 
 void
-ConfigFile::process(bool isDryRun, const std::string& filename)
+ConfigFile::process(bool isDryRun, const std::string& filename) const
 {
   BOOST_ASSERT(!filename.empty());
-  // NFD_LOG_DEBUG("processing..." << ((isDryRun)?("dry run"):("")));
 
-  if (m_global.begin() == m_global.end())
-    {
-      std::string msg = "Error processing configuration file: ";
-      msg += filename;
-      msg += " no data";
-      BOOST_THROW_EXCEPTION(Error(msg));
+  if (m_global.begin() == m_global.end()) {
+    std::string msg = "Error processing configuration file: ";
+    msg += filename;
+    msg += " no data";
+    BOOST_THROW_EXCEPTION(Error(msg));
+  }
+
+  for (const auto& i : m_global) {
+    try {
+      ConfigSectionHandler subscriber = m_subscriptions.at(i.first);
+      subscriber(i.second, isDryRun, filename);
     }
-
-  for (ConfigSection::const_iterator i = m_global.begin(); i != m_global.end(); ++i)
-    {
-      const std::string& sectionName = i->first;
-      const ConfigSection& section = i->second;
-
-      SubscriptionTable::iterator subscriberIt = m_subscriptions.find(sectionName);
-      if (subscriberIt != m_subscriptions.end())
-        {
-          ConfigSectionHandler subscriber = subscriberIt->second;
-          subscriber(section, isDryRun, filename);
-        }
-      else
-        {
-          m_unknownSectionCallback(filename, sectionName, section, isDryRun);
-        }
+    catch (const std::out_of_range&) {
+      m_unknownSectionCallback(filename, i.first, i.second, isDryRun);
     }
+  }
 }
 
 }

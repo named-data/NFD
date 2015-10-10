@@ -27,18 +27,13 @@
 
 namespace nfd {
 
-using namespace boost::asio;
-
-WebSocketFactory::WebSocketFactory(const std::string& defaultPort)
-  : m_defaultPort(defaultPort)
-{
-}
+namespace ip = boost::asio::ip;
 
 shared_ptr<WebSocketChannel>
 WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 {
-  shared_ptr<WebSocketChannel> channel = findChannel(endpoint);
-  if (static_cast<bool>(channel))
+  auto channel = findChannel(endpoint);
+  if (channel)
     return channel;
 
   channel = make_shared<WebSocketChannel>(endpoint);
@@ -48,42 +43,42 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 }
 
 shared_ptr<WebSocketChannel>
-WebSocketFactory::createChannel(const std::string& localIp, const std::string& port)
+WebSocketFactory::createChannel(const std::string& localIp, const std::string& localPort)
 {
-  using namespace boost::asio::ip;
-  websocket::Endpoint endpoint(address::from_string(localIp), boost::lexical_cast<uint16_t>(port));
+  websocket::Endpoint endpoint(ip::address::from_string(localIp),
+                               boost::lexical_cast<uint16_t>(localPort));
   return createChannel(endpoint);
-}
-
-shared_ptr<WebSocketChannel>
-WebSocketFactory::findChannel(const websocket::Endpoint& localEndpoint)
-{
-  ChannelMap::iterator i = m_channels.find(localEndpoint);
-  if (i != m_channels.end())
-    return i->second;
-  else
-    return shared_ptr<WebSocketChannel>();
 }
 
 void
 WebSocketFactory::createFace(const FaceUri& uri,
                              ndn::nfd::FacePersistency persistency,
                              const FaceCreatedCallback& onCreated,
-                             const FaceConnectFailedCallback& onConnectFailed)
+                             const FaceCreationFailedCallback& onConnectFailed)
 {
   BOOST_THROW_EXCEPTION(Error("WebSocketFactory does not support 'createFace' operation"));
 }
 
-std::list<shared_ptr<const Channel> >
+std::vector<shared_ptr<const Channel>>
 WebSocketFactory::getChannels() const
 {
-  std::list<shared_ptr<const Channel> > channels;
-  for (ChannelMap::const_iterator i = m_channels.begin(); i != m_channels.end(); ++i)
-    {
-      channels.push_back(i->second);
-    }
+  std::vector<shared_ptr<const Channel>> channels;
+  channels.reserve(m_channels.size());
+
+  for (const auto& i : m_channels)
+    channels.push_back(i.second);
 
   return channels;
+}
+
+shared_ptr<WebSocketChannel>
+WebSocketFactory::findChannel(const websocket::Endpoint& endpoint) const
+{
+  auto i = m_channels.find(endpoint);
+  if (i != m_channels.end())
+    return i->second;
+  else
+    return nullptr;
 }
 
 } // namespace nfd

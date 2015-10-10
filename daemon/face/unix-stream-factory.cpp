@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -36,7 +36,7 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   p = boost::filesystem::canonical(p.parent_path()) / p.filename();
   unix_stream::Endpoint endpoint(p.string());
 
-  shared_ptr<UnixStreamChannel> channel = findChannel(endpoint);
+  auto channel = findChannel(endpoint);
   if (channel)
     return channel;
 
@@ -45,35 +45,35 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   return channel;
 }
 
-shared_ptr<UnixStreamChannel>
-UnixStreamFactory::findChannel(const unix_stream::Endpoint& endpoint)
-{
-  ChannelMap::iterator i = m_channels.find(endpoint);
-  if (i != m_channels.end())
-    return i->second;
-  else
-    return shared_ptr<UnixStreamChannel>();
-}
-
 void
 UnixStreamFactory::createFace(const FaceUri& uri,
                               ndn::nfd::FacePersistency persistency,
                               const FaceCreatedCallback& onCreated,
-                              const FaceConnectFailedCallback& onConnectFailed)
+                              const FaceCreationFailedCallback& onConnectFailed)
 {
   BOOST_THROW_EXCEPTION(Error("UnixStreamFactory does not support 'createFace' operation"));
 }
 
-std::list<shared_ptr<const Channel> >
+std::vector<shared_ptr<const Channel>>
 UnixStreamFactory::getChannels() const
 {
-  std::list<shared_ptr<const Channel> > channels;
-  for (ChannelMap::const_iterator i = m_channels.begin(); i != m_channels.end(); ++i)
-    {
-      channels.push_back(i->second);
-    }
+  std::vector<shared_ptr<const Channel>> channels;
+  channels.reserve(m_channels.size());
+
+  for (const auto& i : m_channels)
+    channels.push_back(i.second);
 
   return channels;
+}
+
+shared_ptr<UnixStreamChannel>
+UnixStreamFactory::findChannel(const unix_stream::Endpoint& endpoint) const
+{
+  auto i = m_channels.find(endpoint);
+  if (i != m_channels.end())
+    return i->second;
+  else
+    return nullptr;
 }
 
 } // namespace nfd

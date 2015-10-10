@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -37,9 +37,14 @@ public:
   /**
    * \brief Exception of UnixStreamFactory
    */
-  struct Error : public ProtocolFactory::Error
+  class Error : public ProtocolFactory::Error
   {
-    Error(const std::string& what) : ProtocolFactory::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : ProtocolFactory::Error(what)
+    {
+    }
   };
 
   /**
@@ -57,15 +62,14 @@ public:
   shared_ptr<UnixStreamChannel>
   createChannel(const std::string& unixSocketPath);
 
-  // from Factory
-
+public: // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE;
+             const FaceCreationFailedCallback& onConnectFailed) DECL_OVERRIDE;
 
-  virtual std::list<shared_ptr<const Channel> >
+  virtual std::vector<shared_ptr<const Channel>>
   getChannels() const DECL_OVERRIDE;
 
 private:
@@ -74,15 +78,12 @@ private:
    *
    * \returns shared pointer to the existing UnixStreamChannel object
    *          or empty shared pointer when such channel does not exist
-   *
-   * \throws never
    */
   shared_ptr<UnixStreamChannel>
-  findChannel(const unix_stream::Endpoint& endpoint);
+  findChannel(const unix_stream::Endpoint& endpoint) const;
 
 private:
-  typedef std::map< unix_stream::Endpoint, shared_ptr<UnixStreamChannel> > ChannelMap;
-  ChannelMap m_channels;
+  std::map<unix_stream::Endpoint, shared_ptr<UnixStreamChannel>> m_channels;
 };
 
 } // namespace nfd

@@ -129,7 +129,8 @@ private: // NotificationStream
 
 private: // configuration
   void
-  processConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename);
+  processConfig(const ConfigSection& configSection, bool isDryRun,
+                const std::string& filename);
 
   void
   processSectionUnix(const ConfigSection& configSection, bool isDryRun);
@@ -138,25 +139,18 @@ private: // configuration
   processSectionTcp(const ConfigSection& configSection, bool isDryRun);
 
   void
-  processSectionUdp(const ConfigSection& configSection,
-                    bool isDryRun,
+  processSectionUdp(const ConfigSection& configSection, bool isDryRun,
                     const std::vector<NetworkInterfaceInfo>& nicList);
 
   void
-  processSectionEther(const ConfigSection& configSection,
-                      bool isDryRun,
+  processSectionEther(const ConfigSection& configSection, bool isDryRun,
                       const std::vector<NetworkInterfaceInfo>& nicList);
 
   void
   processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
 
-private: // helpers for configuration
-  void
-  addCreatedFaceToForwarder(shared_ptr<Face> newFace);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::map<std::string/*protocol*/, shared_ptr<ProtocolFactory>> FactoryMap;
-  FactoryMap m_factories;
+  std::map<std::string /*protocol*/, shared_ptr<ProtocolFactory>> m_factories;
 
 private:
   FaceTable& m_faceTable;

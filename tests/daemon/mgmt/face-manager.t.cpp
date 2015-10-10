@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   BOOST_CHECK_NO_THROW(status.wireDecode(content.elements()[1]));
   BOOST_CHECK_EQUAL(face3->getId(), status.getFaceId());
 
-  ControlResponse expectedResponse(400, "malformed filter"); // nack, 400, malformed filter
+  ControlResponse expectedResponse(400, "Malformed filter"); // nack, 400, malformed filter
   BOOST_CHECK_EQUAL(checkResponse(3, invalidQueryName, expectedResponse, tlv::ContentType_Nack),
                     CheckResponseResult::OK);
 }
@@ -391,11 +391,11 @@ public:
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceConnectFailedCallback& onConnectFailed) DECL_OVERRIDE
+             const FaceCreationFailedCallback& onConnectFailed) DECL_OVERRIDE
   {
   }
 
-  virtual std::list<shared_ptr<const Channel>>
+  virtual std::vector<shared_ptr<const Channel>>
   getChannels() const DECL_OVERRIDE
   {
     return m_channels;
@@ -411,7 +411,7 @@ public:
   }
 
 private:
-  std::list<shared_ptr<const Channel> > m_channels;
+  std::vector<shared_ptr<const Channel>> m_channels;
 };
 
 BOOST_AUTO_TEST_CASE(ChannelDataset)

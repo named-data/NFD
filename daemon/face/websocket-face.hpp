@@ -38,10 +38,8 @@
 namespace nfd {
 
 namespace websocket {
-typedef boost::asio::ip::tcp::endpoint Endpoint;
 typedef websocketpp::server<websocketpp::config::asio> Server;
 } // namespace websocket
-
 
 /**
  * \brief Implementation of Face abstraction that uses WebSocket

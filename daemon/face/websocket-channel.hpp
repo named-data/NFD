@@ -31,6 +31,10 @@
 
 namespace nfd {
 
+namespace websocket {
+typedef boost::asio::ip::tcp::endpoint Endpoint;
+} // namespace websocket
+
 /**
  * \brief Class implementing WebSocket-based channel to create faces
  */

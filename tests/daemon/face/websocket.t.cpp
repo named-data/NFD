@@ -42,32 +42,26 @@ BOOST_FIXTURE_TEST_SUITE(FaceWebSocket, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  WebSocketFactory factory("19596");
+  WebSocketFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
-  std::vector<shared_ptr<const Channel> > expectedChannels;
-
+  std::vector<shared_ptr<const Channel>> expectedChannels;
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
   expectedChannels.push_back(factory.createChannel("::1", "20071"));
 
-  std::list<shared_ptr<const Channel> > channels = factory.getChannels();
-  for (std::list<shared_ptr<const Channel> >::const_iterator i = channels.begin();
-       i != channels.end(); ++i)
-    {
-      std::vector<shared_ptr<const Channel> >::iterator pos =
-        std::find(expectedChannels.begin(), expectedChannels.end(), *i);
-
-      BOOST_REQUIRE(pos != expectedChannels.end());
-      expectedChannels.erase(pos);
-    }
+  for (const auto& i : factory.getChannels()) {
+    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), i);
+    BOOST_REQUIRE(pos != expectedChannels.end());
+    expectedChannels.erase(pos);
+  }
 
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  WebSocketFactory factory("19596");
+  WebSocketFactory factory;
 
   BOOST_CHECK_THROW(factory.createFace(FaceUri("ws://127.0.0.1:20070"),
                                        ndn::nfd::FACE_PERSISTENCY_PERMANENT,
@@ -226,7 +220,7 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
 {
-  WebSocketFactory factory1("9696");
+  WebSocketFactory factory1;
 
   shared_ptr<WebSocketChannel> channel1 = factory1.createChannel("127.0.0.1", "20070");
   channel1->setPingInterval(time::milliseconds(3000));

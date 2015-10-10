@@ -44,22 +44,16 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   UdpFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
-  std::vector<shared_ptr<const Channel> > expectedChannels;
-
+  std::vector<shared_ptr<const Channel>> expectedChannels;
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
   expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
   expectedChannels.push_back(factory.createChannel("::1", "20071"));
 
-  std::list<shared_ptr<const Channel> > channels = factory.getChannels();
-  for (std::list<shared_ptr<const Channel> >::const_iterator i = channels.begin();
-       i != channels.end(); ++i)
-    {
-      std::vector<shared_ptr<const Channel> >::iterator pos =
-        std::find(expectedChannels.begin(), expectedChannels.end(), *i);
-
-      BOOST_REQUIRE(pos != expectedChannels.end());
-      expectedChannels.erase(pos);
-    }
+  for (const auto& i : factory.getChannels()) {
+    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), i);
+    BOOST_REQUIRE(pos != expectedChannels.end());
+    expectedChannels.erase(pos);
+  }
 
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
