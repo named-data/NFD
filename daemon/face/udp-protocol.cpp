@@ -23,36 +23,25 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP
-#define NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP
-
-#include "datagram-transport.hpp"
-#include "core/scheduler.hpp"
+#include "udp-protocol.hpp"
 
 namespace nfd {
-namespace face {
+namespace udp {
 
-/**
- * \brief A Transport that communicates on a unicast UDP socket
- */
-class UnicastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Unicast>
+ssize_t
+computeMtu(const boost::asio::ip::udp::endpoint& localEndpoint)
 {
-public:
-  UnicastUdpTransport(protocol::socket&& socket,
-                      ndn::nfd::FacePersistency persistency,
-                      const time::seconds& idleTimeout);
+  size_t mtu = 0;
+  if (localEndpoint.address().is_v4()) { // IPv4
+    mtu = std::numeric_limits<uint16_t>::max(); // maximum Total Length
+    mtu -= sizeof(uint32_t) * ((1 << 4) - 1); // maximum Internet Header Length
+  }
+  else { // IPv6
+    mtu = std::numeric_limits<uint16_t>::max(); // maximum Payload Length
+  }
+  mtu -= sizeof(uint16_t) * 4; // size of UDP header
+  return mtu;
+}
 
-private:
-  void
-  closeIfIdle();
-
-private:
-  const time::seconds m_idleTimeout;
-  time::steady_clock::TimePoint m_lastIdleCheck;
-  scheduler::ScopedEventId m_closeIfIdleEvent;
-};
-
-} // namespace face
+} // namespace udp
 } // namespace nfd
-
-#endif // NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP

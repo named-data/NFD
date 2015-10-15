@@ -24,6 +24,7 @@
  */
 
 #include "unicast-udp-transport.hpp"
+#include "udp-protocol.hpp"
 
 #ifdef __linux__
 #include <cerrno>       // for errno
@@ -47,8 +48,10 @@ UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
 {
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
   this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
+  this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  this->setMtu(udp::computeMtu(m_socket.local_endpoint()));
 
   NFD_LOG_FACE_INFO("Creating transport");
 

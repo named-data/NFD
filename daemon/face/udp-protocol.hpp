@@ -23,36 +23,20 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP
-#define NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP
+#ifndef NFD_DAEMON_FACE_UDP_PROTOCOL_HPP
+#define NFD_DAEMON_FACE_UDP_PROTOCOL_HPP
 
-#include "datagram-transport.hpp"
-#include "core/scheduler.hpp"
+#include "common.hpp"
 
 namespace nfd {
-namespace face {
+namespace udp {
 
-/**
- * \brief A Transport that communicates on a unicast UDP socket
+/** \brief computes maximum payload size in a UDP packet
  */
-class UnicastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Unicast>
-{
-public:
-  UnicastUdpTransport(protocol::socket&& socket,
-                      ndn::nfd::FacePersistency persistency,
-                      const time::seconds& idleTimeout);
+ssize_t
+computeMtu(const boost::asio::ip::udp::endpoint& localEndpoint);
 
-private:
-  void
-  closeIfIdle();
-
-private:
-  const time::seconds m_idleTimeout;
-  time::steady_clock::TimePoint m_lastIdleCheck;
-  scheduler::ScopedEventId m_closeIfIdleEvent;
-};
-
-} // namespace face
+} // namespace udp
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_UNICAST_UDP_TRANSPORT_HPP
+#endif // NFD_DAEMON_FACE_UDP_PROTOCOL_HPP

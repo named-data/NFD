@@ -53,6 +53,7 @@ operator<<(std::ostream& os, TransportState state)
 
 Transport::Packet::Packet(Block&& packet1)
   : packet(std::move(packet1))
+  , remoteEndpoint(0)
 {
 }
 
@@ -62,9 +63,12 @@ Transport::Transport()
   , m_scope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
   , m_persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   , m_linkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+  , m_mtu(MTU_UNLIMITED)
   , m_state(TransportState::UP)
   , m_counters(nullptr)
 {
+  // warning: Subclass constructor must explicitly initialize all static properties
+  // using setters, and should not rely on the defaults here.
 }
 
 Transport::~Transport()
@@ -96,8 +100,17 @@ Transport::close()
 }
 
 void
-Transport::send(Transport::Packet&& packet)
+Transport::send(Packet&& packet)
 {
+  BOOST_ASSERT(this->getMtu() == MTU_UNLIMITED ||
+               packet.packet.size() <= static_cast<size_t>(this->getMtu()));
+
+  TransportState state = this->getState();
+  if (state != TransportState::UP && state != TransportState::DOWN) {
+    NFD_LOG_FACE_TRACE("send ignored in " << state << " state");
+    return;
+  }
+
   // TODO#3177 increment LpPacket counter
   m_counters->getNOutBytes() += packet.packet.size();
 
@@ -105,8 +118,11 @@ Transport::send(Transport::Packet&& packet)
 }
 
 void
-Transport::receive(Transport::Packet&& packet)
+Transport::receive(Packet&& packet)
 {
+  BOOST_ASSERT(this->getMtu() == MTU_UNLIMITED ||
+               packet.packet.size() <= static_cast<size_t>(this->getMtu()));
+
   // TODO#3177 increment LpPacket counter
   m_counters->getNInBytes() += packet.packet.size();
 

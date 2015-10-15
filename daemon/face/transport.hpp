@@ -51,6 +51,10 @@ enum class TransportState {
 std::ostream&
 operator<<(std::ostream& os, TransportState state);
 
+/** \brief indicates the transport has no limit on payload size
+ */
+const ssize_t MTU_UNLIMITED = -1;
+
 /** \brief the lower part of an LpFace
  *  \sa LpFace
  */
@@ -125,12 +129,15 @@ public: // upper interface
   close();
 
   /** \brief send a link-layer packet
+   *  \note This operation has no effect if \p getState() is neither UP nor DOWN
+   *  \warning undefined behavior if packet size exceeds MTU limit
    */
   void
   send(Packet&& packet);
 
 protected: // upper interface to be invoked by subclass
   /** \brief receive a link-layer packet
+   *  \warning undefined behavior if packet size exceeds MTU limit
    */
   void
   receive(Packet&& packet);
@@ -166,6 +173,18 @@ public: // static properties
   ndn::nfd::LinkType
   getLinkType() const;
 
+  /** \return maximum payload size
+   *  \retval MTU_UNLIMITED transport has no limit on payload size
+   *
+   *  This size is the maximum packet size that can be sent or received through this transport.
+   *
+   *  For a datagram-based transport, this is typically the Maximum Transmission Unit (MTU),
+   *  after the overhead of headers introduced by the transport has been accounted for.
+   *  For a stream-based transport, this is typically unlimited (MTU_UNLIMITED).
+   */
+  ssize_t
+  getMtu() const;
+
 public: // dynamic properties
   /** \return transport state
    */
@@ -188,6 +207,9 @@ protected: // properties to be set by subclass
 
   void
   setLinkType(ndn::nfd::LinkType linkType);
+
+  void
+  setMtu(ssize_t mtu);
 
   /** \brief set transport state
    *
@@ -213,8 +235,11 @@ protected: // to be overridden by subclass
 
   /** \brief performs Transport specific operations to close the transport
    *
+   *  This is invoked once by \p close() after changing state to CLOSING.
+   *  It will not be invoked by Transport class if the transport is already CLOSING or CLOSED.
+   *
    *  When the cleanup procedure is complete, this method should change state to CLOSED.
-   *  This can happen synchronously or asynchronously.
+   *  This transition can happen synchronously or asynchronously.
    */
   virtual void
   doClose() = 0;
@@ -222,6 +247,7 @@ protected: // to be overridden by subclass
 private: // to be overridden by subclass
   /** \brief performs Transport specific operations to send a packet
    *  \param packet the packet, which must be a well-formed TLV block
+   *  \pre state is either UP or DOWN
    */
   virtual void
   doSend(Packet&& packet) = 0;
@@ -234,6 +260,7 @@ private:
   ndn::nfd::FaceScope m_scope;
   ndn::nfd::FacePersistency m_persistency;
   ndn::nfd::LinkType m_linkType;
+  ssize_t m_mtu;
   TransportState m_state;
   LinkLayerCounters* m_counters; // TODO#3177 change into LinkCounters
 };
@@ -262,16 +289,34 @@ Transport::getLocalUri() const
   return m_localUri;
 }
 
+inline void
+Transport::setLocalUri(const FaceUri& uri)
+{
+  m_localUri = uri;
+}
+
 inline FaceUri
 Transport::getRemoteUri() const
 {
   return m_remoteUri;
 }
 
+inline void
+Transport::setRemoteUri(const FaceUri& uri)
+{
+  m_remoteUri = uri;
+}
+
 inline ndn::nfd::FaceScope
 Transport::getScope() const
 {
   return m_scope;
+}
+
+inline void
+Transport::setScope(ndn::nfd::FaceScope scope)
+{
+  m_scope = scope;
 }
 
 inline ndn::nfd::FacePersistency
@@ -293,34 +338,29 @@ Transport::getLinkType() const
   return m_linkType;
 }
 
-inline TransportState
-Transport::getState() const
-{
-  return m_state;
-}
-
-inline void
-Transport::setLocalUri(const FaceUri& uri)
-{
-  m_localUri = uri;
-}
-
-inline void
-Transport::setRemoteUri(const FaceUri& uri)
-{
-  m_remoteUri = uri;
-}
-
-inline void
-Transport::setScope(ndn::nfd::FaceScope scope)
-{
-  m_scope = scope;
-}
-
 inline void
 Transport::setLinkType(ndn::nfd::LinkType linkType)
 {
   m_linkType = linkType;
+}
+
+inline ssize_t
+Transport::getMtu() const
+{
+  return m_mtu;
+}
+
+inline void
+Transport::setMtu(ssize_t mtu)
+{
+  BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu > 0);
+  m_mtu = mtu;
+}
+
+inline TransportState
+Transport::getState() const
+{
+  return m_state;
 }
 
 std::ostream&

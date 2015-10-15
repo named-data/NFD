@@ -43,6 +43,8 @@ UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
   this->setRemoteUri(FaceUri::fromFd(m_socket.native_handle()));
   this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  this->setMtu(MTU_UNLIMITED);
 
   NFD_LOG_FACE_INFO("Creating Transport");
 }

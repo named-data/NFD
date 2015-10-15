@@ -24,6 +24,7 @@
  */
 
 #include "multicast-udp-transport.hpp"
+#include "udp-protocol.hpp"
 
 namespace nfd {
 namespace face {
@@ -41,8 +42,10 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndp
 {
   this->setLocalUri(FaceUri(localEndpoint));
   this->setRemoteUri(FaceUri(multicastGroup));
+  this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   this->setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  this->setMtu(udp::computeMtu(localEndpoint));
 
   NFD_LOG_FACE_INFO("Creating transport");
 }
