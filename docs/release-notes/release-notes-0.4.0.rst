@@ -12,14 +12,15 @@ New features:
 ^^^^^^^^^^^^^
 
 - **(breaking change)** Refactored implementation of face system (:issue:`3088`,
-  :issue:`3104`, :issue:`3165`, :issue:`3168`, :issue:`3225`, :issue:`3226`)
+  :issue:`3104`, :issue:`3165`, :issue:`3168`, :issue:`3225`, :issue:`3226`, :issue:`3253`)
 
   The abstraction to send/receive NDN packets has been split into Transport, LinkService, and Face:
 
   * *Transport* provides delivery of the data blocks over specific underlying channels
     (raw ethernet packets, unicast/multicast UDP datagrams, TCP and WebSocket streams)
 
-    Implemented: :NFD:`UnixStreamTransport`, :NFD:`UnicastUdpTransport`, :NFD:`MulticastUdpTransport`.
+    Implemented: :NFD:`UnixStreamTransport`, :NFD:`UnicastUdpTransport`, :NFD:`MulticastUdpTransport`,
+    :NFD:`InternalForwarderTransport`
 
   * *LinkService* provides an "adaptation" layer to translate between NDN packets and data
     blocks communicated through Transport.  For example, LinkService can provide packet
@@ -56,6 +57,16 @@ New features:
 Updates and bug fixes:
 ^^^^^^^^^^^^^^^^^^^^^^
 
+- **(breaking change)** Redesign of automatic prefix propagation, formerly known as remote
+  prefix registration (:issue:`3211`, :issue:`2413`)
+
+  This includes a backward-incompatible change to NFD's configuration file:
+
+  * ``rib.remote_register`` section has been removed and, if present, will cause failure for NFD to start
+  * ``rib.auto_prefix_propagate`` section has been added to control automatic prefix propagation feature
+
+- Fix memory leak in PriorityFifoPolicy (:issue:`3236`)
+
 - Display extended information for fatal NFD errors (:issue:`2541`)
 
 - Compilation fixes for clang-700.0.72 (Apple LLVM 7.0.0) (:issue:`3209`)
@@ -68,6 +79,12 @@ Deprecated:
 
 - BroadcastStrategy (``/localhost/nfd/strategy/broadcast``) renamed as MulticastStrategy
   (``/localhost/nfd/strategy/multicast``) (:issue:`3011`)
+
+Deleted:
+^^^^^^^^
+
+- NotificationStream, replaced by the version in ndn-cxx library (:issue:`2144`)
+
 
 Planned features for future releases:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
