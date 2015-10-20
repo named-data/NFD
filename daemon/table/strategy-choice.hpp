@@ -49,6 +49,7 @@ public:
 
 public: // available Strategy types
   /** \brief determines if a strategy is installed
+   *  \param strategyName name of the strategy
    *  \param isExact true to require exact match, false to permit unversioned strategyName
    *  \return true if strategy is installed
    */
@@ -64,6 +65,7 @@ public: // available Strategy types
 
 public: // Strategy Choice table
   /** \brief set strategy of prefix to be strategyName
+   *  \param prefix the name prefix for which \p strategyName should be used
    *  \param strategyName the strategy to be used
    *  \return true on success
    *

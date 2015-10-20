@@ -132,6 +132,8 @@ public: // triggers
 
 protected: // actions
   /** \brief send Interest to outFace
+   *  \param pitEntry PIT entry
+   *  \param outFace face through which to send out the Interest
    *  \param wantNewNonce if true, a new Nonce will be generated,
    *                      rather than reusing a Nonce from one of the PIT in-records
    */
@@ -140,6 +142,7 @@ protected: // actions
                bool wantNewNonce = false);
 
   /** \brief decide that a pending Interest cannot be forwarded
+   *  \param pitEntry PIT entry
    *
    *  This shall not be called if the pending Interest has been
    *  forwarded earlier, and does not need to be resent now.
@@ -148,6 +151,9 @@ protected: // actions
   rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
 
   /** \brief send Nack to outFace
+   *  \param pitEntry PIT entry
+   *  \param outFace face through which to send out the Nack
+   *  \param header Nack header
    *
    *  The outFace must have a PIT in-record, otherwise this method has no effect.
    */
@@ -157,6 +163,9 @@ protected: // actions
 
   /** \brief send Nack to every face that has an in-record,
    *         except those in \p exceptFaces
+   *  \param pitEntry PIT entry
+   *  \param header NACK header
+   *  \param exceptFaces list of faces that should be excluded from sending Nacks
    *  \note This is not an action, but a helper that invokes the sendNack action.
    */
   void

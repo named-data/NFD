@@ -39,8 +39,10 @@ class MulticastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Mul
 public:
   /**
    * \brief Creates a UDP-based transport for multicast communication
+   * \param localEndpoint local endpoint
+   * \param multicastGroup multicast group
    * \param recvSocket socket used to receive packets
-   * \param sendSocket socket used to send to the multicast address
+   * \param sendSocket socket used to send to the multicast group
    */
   MulticastUdpTransport(const protocol::endpoint& localEndpoint,
                         const protocol::endpoint& multicastGroup,

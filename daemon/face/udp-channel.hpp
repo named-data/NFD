@@ -58,7 +58,7 @@ public:
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
    * \param onFaceCreated  Callback to notify successful creation of the face
-   * \param onAcceptFailed Callback to notify when channel fails
+   * \param onReceiveFailed Callback to notify when channel fails
    *
    * Once a face is created, if it doesn't send/receive anything for
    * a period of time equal to timeout, it will be destroyed

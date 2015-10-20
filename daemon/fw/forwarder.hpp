@@ -79,18 +79,21 @@ public: // faces
 
 public: // forwarding entrypoints and tables
   /** \brief start incoming Interest processing
+   *  \param face face on which Interest is received
    *  \param interest the incoming Interest, must be created with make_shared
    */
   void
   startProcessInterest(Face& face, const Interest& interest);
 
   /** \brief start incoming Data processing
+   *  \param face face on which Data is received
    *  \param data the incoming Data, must be created with make_shared
    */
   void
   startProcessData(Face& face, const Data& data);
 
   /** \brief start incoming Nack processing
+   *  \param face face on which Nack is received
    *  \param nack the incoming Nack, must be created with make_shared
    */
   void

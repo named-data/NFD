@@ -111,6 +111,8 @@ public:
    * If an unicast face is already active on the same local NIC and port, the
    * creation fails and an exception is thrown
    *
+   * \param localEndpoint local endpoint
+   * \param multicastEndpoint multicast endpoint
    * \param networkInterfaceName name of the network interface on which the face will be bound
    *        (Used only on multihomed linux machine with more than one MulticastUdpFace for
    *        the same multicast group. If specified, will requires CAP_NET_RAW capability)

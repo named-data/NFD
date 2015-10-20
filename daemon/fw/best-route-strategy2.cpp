@@ -40,6 +40,8 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
 }
 
 /** \brief determines whether a NextHop is eligible
+ *  \param pitEntry PIT entry
+ *  \param nexthop next hop
  *  \param currentDownstream incoming FaceId of current Interest
  *  \param wantUnused if true, NextHop must not have unexpired OutRecord
  *  \param now time::steady_clock::now(), ignored if !wantUnused
