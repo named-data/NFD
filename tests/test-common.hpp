@@ -88,8 +88,6 @@ protected:
   void
   advanceClocks(const time::nanoseconds& tick, size_t nTicks = 1)
   {
-    BOOST_ASSERT(nTicks >= 0);
-
     this->advanceClocks(tick, tick * nTicks);
   }
 
