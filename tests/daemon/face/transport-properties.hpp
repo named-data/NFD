@@ -23,75 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_DUMMY_TRANSPORT_HPP
-#define NFD_TESTS_DAEMON_FACE_DUMMY_TRANSPORT_HPP
-
-#include "common.hpp"
+#ifndef NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP
+#define NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP
 
 #include "face/transport.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-/** \brief dummy Transport used in unit tests
+/** \brief check a transport has all its static properties set after initialization
+ *
+ *  This check shall be inserted to the StaticProperties test case for each transport,
+ *  in addition to checking the values of properties.
+ *  When a new static property is defined, this test case shall be updated.
+ *  Thus, if a transport forgets to set a static property, this check would fail.
  */
-class DummyTransport : public Transport
+inline void
+checkStaticPropertiesInitialized(const Transport& transport)
 {
-public:
-  DummyTransport(const std::string& localUri = "dummy://",
-                 const std::string& remoteUri = "dummy://",
-                 ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                 ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                 ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT)
-    : isClosed(false)
-  {
-    this->setLocalUri(FaceUri(localUri));
-    this->setRemoteUri(FaceUri(remoteUri));
-    this->setScope(scope);
-    this->setPersistency(persistency);
-    this->setLinkType(linkType);
-    this->setMtu(MTU_UNLIMITED);
-  }
-
-  void
-  setState(FaceState state)
-  {
-    this->Transport::setState(state);
-  }
-
-  void
-  receivePacket(Packet&& packet)
-  {
-    this->receive(std::move(packet));
-  }
-
-  void
-  receivePacket(Block block)
-  {
-    this->receive(Packet(std::move(block)));
-  }
-
-private:
-  virtual void
-  doClose() DECL_OVERRIDE
-  {
-    isClosed = true;
-  }
-
-  virtual void
-  doSend(Packet&& packet) DECL_OVERRIDE
-  {
-    sentPackets.push_back(std::move(packet));
-  }
-
-public:
-  bool isClosed;
-  std::vector<Packet> sentPackets;
-};
+  BOOST_CHECK(!transport.getLocalUri().getScheme().empty());
+  BOOST_CHECK(!transport.getRemoteUri().getScheme().empty());
+  BOOST_CHECK_NE(transport.getScope(), ndn::nfd::FACE_SCOPE_NONE);
+  BOOST_CHECK_NE(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_NONE);
+  BOOST_CHECK_NE(transport.getLinkType(), ndn::nfd::LINK_TYPE_NONE);
+  BOOST_CHECK_NE(transport.getMtu(), MTU_INVALID);
+}
 
 } // namespace tests
 } // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_DUMMY_TRANSPORT_HPP
+#endif // NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP

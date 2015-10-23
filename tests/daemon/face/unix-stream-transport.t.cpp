@@ -24,6 +24,7 @@
  */
 
 #include "face/unix-stream-transport.hpp"
+#include "transport-properties.hpp"
 
 #include "tests/test-common.hpp"
 #include <boost/filesystem.hpp>
@@ -88,6 +89,7 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   BOOST_CHECK(connectToAcceptor(acceptor1, sock1, sock2));
 
   UnixStreamTransport transport(std::move(sock1));
+  checkStaticPropertiesInitialized(transport);
 
   BOOST_CHECK_EQUAL(transport.getLocalUri().getScheme(), "unix");
   BOOST_CHECK_EQUAL(transport.getLocalUri().getHost(), "");

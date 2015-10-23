@@ -55,6 +55,10 @@ operator<<(std::ostream& os, TransportState state);
  */
 const ssize_t MTU_UNLIMITED = -1;
 
+/** \brief (for internal use) indicates MTU field is unset
+ */
+const ssize_t MTU_INVALID = -2;
+
 /** \brief the lower part of an LpFace
  *  \sa LpFace
  */
@@ -89,6 +93,14 @@ public:
     EndpointId remoteEndpoint;
   };
 
+  /** \brief constructor
+   *
+   *  Transport constructor initializes static properties to invalid values.
+   *  Subclass constructor must explicitly set every static property.
+   *
+   *  This constructor initializes TransportState to UP;
+   *  subclass constructor can rely on this default value.
+   */
   Transport();
 
   virtual

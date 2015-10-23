@@ -40,6 +40,7 @@ InternalForwarderTransport::InternalForwarderTransport(
   this->setScope(scope);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   this->setLinkType(linkType);
+  this->setMtu(MTU_UNLIMITED);
 
   NFD_LOG_FACE_INFO("Creating transport");
 }

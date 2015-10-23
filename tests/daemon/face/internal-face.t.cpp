@@ -25,6 +25,8 @@
 
 #include "face/internal-face.hpp"
 #include "face/lp-face-wrapper.hpp"
+#include "transport-properties.hpp"
+
 #include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
@@ -42,19 +44,21 @@ class InternalFaceFixture : public UnitTestTimeFixture
 public:
   InternalFaceFixture()
   {
-    std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);;
+    std::tie(forwarderFaceW, clientFace) = makeInternalFace(m_keyChain);;
+    forwarderFace = static_pointer_cast<LpFaceWrapper>(forwarderFaceW)->getLpFace();
+    // TODO#3172 eliminate wrapper
 
-    // TODO#3172 connect to afterReceive* signals
-    forwarderFace->onReceiveInterest.connect(
+    forwarderFace->afterReceiveInterest.connect(
       [this] (const Interest& interest) { receivedInterests.push_back(interest); } );
-    forwarderFace->onReceiveData.connect(
+    forwarderFace->afterReceiveData.connect(
       [this] (const Data& data) { receivedData.push_back(data); } );
-    forwarderFace->onReceiveNack.connect(
+    forwarderFace->afterReceiveNack.connect(
       [this] (const lp::Nack& nack) { receivedNacks.push_back(nack); } );
   }
 
 protected:
-  shared_ptr<nfd::Face> forwarderFace;
+  shared_ptr<nfd::Face> forwarderFaceW;
+  LpFace* forwarderFace;
   shared_ptr<ndn::Face> clientFace;
 
   std::vector<Interest> receivedInterests;
@@ -64,9 +68,22 @@ protected:
 
 BOOST_FIXTURE_TEST_SUITE(TestInternalFace, InternalFaceFixture)
 
+BOOST_AUTO_TEST_CASE(TransportStaticProperties)
+{
+  Transport* transport = forwarderFace->getTransport();
+  checkStaticPropertiesInitialized(*transport);
+
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("internal://"));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("internal://"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
 // note: "send" and "receive" in test case names refer to the direction seen on forwarderFace.
 // i.e. "send" means transmission from forwarder to client,
-//      "receive" means transmission client to forwarder.
+//      "receive" means transmission from client to forwarder.
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 {
@@ -182,8 +199,8 @@ BOOST_AUTO_TEST_CASE(CloseForwarderFace)
 {
   forwarderFace->close();
   this->advanceClocks(time::milliseconds(1), 10);
-  BOOST_CHECK_EQUAL(static_pointer_cast<face::LpFaceWrapper>(forwarderFace)->getLpFace()->getState(), FaceState::CLOSED);
-  forwarderFace.reset();
+  BOOST_CHECK_EQUAL(forwarderFace->getState(), FaceState::CLOSED);
+  forwarderFaceW.reset();
 
   shared_ptr<Interest> interest = makeInterest("/zpHsVesu0B");
   interest->setInterestLifetime(time::milliseconds(100));

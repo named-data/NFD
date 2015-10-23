@@ -24,6 +24,7 @@
  */
 
 #include "face/unicast-udp-transport.hpp"
+#include "transport-properties.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -43,6 +44,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesIpv4)
   udp::socket sock(g_io, udp::endpoint(ip::address_v4::loopback(), 7001));
   sock.connect(udp::endpoint(ip::address_v4::loopback(), 7002));
   UnicastUdpTransport transport(std::move(sock), ndn::nfd::FACE_PERSISTENCY_PERSISTENT, time::seconds(300));
+  checkStaticPropertiesInitialized(transport);
 
   BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri("udp4://127.0.0.1:7001"));
   BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri("udp4://127.0.0.1:7002"));
@@ -57,6 +59,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesIpv6)
   udp::socket sock(g_io, udp::endpoint(ip::address_v6::loopback(), 7001));
   sock.connect(udp::endpoint(ip::address_v6::loopback(), 7002));
   UnicastUdpTransport transport(std::move(sock), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, time::seconds(300));
+  checkStaticPropertiesInitialized(transport);
 
   BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri("udp6://[::1]:7001"));
   BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri("udp6://[::1]:7002"));

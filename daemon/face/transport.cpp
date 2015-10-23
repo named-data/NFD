@@ -60,15 +60,13 @@ Transport::Packet::Packet(Block&& packet1)
 Transport::Transport()
   : m_face(nullptr)
   , m_service(nullptr)
-  , m_scope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
-  , m_persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
-  , m_linkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
-  , m_mtu(MTU_UNLIMITED)
+  , m_scope(ndn::nfd::FACE_SCOPE_NONE)
+  , m_persistency(ndn::nfd::FACE_PERSISTENCY_NONE)
+  , m_linkType(ndn::nfd::LINK_TYPE_NONE)
+  , m_mtu(MTU_INVALID)
   , m_state(TransportState::UP)
   , m_counters(nullptr)
 {
-  // warning: Subclass constructor must explicitly initialize all static properties
-  // using setters, and should not rely on the defaults here.
 }
 
 Transport::~Transport()

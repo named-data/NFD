@@ -24,6 +24,7 @@
  */
 
 #include "face/multicast-udp-transport.hpp"
+#include "transport-properties.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -53,6 +54,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesIpv4)
   MulticastUdpTransport transport(sockRx.local_endpoint(),
                                   udp::endpoint(ip::address::from_string("230.15.19.47"), 7001),
                                   std::move(sockRx), std::move(sockTx));
+  checkStaticPropertiesInitialized(transport);
 
   BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri("udp4://127.0.0.1:7001"));
   BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri("udp4://230.15.19.47:7001"));
