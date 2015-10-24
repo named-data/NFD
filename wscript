@@ -256,7 +256,7 @@ def doxygen(bld):
                     "docs/named_data_theme/named_data_footer-with-analytics.html.in"],
             target=["docs/doxygen.conf",
                     "docs/named_data_theme/named_data_footer-with-analytics.html"],
-            VERSION=VERSION_BASE,
+            VERSION=VERSION,
             HTML_FOOTER="../build/docs/named_data_theme/named_data_footer-with-analytics.html" \
                           if os.getenv('GOOGLE_ANALYTICS', None) \
                           else "../docs/named_data_theme/named_data_footer.html",
@@ -277,7 +277,7 @@ def sphinx(bld):
             outdir="docs",
             source=bld.path.ant_glob('docs/**/*.rst'),
             config="docs/conf.py",
-            VERSION=VERSION_BASE)
+            VERSION=VERSION)
 
 def version(ctx):
     if getattr(Context.g_module, 'VERSION_BASE', None):
