@@ -23,64 +23,66 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_WEBSOCKET_FACE_HPP
-#define NFD_DAEMON_FACE_WEBSOCKET_FACE_HPP
+#ifndef NFD_DAEMON_FACE_WEBSOCKET_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_WEBSOCKET_TRANSPORT_HPP
 
-#include "face.hpp"
+#include "transport.hpp"
+#include "websocketpp.hpp"
 #include "core/scheduler.hpp"
 
-#ifndef HAVE_WEBSOCKET
-#error "Cannot include this file when WebSocket support is not enabled"
-#endif // HAVE_WEBSOCKET
-
-#include "websocketpp.hpp"
-
 namespace nfd {
-
-namespace websocket {
-typedef websocketpp::server<websocketpp::config::asio> Server;
-} // namespace websocket
+namespace face {
 
 /**
- * \brief Implementation of Face abstraction that uses WebSocket
- *        as underlying transport mechanism
+ * \brief A Transport that communicates on a WebSocket connection
  */
-class WebSocketFace : public Face
+class WebSocketTransport : public Transport
 {
 public:
-  WebSocketFace(const FaceUri& remoteUri, const FaceUri& localUri,
-                websocketpp::connection_hdl hdl, websocket::Server& server);
+  WebSocketTransport(websocketpp::connection_hdl hdl,
+                     websocket::Server& server,
+                     time::milliseconds pingInterval);
 
-  // from Face
+  /** \brief Translates a message into a Block
+   *         and delivers it to the link service
+   */
   void
-  sendInterest(const Interest& interest) DECL_OVERRIDE;
-
-  void
-  sendData(const Data& data) DECL_OVERRIDE;
-
-  void
-  close() DECL_OVERRIDE;
+  receiveMessage(const std::string& msg);
 
   void
-  setPingEventId(scheduler::EventId& id)
-  {
-    m_pingEventId = id;
-  }
+  handlePong();
+
+  void
+  handlePongTimeout();
 
 protected:
-  // friend because it needs to invoke protected handleReceive
-  friend class WebSocketChannel;
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+
+  virtual void
+  doClose() DECL_OVERRIDE;
+
+private:
+  virtual void
+  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
 
   void
-  handleReceive(const std::string& msg);
+  schedulePing();
+
+  void
+  sendPing();
+
+  void
+  processErrorCode(const websocketpp::lib::error_code& error);
 
 private:
   websocketpp::connection_hdl m_handle;
   websocket::Server& m_server;
-  scheduler::EventId m_pingEventId;
-  bool m_closed;
+  time::milliseconds m_pingInterval;
+  scheduler::ScopedEventId m_pingEventId;
 };
 
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_WEBSOCKET_FACE_HPP
+#endif // NFD_DAEMON_FACE_WEBSOCKET_TRANSPORT_HPP

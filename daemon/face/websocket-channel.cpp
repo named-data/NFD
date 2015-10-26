@@ -24,10 +24,9 @@
  */
 
 #include "websocket-channel.hpp"
+#include "generic-link-service.hpp"
+#include "websocket-transport.hpp"
 #include "core/global-io.hpp"
-#include "core/scheduler.hpp"
-
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace nfd {
 
@@ -35,23 +34,23 @@ NFD_LOG_INIT("WebSocketChannel");
 
 WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   : m_localEndpoint(localEndpoint)
-  , m_isListening(false)
   , m_pingInterval(10000)
 {
   setUri(FaceUri(m_localEndpoint, "ws"));
 
-  // Setup WebSocket server
+  // Be quiet
   m_server.clear_access_channels(websocketpp::log::alevel::all);
-  m_server.clear_error_channels(websocketpp::log::alevel::all);
+  m_server.clear_error_channels(websocketpp::log::elevel::all);
 
-  m_server.set_message_handler(bind(&WebSocketChannel::handleMessage, this, _1, _2));
+  // Setup WebSocket server
+  m_server.init_asio(&getGlobalIoService());
   m_server.set_open_handler(bind(&WebSocketChannel::handleOpen, this, _1));
   m_server.set_close_handler(bind(&WebSocketChannel::handleClose, this, _1));
-  m_server.init_asio(&getGlobalIoService());
+  m_server.set_message_handler(bind(&WebSocketChannel::handleMessage, this, _1, _2));
 
   // Detect disconnections using ping-pong messages
-  m_server.set_pong_handler(bind(&WebSocketChannel::handlePong, this, _1, _2));
-  m_server.set_pong_timeout_handler(bind(&WebSocketChannel::handlePongTimeout, this, _1, _2));
+  m_server.set_pong_handler(bind(&WebSocketChannel::handlePong, this, _1));
+  m_server.set_pong_timeout_handler(bind(&WebSocketChannel::handlePongTimeout, this, _1));
 
   // Always set SO_REUSEADDR flag
   m_server.set_reuse_addr(true);
@@ -60,32 +59,40 @@ WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
 void
 WebSocketChannel::setPingInterval(time::milliseconds interval)
 {
+  BOOST_ASSERT(!m_server.is_listening());
+
   m_pingInterval = interval;
 }
 
 void
 WebSocketChannel::setPongTimeout(time::milliseconds timeout)
 {
+  BOOST_ASSERT(!m_server.is_listening());
+
   m_server.set_pong_timeout(static_cast<long>(timeout.count()));
 }
 
 void
-WebSocketChannel::handlePongTimeout(websocketpp::connection_hdl hdl, std::string msg)
+WebSocketChannel::handlePongTimeout(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    NFD_LOG_TRACE(__func__ << ": " << it->second->getRemoteUri());
-    it->second->close();
-    m_channelFaces.erase(it);
+    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->handlePongTimeout();
+  }
+  else {
+    NFD_LOG_WARN("Pong timeout on unknown transport");
   }
 }
 
 void
-WebSocketChannel::handlePong(websocketpp::connection_hdl hdl, std::string msg)
+WebSocketChannel::handlePong(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    NFD_LOG_TRACE("Pong from " << it->second->getRemoteUri());
+    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->handlePong();
+  }
+  else {
+    NFD_LOG_WARN("Pong received on unknown transport");
   }
 }
 
@@ -95,62 +102,30 @@ WebSocketChannel::handleMessage(websocketpp::connection_hdl hdl,
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    it->second->handleReceive(msg->get_payload());
+    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->receiveMessage(msg->get_payload());
+  }
+  else {
+    NFD_LOG_WARN("Message received on unknown transport");
   }
 }
 
 void
 WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
 {
-  try {
-    std::string remote = "wsclient://" + m_server.get_con_from_hdl(hdl)->get_remote_endpoint();
-    auto face = make_shared<WebSocketFace>(FaceUri(remote), this->getUri(),
-                                           hdl, ref(m_server));
-    m_onFaceCreatedCallback(face);
-    m_channelFaces[hdl] = face;
-    // Schedule ping message
-    scheduler::EventId pingEvent = scheduler::schedule(m_pingInterval,
-                                                       bind(&WebSocketChannel::sendPing,
-                                                            this, hdl));
-    face->setPingEventId(pingEvent);
-  }
-  catch (const FaceUri::Error& e) {
-    NFD_LOG_WARN(e.what());
-    websocketpp::lib::error_code ec;
-    m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ec);
-    // ignore error on close
-  }
-  catch (const websocketpp::exception& e) {
-    NFD_LOG_WARN("Cannot get remote connection: " << e.what());
-    websocketpp::lib::error_code ec;
-    m_server.close(hdl, websocketpp::close::status::normal, "closed by channel", ec);
-    // ignore error on close
-  }
-}
+  auto linkService = make_unique<face::GenericLinkService>();
+  auto transport = make_unique<face::WebSocketTransport>(hdl, ref(m_server), m_pingInterval);
+  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
+  auto face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
 
-void
-WebSocketChannel::sendPing(websocketpp::connection_hdl hdl)
-{
-  auto it = m_channelFaces.find(hdl);
-  if (it != m_channelFaces.end()) {
-    NFD_LOG_TRACE("Sending ping to " << it->second->getRemoteUri());
-
-    websocketpp::lib::error_code ec;
-    m_server.ping(hdl, "NFD-WebSocket", ec);
-    if (ec)
-      {
-        NFD_LOG_WARN("Failed to ping " << it->second->getRemoteUri() << ": " << ec.message());
-        it->second->close();
-        m_channelFaces.erase(it);
-        return;
+  face->getLpFace()->afterStateChange.connect(
+    [this, hdl] (face::FaceState oldState, face::FaceState newState) {
+      if (newState == face::FaceState::CLOSED) {
+        m_channelFaces.erase(hdl);
       }
+    });
+  m_channelFaces[hdl] = face;
 
-    // Schedule next ping message
-    scheduler::EventId pingEvent = scheduler::schedule(m_pingInterval,
-                                                       bind(&WebSocketChannel::sendPing,
-                                                            this, hdl));
-    it->second->setPingEventId(pingEvent);
-  }
+  m_onFaceCreatedCallback(face);
 }
 
 void
@@ -158,20 +133,20 @@ WebSocketChannel::handleClose(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    NFD_LOG_TRACE(__func__ << ": " << it->second->getRemoteUri());
-    it->second->close();
-    m_channelFaces.erase(it);
+    it->second->getLpFace()->close();
+  }
+  else {
+    NFD_LOG_WARN("Close on unknown transport");
   }
 }
 
 void
 WebSocketChannel::listen(const FaceCreatedCallback& onFaceCreated)
 {
-  if (isListening()) {
+  if (m_server.is_listening()) {
     NFD_LOG_WARN("[" << m_localEndpoint << "] Already listening");
     return;
   }
-  m_isListening = true;
 
   m_onFaceCreatedCallback = onFaceCreated;
   m_server.listen(m_localEndpoint);

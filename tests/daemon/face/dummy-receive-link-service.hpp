@@ -23,29 +23,53 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_WEBSOCKETPP_HPP
-#define NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
+#define NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
 
-#ifndef HAVE_WEBSOCKET
-#error "Cannot include this file when WebSocket support is disabled"
-#endif // HAVE_WEBSOCKET
+#include "common.hpp"
 
-// suppress websocketpp warnings
-#pragma GCC system_header
-#pragma clang system_header
-
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/client.hpp>
-#include "websocketpp/config/asio_no_tls.hpp"
-#include "websocketpp/server.hpp"
+#include "face/link-service.hpp"
 
 namespace nfd {
-namespace websocket {
+namespace face {
+namespace tests {
 
-typedef websocketpp::client<websocketpp::config::asio_client> Client;
-typedef websocketpp::server<websocketpp::config::asio> Server;
+/** \brief a dummy LinkService that logs all received packets, for Transport testing
+ *  \warning This LinkService does not allow sending.
+ */
+class DummyReceiveLinkService : public LinkService
+{
+private:
+  virtual void
+  doSendInterest(const Interest& interest) DECL_OVERRIDE
+  {
+    BOOST_ASSERT(false);
+  }
 
-} // namespace websocket
+  virtual void
+  doSendData(const Data& data) DECL_OVERRIDE
+  {
+    BOOST_ASSERT(false);
+  }
+
+  virtual void
+  doSendNack(const lp::Nack& nack) DECL_OVERRIDE
+  {
+    BOOST_ASSERT(false);
+  }
+
+  virtual void
+  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE
+  {
+    receivedPackets.push_back(packet);
+  }
+
+public:
+  std::vector<Transport::Packet> receivedPackets;
+};
+
+} // namespace tests
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_WEBSOCKETPP_HPP
+#endif // NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP

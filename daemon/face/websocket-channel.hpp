@@ -27,7 +27,8 @@
 #define NFD_DAEMON_FACE_WEBSOCKET_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "websocket-face.hpp"
+#include "lp-face-wrapper.hpp"
+#include "websocketpp.hpp"
 
 namespace nfd {
 
@@ -46,9 +47,7 @@ public:
    *
    * To enable creation of faces upon incoming connections,
    * one needs to explicitly call WebSocketChannel::listen method.
-   * The created socket is bound to the localEndpoint.
-   *
-   * \throw WebSocketChannel::Error if bind on the socket fails
+   * The created channel is bound to the localEndpoint.
    */
   explicit
   WebSocketChannel(const websocket::Endpoint& localEndpoint);
@@ -56,9 +55,8 @@ public:
   /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
-   * \param onFaceCreated  Callback to notify successful creation of the face
    *
-   * \throws WebSocketChannel::Error if called multiple times
+   * \param onFaceCreated Callback to notify successful creation of a face
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated);
@@ -73,24 +71,26 @@ public:
   isListening() const;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /** \pre listen hasn't been invoked
+   */
   void
   setPingInterval(time::milliseconds interval);
 
+  /** \pre listen hasn't been invoked
+   */
   void
   setPongTimeout(time::milliseconds timeout);
 
+  void
+  handlePong(websocketpp::connection_hdl hdl);
+
+  void
+  handlePongTimeout(websocketpp::connection_hdl hdl);
+
 private:
   void
-  sendPing(websocketpp::connection_hdl hdl);
-
-  void
-  handlePong(websocketpp::connection_hdl hdl, std::string msg);
-
-  void
-  handlePongTimeout(websocketpp::connection_hdl hdl, std::string msg);
-
-  void
-  handleMessage(websocketpp::connection_hdl hdl, websocket::Server::message_ptr msg);
+  handleMessage(websocketpp::connection_hdl hdl,
+                websocket::Server::message_ptr msg);
 
   void
   handleOpen(websocketpp::connection_hdl hdl);
@@ -102,26 +102,17 @@ private:
   websocket::Endpoint m_localEndpoint;
   websocket::Server m_server;
 
-  std::map<websocketpp::connection_hdl, shared_ptr<WebSocketFace>,
+  std::map<websocketpp::connection_hdl, shared_ptr<face::LpFaceWrapper>,
            std::owner_less<websocketpp::connection_hdl>> m_channelFaces;
 
-  /**
-   * Callback for face creation
-   */
   FaceCreatedCallback m_onFaceCreatedCallback;
-
-  /**
-   * \brief If true, it means the function listen has already been called
-   */
-  bool m_isListening;
-
   time::milliseconds m_pingInterval;
 };
 
 inline bool
 WebSocketChannel::isListening() const
 {
-  return m_isListening;
+  return m_server.is_listening();
 }
 
 } // namespace nfd

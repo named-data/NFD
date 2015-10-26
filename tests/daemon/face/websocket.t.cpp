@@ -24,21 +24,19 @@
  */
 
 #include "face/websocket-channel.hpp"
-#include "face/websocket-face.hpp"
 #include "face/websocket-factory.hpp"
+#include "face/websocketpp.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/client.hpp>
-
-typedef websocketpp::client<websocketpp::config::asio_client> Client;
-
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FaceWebSocket, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestWebSocket, BaseFixture)
+
+using nfd::Face;
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
@@ -212,7 +210,7 @@ public:
   shared_ptr<Face> face1;
   std::vector<Interest> face1_receivedInterests;
   std::vector<Data> face1_receivedDatas;
-  Client client1;
+  websocket::Client client1;
   websocketpp::connection_hdl handle;
   std::vector<Interest> client1_receivedInterests;
   std::vector<Data> client1_receivedDatas;
@@ -243,7 +241,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   client1.set_ping_handler(bind(&EndToEndFixture::client1_onPing, this, _1, _2));
 
   websocketpp::lib::error_code ec;
-  Client::connection_ptr con = client1.get_connection("ws://127.0.0.1:20070", ec);
+  auto con = client1.get_connection("ws://127.0.0.1:20070", ec);
   client1.connect(con);
 
   BOOST_CHECK_MESSAGE(limitedIo.run(2, time::seconds(10)) == LimitedIo::EXCEED_OPS,
@@ -252,7 +250,7 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel1->size(), 1);
 
   BOOST_REQUIRE(static_cast<bool>(face1));
-  BOOST_CHECK_EQUAL(face1->isLocal(), false);
+  BOOST_CHECK_EQUAL(face1->isLocal(), true);
   BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(face1->isMultiAccess(), false);
   BOOST_CHECK_EQUAL(face1->getLocalUri().toString(), "ws://127.0.0.1:20070");
@@ -262,19 +260,15 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   shared_ptr<Interest> interest2 = makeInterest("ndn:/QWiIMfj5sL");
   shared_ptr<Data>     data2     = makeData("ndn:/XNBV796f");
 
-  std::string bigName("ndn:/");
-  bigName.append(9000, 'a');
-  shared_ptr<Interest> bigInterest = makeInterest(bigName);
-
   client1_sendInterest(*interest1);
   client1_sendInterest(*interest1);
   client1_sendInterest(*interest1);
-  client1_sendInterest(*bigInterest);  // This one should be ignored by face1
   face1->sendData     (*data1);
   face1->sendInterest (*interest2);
   client1_sendData    (*data2);
   client1_sendData    (*data2);
   client1_sendData    (*data2);
+
   size_t nBytesSent = data1->wireEncode().size() + interest2->wireEncode().size();
   size_t nBytesReceived = interest1->wireEncode().size() * 3 + data2->wireEncode().size() * 3;
 
@@ -303,7 +297,8 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(channel1->size(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestWebSocket
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace nfd
