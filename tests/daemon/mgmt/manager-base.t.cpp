@@ -32,8 +32,6 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("ManagerBaseTest");
-
 class TestCommandVoidParameters : public ndn::nfd::ControlCommand
 {
 public:
