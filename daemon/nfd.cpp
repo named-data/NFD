@@ -90,9 +90,9 @@ Nfd::initialize()
 
   initializeManagement();
 
-  m_forwarder->getFaceTable().addReserved(make_shared<NullFace>(), FACEID_NULL);
-  m_forwarder->getFaceTable().addReserved(make_shared<NullFace>(FaceUri("contentstore://")),
-                                          FACEID_CONTENT_STORE);
+  FaceTable& faceTable = m_forwarder->getFaceTable();
+  faceTable.addReserved(face::makeNullFace(), FACEID_NULL);
+  faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), FACEID_CONTENT_STORE);
 
   PrivilegeHelper::drop();
 

@@ -24,17 +24,36 @@
  */
 
 #include "face/null-face.hpp"
+#include "face/lp-face-wrapper.hpp"
+#include "transport-properties.hpp"
 
 #include "tests/test-common.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FaceNullFace, BaseFixture)
+using namespace nfd::tests;
+
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestNullFace, BaseFixture)
+
+using nfd::Face;
+
+BOOST_AUTO_TEST_CASE(StaticProperties)
+{
+  shared_ptr<Face> faceW = makeNullFace(FaceUri("testnull://hhppt12sy"));
+  LpFace* face = static_pointer_cast<LpFaceWrapper>(faceW)->getLpFace();
+  checkStaticPropertiesInitialized(*face->getTransport());
+
+  BOOST_CHECK_EQUAL(face->getLocalUri(), FaceUri("testnull://hhppt12sy"));
+  BOOST_CHECK_EQUAL(face->getRemoteUri(), FaceUri("testnull://hhppt12sy"));
+  BOOST_CHECK_EQUAL(face->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+}
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  shared_ptr<NullFace> face = make_shared<NullFace>();
+  shared_ptr<Face> face = makeNullFace();
 
   shared_ptr<Interest> interest = makeInterest("/A");
   BOOST_CHECK_NO_THROW(face->sendInterest(*interest));
@@ -45,7 +64,9 @@ BOOST_AUTO_TEST_CASE(Send)
   BOOST_CHECK_NO_THROW(face->close());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestNullFace
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

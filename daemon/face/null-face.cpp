@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,31 +24,26 @@
  */
 
 #include "null-face.hpp"
+#include "lp-face-wrapper.hpp"
+#include "generic-link-service.hpp"
+#include "internal-transport.hpp"
 
 namespace nfd {
+namespace face {
 
-// FIB might restrict creating a nexthop record toward non-local face in /localhost namespace.
-// NullFace has isLocal=true to enable creating a "blackhole" FIB entry under /localhost.
+// FIB could restrict creating a nexthop record toward non-local face in /localhost namespace.
+// NullFace has scope=local to enable creating a "blackhole" FIB entry under /localhost.
 
-NullFace::NullFace(const FaceUri& uri)
-  : Face(uri, uri, true)
+shared_ptr<Face>
+makeNullFace(const FaceUri& uri)
 {
+  auto face = make_unique<LpFace>(make_unique<GenericLinkService>(),
+                                  make_unique<InternalForwarderTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
+  auto faceW = make_shared<LpFaceWrapper>(std::move(face));
+  // TODO#3172 eliminate wrapper
+
+  return faceW;
 }
 
-void
-NullFace::sendInterest(const Interest& interest)
-{
-}
-
-void
-NullFace::sendData(const Data& data)
-{
-}
-
-void
-NullFace::close()
-{
-  this->fail("close");
-}
-
+} // namespace face
 } // namespace nfd
