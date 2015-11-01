@@ -94,7 +94,7 @@ StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
                                 shared_ptr<Face> outFace,
                                 bool wantNewNonce)
 {
-  SendInterestArgs args{pitEntry, outFace->getId()};
+  SendInterestArgs args{pitEntry, outFace->getId(), wantNewNonce};
   sendInterestHistory.push_back(args);
   pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
   afterAction();
