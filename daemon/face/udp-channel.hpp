@@ -68,7 +68,7 @@ public:
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
-         const ConnectFailedCallback& onReceiveFailed);
+         const FaceCreationFailedCallback& onReceiveFailed);
 
   /**
    * \brief Create a face by establishing connection to remote endpoint
@@ -79,7 +79,7 @@ public:
   connect(const udp::Endpoint& remoteEndpoint,
           ndn::nfd::FacePersistency persistency,
           const FaceCreatedCallback& onFaceCreated,
-          const ConnectFailedCallback& onConnectFailed);
+          const FaceCreationFailedCallback& onConnectFailed);
 
   /**
    * \brief Get number of faces in the channel
@@ -102,7 +102,7 @@ private:
   handleNewPeer(const boost::system::error_code& error,
                 size_t nBytesReceived,
                 const FaceCreatedCallback& onFaceCreated,
-                const ConnectFailedCallback& onReceiveFailed);
+                const FaceCreationFailedCallback& onReceiveFailed);
 
 private:
   std::map<udp::Endpoint, shared_ptr<face::LpFaceWrapper>> m_channelFaces;

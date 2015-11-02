@@ -44,7 +44,7 @@ TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint)
 
 void
 TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
-                   const ConnectFailedCallback& onAcceptFailed,
+                   const FaceCreationFailedCallback& onAcceptFailed,
                    int backlog/* = tcp::acceptor::max_connections*/)
 {
   if (isListening()) {
@@ -66,8 +66,8 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
-                    const TcpChannel::FaceCreatedCallback& onFaceCreated,
-                    const TcpChannel::ConnectFailedCallback& onConnectFailed,
+                    const FaceCreatedCallback& onFaceCreated,
+                    const FaceCreationFailedCallback& onConnectFailed,
                     const time::seconds& timeout/* = time::seconds(4)*/)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
@@ -133,7 +133,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
 
 void
 TcpChannel::accept(const FaceCreatedCallback& onFaceCreated,
-                   const ConnectFailedCallback& onAcceptFailed)
+                   const FaceCreationFailedCallback& onAcceptFailed)
 {
   m_acceptor.async_accept(m_acceptSocket, bind(&TcpChannel::handleAccept, this,
                                                boost::asio::placeholders::error,
@@ -143,7 +143,7 @@ TcpChannel::accept(const FaceCreatedCallback& onFaceCreated,
 void
 TcpChannel::handleAccept(const boost::system::error_code& error,
                          const FaceCreatedCallback& onFaceCreated,
-                         const ConnectFailedCallback& onAcceptFailed)
+                         const FaceCreationFailedCallback& onAcceptFailed)
 {
   if (error) {
     if (error == boost::asio::error::operation_aborted) // when the socket is closed by someone
@@ -168,7 +168,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
                           const shared_ptr<ip::tcp::socket>& socket,
                           const scheduler::EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onConnectFailed)
+                          const FaceCreationFailedCallback& onConnectFailed)
 {
   scheduler::cancel(connectTimeoutEvent);
 
@@ -200,7 +200,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
 
 void
 TcpChannel::handleConnectTimeout(const shared_ptr<ip::tcp::socket>& socket,
-                                 const ConnectFailedCallback& onConnectFailed)
+                                 const FaceCreationFailedCallback& onConnectFailed)
 {
   NFD_LOG_DEBUG("Connect to remote endpoint timed out");
 

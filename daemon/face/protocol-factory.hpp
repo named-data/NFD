@@ -26,26 +26,9 @@
 #ifndef NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
-#include "common.hpp"
+#include "channel.hpp"
 
 namespace nfd {
-
-class Channel;
-class Face;
-
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        is created (as a response to incoming connection or after
- *        connection is established)
- */
-typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
-
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        fails to be created
- */
-typedef function<void(const std::string& reason)> FaceCreationFailedCallback;
-
 
 /**
  * \brief Abstract base class for all protocol factories

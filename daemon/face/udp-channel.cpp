@@ -45,7 +45,7 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
 
 void
 UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
-                   const ConnectFailedCallback& onReceiveFailed)
+                   const FaceCreationFailedCallback& onReceiveFailed)
 {
   if (isListening()) {
     NFD_LOG_WARN("[" << m_localEndpoint << "] Already listening");
@@ -70,7 +70,7 @@ void
 UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
                     ndn::nfd::FacePersistency persistency,
                     const FaceCreatedCallback& onFaceCreated,
-                    const ConnectFailedCallback& onConnectFailed)
+                    const FaceCreationFailedCallback& onConnectFailed)
 {
   shared_ptr<face::LpFaceWrapper> face;
   try {
@@ -136,7 +136,7 @@ void
 UdpChannel::handleNewPeer(const boost::system::error_code& error,
                           size_t nBytesReceived,
                           const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onReceiveFailed)
+                          const FaceCreationFailedCallback& onReceiveFailed)
 {
   if (error) {
     if (error == boost::asio::error::operation_aborted) // when the socket is closed by someone

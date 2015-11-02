@@ -58,7 +58,7 @@ UnixStreamChannel::~UnixStreamChannel()
 
 void
 UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onAcceptFailed,
+                          const FaceCreationFailedCallback& onAcceptFailed,
                           int backlog/* = acceptor::max_connections*/)
 {
   if (isListening()) {
@@ -109,7 +109,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 UnixStreamChannel::accept(const FaceCreatedCallback& onFaceCreated,
-                          const ConnectFailedCallback& onAcceptFailed)
+                          const FaceCreationFailedCallback& onAcceptFailed)
 {
   m_acceptor.async_accept(m_socket, bind(&UnixStreamChannel::handleAccept, this,
                                          boost::asio::placeholders::error,
@@ -119,7 +119,7 @@ UnixStreamChannel::accept(const FaceCreatedCallback& onFaceCreated,
 void
 UnixStreamChannel::handleAccept(const boost::system::error_code& error,
                                 const FaceCreatedCallback& onFaceCreated,
-                                const ConnectFailedCallback& onAcceptFailed)
+                                const FaceCreationFailedCallback& onAcceptFailed)
 {
   if (error) {
     if (error == boost::asio::error::operation_aborted) // when the socket is closed by someone

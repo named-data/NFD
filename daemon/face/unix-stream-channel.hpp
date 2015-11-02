@@ -72,7 +72,7 @@ public:
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
-         const ConnectFailedCallback& onAcceptFailed,
+         const FaceCreationFailedCallback& onAcceptFailed,
          int backlog = boost::asio::local::stream_protocol::acceptor::max_connections);
 
   bool
@@ -81,12 +81,12 @@ public:
 private:
   void
   accept(const FaceCreatedCallback& onFaceCreated,
-         const ConnectFailedCallback& onAcceptFailed);
+         const FaceCreationFailedCallback& onAcceptFailed);
 
   void
   handleAccept(const boost::system::error_code& error,
                const FaceCreatedCallback& onFaceCreated,
-               const ConnectFailedCallback& onAcceptFailed);
+               const FaceCreationFailedCallback& onAcceptFailed);
 
 private:
   unix_stream::Endpoint m_endpoint;
