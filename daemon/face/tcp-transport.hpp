@@ -33,7 +33,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a connected TCP socket
  */
-class TcpTransport : public StreamTransport<boost::asio::ip::tcp>
+class TcpTransport DECL_FINAL : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
   TcpTransport(protocol::socket&& socket,
@@ -41,7 +41,7 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
 };
 
 } // namespace face

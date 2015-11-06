@@ -72,6 +72,13 @@ public:
     this->receive(Packet(std::move(block)));
   }
 
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE
+  {
+    // accept everything
+  }
+
 private:
   virtual void
   doClose() DECL_OVERRIDE

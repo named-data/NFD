@@ -237,13 +237,9 @@ protected: // to be overridden by subclass
   /** \brief invoked before persistency is changed
    *  \throw std::invalid_argument new persistency is not supported
    *  \throw std::runtime_error transition is disallowed
-   *
-   *  Base class implementation does nothing.
    */
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
-  {
-  }
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) = 0;
 
   /** \brief performs Transport specific operations to close the transport
    *
@@ -335,13 +331,6 @@ inline ndn::nfd::FacePersistency
 Transport::getPersistency() const
 {
   return m_persistency;
-}
-
-inline void
-Transport::setPersistency(ndn::nfd::FacePersistency persistency)
-{
-  this->beforeChangePersistency(persistency);
-  m_persistency = persistency;
 }
 
 inline ndn::nfd::LinkType

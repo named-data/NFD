@@ -63,6 +63,9 @@ public:
 
 protected:
   virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+
+  virtual void
   doClose() DECL_OVERRIDE;
 
 private:

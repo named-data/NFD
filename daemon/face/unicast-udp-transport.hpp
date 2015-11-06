@@ -35,20 +35,23 @@ namespace face {
 /**
  * \brief A Transport that communicates on a unicast UDP socket
  */
-class UnicastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Unicast>
+class UnicastUdpTransport DECL_FINAL : public DatagramTransport<boost::asio::ip::udp, Unicast>
 {
 public:
   UnicastUdpTransport(protocol::socket&& socket,
                       ndn::nfd::FacePersistency persistency,
-                      const time::seconds& idleTimeout);
+                      time::nanoseconds idleTimeout);
+
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
 
 private:
   void
-  closeIfIdle();
+  scheduleClosureWhenIdle();
 
 private:
-  const time::seconds m_idleTimeout;
-  time::steady_clock::TimePoint m_lastIdleCheck;
+  const time::nanoseconds m_idleTimeout;
   scheduler::ScopedEventId m_closeIfIdleEvent;
 };
 

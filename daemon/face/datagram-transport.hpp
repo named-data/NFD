@@ -54,12 +54,6 @@ public:
   explicit
   DatagramTransport(typename protocol::socket&& socket);
 
-  virtual void
-  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
-
-  virtual void
-  doClose() DECL_OVERRIDE;
-
   /** \brief Receive datagram, translate buffer into packet, deliver to parent class.
    */
   void
@@ -67,13 +61,19 @@ public:
                   const boost::system::error_code& error);
 
 protected:
-  void
-  handleReceive(const boost::system::error_code& error,
-                size_t nBytesReceived);
+  virtual void
+  doClose() DECL_OVERRIDE;
+
+  virtual void
+  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
 
   void
   handleSend(const boost::system::error_code& error,
              size_t nBytesSent, const Block& payload);
+
+  void
+  handleReceive(const boost::system::error_code& error,
+                size_t nBytesReceived);
 
   void
   processErrorCode(const boost::system::error_code& error);
@@ -96,7 +96,6 @@ private:
 
 
 template<class T, class U>
-inline
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
 {
@@ -107,20 +106,7 @@ DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol:
 }
 
 template<class T, class U>
-inline void
-DatagramTransport<T, U>::doSend(Transport::Packet&& packet)
-{
-  NFD_LOG_FACE_TRACE(__func__);
-
-  m_socket.async_send(boost::asio::buffer(packet.packet),
-                      bind(&DatagramTransport<T, U>::handleSend, this,
-                           boost::asio::placeholders::error,
-                           boost::asio::placeholders::bytes_transferred,
-                           packet.packet));
-}
-
-template<class T, class U>
-inline void
+void
 DatagramTransport<T, U>::doClose()
 {
   NFD_LOG_FACE_TRACE(__func__);
@@ -141,7 +127,20 @@ DatagramTransport<T, U>::doClose()
 }
 
 template<class T, class U>
-inline void
+void
+DatagramTransport<T, U>::doSend(Transport::Packet&& packet)
+{
+  NFD_LOG_FACE_TRACE(__func__);
+
+  m_socket.async_send(boost::asio::buffer(packet.packet),
+                      bind(&DatagramTransport<T, U>::handleSend, this,
+                           boost::asio::placeholders::error,
+                           boost::asio::placeholders::bytes_transferred,
+                           packet.packet));
+}
+
+template<class T, class U>
+void
 DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesReceived,
                                          const boost::system::error_code& error)
 {
@@ -169,7 +168,7 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
 }
 
 template<class T, class U>
-inline void
+void
 DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error,
                                        size_t nBytesReceived)
 {
@@ -183,7 +182,7 @@ DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error,
 }
 
 template<class T, class U>
-inline void
+void
 DatagramTransport<T, U>::handleSend(const boost::system::error_code& error,
                                     size_t nBytesSent, const Block& payload)
 // 'payload' is unused; it's needed to retain the underlying Buffer
@@ -195,7 +194,7 @@ DatagramTransport<T, U>::handleSend(const boost::system::error_code& error,
 }
 
 template<class T, class U>
-inline void
+void
 DatagramTransport<T, U>::processErrorCode(const boost::system::error_code& error)
 {
   NFD_LOG_FACE_TRACE(__func__);

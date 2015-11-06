@@ -56,7 +56,8 @@ WebSocketTransport::WebSocketTransport(websocketpp::connection_hdl hdl,
   NFD_LOG_FACE_INFO("Creating transport");
 }
 
-void WebSocketTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
+void
+WebSocketTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
 {
   if (newPersistency != ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     BOOST_THROW_EXCEPTION(

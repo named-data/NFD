@@ -51,15 +51,15 @@ public:
   explicit
   StreamTransport(typename protocol::socket&& socket);
 
-  virtual void
-  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
-
+protected:
   virtual void
   doClose() DECL_OVERRIDE;
 
-protected:
   void
   deferredClose();
+
+  virtual void
+  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
 
   void
   sendFromQueue();
@@ -81,42 +81,25 @@ protected:
   NFD_LOG_INCLASS_DECLARE();
 
 private:
-  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
-  size_t m_inputBufferSize;
+  uint8_t m_receiveBuffer[ndn::MAX_NDN_PACKET_SIZE];
+  size_t m_receiveBufferSize;
   std::queue<Block> m_sendQueue;
 };
 
-// All derived classes must use
-// NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamTransport, <specialization-parameter>, "Name");
-
 
 template<class T>
-inline
 StreamTransport<T>::StreamTransport(typename StreamTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
-  , m_inputBufferSize(0)
+  , m_receiveBufferSize(0)
 {
-  m_socket.async_receive(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
+  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer, ndn::MAX_NDN_PACKET_SIZE),
                          bind(&StreamTransport<T>::handleReceive, this,
                               boost::asio::placeholders::error,
                               boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T>
-inline void
-StreamTransport<T>::doSend(Transport::Packet&& packet)
-{
-  NFD_LOG_FACE_TRACE(__func__);
-
-  bool wasQueueEmpty = m_sendQueue.empty();
-  m_sendQueue.push(packet.packet);
-
-  if (wasQueueEmpty)
-    sendFromQueue();
-}
-
-template<class T>
-inline void
+void
 StreamTransport<T>::doClose()
 {
   NFD_LOG_FACE_TRACE(__func__);
@@ -148,7 +131,7 @@ StreamTransport<T>::doClose()
 }
 
 template<class T>
-inline void
+void
 StreamTransport<T>::deferredClose()
 {
   NFD_LOG_FACE_TRACE(__func__);
@@ -165,7 +148,20 @@ StreamTransport<T>::deferredClose()
 }
 
 template<class T>
-inline void
+void
+StreamTransport<T>::doSend(Transport::Packet&& packet)
+{
+  NFD_LOG_FACE_TRACE(__func__);
+
+  bool wasQueueEmpty = m_sendQueue.empty();
+  m_sendQueue.push(packet.packet);
+
+  if (wasQueueEmpty)
+    sendFromQueue();
+}
+
+template<class T>
+void
 StreamTransport<T>::sendFromQueue()
 {
   boost::asio::async_write(m_socket, boost::asio::buffer(m_sendQueue.front()),
@@ -175,7 +171,7 @@ StreamTransport<T>::sendFromQueue()
 }
 
 template<class T>
-inline void
+void
 StreamTransport<T>::handleSend(const boost::system::error_code& error,
                                size_t nBytesSent)
 {
@@ -192,7 +188,7 @@ StreamTransport<T>::handleSend(const boost::system::error_code& error,
 }
 
 template<class T>
-inline void
+void
 StreamTransport<T>::handleReceive(const boost::system::error_code& error,
                                   size_t nBytesReceived)
 {
@@ -201,26 +197,24 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
 
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
 
-  m_inputBufferSize += nBytesReceived;
+  m_receiveBufferSize += nBytesReceived;
 
   size_t offset = 0;
 
   bool isOk = true;
   Block element;
-  while (m_inputBufferSize - offset > 0) {
-    std::tie(isOk, element) = Block::fromBuffer(m_inputBuffer + offset, m_inputBufferSize - offset);
+  while (m_receiveBufferSize - offset > 0) {
+    std::tie(isOk, element) = Block::fromBuffer(m_receiveBuffer + offset, m_receiveBufferSize - offset);
     if (!isOk)
       break;
 
     offset += element.size();
+    BOOST_ASSERT(offset <= m_receiveBufferSize);
 
-    BOOST_ASSERT(offset <= m_inputBufferSize);
-
-    Transport::Packet packet(std::move(element));
-    this->receive(std::move(packet));
+    this->receive(Transport::Packet(std::move(element)));
   }
 
-  if (!isOk && m_inputBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0) {
+  if (!isOk && m_receiveBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0) {
     NFD_LOG_FACE_WARN("Failed to parse incoming packet or packet too large to process");
     this->setState(TransportState::FAILED);
     doClose();
@@ -228,24 +222,24 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   }
 
   if (offset > 0) {
-    if (offset != m_inputBufferSize) {
-      std::copy(m_inputBuffer + offset, m_inputBuffer + m_inputBufferSize, m_inputBuffer);
-      m_inputBufferSize -= offset;
+    if (offset != m_receiveBufferSize) {
+      std::copy(m_receiveBuffer + offset, m_receiveBuffer + m_receiveBufferSize, m_receiveBuffer);
+      m_receiveBufferSize -= offset;
     }
     else {
-      m_inputBufferSize = 0;
+      m_receiveBufferSize = 0;
     }
   }
 
-  m_socket.async_receive(boost::asio::buffer(m_inputBuffer + m_inputBufferSize,
-                                             ndn::MAX_NDN_PACKET_SIZE - m_inputBufferSize),
+  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer + m_receiveBufferSize,
+                                             ndn::MAX_NDN_PACKET_SIZE - m_receiveBufferSize),
                          bind(&StreamTransport<T>::handleReceive, this,
                               boost::asio::placeholders::error,
                               boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T>
-inline void
+void
 StreamTransport<T>::processErrorCode(const boost::system::error_code& error)
 {
   NFD_LOG_FACE_TRACE(__func__);

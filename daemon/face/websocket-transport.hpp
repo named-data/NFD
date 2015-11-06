@@ -36,7 +36,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a WebSocket connection
  */
-class WebSocketTransport : public Transport
+class WebSocketTransport DECL_FINAL : public Transport
 {
 public:
   WebSocketTransport(websocketpp::connection_hdl hdl,
@@ -57,14 +57,14 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
 
   virtual void
-  doClose() DECL_OVERRIDE;
+  doClose() DECL_FINAL;
 
 private:
   virtual void
-  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
+  doSend(Transport::Packet&& packet) DECL_FINAL;
 
   void
   schedulePing();

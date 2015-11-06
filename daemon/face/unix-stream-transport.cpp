@@ -49,5 +49,14 @@ UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
   NFD_LOG_FACE_INFO("Creating transport");
 }
 
+void
+UnixStreamTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
+{
+  if (newPersistency != ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+    BOOST_THROW_EXCEPTION(
+      std::invalid_argument("UnixStreamTransport supports only FACE_PERSISTENCY_ON_DEMAND"));
+  }
+}
+
 } // namespace face
 } // namespace nfd

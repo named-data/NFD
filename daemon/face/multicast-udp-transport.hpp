@@ -34,7 +34,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a UDP multicast group
  */
-class MulticastUdpTransport : public DatagramTransport<boost::asio::ip::udp, Multicast>
+class MulticastUdpTransport DECL_FINAL : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
 public:
   /**
@@ -46,14 +46,19 @@ public:
    */
   MulticastUdpTransport(const protocol::endpoint& localEndpoint,
                         const protocol::endpoint& multicastGroup,
-                        protocol::socket&& recvSocket, protocol::socket&& sendSocket);
+                        protocol::socket&& recvSocket,
+                        protocol::socket&& sendSocket);
+
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
 
 private:
   virtual void
-  doSend(Transport::Packet&& packet) DECL_OVERRIDE;
+  doSend(Transport::Packet&& packet) DECL_FINAL;
 
   virtual void
-  doClose() DECL_OVERRIDE;
+  doClose() DECL_FINAL;
 
 private:
   protocol::endpoint m_multicastGroup;

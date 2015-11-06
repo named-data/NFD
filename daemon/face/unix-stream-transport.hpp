@@ -38,11 +38,15 @@ namespace face {
 /**
  * \brief A Transport that communicates on a stream-oriented Unix domain socket
  */
-class UnixStreamTransport : public StreamTransport<boost::asio::local::stream_protocol>
+class UnixStreamTransport DECL_FINAL : public StreamTransport<boost::asio::local::stream_protocol>
 {
 public:
   explicit
   UnixStreamTransport(protocol::socket&& socket);
+
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
 };
 
 } // namespace face

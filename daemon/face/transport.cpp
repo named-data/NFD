@@ -128,6 +128,25 @@ Transport::receive(Packet&& packet)
 }
 
 void
+Transport::setPersistency(ndn::nfd::FacePersistency newPersistency)
+{
+  if (m_persistency == newPersistency) {
+    return;
+  }
+
+  if (newPersistency == ndn::nfd::FACE_PERSISTENCY_NONE) {
+    throw std::runtime_error("invalid persistency transition");
+  }
+
+  if (m_persistency != ndn::nfd::FACE_PERSISTENCY_NONE) {
+    this->beforeChangePersistency(newPersistency);
+    NFD_LOG_FACE_DEBUG("setPersistency " << m_persistency << " -> " << newPersistency);
+  }
+
+  m_persistency = newPersistency;
+}
+
+void
 Transport::setState(TransportState newState)
 {
   if (m_state == newState) {

@@ -51,6 +51,15 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndp
 }
 
 void
+MulticastUdpTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
+{
+  if (newPersistency != ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
+    BOOST_THROW_EXCEPTION(
+      std::invalid_argument("MulticastUdpTransport supports only FACE_PERSISTENCY_PERMANENT"));
+  }
+}
+
+void
 MulticastUdpTransport::doSend(Transport::Packet&& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);

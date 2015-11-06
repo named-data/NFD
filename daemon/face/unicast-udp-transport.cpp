@@ -41,10 +41,9 @@ NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(DatagramTransport, UnicastUdpTran
 
 UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
                                          ndn::nfd::FacePersistency persistency,
-                                         const time::seconds& idleTimeout)
+                                         time::nanoseconds idleTimeout)
   : DatagramTransport(std::move(socket))
   , m_idleTimeout(idleTimeout)
-  , m_lastIdleCheck(time::steady_clock::now())
 {
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
   this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
@@ -76,29 +75,36 @@ UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
 #endif
 
   if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&
-      m_idleTimeout > time::seconds::zero()) {
-    m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UnicastUdpTransport::closeIfIdle, this));
+      m_idleTimeout > time::nanoseconds::zero()) {
+    scheduleClosureWhenIdle();
   }
 }
 
 void
-UnicastUdpTransport::closeIfIdle()
+UnicastUdpTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
 {
-  // transport can be switched from on-demand to non-on-demand mode
-  // (non-on-demand -> on-demand transition is not allowed)
-  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (newPersistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&
+      m_idleTimeout > time::nanoseconds::zero()) {
+    scheduleClosureWhenIdle();
+  }
+  else {
+    m_closeIfIdleEvent.cancel();
+  }
+}
+
+void
+UnicastUdpTransport::scheduleClosureWhenIdle()
+{
+  m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, [this] {
     if (!hasBeenUsedRecently()) {
       NFD_LOG_FACE_INFO("Closing due to inactivity");
       this->close();
     }
     else {
       resetRecentUsage();
-
-      m_lastIdleCheck = time::steady_clock::now();
-      m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, bind(&UnicastUdpTransport::closeIfIdle, this));
+      scheduleClosureWhenIdle();
     }
-  }
-  // else do nothing and do not reschedule the event
+  });
 }
 
 } // namespace face
