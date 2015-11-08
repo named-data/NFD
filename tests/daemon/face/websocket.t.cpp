@@ -112,8 +112,10 @@ public:
   void
   face1_onFail()
   {
-    face1.reset();
-    limitedIo.afterOp();
+    g_io.post([this] {
+      face1.reset();
+      limitedIo.afterOp();
+    });
   }
 
   void
