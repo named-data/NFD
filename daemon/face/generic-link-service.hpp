@@ -30,16 +30,54 @@
 #include "core/logger.hpp"
 
 #include "link-service.hpp"
-
-#include <ndn-cxx/lp/packet.hpp>
+#include "lp-fragmenter.hpp"
+#include "lp-reassembler.hpp"
 
 namespace nfd {
 namespace face {
+
+/** \brief counters provided by GenericLinkService
+ *  \note The type name 'GenericLinkServiceCounters' is implementation detail.
+ *        Use 'GenericLinkService::Counters' in public API.
+ */
+class GenericLinkServiceCounters : public virtual LinkService::Counters
+{
+public:
+  explicit
+  GenericLinkServiceCounters(const LpReassembler& reassembler);
+
+  /** \brief count of failed fragmentations
+   */
+  PacketCounter nFragmentationErrors;
+
+  /** \brief count of outgoing LpPackets dropped due to exceeding MTU limit
+   *
+   *  If this counter is non-zero, the operator should enable fragmentation.
+   */
+  PacketCounter nOutOverMtu;
+
+  /** \brief count of invalid LpPackets dropped before reassembly
+   */
+  PacketCounter nInLpInvalid;
+
+  /** \brief count of network-layer packets currently being reassembled
+   */
+  SizeCounter<LpReassembler> nReassembling;
+
+  /** \brief count of dropped partial network-layer packets due to reassembly timeout
+   */
+  PacketCounter nReassemblyTimeouts;
+
+  /** \brief count of invalid reassembled network-layer packets dropped
+   */
+  PacketCounter nInNetInvalid;
+};
 
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
  *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class GenericLinkService : public LinkService
+                         , protected virtual GenericLinkServiceCounters
 {
 public:
   /** \brief Options that control the behavior of GenericLinkService
@@ -50,12 +88,30 @@ public:
     Options();
 
   public:
-    // TODO #3171: fragmentation and reassembly options
-
     /** \brief enables encoding of IncomingFaceId, and decoding of NextHopFaceId and CachePolicy
      */
     bool allowLocalFields;
+
+    /** \brief enables fragmentation
+     */
+    bool allowFragmentation;
+
+    /** \brief options for fragmentation
+     */
+    LpFragmenter::Options fragmenterOptions;
+
+    /** \brief enables reassembly
+     */
+    bool allowReassembly;
+
+    /** \brief options for reassembly
+     */
+    LpReassembler::Options reassemblerOptions;
   };
+
+  /** \brief counters provided by GenericLinkService
+   */
+  typedef GenericLinkServiceCounters Counters;
 
   explicit
   GenericLinkService(const Options& options = Options());
@@ -70,7 +126,10 @@ public:
   void
   setOptions(const Options& options);
 
-private: // send path entrypoint
+  virtual const Counters&
+  getCounters() const DECL_OVERRIDE;
+
+private: // send path
   /** \brief sends Interest
    */
   void
@@ -87,13 +146,6 @@ private: // send path entrypoint
   void
   doSendNack(const ndn::lp::Nack& nack) DECL_OVERRIDE;
 
-private: // receive path entrypoint
-  /** \brief receives Packet
-   */
-  void
-  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE;
-
-private: // encoding and decoding
   /** \brief encode IncomingFaceId into LpPacket and verify local fields
    */
   static bool
@@ -103,6 +155,38 @@ private: // encoding and decoding
    */
   static bool
   encodeLocalFields(const Data& data, lp::Packet& lpPacket);
+
+  /** \brief encode and send a complete network layer packet
+   *  \param pkt LpPacket containing a complete network layer packet
+   */
+  void
+  sendNetPacket(lp::Packet&& pkt);
+
+  /** \brief assign a sequence number to an LpPacket
+   */
+  void
+  assignSequence(lp::Packet& pkt);
+
+  /** \brief assign consecutive sequence numbers to LpPackets
+   */
+  void
+  assignSequences(std::vector<lp::Packet>& pkts);
+
+private: // receive path
+  /** \brief receive Packet from Transport
+   */
+  void
+  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE;
+
+  /** \brief decode incoming network-layer packet
+   *  \param netPkt reassembled network-layer packet
+   *  \param firstPkt LpPacket of first fragment
+   *
+   *  If decoding is successful, a receive signal is emitted;
+   *  otherwise, a warning is logged.
+   */
+  void
+  decodeNetPacket(const Block& netPkt, const lp::Packet& firstPkt);
 
   /** \brief decode incoming Interest
    *  \param netPkt reassembled network-layer packet; TLV-TYPE must be Interest
@@ -142,6 +226,9 @@ private: // encoding and decoding
 
 private:
   Options m_options;
+  LpFragmenter m_fragmenter;
+  LpReassembler m_reassembler;
+  lp::Sequence m_lastSeqNo;
 };
 
 inline const GenericLinkService::Options&
@@ -154,6 +241,12 @@ inline void
 GenericLinkService::setOptions(const GenericLinkService::Options& options)
 {
   m_options = options;
+}
+
+inline const GenericLinkService::Counters&
+GenericLinkService::getCounters() const
+{
+  return *this;
 }
 
 } // namespace face

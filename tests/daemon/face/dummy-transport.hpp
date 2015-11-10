@@ -56,6 +56,12 @@ public:
   }
 
   void
+  setMtu(ssize_t mtu)
+  {
+    this->Transport::setMtu(mtu);
+  }
+
+  void
   setState(FaceState state)
   {
     this->Transport::setState(state);
