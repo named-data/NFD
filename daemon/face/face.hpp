@@ -29,6 +29,7 @@
 #include "common.hpp"
 #include "core/logger.hpp"
 #include "face-counters.hpp"
+#include "old-face-counters.hpp"
 #include "face-log.hpp"
 
 #include <ndn-cxx/management/nfd-face-status.hpp>
@@ -162,8 +163,7 @@ public: // attributes
   virtual bool
   isUp() const;
 
-  // 'virtual' to allow override in LpFaceWrapper
-  virtual const FaceCounters&
+  virtual const face::FaceCounters&
   getCounters() const;
 
   /** \return a FaceUri that represents the remote endpoint
@@ -176,17 +176,6 @@ public: // attributes
   const FaceUri&
   getLocalUri() const;
 
-  /** \return FaceTraits data structure filled with the current FaceTraits status
-   */
-  template<typename FaceTraits>
-  void
-  copyStatusTo(FaceTraits& traits) const;
-
-  /** \return FaceStatus data structure filled with the current Face status
-   */
-  virtual ndn::nfd::FaceStatus
-  getFaceStatus() const;
-
 protected:
   bool
   decodeAndDispatchInput(const Block& element);
@@ -196,7 +185,7 @@ protected:
   void
   fail(const std::string& reason);
 
-  FaceCounters&
+  OldFaceCounters&
   getMutableCounters();
 
   DECLARE_SIGNAL_EMIT(onReceiveInterest)
@@ -214,7 +203,8 @@ protected:
 private:
   FaceId m_id;
   std::string m_description;
-  FaceCounters m_counters;
+  OldFaceCounters m_counters;
+  face::FaceCounters m_countersWrapper;
   const FaceUri m_remoteUri;
   const FaceUri m_localUri;
   const bool m_isLocal;
@@ -274,13 +264,13 @@ Face::isMultiAccess() const
   return m_isMultiAccess;
 }
 
-inline const FaceCounters&
+inline const face::FaceCounters&
 Face::getCounters() const
 {
-  return m_counters;
+  return m_countersWrapper;
 }
 
-inline FaceCounters&
+inline OldFaceCounters&
 Face::getMutableCounters()
 {
   return m_counters;

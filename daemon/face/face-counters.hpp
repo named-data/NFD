@@ -26,153 +26,77 @@
 #ifndef NFD_DAEMON_FACE_FACE_COUNTERS_HPP
 #define NFD_DAEMON_FACE_FACE_COUNTERS_HPP
 
-#include "core/counter.hpp"
+#include "link-service.hpp"
+#include "transport.hpp"
 
 namespace nfd {
 
-/** \brief contains network layer packet counters
+class OldFaceCounters;
+
+namespace face {
+
+/** \brief gives access to counters provided by Face
+ *
+ *  This type is a facade that exposes common counters of a Face.
+ *
+ *  get<T>() can be used to access extended counters provided by
+ *  LinkService or Transport of the Face.
  */
-class NetworkLayerCounters : noncopyable
+class FaceCounters
 {
 public:
-  /// incoming Interest
-  const PacketCounter&
-  getNInInterests() const
-  {
-    return m_nInInterests;
-  }
+  FaceCounters(const LinkService::Counters& linkServiceCounters,
+               const Transport::Counters& transportCounters);
 
-  PacketCounter&
-  getNInInterests()
-  {
-    return m_nInInterests;
-  }
-
-  /// incoming Data
-  const PacketCounter&
-  getNInDatas() const
-  {
-    return m_nInDatas;
-  }
-
-  PacketCounter&
-  getNInDatas()
-  {
-    return m_nInDatas;
-  }
-
-  /// outgoing Interest
-  const PacketCounter&
-  getNOutInterests() const
-  {
-    return m_nOutInterests;
-  }
-
-  PacketCounter&
-  getNOutInterests()
-  {
-    return m_nOutInterests;
-  }
-
-  /// outgoing Data
-  const PacketCounter&
-  getNOutDatas() const
-  {
-    return m_nOutDatas;
-  }
-
-  PacketCounter&
-  getNOutDatas()
-  {
-    return m_nOutDatas;
-  }
-
-protected:
-  /** \brief copy current obseverations to a struct
-   *  \param recipient an object with set methods for counters
+  /** \brief wraps old counters
+   *
+   *  FaceCounters instance created from this constructor only provides Interest/Data counters
+   *  and Nack counters. Other counters are always zero. get<T>() should not be used.
    */
-  template<typename R>
-  void
-  copyTo(R& recipient) const
+  explicit
+  FaceCounters(const OldFaceCounters& oldCounters);
+
+  /** \return counters provided by LinkService
+   *  \tparam T LinkService counters type
+   *  \throw std::bad_cast counters type mismatch
+   */
+  template<typename T>
+  typename std::enable_if<std::is_base_of<LinkService::Counters, T>::value, const T&>::type
+  get() const
   {
-    recipient.setNInInterests(this->getNInInterests());
-    recipient.setNInDatas(this->getNInDatas());
-    recipient.setNOutInterests(this->getNOutInterests());
-    recipient.setNOutDatas(this->getNOutDatas());
+    return dynamic_cast<const T&>(m_linkServiceCounters);
   }
+
+  /** \return counters provided by Transport
+   *  \tparam T Transport counters type
+   *  \throw std::bad_cast counters type mismatch
+   */
+  template<typename T>
+  typename std::enable_if<std::is_base_of<Transport::Counters, T>::value, const T&>::type
+  get() const
+  {
+    return dynamic_cast<const T&>(m_transportCounters);
+  }
+
+public:
+  const PacketCounter& nInInterests;
+  const PacketCounter& nOutInterests;
+  const PacketCounter& nInData;
+  const PacketCounter& nOutData;
+  const PacketCounter& nInNacks;
+  const PacketCounter& nOutNacks;
+
+  const PacketCounter& nInPackets;
+  const PacketCounter& nOutPackets;
+  const ByteCounter& nInBytes;
+  const ByteCounter& nOutBytes;
 
 private:
-  PacketCounter m_nInInterests;
-  PacketCounter m_nInDatas;
-  PacketCounter m_nOutInterests;
-  PacketCounter m_nOutDatas;
+  const LinkService::Counters& m_linkServiceCounters;
+  const Transport::Counters& m_transportCounters;
 };
 
-/** \brief contains link layer byte counters
- */
-class LinkLayerCounters : noncopyable
-{
-public:
-  /// received bytes
-  const ByteCounter&
-  getNInBytes() const
-  {
-    return m_nInBytes;
-  }
-
-  ByteCounter&
-  getNInBytes()
-  {
-    return m_nInBytes;
-  }
-
-  /// sent bytes
-  const ByteCounter&
-  getNOutBytes() const
-  {
-    return m_nOutBytes;
-  }
-
-  ByteCounter&
-  getNOutBytes()
-  {
-    return m_nOutBytes;
-  }
-
-protected:
-  /** \brief copy current obseverations to a struct
-   *  \param recipient an object with set methods for counters
-   */
-  template<typename R>
-  void
-  copyTo(R& recipient) const
-  {
-    recipient.setNInBytes(this->getNInBytes());
-    recipient.setNOutBytes(this->getNOutBytes());
-  }
-
-private:
-  ByteCounter m_nInBytes;
-  ByteCounter m_nOutBytes;
-};
-
-/** \brief contains counters on face
- */
-class FaceCounters : public NetworkLayerCounters, public LinkLayerCounters
-{
-public:
-  /** \brief copy current obseverations to a struct
-   *  \param recipient an object with set methods for counters
-   */
-  template<typename R>
-  void
-  copyTo(R& recipient) const
-  {
-    this->NetworkLayerCounters::copyTo(recipient);
-    this->LinkLayerCounters::copyTo(recipient);
-  }
-};
-
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_FACE_COUNTERS_HPP

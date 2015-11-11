@@ -105,7 +105,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
   const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
-  ++m_counters.getNInInterests();
+  ++m_counters.nInInterests;
 
   // /localhost scope control
   bool isViolatingLocalhost = !inFace.isLocal() &&
@@ -317,7 +317,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
 
   // send Interest
   outFace.sendInterest(*interest);
-  ++m_counters.getNOutInterests();
+  ++m_counters.nOutInterests;
 }
 
 void
@@ -371,7 +371,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
   const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
-  ++m_counters.getNInDatas();
+  ++m_counters.nInData;
 
   // /localhost scope control
   bool isViolatingLocalhost = !inFace.isLocal() &&
@@ -473,12 +473,14 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 
   // send Data
   outFace.sendData(data);
-  ++m_counters.getNOutDatas();
+  ++m_counters.nOutData;
 }
 
 void
 Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
 {
+  ++m_counters.nInNacks;
+
   // if multi-access face, drop
   if (inFace.isMultiAccess()) {
     NFD_LOG_DEBUG("onIncomingNack face=" << inFace.getId() <<
@@ -572,6 +574,7 @@ Forwarder::onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
 
   // send Nack on face
   const_cast<Face&>(outFace).sendNack(nackPkt);
+  ++m_counters.nOutNacks;
 }
 
 static inline bool

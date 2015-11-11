@@ -31,6 +31,7 @@ namespace nfd {
 
 Face::Face(const FaceUri& remoteUri, const FaceUri& localUri, bool isLocal, bool isMultiAccess)
   : m_id(INVALID_FACEID)
+  , m_countersWrapper(m_counters)
   , m_remoteUri(remoteUri)
   , m_localUri(localUri)
   , m_isLocal(isLocal)
@@ -91,37 +92,6 @@ Face::fail(const std::string& reason)
 
   m_isFailed = true;
   this->onFail(reason);
-}
-
-template<typename FaceTraits>
-void
-Face::copyStatusTo(FaceTraits& traits) const
-{
-  traits.setFaceId(getId())
-        .setRemoteUri(getRemoteUri().toString())
-        .setLocalUri(getLocalUri().toString())
-        .setFaceScope(isLocal() ? ndn::nfd::FACE_SCOPE_LOCAL
-                                : ndn::nfd::FACE_SCOPE_NON_LOCAL)
-        .setFacePersistency(getPersistency())
-        .setLinkType(isMultiAccess() ? ndn::nfd::LINK_TYPE_MULTI_ACCESS
-                                     : ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-}
-
-template void
-Face::copyStatusTo<ndn::nfd::FaceStatus>(ndn::nfd::FaceStatus&) const;
-
-template void
-Face::copyStatusTo<ndn::nfd::FaceEventNotification>(ndn::nfd::FaceEventNotification&) const;
-
-ndn::nfd::FaceStatus
-Face::getFaceStatus() const
-{
-  ndn::nfd::FaceStatus status;
-
-  copyStatusTo(status);
-  this->getCounters().copyTo(status);
-
-  return status;
 }
 
 } // namespace nfd

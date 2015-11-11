@@ -65,7 +65,6 @@ Transport::Transport()
   , m_linkType(ndn::nfd::LINK_TYPE_NONE)
   , m_mtu(MTU_INVALID)
   , m_state(TransportState::UP)
-  , m_oldCounters(nullptr)
 {
 }
 
@@ -81,7 +80,6 @@ Transport::setFaceAndLinkService(LpFace& face, LinkService& service)
 
   m_face = &face;
   m_service = &service;
-  m_oldCounters = &m_face->getMutableCounters();
 }
 
 void
@@ -112,7 +110,6 @@ Transport::send(Packet&& packet)
   if (state == TransportState::UP) {
     ++this->nOutPackets;
     this->nOutBytes += packet.packet.size();
-    m_oldCounters->getNOutBytes() += packet.packet.size();
   }
 
   this->doSend(std::move(packet));
@@ -126,7 +123,6 @@ Transport::receive(Packet&& packet)
 
   ++this->nInPackets;
   this->nInBytes += packet.packet.size();
-  m_oldCounters->getNInBytes() += packet.packet.size();
 
   m_service->receivePacket(std::move(packet));
 }

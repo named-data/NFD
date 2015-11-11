@@ -62,25 +62,25 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
   fibEntry->addNextHop(face2, 0);
 
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 0);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
   g_io.post([&] { face1->receiveInterest(*interestAB); });
   BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getName(), nameAB);
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInInterests (), 1);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutInterests(), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 1);
 
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 0);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
   g_io.post([&] { face2->receiveData(*dataABC); });
   BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getName(), nameABC);
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNInDatas (), 1);
-  BOOST_CHECK_EQUAL(forwarder.getCounters().getNOutDatas(), 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 1);
 }
 
 BOOST_AUTO_TEST_CASE(CsMatched)

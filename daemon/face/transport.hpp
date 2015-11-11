@@ -26,9 +26,7 @@
 #ifndef NFD_DAEMON_FACE_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_TRANSPORT_HPP
 
-#include "common.hpp"
-
-#include "face-counters.hpp"
+#include "core/counter.hpp"
 #include "face-log.hpp"
 
 namespace nfd {
@@ -317,7 +315,6 @@ private:
   ndn::nfd::LinkType m_linkType;
   ssize_t m_mtu;
   TransportState m_state;
-  LinkLayerCounters* m_oldCounters; // TODO#3177 change into LinkCounters
 };
 
 inline const LpFace*

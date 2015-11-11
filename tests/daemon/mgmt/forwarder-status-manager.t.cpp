@@ -92,6 +92,7 @@ BOOST_AUTO_TEST_CASE(Status)
   BOOST_CHECK_EQUAL(status.getNPitEntries(), forwarder.getPit().size());
   BOOST_CHECK_EQUAL(status.getNMeasurementsEntries(), forwarder.getMeasurements().size());
   BOOST_CHECK_EQUAL(status.getNCsEntries(), forwarder.getCs().size());
+  // TODO#3325 check packet counter values
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarderStatusManager

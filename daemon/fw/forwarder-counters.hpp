@@ -26,24 +26,21 @@
 #ifndef NFD_DAEMON_FW_FORWARDER_COUNTERS_HPP
 #define NFD_DAEMON_FW_FORWARDER_COUNTERS_HPP
 
-#include "face/face-counters.hpp"
+#include "core/counter.hpp"
 
 namespace nfd {
 
-/** \brief contains counters on forwarder
+/** \brief counters provided by Forwarder
  */
-class ForwarderCounters : public NetworkLayerCounters
+class ForwarderCounters
 {
 public:
-  /** \brief copy current obseverations to a struct
-   *  \param recipient an object with set methods for counters
-   */
-  template<typename R>
-  void
-  copyTo(R& recipient) const
-  {
-    this->NetworkLayerCounters::copyTo(recipient);
-  }
+  PacketCounter nInInterests;
+  PacketCounter nOutInterests;
+  PacketCounter nInData;
+  PacketCounter nOutData;
+  PacketCounter nInNacks;
+  PacketCounter nOutNacks;
 };
 
 } // namespace nfd

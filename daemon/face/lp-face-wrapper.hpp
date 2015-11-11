@@ -35,8 +35,6 @@ namespace face {
 
 /** \brief an adaptor to provide old Face APIs from an LpFace
  *  \sa LpFace
- *  \note When LpFace is adapted by LpFaceWrapper,
- *        FaceId and counters will come from old Face rather than LpFace.
  */
 class LpFaceWrapper : public Face
 {

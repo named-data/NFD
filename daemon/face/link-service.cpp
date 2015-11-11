@@ -35,7 +35,6 @@ NFD_LOG_INIT("LinkService");
 LinkService::LinkService()
   : m_face(nullptr)
   , m_transport(nullptr)
-  , m_oldCounters(nullptr)
 {
 }
 
@@ -51,7 +50,6 @@ LinkService::setFaceAndTransport(LpFace& face, Transport& transport)
 
   m_face = &face;
   m_transport = &transport;
-  m_oldCounters = &m_face->getMutableCounters();
 }
 
 void
@@ -61,7 +59,6 @@ LinkService::sendInterest(const Interest& interest)
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutInterests;
-  ++m_oldCounters->getNOutInterests();
 
   doSendInterest(interest);
 }
@@ -73,7 +70,6 @@ LinkService::sendData(const Data& data)
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nOutData;
-  ++m_oldCounters->getNOutDatas();
 
   doSendData(data);
 }
@@ -95,7 +91,6 @@ LinkService::receiveInterest(const Interest& interest)
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nInInterests;
-  ++m_oldCounters->getNInInterests();
 
   afterReceiveInterest(interest);
 }
@@ -106,7 +101,6 @@ LinkService::receiveData(const Data& data)
   NFD_LOG_FACE_TRACE(__func__);
 
   ++this->nInData;
-  ++m_oldCounters->getNInDatas();
 
   afterReceiveData(data);
 }

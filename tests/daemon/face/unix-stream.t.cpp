@@ -266,19 +266,19 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd, EndToEndFixture)
   // needed to ensure NOutBytes counters are accurate
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(1));
 
-  const FaceCounters& counters1 = face1->getCounters();
-  BOOST_CHECK_EQUAL(counters1.getNInInterests() , 1);
-  BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
-  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 3);
-  BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
-  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesSent2);
-  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent1);
+  const face::FaceCounters& counters1 = face1->getCounters();
+  BOOST_CHECK_EQUAL(counters1.nInInterests, 1);
+  BOOST_CHECK_EQUAL(counters1.nInData, 3);
+  BOOST_CHECK_EQUAL(counters1.nOutInterests, 3);
+  BOOST_CHECK_EQUAL(counters1.nOutData, 1);
+  BOOST_CHECK_EQUAL(counters1.nInBytes, nBytesSent2);
+  BOOST_CHECK_EQUAL(counters1.nOutBytes, nBytesSent1);
 
-  const FaceCounters& counters2 = face2->getCounters();
-  BOOST_CHECK_EQUAL(counters2.getNInInterests() , 3);
-  BOOST_CHECK_EQUAL(counters2.getNInDatas()     , 1);
-  BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 1);
-  BOOST_CHECK_EQUAL(counters2.getNOutDatas()    , 3);
+  const face::FaceCounters& counters2 = face2->getCounters();
+  BOOST_CHECK_EQUAL(counters2.nInInterests, 3);
+  BOOST_CHECK_EQUAL(counters2.nInData, 1);
+  BOOST_CHECK_EQUAL(counters2.nOutInterests, 1);
+  BOOST_CHECK_EQUAL(counters2.nOutData, 3);
 }
 
 BOOST_FIXTURE_TEST_CASE(MultipleAccepts, EndToEndFixture)

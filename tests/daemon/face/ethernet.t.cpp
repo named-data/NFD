@@ -34,6 +34,10 @@
 namespace nfd {
 namespace tests {
 
+BOOST_AUTO_TEST_SUITE(Face)
+
+using nfd::Face;
+
 class InterfacesFixture : protected BaseFixture
 {
 protected:
@@ -59,7 +63,7 @@ protected:
   std::vector<NetworkInterfaceInfo> m_interfaces;
 };
 
-BOOST_FIXTURE_TEST_SUITE(FaceEthernet, InterfacesFixture)
+BOOST_FIXTURE_TEST_SUITE(TestEthernet, InterfacesFixture)
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
@@ -142,8 +146,8 @@ BOOST_AUTO_TEST_CASE(SendPacket)
                     "ether://[" + ethernet::getDefaultMulticastAddress().toString() + "]");
   BOOST_CHECK_EQUAL(face->getLocalUri().toString(),
                     "dev://" + m_interfaces.front().name);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
-  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(), 0);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 0);
+  BOOST_CHECK_EQUAL(face->getCounters().nOutBytes, 0);
 
   face->onFail.connect([] (const std::string& reason) { BOOST_FAIL(reason); });
 
@@ -157,7 +161,7 @@ BOOST_AUTO_TEST_CASE(SendPacket)
   face->sendInterest(*interest2);
   face->sendData    (*data2    );
 
-  BOOST_CHECK_EQUAL(face->getCounters().getNOutBytes(),
+  BOOST_CHECK_EQUAL(face->getCounters().nOutBytes,
                     14 * 4 + // 4 NDNLP headers
                     interest1->wireEncode().size() +
                     data1->wireEncode().size() +
@@ -203,7 +207,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   // check that packet data is not accessed if pcap didn't capture anything (caplen == 0)
   static const pcap_pkthdr zeroHeader{};
   face->processIncomingPacket(&zeroHeader, nullptr);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 0);
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
@@ -212,7 +216,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   runtHeader.caplen = ethernet::HDR_LEN + 6;
   static const uint8_t packet2[ethernet::HDR_LEN + 6]{};
   face->processIncomingPacket(&runtHeader, packet2);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 0);
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
@@ -227,7 +231,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
     0xfd, 0xff, 0xff  // TLV length (invalid because greater than buffer size)
   };
   face->processIncomingPacket(&validHeader, packet3);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 0);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 0);
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
@@ -240,7 +244,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
     0x00              // TLV length
   };
   face->processIncomingPacket(&validHeader, packet4);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 2);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 2);
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
@@ -257,7 +261,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
     0x00              // NDN TLV length
   };
   face->processIncomingPacket(&validHeader, packet5);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 18);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 18);
   BOOST_CHECK_EQUAL(recInterests.size(), 0);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 
@@ -276,12 +280,13 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
     0x03, 0xef, 0xe9, 0x7c
   };
   face->processIncomingPacket(&validHeader, packet6);
-  BOOST_CHECK_EQUAL(face->getCounters().getNInBytes(), 56);
+  BOOST_CHECK_EQUAL(face->getCounters().nInBytes, 56);
   BOOST_CHECK_EQUAL(recInterests.size(), 1);
   BOOST_CHECK_EQUAL(recDatas.size(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestEthernet
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace nfd

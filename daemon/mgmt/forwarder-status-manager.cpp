@@ -56,7 +56,13 @@ ForwarderStatusManager::listStatus(const Name& topPrefix, const Interest& intere
   status.setNMeasurementsEntries(m_forwarder.getMeasurements().size());
   status.setNCsEntries(m_forwarder.getCs().size());
 
-  m_forwarder.getCounters().copyTo(status);
+  const ForwarderCounters& counters = m_forwarder.getCounters();
+  status.setNInInterests(counters.nInInterests)
+        .setNOutInterests(counters.nOutInterests)
+        .setNInDatas(counters.nInData)
+        .setNOutDatas(counters.nOutData)
+        .setNInNacks(counters.nInNacks)
+        .setNOutNacks(counters.nOutNacks);
 
   context.setExpiry(STATUS_SERVER_DEFAULT_FRESHNESS);
 

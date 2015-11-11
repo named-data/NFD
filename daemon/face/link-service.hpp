@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FACE_LINK_SERVICE_HPP
 #define NFD_DAEMON_FACE_LINK_SERVICE_HPP
 
+#include "core/counter.hpp"
 #include "transport.hpp"
 #include "face-log.hpp"
 
@@ -188,7 +189,6 @@ private: // lower interface to be overridden in subclass
 private:
   LpFace* m_face;
   Transport* m_transport;
-  NetworkLayerCounters* m_oldCounters; // old counters from LpFaceWrapper
 };
 
 inline const LpFace*

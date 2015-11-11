@@ -118,6 +118,18 @@ private: // helpers for StatusDataset handler
   bool
   doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr<Face> face);
 
+  /** \brief copy face properties into traits
+   *  \tparam FaceTraits either FaceStatus or FaceEventNotification
+   */
+  template<typename FaceTraits>
+  static void
+  collectFaceProperties(const Face& face, FaceTraits& traits);
+
+  /** \brief copy face counters into FaceStatus
+   */
+  static void
+  collectFaceCounters(const Face& face, ndn::nfd::FaceStatus& status);
+
 private: // NotificationStream
   void
   afterFaceAdded(shared_ptr<Face> face,

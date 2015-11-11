@@ -23,8 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face/lp-face-wrapper.hpp"
-#include "fw/forwarder.hpp"
+#include "face/lp-face.hpp"
 
 #include "tests/test-common.hpp"
 #include "dummy-lp-face.hpp"
@@ -36,71 +35,11 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestLpFaceWrapper, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestLpFace, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(SetId)
+BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
 {
-  Forwarder forwarder;
-  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
-  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
-
-  BOOST_CHECK_EQUAL(face1->getId(), nfd::face::INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face1w->getId(), nfd::INVALID_FACEID);
-
-  forwarder.addFace(face1w);
-
-  BOOST_CHECK_NE(face1->getId(), nfd::face::INVALID_FACEID);
-  BOOST_CHECK_NE(face1w->getId(), nfd::INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face1->getId(), static_cast<face::FaceId>(face1w->getId()));
-}
-
-BOOST_AUTO_TEST_CASE(SetPersistency)
-{
-  unique_ptr<LpFace> face1u = make_unique<DummyLpFace>();
-  face1u->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-
-  auto face1w = make_shared<face::LpFaceWrapper>(std::move(face1u));
-  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
-
-  BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  BOOST_CHECK_EQUAL(face1w->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-
-  face1w->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-
-  BOOST_CHECK_EQUAL(face1->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-  BOOST_CHECK_EQUAL(face1w->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-}
-
-BOOST_AUTO_TEST_CASE(Counters)
-{
-  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
-  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
-
-  BOOST_CHECK(&face1->getCounters() == &face1w->getCounters());
-}
-
-BOOST_AUTO_TEST_CASE(FailSignal)
-{
-  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
-  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
-
-  bool isFailed = false;
-  face1w->onFail.connect(bind([&isFailed] { isFailed = true; }));
-
-  face1->setState(FaceState::DOWN);
-  BOOST_CHECK(!isFailed);
-
-  face1->setState(FaceState::FAILED);
-  BOOST_CHECK(!isFailed);
-
-  face1->setState(FaceState::CLOSED);
-  BOOST_CHECK(isFailed);
-}
-
-BOOST_AUTO_TEST_CASE(SendReceive)
-{
-  auto face1w = make_shared<face::LpFaceWrapper>(make_unique<DummyLpFace>());
-  auto face1 = static_cast<DummyLpFace*>(face1w->getLpFace());
+  auto face1 = make_shared<DummyLpFace>();
 
   const size_t nInInterests = 192;
   const size_t nInData = 91;
@@ -112,9 +51,9 @@ BOOST_AUTO_TEST_CASE(SendReceive)
   size_t nReceivedInterests = 0;
   size_t nReceivedData = 0;
   size_t nReceivedNacks = 0;
-  face1w->onReceiveInterest.connect(bind([&nReceivedInterests] { ++nReceivedInterests; }));
-  face1w->onReceiveData.connect(bind([&nReceivedData] { ++nReceivedData; }));
-  face1w->onReceiveNack.connect(bind([&nReceivedNacks] { ++nReceivedNacks; }));
+  face1->afterReceiveInterest.connect(bind([&nReceivedInterests] { ++nReceivedInterests; }));
+  face1->afterReceiveData.connect(bind([&nReceivedData] { ++nReceivedData; }));
+  face1->afterReceiveNack.connect(bind([&nReceivedNacks] { ++nReceivedNacks; }));
 
   for (size_t i = 0; i < nInInterests; ++i) {
     shared_ptr<Interest> interest = makeInterest("/JSQdqward4");
@@ -133,18 +72,25 @@ BOOST_AUTO_TEST_CASE(SendReceive)
 
   for (size_t i = 0; i < nOutInterests; ++i) {
     shared_ptr<Interest> interest = makeInterest("/XyUAFYQDmd");
-    face1w->sendInterest(*interest);
+    face1->sendInterest(*interest);
   }
 
   for (size_t i = 0; i < nOutData; ++i) {
     shared_ptr<Data> data = makeData("/GigPEtPH6");
-    face1w->sendData(*data);
+    face1->sendData(*data);
   }
 
   for (size_t i = 0; i < nOutNacks; ++i) {
     lp::Nack nack = makeNack("/9xK6FbwIBM", 365, lp::NackReason::CONGESTION);
-    face1w->sendNack(nack);
+    face1->sendNack(nack);
   }
+
+  BOOST_CHECK_EQUAL(face1->getCounters().nInInterests, nInInterests);
+  BOOST_CHECK_EQUAL(face1->getCounters().nInData, nInData);
+  BOOST_CHECK_EQUAL(face1->getCounters().nInNacks, nInNacks);
+  BOOST_CHECK_EQUAL(face1->getCounters().nOutInterests, nOutInterests);
+  BOOST_CHECK_EQUAL(face1->getCounters().nOutData, nOutData);
+  BOOST_CHECK_EQUAL(face1->getCounters().nOutNacks, nOutNacks);
 
   BOOST_CHECK_EQUAL(nReceivedInterests, nInInterests);
   BOOST_CHECK_EQUAL(nReceivedData, nInData);

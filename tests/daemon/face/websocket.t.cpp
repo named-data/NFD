@@ -287,13 +287,13 @@ BOOST_FIXTURE_TEST_CASE(EndToEnd4, EndToEndFixture)
   BOOST_CHECK_EQUAL(client1_receivedInterests[0].getName(), interest2->getName());
   BOOST_CHECK_EQUAL(client1_receivedDatas    [0].getName(), data1->getName());
 
-  const FaceCounters& counters1 = face1->getCounters();
-  BOOST_CHECK_EQUAL(counters1.getNInInterests() , 3);
-  BOOST_CHECK_EQUAL(counters1.getNInDatas()     , 3);
-  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 1);
-  BOOST_CHECK_EQUAL(counters1.getNOutDatas()    , 1);
-  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesReceived);
-  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent);
+  const face::FaceCounters& counters1 = face1->getCounters();
+  BOOST_CHECK_EQUAL(counters1.nInInterests, 3);
+  BOOST_CHECK_EQUAL(counters1.nInData, 3);
+  BOOST_CHECK_EQUAL(counters1.nOutInterests, 1);
+  BOOST_CHECK_EQUAL(counters1.nOutData, 1);
+  BOOST_CHECK_EQUAL(counters1.nInBytes, nBytesReceived);
+  BOOST_CHECK_EQUAL(counters1.nOutBytes, nBytesSent);
 
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::seconds(8));
   BOOST_CHECK_EQUAL(channel1->size(), 0);

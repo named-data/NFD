@@ -380,8 +380,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(EndToEnd, A, EndToEndAddresses)
   BOOST_CHECK_EQUAL(face1->getRemoteUri(), A::getFaceUri2());
   BOOST_CHECK_EQUAL(face1->getLocalUri(), A::getFaceUri1());
   BOOST_CHECK_EQUAL(face1->isLocal(), false); // UdpFace is never local
-  BOOST_CHECK_EQUAL(face1->getCounters().getNInBytes(), 0);
-  BOOST_CHECK_EQUAL(face1->getCounters().getNOutBytes(), 0);
+  BOOST_CHECK_EQUAL(face1->getCounters().nInBytes, 0);
+  BOOST_CHECK_EQUAL(face1->getCounters().nOutBytes, 0);
 
   // channel2 creation must be after face1 creation,
   // otherwise channel2's endpoint would be prohibited
@@ -417,8 +417,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(EndToEnd, A, EndToEndAddresses)
   BOOST_CHECK_EQUAL(face2->getRemoteUri(), A::getFaceUri1());
   BOOST_CHECK_EQUAL(face2->getLocalUri(), A::getFaceUri2());
   BOOST_CHECK_EQUAL(face2->isLocal(), false); // UdpFace is never local
-  BOOST_CHECK_EQUAL(face2->getCounters().getNInBytes(), nBytesSent1);
-  BOOST_CHECK_EQUAL(face2->getCounters().getNOutBytes(), 0);
+  BOOST_CHECK_EQUAL(face2->getCounters().nInBytes, nBytesSent1);
+  BOOST_CHECK_EQUAL(face2->getCounters().nOutBytes, 0);
 
   BOOST_REQUIRE_EQUAL(history2->receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(history2->receivedInterests.front().getName(), interest1->getName());
@@ -440,21 +440,21 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(EndToEnd, A, EndToEndAddresses)
   BOOST_CHECK_EQUAL(history1->receivedData.front().getName(), data2->getName());
 
   // counters
-  const FaceCounters& counters1 = face1->getCounters();
-  BOOST_CHECK_EQUAL(counters1.getNInInterests(), 3);
-  BOOST_CHECK_EQUAL(counters1.getNInDatas(), 1);
-  BOOST_CHECK_EQUAL(counters1.getNOutInterests(), 1);
-  BOOST_CHECK_EQUAL(counters1.getNOutDatas(), 3);
-  BOOST_CHECK_EQUAL(counters1.getNInBytes(), nBytesSent2);
-  BOOST_CHECK_EQUAL(counters1.getNOutBytes(), nBytesSent1);
+  const face::FaceCounters& counters1 = face1->getCounters();
+  BOOST_CHECK_EQUAL(counters1.nInInterests, 3);
+  BOOST_CHECK_EQUAL(counters1.nInData, 1);
+  BOOST_CHECK_EQUAL(counters1.nOutInterests, 1);
+  BOOST_CHECK_EQUAL(counters1.nOutData, 3);
+  BOOST_CHECK_EQUAL(counters1.nInBytes, nBytesSent2);
+  BOOST_CHECK_EQUAL(counters1.nOutBytes, nBytesSent1);
 
-  const FaceCounters& counters2 = face2->getCounters();
-  BOOST_CHECK_EQUAL(counters2.getNInInterests(), 1);
-  BOOST_CHECK_EQUAL(counters2.getNInDatas(), 3);
-  BOOST_CHECK_EQUAL(counters2.getNOutInterests(), 3);
-  BOOST_CHECK_EQUAL(counters2.getNOutDatas(), 1);
-  BOOST_CHECK_EQUAL(counters2.getNInBytes(), nBytesSent1);
-  BOOST_CHECK_EQUAL(counters2.getNOutBytes(), nBytesSent2);
+  const face::FaceCounters& counters2 = face2->getCounters();
+  BOOST_CHECK_EQUAL(counters2.nInInterests, 1);
+  BOOST_CHECK_EQUAL(counters2.nInData, 3);
+  BOOST_CHECK_EQUAL(counters2.nOutInterests, 3);
+  BOOST_CHECK_EQUAL(counters2.nOutData, 1);
+  BOOST_CHECK_EQUAL(counters2.nInBytes, nBytesSent1);
+  BOOST_CHECK_EQUAL(counters2.nOutBytes, nBytesSent2);
 }
 
 // channel accepting multiple incoming connections

@@ -269,7 +269,10 @@ FaceManager::listFaces(const Name& topPrefix, const Interest& interest,
                        ndn::mgmt::StatusDatasetContext& context)
 {
   for (const auto& face : m_faceTable) {
-    context.append(face->getFaceStatus().wireEncode());
+    ndn::nfd::FaceStatus status;
+    collectFaceProperties(*face, status);
+    collectFaceCounters(*face, status);
+    context.append(status.wireEncode());
   }
   context.end();
 }
@@ -312,9 +315,13 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
   }
 
   for (const auto& face : m_faceTable) {
-    if (doesMatchFilter(faceFilter, face)) {
-      context.append(face->getFaceStatus().wireEncode());
+    if (!doesMatchFilter(faceFilter, face)) {
+      continue;
     }
+    ndn::nfd::FaceStatus status;
+    collectFaceProperties(*face, status);
+    collectFaceCounters(*face, status);
+    context.append(status.wireEncode());
   }
 
   context.end();
@@ -362,13 +369,60 @@ FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr
   return true;
 }
 
+template<typename FaceTraits>
+inline void
+collectLpFaceProperties(const face::LpFace& face, FaceTraits& traits)
+{
+  traits.setFaceId(face.getId())
+        .setRemoteUri(face.getRemoteUri().toString())
+        .setLocalUri(face.getLocalUri().toString())
+        .setFaceScope(face.getScope())
+        .setFacePersistency(face.getPersistency())
+        .setLinkType(face.getLinkType());
+  // TODO#3172 replace this into FaceManager::collectFaceProperties
+}
+
+template<typename FaceTraits>
+void
+FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
+{
+  auto lpFace = dynamic_cast<const face::LpFace*>(&face);
+  if (lpFace != nullptr) {
+    collectLpFaceProperties(*lpFace, traits);
+    return;
+  }
+
+  traits.setFaceId(face.getId())
+        .setRemoteUri(face.getRemoteUri().toString())
+        .setLocalUri(face.getLocalUri().toString())
+        .setFaceScope(face.isLocal() ? ndn::nfd::FACE_SCOPE_LOCAL
+                                     : ndn::nfd::FACE_SCOPE_NON_LOCAL)
+        .setFacePersistency(face.getPersistency())
+        .setLinkType(face.isMultiAccess() ? ndn::nfd::LINK_TYPE_MULTI_ACCESS
+                                          : ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+}
+
+void
+FaceManager::collectFaceCounters(const Face& face, ndn::nfd::FaceStatus& status)
+{
+  const face::FaceCounters& counters = face.getCounters();
+  status.setNInInterests(counters.nInInterests)
+        .setNOutInterests(counters.nOutInterests)
+        .setNInDatas(counters.nInData)
+        .setNOutDatas(counters.nOutData)
+        .setNInNacks(counters.nInNacks)
+        .setNOutNacks(counters.nOutNacks)
+        .setNInBytes(counters.nInBytes)
+        .setNOutBytes(counters.nOutBytes);
+}
+
 void
 FaceManager::afterFaceAdded(shared_ptr<Face> face,
                             const ndn::mgmt::PostNotification& post)
 {
   ndn::nfd::FaceEventNotification notification;
   notification.setKind(ndn::nfd::FACE_EVENT_CREATED);
-  face->copyStatusTo(notification);
+  collectFaceProperties(*face, notification);
 
   post(notification.wireEncode());
 }
@@ -379,7 +433,7 @@ FaceManager::afterFaceRemoved(shared_ptr<Face> face,
 {
   ndn::nfd::FaceEventNotification notification;
   notification.setKind(ndn::nfd::FACE_EVENT_DESTROYED);
-  face->copyStatusTo(notification);
+  collectFaceProperties(*face, notification);
 
   post(notification.wireEncode());
 }

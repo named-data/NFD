@@ -126,9 +126,9 @@ BOOST_FIXTURE_TEST_CASE(OneProducer, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied, and few Interests can go to wrong laptop
-  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
-  BOOST_CHECK_GE(linkA->getFace(router).getCounters().getNOutInterests(), 97);
-  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 5);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
+  BOOST_CHECK_GE(linkA->getFace(router).getCounters().nOutInterests, 97);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 5);
 }
 
 BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
@@ -173,9 +173,9 @@ BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied, and few Interests can go to slower laptopB
-  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
-  BOOST_CHECK_GE(linkA->getFace(router).getCounters().getNOutInterests(), 90);
-  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 15);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
+  BOOST_CHECK_GE(linkA->getFace(router).getCounters().nOutInterests, 90);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 15);
 }
 
 BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
@@ -222,19 +222,19 @@ BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(6));
 
   // few Interests can go to laptopB
-  BOOST_CHECK_LE(linkB->getFace(router).getCounters().getNOutInterests(), 5);
+  BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 5);
 
   // producer moves to laptopB
   producerA->fail();
   producerB->recover();
-  const_cast<FaceCounters&>(linkA->getFace(router).getCounters()).getNOutInterests().set(0);
+  PacketCounter::rep nInterestsToA_beforeMove = linkA->getFace(router).getCounters().nOutInterests;
   this->advanceClocks(time::milliseconds(5), time::seconds(6));
 
   // few additional Interests can go to laptopA
-  BOOST_CHECK_LE(linkA->getFace(router).getCounters().getNOutInterests(), 5);
+  BOOST_CHECK_LE(linkA->getFace(router).getCounters().nOutInterests - nInterestsToA_beforeMove, 5);
 
   // most Interests should be satisfied
-  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().getNOutDatas(), 97);
+  BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
 }
 
 BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
@@ -279,8 +279,8 @@ BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(12));
 
   // most Interests should be satisfied
-  BOOST_CHECK_GE(consumerAB->getForwarderFace().getCounters().getNOutDatas(), 97);
-  BOOST_CHECK_GE(consumerBA->getForwarderFace().getCounters().getNOutDatas(), 97);
+  BOOST_CHECK_GE(consumerAB->getForwarderFace().getCounters().nOutData, 97);
+  BOOST_CHECK_GE(consumerBA->getForwarderFace().getCounters().nOutData, 97);
 }
 
 BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
@@ -365,7 +365,7 @@ BOOST_FIXTURE_TEST_CASE(Bug2831, TwoLaptopsFixture)
   this->advanceClocks(time::milliseconds(5), time::seconds(2));
 
   // Interest shouldn't loop back from router
-  BOOST_CHECK_EQUAL(linkA->getFace(router).getCounters().getNOutInterests(), 0);
+  BOOST_CHECK_EQUAL(linkA->getFace(router).getCounters().nOutInterests, 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestAccessStrategy

@@ -28,6 +28,7 @@
 
 #include "transport.hpp"
 #include "link-service.hpp"
+#include "face-counters.hpp"
 #include "face-log.hpp"
 
 namespace nfd {
@@ -179,9 +180,6 @@ public: // dynamic properties
   const FaceCounters&
   getCounters() const;
 
-  FaceCounters&
-  getMutableCounters();
-
 private:
   FaceId m_id;
   unique_ptr<LinkService> m_service;
@@ -281,12 +279,6 @@ LpFace::close()
 
 inline const FaceCounters&
 LpFace::getCounters() const
-{
-  return m_counters;
-}
-
-inline FaceCounters&
-LpFace::getMutableCounters()
 {
   return m_counters;
 }
