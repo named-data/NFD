@@ -67,6 +67,13 @@ shared_ptr<Entry>
 Measurements::get(const fib::Entry& fibEntry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(fibEntry);
+  if (nte == nullptr) {
+    // must be Fib::s_emptyEntry that is unattched
+    BOOST_ASSERT(fibEntry.getPrefix().empty());
+    nte = m_nameTree.lookup(fibEntry.getPrefix());
+  }
+
+  BOOST_ASSERT(nte != nullptr);
   return this->get(*nte);
 }
 
@@ -74,6 +81,8 @@ shared_ptr<Entry>
 Measurements::get(const pit::Entry& pitEntry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
+
+  BOOST_ASSERT(nte != nullptr);
   return this->get(*nte);
 }
 

@@ -24,6 +24,7 @@
  */
 
 #include "table/measurements.hpp"
+#include "table/fib.hpp"
 #include "table/pit.hpp"
 
 #include "tests/test-common.hpp"
@@ -31,30 +32,77 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TableMeasurements, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+
+class MeasurementsFixture : public UnitTestTimeFixture
+{
+public:
+  MeasurementsFixture()
+    : measurements(nameTree)
+  {
+  }
+
+public:
+  NameTree nameTree;
+  Measurements measurements;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestMeasurements, MeasurementsFixture)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
-  NameTree nameTree;
-  Measurements measurements(nameTree);
-
-  Name name0;
-  Name nameA ("ndn:/A");
-  Name nameAB("ndn:/A/B");
-
-  shared_ptr<measurements::Entry> entryAB = measurements.get(nameAB);
+  shared_ptr<measurements::Entry> entryAB = measurements.get("/A/B");
   BOOST_REQUIRE(entryAB != nullptr);
-  BOOST_CHECK_EQUAL(entryAB->getName(), nameAB);
+  BOOST_CHECK_EQUAL(entryAB->getName(), "/A/B");
 
-  shared_ptr<measurements::Entry> entry0 = measurements.get(name0);
+  shared_ptr<measurements::Entry> entry0 = measurements.get("/");
   BOOST_REQUIRE(entry0 != nullptr);
 
   shared_ptr<measurements::Entry> entryA = measurements.getParent(*entryAB);
   BOOST_REQUIRE(entryA != nullptr);
-  BOOST_CHECK_EQUAL(entryA->getName(), nameA);
+  BOOST_CHECK_EQUAL(entryA->getName(), "/A");
 
   shared_ptr<measurements::Entry> entry0c = measurements.getParent(*entryA);
   BOOST_CHECK_EQUAL(entry0, entry0c);
+}
+
+BOOST_AUTO_TEST_CASE(GetWithFibEntry)
+{
+  Fib fib(nameTree);
+
+  shared_ptr<fib::Entry> fibA = fib.insert("/A").first;
+  shared_ptr<fib::Entry> fibAB = fib.insert("/A/B").first;
+
+  shared_ptr<measurements::Entry> entryA = measurements.get(*fibA);
+  BOOST_REQUIRE(entryA != nullptr);
+  BOOST_CHECK_EQUAL(entryA->getName(), "/A");
+
+  shared_ptr<measurements::Entry> entryAB = measurements.get(*fibAB);
+  BOOST_REQUIRE(entryAB != nullptr);
+  BOOST_CHECK_EQUAL(entryAB->getName(), "/A/B");
+}
+
+BOOST_AUTO_TEST_CASE(GetWithEmptyFibEntry) // Bug 3275
+{
+  Fib fib(nameTree);
+
+  shared_ptr<fib::Entry> fib0 = fib.findLongestPrefixMatch("/");
+
+  shared_ptr<measurements::Entry> entry0 = measurements.get(*fib0);
+  BOOST_REQUIRE(entry0 != nullptr);
+  BOOST_CHECK_EQUAL(entry0->getName(), "/");
+}
+
+BOOST_AUTO_TEST_CASE(GetWithPitEntry)
+{
+  Pit pit(nameTree);
+
+  shared_ptr<Interest> interestA = makeInterest("/A");
+  shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
+
+  shared_ptr<measurements::Entry> entryA = measurements.get(*pitA);
+  BOOST_REQUIRE(entryA != nullptr);
+  BOOST_CHECK_EQUAL(entryA->getName(), "/A");
 }
 
 class DummyStrategyInfo1 : public fw::StrategyInfo
@@ -79,9 +127,6 @@ public:
 
 BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
 {
-  NameTree nameTree;
-  Measurements measurements(nameTree);
-
   measurements.get("/A");
   measurements.get("/A/B/C")->getOrCreateStrategyInfo<DummyStrategyInfo1>();
   measurements.get("/A/B/C/D");
@@ -102,8 +147,6 @@ BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
 
 BOOST_AUTO_TEST_CASE(FindLongestPrefixMatchWithPitEntry)
 {
-  NameTree nameTree;
-  Measurements measurements(nameTree);
   Pit pit(nameTree);
 
   measurements.get("/A");
@@ -127,10 +170,8 @@ BOOST_AUTO_TEST_CASE(FindLongestPrefixMatchWithPitEntry)
   BOOST_CHECK(found3 == nullptr);
 }
 
-BOOST_FIXTURE_TEST_CASE(Lifetime, UnitTestTimeFixture)
+BOOST_AUTO_TEST_CASE(Lifetime)
 {
-  NameTree nameTree;
-  Measurements measurements(nameTree);
   Name nameA("ndn:/A");
   Name nameB("ndn:/B");
   Name nameC("ndn:/C");
@@ -182,10 +223,8 @@ BOOST_FIXTURE_TEST_CASE(Lifetime, UnitTestTimeFixture)
   BOOST_CHECK_EQUAL(measurements.size(), 0);
 }
 
-BOOST_FIXTURE_TEST_CASE(EraseNameTreeEntry, UnitTestTimeFixture)
+BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
 {
-  NameTree nameTree;
-  Measurements measurements(nameTree);
   size_t nNameTreeEntriesBefore = nameTree.size();
 
   shared_ptr<measurements::Entry> entry = measurements.get("/A");
@@ -194,7 +233,8 @@ BOOST_FIXTURE_TEST_CASE(EraseNameTreeEntry, UnitTestTimeFixture)
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestMeasurements
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace nfd
