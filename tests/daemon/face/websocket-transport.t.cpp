@@ -234,6 +234,8 @@ BOOST_AUTO_TEST_CASE(PingPong)
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing, serverHandlePong
                     time::milliseconds(1500)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutPings, 1);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPongs, 1);
 
   this->clientShouldPong = false;
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing, serverHandlePongTimeout
@@ -241,6 +243,8 @@ BOOST_AUTO_TEST_CASE(PingPong)
   BOOST_CHECK_MESSAGE(transport->getState() == TransportState::FAILED ||
                       transport->getState() == TransportState::CLOSED,
                       "expect FAILED or CLOSED state, actual state=" << transport->getState());
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutPings, 2);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPongs, 1);
 }
 
 BOOST_AUTO_TEST_CASE(Send)

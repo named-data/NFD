@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -26,82 +26,9 @@
 #ifndef NFD_DAEMON_FACE_FACE_COUNTERS_HPP
 #define NFD_DAEMON_FACE_FACE_COUNTERS_HPP
 
-#include "common.hpp"
+#include "core/counter.hpp"
 
 namespace nfd {
-
-/** \brief represents a counter of number of packets
- */
-// PacketCounter is noncopyable, because increment should be called on the counter,
-// not a copy of it; it's implicitly convertible to uint64_t to be observed
-class PacketCounter : noncopyable
-{
-public:
-  typedef uint64_t rep;
-
-  PacketCounter()
-    : m_value(0)
-  {
-  }
-
-  operator rep() const
-  {
-    return m_value;
-  }
-
-  PacketCounter&
-  operator++()
-  {
-    ++m_value;
-    return *this;
-  }
-  // postfix ++ operator is not provided because it's not needed
-
-  void
-  set(rep value)
-  {
-    m_value = value;
-  }
-
-private:
-  rep m_value;
-};
-
-/** \brief represents a counter of number of bytes
- */
-// ByteCounter is noncopyable, because increment should be called on the counter,
-// not a copy of it; it's implicitly convertible to uint64_t to be observed
-class ByteCounter : noncopyable
-{
-public:
-  typedef uint64_t rep;
-
-  ByteCounter()
-    : m_value(0)
-  {
-  }
-
-  operator rep() const
-  {
-    return m_value;
-  }
-
-  ByteCounter&
-  operator+=(rep n)
-  {
-    m_value += n;
-    return *this;
-  }
-
-  void
-  set(rep value)
-  {
-    m_value = value;
-  }
-
-private:
-  rep m_value;
-};
 
 /** \brief contains network layer packet counters
  */

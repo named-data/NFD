@@ -35,7 +35,7 @@ NFD_LOG_INIT("LinkService");
 LinkService::LinkService()
   : m_face(nullptr)
   , m_transport(nullptr)
-  , m_counters(nullptr)
+  , m_oldCounters(nullptr)
 {
 }
 
@@ -51,7 +51,7 @@ LinkService::setFaceAndTransport(LpFace& face, Transport& transport)
 
   m_face = &face;
   m_transport = &transport;
-  m_counters = &m_face->getMutableCounters();
+  m_oldCounters = &m_face->getMutableCounters();
 }
 
 void
@@ -60,7 +60,8 @@ LinkService::sendInterest(const Interest& interest)
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
-  ++m_counters->getNOutInterests();
+  ++this->nOutInterests;
+  ++m_oldCounters->getNOutInterests();
 
   doSendInterest(interest);
 }
@@ -71,7 +72,8 @@ LinkService::sendData(const Data& data)
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
-  ++m_counters->getNOutDatas();
+  ++this->nOutData;
+  ++m_oldCounters->getNOutDatas();
 
   doSendData(data);
 }
@@ -82,7 +84,7 @@ LinkService::sendNack(const ndn::lp::Nack& nack)
   BOOST_ASSERT(m_transport != nullptr);
   NFD_LOG_FACE_TRACE(__func__);
 
-  // TODO#3177 increment counter
+  ++this->nOutNacks;
 
   doSendNack(nack);
 }
@@ -92,7 +94,8 @@ LinkService::receiveInterest(const Interest& interest)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  ++m_counters->getNInInterests();
+  ++this->nInInterests;
+  ++m_oldCounters->getNInInterests();
 
   afterReceiveInterest(interest);
 }
@@ -102,7 +105,8 @@ LinkService::receiveData(const Data& data)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  ++m_counters->getNInDatas();
+  ++this->nInData;
+  ++m_oldCounters->getNInDatas();
 
   afterReceiveData(data);
 }
@@ -112,7 +116,7 @@ LinkService::receiveNack(const ndn::lp::Nack& nack)
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  // TODO#3177 increment counter
+  ++this->nInNacks;
 
   afterReceiveNack(nack);
 }

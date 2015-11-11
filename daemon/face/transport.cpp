@@ -65,7 +65,7 @@ Transport::Transport()
   , m_linkType(ndn::nfd::LINK_TYPE_NONE)
   , m_mtu(MTU_INVALID)
   , m_state(TransportState::UP)
-  , m_counters(nullptr)
+  , m_oldCounters(nullptr)
 {
 }
 
@@ -81,7 +81,7 @@ Transport::setFaceAndLinkService(LpFace& face, LinkService& service)
 
   m_face = &face;
   m_service = &service;
-  m_counters = &m_face->getMutableCounters();
+  m_oldCounters = &m_face->getMutableCounters();
 }
 
 void
@@ -109,8 +109,11 @@ Transport::send(Packet&& packet)
     return;
   }
 
-  // TODO#3177 increment LpPacket counter
-  m_counters->getNOutBytes() += packet.packet.size();
+  if (state == TransportState::UP) {
+    ++this->nOutPackets;
+    this->nOutBytes += packet.packet.size();
+    m_oldCounters->getNOutBytes() += packet.packet.size();
+  }
 
   this->doSend(std::move(packet));
 }
@@ -121,8 +124,9 @@ Transport::receive(Packet&& packet)
   BOOST_ASSERT(this->getMtu() == MTU_UNLIMITED ||
                packet.packet.size() <= static_cast<size_t>(this->getMtu()));
 
-  // TODO#3177 increment LpPacket counter
-  m_counters->getNInBytes() += packet.packet.size();
+  ++this->nInPackets;
+  this->nInBytes += packet.packet.size();
+  m_oldCounters->getNInBytes() += packet.packet.size();
 
   m_service->receivePacket(std::move(packet));
 }

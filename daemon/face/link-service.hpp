@@ -34,11 +34,48 @@ namespace face {
 
 class LpFace;
 
+/** \brief counters provided by LinkService
+ *  \note The type name 'LinkServiceCounters' is implementation detail.
+ *        Use 'LinkService::Counters' in public API.
+ */
+class LinkServiceCounters
+{
+public:
+  /** \brief count of incoming Interests
+   */
+  PacketCounter nInInterests;
+
+  /** \brief count of outgoing Interests
+   */
+  PacketCounter nOutInterests;
+
+  /** \brief count of incoming Data
+   */
+  PacketCounter nInData;
+
+  /** \brief count of outgoing Data
+   */
+  PacketCounter nOutData;
+
+  /** \brief count of incoming Nacks
+   */
+  PacketCounter nInNacks;
+
+  /** \brief count of outgoing Nacks
+   */
+  PacketCounter nOutNacks;
+};
+
 /** \brief the upper part of an LpFace
  *  \sa LpFace
  */
-class LinkService : noncopyable
+class LinkService : protected virtual LinkServiceCounters, noncopyable
 {
+public:
+  /** \brief counters provided by LinkService
+   */
+  typedef LinkServiceCounters Counters;
+
 public:
   LinkService();
 
@@ -65,6 +102,9 @@ public:
    */
   Transport*
   getTransport();
+
+  virtual const Counters&
+  getCounters() const;
 
 public: // upper interface to be used by forwarding
   /** \brief send Interest
@@ -97,21 +137,11 @@ public: // upper interface to be used by forwarding
    */
   signal::Signal<LinkService, lp::Nack> afterReceiveNack;
 
-private: // upper interface to be overridden in subclass (send path entrypoint)
-  /** \brief performs LinkService specific operations to send an Interest
+public: // lower interface to be invoked by Transport
+  /** \brief performs LinkService specific operations to receive a lower-layer packet
    */
-  virtual void
-  doSendInterest(const Interest& interest) = 0;
-
-  /** \brief performs LinkService specific operations to send a Data
-   */
-  virtual void
-  doSendData(const Data& data) = 0;
-
-  /** \brief performs LinkService specific operations to send a Nack
-   */
-  virtual void
-  doSendNack(const lp::Nack& nack) = 0;
+  void
+  receivePacket(Transport::Packet&& packet);
 
 protected: // upper interface to be invoked in subclass (receive path termination)
   /** \brief delivers received Interest to forwarding
@@ -129,17 +159,27 @@ protected: // upper interface to be invoked in subclass (receive path terminatio
   void
   receiveNack(const lp::Nack& nack);
 
-public: // lower interface to be invoked by Transport
-  /** \brief performs LinkService specific operations to receive a lower-layer packet
-   */
-  void
-  receivePacket(Transport::Packet&& packet);
-
 protected: // lower interface to be invoked in subclass (send path termination)
   /** \brief sends a lower-layer packet via Transport
    */
   void
   sendPacket(Transport::Packet&& packet);
+
+private: // upper interface to be overridden in subclass (send path entrypoint)
+  /** \brief performs LinkService specific operations to send an Interest
+   */
+  virtual void
+  doSendInterest(const Interest& interest) = 0;
+
+  /** \brief performs LinkService specific operations to send a Data
+   */
+  virtual void
+  doSendData(const Data& data) = 0;
+
+  /** \brief performs LinkService specific operations to send a Nack
+   */
+  virtual void
+  doSendNack(const lp::Nack& nack) = 0;
 
 private: // lower interface to be overridden in subclass
   virtual void
@@ -148,7 +188,7 @@ private: // lower interface to be overridden in subclass
 private:
   LpFace* m_face;
   Transport* m_transport;
-  NetworkLayerCounters* m_counters; // TODO#3177 change into NetCounters
+  NetworkLayerCounters* m_oldCounters; // old counters from LpFaceWrapper
 };
 
 inline const LpFace*
@@ -167,6 +207,12 @@ inline Transport*
 LinkService::getTransport()
 {
   return m_transport;
+}
+
+inline const LinkService::Counters&
+LinkService::getCounters() const
+{
+  return *this;
 }
 
 inline void

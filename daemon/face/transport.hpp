@@ -51,6 +51,46 @@ enum class TransportState {
 std::ostream&
 operator<<(std::ostream& os, TransportState state);
 
+/** \brief counters provided by Transport
+ *  \note The type name 'TransportCounters' is implementation detail.
+ *        Use 'Transport::Counters' in public API.
+ */
+class TransportCounters
+{
+public:
+  /** \brief count of incoming packets
+   *
+   *  A 'packet' typically means a top-level TLV block.
+   *  For a datagram-based transport, an incoming packet that cannot be parsed as TLV
+   *  would not be counted.
+   */
+  PacketCounter nInPackets;
+
+  /** \brief count of outgoing packets
+   *
+   *  A 'packet' typically means a top-level TLV block.
+   *  This counter is incremented only if transport is UP.
+   */
+  PacketCounter nOutPackets;
+
+  /** \brief total incoming bytes
+   *
+   *  This counter includes headers imposed by NFD (such as NDNLP),
+   *  but excludes overhead of underlying protocol (such as IP header).
+   *  For a datagram-based transport, an incoming packet that cannot be parsed as TLV
+   *  would not be counted.
+   */
+  ByteCounter nInBytes;
+
+  /** \brief total outgoing bytes
+   *
+   *  This counter includes headers imposed by NFD (such as NDNLP),
+   *  but excludes overhead of underlying protocol (such as IP header).
+   *  This counter is increased only if transport is UP.
+   */
+  ByteCounter nOutBytes;
+};
+
 /** \brief indicates the transport has no limit on payload size
  */
 const ssize_t MTU_UNLIMITED = -1;
@@ -62,7 +102,7 @@ const ssize_t MTU_INVALID = -2;
 /** \brief the lower part of an LpFace
  *  \sa LpFace
  */
-class Transport : noncopyable
+class Transport : protected virtual TransportCounters, noncopyable
 {
 public:
   /** \brief identifies an endpoint on the link
@@ -92,6 +132,10 @@ public:
      */
     EndpointId remoteEndpoint;
   };
+
+  /** \brief counters provided by Transport
+   */
+  typedef TransportCounters Counters;
 
   /** \brief constructor
    *
@@ -127,6 +171,9 @@ public:
    */
   LinkService*
   getLinkService();
+
+  virtual const Counters&
+  getCounters() const;
 
 public: // upper interface
   /** \brief request the transport to be closed
@@ -270,7 +317,7 @@ private:
   ndn::nfd::LinkType m_linkType;
   ssize_t m_mtu;
   TransportState m_state;
-  LinkLayerCounters* m_counters; // TODO#3177 change into LinkCounters
+  LinkLayerCounters* m_oldCounters; // TODO#3177 change into LinkCounters
 };
 
 inline const LpFace*
@@ -289,6 +336,12 @@ inline LinkService*
 Transport::getLinkService()
 {
   return m_service;
+}
+
+inline const Transport::Counters&
+Transport::getCounters() const
+{
+  return *this;
 }
 
 inline FaceUri

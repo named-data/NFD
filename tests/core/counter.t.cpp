@@ -23,29 +23,65 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face/face-counters.hpp"
-#include "dummy-face.hpp"
+#include "core/counter.hpp"
 
 #include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FaceFaceCounters, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestCounter, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Counters)
+BOOST_AUTO_TEST_CASE(PacketCnt)
 {
-  DummyFace face;
-  const FaceCounters& counters = face.getCounters();
-  BOOST_CHECK_EQUAL(counters.getNInInterests() , 0);
-  BOOST_CHECK_EQUAL(counters.getNInDatas()     , 0);
-  BOOST_CHECK_EQUAL(counters.getNOutInterests(), 0);
-  BOOST_CHECK_EQUAL(counters.getNOutDatas()    , 0);
-  BOOST_CHECK_EQUAL(counters.getNInBytes()     , 0);
-  BOOST_CHECK_EQUAL(counters.getNOutBytes()    , 0);
+  PacketCounter counter;
+
+  uint64_t observation = counter; // implicit conversion
+  BOOST_CHECK_EQUAL(observation, 0);
+
+  ++counter;
+  BOOST_CHECK_EQUAL(counter, 1);
+  ++counter;
+  ++counter;
+  BOOST_CHECK_EQUAL(counter, 3);
+
+  counter.set(2);
+  BOOST_CHECK_EQUAL(counter, 2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_CASE(ByteCnt)
+{
+  ByteCounter counter;
+
+  uint64_t observation = counter; // implicit conversion
+  BOOST_CHECK_EQUAL(observation, 0);
+
+  counter += 20;
+  BOOST_CHECK_EQUAL(counter, 20);
+  counter += 80;
+  counter += 90;
+  BOOST_CHECK_EQUAL(counter, 190);
+
+  counter.set(21);
+  BOOST_CHECK_EQUAL(counter, 21);
+}
+
+BOOST_AUTO_TEST_CASE(SizeCnt)
+{
+  std::vector<int> v;
+  SizeCounter<std::vector<int>> counter(v);
+
+  size_t observation = counter; // implicit conversion
+  BOOST_CHECK_EQUAL(observation, 0);
+
+  v.resize(249);
+  BOOST_CHECK_EQUAL(counter, 249);
+
+  v.resize(98);
+  BOOST_CHECK_EQUAL(counter, 98);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestCounter
 
 } // namespace tests
 } // namespace nfd
