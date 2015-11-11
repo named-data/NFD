@@ -34,8 +34,14 @@ NFD_LOG_INIT("BestRouteStrategy2");
 const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%04");
 NFD_REGISTER_STRATEGY(BestRouteStrategy2);
 
+const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_INITIAL(10);
+const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_MAX(250);
+
 BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)
+  , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
+                      RetxSuppressionExponential::DEFAULT_MULTIPLIER,
+                      RETX_SUPPRESSION_MAX)
 {
 }
 

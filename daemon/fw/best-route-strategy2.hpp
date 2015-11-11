@@ -67,7 +67,9 @@ public:
 public:
   static const Name STRATEGY_NAME;
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  static const time::milliseconds RETX_SUPPRESSION_INITIAL;
+  static const time::milliseconds RETX_SUPPRESSION_MAX;
   RetxSuppressionExponential m_retxSuppression;
 };
 

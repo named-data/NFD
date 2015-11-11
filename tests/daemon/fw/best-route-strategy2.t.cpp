@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
-    fw::RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL * 0.1);
+    BestRouteStrategy2::RETX_SUPPRESSION_INITIAL * 0.1);
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(Forward)
     retxFrom4Evt = scheduler::schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
-  this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 16);
+  this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 16);
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
-    this->advanceClocks(TICK, fw::RetxSuppressionExponential::DEFAULT_MAX_INTERVAL * 2);
+    this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 2);
     pitEntry->insertOrUpdateInRecord(face5, *interest);
     strategy.afterReceiveInterest(*face5, *interest, fibEntry, pitEntry);
   }
