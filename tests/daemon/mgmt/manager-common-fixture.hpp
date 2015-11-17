@@ -105,7 +105,7 @@ public: // verify
     WRONG_TEXT,
     WRONG_BODY_SIZE,
     WRONG_BODY_VALUE
-   };
+  };
 
   /**
    * @brief check a specified response data with the expected ControlResponse

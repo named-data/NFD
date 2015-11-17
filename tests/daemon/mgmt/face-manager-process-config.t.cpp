@@ -47,7 +47,6 @@ public:
     m_manager.setConfigFile(m_config);
   }
 
-public:
   void
   parseConfig(const std::string& type, bool isDryRun)
   {
@@ -411,7 +410,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEtherMulticastReinit)
                        "no Ethernet multicast faces are available");
     return;
   }
-  BOOST_CHECK_GT(factory->getMulticastFaces().size(), 0);
 
   const std::string CONFIG_WITHOUT_MCAST =
     "face_system\n"
@@ -422,6 +420,7 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEtherMulticastReinit)
     "  }\n"
     "}\n";
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  BOOST_REQUIRE_NO_THROW(g_io.poll());
   BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
 }
 

@@ -23,57 +23,49 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_NDNLP_SLICER_HPP
-#define NFD_DAEMON_FACE_NDNLP_SLICER_HPP
+#ifndef NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP
+#define NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP
 
-#include "ndnlp-tlv.hpp"
-#include "ndnlp-sequence-generator.hpp"
+#include "core/network-interface.hpp"
+#include "face/ethernet-transport.hpp"
+
+#include "test-common.hpp"
 
 namespace nfd {
-namespace ndnlp {
+namespace tests {
 
-typedef shared_ptr<std::vector<Block>> PacketArray;
-
-/** \brief provides fragmentation feature at sender
- */
-class Slicer : noncopyable
+class NetworkInterfaceFixture : protected BaseFixture
 {
-public:
-  /** \param mtu maximum size of NDNLP header and payload
-   *  \note If NDNLP packets are to be encapsulated in an additional header
-   *        (eg. in UDP packets), the caller must deduct such overhead.
-   */
-  explicit
-  Slicer(size_t mtu);
+protected:
+  NetworkInterfaceFixture()
+  {
+    for (const auto& netif : listNetworkInterfaces()) {
+      if (!netif.isLoopback() && netif.isUp()) {
+        try {
+          face::EthernetTransport transport(netif, ethernet::getBroadcastAddress());
+          m_interfaces.push_back(netif);
+        }
+        catch (const face::EthernetTransport::Error&) {
+          // pass
+        }
+      }
+    }
+  }
 
-  virtual
-  ~Slicer();
-
-  PacketArray
-  slice(const Block& block);
-
-private:
-  template<bool T>
-  size_t
-  encodeFragment(ndn::EncodingImpl<T>& blk,
-                 uint64_t seq, uint16_t fragIndex, uint16_t fragCount,
-                 const uint8_t* payload, size_t payloadSize);
-
-  /// estimate the size of NDNLP header and maximum payload size per packet
-  void
-  estimateOverhead();
-
-private:
-  SequenceGenerator m_seqgen;
-
-  /// maximum packet size
-  size_t m_mtu;
-
-  /// maximum payload size
-  size_t m_maxPayload;
+protected:
+  std::vector<NetworkInterfaceInfo> m_interfaces;
 };
 
-} // namespace ndnlp
+#define SKIP_IF_NETWORK_INTERFACE_COUNT_LT(n) \
+  do {                                        \
+    if (this->m_interfaces.size() < (n)) {    \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require " \
+                                #n " or more network interfaces");  \
+      return;                                 \
+    }                                         \
+  } while (false)
+
+} // namespace tests
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_NDNLP_SLICER_HPP
+#endif // NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP

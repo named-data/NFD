@@ -42,7 +42,7 @@
 
 #ifdef HAVE_LIBPCAP
 #include "face/ethernet-factory.hpp"
-#include "face/ethernet-face.hpp"
+#include "face/ethernet-transport.hpp"
 #endif // HAVE_LIBPCAP
 
 #ifdef HAVE_WEBSOCKET
@@ -806,7 +806,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
       m_factories.insert(std::make_pair("ether", factory));
     }
 
-    std::set<shared_ptr<EthernetFace>> multicastFacesToRemove;
+    std::set<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
     for (const auto& i : factory->getMulticastFaces()) {
       multicastFacesToRemove.insert(i.second);
     }
@@ -822,7 +822,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
           catch (const EthernetFactory::Error& factoryError) {
             NFD_LOG_ERROR(factoryError.what() << ", continuing");
           }
-          catch (const EthernetFace::Error& faceError) {
+          catch (const face::EthernetTransport::Error& faceError) {
             NFD_LOG_ERROR(faceError.what() << ", continuing");
           }
         }

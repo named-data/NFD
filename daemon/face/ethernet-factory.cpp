@@ -24,16 +24,16 @@
  */
 
 #include "ethernet-factory.hpp"
-#include "face/ethernet-face.hpp"
-
-#include "core/logger.hpp"
+#include "ethernet-transport.hpp"
+#include "generic-link-service.hpp"
+#include "lp-face-wrapper.hpp"
 #include "core/global-io.hpp"
 
 namespace nfd {
 
-shared_ptr<EthernetFace>
+shared_ptr<face::LpFaceWrapper>
 EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
-                                     const ethernet::Address &address)
+                                     const ethernet::Address& address)
 {
   if (!address.isMulticast())
     BOOST_THROW_EXCEPTION(Error(address.toString() + " is not a multicast address"));
@@ -42,8 +42,14 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
   if (face)
     return face;
 
-  face = make_shared<EthernetFace>(boost::asio::posix::stream_descriptor(getGlobalIoService()),
-                                   interface, address);
+  face::GenericLinkService::Options opts;
+  opts.allowFragmentation = true;
+  opts.allowReassembly = true;
+
+  auto linkService = make_unique<face::GenericLinkService>(opts);
+  auto transport = make_unique<face::EthernetTransport>(interface, address);
+  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
+  face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
 
   auto key = std::make_pair(interface.name, address);
   face->onFail.connectSingleShot([this, key] (const std::string& reason) {
@@ -69,7 +75,7 @@ EthernetFactory::getChannels() const
   return {};
 }
 
-shared_ptr<EthernetFace>
+shared_ptr<face::LpFaceWrapper>
 EthernetFactory::findMulticastFace(const std::string& interfaceName,
                                    const ethernet::Address& address) const
 {

@@ -23,16 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_ETHERNET_FACE_HPP
-#define NFD_DAEMON_FACE_ETHERNET_FACE_HPP
+#ifndef NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 
 #include "common.hpp"
-#include "face.hpp"
-#include "ndnlp-partial-message-store.hpp"
-#include "ndnlp-slicer.hpp"
+#include "transport.hpp"
 #include "core/network-interface.hpp"
-
-#include <unordered_map>
 
 #ifndef HAVE_LIBPCAP
 #error "Cannot include this file when libpcap is not available"
@@ -44,43 +40,41 @@ typedef pcap pcap_t;
 struct pcap_pkthdr;
 
 namespace nfd {
+namespace face {
 
 /**
- * @brief Implementation of Face abstraction that uses raw
- *        Ethernet frames as underlying transport mechanism
+ * \brief A multicast Transport that uses raw Ethernet II frames
  */
-class EthernetFace : public Face
+class EthernetTransport DECL_CLASS_FINAL : public Transport
 {
 public:
-  /**
-   * @brief EthernetFace-related error
-   */
-  struct Error : public Face::Error
+  class Error : public std::runtime_error
   {
-    Error(const std::string& what) : Face::Error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
   };
 
-  EthernetFace(boost::asio::posix::stream_descriptor socket,
-               const NetworkInterfaceInfo& interface,
-               const ethernet::Address& address);
-
-  /// send an Interest
-  void
-  sendInterest(const Interest& interest) DECL_OVERRIDE;
-
-  /// send a Data
-  void
-  sendData(const Data& data) DECL_OVERRIDE;
-
   /**
-   * @brief Closes the face
-   *
-   * This terminates all communication on the face and triggers the onFail() event.
+   * @brief Creates an Ethernet-based transport for multicast communication
    */
-  void
-  close() DECL_OVERRIDE;
+  EthernetTransport(const NetworkInterfaceInfo& interface,
+                    const ethernet::Address& mcastAddress);
+
+protected:
+  virtual void
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
+
+  virtual void
+  doClose() DECL_FINAL;
 
 private:
+  virtual void
+  doSend(Transport::Packet&& packet) DECL_FINAL;
+
   /**
    * @brief Allocates and initializes a libpcap context for live capture
    */
@@ -139,26 +133,15 @@ private:
   getInterfaceMtu();
 
 private:
-  struct Reassembler
-  {
-    unique_ptr<ndnlp::PartialMessageStore> pms;
-    scheduler::EventId expireEvent;
-  };
-
   unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
   boost::asio::posix::stream_descriptor m_socket;
 
+  ethernet::Address m_srcAddress;
+  ethernet::Address m_destAddress;
+  std::string m_interfaceName;
 #if defined(__linux__)
   int m_interfaceIndex;
 #endif
-  std::string m_interfaceName;
-  ethernet::Address m_srcAddress;
-  ethernet::Address m_destAddress;
-
-  size_t m_interfaceMtu;
-  unique_ptr<ndnlp::Slicer> m_slicer;
-  std::unordered_map<ethernet::Address, Reassembler> m_reassemblers;
-  static const time::nanoseconds REASSEMBLER_LIFETIME;
 
 #ifdef _DEBUG
   /// number of packets dropped by the kernel, as reported by libpcap
@@ -166,6 +149,7 @@ private:
 #endif
 };
 
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_ETHERNET_FACE_HPP
+#endif // NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP

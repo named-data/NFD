@@ -23,40 +23,38 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_NDNLP_PARSE_HPP
-#define NFD_DAEMON_FACE_NDNLP_PARSE_HPP
+#include "face/ethernet-transport.hpp"
+#include "transport-properties.hpp"
 
-#include "common.hpp"
-#include "ndnlp-tlv.hpp"
+#include "network-interface-fixture.hpp"
 
 namespace nfd {
-namespace ndnlp {
+namespace face {
+namespace tests {
 
-/** \brief represents a NdnlpData packet
- *
- *  NdnlpData ::= NDNLP-DATA-TYPE TLV-LENGTH
- *                  NdnlpSequence
- *                  NdnlpFragIndex?
- *                  NdnlpFragCount?
- *                  NdnlpPayload
- */
-class NdnlpData
+using namespace nfd::tests;
+
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestEthernetTransport, NetworkInterfaceFixture)
+
+BOOST_AUTO_TEST_CASE(StaticProperties)
 {
-public:
-  /** \brief parse a NdnlpData packet
-   *  \return whether \p wire has a valid NdnlpData packet, and the parsed packet
-   */
-  static std::tuple<bool, NdnlpData>
-  fromBlock(const Block& wire);
+  SKIP_IF_NETWORK_INTERFACE_COUNT_LT(1);
 
-public:
-  uint64_t seq;
-  uint16_t fragIndex;
-  uint16_t fragCount;
-  Block payload;
-};
+  auto netif = m_interfaces.front();
+  EthernetTransport transport(netif, ethernet::getDefaultMulticastAddress());
+  checkStaticPropertiesInitialized(transport);
 
-} // namespace ndnlp
+  BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri::fromDev(netif.name));
+  BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri(ethernet::getDefaultMulticastAddress()));
+  BOOST_CHECK_EQUAL(transport.getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestEthernetTransport
+BOOST_AUTO_TEST_SUITE_END() // Face
+
+} // namespace tests
+} // namespace face
 } // namespace nfd
-
-#endif // NFD_DAEMON_FACE_NDNLP_PARSE_HPP
