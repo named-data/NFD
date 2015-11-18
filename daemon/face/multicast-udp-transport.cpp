@@ -87,5 +87,16 @@ MulticastUdpTransport::doClose()
   DatagramTransport::doClose();
 }
 
+template<>
+Transport::EndpointId
+DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep)
+{
+  // IPv6 multicast is not supported
+  BOOST_ASSERT(ep.address().is_v4());
+
+  return (static_cast<uint64_t>(ep.port()) << 32) |
+          static_cast<uint64_t>(ep.address().to_v4().to_ulong());
+}
+
 } // namespace face
 } // namespace nfd

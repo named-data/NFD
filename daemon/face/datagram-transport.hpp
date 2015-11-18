@@ -84,8 +84,12 @@ protected:
   void
   resetRecentUsage();
 
+  static EndpointId
+  makeEndpointId(const typename protocol::endpoint& ep);
+
 protected:
   typename protocol::socket m_socket;
+  typename protocol::endpoint m_sender;
 
   NFD_LOG_INCLASS_DECLARE();
 
@@ -99,10 +103,10 @@ template<class T, class U>
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
 {
-  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer),
-                         bind(&DatagramTransport<T, U>::handleReceive, this,
-                              boost::asio::placeholders::error,
-                              boost::asio::placeholders::bytes_transferred));
+  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
+                              bind(&DatagramTransport<T, U>::handleReceive, this,
+                                   boost::asio::placeholders::error,
+                                   boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -162,9 +166,11 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
     // This packet won't extend the face lifetime
     return;
   }
-
   m_hasBeenUsedRecently = true;
-  this->receive(Transport::Packet(std::move(element)));
+
+  Transport::Packet tp(std::move(element));
+  tp.remoteEndpoint = makeEndpointId(m_sender);
+  this->receive(std::move(tp));
 }
 
 template<class T, class U>
@@ -175,10 +181,10 @@ DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error,
   receiveDatagram(m_receiveBuffer.data(), nBytesReceived, error);
 
   if (m_socket.is_open())
-    m_socket.async_receive(boost::asio::buffer(m_receiveBuffer),
-                           bind(&DatagramTransport<T, U>::handleReceive, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+    m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
+                                bind(&DatagramTransport<T, U>::handleReceive, this,
+                                     boost::asio::placeholders::error,
+                                     boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T, class U>
@@ -230,6 +236,13 @@ inline void
 DatagramTransport<T, U>::resetRecentUsage()
 {
   m_hasBeenUsedRecently = false;
+}
+
+template<class T, class U>
+inline Transport::EndpointId
+DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint& ep)
+{
+  return 0;
 }
 
 } // namespace face

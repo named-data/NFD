@@ -31,6 +31,14 @@
 namespace nfd {
 namespace face {
 
+// Explicit specialization of makeEndpointId for the UDP multicast case.
+// Note that this "shall be declared before the first use of the specialization
+// that would cause an implicit instantiation to take place, in every translation
+// unit in which such a use occurs".
+template<>
+Transport::EndpointId
+DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep);
+
 /**
  * \brief A Transport that communicates on a UDP multicast group
  */
