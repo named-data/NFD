@@ -27,7 +27,7 @@
 #include "face/lp-face.hpp"
 #include "dummy-transport.hpp"
 #include "dummy-receive-link-service.hpp"
-#include "transport-properties.hpp"
+#include "transport-test-common.hpp"
 
 #include <boost/mpl/empty_sequence.hpp>
 #include <boost/mpl/int.hpp>
@@ -35,8 +35,6 @@
 #include <boost/mpl/map.hpp>
 #include <boost/mpl/set.hpp>
 #include <boost/mpl/transform_view.hpp>
-
-#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace face {

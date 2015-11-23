@@ -25,9 +25,7 @@
 
 #include "face/null-face.hpp"
 #include "face/lp-face-wrapper.hpp"
-#include "transport-properties.hpp"
-
-#include "tests/test-common.hpp"
+#include "transport-test-common.hpp"
 
 namespace nfd {
 namespace face {

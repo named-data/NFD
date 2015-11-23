@@ -24,7 +24,7 @@
  */
 
 #include "face/ethernet-transport.hpp"
-#include "transport-properties.hpp"
+#include "transport-test-common.hpp"
 
 #include "network-interface-fixture.hpp"
 

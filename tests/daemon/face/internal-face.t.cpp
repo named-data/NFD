@@ -25,9 +25,8 @@
 
 #include "face/internal-face.hpp"
 #include "face/lp-face-wrapper.hpp"
-#include "transport-properties.hpp"
+#include "transport-test-common.hpp"
 
-#include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
 namespace nfd {

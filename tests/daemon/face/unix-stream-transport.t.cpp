@@ -24,9 +24,8 @@
  */
 
 #include "face/unix-stream-transport.hpp"
-#include "transport-properties.hpp"
+#include "transport-test-common.hpp"
 
-#include "tests/test-common.hpp"
 #include <boost/filesystem.hpp>
 
 namespace nfd {

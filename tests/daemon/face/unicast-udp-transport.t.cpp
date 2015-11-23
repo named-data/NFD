@@ -24,9 +24,7 @@
  */
 
 #include "face/unicast-udp-transport.hpp"
-#include "transport-properties.hpp"
-
-#include "tests/test-common.hpp"
+#include "transport-test-common.hpp"
 
 namespace nfd {
 namespace face {

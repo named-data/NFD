@@ -24,9 +24,13 @@
  */
 
 #include "face/tcp-transport.hpp"
-#include "transport-properties.hpp"
+#include "face/lp-face.hpp"
 
-#include "tests/test-common.hpp"
+#include "dummy-receive-link-service.hpp"
+#include "get-available-interface-ip.hpp"
+#include "transport-test-common.hpp"
+
+#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace face {
@@ -37,42 +41,257 @@ namespace ip = boost::asio::ip;
 using ip::tcp;
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestTcpTransport, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(StaticPropertiesIpv4)
+class TcpTransportFixture : public BaseFixture
 {
-  tcp::endpoint ep(ip::address_v4::loopback(), 7002);
-  tcp::acceptor acceptor(g_io, ep);
+protected:
+  TcpTransportFixture()
+    : transport(nullptr)
+    , remoteSocket(g_io)
+    , receivedPackets(nullptr)
+    , acceptor(g_io)
+  {
+  }
 
-  tcp::socket sock(g_io, tcp::endpoint(ip::address_v4::loopback(), 7001));
-  sock.connect(ep);
-  TcpTransport transport(std::move(sock), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  checkStaticPropertiesInitialized(transport);
+  void
+  initialize(ip::address address = ip::address_v4::loopback())
+  {
+    tcp::endpoint remoteEp(address, 7070);
+    acceptor.open(remoteEp.protocol());
+    acceptor.set_option(tcp::acceptor::reuse_address(true));
+    acceptor.bind(remoteEp);
+    acceptor.listen(1);
+    acceptor.async_accept(remoteSocket, bind([]{}));
 
-  BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri("tcp4://127.0.0.1:7001"));
-  BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri("tcp4://127.0.0.1:7002"));
-  BOOST_CHECK_EQUAL(transport.getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
-  BOOST_CHECK_EQUAL(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport.getMtu(), MTU_UNLIMITED);
+    tcp::socket sock(g_io);
+    sock.async_connect(remoteEp, [this] (const boost::system::error_code& error) {
+      BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
+      limitedIo.afterOp();
+    });
+
+    BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+
+    localEp = sock.local_endpoint();
+    face = make_unique<LpFace>(make_unique<DummyReceiveLinkService>(),
+                               make_unique<TcpTransport>(std::move(sock),
+                                                         ndn::nfd::FACE_PERSISTENCY_PERSISTENT));
+    transport = static_cast<TcpTransport*>(face->getTransport());
+    receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+
+    BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
+  }
+
+  void
+  remoteWrite(const ndn::Buffer& buf)
+  {
+    // use write() because socket::send() does not guarantee that all data is written before returning
+    BOOST_REQUIRE_EQUAL(boost::asio::write(remoteSocket, boost::asio::buffer(buf)), buf.size());
+    limitedIo.defer(time::milliseconds(50));
+  }
+
+protected:
+  LimitedIo limitedIo;
+  TcpTransport* transport;
+  tcp::endpoint localEp;
+  tcp::socket remoteSocket;
+  std::vector<Transport::Packet>* receivedPackets;
+
+private:
+  tcp::acceptor acceptor;
+  unique_ptr<LpFace> face;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestTcpTransport, TcpTransportFixture)
+
+BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
+{
+  initialize();
+
+  checkStaticPropertiesInitialized(*transport);
+
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("tcp4://127.0.0.1:" + to_string(localEp.port())));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("tcp4://127.0.0.1:7070"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
 }
 
-BOOST_AUTO_TEST_CASE(StaticPropertiesIpv6)
+BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 {
-  tcp::endpoint ep(ip::address_v6::loopback(), 7002);
-  tcp::acceptor acceptor(g_io, ep);
+  initialize(ip::address_v6::loopback());
 
-  tcp::socket sock(g_io, tcp::endpoint(ip::address_v6::loopback(), 7001));
-  sock.connect(ep);
-  TcpTransport transport(std::move(sock), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  checkStaticPropertiesInitialized(transport);
+  checkStaticPropertiesInitialized(*transport);
 
-  BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri("tcp6://[::1]:7001"));
-  BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri("tcp6://[::1]:7002"));
-  BOOST_CHECK_EQUAL(transport.getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
-  BOOST_CHECK_EQUAL(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport.getMtu(), MTU_UNLIMITED);
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("tcp6://[::1]:" + to_string(localEp.port())));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("tcp6://[::1]:7070"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
+BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
+{
+  auto address = getAvailableInterfaceIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
+
+  checkStaticPropertiesInitialized(*transport);
+
+  BOOST_CHECK_EQUAL(transport->getLocalUri(),
+                    FaceUri("tcp4://" + address.to_string() + ":" + to_string(localEp.port())));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(),
+                    FaceUri("tcp4://" + address.to_string() + ":7070"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
+BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
+{
+  auto address = getAvailableInterfaceIp<ip::address_v6>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
+
+  checkStaticPropertiesInitialized(*transport);
+
+  BOOST_CHECK_EQUAL(transport->getLocalUri(),
+                    FaceUri("tcp6://[" + address.to_string() + "]:" + to_string(localEp.port())));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(),
+                    FaceUri("tcp6://[" + address.to_string() + "]:7070"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
+BOOST_AUTO_TEST_CASE(Send)
+{
+  initialize();
+
+  auto block1 = ndn::encoding::makeStringBlock(300, "hello");
+  transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 1);
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, block1.size());
+
+  auto block2 = ndn::encoding::makeStringBlock(301, "world");
+  transport->send(Transport::Packet{Block{block2}}); // make a copy of the block
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 2);
+  BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, block1.size() + block2.size());
+
+  std::vector<uint8_t> readBuf(block1.size() + block2.size());
+  boost::asio::async_read(remoteSocket, boost::asio::buffer(readBuf),
+    [this] (const boost::system::error_code& error, size_t) {
+      BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
+      limitedIo.afterOp();
+    });
+
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.begin() + block1.size(), block1.begin(), block1.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin() + block1.size(), readBuf.end(),   block2.begin(), block2.end());
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveNormal)
+{
+  initialize();
+
+  Block pkt = ndn::encoding::makeStringBlock(300, "hello");
+  ndn::Buffer buf(pkt.begin(), pkt.end());
+  remoteWrite(buf);
+
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPackets, 1);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, pkt.size());
+  BOOST_CHECK_EQUAL(receivedPackets->size(), 1);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveMultipleSegments)
+{
+  initialize();
+
+  Block pkt = ndn::encoding::makeStringBlock(300, "hello");
+  ndn::Buffer buf1(pkt.begin(), pkt.end() - 2);
+  ndn::Buffer buf2(pkt.end() - 2, pkt.end());
+
+  remoteWrite(buf1);
+
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPackets, 0);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, 0);
+  BOOST_CHECK_EQUAL(receivedPackets->size(), 0);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+
+  remoteWrite(buf2);
+
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPackets, 1);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, pkt.size());
+  BOOST_CHECK_EQUAL(receivedPackets->size(), 1);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveMultipleBlocks)
+{
+  initialize();
+
+  Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
+  Block pkt2 = ndn::encoding::makeStringBlock(301, "world");
+  ndn::Buffer buf(pkt1.size() + pkt2.size());
+  std::copy(pkt1.begin(), pkt1.end(), buf.buf());
+  std::copy(pkt2.begin(), pkt2.end(), buf.buf() + pkt1.size());
+
+  remoteWrite(buf);
+
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPackets, 2);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, buf.size());
+  BOOST_CHECK_EQUAL(receivedPackets->size(), 2);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveTooLarge)
+{
+  initialize();
+
+  std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE + 1, 0);
+  Block pkt = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size());
+  ndn::Buffer buf(pkt.begin(), pkt.end());
+
+  remoteWrite(buf);
+
+  BOOST_CHECK_EQUAL(transport->getCounters().nInPackets, 0);
+  BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, 0);
+  BOOST_CHECK_EQUAL(receivedPackets->size(), 0);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::CLOSED);
+}
+
+BOOST_AUTO_TEST_CASE(Close)
+{
+  initialize();
+
+  transport->close();
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::CLOSING);
+
+  g_io.poll();
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::CLOSED);
+}
+
+BOOST_AUTO_TEST_CASE(RemoteClose)
+{
+  initialize();
+
+  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+    BOOST_CHECK_EQUAL(newState, TransportState::FAILED);
+    limitedIo.afterOp();
+  });
+
+  remoteSocket.close();
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+
+  g_io.poll();
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::CLOSED);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestTcpTransport

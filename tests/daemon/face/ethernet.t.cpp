@@ -34,6 +34,8 @@
 namespace nfd {
 namespace tests {
 
+using nfd::face::tests::NetworkInterfaceFixture;
+
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestEthernet, NetworkInterfaceFixture)
 

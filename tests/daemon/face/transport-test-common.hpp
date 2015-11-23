@@ -23,11 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP
-#define NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_TRANSPORT_TEST_COMMON_HPP
+#define NFD_TESTS_DAEMON_FACE_TRANSPORT_TEST_COMMON_HPP
 
 #include "face/transport.hpp"
-
 #include "tests/test-common.hpp"
 
 namespace nfd {
@@ -56,4 +55,4 @@ checkStaticPropertiesInitialized(const Transport& transport)
 } // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_TRANSPORT_PROPERTIES_HPP
+#endif // NFD_TESTS_DAEMON_FACE_TRANSPORT_TEST_COMMON_HPP

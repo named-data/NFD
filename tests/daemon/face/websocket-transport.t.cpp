@@ -26,9 +26,8 @@
 #include "face/websocket-transport.hpp"
 #include "face/lp-face.hpp"
 #include "dummy-receive-link-service.hpp"
-#include "transport-properties.hpp"
+#include "transport-test-common.hpp"
 
-#include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {

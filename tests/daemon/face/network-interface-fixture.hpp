@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP
-#define NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
 
 #include "core/network-interface.hpp"
 #include "face/ethernet-transport.hpp"
@@ -32,9 +32,10 @@
 #include "test-common.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
-class NetworkInterfaceFixture : protected BaseFixture
+class NetworkInterfaceFixture : public nfd::tests::BaseFixture
 {
 protected:
   NetworkInterfaceFixture()
@@ -66,6 +67,7 @@ protected:
   } while (false)
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_NETWORK_INTERFACE_FIXTURE_HPP
+#endif // NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
