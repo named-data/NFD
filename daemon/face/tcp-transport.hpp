@@ -33,7 +33,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a connected TCP socket
  */
-class TcpTransport DECL_FINAL : public StreamTransport<boost::asio::ip::tcp>
+class TcpTransport DECL_CLASS_FINAL : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
   TcpTransport(protocol::socket&& socket,

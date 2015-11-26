@@ -35,7 +35,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a unicast UDP socket
  */
-class UnicastUdpTransport DECL_FINAL : public DatagramTransport<boost::asio::ip::udp, Unicast>
+class UnicastUdpTransport DECL_CLASS_FINAL : public DatagramTransport<boost::asio::ip::udp, Unicast>
 {
 public:
   UnicastUdpTransport(protocol::socket&& socket,

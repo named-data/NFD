@@ -34,7 +34,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a UDP multicast group
  */
-class MulticastUdpTransport DECL_FINAL : public DatagramTransport<boost::asio::ip::udp, Multicast>
+class MulticastUdpTransport DECL_CLASS_FINAL : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
 public:
   /**

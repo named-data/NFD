@@ -51,8 +51,8 @@ public:
 
 /** \brief A Transport that communicates on a WebSocket connection
  */
-class WebSocketTransport DECL_FINAL : public Transport
-                                    , protected virtual WebSocketTransportCounters
+class WebSocketTransport DECL_CLASS_FINAL : public Transport
+                                          , protected virtual WebSocketTransportCounters
 {
 public:
   /** \brief counters provided by WebSocketTransport

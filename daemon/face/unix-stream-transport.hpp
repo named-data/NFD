@@ -38,7 +38,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a stream-oriented Unix domain socket
  */
-class UnixStreamTransport DECL_FINAL : public StreamTransport<boost::asio::local::stream_protocol>
+class UnixStreamTransport DECL_CLASS_FINAL : public StreamTransport<boost::asio::local::stream_protocol>
 {
 public:
   explicit
