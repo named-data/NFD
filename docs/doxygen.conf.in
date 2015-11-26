@@ -1929,7 +1929,8 @@ PREDEFINED             = DOXYGEN=1 \
                          PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
                          PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
                          VIRTUAL_WITH_TESTS \
-                         DECL_CLASS_FINAL=final
+                         DECL_CLASS_FINAL=final \
+                         DECL_FINAL=final
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
