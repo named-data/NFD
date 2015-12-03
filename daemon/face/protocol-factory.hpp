@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
 #include "channel.hpp"
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 

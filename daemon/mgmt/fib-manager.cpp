@@ -142,7 +142,12 @@ FibManager::setFaceForSelfRegistration(const Interest& request, ControlParameter
 {
   bool isSelfRegistration = (parameters.getFaceId() == 0);
   if (isSelfRegistration) {
-    parameters.setFaceId(request.getIncomingFaceId());
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
+    // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
+    // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
+    // and is initialized synchronously with IncomingFaceId field enabled.
+    BOOST_ASSERT(incomingFaceIdTag != nullptr);
+    parameters.setFaceId(*incomingFaceIdTag);
   }
 }
 

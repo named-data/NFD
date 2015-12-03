@@ -28,29 +28,25 @@
 #include "rib/rib-status-publisher-common.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace rib {
 namespace tests {
 
-class RibManagerFixture : public nfd::tests::BaseFixture
+using namespace nfd::tests;
+
+class RibManagerFixture : public UnitTestTimeFixture
 {
 public:
   RibManagerFixture()
-    : COMMAND_PREFIX("/localhost/nfd/rib")
-    , ADD_NEXTHOP_VERB("add-nexthop")
-    , REMOVE_NEXTHOP_VERB("remove-nexthop")
-    , REGISTER_COMMAND("/localhost/nfd/rib/register")
-    , UNREGISTER_COMMAND("/localhost/nfd/rib/unregister")
   {
-    face = ndn::util::makeDummyClientFace();
+    face = ndn::util::makeDummyClientFace(g_io);
 
     manager = make_shared<RibManager>(*face, keyChain);
     manager->registerWithNfd();
 
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
     face->sentInterests.clear();
   }
 
@@ -73,18 +69,20 @@ public:
   }
 
   void
-  receiveCommandInterest(const Name& name, ControlParameters& parameters)
+  receiveCommandInterest(const Name& name, ControlParameters& parameters,
+                         uint64_t incomingFaceId = DEFAULT_INCOMING_FACE_ID)
   {
     Name commandName = name;
     commandName.append(parameters.wireEncode());
 
     Interest commandInterest(commandName);
+    commandInterest.setTag(make_shared<lp::IncomingFaceIdTag>(incomingFaceId));
 
     manager->m_managedRib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue,
                                                         this, _1, parameters);
 
     face->receive(commandInterest);
-    face->processEvents(time::milliseconds(1));
+    advanceClocks(time::milliseconds(1));
   }
 
   void
@@ -109,13 +107,22 @@ public:
   shared_ptr<ndn::util::DummyClientFace> face;
   ndn::KeyChain keyChain;
 
-  const Name COMMAND_PREFIX;
-  const Name::Component ADD_NEXTHOP_VERB;
-  const Name::Component REMOVE_NEXTHOP_VERB;
+  static const uint64_t DEFAULT_INCOMING_FACE_ID;
 
-  const Name REGISTER_COMMAND;
-  const Name UNREGISTER_COMMAND;
+  static const Name COMMAND_PREFIX;
+  static const name::Component ADD_NEXTHOP_VERB;
+  static const name::Component REMOVE_NEXTHOP_VERB;
+
+  static const Name REGISTER_COMMAND;
+  static const Name UNREGISTER_COMMAND;
 };
+
+const uint64_t RibManagerFixture::DEFAULT_INCOMING_FACE_ID = 25122;
+const Name RibManagerFixture::COMMAND_PREFIX("/localhost/nfd/rib");
+const name::Component RibManagerFixture::ADD_NEXTHOP_VERB("add-nexthop");
+const name::Component RibManagerFixture::REMOVE_NEXTHOP_VERB("remove-nexthop");
+const Name RibManagerFixture::REGISTER_COMMAND("/localhost/nfd/rib/register");
+const Name RibManagerFixture::UNREGISTER_COMMAND("/localhost/nfd/rib/unregister");
 
 class AuthorizedRibManager : public RibManagerFixture
 {
@@ -232,6 +239,55 @@ BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
   BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), removeParameters.getFaceId());
 }
 
+BOOST_FIXTURE_TEST_CASE(SelfRegister, AuthorizedRibManager)
+{
+  ControlParameters parameters;
+  parameters
+    .setName("/hello");
+
+  receiveCommandInterest(REGISTER_COMMAND, parameters, 10129);
+
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+
+  Interest& request = face->sentInterests[0];
+
+  ControlParameters extractedParameters;
+  Name::Component verb;
+  extractParameters(request, verb, extractedParameters);
+
+  BOOST_CHECK_EQUAL(verb, ADD_NEXTHOP_VERB);
+  BOOST_CHECK_EQUAL(extractedParameters.getName(), parameters.getName());
+  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), 10129);
+}
+
+BOOST_FIXTURE_TEST_CASE(SelfUnregister, AuthorizedRibManager)
+{
+  ControlParameters addParameters;
+  addParameters
+    .setName("/hello")
+    .setFaceId(10129);
+
+  receiveCommandInterest(REGISTER_COMMAND, addParameters);
+  face->sentInterests.clear();
+
+  ControlParameters removeParameters;
+  removeParameters
+    .setName("/hello");
+
+  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters, 10129);
+
+  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+
+  Interest& request = face->sentInterests[0];
+
+  ControlParameters extractedParameters;
+  Name::Component verb;
+  extractParameters(request, verb, extractedParameters);
+
+  BOOST_CHECK_EQUAL(verb, REMOVE_NEXTHOP_VERB);
+  BOOST_CHECK_EQUAL(extractedParameters.getName(), removeParameters.getName());
+  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), 10129);
+}
 
 BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
 {
@@ -264,7 +320,7 @@ BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
   manager->m_managedRib.insert(prefix, route);
 
   face->receive(Interest("/localhost/nfd/rib/list"));
-  face->processEvents(time::milliseconds(1));
+  advanceClocks(time::milliseconds(1));
 
   BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
   RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], prefix, route);
@@ -298,8 +354,7 @@ BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
   addParameters.setExpirationPeriod(ndn::time::milliseconds::max());
   receiveCommandInterest(REGISTER_COMMAND, addParameters);
 
-  nfd::tests::LimitedIo limitedIo;
-  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+  advanceClocks(time::milliseconds(100), time::seconds(1));
 
   BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
 }
@@ -338,8 +393,7 @@ BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
   manager->removeInvalidFaces(buffer);
 
   // Run scheduler
-  nfd::tests::LimitedIo limitedIo;
-  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+  advanceClocks(time::milliseconds(100), time::seconds(1));
 
   BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
 
@@ -399,8 +453,7 @@ BOOST_FIXTURE_TEST_CASE(RouteExpiration, AuthorizedRibManager)
   BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
 
   // Route should expire
-  nfd::tests::LimitedIo limitedIo;
-  limitedIo.run(nfd::tests::LimitedIo::UNLIMITED_OPS, time::seconds(1));
+  advanceClocks(time::milliseconds(100), time::seconds(1));
 
   BOOST_CHECK_EQUAL(manager->m_managedRib.size(), 0);
 }

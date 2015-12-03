@@ -50,14 +50,13 @@ ClientControlStrategy::afterReceiveInterest(const Face& inFace,
                                             shared_ptr<fib::Entry> fibEntry,
                                             shared_ptr<pit::Entry> pitEntry)
 {
-  // Strategy needn't check whether LocalControlHeader-NextHopFaceId is enabled.
-  // LocalFace does this check.
-  if (!interest.getLocalControlHeader().hasNextHopFaceId()) {
+  shared_ptr<lp::NextHopFaceIdTag> tag = interest.getTag<lp::NextHopFaceIdTag>();
+  if (tag == nullptr) {
     this->BestRouteStrategy::afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
     return;
   }
 
-  FaceId outFaceId = static_cast<FaceId>(interest.getNextHopFaceId());
+  FaceId outFaceId = static_cast<FaceId>(*tag);
   shared_ptr<Face> outFace = this->getFace(outFaceId);
   if (!static_cast<bool>(outFace)) {
     // If outFace doesn't exist, it's better to reject the Interest

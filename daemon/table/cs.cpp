@@ -83,12 +83,11 @@ Cs::insert(const Data& data, bool isUnsolicited)
 {
   NFD_LOG_DEBUG("insert " << data.getName());
 
-  // recognize CachingPolicy
-  using ndn::nfd::LocalControlHeader;
-  const LocalControlHeader& lch = data.getLocalControlHeader();
-  if (lch.hasCachingPolicy()) {
-    LocalControlHeader::CachingPolicy policy = lch.getCachingPolicy();
-    if (policy == LocalControlHeader::CachingPolicy::NO_CACHE) {
+  // recognize CachePolicy
+  shared_ptr<lp::CachePolicyTag> tag = data.getTag<lp::CachePolicyTag>();
+  if (tag != nullptr) {
+    lp::CachePolicyType policy = tag->get().getPolicy();
+    if (policy == lp::CachePolicyType::NO_CACHE) {
       return false;
     }
   }

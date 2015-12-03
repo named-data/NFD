@@ -49,29 +49,31 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_reassembler(m_options.reassemblerOptions, this)
   , m_lastSeqNo(-2)
 {
-  m_reassembler.beforeTimeout.connect(bind([this] { ++nReassemblyTimeouts; }));
+  m_reassembler.beforeTimeout.connect(bind([this] { ++this->nReassemblyTimeouts; }));
 }
 
 void
 GenericLinkService::doSendInterest(const Interest& interest)
 {
   lp::Packet lpPacket(interest.wireEncode());
+
   if (m_options.allowLocalFields) {
     encodeLocalFields(interest, lpPacket);
   }
 
-  sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket));
 }
 
 void
 GenericLinkService::doSendData(const Data& data)
 {
   lp::Packet lpPacket(data.wireEncode());
+
   if (m_options.allowLocalFields) {
     encodeLocalFields(data, lpPacket);
   }
 
-  sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket));
 }
 
 void
@@ -79,50 +81,21 @@ GenericLinkService::doSendNack(const lp::Nack& nack)
 {
   lp::Packet lpPacket(nack.getInterest().wireEncode());
   lpPacket.add<lp::NackField>(nack.getHeader());
+
   if (m_options.allowLocalFields) {
-    encodeLocalFields(nack.getInterest(), lpPacket);
+    encodeLocalFields(nack, lpPacket);
   }
 
-  sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket));
 }
 
-bool
-GenericLinkService::encodeLocalFields(const Interest& interest, lp::Packet& lpPacket)
+void
+GenericLinkService::encodeLocalFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket)
 {
-  if (interest.getLocalControlHeader().hasIncomingFaceId()) {
-    lpPacket.add<lp::IncomingFaceIdField>(interest.getIncomingFaceId());
+  shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
+  if (incomingFaceIdTag != nullptr) {
+    lpPacket.add<lp::IncomingFaceIdField>(*incomingFaceIdTag);
   }
-
-  if (interest.getLocalControlHeader().hasCachingPolicy()) {
-    // Packet must be dropped
-    return false;
-  }
-
-  return true;
-}
-
-bool
-GenericLinkService::encodeLocalFields(const Data& data, lp::Packet& lpPacket)
-{
-  if (data.getLocalControlHeader().hasIncomingFaceId()) {
-    lpPacket.add<lp::IncomingFaceIdField>(data.getIncomingFaceId());
-  }
-
-  if (data.getLocalControlHeader().hasCachingPolicy()) {
-    switch (data.getCachingPolicy()) {
-      case ndn::nfd::LocalControlHeader::CachingPolicy::NO_CACHE: {
-        lp::CachePolicy cachePolicy;
-        cachePolicy.setPolicy(lp::CachePolicyType::NO_CACHE);
-        lpPacket.add<lp::CachePolicyField>(cachePolicy);
-        break;
-      }
-      default: {
-        break;
-      }
-    }
-  }
-
-  return true;
 }
 
 void
@@ -135,7 +108,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
     std::tie(isOk, frags) = m_fragmenter.fragmentPacket(pkt, mtu);
     if (!isOk) {
       // fragmentation failed (warning is logged by LpFragmenter)
-      ++nFragmentationErrors;
+      ++this->nFragmentationErrors;
       return;
     }
   }
@@ -145,7 +118,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
 
   if (frags.size() > 1) {
     // sequence is needed only if packet is fragmented
-    assignSequences(frags);
+    this->assignSequences(frags);
   }
   else {
     // even if indexed fragmentation is enabled, the fragmenter should not
@@ -158,11 +131,11 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
   for (const lp::Packet& frag : frags) {
     Transport::Packet tp(frag.wireEncode());
     if (mtu != MTU_UNLIMITED && tp.packet.size() > static_cast<size_t>(mtu)) {
-      ++nOutOverMtu;
+      ++this->nOutOverMtu;
       NFD_LOG_FACE_WARN("attempt to send packet over MTU limit");
       continue;
     }
-    sendPacket(std::move(tp));
+    this->sendPacket(std::move(tp));
   }
 }
 
@@ -249,7 +222,7 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
 
   if (firstPkt.has<lp::NextHopFaceIdField>()) {
     if (m_options.allowLocalFields) {
-      interest->setNextHopFaceId(firstPkt.get<lp::NextHopFaceIdField>());
+      interest->setTag(make_shared<lp::NextHopFaceIdTag>(firstPkt.get<lp::NextHopFaceIdField>()));
     }
     else {
       NFD_LOG_FACE_WARN("received NextHopFaceId, but local fields disabled: DROP");
@@ -292,16 +265,9 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
 
   if (firstPkt.has<lp::CachePolicyField>()) {
     if (m_options.allowLocalFields) {
-      lp::CachePolicyType policy = firstPkt.get<lp::CachePolicyField>().getPolicy();
-      switch (policy) {
-        case lp::CachePolicyType::NO_CACHE:
-          data->setCachingPolicy(ndn::nfd::LocalControlHeader::CachingPolicy::NO_CACHE);
-          break;
-        default:
-          ++this->nInNetInvalid;
-          NFD_LOG_FACE_WARN("unrecognized CachePolicyType " << policy << ": DROP");
-          return;
-      }
+      // In case of an invalid CachePolicyType, get<lp::CachePolicyField> will throw,
+      // so it's unnecessary to check here.
+      data->setTag(make_shared<lp::CachePolicyTag>(firstPkt.get<lp::CachePolicyField>()));
     }
     else {
       NFD_LOG_FACE_WARN("received CachePolicy, but local fields disabled: IGNORE");

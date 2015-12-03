@@ -180,9 +180,9 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   ControlResponse expectedResponse;
   auto testAddNextHop = [&] (ControlParameters parameters, const FaceId& faceId) {
     auto command = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters,
-                                             [&faceId] (shared_ptr<Interest> interest) {
-                                               interest->setIncomingFaceId(faceId);
-                                             });
+                   [&faceId] (shared_ptr<Interest> interest) {
+                     interest->setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
+                   });
     m_responses.clear();
     expectedName = command->getName();
     expectedResponse = makeResponse(200, "Success", parameters.setFaceId(faceId));
@@ -328,9 +328,9 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   auto testWithImplicitFaceId = [&] (ControlParameters parameters, FaceId face) {
     m_responses.clear();
     auto command = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters,
-                                             [face] (shared_ptr<Interest> interest) {
-                                               interest->setIncomingFaceId(face);
-                                             });
+                   [face] (shared_ptr<Interest> interest) {
+                     interest->setTag(make_shared<lp::IncomingFaceIdTag>(face));
+                   });
     expectedName = command->getName();
     expectedResponse = makeResponse(200, "Success", parameters.setFaceId(face));
     receiveInterest(command);

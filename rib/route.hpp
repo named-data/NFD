@@ -28,6 +28,7 @@
 
 #include "common.hpp"
 #include "core/scheduler.hpp"
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 namespace rib {

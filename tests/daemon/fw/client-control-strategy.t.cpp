@@ -48,7 +48,6 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
   shared_ptr<DummyLocalFace> face4 = make_shared<DummyLocalFace>();
-  face4->setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
   forwarder.addFace(face3);
@@ -62,7 +61,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
 
   // Interest with valid NextHopFaceId
   shared_ptr<Interest> interest1 = makeInterest("ndn:/0z8r6yDDe");
-  interest1->setNextHopFaceId(face1->getId());
+  interest1->setTag(make_shared<lp::NextHopFaceIdTag>(face1->getId()));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
   pitEntry1->insertOrUpdateInRecord(face4, *interest1);
 
@@ -83,7 +82,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
 
   // Interest with invalid NextHopFaceId
   shared_ptr<Interest> interest3 = makeInterest("ndn:/0z8r6yDDe");
-  interest3->setNextHopFaceId(face3->getId());
+  interest3->setTag(make_shared<lp::NextHopFaceIdTag>(face3->getId()));
   shared_ptr<pit::Entry> pitEntry3 = pit.insert(*interest3).first;
   pitEntry3->insertOrUpdateInRecord(face4, *interest3);
 

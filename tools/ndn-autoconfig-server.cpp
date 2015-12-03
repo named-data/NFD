@@ -23,6 +23,7 @@
  **/
 
 #include "version.hpp"
+#include <ndn-cxx/encoding/tlv-nfd.hpp>
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 

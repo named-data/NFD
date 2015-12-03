@@ -457,15 +457,15 @@ BOOST_AUTO_TEST_CASE(BackOffRetryPolicy)
   BOOST_REQUIRE_EQUAL(m_requests.size(), 1);
   BOOST_CHECK_EQUAL(checkRequest(0, "register", "/test/A"), CheckRequestResult::OK);
 
-  advanceClocks(time::milliseconds(1), 1050); // wait for the 1st retry
+  advanceClocks(time::milliseconds(10), time::milliseconds(1050)); // wait for the 1st retry
   BOOST_REQUIRE_EQUAL(m_requests.size(), 2);
   BOOST_CHECK_EQUAL(checkRequest(1, "register", "/test/A"), CheckRequestResult::OK);
 
-  advanceClocks(time::milliseconds(1), 2050); // wait for the 2nd retry, 2 times
+  advanceClocks(time::milliseconds(10), time::milliseconds(2050)); // wait for the 2nd retry, 2 times
   BOOST_REQUIRE_EQUAL(m_requests.size(), 3);
   BOOST_CHECK_EQUAL(checkRequest(2, "register", "/test/A"), CheckRequestResult::OK);
 
-  advanceClocks(time::milliseconds(1), 2050); // wait for the 3rd retry, reach the upper bound
+  advanceClocks(time::milliseconds(10), time::milliseconds(2050)); // wait for the 3rd retry, reach the upper bound
   BOOST_REQUIRE_EQUAL(m_requests.size(), 4);
   BOOST_CHECK_EQUAL(checkRequest(3, "register", "/test/A"), CheckRequestResult::OK);
 }

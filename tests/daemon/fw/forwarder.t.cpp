@@ -68,7 +68,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face2->m_sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getName(), nameAB);
-  BOOST_CHECK_EQUAL(face2->m_sentInterests[0].getIncomingFaceId(), face1->getId());
+  BOOST_REQUIRE(face2->m_sentInterests[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
+  BOOST_CHECK_EQUAL(*face2->m_sentInterests[0].getTag<lp::IncomingFaceIdTag>(), face1->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 1);
 
@@ -78,7 +79,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getName(), nameABC);
-  BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), face2->getId());
+  BOOST_REQUIRE(face1->m_sentDatas[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
+  BOOST_CHECK_EQUAL(*face1->m_sentDatas[0].getTag<lp::IncomingFaceIdTag>(), face2->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 1);
 }
@@ -98,7 +100,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   shared_ptr<Interest> interestA = makeInterest("ndn:/A");
   interestA->setInterestLifetime(time::seconds(4));
   shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->setIncomingFaceId(face3->getId());
+  dataA->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
 
   Fib& fib = forwarder.getFib();
   shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
@@ -117,7 +119,8 @@ BOOST_AUTO_TEST_CASE(CsMatched)
 
   BOOST_REQUIRE_EQUAL(face1->m_sentDatas.size(), 1);
   // IncomingFaceId field should be reset to represent CS
-  BOOST_CHECK_EQUAL(face1->m_sentDatas[0].getIncomingFaceId(), FACEID_CONTENT_STORE);
+  BOOST_REQUIRE(face1->m_sentDatas[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
+  BOOST_CHECK_EQUAL(*face1->m_sentDatas[0].getTag<lp::IncomingFaceIdTag>(), FACEID_CONTENT_STORE);
 
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
   // PIT entry should not be left behind

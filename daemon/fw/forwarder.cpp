@@ -104,7 +104,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // receive Interest
   NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                 " interest=" << interest.getName());
-  const_cast<Interest&>(interest).setIncomingFaceId(inFace.getId());
+  interest.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
   ++m_counters.nInInterests;
 
   // /localhost scope control
@@ -244,7 +244,7 @@ Forwarder::onContentStoreHit(const Face& inFace,
 {
   NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName());
 
-  const_pointer_cast<Data>(data.shared_from_this())->setIncomingFaceId(FACEID_CONTENT_STORE);
+  data.setTag(make_shared<lp::IncomingFaceIdTag>(FACEID_CONTENT_STORE));
   // XXX should we lookup PIT for other Interests that also match csMatch?
 
   // set PIT straggler timer
@@ -370,7 +370,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 {
   // receive Data
   NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() << " data=" << data.getName());
-  const_cast<Data&>(data).setIncomingFaceId(inFace.getId());
+  data.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
   ++m_counters.nInData;
 
   // /localhost scope control
@@ -479,6 +479,8 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 void
 Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
 {
+  // receive Nack
+  nack.setTag(make_shared<lp::IncomingFaceIdTag>(inFace.getId()));
   ++m_counters.nInNacks;
 
   // if multi-access face, drop

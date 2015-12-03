@@ -407,8 +407,9 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceId)
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  BOOST_REQUIRE(receivedInterests.back().getLocalControlHeader().hasNextHopFaceId());
-  BOOST_CHECK_EQUAL(receivedInterests.back().getNextHopFaceId(), 1000);
+  shared_ptr<lp::NextHopFaceIdTag> tag = receivedInterests.back().getTag<lp::NextHopFaceIdTag>();
+  BOOST_REQUIRE(tag != nullptr);
+  BOOST_CHECK_EQUAL(*tag, 1000);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDisabled)
@@ -474,16 +475,14 @@ BOOST_AUTO_TEST_CASE(ReceiveCacheControl)
 
   shared_ptr<Data> data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
-  lp::CachePolicy policy;
-  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
-  packet.set<lp::CachePolicyField>(policy);
+  packet.set<lp::CachePolicyField>(lp::CachePolicy().setPolicy(lp::CachePolicyType::NO_CACHE));
 
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_REQUIRE(receivedData.back().getLocalControlHeader().hasCachingPolicy());
-  BOOST_CHECK_EQUAL(receivedData.back().getCachingPolicy(),
-                    ndn::nfd::LocalControlHeader::CachingPolicy::NO_CACHE);
+  shared_ptr<lp::CachePolicyTag> tag = receivedData.back().getTag<lp::CachePolicyTag>();
+  BOOST_REQUIRE(tag != nullptr);
+  BOOST_CHECK_EQUAL(tag->get().getPolicy(), lp::CachePolicyType::NO_CACHE);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControlDisabled)
@@ -503,7 +502,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCacheControlDisabled)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_CHECK(!receivedData.back().getLocalControlHeader().hasCachingPolicy());
+  BOOST_CHECK(receivedData.back().getTag<lp::CachePolicyTag>() == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropInterest)
@@ -553,7 +552,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceId)
   initialize(options);
 
   shared_ptr<Interest> interest = makeInterest("/12345678");
-  interest->setIncomingFaceId(1000);
+  interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
   face->sendInterest(*interest);
 
@@ -571,7 +570,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceIdDisabled)
   initialize(options);
 
   shared_ptr<Interest> interest = makeInterest("/12345678");
-  interest->setIncomingFaceId(1000);
+  interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
   face->sendInterest(*interest);
 
@@ -595,7 +594,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreInterest)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
-  BOOST_CHECK(!receivedInterests.back().getLocalControlHeader().hasIncomingFaceId());
+  BOOST_CHECK(receivedInterests.back().getTag<lp::IncomingFaceIdTag>() == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreData)
@@ -613,7 +612,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreData)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_CHECK(!receivedData.back().getLocalControlHeader().hasIncomingFaceId());
+  BOOST_CHECK(receivedData.back().getTag<lp::IncomingFaceIdTag>() == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
@@ -632,7 +631,7 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
-  BOOST_CHECK(!receivedNacks.back().getLocalControlHeader().hasIncomingFaceId());
+  BOOST_CHECK(receivedNacks.back().getTag<lp::IncomingFaceIdTag>() == nullptr);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // LocalFields

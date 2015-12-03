@@ -28,6 +28,7 @@
 
 #include "core/counter.hpp"
 #include "face-log.hpp"
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 namespace face {

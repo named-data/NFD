@@ -130,33 +130,28 @@ public:
   getCounters() const DECL_OVERRIDE;
 
 private: // send path
-  /** \brief sends Interest
+  /** \brief send Interest
    */
   void
   doSendInterest(const Interest& interest) DECL_OVERRIDE;
 
-  /** \brief sends Data
+  /** \brief send Data
    */
   void
   doSendData(const Data& data) DECL_OVERRIDE;
 
-  /** \brief sends Nack
-   *  This class does not send out a Nack.
+  /** \brief send Nack
    */
   void
   doSendNack(const ndn::lp::Nack& nack) DECL_OVERRIDE;
 
-  /** \brief encode IncomingFaceId into LpPacket and verify local fields
+  /** \brief encode local fields from tags onto outgoing LpPacket
+   *  \param pkt LpPacket containing a complete network layer packet
    */
-  static bool
-  encodeLocalFields(const Interest& interest, lp::Packet& lpPacket);
+  static void
+  encodeLocalFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket);
 
-  /** \brief encode CachingPolicy and IncomingFaceId into LpPacket and verify local fields
-   */
-  static bool
-  encodeLocalFields(const Data& data, lp::Packet& lpPacket);
-
-  /** \brief encode and send a complete network layer packet
+  /** \brief send a complete network layer packet
    *  \param pkt LpPacket containing a complete network layer packet
    */
   void

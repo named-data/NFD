@@ -42,7 +42,7 @@ typedef uint64_t FaceId;
 const FaceId INVALID_FACEID = 0;
 /// identifies the InternalFace used in management
 const FaceId FACEID_INTERNAL_FACE = 1;
-/// identifies a packet comes from the ContentStore, in LocalControlHeader incomingFaceId
+/// identifies a packet comes from the ContentStore
 const FaceId FACEID_CONTENT_STORE = 254;
 /// identifies the NullFace that drops every packet
 const FaceId FACEID_NULL = 255;

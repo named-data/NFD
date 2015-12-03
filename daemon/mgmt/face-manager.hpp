@@ -27,11 +27,12 @@
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 
 #include "manager-base.hpp"
-#include "face/local-face.hpp"
+#include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-query-filter.hpp>
 
 namespace nfd {
 
+class Face;
 class FaceTable;
 class NetworkInterfaceInfo;
 class ProtocolFactory;
@@ -91,9 +92,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   struct ExtractLocalControlParametersResult
   {
     bool isValid;
-    shared_ptr<LocalFace> face;
     face::LpFace* lpFace;
-    LocalControlFeature feature;
   };
 
   ExtractLocalControlParametersResult

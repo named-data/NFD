@@ -31,8 +31,11 @@
 namespace nfd {
 namespace fw {
 
-/** \brief a forwarding strategy that forwards Interests
- *         according to NextHopFaceId field in LocalControlHeader
+/** \brief a forwarding strategy controlled by client application
+ *
+ *  The consumer may specify the nexthop for an Interest in NDNLPv2 NextHopFaceId field.
+ *  If NextHopFaceId field is omitted, the Interest is forwarded to
+ *  the FIB nexthop with lowest routing cost.
  */
 class ClientControlStrategy : public BestRouteStrategy
 {

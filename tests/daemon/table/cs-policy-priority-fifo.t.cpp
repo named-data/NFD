@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "table/cs.hpp"
 #include "table/cs-policy-priority-fifo.hpp"
+#include "table/cs.hpp"
 #include <ndn-cxx/util/crypto.hpp>
 
 #include "tests/test-common.hpp"
@@ -34,7 +34,6 @@ namespace cs {
 namespace tests {
 
 using namespace nfd::tests;
-using ndn::nfd::LocalControlHeader;
 
 BOOST_AUTO_TEST_SUITE(CsPriorityFifo)
 

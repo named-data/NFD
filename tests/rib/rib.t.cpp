@@ -24,6 +24,7 @@
  */
 
 #include "rib/rib.hpp"
+#include <ndn-cxx/encoding/tlv-nfd.hpp>
 
 #include "tests/test-common.hpp"
 

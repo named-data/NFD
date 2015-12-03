@@ -27,25 +27,19 @@
 #define NFD_TESTS_DAEMON_FACE_DUMMY_FACE_HPP
 
 #include "face/face.hpp"
-#include "face/local-face.hpp"
 
 namespace nfd {
 namespace tests {
 
-/** \class DummyFace
- *  \brief a Face for unit testing
+/** \brief a Face for unit testing
  */
-template<class FaceBase>
-class DummyFaceImpl : public FaceBase
+class DummyFace : public Face
 {
 public:
-  DummyFaceImpl()
-    : FaceBase(FaceUri("dummy://"), FaceUri("dummy://"))
-  {
-  }
-
-  DummyFaceImpl(const std::string& remoteUri, const std::string& localUri)
-    : FaceBase(FaceUri(remoteUri), FaceUri(localUri))
+  explicit
+  DummyFace(const std::string& remoteUri = "dummy://", const std::string& localUri = "dummy://",
+            bool isLocal = false)
+    : Face(FaceUri(remoteUri), FaceUri(localUri), isLocal)
   {
   }
 
@@ -83,15 +77,22 @@ public:
     this->emitSignal(onReceiveData, data);
   }
 
-  signal::Signal<DummyFaceImpl<FaceBase>> afterSend;
+  signal::Signal<DummyFace> afterSend;
 
 public:
   std::vector<Interest> m_sentInterests;
   std::vector<Data> m_sentDatas;
 };
 
-typedef DummyFaceImpl<Face> DummyFace;
-typedef DummyFaceImpl<LocalFace> DummyLocalFace;
+class DummyLocalFace : public DummyFace
+{
+public:
+  explicit
+  DummyLocalFace(const std::string& remoteUri = "dummy://", const std::string& localUri = "dummy://")
+    : DummyFace(remoteUri, localUri, true)
+  {
+  }
+};
 
 } // namespace tests
 } // namespace nfd

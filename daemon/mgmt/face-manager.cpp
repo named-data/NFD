@@ -178,11 +178,6 @@ FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
     return;
   }
 
-  if (result.face) {
-    result.face->setLocalControlHeaderFeature(result.feature, true);
-    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-  }
-
   // TODO#3226 redesign enable-local-control
   // For now, enable-local-control will enable all local fields in GenericLinkService.
   BOOST_ASSERT(result.lpFace != nullptr);
@@ -207,11 +202,6 @@ FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest
   auto result = extractLocalControlParameters(interest, parameters, done);
   if (!result.isValid) {
     return;
-  }
-
-  if (result.face) {
-    result.face->setLocalControlHeaderFeature(result.feature, false);
-    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
   }
 
   // TODO#3226 redesign disable-local-control
@@ -239,9 +229,15 @@ FaceManager::extractLocalControlParameters(const Interest& request,
   result.isValid = false;
   result.lpFace = nullptr;
 
-  auto face = m_faceTable.get(request.getIncomingFaceId());
+  shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
+  // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
+  // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
+  // and is initialized synchronously with IncomingFaceId field enabled.
+  BOOST_ASSERT(incomingFaceIdTag != nullptr);
+
+  auto face = m_faceTable.get(*incomingFaceIdTag);
   if (face == nullptr) {
-    NFD_LOG_DEBUG("FaceId " << request.getIncomingFaceId() << " not found");
+    NFD_LOG_DEBUG("FaceId " << *incomingFaceIdTag << " not found");
     done(ControlResponse(410, "Face not found"));
     return result;
   }
@@ -253,13 +249,10 @@ FaceManager::extractLocalControlParameters(const Interest& request,
   }
 
   result.isValid = true;
-  result.face = dynamic_pointer_cast<LocalFace>(face);
-  if (result.face == nullptr) {
-    auto lpFaceW = dynamic_pointer_cast<face::LpFaceWrapper>(face);
-    BOOST_ASSERT(lpFaceW != nullptr);
-    result.lpFace = lpFaceW->getLpFace();
-  }
-  result.feature = parameters.getLocalControlFeature();
+  auto lpFaceW = dynamic_pointer_cast<face::LpFaceWrapper>(face);
+  // LocalFace is gone, so a face that is local must be an LpFace.
+  BOOST_ASSERT(lpFaceW != nullptr);
+  result.lpFace = lpFaceW->getLpFace();
 
   return result;
 }

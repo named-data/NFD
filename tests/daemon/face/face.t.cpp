@@ -24,7 +24,6 @@
  */
 
 #include "face/face.hpp"
-#include "face/local-face.hpp"
 #include "dummy-face.hpp"
 
 #include "tests/test-common.hpp"
@@ -39,24 +38,6 @@ BOOST_AUTO_TEST_CASE(Description)
   DummyFace face;
   face.setDescription("3pFsKrvWr");
   BOOST_CHECK_EQUAL(face.getDescription(), "3pFsKrvWr");
-}
-
-BOOST_AUTO_TEST_CASE(LocalControlHeaderEnabled)
-{
-  DummyLocalFace face;
-
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
-
-  face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, true);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), true);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), true);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
-                         LOCAL_CONTROL_FEATURE_NEXT_HOP_FACE_ID), false);
-
-  face.setLocalControlHeaderFeature(LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID, false);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(), false);
-  BOOST_CHECK_EQUAL(face.isLocalControlHeaderEnabled(
-                         LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID), false);
 }
 
 class FaceFailTestFace : public DummyFace

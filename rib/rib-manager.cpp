@@ -280,7 +280,13 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 
   bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
   if (isSelfRegistration) {
-    parameters.setFaceId(request->getIncomingFaceId());
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request->getTag<lp::IncomingFaceIdTag>();
+    if (incomingFaceIdTag == nullptr) {
+      sendResponse(request->getName(), 503,
+                   "requested self-registration, but IncomingFaceId is unavailable");
+      return;
+    }
+    parameters.setFaceId(*incomingFaceIdTag);
   }
 
   // Respond since command is valid and authorized
@@ -358,7 +364,13 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
 
   bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
   if (isSelfRegistration) {
-    parameters.setFaceId(request->getIncomingFaceId());
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request->getTag<lp::IncomingFaceIdTag>();
+    if (incomingFaceIdTag == nullptr) {
+      sendResponse(request->getName(), 503,
+                   "requested self-registration, but IncomingFaceId is unavailable");
+      return;
+    }
+    parameters.setFaceId(*incomingFaceIdTag);
   }
 
   // Respond since command is valid and authorized
