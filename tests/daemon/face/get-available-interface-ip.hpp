@@ -50,7 +50,7 @@ A
 getAvailableInterfaceIp();
 
 template<>
-boost::asio::ip::address_v4
+inline boost::asio::ip::address_v4
 getAvailableInterfaceIp()
 {
   for (const auto& interface : listNetworkInterfaces()) {
@@ -68,7 +68,7 @@ getAvailableInterfaceIp()
 }
 
 template<>
-boost::asio::ip::address_v6
+inline boost::asio::ip::address_v6
 getAvailableInterfaceIp()
 {
   for (const auto& interface : listNetworkInterfaces()) {
