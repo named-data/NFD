@@ -30,8 +30,6 @@
 #include "face/lp-face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "transport-test-common.hpp"
-
 #include "tests/limited-io.hpp"
 
 #include <boost/filesystem.hpp>
@@ -124,7 +122,7 @@ protected:
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
       });
-    limitedIo.defer(time::milliseconds(50));
+    limitedIo.defer(time::seconds(1));
   }
 
 protected:

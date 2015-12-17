@@ -23,6 +23,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "get-available-interface-ip.hpp"
+#include "transport-test-common.hpp"
+
 #include "tcp-transport-fixture.hpp"
 
 namespace nfd {
@@ -30,7 +33,6 @@ namespace face {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
-
 BOOST_FIXTURE_TEST_SUITE(TestTcpTransport, TcpTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)

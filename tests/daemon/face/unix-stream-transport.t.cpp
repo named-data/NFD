@@ -23,6 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "transport-test-common.hpp"
+
 #include "unix-stream-transport-fixture.hpp"
 
 namespace nfd {
@@ -30,7 +32,6 @@ namespace face {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
-
 BOOST_FIXTURE_TEST_SUITE(TestUnixStreamTransport, UnixStreamTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticProperties)

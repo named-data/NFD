@@ -102,6 +102,7 @@ private:
 template<class T, class U>
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
+  , m_hasBeenUsedRecently(false)
 {
   m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
                               bind(&DatagramTransport<T, U>::handleReceive, this,
