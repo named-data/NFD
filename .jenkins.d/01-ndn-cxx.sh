@@ -5,7 +5,7 @@ set -e
 JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$JDIR"/util.sh
 
-pushd /tmp >/dev/null
+pushd ${CACHE_DIR:-/tmp} >/dev/null
 
 INSTALLED_VERSION=$((cd ndn-cxx && git rev-parse HEAD) 2>/dev/null || echo NONE)
 

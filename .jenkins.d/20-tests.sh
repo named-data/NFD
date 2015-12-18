@@ -2,19 +2,19 @@
 set -x
 set -e
 
+JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source "$JDIR"/util.sh
+
 # Prepare environment
 rm -Rf ~/.ndnx ~/.ndn
 
-echo $NODE_LABELS
-IS_OSX=$( python -c "print 'yes' if 'OSX' in '$NODE_LABELS'.strip().split(' ') else 'no'" )
-IS_LINUX=$( python -c "print 'yes' if 'Linux' in '$NODE_LABELS'.strip().split(' ') else 'no'" )
-
-if [[ $IS_OSX == "yes" ]]; then
+if has OSX $NODE_LABELS; then
   security unlock-keychain -p "named-data"
   sudo chgrp admin /dev/bpf*
   sudo chmod g+rw /dev/bpf*
 fi
-if [[ $IS_LINUX = "yes" ]]; then
+
+if has Linux $NODE_LABELS; then
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-core || true
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-daemon || true
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-rib || true
@@ -24,11 +24,18 @@ ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 
 # Run unit tests
 # Core
-./build/unit-tests-core -l test_suite
-sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
+if [[ -n $XUNIT ]]; then
+  ./build/unit-tests-core -l all --log_format2=XML --log_sink2=build/xunit-core-report.xml
+  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l all --log_format2=XML --log_sink2=build/xunit-core-sudo-report.xml
 
-# Daemon
-./build/unit-tests-daemon -l test_suite
+  ./build/unit-tests-daemon -l all --log_format2=XML --log_sink2=build/xunit-daemon-report.xml
 
-# RIB
-./build/unit-tests-rib -l test_suite
+  ./build/unit-tests-rib -l all --log_format2=XML --log_sink2=build/xunit-rib-report.xml
+else
+  ./build/unit-tests-core -l test_suite
+  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
+
+  ./build/unit-tests-daemon -l test_suite
+
+  ./build/unit-tests-rib -l test_suite
+fi

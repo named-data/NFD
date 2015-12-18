@@ -6,30 +6,31 @@ git submodule init
 git submodule sync
 git submodule update
 
-COVERAGE=$( python -c "print '--with-coverage' if 'code-coverage' in '$JOB_NAME' else ''" )
-
 # Cleanup
 sudo ./waf -j1 --color=yes distclean
 
-# Configure/build in debug mode
-./waf -j1 --color=yes configure --with-tests --debug
+# Configure/build in optimized mode with tests and precompiled headers
+./waf -j1 --color=yes configure --with-tests
 ./waf -j1 --color=yes build
 
 # Cleanup
 sudo ./waf -j1 --color=yes distclean
 
-# Configure/build in optimized mode without tests with precompiled headers
+# Configure/build in optimized mode without tests and with precompiled headers
 ./waf -j1 --color=yes configure
 ./waf -j1 --color=yes build
 
 # Cleanup
 sudo ./waf -j1 --color=yes distclean
 
-# Configure/build in optimized mode
-./waf -j1 --color=yes configure --with-tests --without-pch $COVERAGE
+# Configure/build in debug mode
+if [[ "$JOB_NAME" == *"code-coverage" ]]; then
+    COVERAGE="--with-coverage"
+fi
+./waf -j1 --color=yes configure --debug --with-tests --without-pch $COVERAGE
 ./waf -j1 --color=yes build
 
-# (tests will be run against optimized version)
+# (tests will be run against debug version)
 
 # Install
 sudo ./waf -j1 --color=yes install

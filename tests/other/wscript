@@ -27,8 +27,22 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 top = '../..'
 
 def build(bld):
-    bld.program(target="../../cs-benchmark",
-                source="cs-benchmark.cpp",
-                use='daemon-objects unit-tests-main',
-                install_path=None,
-                )
+   for module, name in {"cs-benchmark": "CS Benchmark"}.iteritems():
+       # main()
+       bld(target='unit-tests-%s-main' % module,
+           name='unit-tests-%s-main' % module,
+           features='cxx',
+           use='BOOST',
+           source='../main.cpp',
+           defines=['BOOST_TEST_MODULE=%s' % name]
+         )
+
+       # unit-tests-%module
+       bld.program(
+           target='../../%s' % module,
+           features='cxx cxxprogram',
+           source=bld.path.ant_glob(['%s*.cpp' % module]),
+           use='daemon-objects unit-tests-base unit-tests-%s-main' % module,
+           includes='.',
+           install_path=None,
+         )

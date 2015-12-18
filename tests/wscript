@@ -28,14 +28,6 @@ top = '..'
 def build(bld):
     # Unit tests
     if bld.env['WITH_TESTS']:
-        # main()
-        unit_test_main = bld(
-            target='unit-tests-main',
-            name='unit-tests-main',
-            features='cxx',
-            use='core-objects',
-            source='main.cpp',
-          )
 
         # common test modules
         unit_test_base = bld(
@@ -47,46 +39,39 @@ def build(bld):
             headers='../common.hpp boost-test.hpp',
           )
 
-        # core tests
-        unit_tests_core = bld.program(
-            target='../unit-tests-core',
-            features='cxx cxxprogram',
-            source=bld.path.ant_glob(['core/**/*.cpp']),
-            use='core-objects unit-tests-base unit-tests-main',
-            includes='.',
-            install_path=None,
-          )
+        for module, name in {"core": "NFD Core Tests",
+                             "daemon": "NFD Daemon Tests",
+                             "rib": "NFD RIB Tests"}.iteritems():
+            # main()
+            bld(target='unit-tests-%s-main' % module,
+                name='unit-tests-%s-main' % module,
+                features='cxx',
+                use='BOOST',
+                source='main.cpp',
+                defines=['BOOST_TEST_MODULE=%s' % name]
+              )
 
-        # NFD tests
-        unit_tests_nfd = bld.program(
-            target='../unit-tests-daemon',
-            features='cxx cxxprogram',
-            source=bld.path.ant_glob(['daemon/**/*.cpp'],
-                                     excl=['daemon/face/ethernet*.cpp',
-                                           'daemon/face/unix*.cpp',
-                                           'daemon/face/websocket*.cpp']),
-            use='daemon-objects unit-tests-base unit-tests-main',
-            includes='.',
-            install_path=None,
-          )
+            # unit-tests-%module
+            unit_tests = bld.program(
+                target='../unit-tests-%s' % module,
+                features='cxx cxxprogram',
+                source=bld.path.ant_glob(['%s/**/*.cpp' % module],
+                                         excl=['%s/**/ethernet*.cpp' % module,
+                                               '%s/**/unix*.cpp' % module,
+                                               '%s/**/websocket*.cpp' % module]),
+                use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
+                includes='.',
+                install_path=None,
+              )
 
-        if bld.env['HAVE_LIBPCAP']:
-            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/ethernet*.cpp')
+            if bld.env['HAVE_LIBPCAP']:
+                unit_tests.source += bld.path.ant_glob('%s/**/ethernet*.cpp' % module)
 
-        if bld.env['HAVE_UNIX_SOCKETS']:
-            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/unix*.cpp')
+            if bld.env['HAVE_UNIX_SOCKETS']:
+                unit_tests.source += bld.path.ant_glob('%s/**/unix*.cpp' % module)
 
-        if bld.env['HAVE_WEBSOCKET']:
-            unit_tests_nfd.source += bld.path.ant_glob('daemon/face/websocket*.cpp')
-
-        unit_tests_rib = bld.program(
-            target='../unit-tests-rib',
-            features='cxx cxxprogram',
-            source=bld.path.ant_glob(['rib/**/*.cpp']),
-            use='rib-objects unit-tests-base unit-tests-main',
-            includes='.',
-            install_path=None,
-          )
+            if bld.env['HAVE_WEBSOCKET']:
+                unit_tests.source += bld.path.ant_glob('%s/**/websocket*.cpp' % module)
 
     # Other tests (e.g., stress tests that can be enabled even if unit tests are disabled)
     if bld.env['WITH_TESTS'] or bld.env['WITH_OTHER_TESTS']:
