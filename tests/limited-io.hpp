@@ -27,8 +27,9 @@
 #define NFD_TESTS_LIMITED_IO_HPP
 
 #include "test-common.hpp"
-#include "core/global-io.hpp"
 #include "core/scheduler.hpp"
+
+#include <exception>
 
 namespace nfd {
 namespace tests {
@@ -38,15 +39,13 @@ namespace tests {
 class LimitedIo : noncopyable
 {
 public:
-  LimitedIo();
-
   /** \brief construct with UnitTestTimeFixture
    */
-  LimitedIo(UnitTestTimeFixture* uttf);
+  explicit
+  LimitedIo(UnitTestTimeFixture* uttf = nullptr);
 
   /// indicates why .run returns
-  enum StopReason
-  {
+  enum StopReason {
     /// g_io.run() returns normally because there's no work to do
     NO_WORK,
     /// .afterOp() has been invoked nOpsLimit times
@@ -71,9 +70,6 @@ public:
   void
   afterOp();
 
-  const std::exception&
-  getLastException() const;
-
   /** \brief defer for specified duration
    *
    *  equivalent to .run(UNLIMITED_OPS, d)
@@ -82,6 +78,12 @@ public:
   defer(const time::nanoseconds& d)
   {
     this->run(UNLIMITED_OPS, d);
+  }
+
+  std::exception_ptr
+  getLastException() const
+  {
+    return m_lastException;
   }
 
 private:
@@ -100,11 +102,11 @@ public:
 
 private:
   UnitTestTimeFixture* m_uttf;
-  bool m_isRunning;
+  StopReason m_reason;
   int m_nOpsRemaining;
   scheduler::EventId m_timeout;
-  StopReason m_reason;
-  std::exception m_lastException;
+  std::exception_ptr m_lastException;
+  bool m_isRunning;
 };
 
 } // namespace tests

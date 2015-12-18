@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -24,6 +24,8 @@
  */
 
 #include "limited-io.hpp"
+#include "core/extended-error-message.hpp"
+#include "core/global-io.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -34,17 +36,10 @@ NFD_LOG_INIT("LimitedIo");
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
-LimitedIo::LimitedIo()
-  : m_uttf(nullptr)
-  , m_isRunning(false)
-  , m_nOpsRemaining(0)
-{
-}
-
 LimitedIo::LimitedIo(UnitTestTimeFixture* uttf)
   : m_uttf(uttf)
-  , m_isRunning(false)
   , m_nOpsRemaining(0)
+  , m_isRunning(false)
 {
 }
 
@@ -74,17 +69,18 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
       m_uttf->advanceClocks(tick, time::nanoseconds::max());
     }
   }
-  catch (StopException&) {
+  catch (const StopException&) {
   }
-  catch (std::exception& ex) {
+  catch (const std::exception& ex) {
+    NFD_LOG_ERROR("g_io.run() exception: " << getExtendedErrorMessage(ex));
     m_reason = EXCEPTION;
-    NFD_LOG_ERROR("g_io.run() exception: " << ex.what());
-    m_lastException = ex;
+    m_lastException = std::current_exception();
   }
 
   getGlobalIoService().reset();
   scheduler::cancel(m_timeout);
   m_isRunning = false;
+
   return m_reason;
 }
 
@@ -97,6 +93,7 @@ LimitedIo::afterOp()
   }
 
   --m_nOpsRemaining;
+
   if (m_nOpsRemaining <= 0) {
     m_reason = EXCEED_OPS;
     getGlobalIoService().stop();
@@ -114,12 +111,6 @@ LimitedIo::afterTimeout()
   if (m_uttf != nullptr) {
     BOOST_THROW_EXCEPTION(StopException());
   }
-}
-
-const std::exception&
-LimitedIo::getLastException() const
-{
-  return m_lastException;
 }
 
 } // namespace tests
