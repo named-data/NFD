@@ -51,7 +51,12 @@ fi
 sudo @BINDIR@/nfd &
 
 if [ -f @SYSCONFDIR@/ndn/nfd-init.sh ]; then
-    sleep 2 # post-start is executed just after nfd process starts, but there is no guarantee
-    # that all initialization has been finished
-    . @SYSCONFDIR@/ndn/nfd-init.sh
+  sleep 2 # post-start is executed just after nfd process starts, but there is no guarantee
+  # that all initialization has been finished
+  . @SYSCONFDIR@/ndn/nfd-init.sh
+fi
+
+if [ -f @SYSCONFDIR@/ndn/autoconfig.conf ]; then
+  sleep 2 # post-start is executed just after nfd process starts, but there is no guarantee
+  @BINDIR@/ndn-autoconfig -d -c "@SYSCONFDIR@/ndn/autoconfig.conf" &
 fi

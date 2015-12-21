@@ -8,12 +8,32 @@ Usage
 
 ::
 
-    ndn-autoconfig
+    ndn-autoconfig [options]
 
 Description
 -----------
 
 Client tool to run :ref:`NDN hub discovery procedure`.
+
+Options
+-------
+
+``-h`` or ``--help``
+  Print usage information.
+
+``-d`` or ``--daemon``
+  Run ndn-autoconfig in daemon mode, detecting network change events and re-running
+  auto-discovery procedure.  In addition, the auto-discovery procedure is unconditionally
+  re-run every hour.
+
+  NOTE: if connection to NFD fails, the daemon will be terminated.
+
+``-c [FILE]`` or ``--config=[FILE]``
+  Use the specified configuration file. If `enabled = true` is not specified in the
+  configuration file, no actions will be performed.
+
+``-V`` or ``--version``
+  Print version information.
 
 .. _NDN hub discovery procedure:
 
@@ -40,8 +60,8 @@ This procedure contains three methods to discover a NDN router:
 
 After connecting to an NDN router, two prefixes will be automatically registered:
 
-- /ndn
-- /localhop/nfd --- this to inform RIB manager that there is connectivity to the hub
+- ``/ndn``
+- ``/localhop/nfd`` --- this to inform RIB manager that there is connectivity to the hub
 
 Stage 1: multicast discovery
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -131,4 +151,4 @@ Stage 3
 See also
 --------
 
-:ref:`ndn-autoconfig-server`
+:ref:`ndn-autoconfig-server`, :doc:`ndn-autoconfig.conf`

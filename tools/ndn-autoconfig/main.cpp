@@ -34,6 +34,11 @@
 #include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 
 #include <boost/noncopyable.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/variables_map.hpp>
+#include <boost/program_options/parsers.hpp>
+
+namespace po = boost::program_options;
 
 namespace ndn {
 namespace tools {
@@ -113,21 +118,16 @@ public:
     m_io.stop();
   }
 
+
   static void
-  usage(const char* programName)
+  usage(std::ostream& os,
+        const po::options_description& optionDescription,
+        const char* programName)
   {
-    std::cout << "Usage:\n"
-              << "  " << programName  << " [options]\n"
-              << "\n"
-              << "Options:\n"
-              << "  [-h]  - print usage and exit\n"
-              << "  [-d]  - run in daemon mode.  In daemon mode, " << programName << " will try \n"
-              << "          to detect network change events and re-run auto-discovery procedure.\n"
-              << "          In addition, the auto-discovery procedure is unconditionally re-run\n"
-              << "          every hour.\n"
-              << "          NOTE: if connection to NFD fails, the daemon will be terminated.\n"
-              << "  [-V]  - print version number and exit\n"
-              << std::endl;
+    os << "Usage:\n"
+       << "  " << programName << " [options]\n"
+       << "\n";
+    os << optionDescription;
   }
 
 private:
@@ -162,22 +162,65 @@ private:
 int
 main(int argc, char** argv)
 {
-  int opt;
-  const char* programName = argv[0];
   bool isDaemonMode = false;
+  std::string configFile;
 
-  while ((opt = getopt(argc, argv, "dhV")) != -1) {
-    switch (opt) {
-    case 'd':
-      isDaemonMode = true;
-      break;
-    case 'h':
-      ndn::tools::NdnAutoconfig::usage(programName);
-      return 0;
-    case 'V':
-      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
-      return 0;
+  po::options_description optionDescription("Options");
+  optionDescription.add_options()
+    ("help,h", "produce help message")
+    ("daemon,d", po::bool_switch(&isDaemonMode)->default_value(isDaemonMode),
+     "run in daemon mode, detecting network change events and re-running "
+     "auto-discovery procedure.  In addition, the auto-discovery procedure "
+     "is unconditionally re-run every hour.\n"
+     "NOTE: if connection to NFD fails, the daemon will be terminated.")
+    ("config,c", po::value<std::string>(&configFile), "configuration file. If `enabled = true` "
+     "is not specified, no actions will be performed.")
+    ("version,V", "show version and exit")
+    ;
+
+  po::variables_map options;
+  try {
+    po::store(po::parse_command_line(argc, argv, optionDescription), options);
+    po::notify(options);
+  }
+  catch (const std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << "\n" << std::endl;
+    ndn::tools::NdnAutoconfig::usage(std::cerr, optionDescription, argv[0]);
+    return 1;
+  }
+
+  if (options.count("help")) {
+    ndn::tools::NdnAutoconfig::usage(std::cout, optionDescription, argv[0]);
+    return 0;
+  }
+
+  if (options.count("version")) {
+    std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+    return 0;
+  }
+
+  // Enable (one-shot or daemon mode whenever config file is not specified)
+  bool isEnabled = true;
+
+  po::options_description configFileOptions;
+  configFileOptions.add_options()
+    ("enabled", po::value<bool>(&isEnabled))
+    ;
+
+  if (!configFile.empty()) {
+    isEnabled = false; // Disable by default if config file is specified
+    try {
+      po::store(po::parse_config_file<char>(configFile.c_str(), configFileOptions), options);
+      po::notify(options);
     }
+    catch (const std::exception& e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      return 1;
+    }
+  }
+
+  if (!isEnabled) {
+    return 0;
   }
 
   try {

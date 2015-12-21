@@ -1,0 +1,3 @@
+# Enable ndn-autoconfig to run in parallel with NFD.  Disabled by default
+# enabled=true
+enabled=false

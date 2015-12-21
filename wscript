@@ -240,6 +240,8 @@ def build(bld):
             install_path="${MANDIR}/",
             VERSION=VERSION)
 
+    bld.install_files("${SYSCONFDIR}/ndn", "autoconfig.conf.sample")
+
 def docs(bld):
     from waflib import Options
     Options.commands = ['doxygen', 'sphinx'] + Options.commands

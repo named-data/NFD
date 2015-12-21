@@ -242,9 +242,11 @@ latex_documents = [
 man_pages = [
     ('manpages/nfd', 'nfd', u'Named Data Networking Forwarding Daemon', None, 1),
     ('manpages/ndn-autoconfig-server', 'ndn-autoconfig-server',
-        u'NFD Auto-configuration Server', None, 1),
+        u'NDN auto-configuration server', None, 1),
     ('manpages/ndn-autoconfig', 'ndn-autoconfig',
-        u'NFD Auto-configuration Client', None, 1),
+        u'NDN auto-configuration client', None, 1),
+    ('manpages/ndn-autoconfig.conf', 'ndn-autoconfig.conf',
+        u'NDN auto-configuration client configuration file', None, 5),
     ('manpages/nfdc', 'nfdc',
         u'NFD utility to manipulate the forwarding table (FIB)', None, 1),
     ('manpages/ndn-tlv-peek', 'ndn-tlv-peek', u'NFD consumer', None, 1),

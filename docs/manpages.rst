@@ -10,6 +10,7 @@ Manpages
    schema
    manpages/nfd-status-http-server
    manpages/ndn-autoconfig
+   manpages/ndn-autoconfig.conf
    manpages/ndn-autoconfig-server
    misc/local-prefix-discovery
    manpages/nfd-autoreg
