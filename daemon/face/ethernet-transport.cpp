@@ -97,11 +97,13 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& interface,
   // do this after assigning m_socket because getInterfaceMtu uses it
   this->setMtu(getInterfaceMtu());
 
-  char filter[100];
-  // std::snprintf not found in some environments
-  // http://redmine.named-data.net/issues/2299 for more information
+  char filter[110];
+  // note #1: we cannot use std::snprintf because it's not available
+  //          on some platforms (see #2299)
+  // note #2: "not vlan" must appear last in the filter expression, or the
+  //          rest of the filter won't work as intended (see pcap-filter(7))
   snprintf(filter, sizeof(filter),
-           "(ether proto 0x%x) && (ether dst %s) && (not ether src %s)",
+           "(ether proto 0x%x) && (ether dst %s) && (not ether src %s) && (not vlan)",
            ethernet::ETHERTYPE_NDN,
            m_destAddress.toString().c_str(),
            m_srcAddress.toString().c_str());
@@ -338,13 +340,16 @@ EthernetTransport::processIncomingPacket(const pcap_pkthdr* header, const uint8_
   const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
   const ethernet::Address sourceAddress(eh->ether_shost);
 
-  // assert in case BPF fails to filter unwanted frames
+  // in some cases VLAN-tagged frames may survive the BPF filter,
+  // make sure we do not process those frames (see #3348)
+  if (ntohs(eh->ether_type) != ethernet::ETHERTYPE_NDN)
+    return;
+
+  // check that our BPF filter is working correctly
   BOOST_ASSERT_MSG(ethernet::Address(eh->ether_dhost) == m_destAddress,
                    "Received frame addressed to a different multicast group");
   BOOST_ASSERT_MSG(sourceAddress != m_srcAddress,
                    "Received frame sent by this host");
-  BOOST_ASSERT_MSG(ntohs(eh->ether_type) == ethernet::ETHERTYPE_NDN,
-                   "Received frame with unrecognized ethertype");
 
   packet += ethernet::HDR_LEN;
   length -= ethernet::HDR_LEN;
