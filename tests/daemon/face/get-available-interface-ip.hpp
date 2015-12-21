@@ -42,19 +42,22 @@ namespace tests {
 
 /** \brief get a non-local IP address from any available network interface
  *  \tparam A the address type, either boost::asio::ip::address_v4 or boost::asio::ip::address_v6
+ *  \param needMulticast true if the address must be chosen from a multicast-capable interface
  *  \return an IP address
  *  \retval default-constructed A, if no address is available
  */
 template<typename A>
 A
-getAvailableInterfaceIp();
+getAvailableInterfaceIp(bool needMulticast = false);
 
 template<>
 inline boost::asio::ip::address_v4
-getAvailableInterfaceIp()
+getAvailableInterfaceIp(bool needMulticast)
 {
   for (const auto& interface : listNetworkInterfaces()) {
-    if (interface.isUp() && !interface.isLoopback()) {
+    if (interface.isUp() &&
+        !interface.isLoopback() &&
+        (!needMulticast || interface.isMulticastCapable())) {
       for (const auto& address : interface.ipv4Addresses) {
         if (!address.is_unspecified() &&
             !address.is_loopback()) {
@@ -63,16 +66,17 @@ getAvailableInterfaceIp()
       }
     }
   }
-
   return {};
 }
 
 template<>
 inline boost::asio::ip::address_v6
-getAvailableInterfaceIp()
+getAvailableInterfaceIp(bool needMulticast)
 {
   for (const auto& interface : listNetworkInterfaces()) {
-    if (interface.isUp() && !interface.isLoopback()) {
+    if (interface.isUp() &&
+        !interface.isLoopback() &&
+        (!needMulticast || interface.isMulticastCapable())) {
       for (const auto& address : interface.ipv6Addresses) {
         if (!address.is_unspecified() &&
             !address.is_link_local() && // see #1428
@@ -82,7 +86,6 @@ getAvailableInterfaceIp()
       }
     }
   }
-
   return {};
 }
 

@@ -35,7 +35,9 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestStreamTransport)
 
-typedef boost::mpl::vector<TcpTransportFixture, UnixStreamTransportFixture> StreamTransportFixtures;
+typedef boost::mpl::vector<TcpTransportFixture,
+                           UnixStreamTransportFixture
+                           > StreamTransportFixtures;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, StreamTransportFixtures, T)
 {

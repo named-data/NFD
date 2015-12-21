@@ -24,6 +24,7 @@
  */
 
 #include "unicast-udp-transport-fixture.hpp"
+#include "multicast-udp-transport-fixture.hpp"
 
 #include <boost/mpl/vector.hpp>
 
@@ -34,11 +35,14 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestDatagramTransport)
 
-typedef boost::mpl::vector<UnicastUdpTransportFixture> DatagramTransportFixtures;
+typedef boost::mpl::vector<UnicastUdpTransportFixture,
+                           MulticastUdpTransportFixture
+                           > DatagramTransportFixtures;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   auto block1 = ndn::encoding::makeStringBlock(300, "hello");
   this->transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
@@ -46,13 +50,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutBytes, block1.size());
 
   std::vector<uint8_t> readBuf(block1.size());
-  this->remoteSocket.async_receive(boost::asio::buffer(readBuf),
-    [this] (const boost::system::error_code& error, size_t) {
-      BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
-      this->limitedIo.afterOp();
-    });
-
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  this->remoteRead(readBuf);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.end(), block1.begin(), block1.end());
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
@@ -60,7 +58,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   Block pkt = ndn::encoding::makeStringBlock(300, "hello");
   ndn::Buffer buf(pkt.begin(), pkt.end());
@@ -74,7 +73,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   std::vector<uint8_t> buf{
     0x05, 0x03, 0x00, 0x01,
@@ -89,7 +89,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world");
@@ -107,7 +108,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFix
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
   Block pkt1 = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size() - 6);
@@ -135,7 +137,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, DatagramTransportFixtures, 
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, DatagramTransportFixtures, T)
 {
-  this->initialize();
+  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
+  this->initialize(this->defaultAddr);
 
   this->transport->close();
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::CLOSING);

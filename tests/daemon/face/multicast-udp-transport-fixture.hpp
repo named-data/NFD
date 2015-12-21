@@ -23,13 +23,14 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_UNICAST_UDP_TRANSPORT_FIXTURE_HPP
-#define NFD_TESTS_DAEMON_FACE_UNICAST_UDP_TRANSPORT_FIXTURE_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_FIXTURE_HPP
 
-#include "face/unicast-udp-transport.hpp"
+#include "face/multicast-udp-transport.hpp"
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
+#include "get-available-interface-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -40,50 +41,56 @@ using namespace nfd::tests;
 namespace ip = boost::asio::ip;
 using ip::udp;
 
-class UnicastUdpTransportFixture : public BaseFixture
+class MulticastUdpTransportFixture : public BaseFixture
 {
 protected:
-  UnicastUdpTransportFixture()
+  MulticastUdpTransportFixture()
     : transport(nullptr)
-    , remoteSocket(g_io)
-    , defaultAddr(ip::address_v4::loopback())
+    , multicastEp(ip::address::from_string("230.15.19.47"), 7070)
+    , defaultAddr(getAvailableInterfaceIp<ip::address_v4>(true))
     , receivedPackets(nullptr)
+    , remoteSockRx(g_io)
+    , remoteSockTx(g_io)
   {
   }
 
   void
-  initialize(ip::address address = ip::address_v4::loopback(),
-             ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+  initialize(ip::address_v4 address)
   {
-    udp::socket sock(g_io);
-    sock.connect(udp::endpoint(address, 7070));
-    localEp = sock.local_endpoint();
+    openMulticastSockets(remoteSockRx, remoteSockTx, multicastEp.port());
 
-    remoteConnect(address);
+    udp::socket sockRx(g_io);
+    udp::socket sockTx(g_io);
+    localEp = udp::endpoint(address, 7001);
+    openMulticastSockets(sockRx, sockTx, localEp.port());
 
     face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),
-             make_unique<UnicastUdpTransport>(std::move(sock), persistency, time::seconds(3)));
-    transport = static_cast<UnicastUdpTransport*>(face->getTransport());
+             make_unique<MulticastUdpTransport>(localEp, multicastEp, std::move(sockRx), std::move(sockTx)));
+    transport = static_cast<MulticastUdpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }
 
   void
-  remoteConnect(ip::address address = ip::address_v4::loopback())
+  openMulticastSockets(udp::socket& rx, udp::socket& tx, uint16_t port)
   {
-    udp::endpoint remoteEp(address, 7070);
-    remoteSocket.open(remoteEp.protocol());
-    remoteSocket.set_option(udp::socket::reuse_address(true));
-    remoteSocket.bind(remoteEp);
-    remoteSocket.connect(localEp);
+    rx.open(udp::v4());
+    rx.set_option(udp::socket::reuse_address(true));
+    rx.bind(udp::endpoint(multicastEp.address(), port));
+    rx.set_option(ip::multicast::join_group(multicastEp.address()));
+
+    tx.open(udp::v4());
+    tx.set_option(udp::socket::reuse_address(true));
+    tx.set_option(ip::multicast::enable_loopback(true));
+    tx.bind(udp::endpoint(ip::address_v4::any(), port));
   }
 
   void
   remoteRead(std::vector<uint8_t>& buf, bool needToCheck = true)
   {
-    remoteSocket.async_receive(boost::asio::buffer(buf),
+    remoteSockRx.async_receive(boost::asio::buffer(buf),
       [this, needToCheck] (const boost::system::error_code& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
@@ -96,7 +103,7 @@ protected:
   void
   remoteWrite(const std::vector<uint8_t>& buf, bool needToCheck = true)
   {
-    remoteSocket.async_send(boost::asio::buffer(buf),
+    remoteSockTx.async_send_to(boost::asio::buffer(buf), udp::endpoint(multicastEp.address(), 7001),
       [needToCheck] (const boost::system::error_code& error, size_t) {
         if (needToCheck) {
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
@@ -107,18 +114,20 @@ protected:
 
 protected:
   LimitedIo limitedIo;
-  UnicastUdpTransport* transport;
+  MulticastUdpTransport* transport;
   udp::endpoint localEp;
-  udp::socket remoteSocket;
-  const ip::address defaultAddr;
+  udp::endpoint multicastEp;
+  const ip::address_v4 defaultAddr;
   std::vector<Transport::Packet>* receivedPackets;
 
 private:
   unique_ptr<Face> face;
+  udp::socket remoteSockRx;
+  udp::socket remoteSockTx;
 };
 
 } // namespace tests
 } // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_UNICAST_UDP_TRANSPORT_FIXTURE_HPP
+#endif // NFD_TESTS_DAEMON_FACE_MULTICAST_UDP_TRANSPORT_FIXTURE_HPP
