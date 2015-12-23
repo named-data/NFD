@@ -55,6 +55,23 @@ public:
              const time::seconds& timeout);
 
   /**
+   * \brief Get number of faces in the channel
+   */
+  size_t
+  size() const;
+
+  /**
+   * \brief Create a face by establishing connection to remote endpoint
+   *
+   * \throw UdpChannel::Error if bind or connect on the socket fail
+   */
+  void
+  connect(const udp::Endpoint& remoteEndpoint,
+          ndn::nfd::FacePersistency persistency,
+          const FaceCreatedCallback& onFaceCreated,
+          const FaceCreationFailedCallback& onConnectFailed);
+
+  /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
    * \param onFaceCreated  Callback to notify successful creation of the face
@@ -70,29 +87,13 @@ public:
   listen(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onReceiveFailed);
 
-  /**
-   * \brief Create a face by establishing connection to remote endpoint
-   *
-   * \throw UdpChannel::Error if bind or connect on the socket fail
-   */
-  void
-  connect(const udp::Endpoint& remoteEndpoint,
-          ndn::nfd::FacePersistency persistency,
-          const FaceCreatedCallback& onFaceCreated,
-          const FaceCreationFailedCallback& onConnectFailed);
-
-  /**
-   * \brief Get number of faces in the channel
-   */
-  size_t
-  size() const;
-
   bool
   isListening() const;
 
 private:
-  std::pair<bool, shared_ptr<face::LpFaceWrapper>>
-  createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency);
+  void
+  waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
+                 const FaceCreationFailedCallback& onReceiveFailed);
 
   /**
    * \brief The channel has received a new packet from a remote
@@ -103,6 +104,9 @@ private:
                 size_t nBytesReceived,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onReceiveFailed);
+
+  std::pair<bool, shared_ptr<face::LpFaceWrapper>>
+  createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency);
 
 private:
   std::map<udp::Endpoint, shared_ptr<face::LpFaceWrapper>> m_channelFaces;
