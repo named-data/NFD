@@ -24,8 +24,7 @@
  */
 
 #include "link-service.hpp"
-#include "lp-face.hpp"
-#include "transport.hpp"
+#include "face.hpp"
 
 namespace nfd {
 namespace face {
@@ -43,7 +42,7 @@ LinkService::~LinkService()
 }
 
 void
-LinkService::setFaceAndTransport(LpFace& face, Transport& transport)
+LinkService::setFaceAndTransport(Face& face, Transport& transport)
 {
   BOOST_ASSERT(m_face == nullptr);
   BOOST_ASSERT(m_transport == nullptr);
@@ -118,7 +117,7 @@ LinkService::receiveNack(const ndn::lp::Nack& nack)
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<LinkService>& flh)
 {
-  const LpFace* face = flh.obj.getFace();
+  const Face* face = flh.obj.getFace();
   if (face == nullptr) {
     os << "[id=0,local=unknown,remote=unknown] ";
   }

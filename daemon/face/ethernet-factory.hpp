@@ -31,10 +31,6 @@
 
 namespace nfd {
 
-namespace face {
-class LpFaceWrapper;
-} // namespace face
-
 class EthernetFactory : public ProtocolFactory
 {
 public:
@@ -52,7 +48,7 @@ public:
   };
 
   typedef std::map<std::pair<std::string, ethernet::Address>,
-                   shared_ptr<face::LpFaceWrapper>> MulticastFaceMap;
+                   shared_ptr<Face>> MulticastFaceMap;
 
   /**
    * \brief Create an EthernetFace to communicate with the given multicast group
@@ -69,7 +65,7 @@ public:
    *
    * \throws EthernetFactory::Error or EthernetTransport::Error
    */
-  shared_ptr<face::LpFaceWrapper>
+  shared_ptr<Face>
   createMulticastFace(const NetworkInterfaceInfo& interface,
                       const ethernet::Address& address);
 
@@ -96,7 +92,7 @@ private:
    * \returns shared pointer to the existing EthernetFace object
    *          or nullptr when such face does not exist
    */
-  shared_ptr<face::LpFaceWrapper>
+  shared_ptr<Face>
   findMulticastFace(const std::string& interfaceName,
                     const ethernet::Address& address) const;
 

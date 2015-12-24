@@ -34,7 +34,6 @@ namespace tests {
 using face::InternalTransportBase;
 using face::InternalForwarderTransport;
 using face::InternalClientTransport;
-using face::LpFaceWrapper;
 using face::GenericLinkService;
 
 TopologyLink::TopologyLink(const time::nanoseconds& delay)
@@ -46,9 +45,9 @@ TopologyLink::TopologyLink(const time::nanoseconds& delay)
 }
 
 void
-TopologyLink::addFace(TopologyNode i, shared_ptr<LpFaceWrapper> face)
+TopologyLink::addFace(TopologyNode i, shared_ptr<Face> face)
 {
-  this->attachTransport(i, dynamic_cast<InternalTransportBase*>(face->getLpFace()->getTransport()));
+  this->attachTransport(i, dynamic_cast<InternalTransportBase*>(face->getTransport()));
   m_faces[i] = face;
 }
 
@@ -87,9 +86,9 @@ TopologyLink::scheduleReceive(InternalTransportBase* recipient, const Block& pac
   });
 }
 
-TopologyAppLink::TopologyAppLink(shared_ptr<LpFaceWrapper> forwarderFace)
+TopologyAppLink::TopologyAppLink(shared_ptr<Face> forwarderFace)
   : m_face(forwarderFace)
-  , m_forwarderTransport(static_cast<InternalForwarderTransport*>(forwarderFace->getLpFace()->getTransport()))
+  , m_forwarderTransport(static_cast<InternalForwarderTransport*>(forwarderFace->getTransport()))
   , m_clientTransport(make_shared<InternalClientTransport>())
   , m_client(make_shared<ndn::Face>(m_clientTransport, getGlobalIoService()))
 {
@@ -136,11 +135,10 @@ TopologyTester::addLink(const std::string& label, const time::nanoseconds& delay
     auto service = make_unique<GenericLinkService>();
     auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                      ndn::nfd::FACE_SCOPE_NON_LOCAL, linkType);
-    auto face = make_unique<LpFace>(std::move(service), std::move(transport));
-    auto faceW = make_shared<LpFaceWrapper>(std::move(face));
+    auto face = make_shared<Face>(std::move(service), std::move(transport));
 
-    forwarder.addFace(faceW);
-    link->addFace(i, faceW);
+    forwarder.addFace(face);
+    link->addFace(i, face);
   }
 
   m_links.push_back(link); // keep a shared_ptr so callers don't have to
@@ -157,12 +155,11 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i)
   auto service = make_unique<GenericLinkService>();
   auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                    ndn::nfd::FACE_SCOPE_LOCAL, ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  auto face = make_unique<LpFace>(std::move(service), std::move(transport));
-  auto faceW = make_shared<LpFaceWrapper>(std::move(face));
+  auto face = make_shared<Face>(std::move(service), std::move(transport));
 
-  forwarder.addFace(faceW);
+  forwarder.addFace(face);
 
-  auto al = make_shared<TopologyAppLink>(faceW);
+  auto al = make_shared<TopologyAppLink>(face);
   m_appLinks.push_back(al); // keep a shared_ptr so callers don't have to
   return al;
 }

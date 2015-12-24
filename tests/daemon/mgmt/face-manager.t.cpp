@@ -37,6 +37,9 @@
 namespace nfd {
 namespace tests {
 
+BOOST_AUTO_TEST_SUITE(Mgmt)
+
+
 class FaceManagerFixture : public ManagerCommonFixture
 {
 public:
@@ -48,17 +51,60 @@ public:
   }
 
 public:
-  template<typename Face>
+  enum AddFaceFlags {
+    REMOVE_LAST_NOTIFICATION = 1 << 0,
+    SET_SCOPE_LOCAL          = 1 << 1,
+    SET_URI_TEST             = 1 << 2,
+    RANDOMIZE_COUNTERS       = 1 << 3
+  };
+
+  /** \brief adds a face to the FaceTable
+   *  \param options bitwise OR'ed AddFaceFlags
+   */
   shared_ptr<Face>
-  addFace(bool wantRemoveLastNotification = false)
+  addFace(int flags = 0)
   {
-    auto face = make_shared<Face>();
+    std::string uri = "dummy://";
+    ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL;
+
+    if ((flags & SET_SCOPE_LOCAL) != 0) {
+      scope = ndn::nfd::FACE_SCOPE_LOCAL;
+    }
+    if ((flags & SET_URI_TEST) != 0) {
+      uri = "test://";
+    }
+
+    auto face = make_shared<DummyFace>(uri, uri, scope);
     m_faceTable.add(face);
+
+    if ((flags & RANDOMIZE_COUNTERS) != 0) {
+      const face::FaceCounters& counters = face->getCounters();
+      randomizeCounter(counters.nInInterests);
+      randomizeCounter(counters.nOutInterests);
+      randomizeCounter(counters.nInData);
+      randomizeCounter(counters.nOutData);
+      randomizeCounter(counters.nInNacks);
+      randomizeCounter(counters.nOutNacks);
+      randomizeCounter(counters.nInPackets);
+      randomizeCounter(counters.nOutPackets);
+      randomizeCounter(counters.nInBytes);
+      randomizeCounter(counters.nOutBytes);
+    }
+
     advanceClocks(time::milliseconds(1), 10); // wait for notification posted
-    if (wantRemoveLastNotification) {
+    if ((flags & REMOVE_LAST_NOTIFICATION) != 0) {
       m_responses.pop_back();
     }
+
     return face;
+  }
+
+private:
+  template<typename T>
+  static typename std::enable_if<std::is_base_of<SimpleCounter, T>::value>::type
+  randomizeCounter(const T& counter)
+  {
+    const_cast<T&>(counter).set(ndn::random::generateWord64());
   }
 
 protected:
@@ -66,14 +112,13 @@ protected:
   FaceManager m_manager;
 };
 
-BOOST_FIXTURE_TEST_SUITE(Mgmt, FaceManagerFixture)
-BOOST_AUTO_TEST_SUITE(TestFaceManager)
+BOOST_FIXTURE_TEST_SUITE(TestFaceManager, FaceManagerFixture)
 
 BOOST_AUTO_TEST_SUITE(DestroyFace)
 
 BOOST_AUTO_TEST_CASE(Existing)
 {
-  auto addedFace = addFace<DummyFace>(true); // clear notification for creation
+  auto addedFace = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // clear notification for creation
 
   auto parameters = ControlParameters().setFaceId(addedFace->getId());
   auto command = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
@@ -86,7 +131,7 @@ BOOST_AUTO_TEST_CASE(Existing)
   BOOST_CHECK_EQUAL(checkResponse(1, command->getName(), makeResponse(200, "OK", parameters)),
                     CheckResponseResult::OK);
 
-  BOOST_CHECK_EQUAL(addedFace->getId(), -1);
+  BOOST_CHECK_EQUAL(addedFace->getId(), face::INVALID_FACEID);
 }
 
 BOOST_AUTO_TEST_CASE(NonExisting)
@@ -106,7 +151,7 @@ BOOST_AUTO_TEST_SUITE_END() // DestroyFace
 
 BOOST_AUTO_TEST_CASE(FaceEvents)
 {
-  auto addedFace = addFace<DummyFace>(); // trigger FACE_EVENT_CREATED notification
+  auto addedFace = addFace(); // trigger FACE_EVENT_CREATED notification
   BOOST_CHECK_NE(addedFace->getId(), -1);
   int64_t faceId = addedFace->getId();
 
@@ -146,24 +191,8 @@ BOOST_AUTO_TEST_CASE(FaceEvents)
     BOOST_CHECK_EQUAL(notification.getFacePersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
     BOOST_CHECK_EQUAL(notification.getLinkType(), ndn::nfd::LinkType::LINK_TYPE_POINT_TO_POINT);
   }
-  BOOST_CHECK_EQUAL(addedFace->getId(), -1);
+  BOOST_CHECK_EQUAL(addedFace->getId(), face::INVALID_FACEID);
 }
-
-class TestFace : public DummyFace
-{
-public:
-  explicit
-  TestFace(const std::string& uri = "test://")
-    : DummyFace(uri, uri)
-  {
-    getMutableCounters().getNInInterests().set(ndn::random::generateWord64());
-    getMutableCounters().getNInDatas().set(ndn::random::generateWord64());
-    getMutableCounters().getNOutInterests().set(ndn::random::generateWord64());
-    getMutableCounters().getNOutDatas().set(ndn::random::generateWord64());
-    getMutableCounters().getNInBytes().set(ndn::random::generateWord64());
-    getMutableCounters().getNOutBytes().set(ndn::random::generateWord64());
-  }
-};
 
 // @todo Refactor when ndn::nfd::FaceStatus implementes operator!= and operator<<
 class FaceStatus : public ndn::nfd::FaceStatus
@@ -179,16 +208,16 @@ bool
 operator!=(const FaceStatus& left, const FaceStatus& right)
 {
   return left.getRemoteUri() != right.getRemoteUri() ||
-    left.getLocalUri() != right.getLocalUri() ||
-    left.getFaceScope() != right.getFaceScope() ||
-    left.getFacePersistency() != right.getFacePersistency() ||
-    left.getLinkType() != right.getLinkType() ||
-    left.getNInInterests() != right.getNInInterests() ||
-    left.getNInDatas() != right.getNInDatas() ||
-    left.getNOutInterests() != right.getNOutInterests() ||
-    left.getNOutDatas() != right.getNOutDatas() ||
-    left.getNInBytes() != right.getNInBytes() ||
-    left.getNOutBytes() != right.getNOutBytes();
+         left.getLocalUri() != right.getLocalUri() ||
+         left.getFaceScope() != right.getFaceScope() ||
+         left.getFacePersistency() != right.getFacePersistency() ||
+         left.getLinkType() != right.getLinkType() ||
+         left.getNInInterests() != right.getNInInterests() ||
+         left.getNInDatas() != right.getNInDatas() ||
+         left.getNOutInterests() != right.getNOutInterests() ||
+         left.getNOutDatas() != right.getNOutDatas() ||
+         left.getNInBytes() != right.getNInBytes() ||
+         left.getNOutBytes() != right.getNOutBytes();
 }
 
 std::ostream&
@@ -210,8 +239,8 @@ operator<<(std::ostream &os, const FaceStatus& status)
 BOOST_AUTO_TEST_CASE(FaceDataset)
 {
   size_t nEntries = 303;
-  for (size_t i = 0 ; i < nEntries ; i ++) {
-    addFace<TestFace>(true);
+  for (size_t i = 0; i < nEntries; ++i) {
+    addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST | RANDOMIZE_COUNTERS);
   }
 
   receiveInterest(makeInterest("/localhost/nfd/faces/list"));
@@ -237,9 +266,9 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
 
 BOOST_AUTO_TEST_CASE(FaceQuery)
 {
-  auto face1 = addFace<DummyFace>(true); // dummy://
-  auto face2 = addFace<DummyLocalFace>(true); // dummy://, local
-  auto face3 = addFace<TestFace>(true); // test://
+  auto face1 = addFace(REMOVE_LAST_NOTIFICATION); // dummy://
+  auto face2 = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // dummy://, local
+  auto face3 = addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST); // test://
 
   auto generateQueryName = [] (const ndn::nfd::FaceQueryFilter& filter) {
     return Name("/localhost/nfd/faces/query").append(filter.wireEncode());

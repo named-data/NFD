@@ -99,7 +99,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
                        const FaceCreatedCallback& onFaceCreated,
                        bool isOnDemand)
 {
-  shared_ptr<face::LpFaceWrapper> face;
+  shared_ptr<Face> face;
   tcp::Endpoint remoteEndpoint = socket.remote_endpoint();
 
   auto it = m_channelFaces.find(remoteEndpoint);
@@ -108,14 +108,14 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
                                   : ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
     auto linkService = make_unique<face::GenericLinkService>();
     auto transport = make_unique<face::TcpTransport>(std::move(socket), persistency);
-    auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
-    face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
+    face = make_shared<Face>(std::move(linkService), std::move(transport));
 
-    face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
-      NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
-      m_channelFaces.erase(remoteEndpoint);
-    });
     m_channelFaces[remoteEndpoint] = face;
+    connectFaceClosedSignal(*face,
+      [this, remoteEndpoint] {
+        NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
+        m_channelFaces.erase(remoteEndpoint);
+      });
   }
   else {
     // we already have a face for this endpoint, just reuse it

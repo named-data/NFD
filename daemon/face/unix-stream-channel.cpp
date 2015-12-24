@@ -25,7 +25,6 @@
 
 #include "unix-stream-channel.hpp"
 #include "generic-link-service.hpp"
-#include "lp-face-wrapper.hpp"
 #include "unix-stream-transport.hpp"
 #include "core/global-io.hpp"
 
@@ -135,8 +134,7 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
 
   auto linkService = make_unique<face::GenericLinkService>();
   auto transport = make_unique<face::UnixStreamTransport>(std::move(m_socket));
-  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
-  auto face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
+  auto face = make_shared<Face>(std::move(linkService), std::move(transport));
   onFaceCreated(face);
 
   // prepare accepting the next connection

@@ -91,8 +91,8 @@ Nfd::initialize()
   initializeManagement();
 
   FaceTable& faceTable = m_forwarder->getFaceTable();
-  faceTable.addReserved(face::makeNullFace(), FACEID_NULL);
-  faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), FACEID_CONTENT_STORE);
+  faceTable.addReserved(face::makeNullFace(), face::FACEID_NULL);
+  faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), face::FACEID_CONTENT_STORE);
 
   PrivilegeHelper::drop();
 
@@ -145,7 +145,7 @@ void
 Nfd::initializeManagement()
 {
   std::tie(m_internalFace, m_internalClientFace) = face::makeInternalFace(m_keyChain);
-  m_forwarder->getFaceTable().addReserved(m_internalFace, FACEID_INTERNAL_FACE);
+  m_forwarder->getFaceTable().addReserved(m_internalFace, face::FACEID_INTERNAL_FACE);
   m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
 
   m_validator.reset(new CommandValidator());

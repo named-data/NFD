@@ -77,7 +77,7 @@ WebSocketChannel::handlePongTimeout(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->handlePongTimeout();
+    static_cast<face::WebSocketTransport*>(it->second->getTransport())->handlePongTimeout();
   }
   else {
     NFD_LOG_WARN("Pong timeout on unknown transport");
@@ -89,7 +89,7 @@ WebSocketChannel::handlePong(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->handlePong();
+    static_cast<face::WebSocketTransport*>(it->second->getTransport())->handlePong();
   }
   else {
     NFD_LOG_WARN("Pong received on unknown transport");
@@ -102,7 +102,7 @@ WebSocketChannel::handleMessage(websocketpp::connection_hdl hdl,
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getLpFace()->getTransport())->receiveMessage(msg->get_payload());
+    static_cast<face::WebSocketTransport*>(it->second->getTransport())->receiveMessage(msg->get_payload());
   }
   else {
     NFD_LOG_WARN("Message received on unknown transport");
@@ -114,16 +114,10 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
 {
   auto linkService = make_unique<face::GenericLinkService>();
   auto transport = make_unique<face::WebSocketTransport>(hdl, ref(m_server), m_pingInterval);
-  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
-  auto face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
+  auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
-  face->getLpFace()->afterStateChange.connect(
-    [this, hdl] (face::FaceState oldState, face::FaceState newState) {
-      if (newState == face::FaceState::CLOSED) {
-        m_channelFaces.erase(hdl);
-      }
-    });
   m_channelFaces[hdl] = face;
+  connectFaceClosedSignal(*face, [this, hdl] { m_channelFaces.erase(hdl); });
 
   m_onFaceCreatedCallback(face);
 }
@@ -133,7 +127,7 @@ WebSocketChannel::handleClose(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    it->second->getLpFace()->close();
+    it->second->close();
   }
   else {
     NFD_LOG_WARN("Close on unknown transport");

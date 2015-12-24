@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -47,7 +47,7 @@ bool
 Entry::hasLocalInRecord() const
 {
   return std::any_of(m_inRecords.begin(), m_inRecords.end(),
-                     [] (const InRecord& inRecord) { return inRecord.getFace()->isLocal(); });
+    [] (const InRecord& inRecord) { return inRecord.getFace()->getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
 }
 
 bool
@@ -78,14 +78,14 @@ bool
 Entry::violatesScope(const Face& face) const
 {
   // /localhost scope
-  bool isViolatingLocalhost = !face.isLocal() &&
+  bool isViolatingLocalhost = face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               LOCALHOST_NAME.isPrefixOf(this->getName());
   if (isViolatingLocalhost) {
     return true;
   }
 
   // /localhop scope
-  bool isViolatingLocalhop = !face.isLocal() &&
+  bool isViolatingLocalhop = face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                              LOCALHOP_NAME.isPrefixOf(this->getName()) &&
                              !this->hasLocalInRecord();
   if (isViolatingLocalhop) {

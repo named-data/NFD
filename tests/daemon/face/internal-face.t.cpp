@@ -24,9 +24,8 @@
  */
 
 #include "face/internal-face.hpp"
-#include "face/lp-face-wrapper.hpp"
-#include "transport-test-common.hpp"
 
+#include "transport-test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
@@ -43,9 +42,7 @@ class InternalFaceFixture : public UnitTestTimeFixture
 public:
   InternalFaceFixture()
   {
-    std::tie(forwarderFaceW, clientFace) = makeInternalFace(m_keyChain);;
-    forwarderFace = static_pointer_cast<LpFaceWrapper>(forwarderFaceW)->getLpFace();
-    // TODO#3172 eliminate wrapper
+    std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);;
 
     forwarderFace->afterReceiveInterest.connect(
       [this] (const Interest& interest) { receivedInterests.push_back(interest); } );
@@ -56,8 +53,7 @@ public:
   }
 
 protected:
-  shared_ptr<nfd::Face> forwarderFaceW;
-  LpFace* forwarderFace;
+  shared_ptr<nfd::Face> forwarderFace;
   shared_ptr<ndn::Face> clientFace;
 
   std::vector<Interest> receivedInterests;
@@ -199,7 +195,7 @@ BOOST_AUTO_TEST_CASE(CloseForwarderFace)
   forwarderFace->close();
   this->advanceClocks(time::milliseconds(1), 10);
   BOOST_CHECK_EQUAL(forwarderFace->getState(), FaceState::CLOSED);
-  forwarderFaceW.reset();
+  forwarderFace.reset();
 
   shared_ptr<Interest> interest = makeInterest("/zpHsVesu0B");
   interest->setInterestLifetime(time::milliseconds(100));

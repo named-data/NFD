@@ -27,7 +27,6 @@
 
 #include "core/network-interface.hpp"
 #include "face/generic-link-service.hpp"
-#include "face/lp-face-wrapper.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 #include "fw/face-table.hpp"
@@ -77,9 +76,9 @@ FaceManager::FaceManager(FaceTable& faceTable,
 
   auto postNotification = registerNotificationStream("events");
   m_faceAddConn =
-    m_faceTable.onAdd.connect(bind(&FaceManager::afterFaceAdded, this, _1, postNotification));
+    m_faceTable.afterAdd.connect(bind(&FaceManager::afterFaceAdded, this, _1, postNotification));
   m_faceRemoveConn =
-    m_faceTable.onRemove.connect(bind(&FaceManager::afterFaceRemoved, this, _1, postNotification));
+    m_faceTable.beforeRemove.connect(bind(&FaceManager::afterFaceRemoved, this, _1, postNotification));
 }
 
 void
@@ -173,15 +172,14 @@ FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
                                 const ControlParameters& parameters,
                                 const ndn::mgmt::CommandContinuation& done)
 {
-  auto result = extractLocalControlParameters(interest, parameters, done);
-  if (!result.isValid) {
+  Face* face = findFaceForLocalControl(interest, parameters, done);
+  if (!face) {
     return;
   }
 
   // TODO#3226 redesign enable-local-control
   // For now, enable-local-control will enable all local fields in GenericLinkService.
-  BOOST_ASSERT(result.lpFace != nullptr);
-  auto service = dynamic_cast<face::GenericLinkService*>(result.lpFace->getLinkService());
+  auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
   if (service == nullptr) {
     return done(ControlResponse(503, "LinkService type not supported"));
   }
@@ -199,15 +197,14 @@ FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest
                                  const ControlParameters& parameters,
                                  const ndn::mgmt::CommandContinuation& done)
 {
-  auto result = extractLocalControlParameters(interest, parameters, done);
-  if (!result.isValid) {
+  Face* face = findFaceForLocalControl(interest, parameters, done);
+  if (!face) {
     return;
   }
 
   // TODO#3226 redesign disable-local-control
   // For now, disable-local-control will disable all local fields in GenericLinkService.
-  BOOST_ASSERT(result.lpFace != nullptr);
-  auto service = dynamic_cast<face::GenericLinkService*>(result.lpFace->getLinkService());
+  auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
   if (service == nullptr) {
     return done(ControlResponse(503, "LinkService type not supported"));
   }
@@ -220,15 +217,11 @@ FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest
               .setBody(parameters.wireEncode()));
 }
 
-FaceManager::ExtractLocalControlParametersResult
-FaceManager::extractLocalControlParameters(const Interest& request,
-                                           const ControlParameters& parameters,
-                                           const ndn::mgmt::CommandContinuation& done)
+Face*
+FaceManager::findFaceForLocalControl(const Interest& request,
+                                     const ControlParameters& parameters,
+                                     const ndn::mgmt::CommandContinuation& done)
 {
-  ExtractLocalControlParametersResult result;
-  result.isValid = false;
-  result.lpFace = nullptr;
-
   shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
   // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
   // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
@@ -239,22 +232,16 @@ FaceManager::extractLocalControlParameters(const Interest& request,
   if (face == nullptr) {
     NFD_LOG_DEBUG("FaceId " << *incomingFaceIdTag << " not found");
     done(ControlResponse(410, "Face not found"));
-    return result;
+    return nullptr;
   }
 
-  if (!face->isLocal()) {
+  if (face->getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL) {
     NFD_LOG_DEBUG("Cannot enable local control on non-local FaceId " << face->getId());
     done(ControlResponse(412, "Face is non-local"));
-    return result;
+    return nullptr;
   }
 
-  result.isValid = true;
-  auto lpFaceW = dynamic_pointer_cast<face::LpFaceWrapper>(face);
-  // LocalFace is gone, so a face that is local must be an LpFace.
-  BOOST_ASSERT(lpFaceW != nullptr);
-  result.lpFace = lpFaceW->getLpFace();
-
-  return result;
+  return face.get();
 }
 
 void
@@ -345,7 +332,7 @@ FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr
   }
 
   if (filter.hasFaceScope() &&
-      (filter.getFaceScope() == ndn::nfd::FACE_SCOPE_LOCAL) != face->isLocal()) {
+      filter.getFaceScope() != face->getScope()) {
     return false;
   }
 
@@ -355,7 +342,7 @@ FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr
   }
 
   if (filter.hasLinkType() &&
-      (filter.getLinkType() == ndn::nfd::LINK_TYPE_MULTI_ACCESS) != face->isMultiAccess()) {
+      filter.getLinkType() != face->getLinkType()) {
     return false;
   }
 
@@ -363,8 +350,8 @@ FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr
 }
 
 template<typename FaceTraits>
-inline void
-collectLpFaceProperties(const face::LpFace& face, FaceTraits& traits)
+void
+FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
 {
   traits.setFaceId(face.getId())
         .setRemoteUri(face.getRemoteUri().toString())
@@ -372,27 +359,6 @@ collectLpFaceProperties(const face::LpFace& face, FaceTraits& traits)
         .setFaceScope(face.getScope())
         .setFacePersistency(face.getPersistency())
         .setLinkType(face.getLinkType());
-  // TODO#3172 replace this into FaceManager::collectFaceProperties
-}
-
-template<typename FaceTraits>
-void
-FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
-{
-  auto lpFace = dynamic_cast<const face::LpFace*>(&face);
-  if (lpFace != nullptr) {
-    collectLpFaceProperties(*lpFace, traits);
-    return;
-  }
-
-  traits.setFaceId(face.getId())
-        .setRemoteUri(face.getRemoteUri().toString())
-        .setLocalUri(face.getLocalUri().toString())
-        .setFaceScope(face.isLocal() ? ndn::nfd::FACE_SCOPE_LOCAL
-                                     : ndn::nfd::FACE_SCOPE_NON_LOCAL)
-        .setFacePersistency(face.getPersistency())
-        .setLinkType(face.isMultiAccess() ? ndn::nfd::LINK_TYPE_MULTI_ACCESS
-                                          : ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 }
 
 void
@@ -717,7 +683,7 @@ FaceManager::processSectionUdp(const ConfigSection& configSection, bool isDryRun
       m_factories.insert(std::make_pair("udp6", factory));
     }
 
-    std::set<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
+    std::set<shared_ptr<Face>> multicastFacesToRemove;
     for (const auto& i : factory->getMulticastFaces()) {
       multicastFacesToRemove.insert(i.second);
     }
@@ -799,7 +765,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
       m_factories.insert(std::make_pair("ether", factory));
     }
 
-    std::set<shared_ptr<face::LpFaceWrapper>> multicastFacesToRemove;
+    std::set<shared_ptr<Face>> multicastFacesToRemove;
     for (const auto& i : factory->getMulticastFaces()) {
       multicastFacesToRemove.insert(i.second);
     }

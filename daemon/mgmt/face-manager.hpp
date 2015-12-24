@@ -29,17 +29,13 @@
 #include "manager-base.hpp"
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-query-filter.hpp>
+#include "face/face.hpp"
 
 namespace nfd {
 
-class Face;
 class FaceTable;
 class NetworkInterfaceInfo;
 class ProtocolFactory;
-
-namespace face {
-class LpFace;
-} // namespace face
 
 /**
  * @brief implement the Face Management of NFD Management Protocol.
@@ -89,16 +85,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   afterCreateFaceFailure(const std::string& reason,
                          const ndn::mgmt::CommandContinuation& done);
 
-  struct ExtractLocalControlParametersResult
-  {
-    bool isValid;
-    face::LpFace* lpFace;
-  };
-
-  ExtractLocalControlParametersResult
-  extractLocalControlParameters(const Interest& request,
-                                const ControlParameters& parameters,
-                                const ndn::mgmt::CommandContinuation& done);
+  Face*
+  findFaceForLocalControl(const Interest& request,
+                          const ControlParameters& parameters,
+                          const ndn::mgmt::CommandContinuation& done);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
   void

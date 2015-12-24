@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -23,32 +23,25 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "packet-datasets.hpp"
-#include "tests/test-common.hpp"
+#include "face/udp-channel.hpp"
 
-#include <boost/foreach.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(Datasets, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestUdpChannel, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Corrupted)
-{
-  {
-    typedef CorruptedInterest Dataset;
-    Dataset dataset;
+using nfd::Face;
 
-    BOOST_FOREACH(Dataset::Container::value_type& data, dataset.data)
-      {
-        Block block(data.buf(), data.size());
+// TODO add the equivalent of these test cases from udp.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
+// MultipleAccepts
+// ManualClose
+// IdleClose
 
-        BOOST_CHECK_THROW((Interest(block)), tlv::Error);
-      }
-  }
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestUdpChannel
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace nfd

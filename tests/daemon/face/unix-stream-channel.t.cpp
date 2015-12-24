@@ -23,24 +23,23 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "lp-face.hpp"
+#include "face/unix-stream-channel.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
-namespace face {
+namespace tests {
 
-LpFace::LpFace(unique_ptr<LinkService> service, unique_ptr<Transport> transport)
-  : afterReceiveInterest(service->afterReceiveInterest)
-  , afterReceiveData(service->afterReceiveData)
-  , afterReceiveNack(service->afterReceiveNack)
-  , afterStateChange(transport->afterStateChange)
-  , m_id(INVALID_FACEID)
-  , m_service(std::move(service))
-  , m_transport(std::move(transport))
-  , m_counters(m_service->getCounters(), m_transport->getCounters())
-{
-  m_service->setFaceAndTransport(*this, *m_transport);
-  m_transport->setFaceAndLinkService(*this, *m_service);
-}
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestUnixStreamChannel, BaseFixture)
 
-} // namespace face
+// TODO add the equivalent of these test cases from unix-stream.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
+// MultipleAccepts
+
+// TODO add a test case to check a failed face is removed from the channel
+
+BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel
+BOOST_AUTO_TEST_SUITE_END() // Face
+
+} // namespace tests
 } // namespace nfd

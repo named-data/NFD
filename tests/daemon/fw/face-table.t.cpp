@@ -32,52 +32,49 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(FwFaceTable, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestFaceTable, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(AddRemove)
 {
   Forwarder forwarder;
 
   FaceTable& faceTable = forwarder.getFaceTable();
-  std::vector<FaceId> onAddHistory;
-  std::vector<FaceId> onRemoveHistory;
-  faceTable.onAdd.connect([&] (shared_ptr<Face> face) {
-    onAddHistory.push_back(face->getId());
-  });
-  faceTable.onRemove.connect([&] (shared_ptr<Face> face) {
-    onRemoveHistory.push_back(face->getId());
-  });
+  std::vector<FaceId> addHistory;
+  std::vector<FaceId> removeHistory;
+  faceTable.afterAdd.connect([&] (shared_ptr<Face> face) { addHistory.push_back(face->getId()); });
+  faceTable.beforeRemove.connect([&] (shared_ptr<Face> face) { removeHistory.push_back(face->getId()); });
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
 
-  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_EQUAL(face2->getId(), INVALID_FACEID);
+  BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
+  BOOST_CHECK_EQUAL(face2->getId(), face::INVALID_FACEID);
 
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
-  BOOST_CHECK_NE(face1->getId(), INVALID_FACEID);
-  BOOST_CHECK_NE(face2->getId(), INVALID_FACEID);
+  BOOST_CHECK_NE(face1->getId(), face::INVALID_FACEID);
+  BOOST_CHECK_NE(face2->getId(), face::INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
-  BOOST_CHECK_GT(face1->getId(), FACEID_RESERVED_MAX);
-  BOOST_CHECK_GT(face2->getId(), FACEID_RESERVED_MAX);
+  BOOST_CHECK_GT(face1->getId(), face::FACEID_RESERVED_MAX);
+  BOOST_CHECK_GT(face2->getId(), face::FACEID_RESERVED_MAX);
 
   FaceId oldId1 = face1->getId();
   faceTable.add(face1);
   BOOST_CHECK_EQUAL(face1->getId(), oldId1);
   BOOST_CHECK_EQUAL(faceTable.size(), 2);
 
-  BOOST_REQUIRE_EQUAL(onAddHistory.size(), 2);
-  BOOST_CHECK_EQUAL(onAddHistory[0], face1->getId());
-  BOOST_CHECK_EQUAL(onAddHistory[1], face2->getId());
+  BOOST_REQUIRE_EQUAL(addHistory.size(), 2);
+  BOOST_CHECK_EQUAL(addHistory[0], face1->getId());
+  BOOST_CHECK_EQUAL(addHistory[1], face2->getId());
 
   face1->close();
 
-  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
+  BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
 
-  BOOST_REQUIRE_EQUAL(onRemoveHistory.size(), 1);
-  BOOST_CHECK_EQUAL(onRemoveHistory[0], onAddHistory[0]);
+  BOOST_REQUIRE_EQUAL(removeHistory.size(), 1);
+  BOOST_CHECK_EQUAL(removeHistory[0], addHistory[0]);
 }
 
 BOOST_AUTO_TEST_CASE(AddReserved)
@@ -86,7 +83,7 @@ BOOST_AUTO_TEST_CASE(AddReserved)
   FaceTable& faceTable = forwarder.getFaceTable();
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
-  BOOST_CHECK_EQUAL(face1->getId(), INVALID_FACEID);
+  BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
 
   faceTable.addReserved(face1, 5);
   BOOST_CHECK_EQUAL(face1->getId(), 5);
@@ -146,7 +143,8 @@ BOOST_AUTO_TEST_CASE(Enumerate)
   BOOST_CHECK(hasFace2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestFaceTable
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace nfd

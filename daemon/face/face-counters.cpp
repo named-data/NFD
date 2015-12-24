@@ -24,7 +24,6 @@
  */
 
 #include "face-counters.hpp"
-#include "old-face-counters.hpp"
 
 namespace nfd {
 namespace face {
@@ -43,25 +42,6 @@ FaceCounters::FaceCounters(const LinkService::Counters& linkServiceCounters,
   , nOutBytes(transportCounters.nOutBytes)
   , m_linkServiceCounters(linkServiceCounters)
   , m_transportCounters(transportCounters)
-{
-}
-
-static const LinkService::Counters g_dummyLinkServiceCounters{};
-static const Transport::Counters g_dummyTransportCounters{};
-
-FaceCounters::FaceCounters(const OldFaceCounters& oldCounters)
-  : nInInterests(oldCounters.getNInInterests())
-  , nOutInterests(oldCounters.getNOutInterests())
-  , nInData(oldCounters.getNInDatas())
-  , nOutData(oldCounters.getNOutDatas())
-  , nInNacks(g_dummyLinkServiceCounters.nInNacks)
-  , nOutNacks(g_dummyLinkServiceCounters.nOutNacks)
-  , nInPackets(g_dummyTransportCounters.nInPackets)
-  , nOutPackets(g_dummyTransportCounters.nOutPackets)
-  , nInBytes(oldCounters.getNInBytes())
-  , nOutBytes(oldCounters.getNOutBytes())
-  , m_linkServiceCounters(g_dummyLinkServiceCounters)
-  , m_transportCounters(g_dummyTransportCounters)
 {
 }
 

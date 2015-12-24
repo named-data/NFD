@@ -23,71 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_FACE_HISTORY_HPP
-#define NFD_TESTS_DAEMON_FACE_FACE_HISTORY_HPP
+#include "face/tcp-channel.hpp"
 
-#include "face/face.hpp"
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-/** \brief captures signals from Face
- */
-class FaceHistory : noncopyable
-{
-public:
-  explicit
-  FaceHistory(Face& face)
-    : m_limitedIo(nullptr)
-  {
-    this->construct(face);
-  }
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestTcpChannel, BaseFixture)
 
-  FaceHistory(Face& face, LimitedIo& limitedIo)
-    : m_limitedIo(&limitedIo)
-  {
-    this->construct(face);
-  }
+// TODO add the equivalent of these test cases from tcp.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
+// MultipleAccepts
+// FaceClosing
 
-private:
-  void
-  construct(Face& face)
-  {
-    m_receiveInterestConn = face.onReceiveInterest.connect([this] (const Interest& interest) {
-      this->receivedInterests.push_back(interest);
-      this->afterOp();
-    });
-    m_receiveDataConn = face.onReceiveData.connect([this] (const Data& data) {
-      this->receivedData.push_back(data);
-      this->afterOp();
-    });
-    m_failConn = face.onFail.connect([this] (const std::string& reason) {
-      this->failures.push_back(reason);
-      this->afterOp();
-    });
-  }
-
-  void
-  afterOp()
-  {
-    if (m_limitedIo != nullptr) {
-      m_limitedIo->afterOp();
-    }
-  }
-
-public:
-  std::vector<Interest> receivedInterests;
-  std::vector<Data> receivedData;
-  std::vector<std::string> failures;
-
-private:
-  LimitedIo* m_limitedIo;
-  signal::ScopedConnection m_receiveInterestConn;
-  signal::ScopedConnection m_receiveDataConn;
-  signal::ScopedConnection m_failConn;
-};
+BOOST_AUTO_TEST_SUITE_END() // TestTcpChannel
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace nfd
-
-#endif // NFD_TESTS_DAEMON_FACE_FACE_HISTORY_HPP

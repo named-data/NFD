@@ -33,7 +33,7 @@
 namespace nfd {
 namespace face {
 
-class LpFace;
+class Face;
 
 /** \brief counters provided by LinkService
  *  \note The type name 'LinkServiceCounters' is implementation detail.
@@ -67,8 +67,8 @@ public:
   PacketCounter nOutNacks;
 };
 
-/** \brief the upper part of an LpFace
- *  \sa LpFace
+/** \brief the upper part of a Face
+ *  \sa Face
  */
 class LinkService : protected virtual LinkServiceCounters, noncopyable
 {
@@ -87,11 +87,11 @@ public:
    *  \pre setFaceAndTransport has not been called
    */
   void
-  setFaceAndTransport(LpFace& face, Transport& transport);
+  setFaceAndTransport(Face& face, Transport& transport);
 
   /** \return Face to which this LinkService is attached
    */
-  const LpFace*
+  const Face*
   getFace() const;
 
   /** \return Transport to which this LinkService is attached
@@ -187,11 +187,11 @@ private: // lower interface to be overridden in subclass
   doReceivePacket(Transport::Packet&& packet) = 0;
 
 private:
-  LpFace* m_face;
+  Face* m_face;
   Transport* m_transport;
 };
 
-inline const LpFace*
+inline const Face*
 LinkService::getFace() const
 {
   return m_face;

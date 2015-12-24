@@ -29,71 +29,78 @@
 #include "face/face.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
+class DummyTransport;
+
 /** \brief a Face for unit testing
+ *
+ *  The DummyFace has no underlying transport, but allows observing outgoing packets
+ *  and injecting incoming packets at network layer.
+ *  It's primarily used for forwarding test suites, but can be used in other tests as well.
+ *
+ *  Outgoing network-layer packets sent through the DummyFace are recorded in sent* vectors,
+ *  which can be observed in test cases.
+ *  Incoming network-layer packets can be injected from test cases through receive* method.
  */
 class DummyFace : public Face
 {
 public:
-  explicit
-  DummyFace(const std::string& remoteUri = "dummy://", const std::string& localUri = "dummy://",
-            bool isLocal = false)
-    : Face(FaceUri(remoteUri), FaceUri(localUri), isLocal)
-  {
-  }
+  class LinkService;
 
+  DummyFace(const std::string& localUri = "dummy://", const std::string& remoteUri = "dummy://",
+            ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
+            ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+            ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+
+  /** \brief changes face state
+   *  \pre current state is not CLOSED or FAILED
+   */
   void
-  sendInterest(const Interest& interest) DECL_OVERRIDE
-  {
-    this->emitSignal(onSendInterest, interest);
-    m_sentInterests.push_back(interest);
-    this->afterSend();
-  }
+  setState(FaceState state);
 
+  /** \brief causes the face to receive an Interest
+   */
   void
-  sendData(const Data& data) DECL_OVERRIDE
-  {
-    this->emitSignal(onSendData, data);
-    m_sentDatas.push_back(data);
-    this->afterSend();
-  }
+  receiveInterest(const Interest& interest);
 
+  /** \brief causes the face to receive a Data
+   */
   void
-  close() DECL_OVERRIDE
-  {
-    this->fail("close");
-  }
+  receiveData(const Data& data);
 
+  /** \brief causes the face to receive a Nack
+   */
   void
-  receiveInterest(const Interest& interest)
-  {
-    this->emitSignal(onReceiveInterest, interest);
-  }
+  receiveNack(const lp::Nack& nack);
 
-  void
-  receiveData(const Data& data)
-  {
-    this->emitSignal(onReceiveData, data);
-  }
+  /** \brief signals after any network-layer packet is sent
+   *
+   *  The network-layer packet type is indicated as an argument,
+   *  which is either of tlv::Interest, tlv::Data, or lp::tlv::Nack.
+   *  The callback may retrieve the packet from sentInterests.back(), sentData.back(), or sentNacks.back().
+   */
+  signal::Signal<LinkService, uint32_t>& afterSend;
 
-  signal::Signal<DummyFace> afterSend;
+private:
+  LinkService*
+  getLinkServiceInternal();
+
+  DummyTransport*
+  getTransportInternal();
 
 public:
-  std::vector<Interest> m_sentInterests;
-  std::vector<Data> m_sentDatas;
+  std::vector<Interest>& sentInterests;
+  std::vector<Data>& sentData;
+  std::vector<lp::Nack>& sentNacks;
 };
 
-class DummyLocalFace : public DummyFace
-{
-public:
-  explicit
-  DummyLocalFace(const std::string& remoteUri = "dummy://", const std::string& localUri = "dummy://")
-    : DummyFace(remoteUri, localUri, true)
-  {
-  }
-};
+} // namespace tests
+} // namespace face
 
+namespace tests {
+using nfd::face::tests::DummyFace;
 } // namespace tests
 } // namespace nfd
 

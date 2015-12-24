@@ -24,7 +24,6 @@
  */
 
 #include "null-face.hpp"
-#include "lp-face-wrapper.hpp"
 #include "generic-link-service.hpp"
 #include "internal-transport.hpp"
 
@@ -37,12 +36,8 @@ namespace face {
 shared_ptr<Face>
 makeNullFace(const FaceUri& uri)
 {
-  auto face = make_unique<LpFace>(make_unique<GenericLinkService>(),
-                                  make_unique<InternalForwarderTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
-  auto faceW = make_shared<LpFaceWrapper>(std::move(face));
-  // TODO#3172 eliminate wrapper
-
-  return faceW;
+  return make_shared<Face>(make_unique<GenericLinkService>(),
+                           make_unique<InternalForwarderTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
 }
 
 } // namespace face

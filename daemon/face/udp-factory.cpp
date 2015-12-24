@@ -25,7 +25,6 @@
 
 #include "udp-factory.hpp"
 #include "generic-link-service.hpp"
-#include "lp-face-wrapper.hpp"
 #include "multicast-udp-transport.hpp"
 #include "core/global-io.hpp"
 #include "core/network-interface.hpp"
@@ -127,7 +126,7 @@ UdpFactory::createChannel(const std::string& localIp, const std::string& localPo
   return createChannel(endpoint, timeout);
 }
 
-shared_ptr<face::LpFaceWrapper>
+shared_ptr<Face>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                 const udp::Endpoint& multicastEndpoint,
                                 const std::string& networkInterfaceName/* = ""*/)
@@ -210,18 +209,15 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   auto transport = make_unique<face::MulticastUdpTransport>(localEndpoint, multicastEndpoint,
                                                             std::move(receiveSocket),
                                                             std::move(sendSocket));
-  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
-  face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
+  face = make_shared<Face>(std::move(linkService), std::move(transport));
 
-  face->onFail.connectSingleShot([this, localEndpoint] (const std::string& reason) {
-    m_multicastFaces.erase(localEndpoint);
-  });
   m_multicastFaces[localEndpoint] = face;
+  connectFaceClosedSignal(*face, [this, localEndpoint] { m_multicastFaces.erase(localEndpoint); });
 
   return face;
 }
 
-shared_ptr<face::LpFaceWrapper>
+shared_ptr<Face>
 UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastIp,
                                 const std::string& multicastPort,
@@ -294,7 +290,7 @@ UdpFactory::findChannel(const udp::Endpoint& localEndpoint) const
     return nullptr;
 }
 
-shared_ptr<face::LpFaceWrapper>
+shared_ptr<Face>
 UdpFactory::findMulticastFace(const udp::Endpoint& localEndpoint) const
 {
   auto i = m_multicastFaces.find(localEndpoint);

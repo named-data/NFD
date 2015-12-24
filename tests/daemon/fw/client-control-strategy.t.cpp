@@ -44,10 +44,10 @@ BOOST_AUTO_TEST_CASE(Forward3)
   typedef StrategyTester<fw::ClientControlStrategy> ClientControlStrategyTester;
   ClientControlStrategyTester strategy(forwarder);
 
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  shared_ptr<DummyLocalFace> face4 = make_shared<DummyLocalFace>();
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<DummyFace>();
+  auto face4 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
   forwarder.addFace(face3);

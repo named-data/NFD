@@ -91,6 +91,7 @@ private:
   doClose() DECL_OVERRIDE
   {
     isClosed = true;
+    this->setState(TransportState::CLOSED);
   }
 
   virtual void

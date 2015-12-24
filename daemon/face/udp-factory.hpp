@@ -49,7 +49,7 @@ public:
     }
   };
 
-  typedef std::map<udp::Endpoint, shared_ptr<face::LpFaceWrapper>> MulticastFaceMap;
+  typedef std::map<udp::Endpoint, shared_ptr<Face>> MulticastFaceMap;
 
   /**
    * \brief Create UDP-based channel using udp::Endpoint
@@ -128,12 +128,12 @@ public:
    * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__udp/endpoint.html
    *      for details on ways to create udp::Endpoint
    */
-  shared_ptr<face::LpFaceWrapper>
+  shared_ptr<Face>
   createMulticastFace(const udp::Endpoint& localEndpoint,
                       const udp::Endpoint& multicastEndpoint,
                       const std::string& networkInterfaceName = "");
 
-  shared_ptr<face::LpFaceWrapper>
+  shared_ptr<Face>
   createMulticastFace(const std::string& localIp,
                       const std::string& multicastIp,
                       const std::string& multicastPort,
@@ -181,7 +181,7 @@ private:
    * \returns shared pointer to the existing multicast UdpFace object
    *          or nullptr when such face does not exist
    */
-  shared_ptr<face::LpFaceWrapper>
+  shared_ptr<Face>
   findMulticastFace(const udp::Endpoint& localEndpoint) const;
 
 private:

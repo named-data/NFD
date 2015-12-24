@@ -26,12 +26,10 @@
 #include "ethernet-factory.hpp"
 #include "ethernet-transport.hpp"
 #include "generic-link-service.hpp"
-#include "lp-face-wrapper.hpp"
-#include "core/global-io.hpp"
 
 namespace nfd {
 
-shared_ptr<face::LpFaceWrapper>
+shared_ptr<Face>
 EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
                                      const ethernet::Address& address)
 {
@@ -48,14 +46,11 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& interface,
 
   auto linkService = make_unique<face::GenericLinkService>(opts);
   auto transport = make_unique<face::EthernetTransport>(interface, address);
-  auto lpFace = make_unique<face::LpFace>(std::move(linkService), std::move(transport));
-  face = make_shared<face::LpFaceWrapper>(std::move(lpFace));
+  face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   auto key = std::make_pair(interface.name, address);
-  face->onFail.connectSingleShot([this, key] (const std::string& reason) {
-    m_multicastFaces.erase(key);
-  });
   m_multicastFaces[key] = face;
+  connectFaceClosedSignal(*face, [this, key] { m_multicastFaces.erase(key); });
 
   return face;
 }
@@ -75,7 +70,7 @@ EthernetFactory::getChannels() const
   return {};
 }
 
-shared_ptr<face::LpFaceWrapper>
+shared_ptr<Face>
 EthernetFactory::findMulticastFace(const std::string& interfaceName,
                                    const ethernet::Address& address) const
 {

@@ -32,7 +32,7 @@
 
 #include <ndn-cxx/face.hpp>
 #include "face/internal-transport.hpp"
-#include "face/lp-face-wrapper.hpp"
+#include "face/face.hpp"
 #include "fw/strategy.hpp"
 #include "tests/test-common.hpp"
 
@@ -70,8 +70,12 @@ public:
     m_isUp = true;
   }
 
+  /** \brief attach a face to the link
+   *  \param i forwarder index
+   *  \param face a Face with InternalForwarderTransport
+   */
   void
-  addFace(TopologyNode i, shared_ptr<face::LpFaceWrapper> face);
+  addFace(TopologyNode i, shared_ptr<Face> face);
 
   /** \return a face of forwarder \p i which is attached to this link
    */
@@ -98,7 +102,7 @@ private:
   bool m_isUp;
   time::nanoseconds m_delay;
   std::unordered_map<TopologyNode, face::InternalTransportBase*> m_transports;
-  std::unordered_map<TopologyNode, shared_ptr<face::LpFaceWrapper>> m_faces;
+  std::unordered_map<TopologyNode, shared_ptr<Face>> m_faces;
 };
 
 /** \brief represents a link to a local application
@@ -106,8 +110,11 @@ private:
 class TopologyAppLink : noncopyable
 {
 public:
+  /** \brief constructor
+   *  \param forwarderFace a Face with InternalForwarderTransport
+   */
   explicit
-  TopologyAppLink(shared_ptr<face::LpFaceWrapper> forwarderFace);
+  TopologyAppLink(shared_ptr<Face> forwarderFace);
 
   /** \brief fail the link, cause packets to be dropped silently
    */

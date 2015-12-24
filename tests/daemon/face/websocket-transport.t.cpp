@@ -24,7 +24,7 @@
  */
 
 #include "face/websocket-transport.hpp"
-#include "face/lp-face.hpp"
+#include "face/face.hpp"
 #include "dummy-receive-link-service.hpp"
 #include "transport-test-common.hpp"
 
@@ -38,6 +38,8 @@ using namespace nfd::tests;
 namespace ip = boost::asio::ip;
 
 BOOST_AUTO_TEST_SUITE(Face)
+
+using nfd::Face;
 
 /** \brief a fixture that accepts a single WebSocket connection from a client
  */
@@ -97,7 +99,7 @@ public:
   void
   makeFace(const time::milliseconds& pingInterval = time::milliseconds(10000))
   {
-    face = make_unique<LpFace>(
+    face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),
              make_unique<WebSocketTransport>(serverHdl, ref(server), pingInterval));
     transport = static_cast<WebSocketTransport*>(face->getTransport());
@@ -197,7 +199,7 @@ public:
 
   websocket::Server server;
   websocketpp::connection_hdl serverHdl;
-  unique_ptr<LpFace> face;
+  unique_ptr<Face> face;
   WebSocketTransport* transport;
   std::vector<Transport::Packet>* serverReceivedPackets;
 

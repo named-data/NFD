@@ -120,7 +120,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] New peer " << m_remoteEndpoint);
 
   bool isCreated = false;
-  shared_ptr<face::LpFaceWrapper> face;
+  shared_ptr<Face> face;
   try {
     std::tie(isCreated, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   }
@@ -136,12 +136,12 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     onFaceCreated(face);
 
   // dispatch the datagram to the face for processing
-  static_cast<face::UnicastUdpTransport*>(face->getLpFace()->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
+  static_cast<face::UnicastUdpTransport*>(face->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
   this->waitForNewPeer(onFaceCreated, onReceiveFailed);
 }
 
-std::pair<bool, shared_ptr<face::LpFaceWrapper>>
+std::pair<bool, shared_ptr<Face>>
 UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
@@ -166,13 +166,13 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
 
   auto linkService = make_unique<face::GenericLinkService>();
   auto transport = make_unique<face::UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
-  auto face = make_shared<face::LpFaceWrapper>(make_unique<face::LpFace>(
-                                               std::move(linkService), std::move(transport)));
+  auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   face->setPersistency(persistency);
 
   m_channelFaces[remoteEndpoint] = face;
-  face->onFail.connectSingleShot([this, remoteEndpoint] (const std::string&) {
+  connectFaceClosedSignal(*face,
+    [this, remoteEndpoint] {
       NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
       m_channelFaces.erase(remoteEndpoint);
     });

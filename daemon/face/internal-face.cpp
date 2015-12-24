@@ -26,7 +26,6 @@
 #include "internal-face.hpp"
 #include "generic-link-service.hpp"
 #include "internal-transport.hpp"
-#include "lp-face-wrapper.hpp"
 #include "core/global-io.hpp"
 
 namespace nfd {
@@ -38,19 +37,16 @@ makeInternalFace(ndn::KeyChain& clientKeyChain)
   GenericLinkService::Options serviceOpts;
   serviceOpts.allowLocalFields = true;
 
-  auto face = make_unique<LpFace>(make_unique<GenericLinkService>(serviceOpts),
-                                  make_unique<InternalForwarderTransport>());
-  auto faceW = make_shared<LpFaceWrapper>(std::move(face));
-  // TODO#3172 eliminate wrapper
+  auto face = make_shared<Face>(make_unique<GenericLinkService>(serviceOpts),
+                                make_unique<InternalForwarderTransport>());
 
-  InternalForwarderTransport* forwarderTransport =
-    static_cast<InternalForwarderTransport*>(faceW->getLpFace()->getTransport());
+  auto forwarderTransport = static_cast<InternalForwarderTransport*>(face->getTransport());
   auto clientTransport = make_shared<InternalClientTransport>();
   clientTransport->connectToForwarder(forwarderTransport);
 
   auto clientFace = make_shared<ndn::Face>(clientTransport, getGlobalIoService(), clientKeyChain);
 
-  return std::make_tuple(faceW, clientFace);
+  return std::make_tuple(face, clientFace);
 }
 
 } // namespace face

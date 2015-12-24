@@ -24,7 +24,7 @@
  */
 
 #include "face/generic-link-service.hpp"
-#include "face/lp-face.hpp"
+#include "face/face.hpp"
 #include "dummy-transport.hpp"
 
 #include "tests/test-common.hpp"
@@ -36,6 +36,8 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
+
+using nfd::Face;
 
 class GenericLinkServiceFixture : public BaseFixture
 {
@@ -52,8 +54,8 @@ protected:
   void
   initialize(const GenericLinkService::Options& options)
   {
-    face.reset(new LpFace(make_unique<GenericLinkService>(options),
-                          make_unique<DummyTransport>()));
+    face.reset(new Face(make_unique<GenericLinkService>(options),
+                        make_unique<DummyTransport>()));
     service = static_cast<GenericLinkService*>(face->getLinkService());
     transport = static_cast<DummyTransport*>(face->getTransport());
 
@@ -66,7 +68,7 @@ protected:
   }
 
 protected:
-  unique_ptr<LpFace> face;
+  unique_ptr<Face> face;
   GenericLinkService* service;
   DummyTransport* transport;
   std::vector<Interest> receivedInterests;

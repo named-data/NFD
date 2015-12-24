@@ -27,6 +27,7 @@
 #include "forwarder.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "face/channel.hpp"
 
 namespace nfd {
 
@@ -34,7 +35,7 @@ NFD_LOG_INIT("FaceTable");
 
 FaceTable::FaceTable(Forwarder& forwarder)
   : m_forwarder(forwarder)
-  , m_lastFaceId(FACEID_RESERVED_MAX)
+  , m_lastFaceId(face::FACEID_RESERVED_MAX)
 {
 }
 
@@ -59,22 +60,22 @@ FaceTable::size() const
 void
 FaceTable::add(shared_ptr<Face> face)
 {
-  if (face->getId() != INVALID_FACEID && m_faces.count(face->getId()) > 0) {
+  if (face->getId() != face::INVALID_FACEID && m_faces.count(face->getId()) > 0) {
     NFD_LOG_WARN("Trying to add existing face id=" << face->getId() << " to the face table");
     return;
   }
 
   FaceId faceId = ++m_lastFaceId;
-  BOOST_ASSERT(faceId > FACEID_RESERVED_MAX);
+  BOOST_ASSERT(faceId > face::FACEID_RESERVED_MAX);
   this->addImpl(face, faceId);
 }
 
 void
 FaceTable::addReserved(shared_ptr<Face> face, FaceId faceId)
 {
-  BOOST_ASSERT(face->getId() == INVALID_FACEID);
+  BOOST_ASSERT(face->getId() == face::INVALID_FACEID);
   BOOST_ASSERT(m_faces.count(face->getId()) == 0);
-  BOOST_ASSERT(faceId <= FACEID_RESERVED_MAX);
+  BOOST_ASSERT(faceId <= face::FACEID_RESERVED_MAX);
   this->addImpl(face, faceId);
 }
 
@@ -86,30 +87,26 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
   NFD_LOG_INFO("Added face id=" << faceId << " remote=" << face->getRemoteUri()
                                           << " local=" << face->getLocalUri());
 
-  face->onReceiveInterest.connect(bind(&Forwarder::startProcessInterest,
-                                       &m_forwarder, ref(*face), _1));
-  face->onReceiveData.connect(bind(&Forwarder::startProcessData,
-                                   &m_forwarder, ref(*face), _1));
-  face->onReceiveNack.connect(bind(&Forwarder::startProcessNack,
-                                   &m_forwarder, ref(*face), _1));
-  face->onFail.connectSingleShot(bind(&FaceTable::remove, this, face, _1));
+  face->afterReceiveInterest.connect(bind(&Forwarder::startProcessInterest, &m_forwarder, ref(*face), _1));
+  face->afterReceiveData.connect(bind(&Forwarder::startProcessData, &m_forwarder, ref(*face), _1));
+  face->afterReceiveNack.connect(bind(&Forwarder::startProcessNack, &m_forwarder, ref(*face), _1));
+  connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, face));
 
-  this->onAdd(face);
+  this->afterAdd(face);
 }
 
 void
-FaceTable::remove(shared_ptr<Face> face, const std::string& reason)
+FaceTable::remove(shared_ptr<Face> face)
 {
-  this->onRemove(face);
+  this->beforeRemove(face);
 
   FaceId faceId = face->getId();
   m_faces.erase(faceId);
-  face->setId(INVALID_FACEID);
+  face->setId(face::INVALID_FACEID);
 
   NFD_LOG_INFO("Removed face id=" << faceId <<
                " remote=" << face->getRemoteUri() <<
-               " local=" << face->getLocalUri() <<
-               " (" << reason << ")");
+               " local=" << face->getLocalUri());
 
   m_forwarder.getFib().removeNextHopFromAllEntries(face);
 

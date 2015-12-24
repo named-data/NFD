@@ -52,6 +52,10 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 }
 
+// TODO add the equivalent of these test cases from ethernet.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
+// SendPacket
+// ProcessIncomingPacket
+
 BOOST_AUTO_TEST_SUITE_END() // TestEthernetTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 

@@ -115,7 +115,7 @@ bool
 AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pitEntry, MtInfo& mi,
                                   shared_ptr<fib::Entry> fibEntry)
 {
-  if (mi.lastNexthop == INVALID_FACEID) {
+  if (mi.lastNexthop == face::INVALID_FACEID) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " no-last-nexthop");
     return false;
   }
@@ -231,7 +231,7 @@ AccessStrategy::updateMeasurements(const Face& inFace, const Data& data,
 }
 
 AccessStrategy::MtInfo::MtInfo()
-  : lastNexthop(INVALID_FACEID)
+  : lastNexthop(face::INVALID_FACEID)
   , rtt(1, time::milliseconds(1), 0.1)
 {
 }

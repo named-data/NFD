@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FACE_TCP_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "lp-face-wrapper.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {
@@ -114,7 +113,7 @@ private:
                        const FaceCreationFailedCallback& onConnectFailed);
 
 private:
-  std::map<tcp::Endpoint, shared_ptr<face::LpFaceWrapper>> m_channelFaces;
+  std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
 
   tcp::Endpoint m_localEndpoint;
   boost::asio::ip::tcp::acceptor m_acceptor;

@@ -27,7 +27,7 @@
 #define NFD_TESTS_DAEMON_FACE_UNIX_STREAM_TRANSPORT_FIXTURE_HPP
 
 #include "face/unix-stream-transport.hpp"
-#include "face/lp-face.hpp"
+#include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
 #include "tests/limited-io.hpp"
@@ -105,8 +105,8 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
 
     localEp = sock.local_endpoint();
-    face = make_unique<LpFace>(make_unique<DummyReceiveLinkService>(),
-                                make_unique<UnixStreamTransport>(std::move(sock)));
+    face = make_unique<Face>(make_unique<DummyReceiveLinkService>(),
+                             make_unique<UnixStreamTransport>(std::move(sock)));
     transport = static_cast<UnixStreamTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 
@@ -134,7 +134,7 @@ protected:
 
 private:
   AcceptorWithCleanup acceptor;
-  unique_ptr<LpFace> face;
+  unique_ptr<Face> face;
 };
 
 } // namespace tests

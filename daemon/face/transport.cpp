@@ -24,8 +24,7 @@
  */
 
 #include "transport.hpp"
-#include "lp-face.hpp"
-#include "link-service.hpp"
+#include "face.hpp"
 
 namespace nfd {
 namespace face {
@@ -73,7 +72,7 @@ Transport::~Transport()
 }
 
 void
-Transport::setFaceAndLinkService(LpFace& face, LinkService& service)
+Transport::setFaceAndLinkService(Face& face, LinkService& service)
 {
   BOOST_ASSERT(m_face == nullptr);
   BOOST_ASSERT(m_service == nullptr);
@@ -190,7 +189,7 @@ std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<Transport>& flh)
 {
   const Transport& transport = flh.obj;
-  const LpFace* face = transport.getFace();
+  const Face* face = transport.getFace();
   FaceId faceId = face == nullptr ? INVALID_FACEID : face->getId();
 
   os << "[id=" << faceId << ",local=" << transport.getLocalUri()

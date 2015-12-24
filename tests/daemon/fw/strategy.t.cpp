@@ -36,7 +36,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(FwStrategy, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestStrategy, BaseFixture)
 
 class FaceTableAccessTestStrategy : public DummyStrategy
 {
@@ -58,7 +59,7 @@ public:
   {
     auto enumerable = this->getFaceTable() |
                       boost::adaptors::filtered([] (shared_ptr<Face> face) {
-                        return face->isLocal();
+                        return face->getScope() == ndn::nfd::FACE_SCOPE_LOCAL;
                       });
 
     std::vector<FaceId> results;
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE(FaceTableAccess)
   FaceTableAccessTestStrategy strategy(forwarder);
 
   auto face1 = make_shared<DummyFace>();
-  auto face2 = make_shared<DummyLocalFace>();
+  auto face2 = make_shared<DummyFace>("dummy://", "dummy://", ndn::nfd::FACE_SCOPE_LOCAL);
   forwarder.addFace(face1);
   forwarder.addFace(face2);
   FaceId id1 = face1->getId();
@@ -94,7 +95,8 @@ BOOST_AUTO_TEST_CASE(FaceTableAccess)
   BOOST_CHECK((strategy.removedFaces == std::vector<FaceId>{id2, id1}));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

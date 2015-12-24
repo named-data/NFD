@@ -23,47 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face/null-face.hpp"
+#include "face/websocket-channel.hpp"
 
-#include "transport-test-common.hpp"
+#include "tests/test-common.hpp"
 
 namespace nfd {
-namespace face {
 namespace tests {
 
-using namespace nfd::tests;
-
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestNullFace, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestWebSocketChannel, BaseFixture)
 
-using nfd::Face;
+// TODO add a test case to accept multiple incoming connections on a channel
 
-BOOST_AUTO_TEST_CASE(StaticProperties)
-{
-  shared_ptr<Face> face = makeNullFace(FaceUri("testnull://hhppt12sy"));
-  checkStaticPropertiesInitialized(*face->getTransport());
+// TODO add a test case to check a failed face is removed from the channel
 
-  BOOST_CHECK_EQUAL(face->getLocalUri(), FaceUri("testnull://hhppt12sy"));
-  BOOST_CHECK_EQUAL(face->getRemoteUri(), FaceUri("testnull://hhppt12sy"));
-  BOOST_CHECK_EQUAL(face->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
-}
-
-BOOST_AUTO_TEST_CASE(Send)
-{
-  shared_ptr<Face> face = makeNullFace();
-
-  shared_ptr<Interest> interest = makeInterest("/A");
-  BOOST_CHECK_NO_THROW(face->sendInterest(*interest));
-
-  shared_ptr<Data> data = makeData("/B");
-  BOOST_CHECK_NO_THROW(face->sendData(*data));
-
-  BOOST_CHECK_NO_THROW(face->close());
-}
-
-BOOST_AUTO_TEST_SUITE_END() // TestNullFace
+BOOST_AUTO_TEST_SUITE_END() // TestWebSocketChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
-} // namespace face
 } // namespace nfd

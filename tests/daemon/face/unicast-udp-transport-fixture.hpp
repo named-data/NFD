@@ -27,7 +27,7 @@
 #define NFD_TESTS_DAEMON_FACE_UNICAST_UDP_TRANSPORT_FIXTURE_HPP
 
 #include "face/unicast-udp-transport.hpp"
-#include "face/lp-face.hpp"
+#include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
 #include "tests/limited-io.hpp"
@@ -60,9 +60,9 @@ protected:
 
     remoteConnect(address);
 
-    face = make_unique<LpFace>(make_unique<DummyReceiveLinkService>(),
-                               make_unique<UnicastUdpTransport>(std::move(sock), persistency,
-                                                                time::seconds(3)));
+    face = make_unique<Face>(
+             make_unique<DummyReceiveLinkService>(),
+             make_unique<UnicastUdpTransport>(std::move(sock), persistency, time::seconds(3)));
     transport = static_cast<UnicastUdpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 
@@ -99,7 +99,7 @@ protected:
   std::vector<Transport::Packet>* receivedPackets;
 
 private:
-  unique_ptr<LpFace> face;
+  unique_ptr<Face> face;
 };
 
 } // namespace tests

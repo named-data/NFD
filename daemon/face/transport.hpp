@@ -33,7 +33,7 @@
 namespace nfd {
 namespace face {
 
-class LpFace;
+class Face;
 class LinkService;
 
 /** \brief indicates the state of a transport
@@ -98,8 +98,8 @@ const ssize_t MTU_UNLIMITED = -1;
  */
 const ssize_t MTU_INVALID = -2;
 
-/** \brief the lower part of an LpFace
- *  \sa LpFace
+/** \brief the lower part of a Face
+ *  \sa Face
  */
 class Transport : protected virtual TransportCounters, noncopyable
 {
@@ -154,11 +154,11 @@ public:
    *  \pre setFaceAndLinkService has not been called
    */
   void
-  setFaceAndLinkService(LpFace& face, LinkService& service);
+  setFaceAndLinkService(Face& face, LinkService& service);
 
   /** \return Face to which this Transport is attached
    */
-  const LpFace*
+  const Face*
   getFace() const;
 
   /** \return LinkService to which this Transport is attached
@@ -307,7 +307,7 @@ private: // to be overridden by subclass
   doSend(Packet&& packet) = 0;
 
 private:
-  LpFace* m_face;
+  Face* m_face;
   LinkService* m_service;
   FaceUri m_localUri;
   FaceUri m_remoteUri;
@@ -318,7 +318,7 @@ private:
   TransportState m_state;
 };
 
-inline const LpFace*
+inline const Face*
 Transport::getFace() const
 {
   return m_face;

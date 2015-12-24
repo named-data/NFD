@@ -108,7 +108,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   ++m_counters.nInInterests;
 
   // /localhost scope control
-  bool isViolatingLocalhost = !inFace.isLocal() &&
+  bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               LOCALHOST_NAME.isPrefixOf(interest.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
@@ -151,7 +151,7 @@ Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
                           shared_ptr<pit::Entry> pitEntry)
 {
   // if multi-access face, drop
-  if (inFace.isMultiAccess()) {
+  if (inFace.getLinkType() == ndn::nfd::LINK_TYPE_MULTI_ACCESS) {
     NFD_LOG_DEBUG("onInterestLoop face=" << inFace.getId() <<
                   " interest=" << interest.getName() <<
                   " drop");
@@ -244,7 +244,7 @@ Forwarder::onContentStoreHit(const Face& inFace,
 {
   NFD_LOG_DEBUG("onContentStoreHit interest=" << interest.getName());
 
-  data.setTag(make_shared<lp::IncomingFaceIdTag>(FACEID_CONTENT_STORE));
+  data.setTag(make_shared<lp::IncomingFaceIdTag>(face::FACEID_CONTENT_STORE));
   // XXX should we lookup PIT for other Interests that also match csMatch?
 
   // set PIT straggler timer
@@ -284,7 +284,7 @@ void
 Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
                               bool wantNewNonce)
 {
-  if (outFace.getId() == INVALID_FACEID) {
+  if (outFace.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingInterest face=invalid interest=" << pitEntry->getName());
     return;
   }
@@ -374,7 +374,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
   ++m_counters.nInData;
 
   // /localhost scope control
-  bool isViolatingLocalhost = !inFace.isLocal() &&
+  bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               LOCALHOST_NAME.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() <<
@@ -439,7 +439,7 @@ void
 Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
 {
   // accept to cache?
-  bool acceptToCache = inFace.isLocal();
+  bool acceptToCache = inFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL;
   if (acceptToCache) {
     // CS insert
     m_cs.insert(data, true);
@@ -453,14 +453,14 @@ Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
 void
 Forwarder::onOutgoingData(const Data& data, Face& outFace)
 {
-  if (outFace.getId() == INVALID_FACEID) {
+  if (outFace.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingData face=invalid data=" << data.getName());
     return;
   }
   NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() << " data=" << data.getName());
 
   // /localhost scope control
-  bool isViolatingLocalhost = !outFace.isLocal() &&
+  bool isViolatingLocalhost = outFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
                               LOCALHOST_NAME.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() <<
@@ -484,7 +484,7 @@ Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
   ++m_counters.nInNacks;
 
   // if multi-access face, drop
-  if (inFace.isMultiAccess()) {
+  if (inFace.getLinkType() == ndn::nfd::LINK_TYPE_MULTI_ACCESS) {
     NFD_LOG_DEBUG("onIncomingNack face=" << inFace.getId() <<
                   " nack=" << nack.getInterest().getName() <<
                   "~" << nack.getReason() << " face-is-multi-access");
@@ -537,7 +537,7 @@ void
 Forwarder::onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
                           const lp::NackHeader& nack)
 {
-  if (outFace.getId() == INVALID_FACEID) {
+  if (outFace.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingNack face=invalid" <<
                   " nack=" << pitEntry->getInterest().getName() <<
                   "~" << nack.getReason() << " no-in-record");
@@ -556,7 +556,7 @@ Forwarder::onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
   }
 
   // if multi-access face, drop
-  if (outFace.isMultiAccess()) {
+  if (outFace.getLinkType() == ndn::nfd::LINK_TYPE_MULTI_ACCESS) {
     NFD_LOG_DEBUG("onOutgoingNack face=" << outFace.getId() <<
                   " nack=" << pitEntry->getInterest().getName() <<
                   "~" << nack.getReason() << " face-is-multi-access");

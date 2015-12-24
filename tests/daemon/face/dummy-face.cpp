@@ -23,14 +23,14 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dummy-lp-face.hpp"
+#include "dummy-face.hpp"
 #include "dummy-transport.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-class DummyLpFace::LinkService : public face::LinkService
+class DummyFace::LinkService : public face::LinkService
 {
 public:
   void
@@ -51,28 +51,28 @@ public:
     this->face::LinkService::receiveNack(nack);
   }
 
-  signal::Signal<LinkService> afterSend;
+  signal::Signal<LinkService, uint32_t> afterSend;
 
 private:
   virtual void
   doSendInterest(const Interest& interest) DECL_OVERRIDE
   {
     this->sentInterests.push_back(interest);
-    this->afterSend();
+    this->afterSend(tlv::Interest);
   }
 
   virtual void
   doSendData(const Data& data) DECL_OVERRIDE
   {
     this->sentData.push_back(data);
-    this->afterSend();
+    this->afterSend(tlv::Data);
   }
 
   virtual void
   doSendNack(const lp::Nack& nack) DECL_OVERRIDE
   {
     this->sentNacks.push_back(nack);
-    this->afterSend();
+    this->afterSend(lp::tlv::Nack);
   }
 
   virtual void
@@ -87,11 +87,11 @@ public:
   std::vector<lp::Nack> sentNacks;
 };
 
-DummyLpFace::DummyLpFace(const std::string& localUri, const std::string& remoteUri,
-                         ndn::nfd::FaceScope scope, ndn::nfd::FacePersistency persistency,
-                         ndn::nfd::LinkType linkType)
-  : LpFace(make_unique<LinkService>(),
-           make_unique<DummyTransport>(localUri, remoteUri, scope, persistency, linkType))
+DummyFace::DummyFace(const std::string& localUri, const std::string& remoteUri,
+                     ndn::nfd::FaceScope scope, ndn::nfd::FacePersistency persistency,
+                     ndn::nfd::LinkType linkType)
+  : Face(make_unique<LinkService>(),
+         make_unique<DummyTransport>(localUri, remoteUri, scope, persistency, linkType))
   , afterSend(this->getLinkServiceInternal()->afterSend)
   , sentInterests(this->getLinkServiceInternal()->sentInterests)
   , sentData(this->getLinkServiceInternal()->sentData)
@@ -100,37 +100,37 @@ DummyLpFace::DummyLpFace(const std::string& localUri, const std::string& remoteU
 }
 
 void
-DummyLpFace::setState(FaceState state)
+DummyFace::setState(FaceState state)
 {
   this->getTransportInternal()->setState(state);
 }
 
 void
-DummyLpFace::receiveInterest(const Interest& interest)
+DummyFace::receiveInterest(const Interest& interest)
 {
   this->getLinkServiceInternal()->receiveInterest(interest);
 }
 
 void
-DummyLpFace::receiveData(const Data& data)
+DummyFace::receiveData(const Data& data)
 {
   this->getLinkServiceInternal()->receiveData(data);
 }
 
 void
-DummyLpFace::receiveNack(const lp::Nack& nack)
+DummyFace::receiveNack(const lp::Nack& nack)
 {
   this->getLinkServiceInternal()->receiveNack(nack);
 }
 
-DummyLpFace::LinkService*
-DummyLpFace::getLinkServiceInternal()
+DummyFace::LinkService*
+DummyFace::getLinkServiceInternal()
 {
   return static_cast<LinkService*>(this->getLinkService());
 }
 
 DummyTransport*
-DummyLpFace::getTransportInternal()
+DummyFace::getTransportInternal()
 {
   return static_cast<DummyTransport*>(this->getTransport());
 }

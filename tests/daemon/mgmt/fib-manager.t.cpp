@@ -80,7 +80,7 @@ public: // for check
    * @brief check whether the nexthop record is added / removed properly
    *
    * @param expectedNNextHops use -1 to skip this check
-   * @param faceId use FACEID_NULL to skip NextHopRecord checks
+   * @param faceId use face::FACEID_NULL to skip NextHopRecord checks
    * @param expectedCost use -1 to skip this check
    *
    * @retval OK FIB entry is found by exact match and has the expected number of nexthops;
@@ -92,7 +92,7 @@ public: // for check
    */
   CheckNextHopResult
   checkNextHop(const Name& prefix, ssize_t expectedNNextHops = -1,
-               FaceId faceId = FACEID_NULL, int32_t expectedCost = -1)
+               FaceId faceId = face::FACEID_NULL, int32_t expectedCost = -1)
   {
     auto entry = m_fib.findExactMatch(prefix);
     if (!static_cast<bool>(entry)) {
@@ -104,7 +104,7 @@ public: // for check
       return CheckNextHopResult::WRONG_N_NEXTHOPS;
     }
 
-    if (faceId != FACEID_NULL) {
+    if (faceId != face::FACEID_NULL) {
       for (auto&& record : nextHops) {
         if (record.getFace()->getId() == faceId) {
           return expectedCost != -1 && record.getCost() != static_cast<uint32_t>(expectedCost) ?
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_SUITE(AddNextHop)
 BOOST_AUTO_TEST_CASE(UnknownFaceId)
 {
   auto command = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop",
-                                           makeParameters("hello", FACEID_NULL, 101));
+                                           makeParameters("hello", face::FACEID_NULL, 101));
   receiveInterest(command);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
 
@@ -167,14 +167,15 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
                     CheckResponseResult::OK);
 
   // double check that the next hop was not added
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", -1, FACEID_NULL, 101), CheckNextHopResult::NO_FIB_ENTRY);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", -1, face::FACEID_NULL, 101), CheckNextHopResult::NO_FIB_ENTRY);
 }
 
 BOOST_AUTO_TEST_CASE(ImplicitFaceId)
 {
   auto face1 = addFace();
   auto face2 = addFace();
-  BOOST_REQUIRE(face1 != INVALID_FACEID && face2 != INVALID_FACEID);
+  BOOST_REQUIRE_NE(face1, face::INVALID_FACEID);
+  BOOST_REQUIRE_NE(face2, face::INVALID_FACEID);
 
   Name expectedName;
   ControlResponse expectedResponse;
@@ -203,7 +204,7 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
 BOOST_AUTO_TEST_CASE(InitialAdd)
 {
   FaceId addedFaceId = addFace();
-  BOOST_REQUIRE(addedFaceId != INVALID_FACEID);
+  BOOST_REQUIRE_NE(addedFaceId, face::INVALID_FACEID);
 
   auto parameters = makeParameters("hello", addedFaceId, 101);
   auto command = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop", parameters);
@@ -218,7 +219,7 @@ BOOST_AUTO_TEST_CASE(InitialAdd)
 BOOST_AUTO_TEST_CASE(ImplicitCost)
 {
   FaceId addedFaceId = addFace();
-  BOOST_REQUIRE(addedFaceId != INVALID_FACEID);
+  BOOST_REQUIRE_NE(addedFaceId, face::INVALID_FACEID);
 
   auto originalParameters = ControlParameters().setName("/hello").setFaceId(addedFaceId);
   auto parameters = makeParameters("/hello", addedFaceId, 0);
@@ -234,7 +235,7 @@ BOOST_AUTO_TEST_CASE(ImplicitCost)
 BOOST_AUTO_TEST_CASE(AddToExisting)
 {
   FaceId face = addFace();
-  BOOST_CHECK(face != INVALID_FACEID);
+  BOOST_REQUIRE_NE(face, face::INVALID_FACEID);
 
   Name expectedName;
   ControlResponse expectedResponse;
@@ -280,7 +281,9 @@ BOOST_AUTO_TEST_CASE(Basic)
   FaceId face1 = addFace();
   FaceId face2 = addFace();
   FaceId face3 = addFace();
-  BOOST_REQUIRE(face1 != INVALID_FACEID && face2 != INVALID_FACEID && face3 != INVALID_FACEID);
+  BOOST_REQUIRE_NE(face1, face::INVALID_FACEID);
+  BOOST_REQUIRE_NE(face2, face::INVALID_FACEID);
+  BOOST_REQUIRE_NE(face3, face::INVALID_FACEID);
 
   shared_ptr<fib::Entry> entry = m_fib.insert("/hello").first;
   entry->addNextHop(m_faceTable.get(face1), 101);
@@ -306,7 +309,7 @@ BOOST_AUTO_TEST_CASE(Basic)
 BOOST_AUTO_TEST_CASE(PrefixNotFound)
 {
   FaceId addedFaceId = addFace();
-  BOOST_CHECK(addedFaceId != INVALID_FACEID);
+  BOOST_REQUIRE_NE(addedFaceId, face::INVALID_FACEID);
 
   auto parameters = makeParameters("hello", addedFaceId);
   auto command = makeControlCommandRequest("/localhost/nfd/fib/remove-nexthop", parameters);
@@ -321,7 +324,8 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
 {
   auto face1 = addFace();
   auto face2 = addFace();
-  BOOST_REQUIRE(face1 != INVALID_FACEID && face2 != INVALID_FACEID);
+  BOOST_REQUIRE_NE(face1, face::INVALID_FACEID);
+  BOOST_REQUIRE_NE(face2, face::INVALID_FACEID);
 
   Name expectedName;
   ControlResponse expectedResponse;
@@ -355,7 +359,8 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
 {
   auto face1 = addFace();
   auto face2 = addFace();
-  BOOST_REQUIRE(face1 != INVALID_FACEID && face2 != INVALID_FACEID);
+  BOOST_REQUIRE_NE(face1, face::INVALID_FACEID);
+  BOOST_REQUIRE_NE(face2, face::INVALID_FACEID);
 
   Name expectedName;
   ControlResponse expectedResponse;

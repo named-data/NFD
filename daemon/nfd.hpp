@@ -34,25 +34,24 @@
 #include <ndn-cxx/util/network-monitor.hpp>
 
 namespace ndn {
-
 class Face;
-
 namespace mgmt {
-
 class Dispatcher;
-
-}
-}
+} // namespace mgmt
+} // namespace ndn
 
 namespace nfd {
 
-class Face;
 class Forwarder;
 class FibManager;
 class FaceManager;
 class StrategyChoiceManager;
 class ForwarderStatusManager;
 class CommandValidator;
+
+namespace face {
+class Face;
+} // namespace face
 
 /**
  * \brief Class representing NFD instance
@@ -110,7 +109,7 @@ private:
   unique_ptr<Forwarder> m_forwarder;
 
   ndn::KeyChain&               m_keyChain;
-  shared_ptr<Face>             m_internalFace;
+  shared_ptr<face::Face>       m_internalFace;
   shared_ptr<ndn::Face>        m_internalClientFace;
   unique_ptr<CommandValidator> m_validator;
 

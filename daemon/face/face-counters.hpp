@@ -30,9 +30,6 @@
 #include "transport.hpp"
 
 namespace nfd {
-
-class OldFaceCounters;
-
 namespace face {
 
 /** \brief gives access to counters provided by Face
@@ -47,14 +44,6 @@ class FaceCounters
 public:
   FaceCounters(const LinkService::Counters& linkServiceCounters,
                const Transport::Counters& transportCounters);
-
-  /** \brief wraps old counters
-   *
-   *  FaceCounters instance created from this constructor only provides Interest/Data counters
-   *  and Nack counters. Other counters are always zero. get<T>() should not be used.
-   */
-  explicit
-  FaceCounters(const OldFaceCounters& oldCounters);
 
   /** \return counters provided by LinkService
    *  \tparam T LinkService counters type

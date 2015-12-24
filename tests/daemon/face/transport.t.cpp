@@ -24,7 +24,7 @@
  */
 
 #include "face/transport.hpp"
-#include "face/lp-face.hpp"
+#include "face/face.hpp"
 #include "dummy-transport.hpp"
 #include "dummy-receive-link-service.hpp"
 #include "transport-test-common.hpp"
@@ -45,6 +45,8 @@ namespace ip = boost::asio::ip;
 
 BOOST_AUTO_TEST_SUITE(Face)
 
+using nfd::Face;
+
 class DummyTransportFixture : public BaseFixture
 {
 public:
@@ -60,14 +62,14 @@ public:
   void
   initialize(unique_ptr<DummyTransport> transport = make_unique<DummyTransport>())
   {
-    this->face = make_unique<LpFace>(make_unique<DummyReceiveLinkService>(), std::move(transport));
+    this->face = make_unique<Face>(make_unique<DummyReceiveLinkService>(), std::move(transport));
     this->transport = static_cast<DummyTransport*>(face->getTransport());
     this->sentPackets = &this->transport->sentPackets;
     this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
   }
 
 public:
-  unique_ptr<LpFace> face;
+  unique_ptr<Face> face;
   DummyTransport* transport;
   std::vector<Transport::Packet>* sentPackets;
   std::vector<Transport::Packet>* receivedPackets;

@@ -26,11 +26,9 @@
 #ifndef NFD_DAEMON_FACE_CHANNEL_HPP
 #define NFD_DAEMON_FACE_CHANNEL_HPP
 
-#include "common.hpp"
+#include "face.hpp"
 
 namespace nfd {
-
-class Face;
 
 /**
  * \brief Prototype for the callback that is invoked when the face
@@ -68,6 +66,16 @@ Channel::getUri() const
 {
   return m_uri;
 }
+
+/** \brief invokes a callback when the face is closed
+ *  \param face the face
+ *  \param f the callback to be invoked when the face enters CLOSED state
+ *
+ *  This function connects a callback to the afterStateChange signal on the \p face,
+ *  and invokes \p f when the state becomes CLOSED.
+ */
+void
+connectFaceClosedSignal(Face& face, const std::function<void()>& f);
 
 } // namespace nfd
 

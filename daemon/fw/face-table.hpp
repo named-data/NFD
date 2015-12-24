@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2015,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -75,22 +75,20 @@ public: // enumeration
 public: // signals
   /** \brief fires after a Face is added
    */
-  signal::Signal<FaceTable, shared_ptr<Face>> onAdd;
+  signal::Signal<FaceTable, shared_ptr<Face>> afterAdd;
 
   /** \brief fires before a Face is removed
    *
    *  FaceId is valid when this event is fired
    */
-  signal::Signal<FaceTable, shared_ptr<Face>> onRemove;
+  signal::Signal<FaceTable, shared_ptr<Face>> beforeRemove;
 
 private:
   void
   addImpl(shared_ptr<Face> face, FaceId faceId);
 
-  // remove is private because it's a handler of face.onFail signal.
-  // face->close() closes the face and triggers .remove()
   void
-  remove(shared_ptr<Face> face, const std::string& reason);
+  remove(shared_ptr<Face> face);
 
   ForwardRange
   getForwardRange() const;
