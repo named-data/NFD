@@ -253,6 +253,12 @@ public: // dynamic properties
    */
   signal::Signal<Transport, TransportState/*old*/, TransportState/*new*/> afterStateChange;
 
+  /** \return expiration time of the transport
+   *  \retval time::steady_clock::TimePoint::max() the transport has indefinite lifetime
+   */
+  time::steady_clock::TimePoint
+  getExpirationTime() const;
+
 protected: // properties to be set by subclass
   void
   setLocalUri(const FaceUri& uri);
@@ -278,6 +284,9 @@ protected: // properties to be set by subclass
    */
   void
   setState(TransportState newState);
+
+  void
+  setExpirationTime(const time::steady_clock::TimePoint& expirationTime);
 
 protected: // to be overridden by subclass
   /** \brief invoked before persistency is changed
@@ -316,6 +325,7 @@ private:
   ndn::nfd::LinkType m_linkType;
   ssize_t m_mtu;
   TransportState m_state;
+  time::steady_clock::TimePoint m_expirationTime;
 };
 
 inline const Face*
@@ -413,6 +423,18 @@ inline TransportState
 Transport::getState() const
 {
   return m_state;
+}
+
+inline time::steady_clock::TimePoint
+Transport::getExpirationTime() const
+{
+  return m_expirationTime;
+}
+
+inline void
+Transport::setExpirationTime(const time::steady_clock::TimePoint& expirationTime)
+{
+  m_expirationTime = expirationTime;
 }
 
 std::ostream&

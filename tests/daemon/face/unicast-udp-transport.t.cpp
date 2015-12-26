@@ -102,6 +102,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 BOOST_AUTO_TEST_CASE(IdleClose)
 {
   initialize(ip::address_v4::loopback(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 
   int nStateChanges = 0;
   this->transport->afterStateChange.connect(
@@ -193,6 +194,15 @@ BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
   BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, block2.size());
   BOOST_CHECK_EQUAL(receivedPackets->size(), 1);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
+BOOST_AUTO_TEST_CASE(ChangePersistencyNoExpirationTime)
+{
+  initialize(ip::address_v4::loopback(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnicastUdpTransport

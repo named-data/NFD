@@ -89,6 +89,7 @@ UnicastUdpTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersis
   }
   else {
     m_closeIfIdleEvent.cancel();
+    setExpirationTime(time::steady_clock::TimePoint::max());
   }
 }
 
@@ -105,6 +106,7 @@ UnicastUdpTransport::scheduleClosureWhenIdle()
       scheduleClosureWhenIdle();
     }
   });
+  setExpirationTime(time::steady_clock::now() + m_idleTimeout);
 }
 
 } // namespace face

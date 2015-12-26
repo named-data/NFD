@@ -200,6 +200,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 
 BOOST_AUTO_TEST_SUITE_END() // StateTransition
 
+BOOST_AUTO_TEST_CASE(NoExpirationTime)
+{
+  initialize();
+
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+}
+
 BOOST_AUTO_TEST_CASE(Send)
 {
   this->initialize();

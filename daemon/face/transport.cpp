@@ -64,6 +64,7 @@ Transport::Transport()
   , m_linkType(ndn::nfd::LINK_TYPE_NONE)
   , m_mtu(MTU_INVALID)
   , m_state(TransportState::UP)
+  , m_expirationTime(time::steady_clock::TimePoint::max())
 {
 }
 

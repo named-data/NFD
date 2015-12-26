@@ -248,10 +248,9 @@ void
 FaceManager::listFaces(const Name& topPrefix, const Interest& interest,
                        ndn::mgmt::StatusDatasetContext& context)
 {
+  auto now = time::steady_clock::now();
   for (const auto& face : m_faceTable) {
-    ndn::nfd::FaceStatus status;
-    collectFaceProperties(*face, status);
-    collectFaceCounters(*face, status);
+    ndn::nfd::FaceStatus status = collectFaceStatus(*face, now);
     context.append(status.wireEncode());
   }
   context.end();
@@ -294,13 +293,12 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
     return context.reject(ControlResponse(400, "Malformed filter"));
   }
 
+  auto now = time::steady_clock::now();
   for (const auto& face : m_faceTable) {
     if (!doesMatchFilter(faceFilter, face)) {
       continue;
     }
-    ndn::nfd::FaceStatus status;
-    collectFaceProperties(*face, status);
-    collectFaceCounters(*face, status);
+    ndn::nfd::FaceStatus status = collectFaceStatus(*face, now);
     context.append(status.wireEncode());
   }
 
@@ -349,6 +347,32 @@ FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr
   return true;
 }
 
+ndn::nfd::FaceStatus
+FaceManager::collectFaceStatus(const Face& face, const time::steady_clock::TimePoint& now)
+{
+  ndn::nfd::FaceStatus status;
+
+  collectFaceProperties(face, status);
+
+  time::steady_clock::TimePoint expirationTime = face.getExpirationTime();
+  if (expirationTime != time::steady_clock::TimePoint::max()) {
+    status.setExpirationPeriod(std::max(time::milliseconds(0),
+                                        time::duration_cast<time::milliseconds>(expirationTime - now)));
+  }
+
+  const face::FaceCounters& counters = face.getCounters();
+  status.setNInInterests(counters.nInInterests)
+        .setNOutInterests(counters.nOutInterests)
+        .setNInDatas(counters.nInData)
+        .setNOutDatas(counters.nOutData)
+        .setNInNacks(counters.nInNacks)
+        .setNOutNacks(counters.nOutNacks)
+        .setNInBytes(counters.nInBytes)
+        .setNOutBytes(counters.nOutBytes);
+
+  return status;
+}
+
 template<typename FaceTraits>
 void
 FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
@@ -359,20 +383,6 @@ FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
         .setFaceScope(face.getScope())
         .setFacePersistency(face.getPersistency())
         .setLinkType(face.getLinkType());
-}
-
-void
-FaceManager::collectFaceCounters(const Face& face, ndn::nfd::FaceStatus& status)
-{
-  const face::FaceCounters& counters = face.getCounters();
-  status.setNInInterests(counters.nInInterests)
-        .setNOutInterests(counters.nOutInterests)
-        .setNInDatas(counters.nInData)
-        .setNOutDatas(counters.nOutData)
-        .setNInNacks(counters.nInNacks)
-        .setNOutNacks(counters.nOutNacks)
-        .setNInBytes(counters.nInBytes)
-        .setNOutBytes(counters.nOutBytes);
 }
 
 void

@@ -159,6 +159,12 @@ public: // dynamic properties
    */
   signal::Signal<Transport, FaceState/*old*/, FaceState/*new*/>& afterStateChange;
 
+  /** \return expiration time of the face
+   *  \retval time::steady_clock::TimePoint::max() the face has an indefinite lifetime
+   */
+  time::steady_clock::TimePoint
+  getExpirationTime() const;
+
   /** \brief request the face to be closed
    *
    *  This operation is effective only if face is in UP or DOWN state,
@@ -264,6 +270,12 @@ inline FaceState
 Face::getState() const
 {
   return m_transport->getState();
+}
+
+inline time::steady_clock::TimePoint
+Face::getExpirationTime() const
+{
+  return m_transport->getExpirationTime();
 }
 
 inline void
