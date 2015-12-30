@@ -37,12 +37,11 @@ ForwarderStatusManager::ForwarderStatusManager(Forwarder& forwarder, Dispatcher&
   , m_startTimestamp(time::system_clock::now())
 {
   m_dispatcher.addStatusDataset("status", ndn::mgmt::makeAcceptAllAuthorization(),
-                                bind(&ForwarderStatusManager::listStatus, this, _1, _2, _3));
+                                bind(&ForwarderStatusManager::listGeneralStatus, this, _1, _2, _3));
 }
 
-void
-ForwarderStatusManager::listStatus(const Name& topPrefix, const Interest& interest,
-                                   ndn::mgmt::StatusDatasetContext& context)
+ndn::nfd::ForwarderStatus
+ForwarderStatusManager::collectGeneralStatus()
 {
   ndn::nfd::ForwarderStatus status;
 
@@ -64,8 +63,29 @@ ForwarderStatusManager::listStatus(const Name& topPrefix, const Interest& intere
         .setNInNacks(counters.nInNacks)
         .setNOutNacks(counters.nOutNacks);
 
+  return status;
+}
+
+void
+ForwarderStatusManager::listGeneralStatus(const Name& topPrefix, const Interest& interest,
+                                          ndn::mgmt::StatusDatasetContext& context)
+{
+  static const PartialName PREFIX_STATUS("status");
+  static const PartialName PREFIX_STATUS_GENERAL("status/general");
+
+  PartialName subPrefix = interest.getName().getSubName(topPrefix.size());
+  if (subPrefix == PREFIX_STATUS_GENERAL || subPrefix == PREFIX_STATUS) {
+    context.setPrefix(Name(topPrefix).append(PREFIX_STATUS_GENERAL));
+  }
+  else {
+    context.reject(ndn::mgmt::ControlResponse().setCode(404));
+    return;
+  }
+  // TODO#3379 register the dataset at status/general, and delete these conditions
+
   context.setExpiry(STATUS_SERVER_DEFAULT_FRESHNESS);
 
+  auto status = this->collectGeneralStatus();
   status.wireEncode().parse();
   for (const auto& subblock : status.wireEncode().elements()) {
     context.append(subblock);

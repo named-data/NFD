@@ -162,7 +162,7 @@ public:
   void
   fetchVersionInformation()
   {
-    Interest interest("/localhost/nfd/status");
+    Interest interest("/localhost/nfd/status/general");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
     m_face.expressInterest(

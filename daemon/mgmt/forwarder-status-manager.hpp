@@ -43,9 +43,14 @@ public:
   ForwarderStatusManager(Forwarder& forwarder, Dispatcher& dispatcher);
 
 private:
+  ndn::nfd::ForwarderStatus
+  collectGeneralStatus();
+
+  /** \brief provide general status dataset
+   */
   void
-  listStatus(const Name& topPrefix, const Interest& interest,
-             ndn::mgmt::StatusDatasetContext& context);
+  listGeneralStatus(const Name& topPrefix, const Interest& interest,
+                    ndn::mgmt::StatusDatasetContext& context);
 
 private:
   Forwarder&  m_forwarder;
