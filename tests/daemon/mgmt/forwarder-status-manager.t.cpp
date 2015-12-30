@@ -24,75 +24,91 @@
  */
 
 #include "mgmt/forwarder-status-manager.hpp"
-#include "fw/forwarder.hpp"
 #include "version.hpp"
 
-#include "tests/test-common.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
-#include <ndn-cxx/util/dummy-client-face.hpp>
-#include <ndn-cxx/mgmt/dispatcher.hpp>
+#include "manager-common-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(Mgmt, UnitTestTimeFixture)
-BOOST_AUTO_TEST_SUITE(TestForwarderStatusManager)
+BOOST_AUTO_TEST_SUITE(Mgmt)
 
-BOOST_AUTO_TEST_CASE(Status)
+class ForwarderStatusManagerFixture : public ManagerCommonFixture
 {
-  // initialize
-  time::system_clock::TimePoint t1 = time::system_clock::now();
-  Forwarder forwarder;
-  auto face = ndn::util::makeDummyClientFace(g_io, {true, true});
-  ndn::KeyChain keyChain;
-  ndn::mgmt::Dispatcher dispatcher(*face, ref(keyChain));
-  ForwarderStatusManager statusServer(ref(forwarder), ref(dispatcher));
-  dispatcher.addTopPrefix("/localhost/nfd");
-  advanceClocks(time::milliseconds(1));
+protected:
+  ForwarderStatusManagerFixture()
+    : manager(m_forwarder, m_dispatcher)
+    , startTime(time::system_clock::now())
+  {
+    this->setTopPrefixAndPrivilege("/localhost/nfd", "status");
+  }
 
-  // populate tables
-  time::system_clock::TimePoint t2 = time::system_clock::now();
-  forwarder.getFib().insert("ndn:/fib1");
-  forwarder.getPit().insert(*makeInterest("ndn:/pit1"));
-  forwarder.getPit().insert(*makeInterest("ndn:/pit2"));
-  forwarder.getPit().insert(*makeInterest("ndn:/pit3"));
-  forwarder.getPit().insert(*makeInterest("ndn:/pit4"));
-  forwarder.getMeasurements().get("ndn:/measurements1");
-  forwarder.getMeasurements().get("ndn:/measurements2");
-  forwarder.getMeasurements().get("ndn:/measurements3");
-  BOOST_CHECK_GE(forwarder.getFib().size(), 1);
-  BOOST_CHECK_GE(forwarder.getPit().size(), 4);
-  BOOST_CHECK_GE(forwarder.getMeasurements().size(), 3);
+protected:
+  ForwarderStatusManager manager;
+  time::system_clock::TimePoint startTime;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestForwarderStatusManager, ForwarderStatusManagerFixture)
+
+BOOST_AUTO_TEST_CASE(GeneralStatus)
+{
+  // cause counters to be non-zero
+  this->advanceClocks(time::seconds(3600));
+  m_forwarder.getFib().insert("ndn:/fib1");
+  m_forwarder.getPit().insert(*makeInterest("ndn:/pit1"));
+  m_forwarder.getPit().insert(*makeInterest("ndn:/pit2"));
+  m_forwarder.getPit().insert(*makeInterest("ndn:/pit3"));
+  m_forwarder.getPit().insert(*makeInterest("ndn:/pit4"));
+  m_forwarder.getMeasurements().get("ndn:/measurements1");
+  m_forwarder.getMeasurements().get("ndn:/measurements2");
+  m_forwarder.getMeasurements().get("ndn:/measurements3");
+  m_forwarder.getCs().insert(*makeData("ndn:/cs1"));
+  m_forwarder.getCs().insert(*makeData("ndn:/cs2"));
+  BOOST_CHECK_GE(m_forwarder.getFib().size(), 1);
+  BOOST_CHECK_GE(m_forwarder.getPit().size(), 4);
+  BOOST_CHECK_GE(m_forwarder.getMeasurements().size(), 3);
+  BOOST_CHECK_GE(m_forwarder.getCs().size(), 2);
 
   // request
-  time::system_clock::TimePoint t3 = time::system_clock::now();
-  auto request = makeInterest("ndn:/localhost/nfd/status");
+  time::system_clock::TimePoint beforeRequest = time::system_clock::now();
+  auto request = makeInterest("ndn:/localhost/nfd/status/general");
   request->setMustBeFresh(true);
   request->setChildSelector(1);
-
-  face->receive<Interest>(*request);
-  advanceClocks(time::milliseconds(1));
+  this->receiveInterest(request);
+  time::system_clock::TimePoint afterRequest = time::system_clock::now();
 
   // verify
-  time::system_clock::TimePoint t4 = time::system_clock::now();
-  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
+  Block response = this->concatenateResponses(0, m_responses.size());
   ndn::nfd::ForwarderStatus status;
-  BOOST_REQUIRE_NO_THROW(status.wireDecode(face->sentDatas[0].getContent()));
+  BOOST_REQUIRE_NO_THROW(status.wireDecode(response));
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
-  BOOST_CHECK_GE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t1));
-  BOOST_CHECK_LE(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(t2));
-  BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t3));
-  BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(t4));
+  BOOST_CHECK_EQUAL(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(startTime));
+  BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(beforeRequest));
+  BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(afterRequest));
 
   // Interest/Data toward ForwarderStatusManager don't go through Forwarder,
   // so request and response won't affect table size
-  BOOST_CHECK_EQUAL(status.getNNameTreeEntries(), forwarder.getNameTree().size());
-  BOOST_CHECK_EQUAL(status.getNFibEntries(), forwarder.getFib().size());
-  BOOST_CHECK_EQUAL(status.getNPitEntries(), forwarder.getPit().size());
-  BOOST_CHECK_EQUAL(status.getNMeasurementsEntries(), forwarder.getMeasurements().size());
-  BOOST_CHECK_EQUAL(status.getNCsEntries(), forwarder.getCs().size());
+  BOOST_CHECK_EQUAL(status.getNNameTreeEntries(), m_forwarder.getNameTree().size());
+  BOOST_CHECK_EQUAL(status.getNFibEntries(), m_forwarder.getFib().size());
+  BOOST_CHECK_EQUAL(status.getNPitEntries(), m_forwarder.getPit().size());
+  BOOST_CHECK_EQUAL(status.getNMeasurementsEntries(), m_forwarder.getMeasurements().size());
+  BOOST_CHECK_EQUAL(status.getNCsEntries(), m_forwarder.getCs().size());
   // TODO#3325 check packet counter values
+}
+
+BOOST_AUTO_TEST_CASE(GeneralStatusLegacy) // request GeneralStatus with legacy name
+{
+  auto request = makeInterest("ndn:/localhost/nfd/status");
+  request->setMustBeFresh(true);
+  request->setChildSelector(1);
+  this->receiveInterest(request);
+
+  BOOST_REQUIRE_GE(m_responses.size(), 1);
+  BOOST_CHECK(Name("ndn:/localhost/nfd/status/general").isPrefixOf(m_responses.front().getName()));
+
+  Block response = this->concatenateResponses(0, m_responses.size());
+  BOOST_REQUIRE_NO_THROW(ndn::nfd::ForwarderStatus(response));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarderStatusManager
