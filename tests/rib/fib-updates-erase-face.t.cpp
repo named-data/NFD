@@ -404,6 +404,24 @@ BOOST_AUTO_TEST_CASE(RemoveNamespaceWithAncestorFace) // Bug #2757
   BOOST_CHECK_EQUAL(update->action, FibUpdate::REMOVE_NEXTHOP);
 }
 
+BOOST_AUTO_TEST_CASE(RemoveNamespaceWithCapture) // Bug #3404
+{
+  insertRoute("/", 262, ndn::nfd::ROUTE_ORIGIN_STATIC, 0, ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+
+  uint64_t appFaceId = 264;
+  ndn::Name ndnConPrefix("/ndn/edu/site/ndnrtc/user/username/streams/main_camera/low");
+  insertRoute(ndnConPrefix, appFaceId, ndn::nfd::ROUTE_ORIGIN_CLIENT, 0,
+              ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE);
+
+  // Clear updates generated from previous insertions
+  clearFibUpdates();
+
+  destroyFace(appFaceId);
+
+  // FibUpdater should not generate any inherited routes for the erased RibEntry
+  BOOST_CHECK_EQUAL(fibUpdater.m_inheritedRoutes.size(), 0);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // EraseFace
 
 BOOST_AUTO_TEST_SUITE_END() // FibUpdates

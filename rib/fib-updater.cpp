@@ -568,10 +568,10 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
     Rib::RouteSet routesToRemove;
     routesToRemove.insert(route);
 
-    // If capture is turned off for the route, need to add ancestors
-    // to self and children
+    // If capture is turned off for the route and another route is installed in the RibEntry,
+    // add ancestors to self
     Rib::RouteSet routesToAdd;
-    if (captureWasTurnedOff) {
+    if (captureWasTurnedOff && entry.getNRoutes() != 0) {
       // Look for an ancestors that were blocked previously
       routesToAdd = m_rib.getAncestorRoutes(entry);
 
@@ -595,10 +595,10 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
     modifyChildrensInheritedRoutes(entry.getChildren(), routesToAdd, routesToRemove);
   }
   else if (route.isCapture()) {
-    // If capture is turned off for the route, need to add ancestors
-    // to self and children
+    // If capture is turned off for the route and another route is installed in the RibEntry,
+    // add ancestors to self
     Rib::RouteSet routesToAdd;
-    if (captureWasTurnedOff) {
+    if (captureWasTurnedOff && entry.getNRoutes() != 0) {
       // Look for an ancestors that were blocked previously
       routesToAdd = m_rib.getAncestorRoutes(entry);
 
