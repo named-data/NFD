@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -176,7 +176,8 @@ AutoPrefixPropagator::afterInsertRibEntry(const Name& prefix)
 
   auto entryIt = m_propagatedEntries.find(propagateParameters.parameters.getName());
   if (entryIt != m_propagatedEntries.end()) {
-    BOOST_ASSERT(!entryIt->second.isNew());
+    // in addition to PROPAGATED and PROPAGATE_FAIL, the state may also be NEW,
+    // if its propagation was suspended because there was no connectivity to the Hub.
     NFD_LOG_INFO("prefix has already been propagated: "
                  << propagateParameters.parameters.getName());
     return;

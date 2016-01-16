@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -419,6 +419,23 @@ BOOST_AUTO_TEST_CASE(NoHubConnectivity)
   m_entries["/test/A"].succeed(nullptr);
   BOOST_REQUIRE(eraseEntryFromRib("/test/A/app"));
   BOOST_CHECK(m_requests.empty());
+}
+
+BOOST_AUTO_TEST_CASE(ProcessSuspendedEntries)
+{
+  BOOST_REQUIRE(addIdentity("/test/A"));
+
+  BOOST_REQUIRE(insertEntryToRib("/test/A/app1"));
+  BOOST_REQUIRE(insertEntryToRib("/test/A/app2"));
+  BOOST_CHECK(m_requests.empty()); // no propagation because no hub is connected
+  BOOST_CHECK_EQUAL(m_entries.size(), 1); // /test/A was suspended
+
+  BOOST_REQUIRE(eraseEntryFromRib("/test/A/app2"));
+  BOOST_CHECK_EQUAL(m_entries.size(), 1); // /test/A was kept for app1
+
+  // repeat the scenario that leads to BUG 3362.
+  // ensure there is no improper assertion.
+  BOOST_REQUIRE(insertEntryToRib("/test/A/app2"));
 }
 
 BOOST_AUTO_TEST_CASE(PropagatedEntryExists)
