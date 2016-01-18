@@ -25,12 +25,12 @@ ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 # Run unit tests
 # Core
 if [[ -n $XUNIT ]]; then
-  ./build/unit-tests-core -l all --log_format2=XML --log_sink2=build/xunit-core-report.xml
-  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l all --log_format2=XML --log_sink2=build/xunit-core-sudo-report.xml
+  ./build/unit-tests-core -l all -- --log_format2=XML --log_sink2=build/xunit-core-report.xml
+  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l all -- --log_format2=XML --log_sink2=build/xunit-core-sudo-report.xml
 
-  ./build/unit-tests-daemon -l all --log_format2=XML --log_sink2=build/xunit-daemon-report.xml
+  ./build/unit-tests-daemon -l all -- --log_format2=XML --log_sink2=build/xunit-daemon-report.xml
 
-  ./build/unit-tests-rib -l all --log_format2=XML --log_sink2=build/xunit-rib-report.xml
+  ./build/unit-tests-rib -l all -- --log_format2=XML --log_sink2=build/xunit-rib-report.xml
 else
   ./build/unit-tests-core -l test_suite
   sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
