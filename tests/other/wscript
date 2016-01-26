@@ -45,4 +45,5 @@ def build(bld):
            use='daemon-objects unit-tests-base unit-tests-%s-main' % module,
            includes='.',
            install_path=None,
+           defines='UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode,
          )
