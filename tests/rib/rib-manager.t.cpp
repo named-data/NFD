@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,11 +24,12 @@
  */
 
 #include "rib/rib-manager.hpp"
-#include <ndn-cxx/management/nfd-face-status.hpp>
-#include "rib/rib-status-publisher-common.hpp"
+#include "manager-common-fixture.hpp"
 
-#include "tests/test-common.hpp"
-#include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/management/nfd-rib-entry.hpp>
+#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/util/random.hpp>
 
 namespace nfd {
 namespace rib {
@@ -36,448 +37,587 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class RibManagerFixture : public UnitTestTimeFixture
+struct ConfigurationStatus
 {
-public:
-  RibManagerFixture()
-  {
-    face = ndn::util::makeDummyClientFace(g_io);
-
-    manager = make_shared<RibManager>(*face, keyChain);
-    manager->registerWithNfd();
-
-    advanceClocks(time::milliseconds(1));
-    face->sentInterests.clear();
-  }
-
-  ~RibManagerFixture()
-  {
-    manager.reset();
-    face.reset();
-  }
-
-  void
-  extractParameters(Interest& interest, Name::Component& verb,
-                    ControlParameters& extractedParameters)
-  {
-    const Name& name = interest.getName();
-    verb = name[COMMAND_PREFIX.size()];
-    const Name::Component& parameterComponent = name[COMMAND_PREFIX.size() + 1];
-
-    Block rawParameters = parameterComponent.blockFromValue();
-    extractedParameters.wireDecode(rawParameters);
-  }
-
-  void
-  receiveCommandInterest(const Name& name, ControlParameters& parameters,
-                         uint64_t incomingFaceId = DEFAULT_INCOMING_FACE_ID)
-  {
-    Name commandName = name;
-    commandName.append(parameters.wireEncode());
-
-    Interest commandInterest(commandName);
-    commandInterest.setTag(make_shared<lp::IncomingFaceIdTag>(incomingFaceId));
-
-    manager->m_managedRib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue,
-                                                        this, _1, parameters);
-
-    face->receive(commandInterest);
-    advanceClocks(time::milliseconds(1));
-  }
-
-  void
-  onSendBatchFromQueue(const RibUpdateBatch& batch, const ControlParameters parameters)
-  {
-    BOOST_REQUIRE(batch.begin() != batch.end());
-    RibUpdate update = *(batch.begin());
-
-    Rib::UpdateSuccessCallback managerCallback =
-      bind(&RibManager::onRibUpdateSuccess, manager, update);
-
-    Rib& rib = manager->m_managedRib;
-
-    // Simulate a successful response from NFD
-    FibUpdater& updater = manager->m_fibUpdater;
-    rib.onFibUpdateSuccess(batch, updater.m_inheritedRoutes, managerCallback);
-  }
-
-
-public:
-  shared_ptr<RibManager> manager;
-  shared_ptr<ndn::util::DummyClientFace> face;
-  ndn::KeyChain keyChain;
-
-  static const uint64_t DEFAULT_INCOMING_FACE_ID;
-
-  static const Name COMMAND_PREFIX;
-  static const name::Component ADD_NEXTHOP_VERB;
-  static const name::Component REMOVE_NEXTHOP_VERB;
-
-  static const Name REGISTER_COMMAND;
-  static const Name UNREGISTER_COMMAND;
+  bool isLocalhostConfigured;
+  bool isLocalhopConfigured;
 };
 
-const uint64_t RibManagerFixture::DEFAULT_INCOMING_FACE_ID = 25122;
-const Name RibManagerFixture::COMMAND_PREFIX("/localhost/nfd/rib");
-const name::Component RibManagerFixture::ADD_NEXTHOP_VERB("add-nexthop");
-const name::Component RibManagerFixture::REMOVE_NEXTHOP_VERB("remove-nexthop");
-const Name RibManagerFixture::REGISTER_COMMAND("/localhost/nfd/rib/register");
-const Name RibManagerFixture::UNREGISTER_COMMAND("/localhost/nfd/rib/unregister");
-
-class AuthorizedRibManager : public RibManagerFixture
+class RibManagerFixture : public ManagerCommonFixture
 {
 public:
-  AuthorizedRibManager()
+  explicit
+  RibManagerFixture(const ConfigurationStatus& status,
+                    bool shouldClearRib)
+    : m_commands(m_face->sentInterests)
+    , m_status(status)
+    , m_manager(m_dispatcher, *m_face, m_keyChain)
+    , m_rib(m_manager.m_rib)
   {
-    ConfigFile config;
-    manager->setConfigFile(config);
+    m_rib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue, this, _1);
 
-    const std::string CONFIG_STRING =
-    "rib\n"
-    "{\n"
-    "  localhost_security\n"
+    const std::string prefix = "rib\n{\n";
+    const std::string suffix = "}";
+    const std::string localhostSection = "  localhost_security\n"
     "  {\n"
     "    trust-anchor\n"
     "    {\n"
     "      type any\n"
     "    }\n"
-    "  }"
-    "}";
+    "  }\n";
+    const std::string localhopSection = "  localhop_security\n"
+    "  {\n"
+    "    trust-anchor\n"
+    "    {\n"
+    "      type any\n"
+    "    }\n"
+    "  }\n";
 
-    config.parse(CONFIG_STRING, true, "test-rib");
+    std::string ribSection = "";
+    if (m_status.isLocalhostConfigured) {
+      ribSection += localhostSection;
+    }
+    if (m_status.isLocalhopConfigured) {
+      ribSection += localhopSection;
+    }
+    const std::string CONFIG_STR = prefix + ribSection + suffix;
+
+    ConfigFile config;
+    m_manager.setConfigFile(config);
+    config.parse(CONFIG_STR, true, "test-rib");
+
+    registerWithNfd();
+
+    if (shouldClearRib) {
+      clearRib();
+    }
+  }
+
+private:
+  void
+  registerWithNfd()
+  {
+    m_manager.registerWithNfd();
+    advanceClocks(time::milliseconds(1));
+
+    auto replyFibAddCommand = [this] (const Interest& interest) {
+      nfd::ControlParameters params(interest.getName().get(-5).blockFromValue());
+      params.setFaceId(1).setCost(0);
+      nfd::ControlResponse resp;
+
+      resp.setCode(200).setBody(params.wireEncode());
+      shared_ptr<Data> data = make_shared<Data>(interest.getName());
+      data->setContent(resp.wireEncode());
+
+      m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
+
+      m_face->getIoService().post([this, data] { m_face->receive(*data); });
+    };
+
+    Name commandPrefix("/localhost/nfd/fib/add-nexthop");
+    for (auto&& command : m_commands) {
+      if (commandPrefix.isPrefixOf(command.getName())) {
+        replyFibAddCommand(command);
+        advanceClocks(time::milliseconds(1));
+      }
+    }
+
+    // clear commands and responses
+    m_responses.clear();
+    m_commands.clear();
+  }
+
+  void clearRib()
+  {
+    while (!m_rib.empty()) {
+      auto& name = m_rib.begin()->first;
+      auto& routes = m_rib.begin()->second->getRoutes();
+      while (!routes.empty()) {
+        m_rib.erase(name, *routes.begin());
+      }
+    }
+  }
+
+public:
+  ControlParameters
+  makeRegisterParameters(const Name& name, uint64_t id = 0,
+                         const time::milliseconds expiry = time::milliseconds::max())
+  {
+    return ControlParameters()
+      .setName(name)
+      .setFaceId(id)
+      .setOrigin(128)
+      .setCost(10)
+      .setFlags(0)
+      .setExpirationPeriod(expiry);
+  }
+
+  ControlParameters
+  makeUnregisterParameters(const Name& name, uint64_t id = 0)
+  {
+    return ControlParameters()
+      .setName(name)
+      .setFaceId(id)
+      .setOrigin(128);
+  }
+
+  void
+  onSendBatchFromQueue(const RibUpdateBatch& batch)
+  {
+    BOOST_ASSERT(batch.begin() != batch.end());
+    RibUpdate update = *(batch.begin());
+
+    // Simulate a successful response from NFD
+    FibUpdater& updater = m_manager.m_fibUpdater;
+    m_manager.m_rib.onFibUpdateSuccess(batch, updater.m_inheritedRoutes,
+                                              bind(&RibManager::onRibUpdateSuccess, &m_manager, update));
+  }
+
+public:
+  enum class CheckCommandResult {
+    OK,
+    OUT_OF_BOUNDARY,
+    WRONG_FORMAT,
+    WRONG_VERB,
+    WRONG_PARAMS_FORMAT,
+    WRONG_PARAMS_NAME,
+    WRONG_PARAMS_FACE
+   };
+
+  CheckCommandResult
+  checkCommand(size_t idx, const char* verbStr, ControlParameters expectedParams)
+  {
+    if (idx > m_commands.size()) {
+      return CheckCommandResult::OUT_OF_BOUNDARY;
+    }
+    const auto& name = m_commands[idx].getName();
+
+    if (!FIB_COMMAND_PREFIX.isPrefixOf(name) || FIB_COMMAND_PREFIX.size() >= name.size()) {
+      return CheckCommandResult::WRONG_FORMAT;
+    }
+    const auto& verb = name[FIB_COMMAND_PREFIX.size()];
+
+    Name::Component expectedVerb(verbStr);
+    if (verb != expectedVerb) {
+      return CheckCommandResult::WRONG_VERB;
+    }
+
+    ControlParameters parameters;
+    try {
+      Block rawParameters = name[FIB_COMMAND_PREFIX.size() + 1].blockFromValue();
+      parameters.wireDecode(rawParameters);
+    }
+    catch (...) {
+      return CheckCommandResult::WRONG_PARAMS_FORMAT;
+    }
+
+    if (parameters.getName() != expectedParams.getName()) {
+      return CheckCommandResult::WRONG_PARAMS_NAME;
+    }
+
+    if (parameters.getFaceId() != expectedParams.getFaceId()) {
+      return CheckCommandResult::WRONG_PARAMS_FACE;
+    }
+
+    return CheckCommandResult::OK;
+  }
+
+public:
+  std::vector<Interest>& m_commands;
+  ConfigurationStatus m_status;
+  static const Name FIB_COMMAND_PREFIX;
+
+protected:
+  RibManager m_manager;
+  Rib& m_rib;
+};
+
+const Name RibManagerFixture::FIB_COMMAND_PREFIX("/localhost/nfd/fib");
+
+std::ostream&
+operator<<(std::ostream& os, const RibManagerFixture::CheckCommandResult& result)
+{
+  switch (result) {
+  case RibManagerFixture::CheckCommandResult::OK:
+    os << "OK";
+    break;
+  case RibManagerFixture::CheckCommandResult::OUT_OF_BOUNDARY:
+    os << "OUT_OF_BOUNDARY";
+    break;
+  case RibManagerFixture::CheckCommandResult::WRONG_FORMAT:
+    os << "WRONG_FORMAT";
+    break;
+  case RibManagerFixture::CheckCommandResult::WRONG_VERB:
+    os << "WRONG_VERB";
+    break;
+  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FORMAT:
+    os << "WRONG_COST";
+    break;
+  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_NAME:
+    os << "WRONG_PARAMS_NAME";
+    break;
+  case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FACE:
+    os << "WRONG_PARAMS_FACE";
+    break;
+  default:
+    break;
+  };
+
+  return os;
+}
+
+BOOST_AUTO_TEST_SUITE(Rib)
+BOOST_AUTO_TEST_SUITE(TestRibManager)
+
+class AddTopPrefixFixture : public RibManagerFixture
+{
+public:
+  AddTopPrefixFixture()
+    : RibManagerFixture({true, true}, false)
+  {
   }
 };
 
-typedef RibManagerFixture UnauthorizedRibManager;
-
-BOOST_FIXTURE_TEST_SUITE(TestRibManager, RibManagerFixture)
-
-BOOST_FIXTURE_TEST_CASE(ShortName, AuthorizedRibManager)
+BOOST_FIXTURE_TEST_CASE(AddTopPrefix, AddTopPrefixFixture)
 {
-  Name commandName("/localhost/nfd/rib");
-  ndn::nfd::ControlParameters parameters;
+  BOOST_CHECK_EQUAL(m_rib.size(), 2);
 
-  receiveCommandInterest(commandName, parameters);
-  // TODO verify error response
+  std::vector<Name> ribEntryNames;
+  for (auto&& entry : m_rib) {
+    ribEntryNames.push_back(entry.first);
+  }
+  BOOST_CHECK_EQUAL(ribEntryNames[0], "/localhop/nfd");
+  BOOST_CHECK_EQUAL(ribEntryNames[1], "/localhost/nfd");
 }
 
-BOOST_FIXTURE_TEST_CASE(Basic, AuthorizedRibManager)
+class UnauthorizedRibManagerFixture : public RibManagerFixture
 {
-  ControlParameters parameters;
-  parameters
-    .setName("/hello")
-    .setFaceId(1)
-    .setCost(10)
-    .setFlags(0)
-    .setOrigin(128)
-    .setExpirationPeriod(ndn::time::milliseconds::max());
+public:
+  UnauthorizedRibManagerFixture()
+    : RibManagerFixture({false, false}, true)
+  {
+  }
+};
 
-  receiveCommandInterest(REGISTER_COMMAND, parameters);
+class LocalhostAuthorizedRibManagerFixture : public RibManagerFixture
+{
+public:
+  LocalhostAuthorizedRibManagerFixture()
+    : RibManagerFixture({true, false}, true)
+  {
+  }
+};
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+class LocalhopAuthorizedRibManagerFixture : public RibManagerFixture
+{
+public:
+  LocalhopAuthorizedRibManagerFixture()
+    : RibManagerFixture({false, true}, true)
+  {
+  }
+};
+
+class AuthorizedRibManagerFixture : public RibManagerFixture
+{
+public:
+  AuthorizedRibManagerFixture()
+    : RibManagerFixture({true, true}, true)
+  {
+  }
+};
+
+typedef boost::mpl::vector<
+  UnauthorizedRibManagerFixture,
+  LocalhostAuthorizedRibManagerFixture,
+  LocalhopAuthorizedRibManagerFixture,
+  AuthorizedRibManagerFixture
+> AllFixtures;
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
+{
+  auto parameters  = this->makeRegisterParameters("/test-authorization", 9527);
+  auto commandHost = this->makeControlCommandRequest("/localhost/nfd/rib/register", parameters);
+  auto commandHop  = this->makeControlCommandRequest("/localhop/nfd/rib/register", parameters);
+  auto successResp = this->makeResponse(200, "Success", parameters);
+  auto failureResp = ControlResponse(403, "authorization rejected");
+
+  BOOST_CHECK_EQUAL(this->m_responses.size(), 0);
+  this->receiveInterest(commandHost);
+  this->receiveInterest(commandHop);
+
+  auto nExpectedResponses = this->m_status.isLocalhopConfigured ? 2 : 1;
+  auto expectedLocalhostResponse = this->m_status.isLocalhostConfigured ? successResp : failureResp;
+  auto expectedLocalhopResponse = this->m_status.isLocalhopConfigured ? successResp : failureResp;
+
+  BOOST_REQUIRE_EQUAL(this->m_responses.size(), nExpectedResponses);
+  BOOST_CHECK_EQUAL(this->checkResponse(0, commandHost->getName(), expectedLocalhostResponse),
+                    ManagerCommonFixture::CheckResponseResult::OK);
+  if (nExpectedResponses == 2) {
+    BOOST_CHECK_EQUAL(this->checkResponse(1, commandHop->getName(), expectedLocalhopResponse),
+                      ManagerCommonFixture::CheckResponseResult::OK);
+  }
 }
 
-BOOST_FIXTURE_TEST_CASE(Register, AuthorizedRibManager)
+BOOST_FIXTURE_TEST_SUITE(RegisterUnregister, LocalhostAuthorizedRibManagerFixture)
+
+BOOST_AUTO_TEST_CASE(Basic)
 {
-  ControlParameters parameters;
-  parameters
-    .setName("/hello")
-    .setFaceId(1)
-    .setCost(10)
-    .setFlags(0)
-    .setOrigin(128)
-    .setExpirationPeriod(ndn::time::milliseconds::max());
+  auto paramsRegister    = makeRegisterParameters("/test-register-unregister", 9527);
+  auto paramsUnregister  = makeUnregisterParameters("/test-register-unregister", 9527);
 
-  receiveCommandInterest(REGISTER_COMMAND, parameters);
+  auto setInFaceId = [] (shared_ptr<Interest> commandInterest) {
+    commandInterest->setTag(make_shared<lp::IncomingFaceIdTag>(1234));
+  };
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+  auto commandRegister   = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister, setInFaceId);
+  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister, setInFaceId);
 
-  Interest& request = face->sentInterests[0];
+  receiveInterest(commandRegister);
+  receiveInterest(commandUnregister);
 
-  ControlParameters extractedParameters;
-  Name::Component verb;
-  extractParameters(request, verb, extractedParameters);
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister->getName(), makeResponse(200, "Success", paramsRegister)),
+                    CheckResponseResult::OK);
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister->getName(), makeResponse(200, "Success", paramsUnregister)),
+                    CheckResponseResult::OK);
 
-  BOOST_CHECK_EQUAL(verb, ADD_NEXTHOP_VERB);
-  BOOST_CHECK_EQUAL(extractedParameters.getName(), parameters.getName());
-  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), parameters.getFaceId());
-  BOOST_CHECK_EQUAL(extractedParameters.getCost(), parameters.getCost());
+  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
+  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
+  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
 }
 
-BOOST_FIXTURE_TEST_CASE(Unregister, AuthorizedRibManager)
+BOOST_AUTO_TEST_CASE(SelfOperation)
 {
-  ControlParameters addParameters;
-  addParameters
-    .setName("/hello")
-    .setFaceId(1)
-    .setCost(10)
-    .setFlags(0)
-    .setOrigin(128)
-    .setExpirationPeriod(ndn::time::milliseconds::max());
+  auto paramsRegister = makeRegisterParameters("/test-self-register-unregister");
+  auto paramsUnregister = makeUnregisterParameters("/test-self-register-unregister");
+  BOOST_CHECK_EQUAL(paramsRegister.getFaceId(), 0);
+  BOOST_CHECK_EQUAL(paramsUnregister.getFaceId(), 0);
 
-  receiveCommandInterest(REGISTER_COMMAND, addParameters);
-  face->sentInterests.clear();
+  const uint64_t inFaceId = 9527;
+  auto setInFaceId = [&inFaceId] (shared_ptr<Interest> commandInterest) {
+    commandInterest->setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
+  };
+  auto commandRegister   = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister, setInFaceId);
+  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister, setInFaceId);
 
-  ControlParameters removeParameters;
-  removeParameters
-    .setName("/hello")
-    .setFaceId(1)
-    .setOrigin(128);
+  receiveInterest(commandRegister);
+  receiveInterest(commandUnregister);
 
-  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters);
+  paramsRegister.setFaceId(inFaceId);
+  paramsUnregister.setFaceId(inFaceId);
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister->getName(), makeResponse(200, "Success", paramsRegister)),
+                    CheckResponseResult::OK);
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister->getName(), makeResponse(200, "Success", paramsUnregister)),
+                    CheckResponseResult::OK);
 
-  Interest& request = face->sentInterests[0];
-
-  ControlParameters extractedParameters;
-  Name::Component verb;
-  extractParameters(request, verb, extractedParameters);
-
-  BOOST_CHECK_EQUAL(verb, REMOVE_NEXTHOP_VERB);
-  BOOST_CHECK_EQUAL(extractedParameters.getName(), removeParameters.getName());
-  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), removeParameters.getFaceId());
+  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
+  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
+  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
 }
 
-BOOST_FIXTURE_TEST_CASE(SelfRegister, AuthorizedRibManager)
+BOOST_AUTO_TEST_CASE(Expiration)
 {
-  ControlParameters parameters;
-  parameters
-    .setName("/hello");
+  auto paramsRegister = makeRegisterParameters("/test-expiry", 9527, time::milliseconds(50));
+  auto paramsUnregister = makeRegisterParameters("/test-expiry", 9527);
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
-  receiveCommandInterest(REGISTER_COMMAND, parameters, 10129);
+  advanceClocks(time::milliseconds(55));
+  BOOST_REQUIRE_EQUAL(m_commands.size(), 2); // the registered route has expired
+  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
+  BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+  m_commands.clear();
+  paramsRegister.setExpirationPeriod(time::milliseconds(100));
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
-  Interest& request = face->sentInterests[0];
-
-  ControlParameters extractedParameters;
-  Name::Component verb;
-  extractParameters(request, verb, extractedParameters);
-
-  BOOST_CHECK_EQUAL(verb, ADD_NEXTHOP_VERB);
-  BOOST_CHECK_EQUAL(extractedParameters.getName(), parameters.getName());
-  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), 10129);
+  advanceClocks(time::milliseconds(55));
+  BOOST_REQUIRE_EQUAL(m_commands.size(), 1); // the registered route is still active
+  BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
 }
 
-BOOST_FIXTURE_TEST_CASE(SelfUnregister, AuthorizedRibManager)
+BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister
+
+// @todo Remove when ndn::nfd::RibEntry implements operator!=
+class RibEntry : public ndn::nfd::RibEntry
 {
-  ControlParameters addParameters;
-  addParameters
-    .setName("/hello")
-    .setFaceId(10129);
+public:
+  RibEntry() = default;
 
-  receiveCommandInterest(REGISTER_COMMAND, addParameters);
-  face->sentInterests.clear();
+  RibEntry(const ndn::nfd::RibEntry& entry)
+    : ndn::nfd::RibEntry(entry)
+  {
+  }
+};
 
-  ControlParameters removeParameters;
-  removeParameters
-    .setName("/hello");
+bool
+operator!=(const RibEntry& left, const RibEntry& right)
+{
+  if (left.getName() != right.getName()) {
+    return true;
+  }
 
-  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters, 10129);
+  auto leftRoutes = left.getRoutes();
+  auto rightRoutes = right.getRoutes();
+  if (leftRoutes.size() != rightRoutes.size()) {
+    return true;
+  }
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 1);
+  for (auto&& route : leftRoutes) {
+    auto hitEntry =
+      std::find_if(rightRoutes.begin(), rightRoutes.end(), [&] (const ndn::nfd::Route& record) {
+          return route.getFaceId() == record.getFaceId() &&
+            route.getCost() == record.getCost() &&
+            route.getOrigin() == record.getOrigin() &&
+            route.getFlags() == record.getFlags() &&
+            route.getExpirationPeriod() == record.getExpirationPeriod();
+        });
 
-  Interest& request = face->sentInterests[0];
+    if (hitEntry == rightRoutes.end()) {
+      return true;
+    }
+  }
 
-  ControlParameters extractedParameters;
-  Name::Component verb;
-  extractParameters(request, verb, extractedParameters);
-
-  BOOST_CHECK_EQUAL(verb, REMOVE_NEXTHOP_VERB);
-  BOOST_CHECK_EQUAL(extractedParameters.getName(), removeParameters.getName());
-  BOOST_CHECK_EQUAL(extractedParameters.getFaceId(), 10129);
+  return false;
 }
 
-BOOST_FIXTURE_TEST_CASE(UnauthorizedCommand, UnauthorizedRibManager)
+BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 {
-  ControlParameters parameters;
-  parameters
-    .setName("/hello")
-    .setFaceId(1)
-    .setCost(10)
-    .setFlags(0)
-    .setOrigin(128)
-    .setExpirationPeriod(ndn::time::milliseconds::max());
+  uint64_t faceId = 0;
+  auto generateRoute = [&faceId] () -> Route {
+    Route route;
+    route.faceId = ++faceId;
+    route.cost = ndn::random::generateWord64();
+    route.expires = time::steady_clock::TimePoint::max();
+    return route;
+  };
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
+  const size_t nEntries = 108;
+  std::set<Name> actualPrefixes;
+  for (size_t i = 0; i < nEntries; ++i) {
+    Name prefix = Name("/test-dataset").appendNumber(i);
+    actualPrefixes.insert(prefix);
+    m_rib.insert(prefix, generateRoute());
+    if (i & 0x1) {
+      m_rib.insert(prefix, generateRoute());
+      m_rib.insert(prefix, generateRoute());
+    }
+  }
 
-  receiveCommandInterest(REGISTER_COMMAND, parameters);
+  receiveInterest(makeInterest("/localhost/nfd/rib/list"));
 
-  BOOST_REQUIRE_EQUAL(face->sentInterests.size(), 0);
+  Block content;
+  BOOST_CHECK_NO_THROW(content = concatenateResponses());
+  BOOST_CHECK_NO_THROW(content.parse());
+  BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
+
+  std::vector<RibEntry> receivedRecords, expectedRecords;
+  for (size_t idx = 0; idx < nEntries; ++idx) {
+    BOOST_TEST_MESSAGE("processing element: " << idx);
+
+    RibEntry decodedEntry;
+    BOOST_REQUIRE_NO_THROW(decodedEntry.wireDecode(content.elements()[idx]));
+    receivedRecords.push_back(decodedEntry);
+
+    actualPrefixes.erase(decodedEntry.getName());
+
+    auto matchedEntryIt = m_rib.find(decodedEntry.getName());
+    BOOST_REQUIRE(matchedEntryIt != m_rib.end());
+
+    auto matchedEntry = matchedEntryIt->second;
+    BOOST_REQUIRE(matchedEntry != nullptr);
+
+    RibEntry record;
+    record.setName(matchedEntry->getName());
+    const auto& routes = matchedEntry->getRoutes();
+    for (auto&& route : routes) {
+      ndn::nfd::Route routeRecord;
+      routeRecord.setFaceId(route.faceId);
+      routeRecord.setOrigin(route.origin);
+      routeRecord.setFlags(route.flags);
+      routeRecord.setCost(route.cost);
+      record.addRoute(routeRecord);
+    }
+    expectedRecords.push_back(record);
+  }
+
+  BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
+                                expectedRecords.begin(), expectedRecords.end());
 }
 
-BOOST_FIXTURE_TEST_CASE(RibStatusRequest, AuthorizedRibManager)
+BOOST_FIXTURE_TEST_SUITE(FaceMonitor, LocalhostAuthorizedRibManagerFixture)
+
+BOOST_AUTO_TEST_CASE(FetchActiveFacesEvent)
 {
-  Name prefix("/");
+  BOOST_CHECK_EQUAL(m_commands.size(), 0);
 
-  Route route;
-  route.faceId = 1;
-  route.origin = 128;
-  route.cost = 32;
-  route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
-
-  manager->m_managedRib.insert(prefix, route);
-
-  face->receive(Interest("/localhost/nfd/rib/list"));
-  advanceClocks(time::milliseconds(1));
-
-  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
-  RibStatusPublisherFixture::decodeRibEntryBlock(face->sentDatas[0], prefix, route);
+  advanceClocks(time::seconds(301)); // RibManager::ACTIVE_FACE_FETCH_INTERVAL = 300s
+  BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
+  BOOST_CHECK_EQUAL(m_commands[0].getName(), "/localhost/nfd/faces/events");
+  BOOST_CHECK_EQUAL(m_commands[1].getName(), "/localhost/nfd/faces/list");
 }
 
-BOOST_FIXTURE_TEST_CASE(CancelExpirationEvent, AuthorizedRibManager)
+BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)
 {
-  // Register route
-  ControlParameters addParameters;
-  addParameters
-    .setName("/expire")
-    .setFaceId(1)
-    .setCost(10)
-    .setFlags(0)
-    .setOrigin(128)
-    .setExpirationPeriod(ndn::time::milliseconds(500));
+  auto parameters1 = makeRegisterParameters("/test-remove-invalid-faces-1");
+  auto parameters2 = makeRegisterParameters("/test-remove-invalid-faces-2");
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1.setFaceId(1)));
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1.setFaceId(2)));
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters2.setFaceId(2)));
+  BOOST_REQUIRE_EQUAL(m_rib.size(), 3);
 
-  receiveCommandInterest(REGISTER_COMMAND, addParameters);
-  face->sentInterests.clear();
-
-  // Unregister route
-  ControlParameters removeParameters;
-  removeParameters
-    .setName("/expire")
-    .setFaceId(1)
-    .setOrigin(128);
-
-  receiveCommandInterest(UNREGISTER_COMMAND, removeParameters);
-
-  // Reregister route
-  addParameters.setExpirationPeriod(ndn::time::milliseconds::max());
-  receiveCommandInterest(REGISTER_COMMAND, addParameters);
-
-  advanceClocks(time::milliseconds(100), time::seconds(1));
-
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
-}
-
-BOOST_FIXTURE_TEST_CASE(RemoveInvalidFaces, AuthorizedRibManager)
-{
-  // Register valid face
-  ControlParameters validParameters;
-  validParameters
-    .setName("/test")
-    .setFaceId(1);
-
-  receiveCommandInterest(REGISTER_COMMAND, validParameters);
-
-  // Register invalid face
-  ControlParameters invalidParameters;
-  invalidParameters
-    .setName("/test")
-    .setFaceId(2);
-
-  receiveCommandInterest(REGISTER_COMMAND, invalidParameters);
-
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 2);
-
-  // Receive status with only faceId: 1
   ndn::nfd::FaceStatus status;
   status.setFaceId(1);
 
-  shared_ptr<Data> data = nfd::tests::makeData("/localhost/nfd/faces/list");
+  auto data = makeData("/localhost/nfd/faces/list");
   data->setContent(status.wireEncode());
 
-  shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
+  auto buffer = make_shared<ndn::OBufferStream>();
   buffer->write(reinterpret_cast<const char*>(data->getContent().value()),
                 data->getContent().value_size());
 
-  manager->removeInvalidFaces(buffer);
+  m_manager.removeInvalidFaces(buffer);
+  advanceClocks(time::milliseconds(100));
+  BOOST_REQUIRE_EQUAL(m_rib.size(), 1);
 
-  // Run scheduler
-  advanceClocks(time::milliseconds(100), time::seconds(1));
-
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
-
-  Rib::const_iterator it = manager->m_managedRib.find("/test");
-  BOOST_REQUIRE(it != manager->m_managedRib.end());
-
-  shared_ptr<RibEntry> entry = it->second;
-  BOOST_CHECK_EQUAL(entry->hasFaceId(1), true);
-  BOOST_CHECK_EQUAL(entry->hasFaceId(2), false);
+  auto it1 = m_rib.find("/test-remove-invalid-faces-1");
+  auto it2 = m_rib.find("/test-remove-invalid-faces-2");
+  BOOST_CHECK(it2 == m_rib.end());
+  BOOST_REQUIRE(it1 != m_rib.end());
+  BOOST_CHECK(it1->second->hasFaceId(1));
+  BOOST_CHECK(!it1->second->hasFaceId(2));
 }
 
-BOOST_FIXTURE_TEST_CASE(LocalHopInherit, AuthorizedRibManager)
+BOOST_AUTO_TEST_CASE(OnNotification)
 {
-  using nfd::rib::RibManager;
+  auto parameters1 = makeRegisterParameters("/test-face-event-notification-1", 1);
+  auto parameters2 = makeRegisterParameters("/test-face-event-notification-2", 1);
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters1));
+  receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters2));
+  BOOST_REQUIRE_EQUAL(m_rib.size(), 2);
 
-  // Simulate NFD response
-  ControlParameters result;
-  result.setFaceId(261);
+  auto makeNotification = [] (ndn::nfd::FaceEventKind eventKind, uint64_t faceId) -> ndn::nfd::FaceEventNotification {
+    ndn::nfd::FaceEventNotification notification;
+    notification.setKind(eventKind).setFaceId(faceId);
+    return notification;
+  };
 
-  manager->onNrdCommandPrefixAddNextHopSuccess(RibManager::REMOTE_COMMAND_PREFIX, result);
+  m_manager.onNotification(makeNotification(ndn::nfd::FaceEventKind::FACE_EVENT_DESTROYED, 1));
+  advanceClocks(time::milliseconds(100));
+  BOOST_CHECK_EQUAL(m_rib.size(), 0);
 
-  // Register route that localhop prefix should inherit
-  ControlParameters parameters;
-  parameters
-    .setName("/localhop/nfd")
-    .setFaceId(262)
-    .setCost(25)
-    .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
-
-  Name commandName("/localhost/nfd/rib/register");
-
-  receiveCommandInterest(commandName, parameters);
-
-  // REMOTE_COMMAND_PREFIX should have its original route and the inherited route
-  auto it = manager->m_managedRib.find(RibManager::REMOTE_COMMAND_PREFIX);
-
-  BOOST_REQUIRE(it != manager->m_managedRib.end());
-  const RibEntry::RouteList& inheritedRoutes = (*(it->second)).getInheritedRoutes();
-
-  BOOST_CHECK_EQUAL(inheritedRoutes.size(), 1);
-  auto routeIt = inheritedRoutes.begin();
-
-  BOOST_CHECK_EQUAL(routeIt->faceId, 262);
-  BOOST_CHECK_EQUAL(routeIt->cost, 25);
+  m_manager.onNotification(makeNotification(ndn::nfd::FaceEventKind::FACE_EVENT_CREATED, 2));
+  advanceClocks(time::milliseconds(100));
+  BOOST_CHECK_EQUAL(m_rib.size(), 0);
 }
 
-BOOST_FIXTURE_TEST_CASE(RouteExpiration, AuthorizedRibManager)
-{
-  // Register route
-  ControlParameters parameters;
-  parameters.setName("/expire")
-            .setExpirationPeriod(ndn::time::milliseconds(500));
+BOOST_AUTO_TEST_SUITE_END() // FaceMonitor
 
-  receiveCommandInterest(REGISTER_COMMAND, parameters);
-  face->sentInterests.clear();
-
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
-
-  // Route should expire
-  advanceClocks(time::milliseconds(100), time::seconds(1));
-
-  BOOST_CHECK_EQUAL(manager->m_managedRib.size(), 0);
-}
-
-BOOST_FIXTURE_TEST_CASE(FaceDestroyEvent, AuthorizedRibManager)
-{
-  uint64_t faceToDestroy = 128;
-
-  // Register valid face
-  ControlParameters parameters;
-  parameters.setName("/test")
-            .setFaceId(faceToDestroy);
-
-  receiveCommandInterest(REGISTER_COMMAND, parameters);
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 1);
-
-  // Don't respond with a success message from the FIB
-  manager->m_managedRib.m_onSendBatchFromQueue = nullptr;
-
-  manager->onFaceDestroyedEvent(faceToDestroy);
-  BOOST_REQUIRE_EQUAL(manager->m_managedRib.size(), 0);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestRibManager
+BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace tests
 } // namespace rib

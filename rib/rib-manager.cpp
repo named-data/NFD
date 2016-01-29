@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,69 +28,41 @@
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
 #include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/management/nfd-rib-entry.hpp>
 
 namespace nfd {
 namespace rib {
 
 NFD_LOG_INIT("RibManager");
 
-const Name RibManager::COMMAND_PREFIX = "/localhost/nfd/rib";
-const Name RibManager::REMOTE_COMMAND_PREFIX = "/localhop/nfd/rib";
+const Name RibManager::LOCAL_HOST_TOP_PREFIX = "/localhost/nfd";
+const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";
 const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
-
-const size_t RibManager::COMMAND_UNSIGNED_NCOMPS =
-  RibManager::COMMAND_PREFIX.size() +
-  1 + // verb
-  1;  // verb options
-
-const size_t RibManager::COMMAND_SIGNED_NCOMPS =
-  RibManager::COMMAND_UNSIGNED_NCOMPS +
-  4; // (timestamp, nonce, signed info tlv, signature tlv)
-
-const RibManager::SignedVerbAndProcessor RibManager::SIGNED_COMMAND_VERBS[] =
-  {
-    SignedVerbAndProcessor(
-                           Name::Component("register"),
-                           &RibManager::registerEntry
-                           ),
-
-    SignedVerbAndProcessor(
-                           Name::Component("unregister"),
-                           &RibManager::unregisterEntry
-                           ),
-  };
-
-const RibManager::UnsignedVerbAndProcessor RibManager::UNSIGNED_COMMAND_VERBS[] =
-  {
-    UnsignedVerbAndProcessor(
-                             Name::Component("list"),
-                             &RibManager::listEntries
-                             ),
-  };
-
-const Name RibManager::LIST_COMMAND_PREFIX("/localhost/nfd/rib/list");
-const size_t RibManager::LIST_COMMAND_NCOMPS = LIST_COMMAND_PREFIX.size();
-
 const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
-RibManager::RibManager(ndn::Face& face, ndn::KeyChain& keyChain)
-  : m_face(face)
+RibManager::RibManager(Dispatcher& dispatcher,
+                       ndn::Face& face,
+                       ndn::KeyChain& keyChain)
+  : ManagerBase(dispatcher, "rib")
+  , m_face(face)
   , m_keyChain(keyChain)
   , m_nfdController(m_face, m_keyChain)
+  , m_faceMonitor(m_face)
   , m_localhostValidator(m_face)
   , m_localhopValidator(m_face)
-  , m_faceMonitor(m_face)
   , m_isLocalhopEnabled(false)
-  , m_prefixPropagator(m_nfdController, m_keyChain, m_managedRib)
-  , m_ribStatusPublisher(m_managedRib, face, LIST_COMMAND_PREFIX, m_keyChain)
-  , m_fibUpdater(m_managedRib, m_nfdController)
-  , m_signedVerbDispatch(SIGNED_COMMAND_VERBS,
-                         SIGNED_COMMAND_VERBS +
-                         (sizeof(SIGNED_COMMAND_VERBS) / sizeof(SignedVerbAndProcessor)))
-  , m_unsignedVerbDispatch(UNSIGNED_COMMAND_VERBS,
-                           UNSIGNED_COMMAND_VERBS +
-                           (sizeof(UNSIGNED_COMMAND_VERBS) / sizeof(UnsignedVerbAndProcessor)))
+  , m_prefixPropagator(m_nfdController, m_keyChain, m_rib)
+  , m_fibUpdater(m_rib, m_nfdController)
+  , m_addTopPrefix([&dispatcher] (const Name& topPrefix) {
+      dispatcher.addTopPrefix(topPrefix, false);
+    })
 {
+  registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
+    bind(&RibManager::registerEntry, this, _2, _3, _4, _5));
+  registerCommandHandler<ndn::nfd::RibUnregisterCommand>("unregister",
+    bind(&RibManager::unregisterEntry, this, _2, _3, _4, _5));
+
+  registerStatusDatasetHandler("list", bind(&RibManager::listEntries, this, _1, _2, _3));
 }
 
 RibManager::~RibManager()
@@ -99,31 +71,12 @@ RibManager::~RibManager()
 }
 
 void
-RibManager::startListening(const Name& commandPrefix, const ndn::OnInterest& onRequest)
-{
-  NFD_LOG_INFO("Listening on: " << commandPrefix);
-
-  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters()
-      .setName(commandPrefix)
-      .setFaceId(0),
-    bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(commandPrefix), _1),
-    bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(commandPrefix), _2));
-
-  m_face.setInterestFilter(commandPrefix, onRequest);
-}
-
-void
 RibManager::registerWithNfd()
 {
-  //check whether the components of localhop and localhost prefixes are same
-  BOOST_ASSERT(COMMAND_PREFIX.size() == REMOTE_COMMAND_PREFIX.size());
-
-  this->startListening(COMMAND_PREFIX, bind(&RibManager::onLocalhostRequest, this, _2));
+  registerTopPrefix(LOCAL_HOST_TOP_PREFIX);
 
   if (m_isLocalhopEnabled) {
-    this->startListening(REMOTE_COMMAND_PREFIX,
-                         bind(&RibManager::onLocalhopRequest, this, _2));
+    registerTopPrefix(LOCAL_HOP_TOP_PREFIX);
   }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
@@ -134,10 +87,36 @@ RibManager::registerWithNfd()
 }
 
 void
+RibManager::enableLocalControlHeader()
+{
+  m_nfdController.start<ndn::nfd::FaceEnableLocalControlCommand>(
+    ControlParameters()
+      .setLocalControlFeature(ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
+    bind(&RibManager::onControlHeaderSuccess, this),
+    bind(&RibManager::onControlHeaderError, this, _1, _2));
+}
+
+void
 RibManager::setConfigFile(ConfigFile& configFile)
 {
   configFile.addSectionHandler("rib",
                                bind(&RibManager::onConfig, this, _1, _2, _3));
+}
+
+void
+RibManager::onRibUpdateSuccess(const RibUpdate& update)
+{
+  NFD_LOG_DEBUG("RIB update succeeded for " << update);
+}
+
+void
+RibManager::onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error)
+{
+  NFD_LOG_DEBUG("RIB update failed for " << update << " (code: " << code
+                                                   << ", error: " << error << ")");
+
+  // Since the FIB rejected the update, clean up invalid routes
+  scheduleActiveFaceFetch(time::seconds(1));
 }
 
 void
@@ -177,120 +156,29 @@ RibManager::onConfig(const ConfigSection& configSection,
 }
 
 void
-RibManager::sendResponse(const Name& name,
-                         const ControlResponse& response)
+RibManager::registerTopPrefix(const Name& topPrefix)
 {
-  const Block& encodedControl = response.wireEncode();
+  // register entry to the FIB
+  m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
+     ControlParameters()
+       .setName(topPrefix)
+       .setFaceId(0),
+     bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
+     bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(topPrefix), _2));
 
-  shared_ptr<Data> responseData = make_shared<Data>(name);
-  responseData->setContent(encodedControl);
-
-  m_keyChain.sign(*responseData);
-  m_face.put(*responseData);
+  // add top prefix to the dispatcher
+  m_addTopPrefix(topPrefix);
 }
 
 void
-RibManager::sendResponse(const Name& name,
-                         uint32_t code,
-                         const std::string& text)
+RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
+                          ControlParameters parameters,
+                          const ndn::mgmt::CommandContinuation& done)
 {
-  ControlResponse response(code, text);
-  sendResponse(name, response);
-}
-
-void
-RibManager::onLocalhostRequest(const Interest& request)
-{
-  const Name& command = request.getName();
-  const Name::Component& verb = command.get(COMMAND_PREFIX.size());
-
-  UnsignedVerbDispatchTable::const_iterator unsignedVerbProcessor = m_unsignedVerbDispatch.find(verb);
-
-  if (unsignedVerbProcessor != m_unsignedVerbDispatch.end()) {
-    NFD_LOG_DEBUG("command result: processing unsigned verb: " << verb);
-    (unsignedVerbProcessor->second)(this, request);
-  }
-  else {
-    m_localhostValidator.validate(request,
-                                  bind(&RibManager::onCommandValidated, this, _1),
-                                  bind(&RibManager::onCommandValidationFailed, this, _1, _2));
-  }
-}
-
-void
-RibManager::onLocalhopRequest(const Interest& request)
-{
-  m_localhopValidator.validate(request,
-                               bind(&RibManager::onCommandValidated, this, _1),
-                               bind(&RibManager::onCommandValidationFailed, this, _1, _2));
-}
-
-void
-RibManager::onCommandValidated(const shared_ptr<const Interest>& request)
-{
-  // REMOTE_COMMAND_PREFIX number of componenets are same as
-  // NRD_COMMAND_PREFIX's so no extra checks are required.
-
-  const Name& command = request->getName();
-  const Name::Component& verb = command[COMMAND_PREFIX.size()];
-  const Name::Component& parameterComponent = command[COMMAND_PREFIX.size() + 1];
-
-  SignedVerbDispatchTable::const_iterator verbProcessor = m_signedVerbDispatch.find(verb);
-
-  if (verbProcessor != m_signedVerbDispatch.end()) {
-
-    ControlParameters parameters;
-    if (!extractParameters(parameterComponent, parameters)) {
-      NFD_LOG_DEBUG("command result: malformed verb: " << verb);
-
-      if (static_cast<bool>(request)) {
-        sendResponse(command, 400, "Malformed command");
-      }
-
-      return;
-    }
-
-    NFD_LOG_DEBUG("command result: processing verb: " << verb);
-    (verbProcessor->second)(this, request, parameters);
-  }
-  else {
-    NFD_LOG_DEBUG("Unsupported command: " << verb);
-
-    if (static_cast<bool>(request)) {
-      sendResponse(request->getName(), 501, "Unsupported command");
-    }
-  }
-}
-
-void
-RibManager::registerEntry(const shared_ptr<const Interest>& request,
-                          ControlParameters& parameters)
-{
-  ndn::nfd::RibRegisterCommand command;
-
-  if (!validateParameters(command, parameters)) {
-    NFD_LOG_DEBUG("register result: FAIL reason: malformed");
-
-    if (static_cast<bool>(request)) {
-      sendResponse(request->getName(), 400, "Malformed command");
-    }
-
-    return;
-  }
-
-  bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
-  if (isSelfRegistration) {
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request->getTag<lp::IncomingFaceIdTag>();
-    if (incomingFaceIdTag == nullptr) {
-      sendResponse(request->getName(), 503,
-                   "requested self-registration, but IncomingFaceId is unavailable");
-      return;
-    }
-    parameters.setFaceId(*incomingFaceIdTag);
-  }
+  setFaceForSelfRegistration(interest, parameters);
 
   // Respond since command is valid and authorized
-  sendSuccessResponse(request, parameters);
+  done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
 
   Route route;
   route.faceId = parameters.getFaceId();
@@ -305,7 +193,7 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 
     // Schedule a new event, the old one will be cancelled during rib insertion.
     scheduler::EventId eventId = scheduler::schedule(parameters.getExpirationPeriod(),
-      bind(&Rib::onRouteExpiration, &m_managedRib, parameters.getName(), route));
+      bind(&Rib::onRouteExpiration, &m_rib, parameters.getName(), route));
 
     NFD_LOG_TRACE("Scheduled unregistration at: " << route.expires <<
                   " with EventId: " << eventId);
@@ -326,7 +214,7 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
         .setName(parameters.getName())
         .setRoute(route);
 
-  m_managedRib.beginApplyUpdate(update,
+  m_rib.beginApplyUpdate(update,
                                 bind(&RibManager::onRibUpdateSuccess, this, update),
                                 bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
 
@@ -334,47 +222,14 @@ RibManager::registerEntry(const shared_ptr<const Interest>& request,
 }
 
 void
-RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
-                            ControlParameters& params)
+RibManager::unregisterEntry(const Name& topPrefix, const Interest& interest,
+                            ControlParameters parameters,
+                            const ndn::mgmt::CommandContinuation& done)
 {
-  ndn::nfd::RibUnregisterCommand command;
-
-  // Passing all parameters gives error in validation,
-  // so passing only the required arguments.
-  ControlParameters parameters;
-  parameters.setName(params.getName());
-
-  if (params.hasFaceId()) {
-    parameters.setFaceId(params.getFaceId());
-  }
-
-  if (params.hasOrigin()) {
-    parameters.setOrigin(params.getOrigin());
-  }
-
-  if (!validateParameters(command, parameters)) {
-    NFD_LOG_DEBUG("unregister result: FAIL reason: malformed");
-
-    if (static_cast<bool>(request)) {
-      sendResponse(request->getName(), 400, "Malformed command");
-    }
-
-    return;
-  }
-
-  bool isSelfRegistration = (!parameters.hasFaceId() || parameters.getFaceId() == 0);
-  if (isSelfRegistration) {
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request->getTag<lp::IncomingFaceIdTag>();
-    if (incomingFaceIdTag == nullptr) {
-      sendResponse(request->getName(), 503,
-                   "requested self-registration, but IncomingFaceId is unavailable");
-      return;
-    }
-    parameters.setFaceId(*incomingFaceIdTag);
-  }
+  setFaceForSelfRegistration(interest, parameters);
 
   // Respond since command is valid and authorized
-  sendSuccessResponse(request, parameters);
+  done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
 
   Route route;
   route.faceId = parameters.getFaceId();
@@ -388,272 +243,72 @@ RibManager::unregisterEntry(const shared_ptr<const Interest>& request,
         .setName(parameters.getName())
         .setRoute(route);
 
-  m_managedRib.beginApplyUpdate(update,
+  m_rib.beginApplyUpdate(update,
                                 bind(&RibManager::onRibUpdateSuccess, this, update),
                                 bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
 }
 
 void
-RibManager::onCommandValidationFailed(const shared_ptr<const Interest>& request,
-                                      const std::string& failureInfo)
+RibManager::listEntries(const Name& topPrefix, const Interest& interest,
+                        ndn::mgmt::StatusDatasetContext& context)
 {
-  NFD_LOG_DEBUG("RibRequestValidationFailed: " << failureInfo);
+  for (auto&& ribTableEntry : m_rib) {
+    const auto& ribEntry = *ribTableEntry.second;
+    ndn::nfd::RibEntry record;
 
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), 403, failureInfo);
-  }
-}
+    for (auto&& route : ribEntry) {
+      ndn::nfd::Route routeElement;
+      routeElement.setFaceId(route.faceId)
+              .setOrigin(route.origin)
+              .setCost(route.cost)
+              .setFlags(route.flags);
 
+      if (route.expires < time::steady_clock::TimePoint::max()) {
+        routeElement.setExpirationPeriod(time::duration_cast<time::milliseconds>(
+          route.expires - time::steady_clock::now()));
+      }
 
-bool
-RibManager::extractParameters(const Name::Component& parameterComponent,
-                              ControlParameters& extractedParameters)
-{
-  try {
-    Block rawParameters = parameterComponent.blockFromValue();
-    extractedParameters.wireDecode(rawParameters);
-  }
-  catch (const tlv::Error&) {
-    return false;
-  }
+      record.addRoute(routeElement);
+    }
 
-  NFD_LOG_DEBUG("Parameters parsed OK");
-  return true;
-}
-
-bool
-RibManager::validateParameters(const ControlCommand& command,
-                               ControlParameters& parameters)
-{
-  try {
-    command.validateRequest(parameters);
-  }
-  catch (const ControlCommand::ArgumentError&) {
-    return false;
+    record.setName(ribEntry.getName());
+    context.append(record.wireEncode());
   }
 
-  command.applyDefaultsToRequest(parameters);
-
-  return true;
+  context.end();
 }
 
 void
-RibManager::onCommandError(uint32_t code, const std::string& error,
-                           const shared_ptr<const Interest>& request,
-                           const Route& route)
+RibManager::setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters)
 {
-  NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
-
-  ControlResponse response;
-
-  if (code == 404) {
-    response.setCode(code);
-    response.setText(error);
-  }
-  else {
-    response.setCode(533);
-    std::ostringstream os;
-    os << "Failure to update NFD " << "(NFD Error: " << code << " " << error << ")";
-    response.setText(os.str());
-  }
-
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), response);
+  bool isSelfRegistration = (parameters.getFaceId() == 0);
+  if (isSelfRegistration) {
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
+    // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
+    // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
+    // and is initialized synchronously with IncomingFaceId field enabled.
+    BOOST_ASSERT(incomingFaceIdTag != nullptr);
+    parameters.setFaceId(*incomingFaceIdTag);
   }
 }
 
 void
-RibManager::onRegSuccess(const shared_ptr<const Interest>& request,
-                         const ControlParameters& parameters,
-                         const Route& route)
+RibManager::authorize(const Name& prefix, const Interest& interest,
+                      const ndn::mgmt::ControlParameters* params,
+                      ndn::mgmt::AcceptContinuation accept,
+                      ndn::mgmt::RejectContinuation reject)
 {
-  ControlResponse response;
+  BOOST_ASSERT(params != nullptr);
+  BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
+  BOOST_ASSERT(prefix == LOCAL_HOST_TOP_PREFIX || prefix == LOCAL_HOP_TOP_PREFIX);
 
-  response.setCode(200);
-  response.setText("Success");
-  response.setBody(parameters.wireEncode());
+  auto& validator = [this, &prefix] () -> ndn::ValidatorConfig & {
+    return prefix == LOCAL_HOST_TOP_PREFIX ? m_localhostValidator : m_localhopValidator;
+  }();
 
-  NFD_LOG_TRACE("onRegSuccess: registered " << route);
-
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), response);
-  }
-}
-
-
-void
-RibManager::onUnRegSuccess(const shared_ptr<const Interest>& request,
-                           const ControlParameters& parameters,
-                           const Route& route)
-{
-  ControlResponse response;
-
-  response.setCode(200);
-  response.setText("Success");
-  response.setBody(parameters.wireEncode());
-
-  NFD_LOG_TRACE("onUnRegSuccess: unregistered " << route);
-
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), response);
-  }
-}
-
-void
-RibManager::sendSuccessResponse(const shared_ptr<const Interest>& request,
-                                const ControlParameters& parameters)
-{
-  if (!static_cast<bool>(request)) {
-    return;
-  }
-
-  ControlResponse response;
-
-  response.setCode(200);
-  response.setText("Success");
-  response.setBody(parameters.wireEncode());
-
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), response);
-  }
-}
-
-void
-RibManager::sendErrorResponse(uint32_t code, const std::string& error,
-                              const shared_ptr<const Interest>& request)
-{
-  NFD_LOG_ERROR("NFD returned an error: " << error << " (code: " << code << ")");
-
-  if (!static_cast<bool>(request)) {
-    return;
-  }
-
-  ControlResponse response;
-
-  if (code == 404) {
-    response.setCode(code);
-    response.setText(error);
-  }
-  else {
-    response.setCode(533);
-    std::ostringstream os;
-    os << "Failure to update NFD " << "(NFD Error: " << code << " " << error << ")";
-    response.setText(os.str());
-  }
-
-  if (static_cast<bool>(request)) {
-    sendResponse(request->getName(), response);
-  }
-}
-
-void
-RibManager::onRibUpdateSuccess(const RibUpdate& update)
-{
-  NFD_LOG_DEBUG("RIB update succeeded for " << update);
-}
-
-void
-RibManager::onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error)
-{
-  NFD_LOG_DEBUG("RIB update failed for " << update << " (code: " << code
-                                                   << ", error: " << error << ")");
-
-  // Since the FIB rejected the update, clean up invalid routes
-  scheduleActiveFaceFetch(time::seconds(1));
-}
-
-void
-RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
-                                                const ndn::nfd::ControlParameters& result)
-{
-  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
-
-  // Routes must be inserted into the RIB so route flags can be applied
-  Route route;
-  route.faceId = result.getFaceId();
-  route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
-  route.expires = time::steady_clock::TimePoint::max();
-  route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
-
-  m_managedRib.insert(prefix, route);
-
-  m_registeredFaces.insert(route.faceId);
-}
-
-void
-RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
-{
-  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() + "): " + msg));
-}
-
-void
-RibManager::onControlHeaderSuccess()
-{
-  NFD_LOG_DEBUG("Local control header enabled");
-}
-
-void
-RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
-{
-  std::ostringstream os;
-  os << "Couldn't enable local control header "
-     << "(code: " << code << ", info: " << reason << ")";
-  BOOST_THROW_EXCEPTION(Error(os.str()));
-}
-
-void
-RibManager::enableLocalControlHeader()
-{
-  m_nfdController.start<ndn::nfd::FaceEnableLocalControlCommand>(
-    ControlParameters()
-      .setLocalControlFeature(ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
-    bind(&RibManager::onControlHeaderSuccess, this),
-    bind(&RibManager::onControlHeaderError, this, _1, _2));
-}
-
-void
-RibManager::onNotification(const FaceEventNotification& notification)
-{
-  NFD_LOG_TRACE("onNotification: " << notification);
-
-  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
-    NFD_LOG_DEBUG("Received notification for destroyed faceId: " << notification.getFaceId());
-
-    scheduler::schedule(time::seconds(0),
-                        bind(&RibManager::onFaceDestroyedEvent, this, notification.getFaceId()));
-  }
-}
-
-void
-RibManager::onFaceDestroyedEvent(uint64_t faceId)
-{
-  m_managedRib.beginRemoveFace(faceId);
-  m_registeredFaces.erase(faceId);
-}
-
-void
-RibManager::listEntries(const Interest& request)
-{
-  const Name& command = request.getName();
-  const size_t commandNComps = command.size();
-
-  if (commandNComps < LIST_COMMAND_NCOMPS || !LIST_COMMAND_PREFIX.isPrefixOf(command)) {
-    NFD_LOG_DEBUG("command result: malformed");
-
-    sendResponse(command, 400, "Malformed command");
-    return;
-  }
-
-  m_ribStatusPublisher.publish();
-}
-
-void
-RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
-{
-  scheduler::cancel(m_activeFaceFetchEvent);
-
-  m_activeFaceFetchEvent = scheduler::schedule(timeToWait,
-                                               bind(&RibManager::fetchActiveFaces, this));
+  validator.validate(interest,
+                     bind([&interest, this, accept] { extractRequester(interest, accept); }),
+                     bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
 }
 
 void
@@ -693,6 +348,29 @@ RibManager::fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffe
 }
 
 void
+RibManager::onFetchFaceStatusTimeout()
+{
+  std::cerr << "Face Status Dataset request timed out" << std::endl;
+  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
+}
+
+void
+RibManager::onFaceDestroyedEvent(uint64_t faceId)
+{
+  m_rib.beginRemoveFace(faceId);
+  m_registeredFaces.erase(faceId);
+}
+
+void
+RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
+{
+  scheduler::cancel(m_activeFaceFetchEvent);
+
+  m_activeFaceFetchEvent = scheduler::schedule(timeToWait,
+                                               bind(&RibManager::fetchActiveFaces, this));
+}
+
+void
 RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
 {
   NFD_LOG_DEBUG("Checking for invalid face registrations");
@@ -719,7 +397,7 @@ RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
 
   // Look for face IDs that were registered but not active to find missed
   // face destroyed events
-  for (uint64_t faceId : m_registeredFaces) {
+  for (auto&& faceId : m_registeredFaces) {
     if (activeFaces.find(faceId) == activeFaces.end()) {
       NFD_LOG_DEBUG("Removing invalid face ID: " << faceId);
 
@@ -733,10 +411,55 @@ RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
 }
 
 void
-RibManager::onFetchFaceStatusTimeout()
+RibManager::onNotification(const FaceEventNotification& notification)
 {
-  std::cerr << "Face Status Dataset request timed out" << std::endl;
-  scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
+  NFD_LOG_TRACE("onNotification: " << notification);
+
+  if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
+    NFD_LOG_DEBUG("Received notification for destroyed faceId: " << notification.getFaceId());
+
+    scheduler::schedule(time::seconds(0),
+                        bind(&RibManager::onFaceDestroyedEvent, this, notification.getFaceId()));
+  }
+}
+
+void
+RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
+                                                const ndn::nfd::ControlParameters& result)
+{
+  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
+
+  // Routes must be inserted into the RIB so route flags can be applied
+  Route route;
+  route.faceId = result.getFaceId();
+  route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
+  route.expires = time::steady_clock::TimePoint::max();
+  route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+
+  m_rib.insert(prefix, route);
+
+  m_registeredFaces.insert(route.faceId);
+}
+
+void
+RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
+{
+  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() + "): " + msg));
+}
+
+void
+RibManager::onControlHeaderSuccess()
+{
+  NFD_LOG_DEBUG("Local control header enabled");
+}
+
+void
+RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
+{
+  std::ostringstream os;
+  os << "Couldn't enable local control header "
+     << "(code: " << code << ", info: " << reason << ")";
+  BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
 } // namespace rib

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,10 +63,11 @@ void
 Nrd::initialize()
 {
   m_face.reset(new ndn::Face(getLocalNfdTransport(), getGlobalIoService(), m_keyChain));
+  m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_face, m_keyChain));
 
   initializeLogging();
 
-  m_ribManager.reset(new RibManager(*m_face, m_keyChain));
+  m_ribManager.reset(new RibManager(*m_dispatcher, *m_face, m_keyChain));
 
   ConfigFile config([] (const std::string& filename, const std::string& sectionName,
                         const ConfigSection& section, bool isDryRun) {

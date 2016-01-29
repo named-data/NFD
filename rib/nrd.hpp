@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,7 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/transport/transport.hpp>
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 namespace rib {
@@ -98,6 +99,7 @@ private:
 
   ndn::KeyChain& m_keyChain;
   unique_ptr<ndn::Face> m_face;
+  unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
   unique_ptr<RibManager> m_ribManager;
 };
 
