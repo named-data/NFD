@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,7 @@
  */
 #include "mgmt/fib-manager.hpp"
 
-#include "manager-common-fixture.hpp"
+#include "nfd-manager-common-fixture.hpp"
 #include "table/fib-nexthop.hpp"
 #include "../face/dummy-face.hpp"
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
@@ -32,7 +32,7 @@
 namespace nfd {
 namespace tests {
 
-class FibManagerFixture : public ManagerCommonFixture
+class FibManagerFixture : public NfdManagerCommonFixture
 {
 public:
   FibManagerFixture()
@@ -40,7 +40,7 @@ public:
     , m_faceTable(m_forwarder.getFaceTable())
     , m_manager(m_fib, bind(&Forwarder::getFace, &m_forwarder, _1), m_dispatcher, m_validator)
   {
-    setTopPrefixAndPrivilege("/localhost/nfd", "fib");
+    setPrivilege("fib");
   }
 
 public: // for test

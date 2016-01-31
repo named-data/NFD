@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,21 +26,21 @@
 #include "mgmt/forwarder-status-manager.hpp"
 #include "version.hpp"
 
-#include "manager-common-fixture.hpp"
+#include "nfd-manager-common-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 
-class ForwarderStatusManagerFixture : public ManagerCommonFixture
+class ForwarderStatusManagerFixture : public NfdManagerCommonFixture
 {
 protected:
   ForwarderStatusManagerFixture()
     : manager(m_forwarder, m_dispatcher)
     , startTime(time::system_clock::now())
   {
-    this->setTopPrefixAndPrivilege("/localhost/nfd", "status");
+    setPrivilege("status");
   }
 
 protected:

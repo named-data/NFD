@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,7 @@
  */
 
 #include "mgmt/face-manager.hpp"
-#include "manager-common-fixture.hpp"
+#include "nfd-manager-common-fixture.hpp"
 #include "../face/dummy-face.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
@@ -39,15 +39,14 @@ namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 
-
-class FaceManagerFixture : public ManagerCommonFixture
+class FaceManagerFixture : public NfdManagerCommonFixture
 {
 public:
   FaceManagerFixture()
     : m_faceTable(m_forwarder.getFaceTable())
     , m_manager(m_faceTable, m_dispatcher, m_validator)
   {
-    setTopPrefixAndPrivilege("/localhost/nfd", "faces");
+    setPrivilege("faces");
   }
 
 public:

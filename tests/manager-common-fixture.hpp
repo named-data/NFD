@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,13 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_NFD_MGMT_MANAGER_COMMON_HPP
-#define NFD_TESTS_NFD_MGMT_MANAGER_COMMON_HPP
+#ifndef NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP
+#define NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP
 
 #include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
-#include "mgmt/manager-base.hpp"
-#include "fw/forwarder.hpp"
+#include "core/manager-base.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
@@ -47,15 +46,14 @@ public: // initialize
   ManagerCommonFixture();
 
   /**
-   * @brief set topPrefix to the dispatcher and configure an interest rule for the module.
+   * @brief set topPrefix to the dispatcher.
    *
    * after setting @param topPrefix, call advanceClocks to ensure all added filters take effects.
    *
    * @param topPrefix top prefix for the dispatcher
-   * @param privilege the module name
    */
   void
-  setTopPrefixAndPrivilege(const Name& topPrefix, const std::string& privilege);
+  setTopPrefix(const Name& topPrefix);
 
 public: // test
   typedef std::function<void(shared_ptr<Interest> interest)> InterestHandler;
@@ -147,8 +145,6 @@ public: // verify
 protected:
   shared_ptr<ndn::util::DummyClientFace> m_face;
   ndn::mgmt::Dispatcher                  m_dispatcher;
-  CommandValidator                       m_validator;
-  Forwarder                              m_forwarder;
   std::vector<Data>&                     m_responses; // a reference of m_face->sentDatas
   Name                                   m_identityName; // the identity used to sign request
   shared_ptr<ndn::IdentityCertificate>   m_certificate; // the certificate used to sign request
@@ -160,4 +156,4 @@ operator<<(std::ostream &os, const ManagerCommonFixture::CheckResponseResult& re
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_NFD_MGMT_MANAGER_COMMON_HPP
+#endif // NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP

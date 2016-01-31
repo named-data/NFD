@@ -23,45 +23,31 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_MGMT_STRATEGY_CHOICE_MANAGER_HPP
-#define NFD_DAEMON_MGMT_STRATEGY_CHOICE_MANAGER_HPP
-
 #include "nfd-manager-base.hpp"
 
 namespace nfd {
 
-class StrategyChoice;
-
-/**
- * @brief implement the Strategy Choice Management of NFD Management Protocol.
- * @sa http://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
- */
-class StrategyChoiceManager : public NfdManagerBase
+NfdManagerBase::NfdManagerBase(Dispatcher& dispatcher,
+                               CommandValidator& validator,
+                               const std::string& module)
+  : ManagerBase(dispatcher, module)
+  , m_validator(validator)
 {
-public:
-  StrategyChoiceManager(StrategyChoice& strategyChoice,
-                        Dispatcher& dispatcher,
-                        CommandValidator& validator);
+  m_validator.addSupportedPrivilege(module);
+}
 
-private:
-  void
-  setStrategy(const Name& topPrefix, const Interest& interest,
-              ControlParameters parameters,
-              const ndn::mgmt::CommandContinuation& done);
+void
+NfdManagerBase::authorize(const Name& prefix, const Interest& interest,
+                          const ndn::mgmt::ControlParameters* params,
+                          ndn::mgmt::AcceptContinuation accept,
+                          ndn::mgmt::RejectContinuation reject)
+{
+  BOOST_ASSERT(params != nullptr);
+  BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
 
-  void
-  unsetStrategy(const Name& topPrefix, const Interest& interest,
-                ControlParameters parameters,
-                const ndn::mgmt::CommandContinuation& done);
-
-  void
-  listChoices(const Name& topPrefix, const Interest& interest,
-              ndn::mgmt::StatusDatasetContext& context);
-
-private:
-  StrategyChoice& m_strategyChoice;
-};
+  m_validator.validate(interest,
+                       bind([&interest, this, accept] { extractRequester(interest, accept); }),
+                       bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
+}
 
 } // namespace nfd
-
-#endif // NFD_DAEMON_MGMT_STRATEGY_CHOICE_MANAGER_HPP

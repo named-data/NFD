@@ -38,17 +38,10 @@ ManagerCommonFixture::ManagerCommonFixture()
 }
 
 void
-ManagerCommonFixture::setTopPrefixAndPrivilege(const Name& topPrefix,
-                                               const std::string& privilege)
+ManagerCommonFixture::setTopPrefix(const Name& topPrefix)
 {
   m_dispatcher.addTopPrefix(topPrefix); // such that all filters are added
   advanceClocks(time::milliseconds(1));
-
-  std::string regex("^");
-  for (auto component : topPrefix) {
-    regex += "<" + component.toUri() + ">";
-  }
-  m_validator.addInterestRule(regex + "<" + privilege + ">", *m_certificate);
 }
 
 shared_ptr<Interest>
@@ -136,17 +129,14 @@ Block
 ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
 {
   auto isFinalSegment = [] (const Data& data) -> bool {
-    const auto& segment = data.getName().at(-1);
-    if (segment.isSegment() == false) {
-      return true;
-    }
-    return segment == data.getFinalBlockId();
+    const name::Component& lastComponent = data.getName().at(-1);
+    return !lastComponent.isSegment() || lastComponent == data.getFinalBlockId();
   };
 
-  while (isFinalSegment(m_responses.back()) == false) {
-    auto name = m_responses.back().getName();
-    auto prefix = name.getPrefix(-1);
-    auto segmentNo = name.at(-1).toSegment() + 1;
+  while (!isFinalSegment(m_responses.back())) {
+    const Name& name = m_responses.back().getName();
+    Name prefix = name.getPrefix(-1);
+    uint64_t segmentNo = name.at(-1).toSegment() + 1;
     // request for the next segment
     receiveInterest(makeInterest(prefix.appendSegment(segmentNo)));
   }

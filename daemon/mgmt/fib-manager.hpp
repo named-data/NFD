@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_MGMT_FIB_MANAGER_HPP
 #define NFD_DAEMON_MGMT_FIB_MANAGER_HPP
 
-#include "manager-base.hpp"
+#include "nfd-manager-base.hpp"
 #include "core/logger.hpp"
 #include "table/fib.hpp"
 #include "fw/forwarder.hpp"
@@ -37,7 +37,7 @@ namespace nfd {
  * @brief implement the FIB Management of NFD Management Protocol.
  * @sa http://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
-class FibManager : public ManagerBase
+class FibManager : public NfdManagerBase
 {
 public:
   /**

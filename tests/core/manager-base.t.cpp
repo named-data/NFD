@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mgmt/manager-base.hpp"
+#include "core/manager-base.hpp"
 #include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
@@ -51,26 +51,37 @@ public:
   }
 };
 
+class ManagerTester : public ManagerBase
+{
+public:
+  ManagerTester(Dispatcher& dispatcher,
+                const std::string& module)
+    : ManagerBase(dispatcher, module) {
+  }
+
+  virtual void
+  authorize(const Name& prefix, const Interest& interest,
+            const ndn::mgmt::ControlParameters* params,
+            ndn::mgmt::AcceptContinuation accept,
+            ndn::mgmt::RejectContinuation reject) {
+    extractRequester(interest, accept);
+  }
+};
+
 class ManagerBaseFixture : public ManagerCommonFixture
 {
 public:
   ManagerBaseFixture()
-    : m_manager(m_dispatcher, m_validator, "test-module")
+    : m_manager(m_dispatcher, "test-module")
   {
   }
 
 protected:
-  ManagerBase m_manager;
+  ManagerTester m_manager;
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtManagerBase, ManagerBaseFixture)
-
-BOOST_AUTO_TEST_CASE(AddSupportedPrivilegeInConstructor)
-{
-  BOOST_CHECK_NO_THROW(m_validator.addSupportedPrivilege("other-module"));
-  // test-module has already been added by the constructor of ManagerBase
-  BOOST_CHECK_THROW(m_validator.addSupportedPrivilege("test-module"), CommandValidator::Error);
-}
+BOOST_AUTO_TEST_SUITE(Core)
+BOOST_FIXTURE_TEST_SUITE(TestManagerBase, ManagerBaseFixture)
 
 BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 {
@@ -79,7 +90,7 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 
   m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
   m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
-  setTopPrefixAndPrivilege("/localhost/nfd", "test-module");
+  setTopPrefix("/localhost/nfd");
 
   auto testRegisterCommandHandler = [&wasCommandHandlerCalled, this] (const Name& commandName) {
     wasCommandHandlerCalled = false;
@@ -99,8 +110,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
   auto handler = bind([&] { isStatusDatasetCalled = true; });
 
   m_manager.registerStatusDatasetHandler("test-status", handler);
-  m_dispatcher.addTopPrefix("/localhost/nfd");
-  advanceClocks(time::milliseconds(1));
+  setTopPrefix("/localhost/nfd");
 
   receiveInterest(makeInterest("/localhost/nfd/test-module/test-status"));
   BOOST_CHECK(isStatusDatasetCalled);
@@ -109,8 +119,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
 BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
 {
   auto post = m_manager.registerNotificationStream("test-notification");
-  m_dispatcher.addTopPrefix("/localhost/nfd");
-  advanceClocks(time::milliseconds(1));
+  setTopPrefix("/localhost/nfd");
 
   post(Block("\x82\x01\x02", 3));
   advanceClocks(time::milliseconds(1));
@@ -118,32 +127,6 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
   BOOST_CHECK_EQUAL(m_responses[0].getName(),
                     Name("/localhost/nfd/test-module/test-notification/%FE%00"));
-}
-
-BOOST_AUTO_TEST_CASE(CommandAuthorization)
-{
-  bool didAcceptCallbackFire = false;
-  bool didRejectCallbackFire = false;
-  auto testAuthorization = [&] {
-    didAcceptCallbackFire = false;
-    didRejectCallbackFire = false;
-
-    auto command = makeControlCommandRequest("/localhost/nfd/test-module/test-verb",
-                                             ControlParameters());
-    ndn::nfd::ControlParameters params;
-    m_manager.authorize("/top/prefix", *command, &params,
-                        bind([&] { didAcceptCallbackFire = true; }),
-                        bind([&] { didRejectCallbackFire = true; }));
-  };
-
-  testAuthorization();
-  BOOST_CHECK(!didAcceptCallbackFire);
-  BOOST_CHECK(didRejectCallbackFire);
-
-  m_validator.addInterestRule("^<localhost><nfd><test-module>", *m_certificate);
-  testAuthorization();
-  BOOST_CHECK(didAcceptCallbackFire);
-  BOOST_CHECK(!didRejectCallbackFire);
 }
 
 BOOST_AUTO_TEST_CASE(ExtractRequester)
@@ -182,7 +165,8 @@ BOOST_AUTO_TEST_CASE(MakeRelPrefix)
   BOOST_CHECK_EQUAL(generatedRelPrefix, PartialName("/test-module/test-verb"));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestManagerBase
+BOOST_AUTO_TEST_SUITE_END() // Core
 
 } // namespace tests
 } // namespace nfd

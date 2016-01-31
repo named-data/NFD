@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,11 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_MGMT_MANAGER_BASE_HPP
-#define NFD_DAEMON_MGMT_MANAGER_BASE_HPP
+#ifndef NFD_CORE_MANAGER_BASE_HPP
+#define NFD_CORE_MANAGER_BASE_HPP
 
 #include "common.hpp"
-#include "mgmt/command-validator.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/management/nfd-control-command.hpp>
@@ -43,10 +42,10 @@ using ndn::nfd::ControlResponse;
 using ndn::nfd::ControlParameters;
 
 /**
- * @brief a collection of common functions shared by all NFD managers,
+ * @brief a collection of common functions shared by all NFD managers and RIB manager,
  *        such as communicating with the dispatcher and command validator.
  */
-class ManagerBase : public noncopyable
+class ManagerBase : noncopyable
 {
 public:
   class Error : public std::runtime_error
@@ -61,7 +60,6 @@ public:
 
 public:
   ManagerBase(Dispatcher& dispatcher,
-              CommandValidator& validator,
               const std::string& module);
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
@@ -84,7 +82,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   ndn::mgmt::PostNotification
   registerNotificationStream(const std::string& verb);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
+PUBLIC_WITH_TESTS_ELSE_PROTECTED: // command validation
   /**
    * @brief validate a request for ControlCommand.
    *
@@ -99,11 +97,11 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
    * @param accept callback of successful validation, take the requester string as a argument
    * @param reject callback of failure in validation, take the action code as a argument
    */
-  void
+  virtual void
   authorize(const Name& prefix, const Interest& interest,
             const ndn::mgmt::ControlParameters* params,
             ndn::mgmt::AcceptContinuation accept,
-            ndn::mgmt::RejectContinuation reject);
+            ndn::mgmt::RejectContinuation reject) = 0;
 
   /**
    * @brief extract a requester from a ControlCommand request
@@ -151,7 +149,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers
 
 private:
   Dispatcher&       m_dispatcher;
-  CommandValidator& m_validator;
   std::string       m_mgmtModuleName;
 };
 
@@ -177,4 +174,4 @@ ManagerBase::registerCommandHandler(const std::string& verb,
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_MGMT_MANAGER_BASE_HPP
+#endif // NFD_CORE_MANAGER_BASE_HPP

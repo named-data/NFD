@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,7 @@ NFD_LOG_INIT("StrategyChoiceManager");
 StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
                                              Dispatcher& dispatcher,
                                              CommandValidator& validator)
-  : ManagerBase(dispatcher, validator, "strategy-choice")
+  : NfdManagerBase(dispatcher, validator, "strategy-choice")
   , m_strategyChoice(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
@@ -96,4 +96,4 @@ StrategyChoiceManager::listChoices(const Name& topPrefix, const Interest& intere
   context.end();
 }
 
-} // namespace
+} // namespace nfd

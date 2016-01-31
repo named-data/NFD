@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,7 @@
  */
 
 #include "mgmt/strategy-choice-manager.hpp"
-#include "manager-common-fixture.hpp"
+#include "nfd-manager-common-fixture.hpp"
 
 #include "face/face.hpp"
 #include "face/internal-face.hpp"
@@ -40,14 +40,14 @@
 namespace nfd {
 namespace tests {
 
-class StrategyChoiceManagerFixture : public ManagerCommonFixture
+class StrategyChoiceManagerFixture : public NfdManagerCommonFixture
 {
 public:
   StrategyChoiceManagerFixture()
     : m_strategyChoice(m_forwarder.getStrategyChoice())
     , m_manager(m_strategyChoice, m_dispatcher, m_validator)
   {
-    setTopPrefixAndPrivilege("/localhost/nfd", "strategy-choice");
+    setPrivilege("strategy-choice");
   }
 
 public:
