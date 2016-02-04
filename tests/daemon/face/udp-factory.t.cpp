@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,135 +56,94 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
-class FactoryErrorCheck : public BaseFixture
+BOOST_AUTO_TEST_CASE(CreateChannel)
 {
-public:
-  bool
-  isTheSameMulticastEndpoint(const UdpFactory::Error& e) {
-    return strcmp(e.what(),
-                  "Cannot create the requested UDP unicast channel, local "
-                  "endpoint is already allocated for a UDP multicast face") == 0;
-  }
+  UdpFactory factory;
 
-  bool
-  isNotMulticastAddress(const UdpFactory::Error& e) {
-    return strcmp(e.what(),
-                  "Cannot create the requested UDP multicast face, "
-                  "the multicast group given as input is not a multicast address") == 0;
-  }
-
-  bool
-  isTheSameUnicastEndpoint(const UdpFactory::Error& e) {
-    return strcmp(e.what(),
-                  "Cannot create the requested UDP multicast face, local "
-                  "endpoint is already allocated for a UDP unicast channel") == 0;
-  }
-
-  bool
-  isLocalEndpointOnDifferentGroup(const UdpFactory::Error& e) {
-    return strcmp(e.what(),
-                  "Cannot create the requested UDP multicast face, local "
-                  "endpoint is already allocated for a UDP multicast face "
-                  "on a different multicast group") == 0;
-  }
-};
-
-BOOST_FIXTURE_TEST_CASE(ChannelMapUdp, FactoryErrorCheck)
-{
-  using boost::asio::ip::udp;
-
-  UdpFactory factory = UdpFactory();
-
-  //to instantiate multicast face on a specific ip address, change interfaceIp
-  std::string interfaceIp = "0.0.0.0";
-
-  shared_ptr<UdpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
-  shared_ptr<UdpChannel> channel1a = factory.createChannel("127.0.0.1", "20070");
+  auto channel1 = factory.createChannel("127.0.0.1", "20070");
+  auto channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1->getUri().toString(), "udp4://127.0.0.1:20070");
 
-  shared_ptr<UdpChannel> channel2 = factory.createChannel("127.0.0.1", "20071");
+  auto channel2 = factory.createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
 
-  shared_ptr<UdpChannel> channel3 = factory.createChannel(interfaceIp, "20070");
+  auto channel3 = factory.createChannel("::1", "20071");
+  BOOST_CHECK_NE(channel2, channel3);
+  BOOST_CHECK_EQUAL(channel3->getUri().toString(), "udp6://[::1]:20071");
 
-  shared_ptr<UdpChannel> channel4 = factory.createChannel("::1", "20071");
-  BOOST_CHECK_NE(channel2, channel4);
-  BOOST_CHECK_EQUAL(channel4->getUri().toString(), "udp6://[::1]:20071");
+  // createChannel with multicast address
+  BOOST_CHECK_EXCEPTION(factory.createChannel("224.0.0.1", "20070"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "createChannel is only for unicast channels. The provided endpoint "
+                                        "is multicast. Use createMulticastFace to create a multicast face") == 0;
+                        });
 
-  //same endpoint of a unicast channel
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "224.0.0.1", "20070"),
-                        UdpFactory::Error, isTheSameUnicastEndpoint);
+  // createChannel with a local endpoint that has already been allocated for a UDP multicast face
+  auto multicastFace = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20072");
+  BOOST_CHECK_EXCEPTION(factory.createChannel("127.0.0.1", "20072"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create the requested UDP unicast channel, local "
+                                        "endpoint is already allocated for a UDP multicast face") == 0;
+                        });
+}
 
-  auto multicastFace1  = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
-  auto multicastFace1a = factory.createMulticastFace(interfaceIp, "224.0.0.1", "20072");
+BOOST_AUTO_TEST_CASE(CreateMulticastFace)
+{
+  using boost::asio::ip::udp;
+
+  UdpFactory factory;
+
+  auto multicastFace1  = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
+  auto multicastFace1a = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
 
-  //same endpoint of a multicast face
-  BOOST_CHECK_EXCEPTION(factory.createChannel(interfaceIp, "20072"),
-                        UdpFactory::Error, isTheSameMulticastEndpoint);
+  // createMulticastFace with a local endpoint that has already been allocated for a UDP unicast channel
+  auto channel = factory.createChannel("127.0.0.1", "20071");
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20071"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create the requested UDP multicast face, local "
+                                        "endpoint is already allocated for a UDP unicast channel") == 0;
+                        });
 
-  //same multicast endpoint, different group
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "224.0.0.42", "20072"),
-                        UdpFactory::Error, isLocalEndpointOnDifferentGroup);
+  // createMulticastFace with a local endpoint that has already been allocated
+  // for a UDP multicast face on a different multicast group
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "224.0.0.42", "20070"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create the requested UDP multicast face, local "
+                                        "endpoint is already allocated for a UDP multicast face "
+                                        "on a different multicast group") == 0;
+                        });
 
-  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(interfaceIp, "192.168.10.15", "20025"),
-                        UdpFactory::Error, isNotMulticastAddress);
+  // createMulticastFace with an IPv4 unicast address
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "192.168.10.15", "20072"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create the requested UDP multicast face, "
+                                        "the multicast group given as input is not a multicast address") == 0;
+                        });
 
+  // createMulticastFace with an IPv6 multicast address
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace("::1", "ff01::114", "20073"), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "IPv6 multicast is not supported yet. Please provide an IPv4 "
+                                        "address") == 0;
+                        });
 
-//  //Test commented because it required to be run in a machine that can resolve ipv6 query
-//  shared_ptr<UdpChannel> channel1v6 = factory.createChannel(//"::1",
-//                                                     "fe80::5e96:9dff:fe7d:9c8d%en1",
-//                                                     //"fe80::aa54:b2ff:fe08:27b8%wlan0",
-//                                                     "20070");
-//
-//  //the creation of multicastFace2 works properly. It has been disable because it needs an IP address of
-//  //an available network interface (different from the first one used)
-//  shared_ptr<MulticastUdpFace> multicastFace2 = factory.createMulticastFace("192.168.1.17",
-//                                                                            "224.0.0.1",
-//                                                                            "20073");
-//  BOOST_CHECK_NE(multicastFace1, multicastFace2);
-//
-//
-//  //ipv6 - work in progress
-//  shared_ptr<MulticastUdpFace> multicastFace3 = factory.createMulticastFace("fe80::5e96:9dff:fe7d:9c8d%en1",
-//                                                                            "FF01:0:0:0:0:0:0:2",
-//                                                                            "20073");
-//
-//  shared_ptr<MulticastUdpFace> multicastFace4 = factory.createMulticastFace("fe80::aa54:b2ff:fe08:27b8%wlan0",
-//                                                                            "FF01:0:0:0:0:0:0:2",
-//                                                                            "20073");
-//
-//  BOOST_CHECK_EQUAL(multicastFace3, multicastFace4);
-//
-//  shared_ptr<MulticastUdpFace> multicastFace5 = factory.createMulticastFace("::1",
-//                                                                            "FF01:0:0:0:0:0:0:2",
-//                                                                            "20073");
-//
-//  BOOST_CHECK_NE(multicastFace3, multicastFace5);
-//
-//  //same local ipv6 endpoint for a different multicast group
-//  BOOST_CHECK_THROW(factory.createMulticastFace("fe80::aa54:b2ff:fe08:27b8%wlan0",
-//                                                "FE01:0:0:0:0:0:0:2",
-//                                                "20073"),
-//                    UdpFactory::Error);
-//
-//  //same local ipv6 (expect for th port number) endpoint for a different multicast group
-//  BOOST_CHECK_THROW(factory.createMulticastFace("fe80::aa54:b2ff:fe08:27b8%wlan0",
-//                                                "FE01:0:0:0:0:0:0:2",
-//                                                "20075"),
-//                    UdpFactory::Error);
-//
-//  BOOST_CHECK_THROW(factory.createMulticastFace("fa80::20a:9dff:fef6:12ff",
-//                                                "FE12:0:0:0:0:0:0:2",
-//                                                "20075"),
-//                    UdpFactory::Error);
-//
-//  //not a multicast ipv6
-//  BOOST_CHECK_THROW(factory.createMulticastFace("fa80::20a:9dff:fef6:12ff",
-//                                                "A112:0:0:0:0:0:0:2",
-//                                                "20075"),
-//                    UdpFactory::Error);
+  // createMulticastFace with different local and remote port numbers
+  udp::endpoint localEndpoint(boost::asio::ip::address_v4::loopback(), 20074);
+  udp::endpoint multicastEndpoint(boost::asio::ip::address::from_string("224.0.0.1"), 20075);
+  BOOST_CHECK_EXCEPTION(factory.createMulticastFace(localEndpoint, multicastEndpoint), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create the requested UDP multicast face, "
+                                        "both endpoints should have the same port number. ") == 0;
+                        });
 }
 
 class FaceCreateFixture : protected BaseFixture
