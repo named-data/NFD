@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 
 #include "tests/test-common.hpp"
 #include "dummy-face.hpp"
+#include "dummy-transport.hpp"
+#include "face/generic-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -37,9 +39,52 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestFace, BaseFixture)
 
-// TODO add test cases for getLinkService, getTransport
-// TODO add a test case for static properties
-// TODO add a test case for getState
+using nfd::Face;
+
+BOOST_AUTO_TEST_CASE(GetLinkService)
+{
+  auto linkService = make_unique<GenericLinkService>();
+  auto linkServicePtr = linkService.get();
+  auto face = make_unique<Face>(std::move(linkService), make_unique<DummyTransport>());
+
+  BOOST_CHECK_EQUAL(face->getLinkService(), linkServicePtr);
+}
+
+BOOST_AUTO_TEST_CASE(GetTransport)
+{
+  auto dummyTransport = make_unique<DummyTransport>();
+  auto transportPtr = dummyTransport.get();
+  auto face = make_unique<Face>(make_unique<GenericLinkService>(), std::move(dummyTransport));
+
+  BOOST_CHECK_EQUAL(face->getTransport(), transportPtr);
+}
+
+BOOST_AUTO_TEST_CASE(StaticProperties)
+{
+  auto face = make_unique<DummyFace>();
+
+  BOOST_CHECK_EQUAL(face->getId(), INVALID_FACEID);
+  BOOST_CHECK_EQUAL(face->getLocalUri().getScheme(), "dummy");
+  BOOST_CHECK_EQUAL(face->getRemoteUri().getScheme(), "dummy");
+  BOOST_CHECK_EQUAL(face->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(face->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(face->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+
+  face->setId(222);
+  BOOST_CHECK_EQUAL(face->getId(), 222);
+
+  face->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(face->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+}
+
+BOOST_AUTO_TEST_CASE(State)
+{
+  auto face = make_shared<DummyFace>();
+  BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
+
+  face->setState(FaceState::DOWN);
+  BOOST_CHECK_EQUAL(face->getState(), FaceState::DOWN);
+}
 
 BOOST_AUTO_TEST_CASE(LinkServiceSendReceive)
 {
