@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,26 +57,28 @@ Pit::Pit(NameTree& nameTree)
 {
 }
 
-Pit::~Pit()
-{
-}
-
 std::pair<shared_ptr<pit::Entry>, bool>
 Pit::findOrInsert(const Interest& interest, bool allowInsert)
 {
-  // first lookup() the Interest Name in the NameTree, which will creates all
-  // the intermedia nodes, starting from the shortest prefix.
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(interest.getName());
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+  // ensure NameTree entry exists
+  const Name& name = interest.getName();
+  bool isEndWithDigest = name.size() > 0 && name[-1].isImplicitSha256Digest();
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(isEndWithDigest ? name.getPrefix(-1) : name);
+  BOOST_ASSERT(nte != nullptr);
+  size_t nteNameLen = nte->getPrefix().size();
 
-  const std::vector<shared_ptr<pit::Entry>>& pitEntries = nameTreeEntry->getPitEntries();
-
-  // then check if this Interest is already in the PIT entries
+  // check if PIT entry already exists
+  const std::vector<shared_ptr<pit::Entry>>& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
-                         [&interest] (const shared_ptr<pit::Entry>& entry) {
-                           return entry->getInterest().getName() == interest.getName() &&
-                                  entry->getInterest().getSelectors() == interest.getSelectors();
-                         });
+    [&interest, nteNameLen] (const shared_ptr<pit::Entry>& entry) -> bool {
+      // initial part of the name is guaranteed to be the same
+      BOOST_ASSERT(entry->getInterest().getName().compare(0, nteNameLen,
+                   interest.getName(), 0, nteNameLen) == 0);
+      // compare implicit digest (or its absence) only
+      return entry->getInterest().getName().compare(nteNameLen, Name::npos,
+                                                    interest.getName(), nteNameLen) == 0 &&
+             entry->getInterest().getSelectors() == interest.getSelectors();
+    });
   if (it != pitEntries.end()) {
     return {*it, false};
   }
@@ -85,8 +87,8 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
     return {nullptr, true};
   }
 
-  shared_ptr<pit::Entry> entry = make_shared<pit::Entry>(interest);
-  nameTreeEntry->insertPitEntry(entry);
+  auto entry = make_shared<pit::Entry>(interest);
+  nte->insertPitEntry(entry);
   m_nItems++;
   return {entry, true};
 }

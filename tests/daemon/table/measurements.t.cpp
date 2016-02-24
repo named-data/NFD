@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -99,10 +99,18 @@ BOOST_AUTO_TEST_CASE(GetWithPitEntry)
 
   shared_ptr<Interest> interestA = makeInterest("/A");
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
+  shared_ptr<Data> dataABC = makeData("/A/B/C");
+  Name fullName = dataABC->getFullName();
+  shared_ptr<Interest> interestFull = makeInterest(fullName);
+  shared_ptr<pit::Entry> pitFull = pit.insert(*interestFull).first;
 
   shared_ptr<measurements::Entry> entryA = measurements.get(*pitA);
   BOOST_REQUIRE(entryA != nullptr);
   BOOST_CHECK_EQUAL(entryA->getName(), "/A");
+
+  shared_ptr<measurements::Entry> entryFull = measurements.get(*pitFull);
+  BOOST_REQUIRE(entryFull != nullptr);
+  BOOST_CHECK_EQUAL(entryFull->getName(), fullName);
 }
 
 class DummyStrategyInfo1 : public fw::StrategyInfo

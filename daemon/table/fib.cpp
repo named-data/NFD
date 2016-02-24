@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -90,11 +90,9 @@ Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(pitEntry);
-
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
-
-  return findLongestPrefixMatch(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(pitEntry);
+  BOOST_ASSERT(nte != nullptr);
+  return findLongestPrefixMatch(nte);
 }
 
 shared_ptr<fib::Entry>

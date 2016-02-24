@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -487,7 +487,23 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
   BOOST_CHECK_EQUAL(hasD  , false);
 
   BOOST_CHECK_EQUAL(count, 2);
+}
 
+BOOST_AUTO_TEST_CASE(MatchFullName) // Bug 3363
+{
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
+  shared_ptr<Data> data = makeData("/A");
+  Name fullName = data->getFullName();
+  shared_ptr<Interest> interest = makeInterest(fullName);
+
+  pit.insert(*interest);
+  pit::DataMatchResult matches = pit.findAllDataMatches(*data);
+
+  BOOST_REQUIRE_EQUAL(std::distance(matches.begin(), matches.end()), 1);
+  shared_ptr<pit::Entry> found = *matches.begin();
+  BOOST_CHECK_EQUAL(found->getName(), fullName);
 }
 
 BOOST_AUTO_TEST_CASE(Iterator)

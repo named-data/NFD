@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -133,19 +133,31 @@ public: // mutation
   eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry);
 
 public: // shortcut access
-  /// get NameTree entry from attached FIB entry
+  /** \brief get NameTree entry from FIB entry
+   *
+   *  This is equivalent to .lookup(fibEntry.getPrefix())
+   */
   shared_ptr<name_tree::Entry>
   get(const fib::Entry& fibEntry) const;
 
-  /// get NameTree entry from attached PIT entry
+  /** \brief get NameTree entry from PIT entry
+   *
+   *  This is equivalent to .lookup(pitEntry.getName()).
+   */
   shared_ptr<name_tree::Entry>
-  get(const pit::Entry& pitEntry) const;
+  get(const pit::Entry& pitEntry);
 
-  /// get NameTree entry from attached Measurements entry
+  /** \brief get NameTree entry from Measurements entry
+   *
+   *  This is equivalent to .lookup(measurementsEntry.getName())
+   */
   shared_ptr<name_tree::Entry>
   get(const measurements::Entry& measurementsEntry) const;
 
-  /// get NameTree entry from attached StrategyChoice entry
+  /** \brief get NameTree entry from StrategyChoice entry
+   *
+   *  This is equivalent to .lookup(strategyChoiceEntry.getName())
+   */
   shared_ptr<name_tree::Entry>
   get(const strategy_choice::Entry& strategyChoiceEntry) const;
 
@@ -172,6 +184,13 @@ public: // matching
   findLongestPrefixMatch(shared_ptr<name_tree::Entry> entry,
                          const name_tree::EntrySelector& entrySelector =
                          name_tree::AnyEntry()) const;
+
+  /** \brief longest prefix matching for Interest name of the PIT entry
+   *
+   *  This is equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry()).
+   */
+  shared_ptr<name_tree::Entry>
+  findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
   /** \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
    *  \return an unspecified type that have .begin() and .end() methods
@@ -348,12 +367,6 @@ inline shared_ptr<name_tree::Entry>
 NameTree::get(const fib::Entry& fibEntry) const
 {
   return fibEntry.m_nameTreeEntry;
-}
-
-inline shared_ptr<name_tree::Entry>
-NameTree::get(const pit::Entry& pitEntry) const
-{
-  return pitEntry.m_nameTreeEntry;
 }
 
 inline shared_ptr<name_tree::Entry>

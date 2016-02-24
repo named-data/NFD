@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,8 @@
  */
 
 #include "table/fib.hpp"
+#include "table/pit.hpp"
+#include "table/measurements.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
@@ -31,7 +33,8 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TableFib, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestFib, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Entry)
 {
@@ -66,14 +69,14 @@ BOOST_AUTO_TEST_CASE(Entry)
   BOOST_CHECK_EQUAL(nexthops4.size(), 2);
   int i = -1;
   for (fib::NextHopList::const_iterator it = nexthops4.begin();
-    it != nexthops4.end(); ++it) {
+       it != nexthops4.end(); ++it) {
     ++i;
     switch (i) {
-      case 0 :
+      case 0:
         BOOST_CHECK_EQUAL(it->getFace(), face1);
         BOOST_CHECK_EQUAL(it->getCost(), 30);
         break;
-      case 1 :
+      case 1:
         BOOST_CHECK_EQUAL(it->getFace(), face2);
         BOOST_CHECK_EQUAL(it->getCost(), 40);
         break;
@@ -86,14 +89,14 @@ BOOST_AUTO_TEST_CASE(Entry)
   BOOST_CHECK_EQUAL(nexthops5.size(), 2);
   i = -1;
   for (fib::NextHopList::const_iterator it = nexthops5.begin();
-    it != nexthops5.end(); ++it) {
+       it != nexthops5.end(); ++it) {
     ++i;
     switch (i) {
-      case 0 :
+      case 0:
         BOOST_CHECK_EQUAL(it->getFace(), face2);
         BOOST_CHECK_EQUAL(it->getCost(), 10);
         break;
-      case 1 :
+      case 1:
         BOOST_CHECK_EQUAL(it->getFace(), face1);
         BOOST_CHECK_EQUAL(it->getCost(), 30);
         break;
@@ -196,6 +199,64 @@ BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
   entry = fib.findLongestPrefixMatch(nameE);
   BOOST_REQUIRE(static_cast<bool>(entry));
   BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
+}
+
+BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithPitEntry)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+
+  shared_ptr<Data> dataABC = makeData("/A/B/C");
+  Name fullNameABC = dataABC->getFullName();
+  shared_ptr<Data> dataADE = makeData("/A/D/E");
+  Name fullNameADE = dataADE->getFullName();
+  fib.insert("/A");
+  fib.insert(fullNameABC);
+
+  Pit pit(nameTree);
+  shared_ptr<Interest> interestAB = makeInterest("/A/B");
+  shared_ptr<pit::Entry> pitAB = pit.insert(*interestAB).first;
+  shared_ptr<Interest> interestABC = makeInterest(fullNameABC);
+  shared_ptr<pit::Entry> pitABC = pit.insert(*interestABC).first;
+  shared_ptr<Interest> interestADE = makeInterest(fullNameADE);
+  shared_ptr<pit::Entry> pitADE = pit.insert(*interestADE).first;
+
+  size_t nNameTreeEntries = nameTree.size();
+
+  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch(*pitAB);
+  BOOST_REQUIRE(entry != nullptr);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
+
+  entry = fib.findLongestPrefixMatch(*pitABC);
+  BOOST_REQUIRE(entry != nullptr);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), fullNameABC);
+
+  entry = fib.findLongestPrefixMatch(*pitADE);
+  BOOST_REQUIRE(entry != nullptr);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
+
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntries);
+}
+
+BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+
+  fib.insert("/A");
+  fib.insert("/A/B/C");
+
+  Measurements measurements(nameTree);
+  shared_ptr<measurements::Entry> mAB = measurements.get("/A/B");
+  shared_ptr<measurements::Entry> mABCD = measurements.get("/A/B/C/D");
+
+  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch(*mAB);
+  BOOST_REQUIRE(entry != nullptr);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
+
+  entry = fib.findLongestPrefixMatch(*mABCD);
+  BOOST_REQUIRE(entry != nullptr);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A/B/C");
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
@@ -420,8 +481,7 @@ BOOST_AUTO_TEST_CASE(Iterator)
   expected.insert(nameABC);
   expected.insert(nameRoot);
 
-  for (Fib::const_iterator it = fib.begin(); it != fib.end(); it++)
-  {
+  for (Fib::const_iterator it = fib.begin(); it != fib.end(); it++) {
     bool isInSet = expected.find(it->getPrefix()) != expected.end();
     BOOST_CHECK(isInSet);
     expected.erase(it->getPrefix());
@@ -430,7 +490,8 @@ BOOST_AUTO_TEST_CASE(Iterator)
   BOOST_CHECK_EQUAL(expected.size(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestFib
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace nfd

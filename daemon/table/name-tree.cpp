@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -240,6 +240,99 @@ NameTree::lookup(const Name& prefix)
   return entry;
 }
 
+// return {false: this entry is not empty, true: this entry is empty and erased}
+bool
+NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
+{
+  BOOST_ASSERT(static_cast<bool>(entry));
+
+  NFD_LOG_TRACE("eraseEntryIfEmpty " << entry->getPrefix());
+
+  // first check if this Entry can be erased
+  if (entry->isEmpty())
+    {
+      // update child-related info in the parent
+      shared_ptr<name_tree::Entry> parent = entry->getParent();
+
+      if (static_cast<bool>(parent))
+        {
+          std::vector<shared_ptr<name_tree::Entry> >& parentChildrenList =
+            parent->getChildren();
+
+          bool isFound = false;
+          size_t size = parentChildrenList.size();
+          for (size_t i = 0; i < size; i++)
+            {
+              if (parentChildrenList[i] == entry)
+                {
+                  parentChildrenList[i] = parentChildrenList[size - 1];
+                  parentChildrenList.pop_back();
+                  isFound = true;
+                  break;
+                }
+            }
+
+          BOOST_VERIFY(isFound == true);
+        }
+
+      // remove this Entry and its Name Tree Node
+      name_tree::Node* node = entry->m_node;
+      name_tree::Node* nodePrev = node->m_prev;
+
+      // configure the previous node
+      if (nodePrev != 0)
+        {
+          // link the previous node to the next node
+          nodePrev->m_next = node->m_next;
+        }
+      else
+        {
+          m_buckets[entry->getHash() % m_nBuckets] = node->m_next;
+        }
+
+      // link the previous node with the next node (skip the erased one)
+      if (node->m_next != 0)
+        {
+          node->m_next->m_prev = nodePrev;
+          node->m_next = 0;
+        }
+
+      BOOST_ASSERT(node->m_next == 0);
+
+      m_nItems--;
+      delete node;
+
+      if (static_cast<bool>(parent))
+        eraseEntryIfEmpty(parent);
+
+      size_t newNBuckets = static_cast<size_t>(m_shrinkFactor *
+                                     static_cast<double>(m_nBuckets));
+
+      if (newNBuckets >= m_minNBuckets && m_nItems < m_shrinkThreshold)
+        {
+          resize(newNBuckets);
+        }
+
+      return true;
+
+    } // if this entry is empty
+
+  return false; // if this entry is not empty
+}
+
+shared_ptr<name_tree::Entry>
+NameTree::get(const pit::Entry& pitEntry)
+{
+  shared_ptr<name_tree::Entry> nte = pitEntry.m_nameTreeEntry;
+  if (nte->getPrefix().size() == pitEntry.getName().size()) {
+    return nte;
+  }
+
+  BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
+  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
+  return this->lookup(pitEntry.getName());
+}
+
 // Exact Match
 shared_ptr<name_tree::Entry>
 NameTree::findExactMatch(const Name& prefix) const
@@ -324,84 +417,40 @@ NameTree::findLongestPrefixMatch(shared_ptr<name_tree::Entry> entry,
   return shared_ptr<name_tree::Entry>();
 }
 
-// return {false: this entry is not empty, true: this entry is empty and erased}
-bool
-NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
+shared_ptr<name_tree::Entry>
+NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  BOOST_ASSERT(static_cast<bool>(entry));
+  shared_ptr<name_tree::Entry> nte = pitEntry.m_nameTreeEntry;
+  if (nte->getPrefix().size() == pitEntry.getName().size()) {
+    return nte;
+  }
 
-  NFD_LOG_TRACE("eraseEntryIfEmpty " << entry->getPrefix());
+  BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
+  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
+  shared_ptr<name_tree::Entry> exact = this->findExactMatch(pitEntry.getName());
+  return exact == nullptr ? nte : exact;
+}
 
-  // first check if this Entry can be erased
-  if (entry->isEmpty())
-    {
-      // update child-related info in the parent
-      shared_ptr<name_tree::Entry> parent = entry->getParent();
+boost::iterator_range<NameTree::const_iterator>
+NameTree::findAllMatches(const Name& prefix,
+                         const name_tree::EntrySelector& entrySelector) const
+{
+  NFD_LOG_TRACE("NameTree::findAllMatches" << prefix);
 
-      if (static_cast<bool>(parent))
-        {
-          std::vector<shared_ptr<name_tree::Entry> >& parentChildrenList =
-            parent->getChildren();
+  // As we are using Name Prefix Hash Table, and the current LPM() is
+  // implemented as starting from full name, and reduce the number of
+  // components by 1 each time, we could use it here.
+  // For trie-like design, it could be more efficient by walking down the
+  // trie from the root node.
 
-          bool isFound = false;
-          size_t size = parentChildrenList.size();
-          for (size_t i = 0; i < size; i++)
-            {
-              if (parentChildrenList[i] == entry)
-                {
-                  parentChildrenList[i] = parentChildrenList[size - 1];
-                  parentChildrenList.pop_back();
-                  isFound = true;
-                  break;
-                }
-            }
+  shared_ptr<name_tree::Entry> entry = findLongestPrefixMatch(prefix, entrySelector);
 
-          BOOST_VERIFY(isFound == true);
-        }
-
-      // remove this Entry and its Name Tree Node
-      name_tree::Node* node = entry->m_node;
-      name_tree::Node* nodePrev = node->m_prev;
-
-      // configure the previous node
-      if (nodePrev != 0)
-        {
-          // link the previous node to the next node
-          nodePrev->m_next = node->m_next;
-        }
-      else
-        {
-          m_buckets[entry->getHash() % m_nBuckets] = node->m_next;
-        }
-
-      // link the previous node with the next node (skip the erased one)
-      if (node->m_next != 0)
-        {
-          node->m_next->m_prev = nodePrev;
-          node->m_next = 0;
-        }
-
-      BOOST_ASSERT(node->m_next == 0);
-
-      m_nItems--;
-      delete node;
-
-      if (static_cast<bool>(parent))
-        eraseEntryIfEmpty(parent);
-
-      size_t newNBuckets = static_cast<size_t>(m_shrinkFactor *
-                                     static_cast<double>(m_nBuckets));
-
-      if (newNBuckets >= m_minNBuckets && m_nItems < m_shrinkThreshold)
-        {
-          resize(newNBuckets);
-        }
-
-      return true;
-
-    } // if this entry is empty
-
-  return false; // if this entry is not empty
+  if (static_cast<bool>(entry)) {
+    const_iterator begin(FIND_ALL_MATCHES_TYPE, *this, entry, entrySelector);
+    return {begin, end()};
+  }
+  // If none of the entry satisfies the requirements, then return the end() iterator.
+  return {end(), end()};
 }
 
 boost::iterator_range<NameTree::const_iterator>
@@ -450,28 +499,6 @@ NameTree::partialEnumerate(const Name& prefix,
     ++it;
   }
   return {it, end()};
-}
-
-boost::iterator_range<NameTree::const_iterator>
-NameTree::findAllMatches(const Name& prefix,
-                         const name_tree::EntrySelector& entrySelector) const
-{
-  NFD_LOG_TRACE("NameTree::findAllMatches" << prefix);
-
-  // As we are using Name Prefix Hash Table, and the current LPM() is
-  // implemented as starting from full name, and reduce the number of
-  // components by 1 each time, we could use it here.
-  // For trie-like design, it could be more efficient by walking down the
-  // trie from the root node.
-
-  shared_ptr<name_tree::Entry> entry = findLongestPrefixMatch(prefix, entrySelector);
-
-  if (static_cast<bool>(entry)) {
-    const_iterator begin(FIND_ALL_MATCHES_TYPE, *this, entry, entrySelector);
-    return {begin, end()};
-  }
-  // If none of the entry satisfies the requirements, then return the end() iterator.
-  return {end(), end()};
 }
 
 // Hash Table Resize

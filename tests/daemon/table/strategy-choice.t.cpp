@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,8 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TableStrategyChoice, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestStrategyChoice, BaseFixture)
 
 using fw::Strategy;
 
@@ -57,7 +58,7 @@ BOOST_AUTO_TEST_CASE(Get)
   BOOST_CHECK_EQUAL(getA.first, false);
 }
 
-BOOST_AUTO_TEST_CASE(Effective)
+BOOST_AUTO_TEST_CASE(FindEffectiveStrategy)
 {
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
@@ -124,13 +125,61 @@ BOOST_AUTO_TEST_CASE(Effective)
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/D")  .getName(), nameQ);
 }
 
+BOOST_AUTO_TEST_CASE(FindEffectiveStrategyWithPitEntry)
+{
+  Forwarder forwarder;
+  Name nameP("ndn:/strategy/P");
+  Name nameQ("ndn:/strategy/Q");
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  StrategyChoice& table = forwarder.getStrategyChoice();
+  table.install(strategyP);
+  table.install(strategyQ);
+
+  shared_ptr<Data> dataABC = makeData("/A/B/C");
+  Name fullName = dataABC->getFullName();
+
+  BOOST_CHECK(table.insert("/A", nameP));
+  BOOST_CHECK(table.insert(fullName, nameQ));
+
+  Pit& pit = forwarder.getPit();
+  shared_ptr<Interest> interestAB = makeInterest("/A/B");
+  shared_ptr<pit::Entry> pitAB = pit.insert(*interestAB).first;
+  shared_ptr<Interest> interestFull = makeInterest(fullName);
+  shared_ptr<pit::Entry> pitFull = pit.insert(*interestFull).first;
+
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*pitAB).getName(), nameP);
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*pitFull).getName(), nameQ);
+}
+
+BOOST_AUTO_TEST_CASE(FindEffectiveStrategyWithMeasurementsEntry)
+{
+  Forwarder forwarder;
+  Name nameP("ndn:/strategy/P");
+  Name nameQ("ndn:/strategy/Q");
+  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  StrategyChoice& table = forwarder.getStrategyChoice();
+  table.install(strategyP);
+  table.install(strategyQ);
+
+  BOOST_CHECK(table.insert("/A", nameP));
+  BOOST_CHECK(table.insert("/A/B/C", nameQ));
+
+  Measurements& measurements = forwarder.getMeasurements();
+  shared_ptr<measurements::Entry> mAB = measurements.get("/A/B");
+  shared_ptr<measurements::Entry> mABCD = measurements.get("/A/B/C/D");
+
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*mAB).getName(), nameP);
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*mABCD).getName(), nameQ);
+}
+
 //XXX BOOST_CONCEPT_ASSERT((ForwardIterator<std::vector<int>::iterator>))
 //    is also failing. There might be a problem with ForwardIterator concept checking.
 //BOOST_CONCEPT_ASSERT((ForwardIterator<StrategyChoice::const_iterator>));
 
 BOOST_AUTO_TEST_CASE(Enumerate)
 {
-
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
@@ -305,7 +354,8 @@ BOOST_AUTO_TEST_CASE(Versioning)
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/").getName(), name4);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestStrategyChoice
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace nfd
