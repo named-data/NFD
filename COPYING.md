@@ -1,3 +1,33 @@
+NFD is licensed under conditions of GNU General Public License version 3 or later.
+
+NFD relies on third-party software and libraries, licensed under the following licenses:
+
+- ndn-cxx library is licensed under conditions of
+  [GNU Lesser General Public License version 3](https://github.com/named-data/ndn-cxx/blob/master/COPYING.md).
+
+- Boost libraries licensed under conditions of
+  [Boost Software License 1.0](http://www.boost.org/users/license.html)
+
+- CryptoPP library is licensed under conditions of
+  [Boost Software License 1.0](http://www.boost.org/users/license.html)
+
+- SQLite is in [public domain](http://www.sqlite.org/copyright.html)
+
+- WebSocket++ library licensed under conditions of
+  [BSD license](https://github.com/zaphoyd/websocketpp/blob/ac5d7ea5af9734de965688b54a7860259887b537/COPYING)
+
+- Libpcap library licensed under conditions of
+  [a 3-clause BSD license](http://www.tcpdump.org/license.html).
+
+- waf build system is licensed under conditions of
+  [BSD license](https://github.com/named-data/ndn-cxx/blob/master/waf)
+
+The GPL license is provided below in this file.  For more information about these licenses, see
+http://www.gnu.org/licenses/
+
+
+----------------------------------------------------------------------------------
+
 GNU GENERAL PUBLIC LICENSE
 ==========================
 Version 3, 29 June 2007
