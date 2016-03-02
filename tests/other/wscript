@@ -27,7 +27,7 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 top = '../..'
 
 def build(bld):
-   for module, name in {"cs-benchmark": "CS Benchmark"}.iteritems():
+   for module, name in {"cs-benchmark": "CS Benchmark"}.items():
        # main()
        bld(target='unit-tests-%s-main' % module,
            name='unit-tests-%s-main' % module,

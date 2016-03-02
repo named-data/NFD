@@ -42,7 +42,7 @@ def build(bld):
 
         for module, name in {"core": "NFD Core Tests",
                              "daemon": "NFD Daemon Tests",
-                             "rib": "NFD RIB Tests"}.iteritems():
+                             "rib": "NFD RIB Tests"}.items():
             # main()
             bld(target='unit-tests-%s-main' % module,
                 name='unit-tests-%s-main' % module,
