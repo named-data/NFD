@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -111,7 +111,7 @@ TopologyNode
 TopologyTester::addForwarder(const std::string& label)
 {
   size_t i = m_forwarders.size();
-  m_forwarders.push_back(std::move(make_unique<Forwarder>()));
+  m_forwarders.push_back(make_unique<Forwarder>());
   m_forwarderLabels.push_back(label);
   BOOST_ASSERT(m_forwarders.size() == m_forwarderLabels.size());
   return i;
