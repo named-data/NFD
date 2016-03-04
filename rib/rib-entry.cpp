@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -200,22 +200,25 @@ RibEntry::getRouteWithLowestCostByFaceId(uint64_t faceId) const
 const Route*
 RibEntry::getRouteWithSecondLowestCostByFaceId(uint64_t faceId) const
 {
-  std::vector<Route> matches;
+  std::vector<const Route*> matches;
 
   // Copy routes which have faceId
-  std::copy_if(m_routes.begin(), m_routes.end(), std::back_inserter(matches),
-    [faceId] (const Route& route) { return route.faceId == faceId; });
+  for (const Route& route : m_routes) {
+    if (route.faceId == faceId) {
+      matches.push_back(&route);
+    }
+  }
 
-  // If there are not at least 2 routes, there is no second lowest
+  // If there are less than 2 routes, there is no second lowest
   if (matches.size() < 2) {
     return nullptr;
   }
 
   // Get second lowest cost
   std::nth_element(matches.begin(), matches.begin() + 1, matches.end(),
-    [] (const Route& lhs, const Route& rhs) { return lhs.cost < rhs.cost; });
+    [] (const Route* lhs, const Route* rhs) { return lhs->cost < rhs->cost; });
 
-  return &matches.at(1);
+  return matches.at(1);
 }
 
 const Route*
