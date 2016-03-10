@@ -14,6 +14,4 @@ Manpages
    manpages/ndn-autoconfig-server
    misc/local-prefix-discovery
    manpages/nfd-autoreg
-   manpages/ndn-tlv-peek
-   manpages/ndn-tlv-poke
    :maxdepth: 1
