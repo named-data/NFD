@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TableCs, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestCs, BaseFixture)
 
 class FindFixture : protected BaseFixture
 {
@@ -313,7 +314,28 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   CHECK_CS_FIND(1);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+/// \todo test MustBeFresh
+
+BOOST_AUTO_TEST_SUITE_END() // Find
+
+// When the capacity limit is set to zero, Data cannot be inserted;
+// this test case covers this situation.
+// The behavior of non-zero capacity limit depends on the eviction policy,
+// and is tested in policy test suites.
+BOOST_FIXTURE_TEST_CASE(ZeroCapacity, FindFixture)
+{
+  m_cs.setLimit(0);
+
+  BOOST_CHECK_EQUAL(m_cs.getLimit(), 0);
+  BOOST_CHECK_EQUAL(m_cs.size(), 0);
+  BOOST_CHECK(m_cs.begin() == m_cs.end());
+
+  insert(1, "ndn:/A");
+  BOOST_CHECK_EQUAL(m_cs.size(), 0);
+
+  startInterest("ndn:/A");
+  CHECK_CS_FIND(0);
+}
 
 BOOST_AUTO_TEST_CASE(CachePolicyNoCache)
 {
@@ -321,12 +343,11 @@ BOOST_AUTO_TEST_CASE(CachePolicyNoCache)
 
   shared_ptr<Data> dataA = makeData("ndn:/A");
   dataA->wireEncode();
-
   dataA->setTag(make_shared<lp::CachePolicyTag>(
                 lp::CachePolicy().setPolicy(lp::CachePolicyType::NO_CACHE)));
+  cs.insert(*dataA);
 
-  BOOST_CHECK_EQUAL(cs.insert(*dataA), false);
-
+  BOOST_CHECK_EQUAL(cs.size(), 0);
   cs.find(Interest("ndn:/A"),
           bind([] { BOOST_CHECK(false); }),
           bind([] { BOOST_CHECK(true); }));
@@ -368,7 +389,8 @@ BOOST_AUTO_TEST_CASE(Enumeration)
   BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestCs
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace cs

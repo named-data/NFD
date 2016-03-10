@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,9 +69,8 @@ public:
   Cs(size_t nMaxPackets = 10, unique_ptr<Policy> policy = makeDefaultPolicy());
 
   /** \brief inserts a Data packet
-   *  \return true
    */
-  bool
+  void
   insert(const Data& data, bool isUnsolicited = false);
 
   typedef std::function<void(const Interest&, const Data& data)> HitCallback;

@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
   Cs& cs = forwarder.getCs();
-  BOOST_REQUIRE(cs.insert(*dataA));
+  cs.insert(*dataA);
 
   face1->receiveInterest(*interestA);
   limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));

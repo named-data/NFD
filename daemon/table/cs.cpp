@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,17 +78,22 @@ Cs::setPolicy(unique_ptr<Policy> policy)
   m_policy->setLimit(limit);
 }
 
-bool
+void
 Cs::insert(const Data& data, bool isUnsolicited)
 {
   NFD_LOG_DEBUG("insert " << data.getName());
+
+  if (m_policy->getLimit() == 0) {
+    // shortcut for disabled CS
+    return;
+  }
 
   // recognize CachePolicy
   shared_ptr<lp::CachePolicyTag> tag = data.getTag<lp::CachePolicyTag>();
   if (tag != nullptr) {
     lp::CachePolicyType policy = tag->get().getPolicy();
     if (policy == lp::CachePolicyType::NO_CACHE) {
-      return false;
+      return;
     }
   }
 
@@ -111,8 +116,6 @@ Cs::insert(const Data& data, bool isUnsolicited)
   else {
     m_policy->afterInsert(it);
   }
-
-  return true;
 }
 
 void
