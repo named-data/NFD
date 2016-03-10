@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -673,6 +673,26 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   // is an implementation decision. NDN protocol requires Name+Nonce to be unique,
   // without specifying when Name+Nonce could repeat. Forwarder is permitted to suppress
   // an Interest if its Name+Nonce has appeared any point in the past.
+}
+
+BOOST_FIXTURE_TEST_CASE(PitLeak, UnitTestTimeFixture) // Bug 3484
+{
+  Forwarder forwarder;
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/hcLSAsQ9A");
+  interest->setNonce(61883075);
+  interest->setInterestLifetime(time::seconds(2));
+
+  DeadNonceList& dnl = forwarder.getDeadNonceList();
+  dnl.add(interest->getName(), interest->getNonce());
+  Pit& pit = forwarder.getPit();
+  BOOST_REQUIRE_EQUAL(pit.size(), 0);
+
+  forwarder.startProcessInterest(*face1, *interest);
+  this->advanceClocks(time::milliseconds(100), time::seconds(20));
+  BOOST_CHECK_EQUAL(pit.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(LinkDelegation)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,16 +117,23 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
     return;
   }
 
+  // detect duplicate Nonce with Dead Nonce List
+  bool hasDuplicateNonceInDnl = m_deadNonceList.has(interest.getName(), interest.getNonce());
+  if (hasDuplicateNonceInDnl) {
+    // goto Interest loop pipeline
+    this->onInterestLoop(inFace, interest);
+    return;
+  }
+
   // PIT insert
   shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
 
-  // detect duplicate Nonce
-  int dnw = pitEntry->findNonce(interest.getNonce(), inFace);
-  bool hasDuplicateNonce = (dnw != pit::DUPLICATE_NONCE_NONE) ||
-                           m_deadNonceList.has(interest.getName(), interest.getNonce());
-  if (hasDuplicateNonce) {
+  // detect duplicate Nonce in PIT entry
+  bool hasDuplicateNonceInPit = pitEntry->findNonce(interest.getNonce(), inFace) !=
+                                pit::DUPLICATE_NONCE_NONE;
+  if (hasDuplicateNonceInPit) {
     // goto Interest loop pipeline
-    this->onInterestLoop(inFace, interest, pitEntry);
+    this->onInterestLoop(inFace, interest);
     return;
   }
 
@@ -147,8 +154,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 }
 
 void
-Forwarder::onInterestLoop(Face& inFace, const Interest& interest,
-                          shared_ptr<pit::Entry> pitEntry)
+Forwarder::onInterestLoop(Face& inFace, const Interest& interest)
 {
   // if multi-access face, drop
   if (inFace.getLinkType() == ndn::nfd::LINK_TYPE_MULTI_ACCESS) {
