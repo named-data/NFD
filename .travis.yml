@@ -1,15 +1,24 @@
-sudo: true
-language: cpp
-os:
-  - linux
-compiler:
-  - gcc
+sudo: required
+language: generic
+env:
+  global:
+    - JOB_NAME=limited-build
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      env: CXX=g++
+    - os: linux
+      dist: trusty
+      env: CXX=clang++
+    - os: osx
+      env: CXX=clang++
 notifications:
   email:
     on_success: always
     on_failure: always
 script:
-  - if [[ $TRAVIS_OS_NAME == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-12.04"; fi
-  - if [[ $TRAVIS_OS_NAME == osx ]]; then export NODE_LABELS="OSX OSX-10.10"; fi
+  - if [[ $TRAVIS_OS_NAME == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-14.04"; fi
+  - if [[ $TRAVIS_OS_NAME == osx ]]; then export NODE_LABELS="OSX OSX-10.9"; fi
   - echo $NODE_LABELS
   - ./.jenkins

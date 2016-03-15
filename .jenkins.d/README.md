@@ -28,6 +28,7 @@ Environment Variables Used in Build Scripts
 
   * empty: default build process
   * `code-coverage` (Linux OS is assumed): build process with code coverage analysis
+  * `limited-build`: only a single build with tests
 
 - `CACHE_DIR`: the variable defines a path to folder containing cached files from previous builds,
   e.g., a compiled version of ndn-cxx library.  If not set, `/tmp` is used.
