@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -135,6 +135,22 @@ ManagerCommonFixture::checkResponse(size_t idx,
 Block
 ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
 {
+  auto isFinalSegment = [] (const Data& data) -> bool {
+    const auto& segment = data.getName().at(-1);
+    if (segment.isSegment() == false) {
+      return true;
+    }
+    return segment == data.getFinalBlockId();
+  };
+
+  while (isFinalSegment(m_responses.back()) == false) {
+    auto name = m_responses.back().getName();
+    auto prefix = name.getPrefix(-1);
+    auto segmentNo = name.at(-1).toSegment() + 1;
+    // request for the next segment
+    receiveInterest(makeInterest(prefix.appendSegment(segmentNo)));
+  }
+
   size_t endIndex = startIndex + nResponses; // not included
   if (nResponses == startIndex || endIndex > m_responses.size()) {
     endIndex = m_responses.size();
