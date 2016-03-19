@@ -97,6 +97,9 @@ main(int, char**)
   int ret = setegid(grp.gr_gid);
   ret = seteuid(pwd.pw_uid);
   (void)(ret);
+
+  getegid();
+  geteuid();
   return 0;
 }
 '''):

@@ -157,6 +157,8 @@ BOOST_AUTO_TEST_CASE(ProcessSectionTcpUnknownOption)
 
 BOOST_AUTO_TEST_CASE(ProcessSectionUdp)
 {
+  SKIP_IF_NOT_SUPERUSER();
+
   const std::string CONFIG =
     "face_system\n"
     "{\n"
@@ -294,6 +296,8 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpUnknownOption)
 
 BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
 {
+  SKIP_IF_NOT_SUPERUSER();
+
   const std::string CONFIG_WITH_MCAST =
     "face_system\n"
     "{\n"

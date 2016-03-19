@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,6 +33,19 @@
 
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
+
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+#include <unistd.h>
+#define SKIP_IF_NOT_SUPERUSER() \
+  do { \
+    if (::geteuid() != 0) { \
+      BOOST_TEST_MESSAGE("This test case needs to be run as superuser, skipping"); \
+      return; \
+    } \
+  } while (false)
+#else
+#define SKIP_IF_NOT_SUPERUSER()
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
 namespace nfd {
 namespace tests {

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,6 +62,11 @@ public:
       "  udp\n"
       "  {\n"
       "    port " + port + "\n"
+      "    mcast no\n"
+      "  }\n"
+      "  ether\n"
+      "  {\n"
+      "    mcast no\n"
       "  }\n"
       "}\n"
       "authorizations\n"
@@ -457,5 +462,5 @@ BOOST_AUTO_TEST_SUITE_END() // CreateFace
 BOOST_AUTO_TEST_SUITE_END() // TestFaceManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
-} // tests
-} // nfd
+} // namespace tests
+} // namespace nfd
