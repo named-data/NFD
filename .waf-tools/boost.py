@@ -71,12 +71,16 @@ int main() { boost::system::error_code c; }
 
 PTHREAD_CODE = '''
 #include <pthread.h>
+static void* f(void*) { return 0; }
 int main() {
 	pthread_t th;
-	pthread_create(&th, 0, 0, 0);
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_create(&th, &attr, &f, 0);
 	pthread_join(th, 0);
-	pthread_attr_init(0); pthread_cleanup_push(0, 0);
-	pthread_create(0,0,0,0); pthread_cleanup_pop(0);
+	pthread_cleanup_push(0, 0);
+	pthread_cleanup_pop(0);
+	pthread_attr_destroy(&attr);
 }
 '''
 
@@ -361,7 +365,7 @@ def _check_pthread_flag(self, *k, **kw):
 		# we'll just look for -pthreads and -lpthread first:
 		boost_pthread_flags = ["-pthreads", "-lpthread", "-mt", "-pthread"]
 	else:
-		boost_pthread_flags = ["-lpthreads", "-Kthread", "-kthread", "-llthread", "-pthread",
+		boost_pthread_flags = ["", "-lpthreads", "-Kthread", "-kthread", "-llthread", "-pthread",
 							   "-pthreads", "-mthreads", "-lpthread", "--thread-safe", "-mt"]
 
 	for boost_pthread_flag in boost_pthread_flags:
