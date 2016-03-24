@@ -77,3 +77,6 @@ in the library:
 * Yukai Tu                <tuyukai1994@gmail.com>
 * João Pereira            <http://website.jpereira.co.uk>
 * Mathias Gibbens         <gibmat@cs.arizona.edu>
+* Yanbiao Li              <https://www.linkedin.com/pub/yanbiao-li/24/7a1/4ba>
+* Weiwei Liu              <https://www.linkedin.com/in/weiweiliu10>
+* Spencer Lee             <https://www.linkedin.com/in/spenlee>
