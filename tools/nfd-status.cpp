@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
  */
 
 #include "version.hpp"
+#include "common.hpp"
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
@@ -47,6 +48,39 @@
 namespace ndn {
 
 using util::SegmentFetcher;
+
+/** \brief custom validator for the purpose of obtaining nfdId.
+ */
+class ForwarderStatusValidator : public Validator
+{
+protected:
+  virtual void
+  checkPolicy(const Data& data,
+              int nSteps,
+              const OnDataValidated& onValidated,
+              const OnDataValidationFailed& onValidationFailed,
+              std::vector<shared_ptr<ValidationRequest>>& nextSteps) DECL_OVERRIDE
+  {
+    const ndn::KeyLocator& locator = data.getSignature().getKeyLocator();
+    if (nfdId.empty() && locator.getType() == KeyLocator::KeyLocator_Name)
+      nfdId = locator.getName();
+    onValidated(data.shared_from_this());
+  }
+
+  virtual void
+  checkPolicy(const Interest& interest,
+              int nSteps,
+              const OnInterestValidated& onValidated,
+              const OnInterestValidationFailed& onValidationFailed,
+              std::vector<shared_ptr<ValidationRequest>>& nextSteps) DECL_OVERRIDE
+  {
+    BOOST_ASSERT(false);
+  }
+
+public:
+  Name nfdId;
+};
+
 
 class NfdStatus
 {
@@ -138,7 +172,7 @@ public:
 
 
   void
-  onErrorFetch(uint32_t errorCode, const std::string& errorMsg)
+  onFetchError(uint32_t errorCode, const std::string& errorMsg)
   {
     std::cerr << "Error code:" << errorCode << ", message:" << errorMsg << std::endl;
 
@@ -165,93 +199,84 @@ public:
     Interest interest("/localhost/nfd/status/general");
     interest.setChildSelector(1);
     interest.setMustBeFresh(true);
-    m_face.expressInterest(
-                           interest,
-                           bind(&NfdStatus::afterFetchedVersionInformation, this, _2),
-                           bind(&NfdStatus::onTimeout, this));
+    SegmentFetcher::fetch(m_face, interest,
+                          m_forwarderStatusValidator,
+                          bind(&NfdStatus::afterFetchedVersionInformation, this, _1),
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
-  afterFetchedVersionInformation(const Data& data)
+  afterFetchedVersionInformation(const ConstBufferPtr& dataset)
   {
-    nfd::ForwarderStatus status(data.getContent());
-    std::string nfdId;
-    if (data.getSignature().hasKeyLocator())
-      {
-        const ndn::KeyLocator& locator = data.getSignature().getKeyLocator();
-        if (locator.getType() == KeyLocator::KeyLocator_Name)
-          nfdId = locator.getName().toUri();
-        //todo: KeyDigest supporting
-      }
+    Block block(tlv::Content, dataset);
+    nfd::ForwarderStatus status(block);
 
-    if (m_isOutputXml)
-      {
-        std::cout << "<generalStatus>";
-        std::cout << "<nfdId>"
-                  << nfdId << "</nfdId>";
-        std::cout << "<version>"
-                  << status.getNfdVersion() << "</version>";
-        std::cout << "<startTime>"
-                  << time::toString(status.getStartTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
-                  << "</startTime>";
-        std::cout << "<currentTime>"
-                  << time::toString(status.getCurrentTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
-                  << "</currentTime>";
-        std::cout << "<uptime>PT"
-                  << time::duration_cast<time::seconds>(status.getCurrentTimestamp()
-                                                        - status.getStartTimestamp()).count()
-                  << "S</uptime>";
-        std::cout << "<nNameTreeEntries>"     << status.getNNameTreeEntries()
-                  << "</nNameTreeEntries>";
-        std::cout << "<nFibEntries>"          << status.getNFibEntries()
-                  << "</nFibEntries>";
-        std::cout << "<nPitEntries>"          << status.getNPitEntries()
-                  << "</nPitEntries>";
-        std::cout << "<nMeasurementsEntries>" << status.getNMeasurementsEntries()
-                  << "</nMeasurementsEntries>";
-        std::cout << "<nCsEntries>"           << status.getNCsEntries()
-                  << "</nCsEntries>";
-        std::cout << "<packetCounters>";
-        std::cout << "<incomingPackets>";
-        std::cout << "<nInterests>"           << status.getNInInterests()
-                  << "</nInterests>";
-        std::cout << "<nDatas>"               << status.getNInDatas()
-                  << "</nDatas>";
-        std::cout << "</incomingPackets>";
-        std::cout << "<outgoingPackets>";
-        std::cout << "<nInterests>"           << status.getNOutInterests()
-                  << "</nInterests>";
-        std::cout << "<nDatas>"               << status.getNOutDatas()
-                  << "</nDatas>";
-        std::cout << "</outgoingPackets>";
-        std::cout << "</packetCounters>";
-        std::cout << "</generalStatus>";
-      }
-    else
-      {
-        std::cout << "General NFD status:" << std::endl;
-        std::cout << "                 nfdId="
-                  << nfdId << std::endl;
-        std::cout << "               version="
-                  << status.getNfdVersion() << std::endl;
-        std::cout << "             startTime="
-                  << time::toIsoString(status.getStartTimestamp()) << std::endl;
-        std::cout << "           currentTime="
-                  << time::toIsoString(status.getCurrentTimestamp()) << std::endl;
-        std::cout << "                uptime="
-                  << time::duration_cast<time::seconds>(status.getCurrentTimestamp()
-                                                        - status.getStartTimestamp()) << std::endl;
+    if (m_isOutputXml) {
+      std::cout << "<generalStatus>";
+      std::cout << "<nfdId>"
+                << m_forwarderStatusValidator.nfdId << "</nfdId>";
+      std::cout << "<version>"
+                << status.getNfdVersion() << "</version>";
+      std::cout << "<startTime>"
+                << time::toString(status.getStartTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
+                << "</startTime>";
+      std::cout << "<currentTime>"
+                << time::toString(status.getCurrentTimestamp(), "%Y-%m-%dT%H:%M:%S%F")
+                << "</currentTime>";
+      std::cout << "<uptime>PT"
+                << time::duration_cast<time::seconds>(status.getCurrentTimestamp() -
+                                                      status.getStartTimestamp()).count()
+                << "S</uptime>";
+      std::cout << "<nNameTreeEntries>"     << status.getNNameTreeEntries()
+                << "</nNameTreeEntries>";
+      std::cout << "<nFibEntries>"          << status.getNFibEntries()
+                << "</nFibEntries>";
+      std::cout << "<nPitEntries>"          << status.getNPitEntries()
+                << "</nPitEntries>";
+      std::cout << "<nMeasurementsEntries>" << status.getNMeasurementsEntries()
+                << "</nMeasurementsEntries>";
+      std::cout << "<nCsEntries>"           << status.getNCsEntries()
+                << "</nCsEntries>";
+      std::cout << "<packetCounters>";
+      std::cout << "<incomingPackets>";
+      std::cout << "<nInterests>"           << status.getNInInterests()
+                << "</nInterests>";
+      std::cout << "<nDatas>"               << status.getNInDatas()
+                << "</nDatas>";
+      std::cout << "</incomingPackets>";
+      std::cout << "<outgoingPackets>";
+      std::cout << "<nInterests>"           << status.getNOutInterests()
+                << "</nInterests>";
+      std::cout << "<nDatas>"               << status.getNOutDatas()
+                << "</nDatas>";
+      std::cout << "</outgoingPackets>";
+      std::cout << "</packetCounters>";
+      std::cout << "</generalStatus>";
+    }
+    else {
+      std::cout << "General NFD status:" << std::endl;
+      std::cout << "                 nfdId="
+                << m_forwarderStatusValidator.nfdId << std::endl;
+      std::cout << "               version="
+                << status.getNfdVersion() << std::endl;
+      std::cout << "             startTime="
+                << time::toIsoString(status.getStartTimestamp()) << std::endl;
+      std::cout << "           currentTime="
+                << time::toIsoString(status.getCurrentTimestamp()) << std::endl;
+      std::cout << "                uptime="
+                << time::duration_cast<time::seconds>(status.getCurrentTimestamp() -
+                                                      status.getStartTimestamp()) << std::endl;
 
-        std::cout << "      nNameTreeEntries=" << status.getNNameTreeEntries()     << std::endl;
-        std::cout << "           nFibEntries=" << status.getNFibEntries()          << std::endl;
-        std::cout << "           nPitEntries=" << status.getNPitEntries()          << std::endl;
-        std::cout << "  nMeasurementsEntries=" << status.getNMeasurementsEntries() << std::endl;
-        std::cout << "            nCsEntries=" << status.getNCsEntries()           << std::endl;
-        std::cout << "          nInInterests=" << status.getNInInterests()         << std::endl;
-        std::cout << "         nOutInterests=" << status.getNOutInterests()        << std::endl;
-        std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
-        std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
-      }
+      std::cout << "      nNameTreeEntries=" << status.getNNameTreeEntries()     << std::endl;
+      std::cout << "           nFibEntries=" << status.getNFibEntries()          << std::endl;
+      std::cout << "           nPitEntries=" << status.getNPitEntries()          << std::endl;
+      std::cout << "  nMeasurementsEntries=" << status.getNMeasurementsEntries() << std::endl;
+      std::cout << "            nCsEntries=" << status.getNCsEntries()           << std::endl;
+      std::cout << "          nInInterests=" << status.getNInInterests()         << std::endl;
+      std::cout << "         nOutInterests=" << status.getNOutInterests()        << std::endl;
+      std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
+      std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
+    }
 
     runNextStep();
   }
@@ -271,7 +296,7 @@ public:
     SegmentFetcher::fetch(m_face, interest,
                           m_validator,
                           bind(&NfdStatus::afterFetchedChannelStatusInformation, this, _1),
-                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
@@ -341,7 +366,7 @@ public:
     SegmentFetcher::fetch(m_face, interest,
                           m_validator,
                           bind(&NfdStatus::afterFetchedFaceStatusInformation, this, _1),
-                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
@@ -473,7 +498,7 @@ public:
     SegmentFetcher::fetch(m_face, interest,
                           m_validator,
                           bind(&NfdStatus::afterFetchedFibEnumerationInformation, this, _1),
-                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
@@ -561,7 +586,7 @@ public:
     SegmentFetcher::fetch(m_face, interest,
                           m_validator,
                           bind(&NfdStatus::afterFetchedStrategyChoiceInformationInformation, this, _1),
-                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
@@ -636,7 +661,7 @@ public:
     SegmentFetcher::fetch(m_face, interest,
                           m_validator,
                           bind(&NfdStatus::afterFetchedRibStatusInformation, this, _1),
-                          bind(&NfdStatus::onErrorFetch, this, _1, _2));
+                          bind(&NfdStatus::onFetchError, this, _1, _2));
   }
 
   void
@@ -828,12 +853,14 @@ private:
 
   shared_ptr<OBufferStream> m_buffer;
 
-  std::deque<function<void()> > m_fetchSteps;
+  std::deque<function<void()>> m_fetchSteps;
 
   ndn::ValidatorNull m_validator;
+
+  ForwarderStatusValidator m_forwarderStatusValidator;
 };
 
-}
+} // namespace ndn
 
 int main(int argc, char* argv[])
 {
