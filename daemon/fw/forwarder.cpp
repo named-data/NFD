@@ -24,6 +24,7 @@
  */
 
 #include "forwarder.hpp"
+#include "pit-algorithm.hpp"
 #include "core/logger.hpp"
 #include "core/random.hpp"
 #include "strategy.hpp"
@@ -129,8 +130,8 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   shared_ptr<pit::Entry> pitEntry = m_pit.insert(interest).first;
 
   // detect duplicate Nonce in PIT entry
-  bool hasDuplicateNonceInPit = pitEntry->findNonce(interest.getNonce(), inFace) !=
-                                pit::DUPLICATE_NONCE_NONE;
+  bool hasDuplicateNonceInPit = fw::findDuplicateNonce(*pitEntry, interest.getNonce(), inFace) !=
+                                fw::DUPLICATE_NONCE_NONE;
   if (hasDuplicateNonceInPit) {
     // goto Interest loop pipeline
     this->onInterestLoop(inFace, interest);
@@ -298,7 +299,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
                 " interest=" << pitEntry->getName());
 
   // scope control
-  if (pitEntry->violatesScope(outFace)) {
+  if (fw::violatesScope(*pitEntry, outFace)) {
     NFD_LOG_DEBUG("onOutgoingInterest face=" << outFace.getId() <<
                   " interest=" << pitEntry->getName() << " violates scope");
     return;
@@ -329,7 +330,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
 void
 Forwarder::onInterestReject(shared_ptr<pit::Entry> pitEntry)
 {
-  if (pitEntry->hasUnexpiredOutRecords()) {
+  if (fw::hasPendingOutRecords(*pitEntry)) {
     NFD_LOG_ERROR("onInterestReject interest=" << pitEntry->getName() <<
                   " cannot reject forwarded Interest");
     return;

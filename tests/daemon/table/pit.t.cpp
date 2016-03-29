@@ -154,65 +154,6 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   BOOST_CHECK(entry.getOutRecord(*face2) == entry.getOutRecords().end());
 }
 
-BOOST_AUTO_TEST_CASE(Nonce)
-{
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  shared_ptr<Face> face2 = make_shared<DummyFace>();
-
-  shared_ptr<Interest> interest = makeInterest("ndn:/qtCQ7I1c");
-  interest->setNonce(25559);
-
-  pit::Entry entry0(*interest);
-  BOOST_CHECK_EQUAL(entry0.findNonce(25559, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry0.findNonce(25559, *face2), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry0.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry0.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-
-  pit::Entry entry1(*interest);
-  entry1.insertOrUpdateInRecord(face1, *interest);
-  BOOST_CHECK_EQUAL(entry1.findNonce(25559, *face1), pit::DUPLICATE_NONCE_IN_SAME);
-  BOOST_CHECK_EQUAL(entry1.findNonce(25559, *face2), pit::DUPLICATE_NONCE_IN_OTHER);
-  BOOST_CHECK_EQUAL(entry1.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry1.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-
-  pit::Entry entry2(*interest);
-  entry2.insertOrUpdateOutRecord(face1, *interest);
-  BOOST_CHECK_EQUAL(entry2.findNonce(25559, *face1), pit::DUPLICATE_NONCE_OUT_SAME);
-  BOOST_CHECK_EQUAL(entry2.findNonce(25559, *face2), pit::DUPLICATE_NONCE_OUT_OTHER);
-  BOOST_CHECK_EQUAL(entry2.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry2.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-
-  pit::Entry entry3(*interest);
-  entry3.insertOrUpdateInRecord(face1, *interest);
-  entry3.insertOrUpdateOutRecord(face1, *interest);
-  BOOST_CHECK_EQUAL(entry3.findNonce(25559, *face1),
-                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_OUT_SAME);
-  BOOST_CHECK_EQUAL(entry3.findNonce(25559, *face2),
-                    pit::DUPLICATE_NONCE_IN_OTHER | pit::DUPLICATE_NONCE_OUT_OTHER);
-  BOOST_CHECK_EQUAL(entry3.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry3.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-
-  pit::Entry entry4(*interest);
-  entry4.insertOrUpdateInRecord(face1, *interest);
-  entry4.insertOrUpdateInRecord(face2, *interest);
-  BOOST_CHECK_EQUAL(entry4.findNonce(25559, *face1),
-                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_IN_OTHER);
-  BOOST_CHECK_EQUAL(entry4.findNonce(25559, *face2),
-                    pit::DUPLICATE_NONCE_IN_SAME | pit::DUPLICATE_NONCE_IN_OTHER);
-  BOOST_CHECK_EQUAL(entry4.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry4.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-
-  pit::Entry entry5(*interest);
-  entry5.insertOrUpdateOutRecord(face1, *interest);
-  entry5.insertOrUpdateOutRecord(face2, *interest);
-  BOOST_CHECK_EQUAL(entry5.findNonce(25559, *face1),
-                    pit::DUPLICATE_NONCE_OUT_SAME | pit::DUPLICATE_NONCE_OUT_OTHER);
-  BOOST_CHECK_EQUAL(entry5.findNonce(25559, *face2),
-                    pit::DUPLICATE_NONCE_OUT_SAME | pit::DUPLICATE_NONCE_OUT_OTHER);
-  BOOST_CHECK_EQUAL(entry5.findNonce(19004, *face1), pit::DUPLICATE_NONCE_NONE);
-  BOOST_CHECK_EQUAL(entry5.findNonce(19004, *face2), pit::DUPLICATE_NONCE_NONE);
-}
-
 BOOST_AUTO_TEST_CASE(Lifetime)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
@@ -227,27 +168,6 @@ BOOST_AUTO_TEST_CASE(Lifetime)
 
   pit::OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
   BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
-}
-
-BOOST_AUTO_TEST_CASE(CanForwardTo)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/WDsuBLIMG");
-  pit::Entry entry(*interest);
-
-  shared_ptr<Face> face1 = make_shared<DummyFace>();
-  shared_ptr<Face> face2 = make_shared<DummyFace>();
-
-  entry.insertOrUpdateInRecord(face1, *interest);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), false);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
-
-  entry.insertOrUpdateInRecord(face2, *interest);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), true);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
-
-  entry.insertOrUpdateOutRecord(face1, *interest);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face1), false);
-  BOOST_CHECK_EQUAL(entry.canForwardTo(*face2), true);
 }
 
 BOOST_AUTO_TEST_CASE(OutRecordNack)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "best-route-strategy2.hpp"
+#include "pit-algorithm.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -65,7 +66,7 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
     return false;
 
   // forwarding would violate scope
-  if (pitEntry->violatesScope(*upstream))
+  if (violatesScope(*pitEntry, *upstream))
     return false;
 
   if (wantUnused) {

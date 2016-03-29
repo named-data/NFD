@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "access-strategy.hpp"
+#include "pit-algorithm.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {
@@ -131,7 +132,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
     return false;
   }
 
-  if (pitEntry->violatesScope(*face)) {
+  if (violatesScope(*pitEntry, *face)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-violates-scope");
     return false;
   }

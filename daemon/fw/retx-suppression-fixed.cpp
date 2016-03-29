@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "retx-suppression-fixed.hpp"
+#include "pit-algorithm.hpp"
 
 namespace nfd {
 namespace fw {
@@ -40,7 +41,7 @@ RetxSuppression::Result
 RetxSuppressionFixed::decide(const Face& inFace, const Interest& interest,
                              pit::Entry& pitEntry) const
 {
-  bool isNewPitEntry = !pitEntry.hasUnexpiredOutRecords();
+  bool isNewPitEntry = !hasPendingOutRecords(pitEntry);
   if (isNewPitEntry) {
     return NEW;
   }

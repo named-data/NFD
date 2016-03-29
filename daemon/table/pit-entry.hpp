@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ class NameTree;
 
 namespace name_tree {
 class Entry;
-}
+} // namespace name_tree
 
 namespace pit {
 
@@ -47,20 +47,6 @@ typedef std::list< InRecord>  InRecordCollection;
 /** \brief represents an unordered collection of OutRecords
  */
 typedef std::list<OutRecord> OutRecordCollection;
-
-/** \brief indicates where duplicate Nonces are found
- */
-enum DuplicateNonceWhere {
-  DUPLICATE_NONCE_NONE      = 0,
-  /// in-record of same face
-  DUPLICATE_NONCE_IN_SAME   = (1 << 0),
-  /// in-record of other face
-  DUPLICATE_NONCE_IN_OTHER  = (1 << 1),
-  /// out-record of same face
-  DUPLICATE_NONCE_OUT_SAME  = (1 << 2),
-  /// out-record of other face
-  DUPLICATE_NONCE_OUT_OTHER = (1 << 3)
-};
 
 /** \brief represents a PIT entry
  */
@@ -78,44 +64,9 @@ public:
   const Name&
   getName() const;
 
-  /** \brief decides whether Interest can be forwarded to face
-   *
-   *  \return true if OutRecord of this face does not exist or has expired,
-   *          and there is an InRecord not of this face,
-   *          and scope is not violated
-   */
-  bool
-  canForwardTo(const Face& face) const;
-
-  /** \brief decides whether forwarding Interest to face would violate scope
-   *
-   *  \return true if scope control would be violated
-   *  \note canForwardTo has more comprehensive checks (including scope control)
-   *        and should be used by most strategies. Outgoing Interest pipeline
-   *        should only check scope because some strategy (eg. vehicular) needs
-   *        to retransmit sooner than OutRecord expiry, or forward Interest
-   *        back to incoming face
-   */
-  bool
-  violatesScope(const Face& face) const;
-
-  /** \brief finds where a duplicate Nonce appears
-   *  \return OR'ed DuplicateNonceWhere
-   */
-  int
-  findNonce(uint32_t nonce, const Face& face) const;
-
 public: // InRecord
   const InRecordCollection&
   getInRecords() const;
-
-  /** \brief determines whether any InRecord is a local Face
-   *
-   *  \return true if any InRecord is a local Face,
-   *          false if all InRecords are non-local Faces
-   */
-  bool
-  hasLocalInRecord() const;
 
   /** \brief inserts a InRecord for face, and updates it with interest
    *
@@ -161,11 +112,6 @@ public: // OutRecord
   /// deletes one OutRecord for face if exists
   void
   deleteOutRecord(const Face& face);
-
-  /** \return true if there is one or more unexpired OutRecords
-   */
-  bool
-  hasUnexpiredOutRecords() const;
 
 public:
   scheduler::EventId m_unsatisfyTimer;

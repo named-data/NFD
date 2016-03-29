@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "multicast-strategy.hpp"
+#include "pit-algorithm.hpp"
 
 namespace nfd {
 namespace fw {
@@ -38,20 +39,20 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 
 void
 MulticastStrategy::afterReceiveInterest(const Face& inFace,
-                   const Interest& interest,
-                   shared_ptr<fib::Entry> fibEntry,
-                   shared_ptr<pit::Entry> pitEntry)
+                                        const Interest& interest,
+                                        shared_ptr<fib::Entry> fibEntry,
+                                        shared_ptr<pit::Entry> pitEntry)
 {
   const fib::NextHopList& nexthops = fibEntry->getNextHops();
 
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> outFace = it->getFace();
-    if (pitEntry->canForwardTo(*outFace)) {
+    if (canForwardToLegacy(*pitEntry, *outFace)) {
       this->sendInterest(pitEntry, outFace);
     }
   }
 
-  if (!pitEntry->hasUnexpiredOutRecords()) {
+  if (!hasPendingOutRecords(*pitEntry)) {
     this->rejectPendingInterest(pitEntry);
   }
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,9 +29,6 @@
 namespace nfd {
 namespace pit {
 
-const Name Entry::LOCALHOST_NAME("ndn:/localhost");
-const Name Entry::LOCALHOP_NAME("ndn:/localhop");
-
 Entry::Entry(const Interest& interest)
   : m_interest(interest.shared_from_this())
 {
@@ -41,90 +38,6 @@ const Name&
 Entry::getName() const
 {
   return m_interest->getName();
-}
-
-bool
-Entry::hasLocalInRecord() const
-{
-  return std::any_of(m_inRecords.begin(), m_inRecords.end(),
-    [] (const InRecord& inRecord) { return inRecord.getFace()->getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
-}
-
-bool
-Entry::canForwardTo(const Face& face) const
-{
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-
-  bool hasUnexpiredOutRecord = std::any_of(m_outRecords.begin(), m_outRecords.end(),
-    [&face, &now] (const OutRecord& outRecord) {
-      return outRecord.getFace().get() == &face && outRecord.getExpiry() >= now;
-    });
-  if (hasUnexpiredOutRecord) {
-    return false;
-  }
-
-  bool hasUnexpiredOtherInRecord = std::any_of(m_inRecords.begin(), m_inRecords.end(),
-    [&face, &now] (const InRecord& inRecord) {
-      return inRecord.getFace().get() != &face && inRecord.getExpiry() >= now;
-    });
-  if (!hasUnexpiredOtherInRecord) {
-    return false;
-  }
-
-  return !this->violatesScope(face);
-}
-
-bool
-Entry::violatesScope(const Face& face) const
-{
-  // /localhost scope
-  bool isViolatingLocalhost = face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
-                              LOCALHOST_NAME.isPrefixOf(this->getName());
-  if (isViolatingLocalhost) {
-    return true;
-  }
-
-  // /localhop scope
-  bool isViolatingLocalhop = face.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
-                             LOCALHOP_NAME.isPrefixOf(this->getName()) &&
-                             !this->hasLocalInRecord();
-  if (isViolatingLocalhop) {
-    return true;
-  }
-
-  return false;
-}
-
-int
-Entry::findNonce(uint32_t nonce, const Face& face) const
-{
-  // TODO should we ignore expired in/out records?
-
-  int dnw = DUPLICATE_NONCE_NONE;
-
-  for (const InRecord& inRecord : m_inRecords) {
-    if (inRecord.getLastNonce() == nonce) {
-      if (inRecord.getFace().get() == &face) {
-        dnw |= DUPLICATE_NONCE_IN_SAME;
-      }
-      else {
-        dnw |= DUPLICATE_NONCE_IN_OTHER;
-      }
-    }
-  }
-
-  for (const OutRecord& outRecord : m_outRecords) {
-    if (outRecord.getLastNonce() == nonce) {
-      if (outRecord.getFace().get() == &face) {
-        dnw |= DUPLICATE_NONCE_OUT_SAME;
-      }
-      else {
-        dnw |= DUPLICATE_NONCE_OUT_OTHER;
-      }
-    }
-  }
-
-  return dnw;
 }
 
 InRecordCollection::iterator
@@ -193,15 +106,6 @@ Entry::deleteOutRecord(const Face& face)
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }
-}
-
-bool
-Entry::hasUnexpiredOutRecords() const
-{
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-
-  return std::any_of(m_outRecords.begin(), m_outRecords.end(),
-    [&now] (const OutRecord& outRecord) { return outRecord.getExpiry() >= now; });
 }
 
 } // namespace pit

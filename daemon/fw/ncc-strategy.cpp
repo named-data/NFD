@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "ncc-strategy.hpp"
+#include "pit-algorithm.hpp"
 #include "core/random.hpp"
 #include <boost/random/uniform_int_distribution.hpp>
 
@@ -60,7 +61,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<PitEntryInfo> pitEntryInfo =
     pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
-  bool isNewPitEntry = !pitEntry->hasUnexpiredOutRecords();
+  bool isNewPitEntry = !hasPendingOutRecords(*pitEntry);
   if (!isNewPitEntry) {
     return;
   }
@@ -74,7 +75,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
   if (static_cast<bool>(bestFace) && fibEntry->hasNextHop(bestFace) &&
-      pitEntry->canForwardTo(*bestFace)) {
+      canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = measurementsEntryInfo->prediction;
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
@@ -88,7 +89,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     // use first eligible nexthop
     auto firstEligibleNexthop = std::find_if(nexthops.begin(), nexthops.end(),
         [&pitEntry] (const fib::NextHop& nexthop) {
-          return pitEntry->canForwardTo(*nexthop.getFace());
+          return canForwardToLegacy(*pitEntry, *nexthop.getFace());
         });
     if (firstEligibleNexthop != nexthops.end()) {
       this->sendInterest(pitEntry, firstEligibleNexthop->getFace());
@@ -97,7 +98,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
-      pitEntry->canForwardTo(*previousFace)) {
+      canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
   }
 
@@ -138,7 +139,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
   if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
-      pitEntry->canForwardTo(*previousFace)) {
+      canForwardToLegacy(*pitEntry, *previousFace)) {
     this->sendInterest(pitEntry, previousFace);
   }
 
@@ -146,7 +147,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
   bool isForwarded = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> face = it->getFace();
-    if (pitEntry->canForwardTo(*face)) {
+    if (canForwardToLegacy(*pitEntry, *face)) {
       isForwarded = true;
       this->sendInterest(pitEntry, face);
       break;
