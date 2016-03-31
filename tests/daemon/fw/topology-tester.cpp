@@ -38,10 +38,17 @@ using face::GenericLinkService;
 
 TopologyLink::TopologyLink(const time::nanoseconds& delay)
   : m_isUp(true)
-  , m_delay(delay)
+{
+  this->setDelay(delay);
+}
+
+void
+TopologyLink::setDelay(const time::nanoseconds& delay)
 {
   BOOST_ASSERT(delay > time::nanoseconds::zero());
   // zero delay does not work on OSX
+
+  m_delay = delay;
 }
 
 void

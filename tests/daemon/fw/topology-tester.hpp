@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,6 +69,12 @@ public:
   {
     m_isUp = true;
   }
+
+  /** \brief change the link delay
+   *  \param delay link delay, must be positive
+   */
+  void
+  setDelay(const time::nanoseconds& delay);
 
   /** \brief attach a face to the link
    *  \param i forwarder index

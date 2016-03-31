@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "fw/ncc-strategy.hpp"
 #include "strategy-tester.hpp"
+#include "topology-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/limited-io.hpp"
 
@@ -39,6 +40,8 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
 
+using fw::NccStrategy;
+
 // NccStrategy is fairly complex.
 // The most important property is:
 // it remembers which upstream is the fastest to return Data,
@@ -47,7 +50,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 {
   LimitedIo limitedIo(this);
   Forwarder forwarder;
-  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  typedef StrategyTester<NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
   strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
@@ -112,7 +115,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 BOOST_AUTO_TEST_CASE(Bug1853)
 {
   Forwarder forwarder;
-  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  typedef StrategyTester<NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
@@ -167,7 +170,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 {
   LimitedIo limitedIo(this);
   Forwarder forwarder;
-  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  typedef StrategyTester<NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
   strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
@@ -229,7 +232,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 {
   LimitedIo limitedIo(this);
   Forwarder forwarder;
-  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  typedef StrategyTester<NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
   strategy->afterAction.connect(bind(&LimitedIo::afterOp, &limitedIo));
 
@@ -280,7 +283,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 BOOST_AUTO_TEST_CASE(Bug1998)
 {
   Forwarder forwarder;
-  typedef StrategyTester<fw::NccStrategy> NccStrategyTester;
+  typedef StrategyTester<NccStrategy> NccStrategyTester;
   shared_ptr<NccStrategyTester> strategy = make_shared<NccStrategyTester>(ref(forwarder));
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
@@ -309,6 +312,121 @@ BOOST_AUTO_TEST_CASE(Bug1998)
   // Interest shall go to face2, not loop back to face1
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy->sendInterestHistory[0].outFaceId, face2->getId());
+}
+
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(PredictionAdjustment, 1)
+BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
+{
+  /*
+   * /----------\
+   * | consumer |
+   * \----------/
+   *     |
+   *     |
+   *   +---+  5ms  +---+
+   *   | A |-------| B |
+   *   +---+       +---+
+   *     |           |
+   *     | 5ms       | 15ms/5ms
+   *     |           |
+   *   +---+       +---+
+   *   | C |-------| D |
+   *   +---+ 15ms  +---+
+   *         /5ms    |
+   *                 |
+   *         /----------\
+   *         | producer |
+   *         \----------/
+   */
+
+  TopologyTester topo;
+  TopologyNode nodeA = topo.addForwarder("A"),
+               nodeB = topo.addForwarder("B"),
+               nodeC = topo.addForwarder("C"),
+               nodeD = topo.addForwarder("D");
+
+  for (TopologyNode node : {nodeA, nodeB, nodeC, nodeD}) {
+    topo.setStrategy<NccStrategy>(node);
+  }
+
+  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", time::milliseconds( 5), {nodeA, nodeB}),
+                           linkAC = topo.addLink("AC", time::milliseconds( 5), {nodeA, nodeC}),
+                           linkBD = topo.addLink("BD", time::milliseconds(15), {nodeB, nodeD}),
+                           linkCD = topo.addLink("CD", time::milliseconds(15), {nodeC, nodeD});
+
+  topo.registerPrefix(nodeA, linkAB->getFace(nodeA), "ndn:/P");
+  topo.registerPrefix(nodeA, linkAC->getFace(nodeA), "ndn:/P");
+  topo.registerPrefix(nodeB, linkBD->getFace(nodeB), "ndn:/P");
+  topo.registerPrefix(nodeC, linkCD->getFace(nodeC), "ndn:/P");
+
+  shared_ptr<TopologyAppLink> producer = topo.addAppFace("producer", nodeD, "ndn:/P");
+  topo.addEchoProducer(producer->getClientFace());
+
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("consumer", nodeA);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/P",
+                           time::milliseconds(100), 300);
+
+  auto getMeInfo = [&] () -> shared_ptr<NccStrategy::MeasurementsEntryInfo> {
+    Measurements& measurements = topo.getForwarder(nodeA).getMeasurements();
+    shared_ptr<measurements::Entry> me = measurements.findExactMatch("ndn:/P");
+    return me == nullptr ? nullptr : me->getStrategyInfo<NccStrategy::MeasurementsEntryInfo>();
+  };
+
+  // NccStrategy starts with an exploration period when the algorithm adjusts
+  // its prediction to converge near the path RTT.
+  bool isExplorationFinished = false;
+  const time::milliseconds TRUE_RTT1(40);
+  bool isLastPredictionUnder = true;
+  int nPredictionCrossings = 0;
+  for (int i = 0; i < 10000; ++i) {
+    this->advanceClocks(time::milliseconds(5));
+    auto meInfo = getMeInfo();
+    if (meInfo == nullptr) {
+      continue;
+    }
+
+    if ((isLastPredictionUnder && meInfo->prediction > TRUE_RTT1) ||
+        (!isLastPredictionUnder && meInfo->prediction < TRUE_RTT1)) {
+      isLastPredictionUnder = !isLastPredictionUnder;
+      if (++nPredictionCrossings > 6) {
+        isExplorationFinished = true;
+        BOOST_TEST_MESSAGE("exploration finishes after " << (i * 5) << "ms");
+        break;
+      }
+    }
+  }
+  BOOST_REQUIRE_MESSAGE(isExplorationFinished, "exploration does not finish in 50000ms");
+
+  // NccStrategy has selected one path as the best.
+  // When we reduce the RTT of the other path, ideally it should be selected as the best face.
+  // However, this won't happen due to a weakness in NccStrategy.
+  // See http://redmine.named-data.net/issues/3411#note-4
+  shared_ptr<Face> bestFace1 = getMeInfo()->bestFace.lock();
+  if (bestFace1.get() == &linkAB->getFace(nodeA)) {
+    linkCD->setDelay(time::milliseconds(5));
+  }
+  else if (bestFace1.get() == &linkAC->getFace(nodeA)) {
+    linkBD->setDelay(time::milliseconds(5));
+  }
+  else {
+    BOOST_FAIL("unexpected best face");
+  }
+
+  bool isNewBestChosen = false;
+  for (int i = 0; i < 10000; ++i) {
+    this->advanceClocks(time::milliseconds(5));
+    auto meInfo = getMeInfo();
+    if (meInfo == nullptr) {
+      continue;
+    }
+
+    if (meInfo->bestFace.lock() != bestFace1) {
+      isNewBestChosen = true;
+      BOOST_TEST_MESSAGE("new best face is found after " << (i * 5) << "ms");
+      break;
+    }
+  }
+  BOOST_CHECK_MESSAGE(isNewBestChosen, "new best face is not found in 50000ms"); // expected failure
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNccStrategy

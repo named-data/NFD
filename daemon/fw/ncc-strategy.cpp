@@ -215,8 +215,16 @@ NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
   }
 
   shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
-  if (static_cast<bool>(pitEntryInfo)) {
+  if (pitEntryInfo != nullptr) {
     scheduler::cancel(pitEntryInfo->propagateTimer);
+
+    // Verify that the best face satisfied the interest before canceling the timeout call
+    shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
+      this->getMeasurementsEntryInfo(pitEntry);
+    shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
+
+    if (bestFace.get() == &inFace)
+      scheduler::cancel(pitEntryInfo->bestFaceTimeout);
   }
 }
 
