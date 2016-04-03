@@ -1,7 +1,7 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014-2015,  Regents of the University of California,
+Copyright (c) 2014-2016,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,27 +27,32 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 top = '../..'
 
 def build(bld):
-   testPrograms = {
-      "cs-benchmark": "CS Benchmark",
-      "pit-fib-benchmark": "PIT & FIB Benchmark",
-   }
-   for module, name in testPrograms.items():
-       # main()
-       bld(target='unit-tests-%s-main' % module,
-           name='unit-tests-%s-main' % module,
-           features='cxx',
-           use='BOOST',
-           source='../main.cpp',
-           defines=['BOOST_TEST_MODULE=%s' % name]
-         )
+    for module, name in {"cs-benchmark": "CS Benchmark",
+                         "pit-fib-benchmark": "PIT & FIB Benchmark"}.items():
+        # main
+        bld(target='unit-tests-%s-main' % module,
+            name='unit-tests-%s-main' % module,
+            features='cxx',
+            source='../main.cpp',
+            use='BOOST',
+            defines=['BOOST_TEST_MODULE=%s' % name]
+            )
 
-       # unit-tests-%module
-       bld.program(
-           target='../../%s' % module,
-           features='cxx cxxprogram',
-           source=bld.path.ant_glob(['%s*.cpp' % module]),
-           use='daemon-objects unit-tests-base unit-tests-%s-main' % module,
-           includes='.',
-           install_path=None,
-           defines='UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode,
-         )
+        # module
+        bld.program(target='../../%s' % module,
+                    features='cxx cxxprogram',
+                    source=bld.path.ant_glob(['%s*.cpp' % module]),
+                    use='daemon-objects unit-tests-base unit-tests-%s-main' % module,
+                    includes='.',
+                    install_path=None,
+                    defines=['UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode]
+                    )
+
+    # face-benchmark does not rely on Boost.Test
+    bld.program(target='../../face-benchmark',
+                features='cxx cxxprogram',
+                source=bld.path.ant_glob(['face-benchmark*.cpp']),
+                use='daemon-objects',
+                includes='.',
+                install_path=None
+                )
