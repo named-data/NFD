@@ -26,12 +26,12 @@
 #include "pit-algorithm.hpp"
 
 namespace nfd {
-namespace fw {
-
 namespace scope_prefix {
 const Name LOCALHOST("ndn:/localhost");
 const Name LOCALHOP("ndn:/localhop");
 } // namespace scope_prefix
+
+namespace fw {
 
 bool
 violatesScope(const pit::Entry& pitEntry, const Face& outFace)

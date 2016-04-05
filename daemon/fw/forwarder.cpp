@@ -36,8 +36,6 @@ NFD_LOG_INIT("Forwarder");
 
 using fw::Strategy;
 
-const Name Forwarder::LOCALHOST_NAME("ndn:/localhost");
-
 Forwarder::Forwarder()
   : m_faceTable(*this)
   , m_fib(m_nameTree)
@@ -110,7 +108,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 
   // /localhost scope control
   bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
-                              LOCALHOST_NAME.isPrefixOf(interest.getName());
+                              scope_prefix::LOCALHOST.isPrefixOf(interest.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                   " interest=" << interest.getName() << " violates /localhost");
@@ -378,7 +376,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
   // /localhost scope control
   bool isViolatingLocalhost = inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
-                              LOCALHOST_NAME.isPrefixOf(data.getName());
+                              scope_prefix::LOCALHOST.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onIncomingData face=" << inFace.getId() <<
                   " data=" << data.getName() << " violates /localhost");
@@ -464,7 +462,7 @@ Forwarder::onOutgoingData(const Data& data, Face& outFace)
 
   // /localhost scope control
   bool isViolatingLocalhost = outFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL &&
-                              LOCALHOST_NAME.isPrefixOf(data.getName());
+                              scope_prefix::LOCALHOST.isPrefixOf(data.getName());
   if (isViolatingLocalhost) {
     NFD_LOG_DEBUG("onOutgoingData face=" << outFace.getId() <<
                   " data=" << data.getName() << " violates /localhost");

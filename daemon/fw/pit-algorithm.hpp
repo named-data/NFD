@@ -33,7 +33,6 @@
  */
 
 namespace nfd {
-namespace fw {
 
 /** \brief contain Name prefix that affects namespace-based scope control
  *  \sa http://redmine.named-data.net/projects/nfd/wiki/ScopeControl
@@ -67,6 +66,8 @@ extern const Name LOCALHOST;
 extern const Name LOCALHOP;
 
 } // namespace scope_prefix
+
+namespace fw {
 
 /** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
  *  \sa http://redmine.named-data.net/projects/nfd/wiki/ScopeControl

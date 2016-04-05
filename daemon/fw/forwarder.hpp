@@ -239,8 +239,6 @@ private:
   DeadNonceList      m_deadNonceList;
   NetworkRegionTable m_networkRegionTable;
 
-  static const Name LOCALHOST_NAME;
-
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
 };
