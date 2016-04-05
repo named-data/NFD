@@ -476,8 +476,8 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyQ->afterReceiveNack_count, 1);
 
   // record Nack on PIT out-record
-  pit::OutRecordCollection::const_iterator outRecord1 = pit1->getOutRecord(*face1);
-  BOOST_REQUIRE(outRecord1 != pit1->getOutRecords().end());
+  pit::OutRecordCollection::iterator outRecord1 = pit1->getOutRecord(*face1);
+  BOOST_REQUIRE(outRecord1 != pit1->out_end());
   BOOST_REQUIRE(outRecord1->getIncomingNack() != nullptr);
   BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
 
@@ -559,8 +559,8 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest().getNonce(), 152);
 
   // erase in-record
-  pit::InRecordCollection::const_iterator inRecord2a = pit2->getInRecord(*face1);
-  BOOST_CHECK(inRecord2a == pit2->getInRecords().end());
+  pit::InRecordCollection::iterator inRecord2a = pit2->getInRecord(*face1);
+  BOOST_CHECK(inRecord2a == pit2->in_end());
 
   // send Nack with correct Nonce
   face2->sentNacks.clear();
@@ -570,8 +570,8 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().getNonce(), 808);
 
   // erase in-record
-  pit::InRecordCollection::const_iterator inRecord2b = pit2->getInRecord(*face1);
-  BOOST_CHECK(inRecord2b == pit2->getInRecords().end());
+  pit::InRecordCollection::iterator inRecord2b = pit2->getInRecord(*face1);
+  BOOST_CHECK(inRecord2b == pit2->in_end());
 
   // don't send Nack to multi-access face
   shared_ptr<Interest> interest2c = makeInterest("/Vi8tRm9MG3", 228);

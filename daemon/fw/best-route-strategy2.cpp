@@ -50,7 +50,7 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
  *  \param pitEntry PIT entry
  *  \param nexthop next hop
  *  \param currentDownstream incoming FaceId of current Interest
- *  \param wantUnused if true, NextHop must not have unexpired OutRecord
+ *  \param wantUnused if true, NextHop must not have unexpired out-record
  *  \param now time::steady_clock::now(), ignored if !wantUnused
  */
 static inline bool
@@ -70,10 +70,9 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
     return false;
 
   if (wantUnused) {
-    // NextHop must not have unexpired OutRecord
-    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(*upstream);
-    if (outRecord != pitEntry->getOutRecords().end() &&
-        outRecord->getExpiry() > now) {
+    // NextHop must not have unexpired out-record
+    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(*upstream);
+    if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
       return false;
     }
   }
@@ -81,8 +80,8 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
   return true;
 }
 
-/** \brief pick an eligible NextHop with earliest OutRecord
- *  \note It is assumed that every nexthop has an OutRecord
+/** \brief pick an eligible NextHop with earliest out-record
+ *  \note It is assumed that every nexthop has an out-record.
  */
 static inline fib::NextHopList::const_iterator
 findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
@@ -94,8 +93,8 @@ findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     if (!predicate_NextHop_eligible(pitEntry, *it, currentDownstream))
       continue;
-    pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(*it->getFace());
-    BOOST_ASSERT(outRecord != pitEntry->getOutRecords().end());
+    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(*it->getFace());
+    BOOST_ASSERT(outRecord != pitEntry->out_end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;
       earliestRenewed = outRecord->getLastRenewed();
@@ -209,8 +208,8 @@ BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
 
   if (nOutRecordsNotNacked == 1) {
     BOOST_ASSERT(lastFaceNotNacked != nullptr);
-    pit::InRecordCollection::const_iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
-    if (inR != pitEntry->getInRecords().end()) {
+    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
+    if (inR != pitEntry->in_end()) {
       // one out-record not Nacked, which is also a downstream
       NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
                     " nack=" << nack.getReason() <<

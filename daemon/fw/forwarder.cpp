@@ -142,9 +142,7 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   this->cancelUnsatisfyAndStragglerTimer(pitEntry);
 
   // is pending?
-  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-  bool isPending = inRecords.begin() != inRecords.end();
-  if (!isPending) {
+  if (!pitEntry->hasInRecords()) {
     m_cs.find(interest,
               bind(&Forwarder::onContentStoreHit, this, ref(inFace), pitEntry, _1, _2),
               bind(&Forwarder::onContentStoreMiss, this, ref(inFace), pitEntry, _1));
@@ -184,7 +182,7 @@ Forwarder::onContentStoreMiss(const Face& inFace,
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
 
   shared_ptr<Face> face = const_pointer_cast<Face>(inFace.shared_from_this());
-  // insert InRecord
+  // insert in-record
   pitEntry->insertOrUpdateInRecord(face, interest);
 
   // set PIT unsatisfy timer
@@ -261,14 +259,14 @@ Forwarder::onContentStoreHit(const Face& inFace,
   this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
 }
 
-/** \brief compare two InRecords for picking outgoing Interest
+/** \brief compare two in-records for picking outgoing Interest
  *  \return true if b is preferred over a
  *
  *  This function should be passed to std::max_element over InRecordCollection.
  *  The outgoing Interest picked is the last incoming Interest
  *  that does not come from outFace.
- *  If all InRecords come from outFace, it's fine to pick that. This happens when
- *  there's only one InRecord that comes from outFace. The legit use is for
+ *  If all in-records come from outFace, it's fine to pick that. This happens when
+ *  there's only one in-record that comes from outFace. The legit use is for
  *  vehicular network; otherwise, strategy shouldn't send to the sole inFace.
  */
 static inline bool
@@ -306,12 +304,10 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
   }
 
   // pick Interest
-  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-  pit::InRecordCollection::const_iterator pickedInRecord = std::max_element(
-    inRecords.begin(), inRecords.end(), bind(&compare_pickInterest, _1, _2, &outFace));
-  BOOST_ASSERT(pickedInRecord != inRecords.end());
-  shared_ptr<Interest> interest = const_pointer_cast<Interest>(
-    pickedInRecord->getInterest().shared_from_this());
+  pit::InRecordCollection::iterator pickedInRecord = std::max_element(
+    pitEntry->in_begin(), pitEntry->in_end(), bind(&compare_pickInterest, _1, _2, &outFace));
+  BOOST_ASSERT(pickedInRecord != pitEntry->in_end());
+  auto interest = const_pointer_cast<Interest>(pickedInRecord->getInterest().shared_from_this());
 
   if (wantNewNonce) {
     interest = make_shared<Interest>(*interest);
@@ -319,7 +315,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
     interest->setNonce(dist(getGlobalRng()));
   }
 
-  // insert OutRecord
+  // insert out-record
   pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), *interest);
 
   // send Interest
@@ -403,6 +399,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
   std::set<Face*> pendingDownstreams;
   // foreach PitEntry
+  auto now = time::steady_clock::now();
   for (const shared_ptr<pit::Entry>& pitEntry : pitMatches) {
     NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
 
@@ -410,9 +407,8 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->cancelUnsatisfyAndStragglerTimer(pitEntry);
 
     // remember pending downstreams
-    const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-    for (const pit::InRecord& inRecord : inRecords) {
-      if (inRecord.getExpiry() > time::steady_clock::now()) {
+    for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+      if (inRecord.getExpiry() > now) {
         pendingDownstreams.insert(inRecord.getFace().get());
       }
     }
@@ -421,11 +417,11 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyInterest, _1,
                                             pitEntry, cref(inFace), cref(data)));
 
-    // Dead Nonce List insert if necessary (for OutRecord of inFace)
+    // Dead Nonce List insert if necessary (for out-record of inFace)
     this->insertDeadNonceList(*pitEntry, true, data.getFreshnessPeriod(), &inFace);
 
     // mark PIT satisfied
-    pitEntry->deleteInRecords();
+    pitEntry->clearInRecords();
     pitEntry->deleteOutRecord(inFace);
 
     // set PIT straggler timer
@@ -511,7 +507,7 @@ Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
   // has out-record?
   pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(inFace);
   // if no out-record found, drop
-  if (outRecord == pitEntry->getOutRecords().end()) {
+  if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG("onIncomingNack face=" << inFace.getId() <<
                   " nack=" << nack.getInterest().getName() <<
                   "~" << nack.getReason() << " no-out-record");
@@ -552,10 +548,10 @@ Forwarder::onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
   }
 
   // has in-record?
-  pit::InRecordCollection::const_iterator inRecord = pitEntry->getInRecord(outFace);
+  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(outFace);
 
   // if no in-record found, drop
-  if (inRecord == pitEntry->getInRecords().end()) {
+  if (inRecord == pitEntry->in_end()) {
     NFD_LOG_DEBUG("onOutgoingNack face=" << outFace.getId() <<
                   " nack=" << pitEntry->getInterest().getName() <<
                   "~" << nack.getReason() << " no-in-record");
@@ -595,15 +591,13 @@ compare_InRecord_expiry(const pit::InRecord& a, const pit::InRecord& b)
 void
 Forwarder::setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry)
 {
-  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-  pit::InRecordCollection::const_iterator lastExpiring =
-    std::max_element(inRecords.begin(), inRecords.end(),
-    &compare_InRecord_expiry);
+  pit::InRecordCollection::iterator lastExpiring =
+    std::max_element(pitEntry->in_begin(), pitEntry->in_end(), &compare_InRecord_expiry);
 
   time::steady_clock::TimePoint lastExpiry = lastExpiring->getExpiry();
-  time::nanoseconds lastExpiryFromNow = lastExpiry  - time::steady_clock::now();
-  if (lastExpiryFromNow <= time::seconds(0)) {
-    // TODO all InRecords are already expired; will this happen?
+  time::nanoseconds lastExpiryFromNow = lastExpiry - time::steady_clock::now();
+  if (lastExpiryFromNow <= time::seconds::zero()) {
+    // TODO all in-records are already expired; will this happen?
   }
 
   scheduler::cancel(pitEntry->m_unsatisfyTimer);
@@ -666,7 +660,7 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
   }
   else {
     // insert outgoing Nonce of a specific face
-    pit::OutRecordCollection::const_iterator outRecord = pitEntry.getOutRecord(*upstream);
+    pit::OutRecordCollection::iterator outRecord = pitEntry.getOutRecord(*upstream);
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }

@@ -195,14 +195,14 @@ AccessStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
     pi->rtoTimer.cancel();
   }
 
-  if (pitEntry->getInRecords().empty()) { // already satisfied by another upstream
+  if (!pitEntry->hasInRecords()) { // already satisfied by another upstream
     NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
                   " not-fastest");
     return;
   }
 
-  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(inFace);
-  if (outRecord == pitEntry->getOutRecords().end()) { // no OutRecord
+  pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(inFace);
+  if (outRecord == pitEntry->out_end()) { // no out-record
     NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
                   " no-out-record");
     return;

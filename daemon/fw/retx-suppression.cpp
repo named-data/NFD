@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,13 +31,12 @@ namespace fw {
 time::steady_clock::TimePoint
 RetxSuppression::getLastOutgoing(const pit::Entry& pitEntry) const
 {
-  const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
   pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
-      outRecords.begin(), outRecords.end(),
-      [] (const pit::OutRecord& a, const pit::OutRecord& b) {
-        return a.getLastRenewed() < b.getLastRenewed();
-      });
-  BOOST_ASSERT(lastOutgoing != outRecords.end()); // otherwise it's new PIT entry
+    pitEntry.out_begin(), pitEntry.out_end(),
+    [] (const pit::OutRecord& a, const pit::OutRecord& b) {
+      return a.getLastRenewed() < b.getLastRenewed();
+    });
+  BOOST_ASSERT(lastOutgoing != pitEntry.out_end()); // otherwise it's new PIT entry
 
   return lastOutgoing->getLastRenewed();
 }

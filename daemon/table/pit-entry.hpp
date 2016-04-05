@@ -40,15 +40,21 @@ class Entry;
 
 namespace pit {
 
-/** \brief represents an unordered collection of InRecords
+/** \brief an unordered collection of in-records
  */
-typedef std::list< InRecord>  InRecordCollection;
+typedef std::list<InRecord> InRecordCollection;
 
-/** \brief represents an unordered collection of OutRecords
+/** \brief an unordered collection of out-records
  */
 typedef std::list<OutRecord> OutRecordCollection;
 
-/** \brief represents a PIT entry
+/** \brief an Interest table entry
+ *
+ *  An Interest table entry represents either a pending Interest or a recently satisfied Interest.
+ *  Each entry contains a collection of in-records, a collection of out-records,
+ *  and two timers used in forwarding pipelines.
+ *  In addition, the entry, in-records, and out-records are subclasses of StrategyInfoHost,
+ *  which allows forwarding strategy to store arbitrary information on them.
  */
 class Entry : public StrategyInfoHost, noncopyable
 {
@@ -56,6 +62,11 @@ public:
   explicit
   Entry(const Interest& interest);
 
+  /** \return the representative Interest of the PIT entry
+   *  \note Every Interest in in-records and out-records should have same Name and Selectors
+   *        as the representative Interest.
+   *  \todo #3162 require Link field to match the representative Interest
+   */
   const Interest&
   getInterest() const;
 
@@ -64,66 +75,124 @@ public:
   const Name&
   getName() const;
 
-public: // InRecord
+public: // in-record
+  /** \return collection of in-records
+   */
   const InRecordCollection&
   getInRecords() const;
 
-  /** \brief inserts a InRecord for face, and updates it with interest
-   *
-   *  If InRecord for face exists, the existing one is updated.
-   *  This method does not add the Nonce as a seen Nonce.
-   *  \return an iterator to the InRecord
+  /** \retval true There is at least one in-record.
+   *               This implies some downstream is waiting for Data or Nack.
+   *  \retval false There is no in-record.
+   *                This implies the entry is new or has been satisfied or Nacked.
+   */
+  bool
+  hasInRecords() const;
+
+  InRecordCollection::iterator
+  in_begin();
+
+  InRecordCollection::const_iterator
+  in_begin() const;
+
+  InRecordCollection::iterator
+  in_end();
+
+  InRecordCollection::const_iterator
+  in_end() const;
+
+  /** \brief get the in-record for \p face
+   *  \return an iterator to the in-record, or .in_end() if it does not exist
+   */
+  InRecordCollection::iterator
+  getInRecord(const Face& face);
+
+  /** \brief insert or update an in-record
+   *  \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
   insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest);
 
-  /** \brief get the InRecord for face
-   *  \return an iterator to the InRecord, or .end if it does not exist
+  /** \brief delete the in-record for \p face if it exists
    */
-  InRecordCollection::const_iterator
-  getInRecord(const Face& face) const;
-
-  /// deletes one InRecord for face if exists
   void
   deleteInRecord(const Face& face);
 
-  /// deletes all InRecords
+  /** \brief delete all in-records
+   */
   void
-  deleteInRecords();
+  clearInRecords();
 
-public: // OutRecord
+public: // out-record
+  /** \return collection of in-records
+   */
   const OutRecordCollection&
   getOutRecords() const;
 
-  /** \brief inserts a OutRecord for face, and updates it with interest
-   *
-   *  If OutRecord for face exists, the existing one is updated.
-   *  \return an iterator to the OutRecord
+  /** \retval true There is at least one out-record.
+   *               This implies the Interest has been forwarded to some upstream,
+   *               and they haven't returned Data, but may have returned Nacks.
+   *  \retval false There is no out-record.
+   *                This implies the Interest has not been forwarded.
    */
-  OutRecordCollection::iterator
-  insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest);
+  bool
+  hasOutRecords() const;
 
-  /** \brief get the OutRecord for face
-   *  \return an iterator to the OutRecord, or .end if it does not exist
+  OutRecordCollection::iterator
+  out_begin();
+
+  OutRecordCollection::const_iterator
+  out_begin() const;
+
+  OutRecordCollection::iterator
+  out_end();
+
+  OutRecordCollection::const_iterator
+  out_end() const;
+
+  /** \brief get the out-record for \p face
+   *  \return an iterator to the out-record, or .out_end() if it does not exist
    */
   OutRecordCollection::iterator
   getOutRecord(const Face& face);
 
-  /// deletes one OutRecord for face if exists
+  /** \brief insert or update an out-record
+   *  \return an iterator to the new or updated out-record
+   */
+  OutRecordCollection::iterator
+  insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest);
+
+  /** \brief delete the out-record for \p face if it exists
+   */
   void
   deleteOutRecord(const Face& face);
 
 public:
+  /** \brief unsatisfy timer
+   *
+   *  This timer is used in forwarding pipelines to delete the entry
+   *  when it expires without being satisfied.
+   *  It fires when the last InterestLifetime among in-records expires.
+   *
+   *  Either this or the straggler timer should be set at all times,
+   *  except when this entry is being processed in a pipeline.
+   */
   scheduler::EventId m_unsatisfyTimer;
+
+  /** \brief straggler timer
+   *
+   *  This timer is used in forwarding pipelines to delete the entry when it has been satisfied
+   *  and is no longer needed for measurement collection purpose.
+   *
+   *  Either this or the unsatisfy timer should be set at all times,
+   *  except when this entry is being processed in a pipeline.
+   */
   scheduler::EventId m_stragglerTimer;
 
 private:
   shared_ptr<const Interest> m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;
-
-  static const Name LOCALHOST_NAME;
-  static const Name LOCALHOP_NAME;
 
   shared_ptr<name_tree::Entry> m_nameTreeEntry;
 
@@ -137,16 +206,82 @@ Entry::getInterest() const
   return *m_interest;
 }
 
+inline const Name&
+Entry::getName() const
+{
+  return m_interest->getName();
+}
+
 inline const InRecordCollection&
 Entry::getInRecords() const
 {
   return m_inRecords;
 }
 
+inline bool
+Entry::hasInRecords() const
+{
+  return !m_inRecords.empty();
+}
+
+inline InRecordCollection::iterator
+Entry::in_begin()
+{
+  return m_inRecords.begin();
+}
+
+inline InRecordCollection::const_iterator
+Entry::in_begin() const
+{
+  return m_inRecords.begin();
+}
+
+inline InRecordCollection::iterator
+Entry::in_end()
+{
+  return m_inRecords.end();
+}
+
+inline InRecordCollection::const_iterator
+Entry::in_end() const
+{
+  return m_inRecords.end();
+}
+
 inline const OutRecordCollection&
 Entry::getOutRecords() const
 {
   return m_outRecords;
+}
+
+inline bool
+Entry::hasOutRecords() const
+{
+  return !m_outRecords.empty();
+}
+
+inline OutRecordCollection::iterator
+Entry::out_begin()
+{
+  return m_outRecords.begin();
+}
+
+inline OutRecordCollection::const_iterator
+Entry::out_begin() const
+{
+  return m_outRecords.begin();
+}
+
+inline OutRecordCollection::iterator
+Entry::out_end()
+{
+  return m_outRecords.end();
+}
+
+inline OutRecordCollection::const_iterator
+Entry::out_end() const
+{
+  return m_outRecords.end();
 }
 
 } // namespace pit

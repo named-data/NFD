@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   scheduler::cancel(retxFrom4Evt);
 
   // nexthops for accepted retransmissions: follow FIB cost,
-  // later forward to an eligible upstream with earliest OutRecord
+  // later forward to an eligible upstream with earliest out-record
   BOOST_REQUIRE_GE(strategy.sendInterestHistory.size(), 6);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[1].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[2].outFaceId, face3->getId());

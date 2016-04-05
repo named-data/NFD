@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   // face1 responds
   shared_ptr<Data> data1 = makeData("ndn:/seRMz5a6/%00");
   strategy->beforeSatisfyInterest(pitEntry1, *face1, *data1);
-  pitEntry1->deleteInRecords();
+  pitEntry1->clearInRecords();
   this->advanceClocks(time::milliseconds(10));
   // face2 also responds
   strategy->beforeSatisfyInterest(pitEntry1, *face2, *data1);
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   data1->setFreshnessPeriod(time::milliseconds(5));
   strategy->beforeSatisfyInterest(pitEntry1, *face2, *data1);
   pitEntry1->deleteOutRecord(*face2);
-  pitEntry1->deleteInRecords();
+  pitEntry1->clearInRecords();
   this->advanceClocks(time::milliseconds(10));
 
   // similar Interest: strategy should still forward it

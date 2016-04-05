@@ -48,7 +48,7 @@ violatesScope(const pit::Entry& pitEntry, const Face& outFace)
 
   if (scope_prefix::LOCALHOP.isPrefixOf(pitEntry.getName())) {
     // face is non-local, violates localhop scope unless PIT entry has local in-record
-    return std::none_of(pitEntry.getInRecords().begin(), pitEntry.getInRecords().end(),
+    return std::none_of(pitEntry.in_begin(), pitEntry.in_end(),
       [] (const pit::InRecord& inRecord) { return inRecord.getFace()->getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
   }
 
@@ -61,7 +61,7 @@ canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
 {
   time::steady_clock::TimePoint now = time::steady_clock::now();
 
-  bool hasUnexpiredOutRecord = std::any_of(pitEntry.getOutRecords().begin(), pitEntry.getOutRecords().end(),
+  bool hasUnexpiredOutRecord = std::any_of(pitEntry.out_begin(), pitEntry.out_end(),
     [&face, &now] (const pit::OutRecord& outRecord) {
       return outRecord.getFace().get() == &face && outRecord.getExpiry() >= now;
     });
@@ -69,7 +69,7 @@ canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
     return false;
   }
 
-  bool hasUnexpiredOtherInRecord = std::any_of(pitEntry.getInRecords().begin(), pitEntry.getInRecords().end(),
+  bool hasUnexpiredOtherInRecord = std::any_of(pitEntry.in_begin(), pitEntry.in_end(),
     [&face, &now] (const pit::InRecord& inRecord) {
       return inRecord.getFace().get() != &face && inRecord.getExpiry() >= now;
     });
@@ -114,7 +114,7 @@ bool
 hasPendingOutRecords(const pit::Entry& pitEntry)
 {
   time::steady_clock::TimePoint now = time::steady_clock::now();
-  return std::any_of(pitEntry.getOutRecords().begin(), pitEntry.getOutRecords().end(),
+  return std::any_of(pitEntry.out_begin(), pitEntry.out_end(),
     [&now] (const pit::OutRecord& outRecord) { return outRecord.getExpiry() >= now; });
 }
 

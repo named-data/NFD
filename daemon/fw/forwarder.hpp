@@ -206,8 +206,8 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
 
   /** \brief insert Nonce to Dead Nonce List if necessary
-   *  \param upstream if null, insert Nonces from all OutRecords;
-   *                  if not null, insert Nonce only on the OutRecord of this face
+   *  \param upstream if null, insert Nonces from all out-records;
+   *                  if not null, insert Nonce only on the out-records of this face
    */
   VIRTUAL_WITH_TESTS void
   insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,

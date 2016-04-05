@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,8 +74,7 @@ Strategy::sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& heade
 {
   // populate downstreams with all downstreams faces
   std::unordered_set<const Face*> downstreams;
-  const pit::InRecordCollection& inRecords = pitEntry->getInRecords();
-  std::transform(inRecords.begin(), inRecords.end(), std::inserter(downstreams, downstreams.end()),
+  std::transform(pitEntry->in_begin(), pitEntry->in_end(), std::inserter(downstreams, downstreams.end()),
                  [] (const pit::InRecord& inR) { return inR.getFace().get(); });
 
   // delete excluded faces
@@ -88,7 +87,7 @@ Strategy::sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& heade
   for (const Face* downstream : downstreams) {
     this->sendNack(pitEntry, *downstream, header);
   }
-  // warning: don't loop on pitEntry->getInRecords(), because InRecord is erased when sending Nack
+  // warning: don't loop on pitEntry->getInRecords(), because in-record is deleted when sending Nack
 }
 
 } // namespace fw

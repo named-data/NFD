@@ -34,10 +34,11 @@ Entry::Entry(const Interest& interest)
 {
 }
 
-const Name&
-Entry::getName() const
+InRecordCollection::iterator
+Entry::getInRecord(const Face& face)
 {
-  return m_interest->getName();
+  return std::find_if(m_inRecords.begin(), m_inRecords.end(),
+    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
 }
 
 InRecordCollection::iterator
@@ -54,13 +55,6 @@ Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
   return it;
 }
 
-InRecordCollection::const_iterator
-Entry::getInRecord(const Face& face) const
-{
-  return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
-}
-
 void
 Entry::deleteInRecord(const Face& face)
 {
@@ -72,9 +66,16 @@ Entry::deleteInRecord(const Face& face)
 }
 
 void
-Entry::deleteInRecords()
+Entry::clearInRecords()
 {
   m_inRecords.clear();
+}
+
+OutRecordCollection::iterator
+Entry::getOutRecord(const Face& face)
+{
+  return std::find_if(m_outRecords.begin(), m_outRecords.end(),
+    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
 }
 
 OutRecordCollection::iterator
@@ -89,13 +90,6 @@ Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
 
   it->update(interest);
   return it;
-}
-
-OutRecordCollection::iterator
-Entry::getOutRecord(const Face& face)
-{
-  return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
 }
 
 void

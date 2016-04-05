@@ -192,7 +192,7 @@ void
 NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
                                    const Face& inFace, const Data& data)
 {
-  if (pitEntry->getInRecords().empty()) {
+  if (!pitEntry->hasInRecords()) {
     // PIT entry has already been satisfied (and is now waiting for straggler timer to expire)
     // NCC does not collect measurements for non-best face
     return;

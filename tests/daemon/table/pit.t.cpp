@@ -58,22 +58,21 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   interest4->setInterestLifetime(time::milliseconds(8795));
   interest4->setNonce(17365);
 
-  pit::Entry entry(*interest);
+  Entry entry(*interest);
 
   BOOST_CHECK_EQUAL(entry.getInterest().getName(), name);
   BOOST_CHECK_EQUAL(entry.getName(), name);
 
-  const pit::InRecordCollection& inRecords1 = entry.getInRecords();
+  const InRecordCollection& inRecords1 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords1.size(), 0);
-  const pit::OutRecordCollection& outRecords1 = entry.getOutRecords();
+  const OutRecordCollection& outRecords1 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords1.size(), 0);
 
-  // insert InRecord
+  // insert in-record
   time::steady_clock::TimePoint before1 = time::steady_clock::now();
-  pit::InRecordCollection::iterator in1 =
-    entry.insertOrUpdateInRecord(face1, *interest1);
+  InRecordCollection::iterator in1 = entry.insertOrUpdateInRecord(face1, *interest1);
   time::steady_clock::TimePoint after1 = time::steady_clock::now();
-  const pit::InRecordCollection& inRecords2 = entry.getInRecords();
+  const InRecordCollection& inRecords2 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords2.size(), 1);
   BOOST_CHECK(in1 == inRecords2.begin());
   BOOST_CHECK_EQUAL(in1->getFace(), face1);
@@ -85,12 +84,11 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
                  (after1 - before1));
   BOOST_CHECK(in1 == entry.getInRecord(*face1));
 
-  // insert OutRecord
+  // insert out-record
   time::steady_clock::TimePoint before2 = time::steady_clock::now();
-  pit::OutRecordCollection::iterator out1 =
-    entry.insertOrUpdateOutRecord(face1, *interest1);
+  OutRecordCollection::iterator out1 = entry.insertOrUpdateOutRecord(face1, *interest1);
   time::steady_clock::TimePoint after2 = time::steady_clock::now();
-  const pit::OutRecordCollection& outRecords2 = entry.getOutRecords();
+  const OutRecordCollection& outRecords2 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords2.size(), 1);
   BOOST_CHECK(out1 == outRecords2.begin());
   BOOST_CHECK_EQUAL(out1->getFace(), face1);
@@ -102,12 +100,11 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
                  (after2 - before2));
   BOOST_CHECK(out1 == entry.getOutRecord(*face1));
 
-  // update InRecord
+  // update in-record
   time::steady_clock::TimePoint before3 = time::steady_clock::now();
-  pit::InRecordCollection::iterator in2 =
-    entry.insertOrUpdateInRecord(face1, *interest2);
+  InRecordCollection::iterator in2 = entry.insertOrUpdateInRecord(face1, *interest2);
   time::steady_clock::TimePoint after3 = time::steady_clock::now();
-  const pit::InRecordCollection& inRecords3 = entry.getInRecords();
+  const InRecordCollection& inRecords3 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords3.size(), 1);
   BOOST_CHECK(in2 == inRecords3.begin());
   BOOST_CHECK_EQUAL(in2->getFace(), face1);
@@ -116,42 +113,41 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
                  - interest2->getInterestLifetime(),
                  (after3 - before3));
 
-  // insert another InRecord
-  pit::InRecordCollection::iterator in3 =
-    entry.insertOrUpdateInRecord(face2, *interest3);
-  const pit::InRecordCollection& inRecords4 = entry.getInRecords();
+  // insert another in-record
+  InRecordCollection::iterator in3 = entry.insertOrUpdateInRecord(face2, *interest3);
+  const InRecordCollection& inRecords4 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
   BOOST_CHECK_EQUAL(in3->getFace(), face2);
 
-  // get InRecord
-  pit::InRecordCollection::const_iterator in4 = entry.getInRecord(*face1);
-  BOOST_REQUIRE(in4 != entry.getInRecords().end());
+  // get in-record
+  InRecordCollection::iterator in4 = entry.getInRecord(*face1);
+  BOOST_REQUIRE(in4 != entry.in_end());
   BOOST_CHECK_EQUAL(in4->getFace(), face1);
 
-  // delete all InRecords
-  entry.deleteInRecords();
-  const pit::InRecordCollection& inRecords5 = entry.getInRecords();
+  // clear in-records
+  entry.clearInRecords();
+  const InRecordCollection& inRecords5 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords5.size(), 0);
-  BOOST_CHECK(entry.getInRecord(*face1) == entry.getInRecords().end());
+  BOOST_CHECK(entry.getInRecord(*face1) == entry.in_end());
 
-  // insert another OutRecord
-  pit::OutRecordCollection::iterator out2 =
+  // insert another out-record
+  OutRecordCollection::iterator out2 =
     entry.insertOrUpdateOutRecord(face2, *interest4);
-  const pit::OutRecordCollection& outRecords3 = entry.getOutRecords();
+  const OutRecordCollection& outRecords3 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
   BOOST_CHECK_EQUAL(out2->getFace(), face2);
 
-  // get OutRecord
-  pit::OutRecordCollection::const_iterator out3 = entry.getOutRecord(*face1);
-  BOOST_REQUIRE(out3 != entry.getOutRecords().end());
+  // get out-record
+  OutRecordCollection::iterator out3 = entry.getOutRecord(*face1);
+  BOOST_REQUIRE(out3 != entry.out_end());
   BOOST_CHECK_EQUAL(out3->getFace(), face1);
 
-  // delete OutRecord
+  // delete out-record
   entry.deleteOutRecord(*face2);
-  const pit::OutRecordCollection& outRecords4 = entry.getOutRecords();
+  const OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
   BOOST_CHECK_EQUAL(outRecords4.begin()->getFace(), face1);
-  BOOST_CHECK(entry.getOutRecord(*face2) == entry.getOutRecords().end());
+  BOOST_CHECK(entry.getOutRecord(*face2) == entry.out_end());
 }
 
 BOOST_AUTO_TEST_CASE(Lifetime)
@@ -161,19 +157,19 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   BOOST_ASSERT(interest->getInterestLifetime() < time::milliseconds::zero());
 
   shared_ptr<Face> face = make_shared<DummyFace>();
-  pit::Entry entry(*interest);
+  Entry entry(*interest);
 
-  pit::InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(face, *interest);
+  InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(face, *interest);
   BOOST_CHECK_GT(inIt->getExpiry(), time::steady_clock::now());
 
-  pit::OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
+  OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
   BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
 }
 
 BOOST_AUTO_TEST_CASE(OutRecordNack)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
-  pit::OutRecord outR(face1);
+  OutRecord outR(face1);
   BOOST_CHECK(outR.getIncomingNack() == nullptr);
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/uWiapGjYL");
@@ -215,7 +211,7 @@ BOOST_AUTO_TEST_CASE(Insert)
   NameTree nameTree(16);
   Pit pit(nameTree);
   BOOST_CHECK_EQUAL(pit.size(), 0);
-  std::pair<shared_ptr<pit::Entry>, bool> insertResult;
+  std::pair<shared_ptr<Entry>, bool> insertResult;
 
   // base
   shared_ptr<Interest> interestA = make_shared<Interest>(name1);
@@ -315,7 +311,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   NameTree nameTree(16);
   Pit pit(nameTree);
 
-  std::pair<shared_ptr<pit::Entry>, bool> insertResult;
+  std::pair<shared_ptr<Entry>, bool> insertResult;
 
   BOOST_CHECK_EQUAL(pit.size(), 0);
 
@@ -346,7 +342,7 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   size_t nNameTreeEntriesBefore = nameTree.size();
 
   shared_ptr<Interest> interest = makeInterest("/37xWVvQ2K");
-  shared_ptr<pit::Entry> entry = pit.insert(*interest).first;
+  shared_ptr<Entry> entry = pit.insert(*interest).first;
   pit.erase(entry);
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
@@ -379,14 +375,14 @@ BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 
   shared_ptr<Data> data = makeData(nameABCD);
 
-  pit::DataMatchResult matches = pit.findAllDataMatches(*data);
+  DataMatchResult matches = pit.findAllDataMatches(*data);
 
   bool hasA   = false;
   bool hasAB  = false;
   bool hasABC = false;
   bool hasD   = false;
 
-  for (const shared_ptr<pit::Entry>& entry : matches) {
+  for (const shared_ptr<Entry>& entry : matches) {
     ++count;
 
     if (entry->getName().equals(nameA ))
@@ -419,10 +415,10 @@ BOOST_AUTO_TEST_CASE(MatchFullName) // Bug 3363
   shared_ptr<Interest> interest = makeInterest(fullName);
 
   pit.insert(*interest);
-  pit::DataMatchResult matches = pit.findAllDataMatches(*data);
+  DataMatchResult matches = pit.findAllDataMatches(*data);
 
   BOOST_REQUIRE_EQUAL(std::distance(matches.begin(), matches.end()), 1);
-  shared_ptr<pit::Entry> found = *matches.begin();
+  shared_ptr<Entry> found = *matches.begin();
   BOOST_CHECK_EQUAL(found->getName(), fullName);
 }
 
