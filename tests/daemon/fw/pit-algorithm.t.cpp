@@ -190,9 +190,39 @@ BOOST_AUTO_TEST_CASE(Nonce)
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry5, 19004, *face2), DUPLICATE_NONCE_NONE);
 }
 
-BOOST_AUTO_TEST_CASE(HasPendingOutRecords)
+BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, UnitTestTimeFixture)
 {
-  /// \todo #3545
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<DummyFace>();
+
+  shared_ptr<Interest> interest = makeInterest("ndn:/totzXG0d");
+  interest->setNonce(29321);
+
+  pit::Entry entry(*interest);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
+
+  // Interest-Data
+  entry.insertOrUpdateOutRecord(face1, *interest);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
+  entry.deleteOutRecord(*face1);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
+
+  // Interest-Nack
+  entry.insertOrUpdateOutRecord(face2, *interest);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
+  pit::OutRecordCollection::iterator outR = entry.getOutRecord(*face2);
+  BOOST_REQUIRE(outR != entry.out_end());
+  lp::Nack nack = makeNack("ndn:/totzXG0d", 29321, lp::NackReason::DUPLICATE);
+  bool isNackAccepted = outR->setIncomingNack(nack); // Nack arrival
+  BOOST_REQUIRE(isNackAccepted);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
+
+  // Interest-timeout
+  entry.insertOrUpdateOutRecord(face3, *interest);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), true);
+  this->advanceClocks(ndn::DEFAULT_INTEREST_LIFETIME, 2);
+  BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPitAlgorithm

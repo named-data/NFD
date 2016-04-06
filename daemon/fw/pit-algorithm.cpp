@@ -115,7 +115,10 @@ hasPendingOutRecords(const pit::Entry& pitEntry)
 {
   time::steady_clock::TimePoint now = time::steady_clock::now();
   return std::any_of(pitEntry.out_begin(), pitEntry.out_end(),
-    [&now] (const pit::OutRecord& outRecord) { return outRecord.getExpiry() >= now; });
+                      [&now] (const pit::OutRecord& outRecord) {
+                        return outRecord.getExpiry() >= now &&
+                               outRecord.getIncomingNack() == nullptr;
+                      });
 }
 
 } // namespace fw
