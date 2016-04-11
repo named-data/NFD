@@ -26,6 +26,7 @@
 #include "face/websocket-channel.hpp"
 #include "face/websocket-transport.hpp"
 
+#include "test-ip.hpp"
 #include "tests/limited-io.hpp"
 #include "tests/test-common.hpp"
 
@@ -176,7 +177,7 @@ BOOST_AUTO_TEST_CASE(Uri)
 {
   websocket::Endpoint ep(ip::address_v4::loopback(), 20070);
   auto channel = makeChannel(ep.address(), ep.port());
-  BOOST_CHECK_EQUAL(channel->getUri(), FaceUri("ws://127.0.0.1:20070"));
+  BOOST_CHECK_EQUAL(channel->getUri(), FaceUri(ep, "ws"));
 }
 
 BOOST_AUTO_TEST_CASE(Listen)
@@ -194,21 +195,25 @@ BOOST_AUTO_TEST_CASE(Listen)
 
 BOOST_AUTO_TEST_CASE(MultipleAccepts)
 {
-  listen(ip::address_v4::loopback());
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address);
 
   BOOST_CHECK_EQUAL(listenerChannel->isListening(), true);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
 
   websocket::Client client1;
-  clientConnect(client1);
+  this->clientConnect(client1);
+
   BOOST_CHECK_EQUAL(limitedIo.run(2, // listenerOnFaceCreated, clientHandleOpen
                     time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 1);
 
   websocket::Client client2;
   websocket::Client client3;
-  clientConnect(client2);
-  clientConnect(client3);
+  this->clientConnect(client2);
+  this->clientConnect(client3);
+
   BOOST_CHECK_EQUAL(limitedIo.run(4, // 2 listenerOnFaceCreated, 2 clientHandleOpen
                     time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 3);
@@ -221,7 +226,9 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  initialize(ip::address_v4::loopback());
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address);
   auto transport = listenerFaces.front()->getTransport();
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
@@ -247,7 +254,9 @@ BOOST_AUTO_TEST_CASE(Send)
 
 BOOST_AUTO_TEST_CASE(Receive)
 {
-  initialize(ip::address_v4::loopback());
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address);
 
   // use network-layer packets here, otherwise GenericLinkService
   // won't recognize the packet type and will discard it
@@ -269,7 +278,9 @@ BOOST_AUTO_TEST_CASE(Receive)
 
 BOOST_AUTO_TEST_CASE(FaceClosure)
 {
-  initialize(ip::address_v4::loopback());
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address);
 
   listenerFaces.front()->close();
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
@@ -277,7 +288,9 @@ BOOST_AUTO_TEST_CASE(FaceClosure)
 
 BOOST_AUTO_TEST_CASE(RemoteClose)
 {
-  initialize(ip::address_v4::loopback());
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address);
 
   client.close(clientHandle, websocketpp::close::status::going_away, "");
   BOOST_CHECK_EQUAL(limitedIo.run(1, // faceClosedSignal
@@ -288,7 +301,9 @@ BOOST_AUTO_TEST_CASE(RemoteClose)
 BOOST_AUTO_TEST_CASE(SetPingInterval)
 {
   auto pingInterval = time::milliseconds(300);
-  initialize(ip::address_v4::loopback(), pingInterval, time::milliseconds(1000));
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address, pingInterval, time::milliseconds(1000));
 
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing
                     time::seconds(1)), LimitedIo::EXCEED_OPS);
@@ -298,9 +313,11 @@ BOOST_AUTO_TEST_CASE(SetPingInterval)
 
 BOOST_AUTO_TEST_CASE(SetPongTimeOut)
 {
-  initialize(ip::address_v4::loopback(), time::milliseconds(500), time::milliseconds(300));
-
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->initialize(address, time::milliseconds(500), time::milliseconds(300));
   clientShouldPong = false;
+
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing, faceClosedSignal
                     time::seconds(2)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);

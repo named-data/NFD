@@ -25,10 +25,10 @@
 
 #include "face/websocket-transport.hpp"
 #include "face/face.hpp"
-#include "dummy-receive-link-service.hpp"
-#include "get-available-interface-ip.hpp"
-#include "transport-test-common.hpp"
 
+#include "dummy-receive-link-service.hpp"
+#include "test-ip.hpp"
+#include "transport-test-common.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -92,7 +92,7 @@ public:
 
     websocketpp::lib::error_code ec;
     websocket::Client::connection_ptr con = client.get_connection(uri, ec);
-    BOOST_REQUIRE(!ec);
+    BOOST_REQUIRE_EQUAL(ec, websocketpp::lib::error_code());
 
     client.connect(con);
   }
@@ -214,8 +214,10 @@ BOOST_FIXTURE_TEST_SUITE(TestWebSocketTransport, SingleWebSocketFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
+
   checkStaticPropertiesInitialized(*transport);
 
   BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("ws://127.0.0.1:20070"));
@@ -230,11 +232,10 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
-  auto address = getAvailableInterfaceIp<ip::address_v4>();
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
-  ip::tcp::endpoint ep(address, 20070);
-  this->endToEndInitialize(ep);
   checkStaticPropertiesInitialized(*transport);
 
   BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("ws://" + address.to_string() + ":20070"));
@@ -249,8 +250,10 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(PingPong)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep, time::milliseconds(500), time::milliseconds(300));
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070),
+                           time::milliseconds(500), time::milliseconds(300));
 
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing, serverHandlePong
                     time::milliseconds(1500)), LimitedIo::EXCEED_OPS);
@@ -272,8 +275,9 @@ BOOST_AUTO_TEST_CASE(PingPong)
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   transport->send(Transport::Packet(Block(pkt1)));
@@ -298,8 +302,9 @@ BOOST_AUTO_TEST_CASE(Send)
 
 BOOST_AUTO_TEST_CASE(ReceiveNormal)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   client.send(clientHdl, pkt1.wire(), pkt1.size(), websocketpp::frame::opcode::binary);
@@ -319,8 +324,9 @@ BOOST_AUTO_TEST_CASE(ReceiveNormal)
 
 BOOST_AUTO_TEST_CASE(ReceiveMalformed)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   client.send(clientHdl, pkt1.wire(), pkt1.size() - 1, // truncated
@@ -344,8 +350,9 @@ BOOST_AUTO_TEST_CASE(ReceiveMalformed)
 
 BOOST_AUTO_TEST_CASE(Close)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
   int nStateChanges = 0;
   transport->afterStateChange.connect(
@@ -371,8 +378,9 @@ BOOST_AUTO_TEST_CASE(Close)
 
 BOOST_AUTO_TEST_CASE(RemoteClose)
 {
-  ip::tcp::endpoint ep(ip::address_v4::loopback(), 20070);
-  this->endToEndInitialize(ep);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
   int nStateChanges = 0;
   transport->afterStateChange.connect(

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "get-available-interface-ip.hpp"
 #include "transport-test-common.hpp"
 
 #include "unicast-udp-transport-fixture.hpp"
@@ -37,7 +36,9 @@ BOOST_FIXTURE_TEST_SUITE(TestUnicastUdpTransport, UnicastUdpTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
-  initialize();
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
 
   checkStaticPropertiesInitialized(*transport);
 
@@ -51,7 +52,9 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 {
-  initialize(ip::address_v6::loopback());
+  auto address = getTestIp<ip::address_v6>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
 
   checkStaticPropertiesInitialized(*transport);
 
@@ -65,7 +68,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
-  auto address = getAvailableInterfaceIp<ip::address_v4>();
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -83,7 +86,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 {
-  auto address = getAvailableInterfaceIp<ip::address_v6>();
+  auto address = getTestIp<ip::address_v6>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -101,7 +104,10 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 
 BOOST_AUTO_TEST_CASE(IdleClose)
 {
-  initialize(ip::address_v4::loopback(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+
   BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 
   int nStateChanges = 0;
@@ -134,7 +140,9 @@ typedef boost::mpl::vector<OnDemand, Persistent> RemoteClosePersistencies;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies)
 {
-  initialize(ip::address_v4::loopback(), Persistency::value);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address, Persistency::value);
 
   transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
@@ -158,7 +166,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies
 
 BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
 {
-  initialize(ip::address_v4::loopback(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address, ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
   remoteSocket.close();
 
@@ -198,9 +208,11 @@ BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
 
 BOOST_AUTO_TEST_CASE(ChangePersistencyNoExpirationTime)
 {
-  initialize(ip::address_v4::loopback(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
 
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
   transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 }

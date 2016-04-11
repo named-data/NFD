@@ -26,6 +26,7 @@
 #include "face/udp-channel.hpp"
 #include "face/transport.hpp"
 
+#include "test-ip.hpp"
 #include "tests/limited-io.hpp"
 #include "tests/test-common.hpp"
 
@@ -40,7 +41,7 @@ using nfd::Face;
 namespace ip = boost::asio::ip;
 
 typedef boost::mpl::vector<ip::address_v4,
-                           ip::address_v6> AddressTypes;
+                           ip::address_v6> AddressFamilies;
 
 class UdpChannelFixture : public BaseFixture
 {
@@ -108,7 +109,7 @@ private:
 
 BOOST_FIXTURE_TEST_SUITE(TestUdpChannel, UdpChannelFixture)
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(Uri, A, AddressTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(Uri, A, AddressFamilies)
 {
   udp::Endpoint ep(A::loopback(), 7050);
   auto channel = makeChannel(ep.address(), ep.port());
@@ -128,9 +129,11 @@ BOOST_AUTO_TEST_CASE(Listen)
   BOOST_CHECK_EQUAL(channel->isListening(), true);
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressFamilies)
 {
-  this->listen(A::loopback());
+  auto address = getTestIp<A>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address);
 
   BOOST_CHECK_EQUAL(listenerChannel->isListening(), true);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
@@ -178,11 +181,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressTypes)
   BOOST_CHECK_EQUAL(clientFaces.at(2), clientFaces.at(3));
 }
 
-BOOST_AUTO_TEST_CASE(FaceClosure)
+BOOST_AUTO_TEST_CASE_TEMPLATE(FaceClosure, A, AddressFamilies)
 {
-  this->listen(ip::address_v4::loopback());
+  auto address = getTestIp<A>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address);
 
-  auto clientChannel = makeChannel(ip::address_v4());
+  auto clientChannel = makeChannel(A());
   this->connect(*clientChannel);
 
   BOOST_CHECK(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS);

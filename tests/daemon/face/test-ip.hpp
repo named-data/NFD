@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,74 +23,58 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_GET_AVAILABLE_INTERFACE_IP_HPP
-#define NFD_TESTS_DAEMON_FACE_GET_AVAILABLE_INTERFACE_IP_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_TEST_IP_HPP
+#define NFD_TESTS_DAEMON_FACE_TEST_IP_HPP
 
-#include "core/network-interface.hpp"
+#include <boost/asio/ip/address_v4.hpp>
+#include <boost/asio/ip/address_v6.hpp>
 
 #define SKIP_IF_IP_UNAVAILABLE(address) \
   do { \
-    if (address.is_unspecified()) { \
+    if ((address).is_unspecified()) { \
       BOOST_WARN_MESSAGE(false, "skipping assertions that require a valid IP address"); \
       return; \
     } \
   } while (false)
 
 namespace nfd {
-namespace face {
 namespace tests {
 
-/** \brief get a non-local IP address from any available network interface
+enum class LoopbackAddress {
+  No,
+  Yes,
+  DontCare,
+  Default = Yes
+};
+
+enum class MulticastInterface {
+  No,
+  Yes,
+  DontCare,
+  Default = DontCare
+};
+
+/** \brief get an IP address for test purposes from any available network interface
  *  \tparam A the address type, either boost::asio::ip::address_v4 or boost::asio::ip::address_v6
- *  \param needMulticast true if the address must be chosen from a multicast-capable interface
+ *  \param loopback specifies if the address can, must, or must not be a loopback address
+ *  \param mcast specifies if the address can, must, or must not be chosen from a multicast-capable interface
  *  \return an IP address
- *  \retval default-constructed A, if no address is available
+ *  \retval default-constructed A, if no appropriate address is available
  */
 template<typename A>
 A
-getAvailableInterfaceIp(bool needMulticast = false);
+getTestIp(LoopbackAddress loopback = LoopbackAddress::Default,
+          MulticastInterface mcast = MulticastInterface::Default);
 
 template<>
-inline boost::asio::ip::address_v4
-getAvailableInterfaceIp(bool needMulticast)
-{
-  for (const auto& interface : listNetworkInterfaces()) {
-    if (interface.isUp() &&
-        !interface.isLoopback() &&
-        (!needMulticast || interface.isMulticastCapable())) {
-      for (const auto& address : interface.ipv4Addresses) {
-        if (!address.is_unspecified() &&
-            !address.is_loopback()) {
-          return address;
-        }
-      }
-    }
-  }
-  return {};
-}
+boost::asio::ip::address_v4
+getTestIp(LoopbackAddress loopback, MulticastInterface mcast);
 
 template<>
-inline boost::asio::ip::address_v6
-getAvailableInterfaceIp(bool needMulticast)
-{
-  for (const auto& interface : listNetworkInterfaces()) {
-    if (interface.isUp() &&
-        !interface.isLoopback() &&
-        (!needMulticast || interface.isMulticastCapable())) {
-      for (const auto& address : interface.ipv6Addresses) {
-        if (!address.is_unspecified() &&
-            !address.is_link_local() && // see #1428
-            !address.is_loopback()) {
-          return address;
-        }
-      }
-    }
-  }
-  return {};
-}
+boost::asio::ip::address_v6
+getTestIp(LoopbackAddress loopback, MulticastInterface mcast);
 
 } // namespace tests
-} // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_GET_AVAILABLE_INTERFACE_IP_HPP
+#endif // NFD_TESTS_DAEMON_FACE_TEST_IP_HPP

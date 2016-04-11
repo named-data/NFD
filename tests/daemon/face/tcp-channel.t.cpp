@@ -25,6 +25,7 @@
 
 #include "face/tcp-channel.hpp"
 
+#include "test-ip.hpp"
 #include "tests/limited-io.hpp"
 #include "tests/test-common.hpp"
 
@@ -39,13 +40,13 @@ using nfd::Face;
 namespace ip = boost::asio::ip;
 
 typedef boost::mpl::vector<ip::address_v4,
-                           ip::address_v6> AddressTypes;
+                           ip::address_v6> AddressFamilies;
 
 class TcpChannelFixture : public BaseFixture
 {
 protected:
   TcpChannelFixture()
-    : nextPort(7050)
+    : m_nextPort(7050)
   {
   }
 
@@ -53,7 +54,7 @@ protected:
   makeChannel(const ip::address& addr, uint16_t port = 0)
   {
     if (port == 0)
-      port = nextPort++;
+      port = m_nextPort++;
 
     return make_unique<TcpChannel>(tcp::Endpoint(addr, port));
   }
@@ -100,12 +101,12 @@ protected:
   std::vector<shared_ptr<Face>> clientFaces;
 
 private:
-  uint16_t nextPort;
+  uint16_t m_nextPort;
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestTcpChannel, TcpChannelFixture)
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(Uri, A, AddressTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(Uri, A, AddressFamilies)
 {
   tcp::Endpoint ep(A::loopback(), 7050);
   auto channel = makeChannel(ep.address(), ep.port());
@@ -125,9 +126,11 @@ BOOST_AUTO_TEST_CASE(Listen)
   BOOST_CHECK_EQUAL(channel->isListening(), true);
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressFamilies)
 {
-  this->listen(A::loopback());
+  auto address = getTestIp<A>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address);
 
   BOOST_CHECK_EQUAL(listenerChannel->isListening(), true);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
@@ -173,11 +176,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(MultipleAccepts, A, AddressTypes)
   BOOST_CHECK_EQUAL(clientFaces.at(2), clientFaces.at(3));
 }
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressTypes)
+BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressFamilies)
 {
-  auto channel = makeChannel(A());
+  auto address = getTestIp<A>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  // do not listen
 
-  channel->connect(tcp::Endpoint(A::loopback(), 7040),
+  auto channel = makeChannel(A());
+  channel->connect(tcp::Endpoint(address, 7040),
     [this] (const shared_ptr<Face>&) {
       BOOST_FAIL("Connect succeeded when it should have failed");
       this->limitedIo.afterOp();
@@ -192,11 +198,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressTypes)
   BOOST_CHECK_EQUAL(channel->size(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(FaceClosure)
+BOOST_AUTO_TEST_CASE_TEMPLATE(FaceClosure, A, AddressFamilies)
 {
-  this->listen(ip::address_v4::loopback());
+  auto address = getTestIp<A>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->listen(address);
 
-  auto clientChannel = makeChannel(ip::address_v4());
+  auto clientChannel = makeChannel(A());
   this->connect(*clientChannel);
 
   BOOST_CHECK(limitedIo.run(2, time::seconds(1)) == LimitedIo::EXCEED_OPS);

@@ -30,6 +30,7 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
+#include "test-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {

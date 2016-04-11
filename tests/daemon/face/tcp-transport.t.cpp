@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "get-available-interface-ip.hpp"
 #include "transport-test-common.hpp"
 
 #include "tcp-transport-fixture.hpp"
@@ -37,7 +36,9 @@ BOOST_FIXTURE_TEST_SUITE(TestTcpTransport, TcpTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
-  initialize();
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
 
   checkStaticPropertiesInitialized(*transport);
 
@@ -51,7 +52,9 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 {
-  initialize(ip::address_v6::loopback());
+  auto address = getTestIp<ip::address_v6>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address);
 
   checkStaticPropertiesInitialized(*transport);
 
@@ -65,7 +68,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
-  auto address = getAvailableInterfaceIp<ip::address_v4>();
+  auto address = getTestIp<ip::address_v4>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -83,7 +86,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 {
-  auto address = getAvailableInterfaceIp<ip::address_v6>();
+  auto address = getTestIp<ip::address_v6>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 

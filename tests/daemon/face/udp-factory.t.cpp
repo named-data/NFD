@@ -92,15 +92,13 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 
 BOOST_AUTO_TEST_CASE(CreateMulticastFace)
 {
-  using boost::asio::ip::udp;
-
   UdpFactory factory;
 
   auto multicastFace1  = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
   auto multicastFace1a = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
 
-  // createMulticastFace with a local endpoint that has already been allocated for a UDP unicast channel
+  // createMulticastFace with a local endpoint that is already used by a channel
   auto channel = factory.createChannel("127.0.0.1", "20071");
   BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20071"), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
@@ -109,8 +107,8 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
                                         "endpoint is already allocated for a UDP unicast channel") == 0;
                         });
 
-  // createMulticastFace with a local endpoint that has already been allocated
-  // for a UDP multicast face on a different multicast group
+  // createMulticastFace with a local endpoint that is already
+  // used by a multicast face on a different multicast group
   BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "224.0.0.42", "20070"), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
@@ -136,8 +134,8 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
                         });
 
   // createMulticastFace with different local and remote port numbers
-  udp::endpoint localEndpoint(boost::asio::ip::address_v4::loopback(), 20074);
-  udp::endpoint multicastEndpoint(boost::asio::ip::address::from_string("224.0.0.1"), 20075);
+  udp::Endpoint localEndpoint(boost::asio::ip::address_v4::loopback(), 20074);
+  udp::Endpoint multicastEndpoint(boost::asio::ip::address::from_string("224.0.0.1"), 20075);
   BOOST_CHECK_EXCEPTION(factory.createMulticastFace(localEndpoint, multicastEndpoint), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
