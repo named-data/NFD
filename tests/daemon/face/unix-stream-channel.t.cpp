@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,18 +25,156 @@
 
 #include "face/unix-stream-channel.hpp"
 
+#include "tests/limited-io.hpp"
 #include "tests/test-common.hpp"
+
+#include <boost/filesystem.hpp>
+#include <fstream>
 
 namespace nfd {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestUnixStreamChannel, BaseFixture)
 
-// TODO add the equivalent of these test cases from unix-stream.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
-// MultipleAccepts
+using nfd::Face;
+namespace fs = boost::filesystem;
+namespace local = boost::asio::local;
 
-// TODO add a test case to check a failed face is removed from the channel
+class UnixStreamChannelFixture : public BaseFixture
+{
+protected:
+  UnixStreamChannelFixture()
+    : listenerEp("nfd-test-unix-stream-channel.sock")
+  {
+  }
+
+  unique_ptr<UnixStreamChannel>
+  makeChannel()
+  {
+    return make_unique<UnixStreamChannel>(listenerEp);
+  }
+
+  void
+  listen()
+  {
+    listenerChannel = makeChannel();
+    listenerChannel->listen(
+      [this] (const shared_ptr<Face>& newFace) {
+        BOOST_REQUIRE(newFace != nullptr);
+        connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
+        listenerFaces.push_back(newFace);
+        limitedIo.afterOp();
+      },
+      [this] (const std::string& reason) {
+        BOOST_FAIL(reason);
+        limitedIo.afterOp();
+      });
+  }
+
+  void
+  connect(local::stream_protocol::socket& client)
+  {
+    client.async_connect(listenerEp,
+      [this] (const boost::system::error_code& error) {
+        BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
+        limitedIo.afterOp();
+      });
+  }
+
+protected:
+  LimitedIo limitedIo;
+  unix_stream::Endpoint listenerEp;
+  unique_ptr<UnixStreamChannel> listenerChannel;
+  std::vector<shared_ptr<Face>> listenerFaces;
+};
+
+BOOST_FIXTURE_TEST_SUITE(TestUnixStreamChannel, UnixStreamChannelFixture)
+
+BOOST_AUTO_TEST_CASE(Listen)
+{
+  auto channel = makeChannel();
+  BOOST_CHECK_EQUAL(channel->isListening(), false);
+
+  channel->listen(nullptr, nullptr);
+  BOOST_CHECK_EQUAL(channel->isListening(), true);
+
+  // listen() is idempotent
+  BOOST_CHECK_NO_THROW(channel->listen(nullptr, nullptr));
+  BOOST_CHECK_EQUAL(channel->isListening(), true);
+}
+
+BOOST_AUTO_TEST_CASE(MultipleAccepts)
+{
+  this->listen();
+
+  BOOST_CHECK_EQUAL(listenerChannel->isListening(), true);
+  BOOST_CHECK_EQUAL(listenerFaces.size(), 0);
+
+  local::stream_protocol::socket client1(g_io);
+  this->connect(client1);
+
+  BOOST_CHECK_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(listenerFaces.size(), 1);
+
+  local::stream_protocol::socket client2(g_io);
+  local::stream_protocol::socket client3(g_io);
+  this->connect(client2);
+  this->connect(client3);
+
+  BOOST_CHECK_EQUAL(limitedIo.run(4, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(listenerFaces.size(), 3);
+
+  // check face persistency
+  for (const auto& face : listenerFaces) {
+    BOOST_CHECK_EQUAL(face->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(SocketFile)
+{
+  fs::path socketPath(listenerEp.path());
+  fs::remove(socketPath);
+
+  auto channel = makeChannel();
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
+
+  channel->listen(nullptr, nullptr);
+  auto status = fs::symlink_status(socketPath);
+  BOOST_CHECK_EQUAL(status.type(), fs::socket_file);
+  BOOST_CHECK_EQUAL(status.permissions(), fs::owner_read | fs::group_read | fs::others_read |
+                                          fs::owner_write | fs::group_write | fs::others_write);
+
+  channel.reset();
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::file_not_found);
+}
+
+BOOST_AUTO_TEST_CASE(ExistingStaleSocketFile)
+{
+  fs::path socketPath(listenerEp.path());
+  fs::remove(socketPath);
+
+  local::stream_protocol::acceptor acceptor(g_io, listenerEp);
+  acceptor.close();
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+
+  auto channel = makeChannel();
+  BOOST_CHECK_NO_THROW(channel->listen(nullptr, nullptr));
+  BOOST_CHECK_EQUAL(fs::symlink_status(socketPath).type(), fs::socket_file);
+}
+
+BOOST_AUTO_TEST_CASE(ExistingRegularFile)
+{
+  fs::path socketPath(listenerEp.path());
+  fs::remove(socketPath);
+
+  std::ofstream f(listenerEp.path());
+  f.close();
+
+  auto channel = makeChannel();
+  BOOST_CHECK_THROW(channel->listen(nullptr, nullptr), UnixStreamChannel::Error);
+
+  fs::remove(socketPath);
+}
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
