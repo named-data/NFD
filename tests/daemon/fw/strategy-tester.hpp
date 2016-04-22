@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,14 +54,14 @@ protected:
   virtual void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
                shared_ptr<Face> outFace,
-               bool wantNewNonce = false) DECL_OVERRIDE;
+               bool wantNewNonce = false) override;
 
   virtual void
-  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE;
+  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry) override;
 
   virtual void
   sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
-           const lp::NackHeader& header) DECL_OVERRIDE;
+           const lp::NackHeader& header) override;
 
 public:
   struct SendInterestArgs

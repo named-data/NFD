@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -72,19 +72,19 @@ public:
 
 private:
   virtual void
-  doAfterInsert(iterator i) DECL_OVERRIDE;
+  doAfterInsert(iterator i) override;
 
   virtual void
-  doAfterRefresh(iterator i) DECL_OVERRIDE;
+  doAfterRefresh(iterator i) override;
 
   virtual void
-  doBeforeErase(iterator i) DECL_OVERRIDE;
+  doBeforeErase(iterator i) override;
 
   virtual void
-  doBeforeUse(iterator i) DECL_OVERRIDE;
+  doBeforeUse(iterator i) override;
 
   virtual void
-  evictEntries() DECL_OVERRIDE;
+  evictEntries() override;
 
 private:
   /** \brief moves an entry to the end of queue

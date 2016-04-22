@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #ifndef NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
@@ -33,7 +34,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a connected TCP socket
  */
-class TcpTransport DECL_CLASS_FINAL : public StreamTransport<boost::asio::ip::tcp>
+class TcpTransport final : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
   TcpTransport(protocol::socket&& socket,
@@ -41,7 +42,7 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
 };
 
 } // namespace face

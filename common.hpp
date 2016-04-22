@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,36 +38,6 @@
 #define PUBLIC_WITH_TESTS_ELSE_PROTECTED protected
 #define PUBLIC_WITH_TESTS_ELSE_PRIVATE private
 #define PROTECTED_WITH_TESTS_ELSE_PRIVATE private
-#endif
-
-/** \def DECL_OVERRIDE
- *  \brief expands to 'override' if compiler supports 'override' specifier,
- *         otherwise expands to nothing
- */
-#ifdef HAVE_CXX_OVERRIDE
-#define DECL_OVERRIDE override
-#else
-#define DECL_OVERRIDE
-#endif
-
-/** \def DECL_FINAL
- *  \brief expands to 'final' if compiler supports 'final' specifier on method,
- *         otherwise expands to nothing
- */
-#ifdef HAVE_CXX_FINAL
-#define DECL_FINAL final
-#else
-#define DECL_FINAL
-#endif
-
-/** \def DECL_CLASS_FINAL
- *  \brief expands to 'final' if compiler supports 'final' specifier on class,
- *         otherwise expands to nothing
- */
-#ifdef HAVE_CXX_CLASS_FINAL
-#define DECL_CLASS_FINAL final
-#else
-#define DECL_CLASS_FINAL
 #endif
 
 #include <cstddef>

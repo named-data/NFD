@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ namespace face {
 /**
  * \brief A multicast Transport that uses raw Ethernet II frames
  */
-class EthernetTransport DECL_CLASS_FINAL : public Transport
+class EthernetTransport final : public Transport
 {
 public:
   class Error : public std::runtime_error
@@ -66,14 +66,14 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
 
   virtual void
-  doClose() DECL_FINAL;
+  doClose() final;
 
 private:
   virtual void
-  doSend(Transport::Packet&& packet) DECL_FINAL;
+  doSend(Transport::Packet&& packet) final;
 
   /**
    * @brief Allocates and initializes a libpcap context for live capture

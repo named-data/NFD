@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,18 +59,18 @@ public:
                              ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   virtual void
-  receiveFromLink(const Block& packet) DECL_OVERRIDE;
+  receiveFromLink(const Block& packet) override;
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) override;
 
   virtual void
-  doClose() DECL_OVERRIDE;
+  doClose() override;
 
 private:
   virtual void
-  doSend(Packet&& packet) DECL_OVERRIDE;
+  doSend(Packet&& packet) override;
 
 private:
   NFD_LOG_INCLASS_DECLARE();
@@ -93,28 +93,28 @@ public:
   connectToForwarder(InternalForwarderTransport* forwarderTransport);
 
   virtual void
-  receiveFromLink(const Block& packet) DECL_OVERRIDE;
+  receiveFromLink(const Block& packet) override;
 
   virtual void
-  close() DECL_OVERRIDE
+  close() override
   {
   }
 
   virtual void
-  pause() DECL_OVERRIDE
+  pause() override
   {
   }
 
   virtual void
-  resume() DECL_OVERRIDE
+  resume() override
   {
   }
 
   virtual void
-  send(const Block& wire) DECL_OVERRIDE;
+  send(const Block& wire) override;
 
   virtual void
-  send(const Block& header, const Block& payload) DECL_OVERRIDE;
+  send(const Block& header, const Block& payload) override;
 
 private:
   NFD_LOG_INCLASS_DECLARE();

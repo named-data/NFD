@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@ namespace face {
 /**
  * \brief A Transport that communicates on a unicast UDP socket
  */
-class UnicastUdpTransport DECL_CLASS_FINAL : public DatagramTransport<boost::asio::ip::udp, Unicast>
+class UnicastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Unicast>
 {
 public:
   UnicastUdpTransport(protocol::socket&& socket,
@@ -44,7 +44,7 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
 
 private:
   void

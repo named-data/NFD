@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -81,21 +81,21 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_OVERRIDE
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) override
   {
     // accept everything
   }
 
 private:
   virtual void
-  doClose() DECL_OVERRIDE
+  doClose() override
   {
     isClosed = true;
     this->setState(TransportState::CLOSED);
   }
 
   virtual void
-  doSend(Packet&& packet) DECL_OVERRIDE
+  doSend(Packet&& packet) override
   {
     sentPackets.push_back(std::move(packet));
   }

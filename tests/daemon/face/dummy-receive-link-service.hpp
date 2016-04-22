@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,25 +41,25 @@ class DummyReceiveLinkService : public LinkService
 {
 private:
   virtual void
-  doSendInterest(const Interest& interest) DECL_OVERRIDE
+  doSendInterest(const Interest& interest) override
   {
     BOOST_ASSERT(false);
   }
 
   virtual void
-  doSendData(const Data& data) DECL_OVERRIDE
+  doSendData(const Data& data) override
   {
     BOOST_ASSERT(false);
   }
 
   virtual void
-  doSendNack(const lp::Nack& nack) DECL_OVERRIDE
+  doSendNack(const lp::Nack& nack) override
   {
     BOOST_ASSERT(false);
   }
 
   virtual void
-  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE
+  doReceivePacket(Transport::Packet&& packet) override
   {
     receivedPackets.push_back(packet);
   }

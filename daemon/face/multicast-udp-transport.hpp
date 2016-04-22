@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protoco
 /**
  * \brief A Transport that communicates on a UDP multicast group
  */
-class MulticastUdpTransport DECL_CLASS_FINAL : public DatagramTransport<boost::asio::ip::udp, Multicast>
+class MulticastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
 public:
   /**
@@ -59,14 +59,14 @@ public:
 
 protected:
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) DECL_FINAL;
+  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
 
 private:
   virtual void
-  doSend(Transport::Packet&& packet) DECL_FINAL;
+  doSend(Transport::Packet&& packet) final;
 
   virtual void
-  doClose() DECL_FINAL;
+  doClose() final;
 
 private:
   protocol::endpoint m_multicastGroup;

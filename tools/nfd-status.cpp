@@ -59,7 +59,7 @@ protected:
               int nSteps,
               const OnDataValidated& onValidated,
               const OnDataValidationFailed& onValidationFailed,
-              std::vector<shared_ptr<ValidationRequest>>& nextSteps) DECL_OVERRIDE
+              std::vector<shared_ptr<ValidationRequest>>& nextSteps) override
   {
     const ndn::KeyLocator& locator = data.getSignature().getKeyLocator();
     if (nfdId.empty() && locator.getType() == KeyLocator::KeyLocator_Name)
@@ -72,7 +72,7 @@ protected:
               int nSteps,
               const OnInterestValidated& onValidated,
               const OnInterestValidationFailed& onValidationFailed,
-              std::vector<shared_ptr<ValidationRequest>>& nextSteps) DECL_OVERRIDE
+              std::vector<shared_ptr<ValidationRequest>>& nextSteps) override
   {
     BOOST_ASSERT(false);
   }

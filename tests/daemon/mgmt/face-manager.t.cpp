@@ -335,12 +335,12 @@ public:
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) DECL_OVERRIDE
+             const FaceCreationFailedCallback& onConnectFailed) override
   {
   }
 
   virtual std::vector<shared_ptr<const Channel>>
-  getChannels() const DECL_OVERRIDE
+  getChannels() const override
   {
     return m_channels;
   }

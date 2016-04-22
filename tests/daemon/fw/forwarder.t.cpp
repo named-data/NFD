@@ -133,14 +133,14 @@ public:
   }
 
   virtual void
-  onDataUnsolicited(Face& inFace, const Data& data) DECL_OVERRIDE
+  onDataUnsolicited(Face& inFace, const Data& data) override
   {
     ++onDataUnsolicited_count;
   }
 
 protected:
   virtual void
-  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f) DECL_OVERRIDE
+  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f) override
   {
     ++dispatchToStrategy_count;
   }

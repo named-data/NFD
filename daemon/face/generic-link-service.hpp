@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -127,23 +127,23 @@ public:
   setOptions(const Options& options);
 
   virtual const Counters&
-  getCounters() const DECL_OVERRIDE;
+  getCounters() const override;
 
 private: // send path
   /** \brief send Interest
    */
   void
-  doSendInterest(const Interest& interest) DECL_OVERRIDE;
+  doSendInterest(const Interest& interest) override;
 
   /** \brief send Data
    */
   void
-  doSendData(const Data& data) DECL_OVERRIDE;
+  doSendData(const Data& data) override;
 
   /** \brief send Nack
    */
   void
-  doSendNack(const ndn::lp::Nack& nack) DECL_OVERRIDE;
+  doSendNack(const ndn::lp::Nack& nack) override;
 
   /** \brief encode local fields from tags onto outgoing LpPacket
    *  \param pkt LpPacket containing a complete network layer packet
@@ -171,7 +171,7 @@ private: // receive path
   /** \brief receive Packet from Transport
    */
   void
-  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE;
+  doReceivePacket(Transport::Packet&& packet) override;
 
   /** \brief decode incoming network-layer packet
    *  \param netPkt reassembled network-layer packet

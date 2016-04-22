@@ -70,7 +70,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
   authorize(const Name& prefix, const Interest& interest,
             const ndn::mgmt::ControlParameters* params,
             ndn::mgmt::AcceptContinuation accept,
-            ndn::mgmt::RejectContinuation reject) DECL_OVERRIDE;
+            ndn::mgmt::RejectContinuation reject) override;
 
 private:
   CommandValidator& m_validator;

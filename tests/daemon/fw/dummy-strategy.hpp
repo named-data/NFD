@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -53,14 +53,15 @@ public:
    *  otherwise, reject pending Interest action is invoked.
    */
   virtual void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const Face& inFace,
+                       const Interest& interest,
                        shared_ptr<fib::Entry> fibEntry,
-                       shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
+                       shared_ptr<pit::Entry> pitEntry) override
   {
     ++afterReceiveInterest_count;
     if (wantAfterReceiveInterestCalls) {
-      afterReceiveInterestCalls.push_back(std::make_tuple(inFace.getId(),
-        interest, fibEntry, pitEntry));
+      afterReceiveInterestCalls.push_back(std::make_tuple(inFace.getId(), interest,
+                                                          fibEntry, pitEntry));
     }
 
     if (interestOutFace) {
@@ -73,21 +74,23 @@ public:
 
   virtual void
   beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
-                        const Face& inFace, const Data& data) DECL_OVERRIDE
+                        const Face& inFace,
+                        const Data& data) override
   {
     ++beforeSatisfyInterest_count;
   }
 
   virtual void
-  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
+  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry) override
   {
     ++beforeExpirePendingInterest_count;
   }
 
   virtual void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const Face& inFace,
+                   const lp::Nack& nack,
                    shared_ptr<fib::Entry> fibEntry,
-                   shared_ptr<pit::Entry> pitEntry) DECL_OVERRIDE
+                   shared_ptr<pit::Entry> pitEntry) override
   {
     ++afterReceiveNack_count;
   }
@@ -102,7 +105,6 @@ public:
   int beforeSatisfyInterest_count;
   int beforeExpirePendingInterest_count;
   int afterReceiveNack_count;
-
 };
 
 } // namespace tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,28 +55,28 @@ public:
 
 private:
   virtual void
-  doSendInterest(const Interest& interest) DECL_OVERRIDE
+  doSendInterest(const Interest& interest) override
   {
     this->sentInterests.push_back(interest);
     this->afterSend(tlv::Interest);
   }
 
   virtual void
-  doSendData(const Data& data) DECL_OVERRIDE
+  doSendData(const Data& data) override
   {
     this->sentData.push_back(data);
     this->afterSend(tlv::Data);
   }
 
   virtual void
-  doSendNack(const lp::Nack& nack) DECL_OVERRIDE
+  doSendNack(const lp::Nack& nack) override
   {
     this->sentNacks.push_back(nack);
     this->afterSend(lp::tlv::Nack);
   }
 
   virtual void
-  doReceivePacket(Transport::Packet&& packet) DECL_OVERRIDE
+  doReceivePacket(Transport::Packet&& packet) override
   {
     BOOST_ASSERT(false);
   }
