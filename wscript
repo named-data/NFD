@@ -111,8 +111,8 @@ main(int, char**)
         conf.env['WITH_OTHER_TESTS'] = 1
 
     conf.check_boost(lib=boost_libs)
-    if conf.env.BOOST_VERSION_NUMBER < 104800:
-        Logs.error("Minimum required boost version is 1.48.0")
+    if conf.env.BOOST_VERSION_NUMBER < 105400:
+        Logs.error("Minimum required boost version is 1.54.0")
         Logs.error("Please upgrade your distribution or install custom boost libraries" +
                    " (http://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
         return

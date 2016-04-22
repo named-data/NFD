@@ -57,7 +57,7 @@ The simplest way to run tests, is just to run the compiled binary without any pa
     # Run NFD RIB management tests
     ./build/unit-tests-rib
 
-However, [Boost.Test framework](http://www.boost.org/doc/libs/1_48_0/libs/test/doc/html/)
+However, [Boost.Test framework](http://www.boost.org/doc/libs/1_54_0/libs/test/doc/html/index.html)
 is very flexible and allows a number of run-time customization of what tests should be run.
 For example, it is possible to choose to run only a specific test suite, only a specific
 test case within a suite, or specific test cases within specific test suites:
@@ -90,5 +90,5 @@ or `-p` to show progress bar:
 
 There are many more command line options available, information about
 which can be obtained either from the command line using `--help`
-switch, or online on [Boost.Test library](http://www.boost.org/doc/libs/1_48_0/libs/test/doc/html/)
+switch, or online on [Boost.Test library](http://www.boost.org/doc/libs/1_54_0/libs/test/doc/html/index.html)
 website.

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@
 #include <boost/program_options/parsers.hpp>
 
 // boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
-// see http://www.boost.org/doc/libs/1_48_0/doc/html/thread/thread_local_storage.html
+// see http://www.boost.org/doc/libs/1_54_0/doc/html/thread/thread_local_storage.html
 #include <boost/thread.hpp>
 
 #include <atomic>

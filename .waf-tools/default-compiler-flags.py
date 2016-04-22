@@ -126,16 +126,12 @@ class GccFlags(GccBasicFlags):
     def getGeneralFlags(self, conf):
         flags = super(GccFlags, self).getGeneralFlags(conf)
         version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (4, 6, 0):
+        if version < (4, 8, 2):
             conf.fatal('The version of gcc you are using (%s) is too old.\n' %
                        '.'.join(conf.env['CC_VERSION']) +
-                       'The minimum supported gcc version is 4.6.0.')
-        elif version < (4, 7, 0):
-            flags['CXXFLAGS'] += ['-std=c++0x']
+                       'The minimum supported gcc version is 4.8.2.')
         else:
             flags['CXXFLAGS'] += ['-std=c++11']
-        if version < (4, 8, 0):
-            flags['DEFINES'] += ['_GLIBCXX_USE_NANOSLEEP'] # Bug #2499
         return flags
 
     def getDebugFlags(self, conf):
