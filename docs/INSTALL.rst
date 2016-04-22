@@ -16,7 +16,7 @@ upstart.
 On OS X, NFD can be installed with MacPorts.  Refer to :ref:`Install NFD Using the NDN
 MacPorts Repository on OS X` for more details.
 
-On Ubuntu 12.04, 14.04, or 14.10 NFD can be installed from NDN PPA repository.  Refer to
+On Ubuntu 14.04 and 16.04, NFD can be installed from NDN PPA repository.  Refer to
 :ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.
 
 Future releases could include support for other platforms.  Please send us feedback on the
@@ -72,7 +72,7 @@ the latest version.  The following commands will do this job:
 Install NFD Using the NDN PPA Repository on Ubuntu Linux
 --------------------------------------------------------
 
-NFD binaries and related tools for Ubuntu 12.04, 14.04, or 14.10 can be installed using PPA
+NFD binaries and related tools for Ubuntu 14.04 and 16.04 can be installed using PPA
 packages from named-data repository.  First, you will need to add ``named-data/ppa``
 repository to binary package sources and update list of available packages.
 
@@ -80,20 +80,11 @@ Preliminary steps if you haven't used PPA packages before
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To simplify adding new PPA repositories, Ubuntu provides ``add-apt-repository`` tool,
-which is not installed by default on some platforms.
-
-On Ubuntu **12.04**:
-
-::
-
-    sudo apt-get install python-software-properties
-
-On Ubuntu **14.04** or **14.10**:
+which is not installed by default on some systems.
 
 ::
 
     sudo apt-get install software-properties-common
-
 
 Adding NDN PPA
 ~~~~~~~~~~~~~~
@@ -147,13 +138,13 @@ Prerequisites
 
 -  ``pkg-config``
 
-   On OS X 10.8, 10.9, and 10.10 with MacPorts:
+   On OS X with MacPorts:
 
    ::
 
        sudo port install pkgconfig
 
-   On Ubuntu >= 12.04:
+   On Ubuntu:
 
    ::
 
@@ -161,9 +152,9 @@ Prerequisites
 
 -  ``libpcap``
 
-   Comes with the base system on OS X 10.8, 10.9, and 10.10.
+   Comes with the base system on OS X 10.8, 10.9, 10.10, and 10.11.
 
-   On Ubuntu >= 12.04:
+   On Ubuntu:
 
    ::
 
@@ -175,14 +166,14 @@ To build manpages and API documentation:
 -  ``graphviz``
 -  ``python-sphinx``
 
-   On OS X 10.8, 10.9, and 10.10 with MacPorts:
+   On OS X with MacPorts:
 
    ::
 
        sudo port install doxygen graphviz py27-sphinx sphinx_select
        sudo port select sphinx py27-sphinx
 
-   On Ubuntu >= 12.04:
+   On Ubuntu:
 
    ::
 

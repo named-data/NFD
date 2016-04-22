@@ -17,13 +17,8 @@ if has OSX $NODE_LABELS; then
 fi
 
 if has Ubuntu $NODE_LABELS; then
-    BOOST_PKG=libboost-all-dev
-    if has Ubuntu-12.04 $NODE_LABELS; then
-        BOOST_PKG=libboost1.48-all-dev
-    fi
-
     set -x
-    sudo apt-get update -qq -y
-    sudo apt-get -qq -y install build-essential pkg-config $BOOST_PKG \
-                                libcrypto++-dev libsqlite3-dev libpcap-dev
+    sudo apt-get -qq update
+    sudo apt-get -qq install build-essential pkg-config libboost-all-dev \
+                             libcrypto++-dev libsqlite3-dev libpcap-dev
 fi
