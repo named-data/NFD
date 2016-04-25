@@ -87,6 +87,8 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Out Interests</th>
         <th>In Data</th>
         <th>Out Data</th>
+        <th>In Nacks</th>
+        <th>Out Nacks</th>
       </tr>
     </thead>
     <tbody>
@@ -105,6 +107,8 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nNacks"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nNacks"/></td>
       </tr>
     </tbody>
   </table>
@@ -150,9 +154,11 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Expires in</th>
         <th>In Interests</th>
         <th>In Data</th>
+        <th>In Nacks</th>
         <th>In Bytes</th>
         <th>Out Interests</th>
         <th>Out Data</th>
+        <th>Out Nacks</th>
         <th>Out Bytes</th>
       </tr>
     </thead>
@@ -185,9 +191,11 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         </td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:byteCounters/nfd:incomingBytes"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:byteCounters/nfd:outgoingBytes"/></td>
       </tr>
       </xsl:for-each>

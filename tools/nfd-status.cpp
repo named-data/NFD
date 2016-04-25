@@ -243,12 +243,16 @@ public:
                 << "</nInterests>";
       std::cout << "<nDatas>"               << status.getNInDatas()
                 << "</nDatas>";
+      std::cout << "<nNacks>"               << status.getNInNacks()
+                << "</nNacks>";
       std::cout << "</incomingPackets>";
       std::cout << "<outgoingPackets>";
       std::cout << "<nInterests>"           << status.getNOutInterests()
                 << "</nInterests>";
       std::cout << "<nDatas>"               << status.getNOutDatas()
                 << "</nDatas>";
+      std::cout << "<nNacks>"               << status.getNOutNacks()
+                << "</nNacks>";
       std::cout << "</outgoingPackets>";
       std::cout << "</packetCounters>";
       std::cout << "</generalStatus>";
@@ -276,6 +280,8 @@ public:
       std::cout << "         nOutInterests=" << status.getNOutInterests()        << std::endl;
       std::cout << "              nInDatas=" << status.getNInDatas()             << std::endl;
       std::cout << "             nOutDatas=" << status.getNOutDatas()            << std::endl;
+      std::cout << "              nInNacks=" << status.getNInNacks()             << std::endl;
+      std::cout << "             nOutNacks=" << status.getNOutNacks()            << std::endl;
     }
 
     runNextStep();
@@ -420,12 +426,16 @@ public:
                   << "</nInterests>";
         std::cout << "<nDatas>"           << faceStatus.getNInDatas()
                   << "</nDatas>";
+        std::cout << "<nNacks>"           << faceStatus.getNInNacks()
+                  << "</nNacks>";
         std::cout << "</incomingPackets>";
         std::cout << "<outgoingPackets>";
         std::cout << "<nInterests>"       << faceStatus.getNOutInterests()
                   << "</nInterests>";
         std::cout << "<nDatas>"           << faceStatus.getNOutDatas()
                   << "</nDatas>";
+        std::cout << "<nNacks>"           << faceStatus.getNOutNacks()
+                  << "</nNacks>";
         std::cout << "</outgoingPackets>";
         std::cout << "</packetCounters>";
 
@@ -468,9 +478,11 @@ public:
         std::cout << " counters={"
                   << "in={" << faceStatus.getNInInterests() << "i "
                   << faceStatus.getNInDatas() << "d "
+                  << faceStatus.getNInNacks() << "n "
                   << faceStatus.getNInBytes() << "B}"
                   << " out={" << faceStatus.getNOutInterests() << "i "
                   << faceStatus.getNOutDatas() << "d "
+                  << faceStatus.getNOutNacks() << "n "
                   << faceStatus.getNOutBytes() << "B}"
                   << "}";
         std::cout << " " << faceStatus.getFaceScope()
