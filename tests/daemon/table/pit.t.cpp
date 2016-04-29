@@ -431,6 +431,34 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
+BOOST_AUTO_TEST_CASE(EraseWithFullName)
+{
+  shared_ptr<Data> data = makeData("/test");
+  shared_ptr<Interest> interest = makeInterest(data->getFullName());
+
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  BOOST_CHECK_EQUAL(pit.insert(*interest).second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+  BOOST_CHECK(pit.find(*interest) != nullptr);
+
+  BOOST_CHECK_EQUAL(pit.insert(*interest).second, false);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+  shared_ptr<pit::Entry> pitEntry = pit.find(*interest);
+  BOOST_REQUIRE(pitEntry != nullptr);
+
+  pit.erase(pitEntry);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+  BOOST_CHECK(pit.find(*interest) == nullptr);
+
+  BOOST_CHECK_EQUAL(pit.insert(*interest).second, true);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+  BOOST_CHECK(pit.find(*interest) != nullptr);
+}
+
 BOOST_AUTO_TEST_CASE(FindAllDataMatches)
 {
   Name nameA   ("ndn:/A");
