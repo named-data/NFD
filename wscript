@@ -1,7 +1,7 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014-2015,  Regents of the University of California,
+Copyright (c) 2014-2016,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -101,7 +101,7 @@ main(int, char**)
 
     conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
 
-    boost_libs = 'system chrono program_options random thread'
+    boost_libs = 'system chrono program_options random thread log log_setup'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1);
@@ -110,7 +110,7 @@ main(int, char**)
     if conf.options.with_other_tests:
         conf.env['WITH_OTHER_TESTS'] = 1
 
-    conf.check_boost(lib=boost_libs)
+    conf.check_boost(lib=boost_libs, mt=True)
     if conf.env.BOOST_VERSION_NUMBER < 105400:
         Logs.error("Minimum required boost version is 1.54.0")
         Logs.error("Please upgrade your distribution or install custom boost libraries" +

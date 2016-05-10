@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,8 @@
 #ifdef HAVE_CUSTOM_LOGGER
 #include "custom-logger.hpp"
 #else
-
-#include <mutex>
+#include <boost/log/common.hpp>
+#include <boost/log/sources/logger.hpp>
 
 namespace nfd {
 
@@ -84,12 +84,8 @@ public:
     m_moduleName = name;
   }
 
-  /** \return string representation of time since epoch: seconds.microseconds
-   *  \warning Return value is in a statically allocated buffer,
-   *           which subsequent calls will overwrite.
-   */
-  static const char*
-  now();
+public:
+  boost::log::sources::logger boostLogger;
 
 private:
   std::string m_moduleName;
@@ -102,6 +98,20 @@ operator<<(std::ostream& output, const Logger& logger)
   output << logger.getName();
   return output;
 }
+
+/**
+ * \brief a tag that writes a timestamp upon stream output
+ */
+struct LoggerTimestamp
+{
+};
+
+/**
+ * \brief write a timestamp to \p os
+ * \note This function is thread-safe.
+ */
+std::ostream&
+operator<<(std::ostream& os, const LoggerTimestamp&);
 
 } // namespace nfd
 
@@ -130,16 +140,15 @@ nfd::Logger& cls<specialization>::g_logger = nfd::LoggerFactory::create(name)
 template<>                                                                 \
 nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name)
 
-extern std::mutex g_logMutex;
+#define NFD_LOG_LINE(msg, expression) \
+LoggerTimestamp{} << " "#msg": " << "[" << g_logger  << "] " << expression
 
-#define NFD_LOG(level, msg, expression)                          \
-do {                                                             \
-  if (g_logger.isEnabled(::nfd::LOG_##level)) {                  \
-    std::lock_guard<std::mutex> lock(::nfd::g_logMutex);         \
-    std::clog << ::nfd::Logger::now() << " "#msg": "             \
-              << "[" << g_logger << "] " << expression << "\n";  \
-  }                                                              \
-} while (false)
+#define NFD_LOG(level, msg, expression)                                 \
+  do {                                                                  \
+    if (g_logger.isEnabled(::nfd::LOG_##level)) {                       \
+      BOOST_LOG(g_logger.boostLogger) << NFD_LOG_LINE(msg, expression); \
+    }                                                                   \
+  } while (false)
 
 #define NFD_LOG_TRACE(expression) NFD_LOG(TRACE, TRACE,   expression)
 #define NFD_LOG_DEBUG(expression) NFD_LOG(DEBUG, DEBUG,   expression)

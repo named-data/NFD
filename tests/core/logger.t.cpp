@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -91,6 +91,8 @@ BOOST_FIXTURE_TEST_CASE(Basic, LoggerFixture)
 
   microseconds::rep after =
     duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  LoggerFactory::getInstance().flushBackend();
 
   const string buffer = m_buffer.str();
 
@@ -202,6 +204,8 @@ BOOST_FIXTURE_TEST_CASE(ConfigureFactory, LoggerFixture)
 
   microseconds::rep after =
     duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  LoggerFactory::getInstance().flushBackend();
 
   const string buffer = m_buffer.str();
 
@@ -328,6 +332,8 @@ BOOST_FIXTURE_TEST_CASE(LimitModules, LoggerFixture)
   microseconds::rep after =
     duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
 
+  LoggerFactory::getInstance().flushBackend();
+
   const string buffer = m_buffer.str();
 
   std::vector<string> components;
@@ -424,6 +430,8 @@ BOOST_FIXTURE_TEST_CASE(ExplicitlySetModule, LoggerFixture)
 
   const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(std::string);
 
+  LoggerFactory::getInstance().flushBackend();
+
   const string buffer = m_buffer.str();
 
   std::vector<string> components;
@@ -512,6 +520,8 @@ BOOST_FIXTURE_TEST_CASE(UnknownModule, LoggerFixture)
 
   microseconds::rep after =
     duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+
+  LoggerFactory::getInstance().flushBackend();
 
   const string buffer = m_buffer.str();
 
@@ -618,6 +628,8 @@ BOOST_FIXTURE_TEST_CASE(InClass, InClassLogger)
     };
 
   const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  LoggerFactory::getInstance().flushBackend();
 
   const string buffer = m_buffer.str();
 
@@ -729,6 +741,8 @@ BOOST_FIXTURE_TEST_CASE(GenericInTemplatedClass, InClassTemplateLogger<bool>)
 
   const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
 
+  LoggerFactory::getInstance().flushBackend();
+
   const string buffer = m_buffer.str();
 
   std::vector<string> components;
@@ -811,6 +825,8 @@ BOOST_FIXTURE_TEST_CASE(SpecializedInTemplatedClass, InClassTemplateLogger<int>)
     };
 
   const size_t N_EXPECTED = sizeof(EXPECTED) / sizeof(string);
+
+  LoggerFactory::getInstance().flushBackend();
 
   const string buffer = m_buffer.str();
 

@@ -129,7 +129,7 @@ TopologyTester::addLink(const std::string& label, const time::nanoseconds& delay
                         std::initializer_list<TopologyNode> forwarders,
                         bool forceMultiAccessFace)
 {
-  auto link = make_shared<TopologyLink>(delay);
+  auto link = std::make_shared<TopologyLink>(delay);
   FaceUri remoteUri("topology://link/" + label);
   ndn::nfd::LinkType linkType = (forceMultiAccessFace || forwarders.size() > 2) ?
                                 ndn::nfd::LINK_TYPE_MULTI_ACCESS :

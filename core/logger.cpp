@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,25 +36,23 @@
 
 namespace nfd {
 
-std::mutex g_logMutex;
-
 Logger::Logger(const std::string& name, LogLevel level)
   : m_moduleName(name)
   , m_enabledLogLevel(level)
 {
 }
 
-const char*
-Logger::now()
+std::ostream&
+operator<<(std::ostream& os, const LoggerTimestamp&)
 {
   using namespace ndn::time;
 
   static const microseconds::rep ONE_SECOND = 1000000;
   microseconds::rep microsecondsSinceEpoch = duration_cast<microseconds>(
-                                             system_clock::now().time_since_epoch()).count();
+    system_clock::now().time_since_epoch()).count();
 
   // 10 (whole seconds) + '.' + 6 (fraction) + '\0'
-  static char buffer[10 + 1 + 6 + 1];
+  char buffer[10 + 1 + 6 + 1];
   BOOST_ASSERT_MSG(microsecondsSinceEpoch / ONE_SECOND <= 9999999999L,
                    "whole seconds cannot fit in 10 characters");
 
@@ -66,9 +64,7 @@ Logger::now()
            microsecondsSinceEpoch / ONE_SECOND,
            microsecondsSinceEpoch % ONE_SECOND);
 
-  // It's okay to return a statically allocated buffer, because Logger::now() is invoked
-  // only once per log macro.
-  return buffer;
+  return os << buffer;
 }
 
 } // namespace nfd

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,9 @@
 
 #include "config-file.hpp"
 #include "logger.hpp"
+
+#include <boost/log/sinks.hpp>
+#include <mutex>
 
 namespace nfd {
 
@@ -77,9 +80,14 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   setDefaultLevel(LogLevel level);
 
+  void
+  flushBackend();
+
 private:
 
   LoggerFactory();
+
+  ~LoggerFactory();
 
   Logger&
   createLogger(const std::string& moduleName);
@@ -104,6 +112,9 @@ private:
   mutable std::mutex m_loggersGuard;
 
   LogLevel m_defaultLevel;
+
+  typedef boost::log::sinks::asynchronous_sink<boost::log::sinks::text_ostream_backend> Sink;
+  boost::shared_ptr<Sink> m_sink;
 };
 
 inline LogLevel
