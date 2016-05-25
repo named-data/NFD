@@ -25,8 +25,6 @@
 
 #include "core/privilege-helper.hpp"
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
-
 #include "tests/test-common.hpp"
 
 namespace nfd {
@@ -36,6 +34,7 @@ BOOST_FIXTURE_TEST_SUITE(TestPrivilegeHelper, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(DropRaise)
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   if (::geteuid() != 0) {
     BOOST_TEST_MESSAGE("This test case needs to be run as super user, skipping");
     return;
@@ -57,11 +56,12 @@ BOOST_AUTO_TEST_CASE(DropRaise)
 
   BOOST_CHECK_NO_THROW(PrivilegeHelper::raise());
   BOOST_CHECK_EQUAL(::geteuid(), 0);
+#else
+  BOOST_TEST_MESSAGE("Skipping test, since drop/raise privileges is not supported on this platform");
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
 } // namespace nfd
-
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE

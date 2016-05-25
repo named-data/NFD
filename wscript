@@ -85,11 +85,14 @@ def configure(conf):
 int
 main(int, char**)
 {
+  char buffer[100];
   ::sysconf(_SC_GETGR_R_SIZE_MAX);
   group grp;
-  getgrnam_r("nogroup", &grp, nullptr, 0, nullptr);
+  group* grpRes;
+  getgrnam_r("nogroup", &grp, buffer, 100, &grpRes);
   passwd pwd;
-  getpwnam_r("nobody", &pwd, nullptr, 0, nullptr);
+  passwd* pwdRes;
+  getpwnam_r("nobody", &pwd, buffer, 100, &pwdRes);
 
   int ret = setegid(grp.gr_gid);
   ret = seteuid(pwd.pw_uid);
