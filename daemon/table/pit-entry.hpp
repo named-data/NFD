@@ -38,6 +38,8 @@ namespace name_tree {
 class Entry;
 } // namespace name_tree
 
+class Pit;
+
 namespace pit {
 
 /** \brief an unordered collection of in-records
@@ -198,6 +200,7 @@ private:
 
   friend class nfd::NameTree;
   friend class nfd::name_tree::Entry;
+  friend class nfd::Pit;
 };
 
 inline const Interest&
