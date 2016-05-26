@@ -60,14 +60,26 @@ Pit::Pit(NameTree& nameTree)
 std::pair<shared_ptr<pit::Entry>, bool>
 Pit::findOrInsert(const Interest& interest, bool allowInsert)
 {
-  // ensure NameTree entry exists
+  // determine which NameTree entry should the PIT entry be attached onto
   const Name& name = interest.getName();
   bool isEndWithDigest = name.size() > 0 && name[-1].isImplicitSha256Digest();
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(isEndWithDigest ? name.getPrefix(-1) : name);
-  BOOST_ASSERT(nte != nullptr);
-  size_t nteNameLen = nte->getPrefix().size();
+  const Name& nteName = isEndWithDigest ? name.getPrefix(-1) : name;
+
+  // ensure NameTree entry exists
+  shared_ptr<name_tree::Entry> nte;
+  if (allowInsert) {
+    nte = m_nameTree.lookup(nteName);
+    BOOST_ASSERT(nte != nullptr);
+  }
+  else {
+    nte = m_nameTree.findExactMatch(nteName);
+    if (nte == nullptr) {
+      return {nullptr, true};
+    }
+  }
 
   // check if PIT entry already exists
+  size_t nteNameLen = nteName.size();
   const std::vector<shared_ptr<pit::Entry>>& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
     [&interest, nteNameLen] (const shared_ptr<pit::Entry>& entry) -> bool {
@@ -84,12 +96,13 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   }
 
   if (!allowInsert) {
+    BOOST_ASSERT(!nte->isEmpty()); // nte shouldn't be created in this call
     return {nullptr, true};
   }
 
   auto entry = make_shared<pit::Entry>(interest);
   nte->insertPitEntry(entry);
-  m_nItems++;
+  ++m_nItems;
   return {entry, true};
 }
 

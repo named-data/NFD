@@ -197,6 +197,25 @@ BOOST_AUTO_TEST_CASE(OutRecordNack)
 BOOST_AUTO_TEST_SUITE_END() // PitEntry
 
 
+BOOST_AUTO_TEST_CASE(Find)
+{
+  shared_ptr<Interest> interest1 = makeInterest("/6hNwxJjw");
+  shared_ptr<Interest> interest2 = makeInterest("/v65zqxm4d");
+
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
+  pit.insert(*interest1);
+  shared_ptr<pit::Entry> found1a = pit.find(*interest1);
+  shared_ptr<pit::Entry> found1b = pit.find(*interest1);
+  BOOST_CHECK(found1a != nullptr);
+  BOOST_CHECK(found1a == found1b);
+
+  shared_ptr<pit::Entry> found2 = pit.find(*interest2);
+  BOOST_CHECK(found2 == nullptr);
+  BOOST_CHECK(nameTree.findExactMatch(interest2->getName()) == nullptr);
+}
+
 BOOST_AUTO_TEST_CASE(Insert)
 {
   Name name1("ndn:/5vzBNnMst");
