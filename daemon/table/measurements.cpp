@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,7 +66,7 @@ Measurements::get(const Name& name)
 shared_ptr<Entry>
 Measurements::get(const fib::Entry& fibEntry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.get(fibEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(fibEntry);
   if (nte == nullptr) {
     // must be Fib::s_emptyEntry that is unattched
     BOOST_ASSERT(fibEntry.getPrefix().empty());
@@ -80,9 +80,9 @@ Measurements::get(const fib::Entry& fibEntry)
 shared_ptr<Entry>
 Measurements::get(const pit::Entry& pitEntry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
-
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
   BOOST_ASSERT(nte != nullptr);
+
   return this->get(*nte);
 }
 
@@ -93,7 +93,7 @@ Measurements::getParent(const Entry& child)
     return nullptr;
   }
 
-  shared_ptr<name_tree::Entry> nteChild = m_nameTree.get(child);
+  shared_ptr<name_tree::Entry> nteChild = m_nameTree.lookup(child);
   shared_ptr<name_tree::Entry> nte = nteChild->getParent();
   BOOST_ASSERT(nte != nullptr);
   return this->get(*nte);
@@ -126,7 +126,8 @@ shared_ptr<Entry>
 Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry,
                                      const measurements::EntryPredicate& pred) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.get(pitEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
+  BOOST_ASSERT(nte != nullptr);
   return this->findLongestPrefixMatchImpl(nte, pred);
 }
 
@@ -140,12 +141,10 @@ Measurements::findExactMatch(const Name& name) const
 }
 
 void
-Measurements::extendLifetime(Entry& entry,
-                             const time::nanoseconds& lifetime)
+Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
-  if (nte == nullptr ||
-      nte->getMeasurementsEntry().get() != &entry) {
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+  if (nte == nullptr || nte->getMeasurementsEntry().get() != &entry) {
     // entry is already gone; it is a dangling reference
     return;
   }
@@ -164,7 +163,7 @@ Measurements::extendLifetime(Entry& entry,
 void
 Measurements::cleanup(Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.get(entry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
   if (nte != nullptr) {
     nte->setMeasurementsEntry(nullptr);
     m_nameTree.eraseEntryIfEmpty(nte);

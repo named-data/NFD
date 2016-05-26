@@ -240,6 +240,47 @@ NameTree::lookup(const Name& prefix)
   return entry;
 }
 
+shared_ptr<name_tree::Entry>
+NameTree::lookup(const fib::Entry& fibEntry) const
+{
+  shared_ptr<name_tree::Entry> nte = this->getEntry(fibEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getFibEntry().get() == &fibEntry);
+  return nte;
+}
+
+shared_ptr<name_tree::Entry>
+NameTree::lookup(const pit::Entry& pitEntry)
+{
+  shared_ptr<name_tree::Entry> nte = this->getEntry(pitEntry);
+  if (nte == nullptr) {
+    return nullptr;
+  }
+
+  if (nte->getPrefix().size() == pitEntry.getName().size()) {
+    return nte;
+  }
+
+  BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
+  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
+  return this->lookup(pitEntry.getName());
+}
+
+shared_ptr<name_tree::Entry>
+NameTree::lookup(const measurements::Entry& measurementsEntry) const
+{
+  shared_ptr<name_tree::Entry> nte = this->getEntry(measurementsEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getMeasurementsEntry().get() == &measurementsEntry);
+  return nte;
+}
+
+shared_ptr<name_tree::Entry>
+NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry) const
+{
+  shared_ptr<name_tree::Entry> nte = this->getEntry(strategyChoiceEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getStrategyChoiceEntry().get() == &strategyChoiceEntry);
+  return nte;
+}
+
 // return {false: this entry is not empty, true: this entry is empty and erased}
 bool
 NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
@@ -318,19 +359,6 @@ NameTree::eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry)
     } // if this entry is empty
 
   return false; // if this entry is not empty
-}
-
-shared_ptr<name_tree::Entry>
-NameTree::get(const pit::Entry& pitEntry)
-{
-  shared_ptr<name_tree::Entry> nte = pitEntry.m_nameTreeEntry;
-  if (nte->getPrefix().size() == pitEntry.getName().size()) {
-    return nte;
-  }
-
-  BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
-  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
-  return this->lookup(pitEntry.getName());
 }
 
 // Exact Match
@@ -420,7 +448,8 @@ NameTree::findLongestPrefixMatch(shared_ptr<name_tree::Entry> entry,
 shared_ptr<name_tree::Entry>
 NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = pitEntry.m_nameTreeEntry;
+  shared_ptr<name_tree::Entry> nte = this->getEntry(pitEntry);
+  BOOST_ASSERT(nte != nullptr);
   if (nte->getPrefix().size() == pitEntry.getName().size()) {
     return nte;
   }

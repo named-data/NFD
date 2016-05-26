@@ -59,7 +59,7 @@ Fib::~Fib()
 static inline bool
 predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& entry)
 {
-  return static_cast<bool>(entry.getFibEntry());
+  return entry.getFibEntry() != nullptr;
 }
 
 shared_ptr<fib::Entry>
@@ -67,7 +67,7 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
 {
   shared_ptr<name_tree::Entry> nameTreeEntry =
     m_nameTree.findLongestPrefixMatch(prefix, &predicate_NameTreeEntry_hasFibEntry);
-  if (static_cast<bool>(nameTreeEntry)) {
+  if (nameTreeEntry != nullptr) {
     return nameTreeEntry->getFibEntry();
   }
   return s_emptyEntry;
@@ -77,13 +77,15 @@ shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const
 {
   shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
-  if (static_cast<bool>(entry))
+  if (entry != nullptr)
     return entry;
+
   nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry,
                                                     &predicate_NameTreeEntry_hasFibEntry);
-  if (static_cast<bool>(nameTreeEntry)) {
+  if (nameTreeEntry != nullptr) {
     return nameTreeEntry->getFibEntry();
   }
+
   return s_emptyEntry;
 }
 
@@ -98,9 +100,8 @@ Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 shared_ptr<fib::Entry>
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(measurementsEntry);
-
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(measurementsEntry);
+  BOOST_ASSERT(nameTreeEntry != nullptr);
 
   return findLongestPrefixMatch(nameTreeEntry);
 }
@@ -109,9 +110,10 @@ shared_ptr<fib::Entry>
 Fib::findExactMatch(const Name& prefix) const
 {
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
-  if (static_cast<bool>(nameTreeEntry))
+  if (nameTreeEntry != nullptr)
     return nameTreeEntry->getFibEntry();
-  return shared_ptr<fib::Entry>();
+
+  return nullptr;
 }
 
 std::pair<shared_ptr<fib::Entry>, bool>
@@ -119,8 +121,9 @@ Fib::insert(const Name& prefix)
 {
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
   shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
-  if (static_cast<bool>(entry))
+  if (entry != nullptr)
     return std::make_pair(entry, false);
+
   entry = make_shared<fib::Entry>(prefix);
   nameTreeEntry->setFibEntry(entry);
   ++m_nItems;
@@ -139,7 +142,7 @@ void
 Fib::erase(const Name& prefix)
 {
   shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
-  if (static_cast<bool>(nameTreeEntry)) {
+  if (nameTreeEntry != nullptr) {
     this->erase(nameTreeEntry);
   }
 }
@@ -147,8 +150,8 @@ Fib::erase(const Name& prefix)
 void
 Fib::erase(const fib::Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.get(entry);
-  if (static_cast<bool>(nameTreeEntry)) {
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(entry);
+  if (nameTreeEntry != nullptr) {
     this->erase(nameTreeEntry);
   }
 }

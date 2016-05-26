@@ -101,6 +101,12 @@ public: // information
   size_t
   getNBuckets() const;
 
+  /** \return Name Tree Entry on which a table entry is attached
+   */
+  template<typename ENTRY>
+  shared_ptr<name_tree::Entry>
+  getEntry(const ENTRY& tableEntry) const;
+
   /**
    * \brief Dump all the information stored in the Name Tree for debugging.
    */
@@ -121,6 +127,34 @@ public: // mutation
   shared_ptr<name_tree::Entry>
   lookup(const Name& prefix);
 
+  /** \brief get NameTree entry from FIB entry
+   *
+   *  This is equivalent to .lookup(fibEntry.getPrefix())
+   */
+  shared_ptr<name_tree::Entry>
+  lookup(const fib::Entry& fibEntry) const;
+
+  /** \brief get NameTree entry from PIT entry
+   *
+   *  This is equivalent to .lookup(pitEntry.getName()).
+   */
+  shared_ptr<name_tree::Entry>
+  lookup(const pit::Entry& pitEntry);
+
+  /** \brief get NameTree entry from Measurements entry
+   *
+   *  This is equivalent to .lookup(measurementsEntry.getName())
+   */
+  shared_ptr<name_tree::Entry>
+  lookup(const measurements::Entry& measurementsEntry) const;
+
+  /** \brief get NameTree entry from StrategyChoice entry
+   *
+   *  This is equivalent to .lookup(strategyChoiceEntry.getName())
+   */
+  shared_ptr<name_tree::Entry>
+  lookup(const strategy_choice::Entry& strategyChoiceEntry) const;
+
   /**
    * \brief Delete a Name Tree Entry if this entry is empty.
    * \param entry The entry to be deleted if empty.
@@ -131,35 +165,6 @@ public: // mutation
    */
   bool
   eraseEntryIfEmpty(shared_ptr<name_tree::Entry> entry);
-
-public: // shortcut access
-  /** \brief get NameTree entry from FIB entry
-   *
-   *  This is equivalent to .lookup(fibEntry.getPrefix())
-   */
-  shared_ptr<name_tree::Entry>
-  get(const fib::Entry& fibEntry) const;
-
-  /** \brief get NameTree entry from PIT entry
-   *
-   *  This is equivalent to .lookup(pitEntry.getName()).
-   */
-  shared_ptr<name_tree::Entry>
-  get(const pit::Entry& pitEntry);
-
-  /** \brief get NameTree entry from Measurements entry
-   *
-   *  This is equivalent to .lookup(measurementsEntry.getName())
-   */
-  shared_ptr<name_tree::Entry>
-  get(const measurements::Entry& measurementsEntry) const;
-
-  /** \brief get NameTree entry from StrategyChoice entry
-   *
-   *  This is equivalent to .lookup(strategyChoiceEntry.getName())
-   */
-  shared_ptr<name_tree::Entry>
-  get(const strategy_choice::Entry& strategyChoiceEntry) const;
 
 public: // matching
   /**
@@ -312,6 +317,17 @@ public: // enumeration
 
 private:
   /**
+   * \brief Create a Name Tree Entry if it does not exist, or return the existing
+   * Name Tree Entry address.
+   * \details Called by lookup() only.
+   * \return The first item is the Name Tree Entry address, the second item is
+   * a bool value indicates whether this is an old entry (false) or a new
+   * entry (true).
+   */
+  std::pair<shared_ptr<name_tree::Entry>, bool>
+  insert(const Name& prefix);
+
+  /**
    * \brief Resize the hash table size when its load factor reaches a threshold.
    * \details As we are currently using a hand-written hash table implementation
    * for the Name Tree, the hash table resize() function should be kept in the
@@ -334,17 +350,6 @@ private:
   name_tree::Node**             m_buckets; // Name Tree Buckets in the NPHT
   shared_ptr<name_tree::Entry>  m_end;
   const_iterator                m_endIterator;
-
-  /**
-   * \brief Create a Name Tree Entry if it does not exist, or return the existing
-   * Name Tree Entry address.
-   * \details Called by lookup() only.
-   * \return The first item is the Name Tree Entry address, the second item is
-   * a bool value indicates whether this is an old entry (false) or a new
-   * entry (true).
-   */
-  std::pair<shared_ptr<name_tree::Entry>, bool>
-  insert(const Name& prefix);
 };
 
 inline NameTree::const_iterator::~const_iterator()
@@ -363,22 +368,11 @@ NameTree::getNBuckets() const
   return m_nBuckets;
 }
 
+template<typename ENTRY>
 inline shared_ptr<name_tree::Entry>
-NameTree::get(const fib::Entry& fibEntry) const
+NameTree::getEntry(const ENTRY& tableEntry) const
 {
-  return fibEntry.m_nameTreeEntry;
-}
-
-inline shared_ptr<name_tree::Entry>
-NameTree::get(const measurements::Entry& measurementsEntry) const
-{
-  return measurementsEntry.m_nameTreeEntry;
-}
-
-inline shared_ptr<name_tree::Entry>
-NameTree::get(const strategy_choice::Entry& strategyChoiceEntry) const
-{
-  return strategyChoiceEntry.m_nameTreeEntry;
+  return tableEntry.m_nameTreeEntry.lock();
 }
 
 inline NameTree::const_iterator

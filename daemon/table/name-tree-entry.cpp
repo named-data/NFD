@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -58,24 +58,23 @@ bool
 Entry::isEmpty() const
 {
   return m_children.empty() &&
-         !static_cast<bool>(m_fibEntry) &&
+         m_fibEntry == nullptr &&
          m_pitEntries.empty() &&
-         !static_cast<bool>(m_measurementsEntry) &&
-         !static_cast<bool>(m_strategyChoiceEntry);
+         m_measurementsEntry == nullptr &&
+         m_strategyChoiceEntry == nullptr;
 }
 
 void
 Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 {
-  if (static_cast<bool>(fibEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(fibEntry->m_nameTreeEntry));
-  }
+  BOOST_ASSERT(fibEntry == nullptr || fibEntry->m_nameTreeEntry.expired());
 
-  if (static_cast<bool>(m_fibEntry)) {
+  if (m_fibEntry != nullptr) {
     m_fibEntry->m_nameTreeEntry.reset();
   }
   m_fibEntry = fibEntry;
-  if (static_cast<bool>(m_fibEntry)) {
+
+  if (m_fibEntry != nullptr) {
     m_fibEntry->m_nameTreeEntry = this->shared_from_this();
   }
 }
@@ -83,8 +82,8 @@ Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
 void
 Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
 {
-  BOOST_ASSERT(static_cast<bool>(pitEntry));
-  BOOST_ASSERT(!static_cast<bool>(pitEntry->m_nameTreeEntry));
+  BOOST_ASSERT(pitEntry != nullptr);
+  BOOST_ASSERT(pitEntry->m_nameTreeEntry.expired());
 
   m_pitEntries.push_back(pitEntry);
   pitEntry->m_nameTreeEntry = this->shared_from_this();
@@ -93,11 +92,10 @@ Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
 void
 Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
 {
-  BOOST_ASSERT(static_cast<bool>(pitEntry));
-  BOOST_ASSERT(pitEntry->m_nameTreeEntry.get() == this);
+  BOOST_ASSERT(pitEntry != nullptr);
+  BOOST_ASSERT(pitEntry->m_nameTreeEntry.lock().get() == this);
 
-  std::vector<shared_ptr<pit::Entry> >::iterator it =
-    std::find(m_pitEntries.begin(), m_pitEntries.end(), pitEntry);
+  auto it = std::find(m_pitEntries.begin(), m_pitEntries.end(), pitEntry);
   BOOST_ASSERT(it != m_pitEntries.end());
 
   *it = m_pitEntries.back();
@@ -108,15 +106,14 @@ Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
 void
 Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
 {
-  if (static_cast<bool>(measurementsEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(measurementsEntry->m_nameTreeEntry));
-  }
+  BOOST_ASSERT(measurementsEntry == nullptr || measurementsEntry->m_nameTreeEntry.expired());
 
-  if (static_cast<bool>(m_measurementsEntry)) {
+  if (m_measurementsEntry != nullptr) {
     m_measurementsEntry->m_nameTreeEntry.reset();
   }
   m_measurementsEntry = measurementsEntry;
-  if (static_cast<bool>(m_measurementsEntry)) {
+
+  if (m_measurementsEntry != nullptr) {
     m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();
   }
 }
@@ -124,15 +121,14 @@ Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
 void
 Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
 {
-  if (static_cast<bool>(strategyChoiceEntry)) {
-    BOOST_ASSERT(!static_cast<bool>(strategyChoiceEntry->m_nameTreeEntry));
-  }
+  BOOST_ASSERT(strategyChoiceEntry == nullptr || strategyChoiceEntry->m_nameTreeEntry.expired());
 
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
+  if (m_strategyChoiceEntry != nullptr) {
     m_strategyChoiceEntry->m_nameTreeEntry.reset();
   }
+
   m_strategyChoiceEntry = strategyChoiceEntry;
-  if (static_cast<bool>(m_strategyChoiceEntry)) {
+  if (m_strategyChoiceEntry != nullptr) {
     m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
   }
 }

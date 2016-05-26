@@ -113,8 +113,8 @@ Pit::findAllDataMatches(const Data& data) const
 void
 Pit::erase(shared_ptr<pit::Entry> pitEntry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = pitEntry->m_nameTreeEntry;
-  BOOST_ASSERT(static_cast<bool>(nameTreeEntry));
+  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.getEntry(*pitEntry);
+  BOOST_ASSERT(nameTreeEntry != nullptr);
 
   nameTreeEntry->erasePitEntry(pitEntry);
   m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
