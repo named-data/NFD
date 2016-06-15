@@ -11,7 +11,7 @@ def build(bld):
         bld(features=['cxx', 'cxxprogram'],
             target="../bin/%s" % name,
             source=[i] + bld.path.ant_glob(['%s/**/*.cpp' % name]),
-            use='ndn-cxx core-objects LIBRESOLV BOOST'
+            use='core-objects NDN_CXX BOOST LIBRESOLV'
             )
 
     # List all directories files (tool can has multiple .cpp in the directory)
@@ -21,7 +21,7 @@ def build(bld):
             bld(features=['cxx', 'cxxprogram'],
                 target="../bin/%s" % name,
                 source=srcFiles,
-                use='ndn-cxx core-objects LIBRESOLV BOOST',
+                use='core-objects NDN_CXX BOOST LIBRESOLV',
                 includes='%s' % name,
                 )
 

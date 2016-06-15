@@ -181,7 +181,7 @@ def build(bld):
         features='cxx pch',
         source=bld.path.ant_glob(['core/**/*.cpp'],
                                  excl=['core/logger*.cpp']),
-        use='version BOOST NDN_CXX LIBRT',
+        use='version NDN_CXX BOOST LIBRT',
         includes='. core',
         export_includes='. core',
         headers='common.hpp',
