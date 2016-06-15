@@ -120,28 +120,28 @@ operator<<(std::ostream& os, const LoggerTimestamp&);
 namespace nfd {
 
 #define NFD_LOG_INIT(name) \
-static nfd::Logger& g_logger = nfd::LoggerFactory::create(name)
+static ::nfd::Logger& g_logger = ::nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_DECLARE() \
-static nfd::Logger& g_logger
+static ::nfd::Logger& g_logger
 
 #define NFD_LOG_INCLASS_DEFINE(cls, name) \
-nfd::Logger& cls::g_logger = nfd::LoggerFactory::create(name)
+::nfd::Logger& cls::g_logger = ::nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_TEMPLATE_DEFINE(cls, name) \
 template<class T>                                  \
-nfd::Logger& cls<T>::g_logger = nfd::LoggerFactory::create(name)
+::nfd::Logger& cls<T>::g_logger = ::nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(cls, specialization, name) \
 template<>                                                                        \
-nfd::Logger& cls<specialization>::g_logger = nfd::LoggerFactory::create(name)
+::nfd::Logger& cls<specialization>::g_logger = ::nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(cls, s1, s2, name) \
 template<>                                                                 \
-nfd::Logger& cls<s1, s2>::g_logger = nfd::LoggerFactory::create(name)
+::nfd::Logger& cls<s1, s2>::g_logger = ::nfd::LoggerFactory::create(name)
 
 #define NFD_LOG_LINE(msg, expression) \
-LoggerTimestamp{} << " "#msg": " << "[" << g_logger  << "] " << expression
+::nfd::LoggerTimestamp{} << " "#msg": " << "[" << g_logger  << "] " << expression
 
 #define NFD_LOG(level, msg, expression)                                 \
   do {                                                                  \

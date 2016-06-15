@@ -903,3 +903,88 @@ BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace tests
 } // namespace nfd
+
+// Testing compilation of the logger outside ::nfd namespace
+
+namespace test_logger { // another root namespace
+
+void
+Test1()
+{
+  NFD_LOG_INIT("Test");
+
+  NFD_LOG_TRACE("Trace");
+  NFD_LOG_DEBUG("Debug");
+  NFD_LOG_INFO("Info");
+  NFD_LOG_WARN("Warn");
+  NFD_LOG_ERROR("Error");
+  NFD_LOG_FATAL("Fatal");
+}
+
+class Test2
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_DEFINE(Test2, "Test2");
+
+template<class T>
+class Test3
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_TEMPLATE_DEFINE(Test3, "Test3");
+
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(Test3, int, "Test3Int");
+
+template<class X, class Y>
+class Test4
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(Test4, int, int, "Test4IntInt");
+
+namespace nfd { // nested nfd namespace, different from ::nfd
+
+void
+Test1()
+{
+  NFD_LOG_INIT("Test");
+
+  NFD_LOG_TRACE("Trace");
+  NFD_LOG_DEBUG("Debug");
+  NFD_LOG_INFO("Info");
+  NFD_LOG_WARN("Warn");
+  NFD_LOG_ERROR("Error");
+  NFD_LOG_FATAL("Fatal");
+}
+
+class Test2
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_DEFINE(Test2, "Test2");
+
+template<class T>
+class Test3
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_TEMPLATE_DEFINE(Test3, "Test3");
+
+NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(Test3, int, "Test3Int");
+
+template<class X, class Y>
+class Test4
+{
+  NFD_LOG_INCLASS_DECLARE();
+};
+
+NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(Test4, int, int, "Test4IntInt");
+
+} // namespace nfd
+} // namespace test_logger
