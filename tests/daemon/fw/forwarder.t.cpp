@@ -28,22 +28,19 @@
 #include "dummy-strategy.hpp"
 
 #include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestForwarder, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestForwarder, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
-  LimitedIo limitedIo;
-  auto afterOp = bind(&LimitedIo::afterOp, &limitedIo);;
   Forwarder forwarder;
 
-  Name nameA  ("ndn:/A");
-  Name nameAB ("ndn:/A/B");
+  Name nameA("ndn:/A");
+  Name nameAB("ndn:/A/B");
   Name nameABC("ndn:/A/B/C");
   shared_ptr<Interest> interestAB = makeInterest(nameAB);
   interestAB->setInterestLifetime(time::seconds(4));
@@ -51,8 +48,6 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
-  face1->afterSend.connect(bind(afterOp));
-  face2->afterSend.connect(bind(afterOp));
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
@@ -62,8 +57,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
-  g_io.post([&] { face1->receiveInterest(*interestAB); });
-  BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  face1->receiveInterest(*interestAB);
+  this->advanceClocks(time::milliseconds(100), time::seconds(1));
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), nameAB);
   BOOST_REQUIRE(face2->sentInterests[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
@@ -73,8 +68,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
-  g_io.post([&] { face2->receiveData(*dataABC); });
-  BOOST_CHECK_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  face2->receiveData(*dataABC);
+  this->advanceClocks(time::milliseconds(100), time::seconds(1));
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
   BOOST_CHECK_EQUAL(face1->sentData[0].getName(), nameABC);
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
@@ -85,7 +80,6 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
 BOOST_AUTO_TEST_CASE(CsMatched)
 {
-  LimitedIo limitedIo;
   Forwarder forwarder;
 
   auto face1 = make_shared<DummyFace>();
@@ -111,7 +105,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   cs.insert(*dataA);
 
   face1->receiveInterest(*interestA);
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
   // Interest matching ContentStore should not be forwarded
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 0);
 
@@ -120,7 +114,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face1->sentData[0].getTag<lp::IncomingFaceIdTag>(), face::FACEID_CONTENT_STORE);
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(500));
+  this->advanceClocks(time::milliseconds(100), time::milliseconds(500));
   // PIT entry should not be left behind
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
@@ -337,7 +331,6 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
 
 BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 {
-  LimitedIo limitedIo;
   Forwarder forwarder;
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
@@ -366,7 +359,7 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   forwarder.startProcessInterest(*face1, *interest2);
   BOOST_CHECK_EQUAL(strategyQ->afterReceiveInterest_count, 1);
 
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
 
   shared_ptr<Data> data1 = makeData("ndn:/A/1/a");
   strategyP->beforeSatisfyInterest_count = 0;
@@ -387,14 +380,13 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
 
   strategyP->beforeExpirePendingInterest_count = 0;
   strategyQ->beforeExpirePendingInterest_count = 0;
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(100));
+  this->advanceClocks(time::milliseconds(10), time::milliseconds(100));
   BOOST_CHECK_EQUAL(strategyP->beforeExpirePendingInterest_count, 1);
   BOOST_CHECK_EQUAL(strategyQ->beforeExpirePendingInterest_count, 0);
 }
 
 BOOST_AUTO_TEST_CASE(IncomingData)
 {
-  LimitedIo limitedIo;
   Forwarder forwarder;
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
@@ -420,7 +412,7 @@ BOOST_AUTO_TEST_CASE(IncomingData)
 
   shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
   forwarder.onIncomingData(*face3, *dataD);
-  limitedIo.run(LimitedIo::UNLIMITED_OPS, time::milliseconds(5));
+  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
 
   BOOST_CHECK_EQUAL(face1->sentData.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentData.size(), 1);
@@ -675,7 +667,7 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   // an Interest if its Name+Nonce has appeared any point in the past.
 }
 
-BOOST_FIXTURE_TEST_CASE(PitLeak, UnitTestTimeFixture) // Bug 3484
+BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
 {
   Forwarder forwarder;
   shared_ptr<Face> face1 = make_shared<DummyFace>();
