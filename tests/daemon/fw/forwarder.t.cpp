@@ -119,6 +119,60 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
 
+BOOST_AUTO_TEST_CASE(OutgoingInterest)
+{
+  Forwarder forwarder;
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  Pit& pit = forwarder.getPit();
+  auto interestA1 = makeInterest("ndn:/A");
+  interestA1->setNonce(8378);
+  shared_ptr<pit::Entry> pitA = pit.insert(*interestA1).first;
+  pit::InRecordCollection::iterator inA1 = pitA->insertOrUpdateInRecord(face1, *interestA1);
+
+  // there is only one downstream, interestA1 is used
+  forwarder.onOutgoingInterest(pitA, *face3, false);
+  BOOST_REQUIRE_EQUAL(face3->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(face3->sentInterests.back().getNonce(), 8378);
+
+  // new Nonce is requested
+  forwarder.onOutgoingInterest(pitA, *face3, true);
+  BOOST_REQUIRE_EQUAL(face3->sentInterests.size(), 2);
+  BOOST_CHECK_NE(face3->sentInterests.back().getNonce(), 8378);
+  // Nonce on in-record Interest shouldn't be touched
+  BOOST_CHECK_EQUAL(inA1->getInterest().getNonce(), 8378);
+
+  // outgoing face is face1, interestA1 is still used because there's no other choice
+  forwarder.onOutgoingInterest(pitA, *face1, false);
+  BOOST_REQUIRE_EQUAL(face1->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(face1->sentInterests.back().getNonce(), 8378);
+
+  this->advanceClocks(time::seconds(2));
+  auto interestA2 = makeInterest("ndn:/A");
+  interestA2->setNonce(9102);
+  pitA->insertOrUpdateInRecord(face2, *interestA2);
+
+  // there are two downstreams, prefer newer interestA2
+  forwarder.onOutgoingInterest(pitA, *face3, false);
+  BOOST_REQUIRE_EQUAL(face3->sentInterests.size(), 3);
+  BOOST_CHECK_EQUAL(face3->sentInterests.back().getNonce(), 9102);
+
+  // outgoing face is face2, prefer interestA1 from face1 despite it's older
+  forwarder.onOutgoingInterest(pitA, *face2, false);
+  BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(face2->sentInterests.back().getNonce(), 8378);
+
+  // outgoing face is face1, prefer interestA2
+  forwarder.onOutgoingInterest(pitA, *face1, false);
+  BOOST_REQUIRE_EQUAL(face1->sentInterests.size(), 2);
+  BOOST_CHECK_EQUAL(face1->sentInterests.back().getNonce(), 9102);
+}
+
 class ScopeLocalhostIncomingTestForwarder : public Forwarder
 {
 public:
