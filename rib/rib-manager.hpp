@@ -194,6 +194,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 private:
   static const Name LOCAL_HOST_TOP_PREFIX;
   static const Name LOCAL_HOP_TOP_PREFIX;
+  static const std::string MGMT_MODULE_NAME;
   static const Name FACES_LIST_DATASET_PREFIX;
   static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
   scheduler::EventId m_activeFaceFetchEvent;

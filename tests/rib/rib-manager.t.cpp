@@ -102,6 +102,7 @@ private:
 
     auto replyFibAddCommand = [this] (const Interest& interest) {
       nfd::ControlParameters params(interest.getName().get(-5).blockFromValue());
+      BOOST_CHECK(params.getName() == "/localhost/nfd/rib" || params.getName() == "/localhop/nfd/rib");
       params.setFaceId(1).setCost(0);
       nfd::ControlResponse resp;
 

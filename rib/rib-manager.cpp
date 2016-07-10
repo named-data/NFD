@@ -37,13 +37,14 @@ NFD_LOG_INIT("RibManager");
 
 const Name RibManager::LOCAL_HOST_TOP_PREFIX = "/localhost/nfd";
 const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";
+const std::string RibManager::MGMT_MODULE_NAME = "rib";
 const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
 const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
 RibManager::RibManager(Dispatcher& dispatcher,
                        ndn::Face& face,
                        ndn::KeyChain& keyChain)
-  : ManagerBase(dispatcher, "rib")
+  : ManagerBase(dispatcher, MGMT_MODULE_NAME)
   , m_face(face)
   , m_keyChain(keyChain)
   , m_nfdController(m_face, m_keyChain)
@@ -161,7 +162,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
   // register entry to the FIB
   m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
      ControlParameters()
-       .setName(topPrefix)
+       .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
        .setFaceId(0),
      bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
      bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(topPrefix), _2));
