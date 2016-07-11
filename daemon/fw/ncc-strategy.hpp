@@ -44,7 +44,6 @@ public:
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) override;
 
   virtual void
@@ -126,7 +125,7 @@ protected:
 
   /// propagate to another upstream
   void
-  doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry> fibEntryWeak);
+  doPropagate(weak_ptr<pit::Entry> pitEntryWeak);
 
   /// best face did not reply within prediction
   void

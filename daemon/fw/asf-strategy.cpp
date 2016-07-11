@@ -56,7 +56,6 @@ AsfStrategy::~AsfStrategy()
 void
 AsfStrategy::afterReceiveInterest(const Face& inFace,
                                   const Interest& interest,
-                                  shared_ptr<fib::Entry> fibEntry,
                                   shared_ptr<pit::Entry> pitEntry)
 {
   // Should the Interest be suppressed?
@@ -71,7 +70,8 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   if (nexthops.size() == 0) {
     sendNoRouteNack(inFace, interest, pitEntry);
@@ -79,7 +79,7 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  const shared_ptr<Face> faceToUse = getBestFaceForForwarding(*fibEntry, interest, inFace);
+  const shared_ptr<Face> faceToUse = getBestFaceForForwarding(fibEntry, interest, inFace);
 
   if (faceToUse == nullptr) {
     sendNoRouteNack(inFace, interest, pitEntry);
@@ -87,18 +87,18 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  forwardInterest(interest, *fibEntry, pitEntry, faceToUse);
+  forwardInterest(interest, fibEntry, pitEntry, faceToUse);
 
   // If necessary, send probe
   if (m_probing.isProbingNeeded(fibEntry, interest)) {
     shared_ptr<Face> faceToProbe = m_probing.getFaceToProbe(inFace, interest, fibEntry, *faceToUse);
 
     if (faceToProbe != nullptr) {
-      NFD_LOG_TRACE("Sending probe for " << fibEntry->getPrefix()
+      NFD_LOG_TRACE("Sending probe for " << fibEntry.getPrefix()
                                          << " to FaceId: " << faceToProbe->getId());
 
       bool wantNewNonce = true;
-      forwardInterest(interest, *fibEntry, pitEntry, faceToProbe, wantNewNonce);
+      forwardInterest(interest, fibEntry, pitEntry, faceToProbe, wantNewNonce);
       m_probing.afterForwardingProbe(fibEntry, interest);
     }
   }
@@ -130,7 +130,6 @@ AsfStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
 
 void
 AsfStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                              shared_ptr<fib::Entry> fibEntry,
                               shared_ptr<pit::Entry> pitEntry)
 {
   NFD_LOG_DEBUG("Nack for " << nack.getInterest() << " from=" << inFace.getId() << ": " << nack.getReason());

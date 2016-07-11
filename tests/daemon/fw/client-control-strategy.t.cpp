@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   pitEntry1->insertOrUpdateInRecord(face4, *interest1);
 
   strategy.sendInterestHistory.clear();
-  strategy.afterReceiveInterest(*face4, *interest1, fibEntry, pitEntry1);
+  strategy.afterReceiveInterest(*face4, *interest1, pitEntry1);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face1->getId());
 
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   pitEntry2->insertOrUpdateInRecord(face4, *interest2);
 
   strategy.sendInterestHistory.clear();
-  strategy.afterReceiveInterest(*face4, *interest2, fibEntry, pitEntry2);
+  strategy.afterReceiveInterest(*face4, *interest2, pitEntry2);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face2->getId());
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   face3->close(); // face3 is closed and its FaceId becomes invalid
   strategy.sendInterestHistory.clear();
   strategy.rejectPendingInterestHistory.clear();
-  strategy.afterReceiveInterest(*face4, *interest3, fibEntry, pitEntry3);
+  strategy.afterReceiveInterest(*face4, *interest3, pitEntry3);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 0);
   BOOST_REQUIRE_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
 }

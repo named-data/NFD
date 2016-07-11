@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,12 +47,11 @@ ClientControlStrategy::~ClientControlStrategy()
 void
 ClientControlStrategy::afterReceiveInterest(const Face& inFace,
                                             const Interest& interest,
-                                            shared_ptr<fib::Entry> fibEntry,
                                             shared_ptr<pit::Entry> pitEntry)
 {
   shared_ptr<lp::NextHopFaceIdTag> tag = interest.getTag<lp::NextHopFaceIdTag>();
   if (tag == nullptr) {
-    this->BestRouteStrategy::afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
+    this->BestRouteStrategy::afterReceiveInterest(inFace, interest, pitEntry);
     return;
   }
 

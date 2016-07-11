@@ -50,7 +50,7 @@ typedef std::vector<fib::NextHop> NextHopList;
 /** \class Entry
  *  \brief represents a FIB entry
  */
-class Entry : public enable_shared_from_this<Entry>, noncopyable
+class Entry : noncopyable
 {
 public:
   explicit

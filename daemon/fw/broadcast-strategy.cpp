@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,6 @@ BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder, const Name& name)
 void
 BroadcastStrategy::afterReceiveInterest(const Face& inFace,
                    const Interest& interest,
-                   shared_ptr<fib::Entry> fibEntry,
                    shared_ptr<pit::Entry> pitEntry)
 {
   if (m_isFirstUse) {
@@ -51,7 +50,7 @@ BroadcastStrategy::afterReceiveInterest(const Face& inFace,
     m_isFirstUse = false;
   }
 
-  this->MulticastStrategy::afterReceiveInterest(inFace, interest, fibEntry, pitEntry);
+  this->MulticastStrategy::afterReceiveInterest(inFace, interest, pitEntry);
 }
 
 } // namespace fw

@@ -54,7 +54,6 @@ public: // triggers
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) override;
 
   virtual void
@@ -63,7 +62,6 @@ public: // triggers
 
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                   shared_ptr<fib::Entry> fibEntry,
                    shared_ptr<pit::Entry> pitEntry) override;
 
 private:

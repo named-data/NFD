@@ -41,19 +41,19 @@ public:
   ProbingModule(AsfMeasurements& measurements);
 
   void
-  scheduleProbe(shared_ptr<fib::Entry> fibEntry, const time::milliseconds& interval);
+  scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval);
 
   shared_ptr<Face>
   getFaceToProbe(const Face& inFace,
                  const Interest& interest,
-                 shared_ptr<fib::Entry> fibEntry,
+                 const fib::Entry& fibEntry,
                  const Face& faceUsed);
 
   bool
-  isProbingNeeded(shared_ptr<fib::Entry> fibEntry, const ndn::Interest& interest);
+  isProbingNeeded(const fib::Entry& fibEntry, const ndn::Interest& interest);
 
   void
-  afterForwardingProbe(shared_ptr<fib::Entry> fibEntry, const ndn::Interest& interest);
+  afterForwardingProbe(const fib::Entry& fibEntry, const ndn::Interest& interest);
 
 private:
   // Used to associate FaceInfo with the face in a NextHop

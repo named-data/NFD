@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,16 +69,11 @@ public: // triggers
    *  - If strategy concludes that this Interest cannot be forwarded,
    *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
    *
-   *  \note The strategy is permitted to store a weak reference to fibEntry.
-   *        Do not store a shared reference, because FIB entry may be deleted at any moment.
-   *        fibEntry is passed by value to allow obtaining a weak reference from it.
    *  \note The strategy is permitted to store a shared reference to pitEntry.
    *        pitEntry is passed by value to reflect this fact.
    */
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
                        shared_ptr<pit::Entry> pitEntry) = 0;
 
   /** \brief trigger before PIT entry is satisfied
@@ -120,15 +115,12 @@ public: // triggers
    *
    *  In this base class this method does nothing.
    *
-   *  \note The strategy is permitted to store a weak reference to fibEntry.
-   *        Do not store a shared reference, because PIT entry may be deleted at any moment.
-   *        fibEntry is passed by value to allow obtaining a weak reference from it.
    *  \note The strategy is permitted to store a shared reference to pitEntry.
    *        pitEntry is passed by value to reflect this fact.
    */
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                   shared_ptr<fib::Entry> fibEntry, shared_ptr<pit::Entry> pitEntry);
+                   shared_ptr<pit::Entry> pitEntry);
 
 protected: // actions
   /** \brief send Interest to outFace
@@ -173,6 +165,9 @@ protected: // actions
             std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
 
 protected: // accessors
+  const fib::Entry&
+  lookupFib(const pit::Entry& pitEntry);
+
   MeasurementsAccessor&
   getMeasurements();
 
@@ -223,6 +218,12 @@ Strategy::sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
                    const lp::NackHeader& header)
 {
   m_forwarder.onOutgoingNack(pitEntry, outFace, header);
+}
+
+inline const fib::Entry&
+Strategy::lookupFib(const pit::Entry& pitEntry)
+{
+  return m_forwarder.lookupFib(pitEntry);
 }
 
 inline MeasurementsAccessor&

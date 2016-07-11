@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(face3, interest1);
-  strategy->afterReceiveInterest(*face3, interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face3, interest1, pitEntry1);
 
   // forwards to face1 because routing says it's best
   // (no io run here: afterReceiveInterest has already sent the Interest)
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(face3, interest2);
-  strategy->afterReceiveInterest(*face3, interest2, fibEntry, pitEntry2);
+  strategy->afterReceiveInterest(*face3, interest2, pitEntry2);
 
   // forwards to face2 because it responds previously
   this->advanceClocks(time::milliseconds(1));
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(face3, *interest1);
-  strategy->afterReceiveInterest(*face3, *interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face3, *interest1, pitEntry1);
 
   this->advanceClocks(time::milliseconds(1));
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(face3, *interest2);
-  strategy->afterReceiveInterest(*face3, *interest2, fibEntry, pitEntry2);
+  strategy->afterReceiveInterest(*face3, *interest2, pitEntry2);
 
   // FIB entry is changed before doPropagate executes
   fibEntry->addNextHop(face2, 20);
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(face3, *interest1);
-  strategy->afterReceiveInterest(*face3, *interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face3, *interest1, pitEntry1);
   limitedIo.run(2 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 2);
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(face3, *interest2);
-  strategy->afterReceiveInterest(*face3, *interest2, fibEntry, pitEntry2);
+  strategy->afterReceiveInterest(*face3, *interest2, pitEntry2);
   limitedIo.run(3 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
 
@@ -257,7 +257,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(face1, *interest1);
-  strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face1, *interest1, pitEntry1);
   limitedIo.run(1 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 
   // similar Interest: strategy should still forward it
   pitEntry1->insertOrUpdateInRecord(face1, *interest1);
-  strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face1, *interest1, pitEntry1);
   limitedIo.run(2 - strategy->sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 2);
@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_CASE(Bug1998)
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
   pitEntry1->insertOrUpdateInRecord(face1, *interest1);
 
-  strategy->afterReceiveInterest(*face1, *interest1, fibEntry, pitEntry1);
+  strategy->afterReceiveInterest(*face1, *interest1, pitEntry1);
 
   // Interest shall go to face2, not loop back to face1
   BOOST_REQUIRE_EQUAL(strategy->sendInterestHistory.size(), 1);

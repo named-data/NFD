@@ -58,7 +58,6 @@ public: // triggers
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) override;
 
   virtual void
@@ -130,13 +129,11 @@ private: // forwarding procedures
   void
   afterReceiveNewInterest(const Face& inFace,
                           const Interest& interest,
-                          shared_ptr<fib::Entry> fibEntry,
                           shared_ptr<pit::Entry> pitEntry);
 
   void
   afterReceiveRetxInterest(const Face& inFace,
                            const Interest& interest,
-                           shared_ptr<fib::Entry> fibEntry,
                            shared_ptr<pit::Entry> pitEntry);
 
   /** \brief send to last working nexthop
@@ -144,18 +141,17 @@ private: // forwarding procedures
    */
   bool
   sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pitEntry, MtInfo& mi,
-                    shared_ptr<fib::Entry> fibEntry);
+                    const fib::Entry& fibEntry);
 
   void
-  afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, weak_ptr<fib::Entry> fibWeak,
-                  FaceId inFace, FaceId firstOutFace);
+  afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFace, FaceId firstOutFace);
 
   /** \brief multicast to all nexthops
    *  \param exceptFaces don't forward to those faces
    */
   void
   multicast(shared_ptr<pit::Entry> pitEntry,
-            shared_ptr<fib::Entry> fibEntry,
+            const fib::Entry& fibEntry,
             std::unordered_set<FaceId> exceptFaces = std::unordered_set<FaceId>());
 
   void

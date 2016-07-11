@@ -50,10 +50,10 @@ const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 void
 NccStrategy::afterReceiveInterest(const Face& inFace,
                                   const Interest& interest,
-                                  shared_ptr<fib::Entry> fibEntry,
                                   shared_ptr<pit::Entry> pitEntry)
 {
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
   if (nexthops.size() == 0) {
     this->rejectPendingInterest(pitEntry);
     return;
@@ -74,7 +74,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   size_t nUpstreams = nexthops.size();
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
-  if (static_cast<bool>(bestFace) && fibEntry->hasNextHop(bestFace) &&
+  if (bestFace != nullptr && fibEntry.hasNextHop(bestFace) &&
       canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = measurementsEntryInfo->prediction;
@@ -97,7 +97,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   }
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
-  if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
   }
@@ -114,36 +114,33 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   }
   pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
     bind(&NccStrategy::doPropagate, this,
-         weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
+         weak_ptr<pit::Entry>(pitEntry)));
 }
 
 void
-NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry> fibEntryWeak)
+NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
 {
   shared_ptr<pit::Entry> pitEntry = pitEntryWeak.lock();
-  if (!static_cast<bool>(pitEntry)) {
+  if (pitEntry == nullptr) {
     return;
   }
-  shared_ptr<fib::Entry> fibEntry = fibEntryWeak.lock();
-  if (!static_cast<bool>(fibEntry)) {
-    return;
-  }
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
   shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
   // pitEntryInfo is guaranteed to exist here, because doPropagate is triggered
   // from a timer set by NccStrategy.
-  BOOST_ASSERT(static_cast<bool>(pitEntryInfo));
+  BOOST_ASSERT(pitEntryInfo != nullptr);
 
   shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
     this->getMeasurementsEntryInfo(pitEntry);
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
-  if (static_cast<bool>(previousFace) && fibEntry->hasNextHop(previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     this->sendInterest(pitEntry, previousFace);
   }
 
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
   bool isForwarded = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> face = it->getFace();
@@ -160,7 +157,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak, weak_ptr<fib::Entry>
     time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
     bind(&NccStrategy::doPropagate, this,
-         weak_ptr<pit::Entry>(pitEntry), weak_ptr<fib::Entry>(fibEntry)));
+         weak_ptr<pit::Entry>(pitEntry)));
   }
 }
 

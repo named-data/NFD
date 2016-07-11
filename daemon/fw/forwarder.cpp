@@ -187,12 +187,8 @@ Forwarder::onContentStoreMiss(const Face& inFace,
   this->setUnsatisfyTimer(pitEntry);
 
   // dispatch to strategy: after incoming Interest
-  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
-  shared_ptr<fib::Entry> fibEntryP = const_cast<fib::Entry&>(fibEntry).shared_from_this();
   this->dispatchToStrategy(pitEntry,
-    [&] (fw::Strategy* strategy) {
-      strategy->afterReceiveInterest(inFace, interest, fibEntryP, pitEntry);
-    });
+    [&] (fw::Strategy* strategy) { strategy->afterReceiveInterest(inFace, interest, pitEntry); });
 }
 
 void
@@ -469,12 +465,8 @@ Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
   outRecord->setIncomingNack(nack);
 
   // trigger strategy: after receive NACK
-  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
-  shared_ptr<fib::Entry> fibEntryP = const_cast<fib::Entry&>(fibEntry).shared_from_this();
   this->dispatchToStrategy(pitEntry,
-    [&] (fw::Strategy* strategy) {
-      strategy->afterReceiveNack(inFace, nack, fibEntryP, pitEntry);
-    });
+    [&] (fw::Strategy* strategy) { strategy->afterReceiveNack(inFace, nack, pitEntry); });
 }
 
 void

@@ -40,10 +40,10 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 void
 MulticastStrategy::afterReceiveInterest(const Face& inFace,
                                         const Interest& interest,
-                                        shared_ptr<fib::Entry> fibEntry,
                                         shared_ptr<pit::Entry> pitEntry)
 {
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     shared_ptr<Face> outFace = it->getFace();

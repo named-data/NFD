@@ -49,16 +49,15 @@ AccessStrategy::~AccessStrategy()
 void
 AccessStrategy::afterReceiveInterest(const Face& inFace,
                                      const Interest& interest,
-                                     shared_ptr<fib::Entry> fibEntry,
                                      shared_ptr<pit::Entry> pitEntry)
 {
   RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
   switch (suppressResult) {
   case RetxSuppression::NEW:
-    this->afterReceiveNewInterest(inFace, interest, fibEntry, pitEntry);
+    this->afterReceiveNewInterest(inFace, interest, pitEntry);
     break;
   case RetxSuppression::FORWARD:
-    this->afterReceiveRetxInterest(inFace, interest, fibEntry, pitEntry);
+    this->afterReceiveRetxInterest(inFace, interest, pitEntry);
     break;
   case RetxSuppression::SUPPRESS:
     NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-suppress");
@@ -72,9 +71,9 @@ AccessStrategy::afterReceiveInterest(const Face& inFace,
 void
 AccessStrategy::afterReceiveNewInterest(const Face& inFace,
                                         const Interest& interest,
-                                        shared_ptr<fib::Entry> fibEntry,
                                         shared_ptr<pit::Entry> pitEntry)
 {
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   Name miName;
   shared_ptr<MtInfo> mi;
   std::tie(miName, mi) = this->findPrefixMeasurements(*pitEntry);
@@ -105,16 +104,16 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace,
 void
 AccessStrategy::afterReceiveRetxInterest(const Face& inFace,
                                          const Interest& interest,
-                                         shared_ptr<fib::Entry> fibEntry,
                                          shared_ptr<pit::Entry> pitEntry)
 {
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-forward");
   this->multicast(pitEntry, fibEntry, {inFace.getId()});
 }
 
 bool
 AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pitEntry, MtInfo& mi,
-                                  shared_ptr<fib::Entry> fibEntry)
+                                  const fib::Entry& fibEntry)
 {
   if (mi.lastNexthop == face::INVALID_FACEID) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " no-last-nexthop");
@@ -127,7 +126,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
   }
 
   shared_ptr<Face> face = this->getFace(mi.lastNexthop);
-  if (face == nullptr || !fibEntry->hasNextHop(face)) {
+  if (face == nullptr || !fibEntry.hasNextHop(face)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-gone");
     return false;
   }
@@ -147,24 +146,20 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
   shared_ptr<PitInfo> pi = pitEntry->getOrCreateStrategyInfo<PitInfo>();
   pi->rtoTimer = scheduler::schedule(rto,
       bind(&AccessStrategy::afterRtoTimeout, this, weak_ptr<pit::Entry>(pitEntry),
-           weak_ptr<fib::Entry>(fibEntry), inFace.getId(), mi.lastNexthop));
+           inFace.getId(), mi.lastNexthop));
 
   return true;
 }
 
 void
-AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, weak_ptr<fib::Entry> fibWeak,
+AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak,
                                 FaceId inFace, FaceId firstOutFace)
 {
   shared_ptr<pit::Entry> pitEntry = pitWeak.lock();
   BOOST_ASSERT(pitEntry != nullptr);
   // pitEntry can't become nullptr, because RTO timer should be cancelled upon pitEntry destruction
 
-  shared_ptr<fib::Entry> fibEntry = fibWeak.lock();
-  if (fibEntry == nullptr) {
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFace << " fib-gone");
-    return;
-  }
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
   NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFace <<
                 " multicast-except " << inFace << ',' << firstOutFace);
@@ -172,10 +167,10 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, weak_ptr<fib::Entr
 }
 
 void
-AccessStrategy::multicast(shared_ptr<pit::Entry> pitEntry, shared_ptr<fib::Entry> fibEntry,
+AccessStrategy::multicast(shared_ptr<pit::Entry> pitEntry, const fib::Entry& fibEntry,
                           std::unordered_set<FaceId> exceptFaces)
 {
-  for (const fib::NextHop& nexthop : fibEntry->getNextHops()) {
+  for (const fib::NextHop& nexthop : fibEntry.getNextHops()) {
     shared_ptr<Face> face = nexthop.getFace();
     if (exceptFaces.count(face->getId()) > 0) {
       continue;

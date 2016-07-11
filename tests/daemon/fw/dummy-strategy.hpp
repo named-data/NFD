@@ -55,13 +55,11 @@ public:
   virtual void
   afterReceiveInterest(const Face& inFace,
                        const Interest& interest,
-                       shared_ptr<fib::Entry> fibEntry,
                        shared_ptr<pit::Entry> pitEntry) override
   {
     ++afterReceiveInterest_count;
     if (wantAfterReceiveInterestCalls) {
-      afterReceiveInterestCalls.push_back(std::make_tuple(inFace.getId(), interest,
-                                                          fibEntry, pitEntry));
+      afterReceiveInterestCalls.emplace_back(inFace.getId(), interest, pitEntry);
     }
 
     if (interestOutFace) {
@@ -89,7 +87,6 @@ public:
   virtual void
   afterReceiveNack(const Face& inFace,
                    const lp::Nack& nack,
-                   shared_ptr<fib::Entry> fibEntry,
                    shared_ptr<pit::Entry> pitEntry) override
   {
     ++afterReceiveNack_count;
@@ -98,8 +95,7 @@ public:
 public:
   int afterReceiveInterest_count;
   bool wantAfterReceiveInterestCalls;
-  std::vector<std::tuple<FaceId, Interest, shared_ptr<fib::Entry>,
-              shared_ptr<pit::Entry>>> afterReceiveInterestCalls;
+  std::vector<std::tuple<FaceId, Interest, shared_ptr<pit::Entry>>> afterReceiveInterestCalls;
   shared_ptr<Face> interestOutFace;
 
   int beforeSatisfyInterest_count;

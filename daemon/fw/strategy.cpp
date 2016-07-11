@@ -62,7 +62,7 @@ Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
 
 void
 Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                           shared_ptr<fib::Entry> fibEntry, shared_ptr<pit::Entry> pitEntry)
+                           shared_ptr<pit::Entry> pitEntry)
 {
   NFD_LOG_DEBUG("afterReceiveNack inFace=" << inFace.getId() <<
                 " pitEntry=" << pitEntry->getName());

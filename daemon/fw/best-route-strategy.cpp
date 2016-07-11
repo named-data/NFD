@@ -44,7 +44,6 @@ BestRouteStrategy::~BestRouteStrategy()
 void
 BestRouteStrategy::afterReceiveInterest(const Face& inFace,
                                         const Interest& interest,
-                                        shared_ptr<fib::Entry> fibEntry,
                                         shared_ptr<pit::Entry> pitEntry)
 {
   if (hasPendingOutRecords(*pitEntry)) {
@@ -52,7 +51,8 @@ BestRouteStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
   fib::NextHopList::const_iterator it = std::find_if(nexthops.begin(), nexthops.end(),
     [&pitEntry] (const fib::NextHop& nexthop) { return canForwardToLegacy(*pitEntry, *nexthop.getFace()); });
 

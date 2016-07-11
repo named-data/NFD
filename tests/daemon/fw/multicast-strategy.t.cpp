@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(face3, *interest);
 
-  strategy.afterReceiveInterest(*face3, *interest, fibEntry, pitEntry);
+  strategy.afterReceiveInterest(*face3, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
   std::set<FaceId> sentInterestFaceIds;
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(RejectScope)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(face1, *interest);
 
-  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
+  strategy.afterReceiveInterest(*face1, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(face1, *interest);
 
-  strategy.afterReceiveInterest(*face1, *interest, fibEntry, pitEntry);
+  strategy.afterReceiveInterest(*face1, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }

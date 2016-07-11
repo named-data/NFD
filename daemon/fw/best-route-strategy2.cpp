@@ -106,13 +106,19 @@ findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
 void
 BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
                                          const Interest& interest,
-                                         shared_ptr<fib::Entry> fibEntry,
                                          shared_ptr<pit::Entry> pitEntry)
 {
-  const fib::NextHopList& nexthops = fibEntry->getNextHops();
+  RetxSuppression::Result suppression = m_retxSuppression.decide(inFace, interest, *pitEntry);
+  if (suppression == RetxSuppression::SUPPRESS) {
+    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
+                           << " suppressed");
+    return;
+  }
+
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  const fib::NextHopList& nexthops = fibEntry.getNextHops();
   fib::NextHopList::const_iterator it = nexthops.end();
 
-  RetxSuppression::Result suppression = m_retxSuppression.decide(inFace, interest, *pitEntry);
   if (suppression == RetxSuppression::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(),
@@ -134,12 +140,6 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
     this->sendInterest(pitEntry, outFace);
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
                            << " newPitEntry-to=" << outFace->getId());
-    return;
-  }
-
-  if (suppression == RetxSuppression::SUPPRESS) {
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " suppressed");
     return;
   }
 
@@ -186,7 +186,6 @@ compareLessSevere(lp::NackReason x, lp::NackReason y)
 
 void
 BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                                     shared_ptr<fib::Entry> fibEntry,
                                      shared_ptr<pit::Entry> pitEntry)
 {
   int nOutRecordsNotNacked = 0;

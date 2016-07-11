@@ -45,9 +45,9 @@ ProbingModule::ProbingModule(AsfMeasurements& measurements)
 }
 
 void
-ProbingModule::scheduleProbe(shared_ptr<fib::Entry> fibEntry, const time::milliseconds& interval)
+ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval)
 {
-  ndn::Name prefix = fibEntry->getPrefix();
+  ndn::Name prefix = fibEntry.getPrefix();
 
   // Set the probing flag for the namespace to true after passed interval of time
   scheduler::schedule(interval, [this, prefix] {
@@ -67,7 +67,7 @@ ProbingModule::scheduleProbe(shared_ptr<fib::Entry> fibEntry, const time::millis
 shared_ptr<Face>
 ProbingModule::getFaceToProbe(const Face& inFace,
                               const Interest& interest,
-                              shared_ptr<fib::Entry> fibEntry,
+                              const fib::Entry& fibEntry,
                               const Face& faceUsed)
 {
   FaceInfoFacePairSet rankedFaces(
@@ -83,7 +83,7 @@ ProbingModule::getFaceToProbe(const Face& inFace,
 
   // Put eligible faces into rankedFaces. If a face does not have an RTT measurement,
   // immediately pick the face for probing
-  for (const fib::NextHop& hop : fibEntry->getNextHops()) {
+  for (const fib::NextHop& hop : fibEntry.getNextHops()) {
     const shared_ptr<Face>& hopFace = hop.getFace();
 
     // Don't send probe Interest back to the incoming face or use the same face
@@ -92,7 +92,7 @@ ProbingModule::getFaceToProbe(const Face& inFace,
       continue;
     }
 
-    FaceInfo* info = m_measurements.getFaceInfo(*fibEntry, interest, *hopFace);
+    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, *hopFace);
 
     // If no RTT has been recorded, probe this face
     if (info == nullptr || !info->hasSrttMeasurement()) {
@@ -112,10 +112,10 @@ ProbingModule::getFaceToProbe(const Face& inFace,
 }
 
 bool
-ProbingModule::isProbingNeeded(shared_ptr<fib::Entry> fibEntry, const ndn::Interest& interest)
+ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const ndn::Interest& interest)
 {
   // Return the probing status flag for a namespace
-  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(*fibEntry, interest);
+  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
 
   // If a first probe has not been scheduled for a namespace
   if (!info.isFirstProbeScheduled()) {
@@ -130,11 +130,11 @@ ProbingModule::isProbingNeeded(shared_ptr<fib::Entry> fibEntry, const ndn::Inter
 }
 
 void
-ProbingModule::afterForwardingProbe(shared_ptr<fib::Entry> fibEntry, const ndn::Interest& interest)
+ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const ndn::Interest& interest)
 {
   // After probing is done, need to set probing flag to false and
   // schedule another future probe
-  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(*fibEntry, interest);
+  NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
   info.setIsProbingDue(false);
 
   scheduleProbe(fibEntry, m_probingInterval);
