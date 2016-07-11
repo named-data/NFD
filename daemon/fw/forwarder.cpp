@@ -186,57 +186,13 @@ Forwarder::onContentStoreMiss(const Face& inFace,
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
 
-  shared_ptr<fib::Entry> fibEntry;
-  // has Link object?
-  if (!interest.hasLink()) {
-    // FIB lookup with Interest name
-    fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
-    NFD_LOG_TRACE("onContentStoreMiss noLinkObject");
-  }
-  else {
-    const Link& link = interest.getLink();
-
-    // in producer region?
-    if (m_networkRegionTable.isInProducerRegion(link)) {
-      // FIB lookup with Interest name
-      fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
-      NFD_LOG_TRACE("onContentStoreMiss inProducerRegion");
-    }
-    // has SelectedDelegation?
-    else if (interest.hasSelectedDelegation()) {
-      // FIB lookup with SelectedDelegation
-      fibEntry = m_fib.findLongestPrefixMatch(interest.getSelectedDelegation());
-      NFD_LOG_TRACE("onContentStoreMiss hasSelectedDelegation=" << interest.getSelectedDelegation());
-    }
-    else {
-      // FIB lookup with first delegation Name
-      fibEntry = m_fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
-
-      // in default-free zone?
-      bool isDefaultFreeZone = !(fibEntry->getPrefix().size() == 0 && fibEntry->hasNextHops());
-      if (isDefaultFreeZone) {
-        // choose and set SelectedDelegation
-        for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
-          const Name& delegationName = delegation.second;
-          fibEntry = m_fib.findLongestPrefixMatch(delegationName);
-          if (fibEntry->hasNextHops()) {
-            const_cast<Interest&>(interest).setSelectedDelegation(delegationName);
-            NFD_LOG_TRACE("onContentStoreMiss enterDefaultFreeZone"
-                          << " setSelectedDelegation=" << delegationName);
-            break;
-          }
-        }
-      }
-      else {
-        NFD_LOG_TRACE("onContentStoreMiss inConsumerRegion");
-      }
-    }
-  }
-
-  // dispatch to strategy
-  BOOST_ASSERT(fibEntry != nullptr);
-  this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveInterest, _1,
-                                          cref(inFace), cref(interest), fibEntry, pitEntry));
+  // dispatch to strategy: after incoming Interest
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  shared_ptr<fib::Entry> fibEntryP = const_cast<fib::Entry&>(fibEntry).shared_from_this();
+  this->dispatchToStrategy(pitEntry,
+    [&] (fw::Strategy* strategy) {
+      strategy->afterReceiveInterest(inFace, interest, fibEntryP, pitEntry);
+    });
 }
 
 void
@@ -328,8 +284,8 @@ Forwarder::onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry)
   NFD_LOG_DEBUG("onInterestUnsatisfied interest=" << pitEntry->getName());
 
   // invoke PIT unsatisfied callback
-  this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeExpirePendingInterest, _1,
-                                          pitEntry));
+  this->dispatchToStrategy(pitEntry,
+    [&] (fw::Strategy* strategy) { strategy->beforeExpirePendingInterest(pitEntry); });
 
   // goto Interest Finalize pipeline
   this->onInterestFinalize(pitEntry, false);
@@ -396,8 +352,8 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     }
 
     // invoke PIT satisfy callback
-    this->dispatchToStrategy(pitEntry, bind(&Strategy::beforeSatisfyInterest, _1,
-                                            pitEntry, cref(inFace), cref(data)));
+    this->dispatchToStrategy(pitEntry,
+      [&] (fw::Strategy* strategy) { strategy->beforeSatisfyInterest(pitEntry, inFace, data); });
 
     // Dead Nonce List insert if necessary (for out-record of inFace)
     this->insertDeadNonceList(*pitEntry, true, data.getFreshnessPeriod(), &inFace);
@@ -513,9 +469,12 @@ Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
   outRecord->setIncomingNack(nack);
 
   // trigger strategy: after receive NACK
-  shared_ptr<fib::Entry> fibEntry = m_fib.findLongestPrefixMatch(*pitEntry);
-  this->dispatchToStrategy(pitEntry, bind(&Strategy::afterReceiveNack, _1,
-                                          cref(inFace), cref(nack), fibEntry, pitEntry));
+  const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
+  shared_ptr<fib::Entry> fibEntryP = const_cast<fib::Entry&>(fibEntry).shared_from_this();
+  this->dispatchToStrategy(pitEntry,
+    [&] (fw::Strategy* strategy) {
+      strategy->afterReceiveNack(inFace, nack, fibEntryP, pitEntry);
+    });
 }
 
 void
@@ -562,6 +521,66 @@ Forwarder::onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
   // send Nack on face
   const_cast<Face&>(outFace).sendNack(nackPkt);
   ++m_counters.nOutNacks;
+}
+
+const fib::Entry&
+Forwarder::lookupFib(const pit::Entry& pitEntry) const
+{
+  const Interest& interest = pitEntry.getInterest();
+  // has Link object?
+  if (!interest.hasLink()) {
+    // FIB lookup with Interest name
+    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(pitEntry);
+    NFD_LOG_TRACE("lookupFib noLinkObject found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  const Link& link = interest.getLink();
+
+  // in producer region?
+  if (m_networkRegionTable.isInProducerRegion(link)) {
+    // FIB lookup with Interest name
+    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(pitEntry);
+    NFD_LOG_TRACE("lookupFib inProducerRegion found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  // has SelectedDelegation?
+  if (interest.hasSelectedDelegation()) {
+    // FIB lookup with SelectedDelegation
+    Name selectedDelegation = interest.getSelectedDelegation();
+    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(selectedDelegation);
+    NFD_LOG_TRACE("lookupFib hasSelectedDelegation=" << selectedDelegation << " found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  // FIB lookup with first delegation Name
+  const fib::Entry& fibEntry0 = *m_fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
+  // in default-free zone?
+  bool isDefaultFreeZone = !(fibEntry0.getPrefix().size() == 0 && fibEntry0.hasNextHops());
+  if (!isDefaultFreeZone) {
+    NFD_LOG_TRACE("onContentStoreMiss inConsumerRegion found=" << fibEntry0.getPrefix());
+    return fibEntry0;
+  }
+
+  // choose and set SelectedDelegation
+  for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
+    const Name& delegationName = delegation.second;
+    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(delegationName);
+    if (fibEntry.hasNextHops()) {
+      /// \todo Don't modify in-record Interests.
+      ///       Set SelectedDelegation in outgoing Interest pipeline.
+      std::for_each(pitEntry.in_begin(), pitEntry.in_end(),
+        [&delegationName] (const pit::InRecord& inR) {
+          const_cast<Interest&>(inR.getInterest()).setSelectedDelegation(delegationName);
+        });
+      NFD_LOG_TRACE("onContentStoreMiss enterDefaultFreeZone"
+                    << " setSelectedDelegation=" << delegationName);
+      return fibEntry;
+    }
+  }
+  BOOST_ASSERT(false);
+  return fibEntry0;
 }
 
 static inline bool

@@ -749,21 +749,9 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
-  StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
-  auto strategyP = make_shared<DummyStrategy>(ref(forwarder), "ndn:/strategyP");
-  strategyP->wantAfterReceiveInterestCalls = true;
-  strategyChoice.install(strategyP);
-  strategyChoice.insert("ndn:/" , strategyP->getName());
-
   Fib& fib = forwarder.getFib();
   Pit& pit = forwarder.getPit();
   NetworkRegionTable& nrt = forwarder.getNetworkRegionTable();
-
-  // returns prefix of FIB entry during last afterReceiveInterest trigger
-  auto getLastFibPrefix = [strategyP] () -> Name {
-    BOOST_REQUIRE(!strategyP->afterReceiveInterestCalls.empty());
-    return std::get<2>(strategyP->afterReceiveInterestCalls.back())->getPrefix();
-  };
 
   shared_ptr<Link> link = makeLink("/net/ndnsim", {{10, "/telia/terabits"}, {20, "/ucla/cs"}});
 
@@ -778,8 +766,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
   pit1->insertOrUpdateInRecord(face1, *interest1);
 
-  forwarder.onContentStoreMiss(*face1, pit1, *interest1);
-  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/");
+  BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit1).getPrefix(), "/");
   BOOST_CHECK_EQUAL(interest1->hasSelectedDelegation(), false);
 
   fibRoot->removeNextHop(face2);
@@ -797,8 +784,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
   pit2->insertOrUpdateInRecord(face1, *interest2);
 
-  forwarder.onContentStoreMiss(*face1, pit2, *interest2);
-  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/telia");
+  BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit2).getPrefix(), "/telia");
   BOOST_REQUIRE_EQUAL(interest2->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest2->getSelectedDelegation(), "/telia/terabits");
 
@@ -816,8 +802,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
   pit3->insertOrUpdateInRecord(face1, *interest3);
 
-  forwarder.onContentStoreMiss(*face1, pit3, *interest3);
-  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/ucla");
+  BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit3).getPrefix(), "/ucla");
   BOOST_REQUIRE_EQUAL(interest3->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest3->getSelectedDelegation(), "/ucla/cs");
 
@@ -837,8 +822,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
   pit4->insertOrUpdateInRecord(face1, *interest4);
 
-  forwarder.onContentStoreMiss(*face1, pit4, *interest4);
-  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/ucla");
+  BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit4).getPrefix(), "/ucla");
   BOOST_REQUIRE_EQUAL(interest4->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest4->getSelectedDelegation(), "/ucla/cs");
 
@@ -860,8 +844,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
   pit5->insertOrUpdateInRecord(face1, *interest5);
 
-  forwarder.onContentStoreMiss(*face1, pit5, *interest5);
-  BOOST_CHECK_EQUAL(getLastFibPrefix(), "/net/ndnsim");
+  BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit1).getPrefix(), "/net/ndnsim");
   BOOST_REQUIRE_EQUAL(interest5->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest5->getSelectedDelegation(), "/ucla/cs");
 
