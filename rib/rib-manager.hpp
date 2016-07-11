@@ -165,11 +165,11 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   void
-  onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
-                                      const ndn::nfd::ControlParameters& result);
+  onCommandPrefixAddNextHopSuccess(const Name& prefix,
+                                   const ndn::nfd::ControlParameters& result);
 
   void
-  onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
+  onCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
 
   void
   onControlHeaderSuccess();

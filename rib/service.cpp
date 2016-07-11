@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nrd.hpp"
+#include "service.hpp"
 
 #include "rib-manager.hpp"
 #include "core/config-file.hpp"
@@ -40,19 +40,19 @@ namespace rib {
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
-Nrd::Nrd(const std::string& configFile, ndn::KeyChain& keyChain)
+Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
   , m_keyChain(keyChain)
 {
 }
 
-Nrd::Nrd(const ConfigSection& config, ndn::KeyChain& keyChain)
+Service::Service(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
   , m_keyChain(keyChain)
 {
 }
 
-Nrd::~Nrd()
+Service::~Service()
 {
   // It is necessary to explicitly define the destructor, because some member variables
   // (e.g., unique_ptr<RibManager>) are forward-declared, but implicitly declared destructor
@@ -60,7 +60,7 @@ Nrd::~Nrd()
 }
 
 void
-Nrd::initialize()
+Service::initialize()
 {
   m_face.reset(new ndn::Face(getLocalNfdTransport(), getGlobalIoService(), m_keyChain));
   m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_face, m_keyChain));
@@ -77,7 +77,7 @@ Nrd::initialize()
         // do nothing
       }
       else {
-        // missing NRD section
+        // missing "rib" section handler
         ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
       }
     });
@@ -98,7 +98,7 @@ Nrd::initialize()
 }
 
 void
-Nrd::initializeLogging()
+Service::initializeLogging()
 {
   ConfigFile config(&ConfigFile::ignoreUnknownSection);
   LoggerFactory::getInstance().setConfigFile(config);
@@ -114,7 +114,7 @@ Nrd::initializeLogging()
 }
 
 shared_ptr<ndn::Transport>
-Nrd::getLocalNfdTransport()
+Service::getLocalNfdTransport()
 {
   ConfigSection config;
 

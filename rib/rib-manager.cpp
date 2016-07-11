@@ -164,8 +164,8 @@ RibManager::registerTopPrefix(const Name& topPrefix)
      ControlParameters()
        .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
        .setFaceId(0),
-     bind(&RibManager::onNrdCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
-     bind(&RibManager::onNrdCommandPrefixAddNextHopError, this, cref(topPrefix), _2));
+     bind(&RibManager::onCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
+     bind(&RibManager::onCommandPrefixAddNextHopError, this, cref(topPrefix), _2));
 
   // add top prefix to the dispatcher
   m_addTopPrefix(topPrefix);
@@ -216,8 +216,8 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
         .setRoute(route);
 
   m_rib.beginApplyUpdate(update,
-                                bind(&RibManager::onRibUpdateSuccess, this, update),
-                                bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
+                         bind(&RibManager::onRibUpdateSuccess, this, update),
+                         bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
 
   m_registeredFaces.insert(route.faceId);
 }
@@ -245,8 +245,8 @@ RibManager::unregisterEntry(const Name& topPrefix, const Interest& interest,
         .setRoute(route);
 
   m_rib.beginApplyUpdate(update,
-                                bind(&RibManager::onRibUpdateSuccess, this, update),
-                                bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
+                         bind(&RibManager::onRibUpdateSuccess, this, update),
+                         bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
 }
 
 void
@@ -425,8 +425,8 @@ RibManager::onNotification(const FaceEventNotification& notification)
 }
 
 void
-RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
-                                                const ndn::nfd::ControlParameters& result)
+RibManager::onCommandPrefixAddNextHopSuccess(const Name& prefix,
+                                             const ndn::nfd::ControlParameters& result)
 {
   NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
 
@@ -443,7 +443,7 @@ RibManager::onNrdCommandPrefixAddNextHopSuccess(const Name& prefix,
 }
 
 void
-RibManager::onNrdCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
+RibManager::onCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
 {
   BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() + "): " + msg));
 }

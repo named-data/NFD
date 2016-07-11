@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_NRD_HPP
-#define NFD_RIB_NRD_HPP
+#ifndef NFD_RIB_SERVICE_HPP
+#define NFD_RIB_SERVICE_HPP
 
 #include "common.hpp"
 #include "core/config-file.hpp"
@@ -40,10 +40,9 @@ namespace rib {
 class RibManager;
 
 /**
- * \brief Class representing NRD (NFD RIB Manager) instance
- * This class can be used to initialize all components of NRD
+ * \brief initializes and executes NFD-RIB service thread
  */
-class Nrd : noncopyable
+class Service : noncopyable
 {
 public:
   class Error : public std::runtime_error
@@ -57,27 +56,31 @@ public:
   };
 
   /**
-   * \brief Create NRD instance using absolute or relative path to \p configFile
+   * \brief create NFD-RIB service
+   * \param configFile absolute or relative path of configuration file
+   * \param keyChain the KeyChain
    */
-  Nrd(const std::string& configFile, ndn::KeyChain& keyChain);
+  Service(const std::string& configFile, ndn::KeyChain& keyChain);
 
   /**
-   * \brief Create NRD instance using a parsed ConfigSection \p config
-   * This version of the constructor is more appropriate for integrated environments,
-   * such as NS-3 or android.
-   * \note When using this version of the constructor, error messages will include
-   *      "internal://nfd.conf" when referring to configuration errors.
+   * \brief create NFD-RIB service
+   * \param config parsed configuration section
+   * \param keyChain the KeyChain
+   * \note This constructor overload is more appropriate for integrated environments,
+   *       such as NS-3 or android. Error messages related to configuration file
+   *       will use "internal://nfd.conf" as configuration filename.
    */
-  Nrd(const ConfigSection& config, ndn::KeyChain& keyChain);
+  Service(const ConfigSection& config, ndn::KeyChain& keyChain);
 
   /**
    * \brief Destructor
    */
-  ~Nrd();
+  ~Service();
 
   /**
-   * \brief Perform initialization of NFD instance
-   * After initialization, NFD instance can be started by invoking run on globalIoService
+   * \brief Perform initialization of NFD-RIB instance
+   *
+   * After initialization, NFD-RIB instance can be started by running the global io_service
    */
   void
   initialize();
@@ -88,7 +91,7 @@ private:
 
   /**
    * \brief Look into the config file and construct appropriate transport to communicate with NFD
-   * If NRD instance was initialized with config file, INFO format is assumed
+   * If NFD-RIB instance was initialized with config file, INFO format is assumed
    */
   shared_ptr<ndn::Transport>
   getLocalNfdTransport();
@@ -106,4 +109,4 @@ private:
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_NRD_HPP
+#endif // NFD_RIB_SERVICE_HPP

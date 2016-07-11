@@ -24,7 +24,7 @@
  */
 
 #include "nfd.hpp"
-#include "rib/nrd.hpp"
+#include "rib/service.hpp"
 
 #include "version.hpp"
 #include "core/global-io.hpp"
@@ -120,30 +120,30 @@ public:
     std::atomic_int retval(0);
 
     boost::asio::io_service* const mainIo = &getGlobalIoService();
-    boost::asio::io_service* nrdIo = nullptr;
+    boost::asio::io_service* ribIo = nullptr;
 
     // Mutex and conditional variable to implement synchronization between main and RIB manager
     // threads:
-    // - to block main thread until RIB manager thread starts and initializes nrdIo (to allow
+    // - to block main thread until RIB manager thread starts and initializes ribIo (to allow
     //   stopping it later)
     std::mutex m;
     std::condition_variable cv;
 
     std::string configFile = this->m_configFile; // c++11 lambda cannot capture member variables
-    boost::thread nrdThread([configFile, &retval, &nrdIo, mainIo, &cv, &m] {
+    boost::thread ribThread([configFile, &retval, &ribIo, mainIo, &cv, &m] {
         {
           std::lock_guard<std::mutex> lock(m);
-          nrdIo = &getGlobalIoService();
-          BOOST_ASSERT(nrdIo != mainIo);
+          ribIo = &getGlobalIoService();
+          BOOST_ASSERT(ribIo != mainIo);
         }
-        cv.notify_all(); // notify that nrdIo has been assigned
+        cv.notify_all(); // notify that ribIo has been assigned
 
         try {
-          ndn::KeyChain nrdKeyChain;
+          ndn::KeyChain ribKeyChain;
           // must be created inside a separate thread
-          rib::Nrd nrd(configFile, nrdKeyChain);
-          nrd.initialize();
-          getGlobalIoService().run(); // nrdIo is not thread-safe to use here
+          rib::Service ribService(configFile, ribKeyChain);
+          ribService.initialize();
+          getGlobalIoService().run(); // ribIo is not thread-safe to use here
         }
         catch (const std::exception& e) {
           NFD_LOG_FATAL(e.what());
@@ -153,15 +153,15 @@ public:
 
         {
           std::lock_guard<std::mutex> lock(m);
-          nrdIo = nullptr;
+          ribIo = nullptr;
         }
       });
 
     {
-      // Wait to guarantee that nrdIo is properly initialized, so it can be used to terminate
+      // Wait to guarantee that ribIo is properly initialized, so it can be used to terminate
       // RIB manager thread.
       std::unique_lock<std::mutex> lock(m);
-      cv.wait(lock, [&nrdIo] { return nrdIo != nullptr; });
+      cv.wait(lock, [&ribIo] { return ribIo != nullptr; });
     }
 
     try {
@@ -177,14 +177,14 @@ public:
     }
 
     {
-      // nrdIo is guaranteed to be alive at this point
+      // ribIo is guaranteed to be alive at this point
       std::lock_guard<std::mutex> lock(m);
-      if (nrdIo != nullptr) {
-        nrdIo->stop();
-        nrdIo = nullptr;
+      if (ribIo != nullptr) {
+        ribIo->stop();
+        ribIo = nullptr;
       }
     }
-    nrdThread.join();
+    ribThread.join();
 
     return retval;
   }
