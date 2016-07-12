@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -28,28 +28,10 @@
 namespace nfd {
 namespace fib {
 
-NextHop::NextHop(shared_ptr<Face> face)
-  : m_face(face)
+NextHop::NextHop(Face& face)
+  : m_face(&face)
   , m_cost(0)
 {
-}
-
-const shared_ptr<Face>&
-NextHop::getFace() const
-{
-  return m_face;
-}
-
-void
-NextHop::setCost(uint64_t cost)
-{
-  m_cost = cost;
-}
-
-uint64_t
-NextHop::getCost() const
-{
-  return m_cost;
 }
 
 } // namespace fib

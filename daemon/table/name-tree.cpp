@@ -244,7 +244,7 @@ shared_ptr<name_tree::Entry>
 NameTree::lookup(const fib::Entry& fibEntry) const
 {
   shared_ptr<name_tree::Entry> nte = this->getEntry(fibEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getFibEntry().get() == &fibEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getFibEntry() == &fibEntry);
   return nte;
 }
 

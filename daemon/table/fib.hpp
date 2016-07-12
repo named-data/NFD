@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,13 +33,14 @@ namespace nfd {
 
 namespace measurements {
 class Entry;
-}
+} // namespace measurements
 namespace pit {
 class Entry;
-}
+} // namespace pit
 
-/** \class Fib
- *  \brief represents the FIB
+namespace fib {
+
+/** \brief represents the Forwarding Information Base (FIB)
  */
 class Fib : noncopyable
 {
@@ -53,44 +54,54 @@ public:
   size() const;
 
 public: // lookup
-  /// performs a longest prefix match
-  shared_ptr<fib::Entry>
+  /** \brief performs a longest prefix match
+   */
+  const Entry&
   findLongestPrefixMatch(const Name& prefix) const;
 
-  /// performs a longest prefix match
-  shared_ptr<fib::Entry>
+  /** \brief performs a longest prefix match
+   *
+   *  This is equivalent to .findLongestPrefixMatch(pitEntry.getName())
+   */
+  const Entry&
   findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
-  /// performs a longest prefix match
-  shared_ptr<fib::Entry>
+  /** \brief performs a longest prefix match
+   *
+   *  This is equivalent to .findLongestPrefixMatch(measurementsEntry.getName())
+   */
+  const Entry&
   findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const;
 
-  shared_ptr<fib::Entry>
-  findExactMatch(const Name& prefix) const;
+  /** \brief performs an exact match lookup
+   */
+  Entry*
+  findExactMatch(const Name& prefix);
 
 public: // mutation
   /** \brief inserts a FIB entry for prefix
+   *
    *  If an entry for exact same prefix exists, that entry is returned.
-   *  \return{ the entry, and true for new entry, false for existing entry }
+   *  \return the entry, and true for new entry or false for existing entry
    */
-  std::pair<shared_ptr<fib::Entry>, bool>
+  std::pair<Entry*, bool>
   insert(const Name& prefix);
 
   void
   erase(const Name& prefix);
 
   void
-  erase(const fib::Entry& entry);
+  erase(const Entry& entry);
 
-  /** \brief removes the NextHop record for face in all entrites
+  /** \brief removes the NextHop record for face in all entries
    *
-   *  This is usually invoked when face goes away.
+   *  This is usually invoked when face is destroyed.
    *  Removing the last NextHop in a FIB entry will erase the FIB entry.
    *
    *  \todo change parameter type to Face&
    */
   void
-  removeNextHopFromAllEntries(shared_ptr<Face> face);
+  removeNextHopFromAllEntries(const Face& face);
 
 public: // enumeration
   class const_iterator;
@@ -110,7 +121,7 @@ public: // enumeration
   const_iterator
   end() const;
 
-  class const_iterator : public std::iterator<std::forward_iterator_tag, const fib::Entry>
+  class const_iterator : public std::iterator<std::forward_iterator_tag, const Entry>
   {
   public:
     const_iterator() = default;
@@ -120,10 +131,10 @@ public: // enumeration
 
     ~const_iterator();
 
-    const fib::Entry&
+    const Entry&
     operator*() const;
 
-    shared_ptr<fib::Entry>
+    const Entry*
     operator->() const;
 
     const_iterator&
@@ -143,8 +154,8 @@ public: // enumeration
   };
 
 private:
-  shared_ptr<fib::Entry>
-  findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const;
+  const Entry&
+  findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const;
 
   void
   erase(shared_ptr<name_tree::Entry> nameTreeEntry);
@@ -153,13 +164,12 @@ private:
   NameTree& m_nameTree;
   size_t m_nItems;
 
-  /** \brief The empty FIB entry.
+  /** \brief the empty FIB entry.
    *
    *  This entry has no nexthops.
    *  It is returned by findLongestPrefixMatch if nothing is matched.
-   *  Returning empty entry instead of nullptr makes forwarding and strategy implementation easier.
    */
-  static const shared_ptr<fib::Entry> s_emptyEntry;
+  static const unique_ptr<Entry> s_emptyEntry;
 };
 
 inline size_t
@@ -189,7 +199,7 @@ inline
 Fib::const_iterator
 Fib::const_iterator::operator++(int)
 {
-  Fib::const_iterator temp(*this);
+  const_iterator temp(*this);
   ++(*this);
   return temp;
 }
@@ -201,29 +211,33 @@ Fib::const_iterator::operator++()
   return *this;
 }
 
-inline const fib::Entry&
+inline const Entry&
 Fib::const_iterator::operator*() const
 {
-  return *this->operator->();
+  return *m_nameTreeIterator->getFibEntry();
 }
 
-inline shared_ptr<fib::Entry>
+inline const Entry*
 Fib::const_iterator::operator->() const
 {
   return m_nameTreeIterator->getFibEntry();
 }
 
 inline bool
-Fib::const_iterator::operator==(const Fib::const_iterator& other) const
+Fib::const_iterator::operator==(const const_iterator& other) const
 {
   return m_nameTreeIterator == other.m_nameTreeIterator;
 }
 
 inline bool
-Fib::const_iterator::operator!=(const Fib::const_iterator& other) const
+Fib::const_iterator::operator!=(const const_iterator& other) const
 {
   return m_nameTreeIterator != other.m_nameTreeIterator;
 }
+
+} // namespace fib
+
+using fib::Fib;
 
 } // namespace nfd
 

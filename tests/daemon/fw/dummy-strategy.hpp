@@ -63,7 +63,7 @@ public:
     }
 
     if (interestOutFace) {
-      this->sendInterest(pitEntry, interestOutFace);
+      this->sendInterest(pitEntry, *interestOutFace);
     }
     else {
       this->rejectPendingInterest(pitEntry);

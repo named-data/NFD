@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,7 +108,7 @@ FaceTable::remove(shared_ptr<Face> face)
                " remote=" << face->getRemoteUri() <<
                " local=" << face->getLocalUri());
 
-  m_forwarder.getFib().removeNextHopFromAllEntries(face);
+  m_forwarder.getFib().removeNextHopFromAllEntries(*face);
 
   // defer Face deallocation, so that Transport isn't deallocated during afterStateChange signal
   getGlobalIoService().post([face] {});

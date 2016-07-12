@@ -43,7 +43,7 @@ public:
   void
   scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval);
 
-  shared_ptr<Face>
+  Face*
   getFaceToProbe(const Face& inFace,
                  const Interest& interest,
                  const fib::Entry& fibEntry,
@@ -57,11 +57,11 @@ public:
 
 private:
   // Used to associate FaceInfo with the face in a NextHop
-  typedef std::pair<FaceInfo*, shared_ptr<Face>> FaceInfoFacePair;
+  typedef std::pair<FaceInfo*, Face*> FaceInfoFacePair;
   typedef std::function<bool(FaceInfoFacePair, FaceInfoFacePair)> FaceInfoPredicate;
   typedef std::set<FaceInfoFacePair, FaceInfoPredicate> FaceInfoFacePairSet;
 
-  shared_ptr<Face>
+  Face*
   getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces);
 
   double

@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -34,40 +34,37 @@ Entry::Entry(const Name& prefix)
 }
 
 NextHopList::iterator
-Entry::findNextHop(Face& face)
+Entry::findNextHop(const Face& face)
 {
   return std::find_if(m_nextHops.begin(), m_nextHops.end(),
                       [&face] (const NextHop& nexthop) {
-                        return nexthop.getFace().get() == &face;
+                        return &nexthop.getFace() == &face;
                       });
 }
 
 bool
-Entry::hasNextHop(shared_ptr<Face> face) const
+Entry::hasNextHop(const Face& face) const
 {
-  return const_cast<Entry*>(this)->findNextHop(*face) != m_nextHops.end();
+  return const_cast<Entry*>(this)->findNextHop(face) != m_nextHops.end();
 }
 
 void
-Entry::addNextHop(shared_ptr<Face> face, uint64_t cost)
+Entry::addNextHop(Face& face, uint64_t cost)
 {
-  auto it = this->findNextHop(*face);
+  auto it = this->findNextHop(face);
   if (it == m_nextHops.end()) {
-    m_nextHops.push_back(fib::NextHop(face));
-    it = m_nextHops.end();
-    --it;
+    m_nextHops.emplace_back(face);
+    it = std::prev(m_nextHops.end());
   }
-  // now it refers to the NextHop for face
 
   it->setCost(cost);
-
   this->sortNextHops();
 }
 
 void
-Entry::removeNextHop(shared_ptr<Face> face)
+Entry::removeNextHop(const Face& face)
 {
-  auto it = this->findNextHop(*face);
+  auto it = this->findNextHop(face);
   if (it != m_nextHops.end()) {
     m_nextHops.erase(it);
   }

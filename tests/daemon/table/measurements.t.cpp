@@ -70,8 +70,8 @@ BOOST_AUTO_TEST_CASE(GetWithFibEntry)
 {
   Fib fib(nameTree);
 
-  shared_ptr<fib::Entry> fibA = fib.insert("/A").first;
-  shared_ptr<fib::Entry> fibAB = fib.insert("/A/B").first;
+  const fib::Entry* fibA = fib.insert("/A").first;
+  const fib::Entry* fibAB = fib.insert("/A/B").first;
 
   shared_ptr<measurements::Entry> entryA = measurements.get(*fibA);
   BOOST_REQUIRE(entryA != nullptr);
@@ -86,9 +86,9 @@ BOOST_AUTO_TEST_CASE(GetWithEmptyFibEntry) // Bug 3275
 {
   Fib fib(nameTree);
 
-  shared_ptr<fib::Entry> fib0 = fib.findLongestPrefixMatch("/");
+  const fib::Entry& fib0 = fib.findLongestPrefixMatch("/");
 
-  shared_ptr<measurements::Entry> entry0 = measurements.get(*fib0);
+  shared_ptr<measurements::Entry> entry0 = measurements.get(fib0);
   BOOST_REQUIRE(entry0 != nullptr);
   BOOST_CHECK_EQUAL(entry0->getName(), "/");
 }

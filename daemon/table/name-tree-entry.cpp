@@ -65,14 +65,14 @@ Entry::isEmpty() const
 }
 
 void
-Entry::setFibEntry(shared_ptr<fib::Entry> fibEntry)
+Entry::setFibEntry(unique_ptr<fib::Entry> fibEntry)
 {
   BOOST_ASSERT(fibEntry == nullptr || fibEntry->m_nameTreeEntry.expired());
 
   if (m_fibEntry != nullptr) {
     m_fibEntry->m_nameTreeEntry.reset();
   }
-  m_fibEntry = fibEntry;
+  m_fibEntry = std::move(fibEntry);
 
   if (m_fibEntry != nullptr) {
     m_fibEntry->m_nameTreeEntry = this->shared_from_this();

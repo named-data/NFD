@@ -64,7 +64,7 @@ ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::millisecond
   });
 }
 
-shared_ptr<Face>
+Face*
 ProbingModule::getFaceToProbe(const Face& inFace,
                               const Interest& interest,
                               const fib::Entry& fibEntry,
@@ -84,23 +84,23 @@ ProbingModule::getFaceToProbe(const Face& inFace,
   // Put eligible faces into rankedFaces. If a face does not have an RTT measurement,
   // immediately pick the face for probing
   for (const fib::NextHop& hop : fibEntry.getNextHops()) {
-    const shared_ptr<Face>& hopFace = hop.getFace();
+    Face& hopFace = hop.getFace();
 
     // Don't send probe Interest back to the incoming face or use the same face
     // as the forwarded Interest
-    if (hopFace->getId() == inFace.getId() || hopFace->getId() == faceUsed.getId()) {
+    if (hopFace.getId() == inFace.getId() || hopFace.getId() == faceUsed.getId()) {
       continue;
     }
 
-    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, *hopFace);
+    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace);
 
     // If no RTT has been recorded, probe this face
     if (info == nullptr || !info->hasSrttMeasurement()) {
-      return hopFace;
+      return &hopFace;
     }
 
     // Add FaceInfo to container sorted by RTT
-    rankedFaces.insert(std::make_pair(info, hopFace));
+    rankedFaces.insert(std::make_pair(info, &hopFace));
   }
 
   if (rankedFaces.empty()) {
@@ -140,7 +140,7 @@ ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const ndn::Inter
   scheduleProbe(fibEntry, m_probingInterval);
 }
 
-shared_ptr<Face>
+Face*
 ProbingModule::getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces)
 {
   double randomNumber = getRandomNumber(0, 1);

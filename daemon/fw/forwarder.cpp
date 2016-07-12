@@ -522,7 +522,7 @@ Forwarder::lookupFib(const pit::Entry& pitEntry) const
   // has Link object?
   if (!interest.hasLink()) {
     // FIB lookup with Interest name
-    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(pitEntry);
+    const fib::Entry& fibEntry = m_fib.findLongestPrefixMatch(pitEntry);
     NFD_LOG_TRACE("lookupFib noLinkObject found=" << fibEntry.getPrefix());
     return fibEntry;
   }
@@ -532,7 +532,7 @@ Forwarder::lookupFib(const pit::Entry& pitEntry) const
   // in producer region?
   if (m_networkRegionTable.isInProducerRegion(link)) {
     // FIB lookup with Interest name
-    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(pitEntry);
+    const fib::Entry& fibEntry = m_fib.findLongestPrefixMatch(pitEntry);
     NFD_LOG_TRACE("lookupFib inProducerRegion found=" << fibEntry.getPrefix());
     return fibEntry;
   }
@@ -541,13 +541,13 @@ Forwarder::lookupFib(const pit::Entry& pitEntry) const
   if (interest.hasSelectedDelegation()) {
     // FIB lookup with SelectedDelegation
     Name selectedDelegation = interest.getSelectedDelegation();
-    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(selectedDelegation);
+    const fib::Entry& fibEntry = m_fib.findLongestPrefixMatch(selectedDelegation);
     NFD_LOG_TRACE("lookupFib hasSelectedDelegation=" << selectedDelegation << " found=" << fibEntry.getPrefix());
     return fibEntry;
   }
 
   // FIB lookup with first delegation Name
-  const fib::Entry& fibEntry0 = *m_fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
+  const fib::Entry& fibEntry0 = m_fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
   // in default-free zone?
   bool isDefaultFreeZone = !(fibEntry0.getPrefix().size() == 0 && fibEntry0.hasNextHops());
   if (!isDefaultFreeZone) {
@@ -558,7 +558,7 @@ Forwarder::lookupFib(const pit::Entry& pitEntry) const
   // choose and set SelectedDelegation
   for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
     const Name& delegationName = delegation.second;
-    const fib::Entry& fibEntry = *m_fib.findLongestPrefixMatch(delegationName);
+    const fib::Entry& fibEntry = m_fib.findLongestPrefixMatch(delegationName);
     if (fibEntry.hasNextHops()) {
       /// \todo Don't modify in-record Interests.
       ///       Set SelectedDelegation in outgoing Interest pipeline.

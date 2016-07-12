@@ -130,7 +130,7 @@ protected: // actions
    *                      rather than reusing a Nonce from one of the PIT in-records
    */
   VIRTUAL_WITH_TESTS void
-  sendInterest(shared_ptr<pit::Entry> pitEntry, shared_ptr<Face> outFace,
+  sendInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
                bool wantNewNonce = false);
 
   /** \brief decide that a pending Interest cannot be forwarded
@@ -200,11 +200,9 @@ Strategy::getName() const
 }
 
 inline void
-Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                       shared_ptr<Face> outFace,
-                       bool wantNewNonce)
+Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace, bool wantNewNonce)
 {
-  m_forwarder.onOutgoingInterest(pitEntry, *outFace, wantNewNonce);
+  m_forwarder.onOutgoingInterest(pitEntry, outFace, wantNewNonce);
 }
 
 inline void

@@ -66,7 +66,7 @@ ClientControlStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  this->sendInterest(pitEntry, outFace);
+  this->sendInterest(pitEntry, *outFace);
 }
 
 } // namespace fw

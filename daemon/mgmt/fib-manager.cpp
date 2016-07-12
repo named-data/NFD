@@ -61,11 +61,10 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
                 << " faceid: " << faceId
                 << " cost: " << cost);
 
-  auto face = m_getFace(faceId);
-  if (static_cast<bool>(face)) {
-    auto entry = m_fib.insert(prefix).first;
-
-    entry->addNextHop(face, cost);
+  shared_ptr<Face> face = m_getFace(faceId);
+  if (face != nullptr) {
+    fib::Entry* entry = m_fib.insert(prefix).first;
+    entry->addNextHop(*face, cost);
 
     NFD_LOG_DEBUG("add-nexthop result: OK"
                   << " prefix:" << prefix
@@ -90,11 +89,11 @@ FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
   NFD_LOG_TRACE("remove-nexthop prefix: " << parameters.getName()
                 << " faceid: " << parameters.getFaceId());
 
-  auto face = m_getFace(parameters.getFaceId());
-  if (static_cast<bool>(face)) {
-    auto entry = m_fib.findExactMatch(parameters.getName());
-    if (static_cast<bool>(entry)) {
-      entry->removeNextHop(face);
+  shared_ptr<Face> face = m_getFace(parameters.getFaceId());
+  if (face != nullptr) {
+    fib::Entry* entry = m_fib.findExactMatch(parameters.getName());
+    if (entry != nullptr) {
+      entry->removeNextHop(*face);
       NFD_LOG_DEBUG("remove-nexthop result: OK prefix: " << parameters.getName()
                     << " faceid: " << parameters.getFaceId());
 
@@ -124,7 +123,7 @@ FibManager::listEntries(const Name& topPrefix, const Interest& interest,
 
     for (auto&& next : nextHops) {
       ndn::nfd::NextHopRecord nextHopRecord;
-      nextHopRecord.setFaceId(next.getFace()->getId());
+      nextHopRecord.setFaceId(next.getFace().getId());
       nextHopRecord.setCost(next.getCost());
 
       record.addNextHopRecord(nextHopRecord);

@@ -59,19 +59,19 @@ predicate_NextHop_eligible(const shared_ptr<pit::Entry>& pitEntry,
   bool wantUnused = false,
   time::steady_clock::TimePoint now = time::steady_clock::TimePoint::min())
 {
-  shared_ptr<Face> upstream = nexthop.getFace();
+  Face& upstream = nexthop.getFace();
 
   // upstream is current downstream
-  if (upstream->getId() == currentDownstream)
+  if (upstream.getId() == currentDownstream)
     return false;
 
   // forwarding would violate scope
-  if (violatesScope(*pitEntry, *upstream))
+  if (violatesScope(*pitEntry, upstream))
     return false;
 
   if (wantUnused) {
     // NextHop must not have unexpired out-record
-    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(*upstream);
+    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(upstream);
     if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
       return false;
     }
@@ -93,7 +93,7 @@ findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     if (!predicate_NextHop_eligible(pitEntry, *it, currentDownstream))
       continue;
-    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(*it->getFace());
+    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(it->getFace());
     BOOST_ASSERT(outRecord != pitEntry->out_end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;
@@ -136,10 +136,10 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
       return;
     }
 
-    shared_ptr<Face> outFace = it->getFace();
+    Face& outFace = it->getFace();
     this->sendInterest(pitEntry, outFace);
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " newPitEntry-to=" << outFace->getId());
+                           << " newPitEntry-to=" << outFace.getId());
     return;
   }
 
@@ -148,10 +148,10 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
                     bind(&predicate_NextHop_eligible, pitEntry, _1, inFace.getId(),
                          true, time::steady_clock::now()));
   if (it != nexthops.end()) {
-    shared_ptr<Face> outFace = it->getFace();
+    Face& outFace = it->getFace();
     this->sendInterest(pitEntry, outFace);
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " retransmit-unused-to=" << outFace->getId());
+                           << " retransmit-unused-to=" << outFace.getId());
     return;
   }
 
@@ -161,10 +161,10 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " retransmitNoNextHop");
   }
   else {
-    shared_ptr<Face> outFace = it->getFace();
+    Face& outFace = it->getFace();
     this->sendInterest(pitEntry, outFace);
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " retransmit-retry-to=" << outFace->getId());
+                           << " retransmit-retry-to=" << outFace.getId());
   }
 }
 

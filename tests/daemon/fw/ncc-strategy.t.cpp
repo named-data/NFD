@@ -62,9 +62,9 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 10);
-  fibEntry->addNextHop(face2, 20);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 10);
+  fibEntry.addNextHop(*face2, 20);
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   strategyChoice.install(strategy);
@@ -126,8 +126,8 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 10);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 10);
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   strategyChoice.install(strategy);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   strategy->afterReceiveInterest(*face3, *interest2, pitEntry2);
 
   // FIB entry is changed before doPropagate executes
-  fibEntry->addNextHop(face2, 20);
+  fibEntry.addNextHop(*face2, 20);
   this->advanceClocks(time::milliseconds(10), time::milliseconds(1000));// should not crash
 }
 
@@ -182,9 +182,9 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 10);
-  fibEntry->addNextHop(face2, 20);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 10);
+  fibEntry.addNextHop(*face2, 20);
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   strategyChoice.install(strategy);
@@ -242,8 +242,8 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face2, 10);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face2, 10);
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   strategyChoice.install(strategy);
@@ -292,9 +292,9 @@ BOOST_AUTO_TEST_CASE(Bug1998)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 10); // face1 is top-ranked nexthop
-  fibEntry->addNextHop(face2, 20);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 10); // face1 is top-ranked nexthop
+  fibEntry.addNextHop(*face2, 20);
 
   StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
   strategyChoice.install(strategy);

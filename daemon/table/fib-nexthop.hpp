@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -39,19 +39,28 @@ class NextHop
 {
 public:
   explicit
-  NextHop(shared_ptr<Face> face);
+  NextHop(Face& face);
 
-  const shared_ptr<Face>&
-  getFace() const;
-
-  void
-  setCost(uint64_t cost);
+  Face&
+  getFace() const
+  {
+    return *m_face;
+  }
 
   uint64_t
-  getCost() const;
+  getCost() const
+  {
+    return m_cost;
+  }
+
+  void
+  setCost(uint64_t cost)
+  {
+    m_cost = cost;
+  }
 
 private:
-  shared_ptr<Face> m_face;
+  Face* m_face;
   uint64_t m_cost;
 };
 

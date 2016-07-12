@@ -94,19 +94,19 @@ public: // for check
   checkNextHop(const Name& prefix, ssize_t expectedNNextHops = -1,
                FaceId faceId = face::FACEID_NULL, int32_t expectedCost = -1)
   {
-    auto entry = m_fib.findExactMatch(prefix);
-    if (!static_cast<bool>(entry)) {
+    const fib::Entry* entry = m_fib.findExactMatch(prefix);
+    if (entry == nullptr) {
       return CheckNextHopResult::NO_FIB_ENTRY;
     }
 
-    auto nextHops = entry->getNextHops();
+    const fib::NextHopList& nextHops = entry->getNextHops();
     if (expectedNNextHops != -1 && nextHops.size() != static_cast<size_t>(expectedNNextHops)) {
       return CheckNextHopResult::WRONG_N_NEXTHOPS;
     }
 
     if (faceId != face::FACEID_NULL) {
       for (auto&& record : nextHops) {
-        if (record.getFace()->getId() == faceId) {
+        if (record.getFace().getId() == faceId) {
           return expectedCost != -1 && record.getCost() != static_cast<uint32_t>(expectedCost) ?
             CheckNextHopResult::WRONG_COST : CheckNextHopResult::OK;
         }
@@ -285,10 +285,10 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_REQUIRE_NE(face2, face::INVALID_FACEID);
   BOOST_REQUIRE_NE(face3, face::INVALID_FACEID);
 
-  shared_ptr<fib::Entry> entry = m_fib.insert("/hello").first;
-  entry->addNextHop(m_faceTable.get(face1), 101);
-  entry->addNextHop(m_faceTable.get(face2), 202);
-  entry->addNextHop(m_faceTable.get(face3), 303);
+  fib::Entry* entry = m_fib.insert("/hello").first;
+  entry->addNextHop(*m_faceTable.get(face1), 101);
+  entry->addNextHop(*m_faceTable.get(face2), 202);
+  entry->addNextHop(*m_faceTable.get(face3), 303);
 
   testRemoveNextHop(makeParameters("/hello", face1));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -340,9 +340,9 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
     receiveInterest(command);
   };
 
-  shared_ptr<fib::Entry> entry = m_fib.insert("/hello").first;
-  entry->addNextHop(m_faceTable.get(face1), 101);
-  entry->addNextHop(m_faceTable.get(face2), 202);
+  fib::Entry* entry = m_fib.insert("/hello").first;
+  entry->addNextHop(*m_faceTable.get(face1), 101);
+  entry->addNextHop(*m_faceTable.get(face2), 202);
 
   testWithImplicitFaceId(ControlParameters().setName("/hello").setFaceId(0), face1);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
     receiveInterest(command);
   };
 
-  m_fib.insert("/hello").first->addNextHop(m_faceTable.get(face1), 101);
+  m_fib.insert("/hello").first->addNextHop(*m_faceTable.get(face1), 101);
 
   testRemoveNextHop(makeParameters("/hello", face2 + 100));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // face does not exist
@@ -446,9 +446,9 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   for (size_t i = 0 ; i < nEntries ; i ++) {
     Name prefix = Name("test").appendSegment(i);
     actualPrefixes.insert(prefix);
-    auto fibEntry = m_fib.insert(prefix).first;
-    fibEntry->addNextHop(m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 1);
-    fibEntry->addNextHop(m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
+    fib::Entry* fibEntry = m_fib.insert(prefix).first;
+    fibEntry->addNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 1);
+    fibEntry->addNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
   }
 
   receiveInterest(makeInterest("/localhost/nfd/fib/list"));
@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     const auto& nextHops = matchedEntry->getNextHops();
     for (auto&& next : nextHops) {
       ndn::nfd::NextHopRecord nextHopRecord;
-      nextHopRecord.setFaceId(next.getFace()->getId());
+      nextHopRecord.setFaceId(next.getFace().getId());
       nextHopRecord.setCost(next.getCost());
       record.addNextHopRecord(nextHopRecord);
     }

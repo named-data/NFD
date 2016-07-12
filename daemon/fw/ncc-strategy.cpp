@@ -74,13 +74,13 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   size_t nUpstreams = nexthops.size();
 
   shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
-  if (bestFace != nullptr && fibEntry.hasNextHop(bestFace) &&
+  if (bestFace != nullptr && fibEntry.hasNextHop(*bestFace) &&
       canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = measurementsEntryInfo->prediction;
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
-    this->sendInterest(pitEntry, bestFace);
+    this->sendInterest(pitEntry, *bestFace);
     pitEntryInfo->bestFaceTimeout = scheduler::schedule(
       measurementsEntryInfo->prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
@@ -89,7 +89,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     // use first eligible nexthop
     auto firstEligibleNexthop = std::find_if(nexthops.begin(), nexthops.end(),
         [&pitEntry] (const fib::NextHop& nexthop) {
-          return canForwardToLegacy(*pitEntry, *nexthop.getFace());
+          return canForwardToLegacy(*pitEntry, nexthop.getFace());
         });
     if (firstEligibleNexthop != nexthops.end()) {
       this->sendInterest(pitEntry, firstEligibleNexthop->getFace());
@@ -97,7 +97,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
   }
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
-  if (previousFace != nullptr && fibEntry.hasNextHop(previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
   }
@@ -135,16 +135,16 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
     this->getMeasurementsEntryInfo(pitEntry);
 
   shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
-  if (previousFace != nullptr && fibEntry.hasNextHop(previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
-    this->sendInterest(pitEntry, previousFace);
+    this->sendInterest(pitEntry, *previousFace);
   }
 
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
   bool isForwarded = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
-    shared_ptr<Face> face = it->getFace();
-    if (canForwardToLegacy(*pitEntry, *face)) {
+    Face& face = it->getFace();
+    if (canForwardToLegacy(*pitEntry, face)) {
       isForwarded = true;
       this->sendInterest(pitEntry, face);
       break;

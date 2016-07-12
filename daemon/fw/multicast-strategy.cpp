@@ -46,8 +46,8 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace,
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
-    shared_ptr<Face> outFace = it->getFace();
-    if (canForwardToLegacy(*pitEntry, *outFace)) {
+    Face& outFace = it->getFace();
+    if (canForwardToLegacy(*pitEntry, outFace)) {
       this->sendInterest(pitEntry, outFace);
     }
   }

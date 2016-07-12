@@ -126,7 +126,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
   }
 
   shared_ptr<Face> face = this->getFace(mi.lastNexthop);
-  if (face == nullptr || !fibEntry.hasNextHop(face)) {
+  if (face == nullptr || !fibEntry.hasNextHop(*face)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-gone");
     return false;
   }
@@ -140,7 +140,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
   NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop <<
                 " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
 
-  this->sendInterest(pitEntry, face);
+  this->sendInterest(pitEntry, *face);
 
   // schedule RTO timeout
   shared_ptr<PitInfo> pi = pitEntry->getOrCreateStrategyInfo<PitInfo>();
@@ -171,11 +171,11 @@ AccessStrategy::multicast(shared_ptr<pit::Entry> pitEntry, const fib::Entry& fib
                           std::unordered_set<FaceId> exceptFaces)
 {
   for (const fib::NextHop& nexthop : fibEntry.getNextHops()) {
-    shared_ptr<Face> face = nexthop.getFace();
-    if (exceptFaces.count(face->getId()) > 0) {
+    Face& face = nexthop.getFace();
+    if (exceptFaces.count(face.getId()) > 0) {
       continue;
     }
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << face->getId() <<
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << face.getId() <<
                   " multicast");
     this->sendInterest(pitEntry, face);
   }

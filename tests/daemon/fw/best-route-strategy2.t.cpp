@@ -75,10 +75,10 @@ BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
 
 BOOST_AUTO_TEST_CASE(Forward)
 {
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 10);
-  fibEntry->addNextHop(face2, 20);
-  fibEntry->addNextHop(face3, 30);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 10);
+  fibEntry.addNextHop(*face2, 20);
+  fibEntry.addNextHop(*face3, 30);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -127,7 +127,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[4].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[5].outFaceId, face3->getId());
 
-  fibEntry->removeNextHop(face1);
+  fibEntry.removeNextHop(*face1);
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
@@ -153,10 +153,10 @@ public:
     return "/P";
   }
 
-  shared_ptr<fib::Entry>
-  makeFibEntry(BestRouteStrategy2Fixture* fixture)
+  void
+  insertFibEntry(BestRouteStrategy2Fixture* fixture)
   {
-    return fixture->fib.insert(Name()).first;
+    fixture->fib.insert(Name());
   }
 };
 
@@ -169,12 +169,10 @@ public:
     return "/P";
   }
 
-  shared_ptr<fib::Entry>
-  makeFibEntry(BestRouteStrategy2Fixture* fixture)
+  void
+  insertFibEntry(BestRouteStrategy2Fixture* fixture)
   {
-    shared_ptr<fib::Entry> fibEntry = fixture->fib.insert(Name()).first;
-    fibEntry->addNextHop(fixture->face1, 10);
-    return fibEntry;
+    fixture->fib.insert(Name()).first->addNextHop(*fixture->face1, 10);
   }
 };
 
@@ -187,13 +185,11 @@ public:
     return "/localhop/P";
   }
 
-  shared_ptr<fib::Entry>
-  makeFibEntry(BestRouteStrategy2Fixture* fixture)
+  void
+  insertFibEntry(BestRouteStrategy2Fixture* fixture)
   {
-    shared_ptr<fib::Entry> fibEntry = fixture->fib.insert("/localhop").first;
-    fibEntry->addNextHop(fixture->face2, 10);
+    fixture->fib.insert("/localhop").first->addNextHop(*fixture->face2, 10);
     // face1 and face2 are both non-local; Interest from face1 cannot be forwarded to face2
-    return fibEntry;
   }
 };
 
@@ -202,12 +198,11 @@ typedef boost::mpl::vector<EmptyNextHopList, NextHopIsDownstream, NextHopViolate
 BOOST_AUTO_TEST_CASE_TEMPLATE(IncomingInterest, Scenario, NoRouteScenarios)
 {
   Scenario scenario;
+  scenario.insertFibEntry(this);
 
   shared_ptr<Interest> interest = makeInterest(scenario.getInterestName());
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(face1, *interest);
-
-  shared_ptr<fib::Entry> fibEntry = scenario.makeFibEntry(this);
 
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
 
@@ -226,10 +221,10 @@ BOOST_AUTO_TEST_SUITE(IncomingNack)
 
 BOOST_AUTO_TEST_CASE(OneUpstream) // one upstream, send Nack when Nack arrives
 {
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face3, 10);
-  fibEntry->addNextHop(face4, 20);
-  fibEntry->addNextHop(face5, 30);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face3, 10);
+  fibEntry.addNextHop(*face4, 20);
+  fibEntry.addNextHop(*face5, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/McQYjMbm", 992);
   shared_ptr<Interest> interest2 = makeInterest("/McQYjMbm", 114);
@@ -256,10 +251,10 @@ BOOST_AUTO_TEST_CASE(OneUpstream) // one upstream, send Nack when Nack arrives
 
 BOOST_AUTO_TEST_CASE(TwoUpstreams) // two upstreams, send Nack when both Nacks arrive
 {
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face3, 10);
-  fibEntry->addNextHop(face4, 20);
-  fibEntry->addNextHop(face5, 30);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face3, 10);
+  fibEntry.addNextHop(*face4, 20);
+  fibEntry.addNextHop(*face5, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
@@ -285,10 +280,10 @@ BOOST_AUTO_TEST_CASE(TwoUpstreams) // two upstreams, send Nack when both Nacks a
 
 BOOST_AUTO_TEST_CASE(Timeout) // two upstreams, one times out, don't send Nack
 {
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face3, 10);
-  fibEntry->addNextHop(face4, 20);
-  fibEntry->addNextHop(face5, 30);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face3, 10);
+  fibEntry.addNextHop(*face4, 20);
+  fibEntry.addNextHop(*face5, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
   interest1->setInterestLifetime(time::milliseconds(400));
@@ -429,10 +424,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombination
 {
   Combination combination;
 
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face3, 10);
-  fibEntry->addNextHop(face4, 20);
-  fibEntry->addNextHop(face5, 30);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face3, 10);
+  fibEntry.addNextHop(*face4, 20);
+  fibEntry.addNextHop(*face5, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/F6sEwB24I", 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;

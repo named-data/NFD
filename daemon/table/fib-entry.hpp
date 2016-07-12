@@ -67,37 +67,33 @@ public:
   bool
   hasNextHops() const;
 
-  /** \return whether there is a NextHop record for face
-   *
-   *  \todo change parameter type to Face&
+  /** \return whether there is a NextHop record for \p face
    */
   bool
-  hasNextHop(shared_ptr<Face> face) const;
+  hasNextHop(const Face& face) const;
 
   /** \brief adds a NextHop record
    *
-   *  If a NextHop record for face already exists, its cost is updated.
-   *  \note shared_ptr is passed by value because this function will take shared ownership
+   *  If a NextHop record for \p face already exists, its cost is updated.
    */
   void
-  addNextHop(shared_ptr<Face> face, uint64_t cost);
+  addNextHop(Face& face, uint64_t cost);
 
   /** \brief removes a NextHop record
    *
    *  If no NextHop record for face exists, do nothing.
-   *
-   *  \todo change parameter type to Face&
    */
   void
-  removeNextHop(shared_ptr<Face> face);
+  removeNextHop(const Face& face);
 
 private:
-  /** @note This method is non-const because normal iterator is needed by callers.
+  /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
-  findNextHop(Face& face);
+  findNextHop(const Face& face);
 
-  /// sorts the nexthop list
+  /** \brief sorts the nexthop list
+   */
   void
   sortNextHops();
 

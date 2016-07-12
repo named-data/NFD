@@ -52,10 +52,10 @@ BOOST_AUTO_TEST_CASE(Forward2)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 0);
-  fibEntry->addNextHop(face2, 0);
-  fibEntry->addNextHop(face3, 0);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 0);
+  fibEntry.addNextHop(*face2, 0);
+  fibEntry.addNextHop(*face3, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();
@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(RejectScope)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert("ndn:/localhop/uS09bub6tm").first;
-  fibEntry->addNextHop(face2, 0);
+  fib::Entry& fibEntry = *fib.insert("ndn:/localhop/uS09bub6tm").first;
+  fibEntry.addNextHop(*face2, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
   Pit& pit = forwarder.getPit();
@@ -111,8 +111,8 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   forwarder.addFace(face1);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face1, 0);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face1, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();

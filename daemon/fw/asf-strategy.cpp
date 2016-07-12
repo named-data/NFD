@@ -79,7 +79,7 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  const shared_ptr<Face> faceToUse = getBestFaceForForwarding(fibEntry, interest, inFace);
+  Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, inFace);
 
   if (faceToUse == nullptr) {
     sendNoRouteNack(inFace, interest, pitEntry);
@@ -87,18 +87,18 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  forwardInterest(interest, fibEntry, pitEntry, faceToUse);
+  forwardInterest(interest, fibEntry, pitEntry, *faceToUse);
 
   // If necessary, send probe
   if (m_probing.isProbingNeeded(fibEntry, interest)) {
-    shared_ptr<Face> faceToProbe = m_probing.getFaceToProbe(inFace, interest, fibEntry, *faceToUse);
+    Face* faceToProbe = m_probing.getFaceToProbe(inFace, interest, fibEntry, *faceToUse);
 
     if (faceToProbe != nullptr) {
       NFD_LOG_TRACE("Sending probe for " << fibEntry.getPrefix()
                                          << " to FaceId: " << faceToProbe->getId());
 
       bool wantNewNonce = true;
-      forwardInterest(interest, fibEntry, pitEntry, faceToProbe, wantNewNonce);
+      forwardInterest(interest, fibEntry, pitEntry, *faceToProbe, wantNewNonce);
       m_probing.afterForwardingProbe(fibEntry, interest);
     }
   }
@@ -143,27 +143,27 @@ void
 AsfStrategy::forwardInterest(const Interest& interest,
                              const fib::Entry& fibEntry,
                              shared_ptr<pit::Entry> pitEntry,
-                             shared_ptr<Face> outFace,
+                             Face& outFace,
                              bool wantNewNonce)
 {
   this->sendInterest(pitEntry, outFace, wantNewNonce);
 
-  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, *outFace);
+  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, outFace);
 
   // Refresh measurements since Face is being used for forwarding
   NamespaceInfo& namespaceInfo = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
-  namespaceInfo.extendFaceInfoLifetime(faceInfo, *outFace);
+  namespaceInfo.extendFaceInfoLifetime(faceInfo, outFace);
 
   if (!faceInfo.isTimeoutScheduled()) {
     // Estimate and schedule timeout
     RttEstimator::Duration timeout = faceInfo.computeRto();
 
     NFD_LOG_TRACE("Scheduling timeout for " << fibEntry.getPrefix()
-                                            << " FaceId: " << outFace->getId()
+                                            << " FaceId: " << outFace.getId()
                                             << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
 
     scheduler::EventId id = scheduler::schedule(timeout,
-        bind(&AsfStrategy::onTimeout, this, interest.getName(), outFace->getId()));
+        bind(&AsfStrategy::onTimeout, this, interest.getName(), outFace.getId()));
 
     faceInfo.setTimeoutEvent(id, interest.getName());
   }
@@ -171,7 +171,7 @@ AsfStrategy::forwardInterest(const Interest& interest,
 
 struct FaceStats
 {
-  shared_ptr<Face> face;
+  Face* face;
   RttStats::Rtt rtt;
   RttStats::Rtt srtt;
   uint64_t cost;
@@ -196,7 +196,7 @@ getValueForSorting(const FaceStats& stats)
   }
 }
 
-const shared_ptr<Face>
+Face*
 AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& inFace)
 {
   NFD_LOG_TRACE("Looking for best face for " << fibEntry.getPrefix());
@@ -222,17 +222,16 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Int
   });
 
   for (const fib::NextHop& hop : fibEntry.getNextHops()) {
+    Face& hopFace = hop.getFace();
 
-    const shared_ptr<Face>& hopFace = hop.getFace();
-
-    if (hopFace->getId() == inFace.getId()) {
+    if (hopFace.getId() == inFace.getId()) {
       continue;
     }
 
-    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, *hopFace);
+    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace);
 
     if (info == nullptr) {
-      FaceStats stats = {hopFace,
+      FaceStats stats = {&hopFace,
                          RttStats::RTT_NO_MEASUREMENT,
                          RttStats::RTT_NO_MEASUREMENT,
                          hop.getCost()};
@@ -240,7 +239,7 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Int
       rankedFaces.insert(stats);
     }
     else {
-      FaceStats stats = {hopFace, info->getRtt(), info->getSrtt(), hop.getCost()};
+      FaceStats stats = {&hopFace, info->getRtt(), info->getSrtt(), hop.getCost()};
       rankedFaces.insert(stats);
     }
   }

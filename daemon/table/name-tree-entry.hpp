@@ -96,9 +96,9 @@ public:
 
 public: // attached table entries
   void
-  setFibEntry(shared_ptr<fib::Entry> fibEntry);
+  setFibEntry(unique_ptr<fib::Entry> fibEntry);
 
-  shared_ptr<fib::Entry>
+  fib::Entry*
   getFibEntry() const;
 
   void
@@ -133,7 +133,7 @@ private:
   Name m_prefix;
   shared_ptr<Entry> m_parent;     // Pointing to the parent entry.
   std::vector<shared_ptr<Entry> > m_children; // Children pointers.
-  shared_ptr<fib::Entry> m_fibEntry;
+  unique_ptr<fib::Entry> m_fibEntry;
   std::vector<shared_ptr<pit::Entry> > m_pitEntries;
   shared_ptr<measurements::Entry> m_measurementsEntry;
   shared_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
@@ -187,10 +187,10 @@ Entry::hasChildren() const
   return !m_children.empty();
 }
 
-inline shared_ptr<fib::Entry>
+inline fib::Entry*
 Entry::getFibEntry() const
 {
-  return m_fibEntry;
+  return m_fibEntry.get();
 }
 
 inline bool

@@ -31,174 +31,142 @@
 #include "tests/test-common.hpp"
 
 namespace nfd {
+namespace fib {
 namespace tests {
+
+using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestFib, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Entry)
+BOOST_AUTO_TEST_CASE(FibEntry)
 {
   Name prefix("ndn:/pxWhfFza");
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
 
-  fib::Entry entry(prefix);
+  Entry entry(prefix);
   BOOST_CHECK_EQUAL(entry.getPrefix(), prefix);
 
-  const fib::NextHopList& nexthops1 = entry.getNextHops();
   // []
-  BOOST_CHECK_EQUAL(nexthops1.size(), 0);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 
-  entry.addNextHop(face1, 20);
-  const fib::NextHopList& nexthops2 = entry.getNextHops();
+  entry.addNextHop(*face1, 20);
   // [(face1,20)]
-  BOOST_CHECK_EQUAL(nexthops2.size(), 1);
-  BOOST_CHECK_EQUAL(nexthops2.begin()->getFace(), face1);
-  BOOST_CHECK_EQUAL(nexthops2.begin()->getCost(), 20);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 20);
 
-  entry.addNextHop(face1, 30);
-  const fib::NextHopList& nexthops3 = entry.getNextHops();
+  entry.addNextHop(*face1, 30);
   // [(face1,30)]
-  BOOST_CHECK_EQUAL(nexthops3.size(), 1);
-  BOOST_CHECK_EQUAL(nexthops3.begin()->getFace(), face1);
-  BOOST_CHECK_EQUAL(nexthops3.begin()->getCost(), 30);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 30);
 
-  entry.addNextHop(face2, 40);
-  const fib::NextHopList& nexthops4 = entry.getNextHops();
+  entry.addNextHop(*face2, 40);
   // [(face1,30), (face2,40)]
-  BOOST_CHECK_EQUAL(nexthops4.size(), 2);
-  int i = -1;
-  for (fib::NextHopList::const_iterator it = nexthops4.begin();
-       it != nexthops4.end(); ++it) {
-    ++i;
-    switch (i) {
-      case 0:
-        BOOST_CHECK_EQUAL(it->getFace(), face1);
-        BOOST_CHECK_EQUAL(it->getCost(), 30);
-        break;
-      case 1:
-        BOOST_CHECK_EQUAL(it->getFace(), face2);
-        BOOST_CHECK_EQUAL(it->getCost(), 40);
-        break;
-    }
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
+  {
+    NextHopList::const_iterator it = entry.getNextHops().begin();
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getCost(), 30);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getCost(), 40);
+
+    ++it;
+    BOOST_CHECK(it == entry.getNextHops().end());
   }
 
-  entry.addNextHop(face2, 10);
-  const fib::NextHopList& nexthops5 = entry.getNextHops();
+  entry.addNextHop(*face2, 10);
   // [(face2,10), (face1,30)]
-  BOOST_CHECK_EQUAL(nexthops5.size(), 2);
-  i = -1;
-  for (fib::NextHopList::const_iterator it = nexthops5.begin();
-       it != nexthops5.end(); ++it) {
-    ++i;
-    switch (i) {
-      case 0:
-        BOOST_CHECK_EQUAL(it->getFace(), face2);
-        BOOST_CHECK_EQUAL(it->getCost(), 10);
-        break;
-      case 1:
-        BOOST_CHECK_EQUAL(it->getFace(), face1);
-        BOOST_CHECK_EQUAL(it->getCost(), 30);
-        break;
-    }
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
+  {
+    NextHopList::const_iterator it = entry.getNextHops().begin();
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getCost(), 10);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getCost(), 30);
+
+    ++it;
+    BOOST_CHECK(it == entry.getNextHops().end());
   }
 
-  entry.removeNextHop(face1);
-  const fib::NextHopList& nexthops6 = entry.getNextHops();
+  entry.removeNextHop(*face1);
   // [(face2,10)]
-  BOOST_CHECK_EQUAL(nexthops6.size(), 1);
-  BOOST_CHECK_EQUAL(nexthops6.begin()->getFace(), face2);
-  BOOST_CHECK_EQUAL(nexthops6.begin()->getCost(), 10);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(face1);
-  const fib::NextHopList& nexthops7 = entry.getNextHops();
+  entry.removeNextHop(*face1);
   // [(face2,10)]
-  BOOST_CHECK_EQUAL(nexthops7.size(), 1);
-  BOOST_CHECK_EQUAL(nexthops7.begin()->getFace(), face2);
-  BOOST_CHECK_EQUAL(nexthops7.begin()->getCost(), 10);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(face2);
-  const fib::NextHopList& nexthops8 = entry.getNextHops();
+  entry.removeNextHop(*face2);
   // []
-  BOOST_CHECK_EQUAL(nexthops8.size(), 0);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 
-  entry.removeNextHop(face2);
-  const fib::NextHopList& nexthops9 = entry.getNextHops();
+  entry.removeNextHop(*face2);
   // []
-  BOOST_CHECK_EQUAL(nexthops9.size(), 0);
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(Insert_LongestPrefixMatch)
 {
-  Name nameEmpty;
-  Name nameA   ("ndn:/A");
-  Name nameAB  ("ndn:/A/B");
-  Name nameABC ("ndn:/A/B/C");
-  Name nameABCD("ndn:/A/B/C/D");
-  Name nameE   ("ndn:/E");
-
-  std::pair<shared_ptr<fib::Entry>, bool> insertRes;
-  shared_ptr<fib::Entry> entry;
-
   NameTree nameTree;
   Fib fib(nameTree);
+
   // []
   BOOST_CHECK_EQUAL(fib.size(), 0);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A").getPrefix(), "/"); // the empty entry
 
-  entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_REQUIRE(static_cast<bool>(entry)); // the empty entry
-
-  insertRes = fib.insert(nameEmpty);
+  std::pair<Entry*, bool> insertRes = fib.insert("/");
   BOOST_CHECK_EQUAL(insertRes.second, true);
-  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameEmpty);
+  BOOST_REQUIRE(insertRes.first != nullptr);
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), "/");
   // ['/']
   BOOST_CHECK_EQUAL(fib.size(), 1);
 
-  entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A").getPrefix(), "/");
 
-  insertRes = fib.insert(nameA);
+  insertRes = fib.insert("/A");
   BOOST_CHECK_EQUAL(insertRes.second, true);
-  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
+  BOOST_REQUIRE(insertRes.first != nullptr);
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), "/A");
   // ['/', '/A']
   BOOST_CHECK_EQUAL(fib.size(), 2);
 
-  insertRes = fib.insert(nameA);
+  insertRes = fib.insert("/A");
   BOOST_CHECK_EQUAL(insertRes.second, false);
-  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameA);
+  BOOST_REQUIRE(insertRes.first != nullptr);
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), "/A");
   // ['/', '/A']
   BOOST_CHECK_EQUAL(fib.size(), 2);
 
-  entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A").getPrefix(), "/A");
 
-  entry = fib.findLongestPrefixMatch(nameABCD);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A/B/C/D").getPrefix(), "/A");
 
-  insertRes = fib.insert(nameABC);
+  insertRes = fib.insert("/A/B/C");
   BOOST_CHECK_EQUAL(insertRes.second, true);
-  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), nameABC);
+  BOOST_REQUIRE(insertRes.first != nullptr);
+  BOOST_CHECK_EQUAL(insertRes.first->getPrefix(), "/A/B/C");
   // ['/', '/A', '/A/B/C']
   BOOST_CHECK_EQUAL(fib.size(), 3);
 
-  entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-
-  entry = fib.findLongestPrefixMatch(nameAB);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-
-  entry = fib.findLongestPrefixMatch(nameABCD);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameABC);
-
-  entry = fib.findLongestPrefixMatch(nameE);
-  BOOST_REQUIRE(static_cast<bool>(entry));
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A").getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A/B").getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/A/B/C/D").getPrefix(), "/A/B/C");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/E").getPrefix(), "/");
 }
 
 BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithPitEntry)
@@ -221,21 +189,13 @@ BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithPitEntry)
   shared_ptr<Interest> interestADE = makeInterest(fullNameADE);
   shared_ptr<pit::Entry> pitADE = pit.insert(*interestADE).first;
 
-  size_t nNameTreeEntries = nameTree.size();
+  size_t nNameTreeEntriesBefore = nameTree.size();
 
-  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch(*pitAB);
-  BOOST_REQUIRE(entry != nullptr);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*pitAB).getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*pitABC).getPrefix(), fullNameABC);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*pitADE).getPrefix(), "/A");
 
-  entry = fib.findLongestPrefixMatch(*pitABC);
-  BOOST_REQUIRE(entry != nullptr);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), fullNameABC);
-
-  entry = fib.findLongestPrefixMatch(*pitADE);
-  BOOST_REQUIRE(entry != nullptr);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
-
-  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntries);
+  BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
 BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
@@ -250,79 +210,57 @@ BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
   shared_ptr<measurements::Entry> mAB = measurements.get("/A/B");
   shared_ptr<measurements::Entry> mABCD = measurements.get("/A/B/C/D");
 
-  shared_ptr<fib::Entry> entry = fib.findLongestPrefixMatch(*mAB);
-  BOOST_REQUIRE(entry != nullptr);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A");
-
-  entry = fib.findLongestPrefixMatch(*mABCD);
-  BOOST_REQUIRE(entry != nullptr);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), "/A/B/C");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*mAB).getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*mABCD).getPrefix(), "/A/B/C");
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
-  Name nameEmpty("ndn:/");
-  Name nameA("ndn:/A");
-  Name nameB("ndn:/B");
-
-  std::pair<shared_ptr<fib::Entry>, bool> insertRes;
-  shared_ptr<fib::Entry> entry;
 
   NameTree nameTree;
   Fib fib(nameTree);
   // {}
 
-  insertRes = fib.insert(nameA);
-  insertRes.first->addNextHop(face1, 0);
-  insertRes.first->addNextHop(face2, 0);
+  Entry* entryA = fib.insert("/A").first;
+  entryA->addNextHop(*face1, 0);
+  entryA->addNextHop(*face2, 0);
   // {'/A':[1,2]}
 
-  insertRes = fib.insert(nameB);
-  insertRes.first->addNextHop(face1, 0);
+  Entry* entryB = fib.insert("/B").first;
+  entryB->addNextHop(*face1, 0);
   // {'/A':[1,2], '/B':[1]}
   BOOST_CHECK_EQUAL(fib.size(), 2);
 
-  insertRes = fib.insert("/C");
-  insertRes.first->addNextHop(face2, 1);
+  Entry* entryC = fib.insert("/C").first;
+  entryC->addNextHop(*face2, 1);
   // {'/A':[1,2], '/B':[1], '/C':[2]}
   BOOST_CHECK_EQUAL(fib.size(), 3);
 
-  insertRes = fib.insert("/B/1");
-  insertRes.first->addNextHop(face1, 0);
+  Entry* entryB1 = fib.insert("/B/1").first;
+  entryB1->addNextHop(*face1, 0);
   // {'/A':[1,2], '/B':[1], '/B/1':[1], '/C':[2]}
   BOOST_CHECK_EQUAL(fib.size(), 4);
 
-  insertRes = fib.insert("/B/1/2");
-  insertRes.first->addNextHop(face1, 0);
+  Entry* entryB12 = fib.insert("/B/1/2").first;
+  entryB12->addNextHop(*face1, 0);
   // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/C':[2]}
   BOOST_CHECK_EQUAL(fib.size(), 5);
 
-  insertRes = fib.insert("/B/1/2/3");
-  insertRes.first->addNextHop(face1, 0);
-  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/B/1/3':[1], '/C':[2]}
-  BOOST_CHECK_EQUAL(fib.size(), 6);
-
-  insertRes = fib.insert("/B/1/2/3/4");
-  insertRes.first->addNextHop(face1, 0);
-  // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/B/1/2/3':[1], '/B/1/2/3/4':[1], '/C':[2]}
-  BOOST_CHECK_EQUAL(fib.size(), 7);
-
   /////////////
 
-  fib.removeNextHopFromAllEntries(face1);
+  fib.removeNextHopFromAllEntries(*face1);
   // {'/A':[2], '/C':[2]}
   BOOST_CHECK_EQUAL(fib.size(), 2);
 
-  entry = fib.findLongestPrefixMatch(nameA);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameA);
-  const fib::NextHopList& nexthopsA = entry->getNextHops();
+  const Entry& foundA = fib.findLongestPrefixMatch("/A");
+  BOOST_CHECK_EQUAL(foundA.getPrefix(), "/A");
+  const NextHopList& nexthopsA = foundA.getNextHops();
   BOOST_CHECK_EQUAL(nexthopsA.size(), 1);
-  BOOST_CHECK_EQUAL(nexthopsA.begin()->getFace(), face2);
+  BOOST_CHECK_EQUAL(&nexthopsA.begin()->getFace(), face2.get());
 
-  entry = fib.findLongestPrefixMatch(nameB);
-  BOOST_CHECK_EQUAL(entry->getPrefix(), nameEmpty);
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch("/B").getPrefix(), "/");
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromManyEntries)
@@ -332,40 +270,32 @@ BOOST_AUTO_TEST_CASE(RemoveNextHopFromManyEntries)
   shared_ptr<Face> face1 = make_shared<DummyFace>();
 
   for (uint64_t i = 0; i < 300; ++i) {
-    shared_ptr<fib::Entry> entry = fib.insert(Name("/P").appendVersion(i)).first;
-    entry->addNextHop(face1, 0);
+    Entry* entry = fib.insert(Name("/P").appendVersion(i)).first;
+    entry->addNextHop(*face1, 0);
   }
   BOOST_CHECK_EQUAL(fib.size(), 300);
 
-  fib.removeNextHopFromAllEntries(face1);
+  fib.removeNextHopFromAllEntries(*face1);
   BOOST_CHECK_EQUAL(fib.size(), 0);
 }
 
 void
-validateFindExactMatch(const Fib& fib, const Name& target)
+validateFindExactMatch(Fib& fib, const Name& target)
 {
-  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
-  if (static_cast<bool>(entry))
-    {
-      BOOST_CHECK_EQUAL(entry->getPrefix(), target);
-    }
-  else
-    {
-      BOOST_FAIL("No entry found for " << target);
-    }
+  const Entry* entry = fib.findExactMatch(target);
+  BOOST_REQUIRE_MESSAGE(entry != nullptr, "No entry found for " << target);
+  BOOST_CHECK_EQUAL(entry->getPrefix(), target);
 }
 
 void
-validateNoExactMatch(const Fib& fib, const Name& target)
+validateNoExactMatch(Fib& fib, const Name& target)
 {
-  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
-  if (static_cast<bool>(entry))
-    {
-      BOOST_FAIL("Found unexpected entry for " << target);
-    }
+  const Entry* entry = fib.findExactMatch(target);
+  BOOST_CHECK_MESSAGE(entry == nullptr,
+                      "Found unexpected entry for " << target);
 }
 
-BOOST_AUTO_TEST_CASE(FindExactMatch)
+BOOST_AUTO_TEST_CASE(ExactMatch)
 {
   NameTree nameTree;
   Fib fib(nameTree);
@@ -376,20 +306,27 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
   validateFindExactMatch(fib, "/A");
   validateFindExactMatch(fib, "/A/B");
   validateFindExactMatch(fib, "/A/B/C");
+
   validateNoExactMatch(fib, "/");
-
   validateNoExactMatch(fib, "/does/not/exist");
+}
 
-  NameTree gapNameTree;
-  Fib gapFib(nameTree);
+BOOST_AUTO_TEST_CASE(ExactMatchGap)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
   fib.insert("/X");
   fib.insert("/X/Y/Z");
 
-  validateNoExactMatch(gapFib, "/X/Y");
+  validateNoExactMatch(fib, "/X/Y");
+}
 
-  NameTree emptyNameTree;
-  Fib emptyFib(emptyNameTree);
-  validateNoExactMatch(emptyFib, "/nothing/here");
+BOOST_AUTO_TEST_CASE(ExactMatchEmpty)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+  validateNoExactMatch(fib, "/");
+  validateNoExactMatch(fib, "/nothing/here");
 }
 
 void
@@ -397,24 +334,12 @@ validateErase(Fib& fib, const Name& target)
 {
   fib.erase(target);
 
-  shared_ptr<fib::Entry> entry = fib.findExactMatch(target);
-  if (static_cast<bool>(entry))
-    {
-      BOOST_FAIL("Found \"removed\" entry for " << target);
-    }
+  const Entry* entry = fib.findExactMatch(target);
+  BOOST_CHECK_MESSAGE(entry == nullptr, "Found \"removed\" entry for " << target);
 }
 
 BOOST_AUTO_TEST_CASE(Erase)
 {
-  NameTree emptyNameTree;
-  Fib emptyFib(emptyNameTree);
-
-  emptyFib.erase("/does/not/exist"); // crash test
-
-  validateErase(emptyFib, "/");
-
-  emptyFib.erase("/still/does/not/exist"); // crash test
-
   NameTree nameTree;
   Fib fib(nameTree);
   fib.insert("/");
@@ -439,15 +364,28 @@ BOOST_AUTO_TEST_CASE(Erase)
 
   validateErase(fib, "/");
   validateNoExactMatch(fib, "/");
+}
 
-  NameTree gapNameTree;
-  Fib gapFib(gapNameTree);
-  gapFib.insert("/X");
-  gapFib.insert("/X/Y/Z");
+BOOST_AUTO_TEST_CASE(EraseGap)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+  fib.insert("/X");
+  fib.insert("/X/Y/Z");
 
-  gapFib.erase("/X/Y"); //should do nothing
-  validateFindExactMatch(gapFib, "/X");
-  validateFindExactMatch(gapFib, "/X/Y/Z");
+  fib.erase("/X/Y"); //should do nothing
+  validateFindExactMatch(fib, "/X");
+  validateFindExactMatch(fib, "/X/Y/Z");
+}
+
+BOOST_AUTO_TEST_CASE(EraseEmpty)
+{
+  NameTree nameTree;
+  Fib fib(nameTree);
+
+  BOOST_CHECK_NO_THROW(fib.erase("/does/not/exist"));
+  validateErase(fib, "/");
+  BOOST_CHECK_NO_THROW(fib.erase("/still/does/not/exist"));
 }
 
 BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
@@ -456,8 +394,8 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   Fib fib(nameTree);
   size_t nNameTreeEntriesBefore = nameTree.size();
 
-  fib.insert("ndn:/A/B/C");
-  fib.erase("ndn:/A/B/C");
+  fib.insert("/A/B/C");
+  fib.erase("/A/B/C");
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
@@ -475,11 +413,7 @@ BOOST_AUTO_TEST_CASE(Iterator)
   fib.insert(nameABC);
   fib.insert(nameRoot);
 
-  std::set<Name> expected;
-  expected.insert(nameA);
-  expected.insert(nameAB);
-  expected.insert(nameABC);
-  expected.insert(nameRoot);
+  std::set<Name> expected{nameA, nameAB, nameABC, nameRoot};
 
   for (Fib::const_iterator it = fib.begin(); it != fib.end(); it++) {
     bool isInSet = expected.find(it->getPrefix()) != expected.end();
@@ -494,4 +428,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestFib
 BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
+} // namespace fib
 } // namespace nfd

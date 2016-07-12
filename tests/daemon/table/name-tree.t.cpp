@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,8 +66,8 @@ BOOST_AUTO_TEST_CASE(Entry)
   std::vector<shared_ptr<name_tree::Entry> >& childList = npe->getChildren();
   BOOST_CHECK_EQUAL(childList.size(), static_cast<size_t>(0));
 
-  shared_ptr<fib::Entry> fib = npe->getFibEntry();
-  BOOST_CHECK(!static_cast<bool>(fib));
+  fib::Entry* fib = npe->getFibEntry();
+  BOOST_CHECK(fib == nullptr);
 
   const std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
   BOOST_CHECK_EQUAL(pitList.size(), static_cast<size_t>(0));
@@ -84,14 +84,12 @@ BOOST_AUTO_TEST_CASE(Entry)
 
   // Insert FIB
 
-  shared_ptr<fib::Entry> fibEntry(new fib::Entry(prefix));
-  shared_ptr<fib::Entry> fibEntryParent(new fib::Entry(parentName));
+  npe->setFibEntry(make_unique<fib::Entry>(prefix));
+  BOOST_REQUIRE(npe->getFibEntry() != nullptr);
+  BOOST_CHECK_EQUAL(npe->getFibEntry()->getPrefix(), prefix);
 
-  npe->setFibEntry(fibEntry);
-  BOOST_CHECK_EQUAL(npe->getFibEntry(), fibEntry);
-
-  npe->setFibEntry(shared_ptr<fib::Entry>());
-  BOOST_CHECK(!static_cast<bool>(npe->getFibEntry()));
+  npe->setFibEntry(nullptr);
+  BOOST_CHECK(npe->getFibEntry() == nullptr);
 
   // Insert a PIT
 

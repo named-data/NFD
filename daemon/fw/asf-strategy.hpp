@@ -69,10 +69,10 @@ private:
   forwardInterest(const Interest& interest,
                   const fib::Entry& fibEntry,
                   shared_ptr<pit::Entry> pitEntry,
-                  shared_ptr<Face> outFace,
+                  Face& outFace,
                   bool wantNewNonce = false);
 
-  const shared_ptr<Face>
+  Face*
   getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& inFace);
 
   void

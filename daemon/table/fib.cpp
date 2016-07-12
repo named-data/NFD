@@ -32,8 +32,9 @@
 #include <type_traits>
 
 namespace nfd {
+namespace fib {
 
-const shared_ptr<fib::Entry> Fib::s_emptyEntry = make_shared<fib::Entry>(Name());
+const unique_ptr<Entry> Fib::s_emptyEntry = make_unique<Entry>(Name());
 
 // http://en.cppreference.com/w/cpp/concept/ForwardIterator
 BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Fib::const_iterator>));
@@ -57,39 +58,38 @@ Fib::~Fib()
 }
 
 static inline bool
-predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& entry)
+predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& nte)
 {
-  return entry.getFibEntry() != nullptr;
+  return nte.getFibEntry() != nullptr;
 }
 
-shared_ptr<fib::Entry>
+const Entry&
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry =
+  shared_ptr<name_tree::Entry> nte =
     m_nameTree.findLongestPrefixMatch(prefix, &predicate_NameTreeEntry_hasFibEntry);
-  if (nameTreeEntry != nullptr) {
-    return nameTreeEntry->getFibEntry();
+  if (nte != nullptr) {
+    return *nte->getFibEntry();
   }
-  return s_emptyEntry;
+  return *s_emptyEntry;
 }
 
-shared_ptr<fib::Entry>
-Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nameTreeEntry) const
+const Entry&
+Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const
 {
-  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
+  Entry* entry = nte->getFibEntry();
   if (entry != nullptr)
-    return entry;
+    return *entry;
 
-  nameTreeEntry = m_nameTree.findLongestPrefixMatch(nameTreeEntry,
-                                                    &predicate_NameTreeEntry_hasFibEntry);
-  if (nameTreeEntry != nullptr) {
-    return nameTreeEntry->getFibEntry();
+  nte = m_nameTree.findLongestPrefixMatch(nte, &predicate_NameTreeEntry_hasFibEntry);
+  if (nte != nullptr) {
+    return *nte->getFibEntry();
   }
 
-  return s_emptyEntry;
+  return *s_emptyEntry;
 }
 
-shared_ptr<fib::Entry>
+const Entry&
 Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(pitEntry);
@@ -97,82 +97,81 @@ Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
   return findLongestPrefixMatch(nte);
 }
 
-shared_ptr<fib::Entry>
+const Entry&
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(measurementsEntry);
-  BOOST_ASSERT(nameTreeEntry != nullptr);
-
-  return findLongestPrefixMatch(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(measurementsEntry);
+  BOOST_ASSERT(nte != nullptr);
+  return findLongestPrefixMatch(nte);
 }
 
-shared_ptr<fib::Entry>
-Fib::findExactMatch(const Name& prefix) const
+Entry*
+Fib::findExactMatch(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
-  if (nameTreeEntry != nullptr)
-    return nameTreeEntry->getFibEntry();
+  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  if (nte != nullptr)
+    return nte->getFibEntry();
 
   return nullptr;
 }
 
-std::pair<shared_ptr<fib::Entry>, bool>
+std::pair<Entry*, bool>
 Fib::insert(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(prefix);
-  shared_ptr<fib::Entry> entry = nameTreeEntry->getFibEntry();
-  if (entry != nullptr)
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(prefix);
+  Entry* entry = nte->getFibEntry();
+  if (entry != nullptr) {
     return std::make_pair(entry, false);
+  }
 
-  entry = make_shared<fib::Entry>(prefix);
-  nameTreeEntry->setFibEntry(entry);
+  nte->setFibEntry(make_unique<Entry>(prefix));
   ++m_nItems;
-  return std::make_pair(entry, true);
+  return std::make_pair(nte->getFibEntry(), true);
 }
 
 void
-Fib::erase(shared_ptr<name_tree::Entry> nameTreeEntry)
+Fib::erase(shared_ptr<name_tree::Entry> nte)
 {
-  nameTreeEntry->setFibEntry(shared_ptr<fib::Entry>());
-  m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
+  nte->setFibEntry(nullptr);
+  m_nameTree.eraseEntryIfEmpty(nte);
   --m_nItems;
 }
 
 void
 Fib::erase(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.findExactMatch(prefix);
-  if (nameTreeEntry != nullptr) {
-    this->erase(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  if (nte != nullptr) {
+    this->erase(nte);
   }
 }
 
 void
-Fib::erase(const fib::Entry& entry)
+Fib::erase(const Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.lookup(entry);
-  if (nameTreeEntry != nullptr) {
-    this->erase(nameTreeEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+  if (nte != nullptr) {
+    this->erase(nte);
   }
 }
 
 void
-Fib::removeNextHopFromAllEntries(shared_ptr<Face> face)
+Fib::removeNextHopFromAllEntries(const Face& face)
 {
-  std::list<fib::Entry*> toErase;
+  std::list<Entry*> toErase;
 
   auto&& enumerable = m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
   for (const name_tree::Entry& nte : enumerable) {
-    shared_ptr<fib::Entry> entry = nte.getFibEntry();
+    Entry* entry = nte.getFibEntry();
     entry->removeNextHop(face);
     if (!entry->hasNextHops()) {
-      toErase.push_back(entry.get());
+      toErase.push_back(entry);
       // entry needs to be erased, but we must wait until the enumeration ends,
       // because otherwise NameTree iterator would be invalidated
     }
   }
 
-  for (fib::Entry* entry : toErase) {
+  for (Entry* entry : toErase) {
     this->erase(*entry);
   }
 }
@@ -183,4 +182,5 @@ Fib::begin() const
   return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry).begin());
 }
 
+} // namespace fib
 } // namespace nfd

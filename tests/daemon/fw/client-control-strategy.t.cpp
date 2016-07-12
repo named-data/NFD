@@ -54,8 +54,8 @@ BOOST_AUTO_TEST_CASE(Forward3)
   forwarder.addFace(face4);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name()).first;
-  fibEntry->addNextHop(face2, 0);
+  fib::Entry& fibEntry = *fib.insert(Name()).first;
+  fibEntry.addNextHop(*face2, 0);
 
   Pit& pit = forwarder.getPit();
 

@@ -39,12 +39,9 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
   Forwarder forwarder;
 
-  Name nameA("ndn:/A");
-  Name nameAB("ndn:/A/B");
-  Name nameABC("ndn:/A/B/C");
-  shared_ptr<Interest> interestAB = makeInterest(nameAB);
+  shared_ptr<Interest> interestAB = makeInterest("/A/B");
   interestAB->setInterestLifetime(time::seconds(4));
-  shared_ptr<Data> dataABC = makeData(nameABC);
+  shared_ptr<Data> dataABC = makeData("/A/B/C");
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
@@ -52,15 +49,14 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
-  fibEntry->addNextHop(face2, 0);
+  fib.insert("/A").first->addNextHop(*face2, 0);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
   face1->receiveInterest(*interestAB);
   this->advanceClocks(time::milliseconds(100), time::seconds(1));
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
-  BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), nameAB);
+  BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), "/A/B");
   BOOST_REQUIRE(face2->sentInterests[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face2->sentInterests[0].getTag<lp::IncomingFaceIdTag>(), face1->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 1);
@@ -71,7 +67,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   face2->receiveData(*dataABC);
   this->advanceClocks(time::milliseconds(100), time::seconds(1));
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
-  BOOST_CHECK_EQUAL(face1->sentData[0].getName(), nameABC);
+  BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B/C");
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face1->sentData[0].getTag<lp::IncomingFaceIdTag>(), face2->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 1);
@@ -89,14 +85,13 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   forwarder.addFace(face2);
   forwarder.addFace(face3);
 
-  shared_ptr<Interest> interestA = makeInterest("ndn:/A");
+  shared_ptr<Interest> interestA = makeInterest("/A");
   interestA->setInterestLifetime(time::seconds(4));
-  shared_ptr<Data> dataA = makeData("ndn:/A");
+  shared_ptr<Data> dataA = makeData("/A");
   dataA->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
-  fibEntry->addNextHop(face2, 0);
+  fib.insert("/A").first->addNextHop(*face2, 0);
 
   Pit& pit = forwarder.getPit();
   BOOST_CHECK_EQUAL(pit.size(), 0);
@@ -130,7 +125,7 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   forwarder.addFace(face3);
 
   Pit& pit = forwarder.getPit();
-  auto interestA1 = makeInterest("ndn:/A");
+  auto interestA1 = makeInterest("/A");
   interestA1->setNonce(8378);
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA1).first;
   pit::InRecordCollection::iterator inA1 = pitA->insertOrUpdateInRecord(face1, *interestA1);
@@ -153,7 +148,7 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   BOOST_CHECK_EQUAL(face1->sentInterests.back().getNonce(), 8378);
 
   this->advanceClocks(time::seconds(2));
-  auto interestA2 = makeInterest("ndn:/A");
+  auto interestA2 = makeInterest("/A");
   interestA2->setNonce(9102);
   pitA->insertOrUpdateInRecord(face2, *interestA2);
 
@@ -644,8 +639,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   forwarder.addFace(face4);
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("/zT4XwK0Hnx")).first;
-  fibEntry->addNextHop(face4, 0);
+  fib.insert("/zT4XwK0Hnx").first->addNextHop(*face4, 0);
 
   // receive Interest on face1
   face1->sentNacks.clear();
@@ -699,8 +693,7 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   });
 
   Fib& fib = forwarder.getFib();
-  shared_ptr<fib::Entry> fibEntry = fib.insert(Name("ndn:/A")).first;
-  fibEntry->addNextHop(face2, 0);
+  fib.insert("/A").first->addNextHop(*face2, 0);
 
   // receive an Interest
   shared_ptr<Interest> interest = makeInterest("ndn:/A/1");
@@ -758,8 +751,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   // consumer region
   nrt.clear();
   nrt.insert("/arizona/cs/avenir");
-  shared_ptr<fib::Entry> fibRoot = fib.insert("/").first;
-  fibRoot->addNextHop(face2, 10);
+  fib.insert("/").first->addNextHop(*face2, 10);
 
   auto interest1 = makeInterest("/net/ndnsim/www/1.html");
   interest1->setLink(link->wireEncode());
@@ -769,15 +761,13 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit1).getPrefix(), "/");
   BOOST_CHECK_EQUAL(interest1->hasSelectedDelegation(), false);
 
-  fibRoot->removeNextHop(face2);
+  fib.insert("/").first->removeNextHop(*face2);
 
   // first default-free router, both delegations are available
   nrt.clear();
   nrt.insert("/arizona/cs/hobo");
-  shared_ptr<fib::Entry> fibTelia = fib.insert("/telia").first;
-  fibTelia->addNextHop(face2, 10);
-  shared_ptr<fib::Entry> fibUcla = fib.insert("/ucla").first;
-  fibUcla->addNextHop(face2, 10);
+  fib.insert("/telia").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
 
   auto interest2 = makeInterest("/net/ndnsim/www/2.html");
   interest2->setLink(link->wireEncode());
@@ -788,14 +778,13 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   BOOST_REQUIRE_EQUAL(interest2->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest2->getSelectedDelegation(), "/telia/terabits");
 
-  fib.erase(*fibTelia);
-  fib.erase(*fibUcla);
+  fib.erase("/telia");
+  fib.erase("/ucla");
 
   // first default-free router, only second delegation is available
   nrt.clear();
   nrt.insert("/arizona/cs/hobo");
-  fibUcla = fib.insert("/ucla").first;
-  fibUcla->addNextHop(face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
 
   auto interest3 = makeInterest("/net/ndnsim/www/3.html");
   interest3->setLink(link->wireEncode());
@@ -806,15 +795,13 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   BOOST_REQUIRE_EQUAL(interest3->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest3->getSelectedDelegation(), "/ucla/cs");
 
-  fib.erase(*fibUcla);
+  fib.erase("/ucla");
 
   // default-free router, chosen SelectedDelegation
   nrt.clear();
   nrt.insert("/ucsd/caida/click");
-  fibTelia = fib.insert("/telia").first;
-  fibTelia->addNextHop(face2, 10);
-  fibUcla = fib.insert("/ucla").first;
-  fibUcla->addNextHop(face2, 10);
+  fib.insert("/telia").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
 
   auto interest4 = makeInterest("/net/ndnsim/www/4.html");
   interest4->setLink(link->wireEncode());
@@ -826,17 +813,15 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   BOOST_REQUIRE_EQUAL(interest4->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest4->getSelectedDelegation(), "/ucla/cs");
 
-  fib.erase(*fibTelia);
-  fib.erase(*fibUcla);
+  fib.erase("/telia");
+  fib.erase("/ucla");
 
   // producer region
   nrt.clear();
   nrt.insert("/ucla/cs/spurs");
-  fibRoot->addNextHop(face2, 10);
-  fibUcla = fib.insert("/ucla").first;
-  fibUcla->addNextHop(face2, 10);
-  shared_ptr<fib::Entry> fibNdnsim = fib.insert("/net/ndnsim").first;
-  fibNdnsim->addNextHop(face2, 10);
+  fib.insert("/").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
+  fib.insert("/net/ndnsim").first->addNextHop(*face2, 10);
 
   auto interest5 = makeInterest("/net/ndnsim/www/5.html");
   interest5->setLink(link->wireEncode());
@@ -848,9 +833,9 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   BOOST_REQUIRE_EQUAL(interest5->hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interest5->getSelectedDelegation(), "/ucla/cs");
 
-  fibRoot->removeNextHop(face2);
-  fib.erase(*fibUcla);
-  fib.erase(*fibNdnsim);
+  fib.insert("/").first->removeNextHop(*face2);
+  fib.erase("/ucla");
+  fib.erase("/ndnsim");
 }
 
 

@@ -53,7 +53,7 @@ public:
 protected:
   virtual void
   sendInterest(shared_ptr<pit::Entry> pitEntry,
-               shared_ptr<Face> outFace,
+               Face& outFace,
                bool wantNewNonce = false) override;
 
   virtual void
@@ -91,12 +91,12 @@ public:
 template<typename S>
 inline void
 StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                                shared_ptr<Face> outFace,
+                                Face& outFace,
                                 bool wantNewNonce)
 {
-  SendInterestArgs args{pitEntry, outFace->getId(), wantNewNonce};
+  SendInterestArgs args{pitEntry, outFace.getId(), wantNewNonce};
   sendInterestHistory.push_back(args);
-  pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
+  pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), pitEntry->getInterest());
   afterAction();
 }
 
