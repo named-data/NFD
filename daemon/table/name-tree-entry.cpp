@@ -119,15 +119,15 @@ Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
 }
 
 void
-Entry::setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry)
+Entry::setStrategyChoiceEntry(unique_ptr<strategy_choice::Entry> strategyChoiceEntry)
 {
   BOOST_ASSERT(strategyChoiceEntry == nullptr || strategyChoiceEntry->m_nameTreeEntry.expired());
 
   if (m_strategyChoiceEntry != nullptr) {
     m_strategyChoiceEntry->m_nameTreeEntry.reset();
   }
+  m_strategyChoiceEntry = std::move(strategyChoiceEntry);
 
-  m_strategyChoiceEntry = strategyChoiceEntry;
   if (m_strategyChoiceEntry != nullptr) {
     m_strategyChoiceEntry->m_nameTreeEntry = this->shared_from_this();
   }

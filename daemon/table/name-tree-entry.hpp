@@ -120,9 +120,9 @@ public: // attached table entries
   getMeasurementsEntry() const;
 
   void
-  setStrategyChoiceEntry(shared_ptr<strategy_choice::Entry> strategyChoiceEntry);
+  setStrategyChoiceEntry(unique_ptr<strategy_choice::Entry> strategyChoiceEntry);
 
-  shared_ptr<strategy_choice::Entry>
+  strategy_choice::Entry*
   getStrategyChoiceEntry() const;
 
 private:
@@ -136,7 +136,7 @@ private:
   unique_ptr<fib::Entry> m_fibEntry;
   std::vector<shared_ptr<pit::Entry> > m_pitEntries;
   shared_ptr<measurements::Entry> m_measurementsEntry;
-  shared_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
+  unique_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
 
   // get the Name Tree Node that is associated with this Name Tree Entry
   Node* m_node;
@@ -211,10 +211,10 @@ Entry::getMeasurementsEntry() const
   return m_measurementsEntry;
 }
 
-inline shared_ptr<strategy_choice::Entry>
+inline strategy_choice::Entry*
 Entry::getStrategyChoiceEntry() const
 {
-  return m_strategyChoiceEntry;
+  return m_strategyChoiceEntry.get();
 }
 
 } // namespace name_tree

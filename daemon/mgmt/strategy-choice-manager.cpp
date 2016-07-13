@@ -35,7 +35,7 @@ StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
                                              Dispatcher& dispatcher,
                                              CommandValidator& validator)
   : NfdManagerBase(dispatcher, validator, "strategy-choice")
-  , m_strategyChoice(strategyChoice)
+  , m_table(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
     bind(&StrategyChoiceManager::setStrategy, this, _2, _3, _4, _5));
@@ -54,15 +54,15 @@ StrategyChoiceManager::setStrategy(const Name& topPrefix, const Interest& intere
   const Name& prefix = parameters.getName();
   const Name& selectedStrategy = parameters.getStrategy();
 
-  if (!m_strategyChoice.hasStrategy(selectedStrategy)) {
+  if (!m_table.hasStrategy(selectedStrategy)) {
     NFD_LOG_DEBUG("strategy-choice result: FAIL reason: unknown-strategy: "
                   << parameters.getStrategy());
     return done(ControlResponse(504, "Unsupported strategy"));
   }
 
-  if (m_strategyChoice.insert(prefix, selectedStrategy)) {
+  if (m_table.insert(prefix, selectedStrategy)) {
     NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
-    auto currentStrategyChoice = m_strategyChoice.get(prefix);
+    auto currentStrategyChoice = m_table.get(prefix);
     BOOST_ASSERT(currentStrategyChoice.first);
     parameters.setStrategy(currentStrategyChoice.second);
     return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
@@ -78,7 +78,7 @@ StrategyChoiceManager::unsetStrategy(const Name& topPrefix, const Interest& inte
                                      ControlParameters parameters,
                                      const ndn::mgmt::CommandContinuation& done)
 {
-  m_strategyChoice.erase(parameters.getName());
+  m_table.erase(parameters.getName());
 
   NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
@@ -88,7 +88,7 @@ void
 StrategyChoiceManager::listChoices(const Name& topPrefix, const Interest& interest,
                                    ndn::mgmt::StatusDatasetContext& context)
 {
-  for (auto&& i : m_strategyChoice) {
+  for (auto&& i : m_table) {
     ndn::nfd::StrategyChoice entry;
     entry.setName(i.getPrefix()).setStrategy(i.getStrategyName());
     context.append(entry.wireEncode());

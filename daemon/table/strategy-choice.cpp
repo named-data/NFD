@@ -30,8 +30,8 @@
 #include "measurements-entry.hpp"
 
 namespace nfd {
+namespace strategy_choice {
 
-using strategy_choice::Entry;
 using fw::Strategy;
 
 NFD_LOG_INIT("StrategyChoice");
@@ -96,7 +96,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   }
 
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(prefix);
-  shared_ptr<Entry> entry = nte->getStrategyChoiceEntry();
+  Entry* entry = nte->getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {
     if (entry->getStrategy().getName() == strategy->getName()) {
@@ -110,8 +110,9 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 
   if (entry == nullptr) {
     oldStrategy = &this->findEffectiveStrategy(prefix);
-    entry = make_shared<Entry>(prefix);
-    nte->setStrategyChoiceEntry(entry);
+    auto newEntry = make_unique<Entry>(prefix);
+    entry = newEntry.get();
+    nte->setStrategyChoiceEntry(std::move(newEntry));
     ++m_nItems;
     NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getName());
   }
@@ -131,7 +132,7 @@ StrategyChoice::erase(const Name& prefix)
     return;
   }
 
-  shared_ptr<Entry> entry = nte->getStrategyChoiceEntry();
+  Entry* entry = nte->getStrategyChoiceEntry();
   if (entry == nullptr) {
     return;
   }
@@ -141,7 +142,7 @@ StrategyChoice::erase(const Name& prefix)
   Strategy& parentStrategy = this->findEffectiveStrategy(prefix.getPrefix(-1));
   this->changeStrategy(*entry, oldStrategy, parentStrategy);
 
-  nte->setStrategyChoiceEntry(shared_ptr<Entry>());
+  nte->setStrategyChoiceEntry(nullptr);
   m_nameTree.eraseEntryIfEmpty(nte);
   --m_nItems;
 }
@@ -151,24 +152,22 @@ StrategyChoice::get(const Name& prefix) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
   if (nte == nullptr) {
-    return { false, Name() };
+    return {false, Name()};
   }
 
-  shared_ptr<Entry> entry = nte->getStrategyChoiceEntry();
+  Entry* entry = nte->getStrategyChoiceEntry();
   if (entry == nullptr) {
-    return { false, Name() };
+    return {false, Name()};
   }
 
-  return { true, entry->getStrategy().getName() };
+  return {true, entry->getStrategy().getName()};
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(prefix,
-    [] (const name_tree::Entry& entry) {
-      return entry.getStrategyChoiceEntry() != nullptr;
-    });
+    [] (const name_tree::Entry& entry) { return entry.getStrategyChoiceEntry() != nullptr; });
 
   BOOST_ASSERT(nte != nullptr);
   return nte->getStrategyChoiceEntry()->getStrategy();
@@ -177,14 +176,12 @@ StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 Strategy&
 StrategyChoice::findEffectiveStrategy(shared_ptr<name_tree::Entry> nte) const
 {
-  shared_ptr<strategy_choice::Entry> entry = nte->getStrategyChoiceEntry();
+  Entry* entry = nte->getStrategyChoiceEntry();
   if (entry != nullptr)
     return entry->getStrategy();
 
   nte = m_nameTree.findLongestPrefixMatch(nte,
-    [] (const name_tree::Entry& entry) {
-      return entry.getStrategyChoiceEntry() != nullptr;
-    });
+    [] (const name_tree::Entry& entry) { return entry.getStrategyChoiceEntry() != nullptr; });
 
   BOOST_ASSERT(nte != nullptr);
   return nte->getStrategyChoiceEntry()->getStrategy();
@@ -213,15 +210,15 @@ StrategyChoice::setDefaultStrategy(shared_ptr<Strategy> strategy)
 {
   this->install(strategy);
 
+  auto entry = make_unique<Entry>(Name());
+  entry->setStrategy(*strategy);
+
   // don't use .insert here, because it will invoke findEffectiveStrategy
   // which expects an existing root entry
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(Name());
-  shared_ptr<Entry> entry = make_shared<Entry>(Name());
-  nte->setStrategyChoiceEntry(entry);
+  nte->setStrategyChoiceEntry(std::move(entry));
   ++m_nItems;
   NFD_LOG_INFO("setDefaultStrategy " << strategy->getName());
-
-  entry->setStrategy(*strategy);
 }
 
 static inline void
@@ -244,7 +241,7 @@ clearStrategyInfo(const name_tree::Entry& nte)
 }
 
 void
-StrategyChoice::changeStrategy(strategy_choice::Entry& entry,
+StrategyChoice::changeStrategy(Entry& entry,
                                fw::Strategy& oldStrategy,
                                fw::Strategy& newStrategy)
 {
@@ -284,4 +281,5 @@ StrategyChoice::begin() const
   return const_iterator(enumerable.begin());
 }
 
+} // namespace strategy_choice
 } // namespace nfd

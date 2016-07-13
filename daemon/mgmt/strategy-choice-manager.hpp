@@ -30,7 +30,9 @@
 
 namespace nfd {
 
+namespace strategy_choice {
 class StrategyChoice;
+} // namespace strategy_choice
 
 /**
  * @brief implement the Strategy Choice Management of NFD Management Protocol.
@@ -39,7 +41,7 @@ class StrategyChoice;
 class StrategyChoiceManager : public NfdManagerBase
 {
 public:
-  StrategyChoiceManager(StrategyChoice& strategyChoice,
+  StrategyChoiceManager(strategy_choice::StrategyChoice& table,
                         Dispatcher& dispatcher,
                         CommandValidator& validator);
 
@@ -59,7 +61,7 @@ private:
               ndn::mgmt::StatusDatasetContext& context);
 
 private:
-  StrategyChoice& m_strategyChoice;
+  strategy_choice::StrategyChoice& m_table;
 };
 
 } // namespace nfd

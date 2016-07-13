@@ -277,7 +277,7 @@ shared_ptr<name_tree::Entry>
 NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry) const
 {
   shared_ptr<name_tree::Entry> nte = this->getEntry(strategyChoiceEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getStrategyChoiceEntry().get() == &strategyChoiceEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getStrategyChoiceEntry() == &strategyChoiceEntry);
   return nte;
 }
 

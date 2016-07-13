@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -30,6 +30,7 @@
 #include "name-tree.hpp"
 
 namespace nfd {
+namespace strategy_choice {
 
 /** \brief represents the Strategy Choice table
  *
@@ -105,7 +106,7 @@ public: // effective strategy
 
 public: // enumeration
   class const_iterator
-    : public std::iterator<std::forward_iterator_tag, const strategy_choice::Entry>
+    : public std::iterator<std::forward_iterator_tag, const Entry>
   {
   public:
     explicit
@@ -113,10 +114,10 @@ public: // enumeration
 
     ~const_iterator();
 
-    const strategy_choice::Entry&
+    const Entry&
     operator*() const;
 
-    shared_ptr<strategy_choice::Entry>
+    const Entry*
     operator->() const;
 
     const_iterator&
@@ -156,7 +157,7 @@ private:
   setDefaultStrategy(shared_ptr<fw::Strategy> strategy);
 
   void
-  changeStrategy(strategy_choice::Entry& entry,
+  changeStrategy(Entry& entry,
                  fw::Strategy& oldStrategy,
                  fw::Strategy& newStrategy);
 
@@ -167,7 +168,7 @@ private:
   NameTree& m_nameTree;
   size_t m_nItems;
 
-  typedef std::map<Name, shared_ptr<fw::Strategy> > StrategyInstanceTable;
+  typedef std::map<Name, shared_ptr<fw::Strategy>> StrategyInstanceTable;
   StrategyInstanceTable m_strategyInstances;
 };
 
@@ -210,13 +211,13 @@ StrategyChoice::const_iterator::operator++()
   return *this;
 }
 
-inline const strategy_choice::Entry&
+inline const Entry&
 StrategyChoice::const_iterator::operator*() const
 {
   return *(m_nameTreeIterator->getStrategyChoiceEntry());
 }
 
-inline shared_ptr<strategy_choice::Entry>
+inline const Entry*
 StrategyChoice::const_iterator::operator->() const
 {
   return m_nameTreeIterator->getStrategyChoiceEntry();
@@ -233,6 +234,10 @@ StrategyChoice::const_iterator::operator!=(const StrategyChoice::const_iterator&
 {
   return m_nameTreeIterator != other.m_nameTreeIterator;
 }
+
+} // namespace strategy_choice
+
+using strategy_choice::StrategyChoice;
 
 } // namespace nfd
 
