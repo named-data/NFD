@@ -376,8 +376,7 @@ Sample applications:
 
 Real applications and libraries:
 
-   + `ndn-tlv-ping - Reachability Testing Tool for NDN
-     <https://github.com/named-data/ndn-tlv-ping>`_
+   + `ndn-tools - NDN Essential Tools <https://github.com/named-data/ndn-tools>`_
    + `ndn-traffic-generator - Traffic Generator For NDN
      <https://github.com/named-data/ndn-traffic-generator>`_
    + `repo-ng - Next generation of NDN repository <https://github.com/named-data/repo-ng>`_
