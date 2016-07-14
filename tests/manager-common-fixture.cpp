@@ -29,9 +29,9 @@ namespace nfd {
 namespace tests {
 
 ManagerCommonFixture::ManagerCommonFixture()
-  : m_face(ndn::util::makeDummyClientFace(UnitTestTimeFixture::g_io, {true, true}))
-  , m_dispatcher(*m_face, m_keyChain, ndn::security::SigningInfo())
-  , m_responses(m_face->sentDatas)
+  : m_face(getGlobalIoService(), m_keyChain, {true, true})
+  , m_dispatcher(m_face, m_keyChain, ndn::security::SigningInfo())
+  , m_responses(m_face.sentData)
   , m_identityName("/unit-test/ManagerCommonFixture/identity")
   , m_certificate(m_keyChain.getCertificate(m_keyChain.createIdentity(m_identityName)))
 {
@@ -63,7 +63,7 @@ ManagerCommonFixture::makeControlCommandRequest(Name commandName,
 void
 ManagerCommonFixture::receiveInterest(shared_ptr<Interest> interest)
 {
-  m_face->receive<Interest>(*interest);
+  m_face.receive(*interest);
   advanceClocks(time::milliseconds(1));
 }
 

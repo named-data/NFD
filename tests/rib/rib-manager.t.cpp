@@ -49,9 +49,9 @@ public:
   explicit
   RibManagerFixture(const ConfigurationStatus& status,
                     bool shouldClearRib)
-    : m_commands(m_face->sentInterests)
+    : m_commands(m_face.sentInterests)
     , m_status(status)
-    , m_manager(m_dispatcher, *m_face, m_keyChain)
+    , m_manager(m_dispatcher, m_face, m_keyChain)
     , m_rib(m_manager.m_rib)
   {
     m_rib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue, this, _1);
@@ -112,7 +112,7 @@ private:
 
       m_keyChain.sign(*data, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_SHA256));
 
-      m_face->getIoService().post([this, data] { m_face->receive(*data); });
+      m_face.getIoService().post([this, data] { m_face.receive(*data); });
     };
 
     Name commandPrefix("/localhost/nfd/fib/add-nexthop");

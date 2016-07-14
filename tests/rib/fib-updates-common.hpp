@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,14 +23,17 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rib-test-common.hpp"
 #include "rib/fib-updater.hpp"
+#include "rib-test-common.hpp"
+#include "tests/identity-management-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace rib {
 namespace tests {
+
+using namespace nfd::tests;
 
 inline bool
 compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
@@ -55,12 +58,12 @@ compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
   return false;
 }
 
-class FibUpdatesFixture : public nfd::tests::BaseFixture
+class FibUpdatesFixture : public IdentityManagementFixture
 {
 public:
   FibUpdatesFixture()
-    : face(ndn::util::makeDummyClientFace())
-    , controller(*face, keyChain)
+    : face(getGlobalIoService(), m_keyChain)
+    , controller(face, m_keyChain)
     , fibUpdater(rib, controller)
   {
   }
@@ -163,8 +166,7 @@ public:
   }
 
 public:
-  shared_ptr<ndn::util::DummyClientFace> face;
-  ndn::KeyChain keyChain;
+  ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
   rib::FibUpdater fibUpdater;
   rib::Rib rib;

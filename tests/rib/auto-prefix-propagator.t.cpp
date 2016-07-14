@@ -33,20 +33,22 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
+using namespace nfd::tests;
+
 NFD_LOG_INIT("AutoPrefixPropagatorTest");
 
 const Name TEST_LINK_LOCAL_NFD_PREFIX("/localhop/nfd");
 const time::milliseconds TEST_PREFIX_PROPAGATION_TIMEOUT(1000);
 
-class AutoPrefixPropagatorFixture : public nfd::tests::IdentityManagementFixture
-                                  , public nfd::tests::UnitTestTimeFixture
+class AutoPrefixPropagatorFixture : public IdentityManagementFixture
+                                  , public UnitTestTimeFixture
 {
 public:
   AutoPrefixPropagatorFixture()
-    : m_face(ndn::util::makeDummyClientFace(nfd::tests::UnitTestTimeFixture::g_io, {true, true}))
-    , m_controller(*m_face, m_keyChain)
+    : m_face(getGlobalIoService(), m_keyChain, {true, true})
+    , m_controller(m_face, m_keyChain)
     , m_propagator(m_controller, m_keyChain, m_rib)
-    , m_requests(m_face->sentInterests)
+    , m_requests(m_face.sentInterests)
     , m_entries(m_propagator.m_propagatedEntries)
   {
     m_propagator.enable();
@@ -173,12 +175,12 @@ public: // helpers for check
   }
 
 protected:
-  shared_ptr<ndn::util::DummyClientFace>     m_face;
-  ndn::nfd::Controller                       m_controller;
-  Rib                                        m_rib;
-  AutoPrefixPropagator                       m_propagator;
-  std::vector<Interest>&                     m_requests; // store sent out requests
-  AutoPrefixPropagator::PropagatedEntryList& m_entries; // store propagated entries
+  ndn::util::DummyClientFace m_face;
+  ndn::nfd::Controller m_controller;
+  Rib m_rib;
+  AutoPrefixPropagator m_propagator;
+  std::vector<Interest>& m_requests; ///< store sent out requests
+  AutoPrefixPropagator::PropagatedEntryList& m_entries; ///< store propagated entries
 };
 
 std::ostream&

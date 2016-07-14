@@ -27,6 +27,7 @@
 #include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/identity-management-fixture.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
@@ -46,8 +47,8 @@ class FaceManagerNode
 {
 public:
   FaceManagerNode(ndn::KeyChain& keyChain, const std::string& port = "6363")
-    : face(ndn::util::makeDummyClientFace(getGlobalIoService(), {true, true}))
-    , dispatcher(*face, keyChain, ndn::security::SigningInfo())
+    : face(getGlobalIoService(), keyChain, {true, true})
+    , dispatcher(face, keyChain, ndn::security::SigningInfo())
     , manager(forwarder.getFaceTable(), dispatcher, validator)
   {
     dispatcher.addTopPrefix("/localhost/nfd");
@@ -104,18 +105,19 @@ public:
 
 public:
   Forwarder forwarder;
-  shared_ptr<ndn::util::DummyClientFace> face;
+  ndn::util::DummyClientFace face;
   ndn::mgmt::Dispatcher dispatcher;
   CommandValidator validator;
   FaceManager manager;
 };
 
 class FaceManagerFixture : public UnitTestTimeFixture
+                         , public IdentityManagementFixture
 {
 public:
   FaceManagerFixture()
-    : node1(keyChain, "16363")
-    , node2(keyChain, "26363")
+    : node1(m_keyChain, "16363")
+    , node2(m_keyChain, "26363")
   {
     advanceClocks(time::milliseconds(1), 100);
   }
@@ -128,7 +130,6 @@ public:
   }
 
 public:
-  ndn::KeyChain keyChain;
   FaceManagerNode node1; // used to test FaceManager
   FaceManagerNode node2; // acts as a remote endpoint
 };
@@ -263,10 +264,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
   commandName.append(FaceType().getParameters().wireEncode());
 
   shared_ptr<Interest> command(make_shared<Interest>(commandName));
-  this->keyChain.sign(*command);
+  m_keyChain.sign(*command);
 
   bool hasCallbackFired = false;
-  this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
+  this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
       // std::cout << response << std::endl;
       if (!command->getName().isPrefixOf(response.getName())) {
         return;
@@ -287,7 +288,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
       hasCallbackFired = true;
     });
 
-  this->node1.face->receive(*command);
+  this->node1.face.receive(*command);
   this->advanceClocks(time::milliseconds(1), 100);
 
   BOOST_CHECK(hasCallbackFired);
@@ -314,9 +315,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     commandName.append(FaceType1().getParameters().wireEncode());
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    this->keyChain.sign(*command);
+    m_keyChain.sign(*command);
 
-    this->node1.face->receive(*command);
+    this->node1.face.receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
   }
 
@@ -329,10 +330,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     commandName.append(FaceType2().getParameters().wireEncode());
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    this->keyChain.sign(*command);
+    m_keyChain.sign(*command);
 
     bool hasCallbackFired = false;
-    this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
+    this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
         if (!command->getName().isPrefixOf(response.getName())) {
           return;
         }
@@ -347,7 +348,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
         hasCallbackFired = true;
       });
 
-    this->node1.face->receive(*command);
+    this->node1.face.receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
 
     BOOST_CHECK(hasCallbackFired);
@@ -390,10 +391,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     commandName.append(OtherNodeFace().getParameters().wireEncode());
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    this->keyChain.sign(*command);
+    m_keyChain.sign(*command);
 
     ndn::util::signal::ScopedConnection connection =
-      this->node2.face->onSendData.connect([this, command] (const Data& response) {
+      this->node2.face.onSendData.connect([this, command] (const Data& response) {
           if (!command->getName().isPrefixOf(response.getName())) {
             return;
           }
@@ -409,7 +410,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
           face->sendInterest(*dummyInterest);
         });
 
-    this->node2.face->receive(*command);
+    this->node2.face.receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
   }
 
@@ -433,10 +434,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     commandName.append(FaceType().getParameters().wireEncode());
 
     shared_ptr<Interest> command(make_shared<Interest>(commandName));
-    this->keyChain.sign(*command);
+    m_keyChain.sign(*command);
 
     bool hasCallbackFired = false;
-    this->node1.face->onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
+    this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
         if (!command->getName().isPrefixOf(response.getName())) {
           return;
         }
@@ -451,7 +452,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
         hasCallbackFired = true;
       });
 
-    this->node1.face->receive(*command);
+    this->node1.face.receive(*command);
     this->advanceClocks(time::milliseconds(1), 10);
 
     BOOST_CHECK(hasCallbackFired);

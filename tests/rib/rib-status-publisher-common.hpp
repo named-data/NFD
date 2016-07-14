@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,9 +27,10 @@
 #define RIB_TESTS_UNIT_TESTS_RIB_STATUS_PUBLISHER_COMMON_HPP
 
 #include "rib/rib-status-publisher.hpp"
+#include "rib/rib.hpp"
 
 #include "tests/test-common.hpp"
-#include "rib/rib.hpp"
+#include "tests/identity-management-fixture.hpp"
 
 #include <ndn-cxx/management/nfd-control-parameters.hpp>
 #include <ndn-cxx/management/nfd-rib-entry.hpp>
@@ -40,9 +41,11 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
+using namespace nfd::tests;
+
 using ndn::nfd::ControlParameters;
 
-class RibStatusPublisherFixture : public nfd::tests::BaseFixture
+class RibStatusPublisherFixture : public IdentityManagementFixture
 {
 public:
   static void

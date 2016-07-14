@@ -143,11 +143,11 @@ public: // verify
   concatenateResponses(size_t startIndex = 0, size_t nResponses = 0);
 
 protected:
-  shared_ptr<ndn::util::DummyClientFace> m_face;
-  ndn::mgmt::Dispatcher                  m_dispatcher;
-  std::vector<Data>&                     m_responses; // a reference of m_face->sentDatas
-  Name                                   m_identityName; // the identity used to sign request
-  shared_ptr<ndn::IdentityCertificate>   m_certificate; // the certificate used to sign request
+  ndn::util::DummyClientFace m_face;
+  ndn::mgmt::Dispatcher m_dispatcher;
+  std::vector<Data>& m_responses; ///< a reference of m_face->sentData
+  Name m_identityName; ///< the identity used to sign request
+  shared_ptr<ndn::IdentityCertificate> m_certificate; ///< the certificate used to sign request
 };
 
 std::ostream&

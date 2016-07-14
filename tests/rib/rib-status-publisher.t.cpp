@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,15 +47,14 @@ BOOST_AUTO_TEST_CASE(Basic)
   route.flags = ndn::nfd::ROUTE_FLAG_CAPTURE;
   rib.insert(name, route);
 
-  ndn::KeyChain keyChain;
-  shared_ptr<ndn::util::DummyClientFace> face = ndn::util::makeDummyClientFace();
-  RibStatusPublisher publisher(rib, *face, "/localhost/nfd/rib/list", keyChain);
+  ndn::util::DummyClientFace face(getGlobalIoService(), m_keyChain);
+  RibStatusPublisher publisher(rib, face, "/localhost/nfd/rib/list", m_keyChain);
 
   publisher.publish();
-  face->processEvents(time::milliseconds(1));
+  face.processEvents(time::milliseconds(1));
 
-  BOOST_REQUIRE_EQUAL(face->sentDatas.size(), 1);
-  decodeRibEntryBlock(face->sentDatas[0], name, route);
+  BOOST_REQUIRE_EQUAL(face.sentData.size(), 1);
+  decodeRibEntryBlock(face.sentData[0], name, route);
 }
 
 
