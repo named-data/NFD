@@ -87,7 +87,7 @@ protected:
   runConsumer()
   {
     topo.addIntervalConsumer(consumer->getClientFace(), PRODUCER_PREFIX, time::seconds(1), 30);
-    this->advanceClocks(time::milliseconds(1), time::seconds(30));
+    this->advanceClocks(time::milliseconds(10), time::seconds(30));
   }
 
 protected:
@@ -143,7 +143,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   linkAB->recover();
 
   // Advance time to ensure probing is due
-  this->advanceClocks(time::milliseconds(1), time::seconds(10));
+  this->advanceClocks(time::milliseconds(10), time::seconds(10));
 
   runConsumer();
 

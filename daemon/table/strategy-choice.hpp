@@ -46,7 +46,7 @@ namespace strategy_choice {
 class StrategyChoice : noncopyable
 {
 public:
-  StrategyChoice(NameTree& nameTree, shared_ptr<fw::Strategy> defaultStrategy);
+  StrategyChoice(NameTree& nameTree, unique_ptr<fw::Strategy> defaultStrategy);
 
 public: // available Strategy types
   /** \brief determines if a strategy is installed
@@ -58,11 +58,12 @@ public: // available Strategy types
   hasStrategy(const Name& strategyName, bool isExact = false) const;
 
   /** \brief install a strategy
-   *  \return true if installed; false if not installed due to duplicate strategyName
-   *  \note shared_ptr is passed by value because StrategyChoice takes ownership of strategy
+   *  \return if installed, true, and a pointer to the strategy instance;
+   *          if not installed due to duplicate strategyName, false,
+   *          and a pointer to the existing strategy instance
    */
-  bool
-  install(shared_ptr<fw::Strategy> strategy);
+  std::pair<bool, fw::Strategy*>
+  install(unique_ptr<fw::Strategy> strategy);
 
 public: // Strategy Choice table
   /** \brief set strategy of prefix to be strategyName
@@ -92,15 +93,18 @@ public: // Strategy Choice table
   get(const Name& prefix) const;
 
 public: // effective strategy
-  /// get effective strategy for prefix
+  /** \brief get effective strategy for prefix
+   */
   fw::Strategy&
   findEffectiveStrategy(const Name& prefix) const;
 
-  /// get effective strategy for pitEntry
+  /** \brief get effective strategy for pitEntry
+   */
   fw::Strategy&
   findEffectiveStrategy(const pit::Entry& pitEntry) const;
 
-  /// get effective strategy for measurementsEntry
+  /** \brief get effective strategy for measurementsEntry
+   */
   fw::Strategy&
   findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
 
@@ -136,7 +140,8 @@ public: // enumeration
     NameTree::const_iterator m_nameTreeIterator;
   };
 
-  /// number of entries stored
+  /** \return number of entries stored
+   */
   size_t
   size() const;
 
@@ -154,7 +159,7 @@ private:
   getStrategy(const Name& strategyName) const;
 
   void
-  setDefaultStrategy(shared_ptr<fw::Strategy> strategy);
+  setDefaultStrategy(unique_ptr<fw::Strategy> strategy);
 
   void
   changeStrategy(Entry& entry,
@@ -168,7 +173,7 @@ private:
   NameTree& m_nameTree;
   size_t m_nItems;
 
-  typedef std::map<Name, shared_ptr<fw::Strategy>> StrategyInstanceTable;
+  typedef std::map<Name, unique_ptr<fw::Strategy>> StrategyInstanceTable;
   StrategyInstanceTable m_strategyInstances;
 };
 

@@ -36,11 +36,11 @@ using fw::Strategy;
 
 NFD_LOG_INIT("StrategyChoice");
 
-StrategyChoice::StrategyChoice(NameTree& nameTree, shared_ptr<Strategy> defaultStrategy)
+StrategyChoice::StrategyChoice(NameTree& nameTree, unique_ptr<Strategy> defaultStrategy)
   : m_nameTree(nameTree)
   , m_nItems(0)
 {
-  this->setDefaultStrategy(defaultStrategy);
+  this->setDefaultStrategy(std::move(defaultStrategy));
 }
 
 bool
@@ -54,25 +54,27 @@ StrategyChoice::hasStrategy(const Name& strategyName, bool isExact) const
   }
 }
 
-bool
-StrategyChoice::install(shared_ptr<Strategy> strategy)
+std::pair<bool, Strategy*>
+StrategyChoice::install(unique_ptr<Strategy> strategy)
 {
   BOOST_ASSERT(strategy != nullptr);
-  const Name& strategyName = strategy->getName();
+  Name strategyName = strategy->getName();
+  // copying Name, so that strategyName remains available even if strategy is deallocated
 
-  if (this->hasStrategy(strategyName, true)) {
+  bool isInserted = false;
+  StrategyInstanceTable::iterator it;
+  std::tie(it, isInserted) = m_strategyInstances.emplace(strategyName, std::move(strategy));
+
+  if (!isInserted) {
     NFD_LOG_ERROR("install(" << strategyName << ") duplicate strategyName");
-    return false;
   }
-
-  m_strategyInstances[strategyName] = strategy;
-  return true;
+  return std::make_pair(isInserted, it->second.get());
 }
 
-fw::Strategy*
+Strategy*
 StrategyChoice::getStrategy(const Name& strategyName) const
 {
-  fw::Strategy* candidate = nullptr;
+  Strategy* candidate = nullptr;
   for (auto it = m_strategyInstances.lower_bound(strategyName);
        it != m_strategyInstances.end() && strategyName.isPrefixOf(it->first); ++it) {
     switch (it->first.size() - strategyName.size()) {
@@ -206,19 +208,22 @@ StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEnt
 }
 
 void
-StrategyChoice::setDefaultStrategy(shared_ptr<Strategy> strategy)
+StrategyChoice::setDefaultStrategy(unique_ptr<Strategy> strategy)
 {
-  this->install(strategy);
+  bool isInstalled = false;
+  Strategy* instance = nullptr;
+  std::tie(isInstalled, instance) = this->install(std::move(strategy));
+  BOOST_ASSERT(isInstalled);
 
   auto entry = make_unique<Entry>(Name());
-  entry->setStrategy(*strategy);
+  entry->setStrategy(*instance);
 
   // don't use .insert here, because it will invoke findEffectiveStrategy
   // which expects an existing root entry
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(Name());
   nte->setStrategyChoiceEntry(std::move(entry));
   ++m_nItems;
-  NFD_LOG_INFO("setDefaultStrategy " << strategy->getName());
+  NFD_LOG_INFO("setDefaultStrategy " << instance->getName());
 }
 
 static inline void
@@ -241,9 +246,7 @@ clearStrategyInfo(const name_tree::Entry& nte)
 }
 
 void
-StrategyChoice::changeStrategy(Entry& entry,
-                               fw::Strategy& oldStrategy,
-                               fw::Strategy& newStrategy)
+StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& newStrategy)
 {
   if (&oldStrategy == &newStrategy) {
     return;

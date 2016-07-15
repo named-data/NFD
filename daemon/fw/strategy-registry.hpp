@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,14 +36,14 @@ namespace fw {
 
 class Strategy;
 
-shared_ptr<Strategy>
+unique_ptr<Strategy>
 makeDefaultStrategy(Forwarder& forwarder);
 
 void
 installStrategies(Forwarder& forwarder);
 
 
-typedef std::function<shared_ptr<Strategy>(Forwarder&)> StrategyCreateFunc;
+typedef std::function<unique_ptr<Strategy>(Forwarder&)> StrategyCreateFunc;
 
 void
 registerStrategyImpl(const Name& strategyName, const StrategyCreateFunc& createFunc);
@@ -55,7 +55,7 @@ void
 registerStrategy()
 {
   registerStrategyImpl(S::STRATEGY_NAME,
-                       [] (Forwarder& forwarder) { return make_shared<S>(ref(forwarder)); });
+                       [] (Forwarder& forwarder) { return make_unique<S>(ref(forwarder)); });
 }
 
 /** \brief registers a built-in strategy

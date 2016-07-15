@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,10 +29,10 @@
 namespace nfd {
 namespace fw {
 
-shared_ptr<Strategy>
+unique_ptr<Strategy>
 makeDefaultStrategy(Forwarder& forwarder)
 {
-  return make_shared<BestRouteStrategy2>(ref(forwarder));
+  return make_unique<BestRouteStrategy2>(ref(forwarder));
 }
 
 static std::map<Name, StrategyCreateFunc>&

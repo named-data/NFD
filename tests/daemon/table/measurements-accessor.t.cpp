@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "tests/test-common.hpp"
 #include "../fw/dummy-strategy.hpp"
+#include "../fw/install-strategy.hpp"
 
 namespace nfd {
 namespace tests {
@@ -59,24 +60,22 @@ class MeasurementsAccessorFixture : public BaseFixture
 {
 protected:
   MeasurementsAccessorFixture()
-    : strategy1(make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy1"))
-    , strategy2(make_shared<MeasurementsAccessorTestStrategy>(ref(forwarder), "ndn:/strategy2"))
+    : strategy1(install<MeasurementsAccessorTestStrategy>(forwarder, "ndn:/strategy1"))
+    , strategy2(install<MeasurementsAccessorTestStrategy>(forwarder, "ndn:/strategy2"))
     , measurements(forwarder.getMeasurements())
-    , accessor1(strategy1->getMeasurementsAccessor())
-    , accessor2(strategy2->getMeasurementsAccessor())
+    , accessor1(strategy1.getMeasurementsAccessor())
+    , accessor2(strategy2.getMeasurementsAccessor())
   {
     StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
-    strategyChoice.install(strategy1);
-    strategyChoice.install(strategy2);
-    strategyChoice.insert("/"   , strategy1->getName());
-    strategyChoice.insert("/A"  , strategy2->getName());
-    strategyChoice.insert("/A/B", strategy1->getName());
+    strategyChoice.insert("/"   , strategy1.getName());
+    strategyChoice.insert("/A"  , strategy2.getName());
+    strategyChoice.insert("/A/B", strategy1.getName());
   }
 
 protected:
   Forwarder forwarder;
-  shared_ptr<MeasurementsAccessorTestStrategy> strategy1;
-  shared_ptr<MeasurementsAccessorTestStrategy> strategy2;
+  MeasurementsAccessorTestStrategy& strategy1;
+  MeasurementsAccessorTestStrategy& strategy2;
   Measurements& measurements;
   MeasurementsAccessor& accessor1;
   MeasurementsAccessor& accessor2;

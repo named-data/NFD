@@ -31,8 +31,10 @@
 #include "table/name-tree.hpp"
 #include "table/strategy-choice.hpp"
 #include "fw/strategy.hpp"
+
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
+#include "tests/daemon/fw/install-strategy.hpp"
 
 #include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/management/nfd-strategy-choice.hpp>
@@ -52,9 +54,9 @@ public:
 
 public:
   void
-  installStrategy(const Name& strategy)
+  installStrategy(const Name& strategyName)
   {
-    m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder), strategy));
+    install<DummyStrategy>(m_forwarder, strategyName);
   }
 
   const Name&

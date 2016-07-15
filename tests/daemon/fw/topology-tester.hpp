@@ -34,6 +34,7 @@
 #include "face/internal-transport.hpp"
 #include "face/face.hpp"
 #include "fw/strategy.hpp"
+#include "install-strategy.hpp"
 #include "tests/test-common.hpp"
 
 namespace nfd {
@@ -175,7 +176,7 @@ public:
   }
 
   /** \brief sets strategy on forwarder \p i
-   *  \tparam the strategy type
+   *  \tparam S the strategy type
    *  \note Test scenario can also access StrategyChoice table directly.
    */
   template<typename S>
@@ -183,10 +184,7 @@ public:
   setStrategy(TopologyNode i, Name prefix = Name("ndn:/"))
   {
     Forwarder& forwarder = this->getForwarder(i);
-    StrategyChoice& strategyChoice = forwarder.getStrategyChoice();
-    shared_ptr<S> strategy = make_shared<S>(ref(forwarder));
-    strategyChoice.install(strategy);
-    strategyChoice.insert(prefix, strategy->getName());
+    choose<S>(forwarder, prefix);
   }
 
   /** \brief makes a link that interconnects two or more forwarders

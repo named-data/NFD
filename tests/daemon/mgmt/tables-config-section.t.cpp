@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,9 +26,9 @@
 #include "mgmt/tables-config-section.hpp"
 #include "fw/forwarder.hpp"
 
-
 #include "tests/test-common.hpp"
-#include "tests/daemon/fw/dummy-strategy.hpp"
+#include "../fw/dummy-strategy.hpp"
+#include "../fw/install-strategy.hpp"
 
 namespace nfd {
 namespace tests {
@@ -185,10 +185,8 @@ BOOST_AUTO_TEST_CASE(Unversioned)
     "  }\n"
     "}\n";
 
-  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
-                                                      "/localhost/nfd/strategy/test-strategy-a"));
-  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
-                                                      "/localhost/nfd/strategy/test-strategy-b"));
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-a");
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-b");
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
@@ -224,13 +222,8 @@ BOOST_AUTO_TEST_CASE(Versioned)
     "}\n";
 
 
-  auto version1 = make_shared<DummyStrategy>(ref(m_forwarder),
-                                             "/localhost/nfd/strategy/test-strategy-a/%FD%01");
-
-  auto version2 = make_shared<DummyStrategy>(ref(m_forwarder),
-                                             "/localhost/nfd/strategy/test-strategy-a/%FD%02");
-  m_strategyChoice.install(version1);
-  m_strategyChoice.install(version2);
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-a/%FD%02");
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
@@ -287,8 +280,7 @@ BOOST_AUTO_TEST_CASE(MissingPrefix)
     "}\n";
 
 
-  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
-                                                      "/localhost/nfd/strategy/test-strategy-a"));
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-a");
 
   BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
@@ -307,10 +299,8 @@ BOOST_AUTO_TEST_CASE(Duplicate)
     "  }\n"
     "}\n";
 
-  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
-                                                      "/localhost/nfd/strategy/test-strategy-a"));
-  m_strategyChoice.install(make_shared<DummyStrategy>(ref(m_forwarder),
-                                                      "/localhost/nfd/strategy/test-strategy-b"));
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-a");
+  install<DummyStrategy>(m_forwarder, "/localhost/nfd/strategy/test-strategy-b");
 
   BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);

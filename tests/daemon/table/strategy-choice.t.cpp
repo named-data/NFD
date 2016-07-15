@@ -24,9 +24,10 @@
  */
 
 #include "table/strategy-choice.hpp"
-#include "tests/daemon/fw/dummy-strategy.hpp"
 
 #include "tests/test-common.hpp"
+#include "../fw/dummy-strategy.hpp"
+#include "../fw/install-strategy.hpp"
 
 namespace nfd {
 namespace tests {
@@ -40,12 +41,9 @@ BOOST_AUTO_TEST_CASE(Get)
 {
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
+  install<DummyStrategy>(forwarder, nameP);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
-
-  // install
-  BOOST_CHECK_EQUAL(table.install(strategyP), true);
 
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
@@ -64,15 +62,10 @@ BOOST_AUTO_TEST_CASE(FindEffectiveStrategy)
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
   Name nameZ("ndn:/strategy/Z");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
-
-  // install
-  BOOST_CHECK_EQUAL(table.install(strategyP), true);
-  BOOST_CHECK_EQUAL(table.install(strategyQ), true);
-  BOOST_CHECK_EQUAL(table.install(strategyQ), false);
 
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
@@ -88,9 +81,8 @@ BOOST_AUTO_TEST_CASE(FindEffectiveStrategy)
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/A")  .getName(), nameP);
   BOOST_CHECK_EQUAL(table.findEffectiveStrategy("ndn:/A/B").getName(), nameP);
   // same instance
-  BOOST_CHECK_EQUAL(&table.findEffectiveStrategy("ndn:/"),    strategyP.get());
-  BOOST_CHECK_EQUAL(&table.findEffectiveStrategy("ndn:/A"),   strategyP.get());
-  BOOST_CHECK_EQUAL(&table.findEffectiveStrategy("ndn:/A/B"), strategyP.get());
+  BOOST_CHECK_EQUAL(&table.findEffectiveStrategy("ndn:/"),
+                    &table.findEffectiveStrategy("ndn:/A/B"));
 
   table.erase("ndn:/A"); // no effect
   // { '/'=>P, '/A/B'=>P }
@@ -130,14 +122,13 @@ BOOST_AUTO_TEST_CASE(FindEffectiveStrategyWithPitEntry)
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
-  StrategyChoice& table = forwarder.getStrategyChoice();
-  table.install(strategyP);
-  table.install(strategyQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
 
   shared_ptr<Data> dataABC = makeData("/A/B/C");
   Name fullName = dataABC->getFullName();
+
+  StrategyChoice& table = forwarder.getStrategyChoice();
 
   BOOST_CHECK(table.insert("/A", nameP));
   BOOST_CHECK(table.insert(fullName, nameQ));
@@ -157,11 +148,10 @@ BOOST_AUTO_TEST_CASE(FindEffectiveStrategyWithMeasurementsEntry)
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
+
   StrategyChoice& table = forwarder.getStrategyChoice();
-  table.install(strategyP);
-  table.install(strategyQ);
 
   BOOST_CHECK(table.insert("/A", nameP));
   BOOST_CHECK(table.insert("/A/B/C", nameQ));
@@ -183,12 +173,10 @@ BOOST_AUTO_TEST_CASE(Enumerate)
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
-  table.install(strategyP);
-  table.install(strategyQ);
 
   table.insert("ndn:/",      nameP);
   table.insert("ndn:/A/B",   nameQ);
@@ -226,15 +214,11 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
   Forwarder forwarder;
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
   Measurements& measurements = forwarder.getMeasurements();
-
-  // install
-  table.install(strategyP);
-  table.install(strategyQ);
 
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
@@ -245,38 +229,36 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
 
   BOOST_CHECK(table.insert("ndn:/A/B", nameP));
   // { '/'=>P, '/A/B'=>P }
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>()));
+  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() != nullptr);
 
   BOOST_CHECK(table.insert("ndn:/A", nameQ));
   // { '/'=>P, '/A/B'=>P, '/A'=>Q }
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>()));
+  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() == nullptr);
 
   table.erase("ndn:/A/B");
   // { '/'=>P, '/A'=>Q }
-  BOOST_CHECK( static_cast<bool>(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>()));
-  BOOST_CHECK(!static_cast<bool>(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>()));
+  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
 {
   Forwarder forwarder;
-  NameTree& nameTree = forwarder.getNameTree();
-  StrategyChoice& table = forwarder.getStrategyChoice();
-
   Name nameP("ndn:/strategy/P");
   Name nameQ("ndn:/strategy/Q");
-  shared_ptr<Strategy> strategyP = make_shared<DummyStrategy>(ref(forwarder), nameP);
-  shared_ptr<Strategy> strategyQ = make_shared<DummyStrategy>(ref(forwarder), nameQ);
-  table.install(strategyP);
-  table.install(strategyQ);
+  install<DummyStrategy>(forwarder, nameP);
+  install<DummyStrategy>(forwarder, nameQ);
+
+  NameTree& nameTree = forwarder.getNameTree();
+  StrategyChoice& table = forwarder.getStrategyChoice();
 
   table.insert("ndn:/", nameP);
 
@@ -297,27 +279,38 @@ BOOST_AUTO_TEST_CASE(Versioning)
   Name name4("ndn:/%FD%04");
   Name nameQ("ndn:/strategy/Q");
   Name nameQ5("ndn:/strategy/Q/%FD%05");
-  shared_ptr<Strategy> strategyP1 = make_shared<DummyStrategy>(ref(forwarder), nameP1);
-  shared_ptr<Strategy> strategyP2 = make_shared<DummyStrategy>(ref(forwarder), nameP2);
-  shared_ptr<Strategy> strategy3  = make_shared<DummyStrategy>(ref(forwarder), name3);
-  shared_ptr<Strategy> strategy4  = make_shared<DummyStrategy>(ref(forwarder), name4);
-  shared_ptr<Strategy> strategyQ  = make_shared<DummyStrategy>(ref(forwarder), nameQ);
-  shared_ptr<Strategy> strategyQ5 = make_shared<DummyStrategy>(ref(forwarder), nameQ5);
 
   StrategyChoice& table = forwarder.getStrategyChoice();
 
   // install
-  BOOST_CHECK_EQUAL(table.install(strategyP1), true);
-  BOOST_CHECK_EQUAL(table.install(strategyP1), false);
+  auto strategyP1 = make_unique<DummyStrategy>(ref(forwarder), nameP1);
+  Strategy* instanceP1 = strategyP1.get();
+  auto strategyP1b = make_unique<DummyStrategy>(ref(forwarder), nameP1);
+  auto strategyP2 = make_unique<DummyStrategy>(ref(forwarder), nameP2);
+  auto strategy3 = make_unique<DummyStrategy>(ref(forwarder), name3);
+  auto strategy4 = make_unique<DummyStrategy>(ref(forwarder), name4);
+  auto strategyQ = make_unique<DummyStrategy>(ref(forwarder), nameQ);
+  auto strategyQ5 = make_unique<DummyStrategy>(ref(forwarder), nameQ5);
+
+  bool isInstalled = false;
+  Strategy* installed = nullptr;
+
+  std::tie(isInstalled, installed) = table.install(std::move(strategyP1));
+  BOOST_CHECK_EQUAL(isInstalled, true);
+  BOOST_CHECK_EQUAL(installed, instanceP1);
+  std::tie(isInstalled, installed) = table.install(std::move(strategyP1b));
+  BOOST_CHECK_EQUAL(isInstalled, false);
+  BOOST_CHECK_EQUAL(installed, instanceP1);
+
   BOOST_CHECK_EQUAL(table.hasStrategy(nameP,  false), true);
   BOOST_CHECK_EQUAL(table.hasStrategy(nameP,  true),  false);
   BOOST_CHECK_EQUAL(table.hasStrategy(nameP1, true),  true);
 
-  BOOST_CHECK_EQUAL(table.install(strategyP2), true);
-  BOOST_CHECK_EQUAL(table.install(strategy3),  true);
-  BOOST_CHECK_EQUAL(table.install(strategy4),  true);
-  BOOST_CHECK_EQUAL(table.install(strategyQ),  true);
-  BOOST_CHECK_EQUAL(table.install(strategyQ5), true);
+  BOOST_CHECK_EQUAL(table.install(std::move(strategyP2)).first, true);
+  BOOST_CHECK_EQUAL(table.install(std::move(strategy3)).first, true);
+  BOOST_CHECK_EQUAL(table.install(std::move(strategy4)).first, true);
+  BOOST_CHECK_EQUAL(table.install(std::move(strategyQ)).first, true);
+  BOOST_CHECK_EQUAL(table.install(std::move(strategyQ5)).first, true);
 
   BOOST_CHECK(table.insert("ndn:/", nameQ));
   // exact match, { '/'=>Q }
