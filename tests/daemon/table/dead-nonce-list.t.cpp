@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,8 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TableDeadNonceList, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestDeadNonceList, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
@@ -62,6 +63,7 @@ protected:
   PeriodicalInsertionFixture()
     : dnl(LIFETIME)
     , name("ndn:/N")
+    , lastNonce(0)
     , addNonceBatch(0)
     , addNonceInterval(LIFETIME / DeadNonceList::EXPECTED_MARK_COUNT)
     , timeUnit(addNonceInterval / 2)
@@ -153,7 +155,8 @@ BOOST_FIXTURE_TEST_CASE(CapacityUp, PeriodicalInsertionFixture)
   BOOST_CHECK_LT(std::abs(cap1 - RATE), std::abs(cap0 - RATE));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestDeadNonceList
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace nfd
