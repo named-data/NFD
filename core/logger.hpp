@@ -140,13 +140,20 @@ template<>                                                                      
 template<>                                                                 \
 ::nfd::Logger& cls<s1, s2>::g_logger = ::nfd::LoggerFactory::create(name)
 
+#if (BOOST_VERSION >= 105900) && (BOOST_VERSION < 106000)
+// workaround Boost bug 11549
+#define NFD_BOOST_LOG(x) BOOST_LOG(x) << ""
+#else
+#define NFD_BOOST_LOG(x) BOOST_LOG(x)
+#endif
+
 #define NFD_LOG_LINE(msg, expression) \
 ::nfd::LoggerTimestamp{} << " "#msg": " << "[" << g_logger  << "] " << expression
 
 #define NFD_LOG(level, msg, expression)                                 \
   do {                                                                  \
     if (g_logger.isEnabled(::nfd::LOG_##level)) {                       \
-      BOOST_LOG(g_logger.boostLogger) << NFD_LOG_LINE(msg, expression); \
+      NFD_BOOST_LOG(g_logger.boostLogger) << NFD_LOG_LINE(msg, expression); \
     }                                                                   \
   } while (false)
 
