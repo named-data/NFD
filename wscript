@@ -125,6 +125,7 @@ main(int, char**)
 
     if conf.env['CXX_NAME'] == 'clang' and conf.env.BOOST_VERSION_NUMBER < 105800:
         conf.define('BOOST_ASIO_HAS_STD_ARRAY', 1) # Workaround for http://redmine.named-data.net/issues/3360#note-14
+        conf.define('BOOST_ASIO_HAS_STD_CHRONO', 1) # Solution documented at https://redmine.named-data.net/issues/3588#note-10
 
     conf.load('unix-socket')
     conf.checkWebsocket(mandatory=True)
