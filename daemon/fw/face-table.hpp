@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@ namespace nfd {
 
 class Forwarder;
 
-/** \brief container of all Faces
+/** \brief container of all faces
  */
 class FaceTable : noncopyable
 {
@@ -44,16 +44,28 @@ public:
   VIRTUAL_WITH_TESTS
   ~FaceTable();
 
+  /** \brief add a face
+   *
+   *  FaceTable obtains shared ownership of the face.
+   *  The channel or protocol factory that creates the face may retain ownership.
+   */
   VIRTUAL_WITH_TESTS void
   add(shared_ptr<Face> face);
 
-  /// add a special Face with a reserved FaceId
+  /** \brief add a special Face with a reserved FaceId
+   */
   VIRTUAL_WITH_TESTS void
   addReserved(shared_ptr<Face> face, FaceId faceId);
 
-  VIRTUAL_WITH_TESTS shared_ptr<Face>
+  /** \brief get face by FaceId
+   *  \return a face if found, nullptr if not found;
+   *          face->shared_from_this() can be used if shared_ptr<Face> is desired
+   */
+  VIRTUAL_WITH_TESTS Face*
   get(FaceId id) const;
 
+  /** \return count of faces
+   */
   size_t
   size() const;
 

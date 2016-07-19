@@ -33,6 +33,8 @@
 
 namespace nfd {
 
+class FaceTable;
+
 /**
  * @brief implement the FIB Management of NFD Management Protocol.
  * @sa http://redmine.named-data.net/projects/nfd/wiki/FibMgmt
@@ -44,12 +46,12 @@ public:
    * @brief construct a FibManger
    *
    * @param fib the managed FIB
-   * @param getFace a function used to retrive a face by FaceId from the face table
+   * @param faceTable FaceTable for querying available faces
    * @param dispatcher the management dispatcher
    * @param validator the command validator
    */
   FibManager(Fib& fib,
-             function<shared_ptr<Face>(FaceId)> getFace,
+             const FaceTable& faceTable,
              Dispatcher& dispatcher,
              CommandValidator& validator);
 
@@ -74,7 +76,7 @@ private:
 
 private:
   Fib& m_fib;
-  function<shared_ptr<Face>(FaceId)> m_getFace;
+  const FaceTable& m_faceTable;
 };
 
 } // namespace nfd

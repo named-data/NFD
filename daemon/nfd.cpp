@@ -151,7 +151,7 @@ Nfd::initializeManagement()
   m_validator.reset(new CommandValidator());
 
   m_fibManager.reset(new FibManager(m_forwarder->getFib(),
-                                    bind(&Forwarder::getFace, m_forwarder.get(), _1),
+                                    m_forwarder->getFaceTable(),
                                     *m_dispatcher,
                                     *m_validator));
 

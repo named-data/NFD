@@ -171,11 +171,11 @@ protected: // accessors
   MeasurementsAccessor&
   getMeasurements();
 
-  shared_ptr<Face>
-  getFace(FaceId id);
+  Face*
+  getFace(FaceId id) const;
 
   const FaceTable&
-  getFaceTable();
+  getFaceTable() const;
 
 protected: // accessors
   signal::Signal<FaceTable, shared_ptr<Face>>& afterAddFace;
@@ -230,14 +230,14 @@ Strategy::getMeasurements()
   return m_measurements;
 }
 
-inline shared_ptr<Face>
-Strategy::getFace(FaceId id)
+inline Face*
+Strategy::getFace(FaceId id) const
 {
   return m_forwarder.getFace(id);
 }
 
 inline const FaceTable&
-Strategy::getFaceTable()
+Strategy::getFaceTable() const
 {
   return m_forwarder.getFaceTable();
 }

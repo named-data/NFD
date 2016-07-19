@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,8 +38,8 @@ BOOST_FIXTURE_TEST_SUITE(TestFaceTable, BaseFixture)
 BOOST_AUTO_TEST_CASE(AddRemove)
 {
   Forwarder forwarder;
-
   FaceTable& faceTable = forwarder.getFaceTable();
+
   std::vector<FaceId> addHistory;
   std::vector<FaceId> removeHistory;
   faceTable.afterAdd.connect([&] (shared_ptr<Face> face) { addHistory.push_back(face->getId()); });
@@ -50,15 +50,20 @@ BOOST_AUTO_TEST_CASE(AddRemove)
 
   BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
   BOOST_CHECK_EQUAL(face2->getId(), face::INVALID_FACEID);
+  BOOST_CHECK(faceTable.get(face::INVALID_FACEID) == nullptr);
+  BOOST_CHECK_EQUAL(faceTable.size(), 0);
 
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
+  faceTable.add(face1);
+  faceTable.add(face2);
+  BOOST_CHECK_EQUAL(faceTable.size(), 2);
 
   BOOST_CHECK_NE(face1->getId(), face::INVALID_FACEID);
   BOOST_CHECK_NE(face2->getId(), face::INVALID_FACEID);
   BOOST_CHECK_NE(face1->getId(), face2->getId());
   BOOST_CHECK_GT(face1->getId(), face::FACEID_RESERVED_MAX);
   BOOST_CHECK_GT(face2->getId(), face::FACEID_RESERVED_MAX);
+  BOOST_CHECK(faceTable.get(face1->getId()) == face1.get());
+  BOOST_CHECK(faceTable.get(face2->getId()) == face2.get());
 
   FaceId oldId1 = face1->getId();
   faceTable.add(face1);
@@ -72,6 +77,8 @@ BOOST_AUTO_TEST_CASE(AddRemove)
   face1->close();
 
   BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
+  BOOST_CHECK_EQUAL(faceTable.size(), 1);
+  BOOST_CHECK(faceTable.get(oldId1) == nullptr);
 
   BOOST_REQUIRE_EQUAL(removeHistory.size(), 1);
   BOOST_CHECK_EQUAL(removeHistory[0], addHistory[0]);

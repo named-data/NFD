@@ -125,7 +125,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
     return false;
   }
 
-  shared_ptr<Face> face = this->getFace(mi.lastNexthop);
+  Face* face = this->getFace(mi.lastNexthop);
   if (face == nullptr || !fibEntry.hasNextHop(*face)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-gone");
     return false;

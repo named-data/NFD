@@ -67,7 +67,7 @@ public: // faces
    *
    *  shortcut to .getFaceTable().get(face)
    */
-  shared_ptr<Face>
+  Face*
   getFace(FaceId id) const;
 
   /** \brief add new Face
@@ -260,7 +260,7 @@ Forwarder::getFaceTable()
   return m_faceTable;
 }
 
-inline shared_ptr<Face>
+inline Face*
 Forwarder::getFace(FaceId id) const
 {
   return m_faceTable.get(id);

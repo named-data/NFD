@@ -44,11 +44,14 @@ FaceTable::~FaceTable()
 
 }
 
-shared_ptr<Face>
+Face*
 FaceTable::get(FaceId id) const
 {
-  std::map<FaceId, shared_ptr<Face> >::const_iterator i = m_faces.find(id);
-  return (i == m_faces.end()) ? (shared_ptr<Face>()) : (i->second);
+  auto i = m_faces.find(id);
+  if (i == m_faces.end()) {
+    return nullptr;
+  }
+  return i->second.get();
 }
 
 size_t

@@ -24,6 +24,7 @@
  */
 
 #include "fib-manager.hpp"
+#include "fw/face-table.hpp"
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
 
 namespace nfd {
@@ -31,12 +32,12 @@ namespace nfd {
 NFD_LOG_INIT("FibManager");
 
 FibManager::FibManager(Fib& fib,
-                       function<shared_ptr<Face>(FaceId)> getFace,
+                       const FaceTable& faceTable,
                        Dispatcher& dispatcher,
                        CommandValidator& validator)
   : NfdManagerBase(dispatcher, validator, "fib")
   , m_fib(fib)
-  , m_getFace(getFace)
+  , m_faceTable(faceTable)
 {
   registerCommandHandler<ndn::nfd::FibAddNextHopCommand>("add-nexthop",
     bind(&FibManager::addNextHop, this, _2, _3, _4, _5));
@@ -61,7 +62,7 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
                 << " faceid: " << faceId
                 << " cost: " << cost);
 
-  shared_ptr<Face> face = m_getFace(faceId);
+  Face* face = m_faceTable.get(faceId);
   if (face != nullptr) {
     fib::Entry* entry = m_fib.insert(prefix).first;
     entry->addNextHop(*face, cost);
@@ -89,7 +90,7 @@ FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
   NFD_LOG_TRACE("remove-nexthop prefix: " << parameters.getName()
                 << " faceid: " << parameters.getFaceId());
 
-  shared_ptr<Face> face = m_getFace(parameters.getFaceId());
+  Face* face = m_faceTable.get(parameters.getFaceId());
   if (face != nullptr) {
     fib::Entry* entry = m_fib.findExactMatch(parameters.getName());
     if (entry != nullptr) {

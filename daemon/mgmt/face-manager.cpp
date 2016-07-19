@@ -150,9 +150,9 @@ FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
                          const ControlParameters& parameters,
                          const ndn::mgmt::CommandContinuation& done)
 {
-  shared_ptr<Face> target = m_faceTable.get(parameters.getFaceId());
-  if (target) {
-    target->close();
+  Face* face = m_faceTable.get(parameters.getFaceId());
+  if (face != nullptr) {
+    face->close();
   }
 
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
@@ -228,7 +228,7 @@ FaceManager::findFaceForLocalControl(const Interest& request,
   // and is initialized synchronously with IncomingFaceId field enabled.
   BOOST_ASSERT(incomingFaceIdTag != nullptr);
 
-  auto face = m_faceTable.get(*incomingFaceIdTag);
+  Face* face = m_faceTable.get(*incomingFaceIdTag);
   if (face == nullptr) {
     NFD_LOG_DEBUG("FaceId " << *incomingFaceIdTag << " not found");
     done(ControlResponse(410, "Face not found"));
@@ -241,7 +241,7 @@ FaceManager::findFaceForLocalControl(const Interest& request,
     return nullptr;
   }
 
-  return face.get();
+  return face;
 }
 
 void

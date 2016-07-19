@@ -56,7 +56,7 @@ ClientControlStrategy::afterReceiveInterest(const Face& inFace,
   }
 
   FaceId outFaceId = static_cast<FaceId>(*tag);
-  shared_ptr<Face> outFace = this->getFace(outFaceId);
+  Face* outFace = this->getFace(outFaceId);
   if (outFace == nullptr) {
     // If outFace doesn't exist, it's better to reject the Interest
     // than to use BestRouteStrategy.
