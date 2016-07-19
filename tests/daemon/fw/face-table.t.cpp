@@ -113,41 +113,31 @@ BOOST_AUTO_TEST_CASE(Enumerate)
   BOOST_CHECK_EQUAL(std::distance(faceTable.begin(), faceTable.end()), faceTable.size());
   hasFace1 = hasFace2 = false;
   for (FaceTable::const_iterator it = faceTable.begin(); it != faceTable.end(); ++it) {
-    if (*it == face1) {
-      hasFace1 = true;
-    }
+    hasFace1 = hasFace1 || &*it == face1.get();
   }
-  BOOST_CHECK(hasFace1);
+  BOOST_CHECK_EQUAL(hasFace1, true);
 
   faceTable.add(face2);
   BOOST_CHECK_EQUAL(faceTable.size(), 2);
   BOOST_CHECK_EQUAL(std::distance(faceTable.begin(), faceTable.end()), faceTable.size());
   hasFace1 = hasFace2 = false;
   for (FaceTable::const_iterator it = faceTable.begin(); it != faceTable.end(); ++it) {
-    if (*it == face1) {
-      hasFace1 = true;
-    }
-    if (*it == face2) {
-      hasFace2 = true;
-    }
+    hasFace1 = hasFace1 || &*it == face1.get();
+    hasFace2 = hasFace2 || &*it == face2.get();
   }
-  BOOST_CHECK(hasFace1);
-  BOOST_CHECK(hasFace2);
+  BOOST_CHECK_EQUAL(hasFace1, true);
+  BOOST_CHECK_EQUAL(hasFace2, true);
 
   face1->close();
   BOOST_CHECK_EQUAL(faceTable.size(), 1);
   BOOST_CHECK_EQUAL(std::distance(faceTable.begin(), faceTable.end()), faceTable.size());
   hasFace1 = hasFace2 = false;
   for (FaceTable::const_iterator it = faceTable.begin(); it != faceTable.end(); ++it) {
-    if (*it == face1) {
-      hasFace1 = true;
-    }
-    if (*it == face2) {
-      hasFace2 = true;
-    }
+    hasFace1 = hasFace1 || &*it == face1.get();
+    hasFace2 = hasFace2 || &*it == face2.get();
   }
-  BOOST_CHECK(!hasFace1);
-  BOOST_CHECK(hasFace2);
+  BOOST_CHECK_EQUAL(hasFace1, false);
+  BOOST_CHECK_EQUAL(hasFace2, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestFaceTable

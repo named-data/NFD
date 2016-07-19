@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,8 @@
 #include "dummy-strategy.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include <boost/range/adaptor/filtered.hpp>
+#include <boost/range/adaptor/transformed.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 #include "tests/test-common.hpp"
 
@@ -58,14 +60,15 @@ public:
   getLocalFaces()
   {
     auto enumerable = this->getFaceTable() |
-                      boost::adaptors::filtered([] (shared_ptr<Face> face) {
-                        return face->getScope() == ndn::nfd::FACE_SCOPE_LOCAL;
+                      boost::adaptors::filtered([] (Face& face) {
+                        return face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL;
+                      }) |
+                      boost::adaptors::transformed([] (Face& face) {
+                        return face.getId();
                       });
 
     std::vector<FaceId> results;
-    for (shared_ptr<Face> face : enumerable) {
-      results.push_back(face->getId());
-    }
+    boost::copy(enumerable, std::back_inserter(results));
     return results;
   }
 

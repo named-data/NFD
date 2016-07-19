@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FW_FACE_TABLE_HPP
 
 #include "face/face.hpp"
+#include <boost/range/adaptor/indirected.hpp>
 #include <boost/range/adaptor/map.hpp>
 
 namespace nfd {
@@ -72,9 +73,9 @@ public:
 public: // enumeration
   typedef std::map<FaceId, shared_ptr<Face>> FaceMap;
 
-  typedef boost::select_second_const_range<FaceMap> ForwardRange;
+  typedef boost::indirected_range<const boost::select_second_const_range<FaceMap>> ForwardRange;
 
-  /** \brief ForwardIterator for shared_ptr<Face>
+  /** \brief ForwardIterator for Face&
    */
   typedef boost::range_iterator<ForwardRange>::type const_iterator;
 

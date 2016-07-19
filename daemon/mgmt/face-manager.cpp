@@ -249,8 +249,8 @@ FaceManager::listFaces(const Name& topPrefix, const Interest& interest,
                        ndn::mgmt::StatusDatasetContext& context)
 {
   auto now = time::steady_clock::now();
-  for (const auto& face : m_faceTable) {
-    ndn::nfd::FaceStatus status = collectFaceStatus(*face, now);
+  for (const Face& face : m_faceTable) {
+    ndn::nfd::FaceStatus status = collectFaceStatus(face, now);
     context.append(status.wireEncode());
   }
   context.end();
@@ -294,11 +294,11 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
   }
 
   auto now = time::steady_clock::now();
-  for (const auto& face : m_faceTable) {
-    if (!doesMatchFilter(faceFilter, face)) {
+  for (const Face& face : m_faceTable) {
+    if (!matchFilter(faceFilter, face)) {
       continue;
     }
-    ndn::nfd::FaceStatus status = collectFaceStatus(*face, now);
+    ndn::nfd::FaceStatus status = collectFaceStatus(face, now);
     context.append(status.wireEncode());
   }
 
@@ -306,41 +306,41 @@ FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
 }
 
 bool
-FaceManager::doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr<Face> face)
+FaceManager::matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
 {
   if (filter.hasFaceId() &&
-      filter.getFaceId() != static_cast<uint64_t>(face->getId())) {
+      filter.getFaceId() != static_cast<uint64_t>(face.getId())) {
     return false;
   }
 
   if (filter.hasUriScheme() &&
-      filter.getUriScheme() != face->getRemoteUri().getScheme() &&
-      filter.getUriScheme() != face->getLocalUri().getScheme()) {
+      filter.getUriScheme() != face.getRemoteUri().getScheme() &&
+      filter.getUriScheme() != face.getLocalUri().getScheme()) {
     return false;
   }
 
   if (filter.hasRemoteUri() &&
-      filter.getRemoteUri() != face->getRemoteUri().toString()) {
+      filter.getRemoteUri() != face.getRemoteUri().toString()) {
     return false;
   }
 
   if (filter.hasLocalUri() &&
-      filter.getLocalUri() != face->getLocalUri().toString()) {
+      filter.getLocalUri() != face.getLocalUri().toString()) {
     return false;
   }
 
   if (filter.hasFaceScope() &&
-      filter.getFaceScope() != face->getScope()) {
+      filter.getFaceScope() != face.getScope()) {
     return false;
   }
 
   if (filter.hasFacePersistency() &&
-      filter.getFacePersistency() != face->getPersistency()) {
+      filter.getFacePersistency() != face.getPersistency()) {
     return false;
   }
 
   if (filter.hasLinkType() &&
-      filter.getLinkType() != face->getLinkType()) {
+      filter.getLinkType() != face.getLinkType()) {
     return false;
   }
 

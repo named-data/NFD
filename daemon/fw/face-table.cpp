@@ -120,7 +120,7 @@ FaceTable::remove(shared_ptr<Face> face)
 FaceTable::ForwardRange
 FaceTable::getForwardRange() const
 {
-  return m_faces | boost::adaptors::map_values;
+  return m_faces | boost::adaptors::map_values | boost::adaptors::indirected;
 }
 
 FaceTable::const_iterator

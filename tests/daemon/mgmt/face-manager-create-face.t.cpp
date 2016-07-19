@@ -25,18 +25,17 @@
 
 #include "mgmt/face-manager.hpp"
 #include "fw/forwarder.hpp"
+#include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
+
+#include <thread>
+#include <boost/property_tree/info_parser.hpp>
 
 #include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
-#include <ndn-cxx/mgmt/dispatcher.hpp>
-#include <ndn-cxx/util/dummy-client-face.hpp>
-
-#include <boost/property_tree/info_parser.hpp>
-
 namespace nfd {
 namespace tests {
-
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
@@ -47,9 +46,10 @@ class FaceManagerNode
 {
 public:
   FaceManagerNode(ndn::KeyChain& keyChain, const std::string& port = "6363")
-    : face(getGlobalIoService(), keyChain, {true, true})
+    : faceTable(forwarder.getFaceTable())
+    , face(getGlobalIoService(), keyChain, {true, true})
     , dispatcher(face, keyChain, ndn::security::SigningInfo())
-    , manager(forwarder.getFaceTable(), dispatcher, validator)
+    , manager(faceTable, dispatcher, validator)
   {
     dispatcher.addTopPrefix("/localhost/nfd");
 
@@ -95,16 +95,17 @@ public:
   void
   closeFaces()
   {
-    std::vector<shared_ptr<Face>> facesToClose;
+    std::vector<std::reference_wrapper<Face>> facesToClose;
     std::copy(forwarder.getFaceTable().begin(), forwarder.getFaceTable().end(),
               std::back_inserter(facesToClose));
-    for (auto face : facesToClose) {
-      face->close();
+    for (Face& face : facesToClose) {
+      face.close();
     }
   }
 
 public:
   Forwarder forwarder;
+  FaceTable& faceTable;
   ndn::util::DummyClientFace face;
   ndn::mgmt::Dispatcher dispatcher;
   CommandValidator validator;
@@ -119,14 +120,16 @@ public:
     : node1(m_keyChain, "16363")
     , node2(m_keyChain, "26363")
   {
-    advanceClocks(time::milliseconds(1), 100);
+    advanceClocks(time::milliseconds(1), 5);
   }
 
   ~FaceManagerFixture()
   {
+    // Explicitly closing faces is necessary. Otherwise, in a subsequent test case,
+    // incoming packets may be delivered to an old socket from previous test cases.
     node1.closeFaces();
     node2.closeFaces();
-    advanceClocks(time::milliseconds(1), 100);
+    advanceClocks(time::milliseconds(1), 5);
   }
 
 public:
@@ -262,13 +265,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
   commandName.append(FaceType().getParameters().wireEncode());
-
-  shared_ptr<Interest> command(make_shared<Interest>(commandName));
+  auto command = makeInterest(commandName);
   m_keyChain.sign(*command);
 
   bool hasCallbackFired = false;
   this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
-      // std::cout << response << std::endl;
       if (!command->getName().isPrefixOf(response.getName())) {
         return;
       }
@@ -289,7 +290,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
     });
 
   this->node1.face.receive(*command);
-  this->advanceClocks(time::milliseconds(1), 100);
+  this->advanceClocks(time::milliseconds(1), 5);
 
   BOOST_CHECK(hasCallbackFired);
 }
@@ -313,12 +314,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
     commandName.append(FaceType1().getParameters().wireEncode());
-
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 
     this->node1.face.receive(*command);
-    this->advanceClocks(time::milliseconds(1), 10);
+    this->advanceClocks(time::milliseconds(1), 5);
   }
 
   //
@@ -328,8 +328,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
     commandName.append(FaceType2().getParameters().wireEncode());
-
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 
     bool hasCallbackFired = false;
@@ -349,7 +348,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
       });
 
     this->node1.face.receive(*command);
-    this->advanceClocks(time::milliseconds(1), 10);
+    this->advanceClocks(time::milliseconds(1), 5);
 
     BOOST_CHECK(hasCallbackFired);
   }
@@ -389,8 +388,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
     commandName.append(OtherNodeFace().getParameters().wireEncode());
-
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 
     ndn::util::signal::ScopedConnection connection =
@@ -411,19 +409,21 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
         });
 
     this->node2.face.receive(*command);
-    this->advanceClocks(time::milliseconds(1), 10);
+    this->advanceClocks(time::milliseconds(1), 5); // let node2 process command and send Interest
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // allow wallclock time for socket IO
+    this->advanceClocks(time::milliseconds(1), 5); // let node1 accept Interest and create on-demand face
   }
 
   // make sure there is on-demand face
-  bool onDemandFaceFound = false;
   FaceUri onDemandFaceUri(FaceType().getParameters().getUri());
-  for (auto face : this->node1.forwarder.getFaceTable()) {
-    if (face->getRemoteUri() == onDemandFaceUri) {
-      onDemandFaceFound = true;
+  const Face* foundFace = nullptr;
+  for (const Face& face : this->node1.faceTable) {
+    if (face.getRemoteUri() == onDemandFaceUri) {
+      foundFace = &face;
       break;
     }
   }
-  BOOST_REQUIRE(onDemandFaceFound);
+  BOOST_REQUIRE_MESSAGE(foundFace != nullptr, "on-demand face is not created");
 
   //
   {
@@ -432,12 +432,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
     commandName.append(FaceType().getParameters().wireEncode());
-
-    shared_ptr<Interest> command(make_shared<Interest>(commandName));
+    auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 
     bool hasCallbackFired = false;
-    this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
+    this->node1.face.onSendData.connect(
+      [this, command, &hasCallbackFired, foundFace] (const Data& response) {
         if (!command->getName().isPrefixOf(response.getName())) {
           return;
         }
@@ -447,13 +447,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
 
         ControlParameters expectedParams(FaceType().getParameters());
         ControlParameters actualParams(actual.getBody());
-        BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
+        BOOST_CHECK_EQUAL(actualParams.getFacePersistency(), expectedParams.getFacePersistency());
+        BOOST_CHECK_EQUAL(actualParams.getFaceId(), foundFace->getId());
+        BOOST_CHECK_EQUAL(foundFace->getPersistency(), expectedParams.getFacePersistency());
 
         hasCallbackFired = true;
       });
 
     this->node1.face.receive(*command);
-    this->advanceClocks(time::milliseconds(1), 10);
+    this->advanceClocks(time::milliseconds(1), 5);
 
     BOOST_CHECK(hasCallbackFired);
   }

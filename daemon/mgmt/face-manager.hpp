@@ -105,7 +105,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
 
 private: // helpers for StatusDataset handler
   bool
-  doesMatchFilter(const ndn::nfd::FaceQueryFilter& filter, shared_ptr<Face> face);
+  matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face);
 
   /** \brief get status of face, including properties and counters
    */
