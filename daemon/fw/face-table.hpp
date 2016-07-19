@@ -53,7 +53,7 @@ public:
   VIRTUAL_WITH_TESTS void
   add(shared_ptr<Face> face);
 
-  /** \brief add a special Face with a reserved FaceId
+  /** \brief add a special face with a reserved FaceId
    */
   VIRTUAL_WITH_TESTS void
   addReserved(shared_ptr<Face> face, FaceId faceId);
@@ -86,22 +86,22 @@ public: // enumeration
   end() const;
 
 public: // signals
-  /** \brief fires after a Face is added
+  /** \brief fires after a face is added
    */
-  signal::Signal<FaceTable, shared_ptr<Face>> afterAdd;
+  signal::Signal<FaceTable, Face&> afterAdd;
 
-  /** \brief fires before a Face is removed
+  /** \brief fires before a face is removed
    *
-   *  FaceId is valid when this event is fired
+   *  When this signal is emitted, face is still in FaceTable and has valid FaceId.
    */
-  signal::Signal<FaceTable, shared_ptr<Face>> beforeRemove;
+  signal::Signal<FaceTable, Face&> beforeRemove;
 
 private:
   void
   addImpl(shared_ptr<Face> face, FaceId faceId);
 
   void
-  remove(shared_ptr<Face> face);
+  remove(FaceId faceId);
 
   ForwardRange
   getForwardRange() const;

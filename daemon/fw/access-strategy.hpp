@@ -123,7 +123,7 @@ private: // StrategyInfo
   typedef std::unordered_map<FaceId, FaceInfo> FaceInfoTable;
 
   void
-  removeFaceInfo(shared_ptr<Face> face);
+  removeFaceInfo(const Face& face);
 
 private: // forwarding procedures
   void

@@ -52,9 +52,7 @@ namespace nfd {
 
 NFD_LOG_INIT("FaceManager");
 
-FaceManager::FaceManager(FaceTable& faceTable,
-                         Dispatcher& dispatcher,
-                         CommandValidator& validator)
+FaceManager::FaceManager(FaceTable& faceTable, Dispatcher& dispatcher, CommandValidator& validator)
   : NfdManagerBase(dispatcher, validator, "faces")
   , m_faceTable(faceTable)
 {
@@ -74,11 +72,9 @@ FaceManager::FaceManager(FaceTable& faceTable,
   registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _1, _2, _3));
   registerStatusDatasetHandler("query", bind(&FaceManager::queryFaces, this, _1, _2, _3));
 
-  auto postNotification = registerNotificationStream("events");
-  m_faceAddConn =
-    m_faceTable.afterAdd.connect(bind(&FaceManager::afterFaceAdded, this, _1, postNotification));
-  m_faceRemoveConn =
-    m_faceTable.beforeRemove.connect(bind(&FaceManager::afterFaceRemoved, this, _1, postNotification));
+  m_postNotification = registerNotificationStream("events");
+  m_faceAddConn = m_faceTable.afterAdd.connect(bind(&FaceManager::notifyAddFace, this, _1));
+  m_faceRemoveConn = m_faceTable.beforeRemove.connect(bind(&FaceManager::notifyRemoveFace, this, _1));
 }
 
 void
@@ -386,25 +382,23 @@ FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
 }
 
 void
-FaceManager::afterFaceAdded(shared_ptr<Face> face,
-                            const ndn::mgmt::PostNotification& post)
+FaceManager::notifyAddFace(const Face& face)
 {
   ndn::nfd::FaceEventNotification notification;
   notification.setKind(ndn::nfd::FACE_EVENT_CREATED);
-  collectFaceProperties(*face, notification);
+  collectFaceProperties(face, notification);
 
-  post(notification.wireEncode());
+  m_postNotification(notification.wireEncode());
 }
 
 void
-FaceManager::afterFaceRemoved(shared_ptr<Face> face,
-                              const ndn::mgmt::PostNotification& post)
+FaceManager::notifyRemoveFace(const Face& face)
 {
   ndn::nfd::FaceEventNotification notification;
   notification.setKind(ndn::nfd::FACE_EVENT_DESTROYED);
-  collectFaceProperties(*face, notification);
+  collectFaceProperties(face, notification);
 
-  post(notification.wireEncode());
+  m_postNotification(notification.wireEncode());
 }
 
 void

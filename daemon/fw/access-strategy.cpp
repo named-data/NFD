@@ -272,9 +272,9 @@ AccessStrategy::FaceInfo::FaceInfo()
 }
 
 void
-AccessStrategy::removeFaceInfo(shared_ptr<Face> face)
+AccessStrategy::removeFaceInfo(const Face& face)
 {
-  m_fit.erase(face->getId());
+  m_fit.erase(face.getId());
 }
 
 } // namespace fw

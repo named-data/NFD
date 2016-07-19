@@ -121,12 +121,10 @@ private: // helpers for StatusDataset handler
 
 private: // NotificationStream
   void
-  afterFaceAdded(shared_ptr<Face> face,
-                 const ndn::mgmt::PostNotification& post);
+  notifyAddFace(const Face& face);
 
   void
-  afterFaceRemoved(shared_ptr<Face> face,
-                   const ndn::mgmt::PostNotification& post);
+  notifyRemoveFace(const Face& face);
 
 private: // configuration
   void
@@ -155,6 +153,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   FaceTable& m_faceTable;
+  ndn::mgmt::PostNotification m_postNotification;
   signal::ScopedConnection m_faceAddConn;
   signal::ScopedConnection m_faceRemoveConn;
 };

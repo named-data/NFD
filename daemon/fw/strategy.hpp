@@ -178,8 +178,8 @@ protected: // accessors
   getFaceTable() const;
 
 protected: // accessors
-  signal::Signal<FaceTable, shared_ptr<Face>>& afterAddFace;
-  signal::Signal<FaceTable, shared_ptr<Face>>& beforeRemoveFace;
+  signal::Signal<FaceTable, Face&>& afterAddFace;
+  signal::Signal<FaceTable, Face&>& beforeRemoveFace;
 
 private:
   Name m_name;

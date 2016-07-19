@@ -48,11 +48,11 @@ public:
   FaceTableAccessTestStrategy(Forwarder& forwarder)
     : DummyStrategy(forwarder, Name("ndn:/strategy"))
   {
-    this->afterAddFace.connect([this] (shared_ptr<Face> face) {
-      this->addedFaces.push_back(face->getId());
+    this->afterAddFace.connect([this] (const Face& face) {
+      this->addedFaces.push_back(face.getId());
     });
-    this->beforeRemoveFace.connect([this] (shared_ptr<Face> face) {
-      this->removedFaces.push_back(face->getId());
+    this->beforeRemoveFace.connect([this] (const Face& face) {
+      this->removedFaces.push_back(face.getId());
     });
   }
 

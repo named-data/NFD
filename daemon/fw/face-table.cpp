@@ -93,25 +93,28 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
   face->afterReceiveInterest.connect(bind(&Forwarder::startProcessInterest, &m_forwarder, ref(*face), _1));
   face->afterReceiveData.connect(bind(&Forwarder::startProcessData, &m_forwarder, ref(*face), _1));
   face->afterReceiveNack.connect(bind(&Forwarder::startProcessNack, &m_forwarder, ref(*face), _1));
-  connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, face));
+  connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, faceId));
 
-  this->afterAdd(face);
+  this->afterAdd(*face);
 }
 
 void
-FaceTable::remove(shared_ptr<Face> face)
+FaceTable::remove(FaceId faceId)
 {
-  this->beforeRemove(face);
+  auto i = m_faces.find(faceId);
+  BOOST_ASSERT(i != m_faces.end());
+  shared_ptr<Face> face = i->second;
 
-  FaceId faceId = face->getId();
-  m_faces.erase(faceId);
+  this->beforeRemove(*face);
+
+  m_forwarder.getFib().removeNextHopFromAllEntries(*face);
+
+  m_faces.erase(i);
   face->setId(face::INVALID_FACEID);
 
   NFD_LOG_INFO("Removed face id=" << faceId <<
                " remote=" << face->getRemoteUri() <<
                " local=" << face->getLocalUri());
-
-  m_forwarder.getFib().removeNextHopFromAllEntries(*face);
 
   // defer Face deallocation, so that Transport isn't deallocated during afterStateChange signal
   getGlobalIoService().post([face] {});

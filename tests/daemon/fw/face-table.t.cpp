@@ -42,8 +42,8 @@ BOOST_AUTO_TEST_CASE(AddRemove)
 
   std::vector<FaceId> addHistory;
   std::vector<FaceId> removeHistory;
-  faceTable.afterAdd.connect([&] (shared_ptr<Face> face) { addHistory.push_back(face->getId()); });
-  faceTable.beforeRemove.connect([&] (shared_ptr<Face> face) { removeHistory.push_back(face->getId()); });
+  faceTable.afterAdd.connect([&] (const Face& face) { addHistory.push_back(face.getId()); });
+  faceTable.beforeRemove.connect([&] (const Face& face) { removeHistory.push_back(face.getId()); });
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();
