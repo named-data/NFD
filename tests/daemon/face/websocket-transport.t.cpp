@@ -115,7 +115,13 @@ public:
                      const time::milliseconds& pongTimeout = time::seconds(1))
   {
     this->serverListen(ep, pongTimeout);
-    std::string uri = "ws://" + ep.address().to_string() + ":" + to_string(ep.port());
+    std::string uri;
+    if (ep.address().is_v6()) {
+      uri = "ws://[" + ep.address().to_string() + "]:" + to_string(ep.port());
+    }
+    else {
+      uri = "ws://" + ep.address().to_string() + ":" + to_string(ep.port());
+    }
     this->clientConnect(uri);
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, // serverHandleOpen, clientHandleOpen
                         time::seconds(1)), LimitedIo::EXCEED_OPS);
@@ -243,6 +249,29 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
   BOOST_CHECK_EQUAL(transport->getRemoteUri().getHost(), address.to_string());
   BOOST_CHECK_EQUAL(transport->getRemoteUri().getPath(), "");
   BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
+BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4MappedIpv6)
+{
+  auto address4 = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  SKIP_IF_IP_UNAVAILABLE(address4);
+  auto address6 = ip::address_v6::v4_mapped(address4);
+  BOOST_REQUIRE(address6.is_v4_mapped());
+  this->endToEndInitialize(ip::tcp::endpoint(address6, 20070));
+
+  checkStaticPropertiesInitialized(*transport);
+
+  BOOST_CHECK_EQUAL(transport->getLocalUri().getScheme(), "ws");
+  BOOST_CHECK_EQUAL(transport->getLocalUri().getHost(), "::ffff:127.0.0.1");
+  BOOST_CHECK_EQUAL(transport->getLocalUri().getPort(), "20070");
+  BOOST_CHECK_EQUAL(transport->getLocalUri().getPath(), "");
+  BOOST_CHECK_EQUAL(transport->getRemoteUri().getScheme(), "wsclient");
+  BOOST_CHECK_EQUAL(transport->getRemoteUri().getHost(), "::ffff:127.0.0.1");
+  BOOST_CHECK_EQUAL(transport->getRemoteUri().getPath(), "");
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);

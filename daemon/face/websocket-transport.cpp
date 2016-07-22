@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,24 @@ namespace face {
 
 NFD_LOG_INIT("WebSocketTransport");
 
+static bool
+isLoopback(const boost::asio::ip::address& addr)
+{
+  if (addr.is_loopback()) {
+    return true;
+  }
+  // Workaround for loopback IPv4-mapped IPv6 addresses
+  // see https://svn.boost.org/trac/boost/ticket/9084
+  else if (addr.is_v6()) {
+    auto addr6 = addr.to_v6();
+    if (addr6.is_v4_mapped()) {
+      return addr6.to_v4().is_loopback();
+    }
+  }
+
+  return false;
+}
+
 WebSocketTransport::WebSocketTransport(websocketpp::connection_hdl hdl,
                                        websocket::Server& server,
                                        time::milliseconds pingInterval)
@@ -41,11 +59,13 @@ WebSocketTransport::WebSocketTransport(websocketpp::connection_hdl hdl,
   this->setLocalUri(FaceUri(sock.local_endpoint(), "ws"));
   this->setRemoteUri(FaceUri(sock.remote_endpoint(), "wsclient"));
 
-  if (sock.local_endpoint().address().is_loopback() &&
-      sock.remote_endpoint().address().is_loopback())
+  if (isLoopback(sock.local_endpoint().address()) &&
+      isLoopback(sock.remote_endpoint().address())) {
     this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
-  else
+  }
+  else {
     this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  }
 
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
