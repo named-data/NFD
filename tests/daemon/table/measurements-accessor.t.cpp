@@ -31,9 +31,10 @@
 #include "../fw/install-strategy.hpp"
 
 namespace nfd {
+namespace measurements {
 namespace tests {
 
-using measurements::Entry;
+using namespace nfd::tests;
 
 class MeasurementsAccessorTestStrategy : public DummyStrategy
 {
@@ -81,7 +82,8 @@ protected:
   MeasurementsAccessor& accessor2;
 };
 
-BOOST_FIXTURE_TEST_SUITE(TableMeasurementsAccessor, MeasurementsAccessorFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestMeasurementsAccessor, MeasurementsAccessorFixture)
 
 BOOST_AUTO_TEST_CASE(Get)
 {
@@ -100,17 +102,17 @@ BOOST_AUTO_TEST_CASE(Get)
 
 BOOST_AUTO_TEST_CASE(GetParent)
 {
-  shared_ptr<Entry> entryRoot = measurements.get("/");
-  BOOST_CHECK(accessor1.getParent(*entryRoot) == nullptr);
-  BOOST_CHECK(accessor2.getParent(*entryRoot) == nullptr);
+  Entry& entryRoot = measurements.get("/");
+  BOOST_CHECK(accessor1.getParent(entryRoot) == nullptr);
+  BOOST_CHECK(accessor2.getParent(entryRoot) == nullptr);
 
-  shared_ptr<Entry> entryABC = measurements.get("/A/B/C");
-  BOOST_CHECK(accessor1.getParent(*entryABC) != nullptr);
-  BOOST_CHECK(accessor2.getParent(*entryABC) == nullptr);
+  Entry& entryABC = measurements.get("/A/B/C");
+  BOOST_CHECK(accessor1.getParent(entryABC) != nullptr);
+  BOOST_CHECK(accessor2.getParent(entryABC) == nullptr);
 
-  shared_ptr<Entry> entryAB = measurements.get("/A/B");
-  BOOST_CHECK(accessor1.getParent(*entryAB) == nullptr);
-  // whether accessor2.getParent(*entryAB) can return an Entry is undefined,
+  Entry& entryAB = measurements.get("/A/B");
+  BOOST_CHECK(accessor1.getParent(entryAB) == nullptr);
+  // whether accessor2.getParent(entryAB) can return an Entry is undefined,
   // because strategy2 shouldn't obtain entryAB in the first place
 }
 
@@ -153,7 +155,9 @@ BOOST_AUTO_TEST_CASE(FindExactMatch)
   BOOST_CHECK(accessor2.findExactMatch("/F"    ) == nullptr);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestMeasurementsAccessor
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
+} // namespace measurements
 } // namespace nfd

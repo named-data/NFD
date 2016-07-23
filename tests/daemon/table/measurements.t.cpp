@@ -30,7 +30,10 @@
 #include "tests/test-common.hpp"
 
 namespace nfd {
+namespace measurements {
 namespace tests {
+
+using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
 
@@ -51,19 +54,19 @@ BOOST_FIXTURE_TEST_SUITE(TestMeasurements, MeasurementsFixture)
 
 BOOST_AUTO_TEST_CASE(Get_Parent)
 {
-  shared_ptr<measurements::Entry> entryAB = measurements.get("/A/B");
-  BOOST_REQUIRE(entryAB != nullptr);
-  BOOST_CHECK_EQUAL(entryAB->getName(), "/A/B");
+  Entry& entryAB = measurements.get("/A/B");
+  BOOST_CHECK_EQUAL(entryAB.getName(), "/A/B");
 
-  shared_ptr<measurements::Entry> entry0 = measurements.get("/");
-  BOOST_REQUIRE(entry0 != nullptr);
+  Entry& entry0 = measurements.get("/");
+  BOOST_CHECK_EQUAL(entry0.getName(), "/");
 
-  shared_ptr<measurements::Entry> entryA = measurements.getParent(*entryAB);
+  Entry* entryA = measurements.getParent(entryAB);
   BOOST_REQUIRE(entryA != nullptr);
   BOOST_CHECK_EQUAL(entryA->getName(), "/A");
 
-  shared_ptr<measurements::Entry> entry0c = measurements.getParent(*entryA);
-  BOOST_CHECK_EQUAL(entry0, entry0c);
+  Entry* entry0c = measurements.getParent(*entryA);
+  BOOST_REQUIRE(entry0c != nullptr);
+  BOOST_CHECK_EQUAL(&entry0, entry0c);
 }
 
 BOOST_AUTO_TEST_CASE(GetWithFibEntry)
@@ -73,13 +76,11 @@ BOOST_AUTO_TEST_CASE(GetWithFibEntry)
   const fib::Entry* fibA = fib.insert("/A").first;
   const fib::Entry* fibAB = fib.insert("/A/B").first;
 
-  shared_ptr<measurements::Entry> entryA = measurements.get(*fibA);
-  BOOST_REQUIRE(entryA != nullptr);
-  BOOST_CHECK_EQUAL(entryA->getName(), "/A");
+  Entry& entryA = measurements.get(*fibA);
+  BOOST_CHECK_EQUAL(entryA.getName(), "/A");
 
-  shared_ptr<measurements::Entry> entryAB = measurements.get(*fibAB);
-  BOOST_REQUIRE(entryAB != nullptr);
-  BOOST_CHECK_EQUAL(entryAB->getName(), "/A/B");
+  Entry& entryAB = measurements.get(*fibAB);
+  BOOST_CHECK_EQUAL(entryAB.getName(), "/A/B");
 }
 
 BOOST_AUTO_TEST_CASE(GetWithEmptyFibEntry) // Bug 3275
@@ -88,9 +89,8 @@ BOOST_AUTO_TEST_CASE(GetWithEmptyFibEntry) // Bug 3275
 
   const fib::Entry& fib0 = fib.findLongestPrefixMatch("/");
 
-  shared_ptr<measurements::Entry> entry0 = measurements.get(fib0);
-  BOOST_REQUIRE(entry0 != nullptr);
-  BOOST_CHECK_EQUAL(entry0->getName(), "/");
+  Entry& entry0 = measurements.get(fib0);
+  BOOST_CHECK_EQUAL(entry0.getName(), "/");
 }
 
 BOOST_AUTO_TEST_CASE(GetWithPitEntry)
@@ -104,13 +104,11 @@ BOOST_AUTO_TEST_CASE(GetWithPitEntry)
   shared_ptr<Interest> interestFull = makeInterest(fullName);
   shared_ptr<pit::Entry> pitFull = pit.insert(*interestFull).first;
 
-  shared_ptr<measurements::Entry> entryA = measurements.get(*pitA);
-  BOOST_REQUIRE(entryA != nullptr);
-  BOOST_CHECK_EQUAL(entryA->getName(), "/A");
+  Entry& entryA = measurements.get(*pitA);
+  BOOST_CHECK_EQUAL(entryA.getName(), "/A");
 
-  shared_ptr<measurements::Entry> entryFull = measurements.get(*pitFull);
-  BOOST_REQUIRE(entryFull != nullptr);
-  BOOST_CHECK_EQUAL(entryFull->getName(), fullName);
+  Entry& entryFull = measurements.get(*pitFull);
+  BOOST_CHECK_EQUAL(entryFull.getName(), fullName);
 }
 
 class DummyStrategyInfo1 : public fw::StrategyInfo
@@ -136,20 +134,20 @@ public:
 BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
 {
   measurements.get("/A");
-  measurements.get("/A/B/C")->getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C").getOrCreateStrategyInfo<DummyStrategyInfo1>();
   measurements.get("/A/B/C/D");
 
-  shared_ptr<measurements::Entry> found1 = measurements.findLongestPrefixMatch("/A/B/C/D/E");
+  Entry* found1 = measurements.findLongestPrefixMatch("/A/B/C/D/E");
   BOOST_REQUIRE(found1 != nullptr);
   BOOST_CHECK_EQUAL(found1->getName(), "/A/B/C/D");
 
-  shared_ptr<measurements::Entry> found2 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
-      measurements::EntryWithStrategyInfo<DummyStrategyInfo1>());
+  Entry* found2 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
+      EntryWithStrategyInfo<DummyStrategyInfo1>());
   BOOST_REQUIRE(found2 != nullptr);
   BOOST_CHECK_EQUAL(found2->getName(), "/A/B/C");
 
-  shared_ptr<measurements::Entry> found3 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
-      measurements::EntryWithStrategyInfo<DummyStrategyInfo2>());
+  Entry* found3 = measurements.findLongestPrefixMatch("/A/B/C/D/E",
+      EntryWithStrategyInfo<DummyStrategyInfo2>());
   BOOST_CHECK(found3 == nullptr);
 }
 
@@ -158,23 +156,23 @@ BOOST_AUTO_TEST_CASE(FindLongestPrefixMatchWithPitEntry)
   Pit pit(nameTree);
 
   measurements.get("/A");
-  measurements.get("/A/B/C")->getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C").getOrCreateStrategyInfo<DummyStrategyInfo1>();
   measurements.get("/A/B/C/D");
 
   shared_ptr<Interest> interest = makeInterest("/A/B/C/D/E");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
-  shared_ptr<measurements::Entry> found1 = measurements.findLongestPrefixMatch(*pitEntry);
+  Entry* found1 = measurements.findLongestPrefixMatch(*pitEntry);
   BOOST_REQUIRE(found1 != nullptr);
   BOOST_CHECK_EQUAL(found1->getName(), "/A/B/C/D");
 
-  shared_ptr<measurements::Entry> found2 = measurements.findLongestPrefixMatch(*pitEntry,
-      measurements::EntryWithStrategyInfo<DummyStrategyInfo1>());
+  Entry* found2 = measurements.findLongestPrefixMatch(*pitEntry,
+      EntryWithStrategyInfo<DummyStrategyInfo1>());
   BOOST_REQUIRE(found2 != nullptr);
   BOOST_CHECK_EQUAL(found2->getName(), "/A/B/C");
 
-  shared_ptr<measurements::Entry> found3 = measurements.findLongestPrefixMatch(*pitEntry,
-      measurements::EntryWithStrategyInfo<DummyStrategyInfo2>());
+  Entry* found3 = measurements.findLongestPrefixMatch(*pitEntry,
+      EntryWithStrategyInfo<DummyStrategyInfo2>());
   BOOST_CHECK(found3 == nullptr);
 }
 
@@ -186,9 +184,9 @@ BOOST_AUTO_TEST_CASE(Lifetime)
 
   BOOST_CHECK_EQUAL(measurements.size(), 0);
 
-  shared_ptr<measurements::Entry> entryA = measurements.get(nameA);
-  shared_ptr<measurements::Entry> entryB = measurements.get(nameB);
-  shared_ptr<measurements::Entry> entryC = measurements.get(nameC);
+  Entry& entryA = measurements.get(nameA);
+  measurements.get(nameB);
+  Entry& entryC = measurements.get(nameC);
   BOOST_CHECK_EQUAL(measurements.size(), 3);
 
   const time::nanoseconds EXTEND_A = time::seconds(2);
@@ -202,15 +200,12 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   BOOST_ASSERT(CHECK2 < EXTEND_C);
   BOOST_ASSERT(EXTEND_C < CHECK3);
 
-  measurements.extendLifetime(*entryA, EXTEND_A);
-  measurements.extendLifetime(*entryC, EXTEND_C);
+  measurements.extendLifetime(entryA, EXTEND_A);
+  measurements.extendLifetime(entryC, EXTEND_C);
   // remaining lifetime:
   //   A = initial lifetime, because it's extended by less duration
   //   B = initial lifetime
   //   C = EXTEND_C
-  entryA.reset();
-  entryB.reset();
-  entryC.reset();
 
   this->advanceClocks(time::milliseconds(100), CHECK1);
   BOOST_CHECK(measurements.findExactMatch(nameA) != nullptr);
@@ -235,7 +230,9 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
 {
   size_t nNameTreeEntriesBefore = nameTree.size();
 
-  shared_ptr<measurements::Entry> entry = measurements.get("/A");
+  measurements.get("/A");
+  BOOST_CHECK_EQUAL(measurements.size(), 1);
+
   this->advanceClocks(Measurements::getInitialLifetime() + time::milliseconds(10));
   BOOST_CHECK_EQUAL(measurements.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
@@ -245,4 +242,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestMeasurements
 BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
+} // namespace measurements
 } // namespace nfd

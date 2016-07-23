@@ -219,14 +219,14 @@ AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const ndn::Inte
 shared_ptr<NamespaceInfo>
 AsfMeasurements::getNamespaceInfo(const ndn::Name& prefix)
 {
-  shared_ptr<measurements::Entry> me = m_measurements.findLongestPrefixMatch(prefix);
+  measurements::Entry* me = m_measurements.findLongestPrefixMatch(prefix);
 
   if (me == nullptr) {
     return nullptr;
   }
 
   // Set or update entry lifetime
-  extendLifetime(me);
+  extendLifetime(*me);
 
   shared_ptr<NamespaceInfo> info = me->getOrCreateStrategyInfo<NamespaceInfo>();
   BOOST_ASSERT(info != nullptr);
@@ -237,7 +237,7 @@ AsfMeasurements::getNamespaceInfo(const ndn::Name& prefix)
 NamespaceInfo&
 AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest)
 {
-  shared_ptr<measurements::Entry> me = m_measurements.get(fibEntry);
+  measurements::Entry* me = m_measurements.get(fibEntry);
 
   // If the FIB entry is not under the strategy's namespace, find a part of the prefix
   // that falls under the strategy's namespace
@@ -250,7 +250,7 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn:
   BOOST_ASSERT(me != nullptr);
 
   // Set or update entry lifetime
-  extendLifetime(me);
+  extendLifetime(*me);
 
   shared_ptr<NamespaceInfo> info = me->getOrCreateStrategyInfo<NamespaceInfo>();
   BOOST_ASSERT(info != nullptr);
@@ -259,11 +259,9 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn:
 }
 
 void
-AsfMeasurements::extendLifetime(shared_ptr<measurements::Entry> me)
+AsfMeasurements::extendLifetime(measurements::Entry& me)
 {
-  if (me != nullptr) {
-    m_measurements.extendLifetime(*me, MEASUREMENTS_LIFETIME);
-  }
+  m_measurements.extendLifetime(me, MEASUREMENTS_LIFETIME);
 }
 
 } // namespace asf

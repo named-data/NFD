@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,34 +41,34 @@ class Entry;
 
 namespace measurements {
 
-/** \brief a predicate that accepts or rejects a \p Entry
+/** \brief a predicate that accepts or rejects an entry
  */
 typedef std::function<bool(const Entry&)> EntryPredicate;
 
-/** \brief an \p EntryPredicate that accepts any \p Entry
+/** \brief an \p EntryPredicate that accepts any entry
  */
 class AnyEntry
 {
 public:
   bool
-  operator()(const Entry& entry)
+  operator()(const Entry& entry) const
   {
     return true;
   }
 };
 
+/** \brief an \p EntryPredicate that accepts an entry if it has StrategyInfo of type T
+ */
 template<typename T>
 class EntryWithStrategyInfo
 {
 public:
   bool
-  operator()(const Entry& entry)
+  operator()(const Entry& entry) const
   {
     return entry.getStrategyInfo<T>() != nullptr;
   }
 };
-
-} // namespace measurements
 
 /** \brief represents the Measurements table
  */
@@ -80,42 +80,40 @@ public:
 
   /** \brief find or insert a Measurements entry for \p name
    */
-  shared_ptr<measurements::Entry>
+  Entry&
   get(const Name& name);
 
   /** \brief find or insert a Measurements entry for \p fibEntry.getPrefix()
    */
-  shared_ptr<measurements::Entry>
+  Entry&
   get(const fib::Entry& fibEntry);
 
   /** \brief find or insert a Measurements entry for \p pitEntry.getName()
    */
-  shared_ptr<measurements::Entry>
+  Entry&
   get(const pit::Entry& pitEntry);
 
   /** \brief find or insert a Measurements entry for child's parent
    *  \retval nullptr if child is the root entry
    */
-  shared_ptr<measurements::Entry>
-  getParent(const measurements::Entry& child);
+  Entry*
+  getParent(const Entry& child);
 
   /** \brief perform a longest prefix match for \p name
    */
-  shared_ptr<measurements::Entry>
+  Entry*
   findLongestPrefixMatch(const Name& name,
-                         const measurements::EntryPredicate& pred =
-                             measurements::AnyEntry()) const;
+                         const EntryPredicate& pred = AnyEntry()) const;
 
   /** \brief perform a longest prefix match for \p pitEntry.getName()
    */
-  shared_ptr<measurements::Entry>
+  Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,
-                         const measurements::EntryPredicate& pred =
-                             measurements::AnyEntry()) const;
+                         const EntryPredicate& pred = AnyEntry()) const;
 
   /** \brief perform an exact match
    */
-  shared_ptr<measurements::Entry>
+  Entry*
   findExactMatch(const Name& name) const;
 
   static time::nanoseconds
@@ -126,23 +124,23 @@ public:
    *  The entry will be kept until at least now()+lifetime.
    */
   void
-  extendLifetime(measurements::Entry& entry, const time::nanoseconds& lifetime);
+  extendLifetime(Entry& entry, const time::nanoseconds& lifetime);
 
   size_t
   size() const;
 
 private:
   void
-  cleanup(measurements::Entry& entry);
+  cleanup(Entry& entry);
 
-  shared_ptr<measurements::Entry>
+  Entry&
   get(name_tree::Entry& nte);
 
   /** \tparam K Name or shared_ptr<name_tree::Entry>
    */
   template<typename K>
-  shared_ptr<measurements::Entry>
-  findLongestPrefixMatchImpl(const K& key, const measurements::EntryPredicate& pred) const;
+  Entry*
+  findLongestPrefixMatchImpl(const K& key, const EntryPredicate& pred) const;
 
 private:
   NameTree& m_nameTree;
@@ -160,6 +158,10 @@ Measurements::size() const
 {
   return m_nItems;
 }
+
+} // namespace measurements
+
+using measurements::Measurements;
 
 } // namespace nfd
 

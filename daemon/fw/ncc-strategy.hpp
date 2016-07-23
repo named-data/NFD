@@ -117,10 +117,10 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   };
 
 protected:
-  shared_ptr<MeasurementsEntryInfo>
-  getMeasurementsEntryInfo(shared_ptr<measurements::Entry> entry);
+  MeasurementsEntryInfo&
+  getMeasurementsEntryInfo(measurements::Entry* entry);
 
-  shared_ptr<MeasurementsEntryInfo>
+  MeasurementsEntryInfo&
   getMeasurementsEntryInfo(shared_ptr<pit::Entry> entry);
 
   /// propagate to another upstream

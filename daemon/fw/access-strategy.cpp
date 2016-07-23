@@ -235,7 +235,7 @@ AccessStrategy::MtInfo::MtInfo()
 std::tuple<Name, shared_ptr<AccessStrategy::MtInfo>>
 AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
 {
-  shared_ptr<measurements::Entry> me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
+  measurements::Entry* me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
   if (me == nullptr) {
     return std::forward_as_tuple(Name(), nullptr);
   }
@@ -250,8 +250,8 @@ AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
 shared_ptr<AccessStrategy::MtInfo>
 AccessStrategy::addPrefixMeasurements(const Data& data)
 {
-  shared_ptr<measurements::Entry> me;
-  if (data.getName().size() >= 1) {
+  measurements::Entry* me = nullptr;
+  if (!data.getName().empty()) {
     me = this->getMeasurements().get(data.getName().getPrefix(-1));
   }
   if (me == nullptr) { // parent of Data Name is not in this strategy, or Data Name is empty

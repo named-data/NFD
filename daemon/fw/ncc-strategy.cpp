@@ -66,23 +66,22 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
-    this->getMeasurementsEntryInfo(pitEntry);
+  MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(pitEntry);
 
   time::microseconds deferFirst = DEFER_FIRST_WITHOUT_BEST_FACE;
   time::microseconds deferRange = DEFER_RANGE_WITHOUT_BEST_FACE;
   size_t nUpstreams = nexthops.size();
 
-  shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
+  shared_ptr<Face> bestFace = meInfo.getBestFace();
   if (bestFace != nullptr && fibEntry.hasNextHop(*bestFace) &&
       canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
-    deferFirst = measurementsEntryInfo->prediction;
+    deferFirst = meInfo.prediction;
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
     this->sendInterest(pitEntry, *bestFace);
     pitEntryInfo->bestFaceTimeout = scheduler::schedule(
-      measurementsEntryInfo->prediction,
+      meInfo.prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
   }
   else {
@@ -96,7 +95,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     }
   }
 
-  shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
+  shared_ptr<Face> previousFace = meInfo.previousFace.lock();
   if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
@@ -131,10 +130,9 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
   // from a timer set by NccStrategy.
   BOOST_ASSERT(pitEntryInfo != nullptr);
 
-  shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
-    this->getMeasurementsEntryInfo(pitEntry);
+  MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(pitEntry);
 
-  shared_ptr<Face> previousFace = measurementsEntryInfo->previousFace.lock();
+  shared_ptr<Face> previousFace = meInfo.previousFace.lock();
   if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     this->sendInterest(pitEntry, *previousFace);
@@ -156,8 +154,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
       pitEntryInfo->maxInterval.count() - 1);
     time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
-    bind(&NccStrategy::doPropagate, this,
-         weak_ptr<pit::Entry>(pitEntry)));
+      bind(&NccStrategy::doPropagate, this, weak_ptr<pit::Entry>(pitEntry)));
   }
 }
 
@@ -165,21 +162,20 @@ void
 NccStrategy::timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak)
 {
   shared_ptr<pit::Entry> pitEntry = pitEntryWeak.lock();
-  if (!static_cast<bool>(pitEntry)) {
+  if (pitEntry == nullptr) {
     return;
   }
-  shared_ptr<measurements::Entry> measurementsEntry = this->getMeasurements().get(*pitEntry);
+  measurements::Entry* measurementsEntry = this->getMeasurements().get(*pitEntry);
 
   for (int i = 0; i < UPDATE_MEASUREMENTS_N_LEVELS; ++i) {
-    if (!static_cast<bool>(measurementsEntry)) {
+    if (measurementsEntry == nullptr) {
       // going out of this strategy's namespace
-      return;
+      break;
     }
     this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
 
-    shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
-      this->getMeasurementsEntryInfo(measurementsEntry);
-    measurementsEntryInfo->adjustPredictUp();
+    MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(measurementsEntry);
+    meInfo.adjustPredictUp();
 
     measurementsEntry = this->getMeasurements().getParent(*measurementsEntry);
   }
@@ -195,18 +191,17 @@ NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
     return;
   }
 
-  shared_ptr<measurements::Entry> measurementsEntry = this->getMeasurements().get(*pitEntry);
+  measurements::Entry* measurementsEntry = this->getMeasurements().get(*pitEntry);
 
   for (int i = 0; i < UPDATE_MEASUREMENTS_N_LEVELS; ++i) {
-    if (!static_cast<bool>(measurementsEntry)) {
+    if (measurementsEntry == nullptr) {
       // going out of this strategy's namespace
       return;
     }
     this->getMeasurements().extendLifetime(*measurementsEntry, MEASUREMENTS_LIFETIME);
 
-    shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
-      this->getMeasurementsEntryInfo(measurementsEntry);
-    measurementsEntryInfo->updateBestFace(inFace);
+    MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(measurementsEntry);
+    meInfo.updateBestFace(inFace);
 
     measurementsEntry = this->getMeasurements().getParent(*measurementsEntry);
   }
@@ -216,41 +211,40 @@ NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
     scheduler::cancel(pitEntryInfo->propagateTimer);
 
     // Verify that the best face satisfied the interest before canceling the timeout call
-    shared_ptr<MeasurementsEntryInfo> measurementsEntryInfo =
-      this->getMeasurementsEntryInfo(pitEntry);
-    shared_ptr<Face> bestFace = measurementsEntryInfo->getBestFace();
+    MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(pitEntry);
+    shared_ptr<Face> bestFace = meInfo.getBestFace();
 
     if (bestFace.get() == &inFace)
       scheduler::cancel(pitEntryInfo->bestFaceTimeout);
   }
 }
 
-shared_ptr<NccStrategy::MeasurementsEntryInfo>
+NccStrategy::MeasurementsEntryInfo&
 NccStrategy::getMeasurementsEntryInfo(shared_ptr<pit::Entry> entry)
 {
-  shared_ptr<measurements::Entry> measurementsEntry = this->getMeasurements().get(*entry);
+  measurements::Entry* measurementsEntry = this->getMeasurements().get(*entry);
   return this->getMeasurementsEntryInfo(measurementsEntry);
 }
 
-shared_ptr<NccStrategy::MeasurementsEntryInfo>
-NccStrategy::getMeasurementsEntryInfo(shared_ptr<measurements::Entry> entry)
+NccStrategy::MeasurementsEntryInfo&
+NccStrategy::getMeasurementsEntryInfo(measurements::Entry* entry)
 {
+  BOOST_ASSERT(entry != nullptr);
   shared_ptr<MeasurementsEntryInfo> info = entry->getStrategyInfo<MeasurementsEntryInfo>();
-  if (static_cast<bool>(info)) {
-    return info;
+  if (info != nullptr) {
+    return *info;
   }
 
   info = make_shared<MeasurementsEntryInfo>();
   entry->setStrategyInfo(info);
 
-  shared_ptr<measurements::Entry> parentEntry = this->getMeasurements().getParent(*entry);
-  if (static_cast<bool>(parentEntry)) {
-    shared_ptr<MeasurementsEntryInfo> parentInfo = this->getMeasurementsEntryInfo(parentEntry);
-    BOOST_ASSERT(static_cast<bool>(parentInfo));
-    info->inheritFrom(*parentInfo);
+  measurements::Entry* parentEntry = this->getMeasurements().getParent(*entry);
+  if (parentEntry != nullptr) {
+    MeasurementsEntryInfo& parentInfo = this->getMeasurementsEntryInfo(parentEntry);
+    info->inheritFrom(parentInfo);
   }
 
-  return info;
+  return *info;
 }
 
 
@@ -275,7 +269,7 @@ NccStrategy::MeasurementsEntryInfo::inheritFrom(const MeasurementsEntryInfo& oth
 shared_ptr<Face>
 NccStrategy::MeasurementsEntryInfo::getBestFace(void) {
   shared_ptr<Face> best = this->bestFace.lock();
-  if (static_cast<bool>(best)) {
+  if (best != nullptr) {
     return best;
   }
   this->bestFace = best = this->previousFace.lock();

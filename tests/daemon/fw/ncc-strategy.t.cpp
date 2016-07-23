@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
 
   auto getMeInfo = [&] () -> shared_ptr<NccStrategy::MeasurementsEntryInfo> {
     Measurements& measurements = topo.getForwarder(nodeA).getMeasurements();
-    shared_ptr<measurements::Entry> me = measurements.findExactMatch("ndn:/P");
+    measurements::Entry* me = measurements.findExactMatch("ndn:/P");
     return me == nullptr ? nullptr : me->getStrategyInfo<NccStrategy::MeasurementsEntryInfo>();
   };
 

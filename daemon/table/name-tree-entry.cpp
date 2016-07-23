@@ -104,14 +104,14 @@ Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
 }
 
 void
-Entry::setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry)
+Entry::setMeasurementsEntry(unique_ptr<measurements::Entry> measurementsEntry)
 {
   BOOST_ASSERT(measurementsEntry == nullptr || measurementsEntry->m_nameTreeEntry.expired());
 
   if (m_measurementsEntry != nullptr) {
     m_measurementsEntry->m_nameTreeEntry.reset();
   }
-  m_measurementsEntry = measurementsEntry;
+  m_measurementsEntry = std::move(measurementsEntry);
 
   if (m_measurementsEntry != nullptr) {
     m_measurementsEntry->m_nameTreeEntry = this->shared_from_this();

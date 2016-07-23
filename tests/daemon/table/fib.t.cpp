@@ -207,11 +207,11 @@ BOOST_AUTO_TEST_CASE(LongestPrefixMatchWithMeasurementsEntry)
   fib.insert("/A/B/C");
 
   Measurements measurements(nameTree);
-  shared_ptr<measurements::Entry> mAB = measurements.get("/A/B");
-  shared_ptr<measurements::Entry> mABCD = measurements.get("/A/B/C/D");
+  measurements::Entry& mAB = measurements.get("/A/B");
+  measurements::Entry& mABCD = measurements.get("/A/B/C/D");
 
-  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*mAB).getPrefix(), "/A");
-  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(*mABCD).getPrefix(), "/A/B/C");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(mAB).getPrefix(), "/A");
+  BOOST_CHECK_EQUAL(fib.findLongestPrefixMatch(mABCD).getPrefix(), "/A/B/C");
 }
 
 BOOST_AUTO_TEST_CASE(RemoveNextHopFromAllEntries)

@@ -114,9 +114,9 @@ public: // attached table entries
   getPitEntries() const;
 
   void
-  setMeasurementsEntry(shared_ptr<measurements::Entry> measurementsEntry);
+  setMeasurementsEntry(unique_ptr<measurements::Entry> measurementsEntry);
 
-  shared_ptr<measurements::Entry>
+  measurements::Entry*
   getMeasurementsEntry() const;
 
   void
@@ -135,7 +135,7 @@ private:
   std::vector<shared_ptr<Entry> > m_children; // Children pointers.
   unique_ptr<fib::Entry> m_fibEntry;
   std::vector<shared_ptr<pit::Entry> > m_pitEntries;
-  shared_ptr<measurements::Entry> m_measurementsEntry;
+  unique_ptr<measurements::Entry> m_measurementsEntry;
   unique_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
 
   // get the Name Tree Node that is associated with this Name Tree Entry
@@ -205,10 +205,10 @@ Entry::getPitEntries() const
   return m_pitEntries;
 }
 
-inline shared_ptr<measurements::Entry>
+inline measurements::Entry*
 Entry::getMeasurementsEntry() const
 {
-  return m_measurementsEntry;
+  return m_measurementsEntry.get();
 }
 
 inline strategy_choice::Entry*

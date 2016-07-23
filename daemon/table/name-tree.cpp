@@ -269,7 +269,7 @@ shared_ptr<name_tree::Entry>
 NameTree::lookup(const measurements::Entry& measurementsEntry) const
 {
   shared_ptr<name_tree::Entry> nte = this->getEntry(measurementsEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getMeasurementsEntry().get() == &measurementsEntry);
+  BOOST_ASSERT(nte == nullptr || nte->getMeasurementsEntry() == &measurementsEntry);
   return nte;
 }
 

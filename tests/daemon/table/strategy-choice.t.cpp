@@ -157,11 +157,11 @@ BOOST_AUTO_TEST_CASE(FindEffectiveStrategyWithMeasurementsEntry)
   BOOST_CHECK(table.insert("/A/B/C", nameQ));
 
   Measurements& measurements = forwarder.getMeasurements();
-  shared_ptr<measurements::Entry> mAB = measurements.get("/A/B");
-  shared_ptr<measurements::Entry> mABCD = measurements.get("/A/B/C/D");
+  measurements::Entry& mAB = measurements.get("/A/B");
+  measurements::Entry& mABCD = measurements.get("/A/B/C/D");
 
-  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*mAB).getName(), nameP);
-  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(*mABCD).getName(), nameQ);
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(mAB).getName(), nameP);
+  BOOST_CHECK_EQUAL(table.findEffectiveStrategy(mABCD).getName(), nameQ);
 }
 
 //XXX BOOST_CONCEPT_ASSERT((ForwardIterator<std::vector<int>::iterator>))
@@ -222,31 +222,31 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
 
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
-  measurements.get("ndn:/")     ->getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A")    ->getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A/B")  ->getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A/C")  ->getOrCreateStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/").getOrCreateStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A").getOrCreateStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A/B").getOrCreateStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A/C").getOrCreateStrategyInfo<PStrategyInfo>();
 
   BOOST_CHECK(table.insert("ndn:/A/B", nameP));
   // { '/'=>P, '/A/B'=>P }
-  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C").getStrategyInfo<PStrategyInfo>() != nullptr);
 
   BOOST_CHECK(table.insert("ndn:/A", nameQ));
   // { '/'=>P, '/A/B'=>P, '/A'=>Q }
-  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() == nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A").getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C").getStrategyInfo<PStrategyInfo>() == nullptr);
 
   table.erase("ndn:/A/B");
   // { '/'=>P, '/A'=>Q }
-  BOOST_CHECK(measurements.get("ndn:/")   ->getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A")  ->getStrategyInfo<PStrategyInfo>() == nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/B")->getStrategyInfo<PStrategyInfo>() == nullptr);
-  BOOST_CHECK(measurements.get("ndn:/A/C")->getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/").getStrategyInfo<PStrategyInfo>() != nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A").getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/B").getStrategyInfo<PStrategyInfo>() == nullptr);
+  BOOST_CHECK(measurements.get("ndn:/A/C").getStrategyInfo<PStrategyInfo>() == nullptr);
 }
 
 BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)

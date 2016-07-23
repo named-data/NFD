@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "measurements-accessor.hpp"
 
 namespace nfd {
+namespace measurements {
 
 using fw::Strategy;
 
@@ -42,8 +43,8 @@ MeasurementsAccessor::~MeasurementsAccessor()
 {
 }
 
-shared_ptr<measurements::Entry>
-MeasurementsAccessor::filter(const shared_ptr<measurements::Entry>& entry) const
+Entry*
+MeasurementsAccessor::filter(Entry* entry) const
 {
   if (entry == nullptr) {
     return entry;
@@ -53,7 +54,8 @@ MeasurementsAccessor::filter(const shared_ptr<measurements::Entry>& entry) const
   if (&effectiveStrategy == m_strategy) {
     return entry;
   }
-  return shared_ptr<measurements::Entry>();
+  return nullptr;
 }
 
+} // namespace measurements
 } // namespace nfd

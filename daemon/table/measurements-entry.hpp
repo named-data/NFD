@@ -38,12 +38,11 @@ namespace name_tree {
 class Entry;
 } // namespace name_tree
 
-class Measurements;
-
 namespace measurements {
 
-/** \class Entry
- *  \brief represents a Measurements entry
+class Measurements;
+
+/** \brief represents a Measurements entry
  */
 class Entry : public StrategyInfoHost, noncopyable
 {
@@ -64,7 +63,7 @@ private: // lifetime
 
   friend class nfd::NameTree;
   friend class nfd::name_tree::Entry;
-  friend class nfd::Measurements;
+  friend class Measurements;
 };
 
 inline const Name&

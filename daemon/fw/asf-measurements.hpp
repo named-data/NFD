@@ -294,8 +294,9 @@ public:
   NamespaceInfo&
   getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest);
 
+private:
   void
-  extendLifetime(shared_ptr<measurements::Entry> me);
+  extendLifetime(measurements::Entry& me);
 
 public:
   static constexpr time::microseconds MEASUREMENTS_LIFETIME = time::seconds(300);
