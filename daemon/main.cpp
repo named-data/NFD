@@ -53,7 +53,7 @@ NFD_LOG_INIT("NFD");
 /** \brief Executes NFD with RIB manager
  *
  *  NFD (main forwarding procedure) and RIB manager execute in two different threads.
- *  Each thread has its own instances global io_service and global scheduler.
+ *  Each thread has its own instances of global io_service and global scheduler.
  *
  *  When either of the daemons fails, execution of non-failed daemon will be terminated as
  *  well.  In other words, when NFD fails, RIB manager will be terminated; when RIB manager
@@ -168,7 +168,7 @@ public:
       mainIo->run();
     }
     catch (const std::exception& e) {
-      NFD_LOG_FATAL(e.what());
+      NFD_LOG_FATAL(getExtendedErrorMessage(e));
       retval = 4;
     }
     catch (const PrivilegeHelper::Error& e) {
