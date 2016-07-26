@@ -32,37 +32,31 @@
 
 namespace nfd {
 
-class Forwarder;
-
 /** \brief container of all faces
  */
 class FaceTable : noncopyable
 {
 public:
-  explicit
-  FaceTable(Forwarder& forwarder);
-
-  VIRTUAL_WITH_TESTS
-  ~FaceTable();
+  FaceTable();
 
   /** \brief add a face
    *
    *  FaceTable obtains shared ownership of the face.
    *  The channel or protocol factory that creates the face may retain ownership.
    */
-  VIRTUAL_WITH_TESTS void
+  void
   add(shared_ptr<Face> face);
 
   /** \brief add a special face with a reserved FaceId
    */
-  VIRTUAL_WITH_TESTS void
+  void
   addReserved(shared_ptr<Face> face, FaceId faceId);
 
   /** \brief get face by FaceId
    *  \return a face if found, nullptr if not found;
    *          face->shared_from_this() can be used if shared_ptr<Face> is desired
    */
-  VIRTUAL_WITH_TESTS Face*
+  Face*
   get(FaceId id) const;
 
   /** \return count of faces
@@ -107,7 +101,6 @@ private:
   getForwardRange() const;
 
 private:
-  Forwarder& m_forwarder;
   FaceId m_lastFaceId;
   FaceMap m_faces;
 };

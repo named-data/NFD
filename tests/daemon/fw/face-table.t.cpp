@@ -24,7 +24,6 @@
  */
 
 #include "fw/face-table.hpp"
-#include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -37,8 +36,7 @@ BOOST_FIXTURE_TEST_SUITE(TestFaceTable, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(AddRemove)
 {
-  Forwarder forwarder;
-  FaceTable& faceTable = forwarder.getFaceTable();
+  FaceTable faceTable;
 
   std::vector<FaceId> addHistory;
   std::vector<FaceId> removeHistory;
@@ -86,8 +84,7 @@ BOOST_AUTO_TEST_CASE(AddRemove)
 
 BOOST_AUTO_TEST_CASE(AddReserved)
 {
-  Forwarder forwarder;
-  FaceTable& faceTable = forwarder.getFaceTable();
+  FaceTable faceTable;
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   BOOST_CHECK_EQUAL(face1->getId(), face::INVALID_FACEID);
@@ -98,8 +95,7 @@ BOOST_AUTO_TEST_CASE(AddReserved)
 
 BOOST_AUTO_TEST_CASE(Enumerate)
 {
-  Forwarder forwarder;
-  FaceTable& faceTable = forwarder.getFaceTable();
+  FaceTable faceTable;
 
   shared_ptr<Face> face1 = make_shared<DummyFace>();
   shared_ptr<Face> face2 = make_shared<DummyFace>();

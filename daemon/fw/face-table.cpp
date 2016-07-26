@@ -33,15 +33,9 @@ namespace nfd {
 
 NFD_LOG_INIT("FaceTable");
 
-FaceTable::FaceTable(Forwarder& forwarder)
-  : m_forwarder(forwarder)
-  , m_lastFaceId(face::FACEID_RESERVED_MAX)
+FaceTable::FaceTable()
+  : m_lastFaceId(face::FACEID_RESERVED_MAX)
 {
-}
-
-FaceTable::~FaceTable()
-{
-
 }
 
 Face*
@@ -90,9 +84,6 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
   NFD_LOG_INFO("Added face id=" << faceId << " remote=" << face->getRemoteUri()
                                           << " local=" << face->getLocalUri());
 
-  face->afterReceiveInterest.connect(bind(&Forwarder::startProcessInterest, &m_forwarder, ref(*face), _1));
-  face->afterReceiveData.connect(bind(&Forwarder::startProcessData, &m_forwarder, ref(*face), _1));
-  face->afterReceiveNack.connect(bind(&Forwarder::startProcessNack, &m_forwarder, ref(*face), _1));
   connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, faceId));
 
   this->afterAdd(*face);
@@ -106,8 +97,6 @@ FaceTable::remove(FaceId faceId)
   shared_ptr<Face> face = i->second;
 
   this->beforeRemove(*face);
-
-  m_forwarder.getFib().removeNextHopFromAllEntries(*face);
 
   m_faces.erase(i);
   face->setId(face::INVALID_FACEID);

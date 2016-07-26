@@ -37,18 +37,34 @@ NFD_LOG_INIT("Forwarder");
 using fw::Strategy;
 
 Forwarder::Forwarder()
-  : m_faceTable(*this)
-  , m_fib(m_nameTree)
+  : m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(m_nameTree, fw::makeDefaultStrategy(*this))
 {
   fw::installStrategies(*this);
+
+  m_faceTable.afterAdd.connect([this] (Face& face) {
+    face.afterReceiveInterest.connect(
+      [this, &face] (const Interest& interest) {
+        this->startProcessInterest(face, interest);
+      });
+    face.afterReceiveData.connect(
+      [this, &face] (const Data& data) {
+        this->startProcessData(face, data);
+      });
+    face.afterReceiveNack.connect(
+      [this, &face] (const lp::Nack& nack) {
+        this->startProcessNack(face, nack);
+      });
+  });
+
+  m_faceTable.beforeRemove.connect([this] (Face& face) {
+    m_fib.removeNextHopFromAllEntries(face);
+  });
 }
 
-Forwarder::~Forwarder()
-{
-}
+Forwarder::~Forwarder() = default;
 
 void
 Forwarder::startProcessInterest(Face& face, const Interest& interest)
