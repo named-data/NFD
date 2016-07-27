@@ -30,13 +30,14 @@
 
 namespace nfd {
 
-class NameTree;
-namespace name_tree {
-class Entry;
-} // namespace name_tree
 namespace fw {
 class Strategy;
 } // namespace fw
+namespace name_tree {
+class NameTree;
+class Entry;
+} // namespace name_tree
+using name_tree::NameTree;
 
 namespace strategy_choice {
 

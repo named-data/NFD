@@ -24,61 +24,62 @@
  */
 
 #include "table/name-tree.hpp"
-#include <unordered_set>
 
 #include "tests/test-common.hpp"
 
 namespace nfd {
+namespace name_tree {
 namespace tests {
 
-using name_tree::Entry;
+using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TableNameTree, BaseFixture)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestNameTree, BaseFixture)
 
 BOOST_AUTO_TEST_CASE(Hash)
 {
   Name root("/");
   root.wireEncode();
-  size_t hashValue = name_tree::computeHash(root);
-  BOOST_CHECK_EQUAL(hashValue, static_cast<size_t>(0));
+  size_t hashValue = computeHash(root);
+  BOOST_CHECK_EQUAL(hashValue, 0);
 
   Name prefix("/nohello/world/ndn/research");
   prefix.wireEncode();
-  std::vector<size_t> hashSet = name_tree::computeHashSet(prefix);
+  std::vector<size_t> hashSet = computeHashSet(prefix);
   BOOST_CHECK_EQUAL(hashSet.size(), prefix.size() + 1);
 }
 
-BOOST_AUTO_TEST_CASE(Entry)
+BOOST_AUTO_TEST_CASE(NameTreeEntry)
 {
   Name prefix("ndn:/named-data/research/abc/def/ghi");
 
-  shared_ptr<name_tree::Entry> npe = make_shared<name_tree::Entry>(prefix);
+  auto npe = make_shared<Entry>(prefix);
   BOOST_CHECK_EQUAL(npe->getPrefix(), prefix);
 
   // examine all the get methods
 
   size_t hash = npe->getHash();
-  BOOST_CHECK_EQUAL(hash, static_cast<size_t>(0));
+  BOOST_CHECK_EQUAL(hash, 0);
 
-  shared_ptr<name_tree::Entry> parent = npe->getParent();
-  BOOST_CHECK(!static_cast<bool>(parent));
+  shared_ptr<Entry> parent = npe->getParent();
+  BOOST_CHECK(parent == nullptr);
 
-  std::vector<shared_ptr<name_tree::Entry> >& childList = npe->getChildren();
-  BOOST_CHECK_EQUAL(childList.size(), static_cast<size_t>(0));
+  std::vector<shared_ptr<Entry>>& childList = npe->getChildren();
+  BOOST_CHECK_EQUAL(childList.size(), 0);
 
   fib::Entry* fib = npe->getFibEntry();
   BOOST_CHECK(fib == nullptr);
 
-  const std::vector< shared_ptr<pit::Entry> >& pitList = npe->getPitEntries();
-  BOOST_CHECK_EQUAL(pitList.size(), static_cast<size_t>(0));
+  const std::vector<shared_ptr<pit::Entry>>& pitList = npe->getPitEntries();
+  BOOST_CHECK_EQUAL(pitList.size(), 0);
 
   // examine all the set method
 
-  npe->setHash(static_cast<size_t>(12345));
-  BOOST_CHECK_EQUAL(npe->getHash(), static_cast<size_t>(12345));
+  npe->setHash(12345);
+  BOOST_CHECK_EQUAL(npe->getHash(), 12345);
 
   Name parentName("ndn:/named-data/research/abc/def");
-  parent = make_shared<name_tree::Entry>(parentName);
+  parent = make_shared<Entry>(parentName);
   npe->setParent(parent);
   BOOST_CHECK_EQUAL(npe->getParent(), parent);
 
@@ -93,8 +94,8 @@ BOOST_AUTO_TEST_CASE(Entry)
 
   // Insert a PIT
 
-  shared_ptr<pit::Entry> pitEntry(make_shared<pit::Entry>(*makeInterest(prefix)));
-  shared_ptr<pit::Entry> pitEntry2(make_shared<pit::Entry>(*makeInterest(parentName)));
+  auto pitEntry = make_shared<pit::Entry>(*makeInterest(prefix));
+  auto pitEntry2 = make_shared<pit::Entry>(*makeInterest(parentName));
 
   npe->insertPitEntry(pitEntry);
   BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
@@ -118,19 +119,19 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(nt.getNBuckets(), nBuckets);
 
   Name nameABC("ndn:/a/b/c");
-  shared_ptr<name_tree::Entry> npeABC = nt.lookup(nameABC);
+  shared_ptr<Entry> npeABC = nt.lookup(nameABC);
   BOOST_CHECK_EQUAL(nt.size(), 4);
 
   Name nameABD("/a/b/d");
-  shared_ptr<name_tree::Entry> npeABD = nt.lookup(nameABD);
+  shared_ptr<Entry> npeABD = nt.lookup(nameABD);
   BOOST_CHECK_EQUAL(nt.size(), 5);
 
   Name nameAE("/a/e/");
-  shared_ptr<name_tree::Entry> npeAE = nt.lookup(nameAE);
+  shared_ptr<Entry> npeAE = nt.lookup(nameAE);
   BOOST_CHECK_EQUAL(nt.size(), 6);
 
   Name nameF("/f");
-  shared_ptr<name_tree::Entry> npeF = nt.lookup(nameF);
+  shared_ptr<Entry> npeF = nt.lookup(nameF);
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
   // validate lookup() and findExactMatch()
@@ -147,12 +148,12 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
   Name name0("/does/not/exist");
-  shared_ptr<name_tree::Entry> npe0 = nt.findExactMatch(name0);
-  BOOST_CHECK(!static_cast<bool>(npe0));
+  shared_ptr<Entry> npe0 = nt.findExactMatch(name0);
+  BOOST_CHECK(npe0 == nullptr);
 
 
   // Longest Prefix Matching
-  shared_ptr<name_tree::Entry> temp;
+  shared_ptr<Entry> temp;
   Name nameABCLPM("/a/b/c/def/asdf/nlf");
   temp = nt.findLongestPrefixMatch(nameABCLPM);
   BOOST_CHECK_EQUAL(temp, nt.findExactMatch(nameABC));
@@ -183,19 +184,17 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   bool eraseResult = false;
   temp = nt.findExactMatch(nameABC);
-  if (static_cast<bool>(temp))
-    eraseResult = nt.
-  eraseEntryIfEmpty(temp);
+  if (temp != nullptr)
+    eraseResult = nt.eraseEntryIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 6);
-  BOOST_CHECK(!static_cast<bool>(nt.findExactMatch(nameABC)));
+  BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
   BOOST_CHECK_EQUAL(eraseResult, true);
 
   eraseResult = false;
   temp = nt.findExactMatch(nameABCLPM);
-  if (static_cast<bool>(temp))
-    eraseResult = nt.
-  eraseEntryIfEmpty(temp);
-  BOOST_CHECK(!static_cast<bool>(temp));
+  if (temp != nullptr)
+    eraseResult = nt.eraseEntryIfEmpty(temp);
+  BOOST_CHECK(temp == nullptr);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, false);
 
@@ -206,12 +205,11 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   eraseResult = false;
   temp = nt.findExactMatch(nameABC);
-  if (static_cast<bool>(temp))
-    eraseResult = nt.
-  eraseEntryIfEmpty(temp);
+  if (temp != nullptr)
+    eraseResult = nt.eraseEntryIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, true);
-  BOOST_CHECK(!static_cast<bool>(nt.findExactMatch(nameABC)));
+  BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
 
   BOOST_CHECK_EQUAL(nt.getNBuckets(), 16);
 
@@ -226,16 +224,14 @@ BOOST_AUTO_TEST_CASE(Basic)
   // try to erase /a/b/c, should return false
   temp = nt.findExactMatch(nameABC);
   BOOST_CHECK_EQUAL(temp->getPrefix(), nameABC);
-  eraseResult = nt.
-  eraseEntryIfEmpty(temp);
+  eraseResult = nt.eraseEntryIfEmpty(temp);
   BOOST_CHECK_EQUAL(eraseResult, false);
   temp = nt.findExactMatch(nameABC);
   BOOST_CHECK_EQUAL(temp->getPrefix(), nameABC);
 
   temp = nt.findExactMatch(nameABD);
-  if (static_cast<bool>(temp))
-    nt.
-  eraseEntryIfEmpty(temp);
+  if (temp != nullptr)
+    nt.eraseEntryIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 8);
 }
 
@@ -257,7 +253,7 @@ public:
   template<typename Enumerable>
   EnumerationVerifier(Enumerable&& enumerable)
   {
-    for (const name_tree::Entry& entry : enumerable) {
+    for (const Entry& entry : enumerable) {
       const Name& name = entry.getPrefix();
       BOOST_CHECK_MESSAGE(m_names.insert(name).second, "duplicate Name " << name);
     }
@@ -314,6 +310,7 @@ protected:
   static const size_t N_BUCKETS = 16;
   NameTree nt;
 };
+
 const size_t EnumerationFixture::N_BUCKETS;
 
 BOOST_FIXTURE_TEST_CASE(IteratorFullEnumerate, EnumerationFixture)
@@ -372,7 +369,7 @@ BOOST_AUTO_TEST_CASE(OnlyA)
   this->insertAbAc();
 
   // Accept "root" nameA only
-  auto&& enumerable = nt.partialEnumerate("/a", [] (const name_tree::Entry& entry) {
+  auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
     return std::make_pair(entry.getPrefix() == "/a", true);
   });
 
@@ -386,7 +383,7 @@ BOOST_AUTO_TEST_CASE(ExceptA)
   this->insertAbAc();
 
   // Accept anything except "root" nameA
-  auto&& enumerable = nt.partialEnumerate("/a", [] (const name_tree::Entry& entry) {
+  auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
     return std::make_pair(entry.getPrefix() != "/a", true);
   });
 
@@ -402,7 +399,7 @@ BOOST_AUTO_TEST_CASE(NoNameANoSubTreeAB)
 
   // No NameA
   // No SubTree from NameAB
-  auto&& enumerable = nt.partialEnumerate("/a", [] (const name_tree::Entry& entry) {
+  auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
       return std::make_pair(entry.getPrefix() != "/a", entry.getPrefix() != "/a/b");
     });
 
@@ -420,7 +417,7 @@ BOOST_AUTO_TEST_CASE(NoNameANoSubTreeAC)
 
   // No NameA
   // No SubTree from NameAC
-  auto&& enumerable = nt.partialEnumerate("/a", [] (const name_tree::Entry& entry) {
+  auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
       return std::make_pair(entry.getPrefix() != "/a", entry.getPrefix() != "/a/c");
     });
 
@@ -437,7 +434,7 @@ BOOST_AUTO_TEST_CASE(NoSubTreeA)
   this->insertAb1Ab2Ac1Ac2();
 
   // No Subtree from NameA
-  auto&& enumerable = nt.partialEnumerate("/a", [] (const name_tree::Entry& entry) {
+  auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
       return std::make_pair(true, entry.getPrefix() != "/a");
     });
 
@@ -465,7 +462,7 @@ BOOST_AUTO_TEST_CASE(Example)
   nt.lookup("/F");
 
   auto&& enumerable = nt.partialEnumerate("/A",
-    [] (const name_tree::Entry& entry) -> std::pair<bool, bool> {
+    [] (const Entry& entry) -> std::pair<bool, bool> {
       bool visitEntry = false;
       bool visitChildren = false;
 
@@ -517,7 +514,7 @@ BOOST_AUTO_TEST_CASE(HashTableResizeShrink)
 
   Name prefix("/a/b/c/d/e/f/g/h"); // requires 9 buckets
 
-  shared_ptr<name_tree::Entry> entry = nameTree.lookup(prefix);
+  shared_ptr<Entry> entry = nameTree.lookup(prefix);
   BOOST_CHECK_EQUAL(nameTree.size(), 9);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 32);
 
@@ -583,7 +580,9 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
   BOOST_CHECK(seenNames.size() == 7);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestNameTree
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
+} // namespace name_tree
 } // namespace nfd

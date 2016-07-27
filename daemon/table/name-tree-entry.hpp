@@ -34,13 +34,11 @@
 
 namespace nfd {
 
-class NameTree;
-
 namespace name_tree {
 
-// Forward declarations
 class Node;
 class Entry;
+class NameTree;
 
 /**
  * \brief Name Tree Node Class
@@ -68,8 +66,6 @@ public:
   explicit
   Entry(const Name& prefix);
 
-  ~Entry();
-
   const Name&
   getPrefix() const;
 
@@ -85,7 +81,7 @@ public:
   shared_ptr<Entry>
   getParent() const;
 
-  std::vector<shared_ptr<Entry> >&
+  std::vector<shared_ptr<Entry>>&
   getChildren();
 
   bool

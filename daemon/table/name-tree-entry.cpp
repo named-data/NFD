@@ -29,8 +29,8 @@ namespace nfd {
 namespace name_tree {
 
 Node::Node()
-  : m_prev(0)
-  , m_next(0)
+  : m_prev(nullptr)
+  , m_next(nullptr)
 {
 }
 
@@ -38,19 +38,15 @@ Node::~Node()
 {
   // erase the Name Tree Nodes that were created to
   // resolve hash collisions
-  // So before erasing a single node, make sure its m_next == 0
+  // So before erasing a single node, make sure its m_next == nullptr
   // See eraseEntryIfEmpty in name-tree.cpp
-  if (m_next != 0)
+  if (m_next != nullptr)
     delete m_next;
 }
 
 Entry::Entry(const Name& name)
   : m_hash(0)
   , m_prefix(name)
-{
-}
-
-Entry::~Entry()
 {
 }
 

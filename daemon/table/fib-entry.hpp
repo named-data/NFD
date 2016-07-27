@@ -30,10 +30,11 @@
 
 namespace nfd {
 
-class NameTree;
 namespace name_tree {
+class NameTree;
 class Entry;
 } // namespace name_tree
+using name_tree::NameTree;
 
 namespace fib {
 
