@@ -93,15 +93,10 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief removes the NextHop record for face in all entries
-   *
-   *  This is usually invoked when face is destroyed.
-   *  Removing the last NextHop in a FIB entry will erase the FIB entry.
-   *
-   *  \todo change parameter type to Face&
+  /** \brief removes the NextHop record for face
    */
   void
-  removeNextHopFromAllEntries(const Face& face);
+  removeNextHop(Entry& entry, const Face& face);
 
 public: // enumeration
   class const_iterator;
@@ -158,7 +153,7 @@ private:
   findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const;
 
   void
-  erase(shared_ptr<name_tree::Entry> nameTreeEntry);
+  erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte = true);
 
 private:
   NameTree& m_nameTree;

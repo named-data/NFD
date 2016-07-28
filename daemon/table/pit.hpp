@@ -81,7 +81,12 @@ public:
    *  \brief erases a PIT Entry
    */
   void
-  erase(shared_ptr<pit::Entry> pitEntry);
+  erase(shared_ptr<pit::Entry> entry);
+
+  /** \brief deletes in-record and out-record for face
+   */
+  void
+  deleteInOutRecords(shared_ptr<pit::Entry> entry, const Face& face);
 
 public: // enumeration
   class const_iterator;
@@ -140,6 +145,12 @@ public: // enumeration
   };
 
 private:
+  /**
+   *  \brief erases a PIT Entry
+   */
+  void
+  erase(shared_ptr<pit::Entry> pitEntry, bool canDeleteNte);
+
   /** \brief finds or inserts a PIT entry for Interest
    *  \param interest the Interest; must be created with make_shared if allowInsert
    *  \param allowInsert whether inserting new entry is allowed.

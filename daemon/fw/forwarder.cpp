@@ -28,6 +28,7 @@
 #include "core/logger.hpp"
 #include "core/random.hpp"
 #include "strategy.hpp"
+#include "table/cleanup.hpp"
 #include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {
@@ -60,7 +61,7 @@ Forwarder::Forwarder()
   });
 
   m_faceTable.beforeRemove.connect([this] (Face& face) {
-    m_fib.removeNextHopFromAllEntries(face);
+    cleanupOnFaceRemoval(m_nameTree, m_fib, m_pit, face);
   });
 }
 

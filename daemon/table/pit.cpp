@@ -124,15 +124,33 @@ Pit::findAllDataMatches(const Data& data) const
 }
 
 void
-Pit::erase(shared_ptr<pit::Entry> pitEntry)
+Pit::erase(shared_ptr<pit::Entry> entry)
 {
-  shared_ptr<name_tree::Entry> nameTreeEntry = m_nameTree.getEntry(*pitEntry);
-  BOOST_ASSERT(nameTreeEntry != nullptr);
+  this->erase(entry, true);
+}
 
-  nameTreeEntry->erasePitEntry(pitEntry);
-  m_nameTree.eraseEntryIfEmpty(nameTreeEntry);
+void
+Pit::erase(shared_ptr<pit::Entry> entry, bool canDeleteNte)
+{
+  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(*entry);
+  BOOST_ASSERT(nte != nullptr);
 
+  nte->erasePitEntry(entry);
+  if (canDeleteNte) {
+    m_nameTree.eraseEntryIfEmpty(nte);
+  }
   --m_nItems;
+}
+
+void
+Pit::deleteInOutRecords(shared_ptr<pit::Entry> entry, const Face& face)
+{
+  BOOST_ASSERT(entry != nullptr);
+
+  entry->deleteInRecord(face);
+  entry->deleteOutRecord(face);
+
+  /// \todo decide whether to delete PIT entry if there's no more in/out-record left
 }
 
 Pit::const_iterator

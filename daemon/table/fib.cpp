@@ -130,10 +130,14 @@ Fib::insert(const Name& prefix)
 }
 
 void
-Fib::erase(shared_ptr<name_tree::Entry> nte)
+Fib::erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte)
 {
+  BOOST_ASSERT(nte != nullptr);
+
   nte->setFibEntry(nullptr);
-  m_nameTree.eraseEntryIfEmpty(nte);
+  if (canDeleteNte) {
+    m_nameTree.eraseEntryIfEmpty(nte);
+  }
   --m_nItems;
 }
 
@@ -151,28 +155,19 @@ Fib::erase(const Entry& entry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
   if (nte != nullptr) {
+    // don't try to erase s_emptyEntry
     this->erase(nte);
   }
 }
 
 void
-Fib::removeNextHopFromAllEntries(const Face& face)
+Fib::removeNextHop(Entry& entry, const Face& face)
 {
-  std::list<Entry*> toErase;
+  entry.removeNextHop(face);
 
-  auto&& enumerable = m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry);
-  for (const name_tree::Entry& nte : enumerable) {
-    Entry* entry = nte.getFibEntry();
-    entry->removeNextHop(face);
-    if (!entry->hasNextHops()) {
-      toErase.push_back(entry);
-      // entry needs to be erased, but we must wait until the enumeration ends,
-      // because otherwise NameTree iterator would be invalidated
-    }
-  }
-
-  for (Entry* entry : toErase) {
-    this->erase(*entry);
+  if (!entry.hasNextHops()) {
+    shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+    this->erase(nte, false);
   }
 }
 
