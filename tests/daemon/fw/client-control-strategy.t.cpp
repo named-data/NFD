@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<Interest> interest1 = makeInterest("ndn:/0z8r6yDDe");
   interest1->setTag(make_shared<lp::NextHopFaceIdTag>(face1->getId()));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
-  pitEntry1->insertOrUpdateInRecord(face4, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face4, *interest1);
 
   strategy.sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest1, pitEntry1);
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   // Interest without NextHopFaceId
   shared_ptr<Interest> interest2 = makeInterest("ndn:/y6JQADGVz");
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
-  pitEntry2->insertOrUpdateInRecord(face4, *interest2);
+  pitEntry2->insertOrUpdateInRecord(*face4, *interest2);
 
   strategy.sendInterestHistory.clear();
   strategy.afterReceiveInterest(*face4, *interest2, pitEntry2);
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(Forward3)
   shared_ptr<Interest> interest3 = makeInterest("ndn:/0z8r6yDDe");
   interest3->setTag(make_shared<lp::NextHopFaceIdTag>(face3->getId()));
   shared_ptr<pit::Entry> pitEntry3 = pit.insert(*interest3).first;
-  pitEntry3->insertOrUpdateInRecord(face4, *interest3);
+  pitEntry3->insertOrUpdateInRecord(*face4, *interest3);
 
   face3->close(); // face3 is closed and its FaceId becomes invalid
   strategy.sendInterestHistory.clear();

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,7 +37,7 @@ class OutRecord : public FaceRecord
 {
 public:
   explicit
-  OutRecord(shared_ptr<Face> face);
+  OutRecord(Face& face);
 
   /** \return last NACK returned by \p getFace()
    *

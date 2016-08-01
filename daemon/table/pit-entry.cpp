@@ -38,14 +38,14 @@ InRecordCollection::iterator
 Entry::getInRecord(const Face& face)
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
 }
 
 InRecordCollection::iterator
-Entry::insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest)
+Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
 {
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return inRecord.getFace() == face; });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it == m_inRecords.end()) {
     m_inRecords.emplace_front(face);
     it = m_inRecords.begin();
@@ -59,7 +59,7 @@ void
 Entry::deleteInRecord(const Face& face)
 {
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return inRecord.getFace().get() == &face; });
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it != m_inRecords.end()) {
     m_inRecords.erase(it);
   }
@@ -75,14 +75,14 @@ OutRecordCollection::iterator
 Entry::getOutRecord(const Face& face)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
 }
 
 OutRecordCollection::iterator
-Entry::insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest)
+Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return outRecord.getFace() == face; });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it == m_outRecords.end()) {
     m_outRecords.emplace_front(face);
     it = m_outRecords.begin();
@@ -96,7 +96,7 @@ void
 Entry::deleteOutRecord(const Face& face)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return outRecord.getFace().get() == &face; });
+    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }

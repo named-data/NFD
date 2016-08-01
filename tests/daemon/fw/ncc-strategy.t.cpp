@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   interest1.setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(interest1).first;
 
-  pitEntry1->insertOrUpdateInRecord(face3, interest1);
+  pitEntry1->insertOrUpdateInRecord(*face3, interest1);
   strategy.afterReceiveInterest(*face3, interest1, pitEntry1);
 
   // forwards to face1 because routing says it's best
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   interest2.setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(interest2).first;
 
-  pitEntry2->insertOrUpdateInRecord(face3, interest2);
+  pitEntry2->insertOrUpdateInRecord(*face3, interest2);
   strategy.afterReceiveInterest(*face3, interest2, pitEntry2);
 
   // forwards to face2 because it responds previously
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   interest1->setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
-  pitEntry1->insertOrUpdateInRecord(face3, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face3, *interest1);
   strategy.afterReceiveInterest(*face3, *interest1, pitEntry1);
 
   this->advanceClocks(time::milliseconds(1));
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
   interest2->setInterestLifetime(time::milliseconds(8000));
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
-  pitEntry2->insertOrUpdateInRecord(face3, *interest2);
+  pitEntry2->insertOrUpdateInRecord(*face3, *interest2);
   strategy.afterReceiveInterest(*face3, *interest2, pitEntry2);
 
   // FIB entry is changed before doPropagate executes
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   interest1->setInterestLifetime(time::milliseconds(2000));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
-  pitEntry1->insertOrUpdateInRecord(face3, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face3, *interest1);
   strategy.afterReceiveInterest(*face3, *interest1, pitEntry1);
   limitedIo.run(2 - strategy.sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   interest2->setInterestLifetime(time::milliseconds(2000));
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
-  pitEntry2->insertOrUpdateInRecord(face3, *interest2);
+  pitEntry2->insertOrUpdateInRecord(*face3, *interest2);
   strategy.afterReceiveInterest(*face3, *interest2, pitEntry2);
   limitedIo.run(3 - strategy.sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   interest1->setInterestLifetime(time::milliseconds(2000));
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
-  pitEntry1->insertOrUpdateInRecord(face1, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face1, *interest1);
   strategy.afterReceiveInterest(*face1, *interest1, pitEntry1);
   limitedIo.run(1 - strategy.sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(Bug1971)
   this->advanceClocks(time::milliseconds(10));
 
   // similar Interest: strategy should still forward it
-  pitEntry1->insertOrUpdateInRecord(face1, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face1, *interest1);
   strategy.afterReceiveInterest(*face1, *interest1, pitEntry1);
   limitedIo.run(2 - strategy.sendInterestHistory.size(),
                 time::milliseconds(2000), time::milliseconds(10));
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(Bug1998)
   // Interest comes from face1, which is sole downstream
   shared_ptr<Interest> interest1 = makeInterest("ndn:/tFy5HzUzD4");
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
-  pitEntry1->insertOrUpdateInRecord(face1, *interest1);
+  pitEntry1->insertOrUpdateInRecord(*face1, *interest1);
 
   strategy.afterReceiveInterest(*face1, *interest1, pitEntry1);
 

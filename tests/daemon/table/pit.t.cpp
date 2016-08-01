@@ -70,12 +70,12 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
   // insert in-record
   time::steady_clock::TimePoint before1 = time::steady_clock::now();
-  InRecordCollection::iterator in1 = entry.insertOrUpdateInRecord(face1, *interest1);
+  InRecordCollection::iterator in1 = entry.insertOrUpdateInRecord(*face1, *interest1);
   time::steady_clock::TimePoint after1 = time::steady_clock::now();
   const InRecordCollection& inRecords2 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords2.size(), 1);
   BOOST_CHECK(in1 == inRecords2.begin());
-  BOOST_CHECK_EQUAL(in1->getFace(), face1);
+  BOOST_CHECK_EQUAL(&in1->getFace(), face1.get());
   BOOST_CHECK_EQUAL(in1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(in1->getLastRenewed(), before1);
   BOOST_CHECK_LE(in1->getLastRenewed(), after1);
@@ -86,12 +86,12 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
   // insert out-record
   time::steady_clock::TimePoint before2 = time::steady_clock::now();
-  OutRecordCollection::iterator out1 = entry.insertOrUpdateOutRecord(face1, *interest1);
+  OutRecordCollection::iterator out1 = entry.insertOrUpdateOutRecord(*face1, *interest1);
   time::steady_clock::TimePoint after2 = time::steady_clock::now();
   const OutRecordCollection& outRecords2 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords2.size(), 1);
   BOOST_CHECK(out1 == outRecords2.begin());
-  BOOST_CHECK_EQUAL(out1->getFace(), face1);
+  BOOST_CHECK_EQUAL(&out1->getFace(), face1.get());
   BOOST_CHECK_EQUAL(out1->getLastNonce(), interest1->getNonce());
   BOOST_CHECK_GE(out1->getLastRenewed(), before2);
   BOOST_CHECK_LE(out1->getLastRenewed(), after2);
@@ -102,27 +102,27 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
   // update in-record
   time::steady_clock::TimePoint before3 = time::steady_clock::now();
-  InRecordCollection::iterator in2 = entry.insertOrUpdateInRecord(face1, *interest2);
+  InRecordCollection::iterator in2 = entry.insertOrUpdateInRecord(*face1, *interest2);
   time::steady_clock::TimePoint after3 = time::steady_clock::now();
   const InRecordCollection& inRecords3 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords3.size(), 1);
   BOOST_CHECK(in2 == inRecords3.begin());
-  BOOST_CHECK_EQUAL(in2->getFace(), face1);
+  BOOST_CHECK_EQUAL(&in2->getFace(), face1.get());
   BOOST_CHECK_EQUAL(in2->getLastNonce(), interest2->getNonce());
   BOOST_CHECK_LE(in2->getExpiry() - in2->getLastRenewed()
                  - interest2->getInterestLifetime(),
                  (after3 - before3));
 
   // insert another in-record
-  InRecordCollection::iterator in3 = entry.insertOrUpdateInRecord(face2, *interest3);
+  InRecordCollection::iterator in3 = entry.insertOrUpdateInRecord(*face2, *interest3);
   const InRecordCollection& inRecords4 = entry.getInRecords();
   BOOST_CHECK_EQUAL(inRecords4.size(), 2);
-  BOOST_CHECK_EQUAL(in3->getFace(), face2);
+  BOOST_CHECK_EQUAL(&in3->getFace(), face2.get());
 
   // get in-record
   InRecordCollection::iterator in4 = entry.getInRecord(*face1);
   BOOST_REQUIRE(in4 != entry.in_end());
-  BOOST_CHECK_EQUAL(in4->getFace(), face1);
+  BOOST_CHECK_EQUAL(&in4->getFace(), face1.get());
 
   // clear in-records
   entry.clearInRecords();
@@ -132,21 +132,21 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 
   // insert another out-record
   OutRecordCollection::iterator out2 =
-    entry.insertOrUpdateOutRecord(face2, *interest4);
+    entry.insertOrUpdateOutRecord(*face2, *interest4);
   const OutRecordCollection& outRecords3 = entry.getOutRecords();
   BOOST_CHECK_EQUAL(outRecords3.size(), 2);
-  BOOST_CHECK_EQUAL(out2->getFace(), face2);
+  BOOST_CHECK_EQUAL(&out2->getFace(), face2.get());
 
   // get out-record
   OutRecordCollection::iterator out3 = entry.getOutRecord(*face1);
   BOOST_REQUIRE(out3 != entry.out_end());
-  BOOST_CHECK_EQUAL(out3->getFace(), face1);
+  BOOST_CHECK_EQUAL(&out3->getFace(), face1.get());
 
   // delete out-record
   entry.deleteOutRecord(*face2);
   const OutRecordCollection& outRecords4 = entry.getOutRecords();
   BOOST_REQUIRE_EQUAL(outRecords4.size(), 1);
-  BOOST_CHECK_EQUAL(outRecords4.begin()->getFace(), face1);
+  BOOST_CHECK_EQUAL(&outRecords4.begin()->getFace(), face1.get());
   BOOST_CHECK(entry.getOutRecord(*face2) == entry.out_end());
 }
 
@@ -159,17 +159,17 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   shared_ptr<Face> face = make_shared<DummyFace>();
   Entry entry(*interest);
 
-  InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(face, *interest);
+  InRecordCollection::iterator inIt = entry.insertOrUpdateInRecord(*face, *interest);
   BOOST_CHECK_GT(inIt->getExpiry(), time::steady_clock::now());
 
-  OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(face, *interest);
+  OutRecordCollection::iterator outIt = entry.insertOrUpdateOutRecord(*face, *interest);
   BOOST_CHECK_GT(outIt->getExpiry(), time::steady_clock::now());
 }
 
 BOOST_AUTO_TEST_CASE(OutRecordNack)
 {
   shared_ptr<Face> face1 = make_shared<DummyFace>();
-  OutRecord outR(face1);
+  OutRecord outR(*face1);
   BOOST_CHECK(outR.getIncomingNack() == nullptr);
 
   shared_ptr<Interest> interest1 = makeInterest("ndn:/uWiapGjYL");

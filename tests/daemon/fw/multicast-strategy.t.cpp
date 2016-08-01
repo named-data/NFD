@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face3, *interest);
+  pitEntry->insertOrUpdateInRecord(*face3, *interest);
 
   strategy.afterReceiveInterest(*face3, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(RejectScope)
   shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
   Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);

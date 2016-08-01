@@ -195,7 +195,7 @@ BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
     const lp::NackHeader* inNack = outR.getIncomingNack();
     if (inNack == nullptr) {
       ++nOutRecordsNotNacked;
-      lastFaceNotNacked = outR.getFace().get();
+      lastFaceNotNacked = &outR.getFace();
       continue;
     }
 

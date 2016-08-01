@@ -49,7 +49,7 @@ violatesScope(const pit::Entry& pitEntry, const Face& outFace)
   if (scope_prefix::LOCALHOP.isPrefixOf(pitEntry.getName())) {
     // face is non-local, violates localhop scope unless PIT entry has local in-record
     return std::none_of(pitEntry.in_begin(), pitEntry.in_end(),
-      [] (const pit::InRecord& inRecord) { return inRecord.getFace()->getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
+      [] (const pit::InRecord& inRecord) { return inRecord.getFace().getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
   }
 
   // Name is not subject to scope control
@@ -63,7 +63,7 @@ canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
 
   bool hasUnexpiredOutRecord = std::any_of(pitEntry.out_begin(), pitEntry.out_end(),
     [&face, &now] (const pit::OutRecord& outRecord) {
-      return outRecord.getFace().get() == &face && outRecord.getExpiry() >= now;
+      return &outRecord.getFace() == &face && outRecord.getExpiry() >= now;
     });
   if (hasUnexpiredOutRecord) {
     return false;
@@ -71,7 +71,7 @@ canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
 
   bool hasUnexpiredOtherInRecord = std::any_of(pitEntry.in_begin(), pitEntry.in_end(),
     [&face, &now] (const pit::InRecord& inRecord) {
-      return inRecord.getFace().get() != &face && inRecord.getExpiry() >= now;
+      return &inRecord.getFace() != &face && inRecord.getExpiry() >= now;
     });
   if (!hasUnexpiredOtherInRecord) {
     return false;
@@ -87,7 +87,7 @@ findDuplicateNonce(const pit::Entry& pitEntry, uint32_t nonce, const Face& face)
 
   for (const pit::InRecord& inRecord : pitEntry.getInRecords()) {
     if (inRecord.getLastNonce() == nonce) {
-      if (inRecord.getFace().get() == &face) {
+      if (&inRecord.getFace() == &face) {
         dnw |= DUPLICATE_NONCE_IN_SAME;
       }
       else {
@@ -98,7 +98,7 @@ findDuplicateNonce(const pit::Entry& pitEntry, uint32_t nonce, const Face& face)
 
   for (const pit::OutRecord& outRecord : pitEntry.getOutRecords()) {
     if (outRecord.getLastNonce() == nonce) {
-      if (outRecord.getFace().get() == &face) {
+      if (&outRecord.getFace() == &face) {
         dnw |= DUPLICATE_NONCE_OUT_SAME;
       }
       else {

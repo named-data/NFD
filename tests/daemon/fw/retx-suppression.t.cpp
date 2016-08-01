@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,31 +59,31 @@ BOOST_AUTO_TEST_CASE(Fixed)
       time::duration_cast<time::nanoseconds>(MIN_RETX_INTERVAL * 0.1);
 
   // @ time 0
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::NEW);
-  pitEntry->insertOrUpdateOutRecord(face3, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest);
 
   this->advanceClocks(RETRANSMISSION_10P, 5); // @ time 0.5 interval
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
-  pitEntry->insertOrUpdateInRecord(face2, *interest);
+  pitEntry->insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face2, *interest, *pitEntry), RetxSuppression::SUPPRESS);
 
   this->advanceClocks(RETRANSMISSION_10P, 6); // @ time 1.1 interval
-  pitEntry->insertOrUpdateInRecord(face2, *interest);
+  pitEntry->insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face2, *interest, *pitEntry), RetxSuppression::FORWARD);
   // but strategy decides not to forward
 
   this->advanceClocks(RETRANSMISSION_10P, 1); // @ time 1.2 interval
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
   // retransmission suppress shall still give clearance for forwarding
-  pitEntry->insertOrUpdateOutRecord(face3, *interest); // and strategy forwards
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest); // and strategy forwards
 
   this->advanceClocks(RETRANSMISSION_10P, 2); // @ time 1.4 interval
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
-  pitEntry->insertOrUpdateInRecord(face2, *interest);
+  pitEntry->insertOrUpdateInRecord(*face2, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face2, *interest, *pitEntry), RetxSuppression::SUPPRESS);
 }
 
@@ -102,13 +102,13 @@ BOOST_AUTO_TEST_CASE(Exponential)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
 
   // @ 0ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::NEW);
-  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face2, *interest);
   // suppression interval is 10ms, until 10ms
 
   this->advanceClocks(time::milliseconds(5)); // @ 5ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
   // suppression interval is 10ms, until 10ms
 
@@ -116,42 +116,42 @@ BOOST_AUTO_TEST_CASE(Exponential)
   // note: what happens at *exactly* 10ms does not matter so it's untested,
   // because in reality network timing won't be exact:
   // incoming Interest is processed either before or after 10ms point
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
-  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face2, *interest);
   // suppression interval is 30ms, until 41ms
 
   this->advanceClocks(time::milliseconds(25)); // @ 36ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
   // suppression interval is 30ms, until 41ms
 
   this->advanceClocks(time::milliseconds(6)); // @ 42ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
   // strategy decides not to forward, but suppression interval is increased nevertheless
   // suppression interval is 90ms, until 101ms
 
   this->advanceClocks(time::milliseconds(58)); // @ 100ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
   // suppression interval is 90ms, until 101ms
 
   this->advanceClocks(time::milliseconds(3)); // @ 103ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
-  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face2, *interest);
   // suppression interval is 100ms, until 203ms
 
   this->advanceClocks(time::milliseconds(99)); // @ 202ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::SUPPRESS);
   // suppression interval is 100ms, until 203ms
 
   this->advanceClocks(time::milliseconds(2)); // @ 204ms
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   BOOST_CHECK_EQUAL(rs.decide(*face1, *interest, *pitEntry), RetxSuppression::FORWARD);
-  pitEntry->insertOrUpdateOutRecord(face2, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face2, *interest);
   // suppression interval is 100ms, until 304ms
 }
 

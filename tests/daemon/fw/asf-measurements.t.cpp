@@ -100,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, UnitTestTimeFixture)
   shared_ptr<pit::Entry> pitEntry = make_shared<pit::Entry>(*interest);
   std::shared_ptr<DummyFace> face = make_shared<DummyFace>();
 
-  pitEntry->insertOrUpdateOutRecord(face, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face, *interest);
 
   RttEstimator::Duration rtt(50);
   this->advanceClocks(time::milliseconds(5), rtt);

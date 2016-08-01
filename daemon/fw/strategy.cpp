@@ -75,10 +75,10 @@ Strategy::sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& heade
   // populate downstreams with all downstreams faces
   std::unordered_set<const Face*> downstreams;
   std::transform(pitEntry->in_begin(), pitEntry->in_end(), std::inserter(downstreams, downstreams.end()),
-                 [] (const pit::InRecord& inR) { return inR.getFace().get(); });
+                 [] (const pit::InRecord& inR) { return &inR.getFace(); });
 
   // delete excluded faces
-  // .erase in a loop is more efficient than std::set_difference between that requires sorted range
+  // .erase in a loop is more efficient than std::set_difference because that requires sorted range
   for (const Face* exceptFace : exceptFaces) {
     downstreams.erase(exceptFace);
   }

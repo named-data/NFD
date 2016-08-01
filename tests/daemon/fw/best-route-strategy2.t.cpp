@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(Forward)
 
   // first Interest goes to nexthop with lowest FIB cost,
   // however face1 is downstream so it cannot be used
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.back().outFaceId, face2->getId());
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
   function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
-    pitEntry->insertOrUpdateInRecord(face4, *interest);
+    pitEntry->insertOrUpdateInRecord(*face4, *interest);
     strategy.afterReceiveInterest(*face4, *interest, pitEntry);
 
     size_t nSent = strategy.sendInterestHistory.size();
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {
     this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 2);
-    pitEntry->insertOrUpdateInRecord(face5, *interest);
+    pitEntry->insertOrUpdateInRecord(*face5, *interest);
     strategy.afterReceiveInterest(*face5, *interest, pitEntry);
   }
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 3);
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IncomingInterest, Scenario, NoRouteScenarios)
 
   shared_ptr<Interest> interest = makeInterest(scenario.getInterestName());
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
 
@@ -229,9 +229,9 @@ BOOST_AUTO_TEST_CASE(OneUpstream) // one upstream, send Nack when Nack arrives
   shared_ptr<Interest> interest1 = makeInterest("/McQYjMbm", 992);
   shared_ptr<Interest> interest2 = makeInterest("/McQYjMbm", 114);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest1);
-  pitEntry->insertOrUpdateInRecord(face2, *interest2);
-  pitEntry->insertOrUpdateOutRecord(face3, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face2, *interest2);
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
 
   lp::Nack nack3 = makeNack("/McQYjMbm", 992, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
@@ -258,9 +258,9 @@ BOOST_AUTO_TEST_CASE(TwoUpstreams) // two upstreams, send Nack when both Nacks a
 
   shared_ptr<Interest> interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(face3, *interest1);
-  pitEntry->insertOrUpdateOutRecord(face4, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face4, *interest1);
 
   lp::Nack nack3 = makeNack("/aS9FAyUV19", 286, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
@@ -288,13 +288,13 @@ BOOST_AUTO_TEST_CASE(Timeout) // two upstreams, one times out, don't send Nack
   shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
   interest1->setInterestLifetime(time::milliseconds(400));
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(face3, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
 
   this->advanceClocks(time::milliseconds(300));
   shared_ptr<Interest> interest2 = makeInterest("/sIYw0TXWDj", 223);
-  pitEntry->insertOrUpdateInRecord(face1, *interest2);
-  pitEntry->insertOrUpdateOutRecord(face4, *interest2);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest2);
+  pitEntry->insertOrUpdateOutRecord(*face4, *interest2);
 
   this->advanceClocks(time::milliseconds(200)); // face3 has timed out
 
@@ -431,9 +431,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombination
 
   shared_ptr<Interest> interest1 = makeInterest("/F6sEwB24I", 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(face3, *interest1);
-  pitEntry->insertOrUpdateOutRecord(face4, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face1, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face4, *interest1);
 
   lp::Nack nack3 = makeNack("/F6sEwB24I", 282, combination.getX());
   pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);

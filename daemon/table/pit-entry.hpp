@@ -111,7 +111,7 @@ public: // in-record
    *  \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
-  insertOrUpdateInRecord(shared_ptr<Face> face, const Interest& interest);
+  insertOrUpdateInRecord(Face& face, const Interest& interest);
 
   /** \brief delete the in-record for \p face if it exists
    */
@@ -160,7 +160,7 @@ public: // out-record
    *  \return an iterator to the new or updated out-record
    */
   OutRecordCollection::iterator
-  insertOrUpdateOutRecord(shared_ptr<Face> face, const Interest& interest);
+  insertOrUpdateOutRecord(Face& face, const Interest& interest);
 
   /** \brief delete the out-record for \p face if it exists
    */

@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   auto interestA1 = makeInterest("/A");
   interestA1->setNonce(8378);
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA1).first;
-  pit::InRecordCollection::iterator inA1 = pitA->insertOrUpdateInRecord(face1, *interestA1);
+  pit::InRecordCollection::iterator inA1 = pitA->insertOrUpdateInRecord(*face1, *interestA1);
 
   // there is only one downstream, interestA1 is used
   forwarder.onOutgoingInterest(pitA, *face3, false);
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   this->advanceClocks(time::seconds(2));
   auto interestA2 = makeInterest("/A");
   interestA2->setNonce(9102);
-  pitA->insertOrUpdateInRecord(face2, *interestA2);
+  pitA->insertOrUpdateInRecord(*face2, *interestA2);
 
   // there are two downstreams, prefer newer interestA2
   forwarder.onOutgoingInterest(pitA, *face3, false);
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   // local face, /localhost: OK
   shared_ptr<Interest> interestA1 = makeInterest("/localhost/A1");
   shared_ptr<pit::Entry> pitA1 = pit.insert(*interestA1).first;
-  pitA1->insertOrUpdateInRecord(face3, *interestA1);
+  pitA1->insertOrUpdateInRecord(*face3, *interestA1);
   face1->sentInterests.clear();
   forwarder.onOutgoingInterest(pitA1, *face1);
   BOOST_CHECK_EQUAL(face1->sentInterests.size(), 1);
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   // non-local face, /localhost: violate
   shared_ptr<Interest> interestA2 = makeInterest("/localhost/A2");
   shared_ptr<pit::Entry> pitA2 = pit.insert(*interestA2).first;
-  pitA2->insertOrUpdateInRecord(face3, *interestA2);
+  pitA2->insertOrUpdateInRecord(*face3, *interestA2);
   face2->sentInterests.clear();
   forwarder.onOutgoingInterest(pitA2, *face2);
   BOOST_CHECK_EQUAL(face2->sentInterests.size(), 0);
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   // local face, non-/localhost: OK
   shared_ptr<Interest> interestA3 = makeInterest("/A3");
   shared_ptr<pit::Entry> pitA3 = pit.insert(*interestA3).first;
-  pitA3->insertOrUpdateInRecord(face3, *interestA3);
+  pitA3->insertOrUpdateInRecord(*face3, *interestA3);
   face1->sentInterests.clear();
   forwarder.onOutgoingInterest(pitA3, *face1);
   BOOST_CHECK_EQUAL(face1->sentInterests.size(), 1);
@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhostOutgoing)
   // non-local face, non-/localhost: OK
   shared_ptr<Interest> interestA4 = makeInterest("/A4");
   shared_ptr<pit::Entry> pitA4 = pit.insert(*interestA4).first;
-  pitA4->insertOrUpdateInRecord(face3, *interestA4);
+  pitA4->insertOrUpdateInRecord(*face3, *interestA4);
   face2->sentInterests.clear();
   forwarder.onOutgoingInterest(pitA4, *face2);
   BOOST_CHECK_EQUAL(face2->sentInterests.size(), 1);
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from local face, to local face: OK
   shared_ptr<Interest> interest1 = makeInterest("/localhop/1");
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateInRecord(face1, *interest1);
+  pit1->insertOrUpdateInRecord(*face1, *interest1);
   face3->sentInterests.clear();
   forwarder.onOutgoingInterest(pit1, *face3);
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 1);
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from non-local face, to local face: OK
   shared_ptr<Interest> interest2 = makeInterest("/localhop/2");
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
-  pit2->insertOrUpdateInRecord(face2, *interest2);
+  pit2->insertOrUpdateInRecord(*face2, *interest2);
   face3->sentInterests.clear();
   forwarder.onOutgoingInterest(pit2, *face3);
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 1);
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from local face, to non-local face: OK
   shared_ptr<Interest> interest3 = makeInterest("/localhop/3");
   shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
-  pit3->insertOrUpdateInRecord(face1, *interest3);
+  pit3->insertOrUpdateInRecord(*face1, *interest3);
   face4->sentInterests.clear();
   forwarder.onOutgoingInterest(pit3, *face4);
   BOOST_CHECK_EQUAL(face4->sentInterests.size(), 1);
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from non-local face, to non-local face: violate
   shared_ptr<Interest> interest4 = makeInterest("/localhop/4");
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
-  pit4->insertOrUpdateInRecord(face2, *interest4);
+  pit4->insertOrUpdateInRecord(*face2, *interest4);
   face4->sentInterests.clear();
   forwarder.onOutgoingInterest(pit4, *face4);
   BOOST_CHECK_EQUAL(face4->sentInterests.size(), 0);
@@ -363,8 +363,8 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from local face and non-local face, to local face: OK
   shared_ptr<Interest> interest5 = makeInterest("/localhop/5");
   shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
-  pit5->insertOrUpdateInRecord(face1, *interest5);
-  pit5->insertOrUpdateInRecord(face2, *interest5);
+  pit5->insertOrUpdateInRecord(*face1, *interest5);
+  pit5->insertOrUpdateInRecord(*face2, *interest5);
   face3->sentInterests.clear();
   forwarder.onOutgoingInterest(pit5, *face3);
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 1);
@@ -372,8 +372,8 @@ BOOST_AUTO_TEST_CASE(ScopeLocalhopOutgoing)
   // from local face and non-local face, to non-local face: OK
   shared_ptr<Interest> interest6 = makeInterest("/localhop/6");
   shared_ptr<pit::Entry> pit6 = pit.insert(*interest6).first;
-  pit6->insertOrUpdateInRecord(face1, *interest6);
-  pit6->insertOrUpdateInRecord(face2, *interest6);
+  pit6->insertOrUpdateInRecord(*face1, *interest6);
+  pit6->insertOrUpdateInRecord(*face2, *interest6);
   face4->sentInterests.clear();
   forwarder.onOutgoingInterest(pit6, *face4);
   BOOST_CHECK_EQUAL(face4->sentInterests.size(), 1);
@@ -443,15 +443,15 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   Pit& pit = forwarder.getPit();
   shared_ptr<Interest> interest0 = makeInterest("ndn:/");
   shared_ptr<pit::Entry> pit0 = pit.insert(*interest0).first;
-  pit0->insertOrUpdateInRecord(face1, *interest0);
+  pit0->insertOrUpdateInRecord(*face1, *interest0);
   shared_ptr<Interest> interestA = makeInterest("ndn:/A");
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
-  pitA->insertOrUpdateInRecord(face1, *interestA);
-  pitA->insertOrUpdateInRecord(face2, *interestA);
+  pitA->insertOrUpdateInRecord(*face1, *interestA);
+  pitA->insertOrUpdateInRecord(*face2, *interestA);
   shared_ptr<Interest> interestC = makeInterest("ndn:/A/B/C");
   shared_ptr<pit::Entry> pitC = pit.insert(*interestC).first;
-  pitC->insertOrUpdateInRecord(face3, *interestC);
-  pitC->insertOrUpdateInRecord(face4, *interestC);
+  pitC->insertOrUpdateInRecord(*face3, *interestC);
+  pitC->insertOrUpdateInRecord(*face4, *interestC);
 
   shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
   forwarder.onIncomingData(*face3, *dataD);
@@ -484,10 +484,10 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   // dispatch to the correct strategy
   shared_ptr<Interest> interest1 = makeInterest("/A/AYJqayrzF", 562);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateOutRecord(face1, *interest1);
+  pit1->insertOrUpdateOutRecord(*face1, *interest1);
   shared_ptr<Interest> interest2 = makeInterest("/B/EVyP73ru", 221);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
-  pit2->insertOrUpdateOutRecord(face1, *interest2);
+  pit2->insertOrUpdateOutRecord(*face1, *interest2);
 
   lp::Nack nack1 = makeNack("/A/AYJqayrzF", 562, lp::NackReason::CONGESTION);
   strategyP.afterReceiveNack_count = 0;
@@ -520,7 +520,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   // drop if no out-record
   shared_ptr<Interest> interest4 = makeInterest("/Etab4KpY", 157);
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
-  pit4->insertOrUpdateOutRecord(face1, *interest4);
+  pit4->insertOrUpdateOutRecord(*face1, *interest4);
 
   lp::Nack nack4a = makeNack("/Etab4KpY", 157, lp::NackReason::CONGESTION);
   strategyP.afterReceiveNack_count = 0;
@@ -538,7 +538,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyQ.afterReceiveNack_count, 0);
 
   // drop if inFace is multi-access
-  pit4->insertOrUpdateOutRecord(face3, *interest4);
+  pit4->insertOrUpdateOutRecord(*face3, *interest4);
   strategyP.afterReceiveNack_count = 0;
   strategyQ.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(*face3, nack4a);
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   // don't send Nack if there's no in-record
   shared_ptr<Interest> interest1 = makeInterest("/fM5IVEtC", 719);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateInRecord(face1, *interest1);
+  pit1->insertOrUpdateInRecord(*face1, *interest1);
 
   face2->sentNacks.clear();
   forwarder.onOutgoingNack(pit1, *face2, nackHeader);
@@ -576,9 +576,9 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   // send Nack with correct Nonce
   shared_ptr<Interest> interest2a = makeInterest("/Vi8tRm9MG3", 152);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2a).first;
-  pit2->insertOrUpdateInRecord(face1, *interest2a);
+  pit2->insertOrUpdateInRecord(*face1, *interest2a);
   shared_ptr<Interest> interest2b = makeInterest("/Vi8tRm9MG3", 808);
-  pit2->insertOrUpdateInRecord(face2, *interest2b);
+  pit2->insertOrUpdateInRecord(*face2, *interest2b);
 
   face1->sentNacks.clear();
   forwarder.onOutgoingNack(pit2, *face1, nackHeader);
@@ -603,7 +603,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
 
   // don't send Nack to multi-access face
   shared_ptr<Interest> interest2c = makeInterest("/Vi8tRm9MG3", 228);
-  pit2->insertOrUpdateInRecord(face3, *interest2c);
+  pit2->insertOrUpdateInRecord(*face3, *interest2c);
 
   face3->sentNacks.clear();
   forwarder.onOutgoingNack(pit1, *face3, nackHeader);
@@ -743,7 +743,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   auto interest1 = makeInterest("/net/ndnsim/www/1.html");
   interest1->setLink(link->wireEncode());
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateInRecord(face1, *interest1);
+  pit1->insertOrUpdateInRecord(*face1, *interest1);
 
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit1).getPrefix(), "/");
   BOOST_CHECK_EQUAL(interest1->hasSelectedDelegation(), false);
@@ -759,7 +759,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   auto interest2 = makeInterest("/net/ndnsim/www/2.html");
   interest2->setLink(link->wireEncode());
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
-  pit2->insertOrUpdateInRecord(face1, *interest2);
+  pit2->insertOrUpdateInRecord(*face1, *interest2);
 
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit2).getPrefix(), "/telia");
   BOOST_REQUIRE_EQUAL(interest2->hasSelectedDelegation(), true);
@@ -776,7 +776,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   auto interest3 = makeInterest("/net/ndnsim/www/3.html");
   interest3->setLink(link->wireEncode());
   shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
-  pit3->insertOrUpdateInRecord(face1, *interest3);
+  pit3->insertOrUpdateInRecord(*face1, *interest3);
 
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit3).getPrefix(), "/ucla");
   BOOST_REQUIRE_EQUAL(interest3->hasSelectedDelegation(), true);
@@ -794,7 +794,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   interest4->setLink(link->wireEncode());
   interest4->setSelectedDelegation("/ucla/cs");
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
-  pit4->insertOrUpdateInRecord(face1, *interest4);
+  pit4->insertOrUpdateInRecord(*face1, *interest4);
 
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit4).getPrefix(), "/ucla");
   BOOST_REQUIRE_EQUAL(interest4->hasSelectedDelegation(), true);
@@ -814,7 +814,7 @@ BOOST_AUTO_TEST_CASE(LinkDelegation)
   interest5->setLink(link->wireEncode());
   interest5->setSelectedDelegation("/ucla/cs");
   shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
-  pit5->insertOrUpdateInRecord(face1, *interest5);
+  pit5->insertOrUpdateInRecord(*face1, *interest5);
 
   BOOST_CHECK_EQUAL(forwarder.lookupFib(*pit1).getPrefix(), "/net/ndnsim");
   BOOST_REQUIRE_EQUAL(interest5->hasSelectedDelegation(), true);

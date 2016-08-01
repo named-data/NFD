@@ -196,9 +196,8 @@ Forwarder::onContentStoreMiss(const Face& inFace,
 {
   NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName());
 
-  shared_ptr<Face> face = const_pointer_cast<Face>(inFace.shared_from_this());
   // insert in-record
-  pitEntry->insertOrUpdateInRecord(face, interest);
+  pitEntry->insertOrUpdateInRecord(const_cast<Face&>(inFace), interest);
 
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
@@ -252,8 +251,8 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
   pit::InRecordCollection::iterator pickedInRecord = std::max_element(
     pitEntry->in_begin(), pitEntry->in_end(),
     [&outFace] (const pit::InRecord& a, const pit::InRecord& b) {
-      bool isOutFaceA = a.getFace().get() == &outFace;
-      bool isOutFaceB = b.getFace().get() == &outFace;
+      bool isOutFaceA = &a.getFace() == &outFace;
+      bool isOutFaceB = &b.getFace() == &outFace;
       return (isOutFaceA > isOutFaceB) ||
              (isOutFaceA == isOutFaceB && a.getLastRenewed() < b.getLastRenewed());
     });
@@ -267,7 +266,7 @@ Forwarder::onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
   }
 
   // insert out-record
-  pitEntry->insertOrUpdateOutRecord(outFace.shared_from_this(), *interest);
+  pitEntry->insertOrUpdateOutRecord(outFace, *interest);
 
   // send Interest
   outFace.sendInterest(*interest);
@@ -360,7 +359,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     // remember pending downstreams
     for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
       if (inRecord.getExpiry() > now) {
-        pendingDownstreams.insert(inRecord.getFace().get());
+        pendingDownstreams.insert(&inRecord.getFace());
       }
     }
 

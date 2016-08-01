@@ -37,7 +37,7 @@ class InRecord : public FaceRecord
 {
 public:
   explicit
-  InRecord(shared_ptr<Face> face);
+  InRecord(Face& face);
 
   void
   update(const Interest& interest);

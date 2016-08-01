@@ -55,10 +55,10 @@ BOOST_AUTO_TEST_CASE(Basic)
     shared_ptr<Interest> interest = makeInterest(name);
     shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
     if ((i & 0x01) != 0) {
-      pitEntry->insertOrUpdateInRecord(face1, *interest);
+      pitEntry->insertOrUpdateInRecord(*face1, *interest);
     }
     if ((i & 0x02) != 0) {
-      pitEntry->insertOrUpdateOutRecord(face1, *interest);
+      pitEntry->insertOrUpdateOutRecord(*face1, *interest);
     }
   }
   BOOST_CHECK_EQUAL(fib.size(), 300);
@@ -144,22 +144,22 @@ BOOST_AUTO_TEST_CASE(DeletePitInOutRecords)
 
   shared_ptr<Interest> interestA = makeInterest("/A");
   shared_ptr<pit::Entry> entryA = pit.insert(*interestA).first;
-  entryA->insertOrUpdateInRecord(face1, *interestA);
-  entryA->insertOrUpdateInRecord(face2, *interestA);
-  entryA->insertOrUpdateOutRecord(face1, *interestA);
-  entryA->insertOrUpdateOutRecord(face2, *interestA);
+  entryA->insertOrUpdateInRecord(*face1, *interestA);
+  entryA->insertOrUpdateInRecord(*face2, *interestA);
+  entryA->insertOrUpdateOutRecord(*face1, *interestA);
+  entryA->insertOrUpdateOutRecord(*face2, *interestA);
   // {'/A':[1,2]}
 
   shared_ptr<Interest> interestB = makeInterest("/B");
   shared_ptr<pit::Entry> entryB = pit.insert(*interestB).first;
-  entryB->insertOrUpdateInRecord(face1, *interestB);
-  entryB->insertOrUpdateOutRecord(face1, *interestB);
+  entryB->insertOrUpdateInRecord(*face1, *interestB);
+  entryB->insertOrUpdateOutRecord(*face1, *interestB);
   // {'/A':[1,2], '/B':[1]}
 
   shared_ptr<Interest> interestC = makeInterest("/C");
   shared_ptr<pit::Entry> entryC = pit.insert(*interestC).first;
-  entryC->insertOrUpdateInRecord(face2, *interestC);
-  entryC->insertOrUpdateOutRecord(face2, *interestC);
+  entryC->insertOrUpdateInRecord(*face2, *interestC);
+  entryC->insertOrUpdateOutRecord(*face2, *interestC);
   // {'/A':[1,2], '/B':[1], '/C':[2]}
   BOOST_CHECK_EQUAL(pit.size(), 3);
 
@@ -172,9 +172,9 @@ BOOST_AUTO_TEST_CASE(DeletePitInOutRecords)
   shared_ptr<pit::Entry> foundA = pit.find(*interestA);
   BOOST_REQUIRE(foundA != nullptr);
   BOOST_REQUIRE_EQUAL(foundA->getInRecords().size(), 1);
-  BOOST_CHECK_EQUAL(foundA->getInRecords().front().getFace(), face2);
+  BOOST_CHECK_EQUAL(&foundA->getInRecords().front().getFace(), face2.get());
   BOOST_REQUIRE_EQUAL(foundA->getOutRecords().size(), 1);
-  BOOST_CHECK_EQUAL(foundA->getOutRecords().front().getFace(), face2);
+  BOOST_CHECK_EQUAL(&foundA->getOutRecords().front().getFace(), face2.get());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // FaceRemovalCleanup

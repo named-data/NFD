@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -41,9 +41,9 @@ class FaceRecord : public StrategyInfoHost
 {
 public:
   explicit
-  FaceRecord(shared_ptr<Face> face);
+  FaceRecord(Face& face);
 
-  shared_ptr<Face>
+  Face&
   getFace() const;
 
   uint32_t
@@ -64,13 +64,13 @@ public:
   update(const Interest& interest);
 
 private:
-  shared_ptr<Face> m_face;
+  Face& m_face;
   uint32_t m_lastNonce;
   time::steady_clock::TimePoint m_lastRenewed;
   time::steady_clock::TimePoint m_expiry;
 };
 
-inline shared_ptr<Face>
+inline Face&
 FaceRecord::getFace() const
 {
   return m_face;
