@@ -23,48 +23,55 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#ifndef NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP
+#define NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP
 
-#include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
+#include "module.hpp"
 
 namespace nfd {
-namespace tests {
+namespace tools {
+namespace nfd_status {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
+using ndn::nfd::ChannelStatus;
+
+/** \brief provides access to NFD channel dataset
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
  */
-class IdentityManagementFixture : public virtual BaseFixture
+class ChannelModule : public Module, noncopyable
 {
 public:
-  IdentityManagementFixture();
+  virtual void
+  fetchStatus(Controller& controller,
+              const function<void()>& onSuccess,
+              const Controller::CommandFailCallback& onFailure,
+              const CommandOptions& options) override;
 
-  ~IdentityManagementFixture();
+  virtual void
+  formatStatusXml(std::ostream& os) const override;
 
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
+  /** \brief format a single status item as XML
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemXml(std::ostream& os, const ChannelStatus& item) const;
 
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
+  virtual void
+  formatStatusText(std::ostream& os) const override;
+
+  /** \brief format a single status item as text
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemText(std::ostream& os, const ChannelStatus& item) const;
+
+private:
+  std::vector<ChannelStatus> m_status;
 };
 
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
-{
-};
-
-} // namespace tests
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
 
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#endif // NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP

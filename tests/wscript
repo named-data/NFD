@@ -40,9 +40,10 @@ def build(bld):
             defines='UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode,
           )
 
-        for module, name in {"core": "NFD Core Tests",
-                             "daemon": "NFD Daemon Tests",
-                             "rib": "NFD RIB Tests"}.items():
+        for module, name in {"core": "Core Tests",
+                             "daemon": "Daemon Tests",
+                             "rib": "RIB Tests",
+                             "tools": "Tools Tests"}.items():
             # main()
             bld(target='unit-tests-%s-main' % module,
                 name='unit-tests-%s-main' % module,

@@ -23,48 +23,63 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#ifndef NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP
+#define NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP
 
-#include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
+#include "module.hpp"
 
 namespace nfd {
-namespace tests {
+namespace tools {
+namespace nfd_status {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
+using ndn::Face;
+using ndn::security::KeyChain;
+using ndn::Validator;
+
+/** \brief collects and prints NFD status report
  */
-class IdentityManagementFixture : public virtual BaseFixture
+class StatusReport : noncopyable
 {
 public:
-  IdentityManagementFixture();
+#ifdef WITH_TESTS
+  virtual
+  ~StatusReport() = default;
+#endif
 
-  ~IdentityManagementFixture();
+  /** \brief collect status via chosen \p sections
+   *
+   *  This function is blocking. It has exclusive use of \p face.
+   *
+   *  \return if status has been fetched successfully, 0;
+   *          otherwise, error code from any failed section, plus 1000000 * section index
+   */
+  uint32_t
+  collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options);
 
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
+  /** \brief print an XML report
+   *  \param os output stream
+   */
+  void
+  formatXml(std::ostream& os) const;
 
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
+  /** \brief print a text report
+   *  \param os output stream
+   */
+  void
+  formatText(std::ostream& os) const;
+
+private:
+  VIRTUAL_WITH_TESTS void
+  processEvents(Face& face);
+
+public:
+  /** \brief modules through which status is collected
+   */
+  std::vector<unique_ptr<Module>> sections;
 };
 
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
-{
-};
-
-} // namespace tests
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
 
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#endif // NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP

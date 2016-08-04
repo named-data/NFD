@@ -23,48 +23,52 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#include "nfd-status/format-helpers.hpp"
 
 #include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
 
 namespace nfd {
+namespace tools {
+namespace nfd_status {
 namespace tests {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
- */
-class IdentityManagementFixture : public virtual BaseFixture
+using boost::test_tools::output_test_stream;
+
+BOOST_AUTO_TEST_SUITE(NfdStatus)
+BOOST_AUTO_TEST_SUITE(TestFormatHelpers)
+
+BOOST_AUTO_TEST_SUITE(Xml)
+
+BOOST_AUTO_TEST_CASE(TextEscaping)
 {
-public:
-  IdentityManagementFixture();
+  output_test_stream os;
+  os << xml::Text{"\"less than\" & 'greater than' surround XML <element> tag name"};
 
-  ~IdentityManagementFixture();
+  BOOST_CHECK(os.is_equal("&quot;less than&quot; &amp; &apos;greater than&apos;"
+                          " surround XML &lt;element&gt; tag name"));
+}
 
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
+BOOST_AUTO_TEST_SUITE_END() // Xml
 
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
-};
+BOOST_AUTO_TEST_SUITE(Text)
 
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
+BOOST_AUTO_TEST_CASE(Sep)
 {
-};
+  output_test_stream os;
+  text::Separator sep(",");
+  for (int i = 1; i <= 3; ++i) {
+    os << sep << i;
+  }
+
+  BOOST_CHECK(os.is_equal("1,2,3"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Text
+
+BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers
+BOOST_AUTO_TEST_SUITE_END() // NfdStatus
 
 } // namespace tests
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
-
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP

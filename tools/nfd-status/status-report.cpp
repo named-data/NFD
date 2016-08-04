@@ -23,48 +23,58 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-
-#include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
+#include "status-report.hpp"
+#include "format-helpers.hpp"
 
 namespace nfd {
-namespace tests {
+namespace tools {
+namespace nfd_status {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
- */
-class IdentityManagementFixture : public virtual BaseFixture
+uint32_t
+StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options)
 {
-public:
-  IdentityManagementFixture();
+  Controller controller(face, keyChain, validator);
+  uint32_t errorCode = 0;
 
-  ~IdentityManagementFixture();
+  for (size_t i = 0; i < sections.size(); ++i) {
+    Module& module = *sections[i];
+    module.fetchStatus(
+      controller,
+      [] {},
+      [i, &errorCode] (uint32_t code, const std::string& reason) {
+        errorCode = i * 1000000 + code;
+      },
+      options);
+  }
 
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
+  this->processEvents(face);
+  return errorCode;
+}
 
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
-};
-
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
+void
+StatusReport::processEvents(Face& face)
 {
-};
+  face.processEvents();
+}
 
-} // namespace tests
+void
+StatusReport::formatXml(std::ostream& os) const
+{
+  xml::printHeader(os);
+  for (const unique_ptr<Module>& module : sections) {
+    module->formatStatusXml(os);
+  }
+  xml::printFooter(os);
+}
+
+void
+StatusReport::formatText(std::ostream& os) const
+{
+  for (const unique_ptr<Module>& module : sections) {
+    module->formatStatusText(os);
+  }
+}
+
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
-
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP

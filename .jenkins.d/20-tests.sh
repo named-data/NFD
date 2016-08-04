@@ -18,6 +18,7 @@ if has Linux $NODE_LABELS; then
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-core || true
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-daemon || true
   sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-rib || true
+  # unit-tests-tools does not need capabilities
 fi
 
 ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
@@ -31,6 +32,8 @@ if [[ -n $XUNIT ]]; then
   ./build/unit-tests-daemon -l all -- --log_format2=XML --log_sink2=build/xunit-daemon-report.xml
 
   ./build/unit-tests-rib -l all -- --log_format2=XML --log_sink2=build/xunit-rib-report.xml
+
+  ./build/unit-tests-tools -l all -- --log_format2=XML --log_sink2=build/xunit-tools-report.xml
 else
   ./build/unit-tests-core -l test_suite
   sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
@@ -38,4 +41,6 @@ else
   ./build/unit-tests-daemon -l test_suite
 
   ./build/unit-tests-rib -l test_suite
+
+  ./build/unit-tests-tools -l test_suite
 fi

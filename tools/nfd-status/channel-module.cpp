@@ -23,48 +23,61 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-
-#include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
+#include "channel-module.hpp"
+#include "format-helpers.hpp"
 
 namespace nfd {
-namespace tests {
+namespace tools {
+namespace nfd_status {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
- */
-class IdentityManagementFixture : public virtual BaseFixture
+void
+ChannelModule::fetchStatus(Controller& controller,
+                           const function<void()>& onSuccess,
+                           const Controller::CommandFailCallback& onFailure,
+                           const CommandOptions& options)
 {
-public:
-  IdentityManagementFixture();
+  controller.fetch<ndn::nfd::ChannelDataset>(
+    [this, onSuccess] (const std::vector<ChannelStatus>& result) {
+      m_status = result;
+      onSuccess();
+    },
+    onFailure, options);
+}
 
-  ~IdentityManagementFixture();
-
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
-
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
-};
-
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
+void
+ChannelModule::formatStatusXml(std::ostream& os) const
 {
-};
+  os << "<channels>";
+  for (const ChannelStatus& item : m_status) {
+    this->formatItemXml(os, item);
+  }
+  os << "</channels>";
+}
 
-} // namespace tests
+void
+ChannelModule::formatItemXml(std::ostream& os, const ChannelStatus& item) const
+{
+  os << "<channel>";
+  os << "<localUri>" << xml::Text{item.getLocalUri()} << "</localUri>";
+  os << "</channel>";
+}
+
+void
+ChannelModule::formatStatusText(std::ostream& os) const
+{
+  os << "Channels:\n";
+  for (const ChannelStatus& item : m_status) {
+    this->formatItemText(os, item);
+  }
+}
+
+void
+ChannelModule::formatItemText(std::ostream& os, const ChannelStatus& item) const
+{
+  os << "  " << item.getLocalUri();
+  os << "\n";
+}
+
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
-
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP

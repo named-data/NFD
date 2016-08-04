@@ -23,48 +23,53 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#include "nfd-status/channel-module.hpp"
 
-#include "tests/test-common.hpp"
-#include <ndn-cxx/security/key-chain.hpp>
-#include <vector>
-
-#include "boost-test.hpp"
+#include "module-fixture.hpp"
 
 namespace nfd {
+namespace tools {
+namespace nfd_status {
 namespace tests {
 
-/**
- * @brief IdentityManagementFixture is a test suite level fixture.
- *
- * Test cases in the suite can use this fixture to create identities.
- * Identities added via addIdentity method are automatically deleted
- * during test teardown.
- */
-class IdentityManagementFixture : public virtual BaseFixture
+BOOST_AUTO_TEST_SUITE(NfdStatus)
+BOOST_FIXTURE_TEST_SUITE(TestChannelModule, ModuleFixture<ChannelModule>)
+
+const std::string STATUS_XML = stripXmlSpaces(R"XML(
+  <channels>
+    <channel>
+      <localUri>tcp4://192.0.2.1:6363</localUri>
+    </channel>
+    <channel>
+      <localUri>ws://[::]:9696/NFD</localUri>
+    </channel>
+  </channels>
+)XML");
+
+const std::string STATUS_TEXT = std::string(R"TEXT(
+Channels:
+  tcp4://192.0.2.1:6363
+  ws://[::]:9696/NFD
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(Status)
 {
-public:
-  IdentityManagementFixture();
+  this->fetchStatus();
+  ChannelStatus payload1;
+  payload1.setLocalUri("tcp4://192.0.2.1:6363");
+  ChannelStatus payload2;
+  payload2.setLocalUri("ws://[::]:9696/NFD");
+  this->sendDataset("/localhost/nfd/faces/channels", payload1, payload2);
+  this->prepareStatusOutput();
 
-  ~IdentityManagementFixture();
+  BOOST_CHECK(statusXml.is_equal(STATUS_XML));
+  BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
+}
 
-  // @brief add identity, return true if succeed.
-  bool
-  addIdentity(const ndn::Name& identity,
-              const ndn::KeyParams& params = ndn::KeyChain::DEFAULT_KEY_PARAMS);
-
-protected:
-  ndn::KeyChain m_keyChain;
-  std::vector<ndn::Name> m_identities;
-};
-
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
-{
-};
+BOOST_AUTO_TEST_SUITE_END() // TestChannelModule
+BOOST_AUTO_TEST_SUITE_END() // NfdStatus
 
 } // namespace tests
+} // namespace nfd_status
+} // namespace tools
 } // namespace nfd
-
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
