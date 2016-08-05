@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,6 @@
 
 #ifndef NFD_RIB_RIB_HPP
 #define NFD_RIB_RIB_HPP
-
-#include "common.hpp"
 
 #include "rib-entry.hpp"
 #include "rib-update-batch.hpp"
@@ -131,6 +129,9 @@ public:
   void
   onRouteExpiration(const Name& prefix, const Route& route);
 
+  void
+  insert(const Name& prefix, const Route& route);
+
 private:
   /** \brief adds the passed update to a RibUpdateBatch and adds the batch to
   *          the end of the update queue.
@@ -161,11 +162,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   // Used by RibManager unit-tests to get sent batch to simulate successful FIB update
   function<void(RibUpdateBatch)> m_onSendBatchFromQueue;
 
-public:
-  void
-  insert(const Name& prefix, const Route& route);
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   erase(const Name& prefix, const Route& route);
 

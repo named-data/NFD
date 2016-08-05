@@ -26,7 +26,7 @@
 #include "nfd.hpp"
 #include "rib/service.hpp"
 
-#include "version.hpp"
+#include "core/version.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/privilege-helper.hpp"

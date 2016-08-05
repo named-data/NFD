@@ -156,15 +156,15 @@ main(int, char**)
     if not conf.options.debug:
         conf.define('NDEBUG', 1)
 
-    conf.write_config_header('config.hpp')
+    conf.write_config_header('core/config.hpp')
 
 def build(bld):
     version(bld)
 
     bld(features="subst",
         name='version',
-        source='version.hpp.in',
-        target='version.hpp',
+        source='core/version.hpp.in',
+        target='core/version.hpp',
         install_path=None,
         VERSION_STRING=VERSION_BASE,
         VERSION_BUILD=VERSION,
@@ -184,8 +184,8 @@ def build(bld):
                                  excl=['core/logger*.cpp']),
         use='version NDN_CXX BOOST LIBRT',
         includes='. core',
-        export_includes='. core',
-        headers='common.hpp',
+        export_includes='.',
+        headers='core/common.hpp'
         )
 
     if bld.env['HAVE_CUSTOM_LOGGER']:

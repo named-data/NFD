@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 #include "table/measurements-entry.hpp"

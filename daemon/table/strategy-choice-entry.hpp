@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_STRATEGY_CHOICE_ENTRY_HPP
 #define NFD_DAEMON_TABLE_STRATEGY_CHOICE_ENTRY_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 

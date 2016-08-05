@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "version.hpp"
+#include "core/version.hpp"
 #include <ndn-cxx/security/validator-null.hpp>
 
 #include <boost/program_options/options_description.hpp>

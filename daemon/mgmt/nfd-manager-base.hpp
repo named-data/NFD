@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_MGMT_NFD_MANAGER_BASE_HPP
 #define NFD_DAEMON_MGMT_NFD_MANAGER_BASE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "command-validator.hpp"
 #include "core/manager-base.hpp"
 

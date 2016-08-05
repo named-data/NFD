@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "name-tree-entry.hpp"
 
 namespace nfd {

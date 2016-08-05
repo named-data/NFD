@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_GENERIC_LINK_SERVICE_HPP
 #define NFD_DAEMON_FACE_GENERIC_LINK_SERVICE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "core/logger.hpp"
 
 #include "link-service.hpp"

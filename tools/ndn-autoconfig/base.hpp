@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,9 +26,7 @@
 #ifndef NFD_TOOLS_NDN_AUTOCONFIG_BASE_HPP
 #define NFD_TOOLS_NDN_AUTOCONFIG_BASE_HPP
 
-#include "common.hpp"
-
-#include <boost/noncopyable.hpp>
+#include "core/common.hpp"
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>

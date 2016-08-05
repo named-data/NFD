@@ -26,7 +26,7 @@
 #ifndef NFD_RIB_SERVICE_HPP
 #define NFD_RIB_SERVICE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "core/config-file.hpp"
 
 #include <ndn-cxx/face.hpp>

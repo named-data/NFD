@@ -23,10 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_COMMON_HPP
-#define NFD_COMMON_HPP
+#ifndef NFD_CORE_COMMON_HPP
+#define NFD_CORE_COMMON_HPP
 
-#include "config.hpp"
+#include "core/config.hpp"
 
 #ifdef WITH_TESTS
 #define VIRTUAL_WITH_TESTS virtual
@@ -116,4 +116,4 @@ namespace signal = ndn::util::signal;
 
 } // namespace nfd
 
-#endif // NFD_COMMON_HPP
+#endif // NFD_CORE_COMMON_HPP

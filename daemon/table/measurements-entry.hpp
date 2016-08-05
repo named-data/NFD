@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_TABLE_MEASUREMENTS_ENTRY_HPP
 #define NFD_DAEMON_TABLE_MEASUREMENTS_ENTRY_HPP
 
-#include "common.hpp"
 #include "strategy-info-host.hpp"
 #include "core/scheduler.hpp"
 

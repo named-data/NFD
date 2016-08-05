@@ -27,7 +27,6 @@
 #define NFD_DAEMON_TABLE_CS_POLICY_FIFO_HPP
 
 #include "cs-policy.hpp"
-#include "common.hpp"
 #include "core/scheduler.hpp"
 
 namespace nfd {

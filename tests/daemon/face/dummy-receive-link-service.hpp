@@ -26,7 +26,7 @@
 #ifndef NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
 #define NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 #include "face/link-service.hpp"
 

@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FW_FORWARDER_HPP
 #define NFD_DAEMON_FW_FORWARDER_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "core/scheduler.hpp"
 #include "forwarder-counters.hpp"
 #include "face-table.hpp"

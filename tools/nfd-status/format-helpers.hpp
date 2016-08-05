@@ -26,7 +26,7 @@
 #ifndef NFD_TOOLS_NFD_STATUS_FORMAT_HELPERS_HPP
 #define NFD_TOOLS_NFD_STATUS_FORMAT_HELPERS_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 namespace tools {

@@ -26,7 +26,7 @@
 #ifndef NFD_TOOLS_NFD_STATUS_MODULE_HPP
 #define NFD_TOOLS_NFD_STATUS_MODULE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include <ndn-cxx/management/nfd-controller.hpp>
 
 namespace nfd {

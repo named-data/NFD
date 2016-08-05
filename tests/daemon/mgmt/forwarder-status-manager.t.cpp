@@ -24,7 +24,7 @@
  */
 
 #include "mgmt/forwarder-status-manager.hpp"
-#include "version.hpp"
+#include "core/version.hpp"
 
 #include "nfd-manager-common-fixture.hpp"
 

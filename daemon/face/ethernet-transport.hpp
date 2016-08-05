@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "transport.hpp"
 #include "core/network-interface.hpp"
 

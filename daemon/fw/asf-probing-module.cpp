@@ -25,7 +25,7 @@
 
 #include "asf-probing-module.hpp"
 
-#include "random.hpp"
+#include "core/random.hpp"
 
 #include <boost/random/uniform_real_distribution.hpp>
 

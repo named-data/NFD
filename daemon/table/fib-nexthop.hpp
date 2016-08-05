@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_FIB_NEXTHOP_HPP
 #define NFD_DAEMON_TABLE_FIB_NEXTHOP_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 #include "face/face.hpp"
 
 namespace nfd {

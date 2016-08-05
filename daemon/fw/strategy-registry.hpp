@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FW_STRATEGY_REGISTRY_HPP
 #define NFD_DAEMON_FW_STRATEGY_REGISTRY_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 
