@@ -26,8 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_HPP
 
-#include "core/common.hpp"
-#include "name-tree-entry.hpp"
+#include "name-tree-iterator.hpp"
 
 namespace nfd {
 namespace name_tree {
@@ -43,40 +42,12 @@ computeHash(const Name& prefix);
 std::vector<size_t>
 computeHashSet(const Name& prefix);
 
-/** \brief a predicate to accept or reject an Entry in find operations
- */
-typedef function<bool(const Entry& entry)> EntrySelector;
-
-/** \brief a predicate to accept or reject an Entry and its children
- *  \return .first indicates whether entry should be accepted;
- *          .second indicates whether entry's children should be visited
- */
-typedef function<std::pair<bool,bool>(const Entry& entry)> EntrySubTreeSelector;
-
-struct AnyEntry
-{
-  bool
-  operator()(const Entry& entry) const
-  {
-    return true;
-  }
-};
-
-struct AnyEntrySubTree
-{
-  std::pair<bool, bool>
-  operator()(const Entry& entry) const
-  {
-    return {true, true};
-  }
-};
-
 /** \brief shared name-based index for FIB, PIT, Measurements, and StrategyChoice
  */
 class NameTree : noncopyable
 {
 public:
-  class const_iterator;
+  typedef Iterator const_iterator;
 
   explicit
   NameTree(size_t nBuckets = 1024);
@@ -255,53 +226,6 @@ public: // enumeration
   const_iterator
   end() const;
 
-  enum IteratorType {
-    FULL_ENUMERATE_TYPE,
-    PARTIAL_ENUMERATE_TYPE,
-    FIND_ALL_MATCHES_TYPE
-  };
-
-  class const_iterator : public std::iterator<std::forward_iterator_tag, const Entry>
-  {
-  public:
-    friend class NameTree;
-
-    const_iterator();
-
-    const_iterator(NameTree::IteratorType type,
-                   const NameTree& nameTree,
-                   shared_ptr<Entry> entry,
-                   const EntrySelector& entrySelector = AnyEntry(),
-                   const EntrySubTreeSelector& entrySubTreeSelector = AnyEntrySubTree());
-
-    const Entry&
-    operator*() const;
-
-    shared_ptr<Entry>
-    operator->() const;
-
-    const_iterator
-    operator++();
-
-    const_iterator
-    operator++(int);
-
-    bool
-    operator==(const const_iterator& other) const;
-
-    bool
-    operator!=(const const_iterator& other) const;
-
-  private:
-    const NameTree* m_nameTree;
-    shared_ptr<Entry> m_entry;
-    shared_ptr<Entry> m_subTreeRoot;
-    shared_ptr<EntrySelector> m_entrySelector;
-    shared_ptr<EntrySubTreeSelector> m_entrySubTreeSelector;
-    NameTree::IteratorType m_type;
-    bool m_shouldVisitChildren;
-  };
-
 private:
   /** \brief Create a Name Tree Entry if it does not exist, or return the existing
    *         Name Tree Entry address.
@@ -336,8 +260,10 @@ private:
   size_t m_shrinkThreshold;
   double m_shrinkFactor;
   Node** m_buckets; ///< Name Tree Buckets in the NPHT
-  shared_ptr<Entry> m_end;
-  const_iterator m_endIterator;
+
+  friend class FullEnumerationImpl;
+  friend class PartialEnumerationImpl;
+  friend class PrefixMatchImpl;
 };
 
 inline size_t
@@ -368,39 +294,7 @@ NameTree::begin() const
 inline NameTree::const_iterator
 NameTree::end() const
 {
-  return m_endIterator;
-}
-
-inline const Entry&
-NameTree::const_iterator::operator*() const
-{
-  return *m_entry;
-}
-
-inline shared_ptr<Entry>
-NameTree::const_iterator::operator->() const
-{
-  return m_entry;
-}
-
-inline NameTree::const_iterator
-NameTree::const_iterator::operator++(int)
-{
-  NameTree::const_iterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-inline bool
-NameTree::const_iterator::operator==(const NameTree::const_iterator& other) const
-{
-  return m_entry == other.m_entry;
-}
-
-inline bool
-NameTree::const_iterator::operator!=(const NameTree::const_iterator& other) const
-{
-  return m_entry != other.m_entry;
+  return Iterator();
 }
 
 } // namespace name_tree

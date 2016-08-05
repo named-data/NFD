@@ -33,7 +33,6 @@
 #include "table/strategy-choice-entry.hpp"
 
 namespace nfd {
-
 namespace name_tree {
 
 class Node;
@@ -128,17 +127,19 @@ private:
   size_t m_hash;
   Name m_prefix;
   shared_ptr<Entry> m_parent;     // Pointing to the parent entry.
-  std::vector<shared_ptr<Entry> > m_children; // Children pointers.
+  std::vector<shared_ptr<Entry>> m_children; // Children pointers.
   unique_ptr<fib::Entry> m_fibEntry;
-  std::vector<shared_ptr<pit::Entry> > m_pitEntries;
+  std::vector<shared_ptr<pit::Entry>> m_pitEntries;
   unique_ptr<measurements::Entry> m_measurementsEntry;
   unique_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
 
   // get the Name Tree Node that is associated with this Name Tree Entry
   Node* m_node;
 
-  // Make private members accessible by Name Tree
-  friend class nfd::NameTree;
+  friend class NameTree;
+  friend class FullEnumerationImpl;
+  friend class PartialEnumerationImpl;
+  friend class PrefixMatchImpl;
 };
 
 inline const Name&
@@ -171,7 +172,7 @@ Entry::setParent(shared_ptr<Entry> parent)
   m_parent = parent;
 }
 
-inline std::vector<shared_ptr<name_tree::Entry> >&
+inline std::vector<shared_ptr<name_tree::Entry>>&
 Entry::getChildren()
 {
   return m_children;
