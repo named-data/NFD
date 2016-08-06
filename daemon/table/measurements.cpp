@@ -94,7 +94,7 @@ Measurements::getParent(const Entry& child)
   }
 
   shared_ptr<name_tree::Entry> nteChild = m_nameTree.lookup(child);
-  shared_ptr<name_tree::Entry> nte = nteChild->getParent();
+  name_tree::Entry* nte = nteChild->getParent();
   BOOST_ASSERT(nte != nullptr);
   return &this->get(*nte);
 }

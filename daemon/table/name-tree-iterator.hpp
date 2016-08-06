@@ -72,7 +72,7 @@ class Iterator : public std::iterator<std::forward_iterator_tag, const Entry>
 public:
   Iterator();
 
-  Iterator(shared_ptr<EnumerationImpl> impl, shared_ptr<Entry> ref);
+  Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);
 
   virtual
   ~Iterator() = default;
@@ -84,7 +84,7 @@ public:
     return *m_entry;
   }
 
-  shared_ptr<Entry>
+  const Entry*
   operator->() const
   {
     BOOST_ASSERT(m_impl != nullptr);
@@ -113,11 +113,11 @@ private:
 
   /** \brief current entry; nullptr for uninitialized iterator
    */
-  shared_ptr<Entry> m_entry;
+  const Entry* m_entry;
 
   /** \brief reference entry used by enumeration implementation
    */
-  shared_ptr<Entry> m_ref;
+  const Entry* m_ref;
 
   /** \brief state used by enumeration implementation
    */
@@ -145,6 +145,7 @@ public:
 
 protected:
   const NameTree& nt;
+  const Hashtable& ht;
 };
 
 /** \brief full enumeration implementation

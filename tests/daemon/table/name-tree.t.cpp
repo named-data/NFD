@@ -36,36 +36,166 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestNameTree, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(Hash)
+BOOST_AUTO_TEST_CASE(ComputeHash)
 {
   Name root("/");
   root.wireEncode();
-  size_t hashValue = computeHash(root);
+  HashValue hashValue = computeHash(root);
   BOOST_CHECK_EQUAL(hashValue, 0);
 
   Name prefix("/nohello/world/ndn/research");
   prefix.wireEncode();
-  std::vector<size_t> hashSet = computeHashSet(prefix);
-  BOOST_CHECK_EQUAL(hashSet.size(), prefix.size() + 1);
+  HashSequence hashes = computeHashes(prefix);
+  BOOST_CHECK_EQUAL(hashes.size(), prefix.size() + 1);
 }
+
+BOOST_AUTO_TEST_SUITE(Hashtable)
+using name_tree::Hashtable;
+
+BOOST_AUTO_TEST_CASE(Modifiers)
+{
+  Hashtable ht(HashtableOptions(16));
+
+  Name name("/A/B/C/D");
+  HashSequence hashes = computeHashes(name);
+
+  BOOST_CHECK_EQUAL(ht.size(), 0);
+  BOOST_CHECK(ht.find(name, 2) == nullptr);
+
+  const Node* node = nullptr;
+  bool isNew = false;
+  std::tie(node, isNew) = ht.insert(name, 2, hashes);
+  BOOST_CHECK_EQUAL(isNew, true);
+  BOOST_CHECK(node != nullptr);
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+  BOOST_CHECK_EQUAL(ht.find(name, 2), node);
+  BOOST_CHECK_EQUAL(ht.find(name, 2, hashes), node);
+
+  BOOST_CHECK(ht.find(name, 0) == nullptr);
+  BOOST_CHECK(ht.find(name, 1) == nullptr);
+  BOOST_CHECK(ht.find(name, 3) == nullptr);
+  BOOST_CHECK(ht.find(name, 4) == nullptr);
+
+  const Node* node2 = nullptr;
+  std::tie(node2, isNew) = ht.insert(name, 2, hashes);
+  BOOST_CHECK_EQUAL(isNew, false);
+  BOOST_CHECK_EQUAL(node2, node);
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+
+  std::tie(node2, isNew) = ht.insert(name, 4, hashes);
+  BOOST_CHECK_EQUAL(isNew, true);
+  BOOST_CHECK(node2 != nullptr);
+  BOOST_CHECK_NE(node2, node);
+  BOOST_CHECK_EQUAL(ht.size(), 2);
+
+  ht.erase(const_cast<Node*>(node2));
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+  BOOST_CHECK(ht.find(name, 4) == nullptr);
+  BOOST_CHECK_EQUAL(ht.find(name, 2), node);
+
+  ht.erase(const_cast<Node*>(node));
+  BOOST_CHECK_EQUAL(ht.size(), 0);
+  BOOST_CHECK(ht.find(name, 2) == nullptr);
+  BOOST_CHECK(ht.find(name, 4) == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(Resize)
+{
+  HashtableOptions options(9);
+  BOOST_CHECK_EQUAL(options.initialSize, 9);
+  BOOST_CHECK_EQUAL(options.minSize, 9);
+  options.minSize = 6;
+  options.expandLoadFactor = 0.80;
+  options.expandFactor = 5.0;
+  options.shrinkLoadFactor = 0.12;
+  options.shrinkFactor = 0.3;
+
+  Hashtable ht(options);
+
+  auto addNodes = [&ht] (int min, int max) {
+    for (int i = min; i <= max; ++i) {
+      Name name;
+      name.appendNumber(i);
+      HashSequence hashes = computeHashes(name);
+      ht.insert(name, name.size(), hashes);
+    }
+  };
+
+  auto removeNodes = [&ht] (int min, int max) {
+    for (int i = min; i <= max; ++i) {
+      Name name;
+      name.appendNumber(i);
+      const Node* node = ht.find(name, name.size());
+      BOOST_REQUIRE(node != nullptr);
+      ht.erase(const_cast<Node*>(node));
+    }
+  };
+
+  BOOST_CHECK_EQUAL(ht.size(), 0);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 9);
+
+  addNodes(1, 1);
+  BOOST_CHECK_EQUAL(ht.size(), 1);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 9);
+
+  removeNodes(1, 1);
+  BOOST_CHECK_EQUAL(ht.size(), 0);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 6);
+
+  addNodes(1, 4);
+  BOOST_CHECK_EQUAL(ht.size(), 4);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 6);
+
+  addNodes(5, 5);
+  BOOST_CHECK_EQUAL(ht.size(), 5);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 30);
+
+  addNodes(6, 23);
+  BOOST_CHECK_EQUAL(ht.size(), 23);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 30);
+
+  addNodes(24, 25);
+  BOOST_CHECK_EQUAL(ht.size(), 25);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 150);
+
+  removeNodes(19, 25);
+  BOOST_CHECK_EQUAL(ht.size(), 18);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 150);
+
+  removeNodes(17, 18);
+  BOOST_CHECK_EQUAL(ht.size(), 16);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 45);
+
+  removeNodes(7, 16);
+  BOOST_CHECK_EQUAL(ht.size(), 6);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 45);
+
+  removeNodes(5, 6);
+  BOOST_CHECK_EQUAL(ht.size(), 4);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 13);
+
+  removeNodes(1, 4);
+  BOOST_CHECK_EQUAL(ht.size(), 0);
+  BOOST_CHECK_EQUAL(ht.getNBuckets(), 6);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Hashtable
 
 BOOST_AUTO_TEST_CASE(NameTreeEntry)
 {
   Name prefix("ndn:/named-data/research/abc/def/ghi");
 
-  auto npe = make_shared<Entry>(prefix);
+  auto node = make_unique<Node>(0, prefix);
+  shared_ptr<Entry> npe = node->entry;
   BOOST_CHECK_EQUAL(npe->getPrefix(), prefix);
 
   // examine all the get methods
 
-  size_t hash = npe->getHash();
-  BOOST_CHECK_EQUAL(hash, 0);
-
-  shared_ptr<Entry> parent = npe->getParent();
+  Entry* parent = npe->getParent();
   BOOST_CHECK(parent == nullptr);
 
-  std::vector<shared_ptr<Entry>>& childList = npe->getChildren();
-  BOOST_CHECK_EQUAL(childList.size(), 0);
+  const std::vector<Entry*>& children = npe->getChildren();
+  BOOST_CHECK_EQUAL(children.size(), 0);
 
   fib::Entry* fib = npe->getFibEntry();
   BOOST_CHECK(fib == nullptr);
@@ -75,13 +205,10 @@ BOOST_AUTO_TEST_CASE(NameTreeEntry)
 
   // examine all the set method
 
-  npe->setHash(12345);
-  BOOST_CHECK_EQUAL(npe->getHash(), 12345);
-
   Name parentName("ndn:/named-data/research/abc/def");
-  parent = make_shared<Entry>(parentName);
-  npe->setParent(parent);
-  BOOST_CHECK_EQUAL(npe->getParent(), parent);
+  auto parentNode = make_unique<Node>(1, parentName);
+  npe->setParent(*parentNode->entry);
+  BOOST_CHECK_EQUAL(npe->getParent(), parentNode->entry.get());
 
   // Insert FIB
 
@@ -137,14 +264,14 @@ BOOST_AUTO_TEST_CASE(Basic)
   // validate lookup() and findExactMatch()
 
   Name nameAB ("/a/b");
-  BOOST_CHECK_EQUAL(npeABC->getParent(), nt.findExactMatch(nameAB));
-  BOOST_CHECK_EQUAL(npeABD->getParent(), nt.findExactMatch(nameAB));
+  BOOST_CHECK_EQUAL(npeABC->getParent(), nt.findExactMatch(nameAB).get());
+  BOOST_CHECK_EQUAL(npeABD->getParent(), nt.findExactMatch(nameAB).get());
 
   Name nameA ("/a");
-  BOOST_CHECK_EQUAL(npeAE->getParent(), nt.findExactMatch(nameA));
+  BOOST_CHECK_EQUAL(npeAE->getParent(), nt.findExactMatch(nameA).get());
 
   Name nameRoot ("/");
-  BOOST_CHECK_EQUAL(npeF->getParent(), nt.findExactMatch(nameRoot));
+  BOOST_CHECK_EQUAL(npeF->getParent(), nt.findExactMatch(nameRoot).get());
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
   Name name0("/does/not/exist");

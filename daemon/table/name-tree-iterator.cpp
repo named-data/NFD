@@ -41,12 +41,15 @@ static_assert(std::is_default_constructible<Iterator>::value,
               "Iterator must be default-constructible");
 
 Iterator::Iterator()
-  : m_state(0)
+  : m_entry(nullptr)
+  , m_ref(nullptr)
+  , m_state(0)
 {
 }
 
-Iterator::Iterator(shared_ptr<EnumerationImpl> impl, shared_ptr<Entry> ref)
+Iterator::Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref)
   : m_impl(impl)
+  , m_entry(nullptr)
   , m_ref(ref)
   , m_state(0)
 {
@@ -98,8 +101,9 @@ operator<<(std::ostream& os, const Iterator& i)
   return os;
 }
 
-EnumerationImpl::EnumerationImpl(const NameTree& nt1)
-  : nt(nt1)
+EnumerationImpl::EnumerationImpl(const NameTree& nt)
+  : nt(nt)
+  , ht(nt.m_ht)
 {
 }
 
@@ -112,37 +116,38 @@ FullEnumerationImpl::FullEnumerationImpl(const NameTree& nt, const EntrySelector
 void
 FullEnumerationImpl::advance(Iterator& i)
 {
-  // find initial entry
+  // find first entry
   if (i.m_entry == nullptr) {
-    for (size_t bucket = 0; bucket < nt.m_nBuckets; ++bucket) {
-      Node* node = nt.m_buckets[bucket];
+    for (size_t bucket = 0; bucket < ht.getNBuckets(); ++bucket) {
+      const Node* node = ht.getBucket(bucket);
       if (node != nullptr) {
-        i.m_entry = node->m_entry;
+        i.m_entry = node->entry.get();
         break;
       }
     }
-    if (i.m_entry == nullptr) { // empty enumeration
+    if (i.m_entry == nullptr) { // empty enumerable
       i = Iterator();
       return;
     }
-    if (m_pred(*i.m_entry)) { // visit initial entry
+    if (m_pred(*i.m_entry)) { // visit first entry
       return;
     }
   }
 
   // process entries in same bucket
-  for (Node* node = i.m_entry->m_node->m_next; node != nullptr; node = node->m_next) {
-    if (m_pred(*node->m_entry)) {
-      i.m_entry = node->m_entry;
+  for (const Node* node = getNode(*i.m_entry)->next; node != nullptr; node = node->next) {
+    if (m_pred(*node->entry)) {
+      i.m_entry = node->entry.get();
       return;
     }
   }
 
   // process other buckets
-  for (size_t bucket = i.m_entry->m_hash % nt.m_nBuckets + 1; bucket < nt.m_nBuckets; ++bucket) {
-    for (Node* node = nt.m_buckets[bucket]; node != nullptr; node = node->m_next) {
-      if (m_pred(*node->m_entry)) {
-        i.m_entry = node->m_entry;
+  size_t currentBucket = ht.computeBucketIndex(getNode(*i.m_entry)->hash);
+  for (size_t bucket = currentBucket + 1; bucket < ht.getNBuckets(); ++bucket) {
+    for (const Node* node = ht.getBucket(bucket); node != nullptr; node = node->next) {
+      if (m_pred(*node->entry)) {
+        i.m_entry = node->entry.get();
         return;
       }
     }
@@ -166,7 +171,7 @@ PartialEnumerationImpl::advance(Iterator& i)
 
   // initialize: start from root
   if (i.m_entry == nullptr) {
-    if (i.m_ref == nullptr) { // empty enumeration
+    if (i.m_ref == nullptr) { // root does not exist
       i = Iterator();
       return;
     }
@@ -195,8 +200,8 @@ PartialEnumerationImpl::advance(Iterator& i)
       // first child rejected, let while loop process other children (siblings of new m_entry)
     }
     else { // process siblings of m_entry
-      shared_ptr<Entry> parent = i.m_entry->getParent();
-      const std::vector<shared_ptr<Entry>>& siblings = parent->getChildren();
+      const Entry* parent = i.m_entry->getParent();
+      const std::vector<Entry*>& siblings = parent->getChildren();
       auto sibling = std::find(siblings.begin(), siblings.end(), i.m_entry);
       BOOST_ASSERT(sibling != siblings.end());
       while (++sibling != siblings.end()) {
@@ -232,7 +237,7 @@ void
 PrefixMatchImpl::advance(Iterator& i)
 {
   if (i.m_entry == nullptr) {
-    if (i.m_ref == nullptr) { // empty enumeration
+    if (i.m_ref == nullptr) { // empty enumerable
       i = Iterator();
       return;
     }

@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 
-#include "core/common.hpp"
+#include "name-tree-hashtable.hpp"
 #include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 #include "table/measurements-entry.hpp"
@@ -35,66 +35,104 @@
 namespace nfd {
 namespace name_tree {
 
-class Node;
-class Entry;
-class NameTree;
-
-/**
- * \brief Name Tree Node Class
- */
-class Node
-{
-public:
-  Node();
-
-  ~Node();
-
-public:
-  // variables are in public as this is just a data structure
-  shared_ptr<Entry> m_entry; // Name Tree Entry (i.e., Name Prefix Entry)
-  Node* m_prev; // Previous Name Tree Node (to resolve hash collision)
-  Node* m_next; // Next Name Tree Node (to resolve hash collision)
-};
-
-/**
- * \brief Name Tree Entry Class
+/** \brief an entry in the name tree
  */
 class Entry : public enable_shared_from_this<Entry>, noncopyable
 {
 public:
-  explicit
-  Entry(const Name& prefix);
+  Entry(const Name& prefix, Node* node);
 
   const Name&
-  getPrefix() const;
+  getName() const
+  {
+    return m_name;
+  }
 
+  /// \deprecated
+  const Name&
+  getPrefix() const
+  {
+    return this->getName();
+  }
+
+  /** \return entry of getName().getPrefix(-1)
+   *  \retval nullptr this entry is the root entry, i.e. getName() == Name()
+   */
+  Entry*
+  getParent() const
+  {
+    return m_parent;
+  }
+
+  /** \brief set parent of this entry
+   *  \param entry entry of getName().getPrefix(-1)
+   *  \pre getParent() == nullptr
+   *  \post getParent() == &entry
+   *  \post entry.getChildren() contains this
+   */
   void
-  setHash(size_t hash);
+  setParent(Entry& entry);
 
-  size_t
-  getHash() const;
-
+  /** \brief unset parent of this entry
+   *  \post getParent() == nullptr
+   *  \post parent.getChildren() does not contain this
+   */
   void
-  setParent(shared_ptr<Entry> parent);
+  unsetParent();
 
-  shared_ptr<Entry>
-  getParent() const;
-
-  std::vector<shared_ptr<Entry>>&
-  getChildren();
-
+  /** \retval true this entry has at least one child
+   *  \retval false this entry has no children
+   */
   bool
-  hasChildren() const;
+  hasChildren() const
+  {
+    return !this->getChildren().empty();
+  }
 
+  /** \return children of this entry
+   */
+  const std::vector<Entry*>&
+  getChildren() const
+  {
+    return m_children;
+  }
+
+  /** \retval true this entry has no children and no table entries
+   *  \retval false this entry has child or attached table entry
+   */
   bool
-  isEmpty() const;
+  isEmpty() const
+  {
+    return !this->hasChildren() && !this->hasTableEntries();
+  }
 
 public: // attached table entries
+  /** \retval true at least one table entries is attached
+   *  \retval false no table entry is attached
+   */
+  bool
+  hasTableEntries() const;
+
+  fib::Entry*
+  getFibEntry() const
+  {
+    return m_fibEntry.get();
+  }
+
   void
   setFibEntry(unique_ptr<fib::Entry> fibEntry);
 
-  fib::Entry*
-  getFibEntry() const;
+  bool
+  hasPitEntries() const
+  {
+    return !this->getPitEntries().empty();
+  }
+
+  const std::vector<shared_ptr<pit::Entry>>&
+  getPitEntries() const
+  {
+    return m_pitEntries;
+  }
 
   void
   insertPitEntry(shared_ptr<pit::Entry> pitEntry);
@@ -102,117 +140,37 @@ public: // attached table entries
   void
   erasePitEntry(shared_ptr<pit::Entry> pitEntry);
 
-  bool
-  hasPitEntries() const;
-
-  const std::vector<shared_ptr<pit::Entry>>&
-  getPitEntries() const;
+  measurements::Entry*
+  getMeasurementsEntry() const
+  {
+    return m_measurementsEntry.get();
+  }
 
   void
   setMeasurementsEntry(unique_ptr<measurements::Entry> measurementsEntry);
 
-  measurements::Entry*
-  getMeasurementsEntry() const;
+  strategy_choice::Entry*
+  getStrategyChoiceEntry() const
+  {
+    return m_strategyChoiceEntry.get();
+  }
 
   void
   setStrategyChoiceEntry(unique_ptr<strategy_choice::Entry> strategyChoiceEntry);
 
-  strategy_choice::Entry*
-  getStrategyChoiceEntry() const;
-
 private:
-  // Benefits of storing m_hash
-  // 1. m_hash is compared before m_prefix is compared
-  // 2. fast hash table resize support
-  size_t m_hash;
-  Name m_prefix;
-  shared_ptr<Entry> m_parent;     // Pointing to the parent entry.
-  std::vector<shared_ptr<Entry>> m_children; // Children pointers.
+  Name m_name;
+  Node* m_node;
+  Entry* m_parent;
+  std::vector<Entry*> m_children;
+
   unique_ptr<fib::Entry> m_fibEntry;
   std::vector<shared_ptr<pit::Entry>> m_pitEntries;
   unique_ptr<measurements::Entry> m_measurementsEntry;
   unique_ptr<strategy_choice::Entry> m_strategyChoiceEntry;
 
-  // get the Name Tree Node that is associated with this Name Tree Entry
-  Node* m_node;
-
-  friend class NameTree;
-  friend class FullEnumerationImpl;
-  friend class PartialEnumerationImpl;
-  friend class PrefixMatchImpl;
+  friend Node* getNode(const Entry& entry);
 };
-
-inline const Name&
-Entry::getPrefix() const
-{
-  return m_prefix;
-}
-
-inline size_t
-Entry::getHash() const
-{
-  return m_hash;
-}
-
-inline void
-Entry::setHash(size_t hash)
-{
-  m_hash = hash;
-}
-
-inline shared_ptr<Entry>
-Entry::getParent() const
-{
-  return m_parent;
-}
-
-inline void
-Entry::setParent(shared_ptr<Entry> parent)
-{
-  m_parent = parent;
-}
-
-inline std::vector<shared_ptr<name_tree::Entry>>&
-Entry::getChildren()
-{
-  return m_children;
-}
-
-inline bool
-Entry::hasChildren() const
-{
-  return !m_children.empty();
-}
-
-inline fib::Entry*
-Entry::getFibEntry() const
-{
-  return m_fibEntry.get();
-}
-
-inline bool
-Entry::hasPitEntries() const
-{
-  return !m_pitEntries.empty();
-}
-
-inline const std::vector<shared_ptr<pit::Entry>>&
-Entry::getPitEntries() const
-{
-  return m_pitEntries;
-}
-
-inline measurements::Entry*
-Entry::getMeasurementsEntry() const
-{
-  return m_measurementsEntry.get();
-}
-
-inline strategy_choice::Entry*
-Entry::getStrategyChoiceEntry() const
-{
-  return m_strategyChoiceEntry.get();
-}
 
 } // namespace name_tree
 } // namespace nfd

@@ -31,19 +31,6 @@
 namespace nfd {
 namespace name_tree {
 
-/** \brief Compute the hash value of the given name prefix's WIRE FORMAT
- */
-size_t
-computeHash(const Name& prefix);
-
-/** \brief Incrementally compute hash values
- *  \return Return a vector of hash values, starting from the root prefix
- */
-std::vector<size_t>
-computeHashSet(const Name& prefix);
-
-/** \brief shared name-based index for FIB, PIT, Measurements, and StrategyChoice
- */
 class NameTree : noncopyable
 {
 public:
@@ -52,13 +39,14 @@ public:
   explicit
   NameTree(size_t nBuckets = 1024);
 
-  ~NameTree();
-
 public: // information
   /** \brief Get the number of occupied entries in the Name Tree
    */
   size_t
-  size() const;
+  size() const
+  {
+    return m_ht.size();
+  }
 
   /** \brief Get the number of buckets in the Name Tree (NPHT)
    *
@@ -66,18 +54,19 @@ public: // information
    *  table, i.e., m_nBuckets.
    */
   size_t
-  getNBuckets() const;
+  getNBuckets() const
+  {
+    return m_ht.getNBuckets();
+  }
 
   /** \return Name Tree Entry on which a table entry is attached
    */
   template<typename ENTRY>
   shared_ptr<Entry>
-  getEntry(const ENTRY& tableEntry) const;
-
-  /** \brief Dump all the information stored in the Name Tree for debugging.
-   */
-  void
-  dump(std::ostream& output) const;
+  getEntry(const ENTRY& tableEntry) const
+  {
+    return tableEntry.m_nameTreeEntry.lock();
+  }
 
 public: // mutation
   /** \brief Look for the Name Tree Entry that contains this name prefix.
@@ -86,12 +75,12 @@ public: // mutation
    *  number of name components by one each time. All non-existing Name Tree
    *  Entries will be created.
    *
-   *  \param prefix The querying name prefix.
+   *  \param name The querying name prefix.
    *  \return The pointer to the Name Tree Entry that contains this full name prefix.
    *  \note Existing iterators are unaffected.
    */
   shared_ptr<Entry>
-  lookup(const Name& prefix);
+  lookup(const Name& name);
 
   /** \brief get NameTree entry from FIB entry
    *
@@ -128,15 +117,23 @@ public: // mutation
    *        it has no children, then repeats the same process on its ancestors.
    *  \note Existing iterators, except those pointing to deleted entries, are unaffected.
    */
+  size_t
+  eraseEntryIfEmpty(Entry* entry);
+
+  /// \deprecated
   bool
-  eraseEntryIfEmpty(shared_ptr<Entry> entry);
+  eraseEntryIfEmpty(shared_ptr<Entry> entry)
+  {
+    BOOST_ASSERT(entry != nullptr);
+    return this->eraseEntryIfEmpty(entry.get()) > 0;
+  }
 
 public: // matching
   /** \brief Exact match lookup for the given name prefix.
    *  \return nullptr if this prefix is not found; otherwise return the Name Tree Entry address
    */
   shared_ptr<Entry>
-  findExactMatch(const Name& prefix) const;
+  findExactMatch(const Name& name) const;
 
   /** \brief Longest prefix matching for the given name
    *
@@ -144,7 +141,7 @@ public: // matching
    *  by one each time, until an Entry is found.
    */
   shared_ptr<Entry>
-  findLongestPrefixMatch(const Name& prefix,
+  findLongestPrefixMatch(const Name& name,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   shared_ptr<Entry>
@@ -217,85 +214,26 @@ public: // enumeration
    *  \note The returned iterator may get invalidated when NameTree is modified
    */
   const_iterator
-  begin() const;
+  begin() const
+  {
+    return fullEnumerate().begin();
+  }
 
   /** \brief Get an iterator referring to the past-the-end FIB entry
    *  \note Iteration order is implementation-specific and is undefined
    *  \note The returned iterator may get invalidated when NameTree is modified
    */
   const_iterator
-  end() const;
+  end() const
+  {
+    return Iterator();
+  }
 
 private:
-  /** \brief Create a Name Tree Entry if it does not exist, or return the existing
-   *         Name Tree Entry address.
-   *
-   *  Called by lookup() only.
-   *
-   *  \return The first item is the Name Tree Entry address, the second item is
-   *          a bool value indicates whether this is an old entry (false) or a new
-   *          entry (true).
-   */
-  std::pair<shared_ptr<Entry>, bool>
-  insert(const Name& prefix);
+  Hashtable m_ht;
 
-  /** \brief Resize the hash table size when its load factor reaches a threshold.
-   *
-   *  As we are currently using a hand-written hash table implementation
-   *  for the Name Tree, the hash table resize() function should be kept in the
-   *  name-tree.hpp file.
-   *  \param newNBuckets The number of buckets for the new hash table.
-   */
-  void
-  resize(size_t newNBuckets);
-
-private:
-  size_t m_nItems;  ///< Number of items being stored
-  size_t m_nBuckets; ///< Number of hash buckets
-  size_t m_minNBuckets; ///< Minimum number of hash buckets
-  double m_enlargeLoadFactor;
-  size_t m_enlargeThreshold;
-  int m_enlargeFactor;
-  double m_shrinkLoadFactor;
-  size_t m_shrinkThreshold;
-  double m_shrinkFactor;
-  Node** m_buckets; ///< Name Tree Buckets in the NPHT
-
-  friend class FullEnumerationImpl;
-  friend class PartialEnumerationImpl;
-  friend class PrefixMatchImpl;
+  friend class EnumerationImpl;
 };
-
-inline size_t
-NameTree::size() const
-{
-  return m_nItems;
-}
-
-inline size_t
-NameTree::getNBuckets() const
-{
-  return m_nBuckets;
-}
-
-template<typename ENTRY>
-inline shared_ptr<Entry>
-NameTree::getEntry(const ENTRY& tableEntry) const
-{
-  return tableEntry.m_nameTreeEntry.lock();
-}
-
-inline NameTree::const_iterator
-NameTree::begin() const
-{
-  return fullEnumerate().begin();
-}
-
-inline NameTree::const_iterator
-NameTree::end() const
-{
-  return Iterator();
-}
 
 } // namespace name_tree
 

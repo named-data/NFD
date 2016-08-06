@@ -28,36 +28,45 @@
 namespace nfd {
 namespace name_tree {
 
-Node::Node()
-  : m_prev(nullptr)
-  , m_next(nullptr)
+Entry::Entry(const Name& name, Node* node)
+  : m_name(name)
+  , m_node(node)
+  , m_parent(nullptr)
 {
+  BOOST_ASSERT(node != nullptr);
 }
 
-Node::~Node()
+void
+Entry::setParent(Entry& entry)
 {
-  // erase the Name Tree Nodes that were created to
-  // resolve hash collisions
-  // So before erasing a single node, make sure its m_next == nullptr
-  // See eraseEntryIfEmpty in name-tree.cpp
-  if (m_next != nullptr)
-    delete m_next;
+  BOOST_ASSERT(this->getParent() == nullptr);
+  BOOST_ASSERT(!this->getName().empty());
+  BOOST_ASSERT(entry.getName() == this->getName().getPrefix(-1));
+
+  m_parent = &entry;
+
+  m_parent->m_children.push_back(this);
 }
 
-Entry::Entry(const Name& name)
-  : m_hash(0)
-  , m_prefix(name)
+void
+Entry::unsetParent()
 {
+  BOOST_ASSERT(this->getParent() != nullptr);
+
+  auto i = std::find(m_parent->m_children.begin(), m_parent->m_children.end(), this);
+  BOOST_ASSERT(i != m_parent->m_children.end());
+  m_parent->m_children.erase(i);
+
+  m_parent = nullptr;
 }
 
 bool
-Entry::isEmpty() const
+Entry::hasTableEntries() const
 {
-  return m_children.empty() &&
-         m_fibEntry == nullptr &&
-         m_pitEntries.empty() &&
-         m_measurementsEntry == nullptr &&
-         m_strategyChoiceEntry == nullptr;
+  return m_fibEntry != nullptr ||
+         !m_pitEntries.empty() ||
+         m_measurementsEntry != nullptr ||
+         m_strategyChoiceEntry != nullptr;
 }
 
 void
