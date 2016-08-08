@@ -53,7 +53,8 @@ protected:
 
     for (size_t i = 0; i < nPackets; i++) {
       Name prefix(to_string(i / nFibEntries));
-      extendName(prefix, fibPrefixLength - 1);
+      extendName(prefix, fibPrefixLength);
+      m_fib.insert(prefix);
 
       Name interestName = prefix;
       if (nPackets > nFibEntries) {
@@ -65,8 +66,6 @@ protected:
       Name dataName = interestName;
       extendName(dataName, dataNameLength);
       data.push_back(make_shared<Data>(dataName));
-
-      m_fib.insert(prefix);
     }
   }
 
