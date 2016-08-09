@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -318,7 +318,8 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   shared_ptr<Interest> interest1 = makeInterest("ndn:/laptops/A/1");
   bool hasData1 = false;
   consumer->getClientFace().expressInterest(*interest1,
-                                            bind([&hasData1] { hasData1 = true; }));
+                                            bind([&hasData1] { hasData1 = true; }),
+                                            nullptr, nullptr);
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData1, true);
 
@@ -327,6 +328,7 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   bool hasData2a = false, hasTimeout2a = false;
   consumer->getClientFace().expressInterest(*interest2a,
                                             bind([&hasData2a] { hasData2a = true; }),
+                                            nullptr,
                                             bind([&hasTimeout2a] { hasTimeout2a = true; }));
   producerA->fail();
   this->advanceClocks(time::milliseconds(5), time::milliseconds(60));
@@ -337,7 +339,8 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   shared_ptr<Interest> interest2b = makeInterest("ndn:/laptops/A/2");
   bool hasData2b = false;
   consumer->getClientFace().expressInterest(*interest2b,
-                                            bind([&hasData2b] { hasData2b = true; }));
+                                            bind([&hasData2b] { hasData2b = true; }),
+                                            nullptr, nullptr);
   producerA->recover();
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData2b, false);
@@ -346,7 +349,8 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   shared_ptr<Interest> interest2c = makeInterest("ndn:/laptops/A/2");
   bool hasData2c = false;
   consumer->getClientFace().expressInterest(*interest2c,
-                                            bind([&hasData2c] { hasData2c = true; }));
+                                            bind([&hasData2c] { hasData2c = true; }),
+                                            nullptr, nullptr);
   this->advanceClocks(time::milliseconds(5), time::seconds(1));
   BOOST_CHECK_EQUAL(hasData2c, true);
 }
