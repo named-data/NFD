@@ -136,7 +136,7 @@ Fib::erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte)
 
   nte->setFibEntry(nullptr);
   if (canDeleteNte) {
-    m_nameTree.eraseEntryIfEmpty(nte);
+    m_nameTree.eraseIfEmpty(nte.get());
   }
   --m_nItems;
 }

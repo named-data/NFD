@@ -31,6 +31,8 @@
 namespace nfd {
 namespace name_tree {
 
+/** \brief a common index structure for FIB, PIT, StrategyChoice, and Measurements
+ */
 class NameTree : noncopyable
 {
 public:
@@ -40,7 +42,7 @@ public:
   NameTree(size_t nBuckets = 1024);
 
 public: // information
-  /** \brief Get the number of occupied entries in the Name Tree
+  /** \return number of name tree entries
    */
   size_t
   size() const
@@ -48,10 +50,7 @@ public: // information
     return m_ht.size();
   }
 
-  /** \brief Get the number of buckets in the Name Tree (NPHT)
-   *
-   *  The number of buckets is the one that used to create the hash
-   *  table, i.e., m_nBuckets.
+  /** \return number of hashtable buckets
    */
   size_t
   getNBuckets() const
@@ -59,7 +58,7 @@ public: // information
     return m_ht.getNBuckets();
   }
 
-  /** \return Name Tree Entry on which a table entry is attached
+  /** \return entry on which a table entry is attached
    */
   template<typename ENTRY>
   shared_ptr<Entry>
@@ -69,149 +68,152 @@ public: // information
   }
 
 public: // mutation
-  /** \brief Look for the Name Tree Entry that contains this name prefix.
-   *
-   *  Starts from the shortest name prefix, and then increase the
-   *  number of name components by one each time. All non-existing Name Tree
-   *  Entries will be created.
-   *
-   *  \param name The querying name prefix.
-   *  \return The pointer to the Name Tree Entry that contains this full name prefix.
+  /** \brief find or insert an entry with specified name
+   *  \param name a name prefix
+   *  \return an entry with \p name
+   *  \post an entry with \p name and all ancestors are created
    *  \note Existing iterators are unaffected.
    */
   shared_ptr<Entry>
   lookup(const Name& name);
 
-  /** \brief get NameTree entry from FIB entry
-   *
-   *  This is equivalent to .lookup(fibEntry.getPrefix())
+  /** \brief equivalent to .lookup(fibEntry.getPrefix())
+   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
   lookup(const fib::Entry& fibEntry) const;
 
-  /** \brief get NameTree entry from PIT entry
-   *
-   *  This is equivalent to .lookup(pitEntry.getName()).
+  /** \brief equivalent to .lookup(pitEntry.getName()).
+   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
   lookup(const pit::Entry& pitEntry);
 
-  /** \brief get NameTree entry from Measurements entry
-   *
-   *  This is equivalent to .lookup(measurementsEntry.getName())
+  /** \brief equivalent to .lookup(measurementsEntry.getName())
+   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
   lookup(const measurements::Entry& measurementsEntry) const;
 
-  /** \brief get NameTree entry from StrategyChoice entry
-   *
-   *  This is equivalent to .lookup(strategyChoiceEntry.getName())
+  /** \brief equivalent to .lookup(strategyChoiceEntry.getName())
+   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
   lookup(const strategy_choice::Entry& strategyChoiceEntry) const;
 
-  /** \brief Delete a Name Tree Entry if this entry is empty.
-   *  \param entry The entry to be deleted if empty.
-   *  \note This function must be called after a table entry is detached from Name Tree
-   *        entry. The function deletes a Name Tree entry if nothing is attached to it and
-   *        it has no children, then repeats the same process on its ancestors.
+  /** \brief delete the entry if it is empty
+   *  \param entry a valid entry
+   *  \return number of deleted entries
+   *  \sa Entry::isEmpty()
+   *  \post If the entry is empty, it's deleted.
+   *        Ancestors of the entry are also deleted if they become empty.
+   *  \note This function must be called after detaching a table entry from a name tree entry,
    *  \note Existing iterators, except those pointing to deleted entries, are unaffected.
    */
   size_t
-  eraseEntryIfEmpty(Entry* entry);
-
-  /// \deprecated
-  bool
-  eraseEntryIfEmpty(shared_ptr<Entry> entry)
-  {
-    BOOST_ASSERT(entry != nullptr);
-    return this->eraseEntryIfEmpty(entry.get()) > 0;
-  }
+  eraseIfEmpty(Entry* entry);
 
 public: // matching
-  /** \brief Exact match lookup for the given name prefix.
-   *  \return nullptr if this prefix is not found; otherwise return the Name Tree Entry address
+  /** \brief exact match lookup
+   *  \return entry with \p name, or nullptr if it does not exist
    */
   shared_ptr<Entry>
   findExactMatch(const Name& name) const;
 
-  /** \brief Longest prefix matching for the given name
-   *
-   *  Starts from the full name string, reduce the number of name component
-   *  by one each time, until an Entry is found.
+  /** \brief longest prefix matching
+   *  \return entry whose name is a prefix of \p name and passes \p entrySelector,
+   *          where no other entry with a longer name satisfies those requirements;
+   *          or nullptr if no entry satisfying those requirements exists
    */
   shared_ptr<Entry>
   findLongestPrefixMatch(const Name& name,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
+  /** \brief equivalent to .findLongestPrefixMatch(entry->getName(), entrySelector)
+   *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
+   *        in common cases.
+   */
   shared_ptr<Entry>
   findLongestPrefixMatch(shared_ptr<Entry> entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief longest prefix matching for Interest name of the PIT entry
-   *
-   *  This is equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry()).
+  /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry())
+   *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
+   *        in common cases.
    */
   shared_ptr<Entry>
   findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
-  /** \brief Enumerate all the name prefixes that satisfy the prefix and entrySelector
+  /** \brief all-prefixes match lookup
    *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for
+   *          and is usable with range-based for.
+   *          Every entry in the range has a name that is a prefix of \p name ,
+   *          and matches \p entrySelector.
    *
    *  Example:
-   *  \code{.cpp}
-   *  auto&& allMatches = nt.findAllMatches(Name("/A/B/C"));
+   *  \code
+   *  Name name("/A/B/C");
+   *  auto&& allMatches = nt.findAllMatches(name);
    *  for (const Entry& nte : allMatches) {
+   *    BOOST_ASSERT(nte.getName().isPrefixOf(name));
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated when NameTree is modified
+   *  \note Iteration order is implementation-specific and is undefined.
+   *  \warning If a name tree entry whose name is a prefix of \p name is inserted
+   *           during the enumeration, it may or may not be visited.
+   *           If a name tree entry whose name is a prefix of \p name is deleted
+   *           during the enumeration, undefined behavior may occur.
    */
   boost::iterator_range<const_iterator>
-  findAllMatches(const Name& prefix,
+  findAllMatches(const Name& name,
                  const EntrySelector& entrySelector = AnyEntry()) const;
 
 public: // enumeration
-  /** \brief Enumerate all entries, optionally filtered by an EntrySelector.
+  /** \brief enumerate all entries
    *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for
+   *          and is usable with range-based for.
+   *          Every entry in the range matches \p entrySelector.
    *
    *  Example:
-   *  \code{.cpp}
+   *  \code
    *  auto&& enumerable = nt.fullEnumerate();
    *  for (const Entry& nte : enumerable) {
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated when NameTree is modified
+   *  \note Iteration order is implementation-specific and is undefined.
+   *  \warning If a name tree entry is inserted or deleted during the enumeration,
+   *           it may cause the enumeration to skip entries or visit some entries twice.
    */
   boost::iterator_range<const_iterator>
   fullEnumerate(const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief Enumerate all entries under a prefix, optionally filtered by an EntrySubTreeSelector.
+  /** \brief enumerate all entries under a prefix
    *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for
+   *          and is usable with range-based for.
+   *          Every entry in the range has a name that starts with \p prefix,
+   *          and matches \p entrySubTreeSelector.
    *
    *  Example:
-   *  \code{.cpp}
-   *  auto&& enumerable = nt.partialEnumerate(Name("/A/B/C"));
+   *  \code
+   *  Name name("/A/B/C");
+   *  auto&& enumerable = nt.partialEnumerate(name);
    *  for (const Entry& nte : enumerable) {
+   *    BOOST_ASSERT(name.isPrefixOf(nte.getName()));
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated when NameTree is modified
+   *  \note Iteration order is implementation-specific and is undefined.
+   *  \warning If a name tree entry under \p prefix is inserted or deleted during the enumeration,
+   *           it may cause the enumeration to skip entries or visit some entries twice.
    */
   boost::iterator_range<const_iterator>
   partialEnumerate(const Name& prefix,
                    const EntrySubTreeSelector& entrySubTreeSelector = AnyEntrySubTree()) const;
 
-  /** \brief Get an iterator pointing to the first NameTree entry
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated when NameTree is modified
+  /** \return an iterator to enumerate all entries
+   *  \sa fullEnumerate
    */
   const_iterator
   begin() const
@@ -219,9 +221,7 @@ public: // enumeration
     return fullEnumerate().begin();
   }
 
-  /** \brief Get an iterator referring to the past-the-end FIB entry
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated when NameTree is modified
+  /** \return a past-the-end iterator
    */
   const_iterator
   end() const

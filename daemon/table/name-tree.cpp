@@ -77,12 +77,12 @@ NameTree::lookup(const pit::Entry& pitEntry)
     return nullptr;
   }
 
-  if (nte->getPrefix().size() == pitEntry.getName().size()) {
+  if (nte->getName().size() == pitEntry.getName().size()) {
     return nte;
   }
 
   BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
-  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
+  BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
   return this->lookup(pitEntry.getName());
 }
 
@@ -103,7 +103,7 @@ NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry) const
 }
 
 size_t
-NameTree::eraseEntryIfEmpty(Entry* entry)
+NameTree::eraseIfEmpty(Entry* entry)
 {
   BOOST_ASSERT(entry != nullptr);
 
@@ -167,21 +167,20 @@ NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
   shared_ptr<Entry> nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
-  if (nte->getPrefix().size() == pitEntry.getName().size()) {
+  if (nte->getName().size() == pitEntry.getName().size()) {
     return nte;
   }
 
   BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
-  BOOST_ASSERT(nte->getPrefix() == pitEntry.getName().getPrefix(-1));
+  BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
   shared_ptr<Entry> exact = this->findExactMatch(pitEntry.getName());
   return exact == nullptr ? nte : exact;
 }
 
 boost::iterator_range<NameTree::const_iterator>
-NameTree::findAllMatches(const Name& prefix,
-                         const EntrySelector& entrySelector) const
+NameTree::findAllMatches(const Name& name, const EntrySelector& entrySelector) const
 {
-  NFD_LOG_TRACE("NameTree::findAllMatches" << prefix);
+  NFD_LOG_TRACE("NameTree::findAllMatches" << name);
 
   // As we are using Name Prefix Hash Table, and the current LPM() is
   // implemented as starting from full name, and reduce the number of
@@ -189,7 +188,7 @@ NameTree::findAllMatches(const Name& prefix,
   // For trie-like design, it could be more efficient by walking down the
   // trie from the root node.
 
-  shared_ptr<Entry> entry = findLongestPrefixMatch(prefix, entrySelector);
+  shared_ptr<Entry> entry = findLongestPrefixMatch(name, entrySelector);
   return {Iterator(make_shared<PrefixMatchImpl>(*this, entrySelector), entry.get()), end()};
 }
 

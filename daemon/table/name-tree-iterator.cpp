@@ -90,12 +90,12 @@ operator<<(std::ostream& os, const Iterator& i)
     return os << "uninitialized";
   }
 
-  os << "entry=" << i.m_entry->getPrefix();
+  os << "entry=" << i.m_entry->getName();
   if (i.m_ref == nullptr) {
     os << " ref=null";
   }
   else {
-    os << " ref=" << i.m_ref->getPrefix();
+    os << " ref=" << i.m_ref->getName();
   }
   os << " state=" << i.m_state;
   return os;

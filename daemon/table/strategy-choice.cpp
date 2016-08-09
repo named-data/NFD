@@ -145,7 +145,7 @@ StrategyChoice::erase(const Name& prefix)
   this->changeStrategy(*entry, oldStrategy, parentStrategy);
 
   nte->setStrategyChoiceEntry(nullptr);
-  m_nameTree.eraseEntryIfEmpty(nte);
+  m_nameTree.eraseIfEmpty(nte.get());
   --m_nItems;
 }
 
@@ -229,7 +229,7 @@ StrategyChoice::setDefaultStrategy(unique_ptr<Strategy> strategy)
 static inline void
 clearStrategyInfo(const name_tree::Entry& nte)
 {
-  NFD_LOG_TRACE("clearStrategyInfo " << nte.getPrefix());
+  NFD_LOG_TRACE("clearStrategyInfo " << nte.getName());
 
   for (const shared_ptr<pit::Entry>& pitEntry : nte.getPitEntries()) {
     pitEntry->clearStrategyInfo();

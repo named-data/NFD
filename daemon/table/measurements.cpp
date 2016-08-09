@@ -45,7 +45,7 @@ Measurements::get(name_tree::Entry& nte)
     return *entry;
   }
 
-  nte.setMeasurementsEntry(make_unique<Entry>(nte.getPrefix()));
+  nte.setMeasurementsEntry(make_unique<Entry>(nte.getName()));
   ++m_nItems;
   entry = nte.getMeasurementsEntry();
 
@@ -165,7 +165,7 @@ Measurements::cleanup(Entry& entry)
   BOOST_ASSERT(nte != nullptr);
 
   nte->setMeasurementsEntry(nullptr);
-  m_nameTree.eraseEntryIfEmpty(nte);
+  m_nameTree.eraseIfEmpty(nte.get());
   --m_nItems;
 }
 

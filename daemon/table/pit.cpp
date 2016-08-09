@@ -137,7 +137,7 @@ Pit::erase(shared_ptr<pit::Entry> entry, bool canDeleteNte)
 
   nte->erasePitEntry(entry);
   if (canDeleteNte) {
-    m_nameTree.eraseEntryIfEmpty(nte);
+    m_nameTree.eraseIfEmpty(nte.get());
   }
   --m_nItems;
 }

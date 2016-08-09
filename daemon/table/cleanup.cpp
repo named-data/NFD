@@ -44,7 +44,7 @@ cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
     }
 
     if (nte.getFibEntry() == nullptr && !nte.hasPitEntries()) {
-      maybeEmptyNtes.emplace(nte.getPrefix().size(), const_pointer_cast<name_tree::Entry>(nte.shared_from_this()));
+      maybeEmptyNtes.emplace(nte.getName().size(), const_pointer_cast<name_tree::Entry>(nte.shared_from_this()));
     }
   }
 
@@ -53,7 +53,7 @@ cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
     shared_ptr<name_tree::Entry> nte = i->second.lock();
     // nte may have been erased when its last child is erased
     if (nte != nullptr) {
-      nt.eraseEntryIfEmpty(nte);
+      nt.eraseIfEmpty(nte.get());
     }
   }
 }

@@ -187,7 +187,7 @@ BOOST_AUTO_TEST_CASE(NameTreeEntry)
 
   auto node = make_unique<Node>(0, prefix);
   shared_ptr<Entry> npe = node->entry;
-  BOOST_CHECK_EQUAL(npe->getPrefix(), prefix);
+  BOOST_CHECK_EQUAL(npe->getName(), prefix);
 
   // examine all the get methods
 
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   bool eraseResult = false;
   temp = nt.findExactMatch(nameABC);
   if (temp != nullptr)
-    eraseResult = nt.eraseEntryIfEmpty(temp);
+    eraseResult = nt.eraseIfEmpty(temp.get());
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
   BOOST_CHECK_EQUAL(eraseResult, true);
@@ -320,12 +320,10 @@ BOOST_AUTO_TEST_CASE(Basic)
   eraseResult = false;
   temp = nt.findExactMatch(nameABCLPM);
   if (temp != nullptr)
-    eraseResult = nt.eraseEntryIfEmpty(temp);
+    eraseResult = nt.eraseIfEmpty(temp.get());
   BOOST_CHECK(temp == nullptr);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, false);
-
-  // nt.dump(std::cout);
 
   nt.lookup(nameABC);
   BOOST_CHECK_EQUAL(nt.size(), 7);
@@ -333,7 +331,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   eraseResult = false;
   temp = nt.findExactMatch(nameABC);
   if (temp != nullptr)
-    eraseResult = nt.eraseEntryIfEmpty(temp);
+    eraseResult = nt.eraseIfEmpty(temp.get());
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, true);
   BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
@@ -350,22 +348,22 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   // try to erase /a/b/c, should return false
   temp = nt.findExactMatch(nameABC);
-  BOOST_CHECK_EQUAL(temp->getPrefix(), nameABC);
-  eraseResult = nt.eraseEntryIfEmpty(temp);
+  BOOST_CHECK_EQUAL(temp->getName(), nameABC);
+  eraseResult = nt.eraseIfEmpty(temp.get());
   BOOST_CHECK_EQUAL(eraseResult, false);
   temp = nt.findExactMatch(nameABC);
-  BOOST_CHECK_EQUAL(temp->getPrefix(), nameABC);
+  BOOST_CHECK_EQUAL(temp->getName(), nameABC);
 
   temp = nt.findExactMatch(nameABD);
   if (temp != nullptr)
-    nt.eraseEntryIfEmpty(temp);
+    nt.eraseIfEmpty(temp.get());
   BOOST_CHECK_EQUAL(nt.size(), 8);
 }
 
 /** \brief verify a NameTree enumeration contains expected entries
  *
  *  Example:
- *  \code{.cpp}
+ *  \code
  *  auto& enumerable = ...;
  *  EnumerationVerifier(enumerable)
  *    .expect("/A")
@@ -381,7 +379,7 @@ public:
   EnumerationVerifier(Enumerable&& enumerable)
   {
     for (const Entry& entry : enumerable) {
-      const Name& name = entry.getPrefix();
+      const Name& name = entry.getName();
       BOOST_CHECK_MESSAGE(m_names.insert(name).second, "duplicate Name " << name);
     }
   }
@@ -497,7 +495,7 @@ BOOST_AUTO_TEST_CASE(OnlyA)
 
   // Accept "root" nameA only
   auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
-    return std::make_pair(entry.getPrefix() == "/a", true);
+    return std::make_pair(entry.getName() == "/a", true);
   });
 
   EnumerationVerifier(enumerable)
@@ -511,7 +509,7 @@ BOOST_AUTO_TEST_CASE(ExceptA)
 
   // Accept anything except "root" nameA
   auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
-    return std::make_pair(entry.getPrefix() != "/a", true);
+    return std::make_pair(entry.getName() != "/a", true);
   });
 
   EnumerationVerifier(enumerable)
@@ -527,7 +525,7 @@ BOOST_AUTO_TEST_CASE(NoNameANoSubTreeAB)
   // No NameA
   // No SubTree from NameAB
   auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
-      return std::make_pair(entry.getPrefix() != "/a", entry.getPrefix() != "/a/b");
+      return std::make_pair(entry.getName() != "/a", entry.getName() != "/a/b");
     });
 
   EnumerationVerifier(enumerable)
@@ -545,7 +543,7 @@ BOOST_AUTO_TEST_CASE(NoNameANoSubTreeAC)
   // No NameA
   // No SubTree from NameAC
   auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
-      return std::make_pair(entry.getPrefix() != "/a", entry.getPrefix() != "/a/c");
+      return std::make_pair(entry.getName() != "/a", entry.getName() != "/a/c");
     });
 
   EnumerationVerifier(enumerable)
@@ -562,7 +560,7 @@ BOOST_AUTO_TEST_CASE(NoSubTreeA)
 
   // No Subtree from NameA
   auto&& enumerable = nt.partialEnumerate("/a", [] (const Entry& entry) {
-      return std::make_pair(true, entry.getPrefix() != "/a");
+      return std::make_pair(true, entry.getName() != "/a");
     });
 
   EnumerationVerifier(enumerable)
@@ -593,7 +591,7 @@ BOOST_AUTO_TEST_CASE(Example)
       bool visitEntry = false;
       bool visitChildren = false;
 
-      Name name = entry.getPrefix();
+      Name name = entry.getName();
 
       if (name == "/" || name == "/A/B" || name == "/A/B/C" || name == "/A/D") {
         visitEntry = true;
@@ -645,7 +643,7 @@ BOOST_AUTO_TEST_CASE(HashTableResizeShrink)
   BOOST_CHECK_EQUAL(nameTree.size(), 9);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 32);
 
-  nameTree.eraseEntryIfEmpty(entry);
+  nameTree.eraseIfEmpty(entry.get());
   BOOST_CHECK_EQUAL(nameTree.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 16);
 }
@@ -660,8 +658,8 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterLookup)
   Name nameB("/A/B");
   std::set<Name> seenNames;
   for (NameTree::const_iterator it = nt.begin(); it != nt.end(); ++it) {
-    BOOST_CHECK(seenNames.insert(it->getPrefix()).second);
-    if (it->getPrefix() == nameB) {
+    BOOST_CHECK(seenNames.insert(it->getName()).second);
+    if (it->getName() == nameB) {
       nt.lookup("/D");
     }
   }
@@ -676,7 +674,7 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterLookup)
   BOOST_CHECK(seenNames.size() == 5);
 }
 
-// .eraseEntryIfEmpty should not invalidate iterator
+// .eraseIfEmpty should not invalidate iterator
 BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
 {
   NameTree nt;
@@ -688,9 +686,9 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
   Name nameD("/A/D");
   std::set<Name> seenNames;
   for (NameTree::const_iterator it = nt.begin(); it != nt.end(); ++it) {
-    BOOST_CHECK(seenNames.insert(it->getPrefix()).second);
-    if (it->getPrefix() == nameD) {
-      nt.eraseEntryIfEmpty(nt.findExactMatch("/A/F/G")); // /A/F/G and /A/F are erased
+    BOOST_CHECK(seenNames.insert(it->getName()).second);
+    if (it->getName() == nameD) {
+      nt.eraseIfEmpty(nt.findExactMatch("/A/F/G").get()); // /A/F/G and /A/F are erased
     }
   }
 

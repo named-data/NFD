@@ -48,13 +48,6 @@ public:
     return m_name;
   }
 
-  /// \deprecated
-  const Name&
-  getPrefix() const
-  {
-    return this->getName();
-  }
-
   /** \return entry of getName().getPrefix(-1)
    *  \retval nullptr this entry is the root entry, i.e. getName() == Name()
    */
