@@ -204,7 +204,7 @@ TopologyTester::addIntervalConsumer(ndn::Face& face, const Name& prefix,
   Name name(prefix);
   name.appendTimestamp();
   shared_ptr<Interest> interest = makeInterest(name);
-  face.expressInterest(*interest, bind([]{}));
+  face.expressInterest(*interest, nullptr, nullptr, nullptr);
 
   if (n > 1) {
     scheduler::schedule(interval, bind(&TopologyTester::addIntervalConsumer, this,
