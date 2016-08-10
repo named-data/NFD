@@ -35,14 +35,16 @@ import os
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['boost', 'unix-socket', 'dependency-checker', 'websocket',
-              'default-compiler-flags', 'coverage', 'pch', 'boost-kqueue',
-              'doxygen', 'sphinx_build', 'type_traits', 'compiler-features'],
+    opt.load(['default-compiler-flags', 'compiler-features', 'type_traits',
+              'coverage', 'pch', 'sanitizers', 'boost', 'boost-kqueue',
+              'dependency-checker', 'unix-socket', 'websocket',
+              'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
 
     nfdopt = opt.add_option_group('NFD Options')
     opt.addUnixOptions(nfdopt)
     opt.addWebsocketOptions(nfdopt)
+
     opt.addDependencyOptions(nfdopt, 'libpcap')
     nfdopt.add_option('--without-libpcap', action='store_true', default=False,
                       dest='without_libpcap',
@@ -63,9 +65,10 @@ def options(opt):
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
-               'default-compiler-flags', 'pch', 'boost-kqueue',
-               'boost', 'dependency-checker', 'websocket',
-               'doxygen', 'sphinx_build', 'type_traits', 'compiler-features'])
+               'default-compiler-flags', 'compiler-features', 'type_traits',
+               'pch', 'sanitizers', 'boost', 'boost-kqueue',
+               'dependency-checker', 'websocket',
+               'doxygen', 'sphinx_build'])
 
     conf.find_program('bash', var='BASH')
 
@@ -110,7 +113,7 @@ main(int, char**)
     boost_libs = 'system chrono program_options random thread log log_setup'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
-        conf.define('WITH_TESTS', 1);
+        conf.define('WITH_TESTS', 1)
         boost_libs += ' unit_test_framework'
 
     if conf.options.with_other_tests:
@@ -173,8 +176,7 @@ def build(bld):
                 int(VERSION_SPLIT[2]),
         VERSION_MAJOR=VERSION_SPLIT[0],
         VERSION_MINOR=VERSION_SPLIT[1],
-        VERSION_PATCH=VERSION_SPLIT[2],
-        )
+        VERSION_PATCH=VERSION_SPLIT[2])
 
     core = bld(
         target='core-objects',
@@ -185,8 +187,7 @@ def build(bld):
         use='version NDN_CXX BOOST LIBRT',
         includes='. core',
         export_includes='.',
-        headers='core/common.hpp'
-        )
+        headers='core/common.hpp')
 
     if bld.env['HAVE_CUSTOM_LOGGER']:
         core.use += " CUSTOM_LOGGER"
@@ -204,8 +205,7 @@ def build(bld):
                                        'daemon/main.cpp']),
         use='core-objects WEBSOCKET',
         includes='daemon',
-        export_includes='daemon',
-        )
+        export_includes='daemon')
 
     if bld.env['HAVE_LIBPCAP']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/ethernet-*.cpp')
@@ -222,14 +222,12 @@ def build(bld):
         name='rib-objects',
         features='cxx',
         source=bld.path.ant_glob(['rib/**/*.cpp']),
-        use='core-objects',
-        )
+        use='core-objects')
 
     bld(target='bin/nfd',
         features='cxx cxxprogram',
         source='daemon/main.cpp',
-        use='daemon-objects rib-objects',
-        )
+        use='daemon-objects rib-objects')
 
     bld.recurse("tools")
     bld.recurse("tests")
@@ -272,8 +270,7 @@ def doxygen(bld):
             HTML_FOOTER="../build/docs/named_data_theme/named_data_footer-with-analytics.html" \
                           if os.getenv('GOOGLE_ANALYTICS', None) \
                           else "../docs/named_data_theme/named_data_footer.html",
-            GOOGLE_ANALYTICS=os.getenv('GOOGLE_ANALYTICS', ""),
-            )
+            GOOGLE_ANALYTICS=os.getenv('GOOGLE_ANALYTICS', ""))
 
         bld(features="doxygen",
             doxyfile='docs/doxygen.conf',

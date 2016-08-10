@@ -60,7 +60,7 @@ def add_supported_cxxflags(self, cxxflags):
             supportedFlags += [flag]
 
     self.end_msg(' '.join(supportedFlags))
-    self.env.CXXFLAGS = supportedFlags + self.env.CXXFLAGS
+    self.env.prepend_value('CXXFLAGS', supportedFlags)
 
 @Configure.conf
 def add_supported_linkflags(self, linkflags):
@@ -78,7 +78,7 @@ def add_supported_linkflags(self, linkflags):
             supportedFlags += [flag]
 
     self.end_msg(' '.join(supportedFlags))
-    self.env.LINKFLAGS = supportedFlags + self.env.LINKFLAGS
+    self.env.prepend_value('LINKFLAGS', supportedFlags)
 
 
 class CompilerFlags(object):

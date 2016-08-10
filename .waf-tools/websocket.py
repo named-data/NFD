@@ -1,17 +1,14 @@
-# encoding: utf-8
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-from waflib import Options, Logs, Errors
-from waflib.Configure import conf
-
+from waflib import Options, Logs, Errors, Configure
 import re
 
 def addWebsocketOptions(self, opt):
     opt.add_option('--without-websocket', action='store_false', default=True,
-                   dest='with_websocket',
-                   help='Disable WebSocket face support')
+                   dest='with_websocket', help='Disable WebSocket face support')
 setattr(Options.OptionsContext, "addWebsocketOptions", addWebsocketOptions)
 
-@conf
+@Configure.conf
 def checkWebsocket(self, **kw):
     if not self.options.with_websocket:
         return
