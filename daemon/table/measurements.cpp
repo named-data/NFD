@@ -101,14 +101,13 @@ Measurements::getParent(const Entry& child)
 
 template<typename K>
 Entry*
-Measurements::findLongestPrefixMatchImpl(const K& key,
-                                         const EntryPredicate& pred) const
+Measurements::findLongestPrefixMatchImpl(const K& key, const EntryPredicate& pred) const
 {
-  shared_ptr<name_tree::Entry> match = m_nameTree.findLongestPrefixMatch(key,
-      [&pred] (const name_tree::Entry& nte) -> bool {
-        Entry* entry = nte.getMeasurementsEntry();
-        return entry != nullptr && pred(*entry);
-      });
+  name_tree::Entry* match = m_nameTree.findLongestPrefixMatch(key,
+    [&pred] (const name_tree::Entry& nte) {
+      const Entry* entry = nte.getMeasurementsEntry();
+      return entry != nullptr && pred(*entry);
+    });
   if (match != nullptr) {
     return match->getMeasurementsEntry();
   }
@@ -116,19 +115,17 @@ Measurements::findLongestPrefixMatchImpl(const K& key,
 }
 
 Entry*
-Measurements::findLongestPrefixMatch(const Name& name,
-                                     const EntryPredicate& pred) const
+Measurements::findLongestPrefixMatch(const Name& name, const EntryPredicate& pred) const
 {
   return this->findLongestPrefixMatchImpl(name, pred);
 }
 
 Entry*
-Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry,
-                                     const EntryPredicate& pred) const
+Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntryPredicate& pred) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
   BOOST_ASSERT(nte != nullptr);
-  return this->findLongestPrefixMatchImpl(nte, pred);
+  return this->findLongestPrefixMatchImpl(*nte, pred);
 }
 
 Entry*

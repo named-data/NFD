@@ -48,8 +48,6 @@ public:
   explicit
   Fib(NameTree& nameTree);
 
-  ~Fib();
-
   size_t
   size() const;
 
@@ -150,10 +148,10 @@ public: // enumeration
 
 private:
   const Entry&
-  findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const;
+  findLongestPrefixMatch(const name_tree::Entry* nte) const;
 
   void
-  erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte = true);
+  erase(name_tree::Entry* nte, bool canDeleteNte = true);
 
 private:
   NameTree& m_nameTree;

@@ -36,6 +36,12 @@ using fw::Strategy;
 
 NFD_LOG_INIT("StrategyChoice");
 
+static inline bool
+nteHasStrategyChoiceEntry(const name_tree::Entry& nte)
+{
+  return nte.getStrategyChoiceEntry() != nullptr;
+}
+
 StrategyChoice::StrategyChoice(NameTree& nameTree, unique_ptr<Strategy> defaultStrategy)
   : m_nameTree(nameTree)
   , m_nItems(0)
@@ -129,7 +135,7 @@ StrategyChoice::erase(const Name& prefix)
 {
   BOOST_ASSERT(prefix.size() > 0);
 
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  name_tree::Entry* nte = m_nameTree.findExactMatch(prefix);
   if (nte == nullptr) {
     return;
   }
@@ -145,14 +151,14 @@ StrategyChoice::erase(const Name& prefix)
   this->changeStrategy(*entry, oldStrategy, parentStrategy);
 
   nte->setStrategyChoiceEntry(nullptr);
-  m_nameTree.eraseIfEmpty(nte.get());
+  m_nameTree.eraseIfEmpty(nte);
   --m_nItems;
 }
 
 std::pair<bool, Name>
 StrategyChoice::get(const Name& prefix) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  name_tree::Entry* nte = m_nameTree.findExactMatch(prefix);
   if (nte == nullptr) {
     return {false, Name()};
   }
@@ -168,23 +174,19 @@ StrategyChoice::get(const Name& prefix) const
 Strategy&
 StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(prefix,
-    [] (const name_tree::Entry& entry) { return entry.getStrategyChoiceEntry() != nullptr; });
-
+  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(prefix, &nteHasStrategyChoiceEntry);
   BOOST_ASSERT(nte != nullptr);
   return nte->getStrategyChoiceEntry()->getStrategy();
 }
 
 Strategy&
-StrategyChoice::findEffectiveStrategy(shared_ptr<name_tree::Entry> nte) const
+StrategyChoice::findEffectiveStrategy(const name_tree::Entry* nte) const
 {
   Entry* entry = nte->getStrategyChoiceEntry();
   if (entry != nullptr)
     return entry->getStrategy();
 
-  nte = m_nameTree.findLongestPrefixMatch(nte,
-    [] (const name_tree::Entry& entry) { return entry.getStrategyChoiceEntry() != nullptr; });
-
+  nte = m_nameTree.findLongestPrefixMatch(*nte, &nteHasStrategyChoiceEntry);
   BOOST_ASSERT(nte != nullptr);
   return nte->getStrategyChoiceEntry()->getStrategy();
 }
@@ -194,8 +196,7 @@ StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
   BOOST_ASSERT(nte != nullptr);
-
-  return this->findEffectiveStrategy(nte);
+  return this->findEffectiveStrategy(nte.get());
 }
 
 Strategy&
@@ -203,8 +204,7 @@ StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEnt
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(measurementsEntry);
   BOOST_ASSERT(nte != nullptr);
-
-  return this->findEffectiveStrategy(nte);
+  return this->findEffectiveStrategy(nte.get());
 }
 
 void
@@ -277,11 +277,7 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
 StrategyChoice::const_iterator
 StrategyChoice::begin() const
 {
-  auto&& enumerable = m_nameTree.fullEnumerate(
-    [] (const name_tree::Entry& entry) {
-      return entry.getStrategyChoiceEntry() != nullptr;
-    });
-  return const_iterator(enumerable.begin());
+  return const_iterator(m_nameTree.fullEnumerate(&nteHasStrategyChoiceEntry).begin());
 }
 
 } // namespace strategy_choice

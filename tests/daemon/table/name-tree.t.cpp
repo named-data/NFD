@@ -263,24 +263,24 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   // validate lookup() and findExactMatch()
 
-  Name nameAB ("/a/b");
-  BOOST_CHECK_EQUAL(npeABC->getParent(), nt.findExactMatch(nameAB).get());
-  BOOST_CHECK_EQUAL(npeABD->getParent(), nt.findExactMatch(nameAB).get());
+  Name nameAB("/a/b");
+  BOOST_CHECK_EQUAL(npeABC->getParent(), nt.findExactMatch(nameAB));
+  BOOST_CHECK_EQUAL(npeABD->getParent(), nt.findExactMatch(nameAB));
 
   Name nameA ("/a");
-  BOOST_CHECK_EQUAL(npeAE->getParent(), nt.findExactMatch(nameA).get());
+  BOOST_CHECK_EQUAL(npeAE->getParent(), nt.findExactMatch(nameA));
 
   Name nameRoot ("/");
-  BOOST_CHECK_EQUAL(npeF->getParent(), nt.findExactMatch(nameRoot).get());
+  BOOST_CHECK_EQUAL(npeF->getParent(), nt.findExactMatch(nameRoot));
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
   Name name0("/does/not/exist");
-  shared_ptr<Entry> npe0 = nt.findExactMatch(name0);
+  Entry* npe0 = nt.findExactMatch(name0);
   BOOST_CHECK(npe0 == nullptr);
 
 
   // Longest Prefix Matching
-  shared_ptr<Entry> temp;
+  Entry* temp = nullptr;
   Name nameABCLPM("/a/b/c/def/asdf/nlf");
   temp = nt.findLongestPrefixMatch(nameABCLPM);
   BOOST_CHECK_EQUAL(temp, nt.findExactMatch(nameABC));
@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   bool eraseResult = false;
   temp = nt.findExactMatch(nameABC);
   if (temp != nullptr)
-    eraseResult = nt.eraseIfEmpty(temp.get());
+    eraseResult = nt.eraseIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
   BOOST_CHECK_EQUAL(eraseResult, true);
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   eraseResult = false;
   temp = nt.findExactMatch(nameABCLPM);
   if (temp != nullptr)
-    eraseResult = nt.eraseIfEmpty(temp.get());
+    eraseResult = nt.eraseIfEmpty(temp);
   BOOST_CHECK(temp == nullptr);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, false);
@@ -331,7 +331,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   eraseResult = false;
   temp = nt.findExactMatch(nameABC);
   if (temp != nullptr)
-    eraseResult = nt.eraseIfEmpty(temp.get());
+    eraseResult = nt.eraseIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 6);
   BOOST_CHECK_EQUAL(eraseResult, true);
   BOOST_CHECK(nt.findExactMatch(nameABC) == nullptr);
@@ -349,14 +349,14 @@ BOOST_AUTO_TEST_CASE(Basic)
   // try to erase /a/b/c, should return false
   temp = nt.findExactMatch(nameABC);
   BOOST_CHECK_EQUAL(temp->getName(), nameABC);
-  eraseResult = nt.eraseIfEmpty(temp.get());
+  eraseResult = nt.eraseIfEmpty(temp);
   BOOST_CHECK_EQUAL(eraseResult, false);
   temp = nt.findExactMatch(nameABC);
   BOOST_CHECK_EQUAL(temp->getName(), nameABC);
 
   temp = nt.findExactMatch(nameABD);
   if (temp != nullptr)
-    nt.eraseIfEmpty(temp.get());
+    nt.eraseIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 8);
 }
 
@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE(Example)
   nt.lookup("/F");
 
   auto&& enumerable = nt.partialEnumerate("/A",
-    [] (const Entry& entry) -> std::pair<bool, bool> {
+    [] (const Entry& entry) {
       bool visitEntry = false;
       bool visitChildren = false;
 
@@ -601,7 +601,7 @@ BOOST_AUTO_TEST_CASE(Example)
         visitChildren = true;
       }
 
-      return {visitEntry, visitChildren};
+      return std::make_pair(visitEntry, visitChildren);
     });
 
   EnumerationVerifier(enumerable)
@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(SurvivedIteratorAfterErase)
   for (NameTree::const_iterator it = nt.begin(); it != nt.end(); ++it) {
     BOOST_CHECK(seenNames.insert(it->getName()).second);
     if (it->getName() == nameD) {
-      nt.eraseIfEmpty(nt.findExactMatch("/A/F/G").get()); // /A/F/G and /A/F are erased
+      nt.eraseIfEmpty(nt.findExactMatch("/A/F/G")); // /A/F/G and /A/F are erased
     }
   }
 

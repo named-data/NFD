@@ -47,27 +47,22 @@ static_assert(std::is_default_constructible<Fib::const_iterator>::value,
 BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Fib::const_iterator>));
 #endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
 
+static inline bool
+nteHasFibEntry(const name_tree::Entry& nte)
+{
+  return nte.getFibEntry() != nullptr;
+}
+
 Fib::Fib(NameTree& nameTree)
   : m_nameTree(nameTree)
   , m_nItems(0)
 {
 }
 
-Fib::~Fib()
-{
-}
-
-static inline bool
-predicate_NameTreeEntry_hasFibEntry(const name_tree::Entry& nte)
-{
-  return nte.getFibEntry() != nullptr;
-}
-
 const Entry&
 Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  shared_ptr<name_tree::Entry> nte =
-    m_nameTree.findLongestPrefixMatch(prefix, &predicate_NameTreeEntry_hasFibEntry);
+  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(prefix, &nteHasFibEntry);
   if (nte != nullptr) {
     return *nte->getFibEntry();
   }
@@ -75,13 +70,13 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
 }
 
 const Entry&
-Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const
+Fib::findLongestPrefixMatch(const name_tree::Entry* nte) const
 {
   Entry* entry = nte->getFibEntry();
   if (entry != nullptr)
     return *entry;
 
-  nte = m_nameTree.findLongestPrefixMatch(nte, &predicate_NameTreeEntry_hasFibEntry);
+  nte = m_nameTree.findLongestPrefixMatch(*nte, &nteHasFibEntry);
   if (nte != nullptr) {
     return *nte->getFibEntry();
   }
@@ -92,7 +87,7 @@ Fib::findLongestPrefixMatch(shared_ptr<name_tree::Entry> nte) const
 const Entry&
 Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findLongestPrefixMatch(pitEntry);
+  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(pitEntry);
   BOOST_ASSERT(nte != nullptr);
   return findLongestPrefixMatch(nte);
 }
@@ -100,7 +95,7 @@ Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 const Entry&
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(measurementsEntry);
+  name_tree::Entry* nte = m_nameTree.lookup(measurementsEntry).get();
   BOOST_ASSERT(nte != nullptr);
   return findLongestPrefixMatch(nte);
 }
@@ -108,7 +103,7 @@ Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 Entry*
 Fib::findExactMatch(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  name_tree::Entry* nte = m_nameTree.findExactMatch(prefix);
   if (nte != nullptr)
     return nte->getFibEntry();
 
@@ -130,13 +125,13 @@ Fib::insert(const Name& prefix)
 }
 
 void
-Fib::erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte)
+Fib::erase(name_tree::Entry* nte, bool canDeleteNte)
 {
   BOOST_ASSERT(nte != nullptr);
 
   nte->setFibEntry(nullptr);
   if (canDeleteNte) {
-    m_nameTree.eraseIfEmpty(nte.get());
+    m_nameTree.eraseIfEmpty(nte);
   }
   --m_nItems;
 }
@@ -144,7 +139,7 @@ Fib::erase(shared_ptr<name_tree::Entry> nte, bool canDeleteNte)
 void
 Fib::erase(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.findExactMatch(prefix);
+  name_tree::Entry* nte = m_nameTree.findExactMatch(prefix);
   if (nte != nullptr) {
     this->erase(nte);
   }
@@ -156,7 +151,7 @@ Fib::erase(const Entry& entry)
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
   if (nte != nullptr) {
     // don't try to erase s_emptyEntry
-    this->erase(nte);
+    this->erase(nte.get());
   }
 }
 
@@ -167,14 +162,14 @@ Fib::removeNextHop(Entry& entry, const Face& face)
 
   if (!entry.hasNextHops()) {
     shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
-    this->erase(nte, false);
+    this->erase(nte.get(), false);
   }
 }
 
 Fib::const_iterator
 Fib::begin() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(&predicate_NameTreeEntry_hasFibEntry).begin());
+  return const_iterator(m_nameTree.fullEnumerate(&nteHasFibEntry).begin());
 }
 
 } // namespace fib

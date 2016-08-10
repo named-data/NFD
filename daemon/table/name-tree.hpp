@@ -117,7 +117,7 @@ public: // matching
   /** \brief exact match lookup
    *  \return entry with \p name, or nullptr if it does not exist
    */
-  shared_ptr<Entry>
+  Entry*
   findExactMatch(const Name& name) const;
 
   /** \brief longest prefix matching
@@ -125,23 +125,23 @@ public: // matching
    *          where no other entry with a longer name satisfies those requirements;
    *          or nullptr if no entry satisfying those requirements exists
    */
-  shared_ptr<Entry>
+  Entry*
   findLongestPrefixMatch(const Name& name,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to .findLongestPrefixMatch(entry->getName(), entrySelector)
+  /** \brief equivalent to .findLongestPrefixMatch(entry.getName(), entrySelector)
    *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
    *        in common cases.
    */
-  shared_ptr<Entry>
-  findLongestPrefixMatch(shared_ptr<Entry> entry,
+  Entry*
+  findLongestPrefixMatch(const Entry& entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry())
    *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
    *        in common cases.
    */
-  shared_ptr<Entry>
+  Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
   /** \brief all-prefixes match lookup

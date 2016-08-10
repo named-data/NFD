@@ -66,9 +66,9 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   const Name& nteName = isEndWithDigest ? name.getPrefix(-1) : name;
 
   // ensure NameTree entry exists
-  shared_ptr<name_tree::Entry> nte;
+  name_tree::Entry* nte = nullptr;
   if (allowInsert) {
-    nte = m_nameTree.lookup(nteName);
+    nte = m_nameTree.lookup(nteName).get();
     BOOST_ASSERT(nte != nullptr);
   }
   else {

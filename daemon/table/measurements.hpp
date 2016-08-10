@@ -136,7 +136,7 @@ private:
   Entry&
   get(name_tree::Entry& nte);
 
-  /** \tparam K Name or shared_ptr<name_tree::Entry>
+  /** \tparam K Name or name_tree::Entry
    */
   template<typename K>
   Entry*

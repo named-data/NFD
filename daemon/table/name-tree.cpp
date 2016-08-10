@@ -125,15 +125,14 @@ NameTree::eraseIfEmpty(Entry* entry)
   return nErased;
 }
 
-shared_ptr<Entry>
+Entry*
 NameTree::findExactMatch(const Name& name) const
 {
   const Node* node = m_ht.find(name, name.size());
-  return node == nullptr ? nullptr : node->entry;
+  return node == nullptr ? nullptr : node->entry.get();
 }
 
-// Longest Prefix Match
-shared_ptr<Entry>
+Entry*
 NameTree::findLongestPrefixMatch(const Name& name, const EntrySelector& entrySelector) const
 {
   HashSequence hashes = computeHashes(name);
@@ -141,40 +140,41 @@ NameTree::findLongestPrefixMatch(const Name& name, const EntrySelector& entrySel
   for (ssize_t prefixLen = name.size(); prefixLen >= 0; --prefixLen) {
     const Node* node = m_ht.find(name, prefixLen, hashes);
     if (node != nullptr && entrySelector(*node->entry)) {
-      return node->entry;
+      return node->entry.get();
     }
   }
 
   return nullptr;
 }
 
-shared_ptr<Entry>
-NameTree::findLongestPrefixMatch(shared_ptr<Entry> entry1,
-                                 const EntrySelector& entrySelector) const
+Entry*
+NameTree::findLongestPrefixMatch(const Entry& entry1, const EntrySelector& entrySelector) const
 {
-  Entry* entry = entry1.get();
+  Entry* entry = const_cast<Entry*>(&entry1);
   while (entry != nullptr) {
     if (entrySelector(*entry)) {
-      return entry->shared_from_this();
+      return entry;
     }
     entry = entry->getParent();
   }
   return nullptr;
 }
 
-shared_ptr<Entry>
+Entry*
 NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
   shared_ptr<Entry> nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
   if (nte->getName().size() == pitEntry.getName().size()) {
-    return nte;
+    return nte.get();
   }
 
+  // special case: PIT entry whose Interest name ends with an implicit digest
+  // are attached to the name tree entry with one-shorter-prefix.
   BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
   BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
-  shared_ptr<Entry> exact = this->findExactMatch(pitEntry.getName());
-  return exact == nullptr ? nte : exact;
+  Entry* exact = this->findExactMatch(pitEntry.getName());
+  return exact == nullptr ? nte.get() : exact;
 }
 
 boost::iterator_range<NameTree::const_iterator>
@@ -188,8 +188,8 @@ NameTree::findAllMatches(const Name& name, const EntrySelector& entrySelector) c
   // For trie-like design, it could be more efficient by walking down the
   // trie from the root node.
 
-  shared_ptr<Entry> entry = findLongestPrefixMatch(name, entrySelector);
-  return {Iterator(make_shared<PrefixMatchImpl>(*this, entrySelector), entry.get()), end()};
+  Entry* entry = findLongestPrefixMatch(name, entrySelector);
+  return {Iterator(make_shared<PrefixMatchImpl>(*this, entrySelector), entry), end()};
 }
 
 boost::iterator_range<NameTree::const_iterator>
@@ -205,8 +205,8 @@ NameTree::partialEnumerate(const Name& prefix,
                            const EntrySubTreeSelector& entrySubTreeSelector) const
 {
   // the first step is to process the root node
-  shared_ptr<Entry> entry = findExactMatch(prefix);
-  return {Iterator(make_shared<PartialEnumerationImpl>(*this, entrySubTreeSelector), entry.get()), end()};
+  Entry* entry = this->findExactMatch(prefix);
+  return {Iterator(make_shared<PartialEnumerationImpl>(*this, entrySubTreeSelector), entry), end()};
 }
 
 } // namespace name_tree
