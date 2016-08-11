@@ -40,7 +40,7 @@ NameTree::NameTree(size_t nBuckets)
 {
 }
 
-shared_ptr<Entry>
+Entry&
 NameTree::lookup(const Name& name)
 {
   NFD_LOG_TRACE("lookup " << name);
@@ -58,13 +58,13 @@ NameTree::lookup(const Name& name)
     }
     parent = node->entry.get();
   }
-  return node->entry;
+  return *node->entry;
 }
 
-shared_ptr<Entry>
+Entry&
 NameTree::lookup(const fib::Entry& fibEntry)
 {
-  shared_ptr<Entry> nte = this->getEntry(fibEntry);
+  Entry* nte = this->getEntry(fibEntry);
   if (nte == nullptr) {
     // special case: Fib::s_emptyEntry is unattached
     BOOST_ASSERT(fibEntry.getPrefix().empty());
@@ -72,13 +72,13 @@ NameTree::lookup(const fib::Entry& fibEntry)
   }
 
   BOOST_ASSERT(nte->getFibEntry() == &fibEntry);
-  return nte;
+  return *nte;
 }
 
-shared_ptr<Entry>
+Entry&
 NameTree::lookup(const pit::Entry& pitEntry)
 {
-  shared_ptr<Entry> nte = this->getEntry(pitEntry);
+  Entry* nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
 
   BOOST_ASSERT(std::count_if(nte->getPitEntries().begin(), nte->getPitEntries().end(),
@@ -87,7 +87,7 @@ NameTree::lookup(const pit::Entry& pitEntry)
     }) == 1);
 
   if (nte->getName().size() == pitEntry.getName().size()) {
-    return nte;
+    return *nte;
   }
 
   // special case: PIT entry whose Interest name ends with an implicit digest
@@ -97,24 +97,24 @@ NameTree::lookup(const pit::Entry& pitEntry)
   return this->lookup(pitEntry.getName());
 }
 
-shared_ptr<Entry>
+Entry&
 NameTree::lookup(const measurements::Entry& measurementsEntry)
 {
-  shared_ptr<Entry> nte = this->getEntry(measurementsEntry);
+  Entry* nte = this->getEntry(measurementsEntry);
   BOOST_ASSERT(nte != nullptr);
 
   BOOST_ASSERT(nte->getMeasurementsEntry() == &measurementsEntry);
-  return nte;
+  return *nte;
 }
 
-shared_ptr<Entry>
+Entry&
 NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry)
 {
-  shared_ptr<Entry> nte = this->getEntry(strategyChoiceEntry);
+  Entry* nte = this->getEntry(strategyChoiceEntry);
   BOOST_ASSERT(nte != nullptr);
 
   BOOST_ASSERT(nte->getStrategyChoiceEntry() == &strategyChoiceEntry);
-  return nte;
+  return *nte;
 }
 
 size_t
@@ -178,7 +178,7 @@ NameTree::findLongestPrefixMatch(const Entry& entry1, const EntrySelector& entry
 Entry*
 NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntrySelector& entrySelector) const
 {
-  const Entry* nte = this->getEntry(pitEntry).get();
+  const Entry* nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
 
   if (nte->getName().size() < pitEntry.getName().size()) {
@@ -204,7 +204,7 @@ NameTree::findAllMatches(const Name& name, const EntrySelector& entrySelector) c
   // For trie-like design, it could be more efficient by walking down the
   // trie from the root node.
 
-  Entry* entry = findLongestPrefixMatch(name, entrySelector);
+  Entry* entry = this->findLongestPrefixMatch(name, entrySelector);
   return {Iterator(make_shared<PrefixMatchImpl>(*this, entrySelector), entry), end()};
 }
 

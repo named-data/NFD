@@ -245,33 +245,35 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(nt.size(), 0);
   BOOST_CHECK_EQUAL(nt.getNBuckets(), nBuckets);
 
+  // lookup
+
   Name nameABC("ndn:/a/b/c");
-  shared_ptr<Entry> npeABC = nt.lookup(nameABC);
+  Entry& npeABC = nt.lookup(nameABC);
   BOOST_CHECK_EQUAL(nt.size(), 4);
 
   Name nameABD("/a/b/d");
-  shared_ptr<Entry> npeABD = nt.lookup(nameABD);
+  Entry& npeABD = nt.lookup(nameABD);
   BOOST_CHECK_EQUAL(nt.size(), 5);
 
   Name nameAE("/a/e/");
-  shared_ptr<Entry> npeAE = nt.lookup(nameAE);
+  Entry& npeAE = nt.lookup(nameAE);
   BOOST_CHECK_EQUAL(nt.size(), 6);
 
   Name nameF("/f");
-  shared_ptr<Entry> npeF = nt.lookup(nameF);
+  Entry& npeF = nt.lookup(nameF);
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
-  // validate lookup() and findExactMatch()
+  // getParent and findExactMatch
 
   Name nameAB("/a/b");
-  BOOST_CHECK_EQUAL(npeABC->getParent(), nt.findExactMatch(nameAB));
-  BOOST_CHECK_EQUAL(npeABD->getParent(), nt.findExactMatch(nameAB));
+  BOOST_CHECK_EQUAL(npeABC.getParent(), nt.findExactMatch(nameAB));
+  BOOST_CHECK_EQUAL(npeABD.getParent(), nt.findExactMatch(nameAB));
 
-  Name nameA ("/a");
-  BOOST_CHECK_EQUAL(npeAE->getParent(), nt.findExactMatch(nameA));
+  Name nameA("/a");
+  BOOST_CHECK_EQUAL(npeAE.getParent(), nt.findExactMatch(nameA));
 
-  Name nameRoot ("/");
-  BOOST_CHECK_EQUAL(npeF->getParent(), nt.findExactMatch(nameRoot));
+  Name nameRoot("/");
+  BOOST_CHECK_EQUAL(npeF.getParent(), nt.findExactMatch(nameRoot));
   BOOST_CHECK_EQUAL(nt.size(), 7);
 
   Name name0("/does/not/exist");
@@ -279,7 +281,8 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK(npe0 == nullptr);
 
 
-  // Longest Prefix Matching
+  // findLongestPrefixMatch
+
   Entry* temp = nullptr;
   Name nameABCLPM("/a/b/c/def/asdf/nlf");
   temp = nt.findLongestPrefixMatch(nameABCLPM);
@@ -639,11 +642,11 @@ BOOST_AUTO_TEST_CASE(HashTableResizeShrink)
 
   Name prefix("/a/b/c/d/e/f/g/h"); // requires 9 buckets
 
-  shared_ptr<Entry> entry = nameTree.lookup(prefix);
+  Entry& entry = nameTree.lookup(prefix);
   BOOST_CHECK_EQUAL(nameTree.size(), 9);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 32);
 
-  nameTree.eraseIfEmpty(entry.get());
+  nameTree.eraseIfEmpty(&entry);
   BOOST_CHECK_EQUAL(nameTree.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.getNBuckets(), 16);
 }

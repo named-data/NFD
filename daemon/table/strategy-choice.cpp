@@ -103,8 +103,8 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     return false;
   }
 
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(prefix);
-  Entry* entry = nte->getStrategyChoiceEntry();
+  name_tree::Entry& nte = m_nameTree.lookup(prefix);
+  Entry* entry = nte.getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {
     if (entry->getStrategy().getName() == strategy->getName()) {
@@ -120,7 +120,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     oldStrategy = &this->findEffectiveStrategy(prefix);
     auto newEntry = make_unique<Entry>(prefix);
     entry = newEntry.get();
-    nte->setStrategyChoiceEntry(std::move(newEntry));
+    nte.setStrategyChoiceEntry(std::move(newEntry));
     ++m_nItems;
     NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getName());
   }
@@ -202,7 +202,7 @@ StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 Strategy&
 StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(measurementsEntry);
+  const name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry);
   BOOST_ASSERT(nte != nullptr);
   return this->findEffectiveStrategy(*nte);
 }
@@ -220,8 +220,8 @@ StrategyChoice::setDefaultStrategy(unique_ptr<Strategy> strategy)
 
   // don't use .insert here, because it will invoke findEffectiveStrategy
   // which expects an existing root entry
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(Name());
-  nte->setStrategyChoiceEntry(std::move(entry));
+  name_tree::Entry& nte = m_nameTree.lookup(Name());
+  nte.setStrategyChoiceEntry(std::move(entry));
   ++m_nItems;
   NFD_LOG_INFO("setDefaultStrategy " << instance->getName());
 }
@@ -258,7 +258,7 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
 
   // reset StrategyInfo on a portion of NameTree,
   // where entry's effective strategy is covered by the changing StrategyChoice entry
-  const name_tree::Entry* rootNte = m_nameTree.getEntry(entry).get();
+  const name_tree::Entry* rootNte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(rootNte != nullptr);
   auto&& ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
     [&rootNte] (const name_tree::Entry& nte) -> std::pair<bool, bool> {

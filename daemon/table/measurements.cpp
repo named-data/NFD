@@ -59,25 +59,22 @@ Measurements::get(name_tree::Entry& nte)
 Entry&
 Measurements::get(const Name& name)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
-  BOOST_ASSERT(nte != nullptr);
-  return this->get(*nte);
+  name_tree::Entry& nte = m_nameTree.lookup(name);
+  return this->get(nte);
 }
 
 Entry&
 Measurements::get(const fib::Entry& fibEntry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(fibEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return this->get(*nte);
+  name_tree::Entry& nte = m_nameTree.lookup(fibEntry);
+  return this->get(nte);
 }
 
 Entry&
 Measurements::get(const pit::Entry& pitEntry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return this->get(*nte);
+  name_tree::Entry& nte = m_nameTree.lookup(pitEntry);
+  return this->get(nte);
 }
 
 Entry*
@@ -87,7 +84,7 @@ Measurements::getParent(const Entry& child)
     return nullptr;
   }
 
-  shared_ptr<name_tree::Entry> nteChild = m_nameTree.getEntry(child);
+  name_tree::Entry* nteChild = m_nameTree.getEntry(child);
   name_tree::Entry* nte = nteChild->getParent();
   BOOST_ASSERT(nte != nullptr);
   return &this->get(*nte);
@@ -130,7 +127,7 @@ Measurements::findExactMatch(const Name& name) const
 void
 Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
+  name_tree::Entry* nte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(nte != nullptr);
 
   time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
@@ -147,11 +144,11 @@ Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 void
 Measurements::cleanup(Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
+  name_tree::Entry* nte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(nte != nullptr);
 
   nte->setMeasurementsEntry(nullptr);
-  m_nameTree.eraseIfEmpty(nte.get());
+  m_nameTree.eraseIfEmpty(nte);
   --m_nItems;
 }
 

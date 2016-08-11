@@ -62,10 +62,10 @@ public: // information
    *          or nullptr if the table entry is detached
    */
   template<typename ENTRY>
-  shared_ptr<Entry>
+  Entry*
   getEntry(const ENTRY& tableEntry) const
   {
-    return tableEntry.m_nameTreeEntry.lock();
+    return tableEntry.m_nameTreeEntry.lock().get();
   }
 
 public: // mutation
@@ -75,35 +75,35 @@ public: // mutation
    *  \post an entry with \p name and all ancestors are created
    *  \note Existing iterators are unaffected.
    */
-  shared_ptr<Entry>
+  Entry&
   lookup(const Name& name);
 
   /** \brief equivalent to .lookup(fibEntry.getPrefix())
    *  \param fibEntry a FIB entry attached to this name tree, or Fib::s_emptyEntry
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
-  shared_ptr<Entry>
+  Entry&
   lookup(const fib::Entry& fibEntry);
 
   /** \brief equivalent to .lookup(pitEntry.getName()).
    *  \param pitEntry a PIT entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
-  shared_ptr<Entry>
+  Entry&
   lookup(const pit::Entry& pitEntry);
 
   /** \brief equivalent to .lookup(measurementsEntry.getName())
    *  \param measurementsEntry a Measurements entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
-  shared_ptr<Entry>
+  Entry&
   lookup(const measurements::Entry& measurementsEntry);
 
   /** \brief equivalent to .lookup(strategyChoiceEntry.getName())
    *  \param strategyChoiceEntry a StrategyChoice entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
-  shared_ptr<Entry>
+  Entry&
   lookup(const strategy_choice::Entry& strategyChoiceEntry);
 
   /** \brief delete the entry if it is empty

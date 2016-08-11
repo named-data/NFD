@@ -95,7 +95,7 @@ Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 const Entry&
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry).get();
+  name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry);
   BOOST_ASSERT(nte != nullptr);
   return findLongestPrefixMatch(*nte);
 }
@@ -113,15 +113,15 @@ Fib::findExactMatch(const Name& prefix)
 std::pair<Entry*, bool>
 Fib::insert(const Name& prefix)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(prefix);
-  Entry* entry = nte->getFibEntry();
+  name_tree::Entry& nte = m_nameTree.lookup(prefix);
+  Entry* entry = nte.getFibEntry();
   if (entry != nullptr) {
     return std::make_pair(entry, false);
   }
 
-  nte->setFibEntry(make_unique<Entry>(prefix));
+  nte.setFibEntry(make_unique<Entry>(prefix));
   ++m_nItems;
-  return std::make_pair(nte->getFibEntry(), true);
+  return std::make_pair(nte.getFibEntry(), true);
 }
 
 void
@@ -148,10 +148,10 @@ Fib::erase(const Name& prefix)
 void
 Fib::erase(const Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
+  name_tree::Entry* nte = m_nameTree.getEntry(entry);
   if (nte != nullptr) {
     // don't try to erase s_emptyEntry
-    this->erase(nte.get());
+    this->erase(nte);
   }
 }
 
@@ -161,8 +161,8 @@ Fib::removeNextHop(Entry& entry, const Face& face)
   entry.removeNextHop(face);
 
   if (!entry.hasNextHops()) {
-    shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
-    this->erase(nte.get(), false);
+    name_tree::Entry* nte = m_nameTree.getEntry(entry);
+    this->erase(nte, false);
   }
 }
 

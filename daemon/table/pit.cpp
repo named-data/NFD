@@ -68,8 +68,7 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   // ensure NameTree entry exists
   name_tree::Entry* nte = nullptr;
   if (allowInsert) {
-    nte = m_nameTree.lookup(nteName).get();
-    BOOST_ASSERT(nte != nullptr);
+    nte = &m_nameTree.lookup(nteName);
   }
   else {
     nte = m_nameTree.findExactMatch(nteName);
@@ -132,12 +131,12 @@ Pit::erase(shared_ptr<pit::Entry> entry)
 void
 Pit::erase(shared_ptr<pit::Entry> entry, bool canDeleteNte)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(*entry);
+  name_tree::Entry* nte = m_nameTree.getEntry(*entry);
   BOOST_ASSERT(nte != nullptr);
 
   nte->erasePitEntry(entry);
   if (canDeleteNte) {
-    m_nameTree.eraseIfEmpty(nte.get());
+    m_nameTree.eraseIfEmpty(nte);
   }
   --m_nItems;
 }
