@@ -58,7 +58,8 @@ public: // information
     return m_ht.getNBuckets();
   }
 
-  /** \return entry on which a table entry is attached
+  /** \return name tree entry on which a table entry is attached,
+   *          or nullptr if the table entry is detached
    */
   template<typename ENTRY>
   shared_ptr<Entry>
@@ -78,28 +79,32 @@ public: // mutation
   lookup(const Name& name);
 
   /** \brief equivalent to .lookup(fibEntry.getPrefix())
+   *  \param fibEntry a FIB entry attached to this name tree, or Fib::s_emptyEntry
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
-  lookup(const fib::Entry& fibEntry) const;
+  lookup(const fib::Entry& fibEntry);
 
   /** \brief equivalent to .lookup(pitEntry.getName()).
+   *  \param pitEntry a PIT entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
   lookup(const pit::Entry& pitEntry);
 
   /** \brief equivalent to .lookup(measurementsEntry.getName())
+   *  \param measurementsEntry a Measurements entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
-  lookup(const measurements::Entry& measurementsEntry) const;
+  lookup(const measurements::Entry& measurementsEntry);
 
   /** \brief equivalent to .lookup(strategyChoiceEntry.getName())
+   *  \param strategyChoiceEntry a StrategyChoice entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
   shared_ptr<Entry>
-  lookup(const strategy_choice::Entry& strategyChoiceEntry) const;
+  lookup(const strategy_choice::Entry& strategyChoiceEntry);
 
   /** \brief delete the entry if it is empty
    *  \param entry a valid entry
@@ -130,19 +135,20 @@ public: // matching
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief equivalent to .findLongestPrefixMatch(entry.getName(), entrySelector)
-   *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
-   *        in common cases.
+   *  \note This overload is more efficient than
+   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
    */
   Entry*
   findLongestPrefixMatch(const Entry& entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry())
-   *  \note This overload is more efficient than .findLongestPrefixMatch(const Name&)
-   *        in common cases.
+   *  \note This overload is more efficient than
+   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
    */
   Entry*
-  findLongestPrefixMatch(const pit::Entry& pitEntry) const;
+  findLongestPrefixMatch(const pit::Entry& pitEntry,
+                         const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief all-prefixes match lookup
    *  \return an unspecified type that have .begin() and .end() methods

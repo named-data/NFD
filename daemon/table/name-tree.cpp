@@ -62,10 +62,16 @@ NameTree::lookup(const Name& name)
 }
 
 shared_ptr<Entry>
-NameTree::lookup(const fib::Entry& fibEntry) const
+NameTree::lookup(const fib::Entry& fibEntry)
 {
   shared_ptr<Entry> nte = this->getEntry(fibEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getFibEntry() == &fibEntry);
+  if (nte == nullptr) {
+    // special case: Fib::s_emptyEntry is unattached
+    BOOST_ASSERT(fibEntry.getPrefix().empty());
+    return this->lookup(fibEntry.getPrefix());
+  }
+
+  BOOST_ASSERT(nte->getFibEntry() == &fibEntry);
   return nte;
 }
 
@@ -73,32 +79,41 @@ shared_ptr<Entry>
 NameTree::lookup(const pit::Entry& pitEntry)
 {
   shared_ptr<Entry> nte = this->getEntry(pitEntry);
-  if (nte == nullptr) {
-    return nullptr;
-  }
+  BOOST_ASSERT(nte != nullptr);
+
+  BOOST_ASSERT(std::count_if(nte->getPitEntries().begin(), nte->getPitEntries().end(),
+    [&pitEntry] (const shared_ptr<pit::Entry>& pitEntry1) {
+      return pitEntry1.get() == &pitEntry;
+    }) == 1);
 
   if (nte->getName().size() == pitEntry.getName().size()) {
     return nte;
   }
 
+  // special case: PIT entry whose Interest name ends with an implicit digest
+  // are attached to the name tree entry with one-shorter-prefix.
   BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
   BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
   return this->lookup(pitEntry.getName());
 }
 
 shared_ptr<Entry>
-NameTree::lookup(const measurements::Entry& measurementsEntry) const
+NameTree::lookup(const measurements::Entry& measurementsEntry)
 {
   shared_ptr<Entry> nte = this->getEntry(measurementsEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getMeasurementsEntry() == &measurementsEntry);
+  BOOST_ASSERT(nte != nullptr);
+
+  BOOST_ASSERT(nte->getMeasurementsEntry() == &measurementsEntry);
   return nte;
 }
 
 shared_ptr<Entry>
-NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry) const
+NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry)
 {
   shared_ptr<Entry> nte = this->getEntry(strategyChoiceEntry);
-  BOOST_ASSERT(nte == nullptr || nte->getStrategyChoiceEntry() == &strategyChoiceEntry);
+  BOOST_ASSERT(nte != nullptr);
+
+  BOOST_ASSERT(nte->getStrategyChoiceEntry() == &strategyChoiceEntry);
   return nte;
 }
 
@@ -161,27 +176,28 @@ NameTree::findLongestPrefixMatch(const Entry& entry1, const EntrySelector& entry
 }
 
 Entry*
-NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry) const
+NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntrySelector& entrySelector) const
 {
-  shared_ptr<Entry> nte = this->getEntry(pitEntry);
+  const Entry* nte = this->getEntry(pitEntry).get();
   BOOST_ASSERT(nte != nullptr);
-  if (nte->getName().size() == pitEntry.getName().size()) {
-    return nte.get();
+
+  if (nte->getName().size() < pitEntry.getName().size()) {
+    // special case: PIT entry whose Interest name ends with an implicit digest
+    // are attached to the name tree entry with one-shorter-prefix.
+    BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
+    BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
+    const Entry* exact = this->findExactMatch(pitEntry.getName());
+    if (exact != nullptr) {
+      nte = exact;
+    }
   }
 
-  // special case: PIT entry whose Interest name ends with an implicit digest
-  // are attached to the name tree entry with one-shorter-prefix.
-  BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
-  BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
-  Entry* exact = this->findExactMatch(pitEntry.getName());
-  return exact == nullptr ? nte.get() : exact;
+  return this->findLongestPrefixMatch(*nte, entrySelector);
 }
 
 boost::iterator_range<NameTree::const_iterator>
 NameTree::findAllMatches(const Name& name, const EntrySelector& entrySelector) const
 {
-  NFD_LOG_TRACE("NameTree::findAllMatches" << name);
-
   // As we are using Name Prefix Hash Table, and the current LPM() is
   // implemented as starting from full name, and reduce the number of
   // components by 1 each time, we could use it here.
@@ -195,8 +211,6 @@ NameTree::findAllMatches(const Name& name, const EntrySelector& entrySelector) c
 boost::iterator_range<NameTree::const_iterator>
 NameTree::fullEnumerate(const EntrySelector& entrySelector) const
 {
-  NFD_LOG_TRACE("fullEnumerate");
-
   return {Iterator(make_shared<FullEnumerationImpl>(*this, entrySelector), nullptr), end()};
 }
 
@@ -204,7 +218,6 @@ boost::iterator_range<NameTree::const_iterator>
 NameTree::partialEnumerate(const Name& prefix,
                            const EntrySubTreeSelector& entrySubTreeSelector) const
 {
-  // the first step is to process the root node
   Entry* entry = this->findExactMatch(prefix);
   return {Iterator(make_shared<PartialEnumerationImpl>(*this, entrySubTreeSelector), entry), end()};
 }

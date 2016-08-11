@@ -148,7 +148,7 @@ public: // enumeration
 
 private:
   const Entry&
-  findLongestPrefixMatch(const name_tree::Entry* nte) const;
+  findLongestPrefixMatch(const name_tree::Entry& nte) const;
 
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);

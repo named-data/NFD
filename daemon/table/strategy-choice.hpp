@@ -167,7 +167,7 @@ private:
                  fw::Strategy& newStrategy);
 
   fw::Strategy&
-  findEffectiveStrategy(const name_tree::Entry* nte) const;
+  findEffectiveStrategy(const name_tree::Entry& nte) const;
 
 private:
   NameTree& m_nameTree;

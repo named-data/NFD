@@ -70,15 +70,15 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
 }
 
 const Entry&
-Fib::findLongestPrefixMatch(const name_tree::Entry* nte) const
+Fib::findLongestPrefixMatch(const name_tree::Entry& nte) const
 {
-  Entry* entry = nte->getFibEntry();
+  Entry* entry = nte.getFibEntry();
   if (entry != nullptr)
     return *entry;
 
-  nte = m_nameTree.findLongestPrefixMatch(*nte, &nteHasFibEntry);
-  if (nte != nullptr) {
-    return *nte->getFibEntry();
+  const name_tree::Entry* nte2 = m_nameTree.findLongestPrefixMatch(nte, &nteHasFibEntry);
+  if (nte2 != nullptr) {
+    return *nte2->getFibEntry();
   }
 
   return *s_emptyEntry;
@@ -89,15 +89,15 @@ Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
   name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(pitEntry);
   BOOST_ASSERT(nte != nullptr);
-  return findLongestPrefixMatch(nte);
+  return findLongestPrefixMatch(*nte);
 }
 
 const Entry&
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  name_tree::Entry* nte = m_nameTree.lookup(measurementsEntry).get();
+  name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry).get();
   BOOST_ASSERT(nte != nullptr);
-  return findLongestPrefixMatch(nte);
+  return findLongestPrefixMatch(*nte);
 }
 
 Entry*
@@ -148,7 +148,7 @@ Fib::erase(const Name& prefix)
 void
 Fib::erase(const Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
   if (nte != nullptr) {
     // don't try to erase s_emptyEntry
     this->erase(nte.get());
@@ -161,7 +161,7 @@ Fib::removeNextHop(Entry& entry, const Face& face)
   entry.removeNextHop(face);
 
   if (!entry.hasNextHops()) {
-    shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+    shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
     this->erase(nte.get(), false);
   }
 }

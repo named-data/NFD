@@ -180,31 +180,31 @@ StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 }
 
 Strategy&
-StrategyChoice::findEffectiveStrategy(const name_tree::Entry* nte) const
+StrategyChoice::findEffectiveStrategy(const name_tree::Entry& nte) const
 {
-  Entry* entry = nte->getStrategyChoiceEntry();
+  Entry* entry = nte.getStrategyChoiceEntry();
   if (entry != nullptr)
     return entry->getStrategy();
 
-  nte = m_nameTree.findLongestPrefixMatch(*nte, &nteHasStrategyChoiceEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return nte->getStrategyChoiceEntry()->getStrategy();
+  const name_tree::Entry* nte2 = m_nameTree.findLongestPrefixMatch(nte, &nteHasStrategyChoiceEntry);
+  BOOST_ASSERT(nte2 != nullptr);
+  return nte2->getStrategyChoiceEntry()->getStrategy();
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
+  const name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(pitEntry);
   BOOST_ASSERT(nte != nullptr);
-  return this->findEffectiveStrategy(nte.get());
+  return this->findEffectiveStrategy(*nte);
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(measurementsEntry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(measurementsEntry);
   BOOST_ASSERT(nte != nullptr);
-  return this->findEffectiveStrategy(nte.get());
+  return this->findEffectiveStrategy(*nte);
 }
 
 void
@@ -258,7 +258,8 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
 
   // reset StrategyInfo on a portion of NameTree,
   // where entry's effective strategy is covered by the changing StrategyChoice entry
-  const name_tree::Entry* rootNte = m_nameTree.lookup(entry).get();
+  const name_tree::Entry* rootNte = m_nameTree.getEntry(entry).get();
+  BOOST_ASSERT(rootNte != nullptr);
   auto&& ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
     [&rootNte] (const name_tree::Entry& nte) -> std::pair<bool, bool> {
       if (&nte == rootNte) {

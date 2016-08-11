@@ -68,12 +68,6 @@ Entry&
 Measurements::get(const fib::Entry& fibEntry)
 {
   shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(fibEntry);
-  if (nte == nullptr) {
-    // must be Fib::s_emptyEntry that is unattached
-    BOOST_ASSERT(fibEntry.getPrefix().empty());
-    nte = m_nameTree.lookup(fibEntry.getPrefix());
-  }
-
   BOOST_ASSERT(nte != nullptr);
   return this->get(*nte);
 }
@@ -93,7 +87,7 @@ Measurements::getParent(const Entry& child)
     return nullptr;
   }
 
-  shared_ptr<name_tree::Entry> nteChild = m_nameTree.lookup(child);
+  shared_ptr<name_tree::Entry> nteChild = m_nameTree.getEntry(child);
   name_tree::Entry* nte = nteChild->getParent();
   BOOST_ASSERT(nte != nullptr);
   return &this->get(*nte);
@@ -123,25 +117,20 @@ Measurements::findLongestPrefixMatch(const Name& name, const EntryPredicate& pre
 Entry*
 Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntryPredicate& pred) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(pitEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return this->findLongestPrefixMatchImpl(*nte, pred);
+  return this->findLongestPrefixMatchImpl(pitEntry, pred);
 }
 
 Entry*
 Measurements::findExactMatch(const Name& name) const
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(name);
-  if (nte != nullptr) {
-    return nte->getMeasurementsEntry();
-  }
-  return nullptr;
+  const name_tree::Entry* nte = m_nameTree.findExactMatch(name);
+  return nte == nullptr ? nullptr : nte->getMeasurementsEntry();
 }
 
 void
 Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(nte != nullptr);
 
   time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
@@ -158,7 +147,7 @@ Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 void
 Measurements::cleanup(Entry& entry)
 {
-  shared_ptr<name_tree::Entry> nte = m_nameTree.lookup(entry);
+  shared_ptr<name_tree::Entry> nte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(nte != nullptr);
 
   nte->setMeasurementsEntry(nullptr);
