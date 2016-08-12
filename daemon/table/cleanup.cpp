@@ -30,7 +30,7 @@ namespace nfd {
 void
 cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
 {
-  std::multimap<size_t, weak_ptr<name_tree::Entry>> maybeEmptyNtes;
+  std::multimap<size_t, const name_tree::Entry*> maybeEmptyNtes;
 
   // visit FIB and PIT entries in one pass of NameTree enumeration
   for (const name_tree::Entry& nte : nt) {
@@ -43,19 +43,19 @@ cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
       pit.deleteInOutRecords(pitEntry, face);
     }
 
-    if (nte.getFibEntry() == nullptr && !nte.hasPitEntries()) {
-      maybeEmptyNtes.emplace(nte.getName().size(), const_pointer_cast<name_tree::Entry>(nte.shared_from_this()));
+    if (!nte.hasTableEntries()) {
+      maybeEmptyNtes.emplace(nte.getName().size(), &nte);
     }
   }
 
   // try to erase longer names first, so that children are erased before parent is checked
   for (auto i = maybeEmptyNtes.rbegin(); i != maybeEmptyNtes.rend(); ++i) {
-    shared_ptr<name_tree::Entry> nte = i->second.lock();
-    // nte may have been erased when its last child is erased
-    if (nte != nullptr) {
-      nt.eraseIfEmpty(nte.get());
-    }
+    nt.eraseIfEmpty(const_cast<name_tree::Entry*>(i->second), false);
   }
+
+  BOOST_ASSERT(nt.size() == 0 ||
+               std::none_of(nt.begin(), nt.end(),
+                            [] (const name_tree::Entry& nte) { return nte.isEmpty(); }));
 }
 
 } // namespace nfd

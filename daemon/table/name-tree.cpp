@@ -118,7 +118,7 @@ NameTree::lookup(const strategy_choice::Entry& strategyChoiceEntry)
 }
 
 size_t
-NameTree::eraseIfEmpty(Entry* entry)
+NameTree::eraseIfEmpty(Entry* entry, bool canEraseAncestors)
 {
   BOOST_ASSERT(entry != nullptr);
 
@@ -132,6 +132,10 @@ NameTree::eraseIfEmpty(Entry* entry)
 
     m_ht.erase(getNode(*entry));
     ++nErased;
+
+    if (!canEraseAncestors) {
+      break;
+    }
   }
 
   if (nErased == 0) {

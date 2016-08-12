@@ -108,15 +108,16 @@ public: // mutation
 
   /** \brief delete the entry if it is empty
    *  \param entry a valid entry
+   *  \param canEraseAncestors whether ancestors should be deleted if they become empty
    *  \return number of deleted entries
    *  \sa Entry::isEmpty()
-   *  \post If the entry is empty, it's deleted.
-   *        Ancestors of the entry are also deleted if they become empty.
+   *  \post If the entry is empty, it's deleted. If canEraseAncestors is true,
+   *        ancestors of the entry are also deleted if they become empty.
    *  \note This function must be called after detaching a table entry from a name tree entry,
    *  \note Existing iterators, except those pointing to deleted entries, are unaffected.
    */
   size_t
-  eraseIfEmpty(Entry* entry);
+  eraseIfEmpty(Entry* entry, bool canEraseAncestors = true);
 
 public: // matching
   /** \brief exact match lookup
