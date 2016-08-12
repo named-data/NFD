@@ -147,8 +147,11 @@ public: // enumeration
   };
 
 private:
+  /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch
+   */
+  template<typename K>
   const Entry&
-  findLongestPrefixMatch(const name_tree::Entry& nte) const;
+  findLongestPrefixMatchImpl(const K& key) const;
 
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);

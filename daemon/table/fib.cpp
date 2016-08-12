@@ -59,10 +59,11 @@ Fib::Fib(NameTree& nameTree)
 {
 }
 
+template<typename K>
 const Entry&
-Fib::findLongestPrefixMatch(const Name& prefix) const
+Fib::findLongestPrefixMatchImpl(const K& key) const
 {
-  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(prefix, &nteHasFibEntry);
+  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(key, &nteHasFibEntry);
   if (nte != nullptr) {
     return *nte->getFibEntry();
   }
@@ -70,34 +71,21 @@ Fib::findLongestPrefixMatch(const Name& prefix) const
 }
 
 const Entry&
-Fib::findLongestPrefixMatch(const name_tree::Entry& nte) const
+Fib::findLongestPrefixMatch(const Name& prefix) const
 {
-  Entry* entry = nte.getFibEntry();
-  if (entry != nullptr)
-    return *entry;
-
-  const name_tree::Entry* nte2 = m_nameTree.findLongestPrefixMatch(nte, &nteHasFibEntry);
-  if (nte2 != nullptr) {
-    return *nte2->getFibEntry();
-  }
-
-  return *s_emptyEntry;
+  return this->findLongestPrefixMatchImpl(prefix);
 }
 
 const Entry&
 Fib::findLongestPrefixMatch(const pit::Entry& pitEntry) const
 {
-  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(pitEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return findLongestPrefixMatch(*nte);
+  return this->findLongestPrefixMatchImpl(pitEntry);
 }
 
 const Entry&
 Fib::findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const
 {
-  name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return findLongestPrefixMatch(*nte);
+  return this->findLongestPrefixMatchImpl(measurementsEntry);
 }
 
 Entry*
@@ -149,10 +137,11 @@ void
 Fib::erase(const Entry& entry)
 {
   name_tree::Entry* nte = m_nameTree.getEntry(entry);
-  if (nte != nullptr) {
-    // don't try to erase s_emptyEntry
-    this->erase(nte);
+  if (nte == nullptr) { // don't try to erase s_emptyEntry
+    BOOST_ASSERT(&entry == s_emptyEntry.get());
+    return;
   }
+  this->erase(nte);
 }
 
 void

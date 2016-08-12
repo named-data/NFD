@@ -136,7 +136,7 @@ private:
   Entry&
   get(name_tree::Entry& nte);
 
-  /** \tparam K a parameter acceptable by NameTree::findLongestPrefixMatch
+  /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch
    */
   template<typename K>
   Entry*

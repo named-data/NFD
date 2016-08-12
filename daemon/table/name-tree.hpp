@@ -99,7 +99,7 @@ public: // mutation
   Entry&
   lookup(const measurements::Entry& measurementsEntry);
 
-  /** \brief equivalent to .lookup(strategyChoiceEntry.getName())
+  /** \brief equivalent to .lookup(strategyChoiceEntry.getPrefix())
    *  \param strategyChoiceEntry a StrategyChoice entry attached to this name tree
    *  \note This overload is more efficient than .lookup(const Name&) in common cases.
    */
@@ -142,9 +142,21 @@ public: // matching
   findLongestPrefixMatch(const Entry& entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), AnyEntry())
+  /** \brief equivalent to .findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)
+   *  \tparam ENTRY fib::Entry or measurements::Entry or strategy_choice::Entry
    *  \note This overload is more efficient than
    *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
+   *  \warning Undefined behavior may occur if tableEntry is not attached to this name tree.
+   */
+  template<typename ENTRY>
+  Entry*
+  findLongestPrefixMatch(const ENTRY& tableEntry,
+                         const EntrySelector& entrySelector = AnyEntry()) const;
+
+  /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), entrySelector)
+   *  \note This overload is more efficient than
+   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
+   *  \warning Undefined behavior may occur if pitEntry is not attached to this name tree.
    */
   Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,

@@ -175,6 +175,26 @@ NameTree::findLongestPrefixMatch(const Entry& entry1, const EntrySelector& entry
   return nullptr;
 }
 
+template<typename ENTRY>
+Entry*
+NameTree::findLongestPrefixMatch(const ENTRY& tableEntry, const EntrySelector& entrySelector) const
+{
+  const Entry* nte = this->getEntry(tableEntry);
+  BOOST_ASSERT(nte != nullptr);
+  return this->findLongestPrefixMatch(*nte, entrySelector);
+}
+
+template Entry*
+NameTree::findLongestPrefixMatch<fib::Entry>(const fib::Entry&, const EntrySelector&) const;
+
+template Entry*
+NameTree::findLongestPrefixMatch<measurements::Entry>(const measurements::Entry&,
+                                                      const EntrySelector&) const;
+
+template Entry*
+NameTree::findLongestPrefixMatch<strategy_choice::Entry>(const strategy_choice::Entry&,
+                                                         const EntrySelector&) const;
+
 Entry*
 NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntrySelector& entrySelector) const
 {

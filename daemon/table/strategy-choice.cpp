@@ -171,40 +171,31 @@ StrategyChoice::get(const Name& prefix) const
   return {true, entry->getStrategy().getName()};
 }
 
+template<typename K>
 Strategy&
-StrategyChoice::findEffectiveStrategy(const Name& prefix) const
+StrategyChoice::findEffectiveStrategyImpl(const K& key) const
 {
-  name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(prefix, &nteHasStrategyChoiceEntry);
+  const name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(key, &nteHasStrategyChoiceEntry);
   BOOST_ASSERT(nte != nullptr);
   return nte->getStrategyChoiceEntry()->getStrategy();
 }
 
 Strategy&
-StrategyChoice::findEffectiveStrategy(const name_tree::Entry& nte) const
+StrategyChoice::findEffectiveStrategy(const Name& prefix) const
 {
-  Entry* entry = nte.getStrategyChoiceEntry();
-  if (entry != nullptr)
-    return entry->getStrategy();
-
-  const name_tree::Entry* nte2 = m_nameTree.findLongestPrefixMatch(nte, &nteHasStrategyChoiceEntry);
-  BOOST_ASSERT(nte2 != nullptr);
-  return nte2->getStrategyChoiceEntry()->getStrategy();
+  return this->findEffectiveStrategyImpl(prefix);
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const pit::Entry& pitEntry) const
 {
-  const name_tree::Entry* nte = m_nameTree.findLongestPrefixMatch(pitEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return this->findEffectiveStrategy(*nte);
+  return this->findEffectiveStrategyImpl(pitEntry);
 }
 
 Strategy&
 StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
 {
-  const name_tree::Entry* nte = m_nameTree.getEntry(measurementsEntry);
-  BOOST_ASSERT(nte != nullptr);
-  return this->findEffectiveStrategy(*nte);
+  return this->findEffectiveStrategyImpl(measurementsEntry);
 }
 
 void

@@ -166,8 +166,11 @@ private:
                  fw::Strategy& oldStrategy,
                  fw::Strategy& newStrategy);
 
+  /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch
+   */
+  template<typename K>
   fw::Strategy&
-  findEffectiveStrategy(const name_tree::Entry& nte) const;
+  findEffectiveStrategyImpl(const K& key) const;
 
 private:
   NameTree& m_nameTree;
