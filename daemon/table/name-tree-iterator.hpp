@@ -74,9 +74,6 @@ public:
 
   Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);
 
-  virtual
-  ~Iterator() = default;
-
   const Entry&
   operator*() const
   {
