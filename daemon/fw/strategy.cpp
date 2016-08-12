@@ -37,32 +37,29 @@ Strategy::Strategy(Forwarder& forwarder, const Name& name)
   , beforeRemoveFace(forwarder.getFaceTable().beforeRemove)
   , m_name(name)
   , m_forwarder(forwarder)
-  , m_measurements(m_forwarder.getMeasurements(),
-                   m_forwarder.getStrategyChoice(), *this)
+  , m_measurements(m_forwarder.getMeasurements(), m_forwarder.getStrategyChoice(), *this)
 {
 }
 
-Strategy::~Strategy()
-{
-}
+Strategy::~Strategy() = default;
 
 void
-Strategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+Strategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                 const Face& inFace, const Data& data)
 {
   NFD_LOG_DEBUG("beforeSatisfyInterest pitEntry=" << pitEntry->getName() <<
-    " inFace=" << inFace.getId() << " data=" << data.getName());
+                " inFace=" << inFace.getId() << " data=" << data.getName());
 }
 
 void
-Strategy::beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry)
+Strategy::beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG("beforeExpirePendingInterest pitEntry=" << pitEntry->getName());
 }
 
 void
 Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                           shared_ptr<pit::Entry> pitEntry)
+                           const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG("afterReceiveNack inFace=" << inFace.getId() <<
                 " pitEntry=" << pitEntry->getName());

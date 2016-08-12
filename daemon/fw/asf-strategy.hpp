@@ -47,39 +47,35 @@ public:
   explicit
   AsfStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
-  virtual
-  ~AsfStrategy();
-
 public: // triggers
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) override;
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
   virtual void
-  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+  beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override;
 
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                   shared_ptr<pit::Entry> pitEntry) override;
+                   const shared_ptr<pit::Entry>& pitEntry) override;
 
 private:
   void
   forwardInterest(const Interest& interest,
                   const fib::Entry& fibEntry,
-                  shared_ptr<pit::Entry> pitEntry,
+                  const shared_ptr<pit::Entry>& pitEntry,
                   Face& outFace,
                   bool wantNewNonce = false);
 
   Face*
-  getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& inFace);
+  getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest, const Face& inFace);
 
   void
-  onTimeout(const ndn::Name& interestName, nfd::face::FaceId faceId);
+  onTimeout(const Name& interestName, face::FaceId faceId);
 
   void
-  sendNoRouteNack(const Face& inFace, const Interest& interest, shared_ptr<pit::Entry> pitEntry);
+  sendNoRouteNack(const Face& inFace, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
 
 public:
   static const Name STRATEGY_NAME;

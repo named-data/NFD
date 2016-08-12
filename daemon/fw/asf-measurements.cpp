@@ -110,7 +110,7 @@ FaceInfo::doesNameMatchLastInterest(const ndn::Name& name)
 }
 
 void
-FaceInfo::recordRtt(const shared_ptr<pit::Entry> pitEntry, const Face& inFace)
+FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
 {
   // Calculate RTT
   pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(inFace);

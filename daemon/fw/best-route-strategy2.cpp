@@ -104,9 +104,8 @@ findEligibleNextHopWithEarliestOutRecord(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
-BestRouteStrategy2::afterReceiveInterest(const Face& inFace,
-                                         const Interest& interest,
-                                         shared_ptr<pit::Entry> pitEntry)
+BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppression::Result suppression = m_retxSuppression.decide(inFace, interest, *pitEntry);
   if (suppression == RetxSuppression::SUPPRESS) {
@@ -186,7 +185,7 @@ compareLessSevere(lp::NackReason x, lp::NackReason y)
 
 void
 BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                                     shared_ptr<pit::Entry> pitEntry)
+                                     const shared_ptr<pit::Entry>& pitEntry)
 {
   int nOutRecordsNotNacked = 0;
   Face* lastFaceNotNacked = nullptr;

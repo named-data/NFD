@@ -42,14 +42,9 @@ AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
 {
 }
 
-AccessStrategy::~AccessStrategy()
-{
-}
-
 void
-AccessStrategy::afterReceiveInterest(const Face& inFace,
-                                     const Interest& interest,
-                                     shared_ptr<pit::Entry> pitEntry)
+AccessStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                     const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
   switch (suppressResult) {
@@ -69,9 +64,8 @@ AccessStrategy::afterReceiveInterest(const Face& inFace,
 }
 
 void
-AccessStrategy::afterReceiveNewInterest(const Face& inFace,
-                                        const Interest& interest,
-                                        shared_ptr<pit::Entry> pitEntry)
+AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& interest,
+                                        const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   Name miName;
@@ -102,9 +96,8 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace,
 }
 
 void
-AccessStrategy::afterReceiveRetxInterest(const Face& inFace,
-                                         const Interest& interest,
-                                         shared_ptr<pit::Entry> pitEntry)
+AccessStrategy::afterReceiveRetxInterest(const Face& inFace, const Interest& interest,
+                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-forward");
@@ -112,8 +105,8 @@ AccessStrategy::afterReceiveRetxInterest(const Face& inFace,
 }
 
 bool
-AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pitEntry, MtInfo& mi,
-                                  const fib::Entry& fibEntry)
+AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                                  MtInfo& mi, const fib::Entry& fibEntry)
 {
   if (mi.lastNexthop == face::INVALID_FACEID) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " no-last-nexthop");
@@ -152,8 +145,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pit
 }
 
 void
-AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak,
-                                FaceId inFace, FaceId firstOutFace)
+AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFace, FaceId firstOutFace)
 {
   shared_ptr<pit::Entry> pitEntry = pitWeak.lock();
   BOOST_ASSERT(pitEntry != nullptr);
@@ -167,7 +159,7 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak,
 }
 
 void
-AccessStrategy::multicast(shared_ptr<pit::Entry> pitEntry, const fib::Entry& fibEntry,
+AccessStrategy::multicast(const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
                           std::unordered_set<FaceId> exceptFaces)
 {
   for (const fib::NextHop& nexthop : fibEntry.getNextHops()) {
@@ -182,7 +174,7 @@ AccessStrategy::multicast(shared_ptr<pit::Entry> pitEntry, const fib::Entry& fib
 }
 
 void
-AccessStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                       const Face& inFace, const Data& data)
 {
   shared_ptr<PitInfo> pi = pitEntry->getStrategyInfo<PitInfo>();

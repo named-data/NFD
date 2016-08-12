@@ -39,18 +39,13 @@ NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
 {
 }
 
-NccStrategy::~NccStrategy()
-{
-}
-
 const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
 const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
 const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 
 void
-NccStrategy::afterReceiveInterest(const Face& inFace,
-                                  const Interest& interest,
-                                  shared_ptr<pit::Entry> pitEntry)
+NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                  const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
@@ -59,8 +54,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     return;
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo =
-    pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
+  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
   bool isNewPitEntry = !hasPendingOutRecords(*pitEntry);
   if (!isNewPitEntry) {
     return;
@@ -112,8 +106,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace,
     pitEntryInfo->maxInterval = deferFirst;
   }
   pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
-    bind(&NccStrategy::doPropagate, this,
-         weak_ptr<pit::Entry>(pitEntry)));
+    bind(&NccStrategy::doPropagate, this, weak_ptr<pit::Entry>(pitEntry)));
 }
 
 void
@@ -182,7 +175,7 @@ NccStrategy::timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak)
 }
 
 void
-NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+NccStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                    const Face& inFace, const Data& data)
 {
   if (!pitEntry->hasInRecords()) {
@@ -220,7 +213,7 @@ NccStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
 }
 
 NccStrategy::MeasurementsEntryInfo&
-NccStrategy::getMeasurementsEntryInfo(shared_ptr<pit::Entry> entry)
+NccStrategy::getMeasurementsEntryInfo(const shared_ptr<pit::Entry>& entry)
 {
   measurements::Entry* measurementsEntry = this->getMeasurements().get(*entry);
   return this->getMeasurementsEntryInfo(measurementsEntry);

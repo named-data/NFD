@@ -49,19 +49,16 @@ namespace fw {
 class AccessStrategy : public Strategy
 {
 public:
+  explicit
   AccessStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
-
-  virtual
-  ~AccessStrategy();
 
 public: // triggers
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) override;
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
   virtual void
-  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+  beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override;
 
 private: // StrategyInfo
@@ -127,20 +124,18 @@ private: // StrategyInfo
 
 private: // forwarding procedures
   void
-  afterReceiveNewInterest(const Face& inFace,
-                          const Interest& interest,
-                          shared_ptr<pit::Entry> pitEntry);
+  afterReceiveNewInterest(const Face& inFace, const Interest& interest,
+                          const shared_ptr<pit::Entry>& pitEntry);
 
   void
-  afterReceiveRetxInterest(const Face& inFace,
-                           const Interest& interest,
-                           shared_ptr<pit::Entry> pitEntry);
+  afterReceiveRetxInterest(const Face& inFace, const Interest& interest,
+                           const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief send to last working nexthop
    *  \return whether an Interest is sent
    */
   bool
-  sendToLastNexthop(const Face& inFace, shared_ptr<pit::Entry> pitEntry, MtInfo& mi,
+  sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry, MtInfo& mi,
                     const fib::Entry& fibEntry);
 
   void
@@ -150,8 +145,7 @@ private: // forwarding procedures
    *  \param exceptFaces don't forward to those faces
    */
   void
-  multicast(shared_ptr<pit::Entry> pitEntry,
-            const fib::Entry& fibEntry,
+  multicast(const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
             std::unordered_set<FaceId> exceptFaces = std::unordered_set<FaceId>());
 
   void

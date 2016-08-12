@@ -131,7 +131,7 @@ public:
   }
 
   void
-  recordRtt(const shared_ptr<pit::Entry> pitEntry, const Face& inFace);
+  recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace);
 
   void
   recordTimeout(const ndn::Name& interestName);

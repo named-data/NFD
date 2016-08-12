@@ -69,12 +69,12 @@ public: // triggers
    *  - If strategy concludes that this Interest cannot be forwarded,
    *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
    *
-   *  \note The strategy is permitted to store a shared reference to pitEntry.
-   *        pitEntry is passed by value to reflect this fact.
+   *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
+   *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
    */
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) = 0;
+                       const shared_ptr<pit::Entry>& pitEntry) = 0;
 
   /** \brief trigger before PIT entry is satisfied
    *
@@ -83,11 +83,11 @@ public: // triggers
    *
    *  In this base class this method does nothing.
    *
-   *  \note The strategy is permitted to store a shared reference to pitEntry.
-   *        pitEntry is passed by value to reflect this fact.
+   *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
+   *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
    */
   virtual void
-  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+  beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data);
 
   /** \brief trigger before PIT entry expires
@@ -99,11 +99,12 @@ public: // triggers
    *
    *  In this base class this method does nothing.
    *
-   *  \note The strategy is permitted to store a shared reference to pitEntry.
-   *        pitEntry is passed by value to reflect this fact.
+   *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
+   *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>,
+   *           although this isn't useful here because PIT entry would be deleted shortly after.
    */
   virtual void
-  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry);
+  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief trigger after Nack is received
    *
@@ -115,12 +116,12 @@ public: // triggers
    *
    *  In this base class this method does nothing.
    *
-   *  \note The strategy is permitted to store a shared reference to pitEntry.
-   *        pitEntry is passed by value to reflect this fact.
+   *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
+   *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
    */
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                   shared_ptr<pit::Entry> pitEntry);
+                   const shared_ptr<pit::Entry>& pitEntry);
 
 protected: // actions
   /** \brief send Interest to outFace

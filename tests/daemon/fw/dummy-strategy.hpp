@@ -41,9 +41,9 @@ public:
   DummyStrategy(Forwarder& forwarder, const Name& name)
     : Strategy(forwarder, name)
     , afterReceiveInterest_count(0)
-    , wantAfterReceiveInterestCalls(false)
     , beforeSatisfyInterest_count(0)
     , beforeExpirePendingInterest_count(0)
+    , afterReceiveNack_count(0)
   {
   }
 
@@ -53,14 +53,10 @@ public:
    *  otherwise, reject pending Interest action is invoked.
    */
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) override
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
+                       const shared_ptr<pit::Entry>& pitEntry) override
   {
     ++afterReceiveInterest_count;
-    if (wantAfterReceiveInterestCalls) {
-      afterReceiveInterestCalls.emplace_back(inFace.getId(), interest, pitEntry);
-    }
 
     if (interestOutFace) {
       this->sendInterest(pitEntry, *interestOutFace);
@@ -71,36 +67,32 @@ public:
   }
 
   virtual void
-  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
-                        const Face& inFace,
-                        const Data& data) override
+  beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
+                        const Face& inFace, const Data& data) override
   {
     ++beforeSatisfyInterest_count;
   }
 
   virtual void
-  beforeExpirePendingInterest(shared_ptr<pit::Entry> pitEntry) override
+  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
   {
     ++beforeExpirePendingInterest_count;
   }
 
   virtual void
-  afterReceiveNack(const Face& inFace,
-                   const lp::Nack& nack,
-                   shared_ptr<pit::Entry> pitEntry) override
+  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                   const shared_ptr<pit::Entry>& pitEntry) override
   {
     ++afterReceiveNack_count;
   }
 
 public:
   int afterReceiveInterest_count;
-  bool wantAfterReceiveInterestCalls;
-  std::vector<std::tuple<FaceId, Interest, shared_ptr<pit::Entry>>> afterReceiveInterestCalls;
-  shared_ptr<Face> interestOutFace;
-
   int beforeSatisfyInterest_count;
   int beforeExpirePendingInterest_count;
   int afterReceiveNack_count;
+
+  shared_ptr<Face> interestOutFace;
 };
 
 } // namespace tests

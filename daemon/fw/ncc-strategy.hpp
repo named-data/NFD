@@ -36,18 +36,15 @@ namespace fw {
 class NccStrategy : public Strategy
 {
 public:
+  explicit
   NccStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
-  virtual
-  ~NccStrategy();
+  virtual void
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) override;
-
-  virtual void
-  beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
+  beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override;
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED:
@@ -105,7 +102,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED:
     }
 
     virtual
-    ~PitEntryInfo();
+    ~PitEntryInfo() override;
 
   public:
     /// timer that expires when best face does not respond within predicted time
@@ -121,7 +118,7 @@ protected:
   getMeasurementsEntryInfo(measurements::Entry* entry);
 
   MeasurementsEntryInfo&
-  getMeasurementsEntryInfo(shared_ptr<pit::Entry> entry);
+  getMeasurementsEntryInfo(const shared_ptr<pit::Entry>& entry);
 
   /// propagate to another upstream
   void

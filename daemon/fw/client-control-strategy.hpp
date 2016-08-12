@@ -40,15 +40,12 @@ namespace fw {
 class ClientControlStrategy : public BestRouteStrategy
 {
 public:
+  explicit
   ClientControlStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
 
-  virtual
-  ~ClientControlStrategy();
-
   virtual void
-  afterReceiveInterest(const Face& inFace,
-                       const Interest& interest,
-                       shared_ptr<pit::Entry> pitEntry) override;
+  afterReceiveInterest(const Face& inFace, const Interest& interest,
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
 public:
   static const Name STRATEGY_NAME;

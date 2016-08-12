@@ -40,9 +40,8 @@ BroadcastStrategy::BroadcastStrategy(Forwarder& forwarder, const Name& name)
 }
 
 void
-BroadcastStrategy::afterReceiveInterest(const Face& inFace,
-                   const Interest& interest,
-                   shared_ptr<pit::Entry> pitEntry)
+BroadcastStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                        const shared_ptr<pit::Entry>& pitEntry)
 {
   if (m_isFirstUse) {
     NFD_LOG_WARN("The broadcast strategy has been renamed as multicast strategy. "

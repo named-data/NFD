@@ -37,14 +37,9 @@ BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
 {
 }
 
-BestRouteStrategy::~BestRouteStrategy()
-{
-}
-
 void
-BestRouteStrategy::afterReceiveInterest(const Face& inFace,
-                                        const Interest& interest,
-                                        shared_ptr<pit::Entry> pitEntry)
+BestRouteStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                        const shared_ptr<pit::Entry>& pitEntry)
 {
   if (hasPendingOutRecords(*pitEntry)) {
     // not a new Interest, don't forward

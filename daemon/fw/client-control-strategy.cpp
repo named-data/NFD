@@ -40,14 +40,9 @@ ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& n
 {
 }
 
-ClientControlStrategy::~ClientControlStrategy()
-{
-}
-
 void
-ClientControlStrategy::afterReceiveInterest(const Face& inFace,
-                                            const Interest& interest,
-                                            shared_ptr<pit::Entry> pitEntry)
+ClientControlStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                            const shared_ptr<pit::Entry>& pitEntry)
 {
   shared_ptr<lp::NextHopFaceIdTag> tag = interest.getTag<lp::NextHopFaceIdTag>();
   if (tag == nullptr) {

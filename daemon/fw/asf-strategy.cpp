@@ -49,14 +49,9 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
 {
 }
 
-AsfStrategy::~AsfStrategy()
-{
-}
-
 void
-AsfStrategy::afterReceiveInterest(const Face& inFace,
-                                  const Interest& interest,
-                                  shared_ptr<pit::Entry> pitEntry)
+AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                  const shared_ptr<pit::Entry>& pitEntry)
 {
   // Should the Interest be suppressed?
   RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
@@ -105,9 +100,8 @@ AsfStrategy::afterReceiveInterest(const Face& inFace,
 }
 
 void
-AsfStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
-                                   const Face& inFace,
-                                   const Data& data)
+AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
+                                   const Face& inFace, const Data& data)
 {
   shared_ptr<NamespaceInfo> namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
 
@@ -130,7 +124,7 @@ AsfStrategy::beforeSatisfyInterest(shared_ptr<pit::Entry> pitEntry,
 
 void
 AsfStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                              shared_ptr<pit::Entry> pitEntry)
+                              const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG("Nack for " << nack.getInterest() << " from=" << inFace.getId() << ": " << nack.getReason());
   onTimeout(pitEntry->getName(), inFace.getId());
@@ -142,7 +136,7 @@ AsfStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
 void
 AsfStrategy::forwardInterest(const Interest& interest,
                              const fib::Entry& fibEntry,
-                             shared_ptr<pit::Entry> pitEntry,
+                             const shared_ptr<pit::Entry>& pitEntry,
                              Face& outFace,
                              bool wantNewNonce)
 {
@@ -197,7 +191,8 @@ getValueForSorting(const FaceStats& stats)
 }
 
 Face*
-AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& inFace)
+AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest,
+                                      const Face& inFace)
 {
   NFD_LOG_TRACE("Looking for best face for " << fibEntry.getPrefix());
 
@@ -255,7 +250,7 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const ndn::Int
 }
 
 void
-AsfStrategy::onTimeout(const ndn::Name& interestName, nfd::face::FaceId faceId)
+AsfStrategy::onTimeout(const Name& interestName, face::FaceId faceId)
 {
   NFD_LOG_TRACE("FaceId: " << faceId << " for " << interestName << " has timed-out");
 
@@ -277,7 +272,8 @@ AsfStrategy::onTimeout(const ndn::Name& interestName, nfd::face::FaceId faceId)
 }
 
 void
-AsfStrategy::sendNoRouteNack(const Face& inFace, const Interest& interest, shared_ptr<pit::Entry> pitEntry)
+AsfStrategy::sendNoRouteNack(const Face& inFace, const Interest& interest,
+                             const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
 
