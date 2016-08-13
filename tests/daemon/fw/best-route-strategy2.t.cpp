@@ -207,10 +207,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(IncomingInterest, Scenario, NoRouteScenarios)
   strategy.afterReceiveInterest(*face1, *interest, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory[0].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory[0].pitInterest, pitEntry->getInterest());
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), lp::NackReason::NO_ROUTE);
 }
@@ -238,9 +238,9 @@ BOOST_AUTO_TEST_CASE(OneUpstream) // one upstream, send Nack when Nack arrives
   strategy.afterReceiveNack(*face3, nack3, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 2);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), lp::NackReason::CONGESTION);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[1].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[1].pitInterest, pitEntry->getInterest());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[1].header.getReason(), lp::NackReason::CONGESTION);
   std::unordered_set<FaceId> nackFaceIds{strategy.sendNackHistory[0].outFaceId,
                                          strategy.sendNackHistory[1].outFaceId};
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(TwoUpstreams) // two upstreams, send Nack when both Nacks a
   strategy.afterReceiveNack(*face4, nack4, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), lp::NackReason::CONGESTION);
 }
@@ -446,7 +446,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombination
   strategy.afterReceiveNack(*face4, nack4, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitEntry, pitEntry);
+  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), combination.getExpectedResult());
 }

@@ -56,8 +56,7 @@ protected:
                Face& outFace,
                bool wantNewNonce = false) override
   {
-    SendInterestArgs args{pitEntry, outFace.getId(), wantNewNonce};
-    sendInterestHistory.push_back(args);
+    sendInterestHistory.push_back({pitEntry->getInterest(), outFace.getId(), wantNewNonce});
     pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
     afterAction();
   }
@@ -65,8 +64,7 @@ protected:
   virtual void
   rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
   {
-    RejectPendingInterestArgs args{pitEntry};
-    rejectPendingInterestHistory.push_back(args);
+    rejectPendingInterestHistory.push_back({pitEntry->getInterest()});
     afterAction();
   }
 
@@ -74,8 +72,7 @@ protected:
   sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
            const lp::NackHeader& header) override
   {
-    SendNackArgs args{pitEntry, outFace.getId(), header};
-    sendNackHistory.push_back(args);
+    sendNackHistory.push_back({pitEntry->getInterest(), outFace.getId(), header});
     pitEntry->deleteInRecord(outFace);
     afterAction();
   }
@@ -83,7 +80,7 @@ protected:
 public:
   struct SendInterestArgs
   {
-    shared_ptr<pit::Entry> pitEntry;
+    Interest pitInterest;
     FaceId outFaceId;
     bool wantNewNonce;
   };
@@ -91,13 +88,13 @@ public:
 
   struct RejectPendingInterestArgs
   {
-    shared_ptr<pit::Entry> pitEntry;
+    Interest pitInterest;
   };
   std::vector<RejectPendingInterestArgs> rejectPendingInterestHistory;
 
   struct SendNackArgs
   {
-    shared_ptr<pit::Entry> pitEntry;
+    Interest pitInterest;
     FaceId outFaceId;
     lp::NackHeader header;
   };
