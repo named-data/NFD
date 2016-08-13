@@ -184,7 +184,7 @@ public:
 
 protected:
   virtual void
-  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> f) override
+  dispatchToStrategy(pit::Entry& pitEntry, function<void(fw::Strategy&)> trigger) override
   {
     ++dispatchToStrategy_count;
   }

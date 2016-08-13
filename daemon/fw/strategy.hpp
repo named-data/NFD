@@ -50,9 +50,13 @@ public:
   virtual
   ~Strategy();
 
-  /// a Name that represent the Strategy program
+  /** \return a Name that represents the strategy program
+   */
   const Name&
-  getName() const;
+  getName() const
+  {
+    return m_name;
+  }
 
 public: // triggers
   /** \brief trigger after Interest is received
@@ -131,8 +135,11 @@ protected: // actions
    *                      rather than reusing a Nonce from one of the PIT in-records
    */
   VIRTUAL_WITH_TESTS void
-  sendInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
-               bool wantNewNonce = false);
+  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
+               bool wantNewNonce = false)
+  {
+    m_forwarder.onOutgoingInterest(pitEntry, outFace, wantNewNonce);
+  }
 
   /** \brief decide that a pending Interest cannot be forwarded
    *  \param pitEntry PIT entry
@@ -141,7 +148,10 @@ protected: // actions
    *  forwarded earlier, and does not need to be resent now.
    */
   VIRTUAL_WITH_TESTS void
-  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry);
+  rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry)
+  {
+    m_forwarder.onInterestReject(pitEntry);
+  }
 
   /** \brief send Nack to outFace
    *  \param pitEntry PIT entry
@@ -151,8 +161,11 @@ protected: // actions
    *  The outFace must have a PIT in-record, otherwise this method has no effect.
    */
   VIRTUAL_WITH_TESTS void
-  sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
-           const lp::NackHeader& header);
+  sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
+           const lp::NackHeader& header)
+  {
+    m_forwarder.onOutgoingNack(pitEntry, outFace, header);
+  }
 
   /** \brief send Nack to every face that has an in-record,
    *         except those in \p exceptFaces
@@ -162,21 +175,33 @@ protected: // actions
    *  \note This is not an action, but a helper that invokes the sendNack action.
    */
   void
-  sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& header,
+  sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
             std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
 
 protected: // accessors
   const fib::Entry&
-  lookupFib(const pit::Entry& pitEntry);
+  lookupFib(const pit::Entry& pitEntry)
+  {
+    return m_forwarder.lookupFib(pitEntry);
+  }
 
   MeasurementsAccessor&
-  getMeasurements();
+  getMeasurements()
+  {
+    return m_measurements;
+  }
 
   Face*
-  getFace(FaceId id) const;
+  getFace(FaceId id) const
+  {
+    return m_forwarder.getFace(id);
+  }
 
   const FaceTable&
-  getFaceTable() const;
+  getFaceTable() const
+  {
+    return m_forwarder.getFaceTable();
+  }
 
 protected: // accessors
   signal::Signal<FaceTable, Face&>& afterAddFace;
@@ -193,55 +218,6 @@ private:
 
   MeasurementsAccessor m_measurements;
 };
-
-inline const Name&
-Strategy::getName() const
-{
-  return m_name;
-}
-
-inline void
-Strategy::sendInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace, bool wantNewNonce)
-{
-  m_forwarder.onOutgoingInterest(pitEntry, outFace, wantNewNonce);
-}
-
-inline void
-Strategy::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
-{
-  m_forwarder.onInterestReject(pitEntry);
-}
-
-inline void
-Strategy::sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
-                   const lp::NackHeader& header)
-{
-  m_forwarder.onOutgoingNack(pitEntry, outFace, header);
-}
-
-inline const fib::Entry&
-Strategy::lookupFib(const pit::Entry& pitEntry)
-{
-  return m_forwarder.lookupFib(pitEntry);
-}
-
-inline MeasurementsAccessor&
-Strategy::getMeasurements()
-{
-  return m_measurements;
-}
-
-inline Face*
-Strategy::getFace(FaceId id) const
-{
-  return m_forwarder.getFace(id);
-}
-
-inline const FaceTable&
-Strategy::getFaceTable() const
-{
-  return m_forwarder.getFaceTable();
-}
 
 } // namespace fw
 } // namespace nfd

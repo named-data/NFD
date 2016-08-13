@@ -57,25 +57,37 @@ public:
   ~Forwarder();
 
   const ForwarderCounters&
-  getCounters() const;
+  getCounters() const
+  {
+    return m_counters;
+  }
 
 public: // faces
   FaceTable&
-  getFaceTable();
+  getFaceTable()
+  {
+    return m_faceTable;
+  }
 
   /** \brief get existing Face
    *
    *  shortcut to .getFaceTable().get(face)
    */
   Face*
-  getFace(FaceId id) const;
+  getFace(FaceId id) const
+  {
+    return m_faceTable.get(id);
+  }
 
   /** \brief add new Face
    *
    *  shortcut to .getFaceTable().add(face)
    */
   void
-  addFace(shared_ptr<Face> face);
+  addFace(shared_ptr<Face> face)
+  {
+    m_faceTable.add(face);
+  }
 
 public: // forwarding entrypoints and tables
   /** \brief start incoming Interest processing
@@ -100,28 +112,52 @@ public: // forwarding entrypoints and tables
   startProcessNack(Face& face, const lp::Nack& nack);
 
   NameTree&
-  getNameTree();
+  getNameTree()
+  {
+    return m_nameTree;
+  }
 
   Fib&
-  getFib();
+  getFib()
+  {
+    return m_fib;
+  }
 
   Pit&
-  getPit();
+  getPit()
+  {
+    return m_pit;
+  }
 
   Cs&
-  getCs();
+  getCs()
+  {
+    return m_cs;
+  }
 
   Measurements&
-  getMeasurements();
+  getMeasurements()
+  {
+    return m_measurements;
+  }
 
   StrategyChoice&
-  getStrategyChoice();
+  getStrategyChoice()
+  {
+    return m_strategyChoice;
+  }
 
   DeadNonceList&
-  getDeadNonceList();
+  getDeadNonceList()
+  {
+    return m_deadNonceList;
+  }
 
   NetworkRegionTable&
-  getNetworkRegionTable();
+  getNetworkRegionTable()
+  {
+    return m_networkRegionTable;
+  }
 
   /** \brief performs a FIB lookup, considering Link object if present
    */
@@ -142,37 +178,38 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief Content Store miss pipeline
   */
   VIRTUAL_WITH_TESTS void
-  onContentStoreMiss(const Face& inFace, shared_ptr<pit::Entry> pitEntry, const Interest& interest);
+  onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                     const Interest& interest);
 
   /** \brief Content Store hit pipeline
   */
   VIRTUAL_WITH_TESTS void
-  onContentStoreHit(const Face& inFace, shared_ptr<pit::Entry> pitEntry,
+  onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
                     const Interest& interest, const Data& data);
 
   /** \brief outgoing Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingInterest(shared_ptr<pit::Entry> pitEntry, Face& outFace,
+  onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
                      bool wantNewNonce = false);
 
   /** \brief Interest reject pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onInterestReject(shared_ptr<pit::Entry> pitEntry);
+  onInterestReject(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief Interest unsatisfied pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onInterestUnsatisfied(shared_ptr<pit::Entry> pitEntry);
+  onInterestUnsatisfied(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief Interest finalize pipeline
    *  \param isSatisfied whether the Interest has been satisfied
    *  \param dataFreshnessPeriod FreshnessPeriod of satisfying Data
    */
   VIRTUAL_WITH_TESTS void
-  onInterestFinalize(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
-                     const time::milliseconds& dataFreshnessPeriod = time::milliseconds(-1));
+  onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
+                     time::milliseconds dataFreshnessPeriod = time::milliseconds(-1));
 
   /** \brief incoming Data pipeline
    */
@@ -197,18 +234,18 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief outgoing Nack pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace, const lp::NackHeader& nack);
+  onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace, const lp::NackHeader& nack);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
-  setUnsatisfyTimer(shared_ptr<pit::Entry> pitEntry);
+  setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry);
 
   VIRTUAL_WITH_TESTS void
-  setStragglerTimer(shared_ptr<pit::Entry> pitEntry, bool isSatisfied,
-                    const time::milliseconds& dataFreshnessPeriod = time::milliseconds(-1));
+  setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
+                    time::milliseconds dataFreshnessPeriod = time::milliseconds(-1));
 
   VIRTUAL_WITH_TESTS void
-  cancelUnsatisfyAndStragglerTimer(shared_ptr<pit::Entry> pitEntry);
+  cancelUnsatisfyAndStragglerTimer(pit::Entry& pitEntry);
 
   /** \brief insert Nonce to Dead Nonce List if necessary
    *  \param upstream if null, insert Nonces from all out-records;
@@ -216,18 +253,21 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
    */
   VIRTUAL_WITH_TESTS void
   insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
-                      const time::milliseconds& dataFreshnessPeriod,
-                      Face* upstream);
+                      time::milliseconds dataFreshnessPeriod, Face* upstream);
 
-  /// call trigger (method) on the effective strategy of pitEntry
+  /** \brief call trigger (method) on the effective strategy of pitEntry
+   */
 #ifdef WITH_TESTS
   virtual void
-  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> trigger);
+  dispatchToStrategy(pit::Entry& pitEntry, function<void(fw::Strategy&)> trigger)
 #else
   template<class Function>
   void
-  dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, Function trigger);
+  dispatchToStrategy(pit::Entry& pitEntry, Function trigger)
 #endif
+  {
+    trigger(m_strategyChoice.findEffectiveStrategy(pitEntry));
+  }
 
 private:
   ForwarderCounters m_counters;
@@ -247,91 +287,6 @@ private:
   // allow Strategy (base class) to enter pipelines
   friend class fw::Strategy;
 };
-
-inline const ForwarderCounters&
-Forwarder::getCounters() const
-{
-  return m_counters;
-}
-
-inline FaceTable&
-Forwarder::getFaceTable()
-{
-  return m_faceTable;
-}
-
-inline Face*
-Forwarder::getFace(FaceId id) const
-{
-  return m_faceTable.get(id);
-}
-
-inline void
-Forwarder::addFace(shared_ptr<Face> face)
-{
-  m_faceTable.add(face);
-}
-
-inline NameTree&
-Forwarder::getNameTree()
-{
-  return m_nameTree;
-}
-
-inline Fib&
-Forwarder::getFib()
-{
-  return m_fib;
-}
-
-inline Pit&
-Forwarder::getPit()
-{
-  return m_pit;
-}
-
-inline Cs&
-Forwarder::getCs()
-{
-  return m_cs;
-}
-
-inline Measurements&
-Forwarder::getMeasurements()
-{
-  return m_measurements;
-}
-
-inline StrategyChoice&
-Forwarder::getStrategyChoice()
-{
-  return m_strategyChoice;
-}
-
-inline DeadNonceList&
-Forwarder::getDeadNonceList()
-{
-  return m_deadNonceList;
-}
-
-inline NetworkRegionTable&
-Forwarder::getNetworkRegionTable()
-{
-  return m_networkRegionTable;
-}
-
-#ifdef WITH_TESTS
-inline void
-Forwarder::dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, function<void(fw::Strategy*)> trigger)
-#else
-template<class Function>
-inline void
-Forwarder::dispatchToStrategy(shared_ptr<pit::Entry> pitEntry, Function trigger)
-#endif
-{
-  fw::Strategy& strategy = m_strategyChoice.findEffectiveStrategy(*pitEntry);
-  trigger(&strategy);
-}
 
 } // namespace nfd
 

@@ -52,16 +52,33 @@ public:
 
 protected:
   virtual void
-  sendInterest(shared_ptr<pit::Entry> pitEntry,
+  sendInterest(const shared_ptr<pit::Entry>& pitEntry,
                Face& outFace,
-               bool wantNewNonce = false) override;
+               bool wantNewNonce = false) override
+  {
+    SendInterestArgs args{pitEntry, outFace.getId(), wantNewNonce};
+    sendInterestHistory.push_back(args);
+    pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
+    afterAction();
+  }
 
   virtual void
-  rejectPendingInterest(shared_ptr<pit::Entry> pitEntry) override;
+  rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
+  {
+    RejectPendingInterestArgs args{pitEntry};
+    rejectPendingInterestHistory.push_back(args);
+    afterAction();
+  }
 
   virtual void
-  sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
-           const lp::NackHeader& header) override;
+  sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
+           const lp::NackHeader& header) override
+  {
+    SendNackArgs args{pitEntry, outFace.getId(), header};
+    sendNackHistory.push_back(args);
+    pitEntry->deleteInRecord(outFace);
+    afterAction();
+  }
 
 public:
   struct SendInterestArgs
@@ -86,39 +103,6 @@ public:
   };
   std::vector<SendNackArgs> sendNackHistory;
 };
-
-
-template<typename S>
-inline void
-StrategyTester<S>::sendInterest(shared_ptr<pit::Entry> pitEntry,
-                                Face& outFace,
-                                bool wantNewNonce)
-{
-  SendInterestArgs args{pitEntry, outFace.getId(), wantNewNonce};
-  sendInterestHistory.push_back(args);
-  pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
-  afterAction();
-}
-
-template<typename S>
-inline void
-StrategyTester<S>::rejectPendingInterest(shared_ptr<pit::Entry> pitEntry)
-{
-  RejectPendingInterestArgs args{pitEntry};
-  rejectPendingInterestHistory.push_back(args);
-  afterAction();
-}
-
-template<typename S>
-inline void
-StrategyTester<S>::sendNack(shared_ptr<pit::Entry> pitEntry, const Face& outFace,
-                            const lp::NackHeader& header)
-{
-  SendNackArgs args{pitEntry, outFace.getId(), header};
-  sendNackHistory.push_back(args);
-  pitEntry->deleteInRecord(outFace);
-  afterAction();
-}
 
 } // namespace tests
 } // namespace fw

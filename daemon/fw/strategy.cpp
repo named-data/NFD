@@ -66,7 +66,7 @@ Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
 }
 
 void
-Strategy::sendNacks(shared_ptr<pit::Entry> pitEntry, const lp::NackHeader& header,
+Strategy::sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
                     std::initializer_list<const Face*> exceptFaces)
 {
   // populate downstreams with all downstreams faces
