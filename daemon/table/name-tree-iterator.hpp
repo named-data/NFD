@@ -26,10 +26,12 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_ITERATOR_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_ITERATOR_HPP
 
-#include "name-tree-entry.hpp"
+#include "name-tree-hashtable.hpp"
 
 namespace nfd {
 namespace name_tree {
+
+class NameTree;
 
 /** \brief a predicate to accept or reject an Entry in find operations
  */

@@ -30,6 +30,7 @@ namespace fib {
 
 Entry::Entry(const Name& prefix)
   : m_prefix(prefix)
+  , m_nameTreeEntry(nullptr)
 {
 }
 
@@ -76,7 +77,6 @@ Entry::sortNextHops()
   std::sort(m_nextHops.begin(), m_nextHops.end(),
             [] (const NextHop& a, const NextHop& b) { return a.getCost() < b.getCost(); });
 }
-
 
 } // namespace fib
 } // namespace nfd

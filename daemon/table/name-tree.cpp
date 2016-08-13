@@ -54,11 +54,11 @@ NameTree::lookup(const Name& name)
     std::tie(node, isNew) = m_ht.insert(name, prefixLen, hashes);
 
     if (isNew && parent != nullptr) {
-      node->entry->setParent(*parent);
+      node->entry.setParent(*parent);
     }
-    parent = node->entry.get();
+    parent = &node->entry;
   }
-  return *node->entry;
+  return node->entry;
 }
 
 Entry&
@@ -148,7 +148,7 @@ Entry*
 NameTree::findExactMatch(const Name& name) const
 {
   const Node* node = m_ht.find(name, name.size());
-  return node == nullptr ? nullptr : node->entry.get();
+  return node == nullptr ? nullptr : &node->entry;
 }
 
 Entry*
@@ -158,8 +158,8 @@ NameTree::findLongestPrefixMatch(const Name& name, const EntrySelector& entrySel
 
   for (ssize_t prefixLen = name.size(); prefixLen >= 0; --prefixLen) {
     const Node* node = m_ht.find(name, prefixLen, hashes);
-    if (node != nullptr && entrySelector(*node->entry)) {
-      return node->entry.get();
+    if (node != nullptr && entrySelector(node->entry)) {
+      return &node->entry;
     }
   }
 

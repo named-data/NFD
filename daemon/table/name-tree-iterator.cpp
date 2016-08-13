@@ -121,7 +121,7 @@ FullEnumerationImpl::advance(Iterator& i)
     for (size_t bucket = 0; bucket < ht.getNBuckets(); ++bucket) {
       const Node* node = ht.getBucket(bucket);
       if (node != nullptr) {
-        i.m_entry = node->entry.get();
+        i.m_entry = &node->entry;
         break;
       }
     }
@@ -136,8 +136,8 @@ FullEnumerationImpl::advance(Iterator& i)
 
   // process entries in same bucket
   for (const Node* node = getNode(*i.m_entry)->next; node != nullptr; node = node->next) {
-    if (m_pred(*node->entry)) {
-      i.m_entry = node->entry.get();
+    if (m_pred(node->entry)) {
+      i.m_entry = &node->entry;
       return;
     }
   }
@@ -146,8 +146,8 @@ FullEnumerationImpl::advance(Iterator& i)
   size_t currentBucket = ht.computeBucketIndex(getNode(*i.m_entry)->hash);
   for (size_t bucket = currentBucket + 1; bucket < ht.getNBuckets(); ++bucket) {
     for (const Node* node = ht.getBucket(bucket); node != nullptr; node = node->next) {
-      if (m_pred(*node->entry)) {
-        i.m_entry = node->entry.get();
+      if (m_pred(node->entry)) {
+        i.m_entry = &node->entry;
         return;
       }
     }

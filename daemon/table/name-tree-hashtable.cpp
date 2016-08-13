@@ -24,7 +24,6 @@
  */
 
 #include "name-tree-hashtable.hpp"
-#include "name-tree-entry.hpp"
 #include "core/logger.hpp"
 #include "core/city-hash.hpp"
 
@@ -92,7 +91,7 @@ Node::Node(HashValue h, const Name& name)
   : hash(h)
   , prev(nullptr)
   , next(nullptr)
-  , entry(make_shared<Entry>(name, this))
+  , entry(name, this)
 {
 }
 
@@ -182,7 +181,7 @@ Hashtable::findOrInsert(const Name& name, size_t prefixLen, HashValue h, bool al
   size_t bucket = this->computeBucketIndex(h);
 
   for (const Node* node = m_buckets[bucket]; node != nullptr; node = node->next) {
-    if (node->hash == h && name.compare(0, prefixLen, node->entry->getName()) == 0) {
+    if (node->hash == h && name.compare(0, prefixLen, node->entry.getName()) == 0) {
       NFD_LOG_TRACE("found " << name.getPrefix(prefixLen) << " hash=" << h << " bucket=" << bucket);
       return {node, false};
     }
@@ -195,7 +194,7 @@ Hashtable::findOrInsert(const Name& name, size_t prefixLen, HashValue h, bool al
 
   Node* node = new Node(h, name.getPrefix(prefixLen));
   this->attach(bucket, node);
-  NFD_LOG_TRACE("insert " << node->entry->getName() << " hash=" << h << " bucket=" << bucket);
+  NFD_LOG_TRACE("insert " << node->entry.getName() << " hash=" << h << " bucket=" << bucket);
   ++m_size;
 
   if (m_size > m_expandThreshold) {
@@ -230,10 +229,10 @@ void
 Hashtable::erase(Node* node)
 {
   BOOST_ASSERT(node != nullptr);
-  BOOST_ASSERT(node->entry->getParent() == nullptr);
+  BOOST_ASSERT(node->entry.getParent() == nullptr);
 
   size_t bucket = this->computeBucketIndex(node->hash);
-  NFD_LOG_TRACE("erase " << node->entry->getName() << " hash=" << node->hash << " bucket=" << bucket);
+  NFD_LOG_TRACE("erase " << node->entry.getName() << " hash=" << node->hash << " bucket=" << bucket);
 
   this->detach(bucket, node);
   delete node;

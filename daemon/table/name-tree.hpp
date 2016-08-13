@@ -65,7 +65,7 @@ public: // information
   Entry*
   getEntry(const ENTRY& tableEntry) const
   {
-    return tableEntry.m_nameTreeEntry.lock().get();
+    return Entry::get(tableEntry);
   }
 
 public: // mutation

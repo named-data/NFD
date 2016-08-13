@@ -32,14 +32,10 @@
 namespace nfd {
 
 namespace name_tree {
-class NameTree;
 class Entry;
 } // namespace name_tree
-using name_tree::NameTree;
 
 namespace measurements {
-
-class Measurements;
 
 /** \brief represents a Measurements entry
  */
@@ -50,26 +46,21 @@ public:
   Entry(const Name& name);
 
   const Name&
-  getName() const;
+  getName() const
+  {
+    return m_name;
+  }
 
 private:
   Name m_name;
-
-private: // lifetime
   time::steady_clock::TimePoint m_expiry;
   scheduler::EventId m_cleanup;
-  weak_ptr<name_tree::Entry> m_nameTreeEntry;
 
-  friend class nfd::NameTree;
-  friend class nfd::name_tree::Entry;
+  name_tree::Entry* m_nameTreeEntry;
+
   friend class Measurements;
+  friend class name_tree::Entry;
 };
-
-inline const Name&
-Entry::getName() const
-{
-  return m_name;
-}
 
 } // namespace measurements
 } // namespace nfd

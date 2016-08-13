@@ -181,61 +181,108 @@ BOOST_AUTO_TEST_CASE(Resize)
 
 BOOST_AUTO_TEST_SUITE_END() // Hashtable
 
-BOOST_AUTO_TEST_CASE(NameTreeEntry)
+BOOST_AUTO_TEST_SUITE(TestEntry)
+
+BOOST_AUTO_TEST_CASE(TreeRelation)
 {
-  Name prefix("ndn:/named-data/research/abc/def/ghi");
+  Name name("ndn:/named-data/research/abc/def/ghi");
+  auto node = make_unique<Node>(0, name);
+  Entry& npe = node->entry;
+  BOOST_CHECK(npe.getParent() == nullptr);
 
-  auto node = make_unique<Node>(0, prefix);
-  shared_ptr<Entry> npe = node->entry;
-  BOOST_CHECK_EQUAL(npe->getName(), prefix);
-
-  // examine all the get methods
-
-  Entry* parent = npe->getParent();
-  BOOST_CHECK(parent == nullptr);
-
-  const std::vector<Entry*>& children = npe->getChildren();
-  BOOST_CHECK_EQUAL(children.size(), 0);
-
-  fib::Entry* fib = npe->getFibEntry();
-  BOOST_CHECK(fib == nullptr);
-
-  const std::vector<shared_ptr<pit::Entry>>& pitList = npe->getPitEntries();
-  BOOST_CHECK_EQUAL(pitList.size(), 0);
-
-  // examine all the set method
-
-  Name parentName("ndn:/named-data/research/abc/def");
+  Name parentName = name.getPrefix(-1);
   auto parentNode = make_unique<Node>(1, parentName);
-  npe->setParent(*parentNode->entry);
-  BOOST_CHECK_EQUAL(npe->getParent(), parentNode->entry.get());
+  Entry& parent = parentNode->entry;
+  BOOST_CHECK_EQUAL(parent.hasChildren(), false);
+  BOOST_CHECK_EQUAL(parent.isEmpty(), true);
 
-  // Insert FIB
+  npe.setParent(parentNode->entry);
+  BOOST_CHECK_EQUAL(npe.getParent(), &parent);
+  BOOST_CHECK_EQUAL(parent.hasChildren(), true);
+  BOOST_CHECK_EQUAL(parent.isEmpty(), false);
+  BOOST_REQUIRE_EQUAL(parent.getChildren().size(), 1);
+  BOOST_CHECK_EQUAL(parent.getChildren().front(), &npe);
 
-  npe->setFibEntry(make_unique<fib::Entry>(prefix));
-  BOOST_REQUIRE(npe->getFibEntry() != nullptr);
-  BOOST_CHECK_EQUAL(npe->getFibEntry()->getPrefix(), prefix);
-
-  npe->setFibEntry(nullptr);
-  BOOST_CHECK(npe->getFibEntry() == nullptr);
-
-  // Insert a PIT
-
-  auto pitEntry = make_shared<pit::Entry>(*makeInterest(prefix));
-  auto pitEntry2 = make_shared<pit::Entry>(*makeInterest(parentName));
-
-  npe->insertPitEntry(pitEntry);
-  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
-
-  npe->insertPitEntry(pitEntry2);
-  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 2);
-
-  npe->erasePitEntry(pitEntry);
-  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 1);
-
-  npe->erasePitEntry(pitEntry2);
-  BOOST_CHECK_EQUAL(npe->getPitEntries().size(), 0);
+  npe.unsetParent();
+  BOOST_CHECK(npe.getParent() == nullptr);
+  BOOST_CHECK_EQUAL(parent.hasChildren(), false);
+  BOOST_CHECK_EQUAL(parent.isEmpty(), true);
 }
+
+BOOST_AUTO_TEST_CASE(TableEntries)
+{
+  Name name("ndn:/named-data/research/abc/def/ghi");
+  Node node(0, name);
+  Entry& npe = node.entry;
+  BOOST_CHECK_EQUAL(npe.getName(), name);
+
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), true);
+  BOOST_CHECK(npe.getFibEntry() == nullptr);
+  BOOST_CHECK_EQUAL(npe.hasPitEntries(), false);
+  BOOST_CHECK_EQUAL(npe.getPitEntries().empty(), true);
+  BOOST_CHECK(npe.getMeasurementsEntry() == nullptr);
+  BOOST_CHECK(npe.getStrategyChoiceEntry() == nullptr);
+
+  npe.setFibEntry(make_unique<fib::Entry>(name));
+  BOOST_REQUIRE(npe.getFibEntry() != nullptr);
+  BOOST_CHECK_EQUAL(npe.getFibEntry()->getPrefix(), name);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), true);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), false);
+
+  npe.setFibEntry(nullptr);
+  BOOST_CHECK(npe.getFibEntry() == nullptr);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), true);
+
+  auto pit1 = make_shared<pit::Entry>(*makeInterest(name));
+  shared_ptr<Interest> interest2 = makeInterest(name);
+  interest2->setMinSuffixComponents(2);
+  auto pit2 = make_shared<pit::Entry>(*interest2);
+
+  npe.insertPitEntry(pit1);
+  BOOST_CHECK_EQUAL(npe.hasPitEntries(), true);
+  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 1);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), true);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), false);
+
+  npe.insertPitEntry(pit2);
+  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 2);
+
+  npe.erasePitEntry(pit1);
+  BOOST_REQUIRE_EQUAL(npe.getPitEntries().size(), 1);
+  BOOST_CHECK_EQUAL(npe.getPitEntries().front()->getInterest(), *interest2);
+
+  npe.erasePitEntry(pit2);
+  BOOST_CHECK_EQUAL(npe.hasPitEntries(), false);
+  BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 0);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), true);
+
+  npe.setMeasurementsEntry(make_unique<measurements::Entry>(name));
+  BOOST_REQUIRE(npe.getMeasurementsEntry() != nullptr);
+  BOOST_CHECK_EQUAL(npe.getMeasurementsEntry()->getName(), name);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), true);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), false);
+
+  npe.setMeasurementsEntry(nullptr);
+  BOOST_CHECK(npe.getMeasurementsEntry() == nullptr);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), true);
+
+  npe.setStrategyChoiceEntry(make_unique<strategy_choice::Entry>(name));
+  BOOST_REQUIRE(npe.getStrategyChoiceEntry() != nullptr);
+  BOOST_CHECK_EQUAL(npe.getStrategyChoiceEntry()->getPrefix(), name);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), true);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), false);
+
+  npe.setStrategyChoiceEntry(nullptr);
+  BOOST_CHECK(npe.getStrategyChoiceEntry() == nullptr);
+  BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);
+  BOOST_CHECK_EQUAL(npe.isEmpty(), true);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestEntry
 
 BOOST_AUTO_TEST_CASE(Basic)
 {

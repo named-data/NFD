@@ -31,10 +31,8 @@
 namespace nfd {
 
 namespace name_tree {
-class NameTree;
 class Entry;
 } // namespace name_tree
-using name_tree::NameTree;
 
 namespace fib {
 
@@ -48,8 +46,7 @@ namespace fib {
  */
 typedef std::vector<fib::NextHop> NextHopList;
 
-/** \class Entry
- *  \brief represents a FIB entry
+/** \brief represents a FIB entry
  */
 class Entry : noncopyable
 {
@@ -58,15 +55,24 @@ public:
   Entry(const Name& prefix);
 
   const Name&
-  getPrefix() const;
+  getPrefix() const
+  {
+    return m_prefix;
+  }
 
   const NextHopList&
-  getNextHops() const;
+  getNextHops() const
+  {
+    return m_nextHops;
+  }
 
   /** \return whether this Entry has any NextHop record
    */
   bool
-  hasNextHops() const;
+  hasNextHops() const
+  {
+    return !m_nextHops.empty();
+  }
 
   /** \return whether there is a NextHop record for \p face
    */
@@ -102,29 +108,10 @@ private:
   Name m_prefix;
   NextHopList m_nextHops;
 
-  weak_ptr<name_tree::Entry> m_nameTreeEntry;
-  friend class nfd::NameTree;
-  friend class nfd::name_tree::Entry;
+  name_tree::Entry* m_nameTreeEntry;
+
+  friend class name_tree::Entry;
 };
-
-
-inline const Name&
-Entry::getPrefix() const
-{
-  return m_prefix;
-}
-
-inline const NextHopList&
-Entry::getNextHops() const
-{
-  return m_nextHops;
-}
-
-inline bool
-Entry::hasNextHops() const
-{
-  return !m_nextHops.empty();
-}
 
 } // namespace fib
 } // namespace nfd

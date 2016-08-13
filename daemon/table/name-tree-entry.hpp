@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_ENTRY_HPP
 
-#include "name-tree-hashtable.hpp"
 #include "table/fib-entry.hpp"
 #include "table/pit-entry.hpp"
 #include "table/measurements-entry.hpp"
@@ -35,9 +34,11 @@
 namespace nfd {
 namespace name_tree {
 
+class Node;
+
 /** \brief an entry in the name tree
  */
-class Entry : public enable_shared_from_this<Entry>, noncopyable
+class Entry : noncopyable
 {
 public:
   Entry(const Name& prefix, Node* node);
@@ -150,6 +151,18 @@ public: // attached table entries
 
   void
   setStrategyChoiceEntry(unique_ptr<strategy_choice::Entry> strategyChoiceEntry);
+
+  /** \return name tree entry on which a table entry is attached,
+   *          or nullptr if the table entry is detached
+   *  \note This function is for NameTree internal use. Other components
+   *        should use NameTree::getEntry(tableEntry) instead.
+   */
+  template<typename ENTRY>
+  static Entry*
+  get(const ENTRY& tableEntry)
+  {
+    return tableEntry.m_nameTreeEntry;
+  }
 
 private:
   Name m_name;

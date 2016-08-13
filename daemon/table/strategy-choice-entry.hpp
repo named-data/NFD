@@ -33,11 +33,10 @@ namespace nfd {
 namespace fw {
 class Strategy;
 } // namespace fw
+
 namespace name_tree {
-class NameTree;
 class Entry;
 } // namespace name_tree
-using name_tree::NameTree;
 
 namespace strategy_choice {
 
@@ -49,45 +48,35 @@ public:
   Entry(const Name& prefix);
 
   const Name&
-  getPrefix() const;
+  getPrefix() const
+  {
+    return m_prefix;
+  }
 
   const Name&
   getStrategyName() const;
 
   fw::Strategy&
-  getStrategy() const;
+  getStrategy() const
+  {
+    BOOST_ASSERT(m_strategy != nullptr);
+    return *m_strategy;
+  }
 
   void
-  setStrategy(fw::Strategy& strategy);
+  setStrategy(fw::Strategy& strategy)
+  {
+    m_strategy = &strategy;
+  }
 
 private:
   Name m_prefix;
   fw::Strategy* m_strategy;
 
-  weak_ptr<name_tree::Entry> m_nameTreeEntry;
-  friend class nfd::NameTree;
-  friend class nfd::name_tree::Entry;
+  name_tree::Entry* m_nameTreeEntry;
+
+  friend class name_tree::Entry;
 };
-
-
-inline const Name&
-Entry::getPrefix() const
-{
-  return m_prefix;
-}
-
-inline fw::Strategy&
-Entry::getStrategy() const
-{
-  BOOST_ASSERT(m_strategy != nullptr);
-  return *m_strategy;
-}
-
-inline void
-Entry::setStrategy(fw::Strategy& strategy)
-{
-  m_strategy = &strategy;
-}
 
 } // namespace strategy_choice
 } // namespace nfd

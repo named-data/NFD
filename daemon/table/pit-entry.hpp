@@ -33,10 +33,8 @@
 namespace nfd {
 
 namespace name_tree {
-class NameTree;
 class Entry;
 } // namespace name_tree
-using name_tree::NameTree;
 
 namespace pit {
 
@@ -68,18 +66,27 @@ public:
    *  \todo #3162 require Link field to match the representative Interest
    */
   const Interest&
-  getInterest() const;
+  getInterest() const
+  {
+    return *m_interest;
+  }
 
   /** \return Interest Name
    */
   const Name&
-  getName() const;
+  getName() const
+  {
+    return m_interest->getName();
+  }
 
 public: // in-record
   /** \return collection of in-records
    */
   const InRecordCollection&
-  getInRecords() const;
+  getInRecords() const
+  {
+    return m_inRecords;
+  }
 
   /** \retval true There is at least one in-record.
    *               This implies some downstream is waiting for Data or Nack.
@@ -87,19 +94,34 @@ public: // in-record
    *                This implies the entry is new or has been satisfied or Nacked.
    */
   bool
-  hasInRecords() const;
+  hasInRecords() const
+  {
+    return !m_inRecords.empty();
+  }
 
   InRecordCollection::iterator
-  in_begin();
+  in_begin()
+  {
+    return m_inRecords.begin();
+  }
 
   InRecordCollection::const_iterator
-  in_begin() const;
+  in_begin() const
+  {
+    return m_inRecords.begin();
+  }
 
   InRecordCollection::iterator
-  in_end();
+  in_end()
+  {
+    return m_inRecords.end();
+  }
 
   InRecordCollection::const_iterator
-  in_end() const;
+  in_end() const
+  {
+    return m_inRecords.end();
+  }
 
   /** \brief get the in-record for \p face
    *  \return an iterator to the in-record, or .in_end() if it does not exist
@@ -127,7 +149,10 @@ public: // out-record
   /** \return collection of in-records
    */
   const OutRecordCollection&
-  getOutRecords() const;
+  getOutRecords() const
+  {
+    return m_outRecords;
+  }
 
   /** \retval true There is at least one out-record.
    *               This implies the Interest has been forwarded to some upstream,
@@ -136,19 +161,34 @@ public: // out-record
    *                This implies the Interest has not been forwarded.
    */
   bool
-  hasOutRecords() const;
+  hasOutRecords() const
+  {
+    return !m_outRecords.empty();
+  }
 
   OutRecordCollection::iterator
-  out_begin();
+  out_begin()
+  {
+    return m_outRecords.begin();
+  }
 
   OutRecordCollection::const_iterator
-  out_begin() const;
+  out_begin() const
+  {
+    return m_outRecords.begin();
+  }
 
   OutRecordCollection::iterator
-  out_end();
+  out_end()
+  {
+    return m_outRecords.end();
+  }
 
   OutRecordCollection::const_iterator
-  out_end() const;
+  out_end() const
+  {
+    return m_outRecords.end();
+  }
 
   /** \brief get the out-record for \p face
    *  \return an iterator to the out-record, or .out_end() if it does not exist
@@ -194,95 +234,10 @@ private:
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;
 
-  weak_ptr<name_tree::Entry> m_nameTreeEntry;
+  name_tree::Entry* m_nameTreeEntry;
 
-  friend class nfd::NameTree;
-  friend class nfd::name_tree::Entry;
+  friend class name_tree::Entry;
 };
-
-inline const Interest&
-Entry::getInterest() const
-{
-  return *m_interest;
-}
-
-inline const Name&
-Entry::getName() const
-{
-  return m_interest->getName();
-}
-
-inline const InRecordCollection&
-Entry::getInRecords() const
-{
-  return m_inRecords;
-}
-
-inline bool
-Entry::hasInRecords() const
-{
-  return !m_inRecords.empty();
-}
-
-inline InRecordCollection::iterator
-Entry::in_begin()
-{
-  return m_inRecords.begin();
-}
-
-inline InRecordCollection::const_iterator
-Entry::in_begin() const
-{
-  return m_inRecords.begin();
-}
-
-inline InRecordCollection::iterator
-Entry::in_end()
-{
-  return m_inRecords.end();
-}
-
-inline InRecordCollection::const_iterator
-Entry::in_end() const
-{
-  return m_inRecords.end();
-}
-
-inline const OutRecordCollection&
-Entry::getOutRecords() const
-{
-  return m_outRecords;
-}
-
-inline bool
-Entry::hasOutRecords() const
-{
-  return !m_outRecords.empty();
-}
-
-inline OutRecordCollection::iterator
-Entry::out_begin()
-{
-  return m_outRecords.begin();
-}
-
-inline OutRecordCollection::const_iterator
-Entry::out_begin() const
-{
-  return m_outRecords.begin();
-}
-
-inline OutRecordCollection::iterator
-Entry::out_end()
-{
-  return m_outRecords.end();
-}
-
-inline OutRecordCollection::const_iterator
-Entry::out_end() const
-{
-  return m_outRecords.end();
-}
 
 } // namespace pit
 } // namespace nfd

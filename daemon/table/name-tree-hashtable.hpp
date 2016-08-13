@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_TABLE_NAME_TREE_HASHTABLE_HPP
 #define NFD_DAEMON_TABLE_NAME_TREE_HASHTABLE_HPP
 
-#include "core/common.hpp"
+#include "name-tree-entry.hpp"
 
 namespace nfd {
 namespace name_tree {
@@ -61,10 +61,11 @@ computeHashes(const Name& name);
  *  Zero or more nodes can be added to a hashtable bucket. They are organized as
  *  a doubly linked list through prev and next pointers.
  */
-class Node
+class Node : noncopyable
 {
 public:
-  /** \post entry != nullptr && entry->getName() == name
+  /** \post entry.getName() == name
+   *  \post getNode(entry) == this
    */
   Node(HashValue h, const Name& name);
 
@@ -74,10 +75,10 @@ public:
   ~Node();
 
 public:
-  HashValue hash;
+  const HashValue hash;
   Node* prev;
   Node* next;
-  shared_ptr<Entry> entry; /// \todo #3687 make Node sole owner of Entry
+  mutable Entry entry;
 };
 
 /** \return node associated with entry
