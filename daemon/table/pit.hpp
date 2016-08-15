@@ -26,8 +26,8 @@
 #ifndef NFD_DAEMON_TABLE_PIT_HPP
 #define NFD_DAEMON_TABLE_PIT_HPP
 
-#include "name-tree.hpp"
 #include "pit-entry.hpp"
+#include "pit-iterator.hpp"
 
 namespace nfd {
 namespace pit {
@@ -36,12 +36,10 @@ namespace pit {
  *  \brief an unordered iterable of all PIT entries matching Data
  *
  *  This type shall support:
- *    iterator<shared_ptr<pit::Entry>> begin()
- *    iterator<shared_ptr<pit::Entry>> end()
+ *    iterator<shared_ptr<Entry>> begin()
+ *    iterator<shared_ptr<Entry>> end()
  */
-typedef std::vector<shared_ptr<pit::Entry>> DataMatchResult;
-
-} // namespace pit
+typedef std::vector<shared_ptr<Entry>> DataMatchResult;
 
 /** \brief represents the Interest Table
  */
@@ -54,102 +52,73 @@ public:
   /** \return number of entries
    */
   size_t
-  size() const;
+  size() const
+  {
+    return m_nItems;
+  }
 
   /** \brief finds a PIT entry for Interest
    *  \param interest the Interest
    *  \return an existing entry with same Name and Selectors; otherwise nullptr
    */
-  shared_ptr<pit::Entry>
-  find(const Interest& interest) const;
+  shared_ptr<Entry>
+  find(const Interest& interest) const
+  {
+    return const_cast<Pit*>(this)->findOrInsert(interest, false).first;
+  }
 
   /** \brief inserts a PIT entry for Interest
    *  \param interest the Interest; must be created with make_shared
    *  \return a new or existing entry with same Name and Selectors,
    *          and true for new entry, false for existing entry
    */
-  std::pair<shared_ptr<pit::Entry>, bool>
-  insert(const Interest& interest);
+  std::pair<shared_ptr<Entry>, bool>
+  insert(const Interest& interest)
+  {
+    return this->findOrInsert(interest, true);
+  }
 
   /** \brief performs a Data match
    *  \return an iterable of all PIT entries matching data
    */
-  pit::DataMatchResult
+  DataMatchResult
   findAllDataMatches(const Data& data) const;
 
-  /**
-   *  \brief erases a PIT Entry
+  /** \brief erases a PIT Entry
    */
   void
-  erase(shared_ptr<pit::Entry> entry);
+  erase(shared_ptr<Entry> entry)
+  {
+    this->erase(entry, true);
+  }
 
   /** \brief deletes in-record and out-record for face
    */
   void
-  deleteInOutRecords(shared_ptr<pit::Entry> entry, const Face& face);
+  deleteInOutRecords(shared_ptr<Entry> entry, const Face& face);
 
 public: // enumeration
-  class const_iterator;
+  typedef Iterator const_iterator;
 
-  /** \brief returns an iterator pointing to the first PIT entry
+  /** \return an iterator to the beginning
    *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated if PIT or another NameTree-based
-   *        table is modified
+   *  \warning Undefine behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
+   *           is inserted or deleted during PIT enumeration.
    */
   const_iterator
   begin() const;
 
-  /** \brief returns an iterator referring to the past-the-end PIT entry
-   *  \note The returned iterator may get invalidated if PIT or another NameTree-based
-   *        table is modified
+  /** \return an iterator to the end
+   *  \sa begin()
    */
   const_iterator
   end() const;
 
-  class const_iterator : public std::iterator<std::forward_iterator_tag, const pit::Entry>
-  {
-  public:
-    const_iterator();
-
-    explicit
-    const_iterator(const NameTree::const_iterator& it);
-
-    ~const_iterator();
-
-    const pit::Entry&
-    operator*() const;
-
-    shared_ptr<pit::Entry>
-    operator->() const;
-
-    const_iterator&
-    operator++();
-
-    const_iterator
-    operator++(int);
-
-    bool
-    operator==(const const_iterator& other) const;
-
-    bool
-    operator!=(const const_iterator& other) const;
-
-  private:
-    NameTree::const_iterator m_nameTreeIterator;
-    /** \brief Index of the current visiting PIT entry in NameTree node
-     *
-     * Index is used to ensure that dereferencing of m_nameTreeIterator happens only when
-     * const_iterator is dereferenced or advanced.
-     */
-    size_t m_iPitEntry;
-  };
-
 private:
-  /**
-   *  \brief erases a PIT Entry
+  /** \brief erases a PIT Entry
    */
   void
-  erase(shared_ptr<pit::Entry> pitEntry, bool canDeleteNte);
+  erase(shared_ptr<Entry> pitEntry, bool canDeleteNte);
 
   /** \brief finds or inserts a PIT entry for Interest
    *  \param interest the Interest; must be created with make_shared if allowInsert
@@ -159,7 +128,7 @@ private:
    *          if not allowInsert, an existing entry with same Name+Selectors and false,
    *          or {nullptr, true} if there's no existing entry
    */
-  std::pair<shared_ptr<pit::Entry>, bool>
+  std::pair<shared_ptr<Entry>, bool>
   findOrInsert(const Interest& interest, bool allowInsert);
 
 private:
@@ -167,93 +136,9 @@ private:
   size_t m_nItems;
 };
 
-inline size_t
-Pit::size() const
-{
-  return m_nItems;
-}
+} // namespace pit
 
-inline shared_ptr<pit::Entry>
-Pit::find(const Interest& interest) const
-{
-  return const_cast<Pit*>(this)->findOrInsert(interest, false).first;
-}
-
-inline std::pair<shared_ptr<pit::Entry>, bool>
-Pit::insert(const Interest& interest)
-{
-  return this->findOrInsert(interest, true);
-}
-
-inline Pit::const_iterator
-Pit::end() const
-{
-  return const_iterator(m_nameTree.end());
-}
-
-inline
-Pit::const_iterator::const_iterator()
-  : m_iPitEntry(0)
-{
-}
-
-inline
-Pit::const_iterator::const_iterator(const NameTree::const_iterator& it)
-  : m_nameTreeIterator(it)
-  , m_iPitEntry(0)
-{
-}
-
-inline
-Pit::const_iterator::~const_iterator()
-{
-}
-
-inline Pit::const_iterator
-Pit::const_iterator::operator++(int)
-{
-  Pit::const_iterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-inline Pit::const_iterator&
-Pit::const_iterator::operator++()
-{
-  ++m_iPitEntry;
-  if (m_iPitEntry < m_nameTreeIterator->getPitEntries().size()) {
-    return *this;
-  }
-
-  ++m_nameTreeIterator;
-  m_iPitEntry = 0;
-  return *this;
-}
-
-inline const pit::Entry&
-Pit::const_iterator::operator*() const
-{
-  return *(this->operator->());
-}
-
-inline shared_ptr<pit::Entry>
-Pit::const_iterator::operator->() const
-{
-  return m_nameTreeIterator->getPitEntries().at(m_iPitEntry);
-}
-
-inline bool
-Pit::const_iterator::operator==(const Pit::const_iterator& other) const
-{
-  return m_nameTreeIterator == other.m_nameTreeIterator &&
-         m_iPitEntry == other.m_iPitEntry;
-}
-
-inline bool
-Pit::const_iterator::operator!=(const Pit::const_iterator& other) const
-{
-  return !(*this == other);
-}
+using pit::Pit;
 
 } // namespace nfd
 

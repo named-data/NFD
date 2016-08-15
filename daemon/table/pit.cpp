@@ -24,32 +24,9 @@
  */
 
 #include "pit.hpp"
-#include <type_traits>
-
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
-#include <type_traits>
 
 namespace nfd {
 namespace pit {
-
-#if HAVE_IS_MOVE_CONSTRUCTIBLE
-static_assert(std::is_move_constructible<DataMatchResult>::value,
-              "DataMatchResult must be MoveConstructible");
-#endif // HAVE_IS_MOVE_CONSTRUCTIBLE
-
-} // namespace pit
-
-// http://en.cppreference.com/w/cpp/concept/ForwardIterator
-BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Pit::const_iterator>));
-// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
-// which doesn't require DefaultConstructible
-#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
-static_assert(std::is_default_constructible<Pit::const_iterator>::value,
-              "Pit::const_iterator must be default-constructible");
-#else
-BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Pit::const_iterator>));
-#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
 
 Pit::Pit(NameTree& nameTree)
   : m_nameTree(nameTree)
@@ -57,7 +34,7 @@ Pit::Pit(NameTree& nameTree)
 {
 }
 
-std::pair<shared_ptr<pit::Entry>, bool>
+std::pair<shared_ptr<Entry>, bool>
 Pit::findOrInsert(const Interest& interest, bool allowInsert)
 {
   // determine which NameTree entry should the PIT entry be attached onto
@@ -79,9 +56,9 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
 
   // check if PIT entry already exists
   size_t nteNameLen = nteName.size();
-  const std::vector<shared_ptr<pit::Entry>>& pitEntries = nte->getPitEntries();
+  const std::vector<shared_ptr<Entry>>& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
-    [&interest, nteNameLen] (const shared_ptr<pit::Entry>& entry) -> bool {
+    [&interest, nteNameLen] (const shared_ptr<Entry>& entry) -> bool {
       // initial part of the name is guaranteed to be the same
       BOOST_ASSERT(entry->getInterest().getName().compare(0, nteNameLen,
                    interest.getName(), 0, nteNameLen) == 0);
@@ -99,21 +76,21 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
     return {nullptr, true};
   }
 
-  auto entry = make_shared<pit::Entry>(interest);
+  auto entry = make_shared<Entry>(interest);
   nte->insertPitEntry(entry);
   ++m_nItems;
   return {entry, true};
 }
 
-pit::DataMatchResult
+DataMatchResult
 Pit::findAllDataMatches(const Data& data) const
 {
   auto&& ntMatches = m_nameTree.findAllMatches(data.getName(),
     [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); });
 
-  pit::DataMatchResult matches;
+  DataMatchResult matches;
   for (const name_tree::Entry& nte : ntMatches) {
-    for (const shared_ptr<pit::Entry>& pitEntry : nte.getPitEntries()) {
+    for (const shared_ptr<Entry>& pitEntry : nte.getPitEntries()) {
       if (pitEntry->getInterest().matchesData(data))
         matches.emplace_back(pitEntry);
     }
@@ -123,13 +100,7 @@ Pit::findAllDataMatches(const Data& data) const
 }
 
 void
-Pit::erase(shared_ptr<pit::Entry> entry)
-{
-  this->erase(entry, true);
-}
-
-void
-Pit::erase(shared_ptr<pit::Entry> entry, bool canDeleteNte)
+Pit::erase(shared_ptr<Entry> entry, bool canDeleteNte)
 {
   name_tree::Entry* nte = m_nameTree.getEntry(*entry);
   BOOST_ASSERT(nte != nullptr);
@@ -142,7 +113,7 @@ Pit::erase(shared_ptr<pit::Entry> entry, bool canDeleteNte)
 }
 
 void
-Pit::deleteInOutRecords(shared_ptr<pit::Entry> entry, const Face& face)
+Pit::deleteInOutRecords(shared_ptr<Entry> entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
@@ -159,4 +130,11 @@ Pit::begin() const
     [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); }).begin());
 }
 
+Pit::const_iterator
+Pit::end() const
+{
+  return const_iterator(m_nameTree.end());
+}
+
+} // namespace pit
 } // namespace nfd
