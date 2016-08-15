@@ -101,9 +101,9 @@ public: // enumeration
   typedef Iterator const_iterator;
 
   /** \return an iterator to the beginning
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \warning Undefine behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
-   *           is inserted or deleted during PIT enumeration.
+   *  \note Iteration order is implementation-defined.
+   *  \warning Undefined behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
+   *           is inserted or erased during enumeration.
    */
   const_iterator
   begin() const;

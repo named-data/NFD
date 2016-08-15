@@ -105,10 +105,10 @@ public: // enumeration
   typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
   typedef boost::range_iterator<Range>::type const_iterator;
 
-  /** \brief returns an iterator pointing to the first FIB entry
-   *  \note Iteration order is implementation-specific and is undefined
-   *  \note The returned iterator may get invalidated if FIB or another NameTree-based
-   *        table is modified
+  /** \return an iterator to the beginning
+   *  \note Iteration order is implementation-defined.
+   *  \warning Undefined behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
+   *           is inserted or erased during enumeration.
    */
   const_iterator
   begin() const
@@ -116,9 +116,8 @@ public: // enumeration
     return this->getRange().begin();
   }
 
-  /** \brief returns an iterator referring to the past-the-end FIB entry
-   *  \note The returned iterator may get invalidated if FIB or another NameTree-based
-   *        table is modified
+  /** \return an iterator to the end
+   *  \sa begin()
    */
   const_iterator
   end() const

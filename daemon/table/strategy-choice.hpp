@@ -29,6 +29,8 @@
 #include "strategy-choice-entry.hpp"
 #include "name-tree.hpp"
 
+#include <boost/range/adaptor/transformed.hpp>
+
 namespace nfd {
 namespace strategy_choice {
 
@@ -47,6 +49,12 @@ class StrategyChoice : noncopyable
 {
 public:
   StrategyChoice(NameTree& nameTree, unique_ptr<fw::Strategy> defaultStrategy);
+
+  size_t
+  size() const
+  {
+    return m_nItems;
+  }
 
 public: // available Strategy types
   /** \brief determines if a strategy is installed
@@ -99,57 +107,42 @@ public: // effective strategy
   findEffectiveStrategy(const Name& prefix) const;
 
   /** \brief get effective strategy for pitEntry
+   *
+   *  This is equivalent to .findEffectiveStrategy(pitEntry.getName())
    */
   fw::Strategy&
   findEffectiveStrategy(const pit::Entry& pitEntry) const;
 
   /** \brief get effective strategy for measurementsEntry
+   *
+   *  This is equivalent to .findEffectiveStrategy(measurementsEntry.getName())
    */
   fw::Strategy&
   findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
 
 public: // enumeration
-  class const_iterator
-    : public std::iterator<std::forward_iterator_tag, const Entry>
-  {
-  public:
-    explicit
-    const_iterator(const NameTree::const_iterator& it);
+  typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
+  typedef boost::range_iterator<Range>::type const_iterator;
 
-    ~const_iterator();
-
-    const Entry&
-    operator*() const;
-
-    const Entry*
-    operator->() const;
-
-    const_iterator&
-    operator++();
-
-    const_iterator
-    operator++(int);
-
-    bool
-    operator==(const const_iterator& other) const;
-
-    bool
-    operator!=(const const_iterator& other) const;
-
-  private:
-    NameTree::const_iterator m_nameTreeIterator;
-  };
-
-  /** \return number of entries stored
+  /** \return an iterator to the beginning
+   *  \note Iteration order is implementation-defined.
+   *  \warning Undefined behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
+   *           is inserted or erased during enumeration.
    */
-  size_t
-  size() const;
-
   const_iterator
-  begin() const;
+  begin() const
+  {
+    return this->getRange().begin();
+  }
 
+  /** \return an iterator to the end
+   *  \sa begin()
+   */
   const_iterator
-  end() const;
+  end() const
+  {
+    return this->getRange().end();
+  }
 
 private:
   /** \brief get Strategy instance by strategyName
@@ -172,6 +165,9 @@ private:
   fw::Strategy&
   findEffectiveStrategyImpl(const K& key) const;
 
+  Range
+  getRange() const;
+
 private:
   NameTree& m_nameTree;
   size_t m_nItems;
@@ -179,69 +175,6 @@ private:
   typedef std::map<Name, unique_ptr<fw::Strategy>> StrategyInstanceTable;
   StrategyInstanceTable m_strategyInstances;
 };
-
-inline size_t
-StrategyChoice::size() const
-{
-  return m_nItems;
-}
-
-inline StrategyChoice::const_iterator
-StrategyChoice::end() const
-{
-  return const_iterator(m_nameTree.end());
-}
-
-inline
-StrategyChoice::const_iterator::const_iterator(const NameTree::const_iterator& it)
-  : m_nameTreeIterator(it)
-{
-}
-
-inline
-StrategyChoice::const_iterator::~const_iterator()
-{
-}
-
-inline
-StrategyChoice::const_iterator
-StrategyChoice::const_iterator::operator++(int)
-{
-  StrategyChoice::const_iterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-inline StrategyChoice::const_iterator&
-StrategyChoice::const_iterator::operator++()
-{
-  ++m_nameTreeIterator;
-  return *this;
-}
-
-inline const Entry&
-StrategyChoice::const_iterator::operator*() const
-{
-  return *(m_nameTreeIterator->getStrategyChoiceEntry());
-}
-
-inline const Entry*
-StrategyChoice::const_iterator::operator->() const
-{
-  return m_nameTreeIterator->getStrategyChoiceEntry();
-}
-
-inline bool
-StrategyChoice::const_iterator::operator==(const StrategyChoice::const_iterator& other) const
-{
-  return m_nameTreeIterator == other.m_nameTreeIterator;
-}
-
-inline bool
-StrategyChoice::const_iterator::operator!=(const StrategyChoice::const_iterator& other) const
-{
-  return m_nameTreeIterator != other.m_nameTreeIterator;
-}
 
 } // namespace strategy_choice
 

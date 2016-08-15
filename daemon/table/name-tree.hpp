@@ -174,7 +174,7 @@ public: // matching
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined.
+   *  \note Iteration order is implementation-defined.
    *  \warning If a name tree entry whose name is a prefix of \p name is inserted
    *           during the enumeration, it may or may not be visited.
    *           If a name tree entry whose name is a prefix of \p name is deleted
@@ -197,7 +197,7 @@ public: // enumeration
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined.
+   *  \note Iteration order is implementation-defined.
    *  \warning If a name tree entry is inserted or deleted during the enumeration,
    *           it may cause the enumeration to skip entries or visit some entries twice.
    */
@@ -217,7 +217,7 @@ public: // enumeration
    *    ...
    *  }
    *  \endcode
-   *  \note Iteration order is implementation-specific and is undefined.
+   *  \note Iteration order is implementation-defined.
    *  \warning If a name tree entry under \p prefix is inserted or deleted during the enumeration,
    *           it may cause the enumeration to skip entries or visit some entries twice.
    */
@@ -225,7 +225,7 @@ public: // enumeration
   partialEnumerate(const Name& prefix,
                    const EntrySubTreeSelector& entrySubTreeSelector = AnyEntrySubTree()) const;
 
-  /** \return an iterator to enumerate all entries
+  /** \return an iterator to the beginning
    *  \sa fullEnumerate
    */
   const_iterator
@@ -234,7 +234,8 @@ public: // enumeration
     return fullEnumerate().begin();
   }
 
-  /** \return a past-the-end iterator
+  /** \return an iterator to the end
+   *  \sa begin()
    */
   const_iterator
   end() const

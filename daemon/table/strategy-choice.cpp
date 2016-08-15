@@ -266,10 +266,12 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
   }
 }
 
-StrategyChoice::const_iterator
-StrategyChoice::begin() const
+StrategyChoice::Range
+StrategyChoice::getRange() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(&nteHasStrategyChoiceEntry).begin());
+  return m_nameTree.fullEnumerate(&nteHasStrategyChoiceEntry) |
+         boost::adaptors::transformed(name_tree::GetTableEntry<Entry>(
+                                      &name_tree::Entry::getStrategyChoiceEntry));
 }
 
 } // namespace strategy_choice
