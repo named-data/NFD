@@ -195,6 +195,13 @@ private:
   EntrySelector m_pred;
 };
 
+/** \brief a Forward Range of name tree entries
+ *
+ *  This type has .begin() and .end() methods which return Iterator.
+ *  This type is usable with range-based for.
+ */
+typedef boost::iterator_range<Iterator> Range;
+
 } // namespace name_tree
 } // namespace nfd
 

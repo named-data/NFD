@@ -36,8 +36,6 @@ namespace name_tree {
 class NameTree : noncopyable
 {
 public:
-  typedef Iterator const_iterator;
-
   explicit
   NameTree(size_t nBuckets = 1024);
 
@@ -164,9 +162,7 @@ public: // matching
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief all-prefixes match lookup
-   *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for.
-   *          Every entry in the range has a name that is a prefix of \p name ,
+   *  \return a range where every entry has a name that is a prefix of \p name ,
    *          and matches \p entrySelector.
    *
    *  Example:
@@ -184,15 +180,15 @@ public: // matching
    *           If a name tree entry whose name is a prefix of \p name is deleted
    *           during the enumeration, undefined behavior may occur.
    */
-  boost::iterator_range<const_iterator>
+  Range
   findAllMatches(const Name& name,
                  const EntrySelector& entrySelector = AnyEntry()) const;
 
 public: // enumeration
+  typedef Iterator const_iterator;
+
   /** \brief enumerate all entries
-   *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for.
-   *          Every entry in the range matches \p entrySelector.
+   *  \return a range where every entry matches \p entrySelector
    *
    *  Example:
    *  \code
@@ -205,13 +201,11 @@ public: // enumeration
    *  \warning If a name tree entry is inserted or deleted during the enumeration,
    *           it may cause the enumeration to skip entries or visit some entries twice.
    */
-  boost::iterator_range<const_iterator>
+  Range
   fullEnumerate(const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief enumerate all entries under a prefix
-   *  \return an unspecified type that have .begin() and .end() methods
-   *          and is usable with range-based for.
-   *          Every entry in the range has a name that starts with \p prefix,
+   *  \return a range where every entry has a name that starts with \p prefix,
    *          and matches \p entrySubTreeSelector.
    *
    *  Example:
@@ -227,7 +221,7 @@ public: // enumeration
    *  \warning If a name tree entry under \p prefix is inserted or deleted during the enumeration,
    *           it may cause the enumeration to skip entries or visit some entries twice.
    */
-  boost::iterator_range<const_iterator>
+  Range
   partialEnumerate(const Name& prefix,
                    const EntrySubTreeSelector& entrySubTreeSelector = AnyEntrySubTree()) const;
 

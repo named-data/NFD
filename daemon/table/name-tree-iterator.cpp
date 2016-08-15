@@ -29,16 +29,19 @@
 
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>
+#include <boost/range/concepts.hpp>
 #include <type_traits>
 
 namespace nfd {
 namespace name_tree {
 
-NFD_LOG_INIT("NameTreeIterator");
-
 BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Iterator>));
 static_assert(std::is_default_constructible<Iterator>::value,
               "Iterator must be default-constructible");
+
+BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
+
+NFD_LOG_INIT("NameTreeIterator");
 
 Iterator::Iterator()
   : m_entry(nullptr)
