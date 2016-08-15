@@ -112,7 +112,10 @@ public: // enumeration
    *  \sa begin()
    */
   const_iterator
-  end() const;
+  end() const
+  {
+    return Iterator();
+  }
 
 private:
   /** \brief erases a PIT Entry

@@ -36,27 +36,24 @@ BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Iterator>));
 static_assert(std::is_default_constructible<Iterator>::value,
               "Iterator must be default-constructible");
 
-Iterator::Iterator()
-  : m_iPitEntry(0)
-{
-}
-
-Iterator::Iterator(const NameTree::const_iterator& ntIt)
+Iterator::Iterator(const NameTree::const_iterator& ntIt, size_t iPitEntry)
   : m_ntIt(ntIt)
-  , m_iPitEntry(0)
+  , m_iPitEntry(iPitEntry)
 {
 }
 
 Iterator&
 Iterator::operator++()
 {
-  ++m_iPitEntry;
-  if (m_iPitEntry < m_ntIt->getPitEntries().size()) {
-    return *this;
+  BOOST_ASSERT(m_ntIt != NameTree::const_iterator());
+  BOOST_ASSERT(m_iPitEntry < m_ntIt->getPitEntries().size());
+
+  if (++m_iPitEntry >= m_ntIt->getPitEntries().size()) {
+    ++m_ntIt;
+    m_iPitEntry = 0;
+    BOOST_ASSERT(m_ntIt == NameTree::const_iterator() || m_ntIt->hasPitEntries());
   }
 
-  ++m_ntIt;
-  m_iPitEntry = 0;
   return *this;
 }
 

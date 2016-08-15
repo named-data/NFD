@@ -130,11 +130,5 @@ Pit::begin() const
     [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); }).begin());
 }
 
-Pit::const_iterator
-Pit::end() const
-{
-  return const_iterator(m_nameTree.end());
-}
-
 } // namespace pit
 } // namespace nfd

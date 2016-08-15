@@ -37,13 +37,12 @@ namespace pit {
 class Iterator : public std::iterator<std::forward_iterator_tag, const Entry>
 {
 public:
-  Iterator();
-
   /** \brief constructor
    *  \param ntIt a name tree iterator that visits name tree entries with one or more PIT entries
+   *  \param iPitEntry make this iterator to dereference to the i-th PIT entry in name tree entry
    */
   explicit
-  Iterator(const NameTree::const_iterator& ntIt);
+  Iterator(const NameTree::const_iterator& ntIt = NameTree::const_iterator(), size_t iPitEntry = 0);
 
   const Entry&
   operator*() const
@@ -51,10 +50,12 @@ public:
     return *this->operator->();
   }
 
-  shared_ptr<Entry>
+  const shared_ptr<Entry>&
   operator->() const
   {
-    return m_ntIt->getPitEntries().at(m_iPitEntry);
+    BOOST_ASSERT(m_ntIt != NameTree::const_iterator());
+    BOOST_ASSERT(m_iPitEntry < m_ntIt->getPitEntries().size());
+    return m_ntIt->getPitEntries()[m_iPitEntry];
   }
 
   Iterator&
