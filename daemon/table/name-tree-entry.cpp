@@ -95,17 +95,18 @@ Entry::insertPitEntry(shared_ptr<pit::Entry> pitEntry)
 }
 
 void
-Entry::erasePitEntry(shared_ptr<pit::Entry> pitEntry)
+Entry::erasePitEntry(pit::Entry* pitEntry)
 {
   BOOST_ASSERT(pitEntry != nullptr);
   BOOST_ASSERT(pitEntry->m_nameTreeEntry == this);
 
-  auto it = std::find(m_pitEntries.begin(), m_pitEntries.end(), pitEntry);
+  auto it = std::find_if(m_pitEntries.begin(), m_pitEntries.end(),
+    [pitEntry] (const shared_ptr<pit::Entry>& pitEntry2) { return pitEntry2.get() == pitEntry; });
   BOOST_ASSERT(it != m_pitEntries.end());
 
-  *it = m_pitEntries.back();
+  pitEntry->m_nameTreeEntry = nullptr; // must be done before pitEntry is deallocated
+  *it = m_pitEntries.back(); // may deallocate pitEntry
   m_pitEntries.pop_back();
-  pitEntry->m_nameTreeEntry = nullptr;
 }
 
 void

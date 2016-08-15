@@ -249,11 +249,15 @@ BOOST_AUTO_TEST_CASE(TableEntries)
   npe.insertPitEntry(pit2);
   BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 2);
 
-  npe.erasePitEntry(pit1);
+  pit::Entry* pit1ptr = pit1.get();
+  weak_ptr<pit::Entry> pit1weak(pit1);
+  pit1.reset();
+  BOOST_CHECK_EQUAL(pit1weak.use_count(), 1); // npe is the sole owner of pit1
+  npe.erasePitEntry(pit1ptr);
   BOOST_REQUIRE_EQUAL(npe.getPitEntries().size(), 1);
   BOOST_CHECK_EQUAL(npe.getPitEntries().front()->getInterest(), *interest2);
 
-  npe.erasePitEntry(pit2);
+  npe.erasePitEntry(pit2.get());
   BOOST_CHECK_EQUAL(npe.hasPitEntries(), false);
   BOOST_CHECK_EQUAL(npe.getPitEntries().size(), 0);
   BOOST_CHECK_EQUAL(npe.hasTableEntries(), false);

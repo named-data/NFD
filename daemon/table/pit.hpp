@@ -84,10 +84,10 @@ public:
   DataMatchResult
   findAllDataMatches(const Data& data) const;
 
-  /** \brief erases a PIT Entry
+  /** \brief deletes an entry
    */
   void
-  erase(shared_ptr<Entry> entry)
+  erase(Entry* entry)
   {
     this->erase(entry, true);
   }
@@ -118,10 +118,8 @@ public: // enumeration
   }
 
 private:
-  /** \brief erases a PIT Entry
-   */
   void
-  erase(shared_ptr<Entry> pitEntry, bool canDeleteNte);
+  erase(Entry* pitEntry, bool canDeleteNte);
 
   /** \brief finds or inserts a PIT entry for Interest
    *  \param interest the Interest; must be created with make_shared if allowInsert

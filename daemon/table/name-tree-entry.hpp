@@ -132,7 +132,7 @@ public: // attached table entries
   insertPitEntry(shared_ptr<pit::Entry> pitEntry);
 
   void
-  erasePitEntry(shared_ptr<pit::Entry> pitEntry);
+  erasePitEntry(pit::Entry* pitEntry);
 
   measurements::Entry*
   getMeasurementsEntry() const

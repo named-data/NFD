@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE(Erase)
   BOOST_CHECK_EQUAL(pit.size(), 1);
   BOOST_CHECK(pit.find(*interest) != nullptr);
 
-  pit.erase(insertResult.first);
+  pit.erase(insertResult.first.get());
   BOOST_CHECK_EQUAL(pit.size(), 0);
   BOOST_CHECK(pit.find(*interest) == nullptr);
 
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
 
   shared_ptr<Interest> interest = makeInterest("/37xWVvQ2K");
   shared_ptr<Entry> entry = pit.insert(*interest).first;
-  pit.erase(entry);
+  pit.erase(entry.get());
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(EraseWithFullName)
   shared_ptr<pit::Entry> pitEntry = pit.find(*interest);
   BOOST_REQUIRE(pitEntry != nullptr);
 
-  pit.erase(pitEntry);
+  pit.erase(pitEntry.get());
   BOOST_CHECK_EQUAL(pit.size(), 0);
   BOOST_CHECK(pit.find(*interest) == nullptr);
 

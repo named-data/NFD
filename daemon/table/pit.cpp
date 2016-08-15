@@ -100,7 +100,7 @@ Pit::findAllDataMatches(const Data& data) const
 }
 
 void
-Pit::erase(shared_ptr<Entry> entry, bool canDeleteNte)
+Pit::erase(Entry* entry, bool canDeleteNte)
 {
   name_tree::Entry* nte = m_nameTree.getEntry(*entry);
   BOOST_ASSERT(nte != nullptr);

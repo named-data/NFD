@@ -312,7 +312,7 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry, bool isSat
 
   // PIT delete
   this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
-  m_pit.erase(pitEntry);
+  m_pit.erase(pitEntry.get());
 }
 
 void

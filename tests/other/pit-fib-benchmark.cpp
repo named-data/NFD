@@ -128,7 +128,7 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
     }
     if (i >= gap3 + gap4) {
       // delete PIT entry
-      m_pit.erase(pitEntries[i - gap3 - gap4]);
+      m_pit.erase(pitEntries[i - gap3 - gap4].get());
     }
   }
 
