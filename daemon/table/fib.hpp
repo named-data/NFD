@@ -29,6 +29,8 @@
 #include "fib-entry.hpp"
 #include "name-tree.hpp"
 
+#include <boost/range/adaptor/transformed.hpp>
+
 namespace nfd {
 
 namespace measurements {
@@ -49,7 +51,10 @@ public:
   Fib(NameTree& nameTree);
 
   size_t
-  size() const;
+  size() const
+  {
+    return m_nItems;
+  }
 
 public: // lookup
   /** \brief performs a longest prefix match
@@ -97,7 +102,8 @@ public: // mutation
   removeNextHop(Entry& entry, const Face& face);
 
 public: // enumeration
-  class const_iterator;
+  typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
+  typedef boost::range_iterator<Range>::type const_iterator;
 
   /** \brief returns an iterator pointing to the first FIB entry
    *  \note Iteration order is implementation-specific and is undefined
@@ -105,46 +111,20 @@ public: // enumeration
    *        table is modified
    */
   const_iterator
-  begin() const;
+  begin() const
+  {
+    return this->getRange().begin();
+  }
 
   /** \brief returns an iterator referring to the past-the-end FIB entry
    *  \note The returned iterator may get invalidated if FIB or another NameTree-based
    *        table is modified
    */
   const_iterator
-  end() const;
-
-  class const_iterator : public std::iterator<std::forward_iterator_tag, const Entry>
+  end() const
   {
-  public:
-    const_iterator() = default;
-
-    explicit
-    const_iterator(const NameTree::const_iterator& it);
-
-    ~const_iterator();
-
-    const Entry&
-    operator*() const;
-
-    const Entry*
-    operator->() const;
-
-    const_iterator&
-    operator++();
-
-    const_iterator
-    operator++(int);
-
-    bool
-    operator==(const const_iterator& other) const;
-
-    bool
-    operator!=(const const_iterator& other) const;
-
-  private:
-    NameTree::const_iterator m_nameTreeIterator;
-  };
+    return this->getRange().end();
+  }
 
 private:
   /** \tparam K a parameter acceptable to NameTree::findLongestPrefixMatch
@@ -155,6 +135,9 @@ private:
 
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);
+
+  Range
+  getRange() const;
 
 private:
   NameTree& m_nameTree;
@@ -167,69 +150,6 @@ private:
    */
   static const unique_ptr<Entry> s_emptyEntry;
 };
-
-inline size_t
-Fib::size() const
-{
-  return m_nItems;
-}
-
-inline Fib::const_iterator
-Fib::end() const
-{
-  return const_iterator(m_nameTree.end());
-}
-
-inline
-Fib::const_iterator::const_iterator(const NameTree::const_iterator& it)
-  : m_nameTreeIterator(it)
-{
-}
-
-inline
-Fib::const_iterator::~const_iterator()
-{
-}
-
-inline
-Fib::const_iterator
-Fib::const_iterator::operator++(int)
-{
-  const_iterator temp(*this);
-  ++(*this);
-  return temp;
-}
-
-inline Fib::const_iterator&
-Fib::const_iterator::operator++()
-{
-  ++m_nameTreeIterator;
-  return *this;
-}
-
-inline const Entry&
-Fib::const_iterator::operator*() const
-{
-  return *m_nameTreeIterator->getFibEntry();
-}
-
-inline const Entry*
-Fib::const_iterator::operator->() const
-{
-  return m_nameTreeIterator->getFibEntry();
-}
-
-inline bool
-Fib::const_iterator::operator==(const const_iterator& other) const
-{
-  return m_nameTreeIterator == other.m_nameTreeIterator;
-}
-
-inline bool
-Fib::const_iterator::operator!=(const const_iterator& other) const
-{
-  return m_nameTreeIterator != other.m_nameTreeIterator;
-}
 
 } // namespace fib
 

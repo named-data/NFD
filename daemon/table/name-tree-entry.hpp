@@ -178,6 +178,33 @@ private:
   friend Node* getNode(const Entry& entry);
 };
 
+/** \brief a functor to get a table entry from a name tree entry
+ *  \tparam ENTRY type of single table entry attached to name tree entry, such as fib::Entry
+ */
+template<typename ENTRY>
+class GetTableEntry
+{
+public:
+  /** \brief a function pointer to the getter on Entry class that returns ENTRY
+   */
+  using Getter = ENTRY* (Entry::*)() const;
+
+  explicit
+  GetTableEntry(Getter getter)
+    : m_getter(getter)
+  {
+  }
+
+  const ENTRY&
+  operator()(const Entry& nte) const
+  {
+    return *(nte.*m_getter)();
+  }
+
+private:
+  Getter m_getter;
+};
+
 } // namespace name_tree
 } // namespace nfd
 

@@ -155,10 +155,11 @@ Fib::removeNextHop(Entry& entry, const Face& face)
   }
 }
 
-Fib::const_iterator
-Fib::begin() const
+Fib::Range
+Fib::getRange() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(&nteHasFibEntry).begin());
+  return m_nameTree.fullEnumerate(&nteHasFibEntry) |
+         boost::adaptors::transformed(name_tree::GetTableEntry<Entry>(&name_tree::Entry::getFibEntry));
 }
 
 } // namespace fib
