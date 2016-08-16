@@ -127,8 +127,7 @@ Measurements::findExactMatch(const Name& name) const
 void
 Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 {
-  name_tree::Entry* nte = m_nameTree.getEntry(entry);
-  BOOST_ASSERT(nte != nullptr);
+  BOOST_ASSERT(m_nameTree.getEntry(entry) != nullptr);
 
   time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
   if (entry.m_expiry >= expiry) {
