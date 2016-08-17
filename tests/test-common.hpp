@@ -150,6 +150,30 @@ makeLink(const Name& name, std::initializer_list<std::pair<uint32_t, Name>> dele
 lp::Nack
 makeNack(const Name& name, uint32_t nonce, lp::NackReason reason);
 
+/** \brief replace a name component
+ *  \param[inout] name name
+ *  \param index name component index
+ *  \param a arguments to name::Component constructor
+ */
+template<typename...A>
+void
+setNameComponent(Name& name, ssize_t index, const A& ...a)
+{
+  Name name2 = name.getPrefix(index);
+  name2.append(name::Component(a...));
+  name2.append(name.getSubName(name2.size()));
+  name = name2;
+}
+
+template<typename Packet, typename...A>
+void
+setNameComponent(Packet& packet, ssize_t index, const A& ...a)
+{
+  Name name = packet.getName();
+  setNameComponent(name, index, a...);
+  packet.setName(name);
+}
+
 } // namespace tests
 } // namespace nfd
 
