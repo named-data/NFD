@@ -95,7 +95,7 @@ public:
   /** \brief deletes in-record and out-record for face
    */
   void
-  deleteInOutRecords(shared_ptr<Entry> entry, const Face& face);
+  deleteInOutRecords(Entry* entry, const Face& face);
 
 public: // enumeration
   typedef Iterator const_iterator;

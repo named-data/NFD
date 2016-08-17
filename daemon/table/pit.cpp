@@ -28,6 +28,12 @@
 namespace nfd {
 namespace pit {
 
+static inline bool
+nteHasPitEntries(const name_tree::Entry& nte)
+{
+  return nte.hasPitEntries();
+}
+
 Pit::Pit(NameTree& nameTree)
   : m_nameTree(nameTree)
   , m_nItems(0)
@@ -85,8 +91,7 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
 DataMatchResult
 Pit::findAllDataMatches(const Data& data) const
 {
-  auto&& ntMatches = m_nameTree.findAllMatches(data.getName(),
-    [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); });
+  auto&& ntMatches = m_nameTree.findAllMatches(data.getName(), &nteHasPitEntries);
 
   DataMatchResult matches;
   for (const name_tree::Entry& nte : ntMatches) {
@@ -113,7 +118,7 @@ Pit::erase(Entry* entry, bool canDeleteNte)
 }
 
 void
-Pit::deleteInOutRecords(shared_ptr<Entry> entry, const Face& face)
+Pit::deleteInOutRecords(Entry* entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
@@ -126,8 +131,7 @@ Pit::deleteInOutRecords(shared_ptr<Entry> entry, const Face& face)
 Pit::const_iterator
 Pit::begin() const
 {
-  return const_iterator(m_nameTree.fullEnumerate(
-    [] (const name_tree::Entry& entry) { return entry.hasPitEntries(); }).begin());
+  return const_iterator(m_nameTree.fullEnumerate(&nteHasPitEntries).begin());
 }
 
 } // namespace pit
