@@ -23,21 +23,21 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "channel-module.hpp"
+#include "fib-module.hpp"
 #include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 void
-ChannelModule::fetchStatus(Controller& controller,
-                           const function<void()>& onSuccess,
-                           const Controller::CommandFailCallback& onFailure,
-                           const CommandOptions& options)
+FibModule::fetchStatus(Controller& controller,
+                       const function<void()>& onSuccess,
+                       const Controller::CommandFailCallback& onFailure,
+                       const CommandOptions& options)
 {
-  controller.fetch<ndn::nfd::ChannelDataset>(
-    [this, onSuccess] (const std::vector<ChannelStatus>& result) {
+  controller.fetch<ndn::nfd::FibDataset>(
+    [this, onSuccess] (const std::vector<FibEntry>& result) {
       m_status = result;
       onSuccess();
     },
@@ -45,39 +45,59 @@ ChannelModule::fetchStatus(Controller& controller,
 }
 
 void
-ChannelModule::formatStatusXml(std::ostream& os) const
+FibModule::formatStatusXml(std::ostream& os) const
 {
-  os << "<channels>";
-  for (const ChannelStatus& item : m_status) {
+  os << "<fib>";
+  for (const FibEntry& item : m_status) {
     this->formatItemXml(os, item);
   }
-  os << "</channels>";
+  os << "</fib>";
 }
 
 void
-ChannelModule::formatItemXml(std::ostream& os, const ChannelStatus& item) const
+FibModule::formatItemXml(std::ostream& os, const FibEntry& item) const
 {
-  os << "<channel>";
-  os << "<localUri>" << xml::Text{item.getLocalUri()} << "</localUri>";
-  os << "</channel>";
+  os << "<fibEntry>";
+
+  os << "<prefix>" << xml::Text{item.getPrefix().toUri()} << "</prefix>";
+
+  os << "<nextHops>";
+  for (const NextHopRecord& nh : item.getNextHopRecords()) {
+    os << "<nextHop>"
+       << "<faceId>" << nh.getFaceId() << "</faceId>"
+       << "<cost>" << nh.getCost() << "</cost>"
+       << "</nextHop>";
+  }
+  os << "</nextHops>";
+
+  os << "</fibEntry>";
 }
 
 void
-ChannelModule::formatStatusText(std::ostream& os) const
+FibModule::formatStatusText(std::ostream& os) const
 {
-  os << "Channels:\n";
-  for (const ChannelStatus& item : m_status) {
+  os << "FIB:\n";
+  for (const FibEntry& item : m_status) {
     this->formatItemText(os, item);
   }
 }
 
 void
-ChannelModule::formatItemText(std::ostream& os, const ChannelStatus& item) const
+FibModule::formatItemText(std::ostream& os, const FibEntry& item) const
 {
-  os << "  " << item.getLocalUri();
+  os << "  " << item.getPrefix() << " nexthops={";
+
+  text::Separator sep(", ");
+  for (const NextHopRecord& nh : item.getNextHopRecords()) {
+    os << sep
+       << "faceid=" << nh.getFaceId()
+       << " (cost=" << nh.getCost() << ")";
+  }
+
+  os << "}";
   os << "\n";
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

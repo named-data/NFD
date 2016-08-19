@@ -23,22 +23,21 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_FIB_MODULE_HPP
-#define NFD_TOOLS_NFD_STATUS_FIB_MODULE_HPP
+#ifndef NFD_TOOLS_NFDC_FACE_MODULE_HPP
+#define NFD_TOOLS_NFDC_FACE_MODULE_HPP
 
 #include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
-using ndn::nfd::FibEntry;
-using ndn::nfd::NextHopRecord;
+using ndn::nfd::FaceStatus;
 
-/** \brief provides access to NFD FIB management
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
+/** \brief provides access to NFD face management
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
  */
-class FibModule : public Module, noncopyable
+class FaceModule : public Module, noncopyable
 {
 public:
   virtual void
@@ -55,7 +54,7 @@ public:
    *  \param item status item
    */
   void
-  formatItemXml(std::ostream& os, const FibEntry& item) const;
+  formatItemXml(std::ostream& os, const FaceStatus& item) const;
 
   virtual void
   formatStatusText(std::ostream& os) const override;
@@ -65,14 +64,14 @@ public:
    *  \param item status item
    */
   void
-  formatItemText(std::ostream& os, const FibEntry& item) const;
+  formatItemText(std::ostream& os, const FaceStatus& item) const;
 
 private:
-  std::vector<FibEntry> m_status;
+  std::vector<FaceStatus> m_status;
 };
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_FIB_MODULE_HPP
+#endif // NFD_TOOLS_NFDC_FACE_MODULE_HPP

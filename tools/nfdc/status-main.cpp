@@ -40,7 +40,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 enum class OutputFormat
 {
@@ -121,8 +121,8 @@ parseCommandLine(int argc, const char* const* argv)
   return std::make_tuple(-1, options);
 }
 
-static int
-main(int argc, char** argv)
+int
+status_main(int argc, char** argv)
 {
   int exitCode = -1;
   Options options;
@@ -188,12 +188,6 @@ main(int argc, char** argv)
   return 0;
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
-
-int
-main(int argc, char** argv)
-{
-  return nfd::tools::nfd_status::main(argc, argv);
-}

@@ -48,7 +48,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 void
 FaceModule::fetchStatus(Controller& controller,
@@ -149,6 +149,6 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item) const
   os << "\n";
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

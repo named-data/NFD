@@ -23,61 +23,82 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfd-status/strategy-choice-module.hpp"
+#include "nfdc/fib-module.hpp"
 
 #include "module-fixture.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(NfdStatus)
-BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceModule, ModuleFixture<StrategyChoiceModule>)
+BOOST_AUTO_TEST_SUITE(Nfdc)
+BOOST_FIXTURE_TEST_SUITE(TestFibModule, ModuleFixture<FibModule>)
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
-  <strategyChoices>
-    <strategyChoice>
-      <namespace>/</namespace>
-      <strategy>
-        <name>/localhost/nfd/strategy/best-route/%FD%04</name>
-      </strategy>
-    </strategyChoice>
-    <strategyChoice>
-      <namespace>/localhost</namespace>
-      <strategy>
-        <name>/localhost/nfd/strategy/multicast/%FD%01</name>
-      </strategy>
-    </strategyChoice>
-  </strategyChoices>
+  <fib>
+    <fibEntry>
+      <prefix>/</prefix>
+      <nextHops>
+        <nextHop>
+          <faceId>262</faceId>
+          <cost>9</cost>
+        </nextHop>
+        <nextHop>
+          <faceId>272</faceId>
+          <cost>50</cost>
+        </nextHop>
+        <nextHop>
+          <faceId>274</faceId>
+          <cost>78</cost>
+        </nextHop>
+      </nextHops>
+    </fibEntry>
+    <fibEntry>
+      <prefix>/localhost/nfd</prefix>
+      <nextHops>
+        <nextHop>
+          <faceId>1</faceId>
+          <cost>0</cost>
+        </nextHop>
+        <nextHop>
+          <faceId>274</faceId>
+          <cost>0</cost>
+        </nextHop>
+      </nextHops>
+    </fibEntry>
+  </fib>
 )XML");
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
-Strategy choices:
-  / strategy=/localhost/nfd/strategy/best-route/%FD%04
-  /localhost strategy=/localhost/nfd/strategy/multicast/%FD%01
+FIB:
+  / nexthops={faceid=262 (cost=9), faceid=272 (cost=50), faceid=274 (cost=78)}
+  /localhost/nfd nexthops={faceid=1 (cost=0), faceid=274 (cost=0)}
 )TEXT").substr(1);
 
 BOOST_AUTO_TEST_CASE(Status)
 {
   this->fetchStatus();
-  StrategyChoice payload1;
-  payload1.setName("/")
-          .setStrategy("/localhost/nfd/strategy/best-route/%FD%04");
-  StrategyChoice payload2;
-  payload2.setName("/localhost")
-          .setStrategy("/localhost/nfd/strategy/multicast/%FD%01");
-  this->sendDataset("/localhost/nfd/strategy-choice/list", payload1, payload2);
+  FibEntry payload1;
+  payload1.setPrefix("/")
+          .addNextHopRecord(NextHopRecord().setFaceId(262).setCost(9))
+          .addNextHopRecord(NextHopRecord().setFaceId(272).setCost(50))
+          .addNextHopRecord(NextHopRecord().setFaceId(274).setCost(78));
+  FibEntry payload2;
+  payload2.setPrefix("/localhost/nfd")
+          .addNextHopRecord(NextHopRecord().setFaceId(1).setCost(0))
+          .addNextHopRecord(NextHopRecord().setFaceId(274).setCost(0));
+  this->sendDataset("/localhost/nfd/fib/list", payload1, payload2);
   this->prepareStatusOutput();
 
   BOOST_CHECK(statusXml.is_equal(STATUS_XML));
   BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestStrategyChoiceModule
-BOOST_AUTO_TEST_SUITE_END() // NfdStatus
+BOOST_AUTO_TEST_SUITE_END() // TestFibModule
+BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
 } // namespace tests
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

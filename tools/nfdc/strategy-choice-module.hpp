@@ -23,63 +23,55 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP
-#define NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP
+#ifndef NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP
+#define NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP
 
 #include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
-using ndn::Face;
-using ndn::security::KeyChain;
-using ndn::Validator;
+using ndn::nfd::StrategyChoice;
 
-/** \brief collects and prints NFD status report
+/** \brief provides access to NFD Strategy Choice management
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
  */
-class StatusReport : noncopyable
+class StrategyChoiceModule : public Module, noncopyable
 {
 public:
-#ifdef WITH_TESTS
-  virtual
-  ~StatusReport() = default;
-#endif
+  virtual void
+  fetchStatus(Controller& controller,
+              const function<void()>& onSuccess,
+              const Controller::CommandFailCallback& onFailure,
+              const CommandOptions& options) override;
 
-  /** \brief collect status via chosen \p sections
-   *
-   *  This function is blocking. It has exclusive use of \p face.
-   *
-   *  \return if status has been fetched successfully, 0;
-   *          otherwise, error code from any failed section, plus 1000000 * section index
-   */
-  uint32_t
-  collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options);
+  virtual void
+  formatStatusXml(std::ostream& os) const override;
 
-  /** \brief print an XML report
+  /** \brief format a single status item as XML
    *  \param os output stream
+   *  \param item status item
    */
   void
-  formatXml(std::ostream& os) const;
+  formatItemXml(std::ostream& os, const StrategyChoice& item) const;
 
-  /** \brief print a text report
+  virtual void
+  formatStatusText(std::ostream& os) const override;
+
+  /** \brief format a single status item as text
    *  \param os output stream
+   *  \param item status item
    */
   void
-  formatText(std::ostream& os) const;
+  formatItemText(std::ostream& os, const StrategyChoice& item) const;
 
 private:
-  VIRTUAL_WITH_TESTS void
-  processEvents(Face& face);
-
-public:
-  /** \brief modules through which status is collected
-   */
-  std::vector<unique_ptr<Module>> sections;
+  std::vector<StrategyChoice> m_status;
 };
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_STATUS_REPORT_HPP
+#endif // NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP

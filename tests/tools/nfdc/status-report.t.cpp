@@ -23,14 +23,14 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfd-status/status-report.hpp"
+#include "nfdc/status-report.hpp"
 #include "core/scheduler.hpp"
 
 #include "module-fixture.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 namespace tests {
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
@@ -165,7 +165,7 @@ protected:
 };
 
 
-BOOST_AUTO_TEST_SUITE(NfdStatus)
+BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestStatusReport, StatusReportModulesFixture)
 
 BOOST_AUTO_TEST_CASE(Normal)
@@ -212,9 +212,9 @@ BOOST_AUTO_TEST_CASE(Error)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibModule
-BOOST_AUTO_TEST_SUITE_END() // NfdStatus
+BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
 } // namespace tests
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

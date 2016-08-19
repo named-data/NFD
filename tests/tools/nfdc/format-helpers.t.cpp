@@ -23,58 +23,52 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "status-report.hpp"
-#include "format-helpers.hpp"
+#include "nfdc/format-helpers.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
+namespace tests {
 
-uint32_t
-StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options)
+using boost::test_tools::output_test_stream;
+
+BOOST_AUTO_TEST_SUITE(Nfdc)
+BOOST_AUTO_TEST_SUITE(TestFormatHelpers)
+
+BOOST_AUTO_TEST_SUITE(Xml)
+
+BOOST_AUTO_TEST_CASE(TextEscaping)
 {
-  Controller controller(face, keyChain, validator);
-  uint32_t errorCode = 0;
+  output_test_stream os;
+  os << xml::Text{"\"less than\" & 'greater than' surround XML <element> tag name"};
 
-  for (size_t i = 0; i < sections.size(); ++i) {
-    Module& module = *sections[i];
-    module.fetchStatus(
-      controller,
-      [] {},
-      [i, &errorCode] (uint32_t code, const std::string& reason) {
-        errorCode = i * 1000000 + code;
-      },
-      options);
+  BOOST_CHECK(os.is_equal("&quot;less than&quot; &amp; &apos;greater than&apos;"
+                          " surround XML &lt;element&gt; tag name"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Xml
+
+BOOST_AUTO_TEST_SUITE(Text)
+
+BOOST_AUTO_TEST_CASE(Sep)
+{
+  output_test_stream os;
+  text::Separator sep(",");
+  for (int i = 1; i <= 3; ++i) {
+    os << sep << i;
   }
 
-  this->processEvents(face);
-  return errorCode;
+  BOOST_CHECK(os.is_equal("1,2,3"));
 }
 
-void
-StatusReport::processEvents(Face& face)
-{
-  face.processEvents();
-}
+BOOST_AUTO_TEST_SUITE_END() // Text
 
-void
-StatusReport::formatXml(std::ostream& os) const
-{
-  xml::printHeader(os);
-  for (const unique_ptr<Module>& module : sections) {
-    module->formatStatusXml(os);
-  }
-  xml::printFooter(os);
-}
+BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers
+BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
-void
-StatusReport::formatText(std::ostream& os) const
-{
-  for (const unique_ptr<Module>& module : sections) {
-    module->formatStatusText(os);
-  }
-}
-
-} // namespace nfd_status
+} // namespace tests
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

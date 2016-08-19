@@ -23,14 +23,14 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_FORMAT_HELPERS_HPP
-#define NFD_TOOLS_NFD_STATUS_FORMAT_HELPERS_HPP
+#ifndef NFD_TOOLS_NFDC_FORMAT_HELPERS_HPP
+#define NFD_TOOLS_NFDC_FORMAT_HELPERS_HPP
 
 #include "core/common.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 namespace xml {
 
@@ -111,8 +111,8 @@ formatTimestamp(time::system_clock::TimePoint t);
 
 } // namespace text
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_FORMAT_HELPERS_HPP
+#endif // NFD_TOOLS_NFDC_FORMAT_HELPERS_HPP

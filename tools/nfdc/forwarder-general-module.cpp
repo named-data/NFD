@@ -28,7 +28,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 ForwarderGeneralModule::ForwarderGeneralModule()
   : m_nfdIdCollector(nullptr)
@@ -185,6 +185,6 @@ NfdIdCollector::checkPolicy(const Data& data, int nSteps,
   m_inner->validate(data, accepted, reject);
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

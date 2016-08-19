@@ -23,55 +23,58 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_STARTEGY_CHOICE_MODULE_HPP
-#define NFD_TOOLS_NFD_STATUS_STARTEGY_CHOICE_MODULE_HPP
-
-#include "module.hpp"
+#include "status-report.hpp"
+#include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
-using ndn::nfd::StrategyChoice;
-
-/** \brief provides access to NFD Strategy Choice management
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
- */
-class StrategyChoiceModule : public Module, noncopyable
+uint32_t
+StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options)
 {
-public:
-  virtual void
-  fetchStatus(Controller& controller,
-              const function<void()>& onSuccess,
-              const Controller::CommandFailCallback& onFailure,
-              const CommandOptions& options) override;
+  Controller controller(face, keyChain, validator);
+  uint32_t errorCode = 0;
 
-  virtual void
-  formatStatusXml(std::ostream& os) const override;
+  for (size_t i = 0; i < sections.size(); ++i) {
+    Module& module = *sections[i];
+    module.fetchStatus(
+      controller,
+      [] {},
+      [i, &errorCode] (uint32_t code, const std::string& reason) {
+        errorCode = i * 1000000 + code;
+      },
+      options);
+  }
 
-  /** \brief format a single status item as XML
-   *  \param os output stream
-   *  \param item status item
-   */
-  void
-  formatItemXml(std::ostream& os, const StrategyChoice& item) const;
+  this->processEvents(face);
+  return errorCode;
+}
 
-  virtual void
-  formatStatusText(std::ostream& os) const override;
+void
+StatusReport::processEvents(Face& face)
+{
+  face.processEvents();
+}
 
-  /** \brief format a single status item as text
-   *  \param os output stream
-   *  \param item status item
-   */
-  void
-  formatItemText(std::ostream& os, const StrategyChoice& item) const;
+void
+StatusReport::formatXml(std::ostream& os) const
+{
+  xml::printHeader(os);
+  for (const unique_ptr<Module>& module : sections) {
+    module->formatStatusXml(os);
+  }
+  xml::printFooter(os);
+}
 
-private:
-  std::vector<StrategyChoice> m_status;
-};
+void
+StatusReport::formatText(std::ostream& os) const
+{
+  for (const unique_ptr<Module>& module : sections) {
+    module->formatStatusText(os);
+  }
+}
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
-
-#endif // NFD_TOOLS_NFD_STATUS_STARTEGY_CHOICE_MODULE_HPP

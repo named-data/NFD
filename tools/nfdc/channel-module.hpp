@@ -23,53 +23,55 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfd-status/channel-module.hpp"
+#ifndef NFD_TOOLS_NFDC_CHANNEL_MODULE_HPP
+#define NFD_TOOLS_NFDC_CHANNEL_MODULE_HPP
 
-#include "module-fixture.hpp"
+#include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
-namespace tests {
+namespace nfdc {
 
-BOOST_AUTO_TEST_SUITE(NfdStatus)
-BOOST_FIXTURE_TEST_SUITE(TestChannelModule, ModuleFixture<ChannelModule>)
+using ndn::nfd::ChannelStatus;
 
-const std::string STATUS_XML = stripXmlSpaces(R"XML(
-  <channels>
-    <channel>
-      <localUri>tcp4://192.0.2.1:6363</localUri>
-    </channel>
-    <channel>
-      <localUri>ws://[::]:9696/NFD</localUri>
-    </channel>
-  </channels>
-)XML");
-
-const std::string STATUS_TEXT = std::string(R"TEXT(
-Channels:
-  tcp4://192.0.2.1:6363
-  ws://[::]:9696/NFD
-)TEXT").substr(1);
-
-BOOST_AUTO_TEST_CASE(Status)
+/** \brief provides access to NFD channel dataset
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
+ */
+class ChannelModule : public Module, noncopyable
 {
-  this->fetchStatus();
-  ChannelStatus payload1;
-  payload1.setLocalUri("tcp4://192.0.2.1:6363");
-  ChannelStatus payload2;
-  payload2.setLocalUri("ws://[::]:9696/NFD");
-  this->sendDataset("/localhost/nfd/faces/channels", payload1, payload2);
-  this->prepareStatusOutput();
+public:
+  virtual void
+  fetchStatus(Controller& controller,
+              const function<void()>& onSuccess,
+              const Controller::CommandFailCallback& onFailure,
+              const CommandOptions& options) override;
 
-  BOOST_CHECK(statusXml.is_equal(STATUS_XML));
-  BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
-}
+  virtual void
+  formatStatusXml(std::ostream& os) const override;
 
-BOOST_AUTO_TEST_SUITE_END() // TestChannelModule
-BOOST_AUTO_TEST_SUITE_END() // NfdStatus
+  /** \brief format a single status item as XML
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemXml(std::ostream& os, const ChannelStatus& item) const;
 
-} // namespace tests
-} // namespace nfd_status
+  virtual void
+  formatStatusText(std::ostream& os) const override;
+
+  /** \brief format a single status item as text
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemText(std::ostream& os, const ChannelStatus& item) const;
+
+private:
+  std::vector<ChannelStatus> m_status;
+};
+
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#endif // NFD_TOOLS_NFDC_CHANNEL_MODULE_HPP

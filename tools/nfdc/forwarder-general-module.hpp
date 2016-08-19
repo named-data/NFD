@@ -23,15 +23,15 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_FORWARDER_GENERAL_MODULE_HPP
-#define NFD_TOOLS_NFD_STATUS_FORWARDER_GENERAL_MODULE_HPP
+#ifndef NFD_TOOLS_NFDC_FORWARDER_GENERAL_MODULE_HPP
+#define NFD_TOOLS_NFDC_FORWARDER_GENERAL_MODULE_HPP
 
 #include "module.hpp"
 #include <ndn-cxx/security/validator.hpp>
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 using ndn::nfd::ForwarderStatus;
 
@@ -133,8 +133,8 @@ private:
   Name m_nfdId;
 };
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_FORWARDER_GENERAL_MODULE_HPP
+#endif // NFD_TOOLS_NFDC_FORWARDER_GENERAL_MODULE_HPP

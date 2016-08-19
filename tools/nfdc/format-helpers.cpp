@@ -27,7 +27,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 namespace xml {
 
@@ -123,6 +123,6 @@ formatTimestamp(time::system_clock::TimePoint t)
 
 } // namespace text
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

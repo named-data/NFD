@@ -23,52 +23,56 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfd-status/format-helpers.hpp"
+#ifndef NFD_TOOLS_NFDC_RIB_MODULE_HPP
+#define NFD_TOOLS_NFDC_RIB_MODULE_HPP
 
-#include "tests/test-common.hpp"
+#include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
-namespace tests {
+namespace nfdc {
 
-using boost::test_tools::output_test_stream;
+using ndn::nfd::RibEntry;
+using ndn::nfd::Route;
 
-BOOST_AUTO_TEST_SUITE(NfdStatus)
-BOOST_AUTO_TEST_SUITE(TestFormatHelpers)
-
-BOOST_AUTO_TEST_SUITE(Xml)
-
-BOOST_AUTO_TEST_CASE(TextEscaping)
+/** \brief provides access to NFD RIB management
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
+ */
+class RibModule : public Module, noncopyable
 {
-  output_test_stream os;
-  os << xml::Text{"\"less than\" & 'greater than' surround XML <element> tag name"};
+public:
+  virtual void
+  fetchStatus(Controller& controller,
+              const function<void()>& onSuccess,
+              const Controller::CommandFailCallback& onFailure,
+              const CommandOptions& options) override;
 
-  BOOST_CHECK(os.is_equal("&quot;less than&quot; &amp; &apos;greater than&apos;"
-                          " surround XML &lt;element&gt; tag name"));
-}
+  virtual void
+  formatStatusXml(std::ostream& os) const override;
 
-BOOST_AUTO_TEST_SUITE_END() // Xml
+  /** \brief format a single status item as XML
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemXml(std::ostream& os, const RibEntry& item) const;
 
-BOOST_AUTO_TEST_SUITE(Text)
+  virtual void
+  formatStatusText(std::ostream& os) const override;
 
-BOOST_AUTO_TEST_CASE(Sep)
-{
-  output_test_stream os;
-  text::Separator sep(",");
-  for (int i = 1; i <= 3; ++i) {
-    os << sep << i;
-  }
+  /** \brief format a single status item as text
+   *  \param os output stream
+   *  \param item status item
+   */
+  void
+  formatItemText(std::ostream& os, const RibEntry& item) const;
 
-  BOOST_CHECK(os.is_equal("1,2,3"));
-}
+private:
+  std::vector<RibEntry> m_status;
+};
 
-BOOST_AUTO_TEST_SUITE_END() // Text
-
-BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers
-BOOST_AUTO_TEST_SUITE_END() // NfdStatus
-
-} // namespace tests
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#endif // NFD_TOOLS_NFDC_RIB_MODULE_HPP

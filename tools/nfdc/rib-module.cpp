@@ -28,7 +28,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 void
 RibModule::fetchStatus(Controller& controller,
@@ -128,6 +128,6 @@ RibModule::formatItemText(std::ostream& os, const RibEntry& item) const
   os << "\n";
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

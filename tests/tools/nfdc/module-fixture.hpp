@@ -26,7 +26,7 @@
 #ifndef NFD_TESTS_TOOLS_NFD_STATUS_MODULE_FIXTURE_HPP
 #define NFD_TESTS_TOOLS_NFD_STATUS_MODULE_FIXTURE_HPP
 
-#include "nfd-status/module.hpp"
+#include "nfdc/module.hpp"
 #include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -35,7 +35,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 namespace tests {
 
 using namespace nfd::tests;
@@ -229,7 +229,7 @@ stripXmlSpaces(const std::string& xml)
 }
 
 } // namespace tests
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 

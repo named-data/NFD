@@ -24,6 +24,7 @@
  */
 
 #include "legacy-nfdc.hpp"
+#include "status-main.hpp"
 #include "core/version.hpp"
 
 #include <boost/lexical_cast.hpp>
@@ -83,14 +84,18 @@ main(int argc, char** argv)
     return 0;
   }
 
-  if (!strcmp(argv[1], "-h")) {
+  if (strcmp(argv[1], "-h") == 0) {
     usage(p.m_programName);
     return 0;
   }
 
-  if (!strcmp(argv[1], "-V")) {
+  if (strcmp(argv[1], "-V") == 0) {
     std::cout << NFD_VERSION_BUILD_STRING << std::endl;
     return 0;
+  }
+
+  if (strcmp(argv[1], "legacy-nfd-status") == 0) {
+    return status_main(argc - 1, argv + 1);
   }
 
   ::optind = 2; //start reading options from 2nd argument i.e. Command

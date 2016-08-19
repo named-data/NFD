@@ -23,21 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP
-#define NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP
+#ifndef NFD_TOOLS_NFDC_FIB_MODULE_HPP
+#define NFD_TOOLS_NFDC_FIB_MODULE_HPP
 
 #include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
-using ndn::nfd::ChannelStatus;
+using ndn::nfd::FibEntry;
+using ndn::nfd::NextHopRecord;
 
-/** \brief provides access to NFD channel dataset
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt#Channel-Dataset
+/** \brief provides access to NFD FIB management
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
-class ChannelModule : public Module, noncopyable
+class FibModule : public Module, noncopyable
 {
 public:
   virtual void
@@ -54,7 +55,7 @@ public:
    *  \param item status item
    */
   void
-  formatItemXml(std::ostream& os, const ChannelStatus& item) const;
+  formatItemXml(std::ostream& os, const FibEntry& item) const;
 
   virtual void
   formatStatusText(std::ostream& os) const override;
@@ -64,14 +65,14 @@ public:
    *  \param item status item
    */
   void
-  formatItemText(std::ostream& os, const ChannelStatus& item) const;
+  formatItemText(std::ostream& os, const FibEntry& item) const;
 
 private:
-  std::vector<ChannelStatus> m_status;
+  std::vector<FibEntry> m_status;
 };
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_CHANNEL_MODULE_HPP
+#endif // NFD_TOOLS_NFDC_FIB_MODULE_HPP

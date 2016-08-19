@@ -23,17 +23,17 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfd-status/forwarder-general-module.hpp"
+#include "nfdc/forwarder-general-module.hpp"
 #include <ndn-cxx/security/signing-helpers.hpp>
 
 #include "module-fixture.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(NfdStatus)
+BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestForwarderGeneralModule, ModuleFixture<ForwarderGeneralModule>)
 
 class MakeNfdIdCollector
@@ -148,9 +148,9 @@ BOOST_AUTO_TEST_CASE(StatusNoNfdId)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarderGeneralModule
-BOOST_AUTO_TEST_SUITE_END() // NfdStatus
+BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
 } // namespace tests
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

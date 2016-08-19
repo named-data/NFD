@@ -28,7 +28,7 @@
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
 void
 StrategyChoiceModule::fetchStatus(Controller& controller,
@@ -80,6 +80,6 @@ StrategyChoiceModule::formatItemText(std::ostream& os, const StrategyChoice& ite
      << "\n";
 }
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd

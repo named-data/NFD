@@ -23,58 +23,63 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFD_STATUS_MODULE_HPP
-#define NFD_TOOLS_NFD_STATUS_MODULE_HPP
+#ifndef NFD_TOOLS_NFDC_STATUS_REPORT_HPP
+#define NFD_TOOLS_NFDC_STATUS_REPORT_HPP
 
-#include "core/common.hpp"
-#include <ndn-cxx/management/nfd-controller.hpp>
+#include "module.hpp"
 
 namespace nfd {
 namespace tools {
-namespace nfd_status {
+namespace nfdc {
 
-using ndn::nfd::Controller;
-using ndn::nfd::CommandOptions;
+using ndn::Face;
+using ndn::security::KeyChain;
+using ndn::Validator;
 
-/** \brief provides access to an NFD management module
- *  \note This type is an interface. It should not have member fields.
+/** \brief collects and prints NFD status report
  */
-class Module
+class StatusReport : noncopyable
 {
 public:
+#ifdef WITH_TESTS
   virtual
-  ~Module() = default;
+  ~StatusReport() = default;
+#endif
 
-  /** \brief collect status from NFD
-   *  \pre no other fetchStatus is in progress
-   *  \param controller a controller through which StatusDataset can be requested
-   *  \param onSuccess invoked when status has been collected into this instance
-   *  \param onFailure passed to controller.fetch
-   *  \param options passed to controller.fetch
+  /** \brief collect status via chosen \p sections
+   *
+   *  This function is blocking. It has exclusive use of \p face.
+   *
+   *  \return if status has been fetched successfully, 0;
+   *          otherwise, error code from any failed section, plus 1000000 * section index
    */
-  virtual void
-  fetchStatus(Controller& controller,
-              const function<void()>& onSuccess,
-              const Controller::CommandFailCallback& onFailure,
-              const CommandOptions& options) = 0;
+  uint32_t
+  collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options);
 
-  /** \brief format collected status as XML
-   *  \pre fetchStatus has been successful
+  /** \brief print an XML report
    *  \param os output stream
    */
-  virtual void
-  formatStatusXml(std::ostream& os) const = 0;
+  void
+  formatXml(std::ostream& os) const;
 
-  /** \brief format collected status as text
-   *  \pre fetchStatus has been successful
+  /** \brief print a text report
    *  \param os output stream
    */
-  virtual void
-  formatStatusText(std::ostream& os) const = 0;
+  void
+  formatText(std::ostream& os) const;
+
+private:
+  VIRTUAL_WITH_TESTS void
+  processEvents(Face& face);
+
+public:
+  /** \brief modules through which status is collected
+   */
+  std::vector<unique_ptr<Module>> sections;
 };
 
-} // namespace nfd_status
+} // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFD_STATUS_MODULE_HPP
+#endif // NFD_TOOLS_NFDC_STATUS_REPORT_HPP
