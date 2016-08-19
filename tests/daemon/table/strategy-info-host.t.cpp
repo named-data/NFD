@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -104,16 +104,16 @@ BOOST_AUTO_TEST_CASE(Create)
 {
   StrategyInfoHost host;
 
-  host.getOrCreateStrategyInfo<DummyStrategyInfo>(3503);
+  host.insertStrategyInfo<DummyStrategyInfo>(3503);
   BOOST_REQUIRE(host.getStrategyInfo<DummyStrategyInfo>() != nullptr);
   BOOST_CHECK_EQUAL(host.getStrategyInfo<DummyStrategyInfo>()->m_id, 3503);
 
-  host.getOrCreateStrategyInfo<DummyStrategyInfo>(1032);
+  host.insertStrategyInfo<DummyStrategyInfo>(1032);
   BOOST_REQUIRE(host.getStrategyInfo<DummyStrategyInfo>() != nullptr);
   BOOST_CHECK_EQUAL(host.getStrategyInfo<DummyStrategyInfo>()->m_id, 3503);
 
   host.setStrategyInfo<DummyStrategyInfo>(nullptr);
-  host.getOrCreateStrategyInfo<DummyStrategyInfo>(9956);
+  host.insertStrategyInfo<DummyStrategyInfo>(9956);
   BOOST_REQUIRE(host.getStrategyInfo<DummyStrategyInfo>() != nullptr);
   BOOST_CHECK_EQUAL(host.getStrategyInfo<DummyStrategyInfo>()->m_id, 9956);
 }
@@ -122,11 +122,11 @@ BOOST_AUTO_TEST_CASE(Types)
 {
   StrategyInfoHost host;
 
-  host.getOrCreateStrategyInfo<DummyStrategyInfo>(8063);
+  host.insertStrategyInfo<DummyStrategyInfo>(8063);
   BOOST_REQUIRE(host.getStrategyInfo<DummyStrategyInfo>() != nullptr);
   BOOST_CHECK_EQUAL(host.getStrategyInfo<DummyStrategyInfo>()->m_id, 8063);
 
-  host.getOrCreateStrategyInfo<DummyStrategyInfo2>(2871);
+  host.insertStrategyInfo<DummyStrategyInfo2>(2871);
   BOOST_REQUIRE(host.getStrategyInfo<DummyStrategyInfo2>() != nullptr);
   BOOST_CHECK_EQUAL(host.getStrategyInfo<DummyStrategyInfo2>()->m_id, 2871);
 

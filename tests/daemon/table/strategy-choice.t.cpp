@@ -222,10 +222,10 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
 
   BOOST_CHECK(table.insert("ndn:/", nameP));
   // { '/'=>P }
-  measurements.get("ndn:/").getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A").getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A/B").getOrCreateStrategyInfo<PStrategyInfo>();
-  measurements.get("ndn:/A/C").getOrCreateStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/").insertStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A").insertStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A/B").insertStrategyInfo<PStrategyInfo>();
+  measurements.get("ndn:/A/C").insertStrategyInfo<PStrategyInfo>();
 
   BOOST_CHECK(table.insert("ndn:/A/B", nameP));
   // { '/'=>P, '/A/B'=>P }

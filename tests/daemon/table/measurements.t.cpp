@@ -134,7 +134,7 @@ public:
 BOOST_AUTO_TEST_CASE(FindLongestPrefixMatch)
 {
   measurements.get("/A");
-  measurements.get("/A/B/C").getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C").insertStrategyInfo<DummyStrategyInfo1>();
   measurements.get("/A/B/C/D");
 
   Entry* found1 = measurements.findLongestPrefixMatch("/A/B/C/D/E");
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(FindLongestPrefixMatchWithPitEntry)
   Pit pit(nameTree);
 
   measurements.get("/A");
-  measurements.get("/A/B/C").getOrCreateStrategyInfo<DummyStrategyInfo1>();
+  measurements.get("/A/B/C").insertStrategyInfo<DummyStrategyInfo1>();
   measurements.get("/A/B/C/D");
 
   shared_ptr<Interest> interest = makeInterest("/A/B/C/D/E");

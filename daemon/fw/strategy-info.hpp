@@ -38,7 +38,7 @@ class StrategyInfo
 public:
 #ifdef DOXYGEN
   /** \return an integer that uniquely identifies this StrategyInfo type
-   *  \sa http://redmine.named-data.net/projects/nfd/wiki/StrategyInfoType
+   *  \sa https://redmine.named-data.net/projects/nfd/wiki/StrategyInfoType
    */
   static constexpr int
   getTypeId()
@@ -48,14 +48,11 @@ public:
 #endif
 
   virtual
-  ~StrategyInfo();
+  ~StrategyInfo() = default;
+
+protected:
+  StrategyInfo() = default;
 };
-
-
-inline
-StrategyInfo::~StrategyInfo()
-{
-}
 
 } // namespace fw
 } // namespace nfd

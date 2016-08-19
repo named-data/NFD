@@ -82,7 +82,7 @@ RetxSuppressionExponential::decide(const Face& inFace, const Interest& interest,
   time::steady_clock::TimePoint now = time::steady_clock::now();
   time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
 
-  shared_ptr<PitInfo> pi = pitEntry.getOrCreateStrategyInfo<PitInfo>(m_initialInterval);
+  shared_ptr<PitInfo> pi = pitEntry.insertStrategyInfo<PitInfo>(m_initialInterval);
   bool shouldSuppress = sinceLastOutgoing < pi->suppressionInterval;
 
   if (shouldSuppress) {

@@ -54,7 +54,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
     return;
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getOrCreateStrategyInfo<PitEntryInfo>();
+  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->insertStrategyInfo<PitEntryInfo>();
   bool isNewPitEntry = !hasPendingOutRecords(*pitEntry);
   if (!isNewPitEntry) {
     return;

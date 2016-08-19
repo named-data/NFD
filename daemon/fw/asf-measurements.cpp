@@ -228,7 +228,7 @@ AsfMeasurements::getNamespaceInfo(const ndn::Name& prefix)
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  shared_ptr<NamespaceInfo> info = me->getOrCreateStrategyInfo<NamespaceInfo>();
+  shared_ptr<NamespaceInfo> info = me->insertStrategyInfo<NamespaceInfo>();
   BOOST_ASSERT(info != nullptr);
 
   return info;
@@ -252,7 +252,7 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn:
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  shared_ptr<NamespaceInfo> info = me->getOrCreateStrategyInfo<NamespaceInfo>();
+  shared_ptr<NamespaceInfo> info = me->insertStrategyInfo<NamespaceInfo>();
   BOOST_ASSERT(info != nullptr);
 
   return *info;
