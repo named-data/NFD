@@ -57,6 +57,8 @@ BOOST_AUTO_TEST_CASE(AddSupportedPrivilegeInConstructor)
 
 BOOST_AUTO_TEST_CASE(CommandAuthorization)
 {
+  ndn::mgmt::Authorization authorize = m_manager.makeAuthorization("test-verb");
+
   bool didAcceptCallbackFire = false;
   bool didRejectCallbackFire = false;
   auto testAuthorization = [&] {
@@ -66,9 +68,9 @@ BOOST_AUTO_TEST_CASE(CommandAuthorization)
     auto command = makeControlCommandRequest("/localhost/nfd/test-module/test-verb",
                                              ControlParameters());
     ndn::nfd::ControlParameters params;
-    m_manager.authorize("/top/prefix", *command, &params,
-                        bind([&] { didAcceptCallbackFire = true; }),
-                        bind([&] { didRejectCallbackFire = true; }));
+    authorize("/top/prefix", *command, &params,
+              bind([&] { didAcceptCallbackFire = true; }),
+              bind([&] { didRejectCallbackFire = true; }));
   };
 
   testAuthorization();

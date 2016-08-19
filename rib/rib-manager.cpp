@@ -293,23 +293,23 @@ RibManager::setFaceForSelfRegistration(const Interest& request, ControlParameter
   }
 }
 
-void
-RibManager::authorize(const Name& prefix, const Interest& interest,
-                      const ndn::mgmt::ControlParameters* params,
-                      ndn::mgmt::AcceptContinuation accept,
-                      ndn::mgmt::RejectContinuation reject)
+ndn::mgmt::Authorization
+RibManager::makeAuthorization(const std::string& verb)
 {
-  BOOST_ASSERT(params != nullptr);
-  BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
-  BOOST_ASSERT(prefix == LOCAL_HOST_TOP_PREFIX || prefix == LOCAL_HOP_TOP_PREFIX);
+  return [this] (const Name& prefix, const Interest& interest,
+                 const ndn::mgmt::ControlParameters* params,
+                 const ndn::mgmt::AcceptContinuation& accept,
+                 const ndn::mgmt::RejectContinuation& reject) {
+    BOOST_ASSERT(params != nullptr);
+    BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
+    BOOST_ASSERT(prefix == LOCAL_HOST_TOP_PREFIX || prefix == LOCAL_HOP_TOP_PREFIX);
 
-  auto& validator = [this, &prefix] () -> ndn::ValidatorConfig & {
-    return prefix == LOCAL_HOST_TOP_PREFIX ? m_localhostValidator : m_localhopValidator;
-  }();
-
-  validator.validate(interest,
-                     bind([&interest, this, accept] { extractRequester(interest, accept); }),
-                     bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
+    ndn::ValidatorConfig& validator = prefix == LOCAL_HOST_TOP_PREFIX ?
+                                      m_localhostValidator : m_localhopValidator;
+    validator.validate(interest,
+                       bind([&interest, this, accept] { extractRequester(interest, accept); }),
+                       bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
+  };
 }
 
 void

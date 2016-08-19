@@ -52,25 +52,8 @@ public:
                  const std::string& module);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
-  /**
-   * @brief validate a request for ControlCommand.
-   *
-   * This is called by the dispatcher.
-   *
-   * @pre params != null
-   * @pre typeid(*params) == typeid(ndn::nfd::ControlParameters)
-   *
-   * @param prefix the top prefix
-   * @param interest a request for ControlCommand
-   * @param params the parameters for ControlCommand
-   * @param accept callback of successful validation, take the requester string as a argument
-   * @param reject callback of failure in validation, take the action code as a argument
-   */
-  virtual void
-  authorize(const Name& prefix, const Interest& interest,
-            const ndn::mgmt::ControlParameters* params,
-            ndn::mgmt::AcceptContinuation accept,
-            ndn::mgmt::RejectContinuation reject) override;
+  virtual ndn::mgmt::Authorization
+  makeAuthorization(const std::string& verb) override;
 
 private:
   CommandValidator& m_validator;

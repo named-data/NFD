@@ -36,18 +36,20 @@ NfdManagerBase::NfdManagerBase(Dispatcher& dispatcher,
   m_validator.addSupportedPrivilege(module);
 }
 
-void
-NfdManagerBase::authorize(const Name& prefix, const Interest& interest,
-                          const ndn::mgmt::ControlParameters* params,
-                          ndn::mgmt::AcceptContinuation accept,
-                          ndn::mgmt::RejectContinuation reject)
+ndn::mgmt::Authorization
+NfdManagerBase::makeAuthorization(const std::string& verb)
 {
-  BOOST_ASSERT(params != nullptr);
-  BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
+  return [this] (const Name& prefix, const Interest& interest,
+                 const ndn::mgmt::ControlParameters* params,
+                 const ndn::mgmt::AcceptContinuation& accept,
+                 const ndn::mgmt::RejectContinuation& reject) {
+    BOOST_ASSERT(params != nullptr);
+    BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
 
-  m_validator.validate(interest,
-                       bind([&interest, this, accept] { extractRequester(interest, accept); }),
-                       bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
+    m_validator.validate(interest,
+                         bind([&interest, this, accept] { extractRequester(interest, accept); }),
+                         bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
+  };
 }
 
 } // namespace nfd

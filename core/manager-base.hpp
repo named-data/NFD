@@ -82,27 +82,7 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
   ndn::mgmt::PostNotification
   registerNotificationStream(const std::string& verb);
 
-PUBLIC_WITH_TESTS_ELSE_PROTECTED: // command validation
-  /**
-   * @brief validate a request for ControlCommand.
-   *
-   * This is called by the dispatcher.
-   *
-   * @pre params != null
-   * @pre typeid(*params) == typeid(ndn::nfd::ControlParameters)
-   *
-   * @param prefix the top prefix
-   * @param interest a request for ControlCommand
-   * @param params the parameters for ControlCommand
-   * @param accept callback of successful validation, take the requester string as a argument
-   * @param reject callback of failure in validation, take the action code as a argument
-   */
-  virtual void
-  authorize(const Name& prefix, const Interest& interest,
-            const ndn::mgmt::ControlParameters* params,
-            ndn::mgmt::AcceptContinuation accept,
-            ndn::mgmt::RejectContinuation reject) = 0;
-
+PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   /**
    * @brief extract a requester from a ControlCommand request
    *
@@ -115,7 +95,13 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED: // command validation
   extractRequester(const Interest& interest,
                    ndn::mgmt::AcceptContinuation accept);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /**
+   * @return an authorization function for specified management module and verb
+   */
+  virtual ndn::mgmt::Authorization
+  makeAuthorization(const std::string& verb) = 0;
+
   /**
    * @brief validate the @p parameters for a given @p command
    *
@@ -167,7 +153,7 @@ ManagerBase::registerCommandHandler(const std::string& verb,
 
   m_dispatcher.addControlCommand<ControlParameters>(
     makeRelPrefix(verb),
-    bind(&ManagerBase::authorize, this, _1, _2, _3, _4, _5),
+    makeAuthorization(verb),
     bind(&ManagerBase::validateParameters, cref(*command), _1),
     bind(&ManagerBase::handleCommand, command, handler, _1, _2, _3, _4));
 }

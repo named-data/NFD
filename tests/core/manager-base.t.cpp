@@ -56,15 +56,19 @@ class ManagerTester : public ManagerBase
 public:
   ManagerTester(Dispatcher& dispatcher,
                 const std::string& module)
-    : ManagerBase(dispatcher, module) {
+    : ManagerBase(dispatcher, module)
+  {
   }
 
-  virtual void
-  authorize(const Name& prefix, const Interest& interest,
-            const ndn::mgmt::ControlParameters* params,
-            ndn::mgmt::AcceptContinuation accept,
-            ndn::mgmt::RejectContinuation reject) {
-    extractRequester(interest, accept);
+  virtual ndn::mgmt::Authorization
+  makeAuthorization(const std::string& verb) override
+  {
+    return [this] (const Name& prefix, const Interest& interest,
+                   const ndn::mgmt::ControlParameters* params,
+                   ndn::mgmt::AcceptContinuation accept,
+                   ndn::mgmt::RejectContinuation reject) {
+      accept("requester");
+    };
   }
 };
 

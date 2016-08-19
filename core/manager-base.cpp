@@ -99,5 +99,4 @@ ManagerBase::handleCommand(shared_ptr<nfd::ControlCommand> command,
   handler(*command, prefix, interest, parameters, done);
 }
 
-
 } // namespace nfd
