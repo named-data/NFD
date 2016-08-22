@@ -29,7 +29,6 @@
 #include "rib.hpp"
 #include "core/config-file.hpp"
 #include "core/manager-base.hpp"
-#include "rib-status-publisher.hpp"
 #include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
 

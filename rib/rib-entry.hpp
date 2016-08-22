@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -186,7 +186,7 @@ private:
   /** \brief The number of routes on this namespace with the capture flag set.
    *
    *  This count is used to check if the namespace will block inherited routes.
-   *  If the number is greater than zero, a route on the namespace has it's capture
+   *  If the number is greater than zero, a route on the namespace has its capture
    *  flag set which means the namespace should not inherit any routes.
    */
   uint64_t m_nRoutesWithCaptureSet;

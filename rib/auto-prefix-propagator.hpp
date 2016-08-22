@@ -28,7 +28,6 @@
 
 #include "rib.hpp"
 #include "core/config-file.hpp"
-#include "rib-status-publisher.hpp"
 #include "propagated-entry.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
