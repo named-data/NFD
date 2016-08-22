@@ -34,8 +34,8 @@ NFD_LOG_INIT("FibManager");
 FibManager::FibManager(Fib& fib,
                        const FaceTable& faceTable,
                        Dispatcher& dispatcher,
-                       CommandValidator& validator)
-  : NfdManagerBase(dispatcher, validator, "fib")
+                       CommandAuthenticator& authenticator)
+  : NfdManagerBase(dispatcher, authenticator, "fib")
   , m_fib(fib)
   , m_faceTable(faceTable)
 {

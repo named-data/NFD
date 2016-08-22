@@ -43,7 +43,7 @@ class StrategyChoiceManager : public NfdManagerBase
 public:
   StrategyChoiceManager(strategy_choice::StrategyChoice& table,
                         Dispatcher& dispatcher,
-                        CommandValidator& validator);
+                        CommandAuthenticator& authenticator);
 
 private:
   void

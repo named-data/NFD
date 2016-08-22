@@ -23,36 +23,45 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_MGMT_NFD_MANAGER_BASE_HPP
-#define NFD_DAEMON_MGMT_NFD_MANAGER_BASE_HPP
-
-#include "core/manager-base.hpp"
-#include "command-authenticator.hpp"
+#include "nfd-manager-common-fixture.hpp"
 
 namespace nfd {
+namespace tests {
 
-using ndn::mgmt::Dispatcher;
-using ndn::nfd::ControlParameters;
-
-/**
- * @brief a collection of common functions shared by all NFD managers,
- *        such as communicating with the dispatcher and command validator.
- */
-class NfdManagerBase : public ManagerBase
+NfdManagerCommonFixture::NfdManagerCommonFixture()
+  : m_authenticator(CommandAuthenticator::create())
 {
-public:
-  NfdManagerBase(Dispatcher& dispatcher,
-                 CommandAuthenticator& authenticator,
-                 const std::string& module);
+}
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE: // command validation
-  virtual ndn::mgmt::Authorization
-  makeAuthorization(const std::string& verb) override;
+void
+NfdManagerCommonFixture::setTopPrefix()
+{
+  this->ManagerCommonFixture::setTopPrefix("/localhost/nfd");
+}
 
-private:
-  CommandAuthenticator& m_authenticator;
-};
+void
+NfdManagerCommonFixture::setPrivilege(const std::string& privilege)
+{
+  this->saveIdentityCertificate(m_identityName, "ManagerCommonFixture.ndncert");
 
+  const std::string& config = R"CONFIG(
+    authorizations
+    {
+      authorize
+      {
+        certfile "ManagerCommonFixture.ndncert"
+        privileges
+        {
+          )CONFIG" + privilege + R"CONFIG(
+        }
+      }
+    }
+  )CONFIG";
+
+  ConfigFile cf;
+  m_authenticator->setConfigFile(cf);
+  cf.parse(config, false, "ManagerCommonFixture.authenticator.conf");
+}
+
+} // namespace tests
 } // namespace nfd
-
-#endif // NFD_DAEMON_MGMT_NFD_MANAGER_BASE_HPP

@@ -38,9 +38,6 @@
 #include "mgmt/forwarder-status-manager.hpp"
 #include "mgmt/general-config-section.hpp"
 #include "mgmt/tables-config-section.hpp"
-#include "mgmt/command-validator.hpp"
-
-#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 
@@ -74,12 +71,10 @@ Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
 {
 }
 
-Nfd::~Nfd()
-{
-  // It is necessary to explicitly define the destructor, because some member variables (e.g.,
-  // unique_ptr<Forwarder>) are forward-declared, but implicitly declared destructor requires
-  // complete types for all members when instantiated.
-}
+// It is necessary to explicitly define the destructor, because some member variables (e.g.,
+// unique_ptr<Forwarder>) are forward-declared, but implicitly declared destructor requires
+// complete types for all members when instantiated.
+Nfd::~Nfd() = default;
 
 void
 Nfd::initialize()
@@ -125,7 +120,6 @@ Nfd::initializeLogging()
   }
 }
 
-
 static inline void
 ignoreRibAndLogSections(const std::string& filename, const std::string& sectionName,
                         const ConfigSection& section, bool isDryRun)
@@ -146,24 +140,17 @@ Nfd::initializeManagement()
 {
   std::tie(m_internalFace, m_internalClientFace) = face::makeInternalFace(m_keyChain);
   m_forwarder->getFaceTable().addReserved(m_internalFace, face::FACEID_INTERNAL_FACE);
+
   m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
-
-  m_validator.reset(new CommandValidator());
-
-  m_fibManager.reset(new FibManager(m_forwarder->getFib(),
-                                    m_forwarder->getFaceTable(),
-                                    *m_dispatcher,
-                                    *m_validator));
-
-  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
-                                      *m_dispatcher,
-                                      *m_validator));
-
-  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
-                                                          *m_dispatcher,
-                                                          *m_validator));
+  m_authenticator = CommandAuthenticator::create();
 
   m_forwarderStatusManager.reset(new ForwarderStatusManager(*m_forwarder, *m_dispatcher));
+  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
+                                      *m_dispatcher, *m_authenticator));
+  m_fibManager.reset(new FibManager(m_forwarder->getFib(), m_forwarder->getFaceTable(),
+                                    *m_dispatcher, *m_authenticator));
+  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
+                                                          *m_dispatcher, *m_authenticator));
 
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);
@@ -176,8 +163,7 @@ Nfd::initializeManagement()
                                    m_forwarder->getNetworkRegionTable());
   tablesConfig.setConfigFile(config);
 
-  m_validator->setConfigFile(config);
-
+  m_authenticator->setConfigFile(config);
   m_faceManager->setConfigFile(config);
 
   // parse config file
@@ -216,10 +202,9 @@ Nfd::reloadConfigFile()
                                    m_forwarder->getStrategyChoice(),
                                    m_forwarder->getMeasurements(),
                                    m_forwarder->getNetworkRegionTable());
-
   tablesConfig.setConfigFile(config);
 
-  m_validator->setConfigFile(config);
+  m_authenticator->setConfigFile(config);
   m_faceManager->setConfigFile(config);
 
   if (!m_configFile.empty()) {

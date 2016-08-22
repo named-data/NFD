@@ -52,8 +52,8 @@ namespace nfd {
 
 NFD_LOG_INIT("FaceManager");
 
-FaceManager::FaceManager(FaceTable& faceTable, Dispatcher& dispatcher, CommandValidator& validator)
-  : NfdManagerBase(dispatcher, validator, "faces")
+FaceManager::FaceManager(FaceTable& faceTable, Dispatcher& dispatcher, CommandAuthenticator& authenticator)
+  : NfdManagerBase(dispatcher, authenticator, "faces")
   , m_faceTable(faceTable)
 {
   registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",

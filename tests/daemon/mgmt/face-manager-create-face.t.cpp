@@ -24,7 +24,7 @@
  */
 
 #include "mgmt/face-manager.hpp"
-#include "fw/forwarder.hpp"
+#include "fw/face-table.hpp"
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -46,10 +46,10 @@ class FaceManagerNode
 {
 public:
   FaceManagerNode(ndn::KeyChain& keyChain, const std::string& port = "6363")
-    : faceTable(forwarder.getFaceTable())
-    , face(getGlobalIoService(), keyChain, {true, true})
+    : face(getGlobalIoService(), keyChain, {true, true})
     , dispatcher(face, keyChain, ndn::security::SigningInfo())
-    , manager(faceTable, dispatcher, validator)
+    , authenticator(CommandAuthenticator::create())
+    , manager(faceTable, dispatcher, *authenticator)
   {
     dispatcher.addTopPrefix("/localhost/nfd");
 
@@ -88,7 +88,7 @@ public:
 
     ConfigFile config;
     manager.setConfigFile(config);
-    validator.setConfigFile(config);
+    authenticator->setConfigFile(config);
     config.parse(configSection, false, "dummy-config");
   }
 
@@ -96,24 +96,21 @@ public:
   closeFaces()
   {
     std::vector<std::reference_wrapper<Face>> facesToClose;
-    std::copy(forwarder.getFaceTable().begin(), forwarder.getFaceTable().end(),
-              std::back_inserter(facesToClose));
+    std::copy(faceTable.begin(), faceTable.end(), std::back_inserter(facesToClose));
     for (Face& face : facesToClose) {
       face.close();
     }
   }
 
 public:
-  Forwarder forwarder;
-  FaceTable& faceTable;
+  FaceTable faceTable;
   ndn::util::DummyClientFace face;
   ndn::mgmt::Dispatcher dispatcher;
-  CommandValidator validator;
+  shared_ptr<CommandAuthenticator> authenticator;
   FaceManager manager;
 };
 
-class FaceManagerFixture : public UnitTestTimeFixture
-                         , public IdentityManagementFixture
+class FaceManagerFixture : public IdentityManagementTimeFixture
 {
 public:
   FaceManagerFixture()
@@ -401,7 +398,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
           BOOST_REQUIRE_EQUAL(controlResponse.getText(), "OK");
           BOOST_REQUIRE_EQUAL(controlResponse.getCode(), 200);
           uint64_t faceId = ControlParameters(controlResponse.getBody()).getFaceId();
-          auto face = this->node2.forwarder.getFace(static_cast<FaceId>(faceId));
+          auto face = this->node2.faceTable.get(static_cast<FaceId>(faceId));
 
           // to force creation of on-demand face
           auto dummyInterest = make_shared<Interest>("/hello/world");

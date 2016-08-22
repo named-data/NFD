@@ -42,11 +42,11 @@ class Dispatcher;
 namespace nfd {
 
 class Forwarder;
+class CommandAuthenticator;
 class FibManager;
 class FaceManager;
 class StrategyChoiceManager;
 class ForwarderStatusManager;
-class CommandValidator;
 
 namespace face {
 class Face;
@@ -107,19 +107,18 @@ private:
 
   unique_ptr<Forwarder> m_forwarder;
 
-  ndn::KeyChain&               m_keyChain;
-  shared_ptr<face::Face>       m_internalFace;
-  shared_ptr<ndn::Face>        m_internalClientFace;
-  unique_ptr<CommandValidator> m_validator;
-
-  unique_ptr<ndn::mgmt::Dispatcher>  m_dispatcher;
-  unique_ptr<FibManager>             m_fibManager;
-  unique_ptr<FaceManager>            m_faceManager;
-  unique_ptr<StrategyChoiceManager>  m_strategyChoiceManager;
+  ndn::KeyChain& m_keyChain;
+  shared_ptr<face::Face> m_internalFace;
+  shared_ptr<ndn::Face> m_internalClientFace;
+  unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
+  shared_ptr<CommandAuthenticator> m_authenticator;
   unique_ptr<ForwarderStatusManager> m_forwarderStatusManager;
+  unique_ptr<FaceManager> m_faceManager;
+  unique_ptr<FibManager> m_fibManager;
+  unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
 
   unique_ptr<ndn::util::NetworkMonitor> m_networkMonitor;
-  scheduler::ScopedEventId              m_reloadConfigEvent;
+  scheduler::ScopedEventId m_reloadConfigEvent;
 };
 
 } // namespace nfd

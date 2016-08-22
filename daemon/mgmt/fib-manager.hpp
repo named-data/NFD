@@ -42,18 +42,10 @@ class FaceTable;
 class FibManager : public NfdManagerBase
 {
 public:
-  /**
-   * @brief construct a FibManger
-   *
-   * @param fib the managed FIB
-   * @param faceTable FaceTable for querying available faces
-   * @param dispatcher the management dispatcher
-   * @param validator the command validator
-   */
   FibManager(Fib& fib,
              const FaceTable& faceTable,
              Dispatcher& dispatcher,
-             CommandValidator& validator);
+             CommandAuthenticator& authenticator);
 
 private:
   void

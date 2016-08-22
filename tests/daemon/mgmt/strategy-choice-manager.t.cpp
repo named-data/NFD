@@ -47,8 +47,9 @@ class StrategyChoiceManagerFixture : public NfdManagerCommonFixture
 public:
   StrategyChoiceManagerFixture()
     : m_strategyChoice(m_forwarder.getStrategyChoice())
-    , m_manager(m_strategyChoice, m_dispatcher, m_validator)
+    , m_manager(m_strategyChoice, m_dispatcher, *m_authenticator)
   {
+    setTopPrefix();
     setPrivilege("strategy-choice");
   }
 

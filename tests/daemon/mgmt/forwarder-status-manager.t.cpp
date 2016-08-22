@@ -40,7 +40,7 @@ protected:
     : manager(m_forwarder, m_dispatcher)
     , startTime(time::system_clock::now())
   {
-    setPrivilege("status");
+    setTopPrefix();
   }
 
 protected:

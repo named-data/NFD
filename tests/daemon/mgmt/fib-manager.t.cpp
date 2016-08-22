@@ -38,8 +38,9 @@ public:
   FibManagerFixture()
     : m_fib(m_forwarder.getFib())
     , m_faceTable(m_forwarder.getFaceTable())
-    , m_manager(m_fib, m_faceTable, m_dispatcher, m_validator)
+    , m_manager(m_fib, m_faceTable, m_dispatcher, *m_authenticator)
   {
+    setTopPrefix();
     setPrivilege("fib");
   }
 

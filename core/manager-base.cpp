@@ -33,7 +33,7 @@ using ndn::mgmt::Authorization;
 ManagerBase::ManagerBase(Dispatcher& dispatcher,
                          const std::string& module)
   : m_dispatcher(dispatcher)
-  , m_mgmtModuleName(module)
+  , m_module(module)
 {
 }
 

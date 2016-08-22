@@ -33,8 +33,8 @@ NFD_LOG_INIT("StrategyChoiceManager");
 
 StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
                                              Dispatcher& dispatcher,
-                                             CommandValidator& validator)
-  : NfdManagerBase(dispatcher, validator, "strategy-choice")
+                                             CommandAuthenticator& authenticator)
+  : NfdManagerBase(dispatcher, authenticator, "strategy-choice")
   , m_table(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",

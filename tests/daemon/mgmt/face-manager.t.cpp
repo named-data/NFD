@@ -44,8 +44,9 @@ class FaceManagerFixture : public NfdManagerCommonFixture
 public:
   FaceManagerFixture()
     : m_faceTable(m_forwarder.getFaceTable())
-    , m_manager(m_faceTable, m_dispatcher, m_validator)
+    , m_manager(m_faceTable, m_dispatcher, *m_authenticator)
   {
+    setTopPrefix();
     setPrivilege("faces");
   }
 

@@ -39,8 +39,7 @@ namespace tests {
 /**
  * @brief a collection of common functions shared by all manager's testing fixtures.
  */
-class ManagerCommonFixture : public UnitTestTimeFixture
-                           , public IdentityManagementFixture
+class ManagerCommonFixture : public IdentityManagementTimeFixture
 {
 public: // initialize
   ManagerCommonFixture();
@@ -146,8 +145,7 @@ protected:
   ndn::util::DummyClientFace m_face;
   ndn::mgmt::Dispatcher m_dispatcher;
   std::vector<Data>& m_responses; ///< a reference of m_face->sentData
-  Name m_identityName; ///< the identity used to sign request
-  shared_ptr<ndn::IdentityCertificate> m_certificate; ///< the certificate used to sign request
+  Name m_identityName; ///< the identity to sign requests
 };
 
 std::ostream&

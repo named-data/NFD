@@ -42,7 +42,7 @@ class FaceManagerProcessConfigFixture : public NfdManagerCommonFixture
 {
 public:
   FaceManagerProcessConfigFixture()
-    : m_manager(m_forwarder.getFaceTable(), m_dispatcher, m_validator)
+    : m_manager(m_forwarder.getFaceTable(), m_dispatcher, *m_authenticator)
   {
     m_manager.setConfigFile(m_config);
   }

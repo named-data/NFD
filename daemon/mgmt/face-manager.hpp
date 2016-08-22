@@ -46,7 +46,7 @@ class FaceManager : public NfdManagerBase
 public:
   FaceManager(FaceTable& faceTable,
               Dispatcher& dispatcher,
-              CommandValidator& validator);
+              CommandAuthenticator& authenticator);
 
   /**
    * @brief Subscribe to face_system section for the config file

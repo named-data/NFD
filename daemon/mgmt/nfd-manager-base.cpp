@@ -28,28 +28,17 @@
 namespace nfd {
 
 NfdManagerBase::NfdManagerBase(Dispatcher& dispatcher,
-                               CommandValidator& validator,
+                               CommandAuthenticator& authenticator,
                                const std::string& module)
   : ManagerBase(dispatcher, module)
-  , m_validator(validator)
+  , m_authenticator(authenticator)
 {
-  m_validator.addSupportedPrivilege(module);
 }
 
 ndn::mgmt::Authorization
 NfdManagerBase::makeAuthorization(const std::string& verb)
 {
-  return [this] (const Name& prefix, const Interest& interest,
-                 const ndn::mgmt::ControlParameters* params,
-                 const ndn::mgmt::AcceptContinuation& accept,
-                 const ndn::mgmt::RejectContinuation& reject) {
-    BOOST_ASSERT(params != nullptr);
-    BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
-
-    m_validator.validate(interest,
-                         bind([&interest, this, accept] { extractRequester(interest, accept); }),
-                         bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
-  };
+  return m_authenticator.makeAuthorization(this->getModule(), verb);
 }
 
 } // namespace nfd

@@ -24,6 +24,7 @@
  */
 
 #include "manager-common-fixture.hpp"
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace tests {
@@ -33,8 +34,8 @@ ManagerCommonFixture::ManagerCommonFixture()
   , m_dispatcher(m_face, m_keyChain, ndn::security::SigningInfo())
   , m_responses(m_face.sentData)
   , m_identityName("/unit-test/ManagerCommonFixture/identity")
-  , m_certificate(m_keyChain.getCertificate(m_keyChain.createIdentity(m_identityName)))
 {
+  BOOST_REQUIRE(this->addIdentity(m_identityName));
 }
 
 void
@@ -55,8 +56,7 @@ ManagerCommonFixture::makeControlCommandRequest(Name commandName,
     beforeSigning(command);
   }
 
-  m_keyChain.sign(*command, ndn::security::SigningInfo(ndn::security::SigningInfo::SIGNER_TYPE_ID,
-                                                       m_identityName));
+  m_keyChain.sign(*command, ndn::security::signingByIdentity(m_identityName));
   return command;
 }
 

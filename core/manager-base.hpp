@@ -62,6 +62,12 @@ public:
   ManagerBase(Dispatcher& dispatcher,
               const std::string& module);
 
+  const std::string&
+  getModule() const
+  {
+    return m_module;
+  }
+
 PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
 
   // difference from mgmt::ControlCommand: accepts nfd::ControlParameters
@@ -134,14 +140,14 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   makeRelPrefix(const std::string& verb);
 
 private:
-  Dispatcher&       m_dispatcher;
-  std::string       m_mgmtModuleName;
+  Dispatcher& m_dispatcher;
+  std::string m_module;
 };
 
 inline PartialName
 ManagerBase::makeRelPrefix(const std::string& verb)
 {
-  return PartialName(m_mgmtModuleName).append(verb);
+  return PartialName(m_module).append(verb);
 }
 
 template<typename Command>

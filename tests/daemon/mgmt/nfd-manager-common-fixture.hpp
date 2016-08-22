@@ -23,54 +23,39 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_HPP
-#define NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_HPP
+#ifndef NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_FIXTURE_HPP
+#define NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_FIXTURE_HPP
 
 #include "manager-common-fixture.hpp"
 #include "fw/forwarder.hpp"
-#include "mgmt/command-validator.hpp"
+#include "mgmt/command-authenticator.hpp"
 
 namespace nfd {
 namespace tests {
 
-/**
- * @brief a base class shared by all NFD manager's testing fixtures.
+/** \brief base fixture for testing an NFD Manager
  */
 class NfdManagerCommonFixture : public ManagerCommonFixture
 {
 public:
-  NfdManagerCommonFixture()
-    : m_topPrefix("/localhost/nfd")
-  {
-  }
+  NfdManagerCommonFixture();
 
-  /**
-   * @brief configure an interest rule for the module.
-   *
-   * set top prefix before set privilege.
-   *
-   * @param privilege the module name
+  /** \brief add /localhost/nfd as a top prefix to the dispatcher
    */
   void
-  setPrivilege(const std::string& privilege)
-  {
-    setTopPrefix(m_topPrefix);
+  setTopPrefix();
 
-    std::string regex("^");
-    for (auto component : m_topPrefix) {
-      regex += "<" + component.toUri() + ">";
-    }
-
-    m_validator.addInterestRule(regex + "<" + privilege + ">", *m_certificate);
-  }
+  /** \brief grant m_identityName privilege to sign commands for the management module
+   */
+  void
+  setPrivilege(const std::string& privilege);
 
 protected:
   Forwarder m_forwarder;
-  CommandValidator m_validator;
-  Name m_topPrefix;
+  shared_ptr<CommandAuthenticator> m_authenticator;
 };
 
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_HPP
+#endif // NFD_TESTS_NFD_MGMT_NFD_MANAGER_COMMON_FIXTURE_HPP
