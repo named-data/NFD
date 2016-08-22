@@ -33,6 +33,7 @@
 #include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
 
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/management/nfd-face-monitor.hpp>
 #include <ndn-cxx/management/nfd-controller.hpp>
