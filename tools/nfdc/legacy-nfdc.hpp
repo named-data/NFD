@@ -142,13 +142,12 @@ public:
   strategyChoiceUnset();
 
 private:
-
   void
   onSuccess(const ndn::nfd::ControlParameters& commandSuccessResult,
             const std::string& message);
 
   void
-  onError(uint32_t code, const std::string& error, const std::string& message);
+  onError(const ndn::nfd::ControlResponse& response, const std::string& message);
 
   void
   onCanonizeFailure(const std::string& reason);

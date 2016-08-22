@@ -631,8 +631,9 @@ BOOST_AUTO_TEST_CASE(AfterPropagateFail)
     wasRetryEventTriggered = false;
 
     auto propagateParameters = m_propagator.getPrefixPropagationParameters(ribEntryPrefix);
-    m_propagator.afterPropagateFail(400, "test", propagateParameters.parameters, propagateParameters.options,
-                                     time::seconds(0), [&]{ wasRetryEventTriggered = true; });
+    m_propagator.afterPropagateFail(ndn::nfd::ControlResponse(400, "test"),
+                                    propagateParameters.parameters, propagateParameters.options,
+                                    time::seconds(0), [&] { wasRetryEventTriggered = true; });
     advanceClocks(time::milliseconds(1));
   };
 

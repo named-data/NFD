@@ -282,7 +282,7 @@ AutoPrefixPropagator::startPropagation(const ControlParameters& parameters,
      parameters,
      bind(&AutoPrefixPropagator::afterPropagateSucceed, this, parameters, options, refreshEvent),
      bind(&AutoPrefixPropagator::afterPropagateFail,
-          this, _1, _2, parameters, options, retryWaitTime, retryEvent),
+          this, _1, parameters, options, retryWaitTime, retryEvent),
      options);
 }
 
@@ -296,7 +296,7 @@ AutoPrefixPropagator::startRevocation(const ControlParameters& parameters,
   m_nfdController.start<ndn::nfd::RibUnregisterCommand>(
      parameters,
      bind(&AutoPrefixPropagator::afterRevokeSucceed, this, parameters, options, retryWaitTime),
-     bind(&AutoPrefixPropagator::afterRevokeFail, this, _1, _2, parameters, options),
+     bind(&AutoPrefixPropagator::afterRevokeFail, this, _1, parameters, options),
      options);
 }
 
@@ -399,14 +399,14 @@ AutoPrefixPropagator::afterPropagateSucceed(const ControlParameters& parameters,
 }
 
 void
-AutoPrefixPropagator::afterPropagateFail(uint32_t code, const std::string& reason,
+AutoPrefixPropagator::afterPropagateFail(const ndn::nfd::ControlResponse& response,
                                          const ControlParameters& parameters,
                                          const CommandOptions& options,
                                          time::seconds retryWaitTime,
                                          const ndn::Scheduler::Event& retryEvent)
 {
   NFD_LOG_TRACE("fail to propagate " << parameters.getName()
-                                     << "\n\t reason:" << reason
+                                     << "\n\t reason:" << response.getText()
                                      << "\n\t retry wait time: " << retryWaitTime);
 
   auto entryIt = m_propagatedEntries.find(parameters.getName());
@@ -442,12 +442,12 @@ AutoPrefixPropagator::afterRevokeSucceed(const ControlParameters& parameters,
 }
 
 void
-AutoPrefixPropagator::afterRevokeFail(uint32_t code, const std::string& reason,
-                                       const ControlParameters& parameters,
-                                       const CommandOptions& options)
+AutoPrefixPropagator::afterRevokeFail(const ndn::nfd::ControlResponse& response,
+                                      const ControlParameters& parameters,
+                                      const CommandOptions& options)
 {
   NFD_LOG_INFO("fail to revoke the propagation of  " << parameters.getName()
-                                                     << "\n\t reason:" << reason);
+                                                     << "\n\t reason:" << response.getText());
 }
 
 void

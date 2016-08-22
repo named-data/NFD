@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,7 +108,7 @@ MulticastDiscovery::registerHubDiscoveryPrefix(const ConstBufferPtr& buffer)
                                                   bind(&MulticastDiscovery::onRegisterSuccess,
                                                        this),
                                                   bind(&MulticastDiscovery::onRegisterFailure,
-                                                       this, _1, _2));
+                                                       this, _1));
     }
   }
 }
@@ -124,9 +124,9 @@ MulticastDiscovery::onRegisterSuccess()
 }
 
 void
-MulticastDiscovery::onRegisterFailure(uint32_t code, const std::string& error)
+MulticastDiscovery::onRegisterFailure(const nfd::ControlResponse& response)
 {
-  std::cerr << "ERROR: " << error << " (code: " << code << ")" << std::endl;
+  std::cerr << "ERROR: " << response.getText() << " (code: " << response.getCode() << ")" << std::endl;
   --nRequestedRegs;
 
   if (nRequestedRegs == nFinishedRegs) {
@@ -150,14 +150,14 @@ MulticastDiscovery::setStrategy()
   m_controller.start<nfd::StrategyChoiceSetCommand>(parameters,
                                                     bind(&MulticastDiscovery::requestHubData, this),
                                                     bind(&MulticastDiscovery::onSetStrategyFailure,
-                                                         this, _2));
+                                                         this, _1));
 }
 
 void
-MulticastDiscovery::onSetStrategyFailure(const std::string& error)
+MulticastDiscovery::onSetStrategyFailure(const nfd::ControlResponse& response)
 {
   m_nextStageOnFailure("Failed to set multicast strategy for " +
-                       LOCALHOP_HUB_DISCOVERY_PREFIX.toUri() + " namespace (" + error + "). "
+                       LOCALHOP_HUB_DISCOVERY_PREFIX.toUri() + " namespace (" + response.getText() + "). "
                        "Skipping multicast discovery stage");
 }
 

@@ -69,13 +69,13 @@ private:
   onRegisterSuccess();
 
   void
-  onRegisterFailure(uint32_t code, const std::string& error);
+  onRegisterFailure(const nfd::ControlResponse& response);
 
   void
   setStrategy();
 
   void
-  onSetStrategyFailure(const std::string& error);
+  onSetStrategyFailure(const nfd::ControlResponse& response);
 
   // Start to look for a hub (NDN hub discovery first stage)
   void

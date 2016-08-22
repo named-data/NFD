@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,7 +57,7 @@ Base::onCanonizeSuccess(const util::FaceUri& canonicalUri)
   m_controller.start<nfd::FaceCreateCommand>(nfd::ControlParameters()
                                                .setUri(canonicalUri.toString()),
                                              bind(&Base::onHubConnectSuccess, this, _1),
-                                             bind(&Base::onHubConnectError, this, _1, _2));
+                                             bind(&Base::onHubConnectError, this, _1));
 }
 
 void
@@ -81,10 +81,10 @@ Base::onHubConnectSuccess(const nfd::ControlParameters& resp)
 }
 
 void
-Base::onHubConnectError(uint32_t code, const std::string& error)
+Base::onHubConnectError(const nfd::ControlResponse& response)
 {
   std::ostringstream os;
-  os << "Failed to create face: " << error << " (code: " << code << ")";
+  os << "Failed to create face: " << response.getText() << " (code: " << response.getCode() << ")";
   BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 
@@ -99,7 +99,7 @@ Base::registerPrefix(const Name& prefix, uint64_t faceId)
                                                 .setCost(100)
                                                 .setExpirationPeriod(time::milliseconds::max()),
                                               bind(&Base::onPrefixRegistrationSuccess, this, _1),
-                                              bind(&Base::onPrefixRegistrationError, this, _1, _2));
+                                              bind(&Base::onPrefixRegistrationError, this, _1));
 }
 
 void
@@ -109,10 +109,10 @@ Base::onPrefixRegistrationSuccess(const nfd::ControlParameters& commandSuccessRe
 }
 
 void
-Base::onPrefixRegistrationError(uint32_t code, const std::string& error)
+Base::onPrefixRegistrationError(const nfd::ControlResponse& response)
 {
   std::ostringstream os;
-  os << "Failed in name registration, " << error << " (code: " << code << ")";
+  os << "Failed in name registration, " << response.getText() << " (code: " << response.getCode() << ")";
   BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 

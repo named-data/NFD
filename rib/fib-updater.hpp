@@ -173,7 +173,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   onUpdateError(const FibUpdate update,
                 const FibUpdateSuccessCallback& onSuccess,
                 const FibUpdateFailureCallback& onFailure,
-                uint32_t code, const std::string& error, uint32_t nTimeouts);
+                const ndn::nfd::ControlResponse& response, uint32_t nTimeouts);
 
 private:
   /** \brief adds the update to an update list based on its Face ID

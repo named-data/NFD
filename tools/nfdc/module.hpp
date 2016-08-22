@@ -55,7 +55,7 @@ public:
   virtual void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
-              const Controller::CommandFailCallback& onFailure,
+              const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) = 0;
 
   /** \brief format collected status as XML

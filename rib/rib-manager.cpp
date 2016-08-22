@@ -94,7 +94,7 @@ RibManager::enableLocalControlHeader()
     ControlParameters()
       .setLocalControlFeature(ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
     bind(&RibManager::onControlHeaderSuccess, this),
-    bind(&RibManager::onControlHeaderError, this, _1, _2));
+    bind(&RibManager::onControlHeaderError, this, _1));
 }
 
 void
@@ -165,7 +165,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
        .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
        .setFaceId(0),
      bind(&RibManager::onCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
-     bind(&RibManager::onCommandPrefixAddNextHopError, this, cref(topPrefix), _2));
+     bind(&RibManager::onCommandPrefixAddNextHopError, this, cref(topPrefix), _1));
 
   // add top prefix to the dispatcher
   m_addTopPrefix(topPrefix);
@@ -443,9 +443,11 @@ RibManager::onCommandPrefixAddNextHopSuccess(const Name& prefix,
 }
 
 void
-RibManager::onCommandPrefixAddNextHopError(const Name& name, const std::string& msg)
+RibManager::onCommandPrefixAddNextHopError(const Name& name,
+                                           const ndn::nfd::ControlResponse& response)
 {
-  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() + "): " + msg));
+  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() +
+                              "): " + response.getText()));
 }
 
 void
@@ -455,11 +457,11 @@ RibManager::onControlHeaderSuccess()
 }
 
 void
-RibManager::onControlHeaderError(uint32_t code, const std::string& reason)
+RibManager::onControlHeaderError(const ndn::nfd::ControlResponse& response)
 {
   std::ostringstream os;
   os << "Couldn't enable local control header "
-     << "(code: " << code << ", info: " << reason << ")";
+     << "(code: " << response.getCode() << ", info: " << response.getText() << ")";
   BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 

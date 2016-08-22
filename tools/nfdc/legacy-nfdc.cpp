@@ -113,7 +113,7 @@ LegacyNfdc::fibAddNextHop()
 
       m_controller.start<ndn::nfd::FibAddNextHopCommand>(parameters,
         bind(&LegacyNfdc::onSuccess, this, _1, "Nexthop insertion succeeded"),
-        bind(&LegacyNfdc::onError, this, _1, _2, "Nexthop insertion failed"));
+        bind(&LegacyNfdc::onError, this, _1, "Nexthop insertion failed"));
     },
     bind(&LegacyNfdc::onObtainFaceIdFailure, this, _1));
 }
@@ -133,7 +133,7 @@ LegacyNfdc::fibRemoveNextHop()
 
       m_controller.start<ndn::nfd::FibRemoveNextHopCommand>(parameters,
         bind(&LegacyNfdc::onSuccess, this, _1, "Nexthop removal succeeded"),
-        bind(&LegacyNfdc::onError, this, _1, _2, "Nexthop removal failed"));
+        bind(&LegacyNfdc::onError, this, _1, "Nexthop removal failed"));
     },
     bind(&LegacyNfdc::onObtainFaceIdFailure, this, _1));
 }
@@ -159,7 +159,7 @@ LegacyNfdc::ribRegisterPrefix()
 
       m_controller.start<ndn::nfd::RibRegisterCommand>(parameters,
         bind(&LegacyNfdc::onSuccess, this, _1, "Successful in name registration"),
-        bind(&LegacyNfdc::onError, this, _1, _2, "Failed in name registration"));
+        bind(&LegacyNfdc::onError, this, _1, "Failed in name registration"));
     },
     bind(&LegacyNfdc::onObtainFaceIdFailure, this, _1));
 }
@@ -180,7 +180,7 @@ LegacyNfdc::ribUnregisterPrefix()
 
       m_controller.start<ndn::nfd::RibUnregisterCommand>(parameters,
         bind(&LegacyNfdc::onSuccess, this, _1, "Successful in unregistering name"),
-        bind(&LegacyNfdc::onError, this, _1, _2, "Failed in unregistering name"));
+        bind(&LegacyNfdc::onError, this, _1, "Failed in unregistering name"));
     },
     bind(&LegacyNfdc::onObtainFaceIdFailure, this, _1));
 }
@@ -221,7 +221,7 @@ LegacyNfdc::startFaceCreate(const FaceUri& canonicalUri)
 
   m_controller.start<ndn::nfd::FaceCreateCommand>(parameters,
     bind(&LegacyNfdc::onSuccess, this, _1, "Face creation succeeded"),
-    bind(&LegacyNfdc::onError, this, _1, _2, "Face creation failed"));
+    bind(&LegacyNfdc::onError, this, _1, "Face creation failed"));
 }
 
 void
@@ -237,7 +237,7 @@ LegacyNfdc::faceDestroy()
 
       m_controller.start<ndn::nfd::FaceDestroyCommand>(faceParameters,
         bind(&LegacyNfdc::onSuccess, this, _1, "Face destroy succeeded"),
-        bind(&LegacyNfdc::onError, this, _1, _2, "Face destroy failed"));
+        bind(&LegacyNfdc::onError, this, _1, "Face destroy failed"));
     },
     bind(&LegacyNfdc::onObtainFaceIdFailure, this, _1));
 }
@@ -255,7 +255,7 @@ LegacyNfdc::strategyChoiceSet()
 
   m_controller.start<ndn::nfd::StrategyChoiceSetCommand>(parameters,
     bind(&LegacyNfdc::onSuccess, this, _1, "Successfully set strategy choice"),
-    bind(&LegacyNfdc::onError, this, _1, _2, "Failed to set strategy choice"));
+    bind(&LegacyNfdc::onError, this, _1, "Failed to set strategy choice"));
 }
 
 void
@@ -268,7 +268,7 @@ LegacyNfdc::strategyChoiceUnset()
 
   m_controller.start<ndn::nfd::StrategyChoiceUnsetCommand>(parameters,
     bind(&LegacyNfdc::onSuccess, this, _1, "Successfully unset strategy choice"),
-    bind(&LegacyNfdc::onError, this, _1, _2, "Failed to unset strategy choice"));
+    bind(&LegacyNfdc::onError, this, _1, "Failed to unset strategy choice"));
 }
 
 void
@@ -278,10 +278,10 @@ LegacyNfdc::onSuccess(const ControlParameters& commandSuccessResult, const std::
 }
 
 void
-LegacyNfdc::onError(uint32_t code, const std::string& error, const std::string& message)
+LegacyNfdc::onError(const ndn::nfd::ControlResponse& response, const std::string& message)
 {
   std::ostringstream os;
-  os << message << ": " << error << " (code: " << code << ")";
+  os << message << ": " << response.getText() << " (code: " << response.getCode() << ")";
   BOOST_THROW_EXCEPTION(Error(os.str()));
 }
 

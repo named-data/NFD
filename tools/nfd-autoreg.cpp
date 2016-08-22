@@ -70,10 +70,11 @@ public:
 
   void
   onRegisterCommandFailure(uint64_t faceId, const Name& prefix,
-                           uint32_t code, const std::string& reason)
+                           const nfd::ControlResponse& response)
   {
     std::cerr << "FAILED: register " << prefix << " on face " << faceId
-              << " (code: " << code << ", reason: " << reason << ")" << std::endl;
+              << " (code: " << response.getCode() << ", reason: " << response.getText() << ")"
+              << std::endl;
   }
 
   /**
@@ -137,7 +138,7 @@ public:
             .setCost(m_cost)
             .setExpirationPeriod(time::milliseconds::max()),
           bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, *prefix),
-          bind(&AutoregServer::onRegisterCommandFailure, this, faceId, *prefix, _1, _2));
+          bind(&AutoregServer::onRegisterCommandFailure, this, faceId, *prefix, _1));
       }
   }
 

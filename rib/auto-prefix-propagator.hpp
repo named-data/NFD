@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -321,15 +321,14 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
    * If the PropagatedEntry still exists, schedule a retry timer to redo propagation
    * after a duration defined by current retry time @p retryWaitTime
    *
-   * @param code error code.
-   * @param reason error reason in string.
+   * @param response ControlResponse from remote NFD-RIB
    * @param parameters the ControlParameters used by the registration command for propagation
    * @param options the CommandOptions used by registration command for propagation
    * @param retryWaitTime the current wait time before retrying propagation
    * @param retryEvent the event of retrying propagation
    */
   void
-  afterPropagateFail(uint32_t code, const std::string& reason,
+  afterPropagateFail(const ndn::nfd::ControlResponse& response,
                      const ndn::nfd::ControlParameters& parameters,
                      const ndn::nfd::CommandOptions& options,
                      time::seconds retryWaitTime,
@@ -357,13 +356,12 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
   /**
    * @brief invoked after revocation fails.
    *
-   * @param code error code.
-   * @param reason error reason in string.
+   * @param response ControlResponse from remote NFD-RIB
    * @param parameters the ControlParameters used by the unregistration command for revocation
    * @param options the CommandOptions used by the unregistration command for revocation
    */
   void
-  afterRevokeFail(uint32_t code, const std::string& reason,
+  afterRevokeFail(const ndn::nfd::ControlResponse& response,
                   const ndn::nfd::ControlParameters& parameters,
                   const ndn::nfd::CommandOptions& options);
 

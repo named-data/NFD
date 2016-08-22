@@ -169,13 +169,13 @@ private:
                                    const ndn::nfd::ControlParameters& result);
 
   void
-  onCommandPrefixAddNextHopError(const Name& name, const std::string& msg);
+  onCommandPrefixAddNextHopError(const Name& name, const ndn::nfd::ControlResponse& response);
 
   void
   onControlHeaderSuccess();
 
   void
-  onControlHeaderError(uint32_t code, const std::string& reason);
+  onControlHeaderError(const ndn::nfd::ControlResponse& response);
 
 private:
   ndn::Face& m_face;

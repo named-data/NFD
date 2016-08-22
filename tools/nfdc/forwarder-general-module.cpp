@@ -38,7 +38,7 @@ ForwarderGeneralModule::ForwarderGeneralModule()
 void
 ForwarderGeneralModule::fetchStatus(Controller& controller,
                                     const function<void()>& onSuccess,
-                                    const Controller::CommandFailCallback& onFailure,
+                                    const Controller::DatasetFailCallback& onFailure,
                                     const CommandOptions& options)
 {
   controller.fetch<ndn::nfd::ForwarderGeneralStatusDataset>(

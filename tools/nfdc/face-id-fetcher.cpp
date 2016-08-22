@@ -164,12 +164,11 @@ FaceIdFetcher::onQueryFailure(uint32_t errorCode,
 }
 
 void
-FaceIdFetcher::onFaceCreateError(uint32_t code,
-                                 const std::string& error,
+FaceIdFetcher::onFaceCreateError(const ndn::nfd::ControlResponse& response,
                                  const std::string& message)
 {
   std::stringstream ss;
-  ss << message << " : " << error << " (code " << code << ")";
+  ss << message << " : " << response.getText() << " (code " << response.getCode() << ")";
   fail(ss.str());
 }
 
@@ -181,7 +180,7 @@ FaceIdFetcher::startFaceCreate(const FaceUri& canonicalUri)
 
   m_controller.start<ndn::nfd::FaceCreateCommand>(parameters,
     [this] (const ndn::nfd::ControlParameters& result) { succeed(result.getFaceId()); },
-    bind(&FaceIdFetcher::onFaceCreateError, this, _1, _2, "Face creation failed"));
+    bind(&FaceIdFetcher::onFaceCreateError, this, _1, "Face creation failed"));
 }
 
 void

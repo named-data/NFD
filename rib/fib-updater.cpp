@@ -243,7 +243,7 @@ FibUpdater::sendAddNextHopUpdate(const FibUpdate& update,
       .setFaceId(update.faceId)
       .setCost(update.cost),
     bind(&FibUpdater::onUpdateSuccess, this, update, onSuccess, onFailure),
-    bind(&FibUpdater::onUpdateError, this, update, onSuccess, onFailure, _1, _2, nTimeouts));
+    bind(&FibUpdater::onUpdateError, this, update, onSuccess, onFailure, _1, nTimeouts));
 }
 
 void
@@ -257,7 +257,7 @@ FibUpdater::sendRemoveNextHopUpdate(const FibUpdate& update,
       .setName(update.name)
       .setFaceId(update.faceId),
     bind(&FibUpdater::onUpdateSuccess, this, update, onSuccess, onFailure),
-    bind(&FibUpdater::onUpdateError, this, update, onSuccess, onFailure, _1, _2, nTimeouts));
+    bind(&FibUpdater::onUpdateError, this, update, onSuccess, onFailure, _1, nTimeouts));
 }
 
 void
@@ -285,16 +285,18 @@ void
 FibUpdater::onUpdateError(const FibUpdate update,
                           const FibUpdateSuccessCallback& onSuccess,
                           const FibUpdateFailureCallback& onFailure,
-                          uint32_t code, const std::string& error, uint32_t nTimeouts)
+                          const ndn::nfd::ControlResponse& response, uint32_t nTimeouts)
 {
-  NFD_LOG_DEBUG("Failed to apply " << update << " (code: " << code << ", error: " << error << ")");
+  uint32_t code = response.getCode();
+  NFD_LOG_DEBUG("Failed to apply " << update <<
+                " (code: " << code << ", error: " << response.getText() << ")");
 
   if (code == ndn::nfd::Controller::ERROR_TIMEOUT && nTimeouts < MAX_NUM_TIMEOUTS) {
     sendAddNextHopUpdate(update, onSuccess, onFailure, ++nTimeouts);
   }
   else if (code == ERROR_FACE_NOT_FOUND) {
     if (update.faceId == m_batchFaceId) {
-      onFailure(code, error);
+      onFailure(code, response.getText());
     }
     else {
       m_updatesForNonBatchFaceId.remove(update);
@@ -305,7 +307,8 @@ FibUpdater::onUpdateError(const FibUpdate update,
     }
   }
   else {
-    BOOST_THROW_EXCEPTION(Error("Non-recoverable error: " + error + " code: " + to_string(code)));
+    BOOST_THROW_EXCEPTION(Error("Non-recoverable error: " + response.getText() +
+                                " code: " + to_string(code)));
   }
 }
 

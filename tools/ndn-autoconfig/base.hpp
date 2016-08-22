@@ -93,7 +93,7 @@ private:
   onHubConnectSuccess(const nfd::ControlParameters& resp);
 
   void
-  onHubConnectError(uint32_t code, const std::string& error);
+  onHubConnectError(const nfd::ControlResponse& response);
 
   void
   registerPrefix(const Name& prefix, uint64_t faceId);
@@ -102,7 +102,7 @@ private:
   onPrefixRegistrationSuccess(const nfd::ControlParameters& commandSuccessResult);
 
   void
-  onPrefixRegistrationError(uint32_t code, const std::string& error);
+  onPrefixRegistrationError(const nfd::ControlResponse& response);
 
 protected:
   Face& m_face;

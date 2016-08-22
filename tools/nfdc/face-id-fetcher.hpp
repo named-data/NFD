@@ -88,8 +88,7 @@ private:
   startFaceCreate(const FaceUri& canonicalUri);
 
   void
-  onFaceCreateError(uint32_t code,
-                    const std::string& error,
+  onFaceCreateError(const ndn::nfd::ControlResponse& response,
                     const std::string& message);
 
   void
