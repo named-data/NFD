@@ -35,10 +35,9 @@ namespace nfd {
 
 NFD_LOG_INIT("Forwarder");
 
-using fw::Strategy;
-
 Forwarder::Forwarder()
-  : m_fib(m_nameTree)
+  : m_unsolicitedDataPolicy(new fw::AdmitLocalUnsolicitedDataPolicy())
+  , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
   , m_strategyChoice(m_nameTree, fw::makeDefaultStrategy(*this))
@@ -389,15 +388,15 @@ void
 Forwarder::onDataUnsolicited(Face& inFace, const Data& data)
 {
   // accept to cache?
-  bool acceptToCache = inFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL;
-  if (acceptToCache) {
+  fw::UnsolicitedDataDecision decision = m_unsolicitedDataPolicy->decide(inFace, data);
+  if (decision == fw::UnsolicitedDataDecision::CACHE) {
     // CS insert
     m_cs.insert(data, true);
   }
 
   NFD_LOG_DEBUG("onDataUnsolicited face=" << inFace.getId() <<
                 " data=" << data.getName() <<
-                (acceptToCache ? " cached" : " not cached"));
+                " decision=" << decision);
 }
 
 void

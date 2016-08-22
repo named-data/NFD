@@ -30,6 +30,7 @@
 #include "core/scheduler.hpp"
 #include "forwarder-counters.hpp"
 #include "face-table.hpp"
+#include "unsolicited-data-policy.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
@@ -62,7 +63,7 @@ public:
     return m_counters;
   }
 
-public: // faces
+public: // faces and policies
   FaceTable&
   getFaceTable()
   {
@@ -87,6 +88,19 @@ public: // faces
   addFace(shared_ptr<Face> face)
   {
     m_faceTable.add(face);
+  }
+
+  fw::UnsolicitedDataPolicy&
+  getUnsolicitedDataPolicy() const
+  {
+    return *m_unsolicitedDataPolicy;
+  }
+
+  void
+  setUnsolicitedDataPolicy(unique_ptr<fw::UnsolicitedDataPolicy> policy)
+  {
+    BOOST_ASSERT(policy != nullptr);
+    m_unsolicitedDataPolicy = std::move(policy);
   }
 
 public: // forwarding entrypoints and tables
@@ -273,8 +287,8 @@ private:
   ForwarderCounters m_counters;
 
   FaceTable m_faceTable;
+  unique_ptr<fw::UnsolicitedDataPolicy> m_unsolicitedDataPolicy;
 
-  // tables
   NameTree           m_nameTree;
   Fib                m_fib;
   Pit                m_pit;
