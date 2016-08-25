@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,6 +45,8 @@ typedef function<void(const std::string& /*filename*/,
                       const ConfigSection& /*section*/,
                       bool /*isDryRun*/)> UnknownConfigSectionHandler;
 
+/** \brief configuration file parsing utility
+ */
 class ConfigFile : noncopyable
 {
 public:
@@ -61,6 +63,7 @@ public:
   explicit
   ConfigFile(UnknownConfigSectionHandler unknownSectionCallback = throwErrorOnUnknownSection);
 
+public: // unknown section handlers
   static void
   throwErrorOnUnknownSection(const std::string& filename,
                              const std::string& sectionName,
@@ -73,27 +76,50 @@ public:
                        const ConfigSection& section,
                        bool isDryRun);
 
-  /**
-   * \brief parse a config option that can be either "yes" or "no"
-   *
-   * \return true if "yes", false if "no"
-   * \throw Error the value is neither "yes" nor "no"
+public: // parse helpers
+  /** \brief parse a config option that can be either "yes" or "no"
+   *  \retval true "yes"
+   *  \retval false "no"
+   *  \throw Error the value is neither "yes" nor "no"
    */
   static bool
-  parseYesNo(const ConfigSection::value_type& option,
-             const std::string& sectionName);
+  parseYesNo(const ConfigSection& node, const std::string& key, const std::string& sectionName);
+
+  static bool
+  parseYesNo(const ConfigSection::value_type& option, const std::string& sectionName)
+  {
+    return parseYesNo(option.second, option.first, sectionName);
+  }
 
   /**
    * \brief parse a numeric (integral or floating point) config option
+   * \tparam T an arithmetic type
    *
    * \return the numeric value of the parsed option
    * \throw Error the value cannot be converted to the specified type
    */
-  template <typename T>
-  static typename std::enable_if<std::is_arithmetic<T>::value, T>::type
-  parseNumber(const ConfigSection::value_type& option,
-              const std::string& sectionName);
+  template<typename T>
+  static T
+  parseNumber(const ConfigSection& node, const std::string& key, const std::string& sectionName)
+  {
+    static_assert(std::is_arithmetic<T>::value, "T must be an arithmetic type");
 
+    boost::optional<T> value = node.get_value_optional<T>();
+    if (value) {
+      return *value;
+    }
+    BOOST_THROW_EXCEPTION(Error("Invalid value \"" + node.get_value<std::string>() +
+                                "\" for option \"" + key + "\" in \"" + sectionName + "\" section"));
+  }
+
+  template <typename T>
+  static T
+  parseNumber(const ConfigSection::value_type& option, const std::string& sectionName)
+  {
+    return parseNumber<T>(option.second, option.first, sectionName);
+  }
+
+public: // setup and parsing
   /// \brief setup notification of configuration file sections
   void
   addSectionHandler(const std::string& sectionName,
@@ -145,22 +171,6 @@ private:
   std::map<std::string, ConfigSectionHandler> m_subscriptions;
   ConfigSection m_global;
 };
-
-template <typename T>
-inline typename std::enable_if<std::is_arithmetic<T>::value, T>::type
-ConfigFile::parseNumber(const ConfigSection::value_type& option,
-                        const std::string& sectionName)
-{
-  auto value = option.second.get_value<std::string>();
-
-  try {
-    return boost::lexical_cast<T>(value);
-  }
-  catch (const boost::bad_lexical_cast&) {
-    BOOST_THROW_EXCEPTION(Error("Invalid value \"" + value + "\" for option \"" +
-                                option.first + "\" in \"" + sectionName + "\" section"));
-  }
-}
 
 } // namespace nfd
 

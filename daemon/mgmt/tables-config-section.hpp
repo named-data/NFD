@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,67 +26,66 @@
 #ifndef NFD_MGMT_TABLES_CONFIG_SECTION_HPP
 #define NFD_MGMT_TABLES_CONFIG_SECTION_HPP
 
-#include "table/fib.hpp"
-#include "table/pit.hpp"
-#include "table/cs.hpp"
-#include "table/measurements.hpp"
-#include "table/network-region-table.hpp"
-#include "table/strategy-choice.hpp"
-
+#include "fw/forwarder.hpp"
 #include "core/config-file.hpp"
 
 namespace nfd {
 
-/**
- * \brief Provides parsing for `tables` configuration file section.
+/** \brief handles 'tables' config section
  *
- * This class enables configuration of CS, PIT, FIB, Strategy Choice, Measurements, and
- * Network Region tables.
+ *  This class recognizes a config section that looks like
+ *  \code{.unparsed}
+ *  tables
+ *  {
+ *    cs_max_packets 65536
+ *
+ *    strategy_choice
+ *    {
+ *      /               /localhost/nfd/strategy/best-route
+ *      /localhost      /localhost/nfd/strategy/multicast
+ *      /localhost/nfd  /localhost/nfd/strategy/best-route
+ *      /ndn/broadcast  /localhost/nfd/strategy/multicast
+ *    }
+ *
+ *    network_region
+ *    {
+ *      /example/region1
+ *      /example/region2
+ *    }
+ *  }
+ *  \endcode
  */
-class TablesConfigSection
+class TablesConfigSection : noncopyable
 {
 public:
-  TablesConfigSection(Cs& cs,
-                      Pit& pit,
-                      Fib& fib,
-                      StrategyChoice& strategyChoice,
-                      Measurements& measurements,
-                      NetworkRegionTable& networkRegionTable);
+  explicit
+  TablesConfigSection(Forwarder& forwarder);
 
   void
   setConfigFile(ConfigFile& configFile);
 
+  /** \brief apply default configuration, if tables section was omitted in configuration file
+   */
   void
-  ensureTablesAreConfigured();
+  ensureConfigured();
 
 private:
+  void
+  processConfig(const ConfigSection& section, bool isDryRun);
 
   void
-  processConfig(const ConfigSection& configSection,
-                bool isDryRun,
-                const std::string& filename);
+  processStrategyChoiceSection(const ConfigSection& section, bool isDryRun);
 
   void
-  processStrategyChoiceSection(const ConfigSection& configSection,
-                               bool isDryRun);
-
-  void
-  processNetworkRegionSection(const ConfigSection& configSection,
-                              bool isDryRun);
+  processNetworkRegionSection(const ConfigSection& section, bool isDryRun);
 
 private:
-  Cs& m_cs;
-  // Pit& m_pit;
-  // Fib& m_fib;
-  StrategyChoice& m_strategyChoice;
-  // Measurements& m_measurements;
-  NetworkRegionTable& m_networkRegionTable;
-
-  bool m_areTablesConfigured;
-
 private:
-
   static const size_t DEFAULT_CS_MAX_PACKETS;
+
+  Forwarder& m_forwarder;
+
+  bool m_isConfigured;
 };
 
 } // namespace nfd

@@ -44,7 +44,7 @@ public:
     , m_strategyChoice(m_forwarder.getStrategyChoice())
     , m_measurements(m_forwarder.getMeasurements())
     , m_networkRegionTable(m_forwarder.getNetworkRegionTable())
-    , m_tablesConfig(m_cs, m_pit, m_fib, m_strategyChoice, m_measurements, m_networkRegionTable)
+    , m_tablesConfig(m_forwarder)
   {
     m_tablesConfig.setConfigFile(m_config);
   }
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(ConfigureTablesWithDefaults)
 {
   const size_t initialLimit = m_cs.getLimit();
 
-  m_tablesConfig.ensureTablesAreConfigured();
+  m_tablesConfig.ensureConfigured();
   BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
 }
 
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(EmptyTablesSection)
 
   const size_t defaultLimit = m_cs.getLimit();
 
-  m_tablesConfig.ensureTablesAreConfigured();
+  m_tablesConfig.ensureConfigured();
   BOOST_CHECK_EQUAL(defaultLimit, m_cs.getLimit());
 }
 
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(MissingTablesSection)
   passiveConfig.parse(CONFIG, false, "dummy-config");
   BOOST_REQUIRE_EQUAL(initialLimit, m_cs.getLimit());
 
-  m_tablesConfig.ensureTablesAreConfigured();
+  m_tablesConfig.ensureConfigured();
   BOOST_CHECK_NE(initialLimit, m_cs.getLimit());
 }
 
@@ -141,7 +141,7 @@ BOOST_AUTO_TEST_CASE(ValidCsMaxPackets)
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   BOOST_CHECK_EQUAL(m_cs.getLimit(), 101);
 
-  m_tablesConfig.ensureTablesAreConfigured();
+  m_tablesConfig.ensureConfigured();
   BOOST_CHECK_EQUAL(m_cs.getLimit(), 101);
 }
 
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(Reload)
 
 BOOST_AUTO_TEST_SUITE_END() // NetworkRegion
 
-BOOST_AUTO_TEST_SUITE_END() // TestTableConfigSection
+BOOST_AUTO_TEST_SUITE_END() // TestTablesConfigSection
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests

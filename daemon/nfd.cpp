@@ -155,12 +155,7 @@ Nfd::initializeManagement()
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);
 
-  TablesConfigSection tablesConfig(m_forwarder->getCs(),
-                                   m_forwarder->getPit(),
-                                   m_forwarder->getFib(),
-                                   m_forwarder->getStrategyChoice(),
-                                   m_forwarder->getMeasurements(),
-                                   m_forwarder->getNetworkRegionTable());
+  TablesConfigSection tablesConfig(*m_forwarder);
   tablesConfig.setConfigFile(config);
 
   m_authenticator->setConfigFile(config);
@@ -176,7 +171,7 @@ Nfd::initializeManagement()
     config.parse(m_configSection, false, INTERNAL_CONFIG);
   }
 
-  tablesConfig.ensureTablesAreConfigured();
+  tablesConfig.ensureConfigured();
 
   // add FIB entry for NFD Management Protocol
   Name topPrefix("/localhost/nfd");
@@ -196,12 +191,7 @@ Nfd::reloadConfigFile()
 
   general::setConfigFile(config);
 
-  TablesConfigSection tablesConfig(m_forwarder->getCs(),
-                                   m_forwarder->getPit(),
-                                   m_forwarder->getFib(),
-                                   m_forwarder->getStrategyChoice(),
-                                   m_forwarder->getMeasurements(),
-                                   m_forwarder->getNetworkRegionTable());
+  TablesConfigSection tablesConfig(*m_forwarder);
   tablesConfig.setConfigFile(config);
 
   m_authenticator->setConfigFile(config);

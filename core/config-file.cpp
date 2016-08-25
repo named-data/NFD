@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,10 +59,10 @@ ConfigFile::ignoreUnknownSection(const std::string& filename,
 }
 
 bool
-ConfigFile::parseYesNo(const ConfigSection::value_type& option,
+ConfigFile::parseYesNo(const ConfigSection& node, const std::string& key,
                        const std::string& sectionName)
 {
-  auto value = option.second.get_value<std::string>();
+  auto value = node.get_value<std::string>();
 
   if (value == "yes") {
     return true;
@@ -72,7 +72,7 @@ ConfigFile::parseYesNo(const ConfigSection::value_type& option,
   }
 
   BOOST_THROW_EXCEPTION(Error("Invalid value \"" + value + "\" for option \"" +
-                              option.first + "\" in \"" + sectionName + "\" section"));
+                              key + "\" in \"" + sectionName + "\" section"));
 }
 
 void
@@ -85,14 +85,10 @@ ConfigFile::addSectionHandler(const std::string& sectionName,
 void
 ConfigFile::parse(const std::string& filename, bool isDryRun)
 {
-  std::ifstream inputFile;
-  inputFile.open(filename.c_str());
-  if (!inputFile.good() || !inputFile.is_open())
-    {
-      std::string msg = "Failed to read configuration file: ";
-      msg += filename;
-      BOOST_THROW_EXCEPTION(Error(msg));
-    }
+  std::ifstream inputFile(filename);
+  if (!inputFile.good() || !inputFile.is_open()) {
+    BOOST_THROW_EXCEPTION(Error("Failed to read configuration file: " + filename));
+  }
   parse(inputFile, isDryRun, filename);
   inputFile.close();
 }
@@ -107,18 +103,16 @@ ConfigFile::parse(const std::string& input, bool isDryRun, const std::string& fi
 void
 ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filename)
 {
-  try
-    {
-      boost::property_tree::read_info(input, m_global);
-    }
-  catch (const boost::property_tree::info_parser_error& error)
-    {
-      std::stringstream msg;
-      msg << "Failed to parse configuration file";
-      msg << " " << filename;
-      msg << " " << error.message() << " line " << error.line();
-      BOOST_THROW_EXCEPTION(Error(msg.str()));
-    }
+  try {
+    boost::property_tree::read_info(input, m_global);
+  }
+  catch (const boost::property_tree::info_parser_error& error) {
+    std::stringstream msg;
+    msg << "Failed to parse configuration file";
+    msg << " " << filename;
+    msg << " " << error.message() << " line " << error.line();
+    BOOST_THROW_EXCEPTION(Error(msg.str()));
+  }
 
   process(isDryRun, filename);
 }
@@ -144,7 +138,7 @@ ConfigFile::process(bool isDryRun, const std::string& filename) const
 
   for (const auto& i : m_global) {
     try {
-      ConfigSectionHandler subscriber = m_subscriptions.at(i.first);
+      const ConfigSectionHandler& subscriber = m_subscriptions.at(i.first);
       subscriber(i.second, isDryRun, filename);
     }
     catch (const std::out_of_range&) {
@@ -153,4 +147,4 @@ ConfigFile::process(bool isDryRun, const std::string& filename) const
   }
 }
 
-}
+} // namespace nfd
