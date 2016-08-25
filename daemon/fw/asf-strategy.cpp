@@ -103,7 +103,7 @@ void
 AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                    const Face& inFace, const Data& data)
 {
-  shared_ptr<NamespaceInfo> namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
+  NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
 
   if (namespaceInfo == nullptr) {
     NFD_LOG_TRACE("Could not find measurements entry for " << pitEntry->getName());
@@ -254,7 +254,7 @@ AsfStrategy::onTimeout(const Name& interestName, face::FaceId faceId)
 {
   NFD_LOG_TRACE("FaceId: " << faceId << " for " << interestName << " has timed-out");
 
-  shared_ptr<NamespaceInfo> namespaceInfo = m_measurements.getNamespaceInfo(interestName);
+  NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(interestName);
 
   if (namespaceInfo == nullptr) {
     NFD_LOG_TRACE("FibEntry for " << interestName << " has been removed since timeout scheduling");

@@ -107,7 +107,7 @@ public:
   ~FaceInfo();
 
   void
-  setTimeoutEvent(const scheduler::EventId& id, const ndn::Name& interestName);
+  setTimeoutEvent(const scheduler::EventId& id, const Name& interestName);
 
   void
   setMeasurementExpirationEventId(const scheduler::EventId& id)
@@ -122,7 +122,7 @@ public:
   }
 
   void
-  cancelTimeoutEvent(const ndn::Name& prefix);
+  cancelTimeoutEvent(const Name& prefix);
 
   bool
   isTimeoutScheduled() const
@@ -134,7 +134,7 @@ public:
   recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace);
 
   void
-  recordTimeout(const ndn::Name& interestName);
+  recordTimeout(const Name& interestName);
 
   bool
   isTimeout() const
@@ -171,11 +171,11 @@ private:
   cancelTimeoutEvent();
 
   bool
-  doesNameMatchLastInterest(const ndn::Name& name);
+  doesNameMatchLastInterest(const Name& name);
 
 private:
   RttStats m_rttStats;
-  ndn::Name m_lastInterestName;
+  Name m_lastInterestName;
 
   // Timeout associated with measurement
   scheduler::EventId m_measurementExpirationId;
@@ -283,16 +283,16 @@ public:
   AsfMeasurements(MeasurementsAccessor& measurements);
 
   FaceInfo*
-  getFaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& face);
+  getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face);
 
   FaceInfo&
-  getOrCreateFaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& face);
+  getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face);
 
-  shared_ptr<NamespaceInfo>
-  getNamespaceInfo(const ndn::Name& prefix);
+  NamespaceInfo*
+  getNamespaceInfo(const Name& prefix);
 
   NamespaceInfo&
-  getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest);
+  getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Interest& interest);
 
 private:
   void

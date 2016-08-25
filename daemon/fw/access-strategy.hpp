@@ -97,13 +97,13 @@ private: // StrategyInfo
 
   /** \brief find per-prefix measurements for Interest
    */
-  std::tuple<Name, shared_ptr<MtInfo>>
+  std::tuple<Name, MtInfo*>
   findPrefixMeasurements(const pit::Entry& pitEntry);
 
   /** \brief get or create pre-prefix measurements for incoming Data
    *  \note This function creates MtInfo but doesn't update it.
    */
-  shared_ptr<MtInfo>
+  MtInfo*
   addPrefixMeasurements(const Data& data);
 
   /** \brief global per-face StrategyInfo

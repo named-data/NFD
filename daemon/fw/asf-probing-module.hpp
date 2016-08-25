@@ -50,10 +50,10 @@ public:
                  const Face& faceUsed);
 
   bool
-  isProbingNeeded(const fib::Entry& fibEntry, const ndn::Interest& interest);
+  isProbingNeeded(const fib::Entry& fibEntry, const Interest& interest);
 
   void
-  afterForwardingProbe(const fib::Entry& fibEntry, const ndn::Interest& interest);
+  afterForwardingProbe(const fib::Entry& fibEntry, const Interest& interest);
 
 private:
   // Used to associate FaceInfo with the face in a NextHop

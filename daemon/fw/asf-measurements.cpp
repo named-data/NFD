@@ -76,7 +76,7 @@ FaceInfo::~FaceInfo()
 }
 
 void
-FaceInfo::setTimeoutEvent(const scheduler::EventId& id, const ndn::Name& interestName)
+FaceInfo::setTimeoutEvent(const scheduler::EventId& id, const Name& interestName)
 {
   if (!m_isTimeoutScheduled) {
     m_timeoutEventId = id;
@@ -96,7 +96,7 @@ FaceInfo::cancelTimeoutEvent()
 }
 
 void
-FaceInfo::cancelTimeoutEvent(const ndn::Name& prefix)
+FaceInfo::cancelTimeoutEvent(const Name& prefix)
 {
   if (isTimeoutScheduled() && doesNameMatchLastInterest(prefix)) {
     cancelTimeoutEvent();
@@ -104,7 +104,7 @@ FaceInfo::cancelTimeoutEvent(const ndn::Name& prefix)
 }
 
 bool
-FaceInfo::doesNameMatchLastInterest(const ndn::Name& name)
+FaceInfo::doesNameMatchLastInterest(const Name& name)
 {
   return m_lastInterestName.isPrefixOf(name);
 }
@@ -125,7 +125,7 @@ FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
 }
 
 void
-FaceInfo::recordTimeout(const ndn::Name& interestName)
+FaceInfo::recordTimeout(const Name& interestName)
 {
   m_rttStats.recordTimeout();
   cancelTimeoutEvent(interestName);
@@ -203,24 +203,23 @@ AsfMeasurements::AsfMeasurements(MeasurementsAccessor& measurements)
 }
 
 FaceInfo*
-AsfMeasurements::getFaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& face)
+AsfMeasurements::getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face)
 {
   NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
   return info.getFaceInfo(fibEntry, face);
 }
 
 FaceInfo&
-AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest, const Face& face)
+AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face)
 {
   NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
   return info.getOrCreateFaceInfo(fibEntry, face);
 }
 
-shared_ptr<NamespaceInfo>
-AsfMeasurements::getNamespaceInfo(const ndn::Name& prefix)
+NamespaceInfo*
+AsfMeasurements::getNamespaceInfo(const Name& prefix)
 {
   measurements::Entry* me = m_measurements.findLongestPrefixMatch(prefix);
-
   if (me == nullptr) {
     return nullptr;
   }
@@ -228,14 +227,13 @@ AsfMeasurements::getNamespaceInfo(const ndn::Name& prefix)
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  shared_ptr<NamespaceInfo> info = me->insertStrategyInfo<NamespaceInfo>();
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>().first;
   BOOST_ASSERT(info != nullptr);
-
   return info;
 }
 
 NamespaceInfo&
-AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn::Interest& interest)
+AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const Interest& interest)
 {
   measurements::Entry* me = m_measurements.get(fibEntry);
 
@@ -252,9 +250,8 @@ AsfMeasurements::getOrCreateNamespaceInfo(const fib::Entry& fibEntry, const ndn:
   // Set or update entry lifetime
   extendLifetime(*me);
 
-  shared_ptr<NamespaceInfo> info = me->insertStrategyInfo<NamespaceInfo>();
+  NamespaceInfo* info = me->insertStrategyInfo<NamespaceInfo>().first;
   BOOST_ASSERT(info != nullptr);
-
   return *info;
 }
 

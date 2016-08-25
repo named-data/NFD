@@ -341,7 +341,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
   topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/P",
                            time::milliseconds(100), 300);
 
-  auto getMeInfo = [&] () -> shared_ptr<NccStrategy::MeasurementsEntryInfo> {
+  auto getMeInfo = [&] () -> NccStrategy::MeasurementsEntryInfo* {
     Measurements& measurements = topo.getForwarder(nodeA).getMeasurements();
     measurements::Entry* me = measurements.findExactMatch("ndn:/P");
     return me == nullptr ? nullptr : me->getStrategyInfo<NccStrategy::MeasurementsEntryInfo>();

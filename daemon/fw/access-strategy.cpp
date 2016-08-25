@@ -69,7 +69,7 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& inte
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   Name miName;
-  shared_ptr<MtInfo> mi;
+  MtInfo* mi = nullptr;
   std::tie(miName, mi) = this->findPrefixMeasurements(*pitEntry);
 
   // has measurements for Interest Name?
@@ -136,7 +136,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entr
   this->sendInterest(pitEntry, *face);
 
   // schedule RTO timeout
-  shared_ptr<PitInfo> pi = pitEntry->insertStrategyInfo<PitInfo>();
+  PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
   pi->rtoTimer = scheduler::schedule(rto,
       bind(&AccessStrategy::afterRtoTimeout, this, weak_ptr<pit::Entry>(pitEntry),
            inFace.getId(), mi.lastNexthop));
@@ -177,7 +177,7 @@ void
 AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                       const Face& inFace, const Data& data)
 {
-  shared_ptr<PitInfo> pi = pitEntry->getStrategyInfo<PitInfo>();
+  PitInfo* pi = pitEntry->getStrategyInfo<PitInfo>();
   if (pi != nullptr) {
     pi->rtoTimer.cancel();
   }
@@ -208,7 +208,7 @@ AccessStrategy::updateMeasurements(const Face& inFace, const Data& data,
   FaceInfo& fi = m_fit[inFace.getId()];
   fi.rtt.addMeasurement(rtt);
 
-  shared_ptr<MtInfo> mi = this->addPrefixMeasurements(data);
+  MtInfo* mi = this->addPrefixMeasurements(data);
   if (mi->lastNexthop != inFace.getId()) {
     mi->lastNexthop = inFace.getId();
     mi->rtt = fi.rtt;
@@ -224,7 +224,7 @@ AccessStrategy::MtInfo::MtInfo()
 {
 }
 
-std::tuple<Name, shared_ptr<AccessStrategy::MtInfo>>
+std::tuple<Name, AccessStrategy::MtInfo*>
 AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
 {
   measurements::Entry* me = this->getMeasurements().findLongestPrefixMatch(pitEntry);
@@ -232,14 +232,14 @@ AccessStrategy::findPrefixMeasurements(const pit::Entry& pitEntry)
     return std::make_tuple(Name(), nullptr);
   }
 
-  shared_ptr<MtInfo> mi = me->getStrategyInfo<MtInfo>();
+  MtInfo* mi = me->getStrategyInfo<MtInfo>();
   BOOST_ASSERT(mi != nullptr);
   // XXX after runtime strategy change, it's possible that me exists but mi doesn't exist;
   // this case needs another longest prefix match until mi is found
   return std::make_tuple(me->getName(), mi);
 }
 
-shared_ptr<AccessStrategy::MtInfo>
+AccessStrategy::MtInfo*
 AccessStrategy::addPrefixMeasurements(const Data& data)
 {
   measurements::Entry* me = nullptr;
@@ -255,7 +255,7 @@ AccessStrategy::addPrefixMeasurements(const Data& data)
   static const time::nanoseconds ME_LIFETIME = time::seconds(8);
   this->getMeasurements().extendLifetime(*me, ME_LIFETIME);
 
-  return me->insertStrategyInfo<MtInfo>();
+  return me->insertStrategyInfo<MtInfo>().first;
 }
 
 AccessStrategy::FaceInfo::FaceInfo()

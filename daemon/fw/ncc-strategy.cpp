@@ -54,7 +54,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
     return;
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->insertStrategyInfo<PitEntryInfo>();
+  PitEntryInfo* pitEntryInfo = pitEntry->insertStrategyInfo<PitEntryInfo>().first;
   bool isNewPitEntry = !hasPendingOutRecords(*pitEntry);
   if (!isNewPitEntry) {
     return;
@@ -118,7 +118,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
   }
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
-  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
+  PitEntryInfo* pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
   // pitEntryInfo is guaranteed to exist here, because doPropagate is triggered
   // from a timer set by NccStrategy.
   BOOST_ASSERT(pitEntryInfo != nullptr);
@@ -199,7 +199,7 @@ NccStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
     measurementsEntry = this->getMeasurements().getParent(*measurementsEntry);
   }
 
-  shared_ptr<PitEntryInfo> pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
+  PitEntryInfo* pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
   if (pitEntryInfo != nullptr) {
     scheduler::cancel(pitEntryInfo->propagateTimer);
 
@@ -223,13 +223,12 @@ NccStrategy::MeasurementsEntryInfo&
 NccStrategy::getMeasurementsEntryInfo(measurements::Entry* entry)
 {
   BOOST_ASSERT(entry != nullptr);
-  shared_ptr<MeasurementsEntryInfo> info = entry->getStrategyInfo<MeasurementsEntryInfo>();
-  if (info != nullptr) {
+  MeasurementsEntryInfo* info = nullptr;
+  bool isNew = false;
+  std::tie(info, isNew) = entry->insertStrategyInfo<MeasurementsEntryInfo>();
+  if (!isNew) {
     return *info;
   }
-
-  info = make_shared<MeasurementsEntryInfo>();
-  entry->setStrategyInfo(info);
 
   measurements::Entry* parentEntry = this->getMeasurements().getParent(*entry);
   if (parentEntry != nullptr) {

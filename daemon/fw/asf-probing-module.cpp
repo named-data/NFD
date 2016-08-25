@@ -47,11 +47,11 @@ ProbingModule::ProbingModule(AsfMeasurements& measurements)
 void
 ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::milliseconds& interval)
 {
-  ndn::Name prefix = fibEntry.getPrefix();
+  Name prefix = fibEntry.getPrefix();
 
   // Set the probing flag for the namespace to true after passed interval of time
   scheduler::schedule(interval, [this, prefix] {
-    shared_ptr<NamespaceInfo> info = m_measurements.getNamespaceInfo(prefix);
+    NamespaceInfo* info = m_measurements.getNamespaceInfo(prefix);
 
     if (info == nullptr) {
       // fib::Entry with the passed prefix has been removed or the fib::Entry has
@@ -112,7 +112,7 @@ ProbingModule::getFaceToProbe(const Face& inFace,
 }
 
 bool
-ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const ndn::Interest& interest)
+ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const Interest& interest)
 {
   // Return the probing status flag for a namespace
   NamespaceInfo& info = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
@@ -130,7 +130,7 @@ ProbingModule::isProbingNeeded(const fib::Entry& fibEntry, const ndn::Interest& 
 }
 
 void
-ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const ndn::Interest& interest)
+ProbingModule::afterForwardingProbe(const fib::Entry& fibEntry, const Interest& interest)
 {
   // After probing is done, need to set probing flag to false and
   // schedule another future probe

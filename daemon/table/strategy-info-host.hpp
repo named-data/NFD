@@ -40,7 +40,7 @@ public:
    *  \return an existing StrategyInfo item of type T, or nullptr if it does not exist
    */
   template<typename T>
-  shared_ptr<T>
+  T*
   getStrategyInfo() const
   {
     static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
@@ -50,44 +50,41 @@ public:
     if (it == m_items.end()) {
       return nullptr;
     }
-    return static_pointer_cast<T, fw::StrategyInfo>(it->second);
-  }
-
-  /** \brief set a StrategyInfo item
-   *  \tparam T type of StrategyInfo, must be a subclass of nfd::fw::StrategyInfo
-   */
-  template<typename T>
-  void
-  setStrategyInfo(shared_ptr<T> item)
-  {
-    static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
-                  "T must inherit from StrategyInfo");
-
-    if (item == nullptr) {
-      m_items.erase(T::getTypeId());
-    }
-    else {
-      m_items[T::getTypeId()] = item;
-    }
+    return static_cast<T*>(it->second.get());
   }
 
   /** \brief insert a StrategyInfo item
    *  \tparam T type of StrategyInfo, must be a subclass of fw::StrategyInfo
-   *  \return a new or existing StrategyInfo item of type T
+   *  \return a new or existing StrategyInfo item of type T,
+   *          and true for new item, false for existing item
    */
   template<typename T, typename ...A>
-  shared_ptr<T>
+  std::pair<T*, bool>
   insertStrategyInfo(A&&... args)
   {
     static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
                   "T must inherit from StrategyInfo");
 
-    shared_ptr<T> item = this->getStrategyInfo<T>();
-    if (!static_cast<bool>(item)) {
-      item = std::make_shared<T>(std::forward<A>(args)...);
-      this->setStrategyInfo(item);
+    unique_ptr<fw::StrategyInfo>& item = m_items[T::getTypeId()];
+    bool isNew = (item == nullptr);
+    if (isNew) {
+      item.reset(new T(std::forward<A>(args)...));
     }
-    return item;
+    return {static_cast<T*>(item.get()), isNew};
+  }
+
+  /** \brief erase a StrategyInfo item
+   *  \tparam T type of StrategyInfo, must be a subclass of fw::StrategyInfo
+   *  \return number of items erased
+   */
+  template<typename T>
+  size_t
+  eraseStrategyInfo()
+  {
+    static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
+                  "T must inherit from StrategyInfo");
+
+    return m_items.erase(T::getTypeId());
   }
 
   /** \brief clear all StrategyInfo items
@@ -96,7 +93,7 @@ public:
   clearStrategyInfo();
 
 private:
-  std::map<int, shared_ptr<fw::StrategyInfo>> m_items;
+  std::unordered_map<int, unique_ptr<fw::StrategyInfo>> m_items;
 };
 
 } // namespace nfd
