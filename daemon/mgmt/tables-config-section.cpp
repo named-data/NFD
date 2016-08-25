@@ -24,11 +24,8 @@
  */
 
 #include "tables-config-section.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
-
-NFD_LOG_INIT("TablesConfigSection");
 
 const size_t TablesConfigSection::DEFAULT_CS_MAX_PACKETS = 65536;
 
@@ -52,7 +49,6 @@ TablesConfigSection::ensureConfigured()
     return;
   }
 
-  NFD_LOG_INFO("Setting CS max packets to " << DEFAULT_CS_MAX_PACKETS);
   m_forwarder.getCs().setLimit(DEFAULT_CS_MAX_PACKETS);
 
   m_isConfigured = true;
@@ -83,7 +79,6 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     return;
   }
 
-  NFD_LOG_INFO("Setting CS max packets to " << nCsMaxPackets);
   m_forwarder.getCs().setLimit(nCsMaxPackets);
 
   m_isConfigured = true;

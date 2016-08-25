@@ -25,6 +25,9 @@
 
 #include "cs-policy.hpp"
 #include "cs.hpp"
+#include "core/logger.hpp"
+
+NFD_LOG_INIT("CsPolicy");
 
 namespace nfd {
 namespace cs {
@@ -34,13 +37,10 @@ Policy::Policy(const std::string& policyName)
 {
 }
 
-Policy::~Policy()
-{
-}
-
 void
 Policy::setLimit(size_t nMaxEntries)
 {
+  NFD_LOG_INFO("setLimit " << nMaxEntries);
   m_limit = nMaxEntries;
   this->evictEntries();
 }
