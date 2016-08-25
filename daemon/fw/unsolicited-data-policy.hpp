@@ -56,9 +56,36 @@ public:
   decide(const Face& inFace, const Data& data) const = 0;
 };
 
+/** \brief drops all unsolicited Data
+ */
+class DropAllUnsolicitedDataPolicy : public UnsolicitedDataPolicy
+{
+public:
+  virtual UnsolicitedDataDecision
+  decide(const Face& inFace, const Data& data) const final;
+};
+
 /** \brief admits unsolicited Data from local faces
  */
 class AdmitLocalUnsolicitedDataPolicy : public UnsolicitedDataPolicy
+{
+public:
+  virtual UnsolicitedDataDecision
+  decide(const Face& inFace, const Data& data) const final;
+};
+
+/** \brief admits unsolicited Data from non-local faces
+ */
+class AdmitNetworkUnsolicitedDataPolicy : public UnsolicitedDataPolicy
+{
+public:
+  virtual UnsolicitedDataDecision
+  decide(const Face& inFace, const Data& data) const final;
+};
+
+/** \brief admits all unsolicited Data
+ */
+class AdmitAllUnsolicitedDataPolicy : public UnsolicitedDataPolicy
 {
 public:
   virtual UnsolicitedDataDecision

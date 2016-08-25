@@ -41,12 +41,33 @@ operator<<(std::ostream& os, UnsolicitedDataDecision d)
 }
 
 UnsolicitedDataDecision
+DropAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
+{
+  return UnsolicitedDataDecision::DROP;
+}
+
+UnsolicitedDataDecision
 AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
 {
   if (inFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
     return UnsolicitedDataDecision::CACHE;
   }
   return UnsolicitedDataDecision::DROP;
+}
+
+UnsolicitedDataDecision
+AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
+{
+  if (inFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL) {
+    return UnsolicitedDataDecision::CACHE;
+  }
+  return UnsolicitedDataDecision::DROP;
+}
+
+UnsolicitedDataDecision
+AdmitAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
+{
+  return UnsolicitedDataDecision::CACHE;
 }
 
 } // namespace fw
