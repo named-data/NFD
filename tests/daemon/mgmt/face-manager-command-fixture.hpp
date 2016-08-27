@@ -23,60 +23,49 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_CHANNEL_HPP
-#define NFD_DAEMON_FACE_CHANNEL_HPP
+#ifndef NFD_TESTS_DAEMON_MGMT_FACE_MANAGER_COMMAND_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_MGMT_FACE_MANAGER_COMMAND_FIXTURE_HPP
 
-#include "face.hpp"
+#include "mgmt/face-manager.hpp"
+#include "fw/face-table.hpp"
+
+#include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
+
+#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
+namespace tests {
 
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        is created (as a response to incoming connection or after
- *        connection is established)
- */
-typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
-
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        fails to be created
- */
-typedef function<void(uint32_t status, const std::string& reason)> FaceCreationFailedCallback;
-
-
-class Channel : noncopyable
+class FaceManagerCommandNode
 {
 public:
-  virtual
-  ~Channel();
+  explicit
+  FaceManagerCommandNode(ndn::KeyChain& keyChain, uint16_t port);
 
-  const FaceUri&
-  getUri() const;
+  ~FaceManagerCommandNode();
 
-protected:
-  void
-  setUri(const FaceUri& uri);
-
-private:
-  FaceUri m_uri;
+public:
+  FaceTable faceTable;
+  ndn::util::DummyClientFace face;
+  ndn::mgmt::Dispatcher dispatcher;
+  shared_ptr<CommandAuthenticator> authenticator;
+  FaceManager manager;
 };
 
-inline const FaceUri&
-Channel::getUri() const
+class FaceManagerCommandFixture : public IdentityManagementTimeFixture
 {
-  return m_uri;
-}
+public:
+  FaceManagerCommandFixture();
 
-/** \brief invokes a callback when the face is closed
- *  \param face the face
- *  \param f the callback to be invoked when the face enters CLOSED state
- *
- *  This function connects a callback to the afterStateChange signal on the \p face,
- *  and invokes \p f when the state becomes CLOSED.
- */
-void
-connectFaceClosedSignal(Face& face, const std::function<void()>& f);
+  ~FaceManagerCommandFixture();
 
+public:
+  FaceManagerCommandNode node1; // used to test FaceManager
+  FaceManagerCommandNode node2; // acts as a remote endpoint
+};
+
+} // namespace tests
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_CHANNEL_HPP
+#endif // NFD_TESTS_DAEMON_MGMT_FACE_MANAGER_COMMAND_FIXTURE_HPP

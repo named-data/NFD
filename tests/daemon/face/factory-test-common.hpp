@@ -23,60 +23,46 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_CHANNEL_HPP
-#define NFD_DAEMON_FACE_CHANNEL_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_FACTORY_TEST_COMMON_HPP
+#define NFD_TESTS_DAEMON_FACE_FACTORY_TEST_COMMON_HPP
 
-#include "face.hpp"
+#include "face/protocol-factory.hpp"
+
+#include "tests/test-common.hpp"
 
 namespace nfd {
+namespace tests {
 
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        is created (as a response to incoming connection or after
- *        connection is established)
- */
-typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
-
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        fails to be created
- */
-typedef function<void(uint32_t status, const std::string& reason)> FaceCreationFailedCallback;
-
-
-class Channel : noncopyable
+struct CreateFaceExpectedResult
 {
-public:
-  virtual
-  ~Channel();
-
-  const FaceUri&
-  getUri() const;
-
-protected:
-  void
-  setUri(const FaceUri& uri);
-
-private:
-  FaceUri m_uri;
+  enum { FAILURE, SUCCESS } result;
+  uint32_t status;
+  std::string reason;
 };
 
-inline const FaceUri&
-Channel::getUri() const
+inline void
+createFace(ProtocolFactory& factory,
+           const FaceUri& uri,
+           ndn::nfd::FacePersistency persistency,
+           const CreateFaceExpectedResult& expected)
 {
-  return m_uri;
+  factory.createFace(uri, persistency,
+                     [expected] (const shared_ptr<Face>& newFace) {
+                       BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
+                     },
+                     [expected] (uint32_t actualStatus, const std::string& actualReason) {
+                       BOOST_CHECK_EQUAL(CreateFaceExpectedResult::FAILURE, expected.result);
+                       BOOST_CHECK_EQUAL(actualStatus, expected.status);
+                       BOOST_CHECK_EQUAL(actualReason, expected.reason);
+                     });
 }
 
-/** \brief invokes a callback when the face is closed
- *  \param face the face
- *  \param f the callback to be invoked when the face enters CLOSED state
- *
- *  This function connects a callback to the afterStateChange signal on the \p face,
- *  and invokes \p f when the state becomes CLOSED.
- */
-void
-connectFaceClosedSignal(Face& face, const std::function<void()>& f);
+inline void
+failIfError(uint32_t status, const std::string& reason) {
+  BOOST_FAIL("No error expected, but got: [" << status << ": " << reason << "]");
+}
 
+} // namespace tests
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_CHANNEL_HPP
+#endif // NFD_TESTS_DAEMON_FACE_FACTORY_TEST_COMMON_HPP

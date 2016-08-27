@@ -77,12 +77,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // ControlCommand
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   void
-  afterCreateFaceSuccess(ControlParameters& parameters,
+  afterCreateFaceSuccess(const ControlParameters& parameters,
                          const shared_ptr<Face>& newFace,
                          const ndn::mgmt::CommandContinuation& done);
 
   void
-  afterCreateFaceFailure(const std::string& reason,
+  afterCreateFaceFailure(uint32_t status,
+                         const std::string& reason,
                          const ndn::mgmt::CommandContinuation& done);
 
   Face*

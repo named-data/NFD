@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -151,7 +151,7 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
 
     NFD_LOG_DEBUG("[" << m_localEndpoint << "] Accept failed: " << error.message());
     if (onAcceptFailed)
-      onAcceptFailed(error.message());
+      onAcceptFailed(500, "Accept failed: " + error.message());
     return;
   }
 
@@ -189,7 +189,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
     socket->close();
 
     if (onConnectFailed)
-      onConnectFailed(error.message());
+      onConnectFailed(504, "Connect failed: " + error.message());
     return;
   }
 
@@ -209,7 +209,7 @@ TcpChannel::handleConnectTimeout(const shared_ptr<ip::tcp::socket>& socket,
   socket->close(error);
 
   if (onConnectFailed)
-    onConnectFailed("Connect to remote endpoint timed out");
+    onConnectFailed(504, "Connect to remote endpoint timed out");
 }
 
 } // namespace nfd

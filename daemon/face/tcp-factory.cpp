@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -105,15 +105,24 @@ TcpFactory::createFace(const FaceUri& uri,
   BOOST_ASSERT(uri.isCanonical());
 
   if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
-    BOOST_THROW_EXCEPTION(Error("TcpFactory::createFace supports only FACE_PERSISTENCY_PERSISTENT"));
+    NFD_LOG_TRACE("createFace only supports FACE_PERSISTENCY_PERSISTENT");
+    onConnectFailed(406, "Outgoing TCP faces only support persistent persistency");
+    return;
   }
 
   tcp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
                          boost::lexical_cast<uint16_t>(uri.getPort()));
 
+  if (endpoint.address().is_multicast()) {
+   NFD_LOG_TRACE("createFace cannot create multicast faces");
+   onConnectFailed(406, "Cannot create multicast TCP faces");
+   return;
+  }
+
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
-    onConnectFailed("Requested endpoint is prohibited "
-                    "(reserved by this NFD or disallowed by face management protocol)");
+    NFD_LOG_TRACE("Requested endpoint is prohibited "
+                  "(reserved by NFD or disallowed by face management protocol)");
+    onConnectFailed(406, "Requested endpoint is prohibited");
     return;
   }
 
@@ -126,7 +135,8 @@ TcpFactory::createFace(const FaceUri& uri,
     }
   }
 
-  onConnectFailed("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  onConnectFailed(504, "No channels available to connect");
 }
 
 std::vector<shared_ptr<const Channel>>

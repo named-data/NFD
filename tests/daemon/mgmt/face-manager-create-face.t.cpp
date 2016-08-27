@@ -23,16 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mgmt/face-manager.hpp"
-#include "fw/face-table.hpp"
-#include <ndn-cxx/mgmt/dispatcher.hpp>
-#include <ndn-cxx/util/dummy-client-face.hpp>
+#include "face-manager-command-fixture.hpp"
+#include "nfd-manager-common-fixture.hpp"
 
 #include <thread>
-#include <boost/property_tree/info_parser.hpp>
-
-#include "tests/test-common.hpp"
-#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
 namespace tests {
@@ -41,98 +35,6 @@ BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
 
 BOOST_FIXTURE_TEST_SUITE(CreateFace, BaseFixture)
-
-class FaceManagerNode
-{
-public:
-  FaceManagerNode(ndn::KeyChain& keyChain, const std::string& port = "6363")
-    : face(getGlobalIoService(), keyChain, {true, true})
-    , dispatcher(face, keyChain, ndn::security::SigningInfo())
-    , authenticator(CommandAuthenticator::create())
-    , manager(faceTable, dispatcher, *authenticator)
-  {
-    dispatcher.addTopPrefix("/localhost/nfd");
-
-    std::string basicConfig =
-      "face_system\n"
-      "{\n"
-      "  tcp\n"
-      "  {\n"
-      "    port " + port + "\n"
-      "  }\n"
-      "  udp\n"
-      "  {\n"
-      "    port " + port + "\n"
-      "    mcast no\n"
-      "  }\n"
-      "  ether\n"
-      "  {\n"
-      "    mcast no\n"
-      "  }\n"
-      "}\n"
-      "authorizations\n"
-      "{\n"
-      "  authorize\n"
-      "  {\n"
-      "    certfile any\n"
-      "    privileges\n"
-      "    {\n"
-      "      faces\n"
-      "    }\n"
-      "  }\n"
-      "}\n"
-      "\n";
-    std::istringstream input(basicConfig);
-    nfd::ConfigSection configSection;
-    boost::property_tree::read_info(input, configSection);
-
-    ConfigFile config;
-    manager.setConfigFile(config);
-    authenticator->setConfigFile(config);
-    config.parse(configSection, false, "dummy-config");
-  }
-
-  void
-  closeFaces()
-  {
-    std::vector<std::reference_wrapper<Face>> facesToClose;
-    std::copy(faceTable.begin(), faceTable.end(), std::back_inserter(facesToClose));
-    for (Face& face : facesToClose) {
-      face.close();
-    }
-  }
-
-public:
-  FaceTable faceTable;
-  ndn::util::DummyClientFace face;
-  ndn::mgmt::Dispatcher dispatcher;
-  shared_ptr<CommandAuthenticator> authenticator;
-  FaceManager manager;
-};
-
-class FaceManagerFixture : public IdentityManagementTimeFixture
-{
-public:
-  FaceManagerFixture()
-    : node1(m_keyChain, "16363")
-    , node2(m_keyChain, "26363")
-  {
-    advanceClocks(time::milliseconds(1), 5);
-  }
-
-  ~FaceManagerFixture()
-  {
-    // Explicitly closing faces is necessary. Otherwise, in a subsequent test case,
-    // incoming packets may be delivered to an old socket from previous test cases.
-    node1.closeFaces();
-    node2.closeFaces();
-    advanceClocks(time::milliseconds(1), 5);
-  }
-
-public:
-  FaceManagerNode node1; // used to test FaceManager
-  FaceManagerNode node2; // acts as a remote endpoint
-};
 
 class TcpFaceOnDemand
 {
@@ -182,7 +84,8 @@ public:
   }
 };
 
-class UdpFaceCannotConnect // face that will cause afterCreateFaceFailure to be invoked
+class UdpFaceConnectToSelf // face that will cause afterCreateFaceFailure to be invoked
+                           // fails because remote endpoint is prohibited
 {
 public:
   ControlParameters
@@ -245,16 +148,16 @@ public:
 
 namespace mpl = boost::mpl;
 
-// pairs of CreateCommand and Success status
-typedef mpl::vector<mpl::pair<TcpFaceOnDemand, Failure<500>>,
+// pairs of CreateCommand and Success/Failure status
+typedef mpl::vector<mpl::pair<TcpFaceOnDemand, Failure<406>>,
                     mpl::pair<TcpFacePersistent, Success>,
-                    mpl::pair<TcpFacePermanent, Failure<500>>,
-                    mpl::pair<UdpFaceOnDemand, Failure<500>>,
+                    mpl::pair<TcpFacePermanent, Failure<406>>,
+                    mpl::pair<UdpFaceOnDemand, Failure<406>>,
                     mpl::pair<UdpFacePersistent, Success>,
                     mpl::pair<UdpFacePermanent, Success>,
-                    mpl::pair<UdpFaceCannotConnect, Failure<408>>> Faces;
+                    mpl::pair<UdpFaceConnectToSelf, Failure<406>>> Faces;
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 {
   typedef typename T::first FaceType;
   typedef typename T::second CreateResult;
@@ -267,24 +170,28 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerFixture)
 
   bool hasCallbackFired = false;
   this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
-      if (!command->getName().isPrefixOf(response.getName())) {
-        return;
-      }
+    if (!command->getName().isPrefixOf(response.getName())) {
+      return;
+    }
 
-      ControlResponse actual(response.getContent().blockFromValue());
-      ControlResponse expected(CreateResult().getExpected());
-      BOOST_CHECK_EQUAL(expected.getCode(), actual.getCode());
-      BOOST_TEST_MESSAGE(actual.getText());
+    ControlResponse actual(response.getContent().blockFromValue());
+    ControlResponse expected(CreateResult().getExpected());
+    BOOST_CHECK_EQUAL(expected.getCode(), actual.getCode());
+    BOOST_TEST_MESSAGE(actual.getText());
 
-      if (actual.getBody().hasWire()) {
-        ControlParameters expectedParams(FaceType().getParameters());
-        ControlParameters actualParams(actual.getBody());
+    if (actual.getBody().hasWire()) {
+      ControlParameters expectedParams(FaceType().getParameters());
+      ControlParameters actualParams(actual.getBody());
 
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
+
+      if (actual.getCode() != 200) {
         BOOST_CHECK_EQUAL(expectedParams.getUri(), actualParams.getUri());
-        BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
       }
-      hasCallbackFired = true;
-    });
+    }
+    hasCallbackFired = true;
+  });
 
   this->node1.face.receive(*command);
   this->advanceClocks(time::milliseconds(1), 5);
@@ -299,7 +206,7 @@ typedef mpl::vector<// mpl::pair<mpl::pair<TcpFacePersistent, TcpFacePermanent>,
                     mpl::pair<mpl::pair<UdpFacePermanent, UdpFacePersistent>, UdpFacePermanent>> FaceTransitions;
 
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFixture)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerCommandFixture)
 {
   typedef typename T::first::first FaceType1;
   typedef typename T::first::second FaceType2;
@@ -339,6 +246,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerFi
 
         ControlParameters expectedParams(FinalFaceType().getParameters());
         ControlParameters actualParams(actual.getBody());
+        BOOST_REQUIRE(!actualParams.hasUri()); // Uri parameter is only included on command failure
         BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
 
         hasCallbackFired = true;
@@ -374,7 +282,7 @@ typedef mpl::vector<mpl::pair<UdpFace, UdpFacePersistent>,
                     mpl::pair<UdpFace, UdpFacePermanent>> OnDemandFaceTransitions;
 
 // need a slightly different logic to test transitions from OnDemand state
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransitions, FaceManagerFixture)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransitions, FaceManagerCommandFixture)
 {
   typedef typename T::first  OtherNodeFace;
   typedef typename T::second FaceType;
@@ -390,20 +298,21 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
 
     ndn::util::signal::ScopedConnection connection =
       this->node2.face.onSendData.connect([this, command] (const Data& response) {
-          if (!command->getName().isPrefixOf(response.getName())) {
-            return;
-          }
+        if (!command->getName().isPrefixOf(response.getName())) {
+          return;
+        }
 
-          ControlResponse controlResponse(response.getContent().blockFromValue());
-          BOOST_REQUIRE_EQUAL(controlResponse.getText(), "OK");
-          BOOST_REQUIRE_EQUAL(controlResponse.getCode(), 200);
-          uint64_t faceId = ControlParameters(controlResponse.getBody()).getFaceId();
-          auto face = this->node2.faceTable.get(static_cast<FaceId>(faceId));
+        ControlResponse controlResponse(response.getContent().blockFromValue());
+        BOOST_REQUIRE_EQUAL(controlResponse.getText(), "OK");
+        BOOST_REQUIRE_EQUAL(controlResponse.getCode(), 200);
+        BOOST_REQUIRE(!ControlParameters(controlResponse.getBody()).hasUri());
+        uint64_t faceId = ControlParameters(controlResponse.getBody()).getFaceId();
+        auto face = this->node2.faceTable.get(static_cast<FaceId>(faceId));
 
-          // to force creation of on-demand face
-          auto dummyInterest = make_shared<Interest>("/hello/world");
-          face->sendInterest(*dummyInterest);
-        });
+        // to force creation of on-demand face
+        auto dummyInterest = make_shared<Interest>("/hello/world");
+        face->sendInterest(*dummyInterest);
+      });
 
     this->node2.face.receive(*command);
     this->advanceClocks(time::milliseconds(1), 5); // let node2 process command and send Interest
@@ -444,6 +353,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFaceOnDemand, T, OnDemandFaceTransition
 
         ControlParameters expectedParams(FaceType().getParameters());
         ControlParameters actualParams(actual.getBody());
+        BOOST_REQUIRE(!actualParams.hasUri());
         BOOST_CHECK_EQUAL(actualParams.getFacePersistency(), expectedParams.getFacePersistency());
         BOOST_CHECK_EQUAL(actualParams.getFaceId(), foundFace->getId());
         BOOST_CHECK_EQUAL(foundFace->getPersistency(), expectedParams.getFacePersistency());

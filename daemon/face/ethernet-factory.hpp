@@ -80,7 +80,7 @@ public: // from ProtocolFactory
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) override;
+             const FaceCreationFailedCallback& onFailure) override;
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const override;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,9 +59,9 @@ void
 EthernetFactory::createFace(const FaceUri& uri,
                             ndn::nfd::FacePersistency persistency,
                             const FaceCreatedCallback& onCreated,
-                            const FaceCreationFailedCallback& onConnectFailed)
+                            const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_THROW_EXCEPTION(Error("EthernetFactory does not support 'createFace' operation"));
+  onFailure(406, "Unsupported protocol");
 }
 
 std::vector<shared_ptr<const Channel>>

@@ -239,20 +239,24 @@ UdpFactory::createFace(const FaceUri& uri,
   BOOST_ASSERT(uri.isCanonical());
 
   if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    BOOST_THROW_EXCEPTION(Error("UdpFactory::createFace does not support FACE_PERSISTENCY_ON_DEMAND"));
+    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    onConnectFailed(406, "Outgoing unicast UDP faces do not support on-demand persistency");
+    return;
   }
 
   udp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
                          boost::lexical_cast<uint16_t>(uri.getPort()));
 
   if (endpoint.address().is_multicast()) {
-    onConnectFailed("The provided address is multicast. Please use createMulticastFace method");
+    NFD_LOG_TRACE("createFace does not support multicast faces");
+    onConnectFailed(406, "Cannot create multicast UDP faces");
     return;
   }
 
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
-    onConnectFailed("Requested endpoint is prohibited "
-                    "(reserved by this NFD or disallowed by face management protocol)");
+    NFD_LOG_TRACE("Requested endpoint is prohibited "
+                  "(reserved by this NFD or disallowed by face management protocol)");
+    onConnectFailed(406, "Requested endpoint is prohibited");
     return;
   }
 
@@ -265,7 +269,8 @@ UdpFactory::createFace(const FaceUri& uri,
     }
   }
 
-  onConnectFailed("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  onConnectFailed(504, "No channels available to connect");
 }
 
 std::vector<shared_ptr<const Channel>>

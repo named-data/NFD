@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,7 +56,7 @@ WebSocketFactory::createFace(const FaceUri& uri,
                              const FaceCreatedCallback& onCreated,
                              const FaceCreationFailedCallback& onConnectFailed)
 {
-  BOOST_THROW_EXCEPTION(Error("WebSocketFactory does not support 'createFace' operation"));
+  onConnectFailed(406, "Unsupported protocol");
 }
 
 std::vector<shared_ptr<const Channel>>

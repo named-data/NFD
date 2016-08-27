@@ -28,7 +28,7 @@
 
 #include "test-ip.hpp"
 #include "tests/limited-io.hpp"
-#include "tests/test-common.hpp"
+#include "factory-test-common.hpp"
 
 #include <boost/mpl/vector.hpp>
 
@@ -72,9 +72,7 @@ protected:
         listenerFaces.push_back(newFace);
         limitedIo.afterOp();
       },
-      [] (const std::string& reason) {
-        BOOST_FAIL(reason);
-      });
+      &failIfError);
   }
 
   void
@@ -90,9 +88,7 @@ protected:
           newFace->getTransport()->send(std::move(pkt));
           limitedIo.afterOp();
         },
-        [] (const std::string& reason) {
-          BOOST_FAIL(reason);
-        });
+        &failIfError);
     });
   }
 

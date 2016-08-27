@@ -27,7 +27,7 @@
 
 #include "test-ip.hpp"
 #include "tests/limited-io.hpp"
-#include "tests/test-common.hpp"
+#include "factory-test-common.hpp"
 
 #include <boost/mpl/vector.hpp>
 
@@ -71,10 +71,7 @@ protected:
         listenerFaces.push_back(newFace);
         limitedIo.afterOp();
       },
-      [this] (const std::string& reason) {
-        BOOST_FAIL(reason);
-        limitedIo.afterOp();
-      });
+      &failIfError);
   }
 
   void
@@ -87,10 +84,7 @@ protected:
         clientFaces.push_back(newFace);
         limitedIo.afterOp();
       },
-      [this] (const std::string& reason) {
-        BOOST_FAIL(reason);
-        limitedIo.afterOp();
-      });
+      &failIfError);
   }
 
 protected:
@@ -188,7 +182,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressFamilies)
       BOOST_FAIL("Connect succeeded when it should have failed");
       this->limitedIo.afterOp();
     },
-    [this] (const std::string& reason) {
+    [this] (uint32_t status, const std::string& reason) {
       BOOST_CHECK_EQUAL(reason.empty(), false);
       this->limitedIo.afterOp();
     },

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #include "face/tcp-factory.hpp"
 
 #include "core/network-interface.hpp"
-#include "tests/test-common.hpp"
+#include "factory-test-common.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -72,38 +72,21 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
 }
 
-class FaceCreateFixture : public BaseFixture
-{
-public:
-  void
-  checkError(const std::string& errorActual, const std::string& errorExpected)
-  {
-    BOOST_CHECK_EQUAL(errorActual, errorExpected);
-  }
-
-  void
-  failIfError(const std::string& errorActual)
-  {
-    BOOST_FAIL("No error expected, but got: [" << errorActual << "]");
-  }
-};
-
-BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
+BOOST_AUTO_TEST_CASE(FaceCreate)
 {
   TcpFactory factory;
 
-  factory.createFace(FaceUri("tcp4://127.0.0.1:6363"),
-                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::checkError, this, _1,
-                          "No channels available to connect to 127.0.0.1:6363"));
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:6363"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   factory.createChannel("127.0.0.1", "20071");
 
-  factory.createFace(FaceUri("tcp4://127.0.0.1:20070"),
-                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20070"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
@@ -113,17 +96,17 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
   factory.createChannel("127.0.0.1", "20070");
   factory.createChannel("127.0.0.1", "20071");
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("tcp4://127.0.0.1:20070"),
-                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20070"),
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             {CreateFaceExpectedResult::FAILURE, 406,
+               "Outgoing TCP faces only support persistent persistency"});
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("tcp4://127.0.0.1:20071"),
-                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20071"),
+             ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             {CreateFaceExpectedResult::FAILURE, 406,
+               "Outgoing TCP faces only support persistent persistency"});
 }
 
 class FaceCreateTimeoutFixture : public BaseFixture
@@ -161,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
-                     bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _1));
+                     bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _2));
 
   BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(10)) == LimitedIo::EXCEED_OPS,
                       "TcpChannel error: cannot connect or cannot accept connection");

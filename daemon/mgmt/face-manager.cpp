@@ -91,17 +91,21 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   FaceUri uri;
   if (!uri.parse(parameters.getUri())) {
     NFD_LOG_TRACE("failed to parse URI");
-    return done(ControlResponse(400, "Malformed command"));
+    done(ControlResponse(400, "Malformed command"));
+    return;
   }
 
   if (!uri.isCanonical()) {
     NFD_LOG_TRACE("received non-canonical URI");
-    return done(ControlResponse(400, "Non-canonical URI"));
+    done(ControlResponse(400, "Non-canonical URI"));
+    return;
   }
 
   auto factory = m_factories.find(uri.getScheme());
   if (factory == m_factories.end()) {
-    return done(ControlResponse(501, "Unsupported protocol"));
+    NFD_LOG_TRACE("received create request for unsupported protocol");
+    done(ControlResponse(406, "Unsupported protocol"));
+    return;
   }
 
   try {
@@ -110,35 +114,50 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
                                 bind(&FaceManager::afterCreateFaceSuccess,
                                      this, parameters, _1, done),
                                 bind(&FaceManager::afterCreateFaceFailure,
-                                     this, _1, done));
+                                     this, _1, _2, done));
   }
   catch (const std::runtime_error& error) {
-    std::string errorMessage = "Face creation failed: ";
-    errorMessage += error.what();
-
-    NFD_LOG_ERROR(errorMessage);
-    return done(ControlResponse(500, errorMessage));
+    NFD_LOG_ERROR("Face creation failed: " << error.what());
+    done(ControlResponse(500, "Face creation failed due to internal error"));
+    return;
   }
   catch (const std::logic_error& error) {
-    std::string errorMessage = "Face creation failed: ";
-    errorMessage += error.what();
-
-    NFD_LOG_ERROR(errorMessage);
-    return done(ControlResponse(500, errorMessage));
+    NFD_LOG_ERROR("Face creation failed: " << error.what());
+    done(ControlResponse(500, "Face creation failed due to internal error"));
+    return;
   }
 }
 
+/**
+ * \todo #3232
+ *       If the creation of this face would conflict with an existing face (e.g. same underlying
+ *       protocol and remote address, or a NIC-associated permanent face), the command will fail
+ *       with StatusCode 409.
+ */
 void
-FaceManager::afterCreateFaceSuccess(ControlParameters& parameters,
+FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
                                     const shared_ptr<Face>& newFace,
                                     const ndn::mgmt::CommandContinuation& done)
 {
-  m_faceTable.add(newFace);
-  parameters.setFaceId(newFace->getId());
-  parameters.setUri(newFace->getRemoteUri().toString());
-  parameters.setFacePersistency(newFace->getPersistency());
+  ControlParameters response;
 
-  done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
+  m_faceTable.add(newFace);
+
+  // Set ControlResponse parameters
+  response.setFaceId(newFace->getId());
+  response.setFacePersistency(newFace->getPersistency());
+
+  done(ControlResponse(200, "OK").setBody(response.wireEncode()));
+}
+
+void
+FaceManager::afterCreateFaceFailure(uint32_t status,
+                                    const std::string& reason,
+                                    const ndn::mgmt::CommandContinuation& done)
+{
+  NFD_LOG_DEBUG("Face creation failed: " << reason);
+
+  done(ControlResponse(status, reason));
 }
 
 void
@@ -152,15 +171,6 @@ FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
   }
 
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-}
-
-void
-FaceManager::afterCreateFaceFailure(const std::string& reason,
-                                    const ndn::mgmt::CommandContinuation& done)
-{
-  NFD_LOG_DEBUG("Failed to create face: " << reason);
-
-  done(ControlResponse(408, "Failed to create face: " + reason));
 }
 
 void

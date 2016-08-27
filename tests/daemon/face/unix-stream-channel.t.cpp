@@ -26,7 +26,7 @@
 #include "face/unix-stream-channel.hpp"
 
 #include "tests/limited-io.hpp"
-#include "tests/test-common.hpp"
+#include "factory-test-common.hpp"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -65,10 +65,7 @@ protected:
         listenerFaces.push_back(newFace);
         limitedIo.afterOp();
       },
-      [this] (const std::string& reason) {
-        BOOST_FAIL(reason);
-        limitedIo.afterOp();
-      });
+      &failIfError);
   }
 
   void

@@ -25,8 +25,8 @@
 
 #include "face/udp-factory.hpp"
 
+#include "factory-test-common.hpp"
 #include "core/network-interface.hpp"
-#include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -144,61 +144,44 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
                         });
 }
 
-class FaceCreateFixture : protected BaseFixture
-{
-public:
-  void
-  checkError(const std::string& errorActual, const std::string& errorExpected)
-  {
-    BOOST_CHECK_EQUAL(errorActual, errorExpected);
-  }
-
-  void
-  failIfError(const std::string& errorActual)
-  {
-    BOOST_FAIL("No error expected, but got: [" << errorActual << "]");
-  }
-};
-
-BOOST_FIXTURE_TEST_CASE(FaceCreate, FaceCreateFixture)
+BOOST_AUTO_TEST_CASE(FaceCreate)
 {
   UdpFactory factory = UdpFactory();
 
-  factory.createFace(FaceUri("udp4://127.0.0.1:6363"),
-                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::checkError, this, _1,
-                          "No channels available to connect to 127.0.0.1:6363"));
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:6363"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   factory.createChannel("127.0.0.1", "20071");
 
-  factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20070"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
   //test the upgrade
-  factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                     ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20070"),
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
-  factory.createFace(FaceUri("udp4://127.0.0.1:20072"),
-                     ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-                     bind([]{}),
-                     bind(&FaceCreateFixture::failIfError, this, _1));
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20072"),
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  UdpFactory factory;
+  UdpFactory factory = UdpFactory();
 
   factory.createChannel("127.0.0.1", "20070");
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("udp4://127.0.0.1:20070"),
-                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20070"),
+             ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             {CreateFaceExpectedResult::FAILURE, 406,
+               "Outgoing unicast UDP faces do not support on-demand persistency"});
 }
 
 class FakeNetworkInterfaceFixture : public BaseFixture

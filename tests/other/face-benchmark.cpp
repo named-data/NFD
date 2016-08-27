@@ -54,11 +54,11 @@ public:
     parseConfig(configFileName);
 
     m_tcpChannel.listen(bind(&FaceBenchmark::onLeftFaceCreated, this, _1),
-                        bind(&FaceBenchmark::onFaceCreationFailed, _1));
+                        bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     std::clog << "Listening on " << m_tcpChannel.getUri() << std::endl;
 
     m_udpChannel.listen(bind(&FaceBenchmark::onLeftFaceCreated, this, _1),
-                        bind(&FaceBenchmark::onFaceCreationFailed, _1));
+                        bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     std::clog << "Listening on " << m_udpChannel.getUri() << std::endl;
   }
 
@@ -129,13 +129,13 @@ private:
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port),
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
-                           bind(&FaceBenchmark::onFaceCreationFailed, _1));
+                           bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
     else if (uriR.getScheme() == "udp4") {
       m_udpChannel.connect(udp::Endpoint(addr, port),
                            ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
-                           bind(&FaceBenchmark::onFaceCreationFailed, _1));
+                           bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
   }
 
@@ -158,9 +158,9 @@ private:
   }
 
   static void
-  onFaceCreationFailed(const std::string& reason)
+  onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
-    BOOST_THROW_EXCEPTION(std::runtime_error("Failed to create face: " + reason));
+    BOOST_THROW_EXCEPTION(std::runtime_error("Failed to create face: " + to_string(status) + ": " + reason));
   }
 
 private:

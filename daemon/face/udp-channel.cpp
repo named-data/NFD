@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,7 +62,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
   catch (const boost::system::system_error& e) {
     NFD_LOG_WARN("[" << m_localEndpoint << "] Connect failed: " << e.what());
     if (onConnectFailed)
-      onConnectFailed(e.what());
+      onConnectFailed(504, std::string("Connect failed: ") + e.what());
     return;
   }
 
@@ -113,7 +113,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
 
     NFD_LOG_DEBUG("[" << m_localEndpoint << "] Receive failed: " << error.message());
     if (onReceiveFailed)
-      onReceiveFailed(error.message());
+      onReceiveFailed(500, "Receive failed: " + error.message());
     return;
   }
 
@@ -128,7 +128,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     NFD_LOG_WARN("[" << m_localEndpoint << "] Failed to create face for peer "
                  << m_remoteEndpoint << ": " << e.what());
     if (onReceiveFailed)
-      onReceiveFailed(e.what());
+      onReceiveFailed(504, "Failed to create face for peer");
     return;
   }
 

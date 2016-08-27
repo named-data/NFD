@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "face/ethernet-factory.hpp"
 
+#include "factory-test-common.hpp"
 #include "network-interface-fixture.hpp"
 
 namespace nfd {
@@ -65,23 +66,20 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   EthernetFactory factory;
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
-                                       ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("ether://[08:00:27:01:01:01]"),
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
-                                       ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("ether://[08:00:27:01:01:01]"),
+             ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
-  BOOST_CHECK_THROW(factory.createFace(FaceUri("ether://[08:00:27:01:01:01]"),
-                                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                                       bind([]{}),
-                                       bind([]{})),
-                    ProtocolFactory::Error);
+  createFace(factory,
+             FaceUri("ether://[08:00:27:01:01:01]"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestEthernetFactory
