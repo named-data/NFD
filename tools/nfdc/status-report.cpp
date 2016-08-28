@@ -30,6 +30,30 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
+ReportFormat
+parseReportFormat(const std::string& s)
+{
+  if (s == "xml") {
+    return ReportFormat::XML;
+  }
+  if (s == "text") {
+    return ReportFormat::TEXT;
+  }
+  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized ReportFormat"));
+}
+
+std::ostream&
+operator<<(std::ostream& os, ReportFormat fmt)
+{
+  switch (fmt) {
+    case ReportFormat::XML:
+      return os << "xml";
+    case ReportFormat::TEXT:
+      return os << "text";
+  }
+  return os << static_cast<int>(fmt);
+}
+
 uint32_t
 StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, const CommandOptions& options)
 {

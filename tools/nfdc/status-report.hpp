@@ -36,6 +36,17 @@ using ndn::Face;
 using ndn::security::KeyChain;
 using ndn::Validator;
 
+enum class ReportFormat {
+  XML = 1,
+  TEXT = 2
+};
+
+ReportFormat
+parseReportFormat(const std::string& s);
+
+std::ostream&
+operator<<(std::ostream& os, ReportFormat fmt);
+
 /** \brief collects and prints NFD status report
  */
 class StatusReport : noncopyable

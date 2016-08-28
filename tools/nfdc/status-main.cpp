@@ -23,13 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "status-main.hpp"
 #include "core/version.hpp"
-#include <ndn-cxx/security/validator-null.hpp>
-
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/variables_map.hpp>
-#include <boost/program_options/parsers.hpp>
-
 #include "status-report.hpp"
 #include "forwarder-general-module.hpp"
 #include "channel-module.hpp"
@@ -38,19 +33,16 @@
 #include "rib-module.hpp"
 #include "strategy-choice-module.hpp"
 
+#include <ndn-cxx/security/validator-null.hpp>
+#include <boost/program_options.hpp>
+
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
-enum class OutputFormat
-{
-  XML = 1,
-  TEXT = 2
-};
-
 struct Options
 {
-  OutputFormat output = OutputFormat::TEXT;
+  ReportFormat output = ReportFormat::TEXT;
   bool wantForwarderGeneral = false;
   bool wantChannels = false;
   bool wantFaces = false;
@@ -109,9 +101,9 @@ parseCommandLine(int argc, const char* const* argv)
   }
 
   if (vm.count("xml") > 0) {
-    options.output = OutputFormat::XML;
+    options.output = ReportFormat::XML;
   }
-  if (options.output == OutputFormat::XML ||
+  if (options.output == ReportFormat::XML ||
       (!options.wantForwarderGeneral && !options.wantChannels && !options.wantFaces &&
        !options.wantFib && !options.wantRib && !options.wantStrategyChoice)) {
     options.wantForwarderGeneral = options.wantChannels = options.wantFaces =
@@ -122,7 +114,7 @@ parseCommandLine(int argc, const char* const* argv)
 }
 
 int
-status_main(int argc, char** argv)
+statusMain(int argc, char** argv)
 {
   int exitCode = -1;
   Options options;
@@ -178,10 +170,10 @@ status_main(int argc, char** argv)
   }
 
   switch (options.output) {
-    case OutputFormat::XML:
+    case ReportFormat::XML:
       report.formatXml(std::cout);
       break;
-    case OutputFormat::TEXT:
+    case ReportFormat::TEXT:
       report.formatText(std::cout);
       break;
   }

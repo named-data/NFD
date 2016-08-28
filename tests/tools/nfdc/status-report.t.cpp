@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(Error)
   BOOST_CHECK_EQUAL(res, 1000500);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestRibModule
+BOOST_AUTO_TEST_SUITE_END() // TestStatusReport
 BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
 } // namespace tests

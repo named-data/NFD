@@ -26,14 +26,12 @@
 #ifndef NFD_TOOLS_NFDC_STATUS_MAIN_HPP
 #define NFD_TOOLS_NFDC_STATUS_MAIN_HPP
 
-#include "module.hpp"
-
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
 int
-status_main(int argc, char** argv);
+statusMain(int argc, char** argv);
 
 } // namespace nfdc
 } // namespace tools

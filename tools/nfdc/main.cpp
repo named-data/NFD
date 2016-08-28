@@ -95,7 +95,7 @@ main(int argc, char** argv)
   }
 
   if (strcmp(argv[1], "legacy-nfd-status") == 0) {
-    return status_main(argc - 1, argv + 1);
+    return statusMain(argc - 1, argv + 1);
   }
 
   ::optind = 2; //start reading options from 2nd argument i.e. Command
