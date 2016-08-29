@@ -26,12 +26,14 @@
 #ifndef NFD_TOOLS_NFDC_STATUS_MAIN_HPP
 #define NFD_TOOLS_NFDC_STATUS_MAIN_HPP
 
+#include "core/common.hpp"
+
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
 int
-statusMain(int argc, char** argv);
+statusMain(const std::vector<std::string>& args);
 
 } // namespace nfdc
 } // namespace tools

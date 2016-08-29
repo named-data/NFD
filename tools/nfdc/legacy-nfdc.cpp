@@ -26,6 +26,7 @@
 #include "legacy-nfdc.hpp"
 #include "face-id-fetcher.hpp"
 
+#include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 
 namespace nfd {
@@ -52,42 +53,42 @@ bool
 LegacyNfdc::dispatch(const std::string& command)
 {
   if (command == "add-nexthop") {
-    if (m_nOptions != 2)
+    if (m_commandLineArguments.size() != 2)
       return false;
     fibAddNextHop();
   }
   else if (command == "remove-nexthop") {
-    if (m_nOptions != 2)
+    if (m_commandLineArguments.size() != 2)
       return false;
     fibRemoveNextHop();
   }
   else if (command == "register") {
-    if (m_nOptions != 2)
+    if (m_commandLineArguments.size() != 2)
       return false;
     ribRegisterPrefix();
   }
   else if (command == "unregister") {
-    if (m_nOptions != 2)
+    if (m_commandLineArguments.size() != 2)
       return false;
     ribUnregisterPrefix();
   }
   else if (command == "create") {
-    if (m_nOptions != 1)
+    if (m_commandLineArguments.size() != 1)
       return false;
     faceCreate();
   }
   else if (command == "destroy") {
-    if (m_nOptions != 1)
+    if (m_commandLineArguments.size() != 1)
       return false;
     faceDestroy();
   }
   else if (command == "set-strategy") {
-    if (m_nOptions != 2)
+    if (m_commandLineArguments.size() != 2)
       return false;
     strategyChoiceSet();
   }
   else if (command == "unset-strategy") {
-    if (m_nOptions != 1)
+    if (m_commandLineArguments.size() != 1)
       return false;
     strategyChoiceUnset();
   }
@@ -283,6 +284,116 @@ LegacyNfdc::onError(const ndn::nfd::ControlResponse& response, const std::string
   std::ostringstream os;
   os << message << ": " << response.getText() << " (code: " << response.getCode() << ")";
   BOOST_THROW_EXCEPTION(Error(os.str()));
+}
+
+void
+legacyNfdcUsage()
+{
+  std::cout << "Usage:\n"
+    "nfdc [-h] [-V] COMMAND [<Command Options>]\n"
+    "       -h print usage and exit\n"
+    "       -V print version and exit\n"
+    "\n"
+    "   COMMAND can be one of the following:\n"
+    "       register [-I] [-C] [-c cost] [-e expiration time] [-o origin] name <faceId | faceUri>\n"
+    "           register name to the given faceId or faceUri\n"
+    "           -I: unset CHILD_INHERIT flag\n"
+    "           -C: set CAPTURE flag\n"
+    "           -c: specify cost (default 0)\n"
+    "           -e: specify expiration time in ms\n"
+    "               (by default the entry remains in FIB for the lifetime of the associated face)\n"
+    "           -o: specify origin\n"
+    "               0 for Local producer applications, 128 for NLSR, 255(default) for static routes\n"
+    "       unregister [-o origin] name <faceId | faceUri>\n"
+    "           unregister name from the given faceId\n"
+    "       create [-P] <faceUri> \n"
+    "           Create a face in one of the following formats:\n"
+    "           UDP unicast:    udp[4|6]://<remote-IP-or-host>[:<remote-port>]\n"
+    "           TCP:            tcp[4|6]://<remote-IP-or-host>[:<remote-port>] \n"
+    "           -P: create permanent (instead of persistent) face\n"
+    "       destroy <faceId | faceUri> \n"
+    "           Destroy a face\n"
+    "       set-strategy <name> <strategy> \n"
+    "           Set the strategy for a namespace \n"
+    "       unset-strategy <name> \n"
+    "           Unset the strategy for a namespace \n"
+    "       add-nexthop [-c <cost>] <name> <faceId | faceUri>\n"
+    "           Add a nexthop to a FIB entry\n"
+    "           -c: specify cost (default 0)\n"
+    "       remove-nexthop <name> <faceId | faceUri> \n"
+    "           Remove a nexthop from a FIB entry\n"
+    << std::endl;
+}
+
+int
+legacyNfdcMain(const std::string& subcommand, const std::vector<std::string>& args)
+{
+  ndn::Face face;
+  LegacyNfdc p(face);
+
+  bool wantUnsetChildInherit = false;
+  bool wantCapture = false;
+  bool wantPermanentFace = false;
+  int64_t expires = -1;
+
+  namespace po = boost::program_options;
+  po::options_description options;
+  options.add_options()
+    (",I", po::bool_switch(&wantUnsetChildInherit))
+    (",C", po::bool_switch(&wantCapture))
+    (",c", po::value<uint64_t>(&p.m_cost))
+    (",e", po::value<int64_t>(&expires))
+    (",o", po::value<uint64_t>(&p.m_origin))
+    (",P", po::bool_switch(&wantPermanentFace));
+  po::variables_map vm;
+  std::vector<std::string> unparsed;
+  try {
+    po::parsed_options parsed = po::command_line_parser(args).options(options).allow_unregistered().run();
+    unparsed = po::collect_unrecognized(parsed.options, po::include_positional);
+    po::store(parsed, vm);
+    po::notify(vm);
+  }
+  catch (const po::error& e) {
+    std::cerr << e.what() << std::endl;
+    legacyNfdcUsage();
+    return 1;
+  }
+
+  if (wantUnsetChildInherit) {
+    p.m_flags &= ~(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT);
+  }
+  if (wantCapture) {
+    p.m_flags |= ndn::nfd::ROUTE_FLAG_CAPTURE;
+  }
+  if (expires >= 0) {
+    // accept negative values as no expiration
+    p.m_expires = time::milliseconds(expires);
+  }
+  if (wantPermanentFace) {
+    p.m_facePersistency = ndn::nfd::FACE_PERSISTENCY_PERMANENT;
+  }
+
+  if (std::any_of(unparsed.begin(), unparsed.end(),
+      [] (const std::string& s) { return s.empty() || s[0] == '-'; })) {
+    // unrecognized -option
+    legacyNfdcUsage();
+    return 1;
+  }
+  p.m_commandLineArguments = unparsed;
+
+  try {
+    bool isOk = p.dispatch(subcommand);
+    if (!isOk) {
+      legacyNfdcUsage();
+      return 1;
+    }
+    face.processEvents();
+  }
+  catch (const std::exception& e) {
+    std::cerr << "ERROR: " << e.what() << std::endl;
+    return 2;
+  }
+  return 0;
 }
 
 } // namespace nfdc

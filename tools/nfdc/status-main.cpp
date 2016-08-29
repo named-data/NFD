@@ -64,7 +64,7 @@ showUsage(std::ostream& os, const boost::program_options::options_description& c
  *          otherwise, caller should immediately exit with the specified exit code
  */
 static std::tuple<int, Options>
-parseCommandLine(int argc, const char* const* argv)
+parseCommandLine(const std::vector<std::string>& args)
 {
   Options options;
 
@@ -82,14 +82,14 @@ parseCommandLine(int argc, const char* const* argv)
     ("xml,x", "output as XML instead of text (implies -vcfbrs)");
   po::variables_map vm;
   try {
-    po::store(po::parse_command_line(argc, argv, cmdOptions), vm);
+    po::store(po::command_line_parser(args).options(cmdOptions).run(), vm);
+    po::notify(vm);
   }
   catch (const po::error& e) {
     std::cerr << e.what() << "\n";
     showUsage(std::cerr, cmdOptions);
     return std::make_tuple(2, options);
   }
-  po::notify(vm);
 
   if (vm.count("help") > 0) {
     showUsage(std::cout, cmdOptions);
@@ -114,11 +114,11 @@ parseCommandLine(int argc, const char* const* argv)
 }
 
 int
-statusMain(int argc, char** argv)
+statusMain(const std::vector<std::string>& args)
 {
   int exitCode = -1;
   Options options;
-  std::tie(exitCode, options) = parseCommandLine(argc, argv);
+  std::tie(exitCode, options) = parseCommandLine(args);
   if (exitCode >= 0) {
     return exitCode;
   }

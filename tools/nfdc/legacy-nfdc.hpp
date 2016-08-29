@@ -159,11 +159,7 @@ private:
   onObtainFaceIdFailure(const std::string& message);
 
 public:
-  const char* m_programName;
-
-  // command parameters without leading 'cmd' component
-  const char* const* m_commandLineArguments;
-  int m_nOptions;
+  std::vector<std::string> m_commandLineArguments; // positional arguments
   uint64_t m_flags;
   uint64_t m_cost;
   uint64_t m_faceId;
@@ -177,6 +173,12 @@ private:
   ndn::Face& m_face;
   ndn::nfd::Controller m_controller;
 };
+
+void
+legacyNfdcUsage();
+
+int
+legacyNfdcMain(const std::string& subcommand, const std::vector<std::string>& args);
 
 } // namespace nfdc
 } // namespace tools
