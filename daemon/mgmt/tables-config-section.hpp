@@ -39,6 +39,8 @@ namespace nfd {
  *  {
  *    cs_max_packets 65536
  *
+ *    cs_unsolicited_policy drop-all
+ *
  *    strategy_choice
  *    {
  *      /               /localhost/nfd/strategy/best-route
@@ -54,6 +56,16 @@ namespace nfd {
  *    }
  *  }
  *  \endcode
+ *
+ *  During a configuration reload,
+ *  \li cs_max_packets and cs_unsolicited_policy are applied;
+ *      defaults are used if an option is omitted.
+ *  \li strategy_choice entries are inserted, but old entries are not deleted.
+ *  \li network_region is applied; it's kept unchanged if the section is omitted.
+ *
+ *  It's necessary to call \p ensureConfigured() after initial configuration and
+ *  configuration reload, so that the correct defaults are applied in case
+ *  tables section is omitted.
  */
 class TablesConfigSection : noncopyable
 {
@@ -79,7 +91,6 @@ private:
   void
   processNetworkRegionSection(const ConfigSection& section, bool isDryRun);
 
-private:
 private:
   static const size_t DEFAULT_CS_MAX_PACKETS;
 

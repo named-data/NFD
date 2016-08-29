@@ -49,6 +49,10 @@ tables
   ; default is 65536, about 500MB with 8KB packet size
   cs_max_packets 65536
 
+  ; Set a policy to decide whether to cache or drop unsolicited Data.
+  ; Available policies are: drop-all, admit-local, admit-network, admit-all
+  cs_unsolicited_policy admit-local
+
   ; Set the forwarding strategy for the specified prefixes:
   ;   <prefix> <strategy>
   strategy_choice

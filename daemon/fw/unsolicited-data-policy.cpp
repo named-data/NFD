@@ -70,5 +70,24 @@ AdmitAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) cons
   return UnsolicitedDataDecision::CACHE;
 }
 
+unique_ptr<UnsolicitedDataPolicy>
+makeUnsolicitedDataPolicy(const std::string& key)
+{
+  /// \todo register policy with a macro
+  if (key == "drop-all") {
+    return make_unique<DropAllUnsolicitedDataPolicy>();
+  }
+  if (key == "admit-local") {
+    return make_unique<AdmitLocalUnsolicitedDataPolicy>();
+  }
+  if (key == "admit-network") {
+    return make_unique<AdmitNetworkUnsolicitedDataPolicy>();
+  }
+  if (key == "admit-all") {
+    return make_unique<AdmitAllUnsolicitedDataPolicy>();
+  }
+  return nullptr;
+}
+
 } // namespace fw
 } // namespace nfd

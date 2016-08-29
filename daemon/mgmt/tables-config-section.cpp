@@ -50,6 +50,7 @@ TablesConfigSection::ensureConfigured()
   }
 
   m_forwarder.getCs().setLimit(DEFAULT_CS_MAX_PACKETS);
+  m_forwarder.setUnsolicitedDataPolicy(make_unique<fw::DefaultUnsolicitedDataPolicy>());
 
   m_isConfigured = true;
 }
@@ -63,6 +64,20 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
   OptionalNode csMaxPacketsNode = section.get_child_optional("cs_max_packets");
   if (csMaxPacketsNode) {
     nCsMaxPackets = ConfigFile::parseNumber<size_t>(*csMaxPacketsNode, "cs_max_packets", "tables");
+  }
+
+  unique_ptr<fw::UnsolicitedDataPolicy> unsolicitedDataPolicy;
+  OptionalNode unsolicitedDataPolicyNode = section.get_child_optional("cs_unsolicited_policy");
+  if (unsolicitedDataPolicyNode) {
+    std::string policyKey = unsolicitedDataPolicyNode->get_value<std::string>();
+    unsolicitedDataPolicy = fw::makeUnsolicitedDataPolicy(policyKey);
+    if (unsolicitedDataPolicy == nullptr) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error(
+        "Unknown cs_unsolicited_policy \"" + policyKey + "\" in \"tables\" section"));
+    }
+  }
+  else {
+    unsolicitedDataPolicy = make_unique<fw::DefaultUnsolicitedDataPolicy>();
   }
 
   OptionalNode strategyChoiceSection = section.get_child_optional("strategy_choice");
@@ -80,6 +95,8 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
   }
 
   m_forwarder.getCs().setLimit(nCsMaxPackets);
+
+  m_forwarder.setUnsolicitedDataPolicy(std::move(unsolicitedDataPolicy));
 
   m_isConfigured = true;
 }

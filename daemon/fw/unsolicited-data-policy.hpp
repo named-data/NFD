@@ -92,6 +92,15 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 };
 
+/** \return an UnsolicitedDataPolicy identified by \p key, or nullptr if \p key is unknown
+ */
+unique_ptr<UnsolicitedDataPolicy>
+makeUnsolicitedDataPolicy(const std::string& key);
+
+/** \brief the default UnsolicitedDataPolicy
+ */
+typedef AdmitLocalUnsolicitedDataPolicy DefaultUnsolicitedDataPolicy;
+
 } // namespace fw
 } // namespace nfd
 

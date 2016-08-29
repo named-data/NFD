@@ -36,7 +36,7 @@ namespace nfd {
 NFD_LOG_INIT("Forwarder");
 
 Forwarder::Forwarder()
-  : m_unsolicitedDataPolicy(new fw::AdmitLocalUnsolicitedDataPolicy())
+  : m_unsolicitedDataPolicy(new fw::DefaultUnsolicitedDataPolicy())
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
