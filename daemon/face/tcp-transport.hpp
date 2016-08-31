@@ -27,22 +27,66 @@
 #define NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
 
 #include "stream-transport.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace face {
 
 /**
  * \brief A Transport that communicates on a connected TCP socket
+ *
+ * When persistency is set to permanent, whenever the TCP connection is severed, the transport
+ * state is set to DOWN, and the connection is retried periodically with exponential backoff
+ * until it is reestablished
  */
-class TcpTransport final : public StreamTransport<boost::asio::ip::tcp>
+class TcpTransport FINAL_UNLESS_WITH_TESTS : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
-  TcpTransport(protocol::socket&& socket,
-               ndn::nfd::FacePersistency persistency);
+  TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency);
 
 protected:
-  virtual void
+  void
   beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
+
+  void
+  doClose() final;
+
+  void
+  handleError(const boost::system::error_code& error) final;
+
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+  VIRTUAL_WITH_TESTS void
+  reconnect();
+
+  VIRTUAL_WITH_TESTS void
+  handleReconnect(const boost::system::error_code& error);
+
+  VIRTUAL_WITH_TESTS void
+  handleReconnectTimeout();
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /** \brief how long to wait before the first reconnection attempt after the TCP connection has been severed
+   */
+  static time::milliseconds s_initialReconnectWait;
+
+  /** \brief maximum amount of time to wait before a reconnection attempt
+   */
+  static time::milliseconds s_maxReconnectWait;
+
+  /** \brief multiplier for the exponential backoff of the reconnection timer
+   */
+  static float s_reconnectWaitMultiplier;
+
+private:
+  typename protocol::endpoint m_remoteEndpoint;
+
+  /** \note valid only when persistency is set to permanent
+   */
+  scheduler::ScopedEventId m_reconnectEvent;
+
+  /** \note valid only when persistency is set to permanent
+   */
+  time::milliseconds m_nextReconnectWait;
 };
 
 } // namespace face

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,9 +53,9 @@ protected:
   }
 
   void
-  initialize(ip::address address = ip::address_v4::loopback())
+  startAccept(const tcp::endpoint& remoteEp)
   {
-    tcp::endpoint remoteEp(address, 7070);
+    BOOST_REQUIRE(!acceptor.is_open());
     acceptor.open(remoteEp.protocol());
     acceptor.set_option(tcp::acceptor::reuse_address(true));
     acceptor.bind(remoteEp);
@@ -64,6 +64,21 @@ protected:
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
+  }
+
+  void
+  stopAccept()
+  {
+    BOOST_REQUIRE(acceptor.is_open());
+    acceptor.close();
+  }
+
+  void
+  initialize(ip::address address = ip::address_v4::loopback(),
+             ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+  {
+    tcp::endpoint remoteEp(address, 7070);
+    startAccept(remoteEp);
 
     tcp::socket sock(g_io);
     sock.async_connect(remoteEp, [this] (const boost::system::error_code& error) {
@@ -75,8 +90,7 @@ protected:
 
     localEp = sock.local_endpoint();
     face = make_unique<Face>(make_unique<DummyReceiveLinkService>(),
-                             make_unique<TcpTransport>(std::move(sock),
-                                                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT));
+                             make_unique<TcpTransport>(std::move(sock), persistency));
     transport = static_cast<TcpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 

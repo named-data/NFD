@@ -69,11 +69,23 @@ protected:
              size_t nBytesSent);
 
   void
+  startReceive();
+
+  void
   handleReceive(const boost::system::error_code& error,
                 size_t nBytesReceived);
 
   void
   processErrorCode(const boost::system::error_code& error);
+
+  virtual void
+  handleError(const boost::system::error_code& error);
+
+  void
+  resetReceiveBuffer();
+
+  void
+  resetSendQueue();
 
 protected:
   typename protocol::socket m_socket;
@@ -92,10 +104,7 @@ StreamTransport<T>::StreamTransport(typename StreamTransport::protocol::socket&&
   : m_socket(std::move(socket))
   , m_receiveBufferSize(0)
 {
-  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer, ndn::MAX_NDN_PACKET_SIZE),
-                         bind(&StreamTransport<T>::handleReceive, this,
-                              boost::asio::placeholders::error,
-                              boost::asio::placeholders::bytes_transferred));
+  startReceive();
 }
 
 template<class T>
@@ -136,9 +145,7 @@ StreamTransport<T>::deferredClose()
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  // clear send queue
-  std::queue<Block> emptyQueue;
-  std::swap(emptyQueue, m_sendQueue);
+  resetSendQueue();
 
   // use the non-throwing variant and ignore errors, if any
   boost::system::error_code error;
@@ -152,6 +159,9 @@ void
 StreamTransport<T>::doSend(Transport::Packet&& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);
+
+  if (getState() != TransportState::UP)
+    return;
 
   bool wasQueueEmpty = m_sendQueue.empty();
   m_sendQueue.push(packet.packet);
@@ -185,6 +195,19 @@ StreamTransport<T>::handleSend(const boost::system::error_code& error,
 
   if (!m_sendQueue.empty())
     sendFromQueue();
+}
+
+template<class T>
+void
+StreamTransport<T>::startReceive()
+{
+  BOOST_ASSERT(getState() == TransportState::UP);
+
+  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer + m_receiveBufferSize,
+                                             ndn::MAX_NDN_PACKET_SIZE - m_receiveBufferSize),
+                         bind(&StreamTransport<T>::handleReceive, this,
+                              boost::asio::placeholders::error,
+                              boost::asio::placeholders::bytes_transferred));
 }
 
 template<class T>
@@ -231,11 +254,7 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
     }
   }
 
-  m_socket.async_receive(boost::asio::buffer(m_receiveBuffer + m_receiveBufferSize,
-                                             ndn::MAX_NDN_PACKET_SIZE - m_receiveBufferSize),
-                         bind(&StreamTransport<T>::handleReceive, this,
-                              boost::asio::placeholders::error,
-                              boost::asio::placeholders::bytes_transferred));
+  startReceive();
 }
 
 template<class T>
@@ -252,11 +271,33 @@ StreamTransport<T>::processErrorCode(const boost::system::error_code& error)
     // transport is shutting down, ignore any errors
     return;
 
+  handleError(error);
+}
+
+template<class T>
+void
+StreamTransport<T>::handleError(const boost::system::error_code& error)
+{
   if (error != boost::asio::error::eof)
     NFD_LOG_FACE_WARN("Send or receive operation failed: " << error.message());
 
   this->setState(TransportState::FAILED);
   doClose();
+}
+
+template<class T>
+void
+StreamTransport<T>::resetReceiveBuffer()
+{
+  m_receiveBufferSize = 0;
+}
+
+template<class T>
+void
+StreamTransport<T>::resetSendQueue()
+{
+  std::queue<Block> emptyQueue;
+  std::swap(emptyQueue, m_sendQueue);
 }
 
 } // namespace face
