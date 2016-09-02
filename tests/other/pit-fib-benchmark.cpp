@@ -28,6 +28,10 @@
 
 #include "tests/test-common.hpp"
 
+#ifdef HAVE_VALGRIND
+#include <valgrind/callgrind.h>
+#endif
+
 namespace nfd {
 namespace tests {
 
@@ -38,6 +42,10 @@ protected:
     : m_fib(m_nameTree)
     , m_pit(m_nameTree)
   {
+#ifdef _DEBUG
+    BOOST_TEST_MESSAGE("Benchmark compiled in debug mode is unreliable, "
+                       "please compile in release mode.");
+#endif
   }
 
   void
@@ -113,6 +121,10 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
   generatePacketsAndPopulateFib(nRoundTrip, nFibEntries, fibPrefixLength,
                                 interestNameLength, dataNameLength);
 
+#ifdef HAVE_VALGRIND
+  CALLGRIND_START_INSTRUMENTATION;
+#endif
+
   auto t1 = time::steady_clock::now();
 
   for (size_t i = 0; i < nRoundTrip + gap3 + gap4; ++i) {
@@ -133,6 +145,11 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
   }
 
   auto t2 = time::steady_clock::now();
+
+#ifdef HAVE_VALGRIND
+  CALLGRIND_STOP_INSTRUMENTATION;
+#endif
+
   BOOST_TEST_MESSAGE(time::duration_cast<time::microseconds>(t2 - t1));
 }
 

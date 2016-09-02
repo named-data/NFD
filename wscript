@@ -109,6 +109,7 @@ main(int, char**)
       Logs.warn('Dropping privileges is not supported on this platform')
 
     conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
+    conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
     boost_libs = 'system chrono program_options random thread log log_setup'
     if conf.options.with_tests:

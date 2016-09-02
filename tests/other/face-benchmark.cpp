@@ -32,6 +32,10 @@
 #include <fstream>
 #include <iostream>
 
+#ifdef HAVE_VALGRIND
+#include <valgrind/callgrind.h>
+#endif
+
 namespace nfd {
 namespace tests {
 
@@ -172,6 +176,10 @@ private:
 int
 main(int argc, char** argv)
 {
+#ifdef _DEBUG
+  std::cerr << "Benchmark compiled in debug mode is unreliable, please compile in release mode.\n";
+#endif
+
   if (argc != 2) {
     std::cerr << "Usage: " << argv[0] << " <config-file>" << std::endl;
     return 2;
@@ -179,6 +187,9 @@ main(int argc, char** argv)
 
   try {
     nfd::tests::FaceBenchmark bench{argv[1]};
+#ifdef HAVE_VALGRIND
+    CALLGRIND_START_INSTRUMENTATION;
+#endif
     nfd::getGlobalIoService().run();
   }
   catch (const std::exception& e) {
