@@ -38,7 +38,7 @@
 #define SKIP_IF_NOT_SUPERUSER() \
   do { \
     if (::geteuid() != 0) { \
-      BOOST_TEST_MESSAGE("This test case needs to be run as superuser, skipping"); \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require superuser privileges"); \
       return; \
     } \
   } while (false)

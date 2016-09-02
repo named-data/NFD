@@ -58,7 +58,6 @@ protected:
   ConfigFile m_config;
 };
 
-
 BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceManagerProcessConfigFixture)
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -120,7 +119,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionTcpBadListen)
     "    listen hello\n"
     "  }\n"
     "}\n";
-
   BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
@@ -312,9 +310,8 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
   auto factory = dynamic_pointer_cast<UdpFactory>(m_manager.m_factories.find("udp")->second);
   BOOST_REQUIRE(factory != nullptr);
 
-  if (factory->getMulticastFaces().size() == 0) {
-    BOOST_TEST_MESSAGE("Destroying multicast faces is not tested because "
-                       "no UDP multicast faces are available");
+  if (factory->getMulticastFaces().empty()) {
+    BOOST_WARN_MESSAGE(false, "skipping assertions that require at least one UDP multicast face");
     return;
   }
 
@@ -335,6 +332,7 @@ BOOST_AUTO_TEST_CASE(ProcessSectionUdpMulticastReinit)
 
 BOOST_AUTO_TEST_CASE(ProcessSectionEther)
 {
+  SKIP_IF_NOT_SUPERUSER();
 
   const std::string CONFIG =
     "face_system\n"
@@ -345,7 +343,6 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEther)
     "    mcast_group 01:00:5E:00:17:AA\n"
     "  }\n"
     "}\n";
-
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
 }
@@ -395,6 +392,8 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEtherUnknownOption)
 
 BOOST_AUTO_TEST_CASE(ProcessSectionEtherMulticastReinit)
 {
+  SKIP_IF_NOT_SUPERUSER();
+
   const std::string CONFIG_WITH_MCAST =
     "face_system\n"
     "{\n"
@@ -409,9 +408,8 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEtherMulticastReinit)
   auto factory = dynamic_pointer_cast<EthernetFactory>(m_manager.m_factories.find("ether")->second);
   BOOST_REQUIRE(factory != nullptr);
 
-  if (factory->getMulticastFaces().size() == 0) {
-    BOOST_TEST_MESSAGE("Destroying multicast faces is not tested because "
-                       "no Ethernet multicast faces are available");
+  if (factory->getMulticastFaces().empty()) {
+    BOOST_WARN_MESSAGE(false, "skipping assertions that require at least one Ethernet multicast face");
     return;
   }
 

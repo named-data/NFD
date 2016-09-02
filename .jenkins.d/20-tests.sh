@@ -9,38 +9,42 @@ source "$JDIR"/util.sh
 rm -Rf ~/.ndnx ~/.ndn
 
 if has OSX $NODE_LABELS; then
-  security unlock-keychain -p "named-data"
-  sudo chgrp admin /dev/bpf*
-  sudo chmod g+rw /dev/bpf*
-fi
-
-if has Linux $NODE_LABELS; then
-  sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-core || true
-  sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-daemon || true
-  sudo setcap cap_net_raw,cap_net_admin=eip `pwd`/build/unit-tests-rib || true
-  # unit-tests-tools does not need capabilities
+    security unlock-keychain -p named-data
 fi
 
 ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 
-# Run unit tests
-# Core
-if [[ -n $XUNIT ]]; then
-  ./build/unit-tests-core -l all -- --log_format2=XML --log_sink2=build/xunit-core-report.xml
-  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l all -- --log_format2=XML --log_sink2=build/xunit-core-sudo-report.xml
+count=0
 
-  ./build/unit-tests-daemon -l all -- --log_format2=XML --log_sink2=build/xunit-daemon-report.xml
+# Helper function
+run_tests() {
+    local sudo=
+    if [[ $1 == sudo ]]; then
+        sudo=$1
+        shift
+    fi
 
-  ./build/unit-tests-rib -l all -- --log_format2=XML --log_sink2=build/xunit-rib-report.xml
+    local module=$1
+    shift
 
-  ./build/unit-tests-tools -l all -- --log_format2=XML --log_sink2=build/xunit-tools-report.xml
-else
-  ./build/unit-tests-core -l test_suite
-  sudo ./build/unit-tests-core -t TestPrivilegeHelper -l test_suite
+    if [[ -n $XUNIT ]]; then
+        ${sudo} ./build/unit-tests-${module} -l all "$@" -- --log_format2=XML --log_sink2="build/xunit-${count}-${module}${sudo:+-}${sudo}.xml"
+        ((count+=1))
+    else
+        ${sudo} ./build/unit-tests-${module} -l test_suite "$@"
+    fi
+}
 
-  ./build/unit-tests-daemon -l test_suite
+# First run all tests as unprivileged user
+run_tests core
+run_tests daemon
+run_tests rib
+run_tests tools
 
-  ./build/unit-tests-rib -l test_suite
+# Then use sudo to run those tests that need superuser powers
+run_tests sudo core -t TestPrivilegeHelper
+run_tests sudo daemon -t Face/TestEthernetFactory,TestEthernetTransport
+run_tests sudo daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig
+run_tests sudo daemon -t Mgmt/TestFaceManager/ProcessConfig/ProcessSectionUdp,ProcessSectionUdpMulticastReinit,ProcessSectionEther,ProcessSectionEtherMulticastReinit
 
-  ./build/unit-tests-tools -l test_suite
-fi
+unset count

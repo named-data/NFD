@@ -28,6 +28,8 @@
 
 #include "tests/test-common.hpp"
 
+#include <cstring>
+
 namespace nfd {
 namespace general {
 namespace tests {
@@ -37,17 +39,18 @@ using namespace nfd::tests;
 class GeneralConfigSectionFixture : public BaseFixture
 {
 public:
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   ~GeneralConfigSectionFixture()
   {
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
     // revert changes to s_normalUid/s_normalGid, if any
     PrivilegeHelper::s_normalUid = ::geteuid();
     PrivilegeHelper::s_normalGid = ::getegid();
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
   }
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 };
 
-BOOST_FIXTURE_TEST_SUITE(MgmtGeneralConfigSection, GeneralConfigSectionFixture)
+BOOST_AUTO_TEST_SUITE(Mgmt)
+BOOST_FIXTURE_TEST_SUITE(TestGeneralConfigSection, GeneralConfigSectionFixture)
 
 BOOST_AUTO_TEST_CASE(DefaultConfig)
 {
@@ -113,12 +116,6 @@ BOOST_AUTO_TEST_CASE(NoGroupConfig)
 
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 
-static bool
-checkExceptionMessage(const ConfigFile::Error& error, const std::string& expected)
-{
-  return error.what() == expected;
-}
-
 BOOST_AUTO_TEST_CASE(InvalidUserConfig)
 {
   const std::string CONFIG =
@@ -130,10 +127,12 @@ BOOST_AUTO_TEST_CASE(InvalidUserConfig)
   ConfigFile configFile;
   general::setConfigFile(configFile);
 
-  const std::string expected = "Invalid value for \"user\" in \"general\" section";
-  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
-                          ConfigFile::Error,
-                          bind(&checkExceptionMessage, _1, expected));
+  BOOST_CHECK_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                        ConfigFile::Error,
+                        [] (const ConfigFile::Error& e) {
+                          return std::strcmp(e.what(),
+                                             "Invalid value for \"user\" in \"general\" section") == 0;
+                        });
 }
 
 BOOST_AUTO_TEST_CASE(InvalidGroupConfig)
@@ -147,13 +146,16 @@ BOOST_AUTO_TEST_CASE(InvalidGroupConfig)
   ConfigFile configFile;
   general::setConfigFile(configFile);
 
-  const std::string expected = "Invalid value for \"group\" in \"general\" section";
-  BOOST_REQUIRE_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
-                          ConfigFile::Error,
-                          bind(&checkExceptionMessage, _1, expected));
+  BOOST_CHECK_EXCEPTION(configFile.parse(CONFIG, true, "test-general-config-section"),
+                        ConfigFile::Error,
+                        [] (const ConfigFile::Error& e) {
+                          return std::strcmp(e.what(),
+                                             "Invalid value for \"group\" in \"general\" section") == 0;
+                        });
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestGeneralConfigSection
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
 } // namespace general

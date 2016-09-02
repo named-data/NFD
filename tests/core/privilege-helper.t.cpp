@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,10 +35,7 @@ BOOST_FIXTURE_TEST_SUITE(TestPrivilegeHelper, BaseFixture)
 BOOST_AUTO_TEST_CASE(DropRaise)
 {
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
-  if (::geteuid() != 0) {
-    BOOST_TEST_MESSAGE("This test case needs to be run as super user, skipping");
-    return;
-  }
+  SKIP_IF_NOT_SUPERUSER();
 
   // The following assumes that nobody/nogroup is present on the test system
   BOOST_CHECK_NO_THROW(PrivilegeHelper::initialize("nobody", "nogroup"));
@@ -50,14 +47,14 @@ BOOST_AUTO_TEST_CASE(DropRaise)
   // separate runElevated case to improve log reporting (otherwise output is unreadable)
   BOOST_CHECK_NO_THROW(PrivilegeHelper::runElevated([]{}));
   PrivilegeHelper::runElevated([] {
-      BOOST_CHECK_EQUAL(::geteuid(), 0);
-    });
+    BOOST_CHECK_EQUAL(::geteuid(), 0);
+  });
   BOOST_CHECK_NE(::geteuid(), 0);
 
   BOOST_CHECK_NO_THROW(PrivilegeHelper::raise());
   BOOST_CHECK_EQUAL(::geteuid(), 0);
 #else
-  BOOST_TEST_MESSAGE("Skipping test, since drop/raise privileges is not supported on this platform");
+  BOOST_TEST_MESSAGE("Dropping/raising privileges not supported on this platform, skipping");
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
