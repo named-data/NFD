@@ -87,5 +87,67 @@ Strategy::sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader
   // warning: don't loop on pitEntry->getInRecords(), because in-record is deleted when sending Nack
 }
 
+const fib::Entry&
+Strategy::lookupFib(const pit::Entry& pitEntry) const
+{
+  const Fib& fib = m_forwarder.getFib();
+  const NetworkRegionTable& nrt = m_forwarder.getNetworkRegionTable();
+
+  const Interest& interest = pitEntry.getInterest();
+  // has Link object?
+  if (!interest.hasLink()) {
+    // FIB lookup with Interest name
+    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(pitEntry);
+    NFD_LOG_TRACE("lookupFib noLinkObject found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  const Link& link = interest.getLink();
+
+  // in producer region?
+  if (nrt.isInProducerRegion(link)) {
+    // FIB lookup with Interest name
+    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(pitEntry);
+    NFD_LOG_TRACE("lookupFib inProducerRegion found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  // has SelectedDelegation?
+  if (interest.hasSelectedDelegation()) {
+    // FIB lookup with SelectedDelegation
+    Name selectedDelegation = interest.getSelectedDelegation();
+    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(selectedDelegation);
+    NFD_LOG_TRACE("lookupFib hasSelectedDelegation=" << selectedDelegation << " found=" << fibEntry.getPrefix());
+    return fibEntry;
+  }
+
+  // FIB lookup with first delegation Name
+  const fib::Entry& fibEntry0 = fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
+  // in default-free zone?
+  bool isDefaultFreeZone = !(fibEntry0.getPrefix().size() == 0 && fibEntry0.hasNextHops());
+  if (!isDefaultFreeZone) {
+    NFD_LOG_TRACE("lookupFib inConsumerRegion found=" << fibEntry0.getPrefix());
+    return fibEntry0;
+  }
+
+  // choose and set SelectedDelegation
+  for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
+    const Name& delegationName = delegation.second;
+    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(delegationName);
+    if (fibEntry.hasNextHops()) {
+      /// \todo Don't modify in-record Interests.
+      ///       Set SelectedDelegation in outgoing Interest pipeline.
+      std::for_each(pitEntry.in_begin(), pitEntry.in_end(),
+        [&delegationName] (const pit::InRecord& inR) {
+          const_cast<Interest&>(inR.getInterest()).setSelectedDelegation(delegationName);
+        });
+      NFD_LOG_TRACE("lookupFib enterDefaultFreeZone setSelectedDelegation=" << delegationName);
+      return fibEntry;
+    }
+  }
+  BOOST_ASSERT(false);
+  return fibEntry0;
+}
+
 } // namespace fw
 } // namespace nfd

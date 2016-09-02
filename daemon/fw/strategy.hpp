@@ -179,11 +179,10 @@ protected: // actions
             std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
 
 protected: // accessors
+  /** \brief performs a FIB lookup, considering Link object if present
+   */
   const fib::Entry&
-  lookupFib(const pit::Entry& pitEntry)
-  {
-    return m_forwarder.lookupFib(pitEntry);
-  }
+  lookupFib(const pit::Entry& pitEntry) const;
 
   MeasurementsAccessor&
   getMeasurements()

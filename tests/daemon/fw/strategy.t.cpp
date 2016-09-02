@@ -98,6 +98,143 @@ BOOST_AUTO_TEST_CASE(FaceTableAccess)
   BOOST_CHECK((strategy.removedFaces == std::vector<FaceId>{id2, id1}));
 }
 
+class LookupFibFixture : public BaseFixture
+{
+protected:
+  class TestStrategy : public DummyStrategy
+  {
+  public:
+    explicit
+    TestStrategy(Forwarder& forwarder)
+      : DummyStrategy(forwarder, Name("ndn:/strategy"))
+    {
+    }
+
+    const fib::Entry&
+    lookupFib(const pit::Entry& pitEntry) const
+    {
+      return this->Strategy::lookupFib(pitEntry);
+    }
+  };
+
+  LookupFibFixture()
+    : strategy(forwarder)
+    , fib(forwarder.getFib())
+    , pit(forwarder.getPit())
+    , nrt(forwarder.getNetworkRegionTable())
+  {
+  }
+
+protected:
+  Forwarder forwarder;
+  TestStrategy strategy;
+  Fib& fib;
+  Pit& pit;
+  NetworkRegionTable& nrt;
+};
+
+BOOST_FIXTURE_TEST_CASE(LookupFib, LookupFibFixture)
+{
+  /// \todo test lookupFib without Link
+  /// \todo split each step to a separate test case
+
+  shared_ptr<Face> face1 = make_shared<DummyFace>();
+  shared_ptr<Face> face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  shared_ptr<Link> link = makeLink("/net/ndnsim", {{10, "/telia/terabits"}, {20, "/ucla/cs"}});
+
+  // consumer region
+  nrt.clear();
+  nrt.insert("/arizona/cs/avenir");
+  fib.insert("/").first->addNextHop(*face2, 10);
+
+  auto interest1 = makeInterest("/net/ndnsim/www/1.html");
+  interest1->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
+  pit1->insertOrUpdateInRecord(*face1, *interest1);
+
+  BOOST_CHECK_EQUAL(strategy.lookupFib(*pit1).getPrefix(), "/");
+  BOOST_CHECK_EQUAL(interest1->hasSelectedDelegation(), false);
+
+  fib.insert("/").first->removeNextHop(*face2);
+
+  // first default-free router, both delegations are available
+  nrt.clear();
+  nrt.insert("/arizona/cs/hobo");
+  fib.insert("/telia").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
+
+  auto interest2 = makeInterest("/net/ndnsim/www/2.html");
+  interest2->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
+  pit2->insertOrUpdateInRecord(*face1, *interest2);
+
+  BOOST_CHECK_EQUAL(strategy.lookupFib(*pit2).getPrefix(), "/telia");
+  BOOST_REQUIRE_EQUAL(interest2->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest2->getSelectedDelegation(), "/telia/terabits");
+
+  fib.erase("/telia");
+  fib.erase("/ucla");
+
+  // first default-free router, only second delegation is available
+  nrt.clear();
+  nrt.insert("/arizona/cs/hobo");
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
+
+  auto interest3 = makeInterest("/net/ndnsim/www/3.html");
+  interest3->setLink(link->wireEncode());
+  shared_ptr<pit::Entry> pit3 = pit.insert(*interest3).first;
+  pit3->insertOrUpdateInRecord(*face1, *interest3);
+
+  BOOST_CHECK_EQUAL(strategy.lookupFib(*pit3).getPrefix(), "/ucla");
+  BOOST_REQUIRE_EQUAL(interest3->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest3->getSelectedDelegation(), "/ucla/cs");
+
+  fib.erase("/ucla");
+
+  // default-free router, chosen SelectedDelegation
+  nrt.clear();
+  nrt.insert("/ucsd/caida/click");
+  fib.insert("/telia").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
+
+  auto interest4 = makeInterest("/net/ndnsim/www/4.html");
+  interest4->setLink(link->wireEncode());
+  interest4->setSelectedDelegation("/ucla/cs");
+  shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
+  pit4->insertOrUpdateInRecord(*face1, *interest4);
+
+  BOOST_CHECK_EQUAL(strategy.lookupFib(*pit4).getPrefix(), "/ucla");
+  BOOST_REQUIRE_EQUAL(interest4->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest4->getSelectedDelegation(), "/ucla/cs");
+
+  fib.erase("/telia");
+  fib.erase("/ucla");
+
+  // producer region
+  nrt.clear();
+  nrt.insert("/ucla/cs/spurs");
+  fib.insert("/").first->addNextHop(*face2, 10);
+  fib.insert("/ucla").first->addNextHop(*face2, 10);
+  fib.insert("/net/ndnsim").first->addNextHop(*face2, 10);
+
+  auto interest5 = makeInterest("/net/ndnsim/www/5.html");
+  interest5->setLink(link->wireEncode());
+  interest5->setSelectedDelegation("/ucla/cs");
+  shared_ptr<pit::Entry> pit5 = pit.insert(*interest5).first;
+  pit5->insertOrUpdateInRecord(*face1, *interest5);
+
+  BOOST_CHECK_EQUAL(strategy.lookupFib(*pit1).getPrefix(), "/net/ndnsim");
+  BOOST_REQUIRE_EQUAL(interest5->hasSelectedDelegation(), true);
+  BOOST_CHECK_EQUAL(interest5->getSelectedDelegation(), "/ucla/cs");
+
+  fib.insert("/").first->removeNextHop(*face2);
+  fib.erase("/ucla");
+  fib.erase("/ndnsim");
+}
+
 BOOST_AUTO_TEST_SUITE_END() // TestStrategy
 BOOST_AUTO_TEST_SUITE_END() // Fw
 

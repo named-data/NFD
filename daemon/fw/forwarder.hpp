@@ -173,11 +173,6 @@ public: // forwarding entrypoints and tables
     return m_networkRegionTable;
   }
 
-  /** \brief performs a FIB lookup, considering Link object if present
-   */
-  const fib::Entry&
-  lookupFib(const pit::Entry& pitEntry) const;
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
