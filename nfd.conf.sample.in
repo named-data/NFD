@@ -51,7 +51,7 @@ tables
 
   ; Set a policy to decide whether to cache or drop unsolicited Data.
   ; Available policies are: drop-all, admit-local, admit-network, admit-all
-  cs_unsolicited_policy admit-local
+  cs_unsolicited_policy drop-all
 
   ; Set the forwarding strategy for the specified prefixes:
   ;   <prefix> <strategy>

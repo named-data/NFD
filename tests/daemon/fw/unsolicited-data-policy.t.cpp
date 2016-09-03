@@ -93,7 +93,7 @@ struct FaceScopePolicyTest
 };
 
 typedef boost::mpl::vector<
-  FaceScopePolicyTest<void, true, false>, // default policy
+  FaceScopePolicyTest<void, false, false>, // default policy
   FaceScopePolicyTest<DropAllUnsolicitedDataPolicy, false, false>,
   FaceScopePolicyTest<AdmitLocalUnsolicitedDataPolicy, true, false>,
   FaceScopePolicyTest<AdmitNetworkUnsolicitedDataPolicy, false, true>,

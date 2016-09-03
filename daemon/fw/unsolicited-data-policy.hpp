@@ -99,7 +99,7 @@ makeUnsolicitedDataPolicy(const std::string& key);
 
 /** \brief the default UnsolicitedDataPolicy
  */
-typedef AdmitLocalUnsolicitedDataPolicy DefaultUnsolicitedDataPolicy;
+typedef DropAllUnsolicitedDataPolicy DefaultUnsolicitedDataPolicy;
 
 } // namespace fw
 } // namespace nfd
