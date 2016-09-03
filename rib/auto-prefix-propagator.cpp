@@ -251,7 +251,7 @@ AutoPrefixPropagator::redoPropagation(PropagatedEntryIt entryIt,
   if (doesCurrentPropagatedPrefixWork(parameters.getName())) {
     // PROPAGATED / PROPAGATE_FAIL --> PROPAGATING
     entryIt->second.startPropagation();
-    return startPropagation(parameters, options, retryWaitTime);
+    return advertise(parameters, options, retryWaitTime);
   }
 
   NFD_LOG_INFO("current propagated prefix does not work any more");
@@ -266,11 +266,11 @@ AutoPrefixPropagator::redoPropagation(PropagatedEntryIt entryIt,
 }
 
 void
-AutoPrefixPropagator::startPropagation(const ControlParameters& parameters,
-                                       const CommandOptions& options,
-                                       time::seconds retryWaitTime)
+AutoPrefixPropagator::advertise(const ControlParameters& parameters,
+                                const CommandOptions& options,
+                                time::seconds retryWaitTime)
 {
-  NFD_LOG_TRACE("start propagate " << parameters.getName());
+  NFD_LOG_INFO("advertise " << parameters.getName());
 
   ndn::Scheduler::Event refreshEvent =
     bind(&AutoPrefixPropagator::onRefreshTimer, this, parameters, options);
@@ -287,11 +287,11 @@ AutoPrefixPropagator::startPropagation(const ControlParameters& parameters,
 }
 
 void
-AutoPrefixPropagator::startRevocation(const ControlParameters& parameters,
-                                      const CommandOptions& options,
-                                      time::seconds retryWaitTime)
+AutoPrefixPropagator::withdraw(const ControlParameters& parameters,
+                               const CommandOptions& options,
+                               time::seconds retryWaitTime)
 {
-  NFD_LOG_INFO("start revoke propagation of " << parameters.getName());
+  NFD_LOG_INFO("withdraw " << parameters.getName());
 
   m_nfdController.start<ndn::nfd::RibUnregisterCommand>(
      parameters,
@@ -317,7 +317,7 @@ AutoPrefixPropagator::afterRibInsert(const ControlParameters& parameters,
 
   // NEW --> PROPAGATING
   entry.startPropagation();
-  startPropagation(parameters, options, m_baseRetryWait);
+  advertise(parameters, options, m_baseRetryWait);
 }
 
 void
@@ -342,7 +342,7 @@ AutoPrefixPropagator::afterRibErase(const ControlParameters& parameters,
     return;
   }
 
-  startRevocation(parameters, options, m_baseRetryWait);
+  withdraw(parameters, options, m_baseRetryWait);
 }
 
 void
@@ -390,7 +390,7 @@ AutoPrefixPropagator::afterPropagateSucceed(const ControlParameters& parameters,
     // propagation should be revoked if this entry has been erased (i.e., be in RELEASED state)
     NFD_LOG_DEBUG("Already erased!");
     ControlParameters newParameters = parameters;
-    return startRevocation(newParameters.unsetCost(), options, m_baseRetryWait);
+    return withdraw(newParameters.unsetCost(), options, m_baseRetryWait);
   }
 
   // PROPAGATING --> PROPAGATED
@@ -437,7 +437,7 @@ AutoPrefixPropagator::afterRevokeSucceed(const ControlParameters& parameters,
     entryIt->second.startPropagation();
 
     ControlParameters newParameters = parameters;
-    startPropagation(newParameters.setCost(m_controlParameters.getCost()), options, retryWaitTime);
+    advertise(newParameters.setCost(m_controlParameters.getCost()), options, retryWaitTime);
   }
 }
 

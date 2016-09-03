@@ -202,9 +202,9 @@ private:
    * @param retryWaitTime the current wait time before retrying propagation
    */
   void
-  startPropagation(const ndn::nfd::ControlParameters& parameters,
-                   const ndn::nfd::CommandOptions& options,
-                   time::seconds retryWaitTime);
+  advertise(const ndn::nfd::ControlParameters& parameters,
+            const ndn::nfd::CommandOptions& options,
+            time::seconds retryWaitTime);
 
   /**
    * @brief send out the unregistration command to revoke the corresponding propagation.
@@ -214,9 +214,9 @@ private:
    * @param retryWaitTime the current wait time before retrying propagation
    */
   void
-  startRevocation(const ndn::nfd::ControlParameters& parameters,
-                  const ndn::nfd::CommandOptions& options,
-                  time::seconds retryWaitTime);
+  withdraw(const ndn::nfd::ControlParameters& parameters,
+           const ndn::nfd::CommandOptions& options,
+           time::seconds retryWaitTime);
 
   /**
    * @brief invoked when Rib::afterInsertEntry signal is emitted
@@ -301,7 +301,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
    * rib.auto_prefix_propagate.refresh_interval.
    *
    * Otherwise, make a copy of the ControlParameters @p parameters, unset its Cost field, and then
-   * invoke startRevocation with this new ControlParameters.
+   * invoke withdraw with this new ControlParameters.
    *
    * @param parameters the ControlParameters used by the registration command for propagation
    * @param options the CommandOptions used by the registration command for propagation
@@ -341,7 +341,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
    *
    * If the PropagatedEntry still exists and is not in PROPAGATE_FAIL state, switch it to
    * PROPAGATING. Then make a copy of the ControlParameters @p parameters, reset its Cost, and
-   * invoke startPropagation with this new ControlParameters.
+   * invoke advertise with this new ControlParameters.
    *
    * @param parameters the ControlParameters used by the unregistration command for revocation
    * @param options the CommandOptions used by the unregistration command for revocation
