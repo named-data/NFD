@@ -59,6 +59,9 @@ FaceManager::FaceManager(FaceTable& faceTable, Dispatcher& dispatcher, CommandAu
   registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
     bind(&FaceManager::createFace, this, _2, _3, _4, _5));
 
+  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
+    bind(&FaceManager::updateFace, this, _2, _3, _4, _5));
+
   registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
     bind(&FaceManager::destroyFace, this, _2, _3, _4, _5));
 
@@ -143,6 +146,8 @@ FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
 
   m_faceTable.add(newFace);
 
+  // TODO: #3731: Verify and add Flags
+
   // Set ControlResponse parameters
   response.setFaceId(newFace->getId());
   response.setFacePersistency(newFace->getPersistency());
@@ -158,6 +163,69 @@ FaceManager::afterCreateFaceFailure(uint32_t status,
   NFD_LOG_DEBUG("Face creation failed: " << reason);
 
   done(ControlResponse(status, reason));
+}
+
+void
+FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
+                        const ControlParameters& parameters,
+                        const ndn::mgmt::CommandContinuation& done)
+{
+  FaceId faceId = parameters.getFaceId();
+  if (faceId == 0) {
+    // Self-updating
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = interest.getTag<lp::IncomingFaceIdTag>();
+    if (incomingFaceIdTag == nullptr) {
+      NFD_LOG_TRACE("unable to determine face for self-update");
+      done(ControlResponse(404, "No FaceId specified and IncomingFaceId not available"));
+      return;
+    }
+    faceId = *incomingFaceIdTag;
+  }
+
+  Face* face = m_faceTable.get(faceId);
+
+  if (face == nullptr) {
+    NFD_LOG_TRACE("invalid face specified");
+    done(ControlResponse(404, "Specified face does not exist"));
+    return;
+  }
+
+  // Verify validity of requested changes
+  ControlParameters response;
+  bool areParamsValid = true;
+
+  if (parameters.hasFacePersistency()) {
+    // TODO #3232: Add FacePersistency updating
+    NFD_LOG_TRACE("received unsupported face persistency change");
+    areParamsValid = false;
+    response.setFacePersistency(parameters.getFacePersistency());
+  }
+
+  if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+      parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+      face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {
+    NFD_LOG_TRACE("received request to enable local fields on non-local face");
+    areParamsValid = false;
+    response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED,
+                        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+  }
+
+  if (!areParamsValid) {
+    done(ControlResponse(409, "Invalid properties specified").setBody(response.wireEncode()));
+    return;
+  }
+
+  // All specified properties are valid, so make changes
+
+  // TODO #3232: Add FacePersistency updating
+
+  setLinkServiceOptions(*face, parameters, response);
+
+  // Set remaining ControlResponse fields
+  response.setFaceId(faceId);
+  response.setFacePersistency(face->getPersistency());
+
+  done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
 
 void
@@ -183,8 +251,7 @@ FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
     return;
   }
 
-  // TODO#3226 redesign enable-local-control
-  // For now, enable-local-control will enable all local fields in GenericLinkService.
+  // enable-local-control will enable all local fields in GenericLinkService
   auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
   if (service == nullptr) {
     return done(ControlResponse(503, "LinkService type not supported"));
@@ -208,8 +275,7 @@ FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest
     return;
   }
 
-  // TODO#3226 redesign disable-local-control
-  // For now, disable-local-control will disable all local fields in GenericLinkService.
+  // disable-local-control will disable all local fields in GenericLinkService
   auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
   if (service == nullptr) {
     return done(ControlResponse(503, "LinkService type not supported"));
@@ -248,6 +314,25 @@ FaceManager::findFaceForLocalControl(const Interest& request,
   }
 
   return face;
+}
+
+void
+FaceManager::setLinkServiceOptions(Face& face,
+                                   const ControlParameters& parameters,
+                                   ControlParameters& response)
+{
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  BOOST_ASSERT(linkService != nullptr);
+
+  auto options = linkService->getOptions();
+  if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+      face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+    options.allowLocalFields = parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
+  }
+  linkService->setOptions(options);
+
+  // Set Flags for ControlResponse
+  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
 }
 
 void

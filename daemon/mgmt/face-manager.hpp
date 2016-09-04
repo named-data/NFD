@@ -61,15 +61,26 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // ControlCommand
              const ndn::mgmt::CommandContinuation& done);
 
   void
+  updateFace(const Name& topPrefix, const Interest& interest,
+             const ControlParameters& parameters,
+             const ndn::mgmt::CommandContinuation& done);
+
+  void
   destroyFace(const Name& topPrefix, const Interest& interest,
               const ControlParameters& parameters,
               const ndn::mgmt::CommandContinuation& done);
 
+  /**
+   * \deprecated use Flags+Mask in faces/update instead
+   */
   void
   enableLocalControl(const Name& topPrefix, const Interest& interest,
                      const ControlParameters& parameters,
                      const ndn::mgmt::CommandContinuation& done);
 
+  /**
+   * \deprecated use Flags+Mask in faces/update instead
+   */
   void
   disableLocalControl(const Name& topPrefix, const Interest& interest,
                       const ControlParameters& parameters,
@@ -90,6 +101,11 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   findFaceForLocalControl(const Interest& request,
                           const ControlParameters& parameters,
                           const ndn::mgmt::CommandContinuation& done);
+
+  static void
+  setLinkServiceOptions(Face& face,
+                        const ControlParameters& parameters,
+                        ControlParameters& response);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
   void
@@ -151,9 +167,9 @@ private: // configuration
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<std::string /*protocol*/, shared_ptr<ProtocolFactory>> m_factories;
+  FaceTable& m_faceTable;
 
 private:
-  FaceTable& m_faceTable;
   ndn::mgmt::PostNotification m_postNotification;
   signal::ScopedConnection m_faceAddConn;
   signal::ScopedConnection m_faceRemoveConn;

@@ -84,19 +84,6 @@ public:
   }
 };
 
-class UdpFaceConnectToSelf // face that will cause afterCreateFaceFailure to be invoked
-                           // fails because remote endpoint is prohibited
-{
-public:
-  ControlParameters
-  getParameters()
-  {
-    return ControlParameters()
-      .setUri("udp4://0.0.0.0:16363"); // cannot connect to self
-  }
-};
-
-
 class UdpFacePersistent
 {
 public:
@@ -121,41 +108,28 @@ public:
   }
 };
 
-class Success
+class UdpFaceConnectToSelf // face that will cause afterCreateFaceFailure to be invoked
+                           // fails because remote endpoint is prohibited
 {
 public:
-  ControlResponse
-  getExpected()
+  ControlParameters
+  getParameters()
   {
-    return ControlResponse()
-      .setCode(200)
-      .setText("OK");
-  }
-};
-
-template<int CODE>
-class Failure
-{
-public:
-  ControlResponse
-  getExpected()
-  {
-    return ControlResponse()
-      .setCode(CODE)
-      .setText("Error"); // error description should not be checked
+    return ControlParameters()
+      .setUri("udp4://0.0.0.0:16363"); // cannot connect to self
   }
 };
 
 namespace mpl = boost::mpl;
 
 // pairs of CreateCommand and Success/Failure status
-typedef mpl::vector<mpl::pair<TcpFaceOnDemand, Failure<406>>,
-                    mpl::pair<TcpFacePersistent, Success>,
-                    mpl::pair<TcpFacePermanent, Failure<406>>,
-                    mpl::pair<UdpFaceOnDemand, Failure<406>>,
-                    mpl::pair<UdpFacePersistent, Success>,
-                    mpl::pair<UdpFacePermanent, Success>,
-                    mpl::pair<UdpFaceConnectToSelf, Failure<406>>> Faces;
+typedef mpl::vector<mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
+                    mpl::pair<TcpFacePersistent, CommandSuccess>,
+                    mpl::pair<TcpFacePermanent, CommandFailure<406>>,
+                    mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
+                    mpl::pair<UdpFacePersistent, CommandSuccess>,
+                    mpl::pair<UdpFacePermanent, CommandSuccess>,
+                    mpl::pair<UdpFaceConnectToSelf, CommandFailure<406>>> Faces;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 {
@@ -186,10 +160,28 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
       BOOST_CHECK(actualParams.hasFaceId());
       BOOST_CHECK_EQUAL(expectedParams.getFacePersistency(), actualParams.getFacePersistency());
 
-      if (actual.getCode() != 200) {
+      if (actual.getCode() == 200) {
+        if (expectedParams.hasFlags()) {
+          // TODO: #3731 check if Flags match
+        }
+        else {
+          // TODO: #3731 check if Flags at defaults
+        }
+      }
+      else {
         BOOST_CHECK_EQUAL(expectedParams.getUri(), actualParams.getUri());
       }
     }
+
+    if (actual.getCode() != 200) {
+      // ensure face not created
+      FaceUri uri(FaceType().getParameters().getUri());
+      auto& faceTable = this->node1.manager.m_faceTable;
+      BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
+        return face.getRemoteUri() == uri;
+      }));
+    }
+
     hasCallbackFired = true;
   });
 

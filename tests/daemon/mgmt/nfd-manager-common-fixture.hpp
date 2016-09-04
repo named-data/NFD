@@ -55,6 +55,31 @@ protected:
   shared_ptr<CommandAuthenticator> m_authenticator;
 };
 
+class CommandSuccess
+{
+public:
+  ControlResponse
+  getExpected()
+  {
+    return ControlResponse()
+      .setCode(200)
+      .setText("OK");
+  }
+};
+
+template<int CODE>
+class CommandFailure
+{
+public:
+  ControlResponse
+  getExpected()
+  {
+    return ControlResponse()
+      .setCode(CODE);
+    // error description should not be checked
+  }
+};
+
 } // namespace tests
 } // namespace nfd
 
