@@ -54,6 +54,28 @@ public:
 
   virtual UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const = 0;
+
+public: // registry
+  template<typename P>
+  static void
+  registerPolicy(const std::string& key)
+  {
+    Registry& registry = getRegistry();
+    BOOST_ASSERT(registry.count(key) == 0);
+    registry[key] = [] { return make_unique<P>(); };
+  }
+
+  /** \return an UnsolicitedDataPolicy identified by \p key, or nullptr if \p key is unknown
+   */
+  static unique_ptr<UnsolicitedDataPolicy>
+  create(const std::string& key);
+
+private:
+  typedef std::function<unique_ptr<UnsolicitedDataPolicy>()> CreateFunc;
+  typedef std::map<std::string, CreateFunc> Registry; // indexed by key
+
+  static Registry&
+  getRegistry();
 };
 
 /** \brief drops all unsolicited Data
@@ -92,16 +114,25 @@ public:
   decide(const Face& inFace, const Data& data) const final;
 };
 
-/** \return an UnsolicitedDataPolicy identified by \p key, or nullptr if \p key is unknown
- */
-unique_ptr<UnsolicitedDataPolicy>
-makeUnsolicitedDataPolicy(const std::string& key);
-
 /** \brief the default UnsolicitedDataPolicy
  */
 typedef DropAllUnsolicitedDataPolicy DefaultUnsolicitedDataPolicy;
 
 } // namespace fw
 } // namespace nfd
+
+/** \brief registers an unsolicited data policy
+ *  \param P a subclass of nfd::fw::UnsolicitedDataPolicy
+ *  \param key the policy keyword, which is available for selection in NFD config file
+ */
+#define NFD_REGISTER_UNSOLICITED_DATA_POLICY(P, key)                \
+static class NfdAuto ## P ## UnsolicitedDataPolicyRegistrationClass \
+{                                                                   \
+public:                                                             \
+  NfdAuto ## P ## UnsolicitedDataPolicyRegistrationClass()          \
+  {                                                                 \
+    ::nfd::fw::UnsolicitedDataPolicy::registerPolicy<P>(key);       \
+  }                                                                 \
+} g_nfdAuto ## P ## UnsolicitedDataPolicyRegistrationVariable
 
 #endif // NFD_DAEMON_FW_UNSOLICITED_DATA_POLICY_HPP

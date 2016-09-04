@@ -70,7 +70,7 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
   OptionalNode unsolicitedDataPolicyNode = section.get_child_optional("cs_unsolicited_policy");
   if (unsolicitedDataPolicyNode) {
     std::string policyKey = unsolicitedDataPolicyNode->get_value<std::string>();
-    unsolicitedDataPolicy = fw::makeUnsolicitedDataPolicy(policyKey);
+    unsolicitedDataPolicy = fw::UnsolicitedDataPolicy::create(policyKey);
     if (unsolicitedDataPolicy == nullptr) {
       BOOST_THROW_EXCEPTION(ConfigFile::Error(
         "Unknown cs_unsolicited_policy \"" + policyKey + "\" in \"tables\" section"));

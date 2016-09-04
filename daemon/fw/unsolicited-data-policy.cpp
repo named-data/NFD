@@ -40,11 +40,30 @@ operator<<(std::ostream& os, UnsolicitedDataDecision d)
   return os << static_cast<int>(d);
 }
 
+UnsolicitedDataPolicy::Registry&
+UnsolicitedDataPolicy::getRegistry()
+{
+  static Registry registry;
+  return registry;
+}
+
+unique_ptr<UnsolicitedDataPolicy>
+UnsolicitedDataPolicy::create(const std::string& key)
+{
+  Registry& registry = getRegistry();
+  auto i = registry.find(key);
+  return i == registry.end() ? nullptr : i->second();
+}
+
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(DropAllUnsolicitedDataPolicy, "drop-all");
+
 UnsolicitedDataDecision
 DropAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
 {
   return UnsolicitedDataDecision::DROP;
 }
+
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitLocalUnsolicitedDataPolicy, "admit-local");
 
 UnsolicitedDataDecision
 AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
@@ -55,6 +74,8 @@ AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) co
   return UnsolicitedDataDecision::DROP;
 }
 
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitNetworkUnsolicitedDataPolicy, "admit-network");
+
 UnsolicitedDataDecision
 AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
 {
@@ -64,29 +85,12 @@ AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) 
   return UnsolicitedDataDecision::DROP;
 }
 
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitAllUnsolicitedDataPolicy, "admit-all");
+
 UnsolicitedDataDecision
 AdmitAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
 {
   return UnsolicitedDataDecision::CACHE;
-}
-
-unique_ptr<UnsolicitedDataPolicy>
-makeUnsolicitedDataPolicy(const std::string& key)
-{
-  /// \todo register policy with a macro
-  if (key == "drop-all") {
-    return make_unique<DropAllUnsolicitedDataPolicy>();
-  }
-  if (key == "admit-local") {
-    return make_unique<AdmitLocalUnsolicitedDataPolicy>();
-  }
-  if (key == "admit-network") {
-    return make_unique<AdmitNetworkUnsolicitedDataPolicy>();
-  }
-  if (key == "admit-all") {
-    return make_unique<AdmitAllUnsolicitedDataPolicy>();
-  }
-  return nullptr;
 }
 
 } // namespace fw
