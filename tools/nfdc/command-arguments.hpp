@@ -23,54 +23,34 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "available-commands.hpp"
-#include "legacy-nfdc.hpp"
-#include "core/version.hpp"
+#ifndef NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP
+#define NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP
+
+#include "core/common.hpp"
+#include <boost/any.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
-static int
-main(int argc, char** argv)
+/** \brief contains named command arguments
+ */
+class CommandArguments : public std::map<std::string, boost::any>
 {
-  std::vector<std::string> args(argv + 1, argv + argc);
-
-  if (args.empty() || args[0] == "-h") {
-    legacyNfdcUsage();
-    return 0;
+public:
+  /** \return the argument value, or a default value if the argument is omitted on command line
+   */
+  template<typename T>
+  T
+  get(const std::string& key, const T& defaultValue = T()) const
+  {
+    auto i = find(key);
+    return i == end() ? defaultValue : boost::any_cast<T>(i->second);
   }
-
-  if (args[0] == "-V") {
-    std::cout << NFD_VERSION_BUILD_STRING << std::endl;
-    return 0;
-  }
-
-  CommandParser parser;
-  registerCommands(parser);
-  CommandParser::Execute* execute = nullptr;
-  CommandArguments ca;
-  try {
-    std::tie(execute, ca) = parser.parse(args, ParseMode::ONE_SHOT);
-  }
-  catch (const std::invalid_argument& e) {
-    std::cerr << e.what() << std::endl;
-    return 1;
-  }
-
-  ///\todo create Face and KeyChain here
-  (*execute)(ca);
-  ///\todo call processEvents here
-  ///\todo return proper exit code here, instead of using exit() in subcommand
-  return 0;
-}
+};
 
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-int
-main(int argc, char** argv)
-{
-  return nfd::tools::nfdc::main(argc, argv);
-}
+#endif // NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP

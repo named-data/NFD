@@ -1,0 +1,114 @@
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/**
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
+ *
+ * This file is part of NFD (Named Data Networking Forwarding Daemon).
+ * See AUTHORS.md for complete list of NFD authors and contributors.
+ *
+ * NFD is free software: you can redistribute it and/or modify it under the terms
+ * of the GNU General Public License as published by the Free Software Foundation,
+ * either version 3 of the License, or (at your option) any later version.
+ *
+ * NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
+#define NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
+
+#include "command-definition.hpp"
+
+namespace nfd {
+namespace tools {
+namespace nfdc {
+
+/** \brief indicates which modes is a command allowed
+ */
+enum AvailableIn : uint8_t {
+  AVAILABLE_IN_NONE     = 0,
+  AVAILABLE_IN_ONE_SHOT = 1 << 0,
+  AVAILABLE_IN_BATCH    = 1 << 1,
+  AVAILABLE_IN_ALL      = 0xff
+};
+
+std::ostream&
+operator<<(std::ostream& os, AvailableIn modes);
+
+/** \brief indicates which mode is the parser operated in
+ */
+enum class ParseMode {
+  ONE_SHOT = AVAILABLE_IN_ONE_SHOT, ///< one-shot mode
+  BATCH    = AVAILABLE_IN_BATCH     ///< batch mode
+};
+
+std::ostream&
+operator<<(std::ostream& os, ParseMode mode);
+
+/** \brief parses a command
+ */
+class CommandParser : noncopyable
+{
+public:
+  class Error : public std::invalid_argument
+  {
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::invalid_argument(what)
+    {
+    }
+  };
+
+  typedef std::function<void(const CommandArguments&)> Execute;
+
+  /** \brief add an available command
+   *  \param def command semantics definition
+   *  \param execute a function to execute the command
+   *  \param modes parse modes this command should be available in, must not be AVAILABLE_IN_NONE
+   */
+  CommandParser&
+  addCommand(const CommandDefinition& def, const Execute& execute, AvailableIn modes = AVAILABLE_IN_ALL);
+
+  /** \brief add an alias "noun verb2" to existing command "noun verb"
+   *  \throw std::out_of_range "noun verb" does not exist
+   */
+  CommandParser&
+  addAlias(const std::string& noun, const std::string& verb, const std::string& verb2);
+
+  /** \brief parse a command line
+   *  \param tokens command line
+   *  \param mode parser mode, must be ParseMode::ONE_SHOT, other modes are not implemented
+   *  \throw Error command is not found
+   *  \throw CommandDefinition::Error command arguments are invalid
+   */
+  std::tuple<Execute*, CommandArguments>
+  parse(const std::vector<std::string>& tokens, ParseMode mode) const;
+
+private:
+  typedef std::pair<std::string, std::string> CommandName;
+
+  struct Command
+  {
+    CommandDefinition def;
+    Execute execute;
+    AvailableIn modes;
+  };
+
+  std::map<CommandName, shared_ptr<Command>> m_commands;
+};
+
+} // namespace nfdc
+} // namespace tools
+} // namespace nfd
+
+#endif // NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
