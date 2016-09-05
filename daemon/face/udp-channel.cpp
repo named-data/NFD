@@ -146,8 +146,10 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
-    // we already have a face for this endpoint, just reuse it
+    // we already have a face for this endpoint, so reuse it
     auto face = it->second;
+
+    // TODO #3232: Remove persistency transitions from faces/create
     // only on-demand -> persistent -> permanent transition is allowed
     bool isTransitionAllowed = persistency != face->getPersistency() &&
                                (face->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND ||

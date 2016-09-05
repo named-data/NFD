@@ -35,19 +35,6 @@ class UnixStreamFactory : public ProtocolFactory
 {
 public:
   /**
-   * \brief Exception of UnixStreamFactory
-   */
-  class Error : public ProtocolFactory::Error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : ProtocolFactory::Error(what)
-    {
-    }
-  };
-
-  /**
    * \brief Create stream-oriented Unix channel using specified socket path
    *
    * If this method is called twice with the same path, only one channel
@@ -56,8 +43,6 @@ public:
    *
    * \returns always a valid pointer to a UnixStreamChannel object,
    *          an exception will be thrown if the channel cannot be created.
-   *
-   * \throws UnixStreamFactory::Error
    */
   shared_ptr<UnixStreamChannel>
   createChannel(const std::string& unixSocketPath);
@@ -66,8 +51,9 @@ public: // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) override;
+             const FaceCreationFailedCallback& onFailure) override;
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const override;

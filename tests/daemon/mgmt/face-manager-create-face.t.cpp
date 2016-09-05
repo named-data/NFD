@@ -120,6 +120,58 @@ public:
   }
 };
 
+class LocalTcpFaceLocalFieldsEnabled
+{
+public:
+  ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true);
+  }
+};
+
+class LocalTcpFaceLocalFieldsDisabled
+{
+public:
+  ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, false);
+  }
+};
+
+class NonLocalUdpFaceLocalFieldsEnabled // won't work because non-local scope
+{
+public:
+  ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true);
+  }
+};
+
+class NonLocalUdpFaceLocalFieldsDisabled
+{
+public:
+  ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, false);
+  }
+};
+
 namespace mpl = boost::mpl;
 
 // pairs of CreateCommand and Success/Failure status
@@ -129,7 +181,11 @@ typedef mpl::vector<mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<UdpFacePersistent, CommandSuccess>,
                     mpl::pair<UdpFacePermanent, CommandSuccess>,
-                    mpl::pair<UdpFaceConnectToSelf, CommandFailure<406>>> Faces;
+                    mpl::pair<UdpFaceConnectToSelf, CommandFailure<406>>,
+                    mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
+                    mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
+                    mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
+                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>> Faces;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 {
@@ -162,10 +218,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 
       if (actual.getCode() == 200) {
         if (expectedParams.hasFlags()) {
-          // TODO: #3731 check if Flags match
+          BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),
+                            actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
         }
         else {
-          // TODO: #3731 check if Flags at defaults
+          // local fields are disabled by default
+          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED), false);
         }
       }
       else {
@@ -193,7 +251,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 
 
 typedef mpl::vector<// mpl::pair<mpl::pair<TcpFacePersistent, TcpFacePermanent>, TcpFacePermanent>, // no need to check now
-                    // mpl::pair<mpl::pair<TcpFacePermanent, TcpFacePersistent>, TcpFacePermanent>, // no need to check now
+                    // mpl::pair<mpl::pair<TcpFacePermanent, TcpFacePersistent>, TcpFacePersistent>, // no need to check now
                     mpl::pair<mpl::pair<UdpFacePersistent, UdpFacePermanent>, UdpFacePermanent>,
                     mpl::pair<mpl::pair<UdpFacePermanent, UdpFacePersistent>, UdpFacePermanent>> FaceTransitions;
 
@@ -235,6 +293,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ExistingFace, T, FaceTransitions, FaceManagerCo
 
         ControlResponse actual(response.getContent().blockFromValue());
         BOOST_REQUIRE_EQUAL(actual.getCode(), 200);
+        BOOST_TEST_MESSAGE(actual.getText());
 
         ControlParameters expectedParams(FinalFaceType().getParameters());
         ControlParameters actualParams(actual.getBody());

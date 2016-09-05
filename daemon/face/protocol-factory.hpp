@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,14 +55,20 @@ public:
    * This method should automatically choose channel, based on supplied FaceUri
    * and create face.
    *
-   * \throw Error Factory does not support connect operation
-   * \throw Error specified \p persistency is not supported
+   * \param uri remote URI of the new face
+   * \param persistency persistency of the new face
+   * \param wantLocalFieldsEnabled whether local fields should be enabled on the face
+   * \param onCreated callback if face creation succeeds
+   *                  If a face with the same remote URI already exists, its persistency and
+   *                  LocalFieldsEnabled setting will not be modified.
+   * \param onFailure callback if face creation fails
    */
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) = 0;
+             const FaceCreationFailedCallback& onFailure) = 0;
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const = 0;

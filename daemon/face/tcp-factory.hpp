@@ -35,19 +35,6 @@ class TcpFactory : public ProtocolFactory
 {
 public:
   /**
-   * \brief Exception of TcpFactory
-   */
-  class Error : public ProtocolFactory::Error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : ProtocolFactory::Error(what)
-    {
-    }
-  };
-
-  /**
    * \brief Create TCP-based channel using tcp::Endpoint
    *
    * tcp::Endpoint is really an alias for boost::asio::ip::tcp::endpoint.
@@ -58,8 +45,6 @@ public:
    *
    * \returns always a valid pointer to a TcpChannel object, an exception
    *          is thrown if it cannot be created.
-   *
-   * \throws TcpFactory::Error
    *
    * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__tcp/endpoint.html
    *      for details on ways to create tcp::Endpoint
@@ -73,7 +58,7 @@ public:
    * This method is just a helper that converts a string representation of localIp and port to
    * tcp::Endpoint and calls the other createChannel overload.
    *
-   * \throws TcpFactory::Error or std::runtime_error
+   * \throws std::runtime_error
    */
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort);
@@ -82,8 +67,9 @@ public: // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) override;
+             const FaceCreationFailedCallback& onFailure) override;
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const override;

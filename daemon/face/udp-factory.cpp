@@ -233,14 +233,15 @@ UdpFactory::createMulticastFace(const std::string& localIp,
 void
 UdpFactory::createFace(const FaceUri& uri,
                        ndn::nfd::FacePersistency persistency,
+                       bool wantLocalFieldsEnabled,
                        const FaceCreatedCallback& onCreated,
-                       const FaceCreationFailedCallback& onConnectFailed)
+                       const FaceCreationFailedCallback& onFailure)
 {
   BOOST_ASSERT(uri.isCanonical());
 
   if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
-    onConnectFailed(406, "Outgoing unicast UDP faces do not support on-demand persistency");
+    onFailure(406, "Outgoing unicast UDP faces do not support on-demand persistency");
     return;
   }
 
@@ -249,14 +250,21 @@ UdpFactory::createFace(const FaceUri& uri,
 
   if (endpoint.address().is_multicast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");
-    onConnectFailed(406, "Cannot create multicast UDP faces");
+    onFailure(406, "Cannot create multicast UDP faces");
     return;
   }
 
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
     NFD_LOG_TRACE("Requested endpoint is prohibited "
                   "(reserved by this NFD or disallowed by face management protocol)");
-    onConnectFailed(406, "Requested endpoint is prohibited");
+    onFailure(406, "Requested endpoint is prohibited");
+    return;
+  }
+
+  if (wantLocalFieldsEnabled) {
+    // UDP faces are never local
+    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
+    onFailure(406, "Local fields can only be enabled on faces with local scope");
     return;
   }
 
@@ -264,13 +272,13 @@ UdpFactory::createFace(const FaceUri& uri,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, persistency, onCreated, onConnectFailed);
+      i.second->connect(endpoint, persistency, onCreated, onFailure);
       return;
     }
   }
 
   NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
-  onConnectFailed(504, "No channels available to connect");
+  onFailure(504, "No channels available to connect");
 }
 
 std::vector<shared_ptr<const Channel>>

@@ -44,9 +44,10 @@ inline void
 createFace(ProtocolFactory& factory,
            const FaceUri& uri,
            ndn::nfd::FacePersistency persistency,
+           bool wantLocalFieldsEnabled,
            const CreateFaceExpectedResult& expected)
 {
-  factory.createFace(uri, persistency,
+  factory.createFace(uri, persistency, wantLocalFieldsEnabled,
                      [expected] (const shared_ptr<Face>& newFace) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },

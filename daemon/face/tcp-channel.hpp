@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -73,6 +73,7 @@ public:
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
+          bool wantLocalFieldsEnabled,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed,
           const time::seconds& timeout = time::seconds(4));
@@ -89,8 +90,9 @@ public:
 private:
   void
   createFace(boost::asio::ip::tcp::socket&& socket,
-             const FaceCreatedCallback& onFaceCreated,
-             bool isOnDemand);
+             bool isOnDemand,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onFaceCreated);
 
   void
   accept(const FaceCreatedCallback& onFaceCreated,
@@ -104,6 +106,7 @@ private:
   void
   handleConnect(const boost::system::error_code& error,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                bool wantLocalFieldsEnabled,
                 const scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onConnectFailed);

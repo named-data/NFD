@@ -53,10 +53,11 @@ WebSocketFactory::createChannel(const std::string& localIp, const std::string& l
 void
 WebSocketFactory::createFace(const FaceUri& uri,
                              ndn::nfd::FacePersistency persistency,
+                             bool wantLocalFieldsEnabled,
                              const FaceCreatedCallback& onCreated,
-                             const FaceCreationFailedCallback& onConnectFailed)
+                             const FaceCreationFailedCallback& onFailure)
 {
-  onConnectFailed(406, "Unsupported protocol");
+  onFailure(406, "Unsupported protocol");
 }
 
 std::vector<shared_ptr<const Channel>>

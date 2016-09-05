@@ -79,6 +79,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   factory.createChannel("127.0.0.1", "20071");
@@ -86,6 +87,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20070"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -99,12 +101,14 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20070"),
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
                "Outgoing TCP faces only support persistent persistency"});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20071"),
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
                "Outgoing TCP faces only support persistent persistency"});
 }
@@ -143,6 +147,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
 
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     false,
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
                      bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _2));
 

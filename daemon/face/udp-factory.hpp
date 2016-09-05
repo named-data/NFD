@@ -149,8 +149,9 @@ public: // from ProtocolFactory
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) override;
+             const FaceCreationFailedCallback& onFailure) override;
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const override;

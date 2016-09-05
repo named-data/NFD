@@ -335,6 +335,7 @@ public:
   virtual void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onConnectFailed) override
   {

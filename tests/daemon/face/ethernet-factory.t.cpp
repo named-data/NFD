@@ -69,16 +69,19 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
   createFace(factory,
              FaceUri("ether://[08:00:27:01:01:01]"),
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("ether://[08:00:27:01:01:01]"),
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("ether://[08:00:27:01:01:01]"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 }
 

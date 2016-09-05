@@ -77,7 +77,7 @@ protected:
   void
   connect(TcpChannel& channel)
   {
-    channel.connect(listenerEp,
+    channel.connect(listenerEp, false,
       [this] (const shared_ptr<Face>& newFace) {
         BOOST_REQUIRE(newFace != nullptr);
         connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressFamilies)
   // do not listen
 
   auto channel = makeChannel(A());
-  channel->connect(tcp::Endpoint(address, 7040),
+  channel->connect(tcp::Endpoint(address, 7040), false,
     [this] (const shared_ptr<Face>&) {
       BOOST_FAIL("Connect succeeded when it should have failed");
       this->limitedIo.afterOp();

@@ -115,6 +115,8 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   try {
     factory->second->createFace(uri,
                                 parameters.getFacePersistency(),
+                                parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ?
+                                  parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) : false,
                                 bind(&FaceManager::afterCreateFaceSuccess,
                                      this, parameters, _1, done),
                                 bind(&FaceManager::afterCreateFaceFailure,
@@ -140,20 +142,45 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
  */
 void
 FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
-                                    const shared_ptr<Face>& newFace,
+                                    const shared_ptr<Face>& face,
                                     const ndn::mgmt::CommandContinuation& done)
 {
+  // TODO: Re-enable check in #3232
+  //if (face->getId() != face::INVALID_FACEID) {
+  //// Face already exists
+  //ControlParameters response;
+  //response.setFaceId(face->getId());
+  //response.setUri(face->getRemoteUri().toString());
+  //response.setFacePersistency(face->getPersistency());
+  //
+  //auto linkService = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
+  //BOOST_ASSERT(linkService != nullptr);
+  //auto options = linkService->getOptions();
+  //response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
+  //
+  //  NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
+  //  done(ControlResponse(409, "Face with remote URI already exists").setBody(response.wireEncode()));
+  //}
+  //else {
+  // If scope non-local and flags set to enable local fields, request shouldn't
+  // have made it this far
+  BOOST_ASSERT(face->getScope() == ndn::nfd::FACE_SCOPE_LOCAL ||
+               !parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ||
+               (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+                !parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)));
+
+  m_faceTable.add(face);
+
   ControlParameters response;
-
-  m_faceTable.add(newFace);
-
-  // TODO: #3731: Verify and add Flags
-
-  // Set ControlResponse parameters
-  response.setFaceId(newFace->getId());
-  response.setFacePersistency(newFace->getPersistency());
+  response.setFaceId(face->getId());
+  response.setFacePersistency(face->getPersistency());
+  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED,
+                      parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ?
+                        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) : false,
+                      false);
 
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
+  //}
 }
 
 void
@@ -222,9 +249,13 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
 
   setLinkServiceOptions(*face, parameters, response);
 
-  // Set remaining ControlResponse fields
+  // Set ControlResponse fields
   response.setFaceId(faceId);
   response.setFacePersistency(face->getPersistency());
+  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED,
+                      parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ?
+                        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) : false,
+                      false);
 
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }

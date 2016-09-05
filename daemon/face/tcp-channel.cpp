@@ -66,6 +66,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
+                    bool wantLocalFieldsEnabled,
                     const FaceCreatedCallback& onFaceCreated,
                     const FaceCreationFailedCallback& onConnectFailed,
                     const time::seconds& timeout/* = time::seconds(4)*/)
@@ -83,8 +84,8 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
 
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleConnect, this,
-                                   boost::asio::placeholders::error,
-                                   clientSocket, connectTimeoutEvent,
+                                   boost::asio::placeholders::error, clientSocket,
+                                   wantLocalFieldsEnabled, connectTimeoutEvent,
                                    onFaceCreated, onConnectFailed));
 }
 
@@ -96,8 +97,9 @@ TcpChannel::size() const
 
 void
 TcpChannel::createFace(ip::tcp::socket&& socket,
-                       const FaceCreatedCallback& onFaceCreated,
-                       bool isOnDemand)
+                       bool isOnDemand,
+                       bool wantLocalFieldsEnabled,
+                       const FaceCreatedCallback& onFaceCreated)
 {
   shared_ptr<Face> face;
   tcp::Endpoint remoteEndpoint = socket.remote_endpoint();
@@ -107,7 +109,12 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
     auto persistency = isOnDemand ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND
                                   : ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
     auto linkService = make_unique<face::GenericLinkService>();
+    auto options = linkService->getOptions();
+    options.allowLocalFields = wantLocalFieldsEnabled;
+    linkService->setOptions(options);
+
     auto transport = make_unique<face::TcpTransport>(std::move(socket), persistency);
+
     face = make_shared<Face>(std::move(linkService), std::move(transport));
 
     m_channelFaces[remoteEndpoint] = face;
@@ -157,7 +164,7 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connection from " << m_acceptSocket.remote_endpoint());
 
-  createFace(std::move(m_acceptSocket), onFaceCreated, true);
+  createFace(std::move(m_acceptSocket), true, false, onFaceCreated);
 
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
@@ -166,6 +173,7 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
 void
 TcpChannel::handleConnect(const boost::system::error_code& error,
                           const shared_ptr<ip::tcp::socket>& socket,
+                          bool wantLocalFieldsEnabled,
                           const scheduler::EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onConnectFailed)
@@ -195,7 +203,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_localEndpoint << "] Connected to " << socket->remote_endpoint());
 
-  createFace(std::move(*socket), onFaceCreated, false);
+  createFace(std::move(*socket), false, wantLocalFieldsEnabled, onFaceCreated);
 }
 
 void
