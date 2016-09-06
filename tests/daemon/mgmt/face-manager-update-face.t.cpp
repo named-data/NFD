@@ -25,6 +25,7 @@
 
 #include "face-manager-command-fixture.hpp"
 #include "nfd-manager-common-fixture.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
 namespace tests {

@@ -29,6 +29,7 @@
 #include "core/random.hpp"
 #include "strategy.hpp"
 #include "table/cleanup.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {

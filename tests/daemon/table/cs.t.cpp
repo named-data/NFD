@@ -24,6 +24,7 @@
  */
 
 #include "table/cs.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/crypto.hpp>
 
 #include "tests/test-common.hpp"

@@ -26,6 +26,7 @@
 #include "rib/rib-manager.hpp"
 #include "manager-common-fixture.hpp"
 
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/management/nfd-rib-entry.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>

@@ -25,6 +25,7 @@
 
 #include "client-control-strategy.hpp"
 #include "core/logger.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
 namespace fw {

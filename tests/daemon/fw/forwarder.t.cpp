@@ -27,6 +27,7 @@
 #include "tests/daemon/face/dummy-face.hpp"
 #include "dummy-strategy.hpp"
 #include "install-strategy.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 
 #include "tests/test-common.hpp"
 

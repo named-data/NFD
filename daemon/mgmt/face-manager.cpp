@@ -31,6 +31,7 @@
 #include "face/udp-factory.hpp"
 #include "fw/face-table.hpp"
 
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/management/nfd-channel-status.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-face-event-notification.hpp>

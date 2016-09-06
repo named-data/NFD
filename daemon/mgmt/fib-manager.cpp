@@ -25,6 +25,7 @@
 
 #include "fib-manager.hpp"
 #include "fw/face-table.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
 
 namespace nfd {

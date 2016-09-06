@@ -26,6 +26,7 @@
 #include "fw/client-control-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 
 #include "tests/test-common.hpp"
 

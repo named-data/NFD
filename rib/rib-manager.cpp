@@ -27,6 +27,7 @@
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/management/nfd-face-status.hpp>
 #include <ndn-cxx/management/nfd-rib-entry.hpp>
 

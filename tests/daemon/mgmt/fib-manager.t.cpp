@@ -27,6 +27,7 @@
 #include "nfd-manager-common-fixture.hpp"
 #include "table/fib-nexthop.hpp"
 #include "../face/dummy-face.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/management/nfd-fib-entry.hpp>
 
 namespace nfd {

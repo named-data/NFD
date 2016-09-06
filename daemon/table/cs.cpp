@@ -27,6 +27,7 @@
 #include "cs-policy-priority-fifo.hpp"
 #include "core/logger.hpp"
 #include "core/algorithm.hpp"
+#include <ndn-cxx/lp/tags.hpp>
 
 NFD_LOG_INIT("ContentStore");
 
