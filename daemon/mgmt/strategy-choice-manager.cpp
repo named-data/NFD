@@ -25,7 +25,7 @@
 
 #include "strategy-choice-manager.hpp"
 #include "table/strategy-choice.hpp"
-#include <ndn-cxx/management/nfd-strategy-choice.hpp>
+#include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
 namespace nfd {
 

@@ -29,9 +29,9 @@
 #include "common.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
-#include <ndn-cxx/management/nfd-control-command.hpp>
-#include <ndn-cxx/management/nfd-control-response.hpp>
-#include <ndn-cxx/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-response.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
 namespace nfd {
 

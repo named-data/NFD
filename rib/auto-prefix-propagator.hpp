@@ -31,10 +31,10 @@
 #include "propagated-entry.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/management/nfd-controller.hpp>
-#include <ndn-cxx/management/nfd-control-command.hpp>
-#include <ndn-cxx/management/nfd-control-parameters.hpp>
-#include <ndn-cxx/management/nfd-command-options.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/command-options.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {

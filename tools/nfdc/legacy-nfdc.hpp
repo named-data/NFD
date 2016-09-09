@@ -29,7 +29,7 @@
 #include "core/common.hpp"
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
 
 namespace nfd {
 namespace tools {

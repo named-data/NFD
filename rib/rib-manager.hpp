@@ -34,11 +34,11 @@
 
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
-#include <ndn-cxx/management/nfd-face-monitor.hpp>
-#include <ndn-cxx/management/nfd-controller.hpp>
-#include <ndn-cxx/management/nfd-control-command.hpp>
-#include <ndn-cxx/management/nfd-control-response.hpp>
-#include <ndn-cxx/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-response.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
 namespace nfd {
 namespace rib {

@@ -31,7 +31,7 @@
 #include "rib.hpp"
 #include "rib-update-batch.hpp"
 
-#include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
 
 namespace nfd {
 namespace rib {

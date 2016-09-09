@@ -37,7 +37,7 @@
 #include "tests/daemon/fw/install-strategy.hpp"
 
 #include <ndn-cxx/util/random.hpp>
-#include <ndn-cxx/management/nfd-strategy-choice.hpp>
+#include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
 namespace nfd {
 namespace tests {

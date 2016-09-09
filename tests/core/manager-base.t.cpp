@@ -27,7 +27,7 @@
 #include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/management/nfd-control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 
 namespace nfd {
 namespace tests {

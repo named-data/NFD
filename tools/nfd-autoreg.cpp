@@ -28,9 +28,9 @@
 
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
-#include <ndn-cxx/management/nfd-controller.hpp>
-#include <ndn-cxx/management/nfd-face-monitor.hpp>
-#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 
 #include <boost/program_options/options_description.hpp>

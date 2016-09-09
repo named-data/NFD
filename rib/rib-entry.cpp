@@ -27,7 +27,7 @@
 
 #include "core/logger.hpp"
 
-#include <ndn-cxx/management/nfd-control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 
 NFD_LOG_INIT("RibEntry");
 

@@ -27,8 +27,8 @@
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 
 #include "nfd-manager-base.hpp"
-#include <ndn-cxx/management/nfd-face-status.hpp>
-#include <ndn-cxx/management/nfd-face-query-filter.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include "face/face.hpp"
 
 namespace nfd {

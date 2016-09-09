@@ -27,9 +27,9 @@
 #include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/management/nfd-rib-entry.hpp>
-#include <ndn-cxx/management/nfd-face-status.hpp>
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include <ndn-cxx/util/random.hpp>
 
 namespace nfd {

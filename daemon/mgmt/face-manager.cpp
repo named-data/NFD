@@ -32,9 +32,9 @@
 #include "fw/face-table.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/management/nfd-channel-status.hpp>
-#include <ndn-cxx/management/nfd-face-status.hpp>
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/channel-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 
 #ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"

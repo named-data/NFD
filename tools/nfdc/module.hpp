@@ -27,7 +27,7 @@
 #define NFD_TOOLS_NFDC_MODULE_HPP
 
 #include "core/common.hpp"
-#include <ndn-cxx/management/nfd-controller.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
 
 namespace nfd {
 namespace tools {

@@ -27,7 +27,7 @@
 #define NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP
 
 #include "core/manager-base.hpp"
-#include <ndn-cxx/management/nfd-forwarder-status.hpp>
+#include <ndn-cxx/mgmt/nfd/forwarder-status.hpp>
 
 namespace nfd {
 

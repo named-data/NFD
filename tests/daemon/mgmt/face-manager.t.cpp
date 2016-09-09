@@ -31,8 +31,8 @@
 
 #include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/encoding/tlv.hpp>
-#include <ndn-cxx/management/nfd-channel-status.hpp>
-#include <ndn-cxx/management/nfd-face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/channel-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 
 namespace nfd {
 namespace tests {

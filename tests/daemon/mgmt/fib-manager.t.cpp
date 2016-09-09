@@ -28,7 +28,7 @@
 #include "table/fib-nexthop.hpp"
 #include "../face/dummy-face.hpp"
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/management/nfd-fib-entry.hpp>
+#include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
 
 namespace nfd {
 namespace tests {

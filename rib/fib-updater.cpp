@@ -27,7 +27,7 @@
 
 #include "core/logger.hpp"
 
-#include <ndn-cxx/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
 namespace nfd {
 namespace rib {

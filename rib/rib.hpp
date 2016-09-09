@@ -29,7 +29,7 @@
 #include "rib-entry.hpp"
 #include "rib-update-batch.hpp"
 
-#include <ndn-cxx/management/nfd-control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 
 namespace nfd {
 namespace rib {

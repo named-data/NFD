@@ -28,8 +28,8 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/regex.hpp>
 
-#include <ndn-cxx/management/nfd-face-query-filter.hpp>
-#include <ndn-cxx/management/nfd-face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/util/segment-fetcher.hpp>
 
 namespace nfd {
