@@ -1,6 +1,8 @@
 NFD - Named Data Networking Forwarding Daemon
 =============================================
 
+[![Build Status](https://travis-ci.org/named-data/NFD.svg?branch=master)](https://travis-ci.org/named-data/NFD)
+
 For complete documentation, including step-by-step installation instructions and
 tutorials, please visit the [NFD homepage](http://named-data.net/doc/NFD/).
 
