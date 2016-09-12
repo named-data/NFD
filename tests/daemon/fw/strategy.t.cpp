@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(ConsumerRegion)
   BOOST_CHECK_EQUAL(interest->hasSelectedDelegation(), false);
 }
 
-BOOST_AUTO_TEST_CASE(DefaultFreeFirstDegegation)
+BOOST_AUTO_TEST_CASE(DefaultFreeFirstDelegation)
 {
   nrt.insert("/arizona/cs/hobo");
   fib.insert("/telia").first->addNextHop(*outFace, 20);
