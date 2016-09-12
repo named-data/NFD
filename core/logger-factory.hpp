@@ -35,7 +35,6 @@
 #include "config-file.hpp"
 #include "logger.hpp"
 
-#include <boost/log/sinks.hpp>
 #include <mutex>
 
 namespace nfd {
@@ -112,9 +111,6 @@ private:
   mutable std::mutex m_loggersGuard;
 
   LogLevel m_defaultLevel;
-
-  typedef boost::log::sinks::asynchronous_sink<boost::log::sinks::text_ostream_backend> Sink;
-  boost::shared_ptr<Sink> m_sink;
 };
 
 inline LogLevel

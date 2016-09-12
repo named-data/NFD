@@ -24,10 +24,8 @@
  */
 
 #include "logger-factory.hpp"
-
+#include <ndn-cxx/util/logging.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
 
 #ifdef HAVE_CUSTOM_LOGGER
 #error "This file should not be compiled when custom logger is used"
@@ -56,20 +54,14 @@ LoggerFactory::LoggerFactory()
   m_levelNames["TRACE"] = LOG_TRACE;
   m_levelNames["ALL"] = LOG_ALL;
 
-  auto backend = boost::make_shared<boost::log::sinks::text_ostream_backend>();
-  backend->auto_flush(true);
-  backend->add_stream(boost::shared_ptr<std::ostream>(&std::clog, bind([]{})));
-
-  m_sink = boost::make_shared<Sink>(backend);
-  m_sink->set_formatter(boost::log::expressions::stream << boost::log::expressions::message);
-  boost::log::core::get()->add_sink(m_sink);
+  // Let ndn-cxx logging facility initialize Boost.Log backend,
+  // so that only one sink is attached to Boost.Log core.
+  ndn::util::Logging::setDestination(std::clog);
 }
 
 LoggerFactory::~LoggerFactory()
 {
-  boost::log::core::get()->remove_sink(m_sink);
-  m_sink->stop();
-  m_sink->flush();
+  ndn::util::Logging::flush();
 }
 
 void
@@ -129,19 +121,19 @@ LoggerFactory::onConfig(const ConfigSection& section,
                         bool isDryRun,
                         const std::string& filename)
 {
-// log
-// {
-//   ; default_level specifies the logging level for modules
-//   ; that are not explicitly named. All debugging levels
-//   ; listed above the selected value are enabled.
-//
-//   default_level INFO
-//
-//   ; You may also override the default for specific modules:
-//
-//   FibManager DEBUG
-//   Forwarder WARN
-// }
+  // log
+  // {
+  //   ; default_level specifies the logging level for modules
+  //   ; that are not explicitly named. All debugging levels
+  //   ; listed above the selected value are enabled.
+  //
+  //   default_level INFO
+  //
+  //   ; You may also override the default for specific modules:
+  //
+  //   FibManager DEBUG
+  //   Forwarder WARN
+  // }
 
   if (!isDryRun) {
     ConfigSection::const_assoc_iterator item = section.find("default_level");
@@ -193,7 +185,7 @@ LoggerFactory::setDefaultLevel(LogLevel level)
 void
 LoggerFactory::flushBackend()
 {
-  m_sink->flush();
+  ndn::util::Logging::flush();
 }
 
 Logger&
