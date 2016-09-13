@@ -7,18 +7,21 @@ matrix:
   include:
     - os: linux
       dist: trusty
-      env: CXX=g++
+      env:
+        - CXX=g++
+        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
     - os: linux
       dist: trusty
-      env: CXX=clang++
+      env:
+        - CXX=clang++
+        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
     - os: osx
-      env: CXX=clang++
+      env:
+        - CXX=clang++
+        - NODE_LABELS="OSX OSX-10.9"
 notifications:
   email:
     on_success: always
     on_failure: always
 script:
-  - if [[ $TRAVIS_OS_NAME == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-14.04"; fi
-  - if [[ $TRAVIS_OS_NAME == osx ]]; then export NODE_LABELS="OSX OSX-10.9"; fi
-  - echo $NODE_LABELS
   - ./.jenkins

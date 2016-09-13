@@ -1,9 +1,18 @@
 has() {
+    local saved_xtrace
+    [[ $- == *x* ]] && saved_xtrace=-x || saved_xtrace=+x
+    set +x
+
     local p=$1
     shift
-    local x
-    for x in "$@"; do
-        [[ "${x}" == "${p}" ]] && return 0
+    local i ret=1
+    for i in "$@"; do
+        if [[ "${i}" == "${p}" ]]; then
+            ret=0
+            break
+        fi
     done
-    return 1
+
+    set ${saved_xtrace}
+    return ${ret}
 }

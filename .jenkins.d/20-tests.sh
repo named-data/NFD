@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-set -x
 set -e
 
 JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$JDIR"/util.sh
 
+set -x
+
 # Prepare environment
-rm -Rf ~/.ndnx ~/.ndn
+rm -Rf ~/.ndn
 
 if has OSX $NODE_LABELS; then
     security unlock-keychain -p named-data
@@ -14,37 +15,32 @@ fi
 
 ndnsec-keygen "/tmp/jenkins/$NODE_NAME" | ndnsec-install-cert -
 
-count=0
+BOOST_VERSION=$(python -c "import sys; sys.path.append('build/c4che'); import _cache; print(_cache.BOOST_VERSION_NUMBER);")
 
-# Helper function
-run_tests() {
-    local sudo=
-    if [[ $1 == sudo ]]; then
-        sudo=$1
-        shift
-    fi
-
-    local module=$1
-    shift
-
-    if [[ -n $XUNIT ]]; then
-        ${sudo} ./build/unit-tests-${module} -l all "$@" -- --log_format2=XML --log_sink2="build/xunit-${count}-${module}${sudo:+-}${sudo}.xml"
-        ((count+=1))
+ut_log_args() {
+    ((ut_count+=1))
+    if (( BOOST_VERSION >= 106200 )); then
+        echo --logger=HRF,test_suite,stdout:XML,all,build/xunit-report-${ut_count}.xml
     else
-        ${sudo} ./build/unit-tests-${module} -l test_suite "$@"
+        if [[ -n $XUNIT ]]; then
+            echo --log_level=all $( (( BOOST_VERSION >= 106000 )) && echo -- ) \
+                 --log_format2=XML --log_sink2=build/xunit-report-${ut_count}.xml
+        else
+            echo --log_level=test_suite
+        fi
     fi
 }
 
 # First run all tests as unprivileged user
-run_tests core
-run_tests daemon
-run_tests rib
-run_tests tools
+./build/unit-tests-core $(ut_log_args)
+./build/unit-tests-daemon $(ut_log_args)
+./build/unit-tests-rib $(ut_log_args)
+./build/unit-tests-tools $(ut_log_args)
 
 # Then use sudo to run those tests that need superuser powers
-run_tests sudo core -t TestPrivilegeHelper
-run_tests sudo daemon -t Face/TestEthernetFactory,TestEthernetTransport
-run_tests sudo daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig
-run_tests sudo daemon -t Mgmt/TestFaceManager/ProcessConfig/ProcessSectionUdp,ProcessSectionUdpMulticastReinit,ProcessSectionEther,ProcessSectionEtherMulticastReinit
+sudo ./build/unit-tests-core -t TestPrivilegeHelper $(ut_log_args)
+sudo ./build/unit-tests-daemon -t Face/TestEthernetFactory,TestEthernetTransport $(ut_log_args)
+sudo ./build/unit-tests-daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig $(ut_log_args)
+sudo ./build/unit-tests-daemon -t Mgmt/TestFaceManager/ProcessConfig/ProcessSectionUdp,ProcessSectionUdpMulticastReinit,ProcessSectionEther,ProcessSectionEtherMulticastReinit $(ut_log_args)
 
-unset count
+unset ut_count

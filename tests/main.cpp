@@ -1,11 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -20,13 +21,20 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
-#define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 
+#include <boost/version.hpp>
+
+#if BOOST_VERSION >= 106200
+// Boost.Test v3.3 (Boost 1.62) natively supports multi-logger output
 #include "boost-test.hpp"
+#else
+#define BOOST_TEST_NO_MAIN
+#include "boost-test.hpp"
+
 #include "boost-multi-log-formatter.hpp"
 
 #include <boost/program_options/options_description.hpp>
@@ -103,3 +111,5 @@ main(int argc, char* argv[])
 {
   return ::boost::unit_test::unit_test_main(&init_tests, argc, argv);
 }
+
+#endif // BOOST_VERSION >= 106200

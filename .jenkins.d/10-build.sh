@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-set -x
 set -e
+
+JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source "$JDIR"/util.sh
+
+set -x
 
 git submodule init
 git submodule sync
@@ -10,14 +14,14 @@ git submodule update
 sudo ./waf -j1 --color=yes distclean
 
 if [[ "$JOB_NAME" != *"limited-build" ]]; then
-  # Configure/build in optimized mode with tests and precompiled headers
+  # Configure/build in optimized mode with tests
   ./waf -j1 --color=yes configure --with-tests
   ./waf -j1 --color=yes build
 
   # Cleanup
   sudo ./waf -j1 --color=yes distclean
 
-  # Configure/build in optimized mode without tests and with precompiled headers
+  # Configure/build in optimized mode without tests
   ./waf -j1 --color=yes configure
   ./waf -j1 --color=yes build
 
@@ -25,7 +29,7 @@ if [[ "$JOB_NAME" != *"limited-build" ]]; then
   sudo ./waf -j1 --color=yes distclean
 fi
 
-# Configure/build in debug mode
+# Configure/build in debug mode with tests and without precompiled headers
 if [[ "$JOB_NAME" == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
 fi

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-set -x
 set -e
 
 JDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$JDIR"/util.sh
 
-pushd ${CACHE_DIR:-/tmp} >/dev/null
+set -x
+
+pushd "${CACHE_DIR:-/tmp}" >/dev/null
 
 INSTALLED_VERSION=$((cd ndn-cxx && git rev-parse HEAD) 2>/dev/null || echo NONE)
 
@@ -28,9 +29,9 @@ sudo rm -f /usr/local/lib/pkgconfig/libndn-cxx*
 
 pushd ndn-cxx >/dev/null
 
-./waf configure -j1 --color=yes --enable-shared --disable-static --without-osx-keychain
-./waf -j1 --color=yes
-sudo ./waf install -j1 --color=yes
+./waf -j1 --color=yes configure --enable-shared --disable-static --without-osx-keychain
+./waf -j1 --color=yes build
+sudo ./waf -j1 --color=yes install
 
 popd >/dev/null
 popd >/dev/null
