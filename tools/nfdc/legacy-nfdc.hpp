@@ -26,9 +26,7 @@
 #ifndef NFD_TOOLS_NFDC_LEGACY_NFDC_HPP
 #define NFD_TOOLS_NFDC_LEGACY_NFDC_HPP
 
-#include "core/common.hpp"
-#include <ndn-cxx/face.hpp>
-#include <ndn-cxx/security/key-chain.hpp>
+#include "execute-command.hpp"
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 
 namespace nfd {
@@ -51,8 +49,7 @@ public:
     }
   };
 
-  explicit
-  LegacyNfdc(ndn::Face& face);
+  LegacyNfdc(Face& face, KeyChain& keyChain);
 
   bool
   dispatch(const std::string& cmd);
@@ -169,8 +166,7 @@ public:
   ndn::nfd::FacePersistency m_facePersistency;
 
 private:
-  ndn::KeyChain m_keyChain;
-  ndn::Face& m_face;
+  Face& m_face;
   ndn::nfd::Controller m_controller;
 };
 
@@ -178,7 +174,7 @@ void
 legacyNfdcUsage();
 
 int
-legacyNfdcMain(const std::string& subcommand, const std::vector<std::string>& args);
+legacyNfdcMain(ExecuteContext& ctx);
 
 } // namespace nfdc
 } // namespace tools

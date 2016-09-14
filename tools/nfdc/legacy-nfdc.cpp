@@ -38,14 +38,14 @@ using ndn::nfd::ControlParameters;
 const time::milliseconds LegacyNfdc::DEFAULT_EXPIRATION_PERIOD = time::milliseconds::max();
 const uint64_t LegacyNfdc::DEFAULT_COST = 0;
 
-LegacyNfdc::LegacyNfdc(ndn::Face& face)
+LegacyNfdc::LegacyNfdc(Face& face, KeyChain& keyChain)
   : m_flags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
   , m_cost(DEFAULT_COST)
   , m_origin(ndn::nfd::ROUTE_ORIGIN_STATIC)
   , m_expires(DEFAULT_EXPIRATION_PERIOD)
   , m_facePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   , m_face(face)
-  , m_controller(face, m_keyChain)
+  , m_controller(face, keyChain)
 {
 }
 
@@ -326,11 +326,12 @@ legacyNfdcUsage()
 }
 
 int
-legacyNfdcMain(const std::string& subcommand, const std::vector<std::string>& args)
+legacyNfdcMain(ExecuteContext& ctx)
 {
-  ndn::Face face;
-  LegacyNfdc p(face);
+  LegacyNfdc p(ctx.face, ctx.keyChain);
 
+  const std::string& subcommand = ctx.noun;
+  auto args = ctx.args.get<std::vector<std::string>>("args");
   bool wantUnsetChildInherit = false;
   bool wantCapture = false;
   bool wantPermanentFace = false;
@@ -381,18 +382,12 @@ legacyNfdcMain(const std::string& subcommand, const std::vector<std::string>& ar
   }
   p.m_commandLineArguments = unparsed;
 
-  try {
-    bool isOk = p.dispatch(subcommand);
-    if (!isOk) {
-      legacyNfdcUsage();
-      return 1;
-    }
-    face.processEvents();
+  bool isOk = p.dispatch(subcommand);
+  if (!isOk) {
+    legacyNfdcUsage();
+    return 1;
   }
-  catch (const std::exception& e) {
-    std::cerr << "ERROR: " << e.what() << std::endl;
-    return 2;
-  }
+  ctx.face.processEvents();
   return 0;
 }
 

@@ -48,21 +48,27 @@ main(int argc, char** argv)
 
   CommandParser parser;
   registerCommands(parser);
-  CommandParser::Execute* execute = nullptr;
+  std::string noun, verb;
   CommandArguments ca;
+  ExecuteCommand execute;
   try {
-    std::tie(execute, ca) = parser.parse(args, ParseMode::ONE_SHOT);
+    std::tie(noun, verb, ca, execute) = parser.parse(args, ParseMode::ONE_SHOT);
   }
   catch (const std::invalid_argument& e) {
     std::cerr << e.what() << std::endl;
     return 1;
   }
 
-  ///\todo create Face and KeyChain here
-  (*execute)(ca);
-  ///\todo call processEvents here
-  ///\todo return proper exit code here, instead of using exit() in subcommand
-  return 0;
+  try {
+    ndn::Face face;
+    ndn::KeyChain keyChain;
+    ExecuteContext ctx{noun, verb, ca, face, keyChain};
+    return execute(ctx);
+  }
+  catch (const std::exception& e) {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }
 }
 
 } // namespace nfdc

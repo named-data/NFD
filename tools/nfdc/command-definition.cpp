@@ -104,7 +104,7 @@ CommandDefinition::addArg(const std::string& name, ArgValueType valueType,
   bool isNew = m_args.emplace(name,
     Arg{name, valueType, static_cast<bool>(isRequired),
         metavar.empty() ? getMetavarFromType(valueType) : metavar}).second;
-  BOOST_ASSERT(isNew);
+  BOOST_VERIFY(isNew);
 
   if (static_cast<bool>(isRequired)) {
     m_requiredArgs.insert(name);

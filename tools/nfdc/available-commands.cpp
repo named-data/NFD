@@ -32,36 +32,25 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
-static void
-statusReport(const CommandArguments& ca)
+static int
+statusReport(ExecuteContext& ctx)
 {
-  int res = 1;
-  ReportFormat fmt = ca.get<ReportFormat>("format", ReportFormat::TEXT);
+  ReportFormat fmt = ctx.args.get<ReportFormat>("format", ReportFormat::TEXT);
   switch (fmt) {
     case ReportFormat::XML:
-      res = statusMain(std::vector<std::string>{"-x"});
-      break;
+      return statusMain(std::vector<std::string>{"-x"}, ctx.face, ctx.keyChain);
     case ReportFormat::TEXT:
-      res = statusMain(std::vector<std::string>{});
-      break;
+      return statusMain(std::vector<std::string>{}, ctx.face, ctx.keyChain);
   }
-  exit(res);
+  BOOST_ASSERT(false);
+  return 1;
 }
 
-static void
-legacyNfdStatus(const CommandArguments& ca)
+static int
+legacyNfdStatus(ExecuteContext& ctx)
 {
-  std::vector<std::string> args = ca.get<std::vector<std::string>>("args");
-  int res = statusMain(args);
-  exit(res);
-}
-
-static void
-legacyNfdc(const std::string& subcommand, const CommandArguments& ca)
-{
-  std::vector<std::string> args = ca.get<std::vector<std::string>>("args");
-  int res = legacyNfdcMain(subcommand, args);
-  exit(res);
+  auto args = ctx.args.get<std::vector<std::string>>("args");
+  return statusMain(args, ctx.face, ctx.keyChain);
 }
 
 void
@@ -90,7 +79,7 @@ registerCommands(CommandParser& parser)
   for (const std::string& subcommand : legacyNfdcSubcommands) {
     CommandDefinition def(subcommand, "");
     def.addArg("args", ArgValueType::ANY, Required::NO, Positional::YES);
-    parser.addCommand(def, bind(&legacyNfdc, subcommand, _1));
+    parser.addCommand(def, &legacyNfdcMain);
   }
 }
 

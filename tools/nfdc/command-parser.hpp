@@ -27,6 +27,7 @@
 #define NFD_TOOLS_NFDC_COMMAND_PARSER_HPP
 
 #include "command-definition.hpp"
+#include "execute-command.hpp"
 
 namespace nfd {
 namespace tools {
@@ -69,15 +70,13 @@ public:
     }
   };
 
-  typedef std::function<void(const CommandArguments&)> Execute;
-
   /** \brief add an available command
    *  \param def command semantics definition
    *  \param execute a function to execute the command
    *  \param modes parse modes this command should be available in, must not be AVAILABLE_IN_NONE
    */
   CommandParser&
-  addCommand(const CommandDefinition& def, const Execute& execute, AvailableIn modes = AVAILABLE_IN_ALL);
+  addCommand(const CommandDefinition& def, const ExecuteCommand& execute, AvailableIn modes = AVAILABLE_IN_ALL);
 
   /** \brief add an alias "noun verb2" to existing command "noun verb"
    *  \throw std::out_of_range "noun verb" does not exist
@@ -90,8 +89,9 @@ public:
    *  \param mode parser mode, must be ParseMode::ONE_SHOT, other modes are not implemented
    *  \throw Error command is not found
    *  \throw CommandDefinition::Error command arguments are invalid
+   *  \return noun, verb, arguments, execute function
    */
-  std::tuple<Execute*, CommandArguments>
+  std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
   parse(const std::vector<std::string>& tokens, ParseMode mode) const;
 
 private:
@@ -100,7 +100,7 @@ private:
   struct Command
   {
     CommandDefinition def;
-    Execute execute;
+    ExecuteCommand execute;
     AvailableIn modes;
   };
 

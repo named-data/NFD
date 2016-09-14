@@ -23,20 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_STATUS_MAIN_HPP
-#define NFD_TOOLS_NFDC_STATUS_MAIN_HPP
+#ifndef NFD_TOOLS_NFDC_EXECUTE_COMMAND_HPP
+#define NFD_TOOLS_NFDC_EXECUTE_COMMAND_HPP
 
-#include "execute-command.hpp"
+#include "command-arguments.hpp"
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
-int
-statusMain(const std::vector<std::string>& args, Face& face, KeyChain& keyChain);
+using ndn::Face;
+using ndn::KeyChain;
+
+/** \brief context for command execution
+ */
+struct ExecuteContext
+{
+  const std::string& noun;
+  const std::string& verb;
+  const CommandArguments& args;
+
+  Face& face;
+  KeyChain& keyChain;
+  ///\todo validator
+};
+
+/** \brief a function to execute a command
+ *  \return exit code
+ */
+typedef std::function<int(ExecuteContext& ctx)> ExecuteCommand;
 
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFDC_STATUS_MAIN_HPP
+#endif // NFD_TOOLS_NFDC_EXECUTE_COMMAND_HPP

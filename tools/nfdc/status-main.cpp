@@ -114,7 +114,7 @@ parseCommandLine(const std::vector<std::string>& args)
 }
 
 int
-statusMain(const std::vector<std::string>& args)
+statusMain(const std::vector<std::string>& args, Face& face, KeyChain& keyChain)
 {
   int exitCode = -1;
   Options options;
@@ -123,8 +123,6 @@ statusMain(const std::vector<std::string>& args)
     return exitCode;
   }
 
-  Face face;
-  KeyChain keyChain;
   unique_ptr<Validator> validator = make_unique<ndn::ValidatorNull>();
   CommandOptions ctrlOptions;
 

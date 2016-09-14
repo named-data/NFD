@@ -69,7 +69,7 @@ operator<<(std::ostream& os, ParseMode mode)
 }
 
 CommandParser&
-CommandParser::addCommand(const CommandDefinition& def, const Execute& execute, AvailableIn modes)
+CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& execute, AvailableIn modes)
 {
   BOOST_ASSERT(modes != AVAILABLE_IN_NONE);
   m_commands[{def.getNoun(), def.getVerb()}].reset(new Command{def, execute, modes});
@@ -83,7 +83,7 @@ CommandParser::addAlias(const std::string& noun, const std::string& verb, const 
   return *this;
 }
 
-std::tuple<CommandParser::Execute*, CommandArguments>
+std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
 CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) const
 {
   BOOST_ASSERT(mode == ParseMode::ONE_SHOT);
@@ -110,7 +110,7 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
   const CommandDefinition& def = i->second->def;
   NDN_LOG_TRACE("found command " << def.getNoun() << " " << def.getVerb());
 
-  return std::make_tuple(&i->second->execute, def.parse(tokens, nameLen));
+  return std::make_tuple(def.getNoun(), def.getVerb(), def.parse(tokens, nameLen), i->second->execute);
 }
 
 } // namespace nfdc
