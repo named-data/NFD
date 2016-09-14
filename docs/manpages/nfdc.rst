@@ -181,7 +181,14 @@ Options
         Note that when ``faceId`` is the last Face associated with ``prefix`` FIB entry,
         the whole FIB entry will be removed.
 
+Exit Codes
+----------
 
+0: Success
+
+1: An unspecified error occurred
+
+2: Malformed command line
 
 Examples
 --------

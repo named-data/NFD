@@ -56,7 +56,7 @@ main(int argc, char** argv)
   }
   catch (const std::invalid_argument& e) {
     std::cerr << e.what() << std::endl;
-    return 1;
+    return 2;
   }
 
   try {

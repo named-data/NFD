@@ -357,7 +357,7 @@ legacyNfdcMain(ExecuteContext& ctx)
   catch (const po::error& e) {
     std::cerr << e.what() << std::endl;
     legacyNfdcUsage();
-    return 1;
+    return 2;
   }
 
   if (wantUnsetChildInherit) {
@@ -378,14 +378,14 @@ legacyNfdcMain(ExecuteContext& ctx)
       [] (const std::string& s) { return s.empty() || s[0] == '-'; })) {
     // unrecognized -option
     legacyNfdcUsage();
-    return 1;
+    return 2;
   }
   p.m_commandLineArguments = unparsed;
 
   bool isOk = p.dispatch(subcommand);
   if (!isOk) {
     legacyNfdcUsage();
-    return 1;
+    return 2;
   }
   ctx.face.processEvents();
   return 0;

@@ -47,6 +47,15 @@ If no options are provided, all information is retrieved.
 
 If -x is provided, other options(-v, -c, etc.) are ignored, and all information is printed in XML format.
 
+Exit Codes
+----------
+
+0: Success
+
+1: An unspecified error occurred
+
+2: Malformed command line
+
 Examples
 --------
 
