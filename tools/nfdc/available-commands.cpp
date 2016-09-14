@@ -47,6 +47,12 @@ statusReport(ExecuteContext& ctx)
 }
 
 static int
+statusList(ExecuteContext& ctx, const std::string& option)
+{
+  return statusMain(std::vector<std::string>{option}, ctx.face, ctx.keyChain);
+}
+
+static int
 legacyNfdStatus(ExecuteContext& ctx)
 {
   auto args = ctx.args.get<std::vector<std::string>>("args");
@@ -60,6 +66,26 @@ registerCommands(CommandParser& parser)
   defStatusReport
     .addArg("format", ArgValueType::REPORT_FORMAT, Required::NO, Positional::YES);
   parser.addCommand(defStatusReport, &statusReport);
+
+  struct StatusCommandDefinition
+  {
+    std::string noun;
+    std::string verb;
+    std::string legacyOption;
+  };
+  const std::vector<StatusCommandDefinition> statusCommands{
+    {"status", "show", "-v"},
+    {"face", "list", "-f"},
+    {"channel", "list", "-c"},
+    {"strategy", "list", "-s"},
+    {"fib", "list", "-b"},
+    {"route", "list", "-r"}
+  };
+  for (const StatusCommandDefinition& scd : statusCommands) {
+    CommandDefinition def(scd.noun, scd.verb);
+    parser.addCommand(def, bind(&statusList, _1, scd.legacyOption));
+  }
+  parser.addAlias("status", "show", "list");
 
   CommandDefinition defLegacyNfdStatus("legacy-nfd-status", "");
   defLegacyNfdStatus
