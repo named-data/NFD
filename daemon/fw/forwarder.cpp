@@ -201,6 +201,18 @@ Forwarder::onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& 
   // set PIT unsatisfy timer
   this->setUnsatisfyTimer(pitEntry);
 
+  // has NextHopFaceId?
+  shared_ptr<lp::NextHopFaceIdTag> nextHopTag = interest.getTag<lp::NextHopFaceIdTag>();
+  if (nextHopTag != nullptr) {
+    // chosen NextHop face exists?
+    Face* nextHopFace = m_faceTable.get(*nextHopTag);
+    if (nextHopFace != nullptr) {
+      // go to outgoing Interest pipeline
+      this->onOutgoingInterest(pitEntry, *nextHopFace);
+    }
+    return;
+  }
+
   // dispatch to strategy: after incoming Interest
   this->dispatchToStrategy(*pitEntry,
     [&] (fw::Strategy& strategy) { strategy.afterReceiveInterest(inFace, interest, pitEntry); });

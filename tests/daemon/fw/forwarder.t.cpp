@@ -170,6 +170,30 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   BOOST_CHECK_EQUAL(face1->sentInterests.back().getNonce(), 9102);
 }
 
+BOOST_AUTO_TEST_CASE(NextHopFaceId)
+{
+  Forwarder forwarder;
+
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  Fib& fib = forwarder.getFib();
+  fib.insert("/A").first->addNextHop(*face3, 0);
+
+  shared_ptr<Interest> interest = makeInterest("/A/B");
+  interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
+
+  face1->receiveInterest(*interest);
+  this->advanceClocks(time::milliseconds(100), time::seconds(1));
+  BOOST_CHECK_EQUAL(face3->sentInterests.size(), 0);
+  BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
+  BOOST_CHECK_EQUAL(face2->sentInterests.front().getName(), "/A/B");
+}
+
 class ScopeLocalhostIncomingTestForwarder : public Forwarder
 {
 public:
