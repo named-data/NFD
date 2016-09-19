@@ -31,11 +31,8 @@
 namespace nfd {
 namespace fw {
 
-/** \brief a forwarding strategy controlled by client application
- *
- *  The consumer may specify the nexthop for an Interest in NDNLPv2 NextHopFaceId field.
- *  If NextHopFaceId field is omitted, the Interest is forwarded to
- *  the FIB nexthop with lowest routing cost.
+/** \brief identical to BestRouteStrategy v1, for backwards compatibility
+ *  \deprecated NextHopFaceId field is honored universally and it's unnecessary to set this strategy
  */
 class ClientControlStrategy : public BestRouteStrategy
 {
@@ -49,6 +46,9 @@ public:
 
 public:
   static const Name STRATEGY_NAME;
+
+private:
+  bool m_isFirstUse = true;
 };
 
 } // namespace fw

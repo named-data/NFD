@@ -25,15 +25,13 @@
 
 #include "client-control-strategy.hpp"
 #include "core/logger.hpp"
-#include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("ClientControlStrategy");
 
-const Name
-ClientControlStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/client-control/%FD%01");
+const Name ClientControlStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/client-control/%FD%02");
 NFD_REGISTER_STRATEGY(ClientControlStrategy);
 
 ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& name)
@@ -45,24 +43,13 @@ void
 ClientControlStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
                                             const shared_ptr<pit::Entry>& pitEntry)
 {
-  shared_ptr<lp::NextHopFaceIdTag> tag = interest.getTag<lp::NextHopFaceIdTag>();
-  if (tag == nullptr) {
-    this->BestRouteStrategy::afterReceiveInterest(inFace, interest, pitEntry);
-    return;
+  if (m_isFirstUse) {
+    NFD_LOG_WARN("NextHopFaceId field is honored universally and "
+                 "it's unnecessary to set client-control strategy.");
+    m_isFirstUse = false;
   }
 
-  FaceId outFaceId = static_cast<FaceId>(*tag);
-  Face* outFace = this->getFace(outFaceId);
-  if (outFace == nullptr) {
-    // If outFace doesn't exist, it's better to reject the Interest
-    // than to use BestRouteStrategy.
-    NFD_LOG_WARN("Interest " << interest.getName() <<
-                 " NextHopFaceId=" << outFaceId << " non-existent face");
-    this->rejectPendingInterest(pitEntry);
-    return;
-  }
-
-  this->sendInterest(pitEntry, *outFace);
+  this->BestRouteStrategy::afterReceiveInterest(inFace, interest, pitEntry);
 }
 
 } // namespace fw
