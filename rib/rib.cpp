@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -162,21 +162,21 @@ Rib::erase(const Name& prefix, const Route& route)
 
   // Name prefix exists
   if (ribIt != m_rib.end()) {
-    shared_ptr<RibEntry> entry(ribIt->second);
-
+    shared_ptr<RibEntry> entry = ribIt->second;
     RibEntry::iterator routeIt = entry->findRoute(route);
 
     if (routeIt != entry->end()) {
+      auto faceId = route.faceId;
       entry->eraseRoute(routeIt);
       m_nItems--;
 
       // If this RibEntry no longer has this faceId, unregister from face lookup table
-      if (!entry->hasFaceId(route.faceId)) {
-        m_faceMap[route.faceId].remove(entry);
+      if (!entry->hasFaceId(faceId)) {
+        m_faceMap[faceId].remove(entry);
       }
 
       // If a RibEntry's route list is empty, remove it from the tree
-      if (entry->getRoutes().size() == 0) {
+      if (entry->getRoutes().empty()) {
         eraseEntry(ribIt);
       }
     }

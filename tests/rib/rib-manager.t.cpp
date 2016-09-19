@@ -117,7 +117,7 @@ private:
     };
 
     Name commandPrefix("/localhost/nfd/fib/add-nexthop");
-    for (auto&& command : m_commands) {
+    for (const auto& command : m_commands) {
       if (commandPrefix.isPrefixOf(command.getName())) {
         replyFibAddCommand(command);
         advanceClocks(time::milliseconds(1));
@@ -129,14 +129,11 @@ private:
     m_commands.clear();
   }
 
-  void clearRib()
+  void
+  clearRib()
   {
     while (!m_rib.empty()) {
-      auto& name = m_rib.begin()->first;
-      auto& routes = m_rib.begin()->second->getRoutes();
-      while (!routes.empty()) {
-        m_rib.erase(name, *routes.begin());
-      }
+      m_rib.erase(m_rib.begin()->first, *m_rib.begin()->second->begin());
     }
   }
 
