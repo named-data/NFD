@@ -91,7 +91,7 @@ public:
     client.set_ping_handler(bind(&SingleWebSocketFixture::clientHandlePing, this));
 
     websocketpp::lib::error_code ec;
-    websocket::Client::connection_ptr con = client.get_connection(uri, ec);
+    auto con = client.get_connection(uri, ec);
     BOOST_REQUIRE_EQUAL(ec, websocketpp::lib::error_code());
 
     client.connect(con);
@@ -132,6 +132,12 @@ private:
   void
   serverHandleOpen(websocketpp::connection_hdl hdl)
   {
+    websocketpp::lib::error_code ec;
+    auto con = server.get_con_from_hdl(hdl, ec);
+    BOOST_REQUIRE_EQUAL(ec, websocketpp::lib::error_code());
+    BOOST_REQUIRE(con);
+    remoteEp = con->get_socket().remote_endpoint();
+
     serverHdl = hdl;
     limitedIo.afterOp();
   }
@@ -206,6 +212,7 @@ public:
 
   websocket::Server server;
   websocketpp::connection_hdl serverHdl;
+  ip::tcp::endpoint remoteEp;
   unique_ptr<Face> face;
   WebSocketTransport* transport;
   std::vector<Transport::Packet>* serverReceivedPackets;
@@ -222,14 +229,13 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
   auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
-  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
+  ip::tcp::endpoint ep(address, 20070);
+  this->endToEndInitialize(ep);
 
   checkStaticPropertiesInitialized(*transport);
 
-  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("ws://127.0.0.1:20070"));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getScheme(), "wsclient");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getHost(), "127.0.0.1");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getPath(), "");
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri(ep, "ws"));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri(remoteEp, "wsclient"));
   BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
@@ -240,14 +246,13 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
   auto address = getTestIp<ip::address_v4>(LoopbackAddress::No);
   SKIP_IF_IP_UNAVAILABLE(address);
-  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
+  ip::tcp::endpoint ep(address, 20070);
+  this->endToEndInitialize(ep);
 
   checkStaticPropertiesInitialized(*transport);
 
-  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("ws://" + address.to_string() + ":20070"));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getScheme(), "wsclient");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getHost(), address.to_string());
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getPath(), "");
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri(ep, "ws"));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri(remoteEp, "wsclient"));
   BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
@@ -260,17 +265,13 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4MappedIpv6)
   SKIP_IF_IP_UNAVAILABLE(address4);
   auto address6 = ip::address_v6::v4_mapped(address4);
   BOOST_REQUIRE(address6.is_v4_mapped());
-  this->endToEndInitialize(ip::tcp::endpoint(address6, 20070));
+  ip::tcp::endpoint ep(address6, 20070);
+  this->endToEndInitialize(ep);
 
   checkStaticPropertiesInitialized(*transport);
 
-  BOOST_CHECK_EQUAL(transport->getLocalUri().getScheme(), "ws");
-  BOOST_CHECK_EQUAL(transport->getLocalUri().getHost(), "::ffff:127.0.0.1");
-  BOOST_CHECK_EQUAL(transport->getLocalUri().getPort(), "20070");
-  BOOST_CHECK_EQUAL(transport->getLocalUri().getPath(), "");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getScheme(), "wsclient");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getHost(), "::ffff:127.0.0.1");
-  BOOST_CHECK_EQUAL(transport->getRemoteUri().getPath(), "");
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri(ep, "ws"));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri(remoteEp, "wsclient"));
   BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
