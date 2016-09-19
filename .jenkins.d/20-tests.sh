@@ -31,6 +31,17 @@ ut_log_args() {
     fi
 }
 
+ASAN_OPTIONS="color=always"
+ASAN_OPTIONS+=":detect_leaks=false"
+ASAN_OPTIONS+=":detect_stack_use_after_return=true"
+ASAN_OPTIONS+=":check_initialization_order=true"
+ASAN_OPTIONS+=":strict_init_order=true"
+ASAN_OPTIONS+=":detect_invalid_pointer_pairs=1"
+ASAN_OPTIONS+=":detect_container_overflow=false"
+ASAN_OPTIONS+=":strict_string_checks=true"
+ASAN_OPTIONS+=":strip_path_prefix=${PWD}/"
+export ASAN_OPTIONS
+
 # First run all tests as unprivileged user
 ./build/unit-tests-core $(ut_log_args)
 ./build/unit-tests-daemon $(ut_log_args)
