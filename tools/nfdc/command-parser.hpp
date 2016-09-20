@@ -28,6 +28,7 @@
 
 #include "command-definition.hpp"
 #include "execute-command.hpp"
+#include <type_traits>
 
 namespace nfd {
 namespace tools {
@@ -37,8 +38,8 @@ namespace nfdc {
  */
 enum AvailableIn : uint8_t {
   AVAILABLE_IN_NONE     = 0,
-  AVAILABLE_IN_ONE_SHOT = 1 << 0,
-  AVAILABLE_IN_BATCH    = 1 << 1,
+  AVAILABLE_IN_ONE_SHOT = 1 << 0, ///< one-shot mode
+  AVAILABLE_IN_BATCH    = 1 << 1, ///< batch mode
   AVAILABLE_IN_ALL      = 0xff
 };
 
@@ -47,7 +48,7 @@ operator<<(std::ostream& os, AvailableIn modes);
 
 /** \brief indicates which mode is the parser operated in
  */
-enum class ParseMode {
+enum class ParseMode : uint8_t {
   ONE_SHOT = AVAILABLE_IN_ONE_SHOT, ///< one-shot mode
   BATCH    = AVAILABLE_IN_BATCH     ///< batch mode
 };
@@ -76,7 +77,8 @@ public:
    *  \param modes parse modes this command should be available in, must not be AVAILABLE_IN_NONE
    */
   CommandParser&
-  addCommand(const CommandDefinition& def, const ExecuteCommand& execute, AvailableIn modes = AVAILABLE_IN_ALL);
+  addCommand(const CommandDefinition& def, const ExecuteCommand& execute,
+             std::underlying_type<AvailableIn>::type modes = AVAILABLE_IN_ALL);
 
   /** \brief add an alias "noun verb2" to existing command "noun verb"
    *  \throw std::out_of_range "noun verb" does not exist
@@ -104,7 +106,10 @@ private:
     AvailableIn modes;
   };
 
-  std::map<CommandName, shared_ptr<Command>> m_commands;
+  /** \brief map from command name or alias to command definition
+   */
+  typedef std::map<CommandName, shared_ptr<Command>> CommandContainer;
+  CommandContainer m_commands;
 };
 
 } // namespace nfdc

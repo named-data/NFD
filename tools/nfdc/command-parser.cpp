@@ -24,33 +24,31 @@
  */
 
 #include "command-parser.hpp"
+#include "format-helpers.hpp"
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
-NDN_LOG_INIT(CommandParser);
+NDN_LOG_INIT(nfdc.CommandParser);
+
+static_assert(std::is_same<std::underlying_type<AvailableIn>::type,
+                           std::underlying_type<ParseMode>::type>::value,
+              "AvailableIn and ParseMode must be declared with same underlying type");
 
 std::ostream&
 operator<<(std::ostream& os, AvailableIn modes)
 {
-  int count = 0;
-
-#define PRINT_BIT(bit, str) \
-  if ((modes & bit) != 0) { \
-    if (++count > 1) { \
-      os << '|'; \
-    } \
-    os << str; \
+  text::Separator sep("|");
+  if ((modes & AVAILABLE_IN_ONE_SHOT) != 0) {
+    os << sep << "one-shot";
+  }
+  if ((modes & AVAILABLE_IN_BATCH) != 0) {
+    os << sep << "batch";
   }
 
-  PRINT_BIT(AVAILABLE_IN_ONE_SHOT, "one-shot")
-  PRINT_BIT(AVAILABLE_IN_BATCH, "batch")
-
-#undef PRINT_BIT
-
-  if (count == 0) {
+  if (sep.getCount() == 0) {
     os << "none";
   }
   return os;
@@ -69,10 +67,12 @@ operator<<(std::ostream& os, ParseMode mode)
 }
 
 CommandParser&
-CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& execute, AvailableIn modes)
+CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& execute,
+                          std::underlying_type<AvailableIn>::type modes)
 {
   BOOST_ASSERT(modes != AVAILABLE_IN_NONE);
-  m_commands[{def.getNoun(), def.getVerb()}].reset(new Command{def, execute, modes});
+  m_commands[{def.getNoun(), def.getVerb()}].reset(
+    new Command{def, execute, static_cast<AvailableIn>(modes)});
   return *this;
 }
 

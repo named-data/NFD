@@ -33,7 +33,7 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
-NDN_LOG_INIT(CommandDefinition);
+NDN_LOG_INIT(nfdc.CommandDefinition);
 
 std::ostream&
 operator<<(std::ostream& os, ArgValueType vt)

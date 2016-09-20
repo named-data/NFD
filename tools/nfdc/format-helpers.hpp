@@ -85,6 +85,12 @@ public:
   explicit
   Separator(const std::string& subsequent);
 
+  int
+  getCount() const
+  {
+    return m_count;
+  }
+
 private:
   std::string m_first;
   std::string m_subsequent;
