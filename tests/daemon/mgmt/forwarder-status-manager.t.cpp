@@ -97,20 +97,6 @@ BOOST_AUTO_TEST_CASE(GeneralStatus)
   // TODO#3325 check packet counter values
 }
 
-BOOST_AUTO_TEST_CASE(GeneralStatusLegacy) // request GeneralStatus with legacy name
-{
-  auto request = makeInterest("ndn:/localhost/nfd/status");
-  request->setMustBeFresh(true);
-  request->setChildSelector(1);
-  this->receiveInterest(request);
-
-  BOOST_REQUIRE_GE(m_responses.size(), 1);
-  BOOST_CHECK(Name("ndn:/localhost/nfd/status/general").isPrefixOf(m_responses.front().getName()));
-
-  Block response = this->concatenateResponses(0, m_responses.size());
-  BOOST_REQUIRE_NO_THROW(ndn::nfd::ForwarderStatus(response));
-}
-
 BOOST_AUTO_TEST_SUITE_END() // TestForwarderStatusManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt
 

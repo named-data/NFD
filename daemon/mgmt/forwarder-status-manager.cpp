@@ -29,14 +29,14 @@
 
 namespace nfd {
 
-const time::milliseconds STATUS_SERVER_DEFAULT_FRESHNESS = time::milliseconds(5000);
+static const time::milliseconds STATUS_FRESHNESS(5000);
 
 ForwarderStatusManager::ForwarderStatusManager(Forwarder& forwarder, Dispatcher& dispatcher)
   : m_forwarder(forwarder)
   , m_dispatcher(dispatcher)
   , m_startTimestamp(time::system_clock::now())
 {
-  m_dispatcher.addStatusDataset("status", ndn::mgmt::makeAcceptAllAuthorization(),
+  m_dispatcher.addStatusDataset("status/general", ndn::mgmt::makeAcceptAllAuthorization(),
                                 bind(&ForwarderStatusManager::listGeneralStatus, this, _1, _2, _3));
 }
 
@@ -70,24 +70,12 @@ void
 ForwarderStatusManager::listGeneralStatus(const Name& topPrefix, const Interest& interest,
                                           ndn::mgmt::StatusDatasetContext& context)
 {
-  static const PartialName PREFIX_STATUS("status");
-  static const PartialName PREFIX_STATUS_GENERAL("status/general");
-
-  PartialName subPrefix = interest.getName().getSubName(topPrefix.size());
-  if (subPrefix == PREFIX_STATUS_GENERAL || subPrefix == PREFIX_STATUS) {
-    context.setPrefix(Name(topPrefix).append(PREFIX_STATUS_GENERAL));
-  }
-  else {
-    context.reject(ndn::mgmt::ControlResponse().setCode(404));
-    return;
-  }
-  // TODO#3379 register the dataset at status/general, and delete these conditions
-
-  context.setExpiry(STATUS_SERVER_DEFAULT_FRESHNESS);
+  context.setExpiry(STATUS_FRESHNESS);
 
   auto status = this->collectGeneralStatus();
-  status.wireEncode().parse();
-  for (const auto& subblock : status.wireEncode().elements()) {
+  const Block& wire = status.wireEncode();
+  wire.parse();
+  for (const auto& subblock : wire.elements()) {
     context.append(subblock);
   }
   context.end();
