@@ -48,7 +48,7 @@ createFace(ProtocolFactory& factory,
            const CreateFaceExpectedResult& expected)
 {
   factory.createFace(uri, persistency, wantLocalFieldsEnabled,
-                     [expected] (const shared_ptr<Face>& newFace) {
+                     [expected] (const shared_ptr<Face>&) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },
                      [expected] (uint32_t actualStatus, const std::string& actualReason) {
@@ -56,11 +56,6 @@ createFace(ProtocolFactory& factory,
                        BOOST_CHECK_EQUAL(actualStatus, expected.status);
                        BOOST_CHECK_EQUAL(actualReason, expected.reason);
                      });
-}
-
-inline void
-failIfError(uint32_t status, const std::string& reason) {
-  BOOST_FAIL("No error expected, but got: [" << status << ": " << reason << "]");
 }
 
 } // namespace tests

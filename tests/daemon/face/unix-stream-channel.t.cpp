@@ -25,8 +25,7 @@
 
 #include "face/unix-stream-channel.hpp"
 
-#include "tests/limited-io.hpp"
-#include "factory-test-common.hpp"
+#include "channel-fixture.hpp"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -34,22 +33,19 @@
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Face)
-
-using nfd::Face;
 namespace fs = boost::filesystem;
 namespace local = boost::asio::local;
 
-class UnixStreamChannelFixture : public BaseFixture
+class UnixStreamChannelFixture : public ChannelFixture<UnixStreamChannel, unix_stream::Endpoint>
 {
 protected:
   UnixStreamChannelFixture()
-    : listenerEp("nfd-test-unix-stream-channel.sock")
   {
+    listenerEp = unix_stream::Endpoint("nfd-test-unix-stream-channel.sock");
   }
 
-  unique_ptr<UnixStreamChannel>
-  makeChannel()
+  virtual unique_ptr<UnixStreamChannel>
+  makeChannel() final
   {
     return make_unique<UnixStreamChannel>(listenerEp);
   }
@@ -65,11 +61,11 @@ protected:
         listenerFaces.push_back(newFace);
         limitedIo.afterOp();
       },
-      &failIfError);
+      ChannelFixture::unexpectedFailure);
   }
 
   void
-  connect(local::stream_protocol::socket& client)
+  clientConnect(local::stream_protocol::socket& client)
   {
     client.async_connect(listenerEp,
       [this] (const boost::system::error_code& error) {
@@ -77,15 +73,16 @@ protected:
         limitedIo.afterOp();
       });
   }
-
-protected:
-  LimitedIo limitedIo;
-  unix_stream::Endpoint listenerEp;
-  unique_ptr<UnixStreamChannel> listenerChannel;
-  std::vector<shared_ptr<Face>> listenerFaces;
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnixStreamChannel, UnixStreamChannelFixture)
+
+BOOST_AUTO_TEST_CASE(Uri)
+{
+  auto channel = makeChannel();
+  BOOST_CHECK_EQUAL(channel->getUri(), FaceUri(listenerEp));
+}
 
 BOOST_AUTO_TEST_CASE(Listen)
 {
@@ -108,15 +105,15 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   BOOST_CHECK_EQUAL(listenerFaces.size(), 0);
 
   local::stream_protocol::socket client1(g_io);
-  this->connect(client1);
+  this->clientConnect(client1);
 
   BOOST_CHECK_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerFaces.size(), 1);
 
   local::stream_protocol::socket client2(g_io);
   local::stream_protocol::socket client3(g_io);
-  this->connect(client2);
-  this->connect(client3);
+  this->clientConnect(client2);
+  this->clientConnect(client3);
 
   BOOST_CHECK_EQUAL(limitedIo.run(4, time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerFaces.size(), 3);

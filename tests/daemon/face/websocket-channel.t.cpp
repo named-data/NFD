@@ -26,32 +26,22 @@
 #include "face/websocket-channel.hpp"
 #include "face/websocket-transport.hpp"
 
+#include "channel-fixture.hpp"
 #include "test-ip.hpp"
-#include "tests/limited-io.hpp"
-#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Face)
-
-using nfd::Face;
 namespace ip = boost::asio::ip;
 
-class WebSocketChannelFixture : public BaseFixture
+class WebSocketChannelFixture : public ChannelFixture<WebSocketChannel, websocket::Endpoint>
 {
 protected:
-  WebSocketChannelFixture()
-    : clientShouldPong(true)
-    , m_nextPort(20070)
-  {
-  }
-
-  unique_ptr<WebSocketChannel>
-  makeChannel(const ip::address& addr, uint16_t port = 0)
+  virtual unique_ptr<WebSocketChannel>
+  makeChannel(const ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
-      port = m_nextPort++;
+      port = getNextPort();
 
     return make_unique<WebSocketChannel>(websocket::Endpoint(addr, port));
   }
@@ -81,7 +71,7 @@ protected:
 
     std::string uri = "ws://" + listenerEp.address().to_string() + ":" + to_string(listenerEp.port());
     websocketpp::lib::error_code ec;
-    websocket::Client::connection_ptr con = client.get_connection(uri, ec);
+    auto con = client.get_connection(uri, ec);
     BOOST_REQUIRE_EQUAL(ec, websocketpp::lib::error_code());
 
     client.connect(con);
@@ -152,25 +142,21 @@ private:
   }
 
 protected:
-  LimitedIo limitedIo;
-
-  websocket::Endpoint listenerEp;
-  unique_ptr<WebSocketChannel> listenerChannel;
-  std::vector<shared_ptr<Face>> listenerFaces;
   std::vector<Interest> faceReceivedInterests;
 
   websocket::Client client;
   websocketpp::connection_hdl clientHandle;
   std::vector<std::string> clientReceivedMessages;
+
   time::steady_clock::Duration measuredPingInterval;
-  bool clientShouldPong; // set clientShouldPong false to disable the pong response,
-                         // which will cause timeout in listenerChannel
+  bool clientShouldPong = true; // set clientShouldPong false to disable the pong response,
+                                // which will cause timeout in listenerChannel
 
 private:
-  uint16_t m_nextPort;
   time::steady_clock::TimePoint m_prevPingRecvTime;
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketChannel, WebSocketChannelFixture)
 
 BOOST_AUTO_TEST_CASE(Uri)

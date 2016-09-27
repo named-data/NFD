@@ -23,45 +23,48 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tcp-channel-fixture.hpp"
+#ifndef NFD_TESTS_DAEMON_FACE_TCP_CHANNEL_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_FACE_TCP_CHANNEL_FIXTURE_HPP
 
-#include "test-ip.hpp"
+#include "face/tcp-channel.hpp"
 
-#include <boost/mpl/vector.hpp>
+#include "channel-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestTcpChannel, TcpChannelFixture)
-
-using AddressFamilies = boost::mpl::vector<boost::asio::ip::address_v4,
-                                           boost::asio::ip::address_v6>;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, A, AddressFamilies)
+class TcpChannelFixture : public ChannelFixture<TcpChannel, tcp::Endpoint>
 {
-  auto address = getTestIp<A>(LoopbackAddress::Yes);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  // do not listen
+protected:
+  virtual unique_ptr<TcpChannel>
+  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
+  {
+    if (port == 0)
+      port = getNextPort();
 
-  auto channel = this->makeChannel(A());
-  channel->connect(tcp::Endpoint(address, 7040), false,
-    [this] (const shared_ptr<nfd::Face>&) {
-      BOOST_FAIL("Connect succeeded when it should have failed");
-      this->limitedIo.afterOp();
-    },
-    [this] (uint32_t, const std::string& reason) {
-      BOOST_CHECK_EQUAL(reason.empty(), false);
-      this->limitedIo.afterOp();
-    },
-    time::seconds(1));
+    return make_unique<TcpChannel>(tcp::Endpoint(addr, port));
+  }
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(1, time::seconds(2)), LimitedIo::EXCEED_OPS);
-  BOOST_CHECK_EQUAL(channel->size(), 0);
-}
+  virtual void
+  connect(TcpChannel& channel) final
+  {
+    g_io.post([&] {
+      channel.connect(listenerEp, false,
+        [this] (const shared_ptr<Face>& newFace) {
+          BOOST_REQUIRE(newFace != nullptr);
+          connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
+          clientFaces.push_back(newFace);
+          limitedIo.afterOp();
+        },
+        ChannelFixture::unexpectedFailure);
+    });
+  }
 
-BOOST_AUTO_TEST_SUITE_END() // TestTcpChannel
-BOOST_AUTO_TEST_SUITE_END() // Face
+protected:
+  std::vector<shared_ptr<Face>> clientFaces;
+};
 
 } // namespace tests
 } // namespace nfd
+
+#endif // NFD_TESTS_DAEMON_FACE_TCP_CHANNEL_FIXTURE_HPP
