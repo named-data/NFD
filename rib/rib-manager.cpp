@@ -318,41 +318,16 @@ RibManager::fetchActiveFaces()
 {
   NFD_LOG_DEBUG("Fetching active faces");
 
-  Interest interest(FACES_LIST_DATASET_PREFIX);
-  interest.setChildSelector(1);
-  interest.setMustBeFresh(true);
-
-  shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
-
-  m_face.expressInterest(interest,
-                         bind(&RibManager::fetchSegments, this, _2, buffer),
-                         bind(&RibManager::onFetchFaceStatusTimeout, this));
+  m_nfdController.fetch<ndn::nfd::FaceDataset>(
+    bind(&RibManager::removeInvalidFaces, this, _1),
+    bind(&RibManager::onFetchActiveFacesFailure, this, _1, _2),
+    ndn::nfd::CommandOptions());
 }
 
 void
-RibManager::fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffer)
+RibManager::onFetchActiveFacesFailure(uint32_t code, const std::string& reason)
 {
-  buffer->write(reinterpret_cast<const char*>(data.getContent().value()),
-                data.getContent().value_size());
-
-  uint64_t currentSegment = data.getName().get(-1).toSegment();
-
-  const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
-
-  if (finalBlockId.empty() || finalBlockId.toSegment() > currentSegment) {
-    m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment+1),
-                           bind(&RibManager::fetchSegments, this, _2, buffer),
-                           bind(&RibManager::onFetchFaceStatusTimeout, this));
-  }
-  else {
-    removeInvalidFaces(buffer);
-  }
-}
-
-void
-RibManager::onFetchFaceStatusTimeout()
-{
-  std::cerr << "Face Status Dataset request timed out" << std::endl;
+  NFD_LOG_DEBUG("Face Status Dataset request failure " << code << " " << reason);
   scheduleActiveFaceFetch(ACTIVE_FACE_FETCH_INTERVAL);
 }
 
@@ -373,34 +348,19 @@ RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
 }
 
 void
-RibManager::removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer)
+RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFaces)
 {
   NFD_LOG_DEBUG("Checking for invalid face registrations");
 
-  ndn::ConstBufferPtr buf = buffer->buf();
-
-  Block block;
-  size_t offset = 0;
-  FaceIdSet activeFaces;
-
-  while (offset < buf->size()) {
-    bool isOk = false;
-    std::tie(isOk, block) = Block::fromBuffer(buf, offset);
-    if (!isOk) {
-      std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-      break;
-    }
-
-    offset += block.size();
-
-    ndn::nfd::FaceStatus status(block);
-    activeFaces.insert(status.getFaceId());
+  FaceIdSet activeFaceIds;
+  for (const ndn::nfd::FaceStatus& item : activeFaces) {
+    activeFaceIds.insert(item.getFaceId());
   }
 
   // Look for face IDs that were registered but not active to find missed
   // face destroyed events
   for (auto&& faceId : m_registeredFaces) {
-    if (activeFaces.find(faceId) == activeFaces.end()) {
+    if (activeFaceIds.count(faceId) == 0) {
       NFD_LOG_DEBUG("Removing invalid face ID: " << faceId);
 
       scheduler::schedule(time::seconds(0),

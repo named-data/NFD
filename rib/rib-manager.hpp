@@ -115,10 +115,7 @@ private: // Face monitor
   fetchActiveFaces();
 
   void
-  fetchSegments(const Data& data, shared_ptr<ndn::OBufferStream> buffer);
-
-  void
-  onFetchFaceStatusTimeout();
+  onFetchActiveFacesFailure(uint32_t code, const std::string& reason);
 
   void
   onFaceDestroyedEvent(uint64_t faceId);
@@ -130,10 +127,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
    * @brief remove invalid faces
    *
-   * @param buffer Face dataset contents
+   * @param status Face dataset
   */
   void
-  removeInvalidFaces(shared_ptr<ndn::OBufferStream> buffer);
+  removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFaces);
 
   /**
    * @brief response to face events

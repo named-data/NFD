@@ -570,15 +570,10 @@ BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)
 
   ndn::nfd::FaceStatus status;
   status.setFaceId(1);
+  std::vector<ndn::nfd::FaceStatus> activeFaces;
+  activeFaces.push_back(status);
 
-  auto data = makeData("/localhost/nfd/faces/list");
-  data->setContent(status.wireEncode());
-
-  auto buffer = make_shared<ndn::OBufferStream>();
-  buffer->write(reinterpret_cast<const char*>(data->getContent().value()),
-                data->getContent().value_size());
-
-  m_manager.removeInvalidFaces(buffer);
+  m_manager.removeInvalidFaces(activeFaces);
   advanceClocks(time::milliseconds(100));
   BOOST_REQUIRE_EQUAL(m_rib.size(), 1);
 
