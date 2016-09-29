@@ -74,10 +74,10 @@ public:
   Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport);
 
   LinkService*
-  getLinkService();
+  getLinkService() const;
 
   Transport*
-  getTransport();
+  getTransport() const;
 
 public: // upper interface connected to forwarding
   /** \brief sends Interest on Face
@@ -189,13 +189,13 @@ private:
 };
 
 inline LinkService*
-Face::getLinkService()
+Face::getLinkService() const
 {
   return m_service.get();
 }
 
 inline Transport*
-Face::getTransport()
+Face::getTransport() const
 {
   return m_transport.get();
 }

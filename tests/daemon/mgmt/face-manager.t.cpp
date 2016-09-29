@@ -212,6 +212,7 @@ operator!=(const FaceStatus& left, const FaceStatus& right)
          left.getFaceScope() != right.getFaceScope() ||
          left.getFacePersistency() != right.getFacePersistency() ||
          left.getLinkType() != right.getLinkType() ||
+         left.getFlags() != right.getFlags() ||
          left.getNInInterests() != right.getNInInterests() ||
          left.getNInDatas() != right.getNInDatas() ||
          left.getNOutInterests() != right.getNOutInterests() ||
@@ -227,6 +228,7 @@ operator<<(std::ostream &os, const FaceStatus& status)
      << status.getLocalUri() << ", "
      << status.getFacePersistency() << ", "
      << status.getLinkType() << ", "
+     << status.getFlags() << ", "
      << status.getNInInterests() << ", "
      << status.getNInDatas() << ", "
      << status.getNOutInterests() << ", "

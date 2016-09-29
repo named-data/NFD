@@ -493,6 +493,13 @@ FaceManager::collectFaceStatus(const Face& face, const time::steady_clock::TimeP
         .setNInBytes(counters.nInBytes)
         .setNOutBytes(counters.nOutBytes);
 
+  // Set Flag bits
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  if (linkService != nullptr) {
+    auto linkServiceOptions = linkService->getOptions();
+    status.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, linkServiceOptions.allowLocalFields);
+  }
+
   return status;
 }
 
