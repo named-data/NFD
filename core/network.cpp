@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014,  Regents of the University of California,
- *                      Arizona Board of Regents,
- *                      Colorado State University,
- *                      University Pierre & Marie Curie, Sorbonne University,
- *                      Washington University in St. Louis,
- *                      Beijing Institute of Technology,
- *                      The University of Memphis
+ * Copyright (c) 2014-2016,  Regents of the University of California,
+ *                           Arizona Board of Regents,
+ *                           Colorado State University,
+ *                           University Pierre & Marie Curie, Sorbonne University,
+ *                           Washington University in St. Louis,
+ *                           Beijing Institute of Technology,
+ *                           The University of Memphis
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -51,8 +51,33 @@ Network::getMaxRangeV6()
   return range;
 }
 
-//////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////
+bool
+Network::isValidCidr(const std::string& cidr)
+{
+   std::vector<std::string> splitCidr;
+   boost::split(splitCidr, cidr, boost::is_any_of("/"));
+   if (splitCidr.size() != 2) {
+     return false;
+   }
+
+   auto network = splitCidr[0];
+   auto mask = splitCidr[1];
+   auto netmask = 0;
+   if (mask.length() <= 0) {
+     return false;
+   }
+   if (!std::all_of(mask.begin(), mask.end(), ::isdigit)) {
+     return false;
+   }
+
+   netmask = boost::lexical_cast<int>(splitCidr[1]);
+   boost::system::error_code invalidIP;
+   boost::asio::ip::address_v4::from_string(network, invalidIP);
+   if (invalidIP || netmask < 0 || netmask > 32) {
+     return false;
+   }
+   return true;
+}
 
 std::ostream&
 operator<<(std::ostream& os, const Network& network)

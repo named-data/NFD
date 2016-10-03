@@ -24,8 +24,8 @@
  */
 
 #include "face-manager.hpp"
-
 #include "core/network-interface.hpp"
+#include "core/network-interface-predicate.hpp"
 #include "face/generic-link-service.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
@@ -872,6 +872,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
   // }
 
 #if defined(HAVE_LIBPCAP)
+  NetworkInterfacePredicate nicPredicate;
   bool useMcast = true;
   ethernet::Address mcastGroup(ethernet::getDefaultMulticastAddress());
 
@@ -886,6 +887,12 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
                                                 i.first + "\" in \"ether\" section"));
       }
       NFD_LOG_TRACE("Ethernet multicast group set to " << mcastGroup);
+    }
+    else if (i.first == "whitelist") {
+      nicPredicate.parseWhitelist(i.second);
+    }
+    else if (i.first == "blacklist") {
+      nicPredicate.parseBlacklist(i.second);
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
@@ -910,7 +917,7 @@ FaceManager::processSectionEther(const ConfigSection& configSection, bool isDryR
 
     if (useMcast) {
       for (const auto& nic : nicList) {
-        if (nic.isUp() && nic.isMulticastCapable()) {
+        if (nic.isUp() && nic.isMulticastCapable() && nicPredicate(nic)) {
           try {
             auto newFace = factory->createMulticastFace(nic, mcastGroup);
             m_faceTable.add(newFace);

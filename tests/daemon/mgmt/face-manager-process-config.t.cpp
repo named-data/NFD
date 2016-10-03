@@ -341,6 +341,13 @@ BOOST_AUTO_TEST_CASE(ProcessSectionEther)
     "  {\n"
     "    mcast yes\n"
     "    mcast_group 01:00:5E:00:17:AA\n"
+    "    whitelist\n"
+    "    {\n"
+    "      *\n"
+    "    }\n"
+    "    blacklist\n"
+    "    {\n"
+    "    }\n"
     "  }\n"
     "}\n";
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));

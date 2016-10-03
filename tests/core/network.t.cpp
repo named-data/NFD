@@ -144,6 +144,26 @@ BOOST_AUTO_TEST_CASE(Comparisons)
                  boost::lexical_cast<Network>("2001:db8:3f9:0::/64"));
 }
 
+BOOST_AUTO_TEST_CASE(IsValidCidr)
+{
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24"), true);
+  BOOST_CHECK_EQUAL(Network::isValidCidr(""), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("/192.0.0.0/24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/+24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/*24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24.42"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/foo"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24/23"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/33"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/-24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("foo/4"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("foo/"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("foo"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("256.0.256.0/24"), false);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // TestNetwork
 
 } // namespace tests

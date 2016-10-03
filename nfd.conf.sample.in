@@ -148,7 +148,7 @@ face_system
   ;
   ;    sudo chgrp admin /dev/bpf*
   ;    sudo chmod g+rw /dev/bpf*
-
+  ;
   @IF_HAVE_LIBPCAP@ether
   @IF_HAVE_LIBPCAP@{
   @IF_HAVE_LIBPCAP@  ; Ethernet multicast settings
@@ -156,10 +156,23 @@ face_system
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
+  @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order,
+  @IF_HAVE_LIBPCAP@  ; interface names (e.g., ifname eth0),
+  @IF_HAVE_LIBPCAP@  ; mac addresses (e.g., ether 85:3b:4d:d3:5f:c2),
+  @IF_HAVE_LIBPCAP@  ; subnets (e.g., subnet 192.0.2.0/24, note that only IPv4 is supported here),
+  @IF_HAVE_LIBPCAP@  ; or a wildcard (*) that matches all interfaces.
+  @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  whitelist
+  @IF_HAVE_LIBPCAP@  {
+  @IF_HAVE_LIBPCAP@    *
+  @IF_HAVE_LIBPCAP@  }
+  @IF_HAVE_LIBPCAP@  blacklist
+  @IF_HAVE_LIBPCAP@  {
+  @IF_HAVE_LIBPCAP@  }
   @IF_HAVE_LIBPCAP@}
 
   ; The websocket section contains settings of WebSocket faces and channels.
-
   @IF_HAVE_WEBSOCKET@websocket
   @IF_HAVE_WEBSOCKET@{
   @IF_HAVE_WEBSOCKET@  listen yes ; set to 'no' to disable WebSocket listener, default 'yes'
