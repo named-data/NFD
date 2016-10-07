@@ -25,12 +25,12 @@
 
 #include "rib/rib-manager.hpp"
 #include "manager-common-fixture.hpp"
+#include "core/random.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
-#include <ndn-cxx/util/random.hpp>
 
 namespace nfd {
 namespace rib {
@@ -482,11 +482,12 @@ operator!=(const RibEntry& left, const RibEntry& right)
 
 BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 {
+  std::uniform_int_distribution<uint64_t> dist;
   uint64_t faceId = 0;
-  auto generateRoute = [&faceId] () -> Route {
+  auto generateRoute = [&dist, &faceId] () -> Route {
     Route route;
     route.faceId = ++faceId;
-    route.cost = ndn::random::generateWord64();
+    route.cost = dist(getGlobalRng());
     route.expires = time::steady_clock::TimePoint::max();
     return route;
   };

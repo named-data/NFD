@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,21 +28,15 @@
 
 namespace nfd {
 
-static boost::thread_specific_ptr<boost::random::mt19937> g_rng;
-
-boost::random::mt19937&
+std::mt19937&
 getGlobalRng()
 {
-  if (g_rng.get() == nullptr) {
-    g_rng.reset(new boost::random::mt19937());
+  static boost::thread_specific_ptr<std::mt19937> rng;
+  if (rng.get() == nullptr) {
+    std::random_device rd;
+    rng.reset(new std::mt19937(rd()));
   }
-  return *g_rng;
-}
-
-void
-resetGlobalRng()
-{
-  g_rng.reset();
+  return *rng;
 }
 
 } // namespace nfd

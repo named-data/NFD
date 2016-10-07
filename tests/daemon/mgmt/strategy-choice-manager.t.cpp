@@ -25,6 +25,7 @@
 
 #include "mgmt/strategy-choice-manager.hpp"
 
+#include "core/random.hpp"
 #include "face/face.hpp"
 #include "face/internal-face.hpp"
 #include "fw/strategy.hpp"
@@ -36,7 +37,6 @@
 #include "tests/daemon/fw/dummy-strategy.hpp"
 #include "tests/daemon/fw/install-strategy.hpp"
 
-#include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
 namespace nfd {
@@ -200,10 +200,11 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
     actualStrategies.insert(entry.getStrategyName());
   }
 
+  std::uniform_int_distribution<uint64_t> dist;
   size_t nEntries = 1024;
   for (size_t i = 0 ; i < nEntries ; i++) {
     auto name = Name("test-name").appendSegment(i);
-    auto strategy = Name("test-strategy").appendSegment(ndn::random::generateWord64());
+    auto strategy = Name("test-strategy").appendSegment(dist(getGlobalRng()));
     auto entry = ndn::nfd::StrategyChoice().setName(name).setStrategy(strategy);
     actualNames.insert(name);
     actualStrategies.insert(strategy);

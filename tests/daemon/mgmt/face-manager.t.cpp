@@ -24,13 +24,13 @@
  */
 
 #include "mgmt/face-manager.hpp"
+#include "core/random.hpp"
 #include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 
 #include "nfd-manager-common-fixture.hpp"
 #include "../face/dummy-face.hpp"
 
-#include <ndn-cxx/util/random.hpp>
 #include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/mgmt/nfd/channel-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
@@ -103,7 +103,8 @@ private:
   static typename std::enable_if<std::is_base_of<SimpleCounter, T>::value>::type
   randomizeCounter(const T& counter)
   {
-    const_cast<T&>(counter).set(ndn::random::generateWord64());
+    static std::uniform_int_distribution<typename T::rep> dist;
+    const_cast<T&>(counter).set(dist(getGlobalRng()));
   }
 
 protected:

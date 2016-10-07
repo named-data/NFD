@@ -26,7 +26,6 @@
 #include "ncc-strategy.hpp"
 #include "pit-algorithm.hpp"
 #include "core/random.hpp"
-#include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {
 namespace fw {
@@ -143,8 +142,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
   }
 
   if (isForwarded) {
-    boost::random::uniform_int_distribution<time::nanoseconds::rep> dist(0,
-      pitEntryInfo->maxInterval.count() - 1);
+    std::uniform_int_distribution<time::nanoseconds::rep> dist(0, pitEntryInfo->maxInterval.count() - 1);
     time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
       bind(&NccStrategy::doPropagate, this, weak_ptr<pit::Entry>(pitEntry)));
@@ -239,13 +237,9 @@ NccStrategy::getMeasurementsEntryInfo(measurements::Entry* entry)
   return *info;
 }
 
-
-const time::microseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION =
-                                                             time::microseconds(8192);
-const time::microseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION =
-                                                             time::microseconds(127);
-const time::microseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION =
-                                                             time::microseconds(160000);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION = time::microseconds(8192);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION = time::microseconds(127);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION = time::milliseconds(160);
 
 NccStrategy::MeasurementsEntryInfo::MeasurementsEntryInfo()
   : prediction(INITIAL_PREDICTION)
@@ -259,7 +253,8 @@ NccStrategy::MeasurementsEntryInfo::inheritFrom(const MeasurementsEntryInfo& oth
 }
 
 shared_ptr<Face>
-NccStrategy::MeasurementsEntryInfo::getBestFace(void) {
+NccStrategy::MeasurementsEntryInfo::getBestFace()
+{
   shared_ptr<Face> best = this->bestFace.lock();
   if (best != nullptr) {
     return best;
@@ -269,7 +264,8 @@ NccStrategy::MeasurementsEntryInfo::getBestFace(void) {
 }
 
 void
-NccStrategy::MeasurementsEntryInfo::updateBestFace(const Face& face) {
+NccStrategy::MeasurementsEntryInfo::updateBestFace(const Face& face)
+{
   if (this->bestFace.expired()) {
     this->bestFace = const_cast<Face&>(face).shared_from_this();
     return;
@@ -285,19 +281,22 @@ NccStrategy::MeasurementsEntryInfo::updateBestFace(const Face& face) {
 }
 
 void
-NccStrategy::MeasurementsEntryInfo::adjustPredictDown() {
+NccStrategy::MeasurementsEntryInfo::adjustPredictDown()
+{
   prediction = std::max(MIN_PREDICTION,
     time::microseconds(prediction.count() - (prediction.count() >> ADJUST_PREDICT_DOWN_SHIFT)));
 }
 
 void
-NccStrategy::MeasurementsEntryInfo::adjustPredictUp() {
+NccStrategy::MeasurementsEntryInfo::adjustPredictUp()
+{
   prediction = std::min(MAX_PREDICTION,
     time::microseconds(prediction.count() + (prediction.count() >> ADJUST_PREDICT_UP_SHIFT)));
 }
 
 void
-NccStrategy::MeasurementsEntryInfo::ageBestFace() {
+NccStrategy::MeasurementsEntryInfo::ageBestFace()
+{
   this->previousFace = this->bestFace;
   this->bestFace.reset();
 }

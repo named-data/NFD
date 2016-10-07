@@ -30,7 +30,6 @@
 #include "strategy.hpp"
 #include "table/cleanup.hpp"
 #include <ndn-cxx/lp/tags.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
 
 namespace nfd {
 
@@ -270,7 +269,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outF
 
   if (wantNewNonce) {
     interest = make_shared<Interest>(*interest);
-    static boost::random::uniform_int_distribution<uint32_t> dist;
+    static std::uniform_int_distribution<uint32_t> dist;
     interest->setNonce(dist(getGlobalRng()));
   }
 

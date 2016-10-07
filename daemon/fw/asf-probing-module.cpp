@@ -24,10 +24,7 @@
  */
 
 #include "asf-probing-module.hpp"
-
 #include "core/random.hpp"
-
-#include <boost/random/uniform_real_distribution.hpp>
 
 namespace nfd {
 namespace fw {
@@ -186,8 +183,8 @@ ProbingModule::getProbingProbability(uint64_t rank, uint64_t rankSum, uint64_t n
 double
 ProbingModule::getRandomNumber(double start, double end)
 {
-  boost::random::uniform_real_distribution<double> distribution(start, end);
-  return distribution(getGlobalRng());
+  std::uniform_real_distribution<double> dist(start, end);
+  return dist(getGlobalRng());
 }
 
 } // namespace asf

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,15 +32,15 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRandom, BaseFixture)
+BOOST_AUTO_TEST_SUITE(TestRandom)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
+BOOST_AUTO_TEST_CASE(ThreadLocalRng)
 {
-  boost::random::mt19937* s1 = &getGlobalRng();
-  boost::random::mt19937* s2 = nullptr;
+  std::mt19937* s1 = &getGlobalRng();
+  std::mt19937* s2 = nullptr;
   boost::thread t([&s2] {
-      s2 = &getGlobalRng();
-    });
+    s2 = &getGlobalRng();
+  });
 
   t.join();
 
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE(ThreadLocalRandon)
   BOOST_CHECK(s1 != s2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestRandom
 
 } // namespace tests
 } // namespace nfd
