@@ -244,62 +244,17 @@ public:
     m_face.processEvents();
   }
 
-
-  void
-  fetchFaceStatusSegments(const Data& data, const shared_ptr<ndn::OBufferStream>& buffer)
-  {
-    buffer->write(reinterpret_cast<const char*>(data.getContent().value()),
-                  data.getContent().value_size());
-
-    uint64_t currentSegment = data.getName().get(-1).toSegment();
-
-    const name::Component& finalBlockId = data.getMetaInfo().getFinalBlockId();
-    if (finalBlockId.empty() || finalBlockId.toSegment() > currentSegment) {
-      m_face.expressInterest(data.getName().getPrefix(-1).appendSegment(currentSegment + 1),
-                             bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
-                             ndn::OnTimeout());
-    }
-    else {
-      return processFaceStatusDataset(buffer);
-    }
-  }
-
   void
   startFetchingFaceStatusDataset()
   {
-    shared_ptr<ndn::OBufferStream> buffer = make_shared<ndn::OBufferStream>();
-
-    Interest interest("/localhost/nfd/faces/list");
-    interest.setChildSelector(1);
-    interest.setMustBeFresh(true);
-
-    m_face.expressInterest(interest,
-                           bind(&AutoregServer::fetchFaceStatusSegments, this, _2, buffer),
-                           ndn::OnTimeout());
-  }
-
-  void
-  processFaceStatusDataset(const shared_ptr<ndn::OBufferStream>& buffer)
-  {
-    ndn::ConstBufferPtr buf = buffer->buf();
-    std::vector<uint64_t> multicastFaces;
-
-    size_t offset = 0;
-    while (offset < buf->size()) {
-      bool isOk = false;
-      Block block;
-      std::tie(isOk, block) = Block::fromBuffer(buf, offset);
-      if (!isOk) {
-        std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-        break;
-      }
-
-      offset += block.size();
-
-      nfd::FaceStatus faceStatus(block);
-      registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
-                               faceStatus.getFacePersistency());
-    }
+    m_controller.fetch<FaceDataset>(
+      [this] (const std::vector<ndn::nfd::FaceStatus>& faces) {
+        for (const ndn::nfd::FaceStatus& faceStatus : faces) {
+          registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
+                                   faceStatus.getFacePersistency());
+        }
+      },
+      [this] (uint32_t code, const std::string& reason) {});
   }
 
   int
