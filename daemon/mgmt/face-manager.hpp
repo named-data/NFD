@@ -29,6 +29,7 @@
 #include "nfd-manager-base.hpp"
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include "face/face.hpp"
 
 namespace nfd {
@@ -138,10 +139,10 @@ private: // helpers for StatusDataset handler
 
 private: // NotificationStream
   void
-  notifyAddFace(const Face& face);
+  notifyFaceEvent(const Face& face, ndn::nfd::FaceEventKind kind);
 
   void
-  notifyRemoveFace(const Face& face);
+  connectFaceStateChangeSignal(const Face& face);
 
 private: // configuration
   void
@@ -168,6 +169,7 @@ private: // configuration
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<std::string /*protocol*/, shared_ptr<ProtocolFactory>> m_factories;
   FaceTable& m_faceTable;
+  std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
 
 private:
   ndn::mgmt::PostNotification m_postNotification;
