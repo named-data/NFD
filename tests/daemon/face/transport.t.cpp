@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,15 +41,11 @@ namespace face {
 namespace tests {
 
 using namespace nfd::tests;
-namespace ip = boost::asio::ip;
-
-BOOST_AUTO_TEST_SUITE(Face)
-
-using nfd::Face;
+namespace mpl = boost::mpl;
 
 class DummyTransportFixture : public BaseFixture
 {
-public:
+protected:
   DummyTransportFixture()
     : transport(nullptr)
     , sentPackets(nullptr)
@@ -68,13 +64,14 @@ public:
     this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
   }
 
-public:
+protected:
   unique_ptr<Face> face;
   DummyTransport* transport;
   std::vector<Transport::Packet>* sentPackets;
   std::vector<Transport::Packet>* receivedPackets;
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestTransport, DummyTransportFixture)
 
 BOOST_AUTO_TEST_CASE(DummyTransportStaticProperties)
@@ -82,10 +79,6 @@ BOOST_AUTO_TEST_CASE(DummyTransportStaticProperties)
   this->initialize();
   checkStaticPropertiesInitialized(*transport);
 }
-
-BOOST_AUTO_TEST_SUITE(StateTransition)
-
-namespace mpl = boost::mpl;
 
 /** \brief a macro to declare a TransportState as a integral constant
  */
@@ -197,8 +190,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
     BOOST_CHECK_THROW(this->transport->setState(to), std::runtime_error);
   }
 }
-
-BOOST_AUTO_TEST_SUITE_END() // StateTransition
 
 BOOST_AUTO_TEST_CASE(NoExpirationTime)
 {

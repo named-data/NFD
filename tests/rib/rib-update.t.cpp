@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,17 +23,17 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tests/test-common.hpp"
-#include "rib-test-common.hpp"
-
 #include "rib/rib-update.hpp"
 #include "rib/rib-update-batch.hpp"
+
+#include "rib-test-common.hpp"
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(RibRibUpdate, nfd::tests::BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRibUpdate, nfd::tests::BaseFixture)
 
 BOOST_AUTO_TEST_CASE(BatchBasic)
 {
@@ -77,8 +77,7 @@ BOOST_AUTO_TEST_CASE(BatchBasic)
   BOOST_CHECK(it == batch.end());
 }
 
-
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestRibUpdate
 
 } // namespace tests
 } // namespace rib

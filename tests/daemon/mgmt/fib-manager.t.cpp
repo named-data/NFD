@@ -22,11 +22,13 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "mgmt/fib-manager.hpp"
+#include "table/fib-nexthop.hpp"
 
 #include "nfd-manager-common-fixture.hpp"
-#include "table/fib-nexthop.hpp"
 #include "../face/dummy-face.hpp"
+
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
 
@@ -107,16 +109,16 @@ public: // for check
     }
 
     if (faceId != face::FACEID_NULL) {
-      for (auto&& record : nextHops) {
+      for (const auto& record : nextHops) {
         if (record.getFace().getId() == faceId) {
-          return expectedCost != -1 && record.getCost() != static_cast<uint32_t>(expectedCost) ?
-            CheckNextHopResult::WRONG_COST : CheckNextHopResult::OK;
+          if (expectedCost != -1 && record.getCost() != static_cast<uint32_t>(expectedCost))
+            return CheckNextHopResult::WRONG_COST;
+          else
+            return CheckNextHopResult::OK;
         }
       }
-
       return CheckNextHopResult::NO_NEXTHOP;
     }
-
     return CheckNextHopResult::OK;
   }
 
@@ -152,8 +154,8 @@ operator<<(std::ostream &os, const FibManagerFixture::CheckNextHopResult& result
   return os;
 }
 
-BOOST_FIXTURE_TEST_SUITE(Mgmt, FibManagerFixture)
-BOOST_AUTO_TEST_SUITE(TestFibManager)
+BOOST_AUTO_TEST_SUITE(Mgmt)
+BOOST_FIXTURE_TEST_SUITE(TestFibManager, FibManagerFixture)
 
 BOOST_AUTO_TEST_SUITE(AddNextHop)
 
@@ -389,6 +391,8 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
 
 BOOST_AUTO_TEST_SUITE_END() // RemoveNextHop
 
+BOOST_AUTO_TEST_SUITE(List)
+
 // @todo Remove when ndn::nfd::FibEntry implements operator!= and operator<<
 class FibEntry : public ndn::nfd::FibEntry
 {
@@ -408,17 +412,17 @@ operator!=(const FibEntry& left, const FibEntry& right)
     return true;
   }
 
-  auto leftNextHops = left.getNextHopRecords();
-  auto rightNextHops = right.getNextHopRecords();
+  const auto& leftNextHops = left.getNextHopRecords();
+  const auto& rightNextHops = right.getNextHopRecords();
   if (leftNextHops.size() != rightNextHops.size()) {
     return true;
   }
 
-  for (auto&& nexthop : leftNextHops) {
-    auto hitEntry =
-      std::find_if(rightNextHops.begin(), rightNextHops.end(), [&] (const ndn::nfd::NextHopRecord& record) {
-          return nexthop.getCost() == record.getCost() && nexthop.getFaceId() == record.getFaceId();
-        });
+  for (const auto& nexthop : leftNextHops) {
+    auto hitEntry = std::find_if(rightNextHops.begin(), rightNextHops.end(),
+      [&] (const ndn::nfd::NextHopRecord& record) {
+        return nexthop.getCost() == record.getCost() && nexthop.getFaceId() == record.getFaceId();
+      });
 
     if (hitEntry == rightNextHops.end()) {
       return true;
@@ -476,7 +480,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     FibEntry record;
     record.setPrefix(matchedEntry->getPrefix());
     const auto& nextHops = matchedEntry->getNextHops();
-    for (auto&& next : nextHops) {
+    for (const auto& next : nextHops) {
       ndn::nfd::NextHopRecord nextHopRecord;
       nextHopRecord.setFaceId(next.getFace().getId());
       nextHopRecord.setCost(next.getCost());
@@ -486,10 +490,11 @@ BOOST_AUTO_TEST_CASE(FibDataset)
   }
 
   BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
-
   BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
                                 expectedRecords.begin(), expectedRecords.end());
 }
+
+BOOST_AUTO_TEST_SUITE_END() // List
 
 BOOST_AUTO_TEST_SUITE_END() // TestFibManager
 BOOST_AUTO_TEST_SUITE_END() // Mgmt

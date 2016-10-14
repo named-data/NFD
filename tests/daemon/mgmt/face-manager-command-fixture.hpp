@@ -29,10 +29,10 @@
 #include "mgmt/face-manager.hpp"
 #include "fw/face-table.hpp"
 
+#include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
-
-#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
 namespace tests {
@@ -40,7 +40,6 @@ namespace tests {
 class FaceManagerCommandNode
 {
 public:
-  explicit
   FaceManagerCommandNode(ndn::KeyChain& keyChain, uint16_t port);
 
   ~FaceManagerCommandNode();

@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_NFD_FW_STRATEGY_TESTER_HPP
-#define NFD_TESTS_NFD_FW_STRATEGY_TESTER_HPP
+#ifndef NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP
+#define NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP
 
 #include <boost/tuple/tuple_comparison.hpp>
 #include "fw/strategy.hpp"
@@ -105,4 +105,4 @@ public:
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_TESTS_NFD_FW_STRATEGY_TESTER_HPP
+#endif // NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP

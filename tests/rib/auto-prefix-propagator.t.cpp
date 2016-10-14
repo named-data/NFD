@@ -25,8 +25,8 @@
 
 #include "rib/auto-prefix-propagator.hpp"
 
-#include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
@@ -35,13 +35,10 @@ namespace tests {
 
 using namespace nfd::tests;
 
-NFD_LOG_INIT("AutoPrefixPropagatorTest");
-
 const Name TEST_LINK_LOCAL_NFD_PREFIX("/localhop/nfd");
 const time::milliseconds TEST_PREFIX_PROPAGATION_TIMEOUT(1000);
 
-class AutoPrefixPropagatorFixture : public IdentityManagementFixture
-                                  , public UnitTestTimeFixture
+class AutoPrefixPropagatorFixture : public IdentityManagementTimeFixture
 {
 public:
   AutoPrefixPropagatorFixture()
@@ -66,7 +63,7 @@ public: // helpers for test
   insertEntryToRib(const Name& name, const uint64_t& faceId = 0)
   {
     if (m_rib.find(name) != m_rib.end()) {
-      NFD_LOG_INFO("RIB entry already exists: " << name);
+      BOOST_TEST_MESSAGE("RIB entry already exists: " + name.toUri());
       return false;
     }
 
@@ -82,7 +79,7 @@ public: // helpers for test
   eraseEntryFromRib(const Name& name)
   {
     if (m_rib.find(name) == m_rib.end()) {
-      NFD_LOG_INFO("RIB entry does not exist: " << name);
+      BOOST_TEST_MESSAGE("RIB entry does not exist: " + name.toUri());
       return false;
     }
 
@@ -215,8 +212,6 @@ operator<<(std::ostream &os, const AutoPrefixPropagatorFixture::CheckRequestResu
   return os;
 }
 
-BOOST_AUTO_TEST_SUITE(Rib)
-
 BOOST_FIXTURE_TEST_SUITE(TestAutoPrefixPropagator, AutoPrefixPropagatorFixture)
 
 BOOST_AUTO_TEST_CASE(EnableDisable)
@@ -276,8 +271,6 @@ BOOST_AUTO_TEST_CASE(LoadConfiguration)
   BOOST_CHECK_EQUAL(m_propagator.m_baseRetryWait, time::seconds(44));
   BOOST_CHECK_EQUAL(m_propagator.m_maxRetryWait, time::seconds(55));
 }
-
-BOOST_AUTO_TEST_SUITE(Helpers)
 
 BOOST_AUTO_TEST_CASE(GetPrefixPropagationParameters)
 {
@@ -364,8 +357,6 @@ BOOST_AUTO_TEST_CASE(RedoPropagation)
   BOOST_CHECK_EQUAL(checkRequest(0, "register", "/test/B"), CheckRequestResult::OK);
   BOOST_CHECK(m_entries.find("test/B/C") == m_entries.end());
 }
-
-BOOST_AUTO_TEST_SUITE_END() // Helpers
 
 BOOST_AUTO_TEST_SUITE(PropagateRevokeSemantics)
 
@@ -684,7 +675,6 @@ BOOST_AUTO_TEST_CASE(AfterRevokeSucceed)
 BOOST_AUTO_TEST_SUITE_END() // PropagatedEntryStateChanges
 
 BOOST_AUTO_TEST_SUITE_END() // TestAutoPrefixPropagator
-BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace tests
 } // namespace rib

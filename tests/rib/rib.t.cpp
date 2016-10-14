@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,10 @@
  */
 
 #include "rib/rib.hpp"
-#include <ndn-cxx/encoding/tlv-nfd.hpp>
 
 #include "tests/test-common.hpp"
+
+#include <ndn-cxx/encoding/tlv-nfd.hpp>
 
 namespace nfd {
 namespace rib {
@@ -294,7 +295,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(rib.size(), 1);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestRib
 
 } // namespace tests
 } // namespace rib

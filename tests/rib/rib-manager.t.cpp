@@ -265,7 +265,6 @@ operator<<(std::ostream& os, const RibManagerFixture::CheckCommandResult& result
   return os;
 }
 
-BOOST_AUTO_TEST_SUITE(Rib)
 BOOST_AUTO_TEST_SUITE(TestRibManager)
 
 class AddTopPrefixFixture : public RibManagerFixture
@@ -611,7 +610,6 @@ BOOST_AUTO_TEST_CASE(OnNotification)
 BOOST_AUTO_TEST_SUITE_END() // FaceMonitor
 
 BOOST_AUTO_TEST_SUITE_END() // TestRibManager
-BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace tests
 } // namespace rib

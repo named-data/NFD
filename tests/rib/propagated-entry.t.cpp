@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,12 @@
  */
 
 #include "rib/propagated-entry.hpp"
+
 #include "tests/test-common.hpp"
 
 namespace nfd {
 namespace rib {
 namespace tests {
-
-BOOST_AUTO_TEST_SUITE(Rib)
 
 BOOST_FIXTURE_TEST_SUITE(TestPropagatedEntry, nfd::tests::BaseFixture)
 
@@ -81,7 +80,6 @@ BOOST_AUTO_TEST_CASE(Initialize)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestPropagatedEntry
-BOOST_AUTO_TEST_SUITE_END() // Rib
 
 } // namespace tests
 } // namespace rib

@@ -33,8 +33,6 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
-using namespace nfd::tests;
-
 inline bool
 compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
 {
@@ -58,7 +56,7 @@ compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
   return false;
 }
 
-class FibUpdatesFixture : public IdentityManagementFixture
+class FibUpdatesFixture : public nfd::tests::IdentityManagementFixture
 {
 public:
   FibUpdatesFixture()
@@ -168,9 +166,9 @@ public:
 public:
   ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
-  rib::FibUpdater fibUpdater;
-  rib::Rib rib;
 
+  Rib rib;
+  FibUpdater fibUpdater;
   FibUpdater::FibUpdateList fibUpdates;
 };
 

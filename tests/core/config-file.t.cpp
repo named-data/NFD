@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,40 +75,34 @@ const std::string MALFORMED_CONFIG =
 "}\n";
 
 // counts of the respective section counts in config_example.info
-
 const int CONFIG_N_A_SECTIONS = 1;
 const int CONFIG_N_B_SECTIONS = 1;
 
 class DummySubscriber
 {
 public:
-
-  DummySubscriber(ConfigFile& config,
-                  int nASections,
-                  int nBSections,
-                  bool expectDryRun)
-    : m_nASections(nASections),
-      m_nBSections(nBSections),
-      m_nRemainingACallbacks(nASections),
-      m_nRemainingBCallbacks(nBSections),
-      m_expectDryRun(expectDryRun)
+  DummySubscriber(ConfigFile& config, int nASections, int nBSections, bool expectDryRun)
+    : m_nASections(nASections)
+    , m_nBSections(nBSections)
+    , m_nRemainingACallbacks(nASections)
+    , m_nRemainingBCallbacks(nBSections)
+    , m_expectDryRun(expectDryRun)
   {
-
   }
+
+  virtual
+  ~DummySubscriber() = default;
 
   void
   onA(const ConfigSection& section, bool isDryRun)
   {
-    // NFD_LOG_DEBUG("a");
     BOOST_CHECK_EQUAL(isDryRun, m_expectDryRun);
     --m_nRemainingACallbacks;
   }
 
-
   void
   onB(const ConfigSection& section, bool isDryRun)
   {
-    // NFD_LOG_DEBUG("b");
     BOOST_CHECK_EQUAL(isDryRun, m_expectDryRun);
     --m_nRemainingBCallbacks;
   }
@@ -127,12 +121,6 @@ public:
       m_nRemainingBCallbacks == m_nBSections;
   }
 
-  virtual
-  ~DummySubscriber()
-  {
-
-  }
-
 private:
   int m_nASections;
   int m_nBSections;
@@ -144,7 +132,7 @@ private:
 class DummyAllSubscriber : public DummySubscriber
 {
 public:
-  DummyAllSubscriber(ConfigFile& config, bool expectDryRun=false)
+  DummyAllSubscriber(ConfigFile& config, bool expectDryRun = false)
     : DummySubscriber(config,
                       CONFIG_N_A_SECTIONS,
                       CONFIG_N_B_SECTIONS,
@@ -153,12 +141,6 @@ public:
     config.addSectionHandler("a", bind(&DummySubscriber::onA, this, _1, _2));
     config.addSectionHandler("b", bind(&DummySubscriber::onB, this, _1, _2));
   }
-
-  virtual
-  ~DummyAllSubscriber()
-  {
-
-  }
 };
 
 class DummyOneSubscriber : public DummySubscriber
@@ -166,7 +148,7 @@ class DummyOneSubscriber : public DummySubscriber
 public:
   DummyOneSubscriber(ConfigFile& config,
                      const std::string& sectionName,
-                     bool expectDryRun=false)
+                     bool expectDryRun = false)
     : DummySubscriber(config,
                       (sectionName == "a"),
                       (sectionName == "b"),
@@ -188,12 +170,6 @@ public:
       }
 
   }
-
-  virtual
-  ~DummyOneSubscriber()
-  {
-
-  }
 };
 
 class DummyNoSubscriber : public DummySubscriber
@@ -202,13 +178,6 @@ public:
   DummyNoSubscriber(ConfigFile& config, bool expectDryRun)
     : DummySubscriber(config, 0, 0, expectDryRun)
   {
-
-  }
-
-  virtual
-  ~DummyNoSubscriber()
-  {
-
   }
 };
 
@@ -374,8 +343,6 @@ public:
 protected:
   bool m_missingFired;
 };
-
-
 
 BOOST_FIXTURE_TEST_CASE(OnConfigUncoveredSections, MissingCallbackFixture)
 {

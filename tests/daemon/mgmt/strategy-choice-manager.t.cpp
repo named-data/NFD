@@ -24,14 +24,14 @@
  */
 
 #include "mgmt/strategy-choice-manager.hpp"
-#include "nfd-manager-common-fixture.hpp"
 
 #include "face/face.hpp"
 #include "face/internal-face.hpp"
+#include "fw/strategy.hpp"
 #include "table/name-tree.hpp"
 #include "table/strategy-choice.hpp"
-#include "fw/strategy.hpp"
 
+#include "nfd-manager-common-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/daemon/fw/dummy-strategy.hpp"
 #include "tests/daemon/fw/install-strategy.hpp"
@@ -77,8 +77,8 @@ protected:
   StrategyChoiceManager m_manager;
 };
 
-BOOST_FIXTURE_TEST_SUITE(Mgmt, StrategyChoiceManagerFixture)
-BOOST_AUTO_TEST_SUITE(TestStrategyChoiceManager)
+BOOST_AUTO_TEST_SUITE(Mgmt)
+BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceManager, StrategyChoiceManagerFixture)
 
 BOOST_AUTO_TEST_CASE(SetStrategy)
 {
@@ -191,11 +191,11 @@ operator<<(std::ostream &os, const StrategyChoice& entry)
   return os;
 }
 
-BOOST_AUTO_TEST_CASE(ListChoices)
+BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
 {
   size_t nPreInsertedStrategies = m_strategyChoice.size(); // the best-route strategy
   std::set<Name> actualNames, actualStrategies;
-  for (auto&& entry : m_strategyChoice) {
+  for (const auto& entry : m_strategyChoice) {
     actualNames.insert(entry.getPrefix());
     actualStrategies.insert(entry.getStrategyName());
   }
@@ -239,7 +239,6 @@ BOOST_AUTO_TEST_CASE(ListChoices)
 
   BOOST_CHECK_EQUAL(actualNames.size(), 0);
   BOOST_CHECK_EQUAL(actualStrategies.size(), 0);
-
   BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
                                 expectedRecords.begin(), expectedRecords.end());
 }

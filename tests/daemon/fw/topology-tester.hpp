@@ -27,15 +27,16 @@
  *  \brief allows testing forwarding in a network topology
  */
 
-#ifndef NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
-#define NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
+#ifndef NFD_TESTS_DAEMON_FW_TOPOLOGY_TESTER_HPP
+#define NFD_TESTS_DAEMON_FW_TOPOLOGY_TESTER_HPP
 
-#include <ndn-cxx/face.hpp>
 #include "face/internal-transport.hpp"
 #include "face/face.hpp"
 #include "fw/strategy.hpp"
 #include "install-strategy.hpp"
 #include "tests/test-common.hpp"
+
+#include <ndn-cxx/face.hpp>
 
 namespace nfd {
 namespace fw {
@@ -236,4 +237,4 @@ private:
 } // namespace fw
 } // namespace nfd
 
-#endif // NFD_TESTS_NFD_FW_TOPOLOGY_TESTER_HPP
+#endif // NFD_TESTS_DAEMON_FW_TOPOLOGY_TESTER_HPP

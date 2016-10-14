@@ -31,8 +31,6 @@
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Mgmt)
-
 class ForwarderStatusManagerFixture : public NfdManagerCommonFixture
 {
 protected:
@@ -48,9 +46,10 @@ protected:
   time::system_clock::TimePoint startTime;
 };
 
+BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_FIXTURE_TEST_SUITE(TestForwarderStatusManager, ForwarderStatusManagerFixture)
 
-BOOST_AUTO_TEST_CASE(GeneralStatus)
+BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
 {
   // cause counters to be non-zero
   this->advanceClocks(time::seconds(3600));

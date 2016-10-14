@@ -36,7 +36,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(FwRetxSuppression, UnitTestTimeFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestRetxSuppression, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Fixed)
 {
@@ -155,7 +156,8 @@ BOOST_AUTO_TEST_CASE(Exponential)
   // suppression interval is 100ms, until 304ms
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestRetxSuppression
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace fw

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,8 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_AUTO_TEST_SUITE(CsPriorityFifo)
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_AUTO_TEST_SUITE(TestCsPriorityFifo)
 
 BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
 {
@@ -140,7 +141,8 @@ BOOST_FIXTURE_TEST_CASE(Refresh, UnitTestTimeFixture)
           bind([] { BOOST_CHECK(true); }));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestCsPriorityFifo
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace cs

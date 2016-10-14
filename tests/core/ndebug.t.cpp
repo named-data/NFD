@@ -38,6 +38,8 @@ BOOST_AUTO_TEST_CASE(AssertFalse)
   // in release builds, assertion shouldn't execute
   BOOST_ASSERT(false);
 #endif
+  // Trivial check to avoid "test case did not check any assertions" message from Boost.Test
+  BOOST_CHECK(true);
 }
 
 BOOST_AUTO_TEST_CASE(SideEffect)

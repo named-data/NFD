@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,6 +74,7 @@ public:
     ++count3;
   }
 
+public:
   int count1;
   int count2;
   int count3;
@@ -102,17 +103,21 @@ BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
 {
   EventId i;
   scheduler::cancel(i);
+
+  // Trivial check to avoid "test case did not check any assertions" message from Boost.Test
+  BOOST_CHECK(true);
 }
 
 class SelfCancelFixture : protected BaseFixture
 {
 public:
   void
-  cancelSelf()
+  cancelSelf() const
   {
     scheduler::cancel(m_selfEventId);
   }
 
+public:
   EventId m_selfEventId;
 };
 
@@ -182,7 +187,7 @@ BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
   BOOST_CHECK(s1 != s2);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestScheduler
 
 } // namespace tests
 } // namespace nfd

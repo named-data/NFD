@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,11 +33,9 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_AUTO_TEST_SUITE(Face)
-
 class LpReassemblerFixture : public UnitTestTimeFixture
 {
-public:
+protected:
   LpReassemblerFixture()
   {
     reassembler.beforeTimeout.connect(
@@ -46,7 +44,7 @@ public:
       });
   }
 
-public:
+protected:
   LpReassembler reassembler;
   std::vector<std::tuple<Transport::EndpointId, size_t>> timeoutHistory;
 
@@ -58,6 +56,7 @@ const uint8_t LpReassemblerFixture::data[10] = {
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestLpReassembler, LpReassemblerFixture)
 
 BOOST_AUTO_TEST_SUITE(SingleFragment)
@@ -460,7 +459,9 @@ BOOST_AUTO_TEST_CASE(OverFragCount)
 
 BOOST_AUTO_TEST_SUITE_END() // MultiFragment
 
-BOOST_AUTO_TEST_CASE(MultiRemoteEndpoints)
+BOOST_AUTO_TEST_SUITE(MultipleRemoteEndpoints)
+
+BOOST_AUTO_TEST_CASE(Normal)
 {
   ndn::Buffer data1Buffer(data, 5);
   ndn::Buffer data2Buffer(data + 5, 5);
@@ -509,6 +510,8 @@ BOOST_AUTO_TEST_CASE(MultiRemoteEndpoints)
   BOOST_REQUIRE(isComplete);
   BOOST_CHECK_EQUAL(reassembler.size(), 0);
 }
+
+BOOST_AUTO_TEST_SUITE_END() // MultipleRemoteEndpoints
 
 BOOST_AUTO_TEST_SUITE_END() // TestLpReassembler
 BOOST_AUTO_TEST_SUITE_END() // Face

@@ -84,7 +84,6 @@ protected:
   ManagerTester m_manager;
 };
 
-BOOST_AUTO_TEST_SUITE(Core)
 BOOST_FIXTURE_TEST_SUITE(TestManagerBase, ManagerBaseFixture)
 
 BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
@@ -170,7 +169,6 @@ BOOST_AUTO_TEST_CASE(MakeRelPrefix)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestManagerBase
-BOOST_AUTO_TEST_SUITE_END() // Core
 
 } // namespace tests
 } // namespace nfd

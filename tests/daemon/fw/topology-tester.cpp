@@ -75,7 +75,7 @@ TopologyLink::transmit(TopologyNode i, const Block& packet)
     return;
   }
 
-  for (auto&& p : m_transports) {
+  for (const auto& p : m_transports) {
     if (p.first == i) {
       continue;
     }
