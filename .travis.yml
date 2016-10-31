@@ -16,9 +16,10 @@ matrix:
         - CXX=clang++
         - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
     - os: osx
+      osx_image: xcode7.3
       env:
         - CXX=clang++
-        - NODE_LABELS="OSX OSX-10.9"
+        - NODE_LABELS="OSX OSX-10.11"
 notifications:
   email:
     on_success: always
