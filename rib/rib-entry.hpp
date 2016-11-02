@@ -72,9 +72,12 @@ public:
   /** \brief inserts a new route into the entry's route list
    *  If another route already exists with the same faceId and origin,
    *  the new route is not inserted.
-   *  \return{ true if the route is inserted, false otherwise }
+   *  \return a pair, whose first element is the iterator to the newly
+   *  inserted element if the insert succeeds and to the
+   *  previously-existing element otherwise, and whose second element
+   *  is true if the insert succeeds and false otherwise.
    */
-  bool
+  std::pair<RibEntry::iterator, bool>
   insertRoute(const Route& route);
 
   /** \brief erases a Route with the same faceId and origin

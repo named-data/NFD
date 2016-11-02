@@ -38,7 +38,20 @@ using ndn::nfd::ControlParameters;
 
 class FibUpdater;
 
-/** \brief represents the RIB
+  /** \brief references a route
+   */
+struct RibRouteRef
+{
+  shared_ptr<RibEntry> entry;
+  RibEntry::const_iterator route;
+};
+
+/** \brief represents the Routing Information Base
+
+    The Routing Information Base contains a collection of Routes, each
+    represents a piece of static or dynamic routing information
+    registered by applications, operators, or NFD itself. Routes
+    associated with the same namespace are collected into a RIB entry.
  */
 class Rib : noncopyable
 {
@@ -201,8 +214,28 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   findRoutesWithFaceId(uint64_t faceId);
 
 public:
+  /** \brief signals after a RIB entry is inserted
+   *
+   *  A RIB entry is inserted when the first route associated with a
+   *  certain namespace is added.
+   */
   ndn::util::signal::Signal<Rib, Name> afterInsertEntry;
+
+  /** \brief signals after a RIB entry is erased
+   *
+   *  A RIB entry is erased when the last route associated with a
+   *  certain namespace is removed.
+   */
+
   ndn::util::signal::Signal<Rib, Name> afterEraseEntry;
+
+  /** \brief signals after a Route is added
+   */
+  ndn::util::signal::Signal<Rib, RibRouteRef> afterAddRoute;
+
+  /** \brief signals before a route is removed
+   */
+  ndn::util::signal::Signal<Rib, RibRouteRef> beforeRemoveRoute;
 
 private:
   RibTable m_rib;

@@ -89,12 +89,15 @@ Rib::insert(const Name& prefix, const Route& route)
   if (ribIt != m_rib.end()) {
     shared_ptr<RibEntry> entry(ribIt->second);
 
-    RibEntry::iterator routeIt = entry->findRoute(route);
+    RibEntry::iterator entryIt;
+    bool didInsert = false;
+    std::tie(entryIt, didInsert) = entry->insertRoute(route);
 
-    if (routeIt == entry->end()) {
-      // New route
-      entry->insertRoute(route);
+    if (didInsert) {
+      // The route was new and we successfully inserted it.
       m_nItems++;
+
+      afterAddRoute(RibRouteRef{entry, entryIt});
 
       // Register with face lookup table
       m_faceMap[route.faceId].push_back(entry);
@@ -102,29 +105,29 @@ Rib::insert(const Name& prefix, const Route& route)
     else {
       // Route exists, update fields
       // First cancel old scheduled event, if any, then set the EventId to new one
-      if (static_cast<bool>(routeIt->getExpirationEvent())) {
+      if (static_cast<bool>(entryIt->getExpirationEvent())) {
         NFD_LOG_TRACE("Cancelling expiration event for " << entry->getName() << " "
-                                                         << *routeIt);
-        scheduler::cancel(routeIt->getExpirationEvent());
+                                                         << (*entryIt));
+        scheduler::cancel(entryIt->getExpirationEvent());
       }
 
       // No checks are required here as the iterator needs to be updated in all cases.
-      routeIt->setExpirationEvent(route.getExpirationEvent());
+      entryIt->setExpirationEvent(route.getExpirationEvent());
 
-      routeIt->flags = route.flags;
-      routeIt->cost = route.cost;
-      routeIt->expires = route.expires;
+      entryIt->flags = route.flags;
+      entryIt->cost = route.cost;
+      entryIt->expires = route.expires;
     }
   }
   else {
     // New name prefix
-    shared_ptr<RibEntry> entry(make_shared<RibEntry>(RibEntry()));
+    shared_ptr<RibEntry> entry = make_shared<RibEntry>();
 
     m_rib[prefix] = entry;
     m_nItems++;
 
     entry->setName(prefix);
-    entry->insertRoute(route);
+    RibEntry::iterator routeIt = entry->insertRoute(route).first;
 
     // Find prefix's parent
     shared_ptr<RibEntry> parent = findParent(prefix);
@@ -152,6 +155,7 @@ Rib::insert(const Name& prefix, const Route& route)
 
     // do something after inserting an entry
     afterInsertEntry(prefix);
+    afterAddRoute(RibRouteRef{entry, routeIt});
   }
 }
 
@@ -166,6 +170,8 @@ Rib::erase(const Name& prefix, const Route& route)
     RibEntry::iterator routeIt = entry->findRoute(route);
 
     if (routeIt != entry->end()) {
+      beforeRemoveRoute(RibRouteRef{entry, routeIt});
+
       auto faceId = route.faceId;
       entry->eraseRoute(routeIt);
       m_nItems--;

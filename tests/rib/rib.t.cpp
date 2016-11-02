@@ -1,4 +1,4 @@
-/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+ /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
  * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
@@ -34,38 +34,6 @@ namespace rib {
 namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TestRib, nfd::tests::BaseFixture)
-
-BOOST_AUTO_TEST_CASE(RibEntry)
-{
-  rib::RibEntry entry;
-
-  rib::Route route1;
-  route1.faceId = 1;
-  route1.origin = 0;
-
-  entry.insertRoute(route1);
-  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
-
-  Route route2;
-  route2.faceId = 1;
-  route2.origin = 128;
-
-  entry.insertRoute(route2);
-  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 2);
-
-  entry.eraseRoute(route1);
-  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
-
-  BOOST_CHECK(entry.findRoute(route1) == entry.getRoutes().end());
-  BOOST_CHECK(entry.findRoute(route2) != entry.getRoutes().end());
-
-  entry.insertRoute(route2);
-  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
-
-  entry.eraseRoute(route1);
-  BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
-  BOOST_CHECK(entry.findRoute(route2) != entry.getRoutes().end());
-}
 
 BOOST_AUTO_TEST_CASE(Parent)
 {
@@ -293,6 +261,79 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   rib.erase(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(RibSignals)
+{
+  rib::Rib rib;
+
+  Route route;
+  Name name("/hello/world");
+
+  Route route1;
+  route1.faceId = 1;
+  route1.origin = 20;
+  route1.cost = 10;
+
+  Route route2;
+  route2.faceId = 2;
+  route2.origin = 30;
+  route2.cost = 20;
+
+  RibRouteRef routeInfo;
+
+  int nAfterInsertEntryInvocations = 0;
+  int nAfterAddRouteInvocations = 0;
+  int nBeforeRemoveRouteInvocations = 0;
+  int nAfterEraseEntryInvocations = 0;
+  rib.afterInsertEntry.connect([&] (const Name& inName) {
+      BOOST_CHECK_EQUAL(nAfterInsertEntryInvocations, 0);
+      BOOST_CHECK_EQUAL(nAfterAddRouteInvocations, 0);
+      BOOST_CHECK(rib.find(name) != rib.end());
+      nAfterInsertEntryInvocations++;
+    });
+
+  rib.afterAddRoute.connect([&] (const RibRouteRef& rrr) {
+      BOOST_CHECK_EQUAL(nAfterInsertEntryInvocations, 1);
+      BOOST_CHECK(rib.find(name) != rib.end());
+      BOOST_CHECK(rib.find(name, route) != nullptr);
+      nAfterAddRouteInvocations++;
+    });
+
+  rib.beforeRemoveRoute.connect([&] (const RibRouteRef& rrr) {
+      BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 0);
+      BOOST_CHECK(rib.find(name) != rib.end());
+      BOOST_CHECK(rib.find(name, route) != nullptr);
+      nBeforeRemoveRouteInvocations++;
+    });
+
+  rib.afterEraseEntry.connect([&] (const Name& inName) {
+      BOOST_CHECK_EQUAL(nBeforeRemoveRouteInvocations, 2);
+      BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 0);
+      BOOST_CHECK(rib.find(name) == rib.end());
+      nAfterEraseEntryInvocations++;
+    });
+
+  route = route1;
+  rib.insert(name, route);
+  BOOST_CHECK_EQUAL(nAfterInsertEntryInvocations, 1);
+  BOOST_CHECK_EQUAL(nAfterAddRouteInvocations, 1);
+
+  route = route2;
+  rib.insert(name, route);
+  BOOST_CHECK_EQUAL(nAfterInsertEntryInvocations, 1);
+  BOOST_CHECK_EQUAL(nAfterAddRouteInvocations, 2);
+
+  route = route1;
+  rib.erase(name, route);
+  BOOST_CHECK_EQUAL(nBeforeRemoveRouteInvocations, 1);
+  BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 0);
+
+  route = route2;
+  rib.erase(name, route);
+  BOOST_CHECK_EQUAL(nBeforeRemoveRouteInvocations, 2);
+  BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 1);
+
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRib

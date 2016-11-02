@@ -46,7 +46,7 @@ RibEntry::findRoute(const Route& route) const
   return std::find_if(begin(), end(), bind(&compareFaceIdAndOrigin, _1, route));
 }
 
-bool
+std::pair<RibEntry::iterator, bool>
 RibEntry::insertRoute(const Route& route)
 {
   iterator it = findRoute(route);
@@ -58,10 +58,10 @@ RibEntry::insertRoute(const Route& route)
 
     m_routes.push_back(route);
 
-    return true;
+    return std::make_pair(std::prev(m_routes.end()), true);
   }
   else {
-    return false;
+    return std::make_pair(it, false);
   }
 }
 
