@@ -66,8 +66,7 @@ def options(opt):
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
                'default-compiler-flags', 'compiler-features', 'type_traits',
-               'pch', 'sanitizers', 'boost', 'boost-kqueue',
-               'dependency-checker', 'websocket',
+               'pch', 'boost', 'boost-kqueue', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
     conf.find_program('bash', var='BASH')
@@ -153,6 +152,8 @@ main(int, char**)
         conf.env['HAVE_CUSTOM_LOGGER'] = 1
 
     conf.load('coverage')
+
+    conf.load('sanitizers')
 
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env['SYSCONFDIR'])
 
