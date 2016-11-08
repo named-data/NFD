@@ -89,13 +89,13 @@ RibManager::registerWithNfd()
 }
 
 void
-RibManager::enableLocalControlHeader()
+RibManager::enableLocalFields()
 {
-  m_nfdController.start<ndn::nfd::FaceEnableLocalControlCommand>(
+  m_nfdController.start<ndn::nfd::FaceUpdateCommand>(
     ControlParameters()
-      .setLocalControlFeature(ndn::nfd::LOCAL_CONTROL_FEATURE_INCOMING_FACE_ID),
-    bind(&RibManager::onControlHeaderSuccess, this),
-    bind(&RibManager::onControlHeaderError, this, _1));
+      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true),
+    bind(&RibManager::onEnableLocalFieldsSuccess, this),
+    bind(&RibManager::onEnableLocalFieldsError, this, _1));
 }
 
 void
@@ -412,18 +412,17 @@ RibManager::onCommandPrefixAddNextHopError(const Name& name,
 }
 
 void
-RibManager::onControlHeaderSuccess()
+RibManager::onEnableLocalFieldsSuccess()
 {
-  NFD_LOG_DEBUG("Local control header enabled");
+  NFD_LOG_DEBUG("Local fields enabled");
 }
 
 void
-RibManager::onControlHeaderError(const ndn::nfd::ControlResponse& response)
+RibManager::onEnableLocalFieldsError(const ndn::nfd::ControlResponse& response)
 {
-  std::ostringstream os;
-  os << "Couldn't enable local control header "
-     << "(code: " << response.getCode() << ", info: " << response.getText() << ")";
-  BOOST_THROW_EXCEPTION(Error(os.str()));
+  BOOST_THROW_EXCEPTION(Error("Couldn't enable local fields (code: " +
+                              to_string(response.getCode()) + ", info: " + response.getText() +
+                              ")"));
 }
 
 } // namespace rib

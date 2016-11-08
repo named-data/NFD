@@ -71,7 +71,7 @@ public:
   registerWithNfd();
 
   void
-  enableLocalControlHeader();
+  enableLocalFields();
 
   void
   setConfigFile(ConfigFile& configFile);
@@ -149,10 +149,10 @@ private:
   onCommandPrefixAddNextHopError(const Name& name, const ndn::nfd::ControlResponse& response);
 
   void
-  onControlHeaderSuccess();
+  onEnableLocalFieldsSuccess();
 
   void
-  onControlHeaderError(const ndn::nfd::ControlResponse& response);
+  onEnableLocalFieldsError(const ndn::nfd::ControlResponse& response);
 
 private:
   ndn::Face& m_face;

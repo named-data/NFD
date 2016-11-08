@@ -94,7 +94,7 @@ Service::initialize()
   }
 
   m_ribManager->registerWithNfd();
-  m_ribManager->enableLocalControlHeader();
+  m_ribManager->enableLocalFields();
 }
 
 void
