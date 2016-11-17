@@ -79,6 +79,13 @@ public:
     return m_interest->getName();
   }
 
+  /** \return whether interest matches this entry
+   *  \param interest the Interest
+   *  \param nEqualNameComps number of initial name components guaranteed to be equal
+   */
+  bool
+  canMatch(const Interest& interest, size_t nEqualNameComps = 0) const;
+
 public: // in-record
   /** \return collection of in-records
    */

@@ -64,14 +64,10 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   size_t nteNameLen = nteName.size();
   const std::vector<shared_ptr<Entry>>& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
-    [&interest, nteNameLen] (const shared_ptr<Entry>& entry) -> bool {
-      // initial part of the name is guaranteed to be the same
-      BOOST_ASSERT(entry->getInterest().getName().compare(0, nteNameLen,
-                   interest.getName(), 0, nteNameLen) == 0);
-      // compare implicit digest (or its absence) only
-      return entry->getInterest().getName().compare(nteNameLen, Name::npos,
-                                                    interest.getName(), nteNameLen) == 0 &&
-             entry->getInterest().getSelectors() == interest.getSelectors();
+    [&interest, nteNameLen] (const shared_ptr<Entry>& entry) {
+      // initial part of name is guaranteed to be equal by NameTree
+      // check implicit digest (or its absence) only
+      return entry->canMatch(interest, nteNameLen);
     });
   if (it != pitEntries.end()) {
     return {*it, false};

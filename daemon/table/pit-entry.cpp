@@ -35,6 +35,18 @@ Entry::Entry(const Interest& interest)
 {
 }
 
+bool
+Entry::canMatch(const Interest& interest, size_t nEqualNameComps) const
+{
+  BOOST_ASSERT(m_interest->getName().compare(0, nEqualNameComps,
+                                             interest.getName(), 0, nEqualNameComps) == 0);
+
+  return m_interest->getName().compare(nEqualNameComps, Name::npos,
+                                       interest.getName(), nEqualNameComps) == 0 &&
+         m_interest->getSelectors() == interest.getSelectors();
+  /// \todo #3162 match Link field
+}
+
 InRecordCollection::iterator
 Entry::getInRecord(const Face& face)
 {
@@ -45,6 +57,8 @@ Entry::getInRecord(const Face& face)
 InRecordCollection::iterator
 Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
 {
+  BOOST_ASSERT(this->canMatch(interest));
+
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
     [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
   if (it == m_inRecords.end()) {
@@ -82,6 +96,8 @@ Entry::getOutRecord(const Face& face)
 OutRecordCollection::iterator
 Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
 {
+  BOOST_ASSERT(this->canMatch(interest));
+
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
     [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
   if (it == m_outRecords.end()) {
