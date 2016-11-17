@@ -187,8 +187,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief Content Store miss pipeline
   */
   VIRTUAL_WITH_TESTS void
-  onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
-                     const Interest& interest);
+  onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry, const Interest& interest);
 
   /** \brief Content Store hit pipeline
   */
@@ -199,8 +198,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief outgoing Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
-                     bool wantNewNonce = false);
+  onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace, const Interest& interest);
 
   /** \brief Interest reject pipeline
    */

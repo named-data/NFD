@@ -52,12 +52,11 @@ public:
 
 protected:
   virtual void
-  sendInterest(const shared_ptr<pit::Entry>& pitEntry,
-               Face& outFace,
-               bool wantNewNonce = false) override
+  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
+               const Interest& interest) override
   {
-    sendInterestHistory.push_back({pitEntry->getInterest(), outFace.getId(), wantNewNonce});
-    pitEntry->insertOrUpdateOutRecord(outFace, pitEntry->getInterest());
+    sendInterestHistory.push_back({pitEntry->getInterest(), outFace.getId(), interest});
+    pitEntry->insertOrUpdateOutRecord(outFace, interest);
     afterAction();
   }
 
@@ -82,7 +81,7 @@ public:
   {
     Interest pitInterest;
     FaceId outFaceId;
-    bool wantNewNonce;
+    Interest interest;
   };
   std::vector<SendInterestArgs> sendInterestHistory;
 
