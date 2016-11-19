@@ -65,7 +65,6 @@
 #include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
-#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>

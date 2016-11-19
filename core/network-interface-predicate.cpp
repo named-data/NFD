@@ -97,13 +97,12 @@ NetworkInterfacePredicate::parseBlacklist(const boost::property_tree::ptree& lis
 static bool
 doesMatchRule(const NetworkInterfaceInfo& nic, const std::string& rule)
 {
-  // if / is in rule, this is a subnet, check if IP in subnet
-
-  if (boost::contains(rule, "/")) {
+  // if '/' is in rule, this is a subnet, check if IP in subnet
+  if (rule.find('/') != std::string::npos) {
     Network n = boost::lexical_cast<Network>(rule);
     for (const auto& addr : nic.ipv4Addresses) {
       if (n.doesContain(addr)) {
-          return true;
+        return true;
       }
     }
   }

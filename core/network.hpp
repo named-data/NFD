@@ -26,44 +26,32 @@
 #ifndef NFD_CORE_NETWORK_HPP
 #define NFD_CORE_NETWORK_HPP
 
-#include <boost/asio.hpp>
-#include <boost/utility/value_init.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
+#include "common.hpp"
 
 namespace nfd {
 
 class Network
 {
 public:
-  Network()
-  {
-  }
+  Network();
 
   Network(const boost::asio::ip::address& minAddress,
-          const boost::asio::ip::address& maxAddress)
-    : m_minAddress(minAddress)
-    , m_maxAddress(maxAddress)
-  {
-  }
-
-  void
-  print(std::ostream& os) const;
+          const boost::asio::ip::address& maxAddress);
 
   bool
   doesContain(const boost::asio::ip::address& address) const
   {
-    return (m_minAddress <= address && address <= m_maxAddress);
+    return m_minAddress <= address && address <= m_maxAddress;
   }
-
-  static bool
-  isValidCidr(const std::string& cidr);
 
   static const Network&
   getMaxRangeV4();
 
   static const Network&
   getMaxRangeV6();
+
+  static bool
+  isValidCidr(const std::string& cidr);
 
   bool
   operator==(const Network& rhs) const
@@ -81,11 +69,11 @@ private:
   boost::asio::ip::address m_minAddress;
   boost::asio::ip::address m_maxAddress;
 
-  friend std::istream&
-  operator>>(std::istream& is, Network& network);
-
   friend std::ostream&
   operator<<(std::ostream& os, const Network& network);
+
+  friend std::istream&
+  operator>>(std::istream& is, Network& network);
 };
 
 std::ostream&

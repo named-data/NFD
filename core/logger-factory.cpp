@@ -24,7 +24,10 @@
  */
 
 #include "logger-factory.hpp"
+
 #include <ndn-cxx/util/logging.hpp>
+
+#include <boost/algorithm/string/case_conv.hpp>
 #include <boost/range/adaptor/map.hpp>
 
 #ifdef HAVE_CUSTOM_LOGGER
@@ -73,8 +76,7 @@ LoggerFactory::setConfigFile(ConfigFile& config)
 LogLevel
 LoggerFactory::parseLevel(const std::string& level)
 {
-  std::string upperLevel = level;
-  boost::to_upper(upperLevel);
+  std::string upperLevel = boost::to_upper_copy(level);
 
   // std::cerr << "parsing level: " << upperLevel << std::endl;;
   // std::cerr << "# levels: " << m_levelNames.size() << std::endl;

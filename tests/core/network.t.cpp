@@ -147,15 +147,20 @@ BOOST_AUTO_TEST_CASE(Comparisons)
 BOOST_AUTO_TEST_CASE(IsValidCidr)
 {
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24"), true);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.1.2.3/32"), true);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("0.0.0.0/0"), true);
   BOOST_CHECK_EQUAL(Network::isValidCidr(""), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24/8"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("/192.0.0.0/24"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/+24"), false);
-  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/*24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/-24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/ 24"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24a"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/0x42"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24.42"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/foo"), false);
-  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/24/23"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/33"), false);
-  BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/-24"), false);
+  //BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/999999999999999"), false); // #3858
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0/"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("192.0.0.0"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("foo/4"), false);

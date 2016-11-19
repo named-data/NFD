@@ -25,19 +25,26 @@
 
 #include "network.hpp"
 
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+#include <boost/utility/value_init.hpp>
+
 namespace nfd {
 
-void
-Network::print(std::ostream& os) const
+Network::Network() = default;
+
+Network::Network(const boost::asio::ip::address& minAddress,
+                 const boost::asio::ip::address& maxAddress)
+  : m_minAddress(minAddress)
+  , m_maxAddress(maxAddress)
 {
-  os << m_minAddress << " <-> " << m_maxAddress;
 }
 
 const Network&
 Network::getMaxRangeV4()
 {
   using boost::asio::ip::address_v4;
-  static Network range = Network(address_v4(0), address_v4(0xFFFFFFFF));
+  static Network range{address_v4{}, address_v4{0xffffffff}};
   return range;
 }
 
@@ -47,111 +54,103 @@ Network::getMaxRangeV6()
   using boost::asio::ip::address_v6;
   static address_v6::bytes_type maxV6 = {{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
                                           0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}};
-  static Network range = Network(address_v6(), address_v6(maxV6));
+  static Network range{address_v6{}, address_v6{maxV6}};
   return range;
 }
 
 bool
 Network::isValidCidr(const std::string& cidr)
 {
-   std::vector<std::string> splitCidr;
-   boost::split(splitCidr, cidr, boost::is_any_of("/"));
-   if (splitCidr.size() != 2) {
-     return false;
-   }
+  std::vector<std::string> splitCidr;
+  boost::split(splitCidr, cidr, boost::is_any_of("/"));
+  if (splitCidr.size() != 2) {
+    return false;
+  }
 
-   auto network = splitCidr[0];
-   auto mask = splitCidr[1];
-   auto netmask = 0;
-   if (mask.length() <= 0) {
-     return false;
-   }
-   if (!std::all_of(mask.begin(), mask.end(), ::isdigit)) {
-     return false;
-   }
+  boost::system::error_code invalidIp;
+  boost::asio::ip::address_v4::from_string(splitCidr[0], invalidIp);
+  if (invalidIp) {
+    return false;
+  }
 
-   netmask = boost::lexical_cast<int>(splitCidr[1]);
-   boost::system::error_code invalidIP;
-   boost::asio::ip::address_v4::from_string(network, invalidIP);
-   if (invalidIP || netmask < 0 || netmask > 32) {
-     return false;
-   }
-   return true;
+  auto prefixLenStr = splitCidr[1];
+  if (prefixLenStr.length() <= 0 ||
+      !std::all_of(prefixLenStr.begin(), prefixLenStr.end(), ::isdigit)) {
+    return false;
+  }
+  int prefixLen = boost::lexical_cast<int>(prefixLenStr);
+  if (prefixLen < 0 || prefixLen > 32) {
+    return false;
+  }
+
+  return true;
 }
 
 std::ostream&
 operator<<(std::ostream& os, const Network& network)
 {
-  network.print(os);
-  return os;
+  return os << network.m_minAddress << " <-> " << network.m_maxAddress;
 }
 
 std::istream&
 operator>>(std::istream& is, Network& network)
 {
-  using namespace boost::asio;
+  namespace ip = boost::asio::ip;
 
   std::string networkStr;
   is >> networkStr;
 
   size_t position = networkStr.find('/');
-  if (position == std::string::npos)
-    {
-      network.m_minAddress = ip::address::from_string(networkStr);
-      network.m_maxAddress = ip::address::from_string(networkStr);
+  if (position == std::string::npos) {
+    network.m_minAddress = ip::address::from_string(networkStr);
+    network.m_maxAddress = ip::address::from_string(networkStr);
+  }
+  else {
+    ip::address address = ip::address::from_string(networkStr.substr(0, position));
+    size_t mask = boost::lexical_cast<size_t>(networkStr.substr(position+1));
+
+    if (address.is_v4()) {
+      ip::address_v4::bytes_type maskBytes = boost::initialized_value;
+      for (size_t i = 0; i < mask; i++) {
+        size_t byteId = i / 8;
+        size_t bitIndex = 7 - i % 8;
+        maskBytes[byteId] |= (1 << bitIndex);
+      }
+
+      ip::address_v4::bytes_type addressBytes = address.to_v4().to_bytes();
+      ip::address_v4::bytes_type min;
+      ip::address_v4::bytes_type max;
+
+      for (size_t i = 0; i < addressBytes.size(); i++) {
+        min[i] = addressBytes[i] & maskBytes[i];
+        max[i] = addressBytes[i] | ~(maskBytes[i]);
+      }
+
+      network.m_minAddress = ip::address_v4(min);
+      network.m_maxAddress = ip::address_v4(max);
     }
-  else
-    {
-      ip::address address = ip::address::from_string(networkStr.substr(0, position));
-      size_t mask = boost::lexical_cast<size_t>(networkStr.substr(position+1));
+    else {
+      ip::address_v6::bytes_type maskBytes = boost::initialized_value;
+      for (size_t i = 0; i < mask; i++) {
+        size_t byteId = i / 8;
+        size_t bitIndex = 7 - i % 8;
+        maskBytes[byteId] |= (1 << bitIndex);
+      }
 
-      if (address.is_v4())
-        {
-          ip::address_v4::bytes_type maskBytes = boost::initialized_value;
-          for (size_t i = 0; i < mask; i++)
-            {
-              size_t byteId = i / 8;
-              size_t bitIndex = 7 - i % 8;
-              maskBytes[byteId] |= (1 << bitIndex);
-            }
+      ip::address_v6::bytes_type addressBytes = address.to_v6().to_bytes();
+      ip::address_v6::bytes_type min;
+      ip::address_v6::bytes_type max;
 
-          ip::address_v4::bytes_type addressBytes = address.to_v4().to_bytes();
-          ip::address_v4::bytes_type min;
-          ip::address_v4::bytes_type max;
+      for (size_t i = 0; i < addressBytes.size(); i++) {
+        min[i] = addressBytes[i] & maskBytes[i];
+        max[i] = addressBytes[i] | ~(maskBytes[i]);
+      }
 
-          for (size_t i = 0; i < addressBytes.size(); i++)
-            {
-              min[i] = addressBytes[i] & maskBytes[i];
-              max[i] = addressBytes[i] | ~(maskBytes[i]);
-            }
-
-          network.m_minAddress = ip::address_v4(min);
-          network.m_maxAddress = ip::address_v4(max);
-        }
-      else
-        {
-          ip::address_v6::bytes_type maskBytes = boost::initialized_value;
-          for (size_t i = 0; i < mask; i++)
-            {
-              size_t byteId = i / 8;
-              size_t bitIndex = 7 - i % 8;
-              maskBytes[byteId] |= (1 << bitIndex);
-            }
-
-          ip::address_v6::bytes_type addressBytes = address.to_v6().to_bytes();
-          ip::address_v6::bytes_type min;
-          ip::address_v6::bytes_type max;
-
-          for (size_t i = 0; i < addressBytes.size(); i++)
-            {
-              min[i] = addressBytes[i] & maskBytes[i];
-              max[i] = addressBytes[i] | ~(maskBytes[i]);
-            }
-
-          network.m_minAddress = ip::address_v6(min);
-          network.m_maxAddress = ip::address_v6(max);
-        }
+      network.m_minAddress = ip::address_v6(min);
+      network.m_maxAddress = ip::address_v6(max);
     }
+  }
+
   return is;
 }
 
