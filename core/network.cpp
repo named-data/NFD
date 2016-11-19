@@ -25,9 +25,8 @@
 
 #include "network.hpp"
 
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <boost/utility/value_init.hpp>
+#include <algorithm>
 
 namespace nfd {
 
@@ -61,24 +60,28 @@ Network::getMaxRangeV6()
 bool
 Network::isValidCidr(const std::string& cidr)
 {
-  std::vector<std::string> splitCidr;
-  boost::split(splitCidr, cidr, boost::is_any_of("/"));
-  if (splitCidr.size() != 2) {
+  auto pos = cidr.find('/');
+  if (pos == std::string::npos) {
     return false;
   }
 
   boost::system::error_code invalidIp;
-  boost::asio::ip::address_v4::from_string(splitCidr[0], invalidIp);
+  boost::asio::ip::address_v4::from_string(cidr.substr(0, pos), invalidIp);
   if (invalidIp) {
     return false;
   }
 
-  auto prefixLenStr = splitCidr[1];
-  if (prefixLenStr.length() <= 0 ||
-      !std::all_of(prefixLenStr.begin(), prefixLenStr.end(), ::isdigit)) {
+  auto prefixLenStr = cidr.substr(pos + 1);
+  if (!std::all_of(prefixLenStr.begin(), prefixLenStr.end(), ::isdigit)) {
     return false;
   }
-  int prefixLen = boost::lexical_cast<int>(prefixLenStr);
+  int prefixLen = -1;
+  try {
+    prefixLen = boost::lexical_cast<int>(prefixLenStr);
+  }
+  catch (const boost::bad_lexical_cast&) {
+    return false;
+  }
   if (prefixLen < 0 || prefixLen > 32) {
     return false;
   }
