@@ -24,7 +24,7 @@
  */
 
 #include "ncc-strategy.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 #include "core/random.hpp"
 
 namespace nfd {

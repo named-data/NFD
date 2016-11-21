@@ -1924,11 +1924,12 @@ PREDEFINED             = DOXYGEN=1 \
                          BOOST_STATIC_ASSERT(x)= \
                          BOOST_CONCEPT_ASSERT(x)= \
                          BOOST_CONCEPT_REQUIRES(x)= \
+                         DEPRECATED(x)=x \
                          PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \
                          PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
                          PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
                          FINAL_UNLESS_WITH_TESTS=final \
-                         VIRTUAL_WITH_TESTS
+                         VIRTUAL_WITH_TESTS=
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The

@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 
 namespace nfd {
 namespace scope_prefix {
@@ -32,6 +32,28 @@ const Name LOCALHOP("ndn:/localhop");
 } // namespace scope_prefix
 
 namespace fw {
+
+bool
+wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace)
+{
+  if (outFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+    // forwarding to a local face is always allowed
+    return false;
+  }
+
+  if (scope_prefix::LOCALHOST.isPrefixOf(interest.getName())) {
+    // localhost Interests cannot be forwarded to a non-local face
+    return true;
+  }
+
+  if (scope_prefix::LOCALHOP.isPrefixOf(interest.getName())) {
+    // localhop Interests can be forwarded to a non-local face only if it comes from a local face
+    return inFace.getScope() != ndn::nfd::FACE_SCOPE_LOCAL;
+  }
+
+  // Interest name is not subject to scope control
+  return false;
+}
 
 bool
 violatesScope(const pit::Entry& pitEntry, const Face& outFace)

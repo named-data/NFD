@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fw/pit-algorithm.hpp"
+#include "fw/algorithm.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -35,7 +35,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestPitAlgorithm, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestAlgorithm, BaseFixture)
 
 class ScopeControlFixture : public BaseFixture
 {
@@ -54,6 +54,40 @@ protected:
   shared_ptr<Face> localFace3;
   shared_ptr<Face> localFace4;
 };
+
+BOOST_FIXTURE_TEST_SUITE(WouldViolateScope, ScopeControlFixture)
+
+BOOST_AUTO_TEST_CASE(Unrestricted)
+{
+  shared_ptr<Interest> interest = makeInterest("ndn:/ieWRzDsCu");
+
+  BOOST_CHECK_EQUAL(wouldViolateScope(*nonLocalFace1, *interest, *nonLocalFace2), false);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*nonLocalFace1, *interest, *localFace4), false);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *nonLocalFace2), false);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *localFace4), false);
+}
+
+BOOST_AUTO_TEST_CASE(Localhost)
+{
+  shared_ptr<Interest> interest = makeInterest("ndn:/localhost/5n1LzIt3");
+
+  // /localhost Interests from non-local faces should be rejected by incoming Interest pipeline,
+  // and are not tested here.
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *nonLocalFace2), true);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *localFace4), false);
+}
+
+BOOST_AUTO_TEST_CASE(Localhop)
+{
+  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/YcIKWCRYJ");
+
+  BOOST_CHECK_EQUAL(wouldViolateScope(*nonLocalFace1, *interest, *nonLocalFace2), true);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*nonLocalFace1, *interest, *localFace4), false);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *nonLocalFace2), false);
+  BOOST_CHECK_EQUAL(wouldViolateScope(*localFace3, *interest, *localFace4), false);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // WouldViolateScope
 
 BOOST_FIXTURE_TEST_SUITE(ViolatesScope, ScopeControlFixture)
 

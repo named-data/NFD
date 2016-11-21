@@ -25,7 +25,7 @@
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 #include "core/logger.hpp"
 #include "core/random.hpp"
 

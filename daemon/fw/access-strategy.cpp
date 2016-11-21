@@ -24,7 +24,7 @@
  */
 
 #include "access-strategy.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 #include "core/logger.hpp"
 
 namespace nfd {

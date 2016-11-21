@@ -24,7 +24,7 @@
  */
 
 #include "retx-suppression-fixed.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {

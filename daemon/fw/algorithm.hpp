@@ -29,13 +29,13 @@
 #include "table/pit-entry.hpp"
 
 /** \file
- *  This file contains algorithms that operate on a PIT entry.
+ *  This file contains common algorithms used by forwarding strategies.
  */
 
 namespace nfd {
 
-/** \brief contain Name prefix that affects namespace-based scope control
- *  \sa http://redmine.named-data.net/projects/nfd/wiki/ScopeControl
+/** \brief contain name prefixes that affect namespace-based scope control
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */
 namespace scope_prefix {
 
@@ -54,11 +54,9 @@ extern const Name LOCALHOST;
  *  The localhop scope limits propagation to no further than the next node.
  *
  *  Interest packets under prefix ndn:/localhop are restricted by these rules:
- *  \li Interest can come from a local face or a non-local face.
- *  \li If PIT entry has at least one in-record from a local face,
- *      it can be forwarded to local faces and non-local faces.
- *  \li If PIT entry has all in-records from non-local faces,
- *      it can only be forwarded to local faces.
+ *  \li If an Interest is received from a local face, it can be forwarded to a non-local face.
+ *  \li If an Interest is received from a non-local face, it cannot be forwarded to a non-local face.
+ *  \li In either case the Interest can be forwarded to a local face.
  *  \li PIT entry can be satisfied by Data from any source.
  *
  *  Data packets under prefix ndn:/localhop are unrestricted.
@@ -70,10 +68,18 @@ extern const Name LOCALHOP;
 namespace fw {
 
 /** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
- *  \sa http://redmine.named-data.net/projects/nfd/wiki/ScopeControl
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
  */
 bool
-violatesScope(const pit::Entry& pitEntry, const Face& outFace);
+wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace);
+
+/** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
+ *  \deprecated use violatesScope(inFace, interest, outFace) instead
+ */
+DEPRECATED(
+bool
+violatesScope(const pit::Entry& pitEntry, const Face& outFace));
 
 /** \brief decide whether Interest can be forwarded to face
  *

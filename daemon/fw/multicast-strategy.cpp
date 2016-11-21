@@ -24,7 +24,7 @@
  */
 
 #include "multicast-strategy.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {

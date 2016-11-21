@@ -24,7 +24,7 @@
  */
 
 #include "forwarder.hpp"
-#include "pit-algorithm.hpp"
+#include "algorithm.hpp"
 #include "core/logger.hpp"
 #include "strategy.hpp"
 #include "table/cleanup.hpp"
