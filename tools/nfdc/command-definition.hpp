@@ -142,20 +142,21 @@ public:
   }
 
 public: // help
-  /** \return one-line synopsis
+  /** \return one-line description
    */
   const std::string&
-  getSynopsis() const
+  getTitle() const
   {
-    return m_synopsis;
+    return m_title;
   }
 
-  /** \brief set one-line synopsis
+  /** \brief set one-line description
+   *  \param title one-line description, written in lower case
    */
   CommandDefinition&
-  setSynopsis(const std::string& synopsis)
+  setTitle(const std::string& title)
   {
-    m_synopsis = synopsis;
+    m_title = title;
     return *this;
   }
 
@@ -189,7 +190,7 @@ private:
   std::string m_noun;
   std::string m_verb;
 
-  std::string m_synopsis;
+  std::string m_title;
 
   struct Arg
   {

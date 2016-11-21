@@ -67,6 +67,16 @@ formatTimestamp(time::system_clock::TimePoint t);
 
 namespace text {
 
+/** \brief print a number of whitespaces
+ */
+struct Spaces
+{
+  int nSpaces; ///< number of spaces; print nothing if negative
+};
+
+std::ostream&
+operator<<(std::ostream& os, const Spaces& spaces);
+
 /** \brief print different string on first and subsequent usage
  *
  *  \code

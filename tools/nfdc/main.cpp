@@ -24,7 +24,7 @@
  */
 
 #include "available-commands.hpp"
-#include "legacy-nfdc.hpp"
+#include "help.hpp"
 #include "core/version.hpp"
 
 namespace nfd {
@@ -36,8 +36,11 @@ main(int argc, char** argv)
 {
   std::vector<std::string> args(argv + 1, argv + argc);
 
+  CommandParser parser;
+  registerCommands(parser);
+
   if (args.empty() || args[0] == "-h") {
-    legacyNfdcUsage();
+    helpList(std::cout, parser);
     return 0;
   }
 
@@ -46,8 +49,6 @@ main(int argc, char** argv)
     return 0;
   }
 
-  CommandParser parser;
-  registerCommands(parser);
   std::string noun, verb;
   CommandArguments ca;
   ExecuteCommand execute;

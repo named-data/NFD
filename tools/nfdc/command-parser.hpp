@@ -40,6 +40,7 @@ enum AvailableIn : uint8_t {
   AVAILABLE_IN_NONE     = 0,
   AVAILABLE_IN_ONE_SHOT = 1 << 0, ///< one-shot mode
   AVAILABLE_IN_BATCH    = 1 << 1, ///< batch mode
+  AVAILABLE_IN_HELP     = 1 << 7, ///< visible in help listing
   AVAILABLE_IN_ALL      = 0xff
 };
 
@@ -86,6 +87,14 @@ public:
   CommandParser&
   addAlias(const std::string& noun, const std::string& verb, const std::string& verb2);
 
+  /** \brief list known commands for help
+   *  \param noun if not empty, filter results by this noun
+   *  \param mode include commands for the specified parse mode
+   *  \return commands in insertion order
+   */
+  std::vector<const CommandDefinition*>
+  listCommands(const std::string& noun, ParseMode mode) const;
+
   /** \brief parse a command line
    *  \param tokens command line
    *  \param mode parser mode, must be ParseMode::ONE_SHOT, other modes are not implemented
@@ -110,6 +119,10 @@ private:
    */
   typedef std::map<CommandName, shared_ptr<Command>> CommandContainer;
   CommandContainer m_commands;
+
+  /** \brief commands in insertion order
+   */
+  std::vector<CommandContainer::const_iterator> m_commandOrder;
 };
 
 } // namespace nfdc

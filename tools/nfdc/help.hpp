@@ -23,60 +23,31 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfdc/format-helpers.hpp"
+#ifndef NFD_TOOLS_NFDC_HELP_HPP
+#define NFD_TOOLS_NFDC_HELP_HPP
 
-#include "tests/test-common.hpp"
+#include "command-parser.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
-namespace tests {
 
-using boost::test_tools::output_test_stream;
+void
+helpList(std::ostream& os, const CommandParser& parser,
+         ParseMode mode = ParseMode::ONE_SHOT, const std::string& noun = "");
 
-BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_AUTO_TEST_SUITE(TestFormatHelpers)
+/** \brief the 'help' command
+ */
+int
+help(ExecuteContext& ctx, const CommandParser& parser, std::ostream& os);
 
-BOOST_AUTO_TEST_SUITE(Xml)
+/** \brief registers 'help' command
+ */
+void
+registerHelpCommand(CommandParser& parser);
 
-BOOST_AUTO_TEST_CASE(TextEscaping)
-{
-  output_test_stream os;
-  os << xml::Text{"\"less than\" & 'greater than' surround XML <element> tag name"};
-
-  BOOST_CHECK(os.is_equal("&quot;less than&quot; &amp; &apos;greater than&apos;"
-                          " surround XML &lt;element&gt; tag name"));
-}
-
-BOOST_AUTO_TEST_SUITE_END() // Xml
-
-BOOST_AUTO_TEST_SUITE(Text)
-
-BOOST_AUTO_TEST_CASE(Space)
-{
-  output_test_stream os;
-  os << 'A' << text::Spaces{-1} << 'B' << text::Spaces{0} << 'C' << text::Spaces{5} << 'D';
-
-  BOOST_CHECK(os.is_equal("ABC     D"));
-}
-
-BOOST_AUTO_TEST_CASE(Sep)
-{
-  output_test_stream os;
-  text::Separator sep(",");
-  for (int i = 1; i <= 3; ++i) {
-    os << sep << i;
-  }
-
-  BOOST_CHECK(os.is_equal("1,2,3"));
-}
-
-BOOST_AUTO_TEST_SUITE_END() // Text
-
-BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers
-BOOST_AUTO_TEST_SUITE_END() // Nfdc
-
-} // namespace tests
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#endif // NFD_TOOLS_NFDC_HELP_HPP

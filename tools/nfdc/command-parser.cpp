@@ -47,6 +47,9 @@ operator<<(std::ostream& os, AvailableIn modes)
   if ((modes & AVAILABLE_IN_BATCH) != 0) {
     os << sep << "batch";
   }
+  if ((modes & AVAILABLE_IN_HELP) == 0) {
+    os << sep << "hidden";
+  }
 
   if (sep.getCount() == 0) {
     os << "none";
@@ -73,6 +76,11 @@ CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& ex
   BOOST_ASSERT(modes != AVAILABLE_IN_NONE);
   m_commands[{def.getNoun(), def.getVerb()}].reset(
     new Command{def, execute, static_cast<AvailableIn>(modes)});
+
+  if ((modes & AVAILABLE_IN_HELP) != 0) {
+    m_commandOrder.push_back(m_commands.find({def.getNoun(), def.getVerb()}));
+  }
+
   return *this;
 }
 
@@ -81,6 +89,20 @@ CommandParser::addAlias(const std::string& noun, const std::string& verb, const 
 {
   m_commands[{noun, verb2}] = m_commands.at({noun, verb});
   return *this;
+}
+
+std::vector<const CommandDefinition*>
+CommandParser::listCommands(const std::string& noun, ParseMode mode) const
+{
+  std::vector<const CommandDefinition*> results;
+  for (CommandContainer::const_iterator i : m_commandOrder) {
+    const Command& command = *i->second;
+    if ((command.modes & static_cast<AvailableIn>(mode)) != 0 &&
+        (noun.empty() || noun == command.def.getNoun())) {
+      results.push_back(&command.def);
+    }
+  }
+  return results;
 }
 
 std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>

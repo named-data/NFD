@@ -6,6 +6,10 @@ Manpages
 .. toctree::
    manpages/nfd
    manpages/nfdc
+   manpages/nfdc-status
+   manpages/nfdc-face
+   manpages/nfdc-route
+   manpages/nfdc-strategy
    manpages/nfd-status
    schema
    manpages/nfd-status-http-server

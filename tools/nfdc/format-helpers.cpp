@@ -88,6 +88,15 @@ formatTimestamp(time::system_clock::TimePoint t)
 
 namespace text {
 
+std::ostream&
+operator<<(std::ostream& os, const Spaces& spaces)
+{
+  for (int i = 0; i < spaces.nSpaces; ++i) {
+    os << ' ';
+  }
+  return os;
+}
+
 Separator::Separator(const std::string& first, const std::string& subsequent)
   : m_first(first)
   , m_subsequent(subsequent)

@@ -62,7 +62,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NFD - Named Data Networking Forwarding Daemon'
-copyright = u'2014, Named Data Networking Project'
+copyright = u'2014-2016, Named Data Networking Project'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -247,8 +247,11 @@ man_pages = [
         u'NDN auto-configuration client', None, 1),
     ('manpages/ndn-autoconfig.conf', 'ndn-autoconfig.conf',
         u'NDN auto-configuration client configuration file', None, 5),
-    ('manpages/nfdc', 'nfdc',
-        u'NFD utility to manipulate the forwarding table (FIB)', None, 1),
+    ('manpages/nfdc', 'nfdc', u'show / manipulate NFD state and configuration', None, 1),
+    ('manpages/nfdc-status', 'nfdc-status', u'show NFD status', None, 1),
+    ('manpages/nfdc-face', 'nfdc-face', u'show and manipulate NFD faces', None, 1),
+    ('manpages/nfdc-route', 'nfdc-route', u'show and manipulate NFD routes', None, 1),
+    ('manpages/nfdc-strategy', 'nfdc-strategy', u'show and manipulate NFD strategy choices', None, 1),
     ('manpages/nfd-autoreg', 'nfd-autoreg', u'NFD Auto-registration Server', None, 1),
     ('manpages/nfd-status-http-server', 'nfd-status-http-server',
         u'NFD status HTTP server', None, 1),
