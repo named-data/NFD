@@ -135,18 +135,21 @@ private: // forwarding procedures
    *  \return whether an Interest is sent
    */
   bool
-  sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry, MtInfo& mi,
+  sendToLastNexthop(const Face& inFace, const Interest& interest,
+                    const shared_ptr<pit::Entry>& pitEntry, MtInfo& mi,
                     const fib::Entry& fibEntry);
 
   void
-  afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFace, FaceId firstOutFace);
+  afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, FaceId firstOutFaceId);
 
   /** \brief multicast to all nexthops
-   *  \param exceptFaces don't forward to those faces
+   *  \param exceptFace don't forward to this face; also, inFace is always excluded
+   *  \return how many Interests are sent
    */
-  void
-  multicast(const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
-            std::unordered_set<FaceId> exceptFaces = std::unordered_set<FaceId>());
+  int
+  multicast(const Face& inFace, const Interest& interest,
+            const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
+            FaceId exceptFace = face::INVALID_FACEID);
 
   void
   updateMeasurements(const Face& inFace, const Data& data,

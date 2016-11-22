@@ -78,7 +78,7 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& inte
                   " new-interest mi=" << miName);
 
     // send to last working nexthop
-    bool isSentToLastNexthop = this->sendToLastNexthop(inFace, pitEntry, *mi, fibEntry);
+    bool isSentToLastNexthop = this->sendToLastNexthop(inFace, interest, pitEntry, *mi, fibEntry);
 
     if (isSentToLastNexthop) {
       return;
@@ -92,7 +92,11 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& inte
   // no measurements, or last working nexthop unavailable
 
   // multicast to all nexthops except incoming face
-  this->multicast(pitEntry, fibEntry, {inFace.getId()});
+  int nMulticastSent = this->multicast(inFace, interest, pitEntry, fibEntry);
+
+  if (nMulticastSent < 1) {
+    this->rejectPendingInterest(pitEntry);
+  }
 }
 
 void
@@ -101,12 +105,13 @@ AccessStrategy::afterReceiveRetxInterest(const Face& inFace, const Interest& int
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-forward");
-  this->multicast(pitEntry, fibEntry, {inFace.getId()});
+  this->multicast(inFace, interest, pitEntry, fibEntry);
 }
 
 bool
-AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
-                                  MtInfo& mi, const fib::Entry& fibEntry)
+AccessStrategy::sendToLastNexthop(const Face& inFace, const Interest& interest,
+                                  const shared_ptr<pit::Entry>& pitEntry, MtInfo& mi,
+                                  const fib::Entry& fibEntry)
 {
   if (mi.lastNexthop == face::INVALID_FACEID) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " no-last-nexthop");
@@ -118,13 +123,13 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entr
     return false;
   }
 
-  Face* face = this->getFace(mi.lastNexthop);
-  if (face == nullptr || !fibEntry.hasNextHop(*face)) {
+  Face* outFace = this->getFace(mi.lastNexthop);
+  if (outFace == nullptr || !fibEntry.hasNextHop(*outFace)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-gone");
     return false;
   }
 
-  if (violatesScope(*pitEntry, *face)) {
+  if (wouldViolateScope(inFace, interest, *outFace)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-violates-scope");
     return false;
   }
@@ -133,7 +138,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entr
   NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop <<
                 " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
 
-  this->sendInterest(pitEntry, *face);
+  this->sendInterest(pitEntry, *outFace, interest);
 
   // schedule RTO timeout
   PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
@@ -145,32 +150,52 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const shared_ptr<pit::Entr
 }
 
 void
-AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFace, FaceId firstOutFace)
+AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, FaceId firstOutFaceId)
 {
   shared_ptr<pit::Entry> pitEntry = pitWeak.lock();
   BOOST_ASSERT(pitEntry != nullptr);
-  // pitEntry can't become nullptr, because RTO timer should be cancelled upon pitEntry destruction
+  // if pitEntry is gone, RTO timer should have been cancelled
+
+  Face* inFace = this->getFace(inFaceId);
+  if (inFace == nullptr) {
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId <<
+                  " inFace-gone " << inFaceId);
+    return;
+  }
+
+  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(*inFace);
+  BOOST_ASSERT(inRecord != pitEntry->in_end());
+  // in-record is erased only if Interest is satisfied, and RTO timer should have been cancelled
+  // note: if this strategy is extended to send Nacks, that would also erase in-record,
+  //       and RTO timer should be cancelled in that case as well
+
+  const Interest& interest = inRecord->getInterest();
 
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
-  NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFace <<
-                " multicast-except " << inFace << ',' << firstOutFace);
-  this->multicast(pitEntry, fibEntry, {inFace, firstOutFace});
+  NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId <<
+                " multicast-except " << firstOutFaceId);
+  this->multicast(*inFace, interest, pitEntry, fibEntry, firstOutFaceId);
 }
 
-void
-AccessStrategy::multicast(const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
-                          std::unordered_set<FaceId> exceptFaces)
+int
+AccessStrategy::multicast(const Face& inFace, const Interest& interest,
+                          const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
+                          FaceId exceptFace)
 {
+  int nSent = 0;
   for (const fib::NextHop& nexthop : fibEntry.getNextHops()) {
-    Face& face = nexthop.getFace();
-    if (exceptFaces.count(face.getId()) > 0) {
+    Face& outFace = nexthop.getFace();
+    if (&outFace == &inFace || outFace.getId() == exceptFace ||
+        wouldViolateScope(inFace, interest, outFace)) {
       continue;
     }
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << face.getId() <<
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << outFace.getId() <<
                   " multicast");
-    this->sendInterest(pitEntry, face);
+    this->sendInterest(pitEntry, outFace, interest);
+    ++nSent;
   }
+  return nSent;
 }
 
 void
