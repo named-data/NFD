@@ -49,7 +49,7 @@ public:
 
   /** \brief after receive Interest trigger
    *
-   *  If \p interestOutFace is not null, send Interest action is invoked with that face;
+   *  If \p interestOutFace is not null, Interest is forwarded to that face via send Interest action;
    *  otherwise, reject pending Interest action is invoked.
    */
   virtual void
@@ -58,8 +58,8 @@ public:
   {
     ++afterReceiveInterest_count;
 
-    if (interestOutFace) {
-      this->sendInterest(pitEntry, *interestOutFace);
+    if (interestOutFace != nullptr) {
+      this->sendInterest(pitEntry, *interestOutFace, interest);
     }
     else {
       this->rejectPendingInterest(pitEntry);
