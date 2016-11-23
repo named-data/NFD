@@ -23,46 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "available-commands.hpp"
-#include "help.hpp"
+#ifndef NFD_TOOLS_NFDC_LEGACY_STATUS_HPP
+#define NFD_TOOLS_NFDC_LEGACY_STATUS_HPP
+
 #include "status.hpp"
-#include "legacy-status.hpp"
-#include "legacy-nfdc.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
+/** \brief registers 'legacy-nfd-status' command
+ */
 void
-registerCommands(CommandParser& parser)
-{
-  registerHelpCommand(parser);
-  registerStatusCommands(parser);
-  registerLegacyStatusCommand(parser);
-
-  struct LegacyNfdcCommandDefinition
-  {
-    std::string subcommand;
-    std::string title;
-  };
-  const std::vector<LegacyNfdcCommandDefinition> legacyNfdcSubcommands{
-    {"register", "register a prefix"},
-    {"unregister", "unregister a prefix"},
-    {"create", "create a face"},
-    {"destroy", "destroy a face"},
-    {"set-strategy", "set strategy choice on namespace"},
-    {"unset-strategy", "unset strategy choice on namespace"},
-    {"add-nexthop", "add FIB nexthop"},
-    {"remove-nexthop", "remove FIB nexthop"}
-  };
-  for (const LegacyNfdcCommandDefinition& lncd : legacyNfdcSubcommands) {
-    CommandDefinition def(lncd.subcommand, "");
-    def.setTitle(lncd.title);
-    def.addArg("args", ArgValueType::ANY, Required::NO, Positional::YES);
-    parser.addCommand(def, &legacyNfdcMain);
-  }
-}
+registerLegacyStatusCommand(CommandParser& parser);
 
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#endif // NFD_TOOLS_NFDC_LEGACY_STATUS_HPP

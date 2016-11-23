@@ -23,33 +23,14 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "status-main.hpp"
+#include "legacy-status.hpp"
 #include "core/version.hpp"
-#include "status-report.hpp"
-#include "forwarder-general-module.hpp"
-#include "channel-module.hpp"
-#include "face-module.hpp"
-#include "fib-module.hpp"
-#include "rib-module.hpp"
-#include "strategy-choice-module.hpp"
 
-#include <ndn-cxx/security/validator-null.hpp>
 #include <boost/program_options.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
-
-struct Options
-{
-  ReportFormat output = ReportFormat::TEXT;
-  bool wantForwarderGeneral = false;
-  bool wantChannels = false;
-  bool wantFaces = false;
-  bool wantFib = false;
-  bool wantRib = false;
-  bool wantStrategyChoice = false;
-};
 
 static void
 showUsage(std::ostream& os, const boost::program_options::options_description& cmdOptions)
@@ -59,17 +40,17 @@ showUsage(std::ostream& os, const boost::program_options::options_description& c
      << cmdOptions;
 }
 
-/** \brief parse command line, and show usage if necessary
+/** \brief parse legacy nfd-status command line, and show usage if necessary
  *  \return if first item is -1, caller should retrieve and display StatusReport;
  *          otherwise, caller should immediately exit with the specified exit code
  */
-static std::tuple<int, Options>
+static std::tuple<int, StatusReportOptions>
 parseCommandLine(const std::vector<std::string>& args)
 {
-  Options options;
+  StatusReportOptions options;
 
   namespace po = boost::program_options;
-  po::options_description cmdOptions("Options");
+  po::options_description cmdOptions("StatusReportOptions");
   cmdOptions.add_options()
     ("help,h", "print this help message")
     ("version,V", "show program version")
@@ -113,69 +94,30 @@ parseCommandLine(const std::vector<std::string>& args)
   return std::make_tuple(-1, options);
 }
 
-int
-statusMain(const std::vector<std::string>& args, Face& face, KeyChain& keyChain)
+/** \brief the 'legacy-nfd-status' command
+ */
+static int
+legacyNfdStatus(ExecuteContext& ctx)
 {
+  auto args = ctx.args.get<std::vector<std::string>>("args");
+
   int exitCode = -1;
-  Options options;
+  StatusReportOptions options;
   std::tie(exitCode, options) = parseCommandLine(args);
   if (exitCode >= 0) {
     return exitCode;
   }
 
-  unique_ptr<Validator> validator = make_unique<ndn::ValidatorNull>();
-  CommandOptions ctrlOptions;
+  return reportStatus(ctx, options);
+}
 
-  StatusReport report;
-
-  if (options.wantForwarderGeneral) {
-    auto nfdIdCollector = make_unique<NfdIdCollector>(std::move(validator));
-    auto forwarderGeneralModule = make_unique<ForwarderGeneralModule>();
-    forwarderGeneralModule->setNfdIdCollector(*nfdIdCollector);
-    report.sections.push_back(std::move(forwarderGeneralModule));
-    validator = std::move(nfdIdCollector);
-  }
-
-  if (options.wantChannels) {
-    report.sections.push_back(make_unique<ChannelModule>());
-  }
-
-  if (options.wantFaces) {
-    report.sections.push_back(make_unique<FaceModule>());
-  }
-
-  if (options.wantFib) {
-    report.sections.push_back(make_unique<FibModule>());
-  }
-
-  if (options.wantRib) {
-    report.sections.push_back(make_unique<RibModule>());
-  }
-
-  if (options.wantStrategyChoice) {
-    report.sections.push_back(make_unique<StrategyChoiceModule>());
-  }
-
-  uint32_t code = report.collect(face, keyChain, *validator, ctrlOptions);
-  if (code != 0) {
-    // Give a simple error code for end user.
-    // Technical support personnel:
-    // 1. get the exact command from end user
-    // 2. code div 1000000 is zero-based section index
-    // 3. code mod 1000000 is a Controller.fetch error code
-    std::cerr << "Error while collecting status report (" << code << ").\n";
-    return 1;
-  }
-
-  switch (options.output) {
-    case ReportFormat::XML:
-      report.formatXml(std::cout);
-      break;
-    case ReportFormat::TEXT:
-      report.formatText(std::cout);
-      break;
-  }
-  return 0;
+void
+registerLegacyStatusCommand(CommandParser& parser)
+{
+  CommandDefinition defLegacyNfdStatus("legacy-nfd-status", "");
+  defLegacyNfdStatus
+    .addArg("args", ArgValueType::ANY, Required::NO, Positional::YES);
+  parser.addCommand(defLegacyNfdStatus, &legacyNfdStatus, AVAILABLE_IN_ALL & ~AVAILABLE_IN_HELP);
 }
 
 } // namespace nfdc
