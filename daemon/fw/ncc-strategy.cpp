@@ -67,12 +67,13 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
 
   shared_ptr<Face> bestFace = meInfo.getBestFace();
   if (bestFace != nullptr && fibEntry.hasNextHop(*bestFace) &&
+      !wouldViolateScope(inFace, interest, *bestFace) &&
       canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
     deferFirst = meInfo.prediction;
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
-    this->sendInterest(pitEntry, *bestFace);
+    this->sendInterest(pitEntry, *bestFace, interest);
     pitEntryInfo->bestFaceTimeout = scheduler::schedule(
       meInfo.prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
@@ -80,16 +81,23 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   else {
     // use first eligible nexthop
     auto firstEligibleNexthop = std::find_if(nexthops.begin(), nexthops.end(),
-        [&pitEntry] (const fib::NextHop& nexthop) {
-          return canForwardToLegacy(*pitEntry, nexthop.getFace());
+        [&] (const fib::NextHop& nexthop) {
+          Face& outFace = nexthop.getFace();
+          return !wouldViolateScope(inFace, interest, outFace) &&
+                 canForwardToLegacy(*pitEntry, outFace);
         });
     if (firstEligibleNexthop != nexthops.end()) {
-      this->sendInterest(pitEntry, firstEligibleNexthop->getFace());
+      this->sendInterest(pitEntry, firstEligibleNexthop->getFace(), interest);
+    }
+    else {
+      this->rejectPendingInterest(pitEntry);
+      return;
     }
   }
 
   shared_ptr<Face> previousFace = meInfo.previousFace.lock();
   if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
+      !wouldViolateScope(inFace, interest, *previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
   }
@@ -105,16 +113,25 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
     pitEntryInfo->maxInterval = deferFirst;
   }
   pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
-    bind(&NccStrategy::doPropagate, this, weak_ptr<pit::Entry>(pitEntry)));
+    bind(&NccStrategy::doPropagate, this, inFace.getId(), weak_ptr<pit::Entry>(pitEntry)));
 }
 
 void
-NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
+NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
 {
+  Face* inFace = this->getFace(inFaceId);
+  if (inFace == nullptr) {
+    return;
+  }
   shared_ptr<pit::Entry> pitEntry = pitEntryWeak.lock();
   if (pitEntry == nullptr) {
     return;
   }
+  pit::InRecordCollection::const_iterator inRecord = pitEntry->getInRecord(*inFace);
+  if (inRecord == pitEntry->in_end()) {
+    return;
+  }
+  const Interest& interest = inRecord->getInterest();
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
   PitEntryInfo* pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
@@ -126,17 +143,19 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
 
   shared_ptr<Face> previousFace = meInfo.previousFace.lock();
   if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
+      !wouldViolateScope(*inFace, interest, *previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
-    this->sendInterest(pitEntry, *previousFace);
+    this->sendInterest(pitEntry, *previousFace, interest);
   }
 
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
   bool isForwarded = false;
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     Face& face = it->getFace();
-    if (canForwardToLegacy(*pitEntry, face)) {
+    if (!wouldViolateScope(*inFace, interest, face) &&
+        canForwardToLegacy(*pitEntry, face)) {
       isForwarded = true;
-      this->sendInterest(pitEntry, face);
+      this->sendInterest(pitEntry, face, interest);
       break;
     }
   }
@@ -145,7 +164,7 @@ NccStrategy::doPropagate(weak_ptr<pit::Entry> pitEntryWeak)
     std::uniform_int_distribution<time::nanoseconds::rep> dist(0, pitEntryInfo->maxInterval.count() - 1);
     time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
-      bind(&NccStrategy::doPropagate, this, weak_ptr<pit::Entry>(pitEntry)));
+      bind(&NccStrategy::doPropagate, this, inFaceId, weak_ptr<pit::Entry>(pitEntry)));
   }
 }
 

@@ -48,16 +48,17 @@ BestRouteStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
 
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
-  fib::NextHopList::const_iterator it = std::find_if(nexthops.begin(), nexthops.end(),
-    [&pitEntry] (const fib::NextHop& nexthop) { return canForwardToLegacy(*pitEntry, nexthop.getFace()); });
 
-  if (it == nexthops.end()) {
-    this->rejectPendingInterest(pitEntry);
-    return;
+  for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
+    Face& outFace = it->getFace();
+    if (!wouldViolateScope(inFace, interest, outFace) &&
+        canForwardToLegacy(*pitEntry, outFace)) {
+      this->sendInterest(pitEntry, outFace, interest);
+      return;
+    }
   }
 
-  Face& outFace = it->getFace();
-  this->sendInterest(pitEntry, outFace);
+  this->rejectPendingInterest(pitEntry);
 }
 
 } // namespace fw

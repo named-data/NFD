@@ -122,7 +122,7 @@ protected:
 
   /// propagate to another upstream
   void
-  doPropagate(weak_ptr<pit::Entry> pitEntryWeak);
+  doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak);
 
   /// best face did not reply within prediction
   void

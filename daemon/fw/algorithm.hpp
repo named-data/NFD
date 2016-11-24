@@ -84,8 +84,7 @@ violatesScope(const pit::Entry& pitEntry, const Face& outFace));
 /** \brief decide whether Interest can be forwarded to face
  *
  *  \return true if out-record of this face does not exist or has expired,
- *          and there is an in-record not of this face,
- *          and scope is not violated
+ *          and there is an in-record not of this face
  *
  *  \note This algorithm has a weakness that it does not permit consumer retransmissions
  *        before out-record expires. Therefore, it's not recommended to use this function

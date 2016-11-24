@@ -99,7 +99,7 @@ canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
     return false;
   }
 
-  return !violatesScope(pitEntry, face);
+  return true;
 }
 
 int

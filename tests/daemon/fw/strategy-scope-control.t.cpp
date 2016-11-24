@@ -29,10 +29,14 @@
 
 // Strategies implementing namespace-based scope control, sorted alphabetically.
 #include "fw/access-strategy.hpp"
+#include "fw/best-route-strategy.hpp"
 #include "fw/best-route-strategy2.hpp"
+#include "fw/multicast-strategy.hpp"
+#include "fw/ncc-strategy.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
+#include "install-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include <boost/mpl/copy_if.hpp>
@@ -51,7 +55,7 @@ public:
   StrategyScopeControlFixture()
     : limitedIo(this)
     , nStrategyActions(0)
-    , strategy(forwarder)
+    , strategy(choose<StrategyTester<S>>(forwarder))
     , fib(forwarder.getFib())
     , pit(forwarder.getPit())
     , nonLocalFace1(make_shared<DummyFace>("dummy://1", "dummy://1", ndn::nfd::FACE_SCOPE_NON_LOCAL))
@@ -82,6 +86,9 @@ public:
       BOOST_REQUIRE_EQUAL(limitedIo.run(nExpectedActions - nStrategyActions, LimitedIo::UNLIMITED_TIME),
                           LimitedIo::EXCEED_OPS);
     }
+    // A correctly implemented strategy is required to invoke reject pending Interest action
+    // if it decides to not forward an Interest. If a test case is stuck in an endless loop within
+    // this function, check that rejectPendingInterest is invoked under proper condition.
   }
 
 public:
@@ -89,7 +96,7 @@ public:
   int nStrategyActions;
 
   Forwarder forwarder;
-  StrategyTester<S> strategy;
+  StrategyTester<S>& strategy;
   Fib& fib;
   Pit& pit;
 
@@ -102,49 +109,35 @@ public:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_AUTO_TEST_SUITE(TestStrategyScopeControl)
 
-class AccessStrategyTest
+template<typename S, bool WillSendNackNoRoute, bool CanProcessNack>
+class Test
 {
 public:
-  using S = AccessStrategy;
+  using Strategy = S;
 
   static bool
   willSendNackNoRoute()
   {
-    return false;
+    return WillSendNackNoRoute;
   }
 
   static bool
   canProcessNack()
   {
-    return false;
-  }
-};
-
-class BestRouteStrategy2Test
-{
-public:
-  using S = BestRouteStrategy2;
-
-  static bool
-  willSendNackNoRoute()
-  {
-    return true;
-  }
-
-  static bool
-  canProcessNack()
-  {
-    return true;
+    return CanProcessNack;
   }
 };
 
 using Tests = boost::mpl::vector<
-  AccessStrategyTest,
-  BestRouteStrategy2Test
+  Test<AccessStrategy, false, false>,
+  Test<BestRouteStrategy, false, false>,
+  Test<BestRouteStrategy2, true, true>,
+  Test<MulticastStrategy, false, false>,
+  Test<NccStrategy, false, false>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addNextHop(*this->localFace4, 10);
@@ -162,7 +155,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addNextHop(*this->nonLocalFace2, 10);
@@ -184,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addNextHop(*this->nonLocalFace2, 10);
@@ -204,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
   fibEntry->addNextHop(*this->nonLocalFace2, 10);
@@ -226,7 +219,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
   fibEntry->addNextHop(*this->nonLocalFace2, 10);
@@ -246,7 +239,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
   fibEntry->addNextHop(*this->localFace4, 10);
@@ -271,7 +264,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
-                                 T, Tests, StrategyScopeControlFixture<typename T::S>)
+                                 T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
   fibEntry->addNextHop(*this->localFace4, 10);
