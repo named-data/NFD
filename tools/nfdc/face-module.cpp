@@ -91,6 +91,17 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
   os << "<facePersistency>" << item.getFacePersistency() << "</facePersistency>";
   os << "<linkType>" << item.getLinkType() << "</linkType>";
 
+  if (item.getFlags() == 0) {
+    os << "<flags/>";
+  }
+  else {
+    os << "<flags>";
+    if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
+      os << "<localFieldsEnabled/>";
+    }
+    os << "</flags>";
+  }
+
   os << "<packetCounters>";
   os << "<incomingPackets>"
      << "<nInterests>" << item.getNInInterests() << "</nInterests>"
@@ -146,6 +157,13 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item) const
   os << " " << item.getFaceScope();
   os << " " << item.getFacePersistency();
   os << " " << item.getLinkType();
+
+  os << " flags={";
+  if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
+    os << "local-fields";
+  }
+  os << "}";
+
   os << "\n";
 }
 

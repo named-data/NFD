@@ -151,6 +151,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <th>Scope</th>
         <th>Persistency</th>
         <th>LinkType</th>
+        <th>Flags</th>
         <th>Expires in</th>
         <th>In Interests</th>
         <th>In Data</th>
@@ -179,6 +180,13 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:faceScope"/></td>
         <td><xsl:value-of select="nfd:facePersistency"/></td>
         <td><xsl:value-of select="nfd:linkType"/></td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="nfd:flags/nfd:localFieldsEnabled">
+              local-fields
+            </xsl:when>
+          </xsl:choose>
+        </td>
         <td>
           <xsl:choose>
             <xsl:when test="nfd:expirationPeriod">

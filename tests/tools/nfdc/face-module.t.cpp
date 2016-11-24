@@ -44,6 +44,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <faceScope>non-local</faceScope>
       <facePersistency>permanent</facePersistency>
       <linkType>multi-access</linkType>
+      <flags/>
       <packetCounters>
         <incomingPackets>
           <nInterests>22562</nInterests>
@@ -68,6 +69,9 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <faceScope>local</faceScope>
       <facePersistency>on-demand</facePersistency>
       <linkType>point-to-point</linkType>
+      <flags>
+        <localFieldsEnabled/>
+      </flags>
       <packetCounters>
         <incomingPackets>
           <nInterests>18998</nInterests>
@@ -92,10 +96,10 @@ const std::string STATUS_TEXT =
   "Faces:\n"
   "  faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
-    " non-local permanent multi-access\n"
+    " non-local permanent multi-access flags={}\n"
   "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " local on-demand point-to-point\n";
+    " local on-demand point-to-point flags={local-fields}\n";
 
 BOOST_AUTO_TEST_CASE(Status)
 {
@@ -122,6 +126,7 @@ BOOST_AUTO_TEST_CASE(Status)
           .setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL)
           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+          .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
           .setNInInterests(18998)
           .setNInDatas(26701)
           .setNInNacks(147)
