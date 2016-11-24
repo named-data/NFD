@@ -145,11 +145,12 @@ private: // send path
   void
   doSendNack(const ndn::lp::Nack& nack) override;
 
-  /** \brief encode local fields from tags onto outgoing LpPacket
-   *  \param pkt LpPacket containing a complete network layer packet
+  /** \brief encode link protocol fields from tags onto an outgoing LpPacket
+   *  \param netPkt network-layer packet to extract tags from
+   *  \param lpPacket LpPacket to add link protocol fields to
    */
-  static void
-  encodeLocalFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket);
+  void
+  encodeLpFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket);
 
   /** \brief send a complete network layer packet
    *  \param pkt LpPacket containing a complete network layer packet

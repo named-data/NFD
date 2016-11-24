@@ -394,7 +394,7 @@ BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragCount)
 BOOST_AUTO_TEST_SUITE_END() // Fragmentation
 
 
-BOOST_AUTO_TEST_SUITE(LocalFields)
+BOOST_AUTO_TEST_SUITE(LpFields)
 
 BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceId)
 {
@@ -637,7 +637,91 @@ BOOST_AUTO_TEST_CASE(ReceiveIncomingFaceIdIgnoreNack)
   BOOST_CHECK(receivedNacks.back().getTag<lp::IncomingFaceIdTag>() == nullptr);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // LocalFields
+BOOST_AUTO_TEST_CASE(SendCongestionMarkInterest)
+{
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  interest->setTag(make_shared<lp::CongestionMarkTag>(1));
+
+  face->sendInterest(*interest);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_REQUIRE(sent.has<lp::CongestionMarkField>());
+  BOOST_CHECK_EQUAL(sent.get<lp::CongestionMarkField>(), 1);
+}
+
+BOOST_AUTO_TEST_CASE(SendCongestionMarkData)
+{
+  shared_ptr<Data> data = makeData("/12345678");
+  data->setTag(make_shared<lp::CongestionMarkTag>(0));
+
+  face->sendData(*data);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_REQUIRE(sent.has<lp::CongestionMarkField>());
+  BOOST_CHECK_EQUAL(sent.get<lp::CongestionMarkField>(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(SendCongestionMarkNack)
+{
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  nack.setTag(make_shared<lp::CongestionMarkTag>(std::numeric_limits<uint64_t>::max()));
+
+  face->sendNack(nack);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_REQUIRE(sent.has<lp::CongestionMarkField>());
+  BOOST_CHECK_EQUAL(sent.get<lp::CongestionMarkField>(), std::numeric_limits<uint64_t>::max());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkInterest)
+{
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::CongestionMarkField>(1);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  shared_ptr<lp::CongestionMarkTag> tag = receivedInterests.back().getTag<lp::CongestionMarkTag>();
+  BOOST_REQUIRE(tag != nullptr);
+  BOOST_CHECK_EQUAL(*tag, 1);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkData)
+{
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::CongestionMarkField>(1);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  shared_ptr<lp::CongestionMarkTag> tag = receivedData.back().getTag<lp::CongestionMarkTag>();
+  BOOST_REQUIRE(tag != nullptr);
+  BOOST_CHECK_EQUAL(*tag, 1);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkNack)
+{
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Packet packet;
+  packet.set<lp::FragmentField>(std::make_pair(
+    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::NackField>(nack.getHeader());
+  packet.set<lp::CongestionMarkField>(1);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
+  shared_ptr<lp::CongestionMarkTag> tag = receivedNacks.back().getTag<lp::CongestionMarkTag>();
+  BOOST_REQUIRE(tag != nullptr);
+  BOOST_CHECK_EQUAL(*tag, 1);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // LpFields
 
 
 BOOST_AUTO_TEST_SUITE(Malformed) // receive malformed packets

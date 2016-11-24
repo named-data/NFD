@@ -58,9 +58,7 @@ GenericLinkService::doSendInterest(const Interest& interest)
 {
   lp::Packet lpPacket(interest.wireEncode());
 
-  if (m_options.allowLocalFields) {
-    encodeLocalFields(interest, lpPacket);
-  }
+  encodeLpFields(interest, lpPacket);
 
   this->sendNetPacket(std::move(lpPacket));
 }
@@ -70,9 +68,7 @@ GenericLinkService::doSendData(const Data& data)
 {
   lp::Packet lpPacket(data.wireEncode());
 
-  if (m_options.allowLocalFields) {
-    encodeLocalFields(data, lpPacket);
-  }
+  encodeLpFields(data, lpPacket);
 
   this->sendNetPacket(std::move(lpPacket));
 }
@@ -83,19 +79,24 @@ GenericLinkService::doSendNack(const lp::Nack& nack)
   lp::Packet lpPacket(nack.getInterest().wireEncode());
   lpPacket.add<lp::NackField>(nack.getHeader());
 
-  if (m_options.allowLocalFields) {
-    encodeLocalFields(nack, lpPacket);
-  }
+  encodeLpFields(nack, lpPacket);
 
   this->sendNetPacket(std::move(lpPacket));
 }
 
 void
-GenericLinkService::encodeLocalFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket)
+GenericLinkService::encodeLpFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket)
 {
-  shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
-  if (incomingFaceIdTag != nullptr) {
-    lpPacket.add<lp::IncomingFaceIdField>(*incomingFaceIdTag);
+  if (m_options.allowLocalFields) {
+    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
+    if (incomingFaceIdTag != nullptr) {
+      lpPacket.add<lp::IncomingFaceIdField>(*incomingFaceIdTag);
+    }
+  }
+
+  shared_ptr<lp::CongestionMarkTag> congestionMarkTag = netPkt.getTag<lp::CongestionMarkTag>();
+  if (congestionMarkTag != nullptr) {
+    lpPacket.add<lp::CongestionMarkField>(*congestionMarkTag);
   }
 }
 
@@ -241,6 +242,10 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
     NFD_LOG_FACE_WARN("received IncomingFaceId: IGNORE");
   }
 
+  if (firstPkt.has<lp::CongestionMarkField>()) {
+    interest->setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
+  }
+
   this->receiveInterest(*interest);
 }
 
@@ -279,6 +284,10 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
     NFD_LOG_FACE_WARN("received IncomingFaceId: IGNORE");
   }
 
+  if (firstPkt.has<lp::CongestionMarkField>()) {
+    data->setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
+  }
+
   this->receiveData(*data);
 }
 
@@ -305,6 +314,10 @@ GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt)
 
   if (firstPkt.has<lp::IncomingFaceIdField>()) {
     NFD_LOG_FACE_WARN("received IncomingFaceId: IGNORE");
+  }
+
+  if (firstPkt.has<lp::CongestionMarkField>()) {
+    nack.setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
   }
 
   this->receiveNack(nack);
