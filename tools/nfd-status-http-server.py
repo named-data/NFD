@@ -2,12 +2,13 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014  Regents of the University of California,
-                    Arizona Board of Regents,
-                    Colorado State University,
-                    University Pierre & Marie Curie, Sorbonne University,
-                    Washington University in St. Louis,
-                    Beijing Institute of Technology
+Copyright (c) 2014-2016,  Regents of the University of California,
+                          Arizona Board of Regents,
+                          Colorado State University,
+                          University Pierre & Marie Curie, Sorbonne University,
+                          Washington University in St. Louis,
+                          Beijing Institute of Technology,
+                          The University of Memphis.
 
 This file is part of NFD (Named Data Networking Forwarding Daemon).
 See AUTHORS.md for complete list of NFD authors and contributors.
@@ -29,10 +30,8 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import sys
 import subprocess
-import StringIO
 import urlparse
 import logging
-import cgi
 import argparse
 import socket
 import os
@@ -69,11 +68,8 @@ class StatusHandler(SimpleHTTPRequestHandler):
                         format % args))
 
     def getNfdStatus(self):
-        """
-        This function is to call nfd-status command
-        to get xml format output
-        """
-        sp = subprocess.Popen(['nfd-status', '-x'], stdout=subprocess.PIPE, close_fds=True)
+        """ Obtain XML-formatted NFD status report """
+        sp = subprocess.Popen(['nfdc', 'status', 'report', 'xml'], stdout=subprocess.PIPE, close_fds=True)
         output = sp.communicate()[0]
         if sp.returncode == 0:
             # add the xml-stylesheet processing instruction after the 1st '>' symbol
