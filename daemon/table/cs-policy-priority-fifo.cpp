@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,13 +25,13 @@
 
 #include "cs-policy-priority-fifo.hpp"
 #include "cs.hpp"
-#include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {
 namespace cs {
 namespace priority_fifo {
 
-const std::string PriorityFifoPolicy::POLICY_NAME = "fifo";
+const std::string PriorityFifoPolicy::POLICY_NAME = "priority_fifo";
+NFD_REGISTER_CS_POLICY(PriorityFifoPolicy);
 
 PriorityFifoPolicy::PriorityFifoPolicy()
   : Policy(POLICY_NAME)
@@ -160,6 +160,6 @@ PriorityFifoPolicy::moveToStaleQueue(iterator i)
   m_entryInfoMap[i] = entryInfo;
 }
 
-} // namespace priorityfifo
+} // namespace priority_fifo
 } // namespace cs
 } // namespace nfd

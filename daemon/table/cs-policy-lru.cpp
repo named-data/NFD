@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2016,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,13 +25,13 @@
 
 #include "cs-policy-lru.hpp"
 #include "cs.hpp"
-#include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {
 namespace cs {
 namespace lru {
 
 const std::string LruPolicy::POLICY_NAME = "lru";
+NFD_REGISTER_CS_POLICY(LruPolicy);
 
 LruPolicy::LruPolicy()
   : Policy(POLICY_NAME)

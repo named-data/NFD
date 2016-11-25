@@ -32,6 +32,21 @@ NFD_LOG_INIT("CsPolicy");
 namespace nfd {
 namespace cs {
 
+Policy::Registry&
+Policy::getRegistry()
+{
+  static Registry registry;
+  return registry;
+}
+
+unique_ptr<Policy>
+Policy::create(const std::string& key)
+{
+  Registry& registry = getRegistry();
+  auto i = registry.find(key);
+  return i == registry.end() ? nullptr : i->second();
+}
+
 Policy::Policy(const std::string& policyName)
   : m_policyName(policyName)
 {

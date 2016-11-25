@@ -24,7 +24,6 @@
  */
 
 #include "cs.hpp"
-#include "cs-policy-priority-fifo.hpp"
 #include "core/logger.hpp"
 #include "core/algorithm.hpp"
 #include <ndn-cxx/lp/tags.hpp>
@@ -48,12 +47,13 @@ BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Cs::const_iterator>));
 unique_ptr<Policy>
 makeDefaultPolicy()
 {
-  return make_unique<PriorityFifoPolicy>();
+  const std::string DEFAULT_POLICY = "priority_fifo";
+  return Policy::create(DEFAULT_POLICY);
 }
 
 Cs::Cs(size_t nMaxPackets, unique_ptr<Policy> policy)
 {
-  this->setPolicyImpl(policy);
+  this->setPolicyImpl(std::move(policy));
   m_policy->setLimit(nMaxPackets);
 }
 
@@ -75,7 +75,7 @@ Cs::setPolicy(unique_ptr<Policy> policy)
   BOOST_ASSERT(policy != nullptr);
   BOOST_ASSERT(m_policy != nullptr);
   size_t limit = m_policy->getLimit();
-  this->setPolicyImpl(policy);
+  this->setPolicyImpl(std::move(policy));
   m_policy->setLimit(limit);
 }
 
@@ -200,8 +200,9 @@ Cs::findRightmostAmongExact(const Interest& interest, iterator first, iterator l
 }
 
 void
-Cs::setPolicyImpl(unique_ptr<Policy>& policy)
+Cs::setPolicyImpl(unique_ptr<Policy> policy)
 {
+  NFD_LOG_DEBUG("set-policy " << policy->getName());
   m_policy = std::move(policy);
   m_beforeEvictConnection = m_policy->beforeEvict.connect([this] (iterator it) {
       m_table.erase(it);

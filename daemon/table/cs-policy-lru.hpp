@@ -27,7 +27,6 @@
 #define NFD_DAEMON_TABLE_CS_POLICY_LRU_HPP
 
 #include "cs-policy.hpp"
-#include "core/common.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
