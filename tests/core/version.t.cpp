@@ -24,20 +24,19 @@
  */
 
 #include "core/version.hpp"
-#include "core/logger.hpp"
 
 #include "tests/test-common.hpp"
+
+#include <stdio.h>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestVersion, BaseFixture)
+BOOST_AUTO_TEST_SUITE(TestVersion)
 
-NFD_LOG_INIT("VersionTest");
-
-BOOST_AUTO_TEST_CASE(Version)
+BOOST_AUTO_TEST_CASE(VersionNumber)
 {
-  NFD_LOG_INFO("NFD_VERSION " << NFD_VERSION);
+  BOOST_TEST_MESSAGE("NFD_VERSION = " + to_string(NFD_VERSION));
 
   BOOST_CHECK_EQUAL(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
                                  NFD_VERSION_MINOR * 1000 +
@@ -46,15 +45,15 @@ BOOST_AUTO_TEST_CASE(Version)
 
 BOOST_AUTO_TEST_CASE(VersionString)
 {
-  NFD_LOG_INFO("NFD_VERSION_STRING " << NFD_VERSION_STRING);
+  BOOST_TEST_MESSAGE("NFD_VERSION_STRING = " NFD_VERSION_STRING);
 
   BOOST_STATIC_ASSERT(NFD_VERSION_MAJOR < 1000);
   BOOST_STATIC_ASSERT(NFD_VERSION_MINOR < 1000);
   BOOST_STATIC_ASSERT(NFD_VERSION_PATCH < 1000);
   char buf[12];
-  snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
+  ::snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
 
-  BOOST_CHECK_EQUAL(std::string(NFD_VERSION_STRING), std::string(buf));
+  BOOST_CHECK_EQUAL(NFD_VERSION_STRING, buf);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
