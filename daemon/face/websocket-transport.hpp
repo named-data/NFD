@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,8 +63,8 @@ public:
                      websocket::Server& server,
                      time::milliseconds pingInterval);
 
-  virtual const Counters&
-  getCounters() const override;
+  const Counters&
+  getCounters() const final;
 
   /** \brief Translates a message into a Block
    *         and delivers it to the link service
@@ -79,14 +79,11 @@ public:
   handlePongTimeout();
 
 protected:
-  virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) final;
-
-  virtual void
+  void
   doClose() final;
 
 private:
-  virtual void
+  void
   doSend(Transport::Packet&& packet) final;
 
   void

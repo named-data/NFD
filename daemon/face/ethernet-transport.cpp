@@ -120,14 +120,6 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& interface,
                                 boost::asio::placeholders::bytes_transferred));
 }
 
-void EthernetTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
-{
-  if (newPersistency != ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
-    BOOST_THROW_EXCEPTION(
-      std::invalid_argument("EthernetTransport supports only FACE_PERSISTENCY_PERMANENT"));
-  }
-}
-
 void EthernetTransport::doSend(Transport::Packet&& packet)
 {
   NFD_LOG_FACE_TRACE(__func__);

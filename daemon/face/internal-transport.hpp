@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,18 +58,15 @@ public:
                              ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_LOCAL,
                              ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
-  virtual void
+  void
   receiveFromLink(const Block& packet) override;
 
 protected:
-  virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) override;
-
-  virtual void
+  void
   doClose() override;
 
 private:
-  virtual void
+  void
   doSend(Packet&& packet) override;
 
 private:
@@ -92,28 +89,28 @@ public:
   void
   connectToForwarder(InternalForwarderTransport* forwarderTransport);
 
-  virtual void
+  void
   receiveFromLink(const Block& packet) override;
 
-  virtual void
+  void
   close() override
   {
   }
 
-  virtual void
+  void
   pause() override
   {
   }
 
-  virtual void
+  void
   resume() override
   {
   }
 
-  virtual void
+  void
   send(const Block& wire) override;
 
-  virtual void
+  void
   send(const Block& header, const Block& payload) override;
 
 private:

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -127,23 +127,47 @@ Transport::receive(Packet&& packet)
   m_service->receivePacket(std::move(packet));
 }
 
+bool
+Transport::canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const
+{
+  // not changing, or setting initial persistency in subclass constructor
+  if (m_persistency == newPersistency || m_persistency == ndn::nfd::FACE_PERSISTENCY_NONE) {
+    return true;
+  }
+
+  if (newPersistency == ndn::nfd::FACE_PERSISTENCY_NONE) {
+    NFD_LOG_FACE_TRACE("cannot change persistency to NONE");
+    return false;
+  }
+
+  return this->canChangePersistencyToImpl(newPersistency);
+}
+
+bool
+Transport::canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const
+{
+  return false;
+}
+
 void
 Transport::setPersistency(ndn::nfd::FacePersistency newPersistency)
 {
+  BOOST_ASSERT(canChangePersistencyTo(newPersistency));
+
   if (m_persistency == newPersistency) {
     return;
   }
 
-  if (newPersistency == ndn::nfd::FACE_PERSISTENCY_NONE) {
-    throw std::runtime_error("invalid persistency transition");
-  }
+  NFD_LOG_FACE_INFO("setPersistency " << m_persistency << " -> " << newPersistency);
 
-  if (m_persistency != ndn::nfd::FACE_PERSISTENCY_NONE) {
-    this->beforeChangePersistency(newPersistency);
-    NFD_LOG_FACE_DEBUG("setPersistency " << m_persistency << " -> " << newPersistency);
-  }
-
+  auto oldPersistency = m_persistency;
   m_persistency = newPersistency;
+  this->afterChangePersistency(oldPersistency);
+}
+
+void
+Transport::afterChangePersistency(ndn::nfd::FacePersistency oldPersistency)
+{
 }
 
 void

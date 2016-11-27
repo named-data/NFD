@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,15 +43,6 @@ InternalForwarderTransport::InternalForwarderTransport(
   this->setMtu(MTU_UNLIMITED);
 
   NFD_LOG_FACE_INFO("Creating transport");
-}
-
-void
-InternalForwarderTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
-{
-  if (newPersistency != ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
-    BOOST_THROW_EXCEPTION(
-      std::invalid_argument("InternalForwarderTransport supports only FACE_PERSISTENCY_PERMANENT"));
-  }
 }
 
 void

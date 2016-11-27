@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,11 +55,17 @@ TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency 
   NFD_LOG_FACE_INFO("Creating transport");
 }
 
-void
-TcpTransport::beforeChangePersistency(ndn::nfd::FacePersistency newPersistency)
+bool
+TcpTransport::canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const
 {
-  // if persistency is changing from permanent to any other value
-  if (this->getPersistency() == ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
+  return true;
+}
+
+void
+TcpTransport::afterChangePersistency(ndn::nfd::FacePersistency oldPersistency)
+{
+  // if persistency was changed from permanent to any other value
+  if (oldPersistency == ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
     if (this->getState() == TransportState::DOWN) {
       // non-permanent transport cannot be in DOWN state, so fail hard
       this->setState(TransportState::FAILED);

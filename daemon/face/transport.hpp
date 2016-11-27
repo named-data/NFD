@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -221,6 +221,20 @@ public: // static properties
   ndn::nfd::FacePersistency
   getPersistency() const;
 
+  /** \brief check whether the intended change from the current persistency to \p newPersistency
+   *  can be performed
+   *
+   *  This function serves as an external API, and invokes the internal function
+   *  canChangePersistencyToImpl to perform further checks if \p newPersistency differs from
+   *  the current persistency.
+   *
+   *  \pre getPersistency() != NONE
+   *
+   *  \return true if the intended change can be performed, otherwise false
+   */
+  bool
+  canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const;
+
   /** \brief changes face persistency setting
    */
   void
@@ -289,12 +303,23 @@ protected: // properties to be set by subclass
   setExpirationTime(const time::steady_clock::TimePoint& expirationTime);
 
 protected: // to be overridden by subclass
-  /** \brief invoked before persistency is changed
-   *  \throw std::invalid_argument new persistency is not supported
-   *  \throw std::runtime_error transition is disallowed
+  /** \brief invoked by canChangePersistencyTo to perform the check
+   *
+   *  Base class implementation returns false.
+   *
+   *  \param newPersistency the new persistency, guaranteed to be different from current persistency
+   */
+  virtual bool
+  canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const;
+
+  /** \brief invoked after the persistency has been changed
+   *
+   *  The base class implementation does nothing.
+   *  When overridden in a subclass, the function should update internal states
+   *  after persistency setting has been changed.
    */
   virtual void
-  beforeChangePersistency(ndn::nfd::FacePersistency newPersistency) = 0;
+  afterChangePersistency(ndn::nfd::FacePersistency oldPersistency);
 
   /** \brief performs Transport specific operations to close the transport
    *
