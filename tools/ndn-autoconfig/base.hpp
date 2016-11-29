@@ -29,15 +29,19 @@
 #include "core/common.hpp"
 
 #include <ndn-cxx/face.hpp>
-#include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
-#include <ndn-cxx/encoding/buffer-stream.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/util/face-uri.hpp>
 
 namespace ndn {
 namespace tools {
 namespace autoconfig {
+
+using ndn::nfd::ControlParameters;
+using ndn::nfd::ControlResponse;
+using ndn::util::FaceUri;
 
 /**
  * @brief Base class for discovery stages
@@ -68,7 +72,7 @@ public:
 
 protected:
   /**
-   * @brief Initialize variables and create nfd::Controller instance
+   * @brief Initialize variables and create Controller instance
    * @param face Face to be used for all operations (e.g., will send registration commands)
    * @param keyChain KeyChain object
    * @param nextStageOnFailure Callback to be called after the stage failed
@@ -84,30 +88,30 @@ protected:
 
 private:
   void
-  onCanonizeSuccess(const util::FaceUri& canonicalUri);
+  onCanonizeSuccess(const FaceUri& canonicalUri);
 
   void
   onCanonizeFailure(const std::string& reason);
 
   void
-  onHubConnectSuccess(const nfd::ControlParameters& resp);
+  onHubConnectSuccess(const ControlParameters& resp);
 
   void
-  onHubConnectError(const nfd::ControlResponse& response);
+  onHubConnectError(const ControlResponse& response);
 
   void
   registerPrefix(const Name& prefix, uint64_t faceId);
 
   void
-  onPrefixRegistrationSuccess(const nfd::ControlParameters& commandSuccessResult);
+  onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult);
 
   void
-  onPrefixRegistrationError(const nfd::ControlResponse& response);
+  onPrefixRegistrationError(const ControlResponse& response);
 
 protected:
   Face& m_face;
   KeyChain& m_keyChain;
-  nfd::Controller m_controller;
+  ndn::nfd::Controller m_controller;
   NextStageCallback m_nextStageOnFailure;
 };
 

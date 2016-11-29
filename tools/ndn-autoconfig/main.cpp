@@ -35,13 +35,16 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/program_options/options_description.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 namespace po = boost::program_options;
 
 namespace ndn {
 namespace tools {
+namespace autoconfig {
+// ndn-autoconfig is an NDN tool not an NFD tool, so it uses ndn::tools::autoconfig namespace.
+// It lives in NFD repository because nfd-start can automatically start ndn-autoconfig in daemon mode.
 
 class NdnAutoconfig : boost::noncopyable
 {
@@ -83,7 +86,7 @@ public:
                })
   {
     if (m_isDaemonMode) {
-      m_networkMonitor.reset(new util::NetworkMonitor(m_io));
+      m_networkMonitor.reset(new ndn::util::NetworkMonitor(m_io));
       m_networkMonitor->onNetworkStateChanged.connect([this] {
           // delay stages, so if multiple events are triggered in short sequence,
           // only one auto-detection procedure is triggered
@@ -118,7 +121,6 @@ public:
     m_io.stop();
   }
 
-
   static void
   usage(std::ostream& os,
         const po::options_description& optionDescription,
@@ -151,15 +153,12 @@ private:
   bool m_isDaemonMode;
   boost::asio::signal_set m_terminationSignalSet;
 
-  autoconfig::MulticastDiscovery m_stage1;
-  autoconfig::GuessFromSearchDomains m_stage2;
-  autoconfig::GuessFromIdentityName m_stage3;
+  MulticastDiscovery m_stage1;
+  GuessFromSearchDomains m_stage2;
+  GuessFromIdentityName m_stage3;
 };
 
-} // namespace tools
-} // namespace ndn
-
-int
+static int
 main(int argc, char** argv)
 {
   bool isDaemonMode = false;
@@ -185,12 +184,12 @@ main(int argc, char** argv)
   }
   catch (const std::exception& e) {
     std::cerr << "ERROR: " << e.what() << "\n" << std::endl;
-    ndn::tools::NdnAutoconfig::usage(std::cerr, optionDescription, argv[0]);
+    NdnAutoconfig::usage(std::cerr, optionDescription, argv[0]);
     return 1;
   }
 
   if (options.count("help")) {
-    ndn::tools::NdnAutoconfig::usage(std::cout, optionDescription, argv[0]);
+    NdnAutoconfig::usage(std::cout, optionDescription, argv[0]);
     return 0;
   }
 
@@ -224,7 +223,7 @@ main(int argc, char** argv)
   }
 
   try {
-    ndn::tools::NdnAutoconfig autoConfigInstance(isDaemonMode);
+    NdnAutoconfig autoConfigInstance(isDaemonMode);
     autoConfigInstance.run();
   }
   catch (const std::exception& error) {
@@ -232,4 +231,14 @@ main(int argc, char** argv)
     return 1;
   }
   return 0;
+}
+
+} // namespace autoconfig
+} // namespace tools
+} // namespace ndn
+
+int
+main(int argc, char** argv)
+{
+  return ndn::tools::autoconfig::main(argc, argv);
 }

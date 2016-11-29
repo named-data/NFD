@@ -40,7 +40,7 @@ Base::Base(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnF
 void
 Base::connectToHub(const std::string& uri)
 {
-  util::FaceUri faceUri(uri);
+  FaceUri faceUri(uri);
 
   faceUri.canonize(bind(&Base::onCanonizeSuccess, this, _1),
                    bind(&Base::onCanonizeFailure, this, _1),
@@ -50,26 +50,24 @@ Base::connectToHub(const std::string& uri)
 
 
 void
-Base::onCanonizeSuccess(const util::FaceUri& canonicalUri)
+Base::onCanonizeSuccess(const FaceUri& canonicalUri)
 {
   std::cerr << "About to connect to: " << canonicalUri.toString() << std::endl;
 
-  m_controller.start<nfd::FaceCreateCommand>(nfd::ControlParameters()
-                                               .setUri(canonicalUri.toString()),
-                                             bind(&Base::onHubConnectSuccess, this, _1),
-                                             bind(&Base::onHubConnectError, this, _1));
+  m_controller.start<ndn::nfd::FaceCreateCommand>(
+    ControlParameters().setUri(canonicalUri.toString()),
+    bind(&Base::onHubConnectSuccess, this, _1),
+    bind(&Base::onHubConnectError, this, _1));
 }
 
 void
 Base::onCanonizeFailure(const std::string& reason)
 {
-  std::ostringstream os;
-  os << "FaceUri canonization failed: " << reason;
-  BOOST_THROW_EXCEPTION(Error(os.str()));
+  BOOST_THROW_EXCEPTION(Error("FaceUri canonization failed: " + reason));
 }
 
 void
-Base::onHubConnectSuccess(const nfd::ControlParameters& resp)
+Base::onHubConnectSuccess(const ControlParameters& resp)
 {
   std::cerr << "Successfully created face: " << resp << std::endl;
 
@@ -81,7 +79,7 @@ Base::onHubConnectSuccess(const nfd::ControlParameters& resp)
 }
 
 void
-Base::onHubConnectError(const nfd::ControlResponse& response)
+Base::onHubConnectError(const ControlResponse& response)
 {
   std::ostringstream os;
   os << "Failed to create face: " << response.getText() << " (code: " << response.getCode() << ")";
@@ -92,28 +90,28 @@ void
 Base::registerPrefix(const Name& prefix, uint64_t faceId)
 {
   // Register a prefix in RIB
-  m_controller.start<nfd::RibRegisterCommand>(nfd::ControlParameters()
-                                                .setName(prefix)
-                                                .setFaceId(faceId)
-                                                .setOrigin(nfd::ROUTE_ORIGIN_AUTOCONF)
-                                                .setCost(100)
-                                                .setExpirationPeriod(time::milliseconds::max()),
-                                              bind(&Base::onPrefixRegistrationSuccess, this, _1),
-                                              bind(&Base::onPrefixRegistrationError, this, _1));
+  m_controller.start<ndn::nfd::RibRegisterCommand>(
+    ControlParameters()
+      .setName(prefix)
+      .setFaceId(faceId)
+      .setOrigin(ndn::nfd::ROUTE_ORIGIN_AUTOCONF)
+      .setCost(100)
+      .setExpirationPeriod(time::milliseconds::max()),
+    bind(&Base::onPrefixRegistrationSuccess, this, _1),
+    bind(&Base::onPrefixRegistrationError, this, _1));
 }
 
 void
-Base::onPrefixRegistrationSuccess(const nfd::ControlParameters& commandSuccessResult)
+Base::onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult)
 {
   std::cerr << "Successful in name registration: " << commandSuccessResult << std::endl;
 }
 
 void
-Base::onPrefixRegistrationError(const nfd::ControlResponse& response)
+Base::onPrefixRegistrationError(const ControlResponse& response)
 {
-  std::ostringstream os;
-  os << "Failed in name registration, " << response.getText() << " (code: " << response.getCode() << ")";
-  BOOST_THROW_EXCEPTION(Error(os.str()));
+  BOOST_THROW_EXCEPTION(Error("Failed in name registration, " + response.getText() +
+                              " (code: " + to_string(response.getCode()) + ")"));
 }
 
 

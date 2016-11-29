@@ -69,13 +69,13 @@ private:
   onRegisterSuccess();
 
   void
-  onRegisterFailure(const nfd::ControlResponse& response);
+  onRegisterFailure(const ControlResponse& response);
 
   void
   setStrategy();
 
   void
-  onSetStrategyFailure(const nfd::ControlResponse& response);
+  onSetStrategyFailure(const ControlResponse& response);
 
   // Start to look for a hub (NDN hub discovery first stage)
   void
@@ -85,8 +85,8 @@ private:
   onSuccess(Data& data);
 
 private:
-  size_t nRequestedRegs;
-  size_t nFinishedRegs;
+  size_t m_nRequestedRegs;
+  size_t m_nFinishedRegs;
 
   ndn::ValidatorNull m_validator;
 };
