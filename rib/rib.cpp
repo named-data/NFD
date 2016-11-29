@@ -507,7 +507,7 @@ std::ostream&
 operator<<(std::ostream& os, const Rib& rib)
 {
   for (const auto& item : rib) {
-    os << item.second << "\n";
+    os << *item.second << "\n";
   }
 
   return os;

@@ -336,6 +336,49 @@ BOOST_AUTO_TEST_CASE(RibSignals)
 
 }
 
+BOOST_AUTO_TEST_CASE(Output)
+{
+  rib::Rib rib;
+
+  Route root;
+  Name name1("/");
+  root.faceId = 1;
+  root.origin = 20;
+  root.expires = time::steady_clock::TimePoint::max();
+  rib.insert(name1, root);
+
+  Route route1;
+  Name name2("/hello");
+  route1.faceId = 2;
+  route1.origin = 20;
+  route1.expires = time::steady_clock::TimePoint::max();
+  rib.insert(name2, route1);
+
+  Route route2;
+  Name name3("/hello/world");
+  route2.faceId = 3;
+  route2.origin = 20;
+  route2.expires = time::steady_clock::TimePoint::max();
+  rib.insert(name3, route2);
+
+  const std::string ribStr = std::string(R"TEXT(
+RibEntry {
+	Name: /
+	Route(faceid: 1, origin: 20, cost: 0, flags: 0, never expires)
+}
+RibEntry {
+	Name: /hello
+	Route(faceid: 2, origin: 20, cost: 0, flags: 0, never expires)
+}
+RibEntry {
+	Name: /hello/world
+	Route(faceid: 3, origin: 20, cost: 0, flags: 0, never expires)
+}
+)TEXT").substr(1);
+
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(rib), ribStr);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // TestRib
 
 } // namespace tests
