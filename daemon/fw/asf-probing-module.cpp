@@ -25,6 +25,7 @@
 
 #include "asf-probing-module.hpp"
 #include "core/random.hpp"
+#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {
@@ -84,8 +85,9 @@ ProbingModule::getFaceToProbe(const Face& inFace,
     Face& hopFace = hop.getFace();
 
     // Don't send probe Interest back to the incoming face or use the same face
-    // as the forwarded Interest
-    if (hopFace.getId() == inFace.getId() || hopFace.getId() == faceUsed.getId()) {
+    // as the forwarded Interest or use a face that violates scope
+    if (hopFace.getId() == inFace.getId() || hopFace.getId() == faceUsed.getId() ||
+        wouldViolateScope(inFace, interest, hopFace)) {
       continue;
     }
 

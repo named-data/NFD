@@ -24,6 +24,7 @@
  */
 
 #include "asf-strategy.hpp"
+#include "algorithm.hpp"
 
 #include "core/logger.hpp"
 
@@ -89,9 +90,6 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
     Face* faceToProbe = m_probing.getFaceToProbe(inFace, interest, fibEntry, *faceToUse);
 
     if (faceToProbe != nullptr) {
-      NFD_LOG_TRACE("Sending probe for " << fibEntry.getPrefix()
-                                         << " to FaceId: " << faceToProbe->getId());
-
       bool wantNewNonce = true;
       forwardInterest(interest, fibEntry, pitEntry, *faceToProbe, wantNewNonce);
       m_probing.afterForwardingProbe(fibEntry, interest);
@@ -140,7 +138,17 @@ AsfStrategy::forwardInterest(const Interest& interest,
                              Face& outFace,
                              bool wantNewNonce)
 {
-  this->sendInterest(pitEntry, outFace, wantNewNonce);
+  if (wantNewNonce) {
+    //Send probe: interest with new Nonce
+    Interest probeInterest(interest);
+    probeInterest.refreshNonce();
+    NFD_LOG_TRACE("Sending probe for " << probeInterest << probeInterest.getNonce()
+                                       << " to FaceId: " << outFace.getId());
+    this->sendInterest(pitEntry, outFace, probeInterest);
+  }
+  else {
+    this->sendInterest(pitEntry, outFace, interest);
+  }
 
   FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, outFace);
 
@@ -219,7 +227,7 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
   for (const fib::NextHop& hop : fibEntry.getNextHops()) {
     Face& hopFace = hop.getFace();
 
-    if (hopFace.getId() == inFace.getId()) {
+    if (hopFace.getId() == inFace.getId() || wouldViolateScope(inFace, interest, hopFace)) {
       continue;
     }
 

@@ -181,7 +181,7 @@ BOOST_FIXTURE_TEST_CASE(Nack, AsfGridFixture)
   BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 2);
 }
 
-BOOST_AUTO_TEST_CASE(NoPitOutRecord)
+BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
 {
   /*                 +---------+
   *                  |  nodeD  |
@@ -227,6 +227,8 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecord)
   topo.registerPrefix(nodeC, linkBC->getFace(nodeC), PRODUCER_PREFIX, 16);
   topo.registerPrefix(nodeB, linkBD->getFace(nodeB), PRODUCER_PREFIX, 80);
 
+  uint32_t nonce;
+
   // Send 6 interest since probes can be scheduled b/w 0-5 seconds
   for (int i = 1; i < 7; i++) {
     // Send ping number i
@@ -234,6 +236,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecord)
     name.appendTimestamp();
     shared_ptr<Interest> interest = makeInterest(name);
     ping->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+    nonce = interest->getNonce();
 
     // Don't know when the probe will be triggered since it is random between 0-5 seconds
     // or whether it will be triggered for this interest
@@ -249,6 +252,16 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecord)
 
     // Check if probe is sent to B else send another ping
     if (linkAB->getFace(nodeA).getCounters().nOutInterests == 1) {
+      // Get pitEntry of node A
+      shared_ptr<pit::Entry> pitEntry = topo.getForwarder(nodeA).getPit().find(*interest);
+      //get outRecord associated with face towards B
+      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA));
+
+      BOOST_CHECK(outRecord != pitEntry->out_end());
+
+      //Check that Nonce of interest is not equal to Nonce of Probe
+      BOOST_CHECK_NE(nonce, outRecord->getLastNonce());
+
       // B should not have received the probe interest yet
       BOOST_CHECK_EQUAL(linkAB->getFace(nodeB).getCounters().nInInterests, 0);
 
@@ -260,10 +273,10 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecord)
       BOOST_CHECK_EQUAL(linkAB->getFace(nodeB).getCounters().nInInterests, 1);
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nOutInterests, i);
 
-      shared_ptr<pit::Entry> pitEntry = topo.getForwarder(nodeB).getPit().find(*interest);
+      pitEntry = topo.getForwarder(nodeB).getPit().find(*interest);
 
       // Get outRecord associated with face towards D.
-      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
+      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
 
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
