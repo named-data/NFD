@@ -24,6 +24,8 @@
  */
 
 #include "unsolicited-data-policy.hpp"
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 namespace nfd {
 namespace fw {
@@ -48,14 +50,24 @@ UnsolicitedDataPolicy::getRegistry()
 }
 
 unique_ptr<UnsolicitedDataPolicy>
-UnsolicitedDataPolicy::create(const std::string& key)
+UnsolicitedDataPolicy::create(const std::string& policyName)
 {
   Registry& registry = getRegistry();
-  auto i = registry.find(key);
+  auto i = registry.find(policyName);
   return i == registry.end() ? nullptr : i->second();
 }
 
-NFD_REGISTER_UNSOLICITED_DATA_POLICY(DropAllUnsolicitedDataPolicy, "drop-all");
+std::set<std::string>
+UnsolicitedDataPolicy::getPolicyNames()
+{
+  std::set<std::string> policyNames;
+  boost::copy(getRegistry() | boost::adaptors::map_keys,
+              std::inserter(policyNames, policyNames.end()));
+  return policyNames;
+}
+
+const std::string DropAllUnsolicitedDataPolicy::POLICY_NAME("drop-all");
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(DropAllUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
 DropAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
@@ -63,7 +75,8 @@ DropAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
   return UnsolicitedDataDecision::DROP;
 }
 
-NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitLocalUnsolicitedDataPolicy, "admit-local");
+const std::string AdmitLocalUnsolicitedDataPolicy::POLICY_NAME("admit-local");
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitLocalUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
 AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
@@ -74,7 +87,8 @@ AdmitLocalUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) co
   return UnsolicitedDataDecision::DROP;
 }
 
-NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitNetworkUnsolicitedDataPolicy, "admit-network");
+const std::string AdmitNetworkUnsolicitedDataPolicy::POLICY_NAME("admit-network");
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitNetworkUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
 AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const
@@ -85,7 +99,8 @@ AdmitNetworkUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) 
   return UnsolicitedDataDecision::DROP;
 }
 
-NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitAllUnsolicitedDataPolicy, "admit-all");
+const std::string AdmitAllUnsolicitedDataPolicy::POLICY_NAME("admit-all");
+NFD_REGISTER_UNSOLICITED_DATA_POLICY(AdmitAllUnsolicitedDataPolicy);
 
 UnsolicitedDataDecision
 AdmitAllUnsolicitedDataPolicy::decide(const Face& inFace, const Data& data) const

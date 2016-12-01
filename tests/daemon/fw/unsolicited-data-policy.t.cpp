@@ -84,6 +84,15 @@ UnsolicitedDataPolicyFixture::setPolicy<void>()
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestUnsolicitedDataPolicy, UnsolicitedDataPolicyFixture)
 
+BOOST_AUTO_TEST_CASE(GetPolicyNames)
+{
+  std::set<std::string> policyNames = UnsolicitedDataPolicy::getPolicyNames();
+  BOOST_CHECK_EQUAL(policyNames.count("drop-all"), 1);
+  BOOST_CHECK_EQUAL(policyNames.count("admit-local"), 1);
+  BOOST_CHECK_EQUAL(policyNames.count("admit-network"), 1);
+  BOOST_CHECK_EQUAL(policyNames.count("admit-all"), 1);
+}
+
 template<typename Policy, bool shouldAdmitLocal, bool shouldAdmitNonLocal>
 struct FaceScopePolicyTest
 {

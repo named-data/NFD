@@ -50,30 +50,37 @@ operator<<(std::ostream& os, UnsolicitedDataDecision d);
 class UnsolicitedDataPolicy : noncopyable
 {
 public:
-  virtual ~UnsolicitedDataPolicy() = default;
+  virtual
+  ~UnsolicitedDataPolicy() = default;
 
   virtual UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const = 0;
 
 public: // registry
+  typedef std::function<unique_ptr<UnsolicitedDataPolicy>()> CreateFunc;
+  typedef std::map<std::string, CreateFunc> Registry; // indexed by policy name
+
   template<typename P>
   static void
-  registerPolicy(const std::string& key)
+  registerPolicy(const std::string& policyName = P::POLICY_NAME)
   {
     Registry& registry = getRegistry();
-    BOOST_ASSERT(registry.count(key) == 0);
-    registry[key] = [] { return make_unique<P>(); };
+    BOOST_ASSERT(registry.count(policyName) == 0);
+    registry[policyName] = [] { return make_unique<P>(); };
   }
 
-  /** \return an UnsolicitedDataPolicy identified by \p key, or nullptr if \p key is unknown
+  /** \return an UnsolicitedDataPolicy identified by \p policyName,
+   *          or nullptr if \p policyName is unknown
    */
   static unique_ptr<UnsolicitedDataPolicy>
-  create(const std::string& key);
+  create(const std::string& policyName);
+
+  /** \return a list of available policy names
+   */
+  static std::set<std::string>
+  getPolicyNames();
 
 private:
-  typedef std::function<unique_ptr<UnsolicitedDataPolicy>()> CreateFunc;
-  typedef std::map<std::string, CreateFunc> Registry; // indexed by key
-
   static Registry&
   getRegistry();
 };
@@ -83,8 +90,11 @@ private:
 class DropAllUnsolicitedDataPolicy : public UnsolicitedDataPolicy
 {
 public:
-  virtual UnsolicitedDataDecision
+  UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const final;
+
+public:
+  static const std::string POLICY_NAME;
 };
 
 /** \brief admits unsolicited Data from local faces
@@ -92,8 +102,11 @@ public:
 class AdmitLocalUnsolicitedDataPolicy : public UnsolicitedDataPolicy
 {
 public:
-  virtual UnsolicitedDataDecision
+  UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const final;
+
+public:
+  static const std::string POLICY_NAME;
 };
 
 /** \brief admits unsolicited Data from non-local faces
@@ -101,8 +114,11 @@ public:
 class AdmitNetworkUnsolicitedDataPolicy : public UnsolicitedDataPolicy
 {
 public:
-  virtual UnsolicitedDataDecision
+  UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const final;
+
+public:
+  static const std::string POLICY_NAME;
 };
 
 /** \brief admits all unsolicited Data
@@ -110,8 +126,11 @@ public:
 class AdmitAllUnsolicitedDataPolicy : public UnsolicitedDataPolicy
 {
 public:
-  virtual UnsolicitedDataDecision
+  UnsolicitedDataDecision
   decide(const Face& inFace, const Data& data) const final;
+
+public:
+  static const std::string POLICY_NAME;
 };
 
 /** \brief the default UnsolicitedDataPolicy
@@ -122,16 +141,16 @@ typedef DropAllUnsolicitedDataPolicy DefaultUnsolicitedDataPolicy;
 } // namespace nfd
 
 /** \brief registers an unsolicited data policy
- *  \param P a subclass of nfd::fw::UnsolicitedDataPolicy
- *  \param key the policy keyword, which is available for selection in NFD config file
+ *  \param P a subclass of nfd::fw::UnsolicitedDataPolicy;
+ *           P::POLICY_NAME must be a string that contains policy name
  */
-#define NFD_REGISTER_UNSOLICITED_DATA_POLICY(P, key)                \
+#define NFD_REGISTER_UNSOLICITED_DATA_POLICY(P)                     \
 static class NfdAuto ## P ## UnsolicitedDataPolicyRegistrationClass \
 {                                                                   \
 public:                                                             \
   NfdAuto ## P ## UnsolicitedDataPolicyRegistrationClass()          \
   {                                                                 \
-    ::nfd::fw::UnsolicitedDataPolicy::registerPolicy<P>(key);       \
+    ::nfd::fw::UnsolicitedDataPolicy::registerPolicy<P>();          \
   }                                                                 \
 } g_nfdAuto ## P ## UnsolicitedDataPolicyRegistrationVariable
 
