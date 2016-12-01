@@ -89,61 +89,6 @@ BOOST_AUTO_TEST_CASE(Localhop)
 
 BOOST_AUTO_TEST_SUITE_END() // WouldViolateScope
 
-BOOST_FIXTURE_TEST_SUITE(ViolatesScope, ScopeControlFixture)
-
-BOOST_AUTO_TEST_CASE(Unrestricted)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/ieWRzDsCu");
-  pit::Entry entry(*interest);
-
-  entry.insertOrUpdateInRecord(*nonLocalFace1, *interest);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *nonLocalFace2), false);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *localFace4), false);
-}
-
-BOOST_AUTO_TEST_CASE(Localhost)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhost/5n1LzIt3");
-  pit::Entry entry(*interest);
-
-  entry.insertOrUpdateInRecord(*localFace3, *interest);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *nonLocalFace2), true);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *localFace4), false);
-}
-
-BOOST_AUTO_TEST_CASE(LocalhopFromLocal)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/YcIKWCRYJ");
-  pit::Entry entry(*interest);
-
-  entry.insertOrUpdateInRecord(*localFace3, *interest);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *nonLocalFace2), false);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *localFace4), false);
-}
-
-BOOST_AUTO_TEST_CASE(LocalhopFromNonLocal)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/x5uFr5IpqY");
-  pit::Entry entry(*interest);
-
-  entry.insertOrUpdateInRecord(*nonLocalFace1, *interest);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *nonLocalFace2), true);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *localFace4), false);
-}
-
-BOOST_AUTO_TEST_CASE(LocalhopFromLocalAndNonLocal)
-{
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/gNn2MJAXt");
-  pit::Entry entry(*interest);
-
-  entry.insertOrUpdateInRecord(*nonLocalFace1, *interest);
-  entry.insertOrUpdateInRecord(*localFace3, *interest);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *nonLocalFace2), false);
-  BOOST_CHECK_EQUAL(violatesScope(entry, *localFace4), false);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // ViolatesScope
-
 BOOST_AUTO_TEST_CASE(CanForwardToLegacy)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/WDsuBLIMG");

@@ -56,29 +56,6 @@ wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outF
 }
 
 bool
-violatesScope(const pit::Entry& pitEntry, const Face& outFace)
-{
-  if (outFace.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
-    return false;
-  }
-  BOOST_ASSERT(outFace.getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL);
-
-  if (scope_prefix::LOCALHOST.isPrefixOf(pitEntry.getName())) {
-    // face is non-local, violates localhost scope
-    return true;
-  }
-
-  if (scope_prefix::LOCALHOP.isPrefixOf(pitEntry.getName())) {
-    // face is non-local, violates localhop scope unless PIT entry has local in-record
-    return std::none_of(pitEntry.in_begin(), pitEntry.in_end(),
-      [] (const pit::InRecord& inRecord) { return inRecord.getFace().getScope() == ndn::nfd::FACE_SCOPE_LOCAL; });
-  }
-
-  // Name is not subject to scope control
-  return false;
-}
-
-bool
 canForwardToLegacy(const pit::Entry& pitEntry, const Face& face)
 {
   time::steady_clock::TimePoint now = time::steady_clock::now();

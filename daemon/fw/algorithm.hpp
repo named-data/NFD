@@ -73,14 +73,6 @@ namespace fw {
 bool
 wouldViolateScope(const Face& inFace, const Interest& interest, const Face& outFace);
 
-/** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
- *  \deprecated use violatesScope(inFace, interest, outFace) instead
- */
-DEPRECATED(
-bool
-violatesScope(const pit::Entry& pitEntry, const Face& outFace));
-
 /** \brief decide whether Interest can be forwarded to face
  *
  *  \return true if out-record of this face does not exist or has expired,

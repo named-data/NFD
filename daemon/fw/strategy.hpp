@@ -140,18 +140,6 @@ protected: // actions
     m_forwarder.onOutgoingInterest(pitEntry, outFace, interest);
   }
 
-  /** \brief send Interest to outFace
-   *  \param pitEntry PIT entry
-   *  \param outFace face through which to send out the Interest
-   *  \param wantNewNonce if true, a new Nonce will be generated,
-   *                      rather than reusing a Nonce from one of the PIT in-records
-   *  \deprecated use sendInterest(pitEntry, outFace, interest) instead
-   */
-  DEPRECATED(
-  void
-  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
-               bool wantNewNonce = false));
-
   /** \brief decide that a pending Interest cannot be forwarded
    *  \param pitEntry PIT entry
    *
