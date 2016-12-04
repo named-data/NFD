@@ -57,9 +57,6 @@ public:
   decide(const Face& inFace, const Data& data) const = 0;
 
 public: // registry
-  typedef std::function<unique_ptr<UnsolicitedDataPolicy>()> CreateFunc;
-  typedef std::map<std::string, CreateFunc> Registry; // indexed by policy name
-
   template<typename P>
   static void
   registerPolicy(const std::string& policyName = P::POLICY_NAME)
@@ -81,6 +78,9 @@ public: // registry
   getPolicyNames();
 
 private:
+  typedef std::function<unique_ptr<UnsolicitedDataPolicy>()> CreateFunc;
+  typedef std::map<std::string, CreateFunc> Registry; // indexed by policy name
+
   static Registry&
   getRegistry();
 };
