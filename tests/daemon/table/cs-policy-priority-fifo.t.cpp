@@ -38,6 +38,12 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_AUTO_TEST_SUITE(TestCsPriorityFifo)
 
+BOOST_AUTO_TEST_CASE(Registration)
+{
+  std::set<std::string> policyNames = Policy::getPolicyNames();
+  BOOST_CHECK_EQUAL(policyNames.count("priority_fifo"), 1);
+}
+
 BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
 {
   Cs cs(3);

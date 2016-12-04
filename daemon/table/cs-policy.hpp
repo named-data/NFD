@@ -41,18 +41,23 @@ class Policy : noncopyable
 public: // registry
   template<typename P>
   static void
-  registerPolicy()
+  registerPolicy(const std::string& policyName = P::POLICY_NAME)
   {
-    const std::string& key = P::POLICY_NAME;
     Registry& registry = getRegistry();
-    BOOST_ASSERT(registry.count(key) == 0);
-    registry[key] = [] { return make_unique<P>(); };
+    BOOST_ASSERT(registry.count(policyName) == 0);
+    registry[policyName] = [] { return make_unique<P>(); };
   }
 
-  /** \return a Policy identified by \p key, or nullptr if \p key is unknown
+  /** \return a cs::Policy identified by \p policyName,
+   *          or nullptr if \p policyName is unknown
    */
   static unique_ptr<Policy>
-  create(const std::string& key);
+  create(const std::string& policyName);
+
+  /** \return a list of available policy names
+   */
+  static std::set<std::string>
+  getPolicyNames();
 
 public:
   explicit
@@ -173,7 +178,7 @@ protected:
 
 private: // registry
   typedef std::function<unique_ptr<Policy>()> CreateFunc;
-  typedef std::map<std::string, CreateFunc> Registry; // indexed by key
+  typedef std::map<std::string, CreateFunc> Registry; // indexed by policy name
 
   static Registry&
   getRegistry();
