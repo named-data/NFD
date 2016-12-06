@@ -28,8 +28,6 @@
 
 #include "base.hpp"
 
-#include <ndn-cxx/security/validator-null.hpp>
-
 namespace ndn {
 namespace tools {
 namespace autoconfig {
@@ -63,7 +61,10 @@ public:
 
 private:
   void
-  registerHubDiscoveryPrefix(const ConstBufferPtr& buffer);
+  collectMulticastFaces();
+
+  void
+  registerHubDiscoveryPrefix(const std::vector<ndn::nfd::FaceStatus>& dataset);
 
   void
   onRegisterSuccess();
@@ -87,8 +88,6 @@ private:
 private:
   size_t m_nRequestedRegs;
   size_t m_nFinishedRegs;
-
-  ndn::ValidatorNull m_validator;
 };
 
 } // namespace autoconfig

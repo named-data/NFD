@@ -25,8 +25,6 @@
 
 #include "multicast-discovery.hpp"
 
-#include <ndn-cxx/util/segment-fetcher.hpp>
-
 namespace ndn {
 namespace tools {
 namespace autoconfig {
@@ -46,45 +44,27 @@ MulticastDiscovery::start()
 {
   std::cerr << "Trying multicast discovery..." << std::endl;
 
-  util::SegmentFetcher::fetch(
-    m_face, Interest("/localhost/nfd/faces/list"),
-    m_validator,
-    [this] (const ConstBufferPtr& data) { registerHubDiscoveryPrefix(data); },
-    [this] (uint32_t code, const std::string& msg) { m_nextStageOnFailure(msg); });
+  this->collectMulticastFaces();
 }
 
 void
-MulticastDiscovery::registerHubDiscoveryPrefix(const ConstBufferPtr& buffer)
+MulticastDiscovery::collectMulticastFaces()
+{
+  ndn::nfd::FaceQueryFilter filter;
+  filter.setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  m_controller.fetch<ndn::nfd::FaceQueryDataset>(
+    filter,
+    bind(&MulticastDiscovery::registerHubDiscoveryPrefix, this, _1),
+    bind(m_nextStageOnFailure, _2)
+  );
+}
+
+void
+MulticastDiscovery::registerHubDiscoveryPrefix(const std::vector<ndn::nfd::FaceStatus>& dataset)
 {
   std::vector<uint64_t> multicastFaces;
-
-  size_t offset = 0;
-  while (offset < buffer->size()) {
-    bool isOk = false;
-    Block block;
-    std::tie(isOk, block) = Block::fromBuffer(buffer, offset);
-    if (!isOk) {
-      std::cerr << "ERROR: cannot decode FaceStatus TLV" << std::endl;
-      break;
-    }
-
-    offset += block.size();
-
-    ndn::nfd::FaceStatus faceStatus(block);
-
-    FaceUri uri(faceStatus.getRemoteUri());
-    if (uri.getScheme() == "udp4") {
-      namespace ip = boost::asio::ip;
-      boost::system::error_code ec;
-      ip::address address = ip::address::from_string(uri.getHost(), ec);
-
-      if (!ec && address.is_multicast()) {
-        multicastFaces.push_back(faceStatus.getFaceId());
-      }
-      else
-        continue;
-    }
-  }
+  std::transform(dataset.begin(), dataset.end(), std::back_inserter(multicastFaces),
+                 [] (const ndn::nfd::FaceStatus& faceStatus) { return faceStatus.getFaceId(); });
 
   if (multicastFaces.empty()) {
     m_nextStageOnFailure("No multicast faces available, skipping multicast discovery stage");
