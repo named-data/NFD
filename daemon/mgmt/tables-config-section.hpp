@@ -38,7 +38,7 @@ namespace nfd {
  *  tables
  *  {
  *    cs_max_packets 65536
- *
+ *    cs_policy priority_fifo
  *    cs_unsolicited_policy drop-all
  *
  *    strategy_choice
@@ -58,7 +58,7 @@ namespace nfd {
  *  \endcode
  *
  *  During a configuration reload,
- *  \li cs_max_packets and cs_unsolicited_policy are applied;
+ *  \li cs_max_packets, cs_policy, and cs_unsolicited_policy are applied;
  *      defaults are used if an option is omitted.
  *  \li strategy_choice entries are inserted, but old entries are not deleted.
  *  \li network_region is applied; it's kept unchanged if the section is omitted.

@@ -50,6 +50,7 @@ TablesConfigSection::ensureConfigured()
   }
 
   m_forwarder.getCs().setLimit(DEFAULT_CS_MAX_PACKETS);
+  // Don't set default cs_policy because it's already created by CS itself.
   m_forwarder.setUnsolicitedDataPolicy(make_unique<fw::DefaultUnsolicitedDataPolicy>());
 
   m_isConfigured = true;
@@ -66,14 +67,25 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     nCsMaxPackets = ConfigFile::parseNumber<size_t>(*csMaxPacketsNode, "cs_max_packets", "tables");
   }
 
+  unique_ptr<cs::Policy> csPolicy;
+  OptionalNode csPolicyNode = section.get_child_optional("cs_policy");
+  if (csPolicyNode) {
+    std::string policyName = csPolicyNode->get_value<std::string>();
+    csPolicy = cs::Policy::create(policyName);
+    if (csPolicy == nullptr) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error(
+        "Unknown cs_policy \"" + policyName + "\" in \"tables\" section"));
+    }
+  }
+
   unique_ptr<fw::UnsolicitedDataPolicy> unsolicitedDataPolicy;
   OptionalNode unsolicitedDataPolicyNode = section.get_child_optional("cs_unsolicited_policy");
   if (unsolicitedDataPolicyNode) {
-    std::string policyKey = unsolicitedDataPolicyNode->get_value<std::string>();
-    unsolicitedDataPolicy = fw::UnsolicitedDataPolicy::create(policyKey);
+    std::string policyName = unsolicitedDataPolicyNode->get_value<std::string>();
+    unsolicitedDataPolicy = fw::UnsolicitedDataPolicy::create(policyName);
     if (unsolicitedDataPolicy == nullptr) {
       BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Unknown cs_unsolicited_policy \"" + policyKey + "\" in \"tables\" section"));
+        "Unknown cs_unsolicited_policy \"" + policyName + "\" in \"tables\" section"));
     }
   }
   else {
@@ -94,7 +106,11 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     return;
   }
 
-  m_forwarder.getCs().setLimit(nCsMaxPackets);
+  Cs& cs = m_forwarder.getCs();
+  cs.setLimit(nCsMaxPackets);
+  if (cs.size() == 0 && csPolicy != nullptr) {
+    cs.setPolicy(std::move(csPolicy));
+  }
 
   m_forwarder.setUnsolicitedDataPolicy(std::move(unsolicitedDataPolicy));
 

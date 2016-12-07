@@ -57,16 +57,13 @@
 namespace nfd {
 namespace cs {
 
-unique_ptr<Policy>
-makeDefaultPolicy();
-
 /** \brief represents the ContentStore
  */
 class Cs : noncopyable
 {
 public:
   explicit
-  Cs(size_t nMaxPackets = 10, unique_ptr<Policy> policy = makeDefaultPolicy());
+  Cs(size_t nMaxPackets = 10);
 
   /** \brief inserts a Data packet
    */

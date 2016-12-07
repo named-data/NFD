@@ -51,9 +51,9 @@ makeDefaultPolicy()
   return Policy::create(DEFAULT_POLICY);
 }
 
-Cs::Cs(size_t nMaxPackets, unique_ptr<Policy> policy)
+Cs::Cs(size_t nMaxPackets)
 {
-  this->setPolicyImpl(std::move(policy));
+  this->setPolicyImpl(makeDefaultPolicy());
   m_policy->setLimit(nMaxPackets);
 }
 

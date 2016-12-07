@@ -25,6 +25,8 @@
 
 #include "mgmt/tables-config-section.hpp"
 #include "fw/forwarder.hpp"
+#include "table/cs-policy-lru.hpp"
+#include "table/cs-policy-priority-fifo.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/check-typeid.hpp"
@@ -140,6 +142,54 @@ BOOST_AUTO_TEST_CASE(InvalidValue)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // CsMaxPackets
+
+BOOST_AUTO_TEST_SUITE(CsPolicy)
+
+BOOST_AUTO_TEST_CASE(Default)
+{
+  const std::string CONFIG = R"CONFIG(
+    tables
+    {
+    }
+  )CONFIG";
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  cs::Policy* currentPolicy = cs.getPolicy();
+  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::PriorityFifoPolicy);
+}
+
+BOOST_AUTO_TEST_CASE(Known)
+{
+  const std::string CONFIG = R"CONFIG(
+    tables
+    {
+      cs_policy lru
+    }
+  )CONFIG";
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
+  cs::Policy* currentPolicy = cs.getPolicy();
+  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::PriorityFifoPolicy);
+
+  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  currentPolicy = cs.getPolicy();
+  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::LruPolicy);
+}
+
+BOOST_AUTO_TEST_CASE(Unknown)
+{
+  const std::string CONFIG = R"CONFIG(
+    tables
+    {
+      cs_policy unknown
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // CsPolicy
 
 class CsUnsolicitedPolicyFixture : public TablesConfigSectionFixture
 {
