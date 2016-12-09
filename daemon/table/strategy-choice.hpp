@@ -32,6 +32,9 @@
 #include <boost/range/adaptor/transformed.hpp>
 
 namespace nfd {
+
+class Forwarder;
+
 namespace strategy_choice {
 
 /** \brief represents the Strategy Choice table
@@ -48,7 +51,8 @@ namespace strategy_choice {
 class StrategyChoice : noncopyable
 {
 public:
-  StrategyChoice(NameTree& nameTree, unique_ptr<fw::Strategy> defaultStrategy);
+  explicit
+  StrategyChoice(Forwarder& forwarder);
 
   size_t
   size() const
@@ -56,7 +60,18 @@ public:
     return m_nItems;
   }
 
-public: // available Strategy types
+  /** \brief set the default strategy
+   *
+   *  This must be called by forwarder constructor.
+   */
+  void
+  setDefaultStrategy(const Name& strategyName);
+
+  /** \brief install all strategies from registry
+   */
+  void
+  installFromRegistry();
+
   /** \brief determines if a strategy is installed
    *  \param strategyName name of the strategy
    *  \param isExact true to require exact match, false to permit unversioned strategyName
@@ -152,9 +167,6 @@ private:
   getStrategy(const Name& strategyName) const;
 
   void
-  setDefaultStrategy(unique_ptr<fw::Strategy> strategy);
-
-  void
   changeStrategy(Entry& entry,
                  fw::Strategy& oldStrategy,
                  fw::Strategy& newStrategy);
@@ -169,6 +181,7 @@ private:
   getRange() const;
 
 private:
+  Forwarder& m_forwarder;
   NameTree& m_nameTree;
   size_t m_nItems;
 

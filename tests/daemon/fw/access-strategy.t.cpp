@@ -50,6 +50,11 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestAccessStrategy, UnitTestTimeFixture)
 
+BOOST_AUTO_TEST_CASE(Registration)
+{
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AccessStrategy::STRATEGY_NAME), 1);
+}
+
 class TwoLaptopsFixture : public UnitTestTimeFixture
 {
 protected:

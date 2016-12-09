@@ -40,7 +40,10 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
 
-using fw::NccStrategy;
+BOOST_AUTO_TEST_CASE(Registration)
+{
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(NccStrategy::STRATEGY_NAME), 1);
+}
 
 // NccStrategy is fairly complex.
 // The most important property is:

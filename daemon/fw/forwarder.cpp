@@ -25,8 +25,9 @@
 
 #include "forwarder.hpp"
 #include "algorithm.hpp"
-#include "core/logger.hpp"
+#include "best-route-strategy2.hpp"
 #include "strategy.hpp"
+#include "core/logger.hpp"
 #include "table/cleanup.hpp"
 #include <ndn-cxx/lp/tags.hpp>
 
@@ -34,15 +35,19 @@ namespace nfd {
 
 NFD_LOG_INIT("Forwarder");
 
+static Name
+getDefaultStrategyName()
+{
+  return fw::BestRouteStrategy2::STRATEGY_NAME;
+}
+
 Forwarder::Forwarder()
   : m_unsolicitedDataPolicy(new fw::DefaultUnsolicitedDataPolicy())
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
-  , m_strategyChoice(m_nameTree, fw::makeDefaultStrategy(*this))
+  , m_strategyChoice(*this)
 {
-  fw::installStrategies(*this);
-
   m_faceTable.afterAdd.connect([this] (Face& face) {
     face.afterReceiveInterest.connect(
       [this, &face] (const Interest& interest) {
@@ -61,6 +66,9 @@ Forwarder::Forwarder()
   m_faceTable.beforeRemove.connect([this] (Face& face) {
     cleanupOnFaceRemoval(m_nameTree, m_fib, m_pit, face);
   });
+
+  m_strategyChoice.setDefaultStrategy(getDefaultStrategyName());
+  m_strategyChoice.installFromRegistry();
 }
 
 Forwarder::~Forwarder() = default;

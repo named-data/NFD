@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FW_STRATEGY_HPP
 
 #include "forwarder.hpp"
-#include "strategy-registry.hpp"
 #include "table/measurements-accessor.hpp"
 
 namespace nfd {
@@ -35,9 +34,47 @@ namespace fw {
 
 /** \brief represents a forwarding strategy
  */
-class Strategy : public enable_shared_from_this<Strategy>, noncopyable
+class Strategy : noncopyable
 {
-public:
+public: // registry
+  /** \brief register a strategy type
+   *  \tparam S subclass of Strategy
+   *  \param strategyName versioned strategy name
+   *  \note It is permitted to register the same strategy type under multiple names,
+   *        which is useful in tests and for creating aliases.
+   */
+  template<typename S>
+  static void
+  registerType(const Name& strategyName = S::STRATEGY_NAME)
+  {
+    Registry& registry = getRegistry();
+    BOOST_ASSERT(registry.count(strategyName) == 0);
+    registry[strategyName] = &make_unique<S, Forwarder&, const Name&>;
+  }
+
+  /** \return whether a strategy instance can be created from \p strategyName
+   *  \param strategyName strategy name, may contain version
+   *  \todo #3868 may contain parameters
+   *  \note This function finds a strategy type using same rules as \p create ,
+   *        but does not attempt to construct an instance.
+   */
+  static bool
+  canCreate(const Name& strategyName);
+
+  /** \return a strategy instance created from \p strategyName,
+   *  \retval nullptr if !canCreate(strategyName)
+   *  \todo #3868 throw std::invalid_argument strategy type constructor
+   *              does not accept specified version or parameters
+   */
+  static unique_ptr<Strategy>
+  create(const Name& strategyName, Forwarder& forwarder);
+
+  /** \return registered versioned strategy names
+   */
+  static std::set<Name>
+  listRegistered();
+
+public: // constructor, destructor, strategy name
   /** \brief construct a strategy instance
    *  \param forwarder a reference to the Forwarder, used to enable actions and accessors.
    *         Strategy subclasses should pass this reference,
@@ -205,7 +242,17 @@ protected: // accessors
   signal::Signal<FaceTable, Face&>& afterAddFace;
   signal::Signal<FaceTable, Face&>& beforeRemoveFace;
 
-private:
+private: // registry
+  typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
+  typedef std::map<Name, CreateFunc> Registry; // indexed by strategy name
+
+  static Registry&
+  getRegistry();
+
+  static Registry::const_iterator
+  find(const Name& strategyName);
+
+private: // instance fields
   Name m_name;
 
   /** \brief reference to the forwarder
@@ -219,5 +266,19 @@ private:
 
 } // namespace fw
 } // namespace nfd
+
+/** \brief registers a strategy
+ *
+ *  This macro should appear once in .cpp of each strategy.
+ */
+#define NFD_REGISTER_STRATEGY(S)                       \
+static class NfdAuto ## S ## StrategyRegistrationClass \
+{                                                      \
+public:                                                \
+  NfdAuto ## S ## StrategyRegistrationClass()          \
+  {                                                    \
+    ::nfd::fw::Strategy::registerType<S>();            \
+  }                                                    \
+} g_nfdAuto ## S ## StrategyRegistrationVariable
 
 #endif // NFD_DAEMON_FW_STRATEGY_HPP

@@ -27,11 +27,69 @@
 #include "forwarder.hpp"
 #include "core/logger.hpp"
 #include "core/random.hpp"
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("Strategy");
+
+Strategy::Registry&
+Strategy::getRegistry()
+{
+  static Registry registry;
+  return registry;
+}
+
+Strategy::Registry::const_iterator
+Strategy::find(const Name& strategyName)
+{
+  const Registry& registry = getRegistry();
+  Registry::const_iterator candidate = registry.end();
+  for (auto it = registry.lower_bound(strategyName);
+       it != registry.end() && strategyName.isPrefixOf(it->first); ++it) {
+    switch (it->first.size() - strategyName.size()) {
+      case 0: // exact match
+        return it;
+      case 1: // unversioned strategyName matches versioned strategy
+        candidate = it;
+        break;
+    }
+  }
+  return candidate;
+  ///\todo #3868 if exact version unavailable, choose closest higher version
+  ///\todo #3868 allow parameter component
+}
+
+bool
+Strategy::canCreate(const Name& strategyName)
+{
+  return Strategy::find(strategyName) != getRegistry().end();
+}
+
+unique_ptr<Strategy>
+Strategy::create(const Name& strategyName, Forwarder& forwarder)
+{
+  auto found = Strategy::find(strategyName);
+  if (found == getRegistry().end()) {
+    NFD_LOG_DEBUG("create " << strategyName << " not-found");
+    return nullptr;
+  }
+
+  NFD_LOG_DEBUG("create " << strategyName << " found=" << found->first);
+  ///\todo #3868 pass parameters to strategy constructor
+  return found->second(forwarder, found->first);
+}
+
+std::set<Name>
+Strategy::listRegistered()
+{
+  std::set<Name> strategyNames;
+  boost::copy(getRegistry() | boost::adaptors::map_keys,
+              std::inserter(strategyNames, strategyNames.end()));
+  return strategyNames;
+}
 
 Strategy::Strategy(Forwarder& forwarder, const Name& name)
   : afterAddFace(forwarder.getFaceTable().afterAdd)

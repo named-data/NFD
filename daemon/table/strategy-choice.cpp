@@ -24,10 +24,10 @@
  */
 
 #include "strategy-choice.hpp"
+#include "measurements-entry.hpp"
+#include "pit-entry.hpp"
 #include "core/logger.hpp"
 #include "fw/strategy.hpp"
-#include "pit-entry.hpp"
-#include "measurements-entry.hpp"
 
 namespace nfd {
 namespace strategy_choice {
@@ -42,11 +42,48 @@ nteHasStrategyChoiceEntry(const name_tree::Entry& nte)
   return nte.getStrategyChoiceEntry() != nullptr;
 }
 
-StrategyChoice::StrategyChoice(NameTree& nameTree, unique_ptr<Strategy> defaultStrategy)
-  : m_nameTree(nameTree)
+StrategyChoice::StrategyChoice(Forwarder& forwarder)
+  : m_forwarder(forwarder)
+  , m_nameTree(m_forwarder.getNameTree())
   , m_nItems(0)
 {
-  this->setDefaultStrategy(std::move(defaultStrategy));
+}
+
+void
+StrategyChoice::setDefaultStrategy(const Name& strategyName)
+{
+  unique_ptr<Strategy> strategy = Strategy::create(strategyName, m_forwarder);
+
+  bool isInstalled = false;
+  Strategy* instance = nullptr;
+  std::tie(isInstalled, instance) = this->install(std::move(strategy));
+  BOOST_ASSERT(isInstalled);
+
+  auto entry = make_unique<Entry>(Name());
+  entry->setStrategy(*instance);
+
+  // don't use .insert here, because it will invoke findEffectiveStrategy
+  // which expects an existing root entry
+  name_tree::Entry& nte = m_nameTree.lookup(Name());
+  nte.setStrategyChoiceEntry(std::move(entry));
+  ++m_nItems;
+  NFD_LOG_INFO("setDefaultStrategy " << instance->getName());
+}
+
+void
+StrategyChoice::installFromRegistry()
+{
+  /// \todo #3868
+  /// * Give every StrategyChoice entry its own Strategy instance.
+  ///    Don't share Strategy instances.
+  /// * Create Strategy instance with Strategy::create.
+  /// * Eliminate install, installFromRegistry, getStrategy functions.
+
+  // This is temporary code until the above is done.
+
+  for (const Name& strategyName : Strategy::listRegistered()) {
+    this->install(Strategy::create(strategyName, m_forwarder));
+  }
 }
 
 bool
@@ -196,25 +233,6 @@ Strategy&
 StrategyChoice::findEffectiveStrategy(const measurements::Entry& measurementsEntry) const
 {
   return this->findEffectiveStrategyImpl(measurementsEntry);
-}
-
-void
-StrategyChoice::setDefaultStrategy(unique_ptr<Strategy> strategy)
-{
-  bool isInstalled = false;
-  Strategy* instance = nullptr;
-  std::tie(isInstalled, instance) = this->install(std::move(strategy));
-  BOOST_ASSERT(isInstalled);
-
-  auto entry = make_unique<Entry>(Name());
-  entry->setStrategy(*instance);
-
-  // don't use .insert here, because it will invoke findEffectiveStrategy
-  // which expects an existing root entry
-  name_tree::Entry& nte = m_nameTree.lookup(Name());
-  nte.setStrategyChoiceEntry(std::move(entry));
-  ++m_nItems;
-  NFD_LOG_INFO("setDefaultStrategy " << instance->getName());
 }
 
 static inline void
