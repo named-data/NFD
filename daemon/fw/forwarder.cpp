@@ -68,7 +68,6 @@ Forwarder::Forwarder()
   });
 
   m_strategyChoice.setDefaultStrategy(getDefaultStrategyName());
-  m_strategyChoice.installFromRegistry();
 }
 
 Forwarder::~Forwarder() = default;

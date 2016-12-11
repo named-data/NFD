@@ -52,38 +52,15 @@ StrategyChoice::StrategyChoice(Forwarder& forwarder)
 void
 StrategyChoice::setDefaultStrategy(const Name& strategyName)
 {
-  unique_ptr<Strategy> strategy = Strategy::create(strategyName, m_forwarder);
-
-  bool isInstalled = false;
-  Strategy* instance = nullptr;
-  std::tie(isInstalled, instance) = this->install(std::move(strategy));
-  BOOST_ASSERT(isInstalled);
-
   auto entry = make_unique<Entry>(Name());
-  entry->setStrategy(*instance);
+  entry->setStrategy(Strategy::create(strategyName, m_forwarder));
+  NFD_LOG_INFO("setDefaultStrategy " << entry->getStrategyName());
 
   // don't use .insert here, because it will invoke findEffectiveStrategy
   // which expects an existing root entry
   name_tree::Entry& nte = m_nameTree.lookup(Name());
   nte.setStrategyChoiceEntry(std::move(entry));
   ++m_nItems;
-  NFD_LOG_INFO("setDefaultStrategy " << instance->getName());
-}
-
-void
-StrategyChoice::installFromRegistry()
-{
-  /// \todo #3868
-  /// * Give every StrategyChoice entry its own Strategy instance.
-  ///    Don't share Strategy instances.
-  /// * Create Strategy instance with Strategy::create.
-  /// * Eliminate install, installFromRegistry, getStrategy functions.
-
-  // This is temporary code until the above is done.
-
-  for (const Name& strategyName : Strategy::listRegistered()) {
-    this->install(Strategy::create(strategyName, m_forwarder));
-  }
 }
 
 bool
@@ -93,13 +70,18 @@ StrategyChoice::hasStrategy(const Name& strategyName, bool isExact) const
     return m_strategyInstances.count(strategyName) > 0;
   }
   else {
-    return this->getStrategy(strategyName) != nullptr;
+    return Strategy::canCreate(strategyName) ||
+           this->getStrategy(strategyName) != nullptr;
   }
 }
 
 std::pair<bool, Strategy*>
 StrategyChoice::install(unique_ptr<Strategy> strategy)
 {
+  /// \todo #3868
+  /// Strategy instance should always be created from Strategy::create;
+  /// m_strategyInstances, install, getStrategy, hasStrategy should be eliminated.
+
   BOOST_ASSERT(strategy != nullptr);
   Name strategyName = strategy->getName();
   // copying Name, so that strategyName remains available even if strategy is deallocated
@@ -134,17 +116,22 @@ StrategyChoice::getStrategy(const Name& strategyName) const
 bool
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
-  Strategy* strategy = this->getStrategy(strategyName);
+  unique_ptr<Strategy> createdStrategy = Strategy::create(strategyName, m_forwarder);
+  Strategy* strategy = createdStrategy.get();
   if (strategy == nullptr) {
-    NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not installed");
-    return false;
+    strategy = this->getStrategy(strategyName);
+    if (strategy == nullptr) {
+      NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered or installed");
+      return false;
+    }
+    NFD_LOG_WARN("insert(" << prefix << "," << strategyName << ") using shared strategy instance");
   }
 
   name_tree::Entry& nte = m_nameTree.lookup(prefix);
   Entry* entry = nte.getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {
-    if (entry->getStrategy().getName() == strategy->getName()) {
+    if (entry->getStrategyName() == strategy->getName()) {
       NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getName());
       return true;
     }
@@ -152,8 +139,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getName() <<
                   " to " << strategy->getName());
   }
-
-  if (entry == nullptr) {
+  else {
     oldStrategy = &this->findEffectiveStrategy(prefix);
     auto newEntry = make_unique<Entry>(prefix);
     entry = newEntry.get();
@@ -163,7 +149,12 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   }
 
   this->changeStrategy(*entry, *oldStrategy, *strategy);
-  entry->setStrategy(*strategy);
+  if (createdStrategy != nullptr) {
+    entry->setStrategy(std::move(createdStrategy));
+  }
+  else {
+    entry->setStrategy(*strategy);
+  }
   return true;
 }
 

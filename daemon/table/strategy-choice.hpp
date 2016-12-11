@@ -67,26 +67,26 @@ public:
   void
   setDefaultStrategy(const Name& strategyName);
 
-  /** \brief install all strategies from registry
-   */
-  void
-  installFromRegistry();
-
   /** \brief determines if a strategy is installed
    *  \param strategyName name of the strategy
    *  \param isExact true to require exact match, false to permit unversioned strategyName
    *  \return true if strategy is installed
    */
+  DEPRECATED(
   bool
-  hasStrategy(const Name& strategyName, bool isExact = false) const;
+  hasStrategy(const Name& strategyName, bool isExact = false) const);
+
+  // DEPRECATED macro does not work when this type appears inline on install function.
+  typedef std::pair<bool, fw::Strategy*> InstallResult;
 
   /** \brief install a strategy
    *  \return if installed, true, and a pointer to the strategy instance;
    *          if not installed due to duplicate strategyName, false,
    *          and a pointer to the existing strategy instance
    */
-  std::pair<bool, fw::Strategy*>
-  install(unique_ptr<fw::Strategy> strategy);
+  DEPRECATED(
+  InstallResult
+  install(unique_ptr<fw::Strategy> strategy));
 
 public: // Strategy Choice table
   /** \brief set strategy of prefix to be strategyName

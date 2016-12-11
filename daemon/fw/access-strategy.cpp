@@ -230,6 +230,7 @@ void
 AccessStrategy::updateMeasurements(const Face& inFace, const Data& data,
                                    const RttEstimator::Duration& rtt)
 {
+  ///\todo move FaceInfoTable out of AccessStrategy instance, to Measurements or somewhere else
   FaceInfo& fi = m_fit[inFace.getId()];
   fi.rtt.addMeasurement(rtt);
 

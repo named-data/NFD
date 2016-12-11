@@ -47,6 +47,8 @@ class Entry : noncopyable
 public:
   Entry(const Name& prefix);
 
+  ~Entry();
+
   const Name&
   getPrefix() const
   {
@@ -59,19 +61,21 @@ public:
   fw::Strategy&
   getStrategy() const
   {
-    BOOST_ASSERT(m_strategy != nullptr);
-    return *m_strategy;
+    BOOST_ASSERT(m_strategyPtr != nullptr);
+    return *m_strategyPtr;
   }
 
+  DEPRECATED(
   void
-  setStrategy(fw::Strategy& strategy)
-  {
-    m_strategy = &strategy;
-  }
+  setStrategy(fw::Strategy& strategy));
+
+  void
+  setStrategy(unique_ptr<fw::Strategy> strategy);
 
 private:
   Name m_prefix;
-  fw::Strategy* m_strategy;
+  unique_ptr<fw::Strategy> m_strategy;
+  fw::Strategy* m_strategyPtr;
 
   name_tree::Entry* m_nameTreeEntry;
 
