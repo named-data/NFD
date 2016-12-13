@@ -11,10 +11,10 @@ Usage
 Description
 -----------
 
-``autoreg-server`` is a deamon application that automatically registers the specified
-prefix(es) when new on-demand Face is created (i.e., when a new UDP face is created
-as a result of an incoming packet or TCP face is created as a result of an incoming
-connection).
+``autoreg-server`` is a daemon application that automatically registers the specified
+prefix(es) when new on-demand Faces are created (i.e., when a new UDP face is created as
+the result of an incoming packet or when a new TCP face is created as the result of an
+incoming connection).
 
 Options
 -------
