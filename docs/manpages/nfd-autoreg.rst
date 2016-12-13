@@ -11,7 +11,7 @@ Usage
 Description
 -----------
 
-``autoreg-server`` is a deamon application that automatically registers the specified
+``autoreg-server`` is a daemon application that automatically registers the specified
 prefix(es) when new on-demand Face is created (i.e., when a new UDP face is created
 as a result of an incoming packet or TCP face is created as a result of an incoming
 connection).
