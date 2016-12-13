@@ -31,8 +31,6 @@ namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("BestRouteStrategy2");
-
-const Name BestRouteStrategy2::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%04");
 NFD_REGISTER_STRATEGY(BestRouteStrategy2);
 
 const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_INITIAL(10);
@@ -44,6 +42,13 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
 {
+}
+
+const Name&
+BestRouteStrategy2::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%04");
+  return strategyName;
 }
 
 /** \brief determines whether a NextHop is eligible

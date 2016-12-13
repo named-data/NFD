@@ -29,12 +29,18 @@
 namespace nfd {
 namespace fw {
 
-const Name BestRouteStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%01");
 NFD_REGISTER_STRATEGY(BestRouteStrategy);
 
 BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)
 {
+}
+
+const Name&
+BestRouteStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%01");
+  return strategyName;
 }
 
 void

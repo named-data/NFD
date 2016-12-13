@@ -36,14 +36,14 @@ namespace fw {
 class MulticastStrategy : public Strategy
 {
 public:
-  MulticastStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  MulticastStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
-
-public:
-  static const Name STRATEGY_NAME;
 };
 
 } // namespace fw

@@ -37,7 +37,10 @@ class NccStrategy : public Strategy
 {
 public:
   explicit
-  NccStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  NccStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
@@ -127,9 +130,6 @@ protected:
   /// best face did not reply within prediction
   void
   timeoutOnBestFace(weak_ptr<pit::Entry> pitEntryWeak);
-
-public:
-  static const Name STRATEGY_NAME;
 
 protected:
   static const time::microseconds DEFER_FIRST_WITHOUT_BEST_FACE;

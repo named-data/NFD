@@ -31,8 +31,6 @@ namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("AccessStrategy");
-
-const Name AccessStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/access/%FD%01");
 NFD_REGISTER_STRATEGY(AccessStrategy);
 
 AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
@@ -40,6 +38,13 @@ AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
   , m_removeFaceInfoConn(this->beforeRemoveFace.connect(
                          bind(&AccessStrategy::removeFaceInfo, this, _1)))
 {
+}
+
+const Name&
+AccessStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/access/%FD%01");
+  return strategyName;
 }
 
 void

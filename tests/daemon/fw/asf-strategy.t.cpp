@@ -40,7 +40,7 @@ BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AsfStrategy::STRATEGY_NAME), 1);
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AsfStrategy::getStrategyName()), 1);
 }
 
 class AsfGridFixture : public UnitTestTimeFixture

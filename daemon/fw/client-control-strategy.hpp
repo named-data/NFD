@@ -38,14 +38,14 @@ class ClientControlStrategy : public BestRouteStrategy
 {
 public:
   explicit
-  ClientControlStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  ClientControlStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
-
-public:
-  static const Name STRATEGY_NAME;
 
 private:
   bool m_isFirstUse = true;

@@ -53,7 +53,10 @@ class BestRouteStrategy2 : public Strategy
 {
 public:
   explicit
-  BestRouteStrategy2(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  BestRouteStrategy2(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
@@ -62,9 +65,6 @@ public:
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
-
-public:
-  static const Name STRATEGY_NAME;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   static const time::milliseconds RETX_SUPPRESSION_INITIAL;

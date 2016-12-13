@@ -43,7 +43,7 @@ class StrategyTester : public S
 public:
   explicit
   StrategyTester(Forwarder& forwarder)
-    : S(forwarder, Name(S::STRATEGY_NAME).append("tester"))
+    : S(forwarder, Name(S::getStrategyName()).append("tester"))
   {
   }
 

@@ -52,7 +52,7 @@ BOOST_FIXTURE_TEST_SUITE(TestAccessStrategy, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AccessStrategy::STRATEGY_NAME), 1);
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AccessStrategy::getStrategyName()), 1);
 }
 
 class TwoLaptopsFixture : public UnitTestTimeFixture

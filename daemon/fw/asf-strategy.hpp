@@ -45,7 +45,10 @@ class AsfStrategy : public Strategy
 {
 public:
   explicit
-  AsfStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  AsfStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
 public: // triggers
   virtual void
@@ -76,9 +79,6 @@ private:
 
   void
   sendNoRouteNack(const Face& inFace, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
-
-public:
-  static const Name STRATEGY_NAME;
 
 private:
   AsfMeasurements m_measurements;

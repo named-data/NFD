@@ -30,13 +30,18 @@ namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("ClientControlStrategy");
-
-const Name ClientControlStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/client-control/%FD%02");
 NFD_REGISTER_STRATEGY(ClientControlStrategy);
 
 ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& name)
   : BestRouteStrategy(forwarder, name)
 {
+}
+
+const Name&
+ClientControlStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/client-control/%FD%02");
+  return strategyName;
 }
 
 void

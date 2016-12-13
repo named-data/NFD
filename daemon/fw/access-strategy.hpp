@@ -50,7 +50,10 @@ class AccessStrategy : public Strategy
 {
 public:
   explicit
-  AccessStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  AccessStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
 public: // triggers
   virtual void
@@ -154,9 +157,6 @@ private: // forwarding procedures
   void
   updateMeasurements(const Face& inFace, const Data& data,
                      const RttEstimator::Duration& rtt);
-
-public:
-  static const Name STRATEGY_NAME;
 
 private:
   FaceInfoTable m_fit;

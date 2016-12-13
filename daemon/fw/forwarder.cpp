@@ -38,7 +38,7 @@ NFD_LOG_INIT("Forwarder");
 static Name
 getDefaultStrategyName()
 {
-  return fw::BestRouteStrategy2::STRATEGY_NAME;
+  return fw::BestRouteStrategy2::getStrategyName();
 }
 
 Forwarder::Forwarder()

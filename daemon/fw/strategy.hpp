@@ -45,7 +45,7 @@ public: // registry
    */
   template<typename S>
   static void
-  registerType(const Name& strategyName = S::STRATEGY_NAME)
+  registerType(const Name& strategyName = S::getStrategyName())
   {
     Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(strategyName) == 0);
@@ -81,13 +81,24 @@ public: // constructor, destructor, strategy name
    *         and should not keep a reference themselves.
    *  \param name the strategy Name.
    *         It's recommended to include a version number as the last component.
+   *  \todo #3868 name contains version and parameters as instantiated.
    */
   Strategy(Forwarder& forwarder, const Name& name);
 
   virtual
   ~Strategy();
 
-  /** \return a Name that represents the strategy program
+#ifdef DOXYGEN
+  /** \return a name that represents the strategy program
+   *  \todo #3868 This name contains version as given in code,
+   *              which may differ from instantiated version.
+   */
+  static const Name&
+  getStrategyName();
+#endif
+
+  /** \return a name that represents the strategy program
+   *  \todo #3868 This name contains version and parameters as instantiated.
    */
   const Name&
   getName() const

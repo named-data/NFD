@@ -75,7 +75,7 @@ BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(BestRouteStrategy2::STRATEGY_NAME), 1);
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(BestRouteStrategy2::getStrategyName()), 1);
 }
 
 BOOST_AUTO_TEST_CASE(Forward)

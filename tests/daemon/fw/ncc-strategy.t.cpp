@@ -42,7 +42,7 @@ BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(NccStrategy::STRATEGY_NAME), 1);
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(NccStrategy::getStrategyName()), 1);
 }
 
 // NccStrategy is fairly complex.

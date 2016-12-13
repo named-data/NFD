@@ -33,12 +33,10 @@ namespace fw {
 namespace asf {
 
 NFD_LOG_INIT("AsfStrategy");
+NFD_REGISTER_STRATEGY(AsfStrategy);
 
-const Name AsfStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/asf/%FD%01");
 const time::milliseconds AsfStrategy::RETX_SUPPRESSION_INITIAL(10);
 const time::milliseconds AsfStrategy::RETX_SUPPRESSION_MAX(250);
-
-NFD_REGISTER_STRATEGY(AsfStrategy);
 
 AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)
@@ -48,6 +46,13 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
 {
+}
+
+const Name&
+AsfStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/asf/%FD%01");
+  return strategyName;
 }
 
 void

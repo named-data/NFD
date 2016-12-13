@@ -46,14 +46,14 @@ class BestRouteStrategy : public Strategy
 {
 public:
   explicit
-  BestRouteStrategy(Forwarder& forwarder, const Name& name = STRATEGY_NAME);
+  BestRouteStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+
+  static const Name&
+  getStrategyName();
 
   virtual void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
-
-public:
-  static const Name STRATEGY_NAME;
 };
 
 } // namespace fw

@@ -30,17 +30,23 @@
 namespace nfd {
 namespace fw {
 
-const Name NccStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/ncc/%FD%01");
 NFD_REGISTER_STRATEGY(NccStrategy);
+
+const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
+const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
+const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 
 NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder, name)
 {
 }
 
-const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
-const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
-const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
+const Name&
+NccStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/ncc/%FD%01");
+  return strategyName;
+}
 
 void
 NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
