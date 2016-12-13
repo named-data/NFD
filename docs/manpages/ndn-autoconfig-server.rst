@@ -19,7 +19,7 @@ Description
 
 This daemon essentially waits for Interests for ``/localhop/ndn-autoconf/hub`` and
 satisfies them with a Data packet that contains TLV-encoded FaceUri block.  The value of
-this block is the ``Uri`` for the HUB, preferrably a UDP tunnel.
+this block is the ``Uri`` for the HUB, preferably a UDP tunnel.
 
 ``-h``
   print usage and exit.
