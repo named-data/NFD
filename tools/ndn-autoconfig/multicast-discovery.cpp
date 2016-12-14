@@ -147,11 +147,12 @@ MulticastDiscovery::requestHubData()
 
   m_face.expressInterest(interest,
                          bind(&MulticastDiscovery::onSuccess, this, _2),
-                         bind(m_nextStageOnFailure, "Timeout"));
+                         bind(m_nextStageOnFailure, "HUB Data not received: nacked"),
+                         bind(m_nextStageOnFailure, "HUB Data not received: timeout"));
 }
 
 void
-MulticastDiscovery::onSuccess(Data& data)
+MulticastDiscovery::onSuccess(const Data& data)
 {
   const Block& content = data.getContent();
   content.parse();

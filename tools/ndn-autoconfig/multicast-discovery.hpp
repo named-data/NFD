@@ -56,7 +56,7 @@ public:
    */
   MulticastDiscovery(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
 
-  virtual void
+  void
   start() override;
 
 private:
@@ -83,7 +83,7 @@ private:
   requestHubData();
 
   void
-  onSuccess(Data& data);
+  onSuccess(const Data& data);
 
 private:
   size_t m_nRequestedRegs;
