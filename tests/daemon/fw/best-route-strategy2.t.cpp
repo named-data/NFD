@@ -36,6 +36,9 @@ namespace tests {
 
 using namespace nfd::tests;
 
+typedef StrategyTester<BestRouteStrategy2> BestRouteStrategy2Tester;
+NFD_REGISTER_STRATEGY(BestRouteStrategy2Tester);
+
 BOOST_AUTO_TEST_SUITE(Fw)
 
 class BestRouteStrategy2Fixture : public UnitTestTimeFixture
@@ -60,7 +63,7 @@ protected:
 
 public:
   Forwarder forwarder;
-  StrategyTester<fw::BestRouteStrategy2> strategy;
+  BestRouteStrategy2Tester strategy;
   Fib& fib;
   Pit& pit;
 

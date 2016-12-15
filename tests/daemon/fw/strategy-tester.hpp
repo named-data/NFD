@@ -36,22 +36,49 @@ namespace tests {
 /** \brief extends strategy S for unit testing
  *
  *  Actions invoked by S are recorded but not passed to forwarder
+ *
+ *  StrategyTester should be registered into the strategy registry prior to use.
+ *  \code
+ *  // appears in or included by every .cpp MyStrategyTester is used
+ *  typedef StrategyTester<MyStrategy> MyStrategyTester;
+ *
+ *  // appears in only one .cpp
+ *  NFD_REGISTER_STRATEGY(MyStrategyTester);
+ *  \endcode
  */
 template<typename S>
 class StrategyTester : public S
 {
 public:
   explicit
-  StrategyTester(Forwarder& forwarder)
-    : S(forwarder, Name(S::getStrategyName()).append("tester"))
+  StrategyTester(Forwarder& forwarder, const Name& name = getStrategyName())
+    : S(forwarder, name)
   {
   }
 
-  /// fires after each Action
+  static Name
+  getStrategyName()
+  {
+    Name name = S::getStrategyName();
+    if (!name.empty() && name[-1].isVersion()) {
+      // insert "tester" before version component
+      name::Component versionComp = name[-1];
+      name = name.getPrefix(-1);
+      name.append("tester");
+      name.append(versionComp);
+    }
+    else {
+      name.append("tester");
+    }
+    return name;
+  }
+
+  /** \brief signal emitted after each Action
+   */
   signal::Signal<StrategyTester<S>> afterAction;
 
 protected:
-  virtual void
+  void
   sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
                const Interest& interest) override
   {
@@ -60,14 +87,14 @@ protected:
     afterAction();
   }
 
-  virtual void
+  void
   rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
   {
     rejectPendingInterestHistory.push_back({pitEntry->getInterest()});
     afterAction();
   }
 
-  virtual void
+  void
   sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
            const lp::NackHeader& header) override
   {

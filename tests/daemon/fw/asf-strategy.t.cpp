@@ -26,6 +26,7 @@
 #include "fw/asf-strategy.hpp"
 
 #include "tests/test-common.hpp"
+#include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
 namespace nfd {
@@ -34,6 +35,10 @@ namespace asf {
 namespace tests {
 
 using namespace nfd::fw::tests;
+
+// The tester is unused in this file, but it's used in various templated test suites.
+typedef StrategyTester<AsfStrategy> AsfStrategyTester;
+NFD_REGISTER_STRATEGY(AsfStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, UnitTestTimeFixture)

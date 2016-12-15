@@ -26,6 +26,7 @@
 #include "fw/access-strategy.hpp"
 
 #include "tests/test-common.hpp"
+#include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
 namespace nfd {
@@ -33,6 +34,10 @@ namespace fw {
 namespace tests {
 
 using namespace nfd::tests;
+
+// The tester is unused in this file, but it's used in various templated test suites.
+typedef StrategyTester<AccessStrategy> AccessStrategyTester;
+NFD_REGISTER_STRATEGY(AccessStrategyTester);
 
 // This test suite tests AccessStrategy's behavior as a black box,
 // without accessing its internals.

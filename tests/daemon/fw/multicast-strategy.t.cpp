@@ -35,8 +35,37 @@ namespace tests {
 
 using namespace nfd::tests;
 
+typedef StrategyTester<MulticastStrategy> MulticastStrategyTester;
+NFD_REGISTER_STRATEGY(MulticastStrategyTester);
+
+class MulticastStrategyFixture : public BaseFixture
+{
+protected:
+  MulticastStrategyFixture()
+    : strategy(forwarder)
+    , fib(forwarder.getFib())
+    , pit(forwarder.getPit())
+    , face1(make_shared<DummyFace>())
+    , face2(make_shared<DummyFace>())
+    , face3(make_shared<DummyFace>())
+  {
+    forwarder.addFace(face1);
+    forwarder.addFace(face2);
+    forwarder.addFace(face3);
+  }
+
+protected:
+  Forwarder forwarder;
+  MulticastStrategyTester strategy;
+  Fib& fib;
+  Pit& pit;
+  shared_ptr<DummyFace> face1;
+  shared_ptr<DummyFace> face2;
+  shared_ptr<DummyFace> face3;
+};
+
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, MulticastStrategyFixture)
 
 BOOST_AUTO_TEST_CASE(Registration)
 {
@@ -45,25 +74,12 @@ BOOST_AUTO_TEST_CASE(Registration)
 
 BOOST_AUTO_TEST_CASE(Forward2)
 {
-  Forwarder forwarder;
-  typedef StrategyTester<fw::MulticastStrategy> MulticastStrategyTester;
-  MulticastStrategyTester strategy(forwarder);
-
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face3 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-  forwarder.addFace(face3);
-
-  Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
   fibEntry.addNextHop(*face1, 0);
   fibEntry.addNextHop(*face2, 0);
   fibEntry.addNextHop(*face3, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
-  Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face3, *interest);
 
@@ -83,21 +99,10 @@ BOOST_AUTO_TEST_CASE(Forward2)
 
 BOOST_AUTO_TEST_CASE(RejectScope)
 {
-  Forwarder forwarder;
-  typedef StrategyTester<fw::MulticastStrategy> MulticastStrategyTester;
-  MulticastStrategyTester strategy(forwarder);
-
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-  forwarder.addFace(face2);
-
-  Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert("ndn:/localhop/uS09bub6tm").first;
   fibEntry.addNextHop(*face2, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
-  Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 
@@ -108,19 +113,10 @@ BOOST_AUTO_TEST_CASE(RejectScope)
 
 BOOST_AUTO_TEST_CASE(RejectLoopback)
 {
-  Forwarder forwarder;
-  typedef StrategyTester<fw::MulticastStrategy> MulticastStrategyTester;
-  MulticastStrategyTester strategy(forwarder);
-
-  shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
-  forwarder.addFace(face1);
-
-  Fib& fib = forwarder.getFib();
   fib::Entry& fibEntry = *fib.insert(Name()).first;
   fibEntry.addNextHop(*face1, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
-  Pit& pit = forwarder.getPit();
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, *interest);
 

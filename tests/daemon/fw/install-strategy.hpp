@@ -26,6 +26,8 @@
 #ifndef NFD_TESTS_DAEMON_FW_INSTALL_STRATEGY_HPP
 #define NFD_TESTS_DAEMON_FW_INSTALL_STRATEGY_HPP
 
+#include "fw/forwarder.hpp"
+
 namespace nfd {
 namespace fw {
 class Strategy;
@@ -40,6 +42,8 @@ namespace tests {
  *  \throw std::bad_cast a strategy with duplicate strategyName is already installed
  *                       and has an incompatible type
  *  \return a reference to the strategy
+ *  \deprecated use strategy registry
+ *  \todo #3868 delete this function template
  */
 template<typename S, typename ...Args>
 typename std::enable_if<std::is_base_of<fw::Strategy, S>::value, S&>::type
@@ -58,14 +62,16 @@ install(Forwarder& forwarder, Args&&... args)
  *  \throw std::bad_cast a strategy with duplicate strategyName is already installed
  *                       and has an incompatible type
  *  \return a reference to the strategy
+ *  \todo #3868 disallow args
  */
 template<typename S, typename ...Args>
 typename std::enable_if<std::is_base_of<fw::Strategy, S>::value, S&>::type
 choose(Forwarder& forwarder, const Name& prefix, Args&&... args)
 {
   S& strategy = install<S>(forwarder, std::forward<Args>(args)...);
-  forwarder.getStrategyChoice().insert(prefix, strategy.getName());
-  return strategy;
+  StrategyChoice& sc = forwarder.getStrategyChoice();
+  sc.insert(prefix, strategy.getName());
+  return dynamic_cast<S&>(sc.findEffectiveStrategy(prefix));
 }
 
 /** \brief install a strategy to forwarder, and choose the strategy as default
@@ -74,6 +80,7 @@ choose(Forwarder& forwarder, const Name& prefix, Args&&... args)
  *  \throw std::bad_cast a strategy with duplicate strategyName is already installed
  *                       and has an incompatible type
  *  \return a reference to the strategy
+ *  \todo #3868 merge into the other overload with default argument
  */
 template<typename S>
 typename std::enable_if<std::is_base_of<fw::Strategy, S>::value, S&>::type
