@@ -41,6 +41,7 @@ void
 Base::connectToHub(const std::string& uri)
 {
   FaceUri faceUri(uri);
+  std::cerr << "About to connect to: " << uri << std::endl;
 
   faceUri.canonize(bind(&Base::onCanonizeSuccess, this, _1),
                    bind(&Base::onCanonizeFailure, this, _1),
@@ -52,8 +53,6 @@ Base::connectToHub(const std::string& uri)
 void
 Base::onCanonizeSuccess(const FaceUri& canonicalUri)
 {
-  std::cerr << "About to connect to: " << canonicalUri.toString() << std::endl;
-
   m_controller.start<ndn::nfd::FaceCreateCommand>(
     ControlParameters().setUri(canonicalUri.toString()),
     bind(&Base::onHubConnectSuccess, this, _1),

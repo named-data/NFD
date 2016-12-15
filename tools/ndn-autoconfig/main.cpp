@@ -27,6 +27,7 @@
 
 #include "multicast-discovery.hpp"
 #include "guess-from-search-domains.hpp"
+#include "ndn-fch-discovery.hpp"
 #include "guess-from-identity-name.hpp"
 
 #include <ndn-cxx/util/network-monitor.hpp>
@@ -60,7 +61,7 @@ public:
   };
 
   explicit
-  NdnAutoconfig(bool isDaemonMode)
+  NdnAutoconfig(const std::string& ndnFchUrl, bool isDaemonMode)
     : m_face(m_io)
     , m_scheduler(m_io)
     , m_startStagesEvent(m_scheduler)
@@ -77,8 +78,14 @@ public:
                  m_stage3.start();
                })
     , m_stage3(m_face, m_keyChain,
+               ndnFchUrl,
                [&] (const std::string& errorMessage) {
                  std::cerr << "Stage 3 failed: " << errorMessage << std::endl;
+                 m_stage4.start();
+               })
+    , m_stage4(m_face, m_keyChain,
+               [&] (const std::string& errorMessage) {
+                 std::cerr << "Stage 4 failed: " << errorMessage << std::endl;
                  if (!m_isDaemonMode)
                    BOOST_THROW_EXCEPTION(Error("No more stages, automatic discovery failed"));
                  else
@@ -155,7 +162,8 @@ private:
 
   MulticastDiscovery m_stage1;
   GuessFromSearchDomains m_stage2;
-  GuessFromIdentityName m_stage3;
+  NdnFchDiscovery m_stage3;
+  GuessFromIdentityName m_stage4;
 };
 
 static int
@@ -163,6 +171,7 @@ main(int argc, char** argv)
 {
   bool isDaemonMode = false;
   std::string configFile;
+  std::string ndnFchUrl;
 
   po::options_description optionDescription("Options");
   optionDescription.add_options()
@@ -172,6 +181,8 @@ main(int argc, char** argv)
      "auto-discovery procedure.  In addition, the auto-discovery procedure "
      "is unconditionally re-run every hour.\n"
      "NOTE: if connection to NFD fails, the daemon will be terminated.")
+    ("ndn-fch-url", po::value<std::string>(&ndnFchUrl)->default_value("http://ndn-fch.named-data.net"),
+     "URL for NDN-FCH (Find Closest Hub) service")
     ("config,c", po::value<std::string>(&configFile), "configuration file. If `enabled = true` "
      "is not specified, no actions will be performed.")
     ("version,V", "show version and exit")
@@ -223,7 +234,7 @@ main(int argc, char** argv)
   }
 
   try {
-    NdnAutoconfig autoConfigInstance(isDaemonMode);
+    NdnAutoconfig autoConfigInstance(ndnFchUrl, isDaemonMode);
     autoConfigInstance.run();
   }
   catch (const std::exception& error) {
