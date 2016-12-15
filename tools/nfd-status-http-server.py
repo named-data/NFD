@@ -44,51 +44,45 @@ class StatusHandler(SimpleHTTPRequestHandler):
         parsedPath = urlparse.urlparse(self.path)
         if parsedPath.path == "/":
             # get current nfd status, and use it as result message
-            (res, resultMessage) = self.getNfdStatus()
-            self.send_response(200)
-            if res == 0:
-                self.send_header("Content-type", "text/xml; charset=UTF-8")
-            else:
-                self.send_header("Content-type", "text/html; charset=UTF-8")
-
+            (httpCode, contentType, body) = self.getNfdStatus()
+            self.send_response(httpCode)
+            self.send_header("Content-Type", contentType)
             self.end_headers()
-            self.wfile.write(resultMessage)
+            self.wfile.write(body)
         elif parsedPath.path == "/robots.txt" and self.server.robots == True:
-            resultMessage = ""
             self.send_response(200)
-            self.send_header("Content-type", "text/plain")
+            self.send_header("Content-Type", "text/plain")
             self.end_headers()
-            self.wfile.write(resultMessage)
         else:
             SimpleHTTPRequestHandler.do_GET(self)
 
     def log_message(self, format, *args):
         if self.server.verbose:
-            logging.info("%s - %s\n" % (self.address_string(),
-                        format % args))
+            logging.info("%s - %s\n" % (self.address_string(), format % args))
+
+    def makeErrorResponseHtml(self, text):
+        return '<!DOCTYPE html><title>NFD status</title><p>%s</p>' % text
 
     def getNfdStatus(self):
         """ Obtain XML-formatted NFD status report """
-        sp = subprocess.Popen(['nfdc', 'status', 'report', 'xml'], stdout=subprocess.PIPE, close_fds=True)
-        output = sp.communicate()[0]
+        try:
+            sp = subprocess.Popen(['nfdc', 'status', 'report', 'xml'], stdout=subprocess.PIPE, close_fds=True)
+            output = sp.communicate()[0]
+        except OSError as e:
+            self.log_message('error invoking nfdc: %s', e)
+            html = self.makeErrorResponseHtml('Internal error')
+            return (500, "text/html; charset=UTF-8", html)
+
         if sp.returncode == 0:
-            # add the xml-stylesheet processing instruction after the 1st '>' symbol
-            newLineIndex = output.index('>') + 1
-            resultStr = output[:newLineIndex]\
-                      + "<?xml-stylesheet type=\"text/xsl\" href=\"nfd-status.xsl\"?>"\
-                      + output[newLineIndex:]
-            return (sp.returncode, resultStr)
+            # add stylesheet processing instruction after the XML document type declaration
+            pos = output.index('>') + 1
+            xml = output[:pos]\
+                + '<?xml-stylesheet type="text/xsl" href="nfd-status.xsl"?>'\
+                + output[pos:]
+            return (200, 'text/xml; charset=UTF-8', xml)
         else:
-            htmlStr = '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional'\
-                    + '//EN" "http://www.w3.org/TR/html4/loose.dtd">\n'\
-                    + '<html><head><title>NFD status</title>'\
-                    + '<meta http-equiv="Content-type" content="text/html;'\
-                    + 'charset=UTF-8"></head>\n<body>'
-            # return connection error code
-            htmlStr = htmlStr + "<p>Cannot connect to NFD,"\
-                    + " Code = " + str(sp.returncode) + "</p>\n"
-            htmlStr = htmlStr + "</body></html>"
-            return (sp.returncode, htmlStr)
+            html = self.makeErrorResponseHtml('Cannot connect to NFD, Code = %d' % sp.returncode)
+            return (504, "text/html; charset=UTF-8", html)
 
 class ThreadHttpServer(ThreadingMixIn, HTTPServer):
     """ Handle requests using threads """
