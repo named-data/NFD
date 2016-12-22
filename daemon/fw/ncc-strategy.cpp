@@ -37,8 +37,13 @@ const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::micr
 const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
 
 NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+  : Strategy(forwarder)
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("NccStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&

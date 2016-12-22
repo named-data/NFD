@@ -38,13 +38,22 @@ namespace tests {
 class DummyStrategy : public fw::Strategy
 {
 public:
+  static void
+  registerAs(const Name& name)
+  {
+    if (!fw::Strategy::canCreate(name)) {
+      fw::Strategy::registerType<DummyStrategy>(name);
+    }
+  }
+
   DummyStrategy(Forwarder& forwarder, const Name& name)
-    : Strategy(forwarder, name)
+    : Strategy(forwarder)
     , afterReceiveInterest_count(0)
     , beforeSatisfyInterest_count(0)
     , beforeExpirePendingInterest_count(0)
     , afterReceiveNack_count(0)
   {
+    this->setInstanceName(name);
   }
 
   /** \brief after receive Interest trigger
@@ -52,7 +61,7 @@ public:
    *  If \p interestOutFace is not null, Interest is forwarded to that face via send Interest action;
    *  otherwise, reject pending Interest action is invoked.
    */
-  virtual void
+  void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override
   {
@@ -66,20 +75,20 @@ public:
     }
   }
 
-  virtual void
+  void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override
   {
     ++beforeSatisfyInterest_count;
   }
 
-  virtual void
+  void
   beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
   {
     ++beforeExpirePendingInterest_count;
   }
 
-  virtual void
+  void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override
   {

@@ -48,12 +48,24 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(Strategy::listRegistered().count(NccStrategy::getStrategyName()), 1);
 }
 
-// NccStrategy is fairly complex.
-// The most important property is:
-// it remembers which upstream is the fastest to return Data,
-// and favors this upstream in subsequent Interests.
+BOOST_AUTO_TEST_CASE(InstanceName)
+{
+  Forwarder forwarder;
+  BOOST_REQUIRE(NccStrategy::getStrategyName().at(-1).isVersion());
+  BOOST_CHECK_EQUAL(
+    NccStrategy(forwarder, NccStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
+    NccStrategy::getStrategyName());
+  BOOST_CHECK_THROW(
+    NccStrategy(forwarder, Name(NccStrategy::getStrategyName()).append("param")),
+    std::invalid_argument);
+}
+
 BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 {
+  // NccStrategy is fairly complex.
+  // The most important property is: it remembers which upstream is the fastest to return Data,
+  // and favors this upstream in subsequent Interests.
+
   LimitedIo limitedIo(this);
   Forwarder forwarder;
   NccStrategyTester& strategy = choose<NccStrategyTester>(forwarder);

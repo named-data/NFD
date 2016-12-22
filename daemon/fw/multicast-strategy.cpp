@@ -32,8 +32,13 @@ namespace fw {
 NFD_REGISTER_STRATEGY(MulticastStrategy);
 
 MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+  : Strategy(forwarder)
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("MulticastStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&

@@ -39,7 +39,7 @@ class Strategy : noncopyable
 public: // registry
   /** \brief register a strategy type
    *  \tparam S subclass of Strategy
-   *  \param strategyName versioned strategy name
+   *  \param strategyName strategy program name, must contain version
    *  \note It is permitted to register the same strategy type under multiple names,
    *        which is useful in tests and for creating aliases.
    */
@@ -47,27 +47,27 @@ public: // registry
   static void
   registerType(const Name& strategyName = S::getStrategyName())
   {
+    BOOST_ASSERT(strategyName.at(-1).isVersion());
     Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(strategyName) == 0);
     registry[strategyName] = &make_unique<S, Forwarder&, const Name&>;
   }
 
-  /** \return whether a strategy instance can be created from \p strategyName
-   *  \param strategyName strategy name, may contain version
-   *  \todo #3868 may contain parameters
+  /** \return whether a strategy instance can be created from \p instanceName
+   *  \param instanceName strategy instance name, may contain version and parameters
    *  \note This function finds a strategy type using same rules as \p create ,
    *        but does not attempt to construct an instance.
    */
   static bool
-  canCreate(const Name& strategyName);
+  canCreate(const Name& instanceName);
 
-  /** \return a strategy instance created from \p strategyName,
-   *  \retval nullptr if !canCreate(strategyName)
-   *  \todo #3868 throw std::invalid_argument strategy type constructor
-   *              does not accept specified version or parameters
+  /** \return a strategy instance created from \p instanceName
+   *  \retval nullptr if !canCreate(instanceName)
+   *  \throw std::invalid_argument strategy type constructor does not accept
+   *                               specified version or parameters
    */
   static unique_ptr<Strategy>
-  create(const Name& strategyName, Forwarder& forwarder);
+  create(const Name& instanceName, Forwarder& forwarder);
 
   /** \return registered versioned strategy names
    */
@@ -76,34 +76,41 @@ public: // registry
 
 public: // constructor, destructor, strategy name
   /** \brief construct a strategy instance
-   *  \param forwarder a reference to the Forwarder, used to enable actions and accessors.
-   *         Strategy subclasses should pass this reference,
-   *         and should not keep a reference themselves.
-   *  \param name the strategy Name.
-   *         It's recommended to include a version number as the last component.
-   *  \todo #3868 name contains version and parameters as instantiated.
+   *  \param forwarder a reference to the forwarder, used to enable actions and accessors.
+   *  \note Strategy subclass constructor should not retain a reference to the forwarder.
    */
-  Strategy(Forwarder& forwarder, const Name& name);
+  explicit
+  Strategy(Forwarder& forwarder);
 
   virtual
   ~Strategy();
 
 #ifdef DOXYGEN
-  /** \return a name that represents the strategy program
-   *  \todo #3868 This name contains version as given in code,
-   *              which may differ from instantiated version.
+  /** \return strategy program name
+   *
+   *  The strategy name is defined by the strategy program.
+   *  It must end with a version component.
    */
   static const Name&
   getStrategyName();
 #endif
 
-  /** \return a name that represents the strategy program
-   *  \todo #3868 This name contains version and parameters as instantiated.
+  /** \return strategy instance name
+   *
+   *  The instance name is assigned during instantiation.
+   *  It contains a version component, and may have extra parameter components.
    */
   const Name&
-  getName() const
+  getInstanceName() const
   {
     return m_name;
+  }
+
+  DEPRECATED(
+  const Name&
+  getName() const)
+  {
+    return this->getInstanceName();
   }
 
 public: // triggers
@@ -249,9 +256,42 @@ protected: // accessors
     return m_forwarder.getFaceTable();
   }
 
-protected: // accessors
-  signal::Signal<FaceTable, Face&>& afterAddFace;
-  signal::Signal<FaceTable, Face&>& beforeRemoveFace;
+protected: // instance name
+  struct ParsedInstanceName
+  {
+    Name strategyName; ///< strategy name without parameters
+    ndn::optional<uint64_t> version; ///< whether strategyName contains a version component
+    PartialName parameters; ///< parameter components
+  };
+
+  /** \brief parse a strategy instance name
+   *  \param input strategy instance name, may contain version and parameters
+   *  \throw std::invalid_argument input format is unacceptable
+   */
+  static ParsedInstanceName
+  parseInstanceName(const Name& input);
+
+  /** \brief construct a strategy instance name
+   *  \param input strategy instance name, may contain version and parameters
+   *  \param strategyName strategy name with version but without parameters;
+   *                      typically this should be \p getStrategyName()
+   *
+   *  If \p input contains a version component, return \p input unchanged.
+   *  Otherwise, return \p input plus the version component taken from \p strategyName.
+   *  This allows a strategy instance to be constructed with an unversioned name,
+   *  but its final instance name should contain the version.
+   */
+  static Name
+  makeInstanceName(const Name& input, const Name& strategyName);
+
+  /** \brief set strategy instance name
+   *  \note This must be called by strategy subclass constructor.
+   */
+  void
+  setInstanceName(const Name& name)
+  {
+    m_name = name;
+  }
 
 private: // registry
   typedef std::function<unique_ptr<Strategy>(Forwarder& forwarder, const Name& strategyName)> CreateFunc;
@@ -261,7 +301,11 @@ private: // registry
   getRegistry();
 
   static Registry::const_iterator
-  find(const Name& strategyName);
+  find(const Name& instanceName);
+
+protected: // accessors
+  signal::Signal<FaceTable, Face&>& afterAddFace;
+  signal::Signal<FaceTable, Face&>& beforeRemoveFace;
 
 private: // instance fields
   Name m_name;

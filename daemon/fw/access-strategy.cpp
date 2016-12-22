@@ -34,10 +34,15 @@ NFD_LOG_INIT("AccessStrategy");
 NFD_REGISTER_STRATEGY(AccessStrategy);
 
 AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+  : Strategy(forwarder)
   , m_removeFaceInfoConn(this->beforeRemoveFace.connect(
                          bind(&AccessStrategy::removeFaceInfo, this, _1)))
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("AccessStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&

@@ -39,13 +39,18 @@ const time::milliseconds AsfStrategy::RETX_SUPPRESSION_INITIAL(10);
 const time::milliseconds AsfStrategy::RETX_SUPPRESSION_MAX(250);
 
 AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+  : Strategy(forwarder)
   , m_measurements(getMeasurements())
   , m_probing(m_measurements)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("AsfStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&

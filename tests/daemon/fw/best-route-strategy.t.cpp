@@ -38,6 +38,29 @@ using namespace nfd::tests;
 typedef StrategyTester<BestRouteStrategy> BestRouteStrategyTester;
 NFD_REGISTER_STRATEGY(BestRouteStrategyTester);
 
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(Registration)
+{
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(BestRouteStrategy::getStrategyName()), 1);
+}
+
+BOOST_AUTO_TEST_CASE(InstanceName)
+{
+  Forwarder forwarder;
+  BOOST_REQUIRE(BestRouteStrategy::getStrategyName().at(-1).isVersion());
+  BOOST_CHECK_EQUAL(
+    BestRouteStrategy(forwarder, BestRouteStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
+    BestRouteStrategy::getStrategyName());
+  BOOST_CHECK_THROW(
+    BestRouteStrategy(forwarder, Name(BestRouteStrategy::getStrategyName()).append("param")),
+    std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestBestRouteStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
+
 } // namespace tests
 } // namespace fw
 } // namespace nfd

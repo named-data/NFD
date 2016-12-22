@@ -34,7 +34,7 @@ namespace fw {
 /** \brief identical to BestRouteStrategy v1, for backwards compatibility
  *  \deprecated NextHopFaceId field is honored universally and it's unnecessary to set this strategy
  */
-class ClientControlStrategy : public BestRouteStrategy
+class ClientControlStrategy : public BestRouteStrategyBase
 {
 public:
   explicit
@@ -42,13 +42,6 @@ public:
 
   static const Name&
   getStrategyName();
-
-  virtual void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
-                       const shared_ptr<pit::Entry>& pitEntry) override;
-
-private:
-  bool m_isFirstUse = true;
 };
 
 } // namespace fw

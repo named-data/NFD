@@ -37,11 +37,16 @@ const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_INITIAL(10);
 const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_MAX(250);
 
 BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+  : Strategy(forwarder)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("BestRouteStrategy2 does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 
 const Name&

@@ -60,6 +60,18 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AccessStrategy::getStrategyName()), 1);
 }
 
+BOOST_AUTO_TEST_CASE(InstanceName)
+{
+  Forwarder forwarder;
+  BOOST_REQUIRE(AccessStrategy::getStrategyName().at(-1).isVersion());
+  BOOST_CHECK_EQUAL(
+    AccessStrategy(forwarder, AccessStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
+    AccessStrategy::getStrategyName());
+  BOOST_CHECK_THROW(
+    AccessStrategy(forwarder, Name(AccessStrategy::getStrategyName()).append("param")),
+    std::invalid_argument);
+}
+
 class TwoLaptopsFixture : public UnitTestTimeFixture
 {
 protected:

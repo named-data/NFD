@@ -48,6 +48,18 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AsfStrategy::getStrategyName()), 1);
 }
 
+BOOST_AUTO_TEST_CASE(InstanceName)
+{
+  Forwarder forwarder;
+  BOOST_REQUIRE(AsfStrategy::getStrategyName().at(-1).isVersion());
+  BOOST_CHECK_EQUAL(
+    AsfStrategy(forwarder, AsfStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
+    AsfStrategy::getStrategyName());
+  BOOST_CHECK_THROW(
+    AsfStrategy(forwarder, Name(AsfStrategy::getStrategyName()).append("param")),
+    std::invalid_argument);
+}
+
 class AsfGridFixture : public UnitTestTimeFixture
 {
 protected:

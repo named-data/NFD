@@ -116,7 +116,15 @@ StrategyChoice::getStrategy(const Name& strategyName) const
 bool
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
-  unique_ptr<Strategy> createdStrategy = Strategy::create(strategyName, m_forwarder);
+  unique_ptr<Strategy> createdStrategy;
+  try {
+    createdStrategy = Strategy::create(strategyName, m_forwarder);
+  }
+  catch (const std::invalid_argument& e) {
+    NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") cannot create strategy: " << e.what());
+    return false;
+  }
+
   Strategy* strategy = createdStrategy.get();
   if (strategy == nullptr) {
     strategy = this->getStrategy(strategyName);

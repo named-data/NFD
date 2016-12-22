@@ -29,23 +29,14 @@
 namespace nfd {
 namespace fw {
 
-NFD_REGISTER_STRATEGY(BestRouteStrategy);
-
-BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
-  : Strategy(forwarder, name)
+BestRouteStrategyBase::BestRouteStrategyBase(Forwarder& forwarder)
+  : Strategy(forwarder)
 {
-}
-
-const Name&
-BestRouteStrategy::getStrategyName()
-{
-  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%01");
-  return strategyName;
 }
 
 void
-BestRouteStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
-                                        const shared_ptr<pit::Entry>& pitEntry)
+BestRouteStrategyBase::afterReceiveInterest(const Face& inFace, const Interest& interest,
+                                            const shared_ptr<pit::Entry>& pitEntry)
 {
   if (hasPendingOutRecords(*pitEntry)) {
     // not a new Interest, don't forward
@@ -65,6 +56,25 @@ BestRouteStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
   }
 
   this->rejectPendingInterest(pitEntry);
+}
+
+NFD_REGISTER_STRATEGY(BestRouteStrategy);
+
+BestRouteStrategy::BestRouteStrategy(Forwarder& forwarder, const Name& name)
+  : BestRouteStrategyBase(forwarder)
+{
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("BestRouteStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
+}
+
+const Name&
+BestRouteStrategy::getStrategyName()
+{
+  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%01");
+  return strategyName;
 }
 
 } // namespace fw

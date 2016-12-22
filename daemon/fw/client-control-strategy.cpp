@@ -33,8 +33,16 @@ NFD_LOG_INIT("ClientControlStrategy");
 NFD_REGISTER_STRATEGY(ClientControlStrategy);
 
 ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& name)
-  : BestRouteStrategy(forwarder, name)
+  : BestRouteStrategyBase(forwarder)
 {
+  ParsedInstanceName parsed = parseInstanceName(name);
+  if (!parsed.parameters.empty()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("ClientControlStrategy does not accept parameters"));
+  }
+  this->setInstanceName(makeInstanceName(name, getStrategyName()));
+
+  NFD_LOG_WARN("NextHopFaceId field is honored universally and "
+               "it's unnecessary to set client-control strategy.");
 }
 
 const Name&
@@ -42,19 +50,6 @@ ClientControlStrategy::getStrategyName()
 {
   static Name strategyName("/localhost/nfd/strategy/client-control/%FD%02");
   return strategyName;
-}
-
-void
-ClientControlStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
-                                            const shared_ptr<pit::Entry>& pitEntry)
-{
-  if (m_isFirstUse) {
-    NFD_LOG_WARN("NextHopFaceId field is honored universally and "
-                 "it's unnecessary to set client-control strategy.");
-    m_isFirstUse = false;
-  }
-
-  this->BestRouteStrategy::afterReceiveInterest(inFace, interest, pitEntry);
 }
 
 } // namespace fw

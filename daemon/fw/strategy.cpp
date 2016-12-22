@@ -43,43 +43,51 @@ Strategy::getRegistry()
 }
 
 Strategy::Registry::const_iterator
-Strategy::find(const Name& strategyName)
+Strategy::find(const Name& instanceName)
 {
   const Registry& registry = getRegistry();
+  ParsedInstanceName parsed = parseInstanceName(instanceName);
+
+  ///\todo #3868 accommodate parameters
+  if (parsed.version) {
+    NFD_LOG_TRACE("find " << instanceName <<
+                  " strategyName=" << parsed.strategyName << " versioned");
+    ///\todo #3868 if exact version unavailable, choose closest higher version
+    return registry.find(parsed.strategyName);
+  }
+
+  NFD_LOG_TRACE("find " << instanceName <<
+                " strategyName=" << parsed.strategyName << " unversioned");
   Registry::const_iterator candidate = registry.end();
-  for (auto it = registry.lower_bound(strategyName);
-       it != registry.end() && strategyName.isPrefixOf(it->first); ++it) {
-    switch (it->first.size() - strategyName.size()) {
-      case 0: // exact match
-        return it;
-      case 1: // unversioned strategyName matches versioned strategy
-        candidate = it;
-        break;
+  for (auto it = registry.lower_bound(parsed.strategyName);
+       it != registry.end() && parsed.strategyName.isPrefixOf(it->first); ++it) {
+    if (it->first.size() == parsed.strategyName.size() + 1) { // only one extra component: version
+      candidate = it;
     }
   }
   return candidate;
-  ///\todo #3868 if exact version unavailable, choose closest higher version
-  ///\todo #3868 allow parameter component
 }
 
 bool
-Strategy::canCreate(const Name& strategyName)
+Strategy::canCreate(const Name& instanceName)
 {
-  return Strategy::find(strategyName) != getRegistry().end();
+  return Strategy::find(instanceName) != getRegistry().end();
 }
 
 unique_ptr<Strategy>
-Strategy::create(const Name& strategyName, Forwarder& forwarder)
+Strategy::create(const Name& instanceName, Forwarder& forwarder)
 {
-  auto found = Strategy::find(strategyName);
+  auto found = Strategy::find(instanceName);
   if (found == getRegistry().end()) {
-    NFD_LOG_DEBUG("create " << strategyName << " not-found");
+    NFD_LOG_DEBUG("create " << instanceName << " not-found");
     return nullptr;
   }
 
-  NFD_LOG_DEBUG("create " << strategyName << " found=" << found->first);
-  ///\todo #3868 pass parameters to strategy constructor
-  return found->second(forwarder, found->first);
+  unique_ptr<Strategy> instance = found->second(forwarder, instanceName);
+  NFD_LOG_DEBUG("create " << instanceName << " found=" << found->first <<
+                " created=" << instance->getInstanceName());
+  BOOST_ASSERT(!instance->getInstanceName().empty());
+  return instance;
 }
 
 std::set<Name>
@@ -91,10 +99,30 @@ Strategy::listRegistered()
   return strategyNames;
 }
 
-Strategy::Strategy(Forwarder& forwarder, const Name& name)
+Strategy::ParsedInstanceName
+Strategy::parseInstanceName(const Name& input)
+{
+  for (ssize_t i = input.size() - 1; i > 0; --i) {
+    if (input[i].isVersion()) {
+      return {input.getPrefix(i + 1), input[i].toVersion(), input.getSubName(i + 1)};
+    }
+  }
+  return {input, ndn::nullopt, PartialName()};
+}
+
+Name
+Strategy::makeInstanceName(const Name& input, const Name& strategyName)
+{
+  BOOST_ASSERT(strategyName.at(-1).isVersion());
+
+  bool hasVersion = std::any_of(input.rbegin(), input.rend(),
+                                [] (const name::Component& comp) { return comp.isVersion(); });
+  return hasVersion ? input : Name(input).append(strategyName.at(-1));
+}
+
+Strategy::Strategy(Forwarder& forwarder)
   : afterAddFace(forwarder.getFaceTable().afterAdd)
   , beforeRemoveFace(forwarder.getFaceTable().beforeRemove)
-  , m_name(name)
   , m_forwarder(forwarder)
   , m_measurements(m_forwarder.getMeasurements(), m_forwarder.getStrategyChoice(), *this)
 {

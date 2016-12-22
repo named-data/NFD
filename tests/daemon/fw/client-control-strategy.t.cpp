@@ -23,47 +23,39 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
-#define NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
+#include "fw/client-control-strategy.hpp"
 
-#include "strategy.hpp"
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace fw {
+namespace tests {
 
-class BestRouteStrategyBase : public Strategy
+using namespace nfd::tests;
+
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestClientControlStrategy, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(Registration)
 {
-public:
-  void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
-                       const shared_ptr<pit::Entry>& pitEntry) override;
+  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(ClientControlStrategy::getStrategyName()), 1);
+}
 
-protected:
-  BestRouteStrategyBase(Forwarder& forwarder);
-};
-
-/** \brief Best Route strategy version 1
- *
- *  This strategy forwards a new Interest to the lowest-cost nexthop
- *  that is not same as the downstream, and does not violate scope.
- *  Subsequent similar Interests or consumer retransmissions are suppressed
- *  until after InterestLifetime expiry.
- *
- *  \note This strategy is superceded by Best Route strategy version 2,
- *        which allows consumer retransmissions. This version is kept for
- *        comparison purposes and is not recommended for general usage.
- */
-class BestRouteStrategy : public BestRouteStrategyBase
+BOOST_AUTO_TEST_CASE(InstanceName)
 {
-public:
-  explicit
-  BestRouteStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+  Forwarder forwarder;
+  BOOST_REQUIRE(ClientControlStrategy::getStrategyName().at(-1).isVersion());
+  BOOST_CHECK_EQUAL(
+    ClientControlStrategy(forwarder, ClientControlStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
+    ClientControlStrategy::getStrategyName());
+  BOOST_CHECK_THROW(
+    ClientControlStrategy(forwarder, Name(ClientControlStrategy::getStrategyName()).append("param")),
+    std::invalid_argument);
+}
 
-  static const Name&
-  getStrategyName();
-};
+BOOST_AUTO_TEST_SUITE_END() // TestClientControlStrategy
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
+} // namespace tests
 } // namespace fw
 } // namespace nfd
-
-#endif // NFD_DAEMON_FW_BEST_ROUTE_STRATEGY_HPP
