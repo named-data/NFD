@@ -31,7 +31,6 @@
 #include "tests/test-common.hpp"
 #include "tests/check-typeid.hpp"
 #include "../fw/dummy-strategy.hpp"
-#include "../fw/install-strategy.hpp"
 
 namespace nfd {
 namespace tests {
@@ -44,7 +43,13 @@ protected:
     , strategyChoice(forwarder.getStrategyChoice())
     , networkRegionTable(forwarder.getNetworkRegionTable())
     , tablesConfig(forwarder)
+    , strategyP("/tables-config-section-strategy-P/%FD%02")
+    , strategyP1("/tables-config-section-strategy-P/%FD%01")
+    , strategyQ("/tables-config-section-strategy-Q/%FD%02")
   {
+    DummyStrategy::registerAs(strategyP);
+    DummyStrategy::registerAs(strategyP1);
+    DummyStrategy::registerAs(strategyQ);
   }
 
   void
@@ -62,6 +67,10 @@ protected:
   NetworkRegionTable& networkRegionTable;
 
   TablesConfigSection tablesConfig;
+
+  const Name strategyP;
+  const Name strategyP1;
+  const Name strategyQ;
 };
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
@@ -273,33 +282,30 @@ BOOST_AUTO_TEST_CASE(Unversioned)
     {
       strategy_choice
       {
-        / /localhost/nfd/strategy/test-strategy-a
-        /a /localhost/nfd/strategy/test-strategy-b
+        / /tables-config-section-strategy-P
+        /a /tables-config-section-strategy-Q
       }
     }
   )CONFIG";
 
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-a");
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-b");
-
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& rootStrategy = strategyChoice.findEffectiveStrategy("/");
-    BOOST_REQUIRE_NE(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
-    BOOST_REQUIRE_NE(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+    BOOST_CHECK_NE(rootStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    BOOST_CHECK_NE(rootStrategy.getInstanceName(), strategyQ.getPrefix(-1));
 
     fw::Strategy& aStrategy = strategyChoice.findEffectiveStrategy("/a");
-    BOOST_REQUIRE_NE(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
-    BOOST_REQUIRE_NE(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
+    BOOST_CHECK_NE(aStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    BOOST_CHECK_NE(aStrategy.getInstanceName(), strategyQ.getPrefix(-1));
   }
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& rootStrategy = strategyChoice.findEffectiveStrategy("/");
-    BOOST_REQUIRE_EQUAL(rootStrategy.getName(), "/localhost/nfd/strategy/test-strategy-a");
+    BOOST_CHECK_EQUAL(rootStrategy.getInstanceName(), strategyP.getPrefix(-1));
 
     fw::Strategy& aStrategy = strategyChoice.findEffectiveStrategy("/a");
-    BOOST_REQUIRE_EQUAL(aStrategy.getName(), "/localhost/nfd/strategy/test-strategy-b");
+    BOOST_CHECK_EQUAL(aStrategy.getInstanceName(), strategyQ.getPrefix(-1));
   }
 }
 
@@ -310,39 +316,30 @@ BOOST_AUTO_TEST_CASE(Versioned)
     {
       strategy_choice
       {
-        /test/latest /localhost/nfd/strategy/test-strategy-a
-        /test/old /localhost/nfd/strategy/test-strategy-a/%FD%01
+        /test/latest /tables-config-section-strategy-P
+        /test/old /tables-config-section-strategy-P/%FD%01
       }
     }
   )CONFIG";
 
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-a/%FD%01");
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-a/%FD%02");
-
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
   {
     fw::Strategy& testLatestStrategy = strategyChoice.findEffectiveStrategy("/test/latest");
-    BOOST_REQUIRE_NE(testLatestStrategy.getName(),
-                     "/localhost/nfd/strategy/test-strategy-a/%FD%01");
-    BOOST_REQUIRE_NE(testLatestStrategy.getName(),
-                     "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+    BOOST_CHECK_NE(testLatestStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    BOOST_CHECK_NE(testLatestStrategy.getInstanceName(), strategyP1);
 
     fw::Strategy& testOldStrategy = strategyChoice.findEffectiveStrategy("/test/old");
-    BOOST_REQUIRE_NE(testOldStrategy.getName(),
-                     "/localhost/nfd/strategy/test-strategy-a/%FD%01");
-    BOOST_REQUIRE_NE(testOldStrategy.getName(),
-                     "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+    BOOST_CHECK_NE(testOldStrategy.getInstanceName(), strategyP.getPrefix(-1));
+    BOOST_CHECK_NE(testOldStrategy.getInstanceName(), strategyP1);
   }
 
   BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
   {
     fw::Strategy& testLatestStrategy = strategyChoice.findEffectiveStrategy("/test/latest");
-    BOOST_REQUIRE_EQUAL(testLatestStrategy.getName(),
-                        "/localhost/nfd/strategy/test-strategy-a/%FD%02");
+    BOOST_CHECK_EQUAL(testLatestStrategy.getInstanceName(), strategyP.getPrefix(-1));
 
     fw::Strategy& testOldStrategy = strategyChoice.findEffectiveStrategy("/test/old");
-    BOOST_REQUIRE_EQUAL(testOldStrategy.getName(),
-                        "/localhost/nfd/strategy/test-strategy-a/%FD%01");
+    BOOST_CHECK_EQUAL(testOldStrategy.getInstanceName(), strategyP1);
   }
 }
 
@@ -369,12 +366,10 @@ BOOST_AUTO_TEST_CASE(MissingPrefix)
     {
       strategy_choice
       {
-        /localhost/nfd/strategy/test-strategy-a
+        /tables-config-section-strategy-P
       }
     }
   )CONFIG";
-
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-a");
 
   BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
@@ -387,15 +382,12 @@ BOOST_AUTO_TEST_CASE(Duplicate)
     {
       strategy_choice
       {
-        / /localhost/nfd/strategy/test-strategy-a
-        /a /localhost/nfd/strategy/test-strategy-b
-        / /localhost/nfd/strategy/test-strategy-b
+        / /tables-config-section-strategy-P
+        /a /tables-config-section-strategy-Q
+        / /tables-config-section-strategy-Q
       }
     }
   )CONFIG";
-
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-a");
-  install<DummyStrategy>(forwarder, "/localhost/nfd/strategy/test-strategy-b");
 
   BOOST_CHECK_THROW(runConfig(CONFIG, true), ConfigFile::Error);
   BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);

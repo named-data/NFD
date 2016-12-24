@@ -256,6 +256,7 @@ clearStrategyInfo(const name_tree::Entry& nte)
 void
 StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& newStrategy)
 {
+  ///\todo #3868 don't clear StrategyInfo if only parameter differs
   if (&oldStrategy == &newStrategy) {
     return;
   }

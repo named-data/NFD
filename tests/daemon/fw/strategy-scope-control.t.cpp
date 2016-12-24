@@ -37,7 +37,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/limited-io.hpp"
-#include "install-strategy.hpp"
+#include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include <boost/mpl/copy_if.hpp>

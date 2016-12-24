@@ -33,7 +33,7 @@
 #include "face/internal-transport.hpp"
 #include "face/face.hpp"
 #include "fw/strategy.hpp"
-#include "install-strategy.hpp"
+#include "choose-strategy.hpp"
 #include "tests/test-common.hpp"
 
 #include <ndn-cxx/face.hpp>

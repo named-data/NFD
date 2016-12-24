@@ -33,28 +33,27 @@ namespace tests {
 
 /** \brief strategy for unit testing
  *
- *  Unless otherwise indicated, triggers are recorded but does nothing.
+ *  Triggers are recorded but do nothing.
+ *
+ *  DummyStrategy registers itself as /dummy-strategy/<max-version>, so that it can be instantiated
+ *  with any version number. Aliases can be created with \p registerAs function.
  */
 class DummyStrategy : public fw::Strategy
 {
 public:
   static void
-  registerAs(const Name& name)
-  {
-    if (!fw::Strategy::canCreate(name)) {
-      fw::Strategy::registerType<DummyStrategy>(name);
-    }
-  }
+  registerAs(const Name& strategyName);
 
-  DummyStrategy(Forwarder& forwarder, const Name& name)
-    : Strategy(forwarder)
-    , afterReceiveInterest_count(0)
-    , beforeSatisfyInterest_count(0)
-    , beforeExpirePendingInterest_count(0)
-    , afterReceiveNack_count(0)
-  {
-    this->setInstanceName(name);
-  }
+  static Name
+  getStrategyName(uint64_t version = std::numeric_limits<uint64_t>::max());
+
+  /** \brief constructor
+   *
+   *  \p name is recorded unchanged as \p getInstanceName() , and will not automatically
+   *  gain a version number when instantiated without a version number.
+   */
+  explicit
+  DummyStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
 
   /** \brief after receive Interest trigger
    *
@@ -63,36 +62,30 @@ public:
    */
   void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
-                       const shared_ptr<pit::Entry>& pitEntry) override
-  {
-    ++afterReceiveInterest_count;
-
-    if (interestOutFace != nullptr) {
-      this->sendInterest(pitEntry, *interestOutFace, interest);
-    }
-    else {
-      this->rejectPendingInterest(pitEntry);
-    }
-  }
+                       const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override
-  {
-    ++beforeSatisfyInterest_count;
-  }
+                        const Face& inFace, const Data& data) override;
 
   void
-  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry) override
-  {
-    ++beforeExpirePendingInterest_count;
-  }
+  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
-                   const shared_ptr<pit::Entry>& pitEntry) override
+                   const shared_ptr<pit::Entry>& pitEntry) override;
+
+protected:
+  /** \brief register an alias
+   *  \tparam S subclass of DummyStrategy
+   */
+  template<typename S>
+  static void
+  registerAsImpl(const Name& strategyName)
   {
-    ++afterReceiveNack_count;
+    if (!fw::Strategy::canCreate(strategyName)) {
+      fw::Strategy::registerType<S>(strategyName);
+    }
   }
 
 public:

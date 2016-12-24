@@ -46,7 +46,7 @@ class FaceTableAccessTestStrategy : public DummyStrategy
 public:
   explicit
   FaceTableAccessTestStrategy(Forwarder& forwarder)
-    : DummyStrategy(forwarder, Name("ndn:/strategy"))
+    : DummyStrategy(forwarder)
   {
     this->afterAddFace.connect([this] (const Face& face) {
       this->addedFaces.push_back(face.getId());
@@ -106,7 +106,7 @@ protected:
   public:
     explicit
     TestStrategy(Forwarder& forwarder)
-      : DummyStrategy(forwarder, Name("ndn:/strategy"))
+      : DummyStrategy(forwarder)
     {
     }
 
