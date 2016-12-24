@@ -393,6 +393,22 @@ BOOST_AUTO_TEST_CASE(Duplicate)
   BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
 }
 
+BOOST_AUTO_TEST_CASE(UnacceptableParameters)
+{
+  const std::string CONFIG = R"CONFIG(
+    tables
+    {
+      strategy_choice
+      {
+        / /localhost/nfd/strategy/best-route/%FD%01/param
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(runConfig(CONFIG, true));
+  BOOST_CHECK_THROW(runConfig(CONFIG, false), ConfigFile::Error);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // StrategyChoice
 
 BOOST_AUTO_TEST_SUITE(NetworkRegion)

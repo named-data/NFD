@@ -24,6 +24,7 @@
  */
 
 #include "tables-config-section.hpp"
+#include "fw/strategy.hpp"
 
 namespace nfd {
 
@@ -120,15 +121,14 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
 void
 TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, bool isDryRun)
 {
-  StrategyChoice& sc = m_forwarder.getStrategyChoice();
+  using fw::Strategy;
 
   std::map<Name, Name> choices;
-
   for (const auto& prefixAndStrategy : section) {
     Name prefix(prefixAndStrategy.first);
     Name strategy(prefixAndStrategy.second.get_value<std::string>());
 
-    if (!sc.hasStrategy(strategy)) {
+    if (!Strategy::canCreate(strategy)) {
       BOOST_THROW_EXCEPTION(ConfigFile::Error(
         "Unknown strategy \"" + prefixAndStrategy.second.get_value<std::string>() +
         "\" for prefix \"" + prefix.toUri() + "\" in \"strategy_choice\" section"));
@@ -145,6 +145,7 @@ TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, 
     return;
   }
 
+  StrategyChoice& sc = m_forwarder.getStrategyChoice();
   for (const auto& prefixAndStrategy : choices) {
     if (!sc.insert(prefixAndStrategy.first, prefixAndStrategy.second)) {
       BOOST_THROW_EXCEPTION(ConfigFile::Error(
@@ -152,6 +153,7 @@ TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, 
         "prefix \"" + prefixAndStrategy.first.toUri() + "\" in \"strategy_choicev\""));
     }
   }
+  ///\todo redesign so that strategy parameter errors can be catched during dry-run
 }
 
 void
