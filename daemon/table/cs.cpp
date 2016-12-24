@@ -24,25 +24,17 @@
  */
 
 #include "cs.hpp"
-#include "core/logger.hpp"
 #include "core/algorithm.hpp"
+#include "core/asserts.hpp"
+#include "core/logger.hpp"
 #include <ndn-cxx/lp/tags.hpp>
-
-NFD_LOG_INIT("ContentStore");
 
 namespace nfd {
 namespace cs {
 
-// http://en.cppreference.com/w/cpp/concept/ForwardIterator
-BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Cs::const_iterator>));
-// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
-// which doesn't require DefaultConstructible
-#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
-static_assert(std::is_default_constructible<Cs::const_iterator>::value,
-              "Cs::const_iterator must be default-constructible");
-#else
-BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Cs::const_iterator>));
-#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
+NFD_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
+
+NFD_LOG_INIT("ContentStore");
 
 unique_ptr<Policy>
 makeDefaultPolicy()

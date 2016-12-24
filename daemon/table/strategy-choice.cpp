@@ -26,6 +26,7 @@
 #include "strategy-choice.hpp"
 #include "measurements-entry.hpp"
 #include "pit-entry.hpp"
+#include "core/asserts.hpp"
 #include "core/logger.hpp"
 #include "fw/strategy.hpp"
 
@@ -33,6 +34,8 @@ namespace nfd {
 namespace strategy_choice {
 
 using fw::Strategy;
+
+NFD_ASSERT_FORWARD_ITERATOR(StrategyChoice::const_iterator);
 
 NFD_LOG_INIT("StrategyChoice");
 

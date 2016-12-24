@@ -25,20 +25,14 @@
 
 #include "name-tree-iterator.hpp"
 #include "name-tree.hpp"
+#include "core/asserts.hpp"
 #include "core/logger.hpp"
-
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
 #include <boost/range/concepts.hpp>
-#include <type_traits>
 
 namespace nfd {
 namespace name_tree {
 
-BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Iterator>));
-static_assert(std::is_default_constructible<Iterator>::value,
-              "Iterator must be default-constructible");
-
+NFD_ASSERT_FORWARD_ITERATOR(Iterator);
 BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
 
 NFD_LOG_INIT("NameTreeIterator");

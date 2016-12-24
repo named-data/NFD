@@ -26,26 +26,14 @@
 #include "fib.hpp"
 #include "pit-entry.hpp"
 #include "measurements-entry.hpp"
-
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
-#include <type_traits>
+#include "core/asserts.hpp"
 
 namespace nfd {
 namespace fib {
 
-const unique_ptr<Entry> Fib::s_emptyEntry = make_unique<Entry>(Name());
+NFD_ASSERT_FORWARD_ITERATOR(Fib::const_iterator);
 
-// http://en.cppreference.com/w/cpp/concept/ForwardIterator
-BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Fib::const_iterator>));
-// boost::ForwardIterator follows SGI standard http://www.sgi.com/tech/stl/ForwardIterator.html,
-// which doesn't require DefaultConstructible
-#ifdef HAVE_IS_DEFAULT_CONSTRUCTIBLE
-static_assert(std::is_default_constructible<Fib::const_iterator>::value,
-              "Fib::const_iterator must be default-constructible");
-#else
-BOOST_CONCEPT_ASSERT((boost::DefaultConstructible<Fib::const_iterator>));
-#endif // HAVE_IS_DEFAULT_CONSTRUCTIBLE
+const unique_ptr<Entry> Fib::s_emptyEntry = make_unique<Entry>(Name());
 
 static inline bool
 nteHasFibEntry(const name_tree::Entry& nte)

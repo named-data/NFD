@@ -24,17 +24,12 @@
  */
 
 #include "pit-iterator.hpp"
-
-#include <boost/concept/assert.hpp>
-#include <boost/concept_check.hpp>
-#include <type_traits>
+#include "core/asserts.hpp"
 
 namespace nfd {
 namespace pit {
 
-BOOST_CONCEPT_ASSERT((boost::ForwardIterator<Iterator>));
-static_assert(std::is_default_constructible<Iterator>::value,
-              "Iterator must be default-constructible");
+NFD_ASSERT_FORWARD_ITERATOR(Iterator);
 
 Iterator::Iterator(const NameTree::const_iterator& ntIt, size_t iPitEntry)
   : m_ntIt(ntIt)

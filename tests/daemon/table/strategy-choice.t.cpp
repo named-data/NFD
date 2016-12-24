@@ -204,10 +204,6 @@ BOOST_AUTO_TEST_CASE(Erase)
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }
 
-//XXX BOOST_CONCEPT_ASSERT((ForwardIterator<std::vector<int>::iterator>))
-//    is also failing. There might be a problem with ForwardIterator concept checking.
-//BOOST_CONCEPT_ASSERT((ForwardIterator<StrategyChoice::const_iterator>));
-
 BOOST_AUTO_TEST_CASE(Enumerate)
 {
   sc.insert("/",      strategyNameP);

@@ -25,11 +25,14 @@
 
 #include "face-table.hpp"
 #include "forwarder.hpp"
+#include "core/asserts.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "face/channel.hpp"
 
 namespace nfd {
+
+NFD_ASSERT_FORWARD_ITERATOR(FaceTable::const_iterator);
 
 NFD_LOG_INIT("FaceTable");
 

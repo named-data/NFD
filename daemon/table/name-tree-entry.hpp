@@ -189,8 +189,11 @@ public:
    */
   using Getter = ENTRY* (Entry::*)() const;
 
+  /** \note The default argument is needed to ensure FIB and StrategyChoice iterators
+   *        are default-constructible.
+   */
   explicit
-  GetTableEntry(Getter getter)
+  GetTableEntry(Getter getter = nullptr)
     : m_getter(getter)
   {
   }
