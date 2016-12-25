@@ -47,18 +47,15 @@ public:
 
 private:
   void
-  setStrategy(const Name& topPrefix, const Interest& interest,
-              ControlParameters parameters,
+  setStrategy(ControlParameters parameters,
               const ndn::mgmt::CommandContinuation& done);
 
   void
-  unsetStrategy(const Name& topPrefix, const Interest& interest,
-                ControlParameters parameters,
+  unsetStrategy(ControlParameters parameters,
                 const ndn::mgmt::CommandContinuation& done);
 
   void
-  listChoices(const Name& topPrefix, const Interest& interest,
-              ndn::mgmt::StatusDatasetContext& context);
+  listChoices(ndn::mgmt::StatusDatasetContext& context);
 
 private:
   strategy_choice::StrategyChoice& m_table;

@@ -38,55 +38,51 @@ StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
   , m_table(strategyChoice)
 {
   registerCommandHandler<ndn::nfd::StrategyChoiceSetCommand>("set",
-    bind(&StrategyChoiceManager::setStrategy, this, _2, _3, _4, _5));
+    bind(&StrategyChoiceManager::setStrategy, this, _4, _5));
   registerCommandHandler<ndn::nfd::StrategyChoiceUnsetCommand>("unset",
-    bind(&StrategyChoiceManager::unsetStrategy, this, _2, _3, _4, _5));
+    bind(&StrategyChoiceManager::unsetStrategy, this, _4, _5));
 
   registerStatusDatasetHandler("list",
-    bind(&StrategyChoiceManager::listChoices, this, _1, _2, _3));
+    bind(&StrategyChoiceManager::listChoices, this, _3));
 }
 
 void
-StrategyChoiceManager::setStrategy(const Name& topPrefix, const Interest& interest,
-                                   ControlParameters parameters,
+StrategyChoiceManager::setStrategy(ControlParameters parameters,
                                    const ndn::mgmt::CommandContinuation& done)
 {
   const Name& prefix = parameters.getName();
-  const Name& selectedStrategy = parameters.getStrategy();
+  const Name& strategy = parameters.getStrategy();
 
-  if (!m_table.hasStrategy(selectedStrategy)) {
-    NFD_LOG_DEBUG("strategy-choice result: FAIL reason: unknown-strategy: "
-                  << parameters.getStrategy());
-    return done(ControlResponse(504, "Unsupported strategy"));
+  if (!m_table.insert(prefix, strategy)) {
+    NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): cannot-create");
+    return done(ControlResponse(404, "Unknown strategy or invalid parameters"));
+    ///\todo #3868 pass along the error message from Strategy subclass constructor
   }
 
-  if (m_table.insert(prefix, selectedStrategy)) {
-    NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
-    auto currentStrategyChoice = m_table.get(prefix);
-    BOOST_ASSERT(currentStrategyChoice.first);
-    parameters.setStrategy(currentStrategyChoice.second);
-    return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-  }
-  else {
-    NFD_LOG_DEBUG("strategy-choice result: FAIL reason: not-installed");
-    return done(ControlResponse(405, "Strategy not installed"));
-  }
+  NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): OK");
+  bool hasEntry = false;
+  Name instanceName;
+  std::tie(hasEntry, instanceName) = m_table.get(prefix);
+  BOOST_ASSERT_MSG(hasEntry, "StrategyChoice entry must exist after StrategyChoice::insert");
+  parameters.setStrategy(instanceName);
+  return done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 }
 
 void
-StrategyChoiceManager::unsetStrategy(const Name& topPrefix, const Interest& interest,
-                                     ControlParameters parameters,
+StrategyChoiceManager::unsetStrategy(ControlParameters parameters,
                                      const ndn::mgmt::CommandContinuation& done)
 {
+  const Name& prefix = parameters.getName();
+  // no need to test for ndn:/ , parameter validation takes care of that
+
   m_table.erase(parameters.getName());
 
-  NFD_LOG_DEBUG("strategy-choice result: SUCCESS");
+  NFD_LOG_DEBUG("strategy-choice/unset(" << prefix << "): OK");
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 }
 
 void
-StrategyChoiceManager::listChoices(const Name& topPrefix, const Interest& interest,
-                                   ndn::mgmt::StatusDatasetContext& context)
+StrategyChoiceManager::listChoices(ndn::mgmt::StatusDatasetContext& context)
 {
   for (const auto& i : m_table) {
     ndn::nfd::StrategyChoice entry;

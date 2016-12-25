@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceManager, StrategyChoiceManagerFixture)
 
 ///\todo #3868 rewrite test case after changing strategy versioning scheme
-BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(SetStrategy, 6)
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(SetStrategy, 7)
 BOOST_AUTO_TEST_CASE(SetStrategy)
 {
   auto testSetStrategy = [this] (const ControlParameters& parameters) -> Name {
