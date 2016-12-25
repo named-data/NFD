@@ -40,9 +40,9 @@ Entry::Entry(const Name& prefix)
 Entry::~Entry() = default;
 
 const Name&
-Entry::getStrategyName() const
+Entry::getStrategyInstanceName() const
 {
-  return this->getStrategy().getName();
+  return this->getStrategy().getInstanceName();
 }
 
 void

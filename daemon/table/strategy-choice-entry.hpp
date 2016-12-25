@@ -49,15 +49,21 @@ public:
 
   ~Entry();
 
+  /** \return name prefix on which this strategy choice is applied
+   */
   const Name&
   getPrefix() const
   {
     return m_prefix;
   }
 
+  /** \return strategy instance name
+   */
   const Name&
-  getStrategyName() const;
+  getStrategyInstanceName() const;
 
+  /** \return strategy instance
+   */
   fw::Strategy&
   getStrategy() const
   {
@@ -78,7 +84,6 @@ private:
   fw::Strategy* m_strategyPtr;
 
   name_tree::Entry* m_nameTreeEntry;
-
   friend class name_tree::Entry;
 };
 

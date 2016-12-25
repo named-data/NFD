@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE(Enumerate)
 
   std::map<Name, Name> map; // namespace=>strategyName
   for (StrategyChoice::const_iterator it = sc.begin(); it != sc.end(); ++it) {
-    map[it->getPrefix()] = it->getStrategyName();
+    map[it->getPrefix()] = it->getStrategyInstanceName();
   }
 
   BOOST_CHECK_EQUAL(map.at("/"),      strategyNameP);

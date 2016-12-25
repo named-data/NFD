@@ -57,7 +57,7 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
 {
   auto entry = make_unique<Entry>(Name());
   entry->setStrategy(Strategy::create(strategyName, m_forwarder));
-  NFD_LOG_INFO("setDefaultStrategy " << entry->getStrategyName());
+  NFD_LOG_INFO("setDefaultStrategy " << entry->getStrategyInstanceName());
 
   // don't use .insert here, because it will invoke findEffectiveStrategy
   // which expects an existing root entry
@@ -86,7 +86,7 @@ StrategyChoice::install(unique_ptr<Strategy> strategy)
   /// m_strategyInstances, install, getStrategy, hasStrategy should be eliminated.
 
   BOOST_ASSERT(strategy != nullptr);
-  Name strategyName = strategy->getName();
+  Name strategyName = strategy->getInstanceName();
   // copying Name, so that strategyName remains available even if strategy is deallocated
 
   bool isInserted = false;
@@ -142,13 +142,13 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   Entry* entry = nte.getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {
-    if (entry->getStrategyName() == strategy->getName()) {
-      NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getName());
+    if (entry->getStrategyInstanceName() == strategy->getInstanceName()) {
+      NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getInstanceName());
       return true;
     }
     oldStrategy = &entry->getStrategy();
-    NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getName() <<
-                  " to " << strategy->getName());
+    NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getInstanceName() <<
+                  " to " << strategy->getInstanceName());
   }
   else {
     oldStrategy = &this->findEffectiveStrategy(prefix);
@@ -156,7 +156,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     entry = newEntry.get();
     nte.setStrategyChoiceEntry(std::move(newEntry));
     ++m_nItems;
-    NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getName());
+    NFD_LOG_TRACE("insert(" << prefix << ") new entry " << strategy->getInstanceName());
   }
 
   this->changeStrategy(*entry, *oldStrategy, *strategy);
@@ -207,7 +207,7 @@ StrategyChoice::get(const Name& prefix) const
     return {false, Name()};
   }
 
-  return {true, entry->getStrategy().getName()};
+  return {true, entry->getStrategyInstanceName()};
 }
 
 template<typename K>
@@ -265,8 +265,8 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
   }
 
   NFD_LOG_INFO("changeStrategy(" << entry.getPrefix() << ")"
-               << " from " << oldStrategy.getName()
-               << " to " << newStrategy.getName());
+               << " from " << oldStrategy.getInstanceName()
+               << " to " << newStrategy.getInstanceName());
 
   // reset StrategyInfo on a portion of NameTree,
   // where entry's effective strategy is covered by the changing StrategyChoice entry

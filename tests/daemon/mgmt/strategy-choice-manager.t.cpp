@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
   std::set<Name> actualNames, actualStrategies;
   for (const auto& entry : m_strategyChoice) {
     actualNames.insert(entry.getPrefix());
-    actualStrategies.insert(entry.getStrategyName());
+    actualStrategies.insert(entry.getStrategyInstanceName());
   }
 
   std::uniform_int_distribution<uint64_t> dist;

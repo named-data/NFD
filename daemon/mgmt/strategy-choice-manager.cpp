@@ -88,9 +88,10 @@ void
 StrategyChoiceManager::listChoices(const Name& topPrefix, const Interest& interest,
                                    ndn::mgmt::StatusDatasetContext& context)
 {
-  for (auto&& i : m_table) {
+  for (const auto& i : m_table) {
     ndn::nfd::StrategyChoice entry;
-    entry.setName(i.getPrefix()).setStrategy(i.getStrategyName());
+    entry.setName(i.getPrefix())
+         .setStrategy(i.getStrategyInstanceName());
     context.append(entry.wireEncode());
   }
   context.end();

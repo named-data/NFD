@@ -106,13 +106,6 @@ public: // constructor, destructor, strategy name
     return m_name;
   }
 
-  DEPRECATED(
-  const Name&
-  getName() const)
-  {
-    return this->getInstanceName();
-  }
-
 public: // triggers
   /** \brief trigger after Interest is received
    *
