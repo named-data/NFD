@@ -67,75 +67,20 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
 }
 
 bool
-StrategyChoice::hasStrategy(const Name& strategyName, bool isExact) const
-{
-  if (isExact) {
-    return m_strategyInstances.count(strategyName) > 0;
-  }
-  else {
-    return Strategy::canCreate(strategyName) ||
-           this->getStrategy(strategyName) != nullptr;
-  }
-}
-
-std::pair<bool, Strategy*>
-StrategyChoice::install(unique_ptr<Strategy> strategy)
-{
-  /// \todo #3868
-  /// Strategy instance should always be created from Strategy::create;
-  /// m_strategyInstances, install, getStrategy, hasStrategy should be eliminated.
-
-  BOOST_ASSERT(strategy != nullptr);
-  Name strategyName = strategy->getInstanceName();
-  // copying Name, so that strategyName remains available even if strategy is deallocated
-
-  bool isInserted = false;
-  StrategyInstanceTable::iterator it;
-  std::tie(it, isInserted) = m_strategyInstances.emplace(strategyName, std::move(strategy));
-
-  if (!isInserted) {
-    NFD_LOG_ERROR("install(" << strategyName << ") duplicate strategyName");
-  }
-  return std::make_pair(isInserted, it->second.get());
-}
-
-Strategy*
-StrategyChoice::getStrategy(const Name& strategyName) const
-{
-  Strategy* candidate = nullptr;
-  for (auto it = m_strategyInstances.lower_bound(strategyName);
-       it != m_strategyInstances.end() && strategyName.isPrefixOf(it->first); ++it) {
-    switch (it->first.size() - strategyName.size()) {
-    case 0: // exact match
-      return it->second.get();
-    case 1: // unversioned strategyName matches versioned strategy
-      candidate = it->second.get();
-      break;
-    }
-  }
-  return candidate;
-}
-
-bool
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
-  unique_ptr<Strategy> createdStrategy;
+  unique_ptr<Strategy> strategy;
   try {
-    createdStrategy = Strategy::create(strategyName, m_forwarder);
+    strategy = Strategy::create(strategyName, m_forwarder);
   }
   catch (const std::invalid_argument& e) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") cannot create strategy: " << e.what());
     return false;
   }
 
-  Strategy* strategy = createdStrategy.get();
   if (strategy == nullptr) {
-    strategy = this->getStrategy(strategyName);
-    if (strategy == nullptr) {
-      NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered or installed");
-      return false;
-    }
-    NFD_LOG_WARN("insert(" << prefix << "," << strategyName << ") using shared strategy instance");
+    NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered");
+    return false;
   }
 
   name_tree::Entry& nte = m_nameTree.lookup(prefix);
@@ -160,12 +105,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   }
 
   this->changeStrategy(*entry, *oldStrategy, *strategy);
-  if (createdStrategy != nullptr) {
-    entry->setStrategy(std::move(createdStrategy));
-  }
-  else {
-    entry->setStrategy(*strategy);
-  }
+  entry->setStrategy(std::move(strategy));
   return true;
 }
 

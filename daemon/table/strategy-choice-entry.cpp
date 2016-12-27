@@ -32,7 +32,6 @@ namespace strategy_choice {
 
 Entry::Entry(const Name& prefix)
   : m_prefix(prefix)
-  , m_strategyPtr(nullptr)
   , m_nameTreeEntry(nullptr)
 {
 }
@@ -46,21 +45,9 @@ Entry::getStrategyInstanceName() const
 }
 
 void
-Entry::setStrategy(fw::Strategy& strategy)
-{
-  /// \todo #3868
-  /// Every entry should have its own Strategy instance in unique_ptr;
-  /// m_strategyPtr and this overload should be eliminated.
-
-  m_strategy.reset();
-  m_strategyPtr = &strategy;
-}
-
-void
 Entry::setStrategy(unique_ptr<fw::Strategy> strategy)
 {
   m_strategy = std::move(strategy);
-  m_strategyPtr = m_strategy.get();
 }
 
 } // namespace strategy_choice

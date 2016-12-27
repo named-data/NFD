@@ -74,6 +74,36 @@ BOOST_FIXTURE_TEST_SUITE(TestStrategyChoice, StrategyChoiceFixture)
 
 using fw::Strategy;
 
+BOOST_AUTO_TEST_CASE(Versioning)
+{
+  const Name strategyNameV("/strategy-choice-V");
+  const Name strategyNameV0("/strategy-choice-V/%FD%00");
+  const Name strategyNameV1("/strategy-choice-V/%FD%01");
+  const Name strategyNameV2("/strategy-choice-V/%FD%02");
+  const Name strategyNameV3("/strategy-choice-V/%FD%03");
+  const Name strategyNameV4("/strategy-choice-V/%FD%04");
+  const Name strategyNameV5("/strategy-choice-V/%FD%05");
+
+  VersionedDummyStrategy<1>::registerAs(strategyNameV1);
+  VersionedDummyStrategy<3>::registerAs(strategyNameV3);
+  VersionedDummyStrategy<4>::registerAs(strategyNameV4);
+
+  // unversioned: choose latest version
+  BOOST_CHECK_EQUAL(this->insertAndGet("/A", strategyNameV), strategyNameV4);
+
+  // exact version: choose same version
+  BOOST_CHECK_EQUAL(this->insertAndGet("/B", strategyNameV1), strategyNameV1);
+  BOOST_CHECK_EQUAL(this->insertAndGet("/C", strategyNameV3), strategyNameV3);
+  BOOST_CHECK_EQUAL(this->insertAndGet("/D", strategyNameV4), strategyNameV4);
+
+  // lower version: choose next higher version
+  // BOOST_CHECK_EQUAL(this->insertAndGet("/E", strategyNameV0), strategyNameV1);
+  // BOOST_CHECK_EQUAL(this->insertAndGet("/F", strategyNameV2), strategyNameV3);
+
+  // higher version: failure
+  BOOST_CHECK_EQUAL(sc.insert("/G", strategyNameV5), false);
+}
+
 BOOST_AUTO_TEST_CASE(Parameters)
 {
   // no parameters

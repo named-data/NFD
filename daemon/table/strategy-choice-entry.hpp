@@ -67,13 +67,9 @@ public:
   fw::Strategy&
   getStrategy() const
   {
-    BOOST_ASSERT(m_strategyPtr != nullptr);
-    return *m_strategyPtr;
+    BOOST_ASSERT(m_strategy != nullptr);
+    return *m_strategy;
   }
-
-  DEPRECATED(
-  void
-  setStrategy(fw::Strategy& strategy));
 
   void
   setStrategy(unique_ptr<fw::Strategy> strategy);
@@ -81,7 +77,6 @@ public:
 private:
   Name m_prefix;
   unique_ptr<fw::Strategy> m_strategy;
-  fw::Strategy* m_strategyPtr;
 
   name_tree::Entry* m_nameTreeEntry;
   friend class name_tree::Entry;

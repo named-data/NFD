@@ -67,27 +67,6 @@ public:
   void
   setDefaultStrategy(const Name& strategyName);
 
-  /** \brief determines if a strategy is installed
-   *  \param strategyName name of the strategy
-   *  \param isExact true to require exact match, false to permit unversioned strategyName
-   *  \return true if strategy is installed
-   */
-  DEPRECATED(
-  bool
-  hasStrategy(const Name& strategyName, bool isExact = false) const);
-
-  // DEPRECATED macro does not work when this type appears inline on install function.
-  typedef std::pair<bool, fw::Strategy*> InstallResult;
-
-  /** \brief install a strategy
-   *  \return if installed, true, and a pointer to the strategy instance;
-   *          if not installed due to duplicate strategyName, false,
-   *          and a pointer to the existing strategy instance
-   */
-  DEPRECATED(
-  InstallResult
-  install(unique_ptr<fw::Strategy> strategy));
-
 public: // Strategy Choice table
   /** \brief set strategy of prefix to be strategyName
    *  \param prefix the name prefix for which \p strategyName should be used
@@ -160,12 +139,6 @@ public: // enumeration
   }
 
 private:
-  /** \brief get Strategy instance by strategyName
-   *  \param strategyName a versioned or unversioned strategyName
-   */
-  fw::Strategy*
-  getStrategy(const Name& strategyName) const;
-
   void
   changeStrategy(Entry& entry,
                  fw::Strategy& oldStrategy,
@@ -184,9 +157,6 @@ private:
   Forwarder& m_forwarder;
   NameTree& m_nameTree;
   size_t m_nItems;
-
-  typedef std::map<Name, unique_ptr<fw::Strategy>> StrategyInstanceTable;
-  StrategyInstanceTable m_strategyInstances;
 };
 
 } // namespace strategy_choice

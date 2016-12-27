@@ -97,6 +97,36 @@ public:
   shared_ptr<Face> interestOutFace;
 };
 
+/** \brief DummyStrategy with specific version
+ */
+template<uint64_t VERSION>
+class VersionedDummyStrategy : public DummyStrategy
+{
+public:
+  static void
+  registerAs(const Name& strategyName)
+  {
+    DummyStrategy::registerAsImpl<VersionedDummyStrategy<VERSION>>(strategyName);
+  }
+
+  static Name
+  getStrategyName()
+  {
+    return DummyStrategy::getStrategyName(VERSION);
+  }
+
+  /** \brief constructor
+   *
+   *  The strategy instance name is taken from \p name ; if it does not contain a version component,
+   *  \p VERSION will be appended.
+   */
+  explicit
+  VersionedDummyStrategy(Forwarder& forwarder, const Name& name = getStrategyName())
+    : DummyStrategy(forwarder, Strategy::makeInstanceName(name, getStrategyName()))
+  {
+  }
+};
+
 } // namespace tests
 } // namespace nfd
 
