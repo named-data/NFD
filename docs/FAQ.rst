@@ -191,7 +191,7 @@ changed ``PREFIX``).
 How to start using NDN MacPorts repository on OSX?
 --------------------------------------------------
 
-Please see :ref:`Install NFD Using the NDN MacPorts Repository on OS X`.
+Please see :ref:`Install NFD Using the NDN MacPorts Repository on OS X and macOS`.
 
 .. _How to start using NDN PPA repository on Ubuntu Linux:
 

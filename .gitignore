@@ -2,7 +2,8 @@
 .waf-1*
 .waf3-*
 .lock*
-**/*.pyc
+*.pyc
+*.pyo
 build/
 VERSION
 unit-tests.conf

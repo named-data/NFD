@@ -4,14 +4,14 @@ NFD - Named Data Networking Forwarding Daemon
 [![Build Status](https://travis-ci.org/named-data/NFD.svg?branch=master)](https://travis-ci.org/named-data/NFD)
 
 For complete documentation, including step-by-step installation instructions and
-tutorials, please visit the [NFD homepage](http://named-data.net/doc/NFD/).
+tutorials, please visit the [NFD homepage](https://named-data.net/doc/NFD/).
 
 ## Overview
 
 NFD is a network forwarder that implements and evolves together with the Named Data
-Networking (NDN) [protocol](http://named-data.net/doc/ndn-tlv/).  After the initial
+Networking (NDN) [protocol](https://named-data.net/doc/ndn-tlv/).  After the initial
 release, NFD will become a core component of the
-[NDN Platform](http://named-data.net/codebase/platform/) and will follow the same release
+[NDN Platform](https://named-data.net/codebase/platform/) and will follow the same release
 cycle.
 
 NFD is an open and free software package licensed under GPL 3.0 license and is the
@@ -21,14 +21,14 @@ limitation, refer to
 [`COPYING.md`](https://github.com/named-data/NFD/blob/master/COPYING.md).
 
 NFD is developed by a community effort.  Although the first release was mostly done by the
-members of [NSF-sponsored NDN project team](http://named-data.net/project/participants/),
+members of [NSF-sponsored NDN project team](https://named-data.net/project/participants/),
 it already contains significant contributions from people outside the project team (for
 more details, refer to
 [`AUTHORS.md`](https://github.com/named-data/NFD/blob/master/AUTHORS.md)).  We strongly
 encourage participation from all interested parties, since broader community support is
 key for NDN to succeed as a new Internet architecture.  Bug reports and feedback are
 highly appreciated and can be made through
-[Redmine site](http://redmine.named-data.net/projects/nfd) and the
+[Redmine site](https://redmine.named-data.net/projects/nfd) and the
 [ndn-interest mailing list](http://www.lists.cs.ucla.edu/mailman/listinfo/ndn-interest).
 
 The main design goal of NFD is to support diverse experimentation of NDN technology.  The

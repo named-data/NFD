@@ -7,14 +7,14 @@ Installing NFD from Binaries
 We provide NFD binaries for the supported platforms, which are the preferred installation
 method. In addition to simplifying installation, the binary release also includes
 automatic initial configuration and platform-specific tools to automatically start NFD and
-related daemons.  In particular, on OS X NFD is controlled using `launchd
+related daemons.  In particular, on OS X and macOS NFD is controlled using `launchd
 <https://github.com/named-data/NFD/tree/master/contrib/osx-launchd>`__ and on Ubuntu using
 `upstart <https://github.com/named-data/NFD/tree/master/contrib/upstart>`__ mechanisms.
 In both cases, `nfd-start` and `nfd-stop` scripts are convenience wrappers for launchd and
 upstart.
 
-On OS X, NFD can be installed with MacPorts.  Refer to :ref:`Install NFD Using the NDN
-MacPorts Repository on OS X` for more details.
+On OS X and macOS, NFD can be installed with MacPorts.  Refer to :ref:`Install NFD Using the NDN
+MacPorts Repository on OS X and macOS` for more details.
 
 On Ubuntu 14.04 and 16.04, NFD can be installed from NDN PPA repository.  Refer to
 :ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.
@@ -24,13 +24,13 @@ platforms you're using, so we can prioritize our goals.  We would also appreciat
 packaging the current NFD release for other platforms.
 
 
-.. _Install NFD Using the NDN MacPorts Repository on OS X:
+.. _Install NFD Using the NDN MacPorts Repository on OS X and macOS:
 
-Install NFD Using the NDN MacPorts Repository on OS X
------------------------------------------------------
+Install NFD Using the NDN MacPorts Repository on OS X and macOS
+---------------------------------------------------------------
 
-OS X users have the opportunity to seamlessly install and run NFD as well as other related
-applications via `MacPorts <https://www.macports.org/>`_.  If you are not using MacPorts
+OS X and macOS users have the opportunity to seamlessly install and run NFD as well as other
+related applications via `MacPorts <https://www.macports.org/>`_.  If you are not using MacPorts
 yet, go to the `MacPorts website <https://www.macports.org/install.php>`_ and install the
 MacPorts package.
 
@@ -133,12 +133,12 @@ sure you checkout the correct release tag (e.g., ``*-0.2.0``) for both repositor
 Prerequisites
 ~~~~~~~~~~~~~
 
--  Install the `ndn-cxx library <http://named-data.net/doc/ndn-cxx/current/INSTALL.html>`_
+-  Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`_
    and its requirements
 
 -  ``pkg-config``
 
-   On OS X with MacPorts:
+   On OS X / macOS with MacPorts:
 
    ::
 
@@ -152,7 +152,7 @@ Prerequisites
 
 -  ``libpcap``
 
-   Comes with the base system on OS X 10.8, 10.9, 10.10, and 10.11.
+   Comes with the base system on OS X / macOS.
 
    On Ubuntu:
 
@@ -166,7 +166,7 @@ To build manpages and API documentation:
 -  ``graphviz``
 -  ``python-sphinx``
 
-   On OS X with MacPorts:
+   On OS X / macOS with MacPorts:
 
    ::
 
@@ -184,7 +184,7 @@ Besides officially supported platforms, NFD is known to work on: Fedora 20, Cent
 Raspberry Pi, OpenWRT, FreeBSD 10.0, and several other platforms.  We are soliciting help
 with documenting common problems / pitfalls in installing/using NFD on different platforms
 on `NFD Wiki
-<http://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms>`__.
+<https://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms>`__.
 
 
 Build
@@ -237,13 +237,13 @@ with configuration in ``/etc`` folder.
 Customize Compiler
 ~~~~~~~~~~~~~~~~~~
 
-To customize compiler, set ``CXX`` environment variable to point to compiler binary and, in
-some case, specify type of the compiler using ``--check-cxx-compiler``.  For example, when
-using clang compiler on Linux system, use the following:
+To choose a custom C++ compiler for building NFD, set the ``CXX`` environment variable
+to point to the compiler binary. For example, when using the clang compiler on a Linux
+system, use the following:
 
 ::
 
-    CXX=clang++ ./waf configure --check-cxx-compiler=clang++
+    CXX=clang++ ./waf configure
 
 Building documentation
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -360,7 +360,7 @@ with the following:
 
 Sample applications:
 
-- `Simple examples in ndn-cxx library <http://named-data.net/doc/ndn-cxx/current/examples.html>`_
+- `Simple examples in ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/examples.html>`_
 
    If you have installed ndn-cxx from source, you already have compiled these:
 
@@ -372,7 +372,7 @@ Sample applications:
    +  tools/ndnputchunks3
 
 - `Introductory examples of NDN-CCL
-  <http://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
+  <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
 
 Real applications and libraries:
 

@@ -30,12 +30,12 @@ Include the following license boilerplate into all `.hpp` and `.cpp` files:
      */
 
 If you are affiliated to an NSF-supported NDN project institution, please use the [NDN Team License
-Boilerplate](http://redmine.named-data.net/projects/nfd/wiki/NDN_Team_License_Boilerplate_(NFD)).
+Boilerplate](https://redmine.named-data.net/projects/nfd/wiki/NDN_Team_License_Boilerplate_(NFD)).
 
 Recommendations
 ---------------
 
-NFD code is subject to NFD [code style](http://redmine.named-data.net/projects/nfd/wiki/CodeStyle).
+NFD code is subject to NFD [code style](https://redmine.named-data.net/projects/nfd/wiki/CodeStyle).
 
 
 Running unit-tests

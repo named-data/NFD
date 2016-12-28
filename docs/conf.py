@@ -270,4 +270,4 @@ if os.getenv('GOOGLE_ANALYTICS', None):
     googleanalytics_id = os.environ['GOOGLE_ANALYTICS']
     googleanalytics_enabled = True
 
-redmine_project_url = "http://redmine.named-data.net/"
+redmine_project_url = "https://redmine.named-data.net/"

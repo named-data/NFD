@@ -46,7 +46,7 @@ NDN hub discovery procedure
 
 When an end host starts up, or detects a change in its network environment, it MAY use
 this procedure to discover a local or home NDN router, in order to gain connectivity to
-`the NDN research testbed <http://named-data.net/ndn-testbed/>`_.
+`the NDN research testbed <https://named-data.net/ndn-testbed/>`_.
 
 Overview
 ^^^^^^^^
@@ -124,8 +124,8 @@ Stage 4: find home router
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This stage assumes that user has configured default certificate using
-`<http://ndncert.named-data.net/>`_ as described in `Certification Architecture
-<http://redmine.named-data.net/attachments/download/23/CertificationArchitecture.pptx>`_.
+`<https://ndncert.named-data.net/>`_ as described in `Certification Architecture
+<https://redmine.named-data.net/attachments/download/23/CertificationArchitecture.pptx>`_.
 
 Request
 +++++++

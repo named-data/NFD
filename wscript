@@ -26,8 +26,8 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 
 VERSION = "0.5.0"
 APPNAME = "nfd"
-BUGREPORT = "http://redmine.named-data.net/projects/nfd"
-URL = "http://named-data.net/doc/NFD/"
+BUGREPORT = "https://redmine.named-data.net/projects/nfd"
+URL = "https://named-data.net/doc/NFD/"
 GIT_TAG_PREFIX = "NFD-"
 
 from waflib import Logs, Utils, Context
@@ -123,11 +123,11 @@ main(int, char**)
     if conf.env.BOOST_VERSION_NUMBER < 105400:
         Logs.error("Minimum required boost version is 1.54.0")
         Logs.error("Please upgrade your distribution or install custom boost libraries" +
-                   " (http://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
+                   " (https://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)")
         return
 
     if conf.env['CXX_NAME'] == 'clang' and conf.env.BOOST_VERSION_NUMBER < 105800:
-        conf.define('BOOST_ASIO_HAS_STD_ARRAY', 1) # Workaround for http://redmine.named-data.net/issues/3360#note-14
+        conf.define('BOOST_ASIO_HAS_STD_ARRAY', 1) # Workaround for https://redmine.named-data.net/issues/3360#note-14
         conf.define('BOOST_ASIO_HAS_STD_CHRONO', 1) # Solution documented at https://redmine.named-data.net/issues/3588#note-10
 
     conf.load('unix-socket')
@@ -141,7 +141,7 @@ main(int, char**)
                                         'Specify --without-libpcap to disable Ethernet face support.')
         else:
             Logs.warn('Warning: Ethernet face support is not supported on this platform with Boost libraries version 1.56. '
-                      'See http://redmine.named-data.net/issues/1877 for more details')
+                      'See https://redmine.named-data.net/issues/1877 for more details')
     if conf.env['HAVE_LIBPCAP']:
         conf.check_cxx(function_name='pcap_set_immediate_mode', header_name='pcap/pcap.h',
                        cxxflags='-Wno-error', use='LIBPCAP', mandatory=False)

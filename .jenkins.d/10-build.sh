@@ -13,7 +13,7 @@ git submodule update
 # Cleanup
 sudo ./waf -j1 --color=yes distclean
 
-if [[ "$JOB_NAME" != *"limited-build" ]]; then
+if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
   # Configure/build in optimized mode with tests
   ./waf -j1 --color=yes configure --with-tests
   ./waf -j1 --color=yes build
@@ -30,7 +30,7 @@ if [[ "$JOB_NAME" != *"limited-build" ]]; then
 fi
 
 # Configure/build in debug mode with tests and without precompiled headers
-if [[ "$JOB_NAME" == *"code-coverage" ]]; then
+if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
 elif ! has OSX-10.9 $NODE_LABELS && ! has OSX-10.11 $NODE_LABELS; then
     ASAN="--with-sanitizer=address"
