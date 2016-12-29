@@ -281,7 +281,7 @@ private:
 BOOST_AUTO_TEST_CASE(ChannelDataset)
 {
   auto factory = make_shared<TestProtocolFactory>();
-  m_manager.m_factories["test"] = factory;
+  m_manager.m_faceSystem.m_factories["test"] = factory;
 
   std::map<std::string, shared_ptr<TestChannel>> addedChannels;
   size_t nEntries = 404;

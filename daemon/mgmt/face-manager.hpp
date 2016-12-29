@@ -27,16 +27,12 @@
 #define NFD_DAEMON_MGMT_FACE_MANAGER_HPP
 
 #include "nfd-manager-base.hpp"
+#include "face/face-system.hpp"
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
-#include "face/face.hpp"
 
 namespace nfd {
-
-class FaceTable;
-class NetworkInterfaceInfo;
-class ProtocolFactory;
 
 /**
  * @brief implement the Face Management of NFD Management Protocol.
@@ -144,30 +140,8 @@ private: // NotificationStream
   void
   connectFaceStateChangeSignal(const Face& face);
 
-private: // configuration
-  void
-  processConfig(const ConfigSection& configSection, bool isDryRun,
-                const std::string& filename);
-
-  void
-  processSectionUnix(const ConfigSection& configSection, bool isDryRun);
-
-  void
-  processSectionTcp(const ConfigSection& configSection, bool isDryRun);
-
-  void
-  processSectionUdp(const ConfigSection& configSection, bool isDryRun,
-                    const std::vector<NetworkInterfaceInfo>& nicList);
-
-  void
-  processSectionEther(const ConfigSection& configSection, bool isDryRun,
-                      const std::vector<NetworkInterfaceInfo>& nicList);
-
-  void
-  processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  std::map<std::string /*protocol*/, shared_ptr<ProtocolFactory>> m_factories;
+  FaceSystem m_faceSystem; ///\todo #3904 accept FaceSystem& in constructor; don't own FaceSystem
   FaceTable& m_faceTable;
   std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
 
