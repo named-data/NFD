@@ -31,6 +31,8 @@
 namespace nfd {
 namespace tests {
 
+using fw::Strategy;
+
 class StrategyChoiceFixture : public BaseFixture
 {
 protected:
@@ -43,15 +45,29 @@ protected:
     DummyStrategy::registerAs(strategyNameQ);
   }
 
+  /** \brief insert StrategyChoice entry at \p prefix for \p instanceName
+   *  \return constructed instance name
+   */
   Name
-  insertAndGet(const Name& prefix, const Name& strategyName)
+  insertAndGet(const Name& prefix, const Name& instanceName)
   {
-    BOOST_REQUIRE(sc.insert(prefix, strategyName));
+    BOOST_REQUIRE(sc.insert(prefix, instanceName));
     bool isFound;
     Name foundName;
     std::tie(isFound, foundName) = sc.get(prefix);
     BOOST_REQUIRE(isFound);
     return foundName;
+  }
+
+  /** \brief determine whether the effective strategy type at \p prefix is \p S
+   *  \tparam S expected strategy type
+   */
+  template<typename S>
+  bool
+  isStrategyType(const Name& prefix)
+  {
+    Strategy& effectiveStrategy = sc.findEffectiveStrategy(prefix);
+    return dynamic_cast<S*>(&effectiveStrategy) != nullptr;
   }
 
   template<typename Q>
@@ -72,8 +88,6 @@ protected:
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestStrategyChoice, StrategyChoiceFixture)
 
-using fw::Strategy;
-
 BOOST_AUTO_TEST_CASE(Versioning)
 {
   const Name strategyNameV("/strategy-choice-V");
@@ -90,15 +104,21 @@ BOOST_AUTO_TEST_CASE(Versioning)
 
   // unversioned: choose latest version
   BOOST_CHECK_EQUAL(this->insertAndGet("/A", strategyNameV), strategyNameV4);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<4>>("/A"));
 
   // exact version: choose same version
   BOOST_CHECK_EQUAL(this->insertAndGet("/B", strategyNameV1), strategyNameV1);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<1>>("/B"));
   BOOST_CHECK_EQUAL(this->insertAndGet("/C", strategyNameV3), strategyNameV3);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<3>>("/C"));
   BOOST_CHECK_EQUAL(this->insertAndGet("/D", strategyNameV4), strategyNameV4);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<4>>("/D"));
 
   // lower version: choose next higher version
-  // BOOST_CHECK_EQUAL(this->insertAndGet("/E", strategyNameV0), strategyNameV1);
-  // BOOST_CHECK_EQUAL(this->insertAndGet("/F", strategyNameV2), strategyNameV3);
+  BOOST_CHECK_EQUAL(this->insertAndGet("/E", strategyNameV0), strategyNameV0);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<1>>("/E"));
+  BOOST_CHECK_EQUAL(this->insertAndGet("/F", strategyNameV2), strategyNameV2);
+  BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<3>>("/F"));
 
   // higher version: failure
   BOOST_CHECK_EQUAL(sc.insert("/G", strategyNameV5), false);

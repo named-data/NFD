@@ -67,23 +67,6 @@ protected:
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, MulticastStrategyFixture)
 
-BOOST_AUTO_TEST_CASE(Registration)
-{
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(MulticastStrategy::getStrategyName()), 1);
-}
-
-BOOST_AUTO_TEST_CASE(InstanceName)
-{
-  Forwarder forwarder;
-  BOOST_REQUIRE(MulticastStrategy::getStrategyName().at(-1).isVersion());
-  BOOST_CHECK_EQUAL(
-    MulticastStrategy(forwarder, MulticastStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
-    MulticastStrategy::getStrategyName());
-  BOOST_CHECK_THROW(
-    MulticastStrategy(forwarder, Name(MulticastStrategy::getStrategyName()).append("param")),
-    std::invalid_argument);
-}
-
 BOOST_AUTO_TEST_CASE(Forward2)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;

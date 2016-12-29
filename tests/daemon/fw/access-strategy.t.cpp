@@ -52,26 +52,6 @@ NFD_REGISTER_STRATEGY(AccessStrategyTester);
 // code style rule 3.25. This is necessary because some lines ends with '\' which
 // would cause "multi-line comment" compiler warning if '//' comments are used.
 
-BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestAccessStrategy, UnitTestTimeFixture)
-
-BOOST_AUTO_TEST_CASE(Registration)
-{
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(AccessStrategy::getStrategyName()), 1);
-}
-
-BOOST_AUTO_TEST_CASE(InstanceName)
-{
-  Forwarder forwarder;
-  BOOST_REQUIRE(AccessStrategy::getStrategyName().at(-1).isVersion());
-  BOOST_CHECK_EQUAL(
-    AccessStrategy(forwarder, AccessStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
-    AccessStrategy::getStrategyName());
-  BOOST_CHECK_THROW(
-    AccessStrategy(forwarder, Name(AccessStrategy::getStrategyName()).append("param")),
-    std::invalid_argument);
-}
-
 class TwoLaptopsFixture : public UnitTestTimeFixture
 {
 protected:
@@ -108,7 +88,10 @@ protected:
   shared_ptr<TopologyLink> linkB;
 };
 
-BOOST_FIXTURE_TEST_CASE(OneProducer, TwoLaptopsFixture)
+BOOST_AUTO_TEST_SUITE(Fw)
+BOOST_FIXTURE_TEST_SUITE(TestAccessStrategy, TwoLaptopsFixture)
+
+BOOST_AUTO_TEST_CASE(OneProducer)
 {
   /*
    *             /------------------\
@@ -153,7 +136,7 @@ BOOST_FIXTURE_TEST_CASE(OneProducer, TwoLaptopsFixture)
   BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 5);
 }
 
-BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
+BOOST_AUTO_TEST_CASE(FastSlowProducer)
 {
   /*
    *             /------------------\
@@ -200,7 +183,7 @@ BOOST_FIXTURE_TEST_CASE(FastSlowProducer, TwoLaptopsFixture)
   BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 15);
 }
 
-BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
+BOOST_AUTO_TEST_CASE(ProducerMobility)
 {
   /*
    *           /------------------\                              /------------------\
@@ -259,7 +242,7 @@ BOOST_FIXTURE_TEST_CASE(ProducerMobility, TwoLaptopsFixture)
   BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
 }
 
-BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
+BOOST_AUTO_TEST_CASE(Bidirectional)
 {
   /*
    *                         /laptops << +--------+ >> /laptops
@@ -305,7 +288,7 @@ BOOST_FIXTURE_TEST_CASE(Bidirectional, TwoLaptopsFixture)
   BOOST_CHECK_GE(consumerBA->getForwarderFace().getCounters().nOutData, 97);
 }
 
-BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
+BOOST_AUTO_TEST_CASE(PacketLoss)
 {
   /*
    *   test case Interests
@@ -377,7 +360,7 @@ BOOST_FIXTURE_TEST_CASE(PacketLoss, TwoLaptopsFixture)
   BOOST_CHECK_EQUAL(hasData2c, true);
 }
 
-BOOST_FIXTURE_TEST_CASE(Bug2831, TwoLaptopsFixture)
+BOOST_AUTO_TEST_CASE(Bug2831)
 {
   // make a two-node loop
   topo.registerPrefix(laptopA, linkA->getFace(laptopA), "ndn:/net");

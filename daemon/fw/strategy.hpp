@@ -47,6 +47,7 @@ public: // registry
   static void
   registerType(const Name& strategyName = S::getStrategyName())
   {
+    BOOST_ASSERT(strategyName.size() > 1);
     BOOST_ASSERT(strategyName.at(-1).isVersion());
     Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(strategyName) == 0);

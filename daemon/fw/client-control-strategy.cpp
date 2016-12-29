@@ -39,6 +39,10 @@ ClientControlStrategy::ClientControlStrategy(Forwarder& forwarder, const Name& n
   if (!parsed.parameters.empty()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument("ClientControlStrategy does not accept parameters"));
   }
+  if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument(
+      "ClientControlStrategy does not support version " + std::to_string(*parsed.version)));
+  }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 
   NFD_LOG_WARN("NextHopFaceId field is honored universally and "

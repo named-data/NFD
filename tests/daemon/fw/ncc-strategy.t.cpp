@@ -43,23 +43,6 @@ NFD_REGISTER_STRATEGY(NccStrategyTester);
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
 
-BOOST_AUTO_TEST_CASE(Registration)
-{
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(NccStrategy::getStrategyName()), 1);
-}
-
-BOOST_AUTO_TEST_CASE(InstanceName)
-{
-  Forwarder forwarder;
-  BOOST_REQUIRE(NccStrategy::getStrategyName().at(-1).isVersion());
-  BOOST_CHECK_EQUAL(
-    NccStrategy(forwarder, NccStrategy::getStrategyName().getPrefix(-1)).getInstanceName(),
-    NccStrategy::getStrategyName());
-  BOOST_CHECK_THROW(
-    NccStrategy(forwarder, Name(NccStrategy::getStrategyName()).append("param")),
-    std::invalid_argument);
-}
-
 BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 {
   // NccStrategy is fairly complex.

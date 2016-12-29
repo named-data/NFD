@@ -41,6 +41,8 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestStrategy, BaseFixture)
 
+// Strategy registry is tested in table/strategy-choice.t.cpp and strategy-instantiation.t.cpp
+
 class FaceTableAccessTestStrategy : public DummyStrategy
 {
 public:

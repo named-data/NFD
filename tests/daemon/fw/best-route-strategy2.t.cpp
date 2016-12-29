@@ -76,23 +76,6 @@ public:
 
 BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
 
-BOOST_AUTO_TEST_CASE(Registration)
-{
-  BOOST_CHECK_EQUAL(Strategy::listRegistered().count(BestRouteStrategy2::getStrategyName()), 1);
-}
-
-BOOST_AUTO_TEST_CASE(InstanceName)
-{
-  Forwarder forwarder;
-  BOOST_REQUIRE(BestRouteStrategy2::getStrategyName().at(-1).isVersion());
-  BOOST_CHECK_EQUAL(
-    BestRouteStrategy2(forwarder, BestRouteStrategy2::getStrategyName().getPrefix(-1)).getInstanceName(),
-    BestRouteStrategy2::getStrategyName());
-  BOOST_CHECK_THROW(
-    BestRouteStrategy2(forwarder, Name(BestRouteStrategy2::getStrategyName()).append("param")),
-    std::invalid_argument);
-}
-
 BOOST_AUTO_TEST_CASE(Forward)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;

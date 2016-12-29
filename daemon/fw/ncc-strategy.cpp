@@ -43,6 +43,10 @@ NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
   if (!parsed.parameters.empty()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument("NccStrategy does not accept parameters"));
   }
+  if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument(
+      "NccStrategy does not support version " + std::to_string(*parsed.version)));
+  }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
 

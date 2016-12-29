@@ -48,24 +48,36 @@ Strategy::find(const Name& instanceName)
   const Registry& registry = getRegistry();
   ParsedInstanceName parsed = parseInstanceName(instanceName);
 
-  ///\todo #3868 accommodate parameters
   if (parsed.version) {
-    NFD_LOG_TRACE("find " << instanceName <<
-                  " strategyName=" << parsed.strategyName << " versioned");
-    ///\todo #3868 if exact version unavailable, choose closest higher version
-    return registry.find(parsed.strategyName);
+    // specified version: find exact or next higher version
+
+    auto found = registry.lower_bound(parsed.strategyName);
+    if (found != registry.end()) {
+      if (parsed.strategyName.getPrefix(-1).isPrefixOf(found->first)) {
+        NFD_LOG_TRACE("find " << instanceName << " versioned found=" << found->first);
+        return found;
+      }
+    }
+
+    NFD_LOG_TRACE("find " << instanceName << " versioned not-found");
+    return registry.end();
   }
 
-  NFD_LOG_TRACE("find " << instanceName <<
-                " strategyName=" << parsed.strategyName << " unversioned");
-  Registry::const_iterator candidate = registry.end();
-  for (auto it = registry.lower_bound(parsed.strategyName);
-       it != registry.end() && parsed.strategyName.isPrefixOf(it->first); ++it) {
-    if (it->first.size() == parsed.strategyName.size() + 1) { // only one extra component: version
-      candidate = it;
+  // no version specified: find highest version
+
+  if (!parsed.strategyName.empty()) { // Name().getSuccessor() would be invalid
+    auto found = registry.lower_bound(parsed.strategyName.getSuccessor());
+    if (found != registry.begin()) {
+      --found;
+      if (parsed.strategyName.isPrefixOf(found->first)) {
+        NFD_LOG_TRACE("find " << instanceName << " unversioned found=" << found->first);
+        return found;
+      }
     }
   }
-  return candidate;
+
+  NFD_LOG_TRACE("find " << instanceName << " unversioned not-found");
+  return registry.end();
 }
 
 bool
