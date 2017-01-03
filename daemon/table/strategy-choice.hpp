@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -68,17 +68,46 @@ public:
   setDefaultStrategy(const Name& strategyName);
 
 public: // Strategy Choice table
-  /** \brief set strategy of prefix to be strategyName
-   *  \param prefix the name prefix for which \p strategyName should be used
-   *  \param strategyName the strategy to be used
-   *  \return true on success
-   *
-   *  This method set a strategy onto a Name prefix.
-   *  The strategy must have been installed.
-   *  The strategyName can either be exact (contains version component),
-   *  or omit the version component to pick the latest version.
+  class InsertResult
+  {
+  public:
+    explicit
+    operator bool() const
+    {
+      return m_status == OK;
+    }
+
+    bool
+    isRegistered() const
+    {
+      return m_status != NOT_REGISTERED;
+    }
+
+  private:
+    enum Status {
+      OK,
+      NOT_REGISTERED,
+      EXCEPTION
+    };
+
+    // implicitly constructible from Status
+    InsertResult(Status status, const std::string& exceptionMessage = "");
+
+  private:
+    Status m_status;
+    std::string m_exceptionMessage;
+
+    friend class StrategyChoice;
+    friend std::ostream& operator<<(std::ostream&, const InsertResult&);
+  };
+
+  /** \brief set strategy of \p prefix to be \p strategyName
+   *  \param prefix the name prefix to change strategy
+   *  \param strategyName strategy instance name, may contain version and parameters;
+   *                      strategy must have been registered
+   *  \return convertible to true on success; convertible to false on failure
    */
-  bool
+  InsertResult
   insert(const Name& prefix, const Name& strategyName);
 
   /** \brief make prefix to inherit strategy from its parent
@@ -158,6 +187,9 @@ private:
   NameTree& m_nameTree;
   size_t m_nItems;
 };
+
+std::ostream&
+operator<<(std::ostream& os, const StrategyChoice::InsertResult& res);
 
 } // namespace strategy_choice
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,7 +66,7 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
   ++m_nItems;
 }
 
-bool
+StrategyChoice::InsertResult
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
   unique_ptr<Strategy> strategy;
@@ -75,12 +75,12 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   }
   catch (const std::invalid_argument& e) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") cannot create strategy: " << e.what());
-    return false;
+    return InsertResult(InsertResult::EXCEPTION, e.what());
   }
 
   if (strategy == nullptr) {
     NFD_LOG_ERROR("insert(" << prefix << "," << strategyName << ") strategy not registered");
-    return false;
+    return InsertResult::NOT_REGISTERED;
   }
 
   name_tree::Entry& nte = m_nameTree.lookup(prefix);
@@ -89,7 +89,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
   if (entry != nullptr) {
     if (entry->getStrategyInstanceName() == strategy->getInstanceName()) {
       NFD_LOG_TRACE("insert(" << prefix << ") not changing " << strategy->getInstanceName());
-      return true;
+      return InsertResult::OK;
     }
     oldStrategy = &entry->getStrategy();
     NFD_LOG_TRACE("insert(" << prefix << ") changing from " << oldStrategy->getInstanceName() <<
@@ -106,7 +106,27 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 
   this->changeStrategy(*entry, *oldStrategy, *strategy);
   entry->setStrategy(std::move(strategy));
-  return true;
+  return InsertResult::OK;
+}
+
+StrategyChoice::InsertResult::InsertResult(Status status, const std::string& exceptionMessage)
+  : m_status(status)
+  , m_exceptionMessage(exceptionMessage)
+{
+}
+
+std::ostream&
+operator<<(std::ostream& os, const StrategyChoice::InsertResult& res)
+{
+  switch (res.m_status) {
+    case StrategyChoice::InsertResult::OK:
+      return os << "OK";
+    case StrategyChoice::InsertResult::NOT_REGISTERED:
+      return os << "Strategy not registered";
+    case StrategyChoice::InsertResult::EXCEPTION:
+      return os << "Error instantiating strategy: " << res.m_exceptionMessage;
+  }
+  return os;
 }
 
 void

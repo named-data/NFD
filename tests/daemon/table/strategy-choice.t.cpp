@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,7 +121,9 @@ BOOST_AUTO_TEST_CASE(Versioning)
   BOOST_CHECK(this->isStrategyType<VersionedDummyStrategy<3>>("/F"));
 
   // higher version: failure
-  BOOST_CHECK_EQUAL(sc.insert("/G", strategyNameV5), false);
+  StrategyChoice::InsertResult res5 = sc.insert("/G", strategyNameV5);
+  BOOST_CHECK(!res5);
+  BOOST_CHECK(!res5.isRegistered());
 }
 
 BOOST_AUTO_TEST_CASE(Parameters)
@@ -139,7 +141,7 @@ BOOST_AUTO_TEST_CASE(Parameters)
 
   // parameter without version is disallowed
   Name oneParamUnversioned = strategyNameP.getPrefix(-1).append("param");
-  BOOST_CHECK_EQUAL(sc.insert("/D", oneParamUnversioned), false);
+  BOOST_CHECK(!sc.insert("/D", oneParamUnversioned));
 }
 
 BOOST_AUTO_TEST_CASE(Get)

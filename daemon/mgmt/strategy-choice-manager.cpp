@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "strategy-choice-manager.hpp"
 #include "table/strategy-choice.hpp"
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
+#include <boost/lexical_cast.hpp>
 
 namespace nfd {
 
@@ -53,10 +54,10 @@ StrategyChoiceManager::setStrategy(ControlParameters parameters,
   const Name& prefix = parameters.getName();
   const Name& strategy = parameters.getStrategy();
 
-  if (!m_table.insert(prefix, strategy)) {
-    NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): cannot-create");
-    return done(ControlResponse(404, "Unknown strategy or invalid parameters"));
-    ///\todo #3868 pass along the error message from Strategy subclass constructor
+  StrategyChoice::InsertResult res = m_table.insert(prefix, strategy);
+  if (!res) {
+    NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): cannot-create " << res);
+    return done(ControlResponse(404, boost::lexical_cast<std::string>(res)));
   }
 
   NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): OK");
