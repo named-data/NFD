@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,12 @@ typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
  */
 typedef function<void(uint32_t status, const std::string& reason)> FaceCreationFailedCallback;
 
-
+/** \brief represent a channel that communicates on a local endpoint
+ *  \sa FaceSystem
+ *
+ *  A channel can listen on a local endpoint and initiate outgoing connection from a local endpoint.
+ *  A channel creates Face objects and retains shared ownership of them.
+ */
 class Channel : noncopyable
 {
 public:

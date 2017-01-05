@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,12 @@
  */
 
 #include "face/face-system.hpp"
-#include "fw/face-table.hpp"
+#include "face-system-fixture.hpp"
 
 // ProtocolFactory includes, sorted alphabetically
 #ifdef HAVE_LIBPCAP
 #include "face/ethernet-factory.hpp"
 #endif // HAVE_LIBPCAP
-#include "face/tcp-factory.hpp"
 #include "face/udp-factory.hpp"
 #ifdef HAVE_UNIX_SOCKETS
 #include "face/unix-stream-factory.hpp"
@@ -47,29 +46,169 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class FaceSystemFixture : public BaseFixture
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestFaceSystem, FaceSystemFixture)
+
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
+
+class DummyProtocolFactory : public ProtocolFactory
 {
 public:
-  FaceSystemFixture()
-    : faceSystem(faceTable)
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override
   {
-    faceSystem.setConfigFile(configFile);
+    processConfigHistory.push_back({configSection, context.isDryRun});
+    if (!context.isDryRun) {
+      this->providedSchemes = this->newProvidedSchemes;
+    }
   }
 
   void
-  parseConfig(const std::string& text, bool isDryRun)
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) override
   {
-    configFile.parse(text, isDryRun, "test-config");
+    BOOST_FAIL("createFace should not be called");
   }
 
-protected:
-  FaceTable faceTable;
-  FaceSystem faceSystem;
-  ConfigFile configFile;
+  std::vector<shared_ptr<const Channel>>
+  getChannels() const override
+  {
+    BOOST_FAIL("getChannels should not be called");
+    return {};
+  }
+
+public:
+  struct ProcessConfigArgs
+  {
+    OptionalConfigSection configSection;
+    bool isDryRun;
+  };
+  std::vector<ProcessConfigArgs> processConfigHistory;
+
+  std::set<std::string> newProvidedSchemes;
 };
 
-BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestFaceSystem, FaceSystemFixture)
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  auto f1 = make_shared<DummyProtocolFactory>();
+  auto f2 = make_shared<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = f1;
+  faceSystem.m_factories["f2"] = f2;
+
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      f1
+      {
+        key v1
+      }
+      f2
+      {
+        key v2
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 1);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, true);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().configSection->get<std::string>("key"), "v1");
+  BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 1);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, true);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().configSection->get<std::string>("key"), "v2");
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 2);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, false);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().configSection->get<std::string>("key"), "v1");
+  BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 2);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, false);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().configSection->get<std::string>("key"), "v2");
+}
+
+BOOST_AUTO_TEST_CASE(OmittedSection)
+{
+  auto f1 = make_shared<DummyProtocolFactory>();
+  auto f2 = make_shared<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = f1;
+  faceSystem.m_factories["f2"] = f2;
+
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      f1
+      {
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 1);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, true);
+  BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 1);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, true);
+  BOOST_CHECK(!f2->processConfigHistory.back().configSection);
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 2);
+  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, false);
+  BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 2);
+  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, false);
+  BOOST_CHECK(!f2->processConfigHistory.back().configSection);
+}
+
+BOOST_AUTO_TEST_CASE(UnknownSection)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      f0
+      {
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(ChangeProvidedSchemes)
+{
+  auto f1 = make_shared<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = f1;
+
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      f1
+      {
+      }
+    }
+  )CONFIG";
+
+  f1->newProvidedSchemes.insert("s1");
+  f1->newProvidedSchemes.insert("s2");
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  BOOST_CHECK(faceSystem.getFactoryByScheme("f1") == nullptr);
+  BOOST_CHECK_EQUAL(faceSystem.getFactoryByScheme("s1"), f1.get());
+  BOOST_CHECK_EQUAL(faceSystem.getFactoryByScheme("s2"), f1.get());
+
+  f1->newProvidedSchemes.erase("s2");
+  f1->newProvidedSchemes.insert("s3");
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  BOOST_CHECK(faceSystem.getFactoryByScheme("f1") == nullptr);
+  BOOST_CHECK_EQUAL(faceSystem.getFactoryByScheme("s1"), f1.get());
+  BOOST_CHECK(faceSystem.getFactoryByScheme("s2") == nullptr);
+  BOOST_CHECK_EQUAL(faceSystem.getFactoryByScheme("s3"), f1.get());
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
+
+///\todo #3904 move Config* to *Factory test suite
 
 #ifdef HAVE_UNIX_SOCKETS
 BOOST_AUTO_TEST_SUITE(ConfigUnix)
@@ -89,9 +228,8 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
 
-  auto factory = dynamic_cast<UnixStreamFactory*>(faceSystem.getProtocolFactory("unix"));
-  BOOST_REQUIRE(factory != nullptr);
-  BOOST_CHECK_EQUAL(factory->getChannels().size(), 1);
+  auto& factory = this->getFactoryByScheme<UnixStreamFactory>("unix");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(UnknownOption)
@@ -112,83 +250,6 @@ BOOST_AUTO_TEST_CASE(UnknownOption)
 
 BOOST_AUTO_TEST_SUITE_END() // ConfigUnix
 #endif // HAVE_UNIX_SOCKETS
-
-BOOST_AUTO_TEST_SUITE(ConfigTcp)
-
-BOOST_AUTO_TEST_CASE(Normal)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      tcp
-      {
-        listen yes
-        port 16363
-        enable_v4 yes
-        enable_v6 yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
-
-  auto factory = dynamic_cast<TcpFactory*>(faceSystem.getProtocolFactory("tcp"));
-  BOOST_REQUIRE(factory != nullptr);
-  BOOST_CHECK_EQUAL(factory->getChannels().size(), 2);
-}
-
-BOOST_AUTO_TEST_CASE(BadListen)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      tcp
-      {
-        listen hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(ChannelsDisabled)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      tcp
-      {
-        port 6363
-        enable_v4 no
-        enable_v6 no
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(UnknownOption)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      tcp
-      {
-        hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // ConfigTcp
 
 BOOST_AUTO_TEST_SUITE(ConfigUdp)
 
@@ -216,9 +277,8 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
 
-  auto factory = dynamic_cast<UdpFactory*>(faceSystem.getProtocolFactory("udp"));
-  BOOST_REQUIRE(factory != nullptr);
-  BOOST_CHECK_EQUAL(factory->getChannels().size(), 2);
+  auto& factory = this->getFactoryByScheme<UdpFactory>("udp");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
 }
 
 BOOST_AUTO_TEST_CASE(BadIdleTimeout)
@@ -367,10 +427,9 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
 
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
 
-  auto factory = dynamic_cast<UdpFactory*>(faceSystem.getProtocolFactory("udp"));
-  BOOST_REQUIRE(factory != nullptr);
+  auto& factory = this->getFactoryByScheme<UdpFactory>("udp");
 
-  if (factory->getMulticastFaces().empty()) {
+  if (factory.getMulticastFaces().empty()) {
     BOOST_WARN_MESSAGE(false, "skipping assertions that require at least one UDP multicast face");
     return;
   }
@@ -387,7 +446,7 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
 
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
   BOOST_REQUIRE_NO_THROW(g_io.poll());
-  BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(factory.getMulticastFaces().size(), 0);
 }
 BOOST_AUTO_TEST_SUITE_END() // ConfigUdp
 
@@ -419,9 +478,8 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
 
-  auto factory = dynamic_cast<EthernetFactory*>(faceSystem.getProtocolFactory("ether"));
-  BOOST_REQUIRE(factory != nullptr);
-  BOOST_CHECK_EQUAL(factory->getChannels().size(), 0);
+  auto& factory = this->getFactoryByScheme<EthernetFactory>("ether");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(BadMcast)
@@ -489,10 +547,9 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
 
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
 
-  auto factory = dynamic_cast<EthernetFactory*>(faceSystem.getProtocolFactory("ether"));
-  BOOST_REQUIRE(factory != nullptr);
+  auto& factory = this->getFactoryByScheme<EthernetFactory>("ether");
 
-  if (factory->getMulticastFaces().empty()) {
+  if (factory.getMulticastFaces().empty()) {
     BOOST_WARN_MESSAGE(false, "skipping assertions that require at least one Ethernet multicast face");
     return;
   }
@@ -509,7 +566,7 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
 
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
   BOOST_REQUIRE_NO_THROW(g_io.poll());
-  BOOST_CHECK_EQUAL(factory->getMulticastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(factory.getMulticastFaces().size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ConfigEther
@@ -536,9 +593,8 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
   BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
 
-  auto factory = dynamic_cast<WebSocketFactory*>(faceSystem.getProtocolFactory("websocket"));
-  BOOST_REQUIRE(factory != nullptr);
-  BOOST_CHECK_EQUAL(factory->getChannels().size(), 1);
+  auto& factory = this->getFactoryByScheme<WebSocketFactory>("websocket");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(ChannelsDisabled)

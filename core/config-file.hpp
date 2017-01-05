@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,18 +32,26 @@
 
 namespace nfd {
 
+/** \brief a config file section
+ */
 typedef boost::property_tree::ptree ConfigSection;
 
-/// \brief callback for config file sections
-typedef function<void(const ConfigSection& /*section*/,
-                      bool /*isDryRun*/,
-                      const std::string& /*filename*/)> ConfigSectionHandler;
+/** \brief an optional config file section
+ */
+typedef boost::optional<const ConfigSection&> OptionalConfigSection;
 
-/// \brief callback for config file sections without a subscribed handler
-typedef function<void(const std::string& /*filename*/,
-                      const std::string& /*sectionName*/,
-                      const ConfigSection& /*section*/,
-                      bool /*isDryRun*/)> UnknownConfigSectionHandler;
+/** \brief callback to process a config file section
+ */
+typedef function<void(const ConfigSection& section,
+                      bool isDryRun,
+                      const std::string& filename)> ConfigSectionHandler;
+
+/** \brief callback to process a config file section without a \p ConfigSectionHandler
+ */
+typedef function<void(const std::string& filename,
+                      const std::string& sectionName,
+                      const ConfigSection& section,
+                      bool isDryRun)> UnknownConfigSectionHandler;
 
 /** \brief configuration file parsing utility
  */

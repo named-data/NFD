@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,20 +26,23 @@
 #ifndef NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 #define NFD_DAEMON_FACE_FACE_SYSTEM_HPP
 
+#include "channel.hpp"
 #include "core/config-file.hpp"
-#include "protocol-factory.hpp"
+#include "core/network-interface.hpp"
+#include "core/network-interface-predicate.hpp"
 
 namespace nfd {
 
 class FaceTable;
-class NetworkInterfaceInfo;
 
 namespace face {
 
+class ProtocolFactory;
+
 /** \brief entry point of the face system
  *
- *  FaceSystem class is the entry point of NFD's face system.
- *  It owns ProtocolFactory objects that are created from face_system section of NFD configuration file.
+ *  NFD's face system is organized as a FaceSystem-ProtocolFactory-Channel-Face hierarchy.
+ *  FaceSystem class is the entry point of NFD's face system and owns ProtocolFactory objects.
  */
 class FaceSystem : noncopyable
 {
@@ -52,15 +55,43 @@ public:
   std::set<const ProtocolFactory*>
   listProtocolFactories() const;
 
-  /** \return ProtocolFactory for specified protocol scheme, or nullptr if not found
+  /** \return ProtocolFactory for the specified registered factory id or nullptr if not found
    */
   ProtocolFactory*
-  getProtocolFactory(const std::string& scheme);
+  getFactoryById(const std::string& id);
+
+  /** \return ProtocolFactory for the specified FaceUri scheme or nullptr if not found
+   */
+  ProtocolFactory*
+  getFactoryByScheme(const std::string& scheme);
 
   /** \brief register handler for face_system section of NFD configuration file
    */
   void
   setConfigFile(ConfigFile& configFile);
+
+  /** \brief context for processing a config section in ProtocolFactory
+   */
+  class ConfigContext : noncopyable
+  {
+  public:
+    const std::vector<NetworkInterfaceInfo>&
+    listNics() const
+    {
+      ///\todo get NIC list from NetworkMonitor
+      return m_nicList;
+    }
+
+  public:
+    bool isDryRun;
+    FaceCreatedCallback addFace;
+    ///\todo add NetworkMonitor
+
+  private:
+    std::vector<NetworkInterfaceInfo> m_nicList;
+
+    friend class FaceSystem;
+  };
 
 private:
   void
@@ -69,9 +100,6 @@ private:
 
   void
   processSectionUnix(const ConfigSection& configSection, bool isDryRun);
-
-  void
-  processSectionTcp(const ConfigSection& configSection, bool isDryRun);
 
   void
   processSectionUdp(const ConfigSection& configSection, bool isDryRun,
@@ -85,11 +113,18 @@ private:
   processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /** \brief config section name => protocol factory
+   *
+   *  \todo #3904 store unique_ptr<ProtocolFactory> here, and reference_wrapper<ProtocolFactory>
+   *              in m_factoryByScheme
+   */
+  std::map<std::string, shared_ptr<ProtocolFactory>> m_factories;
+
   /** \brief scheme => protocol factory
    *
    *  The same protocol factory may be available under multiple schemes.
    */
-  std::map<std::string, shared_ptr<ProtocolFactory>> m_factories;
+  std::map<std::string, shared_ptr<ProtocolFactory>> m_factoryByScheme;
 
   FaceTable& m_faceTable;
 };

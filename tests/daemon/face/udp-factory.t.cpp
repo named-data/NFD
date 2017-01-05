@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
 
 BOOST_AUTO_TEST_CASE(FaceCreate)
 {
-  UdpFactory factory = UdpFactory();
+  UdpFactory factory;
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  UdpFactory factory = UdpFactory();
+  UdpFactory factory;
 
   factory.createChannel("127.0.0.1", "20070");
 

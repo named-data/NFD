@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,16 +60,14 @@ TablesConfigSection::ensureConfigured()
 void
 TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
 {
-  typedef boost::optional<const ConfigSection&> OptionalNode;
-
   size_t nCsMaxPackets = DEFAULT_CS_MAX_PACKETS;
-  OptionalNode csMaxPacketsNode = section.get_child_optional("cs_max_packets");
+  OptionalConfigSection csMaxPacketsNode = section.get_child_optional("cs_max_packets");
   if (csMaxPacketsNode) {
     nCsMaxPackets = ConfigFile::parseNumber<size_t>(*csMaxPacketsNode, "cs_max_packets", "tables");
   }
 
   unique_ptr<cs::Policy> csPolicy;
-  OptionalNode csPolicyNode = section.get_child_optional("cs_policy");
+  OptionalConfigSection csPolicyNode = section.get_child_optional("cs_policy");
   if (csPolicyNode) {
     std::string policyName = csPolicyNode->get_value<std::string>();
     csPolicy = cs::Policy::create(policyName);
@@ -80,7 +78,7 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
   }
 
   unique_ptr<fw::UnsolicitedDataPolicy> unsolicitedDataPolicy;
-  OptionalNode unsolicitedDataPolicyNode = section.get_child_optional("cs_unsolicited_policy");
+  OptionalConfigSection unsolicitedDataPolicyNode = section.get_child_optional("cs_unsolicited_policy");
   if (unsolicitedDataPolicyNode) {
     std::string policyName = unsolicitedDataPolicyNode->get_value<std::string>();
     unsolicitedDataPolicy = fw::UnsolicitedDataPolicy::create(policyName);
@@ -93,12 +91,12 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     unsolicitedDataPolicy = make_unique<fw::DefaultUnsolicitedDataPolicy>();
   }
 
-  OptionalNode strategyChoiceSection = section.get_child_optional("strategy_choice");
+  OptionalConfigSection strategyChoiceSection = section.get_child_optional("strategy_choice");
   if (strategyChoiceSection) {
     processStrategyChoiceSection(*strategyChoiceSection, isDryRun);
   }
 
-  OptionalNode networkRegionSection = section.get_child_optional("network_region");
+  OptionalConfigSection networkRegionSection = section.get_child_optional("network_region");
   if (networkRegionSection) {
     processNetworkRegionSection(*networkRegionSection, isDryRun);
   }

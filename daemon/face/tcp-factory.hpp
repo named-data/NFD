@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,10 +30,26 @@
 #include "tcp-channel.hpp"
 
 namespace nfd {
+namespace face {
 
+/** \brief protocol factory for TCP over IPv4 and IPv6
+ */
 class TcpFactory : public ProtocolFactory
 {
 public:
+  /** \brief process face_system.tcp config section
+   */
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override;
+
+  void
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) override;
+
   /**
    * \brief Create TCP-based channel using tcp::Endpoint
    *
@@ -63,15 +79,7 @@ public:
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort);
 
-public: // from ProtocolFactory
-  virtual void
-  createFace(const FaceUri& uri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
-
-  virtual std::vector<shared_ptr<const Channel>>
+  std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
@@ -101,6 +109,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::set<tcp::Endpoint> m_prohibitedEndpoints;
 };
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_TCP_FACTORY_HPP

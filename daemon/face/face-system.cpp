@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,6 @@
 
 #include "face-system.hpp"
 #include "core/logger.hpp"
-#include "core/network-interface.hpp"
-#include "core/network-interface-predicate.hpp"
 #include "fw/face-table.hpp"
 
 // ProtocolFactory includes, sorted alphabetically
@@ -51,23 +49,32 @@ NFD_LOG_INIT("FaceSystem");
 FaceSystem::FaceSystem(FaceTable& faceTable)
   : m_faceTable(faceTable)
 {
+  ///\todo #3904 make a registry, and construct instances from registry
+  m_factories["tcp"] = make_shared<TcpFactory>();
 }
 
 std::set<const ProtocolFactory*>
 FaceSystem::listProtocolFactories() const
 {
   std::set<const ProtocolFactory*> factories;
-  for (const auto& p : m_factories) {
+  for (const auto& p : m_factoryByScheme) {
     factories.insert(p.second.get());
   }
   return factories;
 }
 
 ProtocolFactory*
-FaceSystem::getProtocolFactory(const std::string& scheme)
+FaceSystem::getFactoryById(const std::string& id)
 {
-  auto found = m_factories.find(scheme);
+  auto found = m_factories.find(id);
   return found == m_factories.end() ? nullptr : found->second.get();
+}
+
+ProtocolFactory*
+FaceSystem::getFactoryByScheme(const std::string& scheme)
+{
+  auto found = m_factoryByScheme.find(scheme);
+  return found == m_factoryByScheme.end() ? nullptr : found->second.get();
 }
 
 void
@@ -79,31 +86,61 @@ FaceSystem::setConfigFile(ConfigFile& configFile)
 void
 FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename)
 {
+  ConfigContext context;
+  context.isDryRun = isDryRun;
+  context.addFace = bind(&FaceTable::add, &m_faceTable, _1);
+  context.m_nicList = listNetworkInterfaces();
+
+  // process sections in protocol factories
+  for (const auto& pair : m_factories) {
+    const std::string& sectionName = pair.first;
+    shared_ptr<ProtocolFactory> factory = pair.second;
+
+    std::set<std::string> oldProvidedSchemes = factory->getProvidedSchemes();
+    factory->processConfig(configSection.get_child_optional(sectionName), context);
+
+    if (!isDryRun) {
+      for (const std::string& scheme : factory->getProvidedSchemes()) {
+        m_factoryByScheme[scheme] = factory;
+        oldProvidedSchemes.erase(scheme);
+      }
+      for (const std::string& scheme : oldProvidedSchemes) {
+        m_factoryByScheme.erase(scheme);
+      }
+    }
+  }
+
+  // process other sections
   std::set<std::string> seenSections;
-  auto nicList = listNetworkInterfaces();
+  for (const auto& pair : configSection) {
+    const std::string& sectionName = pair.first;
+    const ConfigSection& subSection = pair.second;
 
-  for (const auto& item : configSection) {
-    if (!seenSections.insert(item.first).second) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate \"" + item.first + "\" section"));
+    if (!seenSections.insert(sectionName).second) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate section face_system." + sectionName));
     }
 
-    if (item.first == "unix") {
-      processSectionUnix(item.second, isDryRun);
+    if (m_factories.count(sectionName) > 0) {
+      continue;
     }
-    else if (item.first == "tcp") {
-      processSectionTcp(item.second, isDryRun);
+
+    ///\todo #3521 nicfaces
+
+    ///\todo #3904 process these in protocol factory
+    if (sectionName == "unix") {
+      processSectionUnix(subSection, isDryRun);
     }
-    else if (item.first == "udp") {
-      processSectionUdp(item.second, isDryRun, nicList);
+    else if (sectionName == "udp") {
+      processSectionUdp(subSection, isDryRun, context.m_nicList);
     }
-    else if (item.first == "ether") {
-      processSectionEther(item.second, isDryRun, nicList);
+    else if (sectionName == "ether") {
+      processSectionEther(subSection, isDryRun, context.m_nicList);
     }
-    else if (item.first == "websocket") {
-      processSectionWebSocket(item.second, isDryRun);
+    else if (sectionName == "websocket") {
+      processSectionWebSocket(subSection, isDryRun);
     }
     else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" + item.first + "\""));
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
     }
   }
 }
@@ -131,12 +168,12 @@ FaceSystem::processSectionUnix(const ConfigSection& configSection, bool isDryRun
   }
 
   if (!isDryRun) {
-    if (m_factories.count("unix") > 0) {
+    if (m_factoryByScheme.count("unix") > 0) {
       return;
     }
 
     auto factory = make_shared<UnixStreamFactory>();
-    m_factories.emplace("unix", factory);
+    m_factoryByScheme.emplace("unix", factory);
 
     auto channel = factory->createChannel(path);
     channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
@@ -145,77 +182,6 @@ FaceSystem::processSectionUnix(const ConfigSection& configSection, bool isDryRun
   BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without Unix sockets support, "
                                           "cannot process \"unix\" section"));
 #endif // HAVE_UNIX_SOCKETS
-}
-
-void
-FaceSystem::processSectionTcp(const ConfigSection& configSection, bool isDryRun)
-{
-  // ; the tcp section contains settings of TCP faces and channels
-  // tcp
-  // {
-  //   listen yes ; set to 'no' to disable TCP listener, default 'yes'
-  //   port 6363 ; TCP listener port number
-  // }
-
-  uint16_t port = 6363;
-  bool needToListen = true;
-  bool enableV4 = true;
-  bool enableV6 = true;
-
-  for (const auto& i : configSection) {
-    if (i.first == "port") {
-      port = ConfigFile::parseNumber<uint16_t>(i, "tcp");
-      NFD_LOG_TRACE("TCP port set to " << port);
-    }
-    else if (i.first == "listen") {
-      needToListen = ConfigFile::parseYesNo(i, "tcp");
-    }
-    else if (i.first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, "tcp");
-    }
-    else if (i.first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, "tcp");
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i.first + "\" in \"tcp\" section"));
-    }
-  }
-
-  if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 TCP channels have been disabled."
-                                            " Remove \"tcp\" section to disable TCP channels or"
-                                            " re-enable at least one channel type."));
-  }
-
-  if (!isDryRun) {
-    if (m_factories.count("tcp") > 0) {
-      return;
-    }
-
-    auto factory = make_shared<TcpFactory>();
-    m_factories.emplace("tcp", factory);
-
-    if (enableV4) {
-      tcp::Endpoint endpoint(boost::asio::ip::tcp::v4(), port);
-      shared_ptr<TcpChannel> v4Channel = factory->createChannel(endpoint);
-      if (needToListen) {
-        v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
-      }
-
-      m_factories.emplace("tcp4", factory);
-    }
-
-    if (enableV6) {
-      tcp::Endpoint endpoint(boost::asio::ip::tcp::v6(), port);
-      shared_ptr<TcpChannel> v6Channel = factory->createChannel(endpoint);
-      if (needToListen) {
-        v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
-      }
-
-      m_factories.emplace("tcp6", factory);
-    }
-  }
 }
 
 void
@@ -310,13 +276,13 @@ FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
   if (!isDryRun) {
     shared_ptr<UdpFactory> factory;
     bool isReload = false;
-    if (m_factories.count("udp") > 0) {
+    if (m_factoryByScheme.count("udp") > 0) {
       isReload = true;
-      factory = static_pointer_cast<UdpFactory>(m_factories["udp"]);
+      factory = static_pointer_cast<UdpFactory>(m_factoryByScheme["udp"]);
     }
     else {
       factory = make_shared<UdpFactory>();
-      m_factories.emplace("udp", factory);
+      m_factoryByScheme.emplace("udp", factory);
     }
 
     if (!isReload && enableV4) {
@@ -324,7 +290,7 @@ FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
       shared_ptr<UdpChannel> v4Channel = factory->createChannel(endpoint, time::seconds(timeout));
       v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
 
-      m_factories.emplace("udp4", factory);
+      m_factoryByScheme.emplace("udp4", factory);
     }
 
     if (!isReload && enableV6) {
@@ -332,7 +298,7 @@ FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
       shared_ptr<UdpChannel> v6Channel = factory->createChannel(endpoint, time::seconds(timeout));
       v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
 
-      m_factories.emplace("udp6", factory);
+      m_factoryByScheme.emplace("udp6", factory);
     }
 
     std::set<shared_ptr<Face>> multicastFacesToRemove;
@@ -416,12 +382,12 @@ FaceSystem::processSectionEther(const ConfigSection& configSection, bool isDryRu
 
   if (!isDryRun) {
     shared_ptr<EthernetFactory> factory;
-    if (m_factories.count("ether") > 0) {
-      factory = static_pointer_cast<EthernetFactory>(m_factories["ether"]);
+    if (m_factoryByScheme.count("ether") > 0) {
+      factory = static_pointer_cast<EthernetFactory>(m_factoryByScheme["ether"]);
     }
     else {
       factory = make_shared<EthernetFactory>();
-      m_factories.emplace("ether", factory);
+      m_factoryByScheme.emplace("ether", factory);
     }
 
     std::set<shared_ptr<Face>> multicastFacesToRemove;
@@ -505,12 +471,12 @@ FaceSystem::processSectionWebSocket(const ConfigSection& configSection, bool isD
   }
 
   if (!isDryRun) {
-    if (m_factories.count("websocket") > 0) {
+    if (m_factoryByScheme.count("websocket") > 0) {
       return;
     }
 
     auto factory = make_shared<WebSocketFactory>();
-    m_factories.emplace("websocket", factory);
+    m_factoryByScheme.emplace("websocket", factory);
 
     shared_ptr<WebSocketChannel> channel;
 
@@ -518,13 +484,13 @@ FaceSystem::processSectionWebSocket(const ConfigSection& configSection, bool isD
       websocket::Endpoint endpoint(boost::asio::ip::address_v6::any(), port);
       channel = factory->createChannel(endpoint);
 
-      m_factories.emplace("websocket46", factory);
+      m_factoryByScheme.emplace("websocket46", factory);
     }
     else if (enableV4) {
       websocket::Endpoint endpoint(boost::asio::ip::address_v4::any(), port);
       channel = factory->createChannel(endpoint);
 
-      m_factories.emplace("websocket4", factory);
+      m_factoryByScheme.emplace("websocket4", factory);
     }
 
     if (channel && needToListen) {

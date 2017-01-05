@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,14 +27,22 @@
 #define NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP
 
 #include "channel.hpp"
+#include "face-system.hpp"
 #include <ndn-cxx/encoding/nfd-constants.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 namespace nfd {
+namespace face {
 
-/**
- * \brief Abstract base class for all protocol factories
+/** \brief provide support for an underlying protocol
+ *  \sa FaceSystem
+ *
+ *  A protocol factory provides support for an underlying protocol and owns Channel objects.
+ *  It can process a subsection of face_system config section and create channels and multicast
+ *  faces accordingly.
  */
-class ProtocolFactory
+class ProtocolFactory : noncopyable
 {
 public:
   /**
@@ -49,6 +57,29 @@ public:
     {
     }
   };
+
+  /** \brief process face_system subsection that corresponds to this ProtocolFactory type
+   *  \param configSection the configuration section or boost::null to indicate it is omitted
+   *  \param context provides access to data structures and contextual information
+   *  \throw ConfigFile::Error invalid configuration
+   *
+   *  This function updates \p providedSchemes
+   */
+  virtual void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context)
+  {
+    ///\todo implement in every subclass and make this pure-virtual
+    BOOST_THROW_EXCEPTION(Error("processConfig is not implemented"));
+  }
+
+  /** \return FaceUri schemes accepted by this ProtocolFactory
+   */
+  const std::set<std::string>&
+  getProvidedSchemes()
+  {
+    return providedSchemes;
+  }
 
   /** \brief Try to create Face using the supplied FaceUri
    *
@@ -72,7 +103,26 @@ public:
 
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const = 0;
+
+protected:
+  template<typename ChannelMap>
+  static std::vector<shared_ptr<const Channel>>
+  getChannelsFromMap(const ChannelMap& channelMap)
+  {
+    std::vector<shared_ptr<const Channel>> channels;
+    boost::copy(channelMap | boost::adaptors::map_values, std::back_inserter(channels));
+    return channels;
+  }
+
+protected:
+  /** \brief FaceUri schemes provided by this ProtocolFactory
+   */
+  std::set<std::string> providedSchemes;
 };
+
+} // namespace face
+
+using face::ProtocolFactory;
 
 } // namespace nfd
 

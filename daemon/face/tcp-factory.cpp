@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,75 +25,91 @@
 
 #include "tcp-factory.hpp"
 #include "core/logger.hpp"
-#include "core/network-interface.hpp"
 
 namespace nfd {
+namespace face {
 
 namespace ip = boost::asio::ip;
 
 NFD_LOG_INIT("TcpFactory");
 
 void
-TcpFactory::prohibitEndpoint(const tcp::Endpoint& endpoint)
+TcpFactory::processConfig(OptionalConfigSection configSection,
+                          FaceSystem::ConfigContext& context)
 {
-  if (endpoint.address().is_v4() &&
-      endpoint.address() == ip::address_v4::any()) {
-    prohibitAllIpv4Endpoints(endpoint.port());
-  }
-  else if (endpoint.address().is_v6() &&
-           endpoint.address() == ip::address_v6::any()) {
-    prohibitAllIpv6Endpoints(endpoint.port());
+  // tcp
+  // {
+  //   listen yes
+  //   port 6363
+  //   enable_v4 yes
+  //   enable_v6 yes
+  // }
+
+  if (!configSection) {
+    if (!context.isDryRun && !m_channels.empty()) {
+      NFD_LOG_WARN("Cannot disable tcp4 and tcp6 channels after initialization");
+    }
+    return;
   }
 
-  NFD_LOG_TRACE("prohibiting TCP " << endpoint);
-  m_prohibitedEndpoints.insert(endpoint);
-}
+  bool wantListen = true;
+  uint16_t port = 6363;
+  bool enableV4 = true;
+  bool enableV6 = true;
 
-void
-TcpFactory::prohibitAllIpv4Endpoints(uint16_t port)
-{
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv4Addresses) {
-      if (addr != ip::address_v4::any()) {
-        prohibitEndpoint(tcp::Endpoint(addr, port));
-      }
+  for (const auto& pair : *configSection) {
+    const std::string& key = pair.first;
+
+    if (key == "listen") {
+      wantListen = ConfigFile::parseYesNo(pair, "face_system.tcp");
+    }
+    else if (key == "port") {
+      port = ConfigFile::parseNumber<uint16_t>(pair, "face_system.tcp");
+    }
+    else if (key == "enable_v4") {
+      enableV4 = ConfigFile::parseYesNo(pair, "face_system.tcp");
+    }
+    else if (key == "enable_v6") {
+      enableV6 = ConfigFile::parseYesNo(pair, "face_system.tcp");
+    }
+    else {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.tcp." + key));
     }
   }
-}
 
-void
-TcpFactory::prohibitAllIpv6Endpoints(uint16_t port)
-{
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv6Addresses) {
-      if (addr != ip::address_v6::any()) {
-        prohibitEndpoint(tcp::Endpoint(addr, port));
+  if (!enableV4 && !enableV6) {
+    BOOST_THROW_EXCEPTION(ConfigFile::Error(
+      "IPv4 and IPv6 TCP channels have been disabled. Remove face_system.tcp section to disable "
+      "TCP channels or enable at least one channel type."));
+  }
+
+  if (!context.isDryRun) {
+    providedSchemes.insert("tcp");
+
+    if (enableV4) {
+      tcp::Endpoint endpoint(ip::tcp::v4(), port);
+      shared_ptr<TcpChannel> v4Channel = this->createChannel(endpoint);
+      if (wantListen && !v4Channel->isListening()) {
+        v4Channel->listen(context.addFace, nullptr);
       }
+      providedSchemes.insert("tcp4");
+    }
+    else if (providedSchemes.count("tcp4") > 0) {
+      NFD_LOG_WARN("Cannot close tcp4 channel after its creation");
+    }
+
+    if (enableV6) {
+      tcp::Endpoint endpoint(ip::tcp::v6(), port);
+      shared_ptr<TcpChannel> v6Channel = this->createChannel(endpoint);
+      if (wantListen && !v6Channel->isListening()) {
+        v6Channel->listen(context.addFace, nullptr);
+      }
+      providedSchemes.insert("tcp6");
+    }
+    else if (providedSchemes.count("tcp6") > 0) {
+      NFD_LOG_WARN("Cannot close tcp6 channel after its creation");
     }
   }
-}
-
-shared_ptr<TcpChannel>
-TcpFactory::createChannel(const tcp::Endpoint& endpoint)
-{
-  auto channel = findChannel(endpoint);
-  if (channel)
-    return channel;
-
-  channel = make_shared<TcpChannel>(endpoint);
-  m_channels[endpoint] = channel;
-  prohibitEndpoint(endpoint);
-
-  NFD_LOG_DEBUG("Channel [" << endpoint << "] created");
-  return channel;
-}
-
-shared_ptr<TcpChannel>
-TcpFactory::createChannel(const std::string& localIp, const std::string& localPort)
-{
-  tcp::Endpoint endpoint(ip::address::from_string(localIp),
-                         boost::lexical_cast<uint16_t>(localPort));
-  return createChannel(endpoint);
 }
 
 void
@@ -146,16 +162,75 @@ TcpFactory::createFace(const FaceUri& uri,
   onFailure(504, "No channels available to connect");
 }
 
+void
+TcpFactory::prohibitEndpoint(const tcp::Endpoint& endpoint)
+{
+  if (endpoint.address().is_v4() &&
+      endpoint.address() == ip::address_v4::any()) {
+    prohibitAllIpv4Endpoints(endpoint.port());
+  }
+  else if (endpoint.address().is_v6() &&
+           endpoint.address() == ip::address_v6::any()) {
+    prohibitAllIpv6Endpoints(endpoint.port());
+  }
+
+  NFD_LOG_TRACE("prohibiting TCP " << endpoint);
+  m_prohibitedEndpoints.insert(endpoint);
+}
+
+void
+TcpFactory::prohibitAllIpv4Endpoints(uint16_t port)
+{
+  ///\todo prohibited endpoints need to react to dynamic NIC changes
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const auto& addr : nic.ipv4Addresses) {
+      if (addr != ip::address_v4::any()) {
+        prohibitEndpoint(tcp::Endpoint(addr, port));
+      }
+    }
+  }
+}
+
+void
+TcpFactory::prohibitAllIpv6Endpoints(uint16_t port)
+{
+  ///\todo prohibited endpoints need to react to dynamic NIC changes
+  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
+    for (const auto& addr : nic.ipv6Addresses) {
+      if (addr != ip::address_v6::any()) {
+        prohibitEndpoint(tcp::Endpoint(addr, port));
+      }
+    }
+  }
+}
+
+shared_ptr<TcpChannel>
+TcpFactory::createChannel(const tcp::Endpoint& endpoint)
+{
+  auto channel = findChannel(endpoint);
+  if (channel)
+    return channel;
+
+  channel = make_shared<TcpChannel>(endpoint);
+  m_channels[endpoint] = channel;
+  prohibitEndpoint(endpoint);
+
+  NFD_LOG_DEBUG("Channel [" << endpoint << "] created");
+  return channel;
+}
+
+shared_ptr<TcpChannel>
+TcpFactory::createChannel(const std::string& localIp, const std::string& localPort)
+{
+  tcp::Endpoint endpoint(ip::address::from_string(localIp),
+                         boost::lexical_cast<uint16_t>(localPort));
+  return createChannel(endpoint);
+}
+
 std::vector<shared_ptr<const Channel>>
 TcpFactory::getChannels() const
 {
-  std::vector<shared_ptr<const Channel>> channels;
-  channels.reserve(m_channels.size());
-
-  for (const auto& i : m_channels)
-    channels.push_back(i.second);
-
-  return channels;
+  return getChannelsFromMap(m_channels);
 }
 
 shared_ptr<TcpChannel>
@@ -168,4 +243,5 @@ TcpFactory::findChannel(const tcp::Endpoint& localEndpoint) const
     return nullptr;
 }
 
+} // namespace face
 } // namespace nfd

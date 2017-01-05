@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,17 +25,111 @@
 
 #include "face/tcp-factory.hpp"
 
-#include "core/network-interface.hpp"
 #include "factory-test-common.hpp"
+#include "face-system-fixture.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
+
+using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestTcpFactory, BaseFixture)
 
 using nfd::Face;
+
+BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        listen yes
+        port 16363
+        enable_v4 yes
+        enable_v6 yes
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+
+  auto& factory = this->getFactoryById<TcpFactory>("tcp");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
+}
+
+BOOST_AUTO_TEST_CASE(Omitted)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+
+  auto& factory = this->getFactoryById<TcpFactory>("tcp");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(BadListen)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        listen hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(ChannelsDisabled)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        port 6363
+        enable_v4 no
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(UnknownOption)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
@@ -243,4 +337,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestTcpFactory
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
