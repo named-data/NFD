@@ -51,6 +51,10 @@ FaceSystem::FaceSystem(FaceTable& faceTable)
 {
   ///\todo #3904 make a registry, and construct instances from registry
   m_factories["tcp"] = make_shared<TcpFactory>();
+
+#ifdef HAVE_UNIX_SOCKETS
+  m_factories["unix"] = make_shared<UnixStreamFactory>();
+#endif // HAVE_UNIX_SOCKETS
 }
 
 std::set<const ProtocolFactory*>
@@ -127,10 +131,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     ///\todo #3521 nicfaces
 
     ///\todo #3904 process these in protocol factory
-    if (sectionName == "unix") {
-      processSectionUnix(subSection, isDryRun);
-    }
-    else if (sectionName == "udp") {
+    if (sectionName == "udp") {
       processSectionUdp(subSection, isDryRun, context.m_nicList);
     }
     else if (sectionName == "ether") {
@@ -143,45 +144,6 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
     }
   }
-}
-
-void
-FaceSystem::processSectionUnix(const ConfigSection& configSection, bool isDryRun)
-{
-  // ; the unix section contains settings of Unix stream faces and channels
-  // unix
-  // {
-  //   path /var/run/nfd.sock ; Unix stream listener path
-  // }
-
-#if defined(HAVE_UNIX_SOCKETS)
-  std::string path = "/var/run/nfd.sock";
-
-  for (const auto& i : configSection) {
-    if (i.first == "path") {
-      path = i.second.get_value<std::string>();
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i.first + "\" in \"unix\" section"));
-    }
-  }
-
-  if (!isDryRun) {
-    if (m_factoryByScheme.count("unix") > 0) {
-      return;
-    }
-
-    auto factory = make_shared<UnixStreamFactory>();
-    m_factoryByScheme.emplace("unix", factory);
-
-    auto channel = factory->createChannel(path);
-    channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
-  }
-#else
-  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without Unix sockets support, "
-                                          "cannot process \"unix\" section"));
-#endif // HAVE_UNIX_SOCKETS
 }
 
 void

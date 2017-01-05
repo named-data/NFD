@@ -99,9 +99,6 @@ private:
                 const std::string& filename);
 
   void
-  processSectionUnix(const ConfigSection& configSection, bool isDryRun);
-
-  void
   processSectionUdp(const ConfigSection& configSection, bool isDryRun,
                     const std::vector<NetworkInterfaceInfo>& nicList);
 

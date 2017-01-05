@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,10 +30,26 @@
 #include "unix-stream-channel.hpp"
 
 namespace nfd {
+namespace face {
 
+/** \brief protocol factory for stream-oriented Unix sockets
+ */
 class UnixStreamFactory : public ProtocolFactory
 {
 public:
+  /** \brief process face_system.unix config section
+   */
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override;
+
+  void
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) override;
+
   /**
    * \brief Create stream-oriented Unix channel using specified socket path
    *
@@ -47,15 +63,7 @@ public:
   shared_ptr<UnixStreamChannel>
   createChannel(const std::string& unixSocketPath);
 
-public: // from ProtocolFactory
-  virtual void
-  createFace(const FaceUri& uri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
-
-  virtual std::vector<shared_ptr<const Channel>>
+  std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
 private:
@@ -72,6 +80,7 @@ private:
   std::map<unix_stream::Endpoint, shared_ptr<UnixStreamChannel>> m_channels;
 };
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_UNIX_STREAM_FACTORY_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,10 +24,62 @@
  */
 
 #include "unix-stream-factory.hpp"
+#include "core/logger.hpp"
 
-#include <boost/filesystem.hpp> // for canonical()
+#include <boost/filesystem.hpp>
 
 namespace nfd {
+namespace face {
+
+NFD_LOG_INIT("UnixStreamFactory");
+
+void
+UnixStreamFactory::processConfig(OptionalConfigSection configSection,
+                                 FaceSystem::ConfigContext& context)
+{
+  // unix
+  // {
+  //   path /var/run/nfd.sock
+  // }
+
+  if (!configSection) {
+    if (!context.isDryRun && !m_channels.empty()) {
+      NFD_LOG_WARN("Cannot disable unix channel after initialization");
+    }
+    return;
+  }
+
+  std::string path = "/var/run/nfd.sock";
+
+  for (const auto& pair : *configSection) {
+    const std::string& key = pair.first;
+    const ConfigSection& value = pair.second;
+
+    if (key == "path") {
+      path = value.get_value<std::string>();
+    }
+    else {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.unix." + key));
+    }
+  }
+
+  if (!context.isDryRun) {
+    auto channel = this->createChannel(path);
+    if (!channel->isListening()) {
+      channel->listen(context.addFace, nullptr);
+    }
+  }
+}
+
+void
+UnixStreamFactory::createFace(const FaceUri& uri,
+                              ndn::nfd::FacePersistency persistency,
+                              bool wantLocalFieldsEnabled,
+                              const FaceCreatedCallback& onCreated,
+                              const FaceCreationFailedCallback& onFailure)
+{
+  onFailure(406, "Unsupported protocol");
+}
 
 shared_ptr<UnixStreamChannel>
 UnixStreamFactory::createChannel(const std::string& unixSocketPath)
@@ -45,26 +97,10 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   return channel;
 }
 
-void
-UnixStreamFactory::createFace(const FaceUri& uri,
-                              ndn::nfd::FacePersistency persistency,
-                              bool wantLocalFieldsEnabled,
-                              const FaceCreatedCallback& onCreated,
-                              const FaceCreationFailedCallback& onFailure)
-{
-  onFailure(406, "Unsupported protocol");
-}
-
 std::vector<shared_ptr<const Channel>>
 UnixStreamFactory::getChannels() const
 {
-  std::vector<shared_ptr<const Channel>> channels;
-  channels.reserve(m_channels.size());
-
-  for (const auto& i : m_channels)
-    channels.push_back(i.second);
-
-  return channels;
+  return getChannelsFromMap(m_channels);
 }
 
 shared_ptr<UnixStreamChannel>
@@ -77,4 +113,5 @@ UnixStreamFactory::findChannel(const unix_stream::Endpoint& endpoint) const
     return nullptr;
 }
 
+} // namespace face
 } // namespace nfd

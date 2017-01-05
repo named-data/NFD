@@ -210,47 +210,6 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 ///\todo #3904 move Config* to *Factory test suite
 
-#ifdef HAVE_UNIX_SOCKETS
-BOOST_AUTO_TEST_SUITE(ConfigUnix)
-
-BOOST_AUTO_TEST_CASE(Normal)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      unix
-      {
-        path /tmp/nfd.sock
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
-
-  auto& factory = this->getFactoryByScheme<UnixStreamFactory>("unix");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
-}
-
-BOOST_AUTO_TEST_CASE(UnknownOption)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      unix
-      {
-        hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // ConfigUnix
-#endif // HAVE_UNIX_SOCKETS
-
 BOOST_AUTO_TEST_SUITE(ConfigUdp)
 
 BOOST_AUTO_TEST_CASE(Normal)
