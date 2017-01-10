@@ -30,7 +30,6 @@
 // ProtocolFactory includes, sorted alphabetically
 #ifdef HAVE_LIBPCAP
 #include "ethernet-factory.hpp"
-#include "ethernet-transport.hpp"
 #endif // HAVE_LIBPCAP
 #include "tcp-factory.hpp"
 #include "udp-factory.hpp"
@@ -50,6 +49,11 @@ FaceSystem::FaceSystem(FaceTable& faceTable)
   : m_faceTable(faceTable)
 {
   ///\todo #3904 make a registry, and construct instances from registry
+
+#ifdef HAVE_LIBPCAP
+  m_factories["ether"] = make_shared<EthernetFactory>();
+#endif // HAVE_LIBPCAP
+
   m_factories["tcp"] = make_shared<TcpFactory>();
 
 #ifdef HAVE_UNIX_SOCKETS
@@ -93,7 +97,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   ConfigContext context;
   context.isDryRun = isDryRun;
   context.addFace = bind(&FaceTable::add, &m_faceTable, _1);
-  context.m_nicList = listNetworkInterfaces();
+  context.m_netifs = listNetworkInterfaces();
 
   // process sections in protocol factories
   for (const auto& pair : m_factories) {
@@ -132,10 +136,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
 
     ///\todo #3904 process these in protocol factory
     if (sectionName == "udp") {
-      processSectionUdp(subSection, isDryRun, context.m_nicList);
-    }
-    else if (sectionName == "ether") {
-      processSectionEther(subSection, isDryRun, context.m_nicList);
+      processSectionUdp(subSection, isDryRun, context.m_netifs);
     }
     else if (sectionName == "websocket") {
       processSectionWebSocket(subSection, isDryRun);
@@ -299,89 +300,6 @@ FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
       face->close();
     }
   }
-}
-
-void
-FaceSystem::processSectionEther(const ConfigSection& configSection, bool isDryRun,
-                                const std::vector<NetworkInterfaceInfo>& nicList)
-{
-  // ; the ether section contains settings of Ethernet faces and channels
-  // ether
-  // {
-  //   ; NFD creates one Ethernet multicast face per NIC
-  //   mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
-  //   mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
-  // }
-
-#if defined(HAVE_LIBPCAP)
-  NetworkInterfacePredicate nicPredicate;
-  bool useMcast = true;
-  ethernet::Address mcastGroup(ethernet::getDefaultMulticastAddress());
-
-  for (const auto& i : configSection) {
-    if (i.first == "mcast") {
-      useMcast = ConfigFile::parseYesNo(i, "ether");
-    }
-    else if (i.first == "mcast_group") {
-      mcastGroup = ethernet::Address::fromString(i.second.get_value<std::string>());
-      if (mcastGroup.isNull()) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i.first + "\" in \"ether\" section"));
-      }
-      NFD_LOG_TRACE("Ethernet multicast group set to " << mcastGroup);
-    }
-    else if (i.first == "whitelist") {
-      nicPredicate.parseWhitelist(i.second);
-    }
-    else if (i.first == "blacklist") {
-      nicPredicate.parseBlacklist(i.second);
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i.first + "\" in \"ether\" section"));
-    }
-  }
-
-  if (!isDryRun) {
-    shared_ptr<EthernetFactory> factory;
-    if (m_factoryByScheme.count("ether") > 0) {
-      factory = static_pointer_cast<EthernetFactory>(m_factoryByScheme["ether"]);
-    }
-    else {
-      factory = make_shared<EthernetFactory>();
-      m_factoryByScheme.emplace("ether", factory);
-    }
-
-    std::set<shared_ptr<Face>> multicastFacesToRemove;
-    for (const auto& i : factory->getMulticastFaces()) {
-      multicastFacesToRemove.insert(i.second);
-    }
-
-    if (useMcast) {
-      for (const auto& nic : nicList) {
-        if (nic.isUp() && nic.isMulticastCapable() && nicPredicate(nic)) {
-          try {
-            auto newFace = factory->createMulticastFace(nic, mcastGroup);
-            m_faceTable.add(newFace);
-            multicastFacesToRemove.erase(newFace);
-          }
-          catch (const EthernetFactory::Error& factoryError) {
-            NFD_LOG_ERROR(factoryError.what() << ", continuing");
-          }
-          catch (const EthernetTransport::Error& faceError) {
-            NFD_LOG_ERROR(faceError.what() << ", continuing");
-          }
-        }
-      }
-    }
-
-    for (const auto& face : multicastFacesToRemove) {
-      face->close();
-    }
-  }
-#else
-  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without libpcap, cannot process \"ether\" section"));
-#endif // HAVE_LIBPCAP
 }
 
 void

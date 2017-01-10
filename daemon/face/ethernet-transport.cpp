@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -374,14 +374,15 @@ EthernetTransport::processIncomingPacket(const pcap_pkthdr* header, const uint8_
 void
 EthernetTransport::processErrorCode(const boost::system::error_code& error)
 {
-  NFD_LOG_FACE_TRACE(__func__);
-
-  if (getState() == TransportState::CLOSING ||
+  // boost::asio::error::operation_aborted must be checked first. In that situation, the Transport
+  // may already have been destructed, and it's unsafe to call getState() or do logging.
+  if (error == boost::asio::error::operation_aborted ||
+      getState() == TransportState::CLOSING ||
       getState() == TransportState::FAILED ||
-      getState() == TransportState::CLOSED ||
-      error == boost::asio::error::operation_aborted)
+      getState() == TransportState::CLOSED) {
     // transport is shutting down, ignore any errors
     return;
+  }
 
   NFD_LOG_FACE_WARN("Receive operation failed: " << error.message());
 }

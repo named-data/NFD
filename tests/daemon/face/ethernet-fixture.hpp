@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
-#define NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP
 
 #include "core/network-interface.hpp"
 #include "face/ethernet-transport.hpp"
@@ -35,39 +35,41 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-class NetworkInterfaceFixture : public nfd::tests::BaseFixture
+class EthernetFixture : public virtual nfd::tests::BaseFixture
 {
 protected:
-  NetworkInterfaceFixture()
+  EthernetFixture()
   {
     for (const auto& netif : listNetworkInterfaces()) {
       if (!netif.isLoopback() && netif.isUp()) {
         try {
-          face::EthernetTransport transport(netif, ethernet::getBroadcastAddress());
-          m_interfaces.push_back(netif);
+          EthernetTransport transport(netif, ethernet::getBroadcastAddress());
+          netifs.push_back(netif);
         }
-        catch (const face::EthernetTransport::Error&) {
-          // pass
+        catch (const EthernetTransport::Error&) {
+          // ignore
         }
       }
     }
   }
 
 protected:
-  std::vector<NetworkInterfaceInfo> m_interfaces;
+  /** \brief EthernetTransport-capable network interfaces
+   */
+  std::vector<NetworkInterfaceInfo> netifs;
 };
 
-#define SKIP_IF_NETWORK_INTERFACE_COUNT_LT(n) \
-  do {                                        \
-    if (this->m_interfaces.size() < (n)) {    \
-      BOOST_WARN_MESSAGE(false, "skipping assertions that require " \
-                                #n " or more network interfaces");  \
-      return;                                 \
-    }                                         \
+#define SKIP_IF_ETHERNET_NETIF_COUNT_LT(n) \
+  do { \
+    if (this->netifs.size() < (n)) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
+                                " or more EthernetTransport-capable network interfaces"); \
+      return; \
+    } \
   } while (false)
 
 } // namespace tests
 } // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_NETWORK_INTERFACE_FIXTURE_HPP
+#endif // NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP

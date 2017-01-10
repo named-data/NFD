@@ -76,10 +76,10 @@ public:
   {
   public:
     const std::vector<NetworkInterfaceInfo>&
-    listNics() const
+    listNetifs() const
     {
-      ///\todo get NIC list from NetworkMonitor
-      return m_nicList;
+      ///\todo get netifs from NetworkMonitor
+      return m_netifs;
     }
 
   public:
@@ -88,7 +88,7 @@ public:
     ///\todo add NetworkMonitor
 
   private:
-    std::vector<NetworkInterfaceInfo> m_nicList;
+    std::vector<NetworkInterfaceInfo> m_netifs;
 
     friend class FaceSystem;
   };
@@ -101,10 +101,6 @@ private:
   void
   processSectionUdp(const ConfigSection& configSection, bool isDryRun,
                     const std::vector<NetworkInterfaceInfo>& nicList);
-
-  void
-  processSectionEther(const ConfigSection& configSection, bool isDryRun,
-                      const std::vector<NetworkInterfaceInfo>& nicList);
 
   void
   processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);

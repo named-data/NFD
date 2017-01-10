@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -95,12 +95,12 @@ NetworkInterfacePredicate::parseBlacklist(const boost::property_tree::ptree& lis
 }
 
 static bool
-doesMatchRule(const NetworkInterfaceInfo& nic, const std::string& rule)
+doesMatchRule(const NetworkInterfaceInfo& netif, const std::string& rule)
 {
   // if '/' is in rule, this is a subnet, check if IP in subnet
   if (rule.find('/') != std::string::npos) {
     Network n = boost::lexical_cast<Network>(rule);
-    for (const auto& addr : nic.ipv4Addresses) {
+    for (const auto& addr : netif.ipv4Addresses) {
       if (n.doesContain(addr)) {
         return true;
       }
@@ -108,15 +108,22 @@ doesMatchRule(const NetworkInterfaceInfo& nic, const std::string& rule)
   }
 
   return rule == "*" ||
-         nic.name == rule ||
-         nic.etherAddress.toString() == rule;
+         netif.name == rule ||
+         netif.etherAddress.toString() == rule;
 }
 
 bool
-NetworkInterfacePredicate::operator()(const NetworkInterfaceInfo& nic) const
+NetworkInterfacePredicate::operator()(const NetworkInterfaceInfo& netif) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule, nic, _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule, nic, _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule, netif, _1)) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule, netif, _1));
+}
+
+bool
+NetworkInterfacePredicate::operator==(const NetworkInterfacePredicate& other) const
+{
+  return this->m_whitelist == other.m_whitelist &&
+         this->m_blacklist == other.m_blacklist;
 }
 
 } // namespace nfd

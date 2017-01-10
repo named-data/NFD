@@ -27,13 +27,7 @@
 #include "face-system-fixture.hpp"
 
 // ProtocolFactory includes, sorted alphabetically
-#ifdef HAVE_LIBPCAP
-#include "face/ethernet-factory.hpp"
-#endif // HAVE_LIBPCAP
 #include "face/udp-factory.hpp"
-#ifdef HAVE_UNIX_SOCKETS
-#include "face/unix-stream-factory.hpp"
-#endif // HAVE_UNIX_SOCKETS
 #ifdef HAVE_WEBSOCKET
 #include "face/websocket-factory.hpp"
 #endif // HAVE_WEBSOCKET
@@ -408,128 +402,6 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
   BOOST_CHECK_EQUAL(factory.getMulticastFaces().size(), 0);
 }
 BOOST_AUTO_TEST_SUITE_END() // ConfigUdp
-
-#ifdef HAVE_LIBPCAP
-BOOST_AUTO_TEST_SUITE(ConfigEther)
-
-BOOST_AUTO_TEST_CASE(Normal)
-{
-  SKIP_IF_NOT_SUPERUSER();
-
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast yes
-        mcast_group 01:00:5E:00:17:AA
-        whitelist
-        {
-          *
-        }
-        blacklist
-        {
-        }
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
-
-  auto& factory = this->getFactoryByScheme<EthernetFactory>("ether");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(BadMcast)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(BadMcastGroup)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast yes
-        mcast_group
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(UnknownOption)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(MulticastReinit)
-{
-  SKIP_IF_NOT_SUPERUSER();
-
-  const std::string CONFIG_WITH_MCAST = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
-
-  auto& factory = this->getFactoryByScheme<EthernetFactory>("ether");
-
-  if (factory.getMulticastFaces().empty()) {
-    BOOST_WARN_MESSAGE(false, "skipping assertions that require at least one Ethernet multicast face");
-    return;
-  }
-
-  const std::string CONFIG_WITHOUT_MCAST = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast no
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
-  BOOST_REQUIRE_NO_THROW(g_io.poll());
-  BOOST_CHECK_EQUAL(factory.getMulticastFaces().size(), 0);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // ConfigEther
-#endif // HAVE_LIBPCAP
 
 #ifdef HAVE_WEBSOCKET
 BOOST_AUTO_TEST_SUITE(ConfigWebSocket)

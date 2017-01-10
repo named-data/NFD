@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,9 @@
  */
 
 #include "face/ethernet-transport.hpp"
-#include "transport-test-common.hpp"
 
-#include "network-interface-fixture.hpp"
+#include "transport-test-common.hpp"
+#include "ethernet-fixture.hpp"
 
 namespace nfd {
 namespace face {
@@ -35,13 +35,13 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestEthernetTransport, NetworkInterfaceFixture)
+BOOST_FIXTURE_TEST_SUITE(TestEthernetTransport, EthernetFixture)
 
 BOOST_AUTO_TEST_CASE(StaticProperties)
 {
-  SKIP_IF_NETWORK_INTERFACE_COUNT_LT(1);
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
-  auto netif = m_interfaces.front();
+  auto netif = netifs.front();
   EthernetTransport transport(netif, ethernet::getDefaultMulticastAddress());
   checkStaticPropertiesInitialized(transport);
 
@@ -52,9 +52,9 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 }
 
-// TODO add the equivalent of these test cases from ethernet.t.cpp as of commit:65caf200924b28748037750449e28bcb548dbc9c
-// SendPacket
-// ProcessIncomingPacket
+///\todo #3369 add the equivalent of these test cases from ethernet.t.cpp
+///      as of commit:65caf200924b28748037750449e28bcb548dbc9c
+///      SendPacket, ProcessIncomingPacket
 
 BOOST_AUTO_TEST_SUITE_END() // TestEthernetTransport
 BOOST_AUTO_TEST_SUITE_END() // Face

@@ -26,6 +26,7 @@
 #ifndef NFD_TESTS_DAEMON_FACE_FACE_SYSTEM_FIXTURE_HPP
 #define NFD_TESTS_DAEMON_FACE_FACE_SYSTEM_FIXTURE_HPP
 
+#include "face/face.hpp"
 #include "face/face-system.hpp"
 #include "fw/face-table.hpp"
 
@@ -37,7 +38,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class FaceSystemFixture : public BaseFixture
+class FaceSystemFixture : public virtual BaseFixture
 {
 public:
   FaceSystemFixture()
@@ -80,6 +81,26 @@ public:
     F* factory = dynamic_cast<F*>(faceSystem.getFactoryByScheme(scheme));
     BOOST_REQUIRE(factory != nullptr);
     return *factory;
+  }
+
+  /** \brief list faces of specified scheme from FaceTable
+   *  \param scheme local or remote FaceUri scheme
+   *  \param linkType if not NONE, filter by specified LinkType
+   */
+  std::vector<const Face*>
+  listFacesByScheme(const std::string& scheme,
+                    ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_NONE) const
+  {
+    std::vector<const Face*> faces;
+    for (const Face& face : faceTable) {
+      if ((face.getLocalUri().getScheme() == scheme ||
+           face.getRemoteUri().getScheme() == scheme) &&
+          (linkType == ndn::nfd::LINK_TYPE_NONE ||
+           face.getLinkType() == linkType)) {
+        faces.push_back(&face);
+      }
+    }
+    return faces;
   }
 
 protected:

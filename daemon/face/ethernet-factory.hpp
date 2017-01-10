@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,86 +27,66 @@
 #define NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
 
 #include "protocol-factory.hpp"
-#include "core/network-interface.hpp"
 
 namespace nfd {
+namespace face {
 
+/** \brief protocol factory for Ethernet
+ *
+ *  Currently, only Ethernet multicast is supported.
+ */
 class EthernetFactory : public ProtocolFactory
 {
 public:
-  /**
-   * \brief Exception of EthernetFactory
+  /** \brief process face_system.ether config section
    */
-  class Error : public ProtocolFactory::Error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : ProtocolFactory::Error(what)
-    {
-    }
-  };
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override;
 
-  typedef std::map<std::pair<std::string, ethernet::Address>,
-                   shared_ptr<Face>> MulticastFaceMap;
-
-  /**
-   * \brief Create an EthernetFace to communicate with the given multicast group
-   *
-   * If this method is called twice with the same interface and group, only
-   * one face will be created. Instead, the second call will just retrieve
-   * the existing face.
-   *
-   * \param interface Local network interface
-   * \param address   Ethernet broadcast/multicast destination address
-   *
-   * \returns always a valid shared pointer to an EthernetFace object,
-   *          an exception will be thrown if the creation fails
-   *
-   * \throws EthernetFactory::Error or EthernetTransport::Error
+  /** \brief unicast face creation is not supported and will always fail
    */
-  shared_ptr<Face>
-  createMulticastFace(const NetworkInterfaceInfo& interface,
-                      const ethernet::Address& address);
-
-  /**
-   * \brief Get map of configured multicast faces
-   */
-  const MulticastFaceMap&
-  getMulticastFaces() const;
-
-public: // from ProtocolFactory
-  virtual void
+  void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) override;
 
-  virtual std::vector<shared_ptr<const Channel>>
+  /** \return empty container, because Ethernet unicast is not supported
+   */
+  std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
 private:
-  /**
-   * \brief Look up EthernetFace using specified interface and address
-   *
-   * \returns shared pointer to the existing EthernetFace object
-   *          or nullptr when such face does not exist
+  /** \brief Create a face to communicate on the given Ethernet multicast group
+   *  \param netif local network interface
+   *  \param group multicast group address
+   *  \note Calling this method again with same arguments returns the existing face on the given
+   *        interface and multicast group rather than creating a new one.
+   *  \throw EthernetTransport::Error transport creation fails
    */
   shared_ptr<Face>
-  findMulticastFace(const std::string& interfaceName,
-                    const ethernet::Address& address) const;
+  createMulticastFace(const NetworkInterfaceInfo& netif, const ethernet::Address& group);
+
+  void
+  applyConfig(const FaceSystem::ConfigContext& context);
 
 private:
-  MulticastFaceMap m_multicastFaces;
+  struct MulticastConfig
+  {
+    bool isEnabled = false;
+    ethernet::Address group = ethernet::getDefaultMulticastAddress();
+    NetworkInterfacePredicate netifPredicate;
+  };
+
+  MulticastConfig m_mcastConfig;
+
+  /// (ifname, group) => face
+  std::map<std::pair<std::string, ethernet::Address>, shared_ptr<Face>> m_mcastFaces;
 };
 
-inline const EthernetFactory::MulticastFaceMap&
-EthernetFactory::getMulticastFaces() const
-{
-  return m_multicastFaces;
-}
-
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
