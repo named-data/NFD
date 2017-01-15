@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -276,6 +276,17 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4MappedIpv6)
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   BOOST_CHECK_EQUAL(transport->getMtu(), MTU_UNLIMITED);
+}
+
+BOOST_AUTO_TEST_CASE(PersistencyChange)
+{
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
+
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), true);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), false);
 }
 
 BOOST_AUTO_TEST_CASE(PingPong)

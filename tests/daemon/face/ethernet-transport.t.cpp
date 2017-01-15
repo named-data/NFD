@@ -52,6 +52,16 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 }
 
+BOOST_AUTO_TEST_CASE(PersistencyChange)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  EthernetTransport transport(netifs.front(), ethernet::getDefaultMulticastAddress());
+
+  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
+  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), false);
+  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
+}
+
 ///\todo #3369 add the equivalent of these test cases from ethernet.t.cpp
 ///      as of commit:65caf200924b28748037750449e28bcb548dbc9c
 ///      SendPacket, ProcessIncomingPacket

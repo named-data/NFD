@@ -43,7 +43,7 @@ volunteers.
 
 * University Pierre & Marie Curie, Sorbonne University
 
-    * Davide Pesavento    <http://www.lip6.fr/actualite/personnes-fiche.php?ident=D1469>
+    * Davide Pesavento    <https://www.linkedin.com/in/davidepesavento>
     * Giulio Grassi       <http://www.lip6.fr/actualite/personnes-fiche.php?ident=D1461>
     * Giovanni Pau        <http://www.cs.ucla.edu/~gpau/Giovanni_Paus_Home_Page/Home.html>
 

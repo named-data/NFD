@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,44 +40,56 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-using namespace nfd::tests;
 namespace mpl = boost::mpl;
 
-class DummyTransportFixture : public BaseFixture
-{
-protected:
-  DummyTransportFixture()
-    : transport(nullptr)
-    , sentPackets(nullptr)
-    , receivedPackets(nullptr)
-  {
-    // Constructor does not initialize the fixture,
-    // so that test case may specify different parameters to DummyTransport constructor.
-  }
-
-  void
-  initialize(unique_ptr<DummyTransport> transport = make_unique<DummyTransport>())
-  {
-    this->face = make_unique<Face>(make_unique<DummyReceiveLinkService>(), std::move(transport));
-    this->transport = static_cast<DummyTransport*>(face->getTransport());
-    this->sentPackets = &this->transport->sentPackets;
-    this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
-  }
-
-protected:
-  unique_ptr<Face> face;
-  DummyTransport* transport;
-  std::vector<Transport::Packet>* sentPackets;
-  std::vector<Transport::Packet>* receivedPackets;
-};
-
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestTransport, DummyTransportFixture)
+BOOST_AUTO_TEST_SUITE(TestTransport)
 
 BOOST_AUTO_TEST_CASE(DummyTransportStaticProperties)
 {
-  this->initialize();
+  auto transport = make_unique<DummyTransport>();
   checkStaticPropertiesInitialized(*transport);
+}
+
+class PersistencyTestTransport : public DummyTransport
+{
+public:
+  PersistencyTestTransport()
+    : DummyTransport("dummy://", "dummy://",
+                     ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                     ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+  {
+  }
+
+protected:
+  void
+  afterChangePersistency(ndn::nfd::FacePersistency oldPersistency) final
+  {
+    persistencyHistory.push_back(oldPersistency);
+  }
+
+public:
+  std::vector<ndn::nfd::FacePersistency> persistencyHistory;
+};
+
+BOOST_AUTO_TEST_CASE(PersistencyChange)
+{
+  auto transport = make_unique<PersistencyTestTransport>();
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(transport->persistencyHistory.size(), 0);
+
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_NONE), false);
+  BOOST_REQUIRE_EQUAL(transport->canChangePersistencyTo(transport->getPersistency()), true);
+  BOOST_REQUIRE_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
+
+  transport->setPersistency(transport->getPersistency());
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(transport->persistencyHistory.size(), 0);
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  BOOST_REQUIRE_EQUAL(transport->persistencyHistory.size(), 1);
+  BOOST_CHECK_EQUAL(transport->persistencyHistory.back(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
 }
 
 /** \brief a macro to declare a TransportState as a integral constant
@@ -157,20 +169,21 @@ typedef mpl::fold<
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
 {
-  this->initialize();
+  auto transport = make_unique<DummyTransport>();
 
   TransportState from = static_cast<TransportState>(T::first::value);
   TransportState to = static_cast<TransportState>(T::second::value);
   BOOST_TEST_MESSAGE("SetState " << from << " -> " << to);
 
   // enter from state
-  typedef typename mpl::at<StateEntering, mpl::int_<T::first::value>>::type Steps;
-  mpl::for_each<Steps>(
-    [this] (int state) { transport->setState(static_cast<TransportState>(state)); });
+  using Steps = typename mpl::at<StateEntering, mpl::int_<T::first::value>>::type;
+  mpl::for_each<Steps>([&transport] (int state) {
+    transport->setState(static_cast<TransportState>(state));
+  });
   BOOST_REQUIRE_EQUAL(transport->getState(), from);
 
   bool hasSignal = false;
-  this->transport->afterStateChange.connect(
+  transport->afterStateChange.connect(
     [from, to, &hasSignal] (TransportState oldState, TransportState newState) {
       hasSignal = true;
       BOOST_CHECK_EQUAL(oldState, from);
@@ -187,18 +200,46 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
     BOOST_CHECK_EQUAL(hasSignal, from != to);
   }
   else {
-    BOOST_CHECK_THROW(this->transport->setState(to), std::runtime_error);
+    BOOST_CHECK_THROW(transport->setState(to), std::runtime_error);
   }
 }
 
 BOOST_AUTO_TEST_CASE(NoExpirationTime)
 {
-  initialize();
+  auto transport = make_unique<DummyTransport>();
 
   BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 }
 
-BOOST_AUTO_TEST_CASE(Send)
+class DummyTransportFixture : public nfd::tests::BaseFixture
+{
+protected:
+  DummyTransportFixture()
+    : transport(nullptr)
+    , sentPackets(nullptr)
+    , receivedPackets(nullptr)
+  {
+    // Constructor does not initialize the fixture,
+    // so that test case may specify different parameters to DummyTransport constructor.
+  }
+
+  void
+  initialize(unique_ptr<DummyTransport> transport = make_unique<DummyTransport>())
+  {
+    this->face = make_unique<nfd::Face>(make_unique<DummyReceiveLinkService>(), std::move(transport));
+    this->transport = static_cast<DummyTransport*>(face->getTransport());
+    this->sentPackets = &this->transport->sentPackets;
+    this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+  }
+
+protected:
+  unique_ptr<nfd::Face> face;
+  DummyTransport* transport;
+  std::vector<Transport::Packet>* sentPackets;
+  std::vector<Transport::Packet>* receivedPackets;
+};
+
+BOOST_FIXTURE_TEST_CASE(Send, DummyTransportFixture)
 {
   this->initialize();
 
@@ -224,7 +265,7 @@ BOOST_AUTO_TEST_CASE(Send)
   BOOST_CHECK(sentPackets->at(2).packet == pkt3);
 }
 
-BOOST_AUTO_TEST_CASE(Receive)
+BOOST_FIXTURE_TEST_CASE(Receive, DummyTransportFixture)
 {
   this->initialize();
 

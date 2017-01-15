@@ -68,9 +68,7 @@ Transport::Transport()
 {
 }
 
-Transport::~Transport()
-{
-}
+Transport::~Transport() = default;
 
 void
 Transport::setFaceAndLinkService(Face& face, LinkService& service)
@@ -91,7 +89,7 @@ Transport::close()
 
   this->setState(TransportState::CLOSING);
   this->doClose();
-  // warning: don't access any fields after this:
+  // warning: don't access any members after this:
   // the Transport may be deallocated if doClose changes state to CLOSED
 }
 
@@ -158,11 +156,13 @@ Transport::setPersistency(ndn::nfd::FacePersistency newPersistency)
     return;
   }
 
-  NFD_LOG_FACE_INFO("setPersistency " << m_persistency << " -> " << newPersistency);
-
   auto oldPersistency = m_persistency;
   m_persistency = newPersistency;
-  this->afterChangePersistency(oldPersistency);
+
+  if (oldPersistency != ndn::nfd::FACE_PERSISTENCY_NONE) {
+    NFD_LOG_FACE_INFO("setPersistency " << oldPersistency << " -> " << newPersistency);
+    this->afterChangePersistency(oldPersistency);
+  }
 }
 
 void
@@ -198,7 +198,7 @@ Transport::setState(TransportState newState)
   }
 
   if (!isValid) {
-    throw std::runtime_error("invalid state transition");
+    BOOST_THROW_EXCEPTION(std::runtime_error("invalid state transition"));
   }
 
   NFD_LOG_FACE_INFO("setState " << m_state << " -> " << newState);
@@ -206,7 +206,7 @@ Transport::setState(TransportState newState)
   TransportState oldState = m_state;
   m_state = newState;
   afterStateChange(oldState, newState);
-  // warning: don't access any fields after this:
+  // warning: don't access any members after this:
   // the Transport may be deallocated in the signal handler if newState is CLOSED
 }
 

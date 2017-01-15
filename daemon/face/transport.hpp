@@ -221,16 +221,13 @@ public: // static properties
   ndn::nfd::FacePersistency
   getPersistency() const;
 
-  /** \brief check whether the intended change from the current persistency to \p newPersistency
-   *  can be performed
+  /** \brief check whether the face persistency can be changed to \p newPersistency
    *
-   *  This function serves as an external API, and invokes the internal function
-   *  canChangePersistencyToImpl to perform further checks if \p newPersistency differs from
-   *  the current persistency.
+   *  This function serves as the external API, and invokes the protected function
+   *  canChangePersistencyToImpl to perform further checks if \p newPersistency differs
+   *  from the current persistency.
    *
-   *  \pre getPersistency() != NONE
-   *
-   *  \return true if the intended change can be performed, otherwise false
+   *  \return true if the change can be performed, false otherwise
    */
   bool
   canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const;
@@ -238,7 +235,7 @@ public: // static properties
   /** \brief changes face persistency setting
    */
   void
-  setPersistency(ndn::nfd::FacePersistency persistency);
+  setPersistency(ndn::nfd::FacePersistency newPersistency);
 
   /** \return whether face is point-to-point or multi-access
    */

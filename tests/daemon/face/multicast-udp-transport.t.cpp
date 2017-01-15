@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,6 +49,16 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
   BOOST_CHECK_EQUAL(transport->getMtu(), 65535 - 60 - 8);
+}
+
+BOOST_AUTO_TEST_CASE(PersistencyChange)
+{
+  SKIP_IF_IP_UNAVAILABLE(defaultAddr);
+  initialize(defaultAddr);
+
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveMultipleRemoteEndpoints)
