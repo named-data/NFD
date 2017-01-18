@@ -102,9 +102,6 @@ private:
   processSectionUdp(const ConfigSection& configSection, bool isDryRun,
                     const std::vector<NetworkInterfaceInfo>& nicList);
 
-  void
-  processSectionWebSocket(const ConfigSection& configSection, bool isDryRun);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief config section name => protocol factory
    *

@@ -28,9 +28,6 @@
 
 // ProtocolFactory includes, sorted alphabetically
 #include "face/udp-factory.hpp"
-#ifdef HAVE_WEBSOCKET
-#include "face/websocket-factory.hpp"
-#endif // HAVE_WEBSOCKET
 
 #include "tests/test-common.hpp"
 
@@ -402,72 +399,6 @@ BOOST_AUTO_TEST_CASE(MulticastReinit)
   BOOST_CHECK_EQUAL(factory.getMulticastFaces().size(), 0);
 }
 BOOST_AUTO_TEST_SUITE_END() // ConfigUdp
-
-#ifdef HAVE_WEBSOCKET
-BOOST_AUTO_TEST_SUITE(ConfigWebSocket)
-
-BOOST_AUTO_TEST_CASE(Normal)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 yes
-        enable_v6 yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
-
-  auto& factory = this->getFactoryByScheme<WebSocketFactory>("websocket");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
-}
-
-BOOST_AUTO_TEST_CASE(ChannelsDisabled)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 no
-        enable_v6 no
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(Ipv4ChannelDisabled)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 no
-        enable_v6 yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // ConfigWebSocket
-#endif // HAVE_WEBSOCKET
 
 BOOST_AUTO_TEST_SUITE_END() // TestFaceSystem
 BOOST_AUTO_TEST_SUITE_END() // Mgmt

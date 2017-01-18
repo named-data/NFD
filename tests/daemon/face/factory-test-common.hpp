@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,6 +56,23 @@ createFace(ProtocolFactory& factory,
                        BOOST_CHECK_EQUAL(actualStatus, expected.status);
                        BOOST_CHECK_EQUAL(actualReason, expected.reason);
                      });
+}
+
+/** \brief check that channels in a factory equal given channel URIs
+ */
+inline void
+checkChannelListEqual(const ProtocolFactory& factory, const std::set<std::string>& channelUris)
+{
+  std::set<std::string> expected(channelUris); // make a copy so we can erase as we go
+  for (const auto& channel : factory.getChannels()) {
+    std::string uri = channel->getUri().toString();
+    if (expected.erase(uri) == 0) {
+      BOOST_ERROR("Unexpected channel " << uri);
+    }
+  }
+  for (const auto& uri : expected) {
+    BOOST_ERROR("Missing channel " << uri);
+  }
 }
 
 } // namespace tests

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,15 +26,153 @@
 #include "face/websocket-factory.hpp"
 
 #include "factory-test-common.hpp"
+#include "face-system-fixture.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
+
+using namespace nfd::tests;
+namespace ip = boost::asio::ip;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketFactory, BaseFixture)
 
-using nfd::Face;
+BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen yes
+        port 9696
+        enable_v4 yes
+        enable_v6 yes
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+
+  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
+  checkChannelListEqual(factory, {"ws://[::]:9696"});
+}
+
+BOOST_AUTO_TEST_CASE(EnableIpv4Only)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen yes
+        port 9696
+        enable_v4 yes
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+
+  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
+  checkChannelListEqual(factory, {"ws://0.0.0.0:9696"});
+}
+
+BOOST_AUTO_TEST_CASE(UnsupportedIpv6Only)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen yes
+        port 9696
+        enable_v4 no
+        enable_v6 yes
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(ChannelsDisabled)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen yes
+        port 9696
+        enable_v4 no
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(NoListen)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen no
+        port 9696
+        enable_v4 yes
+        enable_v6 yes
+      }
+    }
+  )CONFIG";
+
+  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(ChangeEndpoint)
+{
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port 9001
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG1, false));
+  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
+  checkChannelListEqual(factory, {"ws://[::]:9001"});
+
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port 9002
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_NO_THROW(parseConfig(CONFIG2, false));
+  checkChannelListEqual(factory, {"ws://[::]:9001", "ws://[::]:9002"});
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
@@ -82,4 +220,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestWebSocketFactory
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

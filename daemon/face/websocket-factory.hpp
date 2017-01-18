@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,10 +30,28 @@
 #include "websocket-channel.hpp"
 
 namespace nfd {
+namespace face {
 
+/** \brief protocol factory for WebSocket
+ */
 class WebSocketFactory : public ProtocolFactory
 {
 public:
+  /** \brief process face_system.websocket config section
+   */
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override;
+
+  /** \brief unicast face creation is not supported and will always fail
+   */
+  void
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) override;
+
   /**
    * \brief Create WebSocket-based channel using websocket::Endpoint
    *
@@ -58,15 +76,7 @@ public:
   shared_ptr<WebSocketChannel>
   createChannel(const std::string& localIp, const std::string& localPort);
 
-public: // from ProtocolFactory
-  virtual void
-  createFace(const FaceUri& uri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
-
-  virtual std::vector<shared_ptr<const Channel>>
+  std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
 private:
@@ -83,6 +93,7 @@ private:
   std::map<websocket::Endpoint, shared_ptr<WebSocketChannel>> m_channels;
 };
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_WEBSOCKET_FACTORY_HPP

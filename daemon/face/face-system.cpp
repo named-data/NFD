@@ -59,6 +59,10 @@ FaceSystem::FaceSystem(FaceTable& faceTable)
 #ifdef HAVE_UNIX_SOCKETS
   m_factories["unix"] = make_shared<UnixStreamFactory>();
 #endif // HAVE_UNIX_SOCKETS
+
+#ifdef HAVE_WEBSOCKET
+  m_factories["websocket"] = make_shared<WebSocketFactory>();
+#endif // HAVE_WEBSOCKET
 }
 
 std::set<const ProtocolFactory*>
@@ -137,9 +141,6 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     ///\todo #3904 process these in protocol factory
     if (sectionName == "udp") {
       processSectionUdp(subSection, isDryRun, context.m_netifs);
-    }
-    else if (sectionName == "websocket") {
-      processSectionWebSocket(subSection, isDryRun);
     }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
@@ -300,87 +301,6 @@ FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
       face->close();
     }
   }
-}
-
-void
-FaceSystem::processSectionWebSocket(const ConfigSection& configSection, bool isDryRun)
-{
-  // ; the websocket section contains settings of WebSocket faces and channels
-  // websocket
-  // {
-  //   listen yes ; set to 'no' to disable WebSocket listener, default 'yes'
-  //   port 9696 ; WebSocket listener port number
-  //   enable_v4 yes ; set to 'no' to disable listening on IPv4 socket, default 'yes'
-  //   enable_v6 yes ; set to 'no' to disable listening on IPv6 socket, default 'yes'
-  // }
-
-#if defined(HAVE_WEBSOCKET)
-  uint16_t port = 9696;
-  bool needToListen = true;
-  bool enableV4 = true;
-  bool enableV6 = true;
-
-  for (const auto& i : configSection) {
-    if (i.first == "port") {
-      port = ConfigFile::parseNumber<uint16_t>(i, "websocket");
-      NFD_LOG_TRACE("WebSocket port set to " << port);
-    }
-    else if (i.first == "listen") {
-      needToListen = ConfigFile::parseYesNo(i, "websocket");
-    }
-    else if (i.first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, "websocket");
-    }
-    else if (i.first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, "websocket");
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i.first + "\" in \"websocket\" section"));
-    }
-  }
-
-  if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 WebSocket channels have been disabled."
-                                            " Remove \"websocket\" section to disable WebSocket channels or"
-                                            " re-enable at least one channel type."));
-  }
-
-  if (!enableV4 && enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD does not allow pure IPv6 WebSocket channel."));
-  }
-
-  if (!isDryRun) {
-    if (m_factoryByScheme.count("websocket") > 0) {
-      return;
-    }
-
-    auto factory = make_shared<WebSocketFactory>();
-    m_factoryByScheme.emplace("websocket", factory);
-
-    shared_ptr<WebSocketChannel> channel;
-
-    if (enableV6 && enableV4) {
-      websocket::Endpoint endpoint(boost::asio::ip::address_v6::any(), port);
-      channel = factory->createChannel(endpoint);
-
-      m_factoryByScheme.emplace("websocket46", factory);
-    }
-    else if (enableV4) {
-      websocket::Endpoint endpoint(boost::asio::ip::address_v4::any(), port);
-      channel = factory->createChannel(endpoint);
-
-      m_factoryByScheme.emplace("websocket4", factory);
-    }
-
-    if (channel && needToListen) {
-      channel->listen(bind(&FaceTable::add, &m_faceTable, _1));
-    }
-  }
-#else
-  BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD was compiled without WebSocket, "
-                                          "cannot process \"websocket\" section"));
-#endif // HAVE_WEBSOCKET
 }
 
 } // namespace face
