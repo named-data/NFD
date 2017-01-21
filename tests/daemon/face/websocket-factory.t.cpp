@@ -56,8 +56,8 @@ BOOST_AUTO_TEST_CASE(Normal)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://[::]:9696"});
@@ -78,8 +78,8 @@ BOOST_AUTO_TEST_CASE(EnableIpv4Only)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://0.0.0.0:9696"});
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG1, false));
+  parseConfig(CONFIG1, false);
   auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://[::]:9001"});
 
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG2, false));
+  parseConfig(CONFIG2, false);
   checkChannelListEqual(factory, {"ws://[::]:9001", "ws://[::]:9002"});
 }
 

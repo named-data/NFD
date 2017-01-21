@@ -84,8 +84,8 @@ BOOST_AUTO_TEST_CASE(Normal)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
 }
@@ -98,8 +98,8 @@ BOOST_AUTO_TEST_CASE(Omitted)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(Whitelist)
   )CONFIG";
   boost::replace_first(CONFIG, "%ifname", netifs.front().name);
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, false);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), 1);
   BOOST_CHECK_EQUAL(etherMcastFaces.front()->getLocalUri().getHost(), netifs.front().name);
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(Blacklist)
   )CONFIG";
   boost::replace_first(CONFIG, "%ifname", netifs.front().name);
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, false);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size() - 1);
   BOOST_CHECK_EQUAL(boost::count_if(etherMcastFaces, [=] (const Face* face) {
@@ -175,16 +175,16 @@ BOOST_AUTO_TEST_CASE(EnableDisableMcast)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITH_MCAST, false));
+  parseConfig(CONFIG_WITH_MCAST, false);
   g_io.poll();
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG_WITHOUT_MCAST, false));
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
   g_io.poll();
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
@@ -212,13 +212,13 @@ BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG1, false));
+  parseConfig(CONFIG1, false);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
   BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
                     FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x01)));
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG2, false));
+  parseConfig(CONFIG2, false);
   g_io.poll();
   etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());

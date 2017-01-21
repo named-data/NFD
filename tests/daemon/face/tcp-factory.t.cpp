@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(Normal)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   auto& factory = this->getFactoryById<TcpFactory>("tcp");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
@@ -72,8 +72,8 @@ BOOST_AUTO_TEST_CASE(Omitted)
     }
   )CONFIG";
 
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, true));
-  BOOST_CHECK_NO_THROW(parseConfig(CONFIG, false));
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
 
   auto& factory = this->getFactoryById<TcpFactory>("tcp");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
