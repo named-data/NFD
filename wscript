@@ -1,7 +1,7 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 """
-Copyright (c) 2014-2016,  Regents of the University of California,
+Copyright (c) 2014-2017,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License along with
 NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 APPNAME = "nfd"
 BUGREPORT = "https://redmine.named-data.net/projects/nfd"
 URL = "https://named-data.net/doc/NFD/"
