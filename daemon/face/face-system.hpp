@@ -98,10 +98,6 @@ private:
   processConfig(const ConfigSection& configSection, bool isDryRun,
                 const std::string& filename);
 
-  void
-  processSectionUdp(const ConfigSection& configSection, bool isDryRun,
-                    const std::vector<NetworkInterfaceInfo>& nicList);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief config section name => protocol factory
    *

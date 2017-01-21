@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,12 +27,9 @@
 #define NFD_DAEMON_FACE_UDP_CHANNEL_HPP
 
 #include "channel.hpp"
+#include "udp-protocol.hpp"
 
 namespace nfd {
-
-namespace udp {
-typedef boost::asio::ip::udp::endpoint Endpoint;
-} // namespace udp
 
 /**
  * \brief Class implementing UDP-based channel to create faces

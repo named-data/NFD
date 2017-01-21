@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,19 +27,197 @@
 #include "generic-link-service.hpp"
 #include "multicast-udp-transport.hpp"
 #include "core/global-io.hpp"
-#include "core/network-interface.hpp"
+#include <boost/range/adaptors.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 #ifdef __linux__
 #include <cerrno>       // for errno
 #include <cstring>      // for std::strerror()
 #include <sys/socket.h> // for setsockopt()
-#endif
+#endif // __linux__
 
 namespace nfd {
+namespace face {
 
 namespace ip = boost::asio::ip;
 
 NFD_LOG_INIT("UdpFactory");
+
+void
+UdpFactory::processConfig(OptionalConfigSection configSection,
+                          FaceSystem::ConfigContext& context)
+{
+  // udp
+  // {
+  //   port 6363
+  //   enable_v4 yes
+  //   enable_v6 yes
+  //   idle_timeout 600
+  //   keep_alive_interval 25 ; acceptable but ignored
+  //   mcast yes
+  //   mcast_group 224.0.23.170
+  //   mcast_port 56363
+  // }
+
+  uint16_t port = 6363;
+  bool enableV4 = false;
+  bool enableV6 = false;
+  uint32_t idleTimeout = 600;
+  MulticastConfig mcastConfig;
+
+  if (configSection) {
+    // These default to 'yes' but only if face_system.udp section is present
+    enableV4 = enableV6 = mcastConfig.isEnabled = true;
+
+    for (const auto& pair : *configSection) {
+      const std::string& key = pair.first;
+      const ConfigSection& value = pair.second;
+
+      if (key == "port") {
+        port = ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp");
+      }
+      else if (key == "enable_v4") {
+        enableV4 = ConfigFile::parseYesNo(pair, "face_system.udp");
+      }
+      else if (key == "enable_v6") {
+        enableV6 = ConfigFile::parseYesNo(pair, "face_system.udp");
+      }
+      else if (key == "idle_timeout") {
+        idleTimeout = ConfigFile::parseNumber<uint32_t>(pair, "face_system.udp");
+      }
+      else if (key == "keep_alive_interval") {
+        // ignored
+      }
+      else if (key == "mcast") {
+        mcastConfig.isEnabled = ConfigFile::parseYesNo(pair, "face_system.udp");
+      }
+      else if (key == "mcast_group") {
+        const std::string& valueStr = value.get_value<std::string>();
+        boost::system::error_code ec;
+        mcastConfig.group.address(boost::asio::ip::address_v4::from_string(valueStr, ec));
+        if (ec) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group: '" +
+                                valueStr + "' cannot be parsed as an IPv4 address"));
+        }
+        else if (!mcastConfig.group.address().is_multicast()) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group: '" +
+                                valueStr + "' is not a multicast address"));
+        }
+      }
+      else if (key == "mcast_port") {
+        mcastConfig.group.port(ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp"));
+      }
+      else {
+        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.udp." + key));
+      }
+    }
+
+    if (!enableV4 && !enableV6 && !mcastConfig.isEnabled) {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error(
+        "IPv4 and IPv6 UDP channels and UDP multicast have been disabled. "
+        "Remove face_system.udp section to disable UDP channels or enable at least one of them."));
+    }
+  }
+
+  if (!context.isDryRun) {
+    if (enableV4) {
+      udp::Endpoint endpoint(ip::udp::v4(), port);
+      shared_ptr<UdpChannel> v4Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
+      if (!v4Channel->isListening()) {
+        v4Channel->listen(context.addFace, nullptr);
+      }
+      providedSchemes.insert("udp");
+      providedSchemes.insert("udp4");
+    }
+    else if (providedSchemes.count("udp4") > 0) {
+      NFD_LOG_WARN("Cannot close udp4 channel after its creation");
+    }
+
+    if (enableV6) {
+      udp::Endpoint endpoint(ip::udp::v6(), port);
+      shared_ptr<UdpChannel> v6Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
+      if (!v6Channel->isListening()) {
+        v6Channel->listen(context.addFace, nullptr);
+      }
+      providedSchemes.insert("udp");
+      providedSchemes.insert("udp6");
+    }
+    else if (providedSchemes.count("udp6") > 0) {
+      NFD_LOG_WARN("Cannot close udp6 channel after its creation");
+    }
+
+    if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
+      if (mcastConfig.isEnabled) {
+        NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
+      }
+      else {
+        NFD_LOG_INFO("disabling multicast");
+      }
+    }
+    else if (m_mcastConfig.group != mcastConfig.group) {
+      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+                   " to " << mcastConfig.group);
+    }
+    else {
+      // There's no configuration change, but we still need to re-apply configuration because
+      // netifs may have changed.
+    }
+
+    m_mcastConfig = mcastConfig;
+    this->applyMulticastConfig(context);
+  }
+}
+
+void
+UdpFactory::createFace(const FaceUri& uri,
+                       ndn::nfd::FacePersistency persistency,
+                       bool wantLocalFieldsEnabled,
+                       const FaceCreatedCallback& onCreated,
+                       const FaceCreationFailedCallback& onFailure)
+{
+  BOOST_ASSERT(uri.isCanonical());
+
+  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    onFailure(406, "Outgoing unicast UDP faces do not support on-demand persistency");
+    return;
+  }
+
+  udp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
+                         boost::lexical_cast<uint16_t>(uri.getPort()));
+
+  if (endpoint.address().is_multicast()) {
+    NFD_LOG_TRACE("createFace does not support multicast faces");
+    onFailure(406, "Cannot create multicast UDP faces");
+    return;
+  }
+
+  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
+    NFD_LOG_TRACE("Requested endpoint is prohibited "
+                  "(reserved by this NFD or disallowed by face management protocol)");
+    onFailure(406, "Requested endpoint is prohibited");
+    return;
+  }
+
+  if (wantLocalFieldsEnabled) {
+    // UDP faces are never local
+    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
+    onFailure(406, "Local fields can only be enabled on faces with local scope");
+    return;
+  }
+
+  // very simple logic for now
+  for (const auto& i : m_channels) {
+    if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
+        (i.first.address().is_v6() && endpoint.address().is_v6())) {
+      i.second->connect(endpoint, persistency, onCreated, onFailure);
+      return;
+    }
+  }
+
+  NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  onFailure(504, "No channels available to connect");
+}
 
 void
 UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
@@ -126,6 +304,22 @@ UdpFactory::createChannel(const std::string& localIp, const std::string& localPo
   return createChannel(endpoint, timeout);
 }
 
+std::vector<shared_ptr<const Channel>>
+UdpFactory::getChannels() const
+{
+  return getChannelsFromMap(m_channels);
+}
+
+shared_ptr<UdpChannel>
+UdpFactory::findChannel(const udp::Endpoint& localEndpoint) const
+{
+  auto i = m_channels.find(localEndpoint);
+  if (i != m_channels.end())
+    return i->second;
+  else
+    return nullptr;
+}
+
 shared_ptr<Face>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                 const udp::Endpoint& multicastEndpoint,
@@ -203,16 +397,16 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                   ": " + std::strerror(errno)));
     }
   }
-#endif
+#endif // __linux__
 
-  auto linkService = make_unique<face::GenericLinkService>();
-  auto transport = make_unique<face::MulticastUdpTransport>(localEndpoint, multicastEndpoint,
-                                                            std::move(receiveSocket),
-                                                            std::move(sendSocket));
+  auto linkService = make_unique<GenericLinkService>();
+  auto transport = make_unique<MulticastUdpTransport>(localEndpoint, multicastEndpoint,
+                                                      std::move(receiveSocket),
+                                                      std::move(sendSocket));
   face = make_shared<Face>(std::move(linkService), std::move(transport));
 
-  m_multicastFaces[localEndpoint] = face;
-  connectFaceClosedSignal(*face, [this, localEndpoint] { m_multicastFaces.erase(localEndpoint); });
+  m_mcastFaces[localEndpoint] = face;
+  connectFaceClosedSignal(*face, [this, localEndpoint] { m_mcastFaces.erase(localEndpoint); });
 
   return face;
 }
@@ -230,87 +424,63 @@ UdpFactory::createMulticastFace(const std::string& localIp,
   return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
 }
 
-void
-UdpFactory::createFace(const FaceUri& uri,
-                       ndn::nfd::FacePersistency persistency,
-                       bool wantLocalFieldsEnabled,
-                       const FaceCreatedCallback& onCreated,
-                       const FaceCreationFailedCallback& onFailure)
-{
-  BOOST_ASSERT(uri.isCanonical());
-
-  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
-    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
-    onFailure(406, "Outgoing unicast UDP faces do not support on-demand persistency");
-    return;
-  }
-
-  udp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
-                         boost::lexical_cast<uint16_t>(uri.getPort()));
-
-  if (endpoint.address().is_multicast()) {
-    NFD_LOG_TRACE("createFace does not support multicast faces");
-    onFailure(406, "Cannot create multicast UDP faces");
-    return;
-  }
-
-  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
-    NFD_LOG_TRACE("Requested endpoint is prohibited "
-                  "(reserved by this NFD or disallowed by face management protocol)");
-    onFailure(406, "Requested endpoint is prohibited");
-    return;
-  }
-
-  if (wantLocalFieldsEnabled) {
-    // UDP faces are never local
-    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
-    onFailure(406, "Local fields can only be enabled on faces with local scope");
-    return;
-  }
-
-  // very simple logic for now
-  for (const auto& i : m_channels) {
-    if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
-        (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, persistency, onCreated, onFailure);
-      return;
-    }
-  }
-
-  NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
-  onFailure(504, "No channels available to connect");
-}
-
-std::vector<shared_ptr<const Channel>>
-UdpFactory::getChannels() const
-{
-  std::vector<shared_ptr<const Channel>> channels;
-  channels.reserve(m_channels.size());
-
-  for (const auto& i : m_channels)
-    channels.push_back(i.second);
-
-  return channels;
-}
-
-shared_ptr<UdpChannel>
-UdpFactory::findChannel(const udp::Endpoint& localEndpoint) const
-{
-  auto i = m_channels.find(localEndpoint);
-  if (i != m_channels.end())
-    return i->second;
-  else
-    return nullptr;
-}
-
 shared_ptr<Face>
 UdpFactory::findMulticastFace(const udp::Endpoint& localEndpoint) const
 {
-  auto i = m_multicastFaces.find(localEndpoint);
-  if (i != m_multicastFaces.end())
+  auto i = m_mcastFaces.find(localEndpoint);
+  if (i != m_mcastFaces.end())
     return i->second;
   else
     return nullptr;
 }
 
+void
+UdpFactory::applyMulticastConfig(const FaceSystem::ConfigContext& context)
+{
+  // collect old faces
+  std::set<shared_ptr<Face>> oldFaces;
+  boost::copy(m_mcastFaces | boost::adaptors::map_values,
+              std::inserter(oldFaces, oldFaces.end()));
+
+  if (m_mcastConfig.isEnabled) {
+    // determine interfaces on which faces should be created or retained
+    auto capableNetifRange = context.listNetifs() |
+                             boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
+                               return netif.isUp() && netif.isMulticastCapable() &&
+                                      !netif.ipv4Addresses.empty();
+                             });
+
+    bool needIfname = false;
+#ifdef __linux__
+    std::vector<NetworkInterfaceInfo> capableNetifs;
+    boost::copy(capableNetifRange, std::back_inserter(capableNetifs));
+    // on Linux, ifname is needed to create more than one UDP multicast face on the same group
+    needIfname = capableNetifs.size() > 1;
+#else
+    auto& capableNetifs = capableNetifRange;
+#endif // __linux__
+
+    // create faces
+    for (const auto& netif : capableNetifs) {
+      udp::Endpoint localEndpoint(netif.ipv4Addresses.front(), m_mcastConfig.group.port());
+      shared_ptr<Face> face = this->createMulticastFace(localEndpoint, m_mcastConfig.group,
+                                                        needIfname ? netif.name : "");
+      if (face->getId() == INVALID_FACEID) {
+        // new face: register with forwarding
+        context.addFace(face);
+      }
+      else {
+        // existing face: don't destroy
+        oldFaces.erase(face);
+      }
+    }
+  }
+
+  // destroy old faces that are not needed in new configuration
+  for (const auto& face : oldFaces) {
+    face->close();
+  }
+}
+
+} // namespace face
 } // namespace nfd

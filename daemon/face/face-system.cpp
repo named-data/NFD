@@ -24,7 +24,7 @@
  */
 
 #include "face-system.hpp"
-#include "core/logger.hpp"
+// #include "core/logger.hpp"
 #include "fw/face-table.hpp"
 
 // ProtocolFactory includes, sorted alphabetically
@@ -43,7 +43,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("FaceSystem");
+// NFD_LOG_INIT("FaceSystem");
 
 FaceSystem::FaceSystem(FaceTable& faceTable)
   : m_faceTable(faceTable)
@@ -55,6 +55,8 @@ FaceSystem::FaceSystem(FaceTable& faceTable)
 #endif // HAVE_LIBPCAP
 
   m_factories["tcp"] = make_shared<TcpFactory>();
+
+  m_factories["udp"] = make_shared<UdpFactory>();
 
 #ifdef HAVE_UNIX_SOCKETS
   m_factories["unix"] = make_shared<UnixStreamFactory>();
@@ -126,7 +128,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   std::set<std::string> seenSections;
   for (const auto& pair : configSection) {
     const std::string& sectionName = pair.first;
-    const ConfigSection& subSection = pair.second;
+    // const ConfigSection& subSection = pair.second;
 
     if (!seenSections.insert(sectionName).second) {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate section face_system." + sectionName));
@@ -138,168 +140,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
 
     ///\todo #3521 nicfaces
 
-    ///\todo #3904 process these in protocol factory
-    if (sectionName == "udp") {
-      processSectionUdp(subSection, isDryRun, context.m_netifs);
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
-    }
-  }
-}
-
-void
-FaceSystem::processSectionUdp(const ConfigSection& configSection, bool isDryRun,
-                              const std::vector<NetworkInterfaceInfo>& nicList)
-{
-  // ; the udp section contains settings of UDP faces and channels
-  // udp
-  // {
-  //   port 6363 ; UDP unicast port number
-  //   idle_timeout 600 ; idle time (seconds) before closing a UDP unicast face
-  //   keep_alive_interval 25 ; interval (seconds) between keep-alive refreshes
-
-  //   ; NFD creates one UDP multicast face per NIC
-  //   mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
-  //   mcast_port 56363 ; UDP multicast port number
-  //   mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
-  // }
-
-  uint16_t port = 6363;
-  bool enableV4 = true;
-  bool enableV6 = true;
-  size_t timeout = 600;
-  size_t keepAliveInterval = 25;
-  bool useMcast = true;
-  auto mcastGroup = boost::asio::ip::address_v4::from_string("224.0.23.170");
-  uint16_t mcastPort = 56363;
-
-  for (const auto& i : configSection) {
-    if (i.first == "port") {
-      port = ConfigFile::parseNumber<uint16_t>(i, "udp");
-      NFD_LOG_TRACE("UDP unicast port set to " << port);
-    }
-    else if (i.first == "enable_v4") {
-      enableV4 = ConfigFile::parseYesNo(i, "udp");
-    }
-    else if (i.first == "enable_v6") {
-      enableV6 = ConfigFile::parseYesNo(i, "udp");
-    }
-    else if (i.first == "idle_timeout") {
-      try {
-        timeout = i.second.get_value<size_t>();
-      }
-      catch (const boost::property_tree::ptree_bad_data&) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i.first + "\" in \"udp\" section"));
-      }
-    }
-    else if (i.first == "keep_alive_interval") {
-      try {
-        keepAliveInterval = i.second.get_value<size_t>();
-        /// \todo Make use of keepAliveInterval
-        (void)(keepAliveInterval);
-      }
-      catch (const boost::property_tree::ptree_bad_data&) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i.first + "\" in \"udp\" section"));
-      }
-    }
-    else if (i.first == "mcast") {
-      useMcast = ConfigFile::parseYesNo(i, "udp");
-    }
-    else if (i.first == "mcast_port") {
-      mcastPort = ConfigFile::parseNumber<uint16_t>(i, "udp");
-      NFD_LOG_TRACE("UDP multicast port set to " << mcastPort);
-    }
-    else if (i.first == "mcast_group") {
-      boost::system::error_code ec;
-      mcastGroup = boost::asio::ip::address_v4::from_string(i.second.get_value<std::string>(), ec);
-      if (ec) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for option \"" +
-                                                i.first + "\" in \"udp\" section"));
-      }
-      NFD_LOG_TRACE("UDP multicast group set to " << mcastGroup);
-    }
-    else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option \"" +
-                                              i.first + "\" in \"udp\" section"));
-    }
-  }
-
-  if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 and IPv6 UDP channels have been disabled."
-                                            " Remove \"udp\" section to disable UDP channels or"
-                                            " re-enable at least one channel type."));
-  }
-  else if (useMcast && !enableV4) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("IPv4 multicast requested, but IPv4 channels"
-                                            " have been disabled (conflicting configuration options set)"));
-  }
-
-  if (!isDryRun) {
-    shared_ptr<UdpFactory> factory;
-    bool isReload = false;
-    if (m_factoryByScheme.count("udp") > 0) {
-      isReload = true;
-      factory = static_pointer_cast<UdpFactory>(m_factoryByScheme["udp"]);
-    }
-    else {
-      factory = make_shared<UdpFactory>();
-      m_factoryByScheme.emplace("udp", factory);
-    }
-
-    if (!isReload && enableV4) {
-      udp::Endpoint endpoint(boost::asio::ip::udp::v4(), port);
-      shared_ptr<UdpChannel> v4Channel = factory->createChannel(endpoint, time::seconds(timeout));
-      v4Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
-
-      m_factoryByScheme.emplace("udp4", factory);
-    }
-
-    if (!isReload && enableV6) {
-      udp::Endpoint endpoint(boost::asio::ip::udp::v6(), port);
-      shared_ptr<UdpChannel> v6Channel = factory->createChannel(endpoint, time::seconds(timeout));
-      v6Channel->listen(bind(&FaceTable::add, &m_faceTable, _1), nullptr);
-
-      m_factoryByScheme.emplace("udp6", factory);
-    }
-
-    std::set<shared_ptr<Face>> multicastFacesToRemove;
-    for (const auto& i : factory->getMulticastFaces()) {
-      multicastFacesToRemove.insert(i.second);
-    }
-
-    if (useMcast && enableV4) {
-      std::vector<NetworkInterfaceInfo> ipv4MulticastInterfaces;
-      for (const auto& nic : nicList) {
-        if (nic.isUp() && nic.isMulticastCapable() && !nic.ipv4Addresses.empty()) {
-          ipv4MulticastInterfaces.push_back(nic);
-        }
-      }
-
-      bool isNicNameNecessary = false;
-#if defined(__linux__)
-      if (ipv4MulticastInterfaces.size() > 1) {
-        // On Linux if we have more than one MulticastUdpFace
-        // we need to specify the name of the interface
-        isNicNameNecessary = true;
-      }
-#endif
-
-      udp::Endpoint mcastEndpoint(mcastGroup, mcastPort);
-      for (const auto& nic : ipv4MulticastInterfaces) {
-        udp::Endpoint localEndpoint(nic.ipv4Addresses[0], mcastPort);
-        auto newFace = factory->createMulticastFace(localEndpoint, mcastEndpoint,
-                                                    isNicNameNecessary ? nic.name : "");
-        m_faceTable.add(newFace);
-        multicastFacesToRemove.erase(newFace);
-      }
-    }
-
-    for (const auto& face : multicastFacesToRemove) {
-      face->close();
-    }
+    BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
   }
 }
 

@@ -49,6 +49,6 @@ export ASAN_OPTIONS
 
 # Then use sudo to run those tests that need superuser powers
 sudo ./build/unit-tests-core -t TestPrivilegeHelper $(ut_log_args core-privilege)
-sudo ./build/unit-tests-daemon -t Face/TestEthernetFactory,TestEthernetTransport $(ut_log_args daemon-ethernet)
-sudo ./build/unit-tests-daemon -t Face/TestFaceSystem/Config* $(ut_log_args daemon-face-config)
+sudo ./build/unit-tests-daemon -t Face/TestEthernetTransport $(ut_log_args daemon-ethernet)
+sudo ./build/unit-tests-daemon -t Face/*Factory/ProcessConfig $(ut_log_args daemon-face-config)
 sudo ./build/unit-tests-daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig $(ut_log_args daemon-user-config)

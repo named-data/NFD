@@ -28,6 +28,7 @@
 
 #include "face/face.hpp"
 #include "face/face-system.hpp"
+#include "face/protocol-factory.hpp"
 #include "fw/face-table.hpp"
 
 #include "tests/test-common.hpp"

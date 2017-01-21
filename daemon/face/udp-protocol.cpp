@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@ namespace nfd {
 namespace udp {
 
 ssize_t
-computeMtu(const boost::asio::ip::udp::endpoint& localEndpoint)
+computeMtu(const Endpoint& localEndpoint)
 {
   size_t mtu = 0;
   if (localEndpoint.address().is_v4()) { // IPv4

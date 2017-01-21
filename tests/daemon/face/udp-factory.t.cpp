@@ -26,16 +26,342 @@
 #include "face/udp-factory.hpp"
 
 #include "factory-test-common.hpp"
-#include "core/network-interface.hpp"
+#include "face-system-fixture.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
+
+using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, BaseFixture)
 
 using nfd::Face;
+
+BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+
+BOOST_AUTO_TEST_CASE(Channels)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port 7001
+        enable_v4 yes
+        enable_v6 yes
+        idle_timeout 30
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  auto& factory = this->getFactoryById<UdpFactory>("udp");
+  checkChannelListEqual(factory, {"udp4://0.0.0.0:7001", "udp6://[::]:7001"});
+}
+
+BOOST_AUTO_TEST_CASE(ChannelV4)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port 7001
+        enable_v4 yes
+        enable_v6 no
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  auto& factory = this->getFactoryById<UdpFactory>("udp");
+  checkChannelListEqual(factory, {"udp4://0.0.0.0:7001"});
+}
+
+BOOST_AUTO_TEST_CASE(ChannelV6)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port 7001
+        enable_v4 no
+        enable_v6 yes
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  auto& factory = this->getFactoryById<UdpFactory>("udp");
+  checkChannelListEqual(factory, {"udp6://[::]:7001"});
+}
+
+class UdpMcastConfigFixture : public FaceSystemFixture
+{
+protected:
+  UdpMcastConfigFixture()
+  {
+    for (const auto& netif : listNetworkInterfaces()) {
+      if (netif.isUp() && netif.isMulticastCapable() && !netif.ipv4Addresses.empty()) {
+        netifs.push_back(netif);
+      }
+    }
+  }
+
+  std::vector<const Face*>
+  listUdpMcastFaces() const
+  {
+    return this->listFacesByScheme("udp4", ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  }
+
+  size_t
+  countUdpMcastFaces() const
+  {
+    return this->listUdpMcastFaces().size();
+  }
+
+protected:
+  /** \brief MulticastUdpTransport-capable network interfaces
+   */
+  std::vector<NetworkInterfaceInfo> netifs;
+};
+
+#define SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(n) \
+  do { \
+    if (this->netifs.size() < (n)) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
+                                " or more MulticastUdpTransport-capable network interfaces"); \
+      return; \
+    } \
+  } while (false)
+
+BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+
+  const std::string CONFIG_WITH_MCAST = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast yes
+      }
+    }
+  )CONFIG";
+  const std::string CONFIG_WITHOUT_MCAST = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
+  BOOST_CHECK_EQUAL(this->countUdpMcastFaces(), 0);
+
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+
+  parseConfig(CONFIG_WITH_MCAST, false);
+  g_io.poll();
+  BOOST_CHECK_EQUAL(this->countUdpMcastFaces(), netifs.size());
+
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
+  g_io.poll();
+  BOOST_CHECK_EQUAL(this->countUdpMcastFaces(), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group 239.66.30.1
+        mcast_port 7011
+      }
+    }
+  )CONFIG";
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group 239.66.30.2
+        mcast_port 7012
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG1, false);
+  auto udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifs.size());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(),
+                    FaceUri("udp4://239.66.30.1:7011"));
+
+  parseConfig(CONFIG2, false);
+  g_io.poll();
+  udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifs.size());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(),
+                    FaceUri("udp4://239.66.30.2:7012"));
+}
+
+BOOST_AUTO_TEST_CASE(Omitted)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  auto& factory = this->getFactoryById<UdpFactory>("udp");
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+  BOOST_CHECK_EQUAL(this->listFacesByScheme("udp4", ndn::nfd::LINK_TYPE_MULTI_ACCESS).size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(BadIdleTimeout)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        idle_timeout hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcast)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcastGroup)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcastGroupV4Unicast)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group 10.0.0.1
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcastGroupV6)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group ff00::1
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(AllDisabled)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        enable_v4 no
+        enable_v6 no
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(UnknownOption)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
@@ -277,4 +603,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestUdpFactory
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

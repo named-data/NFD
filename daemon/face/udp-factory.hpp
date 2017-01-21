@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,9 +30,13 @@
 #include "udp-channel.hpp"
 
 namespace nfd {
+namespace face {
 
-/// @todo IPv6 multicast support not implemented
-
+/** \brief protocol factory for UDP over IPv4 and IPv6
+ *
+ *  UDP unicast is available over both IPv4 and IPv6.
+ *  UDP multicast is available over IPv4 only.
+ */
 class UdpFactory : public ProtocolFactory
 {
 public:
@@ -49,7 +53,18 @@ public:
     }
   };
 
-  typedef std::map<udp::Endpoint, shared_ptr<Face>> MulticastFaceMap;
+  /** \brief process face_system.udp config section
+   */
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) override;
+
+  void
+  createFace(const FaceUri& uri,
+             ndn::nfd::FacePersistency persistency,
+             bool wantLocalFieldsEnabled,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) override;
 
   /**
    * \brief Create UDP-based channel using udp::Endpoint
@@ -97,6 +112,9 @@ public:
   createChannel(const std::string& localIp, const std::string& localPort,
                 const time::seconds& timeout = time::seconds(600));
 
+  std::vector<shared_ptr<const Channel>>
+  getChannels() const override;
+
   /**
    * \brief Create MulticastUdpFace using udp::Endpoint
    *
@@ -139,23 +157,6 @@ public:
                       const std::string& multicastPort,
                       const std::string& networkInterfaceName = "");
 
-  /**
-   * \brief Get map of configured multicast faces
-   */
-  const MulticastFaceMap&
-  getMulticastFaces() const;
-
-public: // from ProtocolFactory
-  virtual void
-  createFace(const FaceUri& uri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
-
-  virtual std::vector<shared_ptr<const Channel>>
-  getChannels() const override;
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   prohibitEndpoint(const udp::Endpoint& endpoint);
@@ -185,20 +186,26 @@ private:
   shared_ptr<Face>
   findMulticastFace(const udp::Endpoint& localEndpoint) const;
 
+  void
+  applyMulticastConfig(const FaceSystem::ConfigContext& context);
+
 private:
   std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
-  MulticastFaceMap m_multicastFaces;
+
+  struct MulticastConfig
+  {
+    bool isEnabled = false;
+    udp::Endpoint group = udp::getDefaultMulticastGroup();
+  };
+
+  MulticastConfig m_mcastConfig;
+  std::map<udp::Endpoint, shared_ptr<Face>> m_mcastFaces;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
 
-inline const UdpFactory::MulticastFaceMap&
-UdpFactory::getMulticastFaces() const
-{
-  return m_multicastFaces;
-}
-
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_UDP_FACTORY_HPP
