@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -85,15 +85,18 @@ ManagerCommonFixture::checkResponse(size_t idx,
     data = m_responses.at(idx);
   }
   catch (const std::out_of_range&) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] does not exist");
     return CheckResponseResult::OUT_OF_BOUNDARY;
   }
 
   if (data.getName() != expectedName) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong name " << data.getName());
     return CheckResponseResult::WRONG_NAME;
   }
 
   if (expectedContentType != -1 &&
       data.getContentType() != static_cast<uint32_t>(expectedContentType)) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong ContentType " << data.getContentType());
     return CheckResponseResult::WRONG_CONTENT_TYPE;
   }
 
@@ -102,23 +105,28 @@ ManagerCommonFixture::checkResponse(size_t idx,
     response.wireDecode(data.getContent().blockFromValue());
   }
   catch (const tlv::Error&) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] cannot be decoded");
     return CheckResponseResult::INVALID_RESPONSE;
   }
 
   if (response.getCode() != expectedResponse.getCode()) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong StatusCode " << response.getCode());
     return CheckResponseResult::WRONG_CODE;
   }
 
   if (response.getText() != expectedResponse.getText()) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong StatusText " << response.getText());
     return CheckResponseResult::WRONG_TEXT;
   }
 
   const Block& body = response.getBody();
   const Block& expectedBody = expectedResponse.getBody();
   if (body.value_size() != expectedBody.value_size()) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong body size " << body.value_size());
     return CheckResponseResult::WRONG_BODY_SIZE;
   }
   if (body.value_size() > 0 && memcmp(body.value(), expectedBody.value(), body.value_size()) != 0) {
+    BOOST_TEST_MESSAGE("response[" << idx << "] has wrong body value");
     return CheckResponseResult::WRONG_BODY_VALUE;
   }
 
