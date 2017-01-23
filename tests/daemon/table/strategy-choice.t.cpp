@@ -289,7 +289,6 @@ public:
   }
 };
 
-BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(ClearStrategyInfo, 2)
 BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
 {
   Measurements& measurements = forwarder.getMeasurements();
@@ -305,14 +304,14 @@ BOOST_AUTO_TEST_CASE(ClearStrategyInfo)
   // { '/'=>P, '/A/B'=>P }
   BOOST_CHECK(measurements.get("/").getStrategyInfo<PStrategyInfo>() != nullptr);
   BOOST_CHECK(measurements.get("/A").getStrategyInfo<PStrategyInfo>() != nullptr);
-  BOOST_CHECK(measurements.get("/A/B").getStrategyInfo<PStrategyInfo>() != nullptr); // expected failure
+  BOOST_CHECK(measurements.get("/A/B").getStrategyInfo<PStrategyInfo>() != nullptr);
   BOOST_CHECK(measurements.get("/A/C").getStrategyInfo<PStrategyInfo>() != nullptr);
 
   BOOST_CHECK(sc.insert("/A", strategyNameQ));
   // { '/'=>P, '/A/B'=>P, '/A'=>Q }
   BOOST_CHECK(measurements.get("/").getStrategyInfo<PStrategyInfo>() != nullptr);
   BOOST_CHECK(measurements.get("/A").getStrategyInfo<PStrategyInfo>() == nullptr);
-  BOOST_CHECK(measurements.get("/A/B").getStrategyInfo<PStrategyInfo>() != nullptr); // expected failure
+  BOOST_CHECK(measurements.get("/A/B").getStrategyInfo<PStrategyInfo>() != nullptr);
   BOOST_CHECK(measurements.get("/A/C").getStrategyInfo<PStrategyInfo>() == nullptr);
 
   sc.erase("/A/B");

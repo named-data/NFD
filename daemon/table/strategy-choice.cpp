@@ -219,14 +219,18 @@ clearStrategyInfo(const name_tree::Entry& nte)
 void
 StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& newStrategy)
 {
-  ///\todo #3868 don't clear StrategyInfo if only parameter differs
-  if (&oldStrategy == &newStrategy) {
+  const Name& oldInstanceName = oldStrategy.getInstanceName();
+  const Name& newInstanceName = newStrategy.getInstanceName();
+  if (Strategy::areSameType(oldInstanceName, newInstanceName)) {
+    // same Strategy subclass type: no need to clear StrategyInfo
+    NFD_LOG_INFO("changeStrategy(" << entry.getPrefix() << ") "
+                 << oldInstanceName << " -> " << newInstanceName
+                 << " same-type");
     return;
   }
 
-  NFD_LOG_INFO("changeStrategy(" << entry.getPrefix() << ")"
-               << " from " << oldStrategy.getInstanceName()
-               << " to " << newStrategy.getInstanceName());
+  NFD_LOG_INFO("changeStrategy(" << entry.getPrefix() << ") "
+               << oldInstanceName << " -> " << newInstanceName);
 
   // reset StrategyInfo on a portion of NameTree,
   // where entry's effective strategy is covered by the changing StrategyChoice entry
