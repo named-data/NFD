@@ -32,6 +32,14 @@ namespace face {
 namespace ip = boost::asio::ip;
 
 NFD_LOG_INIT("TcpFactory");
+NFD_REGISTER_PROTOCOL_FACTORY(TcpFactory);
+
+const std::string&
+TcpFactory::getId()
+{
+  static std::string id("tcp");
+  return id;
+}
 
 void
 TcpFactory::processConfig(OptionalConfigSection configSection,

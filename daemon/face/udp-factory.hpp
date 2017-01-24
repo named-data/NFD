@@ -53,6 +53,9 @@ public:
     }
   };
 
+  static const std::string&
+  getId();
+
   /** \brief process face_system.udp config section
    */
   void

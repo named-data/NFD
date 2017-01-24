@@ -24,54 +24,31 @@
  */
 
 #include "face-system.hpp"
-// #include "core/logger.hpp"
+#include "protocol-factory.hpp"
+#include "core/logger.hpp"
 #include "fw/face-table.hpp"
-
-// ProtocolFactory includes, sorted alphabetically
-#ifdef HAVE_LIBPCAP
-#include "ethernet-factory.hpp"
-#endif // HAVE_LIBPCAP
-#include "tcp-factory.hpp"
-#include "udp-factory.hpp"
-#ifdef HAVE_UNIX_SOCKETS
-#include "unix-stream-factory.hpp"
-#endif // HAVE_UNIX_SOCKETS
-#ifdef HAVE_WEBSOCKET
-#include "websocket-factory.hpp"
-#endif // HAVE_WEBSOCKET
 
 namespace nfd {
 namespace face {
 
-// NFD_LOG_INIT("FaceSystem");
+NFD_LOG_INIT("FaceSystem");
 
 FaceSystem::FaceSystem(FaceTable& faceTable)
   : m_faceTable(faceTable)
 {
-  ///\todo #3904 make a registry, and construct instances from registry
-
-#ifdef HAVE_LIBPCAP
-  m_factories["ether"] = make_shared<EthernetFactory>();
-#endif // HAVE_LIBPCAP
-
-  m_factories["tcp"] = make_shared<TcpFactory>();
-
-  m_factories["udp"] = make_shared<UdpFactory>();
-
-#ifdef HAVE_UNIX_SOCKETS
-  m_factories["unix"] = make_shared<UnixStreamFactory>();
-#endif // HAVE_UNIX_SOCKETS
-
-#ifdef HAVE_WEBSOCKET
-  m_factories["websocket"] = make_shared<WebSocketFactory>();
-#endif // HAVE_WEBSOCKET
+  for (const std::string& id : ProtocolFactory::listRegistered()) {
+    NFD_LOG_TRACE("creating factory " << id);
+    m_factories[id] = ProtocolFactory::create(id);
+  }
 }
+
+FaceSystem::~FaceSystem() = default;
 
 std::set<const ProtocolFactory*>
 FaceSystem::listProtocolFactories() const
 {
   std::set<const ProtocolFactory*> factories;
-  for (const auto& p : m_factoryByScheme) {
+  for (const auto& p : m_factories) {
     factories.insert(p.second.get());
   }
   return factories;
@@ -88,7 +65,7 @@ ProtocolFactory*
 FaceSystem::getFactoryByScheme(const std::string& scheme)
 {
   auto found = m_factoryByScheme.find(scheme);
-  return found == m_factoryByScheme.end() ? nullptr : found->second.get();
+  return found == m_factoryByScheme.end() ? nullptr : found->second;
 }
 
 void
@@ -108,7 +85,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   // process sections in protocol factories
   for (const auto& pair : m_factories) {
     const std::string& sectionName = pair.first;
-    shared_ptr<ProtocolFactory> factory = pair.second;
+    ProtocolFactory* factory = pair.second.get();
 
     std::set<std::string> oldProvidedSchemes = factory->getProvidedSchemes();
     factory->processConfig(configSection.get_child_optional(sectionName), context);
@@ -116,10 +93,15 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     if (!isDryRun) {
       for (const std::string& scheme : factory->getProvidedSchemes()) {
         m_factoryByScheme[scheme] = factory;
-        oldProvidedSchemes.erase(scheme);
+        if (oldProvidedSchemes.erase(scheme) == 0) {
+          NFD_LOG_TRACE("factory " << sectionName <<
+                        " provides " << scheme << " FaceUri scheme");
+        }
       }
       for (const std::string& scheme : oldProvidedSchemes) {
         m_factoryByScheme.erase(scheme);
+        NFD_LOG_TRACE("factory " << sectionName <<
+                      " no longer provides " << scheme << " FaceUri scheme");
       }
     }
   }

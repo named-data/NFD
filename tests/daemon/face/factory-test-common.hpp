@@ -31,6 +31,7 @@
 #include "tests/test-common.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
 struct CreateFaceExpectedResult
@@ -76,6 +77,7 @@ checkChannelListEqual(const ProtocolFactory& factory, const std::set<std::string
 }
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_TESTS_DAEMON_FACE_FACTORY_TEST_COMMON_HPP

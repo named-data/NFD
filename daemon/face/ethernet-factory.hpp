@@ -38,6 +38,9 @@ namespace face {
 class EthernetFactory : public ProtocolFactory
 {
 public:
+  static const std::string&
+  getId();
+
   /** \brief process face_system.ether config section
    */
   void

@@ -37,6 +37,9 @@ namespace face {
 class UnixStreamFactory : public ProtocolFactory
 {
 public:
+  static const std::string&
+  getId();
+
   /** \brief process face_system.unix config section
    */
   void

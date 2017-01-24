@@ -44,6 +44,31 @@ namespace face {
  */
 class ProtocolFactory : noncopyable
 {
+public: // registry
+  /** \brief register a protocol factory type
+   *  \tparam S subclass of ProtocolFactory
+   *  \param id factory identifier
+   */
+  template<typename PF>
+  static void
+  registerType(const std::string& id = PF::getId())
+  {
+    Registry& registry = getRegistry();
+    BOOST_ASSERT(registry.count(id) == 0);
+    registry[id] = &make_unique<PF>;
+  }
+
+  /** \return a protocol factory instance
+   *  \retval nullptr if factory with \p id is not registered
+   */
+  static unique_ptr<ProtocolFactory>
+  create(const std::string& id);
+
+  /** \return registered protocol factory ids
+   */
+  static std::set<std::string>
+  listRegistered();
+
 public:
   /**
    * \brief Base class for all exceptions thrown by protocol factories
@@ -57,6 +82,18 @@ public:
     {
     }
   };
+
+  virtual
+  ~ProtocolFactory() = default;
+
+#ifdef DOXYGEN
+  /** \return protocol factory id
+   *
+   *  face_system.factory-id config section is processed by the protocol factory.
+   */
+  static const std::string&
+  getId();
+#endif
 
   /** \brief process face_system subsection that corresponds to this ProtocolFactory type
    *  \param configSection the configuration section or boost::null to indicate it is omitted
@@ -114,6 +151,13 @@ protected:
     return channels;
   }
 
+private: // registry
+  typedef std::function<unique_ptr<ProtocolFactory>()> CreateFunc;
+  typedef std::map<std::string, CreateFunc> Registry; // indexed by factory id
+
+  static Registry&
+  getRegistry();
+
 protected:
   /** \brief FaceUri schemes provided by this ProtocolFactory
    */
@@ -125,5 +169,19 @@ protected:
 using face::ProtocolFactory;
 
 } // namespace nfd
+
+/** \brief registers a protocol factory
+ *
+ *  This macro should appear once in .cpp of each protocol factory.
+ */
+#define NFD_REGISTER_PROTOCOL_FACTORY(PF)                      \
+static class NfdAuto ## PF ## ProtocolFactoryRegistrationClass \
+{                                                              \
+public:                                                        \
+  NfdAuto ## PF ## ProtocolFactoryRegistrationClass()          \
+  {                                                            \
+    ::nfd::face::ProtocolFactory::registerType<PF>();          \
+  }                                                            \
+} g_nfdAuto ## PF ## ProtocolFactoryRegistrationVariable
 
 #endif // NFD_DAEMON_FACE_PROTOCOL_FACTORY_HPP

@@ -37,6 +37,9 @@ namespace face {
 class WebSocketFactory : public ProtocolFactory
 {
 public:
+  static const std::string&
+  getId();
+
   /** \brief process face_system.websocket config section
    */
   void

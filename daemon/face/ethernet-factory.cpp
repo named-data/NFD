@@ -34,6 +34,15 @@ namespace nfd {
 namespace face {
 
 NFD_LOG_INIT("EthernetFactory");
+NFD_REGISTER_PROTOCOL_FACTORY(EthernetFactory);
+
+const std::string&
+EthernetFactory::getId()
+{
+  static std::string id("ether");
+  return id;
+}
+
 
 void
 EthernetFactory::processConfig(OptionalConfigSection configSection,

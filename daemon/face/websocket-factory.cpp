@@ -32,6 +32,15 @@ namespace face {
 namespace ip = boost::asio::ip;
 
 NFD_LOG_INIT("WebSocketFactory");
+NFD_REGISTER_PROTOCOL_FACTORY(WebSocketFactory);
+
+const std::string&
+WebSocketFactory::getId()
+{
+  static std::string id("websocket");
+  return id;
+}
+
 
 void
 WebSocketFactory::processConfig(OptionalConfigSection configSection,

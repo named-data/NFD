@@ -42,6 +42,15 @@ namespace face {
 namespace ip = boost::asio::ip;
 
 NFD_LOG_INIT("UdpFactory");
+NFD_REGISTER_PROTOCOL_FACTORY(UdpFactory);
+
+const std::string&
+UdpFactory::getId()
+{
+  static std::string id("udp");
+  return id;
+}
+
 
 void
 UdpFactory::processConfig(OptionalConfigSection configSection,

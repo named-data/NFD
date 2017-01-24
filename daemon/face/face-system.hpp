@@ -50,6 +50,8 @@ public:
   explicit
   FaceSystem(FaceTable& faceTable);
 
+  ~FaceSystem();
+
   /** \return ProtocolFactory objects owned by the FaceSystem
    */
   std::set<const ProtocolFactory*>
@@ -100,17 +102,15 @@ private:
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief config section name => protocol factory
-   *
-   *  \todo #3904 store unique_ptr<ProtocolFactory> here, and reference_wrapper<ProtocolFactory>
-   *              in m_factoryByScheme
    */
-  std::map<std::string, shared_ptr<ProtocolFactory>> m_factories;
+  std::map<std::string, unique_ptr<ProtocolFactory>> m_factories;
 
+private:
   /** \brief scheme => protocol factory
    *
    *  The same protocol factory may be available under multiple schemes.
    */
-  std::map<std::string, shared_ptr<ProtocolFactory>> m_factoryByScheme;
+  std::map<std::string, ProtocolFactory*> m_factoryByScheme;
 
   FaceTable& m_faceTable;
 };

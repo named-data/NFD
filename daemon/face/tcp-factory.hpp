@@ -37,6 +37,9 @@ namespace face {
 class TcpFactory : public ProtocolFactory
 {
 public:
+  static const std::string&
+  getId();
+
   /** \brief process face_system.tcp config section
    */
   void

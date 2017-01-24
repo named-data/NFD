@@ -32,6 +32,15 @@ namespace nfd {
 namespace face {
 
 NFD_LOG_INIT("UnixStreamFactory");
+NFD_REGISTER_PROTOCOL_FACTORY(UnixStreamFactory);
+
+const std::string&
+UnixStreamFactory::getId()
+{
+  static std::string id("unix");
+  return id;
+}
+
 
 void
 UnixStreamFactory::processConfig(OptionalConfigSection configSection,
