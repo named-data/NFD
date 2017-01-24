@@ -28,6 +28,8 @@
 #include "factory-test-common.hpp"
 #include "face-system-fixture.hpp"
 #include "tests/limited-io.hpp"
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/range/algorithm.hpp>
 
 namespace nfd {
 namespace face {
@@ -133,6 +135,15 @@ protected:
     return this->listUdpMcastFaces().size();
   }
 
+  /** \brief determine whether a UDP multicast face is created on \p netif
+   */
+  static bool
+  isFaceOnNetif(const Face& face, const NetworkInterfaceInfo& netif)
+  {
+    auto ip = boost::asio::ip::address_v4::from_string(face.getLocalUri().getHost());
+    return boost::count(netif.ipv4Addresses, ip) > 0;
+  }
+
 protected:
   /** \brief MulticastUdpTransport-capable network interfaces
    */
@@ -229,6 +240,100 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpMcastConfigFixture)
   BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifs.size());
   BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(),
                     FaceUri("udp4://239.66.30.2:7012"));
+}
+
+BOOST_FIXTURE_TEST_CASE(Whitelist, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+
+  std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        whitelist
+        {
+          ifname %ifname
+        }
+      }
+    }
+  )CONFIG";
+  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+
+  parseConfig(CONFIG, false);
+  auto udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
+  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.front()));
+}
+
+BOOST_FIXTURE_TEST_CASE(Blacklist, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+
+  std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        blacklist
+        {
+          ifname %ifname
+        }
+      }
+    }
+  )CONFIG";
+  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+
+  parseConfig(CONFIG, false);
+  auto udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_CHECK_EQUAL(udpMcastFaces.size(), netifs.size() - 1);
+  BOOST_CHECK_EQUAL(boost::count_if(udpMcastFaces, [=] (const Face* face) {
+    return isFaceOnNetif(*face, netifs.front());
+  }), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(ChangePredicate, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(2);
+
+  std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        whitelist
+        {
+          ifname %ifname
+        }
+      }
+    }
+  )CONFIG";
+  std::string CONFIG2 = CONFIG1;
+  boost::replace_first(CONFIG1, "%ifname", netifs.front().name);
+  boost::replace_first(CONFIG2, "%ifname", netifs.back().name);
+
+  parseConfig(CONFIG1, false);
+  auto udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
+  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.front()));
+
+  parseConfig(CONFIG2, false);
+  g_io.poll();
+  udpMcastFaces = this->listUdpMcastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
+  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.back()));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)

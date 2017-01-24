@@ -128,6 +128,20 @@ face_system
     mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
     mcast_port 56363 ; UDP multicast port number
     mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
+
+    ; Whitelist and blacklist can contain, in no particular order:
+    ; interface names (e.g., ifname eth0),
+    ; mac addresses (e.g., ether 85:3b:4d:d3:5f:c2),
+    ; subnets (e.g., subnet 192.0.2.0/24, note that only IPv4 is supported here),
+    ; or a wildcard (*) that matches all interfaces.
+
+    whitelist
+    {
+      *
+    }
+    blacklist
+    {
+    }
   }
 
   ; The ether section contains settings of Ethernet faces and channels.
@@ -161,7 +175,7 @@ face_system
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
   @IF_HAVE_LIBPCAP@
-  @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order,
+  @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
   @IF_HAVE_LIBPCAP@  ; interface names (e.g., ifname eth0),
   @IF_HAVE_LIBPCAP@  ; mac addresses (e.g., ether 85:3b:4d:d3:5f:c2),
   @IF_HAVE_LIBPCAP@  ; subnets (e.g., subnet 192.0.2.0/24, note that only IPv4 is supported here),

@@ -66,6 +66,13 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   //   mcast yes
   //   mcast_group 224.0.23.170
   //   mcast_port 56363
+  //   whitelist
+  //   {
+  //     *
+  //   }
+  //   blacklist
+  //   {
+  //   }
   // }
 
   uint16_t port = 6363;
@@ -115,6 +122,12 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       }
       else if (key == "mcast_port") {
         mcastConfig.group.port(ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp"));
+      }
+      else if (key == "whitelist") {
+        mcastConfig.netifPredicate.parseWhitelist(value);
+      }
+      else if (key == "blacklist") {
+        mcastConfig.netifPredicate.parseBlacklist(value);
       }
       else {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.udp." + key));
@@ -166,6 +179,9 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
     else if (m_mcastConfig.group != mcastConfig.group) {
       NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
                    " to " << mcastConfig.group);
+    }
+    else if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
+      NFD_LOG_INFO("changing whitelist/blacklist");
     }
     else {
       // There's no configuration change, but we still need to re-apply configuration because
@@ -456,7 +472,8 @@ UdpFactory::applyMulticastConfig(const FaceSystem::ConfigContext& context)
     auto capableNetifRange = context.listNetifs() |
                              boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
                                return netif.isUp() && netif.isMulticastCapable() &&
-                                      !netif.ipv4Addresses.empty();
+                                      !netif.ipv4Addresses.empty() &&
+                                      m_mcastConfig.netifPredicate(netif);
                              });
 
     bool needIfname = false;

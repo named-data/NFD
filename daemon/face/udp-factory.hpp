@@ -199,6 +199,7 @@ private:
   {
     bool isEnabled = false;
     udp::Endpoint group = udp::getDefaultMulticastGroup();
+    NetworkInterfacePredicate netifPredicate;
   };
 
   MulticastConfig m_mcastConfig;
