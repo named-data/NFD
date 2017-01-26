@@ -250,7 +250,13 @@ public:
 class TestProtocolFactory : public ProtocolFactory
 {
 public:
-  virtual void
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) final
+  {
+  }
+
+  void
   createFace(const FaceUri& uri,
              ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
@@ -259,7 +265,7 @@ public:
   {
   }
 
-  virtual std::vector<shared_ptr<const Channel>>
+  std::vector<shared_ptr<const Channel>>
   getChannels() const final
   {
     return m_channels;

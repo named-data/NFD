@@ -104,11 +104,7 @@ public:
    */
   virtual void
   processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context)
-  {
-    ///\todo implement in every subclass and make this pure-virtual
-    BOOST_THROW_EXCEPTION(Error("processConfig is not implemented"));
-  }
+                FaceSystem::ConfigContext& context) = 0;
 
   /** \return FaceUri schemes accepted by this ProtocolFactory
    */
