@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,32 +23,44 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \todo
- *  #2542 plans to merge nfd-status with nfdc.
- *  FaceModule class should be changed as follows:
- *  (1) move into ndn::nfd::nfdc namespace
- *  (2) assuming command syntax is similar to Windows NT \p netsh ,
- *      this class can handle command argument parsing as soon as
- *      'face' sub-command is detected
- *  (3) introduce methods to create and destroy faces, and update face attributes
- *
- *  \todo
- *  #3444 aims at improving output texts of nfdc.
- *  Assuming it's worked with or after #2542:
- *  (1) introduce an \p style parameter on formatItemText method to specify desired text style,
- *      such as human friendly style vs. porcelain style for script consumption
- *  (2) upon successful command execute, convert the command result into FaceStatus type,
- *      and use formatItemText to render the result, so that output from status retrieval
- *      and command execution have consistent styles
- *  }
- */
-
 #include "face-module.hpp"
 #include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
+
+void
+FaceModule::registerCommands(CommandParser& parser)
+{
+  CommandDefinition defFaceShow("face", "show");
+  defFaceShow
+    .setTitle("show face information")
+    .addArg("id", ArgValueType::UNSIGNED, Required::YES, Positional::YES);
+  parser.addCommand(defFaceShow, &FaceModule::show);
+}
+
+void
+FaceModule::show(ExecuteContext& ctx)
+{
+  uint64_t faceId = ctx.args.get<uint64_t>("id");
+
+  ndn::nfd::FaceQueryFilter filter;
+  filter.setFaceId(faceId);
+  ctx.controller.fetch<ndn::nfd::FaceQueryDataset>(
+    filter,
+    [faceId, &ctx] (const std::vector<FaceStatus>& result) {
+      if (result.size() != 1) {
+        ctx.exitCode = 3;
+        ctx.err << "Face " << faceId << " not found.\n";
+        return;
+      }
+      formatItemText(ctx.out, result.front(), true);
+    },
+    ctx.makeDatasetFailureHandler("face information"));
+
+  ctx.face.processEvents();
+}
 
 void
 FaceModule::fetchStatus(Controller& controller,
@@ -128,43 +140,48 @@ FaceModule::formatStatusText(std::ostream& os) const
 {
   os << "Faces:\n";
   for (const FaceStatus& item : m_status) {
-    this->formatItemText(os, item);
+    os << "  ";
+    formatItemText(os, item, false);
+    os << '\n';
   }
 }
 
 void
-FaceModule::formatItemText(std::ostream& os, const FaceStatus& item) const
+FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMultiLine)
 {
-  os << "  faceid=" << item.getFaceId();
-  os << " remote=" << item.getRemoteUri();
-  os << " local=" << item.getLocalUri();
+  text::ItemAttributes ia(wantMultiLine, 8);
+
+  os << ia("faceid") << item.getFaceId();
+  os << ia("remote") << item.getRemoteUri();
+  os << ia("local") << item.getLocalUri();
 
   if (item.hasExpirationPeriod()) {
-    os << " expires=" << text::formatDuration(item.getExpirationPeriod());
+    os << ia("expires") << text::formatDuration(item.getExpirationPeriod());
   }
 
-  os << " counters={in={"
+  os << ia("counters")
+     << "{in={"
      << item.getNInInterests() << "i "
      << item.getNInDatas() << "d "
      << item.getNInNacks() << "n "
-     << item.getNInBytes() << "B} ";
-  os << "out={"
+     << item.getNInBytes() << "B} "
+     << "out={"
      << item.getNOutInterests() << "i "
      << item.getNOutDatas() << "d "
      << item.getNOutNacks() << "n "
      << item.getNOutBytes() << "B}}";
 
-  os << " " << item.getFaceScope();
-  os << " " << item.getFacePersistency();
-  os << " " << item.getLinkType();
-
-  os << " flags={";
+  os << ia("flags") << '{';
+  text::Separator flagSep("", " ");
+  os << flagSep << item.getFaceScope();
+  os << flagSep << item.getFacePersistency();
+  os << flagSep << item.getLinkType();
   if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
-    os << "local-fields";
+    os << flagSep << "local-fields";
   }
-  os << "}";
+  os << '}';
 
-  os << "\n";
+  os << ia.end();
 }
 
 } // namespace nfdc

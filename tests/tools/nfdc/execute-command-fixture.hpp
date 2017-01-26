@@ -23,53 +23,55 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfdc/channel-module.hpp"
+#ifndef NFD_TESTS_TOOLS_NFDC_EXECUTE_COMMAND_FIXTURE_HPP
+#define NFD_TESTS_TOOLS_NFDC_EXECUTE_COMMAND_FIXTURE_HPP
 
-#include "status-fixture.hpp"
+#include "mock-nfd-mgmt-fixture.hpp"
+#include "nfdc/available-commands.hpp"
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestChannelModule, StatusFixture<ChannelModule>)
+using boost::test_tools::output_test_stream;
 
-const std::string STATUS_XML = stripXmlSpaces(R"XML(
-  <channels>
-    <channel>
-      <localUri>tcp4://192.0.2.1:6363</localUri>
-    </channel>
-    <channel>
-      <localUri>ws://[::]:9696/NFD</localUri>
-    </channel>
-  </channels>
-)XML");
-
-const std::string STATUS_TEXT = std::string(R"TEXT(
-Channels:
-  tcp4://192.0.2.1:6363
-  ws://[::]:9696/NFD
-)TEXT").substr(1);
-
-BOOST_AUTO_TEST_CASE(Status)
+/** \brief fixture to test command execution
+ */
+class ExecuteCommandFixture : public MockNfdMgmtFixture
 {
-  this->fetchStatus();
-  ChannelStatus payload1;
-  payload1.setLocalUri("tcp4://192.0.2.1:6363");
-  ChannelStatus payload2;
-  payload2.setLocalUri("ws://[::]:9696/NFD");
-  this->sendDataset("/localhost/nfd/faces/channels", payload1, payload2);
-  this->prepareStatusOutput();
+protected:
+  void
+  execute(const std::string& cmd)
+  {
+    std::vector<std::string> args;
+    boost::split(args, cmd, boost::is_any_of(" "));
 
-  BOOST_CHECK(statusXml.is_equal(STATUS_XML));
-  BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
-}
+    CommandParser parser;
+    registerCommands(parser);
 
-BOOST_AUTO_TEST_SUITE_END() // TestChannelModule
-BOOST_AUTO_TEST_SUITE_END() // Nfdc
+    std::string noun, verb;
+    CommandArguments ca;
+    ExecuteCommand execute;
+    std::tie(noun, verb, ca, execute) = parser.parse(args, ParseMode::ONE_SHOT);
+
+    Controller controller(face, m_keyChain);
+    ExecuteContext ctx{noun, verb, ca, 0, out, err, face, m_keyChain, controller};
+    execute(ctx);
+    exitCode = ctx.exitCode;
+  }
+
+protected:
+  output_test_stream out;
+  output_test_stream err;
+  int exitCode = -1;
+};
 
 } // namespace tests
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#endif // NFD_TESTS_TOOLS_NFDC_EXECUTE_COMMAND_FIXTURE_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "available-commands.hpp"
 #include "help.hpp"
 #include "status.hpp"
+#include "face-module.hpp"
 #include "legacy-status.hpp"
 #include "legacy-nfdc.hpp"
 
@@ -38,6 +39,8 @@ registerCommands(CommandParser& parser)
 {
   registerHelpCommand(parser);
   registerStatusCommands(parser);
+  FaceModule::registerCommands(parser);
+
   registerLegacyStatusCommand(parser);
 
   struct LegacyNfdcCommandDefinition

@@ -23,53 +23,21 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "nfdc/channel-module.hpp"
-
-#include "status-fixture.hpp"
+#include "execute-command.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
-namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestChannelModule, StatusFixture<ChannelModule>)
-
-const std::string STATUS_XML = stripXmlSpaces(R"XML(
-  <channels>
-    <channel>
-      <localUri>tcp4://192.0.2.1:6363</localUri>
-    </channel>
-    <channel>
-      <localUri>ws://[::]:9696/NFD</localUri>
-    </channel>
-  </channels>
-)XML");
-
-const std::string STATUS_TEXT = std::string(R"TEXT(
-Channels:
-  tcp4://192.0.2.1:6363
-  ws://[::]:9696/NFD
-)TEXT").substr(1);
-
-BOOST_AUTO_TEST_CASE(Status)
+Controller::DatasetFailCallback
+ExecuteContext::makeDatasetFailureHandler(const std::string& datasetName)
 {
-  this->fetchStatus();
-  ChannelStatus payload1;
-  payload1.setLocalUri("tcp4://192.0.2.1:6363");
-  ChannelStatus payload2;
-  payload2.setLocalUri("ws://[::]:9696/NFD");
-  this->sendDataset("/localhost/nfd/faces/channels", payload1, payload2);
-  this->prepareStatusOutput();
-
-  BOOST_CHECK(statusXml.is_equal(STATUS_XML));
-  BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
+  return [=] (uint32_t code, const std::string& reason) {
+    this->exitCode = 1;
+    this->err << "Error " << code << " when fetching " << datasetName << ": " << reason << '\n';
+  };
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestChannelModule
-BOOST_AUTO_TEST_SUITE_END() // Nfdc
-
-} // namespace tests
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd

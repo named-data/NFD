@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,6 +117,45 @@ operator<<(std::ostream& os, Separator& sep)
   }
   return os << sep.m_subsequent;
 }
+
+ItemAttributes::ItemAttributes(bool wantMultiLine, int maxAttributeWidth)
+  : m_wantMultiLine(wantMultiLine)
+  , m_maxAttributeWidth(maxAttributeWidth)
+  , m_count(0)
+{
+}
+
+ItemAttributes::Attribute
+ItemAttributes::operator()(const std::string& attribute)
+{
+  ++m_count;
+  if (m_wantMultiLine) {
+    return {m_count > 1,
+            {m_maxAttributeWidth - static_cast<int>(attribute.size())},
+            attribute};
+  }
+  else {
+    return {false,
+            {m_count > 1 ? 1 : 0},
+            attribute};
+  }
+}
+
+std::string
+ItemAttributes::end() const
+{
+  return m_wantMultiLine ? "\n" : "";
+}
+
+std::ostream&
+operator<<(std::ostream& os, const ItemAttributes::Attribute& attr)
+{
+  if (attr.wantNewline) {
+    os << '\n';
+  }
+  return os << attr.spaces << attr.attribute << '=';
+}
+
 
 std::string
 formatSeconds(time::seconds d, bool isLong)

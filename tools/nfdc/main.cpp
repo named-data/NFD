@@ -61,9 +61,10 @@ main(int argc, char** argv)
   }
 
   try {
-    ndn::Face face;
-    ndn::KeyChain keyChain;
-    ExecuteContext ctx{noun, verb, ca, 0, std::cout, std::cerr, face, keyChain};
+    Face face;
+    KeyChain keyChain;
+    Controller controller(face, keyChain);
+    ExecuteContext ctx{noun, verb, ca, 0, std::cout, std::cerr, face, keyChain, controller};
     execute(ctx);
     return ctx.exitCode;
   }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -87,7 +87,7 @@ operator<<(std::ostream& os, const Spaces& spaces);
  *  // prints: 1,2,3
  *  \endcode
  */
-class Separator
+class Separator : noncopyable
 {
 public:
   Separator(const std::string& first, const std::string& subsequent);
@@ -111,6 +111,54 @@ private:
 
 std::ostream&
 operator<<(std::ostream& os, Separator& sep);
+
+/** \brief print attributes of an item
+ *
+ *  \code
+ *  ItemAttributes ia(wantMultiLine, 3);
+ *  os << ia("id") << 500
+ *     << ia("uri") << "udp4://192.0.2.1:6363"
+ *     << ia.end();
+ *
+ *  // prints in single-line style (wantMultiLine==false):
+ *  // id=500 uri=udp4://192.0.2.1:6363 [no-newline]
+ *
+ *  // prints in multi-line style (wantMultiLine==true):
+ *  //  id=500
+ *  // uri=udp4://192.0.2.1:6363 [newline]
+ *  \endcode
+ */
+class ItemAttributes : noncopyable
+{
+public:
+  /** \brief constructor
+   *  \param wantMultiLine true to select multi-line style, false to use single-line style
+   *  \param maxAttributeWidth maximum width of attribute names, for alignment in multi-line style
+   */
+  explicit
+  ItemAttributes(bool wantMultiLine = false, int maxAttributeWidth = 0);
+
+  struct Attribute
+  {
+    bool wantNewline;
+    Spaces spaces;
+    std::string attribute;
+  };
+
+  Attribute
+  operator()(const std::string& attribute);
+
+  std::string
+  end() const;
+
+private:
+  bool m_wantMultiLine;
+  int m_maxAttributeWidth;
+  int m_count;
+};
+
+std::ostream&
+operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 
 std::string
 formatSeconds(time::seconds d, bool isLong = false);

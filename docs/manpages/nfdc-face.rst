@@ -4,6 +4,7 @@ nfdc-face
 SYNOPSIS
 --------
 | nfdc face [list]
+| nfdc face show <faceId>
 | nfdc channel [list]
 | nfdc create [-P] <faceUri>
 | nfdc destroy <faceId|faceUri>
@@ -16,6 +17,8 @@ an overlay communication channel between NFD and a remote node,
 or an inter-process communication channel between NFD and a local application.
 
 The **nfdc face list** command shows a list of faces, their properties, and statistics.
+
+The **nfdc face show** command shows properties and statistics of one specific face.
 
 The **nfdc channel list** command shows a list of channels.
 Channels are listening sockets that can accept incoming connections and create new faces.
@@ -33,6 +36,10 @@ OPTIONS
     A permanent face is kept alive upon socket errors,
     and is closed only upon **nfdc destroy** command.
 
+<faceId>
+    Numerical identifier of the face.
+    It is displayed in the output of **nfdc face list** and **nfdc create** commands.
+
 <faceUri>
     An URI representing the remote endpoint of a face.
     Its syntax is:
@@ -42,9 +49,16 @@ OPTIONS
 
     When a hostname is specified, a DNS query is used to obtain the IP address.
 
-<faceId>
-    Numerical identifier of the face.
-    It is displayed in the output of **nfdc face list** and **nfdc create** commands.
+EXIT CODES
+----------
+
+0: Success
+
+1: An unspecified error occurred
+
+2: Malformed command line
+
+3: Face not found (**nfdc face show** only)
 
 SEE ALSO
 --------

@@ -28,6 +28,7 @@
 
 #include "command-arguments.hpp"
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
@@ -36,11 +37,20 @@ namespace nfdc {
 
 using ndn::Face;
 using ndn::KeyChain;
+using ndn::nfd::Controller;
 
 /** \brief context for command execution
  */
-struct ExecuteContext
+class ExecuteContext
 {
+public:
+  /** \brief handler for dataset retrieval failure
+   *  \param datasetName dataset name used in error message
+   */
+  Controller::DatasetFailCallback
+  makeDatasetFailureHandler(const std::string& datasetName);
+
+public:
   const std::string& noun;
   const std::string& verb;
   const CommandArguments& args;
@@ -52,11 +62,12 @@ struct ExecuteContext
   Face& face;
   KeyChain& keyChain;
   ///\todo validator
+  Controller& controller;
 };
 
 /** \brief a function to execute a command
  */
-typedef std::function<void(ExecuteContext& ctx)> ExecuteCommand;
+using ExecuteCommand = std::function<void(ExecuteContext& ctx)>;
 
 } // namespace nfdc
 } // namespace tools

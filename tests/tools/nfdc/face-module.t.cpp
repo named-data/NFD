@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,8 @@
 
 #include "nfdc/face-module.hpp"
 
-#include "module-fixture.hpp"
+#include "execute-command-fixture.hpp"
+#include "status-fixture.hpp"
 
 namespace nfd {
 namespace tools {
@@ -33,7 +34,76 @@ namespace nfdc {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestFaceModule, ModuleFixture<FaceModule>)
+BOOST_AUTO_TEST_SUITE(TestFaceModule)
+
+BOOST_FIXTURE_TEST_SUITE(ShowCommand, ExecuteCommandFixture)
+
+using ndn::nfd::FaceQueryFilter;
+
+const std::string NORMAL_OUTPUT = std::string(R"TEXT(
+  faceid=256
+  remote=udp4://84.67.35.111:6363
+   local=udp4://79.91.49.215:6363
+counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
+   flags={non-local on-demand point-to-point}
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    Name datasetName("/localhost/nfd/faces/query");
+    FaceQueryFilter filter;
+    filter.setFaceId(256);
+    datasetName.append(filter.wireEncode());
+
+    FaceStatus payload;
+    payload.setFaceId(256)
+           .setRemoteUri("udp4://84.67.35.111:6363")
+           .setLocalUri("udp4://79.91.49.215:6363")
+           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setNInInterests(28975)
+           .setNInDatas(28232)
+           .setNInNacks(212)
+           .setNOutInterests(19525)
+           .setNOutDatas(30993)
+           .setNOutNacks(1038)
+           .setNInBytes(13307258)
+           .setNOutBytes(6231946);
+
+    this->sendDataset(datasetName, payload);
+  };
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NORMAL_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NotFound)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    this->sendEmptyDataset(interest.getName());
+  };
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face 256 not found.\n"));
+}
+
+BOOST_AUTO_TEST_CASE(Error)
+{
+  this->processInterest = nullptr; // no response
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when fetching face information: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ShowCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <faces>
@@ -96,12 +166,12 @@ const std::string STATUS_TEXT =
   "Faces:\n"
   "  faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
-    " non-local permanent multi-access flags={}\n"
+    " flags={non-local permanent multi-access}\n"
   "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " local on-demand point-to-point flags={local-fields}\n";
+    " flags={local on-demand point-to-point local-fields}\n";
 
-BOOST_AUTO_TEST_CASE(Status)
+BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
 {
   this->fetchStatus();
   FaceStatus payload1;

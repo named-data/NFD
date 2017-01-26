@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "nfdc/strategy-choice-module.hpp"
 
-#include "module-fixture.hpp"
+#include "status-fixture.hpp"
 
 namespace nfd {
 namespace tools {
@@ -33,7 +33,7 @@ namespace nfdc {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceModule, ModuleFixture<StrategyChoiceModule>)
+BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceModule, StatusFixture<StrategyChoiceModule>)
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <strategyChoices>
