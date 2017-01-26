@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,10 +45,12 @@ public:
   ~FaceManagerCommandNode();
 
 public:
-  FaceTable faceTable;
-  ndn::util::DummyClientFace face;
+  ndn::util::DummyClientFace face; ///< internal client face used by management
   ndn::mgmt::Dispatcher dispatcher;
   shared_ptr<CommandAuthenticator> authenticator;
+
+  FaceTable faceTable;
+  FaceSystem faceSystem;
   FaceManager manager;
 };
 

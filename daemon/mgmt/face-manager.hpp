@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,9 +41,8 @@ namespace nfd {
 class FaceManager : public NfdManagerBase
 {
 public:
-  FaceManager(FaceTable& faceTable,
-              Dispatcher& dispatcher,
-              CommandAuthenticator& authenticator);
+  FaceManager(FaceSystem& faceSystem,
+              Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
   /**
    * @brief Subscribe to face_system section for the config file
@@ -141,7 +140,7 @@ private: // NotificationStream
   connectFaceStateChangeSignal(const Face& face);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  FaceSystem m_faceSystem; ///\todo #3904 accept FaceSystem& in constructor; don't own FaceSystem
+  FaceSystem& m_faceSystem;
   FaceTable& m_faceTable;
   std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
 

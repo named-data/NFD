@@ -67,6 +67,12 @@ public:
   ProtocolFactory*
   getFactoryByScheme(const std::string& scheme);
 
+  FaceTable&
+  getFaceTable()
+  {
+    return m_faceTable;
+  }
+
   /** \brief register handler for face_system section of NFD configuration file
    */
   void

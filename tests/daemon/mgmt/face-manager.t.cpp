@@ -25,8 +25,7 @@
 
 #include "mgmt/face-manager.hpp"
 #include "core/random.hpp"
-#include "face/tcp-factory.hpp"
-#include "face/udp-factory.hpp"
+#include "face/protocol-factory.hpp"
 
 #include "nfd-manager-common-fixture.hpp"
 #include "../face/dummy-face.hpp"
@@ -44,7 +43,8 @@ class FaceManagerFixture : public NfdManagerCommonFixture
 public:
   FaceManagerFixture()
     : m_faceTable(m_forwarder.getFaceTable())
-    , m_manager(m_faceTable, m_dispatcher, *m_authenticator)
+    , m_faceSystem(m_faceTable)
+    , m_manager(m_faceSystem, m_dispatcher, *m_authenticator)
   {
     setTopPrefix();
     setPrivilege("faces");
@@ -110,6 +110,7 @@ private:
 
 protected:
   FaceTable& m_faceTable;
+  FaceSystem m_faceSystem;
   FaceManager m_manager;
 };
 

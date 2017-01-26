@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 #include "core/privilege-helper.hpp"
 #include "core/config-file.hpp"
 #include "fw/forwarder.hpp"
+#include "face/face-system.hpp"
 #include "face/null-face.hpp"
 #include "face/internal-face.hpp"
 #include "mgmt/fib-manager.hpp"
@@ -83,11 +84,12 @@ Nfd::initialize()
 
   m_forwarder.reset(new Forwarder());
 
-  initializeManagement();
-
   FaceTable& faceTable = m_forwarder->getFaceTable();
   faceTable.addReserved(face::makeNullFace(), face::FACEID_NULL);
   faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), face::FACEID_CONTENT_STORE);
+  m_faceSystem.reset(new face::FaceSystem(faceTable));
+
+  initializeManagement();
 
   PrivilegeHelper::drop();
 
@@ -145,8 +147,7 @@ Nfd::initializeManagement()
   m_authenticator = CommandAuthenticator::create();
 
   m_forwarderStatusManager.reset(new ForwarderStatusManager(*m_forwarder, *m_dispatcher));
-  m_faceManager.reset(new FaceManager(m_forwarder->getFaceTable(),
-                                      *m_dispatcher, *m_authenticator));
+  m_faceManager.reset(new FaceManager(*m_faceSystem, *m_dispatcher, *m_authenticator));
   m_fibManager.reset(new FibManager(m_forwarder->getFib(), m_forwarder->getFaceTable(),
                                     *m_dispatcher, *m_authenticator));
   m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
