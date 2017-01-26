@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,8 +63,9 @@ main(int argc, char** argv)
   try {
     ndn::Face face;
     ndn::KeyChain keyChain;
-    ExecuteContext ctx{noun, verb, ca, face, keyChain};
-    return execute(ctx);
+    ExecuteContext ctx{noun, verb, ca, 0, std::cout, std::cerr, face, keyChain};
+    execute(ctx);
+    return ctx.exitCode;
   }
   catch (const std::exception& e) {
     std::cerr << e.what() << std::endl;

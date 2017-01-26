@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,7 +37,7 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
-int
+void
 reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
 {
   unique_ptr<Validator> validator = make_unique<ndn::ValidatorNull>();
@@ -75,46 +75,45 @@ reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
 
   uint32_t code = report.collect(ctx.face, ctx.keyChain, *validator, ctrlOptions);
   if (code != 0) {
+    ctx.exitCode = 1;
     // Give a simple error code for end user.
     // Technical support personnel:
     // 1. get the exact command from end user
     // 2. code div 1000000 is zero-based section index
     // 3. code mod 1000000 is a Controller.fetch error code
-    std::cerr << "Error while collecting status report (" << code << ").\n";
-    return 1;
+    ctx.err << "Error while collecting status report (" << code << ").\n";
   }
 
   switch (options.output) {
     case ReportFormat::XML:
-      report.formatXml(std::cout);
+      report.formatXml(ctx.out);
       break;
     case ReportFormat::TEXT:
-      report.formatText(std::cout);
+      report.formatText(ctx.out);
       break;
   }
-  return 0;
 }
 
 /** \brief single-section status command
  */
-static int
+static void
 reportStatusSingleSection(ExecuteContext& ctx, bool StatusReportOptions::*wantSection)
 {
   StatusReportOptions options;
   options.*wantSection = true;
-  return reportStatus(ctx, options);
+  reportStatus(ctx, options);
 }
 
 /** \brief the 'status report' command
  */
-static int
+static void
 reportStatusComprehensive(ExecuteContext& ctx)
 {
   StatusReportOptions options;
   options.output = ctx.args.get<ReportFormat>("format", ReportFormat::TEXT);
   options.wantForwarderGeneral = options.wantChannels = options.wantFaces =
     options.wantFib = options.wantRib = options.wantStrategyChoice = true;
-  return reportStatus(ctx, options);
+  reportStatus(ctx, options);
 }
 
 void

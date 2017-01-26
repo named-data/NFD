@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,28 +63,27 @@ helpList(std::ostream& os, const CommandParser& parser, ParseMode mode, const st
   os << "\nSee 'nfdc help <command>' to read about a specific subcommand.\n";
 }
 
-static int
+static void
 helpSingle(const std::string& noun, const std::string& verb)
 {
   std::string manpage = "nfdc-" + noun;
 
   execlp("man", "man", manpage.data(), nullptr);
   NDN_LOG_FATAL("Error opening man page for " << manpage);
-  return 1;
 }
 
-int
-help(ExecuteContext& ctx, const CommandParser& parser, std::ostream& os)
+void
+help(ExecuteContext& ctx, const CommandParser& parser)
 {
   std::string noun = ctx.args.get<std::string>("noun", "");
   std::string verb = ctx.args.get<std::string>("verb", "");
 
   if (noun.empty()) {
-    helpList(os, parser, ParseMode::ONE_SHOT, noun);
-    return 0;
+    helpList(ctx.out, parser, ParseMode::ONE_SHOT, noun);
   }
   else {
-    return helpSingle(noun, verb);
+    helpSingle(noun, verb); // should not return
+    ctx.exitCode = 1;
   }
 }
 
@@ -96,7 +95,7 @@ registerHelpCommand(CommandParser& parser)
     .setTitle("display help information")
     .addArg("noun", ArgValueType::STRING, Required::NO, Positional::YES)
     .addArg("verb", ArgValueType::STRING, Required::NO, Positional::YES);
-  parser.addCommand(defHelp, bind(&help, _1, cref(parser), ref(std::cout)));
+  parser.addCommand(defHelp, bind(&help, _1, cref(parser)));
 }
 
 } // namespace nfdc

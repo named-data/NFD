@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,15 +45,18 @@ struct ExecuteContext
   const std::string& verb;
   const CommandArguments& args;
 
+  int exitCode; ///< program exit code
+  std::ostream& out; ///< output stream
+  std::ostream& err; ///< error stream
+
   Face& face;
   KeyChain& keyChain;
   ///\todo validator
 };
 
 /** \brief a function to execute a command
- *  \return exit code
  */
-typedef std::function<int(ExecuteContext& ctx)> ExecuteCommand;
+typedef std::function<void(ExecuteContext& ctx)> ExecuteCommand;
 
 } // namespace nfdc
 } // namespace tools

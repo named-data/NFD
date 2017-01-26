@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ showUsage(std::ostream& os, const boost::program_options::options_description& c
  *          otherwise, caller should immediately exit with the specified exit code
  */
 static std::tuple<int, StatusReportOptions>
-parseCommandLine(const std::vector<std::string>& args)
+parseCommandLine(ExecuteContext& ctx, const std::vector<std::string>& args)
 {
   StatusReportOptions options;
 
@@ -67,17 +67,17 @@ parseCommandLine(const std::vector<std::string>& args)
     po::notify(vm);
   }
   catch (const po::error& e) {
-    std::cerr << e.what() << "\n";
-    showUsage(std::cerr, cmdOptions);
+    ctx.err << e.what() << "\n";
+    showUsage(ctx.err, cmdOptions);
     return std::make_tuple(2, options);
   }
 
   if (vm.count("help") > 0) {
-    showUsage(std::cout, cmdOptions);
+    showUsage(ctx.out, cmdOptions);
     return std::make_tuple(0, options);
   }
   if (vm.count("version") > 0) {
-    std::cout << "nfd-status " << NFD_VERSION_BUILD_STRING << "\n";
+    ctx.out << "nfd-status " << NFD_VERSION_BUILD_STRING << "\n";
     return std::make_tuple(0, options);
   }
 
@@ -96,19 +96,20 @@ parseCommandLine(const std::vector<std::string>& args)
 
 /** \brief the 'legacy-nfd-status' command
  */
-static int
+static void
 legacyNfdStatus(ExecuteContext& ctx)
 {
   auto args = ctx.args.get<std::vector<std::string>>("args");
 
   int exitCode = -1;
   StatusReportOptions options;
-  std::tie(exitCode, options) = parseCommandLine(args);
+  std::tie(exitCode, options) = parseCommandLine(ctx, args);
   if (exitCode >= 0) {
-    return exitCode;
+    ctx.exitCode = exitCode;
+    return;
   }
 
-  return reportStatus(ctx, options);
+  reportStatus(ctx, options);
 }
 
 void

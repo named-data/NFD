@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -325,7 +325,7 @@ legacyNfdcUsage()
     << std::endl;
 }
 
-int
+void
 legacyNfdcMain(ExecuteContext& ctx)
 {
   LegacyNfdc p(ctx.face, ctx.keyChain);
@@ -357,7 +357,8 @@ legacyNfdcMain(ExecuteContext& ctx)
   catch (const po::error& e) {
     std::cerr << e.what() << std::endl;
     legacyNfdcUsage();
-    return 2;
+    ctx.exitCode = 2;
+    return;
   }
 
   if (wantUnsetChildInherit) {
@@ -378,17 +379,18 @@ legacyNfdcMain(ExecuteContext& ctx)
       [] (const std::string& s) { return s.empty() || s[0] == '-'; })) {
     // unrecognized -option
     legacyNfdcUsage();
-    return 2;
+    ctx.exitCode = 2;
+    return;
   }
   p.m_commandLineArguments = unparsed;
 
   bool isOk = p.dispatch(subcommand);
   if (!isOk) {
     legacyNfdcUsage();
-    return 2;
+    ctx.exitCode = 2;
+    return;
   }
   ctx.face.processEvents();
-  return 0;
 }
 
 } // namespace nfdc

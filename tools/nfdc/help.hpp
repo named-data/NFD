@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,8 +38,8 @@ helpList(std::ostream& os, const CommandParser& parser,
 
 /** \brief the 'help' command
  */
-int
-help(ExecuteContext& ctx, const CommandParser& parser, std::ostream& os);
+void
+help(ExecuteContext& ctx, const CommandParser& parser);
 
 /** \brief registers 'help' command
  */
