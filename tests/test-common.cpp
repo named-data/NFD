@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -119,13 +119,19 @@ makeLink(const Name& name, std::initializer_list<std::pair<uint32_t, Name>> dele
 }
 
 lp::Nack
+makeNack(Interest interest, lp::NackReason reason)
+{
+  lp::Nack nack(std::move(interest));
+  nack.setReason(reason);
+  return nack;
+}
+
+lp::Nack
 makeNack(const Name& name, uint32_t nonce, lp::NackReason reason)
 {
   Interest interest(name);
   interest.setNonce(nonce);
-  lp::Nack nack(std::move(interest));
-  nack.setReason(reason);
-  return nack;
+  return makeNack(std::move(interest), reason);
 }
 
 } // namespace tests

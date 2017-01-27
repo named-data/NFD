@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,8 @@
 #ifndef NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP
 #define NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP
 
-#include <boost/tuple/tuple_comparison.hpp>
 #include "fw/strategy.hpp"
+#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace fw {
@@ -76,6 +76,33 @@ public:
   /** \brief signal emitted after each Action
    */
   signal::Signal<StrategyTester<S>> afterAction;
+
+  /** \brief execute f and wait for a number of strategy actions
+   *  \note The actions may occur either during f() invocation or afterwards.
+   *  \return whether expected number of actions have occurred
+   */
+  bool
+  waitForAction(const std::function<void()>& f,
+                nfd::tests::LimitedIo& limitedIo, int nExpectedActions = 1)
+  {
+    int nActions = 0;
+
+    signal::ScopedConnection conn = afterAction.connect([&] {
+      limitedIo.afterOp();
+      ++nActions;
+    });
+
+    f();
+
+    if (nActions < nExpectedActions) {
+      // A correctly implemented strategy is required to invoke reject pending Interest action if it
+      // decides to not forward an Interest. If a test case is stuck in the call below, check that
+      // rejectPendingInterest is invoked under proper condition.
+      return limitedIo.run(nExpectedActions - nActions, nfd::tests::LimitedIo::UNLIMITED_TIME) ==
+             nfd::tests::LimitedIo::EXCEED_OPS;
+    }
+    return nActions == nExpectedActions;
+  }
 
 protected:
   void

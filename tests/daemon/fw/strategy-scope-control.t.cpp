@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,7 +55,6 @@ class StrategyScopeControlFixture : public UnitTestTimeFixture
 public:
   StrategyScopeControlFixture()
     : limitedIo(this)
-    , nStrategyActions(0)
     , strategy(choose<StrategyTester<S>>(forwarder))
     , fib(forwarder.getFib())
     , pit(forwarder.getPit())
@@ -64,37 +63,14 @@ public:
     , localFace3(make_shared<DummyFace>("dummy://3", "dummy://3", ndn::nfd::FACE_SCOPE_LOCAL))
     , localFace4(make_shared<DummyFace>("dummy://4", "dummy://4", ndn::nfd::FACE_SCOPE_LOCAL))
   {
-    this->strategy.afterAction.connect([this] {
-      limitedIo.afterOp();
-      ++nStrategyActions;
-    });
-
     forwarder.addFace(nonLocalFace1);
     forwarder.addFace(nonLocalFace2);
     forwarder.addFace(localFace3);
     forwarder.addFace(localFace4);
   }
 
-  /** \brief execute f and wait for a number of strategy actions
-   *  \note The actions may occur either during f() invocation or afterwards.
-   */
-  void
-  waitForStrategyAction(const std::function<void()>& f, int nExpectedActions = 1)
-  {
-    nStrategyActions = 0;
-    f();
-    if (nStrategyActions < nExpectedActions) {
-      BOOST_REQUIRE_EQUAL(limitedIo.run(nExpectedActions - nStrategyActions, LimitedIo::UNLIMITED_TIME),
-                          LimitedIo::EXCEED_OPS);
-    }
-    // A correctly implemented strategy is required to invoke reject pending Interest action
-    // if it decides to not forward an Interest. If a test case is stuck in an endless loop within
-    // this function, check that rejectPendingInterest is invoked under proper condition.
-  }
-
 public:
   LimitedIo limitedIo;
-  int nStrategyActions;
 
   Forwarder forwarder;
   StrategyTester<S>& strategy;
@@ -148,8 +124,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, *interest);
 
-  this->waitForStrategyAction(
-    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); });
+  BOOST_REQUIRE(this->strategy.waitForAction(
+    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
+    this->limitedIo));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 0);
@@ -166,9 +143,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, *interest);
 
-  this->waitForStrategyAction(
+  BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
-    1 + T::willSendNackNoRoute());
+    this->limitedIo, 1 + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 1);
@@ -189,8 +166,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->localFace3, *interest);
 
-  this->waitForStrategyAction(
-    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); });
+  BOOST_REQUIRE(this->strategy.waitForAction(
+    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
+    this->limitedIo));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.back().outFaceId, this->localFace4->getId());
@@ -208,9 +186,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, *interest);
 
-  this->waitForStrategyAction(
+  BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveInterest(*this->nonLocalFace1, *interest, pitEntry); },
-    1 + T::willSendNackNoRoute());
+    this->limitedIo, 1 + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 1);
@@ -231,8 +209,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, *interest);
 
-  this->waitForStrategyAction(
-    [&] { this->strategy.afterReceiveInterest(*this->nonLocalFace1, *interest, pitEntry); });
+  BOOST_REQUIRE(this->strategy.waitForAction(
+    [&] { this->strategy.afterReceiveInterest(*this->nonLocalFace1, *interest, pitEntry); },
+    this->limitedIo));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.back().outFaceId, this->localFace4->getId());
@@ -253,9 +232,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
   lp::Nack nack = makeNack("/localhost/A/1", 1460, lp::NackReason::NO_ROUTE);
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, *interest)->setIncomingNack(nack);
 
-  this->waitForStrategyAction(
+  BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(*this->localFace4, nack, pitEntry); },
-    T::canProcessNack());
+    this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 0);
@@ -278,9 +257,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
   lp::Nack nack = makeNack("/localhop/A/1", 1377, lp::NackReason::NO_ROUTE);
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, *interest)->setIncomingNack(nack);
 
-  this->waitForStrategyAction(
+  BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(*this->localFace4, nack, pitEntry); },
-    T::canProcessNack());
+    this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 0);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,6 +38,7 @@ const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_MAX(250);
 
 BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
+  , ProcessNackTraits(this)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
@@ -183,69 +184,11 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& int
   }
 }
 
-/** \return less severe NackReason between x and y
- *
- *  lp::NackReason::NONE is treated as most severe
- */
-inline lp::NackReason
-compareLessSevere(lp::NackReason x, lp::NackReason y)
-{
-  if (x == lp::NackReason::NONE) {
-    return y;
-  }
-  if (y == lp::NackReason::NONE) {
-    return x;
-  }
-  return static_cast<lp::NackReason>(std::min(static_cast<int>(x), static_cast<int>(y)));
-}
-
 void
 BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-  int nOutRecordsNotNacked = 0;
-  Face* lastFaceNotNacked = nullptr;
-  lp::NackReason leastSevereReason = lp::NackReason::NONE;
-  for (const pit::OutRecord& outR : pitEntry->getOutRecords()) {
-    const lp::NackHeader* inNack = outR.getIncomingNack();
-    if (inNack == nullptr) {
-      ++nOutRecordsNotNacked;
-      lastFaceNotNacked = &outR.getFace();
-      continue;
-    }
-
-    leastSevereReason = compareLessSevere(leastSevereReason, inNack->getReason());
-  }
-
-  lp::NackHeader outNack;
-  outNack.setReason(leastSevereReason);
-
-  if (nOutRecordsNotNacked == 1) {
-    BOOST_ASSERT(lastFaceNotNacked != nullptr);
-    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
-    if (inR != pitEntry->in_end()) {
-      // one out-record not Nacked, which is also a downstream
-      NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
-                    " nack=" << nack.getReason() <<
-                    " nack-to(bidirectional)=" << lastFaceNotNacked->getId() <<
-                    " out-nack=" << outNack.getReason());
-      this->sendNack(pitEntry, *lastFaceNotNacked, outNack);
-      return;
-    }
-  }
-
-  if (nOutRecordsNotNacked > 0) {
-    NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
-                  " nack=" << nack.getReason() <<
-                  " waiting=" << nOutRecordsNotNacked);
-    // continue waiting
-    return;
-  }
-
-  NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<
-                " nack=" << nack.getReason() <<
-                " nack-to=all out-nack=" << outNack.getReason());
-  this->sendNacks(pitEntry, outNack);
+  this->processNack(inFace, nack, pitEntry);
 }
 
 } // namespace fw
