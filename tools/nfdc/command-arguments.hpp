@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,11 +27,17 @@
 #define NFD_TOOLS_NFDC_COMMAND_ARGUMENTS_HPP
 
 #include "core/common.hpp"
+#include "status-report.hpp"
+#include <ndn-cxx/encoding/nfd-constants.hpp>
+#include <ndn-cxx/util/face-uri.hpp>
 #include <boost/any.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
+
+using ndn::nfd::FacePersistency;
+using ndn::util::FaceUri;
 
 /** \brief contains named command arguments
  */

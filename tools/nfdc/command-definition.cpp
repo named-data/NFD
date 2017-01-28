@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,6 @@
  */
 
 #include "command-definition.hpp"
-#include "status-report.hpp"
-#include <ndn-cxx/encoding/nfd-constants.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd {
@@ -211,14 +208,14 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
   return ca;
 }
 
-static ndn::nfd::FacePersistency
+static FacePersistency
 parseFacePersistency(const std::string& s)
 {
   if (s == "persistent") {
-    return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
+    return FacePersistency::FACE_PERSISTENCY_PERSISTENT;
   }
   if (s == "permanent") {
-    return ndn::nfd::FACE_PERSISTENCY_PERMANENT;
+    return FacePersistency::FACE_PERSISTENCY_PERMANENT;
   }
   BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized FacePersistency"));
 }
@@ -251,14 +248,14 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
       return Name(token);
 
     case ArgValueType::FACE_URI:
-      return ndn::util::FaceUri(token);
+      return FaceUri(token);
 
     case ArgValueType::FACE_ID_OR_URI:
       try {
         return boost::lexical_cast<uint64_t>(token);
       }
       catch (const boost::bad_lexical_cast&) {
-        return ndn::util::FaceUri(token);
+        return FaceUri(token);
       }
 
     case ArgValueType::FACE_PERSISTENCY:
