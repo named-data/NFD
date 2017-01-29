@@ -128,17 +128,7 @@ ItemAttributes::ItemAttributes(bool wantMultiLine, int maxAttributeWidth)
 ItemAttributes::Attribute
 ItemAttributes::operator()(const std::string& attribute)
 {
-  ++m_count;
-  if (m_wantMultiLine) {
-    return {m_count > 1,
-            {m_maxAttributeWidth - static_cast<int>(attribute.size())},
-            attribute};
-  }
-  else {
-    return {false,
-            {m_count > 1 ? 1 : 0},
-            attribute};
-  }
+  return {*this, attribute};
 }
 
 std::string
@@ -150,12 +140,20 @@ ItemAttributes::end() const
 std::ostream&
 operator<<(std::ostream& os, const ItemAttributes::Attribute& attr)
 {
-  if (attr.wantNewline) {
-    os << '\n';
+  ++attr.ia.m_count;
+  if (attr.ia.m_wantMultiLine) {
+    if (attr.ia.m_count > 1) {
+      os << '\n';
+    }
+    os << Spaces{attr.ia.m_maxAttributeWidth - static_cast<int>(attr.attribute.size())};
   }
-  return os << attr.spaces << attr.attribute << '=';
+  else {
+    if (attr.ia.m_count > 1) {
+      os << ' ';
+    }
+  }
+  return os << attr.attribute << '=';
 }
-
 
 std::string
 formatSeconds(time::seconds d, bool isLong)

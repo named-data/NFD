@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,6 +69,29 @@ BOOST_AUTO_TEST_CASE(Sep)
   }
 
   BOOST_CHECK(os.is_equal("1,2,3"));
+}
+
+static void
+printItemAttributes(std::ostream& os, bool wantMultiLine)
+{
+  text::ItemAttributes ia(wantMultiLine, 3);
+  os << ia("id") << 500
+     << ia("uri") << "udp4://192.0.2.1:6363"
+     << ia.end();
+}
+
+BOOST_AUTO_TEST_CASE(ItemAttributesSingleLine)
+{
+  output_test_stream os;
+  printItemAttributes(os, false);
+  BOOST_CHECK(os.is_equal("id=500 uri=udp4://192.0.2.1:6363"));
+}
+
+BOOST_AUTO_TEST_CASE(ItemAttributesMultiLine)
+{
+  output_test_stream os;
+  printItemAttributes(os, true);
+  BOOST_CHECK(os.is_equal(" id=500\nuri=udp4://192.0.2.1:6363\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // Text

@@ -140,11 +140,13 @@ public:
 
   struct Attribute
   {
-    bool wantNewline;
-    Spaces spaces;
+    ItemAttributes& ia;
     std::string attribute;
   };
 
+  /** \note Caller must ensure ItemAttributes object is alive until after all Attribute objects are
+   *        destructed.
+   */
   Attribute
   operator()(const std::string& attribute);
 
@@ -155,6 +157,8 @@ private:
   bool m_wantMultiLine;
   int m_maxAttributeWidth;
   int m_count;
+
+  friend std::ostream& operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 };
 
 std::ostream&
