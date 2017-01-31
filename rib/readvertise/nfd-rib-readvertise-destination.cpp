@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,11 +32,15 @@ using ndn::nfd::ControlParameters;
 using ndn::nfd::ControlResponse;
 
 NfdRibReadvertiseDestination::NfdRibReadvertiseDestination(ndn::nfd::Controller& controller,
-                                                           //ndn::KeyChain& keyChain,
-                                                           const ndn::Name& commandPrefix)
+                                                           const ndn::Name& commandPrefix,
+                                                           Rib& rib)
   : m_controller(controller)
   , m_commandPrefix(commandPrefix)
 {
+  m_ribAddConn = rib.afterInsertEntry.connect(
+    std::bind(&NfdRibReadvertiseDestination::handleRibAdd, this, _1));
+  m_ribRemoveConn = rib.afterEraseEntry.connect(
+    std::bind(&NfdRibReadvertiseDestination::handleRibRemove, this, _1));
 }
 
 void
@@ -61,6 +65,22 @@ NfdRibReadvertiseDestination::withdraw(nfd::rib::ReadvertisedRoute& rr,
                                                      .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT),
     [=] (const ControlParameters& cp) { successCb(); },
     [=] (const ControlResponse& cr) { failureCb(cr.getText()); });
+}
+
+void
+NfdRibReadvertiseDestination::handleRibAdd(const ndn::Name& name)
+{
+  if (name == m_commandPrefix) {
+    setAvailability(true);
+  }
+}
+
+void
+NfdRibReadvertiseDestination::handleRibRemove(const ndn::Name& name)
+{
+  if (name == m_commandPrefix) {
+    setAvailability(false);
+  }
 }
 
 } // namespace rib

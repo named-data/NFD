@@ -23,55 +23,19 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISE_DESTINATION_HPP
-#define NFD_RIB_READVERTISE_READVERTISE_DESTINATION_HPP
-
-#include "readvertised-route.hpp"
-
-#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include "readvertise-destination.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \brief a destination to readvertise into
- */
-class ReadvertiseDestination : noncopyable
+void
+ReadvertiseDestination::setAvailability(bool isAvailable)
 {
-public:
-  virtual
-  ~ReadvertiseDestination() = default;
-
-  virtual void
-  advertise(nfd::rib::ReadvertisedRoute& rr,
-            std::function<void()> successCb,
-            std::function<void(const std::string&)> failureCb) = 0;
-
-  virtual void
-  withdraw(nfd::rib::ReadvertisedRoute& rr,
-           std::function<void()> successCb,
-           std::function<void(const std::string&)> failureCb) = 0;
-
-  bool
-  isAvailable() const
-  {
-    return m_isAvailable;
-  };
-
-protected:
-  void
-  setAvailability(bool isAvailable);
-
-public:
-  /** \brief signals when the destination becomes available or unavailable
-   */
-  ndn::util::signal::Signal<ReadvertiseDestination, bool>
-  afterAvailabilityChange;
-
-private:
-  bool m_isAvailable = false;
-};
+  if (m_isAvailable != isAvailable) {
+    m_isAvailable = isAvailable;
+    afterAvailabilityChange(isAvailable);
+  }
+}
 
 } // namespace rib
 } // namespace nfd
-
-#endif // NFD_RIB_READVERTISE_READVERTISE_DESTINATION_HPP

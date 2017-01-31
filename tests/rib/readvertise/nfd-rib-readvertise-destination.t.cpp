@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ public:
     , nFailureCallbacks(0)
     , face(getGlobalIoService(), m_keyChain, {true, false})
     , controller(face, m_keyChain)
-    , dest(controller, Name("/localhop/nfd/rib/readvertise"))
+    , dest(controller, Name("/localhop/nfd/rib/readvertise"), rib)
     , successCallback([this] () {
         nSuccessCallbacks++;
       })
@@ -63,6 +63,7 @@ public:
 protected:
   ndn::util::DummyClientFace face;
   ndn::nfd::Controller controller;
+  Rib rib;
   NfdRibReadvertiseDestination dest;
   std::function<void()> successCallback;
   std::function<void(const std::string&)> failureCallback;
@@ -229,6 +230,30 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   this->advanceClocks(time::milliseconds(1));
 
   scenario.checkCommandOutcome(this);
+}
+
+BOOST_AUTO_TEST_CASE(DestinationAvailability)
+{
+  std::vector<bool> availabilityChangeHistory;
+  Name prefix("/localhop/nfd/rib/readvertise");
+  Route route;
+
+  dest.afterAvailabilityChange.connect(
+    std::bind(&std::vector<bool>::push_back, &availabilityChangeHistory, _1));
+  BOOST_CHECK_EQUAL(dest.isAvailable(), false);
+
+  rib.insert(prefix, route);
+  this->advanceClocks(time::milliseconds(100), 1);
+  BOOST_CHECK_EQUAL(dest.isAvailable(), true);
+  BOOST_CHECK_EQUAL(availabilityChangeHistory.size(), 1);
+  BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), true);
+
+  rib.erase(prefix, route);
+
+  this->advanceClocks(time::milliseconds(100), 1);
+  BOOST_CHECK_EQUAL(dest.isAvailable(), false);
+  BOOST_CHECK_EQUAL(availabilityChangeHistory.size(), 2);
+  BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNfdRibReadvertiseDestination
