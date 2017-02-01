@@ -196,7 +196,6 @@ const fib::Entry&
 Strategy::lookupFib(const pit::Entry& pitEntry) const
 {
   const Fib& fib = m_forwarder.getFib();
-  const NetworkRegionTable& nrt = m_forwarder.getNetworkRegionTable();
 
   const Interest& interest = pitEntry.getInterest();
   // has Link object?
@@ -209,13 +208,8 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
 
   const Link& link = interest.getLink();
 
-  // in producer region?
-  if (nrt.isInProducerRegion(link)) {
-    // FIB lookup with Interest name
-    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(pitEntry);
-    NFD_LOG_TRACE("lookupFib inProducerRegion found=" << fibEntry.getPrefix());
-    return fibEntry;
-  }
+  // Link should have been stripped by incoming Interest pipeline when reaching producer region
+  BOOST_ASSERT(!m_forwarder.getNetworkRegionTable().isInProducerRegion(link));
 
   // has SelectedDelegation?
   if (interest.hasSelectedDelegation()) {

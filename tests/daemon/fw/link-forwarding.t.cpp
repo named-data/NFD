@@ -70,13 +70,11 @@ public:
       topo.setStrategy<BestRouteStrategy2>(node);
     }
 
-    topo.getForwarder(nodeA).getNetworkRegionTable().insert("/arizona/cs/avenir");
     topo.getForwarder(nodeH).getNetworkRegionTable().insert("/arizona/cs/hobo");
     topo.getForwarder(nodeT).getNetworkRegionTable().insert("/telia/terabits/router");
-    topo.getForwarder(nodeP).getNetworkRegionTable().insert("/telia/terabits/serverP");
     topo.getForwarder(nodeC).getNetworkRegionTable().insert("/ucsd/caida/click");
     topo.getForwarder(nodeS).getNetworkRegionTable().insert("/ucla/cs/spurs");
-    topo.getForwarder(nodeQ).getNetworkRegionTable().insert("/ucla/cs/serverQ");
+    // NetworkRegionTable configuration is unnecessary on end hosts
 
     linkAH = topo.addLink("AH", time::milliseconds(10), {nodeA, nodeH});
     linkHT = topo.addLink("HT", time::milliseconds(10), {nodeH, nodeT});
@@ -139,12 +137,11 @@ BOOST_AUTO_TEST_CASE(FetchTelia)
   BOOST_CHECK_EQUAL(interestHT.hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interestHT.getSelectedDelegation(), "/telia/terabits");
 
-  // T forwards to P, no change to Link and SelectedDelegation
+  // T forwards to P, Link and SelectedDelegation are stripped when Interest reaches producer region
   BOOST_CHECK_EQUAL(linkTP->getFace(nodeT).getCounters().nOutInterests, 1);
   const Interest& interestTP = topo.getPcap(linkTP->getFace(nodeT)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestTP.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestTP.hasSelectedDelegation(), true);
-  BOOST_CHECK_EQUAL(interestTP.getSelectedDelegation(), "/telia/terabits");
+  BOOST_CHECK_EQUAL(interestTP.hasLink(), false);
+  BOOST_CHECK_EQUAL(interestTP.hasSelectedDelegation(), false);
 
   // Data is served by P and reaches A
   BOOST_CHECK_EQUAL(producerP->getForwarderFace().getCounters().nInData, 1);
@@ -180,12 +177,11 @@ BOOST_AUTO_TEST_CASE(FetchUcla)
   BOOST_CHECK_EQUAL(interestCS.hasSelectedDelegation(), true);
   BOOST_CHECK_EQUAL(interestCS.getSelectedDelegation(), "/ucla/cs");
 
-  // S forwards to Q, no change to Link and SelectedDelegation
+  // S forwards to Q, Link and SelectedDelegation are stripped when Interest reaches producer region
   BOOST_CHECK_EQUAL(linkSQ->getFace(nodeS).getCounters().nOutInterests, 1);
   const Interest& interestSQ = topo.getPcap(linkSQ->getFace(nodeS)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestSQ.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestSQ.hasSelectedDelegation(), true);
-  BOOST_CHECK_EQUAL(interestSQ.getSelectedDelegation(), "/ucla/cs");
+  BOOST_CHECK_EQUAL(interestSQ.hasLink(), false);
+  BOOST_CHECK_EQUAL(interestSQ.hasSelectedDelegation(), false);
 
   // Data is served by Q and reaches A
   BOOST_CHECK_EQUAL(producerQ->getForwarderFace().getCounters().nInData, 1);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -144,6 +144,15 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
     // goto Interest loop pipeline
     this->onInterestLoop(inFace, interest);
     return;
+  }
+
+  // strip Link object if Interest has reached producer region
+  if (interest.hasLink() && m_networkRegionTable.isInProducerRegion(interest.getLink())) {
+    NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
+                  " interest=" << interest.getName() << " reaching-producer-region");
+    Interest& interestRef = const_cast<Interest&>(interest);
+    interestRef.unsetLink();
+    interestRef.unsetSelectedDelegation();
   }
 
   // PIT insert
