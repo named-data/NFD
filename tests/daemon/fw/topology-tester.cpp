@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -114,6 +114,37 @@ TopologyAppLink::recover()
   m_clientTransport->connectToForwarder(m_forwarderTransport);
 }
 
+class TopologyPcapLinkService : public GenericLinkService
+                              , public TopologyPcap
+{
+private:
+  ///\todo #3941 call GenericLinkServiceCounters constructor in TopologyPcapLinkService constructor
+
+  void
+  doSendInterest(const Interest& interest) override
+  {
+    this->sentInterests.push_back(interest);
+    this->sentInterests.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
+    this->GenericLinkService::doSendInterest(interest);
+  }
+
+  void
+  doSendData(const Data& data) override
+  {
+    this->sentData.push_back(data);
+    this->sentData.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
+    this->GenericLinkService::doSendData(data);
+  }
+
+  void
+  doSendNack(const lp::Nack& nack) override
+  {
+    this->sentNacks.push_back(nack);
+    this->sentNacks.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
+    this->GenericLinkService::doSendNack(nack);
+  }
+};
+
 TopologyNode
 TopologyTester::addForwarder(const std::string& label)
 {
@@ -139,7 +170,8 @@ TopologyTester::addLink(const std::string& label, const time::nanoseconds& delay
     Forwarder& forwarder = this->getForwarder(i);
     FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/" + label);
 
-    auto service = make_unique<GenericLinkService>();
+    unique_ptr<GenericLinkService> service = m_wantPcap ? make_unique<TopologyPcapLinkService>() :
+                                                          make_unique<GenericLinkService>();
     auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                      ndn::nfd::FACE_SCOPE_NON_LOCAL, linkType);
     auto face = make_shared<Face>(std::move(service), std::move(transport));
@@ -159,7 +191,8 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i)
   FaceUri localUri("topology://" + m_forwarderLabels.at(i) + "/local/" + label);
   FaceUri remoteUri("topology://" + m_forwarderLabels.at(i) + "/app/" + label);
 
-  auto service = make_unique<GenericLinkService>();
+  unique_ptr<GenericLinkService> service = m_wantPcap ? make_unique<TopologyPcapLinkService>() :
+                                                        make_unique<GenericLinkService>();
   auto transport = make_unique<InternalForwarderTransport>(localUri, remoteUri,
                    ndn::nfd::FACE_SCOPE_LOCAL, ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   auto face = make_shared<Face>(std::move(service), std::move(transport));
@@ -177,6 +210,18 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i, const Name&
   shared_ptr<TopologyAppLink> al = this->addAppFace(label, i);
   this->registerPrefix(i, al->getForwarderFace(), prefix, cost);
   return al;
+}
+
+void
+TopologyTester::enablePcap(bool isEnabled)
+{
+  m_wantPcap = isEnabled;
+}
+
+TopologyPcap&
+TopologyTester::getPcap(const Face& face)
+{
+  return dynamic_cast<TopologyPcapLinkService&>(*face.getLinkService());
 }
 
 void

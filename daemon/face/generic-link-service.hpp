@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,9 +75,10 @@ public:
 
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
  *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+ *  \todo #3941 declare GenericLinkServiceCounters as virtual inheritance
  */
 class GenericLinkService : public LinkService
-                         , protected virtual GenericLinkServiceCounters
+                         , protected GenericLinkServiceCounters
 {
 public:
   /** \brief Options that control the behavior of GenericLinkService
@@ -111,7 +112,7 @@ public:
 
   /** \brief counters provided by GenericLinkService
    */
-  typedef GenericLinkServiceCounters Counters;
+  using Counters = GenericLinkServiceCounters;
 
   explicit
   GenericLinkService(const Options& options = Options());
@@ -126,10 +127,10 @@ public:
   void
   setOptions(const Options& options);
 
-  virtual const Counters&
+  const Counters&
   getCounters() const override;
 
-private: // send path
+PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   /** \brief send Interest
    */
   void
@@ -145,6 +146,7 @@ private: // send path
   void
   doSendNack(const ndn::lp::Nack& nack) override;
 
+private:
   /** \brief encode link protocol fields from tags onto an outgoing LpPacket
    *  \param netPkt network-layer packet to extract tags from
    *  \param lpPacket LpPacket to add link protocol fields to

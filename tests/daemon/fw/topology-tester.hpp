@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -157,6 +157,20 @@ private:
   shared_ptr<ndn::Face> m_client;
 };
 
+/** \brief captured packets on a face
+ */
+class TopologyPcap : noncopyable
+{
+public:
+  std::vector<Interest> sentInterests;
+  std::vector<Data> sentData;
+  std::vector<lp::Nack> sentNacks;
+};
+
+/** \brief captured packet timestamp tag
+ */
+using TopologyPcapTimestamp = ndn::SimpleTag<time::steady_clock::TimePoint, 0>;
+
 /** \brief builds a topology for forwarding tests
  */
 class TopologyTester : noncopyable
@@ -209,6 +223,17 @@ public:
   shared_ptr<TopologyAppLink>
   addAppFace(const std::string& label, TopologyNode i, const Name& prefix, uint64_t cost = 0);
 
+  /** \brief enables packet capture on every forwarder face
+   */
+  void
+  enablePcap(bool isEnabled = true);
+
+  /** \return captured packets on a forwarder face
+   *  \pre enablePcap(true) is in effect when the face was created
+   */
+  TopologyPcap&
+  getPcap(const Face& face);
+
   /** \brief registers a prefix on a forwarder face
    */
   void
@@ -227,6 +252,7 @@ public:
                       const time::nanoseconds& interval, size_t n);
 
 private:
+  bool m_wantPcap = false;
   std::vector<unique_ptr<Forwarder>> m_forwarders;
   std::vector<std::string> m_forwarderLabels;
   std::vector<shared_ptr<TopologyLink>> m_links;
