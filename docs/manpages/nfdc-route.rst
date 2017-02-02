@@ -5,8 +5,8 @@ SYNOPSIS
 --------
 | nfdc route [list]
 | nfdc fib [list]
-| nfdc register [-I] [-C] [-c <cost>] [-e <expiration>] [-o <origin>] <prefix> <faceId|faceUri>
-| nfdc unregister [-o <origin>] <prefix> <faceId>
+| nfdc register [-I] [-C] [-c <COST>] [-e <EXPIRATION>] [-o <ORIGIN>] <PREFIX> <FACEID|FACEURI>
+| nfdc unregister [-o <ORIGIN>] <PREFIX> <FACEID>
 
 DESCRIPTION
 -----------
@@ -35,27 +35,27 @@ OPTIONS
 -C
     Set CAPTURE flag in the route.
 
--c <cost>
+-c <COST>
     The administrative cost of the route.
     The default is 0.
 
--e <expiration>
+-e <EXPIRATION>
     Expiration time of the route, in milliseconds.
     When the route expires, NFD removes it from the RIB.
     The default is infinite, which keeps the route active until the nexthop face is destroyed.
 
--o <origin>
+-o <ORIGIN>
     Origin of the route, i.e. who is announcing the route.
     The default is 255, indicating a static route.
 
-<prefix>
+<PREFIX>
     Name prefix of the route.
 
-<faceUri>
+<FACEURI>
     An URI representing the remote endpoint of a face.
     It can be used in **nfdc register** to create a new UDP or TCP face.
 
-<faceId>
+<FACEID>
     A numerical identifier of the face.
     It is displayed in the output of **nfdc face list** and **nfdc create** commands.
 

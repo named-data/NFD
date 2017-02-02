@@ -4,8 +4,8 @@ nfdc-strategy
 SYNOPSIS
 --------
 | nfdc strategy [list]
-| nfdc set-strategy <prefix> <strategy>
-| nfdc unset-strategy <prefix>
+| nfdc set-strategy <PREFIX> <STRATEGY>
+| nfdc unset-strategy <PREFIX>
 
 DESCRIPTION
 -----------
@@ -27,7 +27,7 @@ It undoes a prior **nfdc set-strategy** command on the same name prefix.
 
 OPTIONS
 -------
-<prefix>
+<PREFIX>
     The name prefix of a strategy choice.
     The strategy choice is effective for all Interests under the name prefix,
     unless overridden by another strategy choice.
@@ -35,7 +35,7 @@ OPTIONS
     Specifying ``ndn:/`` as the prefix in **nfdc unset-strategy** is disallowed,
     because NFD must always have a default strategy.
 
-<strategy>
+<STRATEGY>
     A name that identifies the forwarding strategy.
     Consult NFD Developer's Guide for a complete list of all implemented strategies.
 

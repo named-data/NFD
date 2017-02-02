@@ -4,7 +4,7 @@ nfdc-status
 SYNOPSIS
 --------
 | nfdc status [show]
-| nfdc status report [<format>]
+| nfdc status report [<FORMAT>]
 
 DESCRIPTION
 -----------
@@ -22,7 +22,7 @@ The **nfdc status report** command generates a comprehensive report of NFD statu
 
 OPTIONS
 -------
-<format>
+<FORMAT>
     The format of NFD status report, either ``text`` or ``xml``.
     The default is ``text``.
 

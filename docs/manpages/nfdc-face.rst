@@ -4,10 +4,10 @@ nfdc-face
 SYNOPSIS
 --------
 | nfdc face [list]
-| nfdc face show <faceId>
+| nfdc face show <FACEID>
 | nfdc channel [list]
-| nfdc create [-P] <faceUri>
-| nfdc destroy <faceId|faceUri>
+| nfdc create [-P] <FACEURI>
+| nfdc destroy <FACEID|FACEURI>
 
 DESCRIPTION
 -----------
@@ -36,11 +36,11 @@ OPTIONS
     A permanent face is kept alive upon socket errors,
     and is closed only upon **nfdc destroy** command.
 
-<faceId>
+<FACEID>
     Numerical identifier of the face.
     It is displayed in the output of **nfdc face list** and **nfdc create** commands.
 
-<faceUri>
+<FACEURI>
     An URI representing the remote endpoint of a face.
     Its syntax is:
 

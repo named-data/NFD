@@ -6,7 +6,7 @@ Usage
 
 ::
 
-    nfd-status-http-server [-h] [-p port number] [-a IP address] [-r] [-v]
+    nfd-status-http-server [-h] [-p <PORT>] [-a <IPADDR>] [-r] [-v]
 
 Description
 -----------
@@ -19,10 +19,10 @@ Options
 ``-h``
   Show this help message and exit.
 
-``-p``
+``-p <PORT>``
   HTTP server port number (default is 8080).
 
-``-a``
+``-a <IPADDR>``
   HTTP server IP address (default is 127.0.0.1).
 
 ``-r``
