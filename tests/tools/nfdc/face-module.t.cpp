@@ -24,6 +24,7 @@
  */
 
 #include "nfdc/face-module.hpp"
+#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 
 #include "execute-command-fixture.hpp"
 #include "status-fixture.hpp"
@@ -33,12 +34,12 @@ namespace tools {
 namespace nfdc {
 namespace tests {
 
+using ndn::nfd::FaceQueryFilter;
+
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_AUTO_TEST_SUITE(TestFaceModule)
 
 BOOST_FIXTURE_TEST_SUITE(ShowCommand, ExecuteCommandFixture)
-
-using ndn::nfd::FaceQueryFilter;
 
 const std::string NORMAL_OUTPUT = std::string(R"TEXT(
   faceid=256
@@ -104,6 +105,42 @@ BOOST_AUTO_TEST_CASE(Error)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ShowCommand
+
+BOOST_FIXTURE_TEST_SUITE(CreateCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/create");
+    BOOST_REQUIRE(req.hasUri());
+    BOOST_CHECK_EQUAL(req.getUri(), "udp4://159.242.33.78:6363");
+    BOOST_REQUIRE(req.hasFacePersistency());
+    BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+
+    ControlParameters resp;
+    resp.setFaceId(2130)
+        .setUri("udp4://159.242.33.78:6363")
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    this->succeedCommand(resp);
+  };
+
+  this->execute("face create udp://159.242.33.78");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-created id=2130 remote=udp4://159.242.33.78:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(Error)
+{
+  this->processInterest = nullptr; // no response
+
+  this->execute("face create udp://159.242.33.78");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when creating face: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // CreateCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <faces>

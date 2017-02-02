@@ -51,6 +51,11 @@ public:
   static void
   show(ExecuteContext& ctx);
 
+  /** \brief the 'face create' command
+   */
+  static void
+  create(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,

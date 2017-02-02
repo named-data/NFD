@@ -57,7 +57,7 @@ OPTIONS
 
 <FACEID>
     A numerical identifier of the face.
-    It is displayed in the output of **nfdc face list** and **nfdc create** commands.
+    It is displayed in the output of **nfdc face list** and **nfdc face create** commands.
 
 SEE ALSO
 --------

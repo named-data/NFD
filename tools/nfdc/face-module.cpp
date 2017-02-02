@@ -38,6 +38,13 @@ FaceModule::registerCommands(CommandParser& parser)
     .setTitle("show face information")
     .addArg("id", ArgValueType::UNSIGNED, Required::YES, Positional::YES);
   parser.addCommand(defFaceShow, &FaceModule::show);
+
+  CommandDefinition defFaceCreate("face", "create");
+  defFaceCreate
+    .setTitle("create a face")
+    .addArg("remote", ArgValueType::FACE_URI, Required::YES, Positional::YES)
+    .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES);
+  parser.addCommand(defFaceCreate, &FaceModule::create);
 }
 
 void
@@ -57,7 +64,38 @@ FaceModule::show(ExecuteContext& ctx)
       }
       formatItemText(ctx.out, result.front(), true);
     },
-    ctx.makeDatasetFailureHandler("face information"));
+    ctx.makeDatasetFailureHandler("face information"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
+FaceModule::create(ExecuteContext& ctx)
+{
+  auto faceUri = ctx.args.get<FaceUri>("remote");
+  auto persistency = ctx.args.get<FacePersistency>("persistency", FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+
+  faceUri.canonize(
+    [&] (const FaceUri& canonicalUri) {
+      ctx.controller.start<ndn::nfd::FaceCreateCommand>(
+        ControlParameters().setUri(canonicalUri.toString()).setFacePersistency(persistency),
+        [&] (const ControlParameters& resp) {
+          ctx.out << "face-created ";
+          text::ItemAttributes ia;
+          ctx.out << ia("id") << resp.getFaceId()
+                  << ia("remote") << resp.getUri()
+                  << ia("persistency") << resp.getFacePersistency() << '\n';
+          ///\todo #3864 display localUri
+        },
+        ctx.makeCommandFailureHandler("creating face"), ///\todo #3232 update persistency upon 409
+        ctx.makeCommandOptions());
+    },
+    [&] (const std::string& canonizeError) {
+      ctx.exitCode = 4;
+      ctx.err << "Error when canonizing FaceUri: " << canonizeError << '\n';
+    },
+    ctx.face.getIoService(), ctx.getTimeout());
 
   ctx.face.processEvents();
 }

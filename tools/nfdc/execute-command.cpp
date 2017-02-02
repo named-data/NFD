@@ -29,6 +29,28 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
+time::nanoseconds
+ExecuteContext::getTimeout() const
+{
+  return time::seconds(4);
+}
+
+ndn::nfd::CommandOptions
+ExecuteContext::makeCommandOptions() const
+{
+  return ndn::nfd::CommandOptions()
+           .setTimeout(time::duration_cast<time::milliseconds>(this->getTimeout()));
+}
+
+Controller::CommandFailCallback
+ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
+{
+  return [=] (const ndn::nfd::ControlResponse& resp) {
+    this->exitCode = 1;
+    this->err << "Error " << resp.getCode() << " when " << commandName << ": " << resp.getText() << '\n';
+  };
+}
+
 Controller::DatasetFailCallback
 ExecuteContext::makeDatasetFailureHandler(const std::string& datasetName)
 {

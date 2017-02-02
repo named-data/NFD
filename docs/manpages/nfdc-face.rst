@@ -5,9 +5,9 @@ SYNOPSIS
 --------
 | nfdc face [list]
 | nfdc face show <FACEID>
-| nfdc channel [list]
-| nfdc create [-P] <FACEURI>
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>]
 | nfdc destroy <FACEID|FACEURI>
+| nfdc channel [list]
 
 DESCRIPTION
 -----------
@@ -20,25 +20,19 @@ The **nfdc face list** command shows a list of faces, their properties, and stat
 
 The **nfdc face show** command shows properties and statistics of one specific face.
 
-The **nfdc channel list** command shows a list of channels.
-Channels are listening sockets that can accept incoming connections and create new faces.
-
-The **nfdc create** command creates a new UDP or TCP face.
+The **nfdc face create** command creates a unicast UDP or TCP face.
 
 The **nfdc destroy** command destroys an existing face.
 It has no effect if the specified face does not exist.
 
+The **nfdc channel list** command shows a list of channels.
+Channels are listening sockets that can accept incoming connections and create new faces.
+
 OPTIONS
 -------
--P
-    Creates a "permanent" rather than persistent face.
-    A persistent face is closed when a socket error occrs.
-    A permanent face is kept alive upon socket errors,
-    and is closed only upon **nfdc destroy** command.
-
 <FACEID>
     Numerical identifier of the face.
-    It is displayed in the output of **nfdc face list** and **nfdc create** commands.
+    It is displayed in the output of **nfdc face list** and **nfdc face create** commands.
 
 <FACEURI>
     An URI representing the remote endpoint of a face.
@@ -48,6 +42,11 @@ OPTIONS
     - tcp[4|6]://<IP-or-host>[:<port>]
 
     When a hostname is specified, a DNS query is used to obtain the IP address.
+
+<PERSISTENCY>
+    Either "persistent" or "permanent".
+    A "persistent" face (the default) is closed when a socket error occurs.
+    A "permanent" face survives socket errors, and is closed only with a **nfdc destroy** command.
 
 EXIT CODES
 ----------
@@ -59,6 +58,8 @@ EXIT CODES
 2: Malformed command line
 
 3: Face not found (**nfdc face show** only)
+
+4: FaceUri canonization failed (**nfdc face create** only)
 
 SEE ALSO
 --------

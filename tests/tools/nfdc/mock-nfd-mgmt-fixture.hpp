@@ -37,6 +37,7 @@ namespace nfdc {
 namespace tests {
 
 using namespace nfd::tests;
+using ndn::nfd::ControlParameters;
 
 /** \brief fixture to emulate NFD management
  */
@@ -56,7 +57,43 @@ protected:
     });
   }
 
-protected: // status fetching
+protected: // ControlCommand
+  /** \brief check the last Interest is a command with specified prefix
+   *  \retval nullopt last Interest is not the expected command
+   *  \return command parameters
+   */
+  ndn::optional<ControlParameters>
+  getCommand(const Name& expectedPrefix)
+  {
+    if (face.sentInterests.empty() ||
+        !expectedPrefix.isPrefixOf(face.sentInterests.back().getName())) {
+      return ndn::nullopt;
+    }
+    return ControlParameters(face.sentInterests.back().getName()
+                             .at(expectedPrefix.size()).blockFromValue());
+  }
+
+  /** \brief respond to the last command
+   *  \pre last Interest is a command
+   */
+  void
+  succeedCommand(const ControlParameters& parameters)
+  {
+    ndn::nfd::ControlResponse resp(200, "OK");
+    resp.setBody(parameters.wireEncode());
+    this->sendCommandReply(resp);
+  }
+
+  /** \brief respond to the last command
+   *  \pre last Interest is a command
+   */
+  void
+  failCommand(uint32_t code, const std::string& text)
+  {
+    this->sendCommandReply({code, text});
+  }
+
+protected: // StatusDataset
   /** \brief send an empty dataset in reply to StatusDataset request
    *  \param prefix dataset prefix without version and segment
    *  \pre Interest for dataset has been expressed, sendDataset has not been invoked
@@ -114,6 +151,14 @@ private:
     this->advanceClocks(time::milliseconds(100), timeout);
   }
 
+  void
+  sendCommandReply(const ndn::nfd::ControlResponse& resp)
+  {
+    auto data = makeData(face.sentInterests.back().getName());
+    data->setContent(resp.wireEncode());
+    face.receive(*data);
+  }
+
   /** \brief send a payload in reply to StatusDataset request
    *  \param name dataset prefix without version and segment
    *  \param contentArgs passed to Data::setContent
@@ -157,5 +202,14 @@ protected:
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
+
+#define MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS(expectedPrefix) \
+  [this] { \
+    BOOST_REQUIRE_MESSAGE(!face.sentInterests.empty(), "no Interest expressed"); \
+    auto params = this->getCommand(expectedPrefix); \
+    BOOST_REQUIRE_MESSAGE(params, "last Interest " << face.sentInterests.back().getName() << \
+                          " does not match command prefix " << expectedPrefix); \
+    return *params; \
+  } ()
 
 #endif // NFD_TESTS_TOOLS_NFDC_MOCK_NFD_MGMT_FIXTURE_HPP
