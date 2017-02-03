@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,17 +40,21 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_FIXTURE_TEST_SUITE(TestCs, BaseFixture)
 
-class FindFixture : protected BaseFixture
+class FindFixture : public UnitTestTimeFixture
 {
 protected:
   Name
-  insert(uint32_t id, const Name& name)
+  insert(uint32_t id, const Name& name, const std::function<void(Data&)>& modifyData = nullptr)
   {
     shared_ptr<Data> data = makeData(name);
     data->setFreshnessPeriod(time::milliseconds(99999));
     data->setContent(reinterpret_cast<const uint8_t*>(&id), sizeof(id));
-    data->wireEncode();
 
+    if (modifyData != nullptr) {
+      modifyData(*data);
+    }
+
+    data->wireEncode();
     m_cs.insert(*data);
 
     return data->getFullName();
@@ -66,12 +70,21 @@ protected:
   void
   find(const std::function<void(uint32_t)>& check)
   {
+    bool hasResult = false;
     m_cs.find(*m_interest,
               [&] (const Interest& interest, const Data& data) {
-                  const Block& content = data.getContent();
-                  uint32_t found = *reinterpret_cast<const uint32_t*>(content.value());
-                  check(found); },
-              bind([&] { check(0); }));
+                hasResult = true;
+                const Block& content = data.getContent();
+                uint32_t found = *reinterpret_cast<const uint32_t*>(content.value());
+                check(found);
+              },
+              bind([&] {
+                hasResult = true;
+                check(0);
+              }));
+
+    // current Cs::find implementation performs lookup synchronously
+    BOOST_CHECK(hasResult);
   }
 
 protected:
@@ -83,36 +96,36 @@ BOOST_FIXTURE_TEST_SUITE(Find, FindFixture)
 
 BOOST_AUTO_TEST_CASE(EmptyDataName)
 {
-  insert(1, "ndn:/");
+  insert(1, "/");
 
-  startInterest("ndn:/");
+  startInterest("/");
   CHECK_CS_FIND(1);
 }
 
 BOOST_AUTO_TEST_CASE(EmptyInterestName)
 {
-  insert(1, "ndn:/A");
+  insert(1, "/A");
 
-  startInterest("ndn:/");
+  startInterest("/");
   CHECK_CS_FIND(1);
 }
 
 BOOST_AUTO_TEST_CASE(ExactName)
 {
-  insert(1, "ndn:/");
-  insert(2, "ndn:/A");
-  insert(3, "ndn:/A/B");
-  insert(4, "ndn:/A/C");
-  insert(5, "ndn:/D");
+  insert(1, "/");
+  insert(2, "/A");
+  insert(3, "/A/B");
+  insert(4, "/A/C");
+  insert(5, "/D");
 
-  startInterest("ndn:/A");
+  startInterest("/A");
   CHECK_CS_FIND(2);
 }
 
 BOOST_AUTO_TEST_CASE(FullName)
 {
-  Name n1 = insert(1, "ndn:/A");
-  Name n2 = insert(2, "ndn:/A");
+  Name n1 = insert(1, "/A");
+  Name n2 = insert(2, "/A");
 
   startInterest(n1);
   CHECK_CS_FIND(1);
@@ -123,150 +136,186 @@ BOOST_AUTO_TEST_CASE(FullName)
 
 BOOST_AUTO_TEST_CASE(Leftmost)
 {
-  insert(1, "ndn:/A");
-  insert(2, "ndn:/B/p/1");
-  insert(3, "ndn:/B/p/2");
-  insert(4, "ndn:/B/q/1");
-  insert(5, "ndn:/B/q/2");
-  insert(6, "ndn:/C");
+  insert(1, "/A");
+  insert(2, "/B/p/1");
+  insert(3, "/B/p/2");
+  insert(4, "/B/q/1");
+  insert(5, "/B/q/2");
+  insert(6, "/C");
 
-  startInterest("ndn:/B");
+  startInterest("/B");
   CHECK_CS_FIND(2);
 }
 
 BOOST_AUTO_TEST_CASE(Rightmost)
 {
-  insert(1, "ndn:/A");
-  insert(2, "ndn:/B/p/1");
-  insert(3, "ndn:/B/p/2");
-  insert(4, "ndn:/B/q/1");
-  insert(5, "ndn:/B/q/2");
-  insert(6, "ndn:/C");
+  insert(1, "/A");
+  insert(2, "/B/p/1");
+  insert(3, "/B/p/2");
+  insert(4, "/B/q/1");
+  insert(5, "/B/q/2");
+  insert(6, "/C");
 
-  startInterest("ndn:/B")
+  startInterest("/B")
     .setChildSelector(1);
   CHECK_CS_FIND(4);
 }
 
 BOOST_AUTO_TEST_CASE(MinSuffixComponents)
 {
-  insert(1, "ndn:/");
-  insert(2, "ndn:/A");
-  insert(3, "ndn:/B/1");
-  insert(4, "ndn:/C/1/2");
-  insert(5, "ndn:/D/1/2/3");
-  insert(6, "ndn:/E/1/2/3/4");
+  insert(1, "/");
+  insert(2, "/A");
+  insert(3, "/B/1");
+  insert(4, "/C/1/2");
+  insert(5, "/D/1/2/3");
+  insert(6, "/E/1/2/3/4");
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(0);
   CHECK_CS_FIND(1);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(1);
   CHECK_CS_FIND(1);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(2);
   CHECK_CS_FIND(2);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(3);
   CHECK_CS_FIND(3);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(4);
   CHECK_CS_FIND(4);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(5);
   CHECK_CS_FIND(5);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(6);
   CHECK_CS_FIND(6);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setMinSuffixComponents(7);
   CHECK_CS_FIND(0);
 }
 
 BOOST_AUTO_TEST_CASE(MaxSuffixComponents)
 {
-  insert(1, "ndn:/");
-  insert(2, "ndn:/A");
-  insert(3, "ndn:/B/2");
-  insert(4, "ndn:/C/2/3");
-  insert(5, "ndn:/D/2/3/4");
-  insert(6, "ndn:/E/2/3/4/5");
+  insert(1, "/");
+  insert(2, "/A");
+  insert(3, "/B/2");
+  insert(4, "/C/2/3");
+  insert(5, "/D/2/3/4");
+  insert(6, "/E/2/3/4/5");
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(0);
   CHECK_CS_FIND(0);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(1);
   CHECK_CS_FIND(1);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(2);
   CHECK_CS_FIND(2);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(3);
   CHECK_CS_FIND(3);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(4);
   CHECK_CS_FIND(4);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(5);
   CHECK_CS_FIND(5);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(6);
   CHECK_CS_FIND(6);
 
-  startInterest("ndn:/")
+  startInterest("/")
     .setChildSelector(1)
     .setMaxSuffixComponents(7);
   CHECK_CS_FIND(6);
 }
 
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(MustBeFresh, 1)
+BOOST_AUTO_TEST_CASE(MustBeFresh)
+{
+  ///\todo #3944 add /A/1 without FreshnessPeriod, which is same as FreshnessPeriod=0ms
+  insert(2, "/A/2", [] (Data& data) { data.setFreshnessPeriod(time::seconds(0)); });
+  insert(3, "/A/3", [] (Data& data) { data.setFreshnessPeriod(time::seconds(1)); });
+  insert(4, "/A/4", [] (Data& data) { data.setFreshnessPeriod(time::seconds(3600)); });
+  insert(5, "/A/5"); // omitted FreshnessPeriod means infinite
+  ///\todo #3944 delete /A/5
+
+  // lookup at exact same moment as insertion is not tested because this won't happen in reality
+
+  this->advanceClocks(time::milliseconds(500)); // @500ms
+  startInterest("/A")
+    .setMustBeFresh(true);
+  CHECK_CS_FIND(3);
+
+  this->advanceClocks(time::milliseconds(1500)); // @2s
+  startInterest("/A")
+    .setMustBeFresh(true);
+  CHECK_CS_FIND(4);
+
+  this->advanceClocks(time::seconds(3500)); // @3502s
+  startInterest("/A")
+    .setMustBeFresh(true);
+  CHECK_CS_FIND(4);
+
+  this->advanceClocks(time::seconds(3500)); // @7002s
+  startInterest("/A")
+    .setMustBeFresh(true);
+  CHECK_CS_FIND(5); // expected failure https://redmine.named-data.net/issues/3944#note-2
+  ///\todo #3944 this should not find any Data
+}
+
 BOOST_AUTO_TEST_CASE(DigestOrder)
 {
-  insert(1, "ndn:/A");
-  insert(2, "ndn:/A");
-  // We don't know which comes first, but there must be some order
+  Name n1 = insert(1, "/A");
+  Name n2 = insert(2, "/A");
 
-  int leftmost = 0, rightmost = 0;
-  startInterest("ndn:/A")
+  uint32_t expectedLeftmost = 0, expectedRightmost = 0;
+  if (n1 < n2) {
+    expectedLeftmost = 1;
+    expectedRightmost = 2;
+  }
+  else {
+    BOOST_CHECK_MESSAGE(n1 != n2, "implicit digest collision detected");
+    expectedLeftmost = 2;
+    expectedRightmost = 1;
+  }
+
+  startInterest("/A")
     .setChildSelector(0);
-  m_cs.find(*m_interest,
-            [&leftmost] (const Interest& interest, const Data& data) {
-              leftmost = *reinterpret_cast<const uint32_t*>(data.getContent().value());},
-            bind([] { BOOST_CHECK(false); }));
-  startInterest("ndn:/A")
+  CHECK_CS_FIND(expectedLeftmost);
+  startInterest("/A")
     .setChildSelector(1);
-  m_cs.find(*m_interest,
-            [&rightmost] (const Interest, const Data& data) {
-              rightmost = *reinterpret_cast<const uint32_t*>(data.getContent().value()); },
-            bind([] { BOOST_CHECK(false); }));
-  BOOST_CHECK_NE(leftmost, rightmost);
+  CHECK_CS_FIND(expectedRightmost);
 }
 
 BOOST_AUTO_TEST_CASE(DigestExclude)
 {
-  insert(1, "ndn:/A");
-  Name n2 = insert(2, "ndn:/A");
-  insert(3, "ndn:/A/B");
+  insert(1, "/A");
+  Name n2 = insert(2, "/A");
+  insert(3, "/A/B");
 
   uint8_t digest00[ndn::crypto::SHA256_DIGEST_SIZE];
   std::fill_n(digest00, sizeof(digest00), 0x00);
@@ -278,12 +327,12 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
     name::Component::fromImplicitSha256Digest(digest00, sizeof(digest00)),
     name::Component::fromImplicitSha256Digest(digestFF, sizeof(digestFF)));
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(0)
     .setExclude(excludeDigest);
   CHECK_CS_FIND(3);
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(1)
     .setExclude(excludeDigest);
   CHECK_CS_FIND(3);
@@ -291,12 +340,12 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   Exclude excludeGeneric;
   excludeGeneric.excludeAfter(name::Component(static_cast<uint8_t*>(nullptr), 0));
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(0)
     .setExclude(excludeGeneric);
   find([] (uint32_t found) { BOOST_CHECK(found == 1 || found == 2); });
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(1)
     .setExclude(excludeGeneric);
   find([] (uint32_t found) { BOOST_CHECK(found == 1 || found == 2); });
@@ -304,18 +353,16 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   Exclude exclude2 = excludeGeneric;
   exclude2.excludeOne(n2.get(-1));
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(0)
     .setExclude(exclude2);
   CHECK_CS_FIND(1);
 
-  startInterest("ndn:/A")
+  startInterest("/A")
     .setChildSelector(1)
     .setExclude(exclude2);
   CHECK_CS_FIND(1);
 }
-
-/// \todo test MustBeFresh
 
 BOOST_AUTO_TEST_SUITE_END() // Find
 
@@ -331,27 +378,22 @@ BOOST_FIXTURE_TEST_CASE(ZeroCapacity, FindFixture)
   BOOST_CHECK_EQUAL(m_cs.size(), 0);
   BOOST_CHECK(m_cs.begin() == m_cs.end());
 
-  insert(1, "ndn:/A");
+  insert(1, "/A");
   BOOST_CHECK_EQUAL(m_cs.size(), 0);
 
-  startInterest("ndn:/A");
+  startInterest("/A");
   CHECK_CS_FIND(0);
 }
 
-BOOST_AUTO_TEST_CASE(CachePolicyNoCache)
+BOOST_FIXTURE_TEST_CASE(CachePolicyNoCache, FindFixture)
 {
-  Cs cs(3);
+  insert(1, "/A", [] (Data& data) {
+    data.setTag(make_shared<lp::CachePolicyTag>(
+      lp::CachePolicy().setPolicy(lp::CachePolicyType::NO_CACHE)));
+  });
 
-  shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->wireEncode();
-  dataA->setTag(make_shared<lp::CachePolicyTag>(
-                lp::CachePolicy().setPolicy(lp::CachePolicyType::NO_CACHE)));
-  cs.insert(*dataA);
-
-  BOOST_CHECK_EQUAL(cs.size(), 0);
-  cs.find(Interest("ndn:/A"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/A");
+  CHECK_CS_FIND(0);
 }
 
 BOOST_AUTO_TEST_CASE(Enumeration)
