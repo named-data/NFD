@@ -56,6 +56,11 @@ public:
   static void
   create(ExecuteContext& ctx);
 
+  /** \brief the 'face destroy' command
+   */
+  static void
+  destroy(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,

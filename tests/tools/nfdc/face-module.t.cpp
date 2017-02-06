@@ -142,6 +142,159 @@ BOOST_AUTO_TEST_CASE(Error)
 
 BOOST_AUTO_TEST_SUITE_END() // CreateCommand
 
+BOOST_FIXTURE_TEST_SUITE(DestroyCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(NormalByFaceId)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
+      BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+      FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+      // BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(10156));
+      BOOST_CHECK_EQUAL(filter.getFaceId(), 10156);
+
+      FaceStatus faceStatus;
+      faceStatus.setFaceId(10156)
+                .setLocalUri("tcp4://151.26.163.27:22967")
+                .setRemoteUri("tcp4://198.57.27.40:6363")
+                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      this->sendDataset(interest.getName(), faceStatus);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
+
+    ControlParameters resp;
+    resp.setFaceId(10156);
+    this->succeedCommand(resp);
+  };
+
+  this->execute("face destroy 10156");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-destroyed id=10156 local=tcp4://151.26.163.27:22967 "
+                           "remote=tcp4://198.57.27.40:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NormalByFaceUri)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
+      BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+      FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+      // BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setRemoteUri("tcp4://32.121.182.82:6363"));
+      BOOST_CHECK_EQUAL(filter.getRemoteUri(), "tcp4://32.121.182.82:6363");
+
+      FaceStatus faceStatus;
+      faceStatus.setFaceId(2249)
+                .setLocalUri("tcp4://30.99.87.98:31414")
+                .setRemoteUri("tcp4://32.121.182.82:6363")
+                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      this->sendDataset(interest.getName(), faceStatus);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
+
+    ControlParameters resp;
+    resp.setFaceId(2249);
+    this->succeedCommand(resp);
+  };
+
+  this->execute("face destroy tcp://32.121.182.82");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-destroyed id=2249 local=tcp4://30.99.87.98:31414 "
+                           "remote=tcp4://32.121.182.82:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExist)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+    this->sendEmptyDataset(interest.getName());
+  };
+
+  this->execute("face destroy 23728");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(Ambiguous)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+
+    FaceStatus faceStatus1, faceStatus2;
+    faceStatus1.setFaceId(6720)
+               .setLocalUri("udp4://202.83.168.28:56363")
+               .setRemoteUri("udp4://225.131.75.231:56363")
+               .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    faceStatus2.setFaceId(31066)
+               .setLocalUri("udp4://25.90.26.32:56363")
+               .setRemoteUri("udp4://225.131.75.231:56363")
+               .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    this->sendDataset(interest.getName(), faceStatus1, faceStatus2);
+  };
+
+  this->execute("face destroy udp4://225.131.75.231:56363");
+  BOOST_CHECK_EQUAL(exitCode, 5);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Multiple faces match specified remote FaceUri. "
+                           "Re-run the command with a FaceId: "
+                           "6720 (local=udp4://202.83.168.28:56363), "
+                           "31066 (local=udp4://25.90.26.32:56363)\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCanonization)
+{
+  this->execute("face destroy udp6://32.38.164.64:10445");
+  BOOST_CHECK_EQUAL(exitCode, 4);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error during remote FaceUri canonization: "
+                           "No endpoints match the specified address selector\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset or command
+
+  this->execute("face destroy udp://159.242.33.78");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
+      FaceStatus faceStatus;
+      faceStatus.setFaceId(17757)
+                .setLocalUri("tcp4://27.65.24.30:19187")
+                .setRemoteUri("tcp4://70.47.27.77:6363")
+                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      this->sendDataset(interest.getName(), faceStatus);
+      return;
+    }
+
+    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    // no response to command
+  };
+
+  this->execute("face destroy 17757");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when destroying face: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // DestroyCommand
+
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <faces>
     <face>

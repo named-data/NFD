@@ -24,6 +24,7 @@
  */
 
 #include "face-module.hpp"
+#include "find-face.hpp"
 #include "format-helpers.hpp"
 
 namespace nfd {
@@ -45,6 +46,12 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("remote", ArgValueType::FACE_URI, Required::YES, Positional::YES)
     .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES);
   parser.addCommand(defFaceCreate, &FaceModule::create);
+
+  CommandDefinition defFaceDestroy("face", "destroy");
+  defFaceDestroy
+    .setTitle("destroy a face")
+    .addArg("face", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES);
+  parser.addCommand(defFaceDestroy, &FaceModule::destroy);
 }
 
 void
@@ -96,6 +103,58 @@ FaceModule::create(ExecuteContext& ctx)
       ctx.err << "Error when canonizing FaceUri: " << canonizeError << '\n';
     },
     ctx.face.getIoService(), ctx.getTimeout());
+
+  ctx.face.processEvents();
+}
+
+void
+FaceModule::destroy(ExecuteContext& ctx)
+{
+  const boost::any faceIdOrUri = ctx.args.at("face");
+
+  FindFace findFace(ctx);
+  FindFace::Code res = FindFace::Code::ERROR;
+  const uint64_t* faceId = boost::any_cast<uint64_t>(&faceIdOrUri);
+  if (faceId != nullptr) {
+    res = findFace.execute(*faceId);
+  }
+  else {
+    res = findFace.execute(boost::any_cast<FaceUri>(faceIdOrUri));
+  }
+
+  ctx.exitCode = static_cast<int>(res);
+  switch (res) {
+    case FindFace::Code::OK:
+      break;
+    case FindFace::Code::ERROR:
+    case FindFace::Code::CANONIZE_ERROR:
+    case FindFace::Code::NOT_FOUND:
+      ctx.err << findFace.getErrorReason() << '\n';
+      return;
+    case FindFace::Code::AMBIGUOUS:
+      ctx.err << "Multiple faces match specified remote FaceUri. Re-run the command with a FaceId:";
+      findFace.printDisambiguation(ctx.err, FindFace::DisambiguationStyle::LOCAL_URI);
+      ctx.err << '\n';
+      return;
+    default:
+      BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+      return;
+  }
+
+  const FaceStatus& face = findFace.getFaceStatus();
+
+  ctx.controller.start<ndn::nfd::FaceDestroyCommand>(
+    ControlParameters().setFaceId(face.getFaceId()),
+    [&] (const ControlParameters& resp) {
+      ctx.out << "face-destroyed ";
+      text::ItemAttributes ia;
+      ctx.out << ia("id") << face.getFaceId()
+              << ia("local") << face.getLocalUri()
+              << ia("remote") << face.getRemoteUri()
+              << ia("persistency") << face.getFacePersistency() << '\n';
+    },
+    ctx.makeCommandFailureHandler("destroying face"),
+    ctx.makeCommandOptions());
 
   ctx.face.processEvents();
 }

@@ -6,7 +6,7 @@ SYNOPSIS
 | nfdc face [list]
 | nfdc face show <FACEID>
 | nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>]
-| nfdc destroy <FACEID|FACEURI>
+| nfdc face destroy <FACEID|FACEURI>
 | nfdc channel [list]
 
 DESCRIPTION
@@ -22,8 +22,7 @@ The **nfdc face show** command shows properties and statistics of one specific f
 
 The **nfdc face create** command creates a unicast UDP or TCP face.
 
-The **nfdc destroy** command destroys an existing face.
-It has no effect if the specified face does not exist.
+The **nfdc face destroy** command destroys an existing face.
 
 The **nfdc channel list** command shows a list of channels.
 Channels are listening sockets that can accept incoming connections and create new faces.
@@ -57,9 +56,11 @@ EXIT CODES
 
 2: Malformed command line
 
-3: Face not found (**nfdc face show** only)
+3: Face not found (**nfdc face show** and **nfdc face destroy** only)
 
-4: FaceUri canonization failed (**nfdc face create** only)
+4: FaceUri canonization failed (**nfdc face create** and **nfdc face destroy** only)
+
+5: Ambiguous: multiple matching faces are found (**nfdc face destroy** only)
 
 SEE ALSO
 --------
