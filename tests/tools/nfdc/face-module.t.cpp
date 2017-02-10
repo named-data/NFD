@@ -52,10 +52,9 @@ counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
 BOOST_AUTO_TEST_CASE(Normal)
 {
   this->processInterest = [this] (const Interest& interest) {
-    Name datasetName("/localhost/nfd/faces/query");
-    FaceQueryFilter filter;
-    filter.setFaceId(256);
-    datasetName.append(filter.wireEncode());
+    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(256));
 
     FaceStatus payload;
     payload.setFaceId(256)
@@ -73,7 +72,7 @@ BOOST_AUTO_TEST_CASE(Normal)
            .setNInBytes(13307258)
            .setNOutBytes(6231946);
 
-    this->sendDataset(datasetName, payload);
+    this->sendDataset(interest.getName(), payload);
   };
 
   this->execute("face show 256");
@@ -91,7 +90,7 @@ BOOST_AUTO_TEST_CASE(NotFound)
   this->execute("face show 256");
   BOOST_CHECK_EQUAL(exitCode, 3);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Face 256 not found.\n"));
+  BOOST_CHECK(err.is_equal("Face not found\n"));
 }
 
 BOOST_AUTO_TEST_CASE(Error)
@@ -101,7 +100,7 @@ BOOST_AUTO_TEST_CASE(Error)
   this->execute("face show 256");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when fetching face information: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ShowCommand
@@ -150,8 +149,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
     if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
       BOOST_CHECK_EQUAL(interest.getName().size(), 5);
       FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
-      // BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(10156));
-      BOOST_CHECK_EQUAL(filter.getFaceId(), 10156);
+      BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(10156));
 
       FaceStatus faceStatus;
       faceStatus.setFaceId(10156)
@@ -184,8 +182,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
     if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
       BOOST_CHECK_EQUAL(interest.getName().size(), 5);
       FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
-      // BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setRemoteUri("tcp4://32.121.182.82:6363"));
-      BOOST_CHECK_EQUAL(filter.getRemoteUri(), "tcp4://32.121.182.82:6363");
+      BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setRemoteUri("tcp4://32.121.182.82:6363"));
 
       FaceStatus faceStatus;
       faceStatus.setFaceId(2249)

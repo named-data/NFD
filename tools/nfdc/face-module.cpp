@@ -59,22 +59,22 @@ FaceModule::show(ExecuteContext& ctx)
 {
   uint64_t faceId = ctx.args.get<uint64_t>("id");
 
-  ndn::nfd::FaceQueryFilter filter;
-  filter.setFaceId(faceId);
-  ctx.controller.fetch<ndn::nfd::FaceQueryDataset>(
-    filter,
-    [faceId, &ctx] (const std::vector<FaceStatus>& result) {
-      if (result.size() != 1) {
-        ctx.exitCode = 3;
-        ctx.err << "Face " << faceId << " not found.\n";
-        return;
-      }
-      formatItemText(ctx.out, result.front(), true);
-    },
-    ctx.makeDatasetFailureHandler("face information"),
-    ctx.makeCommandOptions());
+  FindFace findFace(ctx);
+  FindFace::Code res = findFace.execute(faceId);
 
-  ctx.face.processEvents();
+  ctx.exitCode = static_cast<int>(res);
+  switch (res) {
+    case FindFace::Code::OK:
+      formatItemText(ctx.out, findFace.getFaceStatus(), true);
+      break;
+    case FindFace::Code::ERROR:
+    case FindFace::Code::NOT_FOUND:
+      ctx.err << findFace.getErrorReason() << '\n';
+      break;
+    default:
+      BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+      break;
+  }
 }
 
 void
