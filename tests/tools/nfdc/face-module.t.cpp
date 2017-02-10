@@ -118,7 +118,6 @@ BOOST_AUTO_TEST_CASE(Normal)
 
     ControlParameters resp;
     resp.setFaceId(2130)
-        .setUri("udp4://159.242.33.78:6363")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
     this->succeedCommand(resp);
   };

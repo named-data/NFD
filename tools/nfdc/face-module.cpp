@@ -87,15 +87,15 @@ FaceModule::create(ExecuteContext& ctx)
     [&] (const FaceUri& canonicalUri) {
       ctx.controller.start<ndn::nfd::FaceCreateCommand>(
         ControlParameters().setUri(canonicalUri.toString()).setFacePersistency(persistency),
-        [&] (const ControlParameters& resp) {
+        [&ctx, canonicalUri] (const ControlParameters& resp) {
           ctx.out << "face-created ";
           text::ItemAttributes ia;
           ctx.out << ia("id") << resp.getFaceId()
-                  << ia("remote") << resp.getUri()
+                  << ia("remote") << canonicalUri
                   << ia("persistency") << resp.getFacePersistency() << '\n';
-          ///\todo #3864 display localUri
+          ///\todo #3956 display local=localUri before 'remote' field
         },
-        ctx.makeCommandFailureHandler("creating face"), ///\todo #3232 update persistency upon 409
+        ctx.makeCommandFailureHandler("creating face"), ///\todo #3232 upgrade persistency if necessary upon 409
         ctx.makeCommandOptions());
     },
     [&] (const std::string& canonizeError) {
