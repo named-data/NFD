@@ -63,7 +63,7 @@ protected: // ControlCommand
    *  \return command parameters
    */
   ndn::optional<ControlParameters>
-  getCommand(const Name& expectedPrefix)
+  getCommand(const Name& expectedPrefix) const
   {
     if (face.sentInterests.empty() ||
         !expectedPrefix.isPrefixOf(face.sentInterests.back().getName())) {
@@ -91,6 +91,12 @@ protected: // ControlCommand
   failCommand(uint32_t code, const std::string& text)
   {
     this->sendCommandReply({code, text});
+  }
+
+  void
+  failCommand(uint32_t code, const std::string& text, const ControlParameters& resp)
+  {
+    this->sendCommandReply(ndn::nfd::ControlResponse(code, text).setBody(resp.wireEncode()));
   }
 
 protected: // StatusDataset

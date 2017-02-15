@@ -43,6 +43,7 @@ namespace nfdc {
 using ndn::Face;
 using ndn::KeyChain;
 using ndn::nfd::ControlParameters;
+using ndn::nfd::ControlResponse;
 using ndn::nfd::Controller;
 
 /** \brief context for command execution

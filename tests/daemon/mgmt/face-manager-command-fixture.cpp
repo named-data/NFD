@@ -85,6 +85,24 @@ FaceManagerCommandNode::~FaceManagerCommandNode()
   }
 }
 
+const Face*
+FaceManagerCommandNode::findFaceByUri(const std::string& uri) const
+{
+  for (const auto& face : faceTable) {
+    if (face.getRemoteUri().toString() == uri) {
+      return &face;
+    }
+  }
+  return nullptr;
+}
+
+FaceId
+FaceManagerCommandNode::findFaceIdByUri(const std::string& uri) const
+{
+  auto face = findFaceByUri(uri);
+  return face != nullptr ? face->getId() : face::INVALID_FACEID;
+}
+
 FaceManagerCommandFixture::FaceManagerCommandFixture()
   : node1(m_keyChain, 16363)
   , node2(m_keyChain, 26363)

@@ -77,25 +77,76 @@ FaceModule::show(ExecuteContext& ctx)
   }
 }
 
+/** \brief order persistency in NONE < ON_DEMAND < PERSISTENCY < PERMANENT
+ */
+static bool
+persistencyLessThan(FacePersistency x, FacePersistency y)
+{
+  switch (x) {
+    case FacePersistency::FACE_PERSISTENCY_NONE:
+      return y != FacePersistency::FACE_PERSISTENCY_NONE;
+    case FacePersistency::FACE_PERSISTENCY_ON_DEMAND:
+      return y == FacePersistency::FACE_PERSISTENCY_PERSISTENT ||
+             y == FacePersistency::FACE_PERSISTENCY_PERMANENT;
+    case FacePersistency::FACE_PERSISTENCY_PERSISTENT:
+      return y == FacePersistency::FACE_PERSISTENCY_PERMANENT;
+    case FacePersistency::FACE_PERSISTENCY_PERMANENT:
+      return false;
+  }
+  return static_cast<int>(x) < static_cast<int>(y);
+}
+
 void
 FaceModule::create(ExecuteContext& ctx)
 {
   auto faceUri = ctx.args.get<FaceUri>("remote");
   auto persistency = ctx.args.get<FacePersistency>("persistency", FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+  FaceUri canonicalUri;
+
+  auto printPositiveResult = [&] (const std::string& actionSummary, const ControlParameters& resp) {
+    text::ItemAttributes ia;
+    ctx.out << actionSummary << ' '
+            << ia("id") << resp.getFaceId()
+            << ia("remote") << canonicalUri
+            << ia("persistency") << resp.getFacePersistency()
+            << '\n';
+    ///\todo #3956 display local=localUri before 'remote' field
+  };
+
+  auto handle409 = [&] (const ControlResponse& resp) {
+    ControlParameters respParams(resp.getBody());
+    if (respParams.getUri() != canonicalUri.toString()) {
+      // we are conflicting with a different face, which is a general error
+      return false;
+    }
+
+    if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
+      // need to upgrade persistency
+      ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
+          ControlParameters().setFaceId(respParams.getFaceId()).setFacePersistency(persistency),
+          bind(printPositiveResult, "face-updated", _1),
+          ctx.makeCommandFailureHandler("upgrading face persistency"),
+          ctx.makeCommandOptions());
+    }
+    else {
+      // don't downgrade persistency
+      printPositiveResult("face-exists", respParams);
+    }
+    return true;
+  };
 
   faceUri.canonize(
-    [&] (const FaceUri& canonicalUri) {
+    [&] (const FaceUri& canonicalUri1) {
+      canonicalUri = canonicalUri1;
       ctx.controller.start<ndn::nfd::FaceCreateCommand>(
         ControlParameters().setUri(canonicalUri.toString()).setFacePersistency(persistency),
-        [&ctx, canonicalUri] (const ControlParameters& resp) {
-          ctx.out << "face-created ";
-          text::ItemAttributes ia;
-          ctx.out << ia("id") << resp.getFaceId()
-                  << ia("remote") << canonicalUri
-                  << ia("persistency") << resp.getFacePersistency() << '\n';
-          ///\todo #3956 display local=localUri before 'remote' field
+        bind(printPositiveResult, "face-created", _1),
+        [&] (const ControlResponse& resp) {
+          if (resp.getCode() == 409 && handle409(resp)) {
+            return;
+          }
+          ctx.makeCommandFailureHandler("creating face")(resp); // invoke general error handler
         },
-        ctx.makeCommandFailureHandler("creating face"), ///\todo #3232 upgrade persistency if necessary upon 409
         ctx.makeCommandOptions());
     },
     [&] (const std::string& canonizeError) {

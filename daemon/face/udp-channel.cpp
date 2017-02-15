@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -147,17 +147,7 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
     // we already have a face for this endpoint, so reuse it
-    auto face = it->second;
-
-    // TODO #3232: Remove persistency transitions from faces/create
-    // only on-demand -> persistent -> permanent transition is allowed
-    bool isTransitionAllowed = persistency != face->getPersistency() &&
-                               (face->getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND ||
-                                persistency == ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-    if (isTransitionAllowed) {
-      face->setPersistency(persistency);
-    }
-    return {false, face};
+    return {false, it->second};
   }
 
   // else, create a new face
@@ -169,8 +159,6 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   auto linkService = make_unique<face::GenericLinkService>();
   auto transport = make_unique<face::UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
-
-  face->setPersistency(persistency);
 
   m_channelFaces[remoteEndpoint] = face;
   connectFaceClosedSignal(*face,

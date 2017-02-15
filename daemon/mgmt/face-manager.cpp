@@ -41,6 +41,7 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   , m_faceSystem(faceSystem)
   , m_faceTable(faceSystem.getFaceTable())
 {
+  // register handlers for ControlCommand
   registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
     bind(&FaceManager::createFace, this, _2, _3, _4, _5));
 
@@ -56,10 +57,12 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   registerCommandHandler<ndn::nfd::FaceDisableLocalControlCommand>("disable-local-control",
     bind(&FaceManager::disableLocalControl, this, _2, _3, _4, _5));
 
+  // register handlers for StatusDataset
   registerStatusDatasetHandler("list", bind(&FaceManager::listFaces, this, _1, _2, _3));
   registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _1, _2, _3));
   registerStatusDatasetHandler("query", bind(&FaceManager::queryFaces, this, _1, _2, _3));
 
+  // register notification stream
   m_postNotification = registerNotificationStream("events");
   m_faceAddConn = m_faceTable.afterAdd.connect([this] (const Face& face) {
     connectFaceStateChangeSignal(face);
@@ -121,34 +124,20 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   }
 }
 
-/**
- * \todo #3232
- *       If the creation of this face would conflict with an existing face (e.g. same underlying
- *       protocol and remote address, or a NIC-associated permanent face), the command will fail
- *       with StatusCode 409.
- */
 void
 FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
                                     const shared_ptr<Face>& face,
                                     const ndn::mgmt::CommandContinuation& done)
 {
-  // TODO: Re-enable check in #3232
-  //if (face->getId() != face::INVALID_FACEID) {
-  //// Face already exists
-  //ControlParameters response;
-  //response.setFaceId(face->getId());
-  //response.setUri(face->getRemoteUri().toString());
-  //response.setFacePersistency(face->getPersistency());
-  //
-  //auto linkService = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
-  //BOOST_ASSERT(linkService != nullptr);
-  //auto options = linkService->getOptions();
-  //response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
-  //
-  //  NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
-  //  done(ControlResponse(409, "Face with remote URI already exists").setBody(response.wireEncode()));
-  //}
-  //else {
+  if (face->getId() != face::INVALID_FACEID) {// Face already exists
+    NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
+
+    ControlParameters response = collectFaceProperties(*face);
+    response.setUri(face->getRemoteUri().toString());
+    done(ControlResponse(409, "Face with remote URI already exists").setBody(response.wireEncode()));
+    return;
+  }
+
   // If scope non-local and flags set to enable local fields, request shouldn't
   // have made it this far
   BOOST_ASSERT(face->getScope() == ndn::nfd::FACE_SCOPE_LOCAL ||
@@ -158,16 +147,8 @@ FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
 
   m_faceTable.add(face);
 
-  ControlParameters response;
-  response.setFaceId(face->getId());
-  response.setFacePersistency(face->getPersistency());
-  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED,
-                      parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ?
-                        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) : false,
-                      false);
-
+  ControlParameters response = collectFaceProperties(*face);
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
-  //}
 }
 
 void
@@ -209,13 +190,6 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
   ControlParameters response;
   bool areParamsValid = true;
 
-  if (parameters.hasFacePersistency()) {
-    // TODO #3232: Add FacePersistency updating
-    NFD_LOG_TRACE("received unsupported face persistency change");
-    areParamsValid = false;
-    response.setFacePersistency(parameters.getFacePersistency());
-  }
-
   if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
       face->getScope() != ndn::nfd::FACE_SCOPE_LOCAL) {
@@ -225,24 +199,29 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
                         parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
   }
 
+  // check whether the requested FacePersistency change is valid if it's present
+  if (parameters.hasFacePersistency()) {
+    auto persistency = parameters.getFacePersistency();
+    if (!face->getTransport()->canChangePersistencyTo(persistency)) {
+      NFD_LOG_TRACE("cannot change face persistency to " << persistency);
+      areParamsValid = false;
+      response.setFacePersistency(persistency);
+    }
+  }
+
   if (!areParamsValid) {
     done(ControlResponse(409, "Invalid properties specified").setBody(response.wireEncode()));
     return;
   }
 
   // All specified properties are valid, so make changes
-
-  // TODO #3232: Add FacePersistency updating
-
+  if (parameters.hasFacePersistency()) {
+    face->setPersistency(parameters.getFacePersistency());
+  }
   setLinkServiceOptions(*face, parameters, response);
 
   // Set ControlResponse fields
-  response.setFaceId(faceId);
-  response.setFacePersistency(face->getPersistency());
-  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED,
-                      parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) ?
-                        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) : false,
-                      false);
+  response = collectFaceProperties(*face);
 
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
@@ -352,6 +331,19 @@ FaceManager::setLinkServiceOptions(Face& face,
 
   // Set Flags for ControlResponse
   response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
+}
+
+ControlParameters
+FaceManager::collectFaceProperties(const Face& face)
+{
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  BOOST_ASSERT(linkService != nullptr);
+  auto options = linkService->getOptions();
+
+  return ControlParameters()
+    .setFaceId(face.getId())
+    .setFacePersistency(face.getPersistency())
+    .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
 }
 
 void

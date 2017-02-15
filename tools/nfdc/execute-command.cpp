@@ -45,7 +45,7 @@ ExecuteContext::makeCommandOptions() const
 Controller::CommandFailCallback
 ExecuteContext::makeCommandFailureHandler(const std::string& commandName)
 {
-  return [=] (const ndn::nfd::ControlResponse& resp) {
+  return [=] (const ControlResponse& resp) {
     this->exitCode = 1;
     this->err << "Error " << resp.getCode() << " when " << commandName << ": " << resp.getText() << '\n';
   };

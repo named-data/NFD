@@ -103,6 +103,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
                         const ControlParameters& parameters,
                         ControlParameters& response);
 
+  static ControlParameters
+  collectFaceProperties(const Face& face);
+
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
   void
   listFaces(const Name& topPrefix, const Interest& interest,

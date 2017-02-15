@@ -105,9 +105,25 @@ BOOST_AUTO_TEST_CASE(Error)
 
 BOOST_AUTO_TEST_SUITE_END() // ShowCommand
 
-BOOST_FIXTURE_TEST_SUITE(CreateCommand, ExecuteCommandFixture)
+class ExecuteFaceCreateCommandFixture : public ExecuteCommandFixture
+{
+protected:
+  void
+  respond409(FacePersistency persistency)
+  {
+    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/create");
+    ControlParameters body;
+    body.setFaceId(1172)
+        .setUri("udp4://100.77.30.65:6363")
+        .setFacePersistency(persistency)
+        .setFlags(0);
+    this->failCommand(409, "conflict-409", body);
+  }
+};
 
-BOOST_AUTO_TEST_CASE(Normal)
+BOOST_FIXTURE_TEST_SUITE(CreateCommand, ExecuteFaceCreateCommandFixture)
+
+BOOST_AUTO_TEST_CASE(Creating)
 {
   this->processInterest = [this] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/create");
@@ -128,7 +144,64 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK(err.is_empty());
 }
 
-BOOST_AUTO_TEST_CASE(Error)
+BOOST_AUTO_TEST_CASE(UpgradingPersistency)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (this->getCommand("/localhost/nfd/faces/create")) {
+      this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_REQUIRE(req.hasFacePersistency());
+    BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    BOOST_CHECK(!req.hasFlags());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setFlags(0);
+    this->succeedCommand(resp);
+  };
+
+  this->execute("face create udp://100.77.30.65");
+  BOOST_CHECK(hasUpdateCommand);
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    this->respond409(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    // no command other than faces/create is expected
+  };
+
+  this->execute("face create udp://100.77.30.65");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-exists id=1172 remote=udp4://100.77.30.65:6363 persistency=permanent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(SamePersistency)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    this->respond409(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    // no command other than faces/create is expected
+  };
+
+  this->execute("face create udp://100.77.30.65");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-exists id=1172 remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCreate)
 {
   this->processInterest = nullptr; // no response
 
@@ -136,6 +209,40 @@ BOOST_AUTO_TEST_CASE(Error)
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
   BOOST_CHECK(err.is_equal("Error 10060 when creating face: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorConflict)
+{
+  // Current NFD will not report a 409-conflict with a different remote FaceUri, but this is
+  // allowed by FaceMgmt protocol and nfdc should not attempt to upgrade persistency in this case.
+
+  this->processInterest = [this] (const Interest& interest) {
+    // conflict with udp4://100.77.30.65:6363
+    this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+  };
+
+  this->execute("face create udp://20.53.73.45");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 409 when creating face: conflict-409\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorUpdate)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->getCommand("/localhost/nfd/faces/create")) {
+      this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+      return;
+    }
+
+    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/update");
+    // no response to faces/update
+  };
+
+  this->execute("face create udp://100.77.30.65");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when upgrading face persistency: request timed out\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // CreateCommand

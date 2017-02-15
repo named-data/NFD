@@ -45,7 +45,14 @@ public:
   ~FaceManagerCommandNode();
 
 public:
-  ndn::util::DummyClientFace face; ///< internal client face used by management
+  const Face*
+  findFaceByUri(const std::string& uri) const;
+
+  FaceId
+  findFaceIdByUri(const std::string& uri) const;
+
+public:
+  ndn::util::DummyClientFace face;
   ndn::mgmt::Dispatcher dispatcher;
   shared_ptr<CommandAuthenticator> authenticator;
 
