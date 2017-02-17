@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,13 +65,12 @@ public:
   size() const;
 
 public: // enumeration
-  typedef std::map<FaceId, shared_ptr<Face>> FaceMap;
-
-  typedef boost::indirected_range<const boost::select_second_const_range<FaceMap>> ForwardRange;
+  using FaceMap = std::map<FaceId, shared_ptr<Face>>;
+  using ForwardRange = boost::indirected_range<const boost::select_second_const_range<FaceMap>>;
 
   /** \brief ForwardIterator for Face&
    */
-  typedef boost::range_iterator<ForwardRange>::type const_iterator;
+  using const_iterator = boost::range_iterator<ForwardRange>::type;
 
   const_iterator
   begin() const;

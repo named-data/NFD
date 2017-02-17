@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "face-table.hpp"
-#include "forwarder.hpp"
 #include "core/asserts.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
@@ -45,10 +44,7 @@ Face*
 FaceTable::get(FaceId id) const
 {
   auto i = m_faces.find(id);
-  if (i == m_faces.end()) {
-    return nullptr;
-  }
-  return i->second.get();
+  return i == m_faces.end() ? nullptr : i->second.get();
 }
 
 size_t
@@ -67,25 +63,27 @@ FaceTable::add(shared_ptr<Face> face)
 
   FaceId faceId = ++m_lastFaceId;
   BOOST_ASSERT(faceId > face::FACEID_RESERVED_MAX);
-  this->addImpl(face, faceId);
+  this->addImpl(std::move(face), faceId);
 }
 
 void
 FaceTable::addReserved(shared_ptr<Face> face, FaceId faceId)
 {
   BOOST_ASSERT(face->getId() == face::INVALID_FACEID);
-  BOOST_ASSERT(m_faces.count(face->getId()) == 0);
   BOOST_ASSERT(faceId <= face::FACEID_RESERVED_MAX);
-  this->addImpl(face, faceId);
+  this->addImpl(std::move(face), faceId);
 }
 
 void
 FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
 {
   face->setId(faceId);
-  m_faces[faceId] = face;
-  NFD_LOG_INFO("Added face id=" << faceId << " remote=" << face->getRemoteUri()
-                                          << " local=" << face->getLocalUri());
+  auto ret = m_faces.emplace(faceId, face);
+  BOOST_ASSERT(ret.second);
+
+  NFD_LOG_INFO("Added face id=" << faceId <<
+               " remote=" << face->getRemoteUri() <<
+               " local=" << face->getLocalUri());
 
   connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, faceId));
 
