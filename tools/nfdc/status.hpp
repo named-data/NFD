@@ -54,7 +54,6 @@ reportStatus(ExecuteContext& ctx, const StatusReportOptions& options);
  *  Providing the following commands:
  *  \li status report
  *  \li status show
- *  \li face list
  *  \li channel list
  *  \li strategy list
  *  \li fib list

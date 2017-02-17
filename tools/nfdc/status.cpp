@@ -131,11 +131,6 @@ registerStatusCommands(CommandParser& parser)
   parser.addCommand(defStatusShow, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantForwarderGeneral));
   parser.addAlias("status", "show", "list");
 
-  CommandDefinition defFaceList("face", "list");
-  defFaceList
-    .setTitle("print face list");
-  parser.addCommand(defFaceList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantFaces));
-
   CommandDefinition defChannelList("channel", "list");
   defChannelList
     .setTitle("print channel list");

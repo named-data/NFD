@@ -41,10 +41,15 @@ using ndn::nfd::FaceStatus;
 class FaceModule : public Module, noncopyable
 {
 public:
-  /** \brief register 'face show', 'face create', 'face destroy' commands
+  /** \brief register 'face list', 'face show', 'face create', 'face destroy' commands
    */
   static void
   registerCommands(CommandParser& parser);
+
+  /** \brief the 'face list' command
+   */
+  static void
+  list(ExecuteContext& ctx);
 
   /** \brief the 'face show' command
    */

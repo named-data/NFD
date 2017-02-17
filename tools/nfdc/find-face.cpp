@@ -70,7 +70,14 @@ FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
     m_filter.setRemoteUri(remoteUri->toString());
   }
 
-  ///\todo #3864 canonize localUri
+  if (m_filter.hasLocalUri()) {
+    auto localUri = this->canonize("local", FaceUri(m_filter.getLocalUri()));
+    if (!localUri) {
+      m_res = Code::CANONIZE_ERROR;
+      return m_res;
+    }
+    m_filter.setLocalUri(localUri->toString());
+  }
 
   this->query();
   if (m_res == Code::OK) {
@@ -109,17 +116,23 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& input)
 void
 FindFace::query()
 {
-  m_ctx.controller.fetch<ndn::nfd::FaceQueryDataset>(
-    m_filter,
-    [this] (const std::vector<ndn::nfd::FaceStatus>& result) {
-      m_res = Code::OK;
-      m_results = result;
-    },
-    [this] (uint32_t code, const std::string& reason) {
-      m_res = Code::ERROR;
-      m_errorReason = "Error " + std::to_string(code) + " when querying face: " + reason;
-    },
-    m_ctx.makeCommandOptions());
+  auto datasetCb = [this] (const std::vector<ndn::nfd::FaceStatus>& result) {
+    m_res = Code::OK;
+    m_results = result;
+  };
+  auto failureCb = [this] (uint32_t code, const std::string& reason) {
+    m_res = Code::ERROR;
+    m_errorReason = "Error " + std::to_string(code) + " when querying face: " + reason;
+  };
+
+  if (m_filter.empty()) {
+    m_ctx.controller.fetch<ndn::nfd::FaceDataset>(
+      datasetCb, failureCb, m_ctx.makeCommandOptions());
+  }
+  else {
+    m_ctx.controller.fetch<ndn::nfd::FaceQueryDataset>(
+      m_filter, datasetCb, failureCb, m_ctx.makeCommandOptions());
+  }
   m_ctx.face.processEvents();
 }
 

@@ -39,6 +39,124 @@ using ndn::nfd::FaceQueryFilter;
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_AUTO_TEST_SUITE(TestFaceModule)
 
+BOOST_FIXTURE_TEST_SUITE(ListCommand, ExecuteCommandFixture)
+
+const std::string NONQUERY_OUTPUT =
+  "faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
+    " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
+    " flags={non-local permanent multi-access}\n"
+  "faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
+    " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
+    " flags={local on-demand point-to-point local-fields}\n";
+
+BOOST_AUTO_TEST_CASE(NormalNonQuery)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    FaceStatus payload1;
+    payload1.setFaceId(134)
+            .setRemoteUri("udp4://233.252.0.4:6363")
+            .setLocalUri("udp4://192.0.2.1:6363")
+            .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+            .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT)
+            .setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS)
+            .setNInInterests(22562)
+            .setNInDatas(22031)
+            .setNInNacks(63)
+            .setNOutInterests(30121)
+            .setNOutDatas(20940)
+            .setNOutNacks(1218)
+            .setNInBytes(2522915)
+            .setNOutBytes(1353592);
+    FaceStatus payload2;
+    payload2.setFaceId(745)
+            .setRemoteUri("fd://75")
+            .setLocalUri("unix:///var/run/nfd.sock")
+            .setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL)
+            .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+            .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+            .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
+            .setNInInterests(18998)
+            .setNInDatas(26701)
+            .setNInNacks(147)
+            .setNOutInterests(34779)
+            .setNOutDatas(17028)
+            .setNOutNacks(1176)
+            .setNInBytes(4672308)
+            .setNOutBytes(8957187);
+    this->sendDataset("/localhost/nfd/faces/list", payload1, payload2);
+  };
+
+  this->execute("face list");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NONQUERY_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string QUERY_OUTPUT =
+  "faceid=177 remote=tcp4://53.239.9.114:6363 local=tcp4://164.0.31.106:20396"
+    " counters={in={2325i 1110d 79n 4716834B} out={2278i 485d 841n 308108B}}"
+    " flags={non-local persistent point-to-point}\n";
+
+BOOST_AUTO_TEST_CASE(NormalQuery)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    FaceQueryFilter expectedFilter;
+    expectedFilter.setRemoteUri("tcp4://53.239.9.114:6363")
+                  .setLocalUri("tcp4://164.0.31.106:20396")
+                  .setUriScheme("tcp4");
+    BOOST_CHECK_EQUAL(filter, expectedFilter);
+
+    FaceStatus payload;
+    payload.setFaceId(177)
+           .setRemoteUri("tcp4://53.239.9.114:6363")
+           .setLocalUri("tcp4://164.0.31.106:20396")
+           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setNInInterests(2325)
+           .setNInDatas(1110)
+           .setNInNacks(79)
+           .setNOutInterests(2278)
+           .setNOutDatas(485)
+           .setNOutNacks(841)
+           .setNInBytes(4716834)
+           .setNOutBytes(308108);
+    this->sendDataset(interest.getName(), payload);
+  };
+
+  this->execute("face list tcp://53.239.9.114 scheme tcp4 local tcp://164.0.31.106:20396");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(QUERY_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NotFound)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    this->sendEmptyDataset(interest.getName());
+  };
+
+  this->execute("face list scheme udp6");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(Error)
+{
+  this->processInterest = nullptr; // no response
+
+  this->execute("face list local udp4://31.67.17.2:6363");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ListCommand
+
 BOOST_FIXTURE_TEST_SUITE(ShowCommand, ExecuteCommandFixture)
 
 const std::string NORMAL_OUTPUT = std::string(R"TEXT(
@@ -52,6 +170,7 @@ counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
 BOOST_AUTO_TEST_CASE(Normal)
 {
   this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
     BOOST_CHECK_EQUAL(interest.getName().size(), 5);
     FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
     BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(256));

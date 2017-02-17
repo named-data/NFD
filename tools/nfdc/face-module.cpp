@@ -34,6 +34,14 @@ namespace nfdc {
 void
 FaceModule::registerCommands(CommandParser& parser)
 {
+  CommandDefinition defFaceList("face", "list");
+  defFaceList
+    .setTitle("print face list")
+    .addArg("remote", ArgValueType::FACE_URI, Required::NO, Positional::YES)
+    .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO)
+    .addArg("scheme", ArgValueType::STRING, Required::NO, Positional::NO, "scheme");
+  parser.addCommand(defFaceList, &FaceModule::list);
+
   CommandDefinition defFaceShow("face", "show");
   defFaceShow
     .setTitle("show face information")
@@ -52,6 +60,46 @@ FaceModule::registerCommands(CommandParser& parser)
     .setTitle("destroy a face")
     .addArg("face", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES);
   parser.addCommand(defFaceDestroy, &FaceModule::destroy);
+}
+
+void
+FaceModule::list(ExecuteContext& ctx)
+{
+  auto remoteUri = ctx.args.getOptional<FaceUri>("remote");
+  auto localUri = ctx.args.getOptional<FaceUri>("local");
+  auto uriScheme = ctx.args.getOptional<std::string>("scheme");
+
+  FaceQueryFilter filter;
+  if (remoteUri) {
+    filter.setRemoteUri(remoteUri->toString());
+  }
+  if (localUri) {
+    filter.setLocalUri(localUri->toString());
+  }
+  if (uriScheme) {
+    filter.setUriScheme(*uriScheme);
+  }
+
+  FindFace findFace(ctx);
+  FindFace::Code res = findFace.execute(filter, true);
+
+  ctx.exitCode = static_cast<int>(res);
+  switch (res) {
+    case FindFace::Code::OK:
+      for (const FaceStatus& item : findFace.getResults()) {
+        formatItemText(ctx.out, item, false);
+        ctx.out << '\n';
+      }
+      break;
+    case FindFace::Code::ERROR:
+    case FindFace::Code::NOT_FOUND:
+    case FindFace::Code::CANONIZE_ERROR:
+      ctx.err << findFace.getErrorReason() << '\n';
+      break;
+    default:
+      BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+      break;
+  }
 }
 
 void

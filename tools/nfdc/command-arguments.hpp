@@ -53,6 +53,19 @@ public:
     auto i = find(key);
     return i == end() ? defaultValue : boost::any_cast<T>(i->second);
   }
+
+  /** \return the argument value, or nullopt if the argument is omitted on command line
+   */
+  template<typename T>
+  ndn::optional<T>
+  getOptional(const std::string& key) const
+  {
+    auto i = find(key);
+    if (i == end()) {
+      return ndn::nullopt;
+    }
+    return boost::any_cast<T>(i->second);
+  }
 };
 
 } // namespace nfdc
