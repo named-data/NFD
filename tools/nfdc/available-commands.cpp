@@ -47,22 +47,27 @@ registerCommands(CommandParser& parser)
   {
     std::string subcommand;
     std::string title;
+    std::string replacementCommand; ///< replacement for deprecated legacy subcommand
   };
   const std::vector<LegacyNfdcCommandDefinition> legacyNfdcSubcommands{
-    {"register", "register a prefix"},
-    {"unregister", "unregister a prefix"},
-    {"create", "create a face"},
-    {"destroy", "destroy a face"},
-    {"set-strategy", "set strategy choice on namespace"},
-    {"unset-strategy", "unset strategy choice on namespace"},
-    {"add-nexthop", "add FIB nexthop"},
-    {"remove-nexthop", "remove FIB nexthop"}
+    {"register", "register a prefix", ""},
+    {"unregister", "unregister a prefix", ""},
+    {"create", "create a face", "face create"},
+    {"destroy", "destroy a face", "face destroy"},
+    {"set-strategy", "set strategy choice on namespace", ""},
+    {"unset-strategy", "unset strategy choice on namespace", ""},
+    {"add-nexthop", "add FIB nexthop", ""},
+    {"remove-nexthop", "remove FIB nexthop", ""}
   };
   for (const LegacyNfdcCommandDefinition& lncd : legacyNfdcSubcommands) {
     CommandDefinition def(lncd.subcommand, "");
     def.setTitle(lncd.title);
     def.addArg("args", ArgValueType::ANY, Required::NO, Positional::YES);
-    parser.addCommand(def, &legacyNfdcMain);
+    auto modes = AVAILABLE_IN_ONE_SHOT | AVAILABLE_IN_HELP;
+    if (!lncd.replacementCommand.empty()) {
+      modes = modes & ~AVAILABLE_IN_HELP;
+    }
+    parser.addCommand(def, bind(&legacyNfdcMain, _1, lncd.replacementCommand), modes);
   }
 }
 

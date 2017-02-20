@@ -4,9 +4,9 @@ nfdc-face
 SYNOPSIS
 --------
 | nfdc face [list]
-| nfdc face show <FACEID>
+| nfdc face show [id] <FACEID>
 | nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>]
-| nfdc face destroy <FACEID|FACEURI>
+| nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 
 DESCRIPTION

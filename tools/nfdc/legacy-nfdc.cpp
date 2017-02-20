@@ -326,8 +326,13 @@ legacyNfdcUsage()
 }
 
 void
-legacyNfdcMain(ExecuteContext& ctx)
+legacyNfdcMain(ExecuteContext& ctx, const std::string& replacementCommand)
 {
+  if (!replacementCommand.empty()) {
+    std::cerr << "'nfdc " << ctx.noun << "' command is deprecated. "
+              << "Use 'nfdc " << replacementCommand << "' instead.\n";
+  }
+
   LegacyNfdc p(ctx.face, ctx.keyChain);
 
   const std::string& subcommand = ctx.noun;

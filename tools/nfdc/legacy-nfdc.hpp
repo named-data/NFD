@@ -174,7 +174,7 @@ void
 legacyNfdcUsage();
 
 void
-legacyNfdcMain(ExecuteContext& ctx);
+legacyNfdcMain(ExecuteContext& ctx, const std::string& replacementCommand);
 
 } // namespace nfdc
 } // namespace tools
