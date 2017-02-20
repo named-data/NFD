@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -80,7 +80,7 @@ RibModule::formatItemXml(std::ostream& os, const RibEntry& item) const
       }
       os << "</flags>";
     }
-    if (!route.hasInfiniteExpirationPeriod()) {
+    if (route.hasExpirationPeriod()) {
       os << "<expirationPeriod>"
          << xml::formatDuration(route.getExpirationPeriod())
          << "</expirationPeriod>";
@@ -112,7 +112,7 @@ RibModule::formatItemText(std::ostream& os, const RibEntry& item) const
        << "faceid=" << route.getFaceId()
        << " (origin=" << route.getOrigin()
        << " cost=" << route.getCost();
-    if (!route.hasInfiniteExpirationPeriod()) {
+    if (route.hasExpirationPeriod()) {
       os << " expires=" << text::formatDuration(route.getExpirationPeriod());
     }
     if (route.isChildInherit()) {
