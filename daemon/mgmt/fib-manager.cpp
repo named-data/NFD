@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,11 @@
 
 #include "fib-manager.hpp"
 #include "fw/face-table.hpp"
+
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
+
+#include <boost/range/adaptor/transformed.hpp>
 
 namespace nfd {
 
@@ -118,23 +121,18 @@ void
 FibManager::listEntries(const Name& topPrefix, const Interest& interest,
                         ndn::mgmt::StatusDatasetContext& context)
 {
-  for (auto&& entry : m_fib) {
-    auto prefix = entry.getPrefix();
-    ndn::nfd::FibEntry record;
-    const auto& nextHops = entry.getNextHops();
-
-    for (auto&& next : nextHops) {
-      ndn::nfd::NextHopRecord nextHopRecord;
-      nextHopRecord.setFaceId(next.getFace().getId());
-      nextHopRecord.setCost(next.getCost());
-
-      record.addNextHopRecord(nextHopRecord);
-    }
-
-    record.setPrefix(prefix);
-    context.append(record.wireEncode());
+  for (const auto& entry : m_fib) {
+    const auto& nexthops = entry.getNextHops() |
+                           boost::adaptors::transformed([] (const fib::NextHop& nh) {
+                             return ndn::nfd::NextHopRecord()
+                                 .setFaceId(nh.getFace().getId())
+                                 .setCost(nh.getCost());
+                           });
+    context.append(ndn::nfd::FibEntry()
+                   .setPrefix(entry.getPrefix())
+                   .setNextHopRecords(std::begin(nexthops), std::end(nexthops))
+                   .wireEncode());
   }
-
   context.end();
 }
 

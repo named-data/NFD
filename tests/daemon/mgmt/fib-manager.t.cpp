@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,6 +35,8 @@
 namespace nfd {
 namespace tests {
 
+using ndn::nullopt;
+
 class FibManagerFixture : public NfdManagerCommonFixture
 {
 public:
@@ -48,13 +50,13 @@ public:
   }
 
 public: // for test
-  ControlParameters
+  static ControlParameters
   makeParameters(const Name& name, const FaceId& id)
   {
     return ControlParameters().setName(name).setFaceId(id);
   }
 
-  ControlParameters
+  static ControlParameters
   makeParameters(const Name& name, const FaceId& id, const uint32_t& cost)
   {
     return ControlParameters().setName(name).setFaceId(id).setCost(cost);
@@ -78,14 +80,14 @@ public: // for check
     WRONG_N_NEXTHOPS,
     NO_NEXTHOP,
     WRONG_COST
-   };
+  };
 
   /**
    * @brief check whether the nexthop record is added / removed properly
    *
-   * @param expectedNNextHops use -1 to skip this check
-   * @param faceId use face::FACEID_NULL to skip NextHopRecord checks
-   * @param expectedCost use -1 to skip this check
+   * @param expectedNNextHops use nullopt to skip this check
+   * @param faceId use nullopt to skip NextHopRecord checks
+   * @param expectedCost use nullopt to skip this check
    *
    * @retval OK FIB entry is found by exact match and has the expected number of nexthops;
    *            NextHopRe record for faceId is found and has the expected cost
@@ -95,23 +97,25 @@ public: // for check
    * @retval WRONG_COST NextHopRecord for faceId has wrong cost
    */
   CheckNextHopResult
-  checkNextHop(const Name& prefix, ssize_t expectedNNextHops = -1,
-               FaceId faceId = face::FACEID_NULL, int32_t expectedCost = -1)
+  checkNextHop(const Name& prefix,
+               ndn::optional<size_t> expectedNNextHops = nullopt,
+               ndn::optional<FaceId> faceId = nullopt,
+               ndn::optional<uint64_t> expectedCost = nullopt) const
   {
     const fib::Entry* entry = m_fib.findExactMatch(prefix);
     if (entry == nullptr) {
       return CheckNextHopResult::NO_FIB_ENTRY;
     }
 
-    const fib::NextHopList& nextHops = entry->getNextHops();
-    if (expectedNNextHops != -1 && nextHops.size() != static_cast<size_t>(expectedNNextHops)) {
+    const auto& nextHops = entry->getNextHops();
+    if (expectedNNextHops && nextHops.size() != *expectedNNextHops) {
       return CheckNextHopResult::WRONG_N_NEXTHOPS;
     }
 
-    if (faceId != face::FACEID_NULL) {
+    if (faceId) {
       for (const auto& record : nextHops) {
-        if (record.getFace().getId() == faceId) {
-          if (expectedCost != -1 && record.getCost() != static_cast<uint32_t>(expectedCost))
+        if (record.getFace().getId() == *faceId) {
+          if (expectedCost && record.getCost() != *expectedCost)
             return CheckNextHopResult::WRONG_COST;
           else
             return CheckNextHopResult::OK;
@@ -129,29 +133,22 @@ protected:
 };
 
 std::ostream&
-operator<<(std::ostream &os, const FibManagerFixture::CheckNextHopResult& result)
+operator<<(std::ostream& os, FibManagerFixture::CheckNextHopResult result)
 {
   switch (result) {
   case FibManagerFixture::CheckNextHopResult::OK:
-    os << "OK";
-    break;
+    return os << "OK";
   case FibManagerFixture::CheckNextHopResult::NO_FIB_ENTRY:
-    os << "NO_FIB_ENTRY";
-    break;
+    return os << "NO_FIB_ENTRY";
   case FibManagerFixture::CheckNextHopResult::WRONG_N_NEXTHOPS:
-    os << "WRONG_N_NEXTHOPS";
-    break;
+    return os << "WRONG_N_NEXTHOPS";
   case FibManagerFixture::CheckNextHopResult::NO_NEXTHOP:
-    os << "NO_NEXTHOP";
-    break;
+    return os << "NO_NEXTHOP";
   case FibManagerFixture::CheckNextHopResult::WRONG_COST:
-    os << "WRONG_COST";
-    break;
-  default:
-    break;
+    return os << "WRONG_COST";
   };
 
-  return os;
+  return os << static_cast<int>(result);
 }
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
@@ -171,7 +168,7 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
                     CheckResponseResult::OK);
 
   // double check that the next hop was not added
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", -1, face::FACEID_NULL, 101), CheckNextHopResult::NO_FIB_ENTRY);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, nullopt, 101), CheckNextHopResult::NO_FIB_ENTRY);
 }
 
 BOOST_AUTO_TEST_CASE(ImplicitFaceId)
@@ -381,69 +378,17 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
   testRemoveNextHop(makeParameters("/hello", face2 + 100));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // face does not exist
   BOOST_CHECK_EQUAL(checkResponse(0, expectedName, expectedResponse), CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", -1, face2 + 100), CheckNextHopResult::NO_NEXTHOP);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, face2 + 100), CheckNextHopResult::NO_NEXTHOP);
 
   testRemoveNextHop(makeParameters("/hello", face2));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // record does not exist
   BOOST_CHECK_EQUAL(checkResponse(0, expectedName, expectedResponse), CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkNextHop("/hello", -1, face2), CheckNextHopResult::NO_NEXTHOP);
+  BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, face2), CheckNextHopResult::NO_NEXTHOP);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // RemoveNextHop
 
 BOOST_AUTO_TEST_SUITE(List)
-
-// @todo Remove when ndn::nfd::FibEntry implements operator!= and operator<<
-class FibEntry : public ndn::nfd::FibEntry
-{
-public:
-  FibEntry() = default;
-
-  FibEntry(const ndn::nfd::FibEntry& entry)
-    : ndn::nfd::FibEntry(entry)
-  {
-  }
-};
-
-bool
-operator!=(const FibEntry& left, const FibEntry& right)
-{
-  if (left.getPrefix() != right.getPrefix()) {
-    return true;
-  }
-
-  const auto& leftNextHops = left.getNextHopRecords();
-  const auto& rightNextHops = right.getNextHopRecords();
-  if (leftNextHops.size() != rightNextHops.size()) {
-    return true;
-  }
-
-  for (const auto& nexthop : leftNextHops) {
-    auto hitEntry = std::find_if(rightNextHops.begin(), rightNextHops.end(),
-      [&] (const ndn::nfd::NextHopRecord& record) {
-        return nexthop.getCost() == record.getCost() && nexthop.getFaceId() == record.getFaceId();
-      });
-
-    if (hitEntry == rightNextHops.end()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-std::ostream&
-operator<<(std::ostream &os, const FibEntry& entry)
-{
-  const auto& nexthops = entry.getNextHopRecords();
-  os << "[" << entry.getPrefix() << ", " << nexthops.size() << ": ";
-  for (auto record : nexthops) {
-    os << "{" << record.getFaceId() << ", " << record.getCost() << "} ";
-  }
-  os << "]";
-
-  return os;
-}
 
 BOOST_AUTO_TEST_CASE(FibDataset)
 {
@@ -459,34 +404,26 @@ BOOST_AUTO_TEST_CASE(FibDataset)
 
   receiveInterest(makeInterest("/localhost/nfd/fib/list"));
 
-  Block content;
-  BOOST_CHECK_NO_THROW(content = concatenateResponses());
-  BOOST_CHECK_NO_THROW(content.parse());
+  Block content = concatenateResponses();
+  content.parse();
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
-  std::vector<FibEntry> receivedRecords, expectedRecords;
+  std::vector<ndn::nfd::FibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
-    BOOST_TEST_MESSAGE("processing element: " << idx);
-
-    FibEntry decodedEntry;
-    BOOST_REQUIRE_NO_THROW(decodedEntry.wireDecode(content.elements()[idx]));
+    ndn::nfd::FibEntry decodedEntry(content.elements()[idx]);
     receivedRecords.push_back(decodedEntry);
-
     actualPrefixes.erase(decodedEntry.getPrefix());
 
     auto matchedEntry = m_fib.findExactMatch(decodedEntry.getPrefix());
     BOOST_REQUIRE(matchedEntry != nullptr);
 
-    FibEntry record;
-    record.setPrefix(matchedEntry->getPrefix());
-    const auto& nextHops = matchedEntry->getNextHops();
-    for (const auto& next : nextHops) {
-      ndn::nfd::NextHopRecord nextHopRecord;
-      nextHopRecord.setFaceId(next.getFace().getId());
-      nextHopRecord.setCost(next.getCost());
-      record.addNextHopRecord(nextHopRecord);
+    expectedRecords.emplace_back();
+    expectedRecords.back().setPrefix(matchedEntry->getPrefix());
+    for (const auto& nh : matchedEntry->getNextHops()) {
+      expectedRecords.back().addNextHopRecord(ndn::nfd::NextHopRecord()
+                                              .setFaceId(nh.getFace().getId())
+                                              .setCost(nh.getCost()));
     }
-    expectedRecords.push_back(record);
   }
 
   BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
