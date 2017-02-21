@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -94,8 +94,8 @@ public:
   bool
   hasFaceId(const uint64_t faceId) const;
 
-  RouteList&
-  getRoutes();
+  const RouteList&
+  getRoutes() const;
 
   size_t
   getNRoutes() const;
@@ -219,14 +219,14 @@ RibEntry::getParent() const
   return m_parent;
 }
 
-inline const std::list<shared_ptr<RibEntry> >&
+inline const std::list<shared_ptr<RibEntry>>&
 RibEntry::getChildren() const
 {
   return m_children;
 }
 
-inline RibEntry::RouteList&
-RibEntry::getRoutes()
+inline const RibEntry::RouteList&
+RibEntry::getRoutes() const
 {
   return m_routes;
 }

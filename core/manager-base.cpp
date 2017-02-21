@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,12 +30,13 @@ namespace nfd {
 using ndn::mgmt::ValidateParameters;
 using ndn::mgmt::Authorization;
 
-ManagerBase::ManagerBase(Dispatcher& dispatcher,
-                         const std::string& module)
+ManagerBase::ManagerBase(Dispatcher& dispatcher, const std::string& module)
   : m_dispatcher(dispatcher)
   , m_module(module)
 {
 }
+
+ManagerBase::~ManagerBase() = default;
 
 void
 ManagerBase::registerStatusDatasetHandler(const std::string& verb,

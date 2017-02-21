@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,8 +59,10 @@ public:
   };
 
 public:
-  ManagerBase(Dispatcher& dispatcher,
-              const std::string& module);
+  ManagerBase(Dispatcher& dispatcher, const std::string& module);
+
+  virtual
+  ~ManagerBase();
 
   const std::string&
   getModule() const
@@ -69,7 +71,6 @@ public:
   }
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED: // registrations to the dispatcher
-
   // difference from mgmt::ControlCommand: accepts nfd::ControlParameters
   typedef function<void(const ControlCommand& command,
                         const Name& prefix, const Interest& interest,

@@ -33,11 +33,11 @@
 #include "core/config-file.hpp"
 #include "core/manager-base.hpp"
 
-#include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
+#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 
 namespace nfd {
 namespace rib {
@@ -61,7 +61,7 @@ public:
 public:
   RibManager(Dispatcher& dispatcher, ndn::Face& face, ndn::KeyChain& keyChain);
 
-  ~RibManager();
+  ~RibManager() override;
 
   void
   registerWithNfd();
@@ -138,17 +138,16 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   void
-  onCommandPrefixAddNextHopSuccess(const Name& prefix,
-                                   const ndn::nfd::ControlParameters& result);
+  onCommandPrefixAddNextHopSuccess(const Name& prefix, const ControlParameters& result);
 
   void
-  onCommandPrefixAddNextHopError(const Name& name, const ndn::nfd::ControlResponse& response);
+  onCommandPrefixAddNextHopError(const Name& name, const ControlResponse& response);
 
   void
   onEnableLocalFieldsSuccess();
 
   void
-  onEnableLocalFieldsError(const ndn::nfd::ControlResponse& response);
+  onEnableLocalFieldsError(const ControlResponse& response);
 
 private:
   ndn::Face& m_face;
@@ -171,7 +170,7 @@ private:
   static const std::string MGMT_MODULE_NAME;
   static const Name FACES_LIST_DATASET_PREFIX;
   static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
-  scheduler::EventId m_activeFaceFetchEvent;
+  scheduler::ScopedEventId m_activeFaceFetchEvent;
   static const Name READVERTISE_NLSR_PREFIX;
 
   typedef std::set<uint64_t> FaceIdSet;

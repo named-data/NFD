@@ -28,7 +28,6 @@
 #include "readvertise/client-to-nlsr-readvertise-policy.hpp"
 #include "readvertise/nfd-rib-readvertise-destination.hpp"
 
-#include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
 
@@ -39,13 +38,10 @@
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
+#include <boost/range/adaptor/transformed.hpp>
+
 namespace nfd {
 namespace rib {
-
-using ndn::nfd::ControlCommand;
-using ndn::nfd::ControlResponse;
-using ndn::nfd::ControlParameters;
-using ndn::nfd::FaceEventNotification;
 
 NFD_LOG_INIT("RibManager");
 
@@ -81,10 +77,7 @@ RibManager::RibManager(Dispatcher& dispatcher,
   registerStatusDatasetHandler("list", bind(&RibManager::listEntries, this, _1, _2, _3));
 }
 
-RibManager::~RibManager()
-{
-  scheduler::cancel(m_activeFaceFetchEvent);
-}
+RibManager::~RibManager() = default;
 
 void
 RibManager::registerWithNfd()
@@ -283,29 +276,26 @@ void
 RibManager::listEntries(const Name& topPrefix, const Interest& interest,
                         ndn::mgmt::StatusDatasetContext& context)
 {
-  for (auto&& ribTableEntry : m_rib) {
+  for (const auto& ribTableEntry : m_rib) {
     const auto& ribEntry = *ribTableEntry.second;
-    ndn::nfd::RibEntry record;
-
-    for (auto&& route : ribEntry) {
-      ndn::nfd::Route routeElement;
-      routeElement.setFaceId(route.faceId)
-              .setOrigin(route.origin)
-              .setCost(route.cost)
-              .setFlags(route.flags);
-
-      if (route.expires < time::steady_clock::TimePoint::max()) {
-        routeElement.setExpirationPeriod(time::duration_cast<time::milliseconds>(
-          route.expires - time::steady_clock::now()));
-      }
-
-      record.addRoute(routeElement);
-    }
-
-    record.setName(ribEntry.getName());
-    context.append(record.wireEncode());
+    const auto& routes = ribEntry.getRoutes() |
+                         boost::adaptors::transformed([] (const Route& route) {
+                           auto r = ndn::nfd::Route()
+                                    .setFaceId(route.faceId)
+                                    .setOrigin(route.origin)
+                                    .setCost(route.cost)
+                                    .setFlags(route.flags);
+                           if (route.expires < time::steady_clock::TimePoint::max()) {
+                             r.setExpirationPeriod(time::duration_cast<time::milliseconds>(
+                                                     route.expires - time::steady_clock::now()));
+                           }
+                           return r;
+                         });
+    context.append(ndn::nfd::RibEntry()
+                   .setName(ribEntry.getName())
+                   .setRoutes(std::begin(routes), std::end(routes))
+                   .wireEncode());
   }
-
   context.end();
 }
 
@@ -370,10 +360,7 @@ RibManager::onFaceDestroyedEvent(uint64_t faceId)
 void
 RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
 {
-  scheduler::cancel(m_activeFaceFetchEvent);
-
-  m_activeFaceFetchEvent = scheduler::schedule(timeToWait,
-                                               bind(&RibManager::fetchActiveFaces, this));
+  m_activeFaceFetchEvent = scheduler::schedule(timeToWait, [this] { this->fetchActiveFaces(); });
 }
 
 void
@@ -382,18 +369,16 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
   NFD_LOG_DEBUG("Checking for invalid face registrations");
 
   FaceIdSet activeFaceIds;
-  for (const ndn::nfd::FaceStatus& item : activeFaces) {
-    activeFaceIds.insert(item.getFaceId());
+  for (const auto& faceStatus : activeFaces) {
+    activeFaceIds.insert(faceStatus.getFaceId());
   }
 
   // Look for face IDs that were registered but not active to find missed
   // face destroyed events
-  for (auto&& faceId : m_registeredFaces) {
+  for (auto faceId : m_registeredFaces) {
     if (activeFaceIds.count(faceId) == 0) {
       NFD_LOG_DEBUG("Removing invalid face ID: " << faceId);
-
-      scheduler::schedule(time::seconds(0),
-                          bind(&RibManager::onFaceDestroyedEvent, this, faceId));
+      scheduler::schedule(time::seconds(0), [this, faceId] { this->onFaceDestroyedEvent(faceId); });
     }
   }
 
@@ -402,7 +387,7 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
 }
 
 void
-RibManager::onNotification(const FaceEventNotification& notification)
+RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
 {
   NFD_LOG_TRACE("onNotification: " << notification);
 
