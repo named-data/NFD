@@ -32,6 +32,7 @@
 #include "../face/dummy-transport.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
+#include <ndn-cxx/encoding/tlv-nfd.hpp>
 #include <ndn-cxx/mgmt/nfd/channel-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 
