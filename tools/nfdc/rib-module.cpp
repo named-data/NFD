@@ -24,11 +24,96 @@
  */
 
 #include "rib-module.hpp"
+#include "find-face.hpp"
 #include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
+
+void
+RibModule::registerCommands(CommandParser& parser)
+{
+  CommandDefinition defRouteAdd("route", "add");
+  defRouteAdd
+    .setTitle("add a route")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
+    .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES)
+    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("cost", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("no-inherit", ArgValueType::NONE, Required::NO, Positional::NO)
+    .addArg("capture", ArgValueType::NONE, Required::NO, Positional::NO)
+    .addArg("expires", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+  parser.addCommand(defRouteAdd, &RibModule::add);
+}
+
+void
+RibModule::add(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+  const boost::any& nexthop = ctx.args.at("nexthop");
+  auto origin = ctx.args.get<uint64_t>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
+  auto cost = ctx.args.get<uint64_t>("cost", 0);
+  bool wantChildInherit = !ctx.args.get<bool>("no-inherit", false);
+  bool wantCapture = ctx.args.get<bool>("capture", false);
+  auto expiresMillis = ctx.args.getOptional<uint64_t>("expires");
+
+  FindFace findFace(ctx);
+  FindFace::Code res = findFace.execute(nexthop);
+
+  ctx.exitCode = static_cast<int>(res);
+  switch (res) {
+    case FindFace::Code::OK:
+      break;
+    case FindFace::Code::ERROR:
+    case FindFace::Code::CANONIZE_ERROR:
+    case FindFace::Code::NOT_FOUND:
+      ctx.err << findFace.getErrorReason() << '\n';
+      return;
+    case FindFace::Code::AMBIGUOUS:
+      ctx.err << "Multiple faces match specified remote FaceUri. Re-run the command with a FaceId:";
+      findFace.printDisambiguation(ctx.err, FindFace::DisambiguationStyle::LOCAL_URI);
+      ctx.err << '\n';
+      return;
+    default:
+      BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+      return;
+  }
+
+  ControlParameters registerParams;
+  registerParams
+    .setName(prefix)
+    .setFaceId(findFace.getFaceId())
+    .setOrigin(origin)
+    .setCost(cost)
+    .setFlags((wantChildInherit ? ndn::nfd::ROUTE_FLAG_CHILD_INHERIT : 0) |
+              (wantCapture ? ndn::nfd::ROUTE_FLAG_CAPTURE : 0));
+  if (expiresMillis) {
+    registerParams.setExpirationPeriod(time::milliseconds(*expiresMillis));
+  }
+
+  ctx.controller.start<ndn::nfd::RibRegisterCommand>(
+    registerParams,
+    [&] (const ControlParameters& resp) {
+      ctx.out << "route-add-accepted ";
+      text::ItemAttributes ia;
+      ctx.out << ia("prefix") << resp.getName()
+              << ia("nexthop") << resp.getFaceId()
+              << ia("origin") << resp.getOrigin()
+              << ia("cost") << resp.getCost()
+              << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
+      if (resp.hasExpirationPeriod()) {
+        ctx.out << ia("expires") << resp.getExpirationPeriod().count() << "ms\n";
+      }
+      else {
+        ctx.out<< ia("expires") << "never\n";
+      }
+    },
+    ctx.makeCommandFailureHandler("adding route"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
 
 void
 RibModule::fetchStatus(Controller& controller,

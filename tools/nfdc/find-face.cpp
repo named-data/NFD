@@ -55,6 +55,18 @@ FindFace::execute(uint64_t faceId)
 }
 
 FindFace::Code
+FindFace::execute(const boost::any& faceIdOrUri)
+{
+  const uint64_t* faceId = boost::any_cast<uint64_t>(&faceIdOrUri);
+  if (faceId != nullptr) {
+    return this->execute(*faceId);
+  }
+  else {
+    return this->execute(boost::any_cast<FaceUri>(faceIdOrUri));
+  }
+}
+
+FindFace::Code
 FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
 {
   BOOST_ASSERT(m_res == Code::NOT_STARTED);

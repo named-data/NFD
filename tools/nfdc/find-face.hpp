@@ -70,6 +70,14 @@ public:
   Code
   execute(uint64_t faceId);
 
+  /** \brief find face by FaceId or FaceUri
+   *  \param faceIdOrUri a boost::any that contains uint64_t or FaceUri
+   *  \note allowMulti will be set to false
+   *  \throw boost::bad_any_cast faceIdOrUri is neither uint64_t nor FaceUri
+   */
+  Code
+  execute(const boost::any& faceIdOrUri);
+
   /** \brief find face by FaceQueryFilter
    *  \pre execute has not been invoked
    */

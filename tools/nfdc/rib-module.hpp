@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_TOOLS_NFDC_RIB_MODULE_HPP
 
 #include "module.hpp"
+#include "command-parser.hpp"
 
 namespace nfd {
 namespace tools {
@@ -41,13 +42,23 @@ using ndn::nfd::Route;
 class RibModule : public Module, noncopyable
 {
 public:
-  virtual void
+  /** \brief register 'route list', 'route show', 'route add', 'route remove' commands
+   */
+  static void
+  registerCommands(CommandParser& parser);
+
+  /** \brief the 'route add' command
+   */
+  static void
+  add(ExecuteContext& ctx);
+
+  void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) override;
 
-  virtual void
+  void
   formatStatusXml(std::ostream& os) const override;
 
   /** \brief format a single status item as XML
@@ -57,7 +68,7 @@ public:
   void
   formatItemXml(std::ostream& os, const RibEntry& item) const;
 
-  virtual void
+  void
   formatStatusText(std::ostream& os) const override;
 
   /** \brief format a single status item as text

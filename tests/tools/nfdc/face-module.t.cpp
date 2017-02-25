@@ -24,7 +24,6 @@
  */
 
 #include "nfdc/face-module.hpp"
-#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 
 #include "execute-command-fixture.hpp"
 #include "status-fixture.hpp"
@@ -371,17 +370,7 @@ BOOST_FIXTURE_TEST_SUITE(DestroyCommand, ExecuteCommandFixture)
 BOOST_AUTO_TEST_CASE(NormalByFaceId)
 {
   this->processInterest = [this] (const Interest& interest) {
-    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
-      BOOST_CHECK_EQUAL(interest.getName().size(), 5);
-      FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
-      BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(10156));
-
-      FaceStatus faceStatus;
-      faceStatus.setFaceId(10156)
-                .setLocalUri("tcp4://151.26.163.27:22967")
-                .setRemoteUri("tcp4://198.57.27.40:6363")
-                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
-      this->sendDataset(interest.getName(), faceStatus);
+    if (this->respondFaceQuery(interest)) {
       return;
     }
 
@@ -404,17 +393,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
 BOOST_AUTO_TEST_CASE(NormalByFaceUri)
 {
   this->processInterest = [this] (const Interest& interest) {
-    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
-      BOOST_CHECK_EQUAL(interest.getName().size(), 5);
-      FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
-      BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setRemoteUri("tcp4://32.121.182.82:6363"));
-
-      FaceStatus faceStatus;
-      faceStatus.setFaceId(2249)
-                .setLocalUri("tcp4://30.99.87.98:31414")
-                .setRemoteUri("tcp4://32.121.182.82:6363")
-                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
-      this->sendDataset(interest.getName(), faceStatus);
+    if (this->respondFaceQuery(interest)) {
       return;
     }
 
@@ -437,8 +416,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
 BOOST_AUTO_TEST_CASE(FaceNotExist)
 {
   this->processInterest = [this] (const Interest& interest) {
-    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
-    this->sendEmptyDataset(interest.getName());
+    BOOST_CHECK(this->respondFaceQuery(interest));
   };
 
   this->execute("face destroy 23728");
@@ -450,18 +428,7 @@ BOOST_AUTO_TEST_CASE(FaceNotExist)
 BOOST_AUTO_TEST_CASE(Ambiguous)
 {
   this->processInterest = [this] (const Interest& interest) {
-    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
-
-    FaceStatus faceStatus1, faceStatus2;
-    faceStatus1.setFaceId(6720)
-               .setLocalUri("udp4://202.83.168.28:56363")
-               .setRemoteUri("udp4://225.131.75.231:56363")
-               .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
-    faceStatus2.setFaceId(31066)
-               .setLocalUri("udp4://25.90.26.32:56363")
-               .setRemoteUri("udp4://225.131.75.231:56363")
-               .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
-    this->sendDataset(interest.getName(), faceStatus1, faceStatus2);
+    BOOST_CHECK(this->respondFaceQuery(interest));
   };
 
   this->execute("face destroy udp4://225.131.75.231:56363");
@@ -495,13 +462,7 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
 BOOST_AUTO_TEST_CASE(ErrorCommand)
 {
   this->processInterest = [this] (const Interest& interest) {
-    if (Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName())) {
-      FaceStatus faceStatus;
-      faceStatus.setFaceId(17757)
-                .setLocalUri("tcp4://27.65.24.30:19187")
-                .setRemoteUri("tcp4://70.47.27.77:6363")
-                .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
-      this->sendDataset(interest.getName(), faceStatus);
+    if (this->respondFaceQuery(interest)) {
       return;
     }
 
@@ -509,7 +470,7 @@ BOOST_AUTO_TEST_CASE(ErrorCommand)
     // no response to command
   };
 
-  this->execute("face destroy 17757");
+  this->execute("face destroy 10156");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
   BOOST_CHECK(err.is_equal("Error 10060 when destroying face: request timed out\n"));

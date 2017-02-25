@@ -209,17 +209,10 @@ FaceModule::create(ExecuteContext& ctx)
 void
 FaceModule::destroy(ExecuteContext& ctx)
 {
-  const boost::any faceIdOrUri = ctx.args.at("face");
+  const boost::any& faceIdOrUri = ctx.args.at("face");
 
   FindFace findFace(ctx);
-  FindFace::Code res = FindFace::Code::ERROR;
-  const uint64_t* faceId = boost::any_cast<uint64_t>(&faceIdOrUri);
-  if (faceId != nullptr) {
-    res = findFace.execute(*faceId);
-  }
-  else {
-    res = findFace.execute(boost::any_cast<FaceUri>(faceIdOrUri));
-  }
+  FindFace::Code res = findFace.execute(faceIdOrUri);
 
   ctx.exitCode = static_cast<int>(res);
   switch (res) {

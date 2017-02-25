@@ -24,11 +24,12 @@
  */
 
 #include "available-commands.hpp"
-#include "help.hpp"
-#include "status.hpp"
 #include "face-module.hpp"
-#include "legacy-status.hpp"
+#include "help.hpp"
 #include "legacy-nfdc.hpp"
+#include "legacy-status.hpp"
+#include "rib-module.hpp"
+#include "status.hpp"
 
 namespace nfd {
 namespace tools {
@@ -40,6 +41,7 @@ registerCommands(CommandParser& parser)
   registerHelpCommand(parser);
   registerStatusCommands(parser);
   FaceModule::registerCommands(parser);
+  RibModule::registerCommands(parser);
 
   registerLegacyStatusCommand(parser);
 
@@ -50,7 +52,7 @@ registerCommands(CommandParser& parser)
     std::string replacementCommand; ///< replacement for deprecated legacy subcommand
   };
   const std::vector<LegacyNfdcCommandDefinition> legacyNfdcSubcommands{
-    {"register", "register a prefix", ""},
+    {"register", "register a prefix", "route add"},
     {"unregister", "unregister a prefix", ""},
     {"create", "create a face", "face create"},
     {"destroy", "destroy a face", "face destroy"},

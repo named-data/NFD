@@ -25,6 +25,7 @@
 
 #include "nfdc/rib-module.hpp"
 
+#include "execute-command-fixture.hpp"
 #include "status-fixture.hpp"
 
 namespace nfd {
@@ -34,6 +35,134 @@ namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestRibModule, StatusFixture<RibModule>)
+
+BOOST_FIXTURE_TEST_SUITE(AddCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(NormalByFaceId)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    ndn::nfd::RibRegisterCommand cmd;
+    cmd.validateRequest(req);
+    cmd.applyDefaultsToRequest(req);
+    BOOST_CHECK_EQUAL(req.getName(), "/vxXoEaWeDB");
+    BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
+    BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
+    BOOST_CHECK_EQUAL(req.getCost(), 0);
+    BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAGS_NONE);
+    BOOST_CHECK_EQUAL(req.hasExpirationPeriod(), false);
+
+    this->succeedCommand(req);
+  };
+
+  this->execute("route add /vxXoEaWeDB 10156 no-inherit");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("route-add-accepted prefix=/vxXoEaWeDB nexthop=10156 origin=255 "
+                           "cost=0 flags=none expires=never\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NormalByFaceUri)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    ndn::nfd::RibRegisterCommand cmd;
+    cmd.validateRequest(req);
+    cmd.applyDefaultsToRequest(req);
+    BOOST_CHECK_EQUAL(req.getName(), "/FLQAsaYnYf");
+    BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
+    BOOST_CHECK_EQUAL(req.getOrigin(), 17591);
+    BOOST_CHECK_EQUAL(req.getCost(), 702);
+    BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAG_CHILD_INHERIT |
+                                      ndn::nfd::ROUTE_FLAG_CAPTURE);
+    BOOST_REQUIRE_EQUAL(req.hasExpirationPeriod(), true);
+    BOOST_REQUIRE_EQUAL(req.getExpirationPeriod(), time::milliseconds(727411987));
+
+    ControlParameters resp = req;
+    resp.setExpirationPeriod(time::milliseconds(727411154)); // server side may change expiration
+    this->succeedCommand(resp);
+  };
+
+  this->execute("route add /FLQAsaYnYf tcp4://32.121.182.82:6363 "
+                "origin 17591 cost 702 capture expires 727411987");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("route-add-accepted prefix=/FLQAsaYnYf nexthop=2249 origin=17591 "
+                           "cost=702 flags=child-inherit|capture expires=727411154ms\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExist)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest));
+  };
+
+  this->execute("route add /GJiKDus5i 23728");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(Ambiguous)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest));
+  };
+
+  this->execute("route add /BQqjjnVsz udp4://225.131.75.231:56363");
+  BOOST_CHECK_EQUAL(exitCode, 5);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Multiple faces match specified remote FaceUri. "
+                           "Re-run the command with a FaceId: "
+                           "6720 (local=udp4://202.83.168.28:56363), "
+                           "31066 (local=udp4://25.90.26.32:56363)\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCanonization)
+{
+  this->execute("route add /bxJfGsVtDt udp6://32.38.164.64:10445");
+  BOOST_CHECK_EQUAL(exitCode, 4);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error during remote FaceUri canonization: "
+                           "No endpoints match the specified address selector\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset or command
+
+  this->execute("route add /q1Qf7go7 udp://159.242.33.78");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    // no response to command
+  };
+
+  this->execute("route add /bYiMbEuE 10156");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when adding route: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // AddCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <rib>
