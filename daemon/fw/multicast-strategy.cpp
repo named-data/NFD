@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,14 +25,18 @@
 
 #include "multicast-strategy.hpp"
 #include "algorithm.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
 
 NFD_REGISTER_STRATEGY(MulticastStrategy);
 
+NFD_LOG_INIT("MulticastStrategy");
+
 MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
+  , ProcessNackTraits(this)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (!parsed.parameters.empty()) {
@@ -56,20 +60,43 @@ void
 MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
+  if (hasPendingOutRecords(*pitEntry)) {
+    // not a new Interest, don't forward
+    return;
+  }
+
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
-  for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
-    Face& outFace = it->getFace();
-    if (!wouldViolateScope(inFace, interest, outFace) &&
-        canForwardToLegacy(*pitEntry, outFace)) {
+  int nEligibleNextHops = 0;
+
+  for (const auto& nexthop : nexthops) {
+    Face& outFace = nexthop.getFace();
+
+    if (&outFace != &inFace && !wouldViolateScope(inFace, interest, outFace)) {
       this->sendInterest(pitEntry, outFace, interest);
+      NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
+                             << " pitEntry-to=" << outFace.getId());
+      ++nEligibleNextHops;
     }
   }
 
-  if (!hasPendingOutRecords(*pitEntry)) {
-    this->rejectPendingInterest(pitEntry);
+  if (nEligibleNextHops == 0) {
+      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
+
+      lp::NackHeader nackHeader;
+      nackHeader.setReason(lp::NackReason::NO_ROUTE);
+      this->sendNack(pitEntry, inFace, nackHeader);
+
+      this->rejectPendingInterest(pitEntry);
   }
+}
+
+void
+MulticastStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                                    const shared_ptr<pit::Entry>& pitEntry)
+{
+  this->processNack(inFace, nack, pitEntry);
 }
 
 } // namespace fw

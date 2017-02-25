@@ -28,7 +28,6 @@
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
-#include "topology-tester.hpp"
 
 namespace nfd {
 namespace fw {
@@ -144,81 +143,6 @@ BOOST_AUTO_TEST_CASE(Forward)
   BOOST_CHECK_NE(strategy.sendInterestHistory[2].outFaceId, face1->getId());
   // face1 cannot be used because it's gone from FIB entry
 }
-
-BOOST_AUTO_TEST_SUITE(NoRouteNack) // send Nack-NoRoute if there's no usable FIB nexthop
-
-class EmptyNextHopList
-{
-public:
-  Name
-  getInterestName()
-  {
-    return "/P";
-  }
-
-  void
-  insertFibEntry(BestRouteStrategy2Fixture* fixture)
-  {
-    fixture->fib.insert(Name());
-  }
-};
-
-class NextHopIsDownstream
-{
-public:
-  Name
-  getInterestName()
-  {
-    return "/P";
-  }
-
-  void
-  insertFibEntry(BestRouteStrategy2Fixture* fixture)
-  {
-    fixture->fib.insert(Name()).first->addNextHop(*fixture->face1, 10);
-  }
-};
-
-class NextHopViolatesScope
-{
-public:
-  Name
-  getInterestName()
-  {
-    return "/localhop/P";
-  }
-
-  void
-  insertFibEntry(BestRouteStrategy2Fixture* fixture)
-  {
-    fixture->fib.insert("/localhop").first->addNextHop(*fixture->face2, 10);
-    // face1 and face2 are both non-local; Interest from face1 cannot be forwarded to face2
-  }
-};
-
-typedef boost::mpl::vector<EmptyNextHopList, NextHopIsDownstream, NextHopViolatesScope> NoRouteScenarios;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(IncomingInterest, Scenario, NoRouteScenarios)
-{
-  Scenario scenario;
-  scenario.insertFibEntry(this);
-
-  shared_ptr<Interest> interest = makeInterest(scenario.getInterestName());
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(*face1, *interest);
-
-  strategy.afterReceiveInterest(*face1, *interest, pitEntry);
-
-  BOOST_REQUIRE_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory[0].pitInterest, pitEntry->getInterest());
-
-  BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].pitInterest, pitEntry->getInterest());
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].outFaceId, face1->getId());
-  BOOST_CHECK_EQUAL(strategy.sendNackHistory[0].header.getReason(), lp::NackReason::NO_ROUTE);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // NoRouteNack
 
 BOOST_AUTO_TEST_SUITE_END() // TestBestRouteStrategy2
 BOOST_AUTO_TEST_SUITE_END() // Fw

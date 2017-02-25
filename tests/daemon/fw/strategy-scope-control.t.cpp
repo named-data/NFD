@@ -110,7 +110,7 @@ using Tests = boost::mpl::vector<
   Test<AsfStrategy, true, false>,
   Test<BestRouteStrategy, false, false>,
   Test<BestRouteStrategy2, true, true>,
-  Test<MulticastStrategy, false, false>,
+  Test<MulticastStrategy, true, true>,
   Test<NccStrategy, false, false>
 >;
 

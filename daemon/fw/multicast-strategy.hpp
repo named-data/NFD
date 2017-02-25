@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FW_MULTICAST_STRATEGY_HPP
 
 #include "strategy.hpp"
+#include "process-nack-traits.hpp"
 
 namespace nfd {
 namespace fw {
@@ -34,16 +35,25 @@ namespace fw {
 /** \brief a forwarding strategy that forwards Interest to all FIB nexthops
  */
 class MulticastStrategy : public Strategy
+                        , public ProcessNackTraits<MulticastStrategy>
 {
 public:
+  explicit
   MulticastStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
 
   static const Name&
   getStrategyName();
 
-  virtual void
+  void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
+
+  void
+  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+                   const shared_ptr<pit::Entry>& pitEntry) override;
+
+private:
+  friend ProcessNackTraits<MulticastStrategy>;
 };
 
 } // namespace fw
