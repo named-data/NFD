@@ -164,6 +164,124 @@ BOOST_AUTO_TEST_CASE(ErrorCommand)
 
 BOOST_AUTO_TEST_SUITE_END() // AddCommand
 
+BOOST_FIXTURE_TEST_SUITE(RemoveCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(NormalByFaceId)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
+    ndn::nfd::RibUnregisterCommand cmd;
+    cmd.validateRequest(req);
+    cmd.applyDefaultsToRequest(req);
+    BOOST_CHECK_EQUAL(req.getName(), "/2B5NUGjpt");
+    BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
+    BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
+
+    this->succeedCommand(interest, req);
+  };
+
+  this->execute("route remove /2B5NUGjpt 10156");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("route-removed prefix=/2B5NUGjpt nexthop=10156 origin=255\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NormalByFaceUri)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
+    ndn::nfd::RibUnregisterCommand cmd;
+    cmd.validateRequest(req);
+    cmd.applyDefaultsToRequest(req);
+    BOOST_CHECK_EQUAL(req.getName(), "/wHdNn0BtUF");
+    BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
+    BOOST_CHECK_EQUAL(req.getOrigin(), 15246);
+
+    this->succeedCommand(interest, req);
+  };
+
+  this->execute("route remove /wHdNn0BtUF tcp4://32.121.182.82:6363 origin 15246");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("route-removed prefix=/wHdNn0BtUF nexthop=2249 origin=15246\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(MultipleFaces)
+{
+  std::set<uint64_t> faceIds{6720, 31066};
+  this->processInterest = [this, &faceIds] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
+    ndn::nfd::RibUnregisterCommand cmd;
+    cmd.validateRequest(req);
+    cmd.applyDefaultsToRequest(req);
+    BOOST_CHECK_EQUAL(req.getName(), "/nm5y8X8b2");
+    BOOST_CHECK_MESSAGE(faceIds.erase(req.getFaceId()), "expected face " + std::to_string(req.getFaceId()));
+    BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
+
+    this->succeedCommand(interest, req);
+  };
+
+  this->execute("route remove /nm5y8X8b2 udp4://225.131.75.231:56363");
+  BOOST_CHECK(faceIds.empty());
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("route-removed prefix=/nm5y8X8b2 nexthop=6720 origin=255\n"
+                           "route-removed prefix=/nm5y8X8b2 nexthop=31066 origin=255\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExist)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest));
+  };
+
+  this->execute("route remove /HeGRjzwFM 23728");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset or command
+
+  this->execute("route remove /YX4xQQN3v5 udp://26.97.248.3");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    if (this->respondFaceQuery(interest)) {
+      return;
+    }
+
+    MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/unregister");
+    // no response to command
+  };
+
+  this->execute("route remove /mvGRoxD2 10156");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when removing route: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // RemoveCommand
+
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <rib>
     <ribEntry>

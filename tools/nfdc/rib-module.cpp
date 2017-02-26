@@ -45,6 +45,14 @@ RibModule::registerCommands(CommandParser& parser)
     .addArg("capture", ArgValueType::NONE, Required::NO, Positional::NO)
     .addArg("expires", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
   parser.addCommand(defRouteAdd, &RibModule::add);
+
+  CommandDefinition defRouteRemove("route", "remove");
+  defRouteRemove
+    .setTitle("remove a route")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
+    .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES)
+    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+  parser.addCommand(defRouteRemove, &RibModule::remove);
 }
 
 void
@@ -111,6 +119,54 @@ RibModule::add(ExecuteContext& ctx)
     },
     ctx.makeCommandFailureHandler("adding route"),
     ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
+RibModule::remove(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+  const boost::any& nexthop = ctx.args.at("nexthop");
+  auto origin = ctx.args.get<uint64_t>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
+
+  FindFace findFace(ctx);
+  FindFace::Code res = findFace.execute(nexthop, true);
+
+  ctx.exitCode = static_cast<int>(res);
+  switch (res) {
+    case FindFace::Code::OK:
+      break;
+    case FindFace::Code::ERROR:
+    case FindFace::Code::CANONIZE_ERROR:
+    case FindFace::Code::NOT_FOUND:
+      ctx.err << findFace.getErrorReason() << '\n';
+      return;
+    default:
+      BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+      return;
+  }
+
+  for (const FaceStatus& faceStatus : findFace.getResults()) {
+    ControlParameters unregisterParams;
+    unregisterParams
+      .setName(prefix)
+      .setFaceId(faceStatus.getFaceId())
+      .setOrigin(origin);
+
+    ctx.controller.start<ndn::nfd::RibUnregisterCommand>(
+      unregisterParams,
+      [&] (const ControlParameters& resp) {
+        ctx.out << "route-removed ";
+        text::ItemAttributes ia;
+        ctx.out << ia("prefix") << resp.getName()
+                << ia("nexthop") << resp.getFaceId()
+                << ia("origin") << resp.getOrigin()
+                << '\n';
+      },
+      ctx.makeCommandFailureHandler("removing route"),
+      ctx.makeCommandOptions());
+  }
 
   ctx.face.processEvents();
 }

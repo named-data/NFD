@@ -27,7 +27,7 @@ If a route with the same prefix, nexthop, and origin already exists,
 it is updated with the specified cost, route inheritance flags, and expiration period.
 This command returns when the request has been accepted, but does not wait for RIB update completion.
 
-The **nfdc unregister** command removes a route with matching prefix, nexthop, and origin.
+The **nfdc route remove** command removes a route with matching prefix, nexthop, and origin.
 
 OPTIONS
 -------
@@ -40,7 +40,8 @@ OPTIONS
 
 <FACEURI>
     An URI representing the remote endpoint of a face.
-    It must uniquely match an existing face.
+    In **nfdc route add** command, it must uniquely match an existing face.
+    In **nfdc route remove** command, it must match one or more existing faces.
 
 <ORIGIN>
     Origin of the route, i.e. who is announcing the route.
@@ -70,9 +71,9 @@ EXIT CODES
 
 2: Malformed command line
 
-3: Face not found (**nfdc route add** only)
+3: Face not found
 
-4: FaceUri canonization failed (**nfdc route add** only)
+4: FaceUri canonization failed
 
 5: Ambiguous: multiple matching faces are found (**nfdc route add** only)
 

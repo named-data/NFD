@@ -52,6 +52,11 @@ public:
   static void
   add(ExecuteContext& ctx);
 
+  /** \brief the 'route remove' command
+   */
+  static void
+  remove(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,

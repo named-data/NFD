@@ -59,45 +59,73 @@ protected:
   }
 
 protected: // ControlCommand
-  /** \brief check the last Interest is a command with specified prefix
+  /** \brief check the Interest is a command with specified prefix
    *  \retval nullopt last Interest is not the expected command
    *  \return command parameters
    */
-  ndn::optional<ControlParameters>
-  getCommand(const Name& expectedPrefix) const
+  static ndn::optional<ControlParameters>
+  parseCommand(const Interest& interest, const Name& expectedPrefix)
   {
-    if (face.sentInterests.empty() ||
-        !expectedPrefix.isPrefixOf(face.sentInterests.back().getName())) {
+    if (!expectedPrefix.isPrefixOf(interest.getName())) {
       return ndn::nullopt;
     }
-    return ControlParameters(face.sentInterests.back().getName()
-                             .at(expectedPrefix.size()).blockFromValue());
+    return ControlParameters(interest.getName().at(expectedPrefix.size()).blockFromValue());
+  }
+
+  DEPRECATED(
+  ndn::optional<ControlParameters>
+  getCommand(const Name& expectedPrefix) const)
+  {
+    if (face.sentInterests.empty()) {
+      return ndn::nullopt;
+    }
+    return parseCommand(face.sentInterests.back(), expectedPrefix);
   }
 
   /** \brief respond to the last command
-   *  \pre last Interest is a command
    */
   void
-  succeedCommand(const ControlParameters& parameters)
+  succeedCommand(const Interest& interest, const ControlParameters& parameters)
   {
     ndn::nfd::ControlResponse resp(200, "OK");
     resp.setBody(parameters.wireEncode());
-    this->sendCommandReply(resp);
+    this->sendCommandReply(interest, resp);
+  }
+
+  DEPRECATED(
+  void
+  succeedCommand(const ControlParameters& parameters))
+  {
+    this->succeedCommand(face.sentInterests.back(), parameters);
   }
 
   /** \brief respond to the last command
    *  \pre last Interest is a command
    */
   void
-  failCommand(uint32_t code, const std::string& text)
+  failCommand(const Interest& interest, uint32_t code, const std::string& text)
   {
-    this->sendCommandReply({code, text});
+    this->sendCommandReply(interest, {code, text});
+  }
+
+  DEPRECATED(
+  void
+  failCommand(uint32_t code, const std::string& text))
+  {
+    this->sendCommandReply(face.sentInterests.back(), {code, text});
   }
 
   void
-  failCommand(uint32_t code, const std::string& text, const ControlParameters& resp)
+  failCommand(const Interest& interest, uint32_t code, const std::string& text, const ControlParameters& body)
   {
-    this->sendCommandReply(ndn::nfd::ControlResponse(code, text).setBody(resp.wireEncode()));
+    this->sendCommandReply(interest, code, text, body.wireEncode());
+  }
+
+  DEPRECATED(
+  void
+  failCommand(uint32_t code, const std::string& text, const ControlParameters& body))
+  {
+    this->failCommand(face.sentInterests.back(), code, text, body);
   }
 
 protected: // StatusDataset
@@ -218,11 +246,19 @@ private:
   }
 
   void
-  sendCommandReply(const ndn::nfd::ControlResponse& resp)
+  sendCommandReply(const Interest& interest, const ndn::nfd::ControlResponse& resp)
   {
-    auto data = makeData(face.sentInterests.back().getName());
+    auto data = makeData(interest.getName());
     data->setContent(resp.wireEncode());
     face.receive(*data);
+  }
+
+  void
+  sendCommandReply(const Interest& interest, uint32_t code, const std::string& text,
+                   const Block& body)
+  {
+    this->sendCommandReply(interest,
+                           ndn::nfd::ControlResponse(code, text).setBody(body));
   }
 
   /** \brief send a payload in reply to StatusDataset request
@@ -269,13 +305,23 @@ protected:
 } // namespace tools
 } // namespace nfd
 
+/** \brief require the command in \p interest has expected prefix
+ *  \note This must be used in processInterest lambda, and the Interest must be named 'interest'.
+ */
+#define MOCK_NFD_MGMT_REQUIRE_COMMAND_IS(expectedPrefix) \
+  [interest] { \
+    auto params = parseCommand(interest, (expectedPrefix)); \
+    BOOST_REQUIRE_MESSAGE(params, "Interest " << interest.getName() << \
+                          " does not match command prefix " << (expectedPrefix)); \
+    return *params; \
+  } ()
+
+///\deprecated use MOCK_NFD_MGMT_REQUIRE_COMMAND_IS
 #define MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS(expectedPrefix) \
   [this] { \
     BOOST_REQUIRE_MESSAGE(!face.sentInterests.empty(), "no Interest expressed"); \
-    auto params = this->getCommand(expectedPrefix); \
-    BOOST_REQUIRE_MESSAGE(params, "last Interest " << face.sentInterests.back().getName() << \
-                          " does not match command prefix " << expectedPrefix); \
-    return *params; \
+    const Interest& interest = face.sentInterests.back(); \
+    return MOCK_NFD_MGMT_REQUIRE_COMMAND_IS(expectedPrefix); \
   } ()
 
 #endif // NFD_TESTS_TOOLS_NFDC_MOCK_NFD_MGMT_FIXTURE_HPP

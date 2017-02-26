@@ -43,7 +43,7 @@ FindFace::execute(const FaceUri& faceUri, bool allowMulti)
 {
   FaceQueryFilter filter;
   filter.setRemoteUri(faceUri.toString());
-  return this->execute(filter);
+  return this->execute(filter, allowMulti);
 }
 
 FindFace::Code
@@ -55,14 +55,14 @@ FindFace::execute(uint64_t faceId)
 }
 
 FindFace::Code
-FindFace::execute(const boost::any& faceIdOrUri)
+FindFace::execute(const boost::any& faceIdOrUri, bool allowMulti)
 {
   const uint64_t* faceId = boost::any_cast<uint64_t>(&faceIdOrUri);
   if (faceId != nullptr) {
     return this->execute(*faceId);
   }
   else {
-    return this->execute(boost::any_cast<FaceUri>(faceIdOrUri));
+    return this->execute(boost::any_cast<FaceUri>(faceIdOrUri), allowMulti);
   }
 }
 
