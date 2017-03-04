@@ -38,7 +38,7 @@ using namespace nfd::tests;
 typedef StrategyTester<MulticastStrategy> MulticastStrategyTester;
 NFD_REGISTER_STRATEGY(MulticastStrategyTester);
 
-class MulticastStrategyFixture : public BaseFixture
+class MulticastStrategyFixture : public UnitTestTimeFixture
 {
 protected:
   MulticastStrategyFixture()
@@ -91,23 +91,34 @@ BOOST_AUTO_TEST_CASE(Forward2)
   BOOST_CHECK_EQUAL_COLLECTIONS(sentInterestFaceIds.begin(), sentInterestFaceIds.end(),
                                 expectedInterestFaceIds.begin(), expectedInterestFaceIds.end());
 
-  // Check retransmission suppression, sendInterestHistory should remain 2
-  strategy.afterReceiveInterest(*face3, *interest, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
-}
+  const time::nanoseconds TICK = time::duration_cast<time::nanoseconds>(
+                                 MulticastStrategy::RETX_SUPPRESSION_INITIAL * 0.1);
 
-BOOST_AUTO_TEST_CASE(RejectScope)
-{
-  fib::Entry& fibEntry = *fib.insert("ndn:/localhop/uS09bub6tm").first;
-  fibEntry.addNextHop(*face2, 0);
+  // downstream retransmits frequently, but the strategy should not send Interests
+  // more often than DEFAULT_MIN_RETX_INTERVAL
+  scheduler::EventId retxFrom4Evt;
+  size_t nSentLast = strategy.sendInterestHistory.size();
+  time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
+  function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
+  periodicalRetxFrom4 = [&] {
+    pitEntry->insertOrUpdateInRecord(*face3, *interest);
+    strategy.afterReceiveInterest(*face3, *interest, pitEntry);
 
-  shared_ptr<Interest> interest = makeInterest("ndn:/localhop/uS09bub6tm/eG3MMoP6z");
-  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(*face1, *interest);
+    size_t nSent = strategy.sendInterestHistory.size();
+    if (nSent > nSentLast) {
+      // Multicast strategy should multicast the interest to other two faces
+      BOOST_CHECK_EQUAL(nSent - nSentLast, 2);
+      time::steady_clock::TimePoint timeSent = time::steady_clock::now();
+      BOOST_CHECK_GE(timeSent - timeSentLast, TICK * 8);
+      nSentLast = nSent;
+      timeSentLast = timeSent;
+    }
 
-  strategy.afterReceiveInterest(*face1, *interest, pitEntry);
-  BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
-  BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
+    retxFrom4Evt = scheduler::schedule(TICK * 5, periodicalRetxFrom4);
+  };
+  periodicalRetxFrom4();
+  this->advanceClocks(TICK, MulticastStrategy::RETX_SUPPRESSION_MAX * 16);
+  scheduler::cancel(retxFrom4Evt);
 }
 
 BOOST_AUTO_TEST_CASE(RejectLoopback)

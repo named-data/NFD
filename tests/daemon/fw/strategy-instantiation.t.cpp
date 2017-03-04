@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -79,7 +79,7 @@ using Tests = boost::mpl::vector<
   Test<BestRouteStrategy, false, 1>,
   Test<BestRouteStrategy2, false, 4>,
   Test<ClientControlStrategy, false, 2>,
-  Test<MulticastStrategy, false, 1>,
+  Test<MulticastStrategy, false, 2>,
   Test<NccStrategy, false, 1>
 >;
 

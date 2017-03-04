@@ -34,9 +34,15 @@ NFD_REGISTER_STRATEGY(MulticastStrategy);
 
 NFD_LOG_INIT("MulticastStrategy");
 
+const time::milliseconds MulticastStrategy::RETX_SUPPRESSION_INITIAL(10);
+const time::milliseconds MulticastStrategy::RETX_SUPPRESSION_MAX(250);
+
 MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , ProcessNackTraits(this)
+  , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
+                      RetxSuppressionExponential::DEFAULT_MULTIPLIER,
+                      RETX_SUPPRESSION_MAX)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (!parsed.parameters.empty()) {
@@ -52,7 +58,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%01");
+  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%02");
   return strategyName;
 }
 
@@ -60,8 +66,14 @@ void
 MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
-  if (hasPendingOutRecords(*pitEntry)) {
-    // not a new Interest, don't forward
+  // Should the Interest be suppressed?
+  RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
+  switch (suppressResult) {
+  case RetxSuppression::NEW:
+  case RetxSuppression::FORWARD:
+    break;
+  case RetxSuppression::SUPPRESS:
+    NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " suppressed");
     return;
   }
 

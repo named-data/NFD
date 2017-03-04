@@ -28,6 +28,7 @@
 
 #include "strategy.hpp"
 #include "process-nack-traits.hpp"
+#include "retx-suppression-exponential.hpp"
 
 namespace nfd {
 namespace fw {
@@ -54,6 +55,11 @@ public:
 
 private:
   friend ProcessNackTraits<MulticastStrategy>;
+  RetxSuppressionExponential m_retxSuppression;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  static const time::milliseconds RETX_SUPPRESSION_INITIAL;
+  static const time::milliseconds RETX_SUPPRESSION_MAX;
 };
 
 } // namespace fw
