@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -173,14 +173,14 @@ public:
   {
   }
 
-  virtual void
+  void
   onDataUnsolicited(Face& inFace, const Data& data) override
   {
     ++onDataUnsolicited_count;
   }
 
 protected:
-  virtual void
+  void
   dispatchToStrategy(pit::Entry& pitEntry, function<void(fw::Strategy&)> trigger) override
   {
     ++dispatchToStrategy_count;
@@ -503,13 +503,11 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   face1->receiveInterest(*interest1a);
   BOOST_CHECK(face1->sentNacks.empty());
 
-  // receive Interest with duplicate Nonce on face1
+  // receive Interest with duplicate Nonce on face1: legit retransmission
   face1->sentNacks.clear();
   shared_ptr<Interest> interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
   face1->receiveInterest(*interest1b);
-  BOOST_REQUIRE_EQUAL(face1->sentNacks.size(), 1);
-  BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest(), *interest1b);
-  BOOST_CHECK_EQUAL(face1->sentNacks.back().getReason(), lp::NackReason::DUPLICATE);
+  BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face2
   face2->sentNacks.clear();
