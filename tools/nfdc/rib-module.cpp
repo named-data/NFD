@@ -94,8 +94,8 @@ RibModule::add(ExecuteContext& ctx)
     .setFaceId(findFace.getFaceId())
     .setOrigin(origin)
     .setCost(cost)
-    .setFlags((wantChildInherit ? ndn::nfd::ROUTE_FLAG_CHILD_INHERIT : 0) |
-              (wantCapture ? ndn::nfd::ROUTE_FLAG_CAPTURE : 0));
+    .setFlags((wantChildInherit ? ndn::nfd::ROUTE_FLAG_CHILD_INHERIT : ndn::nfd::ROUTE_FLAGS_NONE) |
+              (wantCapture ? ndn::nfd::ROUTE_FLAG_CAPTURE : ndn::nfd::ROUTE_FLAGS_NONE));
   if (expiresMillis) {
     registerParams.setExpirationPeriod(time::milliseconds(*expiresMillis));
   }
