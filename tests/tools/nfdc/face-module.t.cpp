@@ -227,15 +227,15 @@ class ExecuteFaceCreateCommandFixture : public ExecuteCommandFixture
 {
 protected:
   void
-  respond409(FacePersistency persistency)
+  respond409(const Interest& interest, FacePersistency persistency)
   {
-    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/create");
+    MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     ControlParameters body;
     body.setFaceId(1172)
         .setUri("udp4://100.77.30.65:6363")
         .setFacePersistency(persistency)
         .setFlags(0);
-    this->failCommand(409, "conflict-409", body);
+    this->failCommand(interest, 409, "conflict-409", body);
   }
 };
 
@@ -244,7 +244,7 @@ BOOST_FIXTURE_TEST_SUITE(CreateCommand, ExecuteFaceCreateCommandFixture)
 BOOST_AUTO_TEST_CASE(Creating)
 {
   this->processInterest = [this] (const Interest& interest) {
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/create");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     BOOST_REQUIRE(req.hasUri());
     BOOST_CHECK_EQUAL(req.getUri(), "udp4://159.242.33.78:6363");
     BOOST_REQUIRE(req.hasFacePersistency());
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(Creating)
     ControlParameters resp;
     resp.setFaceId(2130)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
-    this->succeedCommand(resp);
+    this->succeedCommand(interest, resp);
   };
 
   this->execute("face create udp://159.242.33.78");
@@ -266,12 +266,12 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
 {
   bool hasUpdateCommand = false;
   this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
-    if (this->getCommand("/localhost/nfd/faces/create")) {
-      this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
       return;
     }
 
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/update");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
     hasUpdateCommand = true;
     BOOST_REQUIRE(req.hasFaceId());
     BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
     resp.setFaceId(1172)
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
         .setFlags(0);
-    this->succeedCommand(resp);
+    this->succeedCommand(interest, resp);
   };
 
   this->execute("face create udp://100.77.30.65");
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
 BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
 {
   this->processInterest = [this] (const Interest& interest) {
-    this->respond409(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERMANENT);
     // no command other than faces/create is expected
   };
 
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
 BOOST_AUTO_TEST_CASE(SamePersistency)
 {
   this->processInterest = [this] (const Interest& interest) {
-    this->respond409(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+    this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT);
     // no command other than faces/create is expected
   };
 
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(ErrorConflict)
 
   this->processInterest = [this] (const Interest& interest) {
     // conflict with udp4://100.77.30.65:6363
-    this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+    this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
   };
 
   this->execute("face create udp://20.53.73.45");
@@ -348,12 +348,12 @@ BOOST_AUTO_TEST_CASE(ErrorConflict)
 BOOST_AUTO_TEST_CASE(ErrorUpdate)
 {
   this->processInterest = [this] (const Interest& interest) {
-    if (this->getCommand("/localhost/nfd/faces/create")) {
-      this->respond409(FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND);
       return;
     }
 
-    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/update");
+    MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
     // no response to faces/update
   };
 
@@ -374,13 +374,13 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
       return;
     }
 
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/destroy");
     BOOST_REQUIRE(req.hasFaceId());
     BOOST_CHECK_EQUAL(req.getFaceId(), 10156);
 
     ControlParameters resp;
     resp.setFaceId(10156);
-    this->succeedCommand(resp);
+    this->succeedCommand(interest, resp);
   };
 
   this->execute("face destroy 10156");
@@ -397,13 +397,13 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
       return;
     }
 
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/destroy");
     BOOST_REQUIRE(req.hasFaceId());
     BOOST_CHECK_EQUAL(req.getFaceId(), 2249);
 
     ControlParameters resp;
     resp.setFaceId(2249);
-    this->succeedCommand(resp);
+    this->succeedCommand(interest, resp);
   };
 
   this->execute("face destroy tcp://32.121.182.82");
@@ -466,7 +466,7 @@ BOOST_AUTO_TEST_CASE(ErrorCommand)
       return;
     }
 
-    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/faces/destroy");
+    MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/destroy");
     // no response to command
   };
 

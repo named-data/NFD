@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
       return;
     }
 
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
     ndn::nfd::RibRegisterCommand cmd;
     cmd.validateRequest(req);
     cmd.applyDefaultsToRequest(req);
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
     BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAGS_NONE);
     BOOST_CHECK_EQUAL(req.hasExpirationPeriod(), false);
 
-    this->succeedCommand(req);
+    this->succeedCommand(interest, req);
   };
 
   this->execute("route add /vxXoEaWeDB 10156 no-inherit");
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
       return;
     }
 
-    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
     ndn::nfd::RibRegisterCommand cmd;
     cmd.validateRequest(req);
     cmd.applyDefaultsToRequest(req);
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
 
     ControlParameters resp = req;
     resp.setExpirationPeriod(time::milliseconds(727411154)); // server side may change expiration
-    this->succeedCommand(resp);
+    this->succeedCommand(interest, resp);
   };
 
   this->execute("route add /FLQAsaYnYf tcp4://32.121.182.82:6363 "
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(ErrorCommand)
       return;
     }
 
-    MOCK_NFD_MGMT_REQUIRE_LAST_COMMAND_IS("/localhost/nfd/rib/register");
+    MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/rib/register");
     // no response to command
   };
 
