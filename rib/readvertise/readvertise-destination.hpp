@@ -28,8 +28,6 @@
 
 #include "readvertised-route.hpp"
 
-#include <ndn-cxx/mgmt/nfd/controller.hpp>
-
 namespace nfd {
 namespace rib {
 
@@ -42,12 +40,12 @@ public:
   ~ReadvertiseDestination() = default;
 
   virtual void
-  advertise(nfd::rib::ReadvertisedRoute& rr,
+  advertise(const ReadvertisedRoute& rr,
             std::function<void()> successCb,
             std::function<void(const std::string&)> failureCb) = 0;
 
   virtual void
-  withdraw(nfd::rib::ReadvertisedRoute& rr,
+  withdraw(const ReadvertisedRoute& rr,
            std::function<void()> successCb,
            std::function<void(const std::string&)> failureCb) = 0;
 
@@ -64,8 +62,7 @@ protected:
 public:
   /** \brief signals when the destination becomes available or unavailable
    */
-  ndn::util::signal::Signal<ReadvertiseDestination, bool>
-  afterAvailabilityChange;
+  signal::Signal<ReadvertiseDestination, bool> afterAvailabilityChange;
 
 private:
   bool m_isAvailable = false;

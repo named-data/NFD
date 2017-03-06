@@ -26,14 +26,10 @@
 #ifndef NFD_RIB_READVERTISE_NFD_RIB_READVERTISE_DESTINATION_HPP
 #define NFD_RIB_READVERTISE_NFD_RIB_READVERTISE_DESTINATION_HPP
 
-#include "readvertised-route.hpp"
 #include "readvertise-destination.hpp"
+#include "../rib.hpp"
 
-#include <ndn-cxx/mgmt/nfd/command-options.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
-#include <ndn-cxx/mgmt/nfd/control-command.hpp>
-#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
-#include <ndn-cxx/mgmt/nfd/control-response.hpp>
 
 namespace nfd {
 namespace rib {
@@ -44,36 +40,36 @@ class NfdRibReadvertiseDestination : public ReadvertiseDestination
 {
 public:
   NfdRibReadvertiseDestination(ndn::nfd::Controller& controller,
-                               const ndn::Name& commandPrefix,
+                               const Name& commandPrefix,
                                Rib& rib);
 
   /** \brief add a name prefix into NFD RIB
    */
   void
-  advertise(nfd::rib::ReadvertisedRoute& rr,
+  advertise(const ReadvertisedRoute& rr,
             std::function<void()> successCb,
             std::function<void(const std::string&)> failureCb) override;
 
   /** \brief remove a name prefix from NFD RIB
    */
   void
-  withdraw(nfd::rib::ReadvertisedRoute& rr,
+  withdraw(const ReadvertisedRoute& rr,
            std::function<void()> successCb,
            std::function<void(const std::string&)> failureCb) override;
 
 private:
   void
-  handleRibAdd(const ndn::Name& name);
+  handleRibInsert(const Name& name);
 
   void
-  handleRibRemove(const ndn::Name& name);
+  handleRibErase(const Name& name);
 
 private:
   ndn::nfd::Controller& m_controller;
   Name m_commandPrefix;
 
-  signal::ScopedConnection m_ribAddConn;
-  signal::ScopedConnection m_ribRemoveConn;
+  signal::ScopedConnection m_ribInsertConn;
+  signal::ScopedConnection m_ribEraseConn;
 };
 
 } // namespace rib

@@ -23,14 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tests/test-common.hpp"
-
 #include "rib/readvertise/nfd-rib-readvertise-destination.hpp"
 
+#include "tests/test-common.hpp"
+#include "tests/identity-management-fixture.hpp"
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <ndn-cxx/security/signing-info.hpp>
-
-#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -46,8 +44,8 @@ public:
     , nFailureCallbacks(0)
     , face(getGlobalIoService(), m_keyChain, {true, false})
     , controller(face, m_keyChain)
-    , dest(controller, Name("/localhop/nfd/rib/readvertise"), rib)
-    , successCallback([this] () {
+    , dest(controller, Name("/localhost/nlsr"), rib)
+    , successCallback([this] {
         nSuccessCallbacks++;
       })
     , failureCallback([this] (const std::string& str) {
@@ -69,6 +67,7 @@ protected:
   std::function<void(const std::string&)> failureCallback;
 };
 
+BOOST_AUTO_TEST_SUITE(Readvertise)
 BOOST_FIXTURE_TEST_SUITE(TestNfdRibReadvertiseDestination, NfdRibReadvertiseDestinationFixture)
 
 class AdvertiseSuccessScenario
@@ -118,16 +117,14 @@ public:
   }
 };
 
-typedef boost::mpl::vector<AdvertiseSuccessScenario, AdvertiseFailureScenario> AdvertiseScenarios;
+using AdvertiseScenarios = boost::mpl::vector<AdvertiseSuccessScenario, AdvertiseFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ndn::security::SigningInfo secInfo;
-  std::vector<RibRouteRef> routes;
-  ReadvertisedRoute rr(prefix, secInfo, routes);
-  const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nfd/rib/register");
+  ReadvertisedRoute rr(prefix);
+  const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/register");
 
   dest.advertise(rr, successCallback, failureCallback);
   advanceClocks(time::milliseconds(100));
@@ -198,16 +195,14 @@ public:
   }
 };
 
-typedef boost::mpl::vector<WithdrawSuccessScenario, WithdrawFailureScenario> WithdrawScenarios;
+using WithdrawScenarios = boost::mpl::vector<WithdrawSuccessScenario, WithdrawFailureScenario>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ndn::security::SigningInfo secInfo;
-  std::vector<RibRouteRef> routes;
-  ReadvertisedRoute rr(prefix, secInfo, routes);
-  const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nfd/rib/unregister");
+  ReadvertisedRoute rr(prefix);
+  const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/unregister");
 
   dest.withdraw(rr, successCallback, failureCallback);
   this->advanceClocks(time::milliseconds(10));
@@ -235,28 +230,28 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 BOOST_AUTO_TEST_CASE(DestinationAvailability)
 {
   std::vector<bool> availabilityChangeHistory;
-  Name prefix("/localhop/nfd/rib/readvertise");
+  Name commandPrefix("/localhost/nlsr");
   Route route;
 
   dest.afterAvailabilityChange.connect(
     std::bind(&std::vector<bool>::push_back, &availabilityChangeHistory, _1));
   BOOST_CHECK_EQUAL(dest.isAvailable(), false);
 
-  rib.insert(prefix, route);
-  this->advanceClocks(time::milliseconds(100), 1);
+  rib.insert(commandPrefix, route);
+  this->advanceClocks(time::milliseconds(100));
   BOOST_CHECK_EQUAL(dest.isAvailable(), true);
-  BOOST_CHECK_EQUAL(availabilityChangeHistory.size(), 1);
+  BOOST_REQUIRE_EQUAL(availabilityChangeHistory.size(), 1);
   BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), true);
 
-  rib.erase(prefix, route);
-
-  this->advanceClocks(time::milliseconds(100), 1);
+  rib.erase(commandPrefix, route);
+  this->advanceClocks(time::milliseconds(100));
   BOOST_CHECK_EQUAL(dest.isAvailable(), false);
-  BOOST_CHECK_EQUAL(availabilityChangeHistory.size(), 2);
+  BOOST_REQUIRE_EQUAL(availabilityChangeHistory.size(), 2);
   BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNfdRibReadvertiseDestination
+BOOST_AUTO_TEST_SUITE_END() // Readvertise
 
 } // namespace tests
 } // namespace rib

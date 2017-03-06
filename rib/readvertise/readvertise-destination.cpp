@@ -24,14 +24,23 @@
  */
 
 #include "readvertise-destination.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace rib {
+
+NFD_LOG_INIT("ReadvertiseDestination");
 
 void
 ReadvertiseDestination::setAvailability(bool isAvailable)
 {
   if (m_isAvailable != isAvailable) {
+    if (isAvailable) {
+      NFD_LOG_DEBUG("Destination has become available.");
+    }
+    else {
+      NFD_LOG_DEBUG("Destinatino has become unavailable.");
+    }
     m_isAvailable = isAvailable;
     afterAvailabilityChange(isAvailable);
   }

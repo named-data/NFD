@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,22 +24,15 @@
  */
 
 #include "readvertised-route.hpp"
+#include "core/random.hpp"
 
 namespace nfd {
 namespace rib {
 
-ReadvertisedRoute::ReadvertisedRoute(const ndn::Name& prefix, const ndn::security::SigningInfo& signer,
-                                     const std::vector<RibRouteRef>& routes)
-  : m_prefix(prefix)
-  , m_signer(signer)
-  , m_ribRoutes(routes)
+ReadvertisedRoute::ReadvertisedRoute(const Name& prefix)
+  : prefix(prefix)
+  , nRibRoutes(0)
 {
-}
-
-bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
-{
-  return lhs.getPrefix() < rhs.getPrefix();
 }
 
 } // namespace rib

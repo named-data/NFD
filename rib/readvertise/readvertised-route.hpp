@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,55 +26,41 @@
 #ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
 #define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
 
-#include "../rib.hpp"
+#include "core/scheduler.hpp"
 #include <ndn-cxx/security/signing-info.hpp>
 
 namespace nfd {
 namespace rib {
 
-/** \brief a readvertised route
+/** \brief state of a readvertised route
  */
-class ReadvertisedRoute
+class ReadvertisedRoute : noncopyable
 {
 public:
-  /** \brief standard constructor
-   */
-  ReadvertisedRoute(const ndn::Name& prefix, const ndn::security::SigningInfo& signer,
-                    const std::vector<RibRouteRef>& routes);
+  explicit
+  ReadvertisedRoute(const Name& prefix);
 
-  /** \return name prefix being advertised
-   */
-  const Name&
-  getPrefix() const
-  {
-    return m_prefix;
-  }
-
-  /** \return signer
-   */
-  const ndn::security::SigningInfo&
-  getSigner() const
-  {
-    return m_signer;
-  }
-
-  /** \return routes that caused the creation of this readvertised route
-   */
-  const std::vector<RibRouteRef>&
-  getRibRoutes() const
-  {
-    return m_ribRoutes;
-  }
-
-
-private:
-  Name m_prefix;
-  ndn::security::SigningInfo m_signer;
-  std::vector<RibRouteRef> m_ribRoutes;
+public:
+  Name prefix; ///< readvertised prefix
+  mutable ndn::security::SigningInfo signer; ///< signer for commands
+  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
+  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
+  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
 };
 
-bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs);
+/** \brief a less than comparison functor for ReadvertisedRoute prefix
+ */
+class ReadvertisedRoutePrefixCompare
+{
+public:
+  bool
+  operator()(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
+  {
+    return lhs.prefix < rhs.prefix;
+  }
+};
+
+using ReadvertisedRouteContainer = std::set<ReadvertisedRoute, ReadvertisedRoutePrefixCompare>;
 
 } // namespace rib
 } // namespace nfd
