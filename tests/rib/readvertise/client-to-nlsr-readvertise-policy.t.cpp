@@ -23,40 +23,54 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
-#define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#include "rib/readvertise/client-to-nlsr-readvertise-policy.hpp"
 
-#include "core/scheduler.hpp"
-#include <ndn-cxx/security/signing-info.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace rib {
+namespace tests {
 
-/** \brief state of a readvertised route
- */
-class ReadvertisedRoute : noncopyable
+using namespace nfd::tests;
+
+BOOST_AUTO_TEST_SUITE(Readvertise)
+BOOST_FIXTURE_TEST_SUITE(TestClientToNlsrReadvertisePolicy, BaseFixture)
+
+BOOST_AUTO_TEST_CASE(ReadvertiseClientRoute)
 {
-public:
-  explicit
-  ReadvertisedRoute(const Name& prefix);
+  auto entry = make_shared<RibEntry>();
+  entry->setName("/test/A");
+  Route route;
+  route.origin = ndn::nfd::ROUTE_ORIGIN_CLIENT;
+  auto routeIt = entry->insertRoute(route).first;
+  RibRouteRef rrr{entry, routeIt};
 
-public:
-  Name prefix; ///< readvertised prefix
-  mutable ndn::security::SigningInfo signer; ///< signer for commands
-  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
-  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
-};
+  ClientToNlsrReadvertisePolicy policy;
+  ndn::optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
 
-inline bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
-{
-  return lhs.prefix < rhs.prefix;
+  BOOST_REQUIRE(action);
+  BOOST_CHECK_EQUAL(action->prefix, "/test/A");
+  BOOST_REQUIRE_EQUAL(action->signer, ndn::security::SigningInfo());
 }
 
-using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
+BOOST_AUTO_TEST_CASE(DontReadvertiseRoute)
+{
+  auto entry = make_shared<RibEntry>();
+  entry->setName("/test/A");
+  Route route;
+  route.origin = ndn::nfd::ROUTE_ORIGIN_NLSR;
+  auto routeIt = entry->insertRoute(route).first;
+  RibRouteRef rrr{entry, routeIt};
 
+  ClientToNlsrReadvertisePolicy policy;
+  ndn::optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
+
+  BOOST_CHECK(!action);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestClientToNlsrReadvertisePolicy
+BOOST_AUTO_TEST_SUITE_END() // Readvertise
+
+} // namespace tests
 } // namespace rib
 } // namespace nfd
-
-#endif // NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP

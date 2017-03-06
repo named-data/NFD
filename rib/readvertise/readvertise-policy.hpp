@@ -23,40 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
-#define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#ifndef NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP
+#define NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP
 
-#include "core/scheduler.hpp"
+#include "../rib.hpp"
 #include <ndn-cxx/security/signing-info.hpp>
 
 namespace nfd {
 namespace rib {
 
-/** \brief state of a readvertised route
+/** \brief a decision made by readvertise policy
  */
-class ReadvertisedRoute : noncopyable
+struct ReadvertiseAction
 {
-public:
-  explicit
-  ReadvertisedRoute(const Name& prefix);
-
-public:
-  Name prefix; ///< readvertised prefix
-  mutable ndn::security::SigningInfo signer; ///< signer for commands
-  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
-  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+  Name prefix; ///< the prefix that should be readvertised
+  ndn::security::SigningInfo signer; ///< credentials for command signing
 };
 
-inline bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
+/** \brief a policy to decide whether to readvertise a route, and what prefix to readvertise
+ */
+class ReadvertisePolicy : noncopyable
 {
-  return lhs.prefix < rhs.prefix;
-}
+public:
+  /** \brief decide whether to readvertise a route, and what prefix to readvertise
+   */
+  virtual ndn::optional<ReadvertiseAction>
+  handleNewRoute(const RibRouteRef& ribRoute) const = 0;
 
-using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
+  /** \return how often readvertisements made by this policy should be refreshed.
+   */
+  virtual time::milliseconds
+  getRefreshInterval() const = 0;
+};
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#endif // NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP

@@ -23,40 +23,32 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
-#define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#ifndef NFD_RIB_READVERTISE_CLIENT_TO_NLSR_READVERTISE_POLICY_HPP
+#define NFD_RIB_READVERTISE_CLIENT_TO_NLSR_READVERTISE_POLICY_HPP
 
-#include "core/scheduler.hpp"
-#include <ndn-cxx/security/signing-info.hpp>
+#include "readvertise-policy.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \brief state of a readvertised route
+/** \brief a policy to readvertise routes registered by end hosts into NLSR
  */
-class ReadvertisedRoute : noncopyable
+class ClientToNlsrReadvertisePolicy : public ReadvertisePolicy
 {
 public:
-  explicit
-  ReadvertisedRoute(const Name& prefix);
+  /** \brief advertise if the route's origin is client
+   *
+   *  If the route origin is "client" (typically from auto prefix propagation), readvertise it
+   *  using the default signing identity.
+   */
+  ndn::optional<ReadvertiseAction>
+  handleNewRoute(const RibRouteRef& ribRoute) const override;
 
-public:
-  Name prefix; ///< readvertised prefix
-  mutable ndn::security::SigningInfo signer; ///< signer for commands
-  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
-  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+  time::milliseconds
+  getRefreshInterval() const override;
 };
-
-inline bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
-{
-  return lhs.prefix < rhs.prefix;
-}
-
-using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#endif // NFD_RIB_READVERTISE_CLIENT_TO_NLSR_READVERTISE_POLICY_HPP
