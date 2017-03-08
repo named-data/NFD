@@ -36,6 +36,158 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestRibModule, StatusFixture<RibModule>)
 
+class RouteListFixture : public ExecuteCommandFixture
+{
+protected:
+  bool
+  respondRibDataset(const Interest& interest)
+  {
+    if (!Name("/localhost/nfd/rib/list").isPrefixOf(interest.getName())) {
+      return false;
+    }
+
+    RibEntry entry1;
+    entry1.setName("/5BBmTevRJ");
+    entry1.addRoute(Route()
+                      .setFaceId(6720)
+                      .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)
+                      .setCost(2956)
+                      .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE)
+                      .setExpirationPeriod(time::milliseconds(29950035)));
+    entry1.addRoute(Route()
+                      .setFaceId(6720)
+                      .setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC)
+                      .setCost(425)
+                      .setFlags(ndn::nfd::ROUTE_FLAGS_NONE));
+    entry1.addRoute(Route()
+                      .setFaceId(8599)
+                      .setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC)
+                      .setCost(9140)
+                      .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT));
+
+    RibEntry entry2;
+    entry2.setName("/aDPTKCio");
+    entry2.addRoute(Route()
+                      .setFaceId(31066)
+                      .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)
+                      .setCost(4617)
+                      .setFlags(ndn::nfd::ROUTE_FLAG_CAPTURE));
+
+    this->sendDataset(interest.getName(), entry1, entry2);
+    return true;
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(ListShowCommand, RouteListFixture)
+
+const std::string NOFILTER_OUTPUT = std::string(R"TEXT(
+prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
+prefix=/aDPTKCio nexthop=31066 origin=65 cost=4617 flags=capture expires=never
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(ListNoFilter)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondRibDataset(interest));
+  };
+
+  this->execute("route");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NOFILTER_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string NEXTHOP_OUTPUT = std::string(R"TEXT(
+prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
+prefix=/aDPTKCio nexthop=31066 origin=65 cost=4617 flags=capture expires=never
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(ListByNexthop)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest) || this->respondRibDataset(interest));
+  };
+
+  this->execute("route list udp4://225.131.75.231:56363");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NEXTHOP_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string ORIGIN_OUTPUT = std::string(R"TEXT(
+prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(ListByOrigin)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondRibDataset(interest));
+  };
+
+  this->execute("route list origin 255");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(ORIGIN_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string PREFIX_OUTPUT = std::string(R"TEXT(
+prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(ShowByPrefix)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondRibDataset(interest));
+  };
+
+  this->execute("route show 5BBmTevRJ");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(PREFIX_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(FaceNotExist)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest));
+  };
+
+  this->execute("route list 23728");
+  BOOST_CHECK_EQUAL(exitCode, 3);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Face not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(RouteNotExist)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondFaceQuery(interest) || this->respondRibDataset(interest));
+  };
+
+  this->execute("route list 10156");
+  BOOST_CHECK_EQUAL(exitCode, 6);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Route not found\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset
+
+  this->execute("route list");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when fetching RIB dataset: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ListShowCommand
+
 BOOST_FIXTURE_TEST_SUITE(AddCommand, ExecuteCommandFixture)
 
 BOOST_AUTO_TEST_CASE(NormalByFaceId)
@@ -339,10 +491,11 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT =
   "RIB:\n"
-  "  / route={faceid=262 (origin=255 cost=9 RibCapture), faceid=272 (origin=255 cost=50), "
-    "faceid=274 (origin=255 cost=78 ChildInherit RibCapture), "
-    "faceid=276 (origin=255 cost=79 expires=47s ChildInherit)}\n"
-  "  /localhost/nfd route={faceid=258 (origin=0 cost=0 ChildInherit)}\n";
+  "  / routes={nexthop=262 origin=255 cost=9 flags=capture expires=never, "
+              "nexthop=272 origin=255 cost=50 flags=none expires=never, "
+              "nexthop=274 origin=255 cost=78 flags=child-inherit|capture expires=never, "
+              "nexthop=276 origin=255 cost=79 flags=child-inherit expires=47s}\n"
+  "  /localhost/nfd routes={nexthop=258 origin=0 cost=0 flags=child-inherit expires=never}\n";
 
 BOOST_AUTO_TEST_CASE(Status)
 {

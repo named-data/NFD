@@ -145,11 +145,6 @@ registerStatusCommands(CommandParser& parser)
   defFibList
     .setTitle("print FIB entries");
   parser.addCommand(defFibList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantFib));
-
-  CommandDefinition defRouteList("route", "list");
-  defRouteList
-    .setTitle("print RIB entries");
-  parser.addCommand(defRouteList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantRib));
 }
 
 } // namespace nfdc

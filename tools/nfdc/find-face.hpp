@@ -92,6 +92,11 @@ public:
     return m_results;
   }
 
+  /** \return FaceId for all results
+   */
+  std::set<uint64_t>
+  getFaceIds() const;
+
   /** \return a single face status
    *  \pre getResults().size() == 1
    */

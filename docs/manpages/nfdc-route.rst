@@ -3,11 +3,12 @@ nfdc-route
 
 SYNOPSIS
 --------
-| nfdc route [list]
-| nfdc fib [list]
+| nfdc route [list [[nexthop] <FACEID|FACEURI>] [origin <ORIGIN>]]
+| nfdc route show [prefix] <PREFIX>
 | nfdc route add [prefix] <PREFIX> [nexthop] <FACEID|FACEURI> [origin <ORIGIN>] [cost <COST>]
 |   [no-inherit] [capture] [expires <EXPIRATION-MILLIS>]
-| nfdc unregister [-o <ORIGIN>] <PREFIX> <FACEID>
+| nfdc route remove [prefix] <PREFIX> [nexthop] <FACEID|FACEURI> [origin <ORIGIN>]
+| nfdc fib [list]
 
 DESCRIPTION
 -----------
@@ -17,10 +18,9 @@ Each *route* in the RIB indicates that contents under a name prefix may be avail
 A route contains a name prefix, a nexthop face, the origin, a cost, and a set of route inheritance flags;
 refer to NFD Management protocol for more information.
 
-The **nfdc route list** command shows a list of routes in the RIB.
+The **nfdc route list** command lists RIB routes, optionally filtered by nexthop and origin.
 
-The **nfdc fib list** command shows the forwarding information base (FIB),
-which is calculated from RIB routes and used directly by NFD forwarding.
+The **nfdc route show** command shows RIB routes at a specified name prefix.
 
 The **nfdc route add** command requests to add a route.
 If a route with the same prefix, nexthop, and origin already exists,
@@ -28,6 +28,9 @@ it is updated with the specified cost, route inheritance flags, and expiration p
 This command returns when the request has been accepted, but does not wait for RIB update completion.
 
 The **nfdc route remove** command removes a route with matching prefix, nexthop, and origin.
+
+The **nfdc fib list** command shows the forwarding information base (FIB),
+which is calculated from RIB routes and used directly by NFD forwarding.
 
 OPTIONS
 -------
@@ -76,6 +79,8 @@ EXIT CODES
 4: FaceUri canonization failed
 
 5: Ambiguous: multiple matching faces are found (**nfdc route add** only)
+
+6: Route not found (**nfdc route list** and **nfdc route show** only)
 
 SEE ALSO
 --------

@@ -34,6 +34,19 @@ namespace nfdc {
 void
 RibModule::registerCommands(CommandParser& parser)
 {
+  CommandDefinition defRouteList("route", "list");
+  defRouteList
+    .setTitle("print RIB routes")
+    .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::NO, Positional::YES)
+    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+  parser.addCommand(defRouteList, &RibModule::list);
+
+  CommandDefinition defRouteShow("route", "show");
+  defRouteShow
+    .setTitle("show routes toward a prefix")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES);
+  parser.addCommand(defRouteShow, &RibModule::show);
+
   CommandDefinition defRouteAdd("route", "add");
   defRouteAdd
     .setTitle("add a route")
@@ -53,6 +66,77 @@ RibModule::registerCommands(CommandParser& parser)
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES)
     .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
   parser.addCommand(defRouteRemove, &RibModule::remove);
+}
+
+void
+RibModule::list(ExecuteContext& ctx)
+{
+  auto nexthopIt = ctx.args.find("nexthop");
+  std::set<uint64_t> nexthops;
+  auto origin = ctx.args.getOptional<uint64_t>("origin");
+
+  if (nexthopIt != ctx.args.end()) {
+    FindFace findFace(ctx);
+    FindFace::Code res = findFace.execute(nexthopIt->second, true);
+
+    ctx.exitCode = static_cast<int>(res);
+    switch (res) {
+      case FindFace::Code::OK:
+        break;
+      case FindFace::Code::ERROR:
+      case FindFace::Code::CANONIZE_ERROR:
+      case FindFace::Code::NOT_FOUND:
+        ctx.err << findFace.getErrorReason() << '\n';
+        return;
+      default:
+        BOOST_ASSERT_MSG(false, "unexpected FindFace result");
+        return;
+    }
+
+    nexthops = findFace.getFaceIds();
+  }
+
+  listRoutesImpl(ctx, [&] (const RibEntry& entry, const Route& route) {
+    return (nexthops.empty() || nexthops.count(route.getFaceId()) > 0) &&
+           (!origin || route.getOrigin() == *origin);
+  });
+}
+
+void
+RibModule::show(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+
+  listRoutesImpl(ctx, [&] (const RibEntry& entry, const Route& route) {
+    return entry.getName() == prefix;
+  });
+}
+
+void
+RibModule::listRoutesImpl(ExecuteContext& ctx, const RoutePredicate& filter)
+{
+  ctx.controller.fetch<ndn::nfd::RibDataset>(
+    [&] (const std::vector<RibEntry>& dataset) {
+      bool hasRoute = false;
+      for (const RibEntry& entry : dataset) {
+        for (const Route& route : entry.getRoutes()) {
+          if (filter(entry, route)) {
+            hasRoute = true;
+            formatRouteText(ctx.out, entry, route, true);
+            ctx.out << '\n';
+          }
+        }
+      }
+
+      if (!hasRoute) {
+        ctx.exitCode = 6;
+        ctx.err << "Route not found\n";
+      }
+    },
+    ctx.makeDatasetFailureHandler("RIB dataset"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
 }
 
 void
@@ -147,11 +231,11 @@ RibModule::remove(ExecuteContext& ctx)
       return;
   }
 
-  for (const FaceStatus& faceStatus : findFace.getResults()) {
+  for (uint64_t faceId : findFace.getFaceIds()) {
     ControlParameters unregisterParams;
     unregisterParams
       .setName(prefix)
-      .setFaceId(faceStatus.getFaceId())
+      .setFaceId(faceId)
       .setOrigin(origin);
 
     ctx.controller.start<ndn::nfd::RibUnregisterCommand>(
@@ -238,35 +322,50 @@ RibModule::formatStatusText(std::ostream& os) const
 {
   os << "RIB:\n";
   for (const RibEntry& item : m_status) {
-    this->formatItemText(os, item);
+    os << "  ";
+    formatEntryText(os, item);
+    os << '\n';
   }
 }
 
 void
-RibModule::formatItemText(std::ostream& os, const RibEntry& item) const
+RibModule::formatEntryText(std::ostream& os, const RibEntry& entry)
 {
-  os << "  " << item.getName() << " route={";
+  os << entry.getName() << " routes={";
 
   text::Separator sep(", ");
-  for (const Route& route : item.getRoutes()) {
-    os << sep
-       << "faceid=" << route.getFaceId()
-       << " (origin=" << route.getOrigin()
-       << " cost=" << route.getCost();
-    if (route.hasExpirationPeriod()) {
-      os << " expires=" << text::formatDuration(route.getExpirationPeriod());
-    }
-    if (route.isChildInherit()) {
-      os << " ChildInherit";
-    }
-    if (route.isRibCapture()) {
-      os << " RibCapture";
-    }
-    os << ")";
+  for (const Route& route : entry.getRoutes()) {
+    os << sep;
+    formatRouteText(os, entry, route, false);
   }
 
   os << "}";
-  os << "\n";
+}
+
+void
+RibModule::formatRouteText(std::ostream& os, const RibEntry& entry, const Route& route,
+                           bool includePrefix)
+{
+  text::ItemAttributes ia;
+
+  if (includePrefix) {
+    os << ia("prefix") << entry.getName();
+  }
+  os << ia("nexthop") << route.getFaceId();
+  os << ia("origin") << static_cast<uint64_t>(route.getOrigin());
+  os << ia("cost") << route.getCost();
+  os << ia("flags") << static_cast<ndn::nfd::RouteFlags>(route.getFlags());
+
+  // 'origin' field is printed as a number, because printing 'origin' as string may mislead user
+  // into passing strings to 'origin' command line argument which currently only accepts numbers.
+  ///\todo #3987 print 'origin' with RouteOrigin stream insertion operator
+
+  if (route.hasExpirationPeriod()) {
+    os << ia("expires") << text::formatDuration(route.getExpirationPeriod());
+  }
+  else {
+    os << ia("expires") << "never";
+  }
 }
 
 } // namespace nfdc

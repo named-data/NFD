@@ -148,6 +148,16 @@ FindFace::query()
   m_ctx.face.processEvents();
 }
 
+std::set<uint64_t>
+FindFace::getFaceIds() const
+{
+  std::set<uint64_t> faceIds;
+  for (const FaceStatus& faceStatus : m_results) {
+    faceIds.insert(faceStatus.getFaceId());
+  }
+  return faceIds;
+}
+
 const FaceStatus&
 FindFace::getFaceStatus() const
 {
