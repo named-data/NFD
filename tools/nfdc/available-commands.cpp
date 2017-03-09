@@ -53,13 +53,13 @@ registerCommands(CommandParser& parser)
   };
   const std::vector<LegacyNfdcCommandDefinition> legacyNfdcSubcommands{
     {"register", "register a prefix", "route add"},
-    {"unregister", "unregister a prefix", ""},
+    {"unregister", "unregister a prefix", "route remove"},
     {"create", "create a face", "face create"},
     {"destroy", "destroy a face", "face destroy"},
     {"set-strategy", "set strategy choice on namespace", ""},
     {"unset-strategy", "unset strategy choice on namespace", ""},
-    {"add-nexthop", "add FIB nexthop", ""},
-    {"remove-nexthop", "remove FIB nexthop", ""}
+    {"add-nexthop", "add FIB nexthop", "route add"},
+    {"remove-nexthop", "remove FIB nexthop", "route remove"}
   };
   for (const LegacyNfdcCommandDefinition& lncd : legacyNfdcSubcommands) {
     CommandDefinition def(lncd.subcommand, "");
