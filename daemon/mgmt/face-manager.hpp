@@ -36,7 +36,7 @@ namespace nfd {
 
 /**
  * @brief implement the Face Management of NFD Management Protocol.
- * @sa http://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
+ * @sa https://redmine.named-data.net/projects/nfd/wiki/FaceMgmt
  */
 class FaceManager : public NfdManagerBase
 {
@@ -66,22 +66,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // ControlCommand
               const ControlParameters& parameters,
               const ndn::mgmt::CommandContinuation& done);
 
-  /**
-   * \deprecated use Flags+Mask in faces/update instead
-   */
-  void
-  enableLocalControl(const Name& topPrefix, const Interest& interest,
-                     const ControlParameters& parameters,
-                     const ndn::mgmt::CommandContinuation& done);
-
-  /**
-   * \deprecated use Flags+Mask in faces/update instead
-   */
-  void
-  disableLocalControl(const Name& topPrefix, const Interest& interest,
-                      const ControlParameters& parameters,
-                      const ndn::mgmt::CommandContinuation& done);
-
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   void
   afterCreateFaceSuccess(const ControlParameters& parameters,
@@ -92,11 +76,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
   afterCreateFaceFailure(uint32_t status,
                          const std::string& reason,
                          const ndn::mgmt::CommandContinuation& done);
-
-  Face*
-  findFaceForLocalControl(const Interest& request,
-                          const ControlParameters& parameters,
-                          const ndn::mgmt::CommandContinuation& done);
 
   static void
   setLinkServiceOptions(Face& face,

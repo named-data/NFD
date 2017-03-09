@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,10 +39,12 @@ using ndn::Scheduler;
  */
 using ndn::EventId;
 
+using ndn::util::scheduler::EventCallback;
+
 /** \brief schedule an event
  */
 EventId
-schedule(const time::nanoseconds& after, const Scheduler::Event& event);
+schedule(time::nanoseconds after, const EventCallback& event);
 
 /** \brief cancel a scheduled event
  */

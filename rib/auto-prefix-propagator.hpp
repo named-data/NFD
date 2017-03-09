@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -310,7 +310,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
   void
   afterPropagateSucceed(const ndn::nfd::ControlParameters& parameters,
                         const ndn::nfd::CommandOptions& options,
-                        const ndn::Scheduler::Event& refreshEvent);
+                        const scheduler::EventCallback& refreshEvent);
 
   /**
    * @brief invoked after propagation fails.
@@ -331,7 +331,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
                      const ndn::nfd::ControlParameters& parameters,
                      const ndn::nfd::CommandOptions& options,
                      time::seconds retryWaitTime,
-                     const ndn::Scheduler::Event& retryEvent);
+                     const scheduler::EventCallback& retryEvent);
 
   /**
    * @brief invoked after revocation succeeds

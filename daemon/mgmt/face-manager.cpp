@@ -51,12 +51,6 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
     bind(&FaceManager::destroyFace, this, _2, _3, _4, _5));
 
-  registerCommandHandler<ndn::nfd::FaceEnableLocalControlCommand>("enable-local-control",
-    bind(&FaceManager::enableLocalControl, this, _2, _3, _4, _5));
-
-  registerCommandHandler<ndn::nfd::FaceDisableLocalControlCommand>("disable-local-control",
-    bind(&FaceManager::disableLocalControl, this, _2, _3, _4, _5));
-
   // register handlers for StatusDataset
   registerStatusDatasetHandler("list", bind(&FaceManager::listFaces, this, _1, _2, _3));
   registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _1, _2, _3));
@@ -237,81 +231,6 @@ FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
   }
 
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
-}
-
-void
-FaceManager::enableLocalControl(const Name& topPrefix, const Interest& interest,
-                                const ControlParameters& parameters,
-                                const ndn::mgmt::CommandContinuation& done)
-{
-  Face* face = findFaceForLocalControl(interest, parameters, done);
-  if (!face) {
-    return;
-  }
-
-  // enable-local-control will enable all local fields in GenericLinkService
-  auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
-  if (service == nullptr) {
-    return done(ControlResponse(503, "LinkService type not supported"));
-  }
-
-  face::GenericLinkService::Options options = service->getOptions();
-  options.allowLocalFields = true;
-  service->setOptions(options);
-
-  return done(ControlResponse(200, "OK: enable all local fields on GenericLinkService")
-              .setBody(parameters.wireEncode()));
-}
-
-void
-FaceManager::disableLocalControl(const Name& topPrefix, const Interest& interest,
-                                 const ControlParameters& parameters,
-                                 const ndn::mgmt::CommandContinuation& done)
-{
-  Face* face = findFaceForLocalControl(interest, parameters, done);
-  if (!face) {
-    return;
-  }
-
-  // disable-local-control will disable all local fields in GenericLinkService
-  auto service = dynamic_cast<face::GenericLinkService*>(face->getLinkService());
-  if (service == nullptr) {
-    return done(ControlResponse(503, "LinkService type not supported"));
-  }
-
-  face::GenericLinkService::Options options = service->getOptions();
-  options.allowLocalFields = false;
-  service->setOptions(options);
-
-  return done(ControlResponse(200, "OK: disable all local fields on GenericLinkService")
-              .setBody(parameters.wireEncode()));
-}
-
-Face*
-FaceManager::findFaceForLocalControl(const Interest& request,
-                                     const ControlParameters& parameters,
-                                     const ndn::mgmt::CommandContinuation& done)
-{
-  shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = request.getTag<lp::IncomingFaceIdTag>();
-  // NDNLPv2 says "application MUST be prepared to receive a packet without IncomingFaceId field",
-  // but it's fine to assert IncomingFaceId is available, because InternalFace lives inside NFD
-  // and is initialized synchronously with IncomingFaceId field enabled.
-  BOOST_ASSERT(incomingFaceIdTag != nullptr);
-
-  Face* face = m_faceTable.get(*incomingFaceIdTag);
-  if (face == nullptr) {
-    NFD_LOG_DEBUG("FaceId " << *incomingFaceIdTag << " not found");
-    done(ControlResponse(410, "Face not found"));
-    return nullptr;
-  }
-
-  if (face->getScope() == ndn::nfd::FACE_SCOPE_NON_LOCAL) {
-    NFD_LOG_DEBUG("Cannot enable local control on non-local FaceId " << face->getId());
-    done(ControlResponse(412, "Face is non-local"));
-    return nullptr;
-  }
-
-  return face;
 }
 
 void

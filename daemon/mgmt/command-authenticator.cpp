@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #include "command-authenticator.hpp"
 #include "core/logger.hpp"
 
-#include <ndn-cxx/security/identity-certificate.hpp>
+#include <ndn-cxx/security/v1/identity-certificate.hpp>
 #include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/io.hpp>
 
@@ -37,6 +37,8 @@ namespace nfd {
 NFD_LOG_INIT("CommandAuthenticator");
 // INFO: configuration change, etc
 // DEBUG: per authentication request result
+
+using ndn::security::v1::IdentityCertificate;
 
 shared_ptr<CommandAuthenticator>
 CommandAuthenticator::create()
@@ -89,7 +91,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
 
     bool isAny = false;
-    shared_ptr<ndn::IdentityCertificate> cert;
+    shared_ptr<IdentityCertificate> cert;
     if (certfile == "any") {
       isAny = true;
       NFD_LOG_WARN("'certfile any' is intended for demo purposes only and "
@@ -98,7 +100,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     else {
       using namespace boost::filesystem;
       path certfilePath = absolute(certfile, path(filename).parent_path());
-      cert = ndn::io::load<ndn::IdentityCertificate>(certfilePath.string());
+      cert = ndn::io::load<IdentityCertificate>(certfilePath.string());
       if (cert == nullptr) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error(
           "cannot load certfile " + certfilePath.string() +
@@ -202,13 +204,13 @@ std::pair<bool, Name>
 CommandAuthenticator::extractKeyName(const Interest& interest)
 {
   const Name& name = interest.getName();
-  if (name.size() < ndn::signed_interest::MIN_LENGTH) {
+  if (name.size() < ndn::command_interest::MIN_SIZE) {
     return {false, Name()};
   }
 
   ndn::SignatureInfo sig;
   try {
-    sig.wireDecode(name[ndn::signed_interest::POS_SIG_INFO].blockFromValue());
+    sig.wireDecode(name[ndn::command_interest::POS_SIG_INFO].blockFromValue());
   }
   catch (const tlv::Error&) {
     return {false, Name()};
@@ -224,9 +226,9 @@ CommandAuthenticator::extractKeyName(const Interest& interest)
   }
 
   try {
-    return {true, ndn::IdentityCertificate::certificateNameToPublicKeyName(keyLocator.getName())};
+    return {true, IdentityCertificate::certificateNameToPublicKeyName(keyLocator.getName())};
   }
-  catch (const ndn::IdentityCertificate::Error&) {
+  catch (const IdentityCertificate::Error&) {
     return {false, Name()};
   }
 }

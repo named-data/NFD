@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,8 @@
  */
 
 #include "identity-management-fixture.hpp"
+#include <ndn-cxx/security/v1/identity-certificate.hpp>
+#include <ndn-cxx/security/v1/sec-public-info.hpp>
 #include <ndn-cxx/util/io.hpp>
 #include <boost/filesystem.hpp>
 
@@ -56,7 +58,7 @@ IdentityManagementFixture::addIdentity(const Name& identity, const ndn::KeyParam
     m_identities.push_back(identity);
     return true;
   }
-  catch (std::runtime_error&) {
+  catch (const std::runtime_error&) {
     return false;
   }
 }
@@ -64,11 +66,11 @@ IdentityManagementFixture::addIdentity(const Name& identity, const ndn::KeyParam
 bool
 IdentityManagementFixture::saveIdentityCertificate(const Name& identity, const std::string& filename, bool wantAdd)
 {
-  shared_ptr<ndn::IdentityCertificate> cert;
+  shared_ptr<ndn::security::v1::IdentityCertificate> cert;
   try {
     cert = m_keyChain.getCertificate(m_keyChain.getDefaultCertificateNameForIdentity(identity));
   }
-  catch (const ndn::SecPublicInfo::Error&) {
+  catch (const ndn::security::v1::SecPublicInfo::Error&) {
     if (wantAdd && this->addIdentity(identity)) {
       return this->saveIdentityCertificate(identity, filename, false);
     }

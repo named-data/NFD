@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@
 #include "core/config-file.hpp"
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/security/command-interest-validator.hpp>
-#include <ndn-cxx/security/public-key.hpp>
+#include <ndn-cxx/security/v1/public-key.hpp>
 
 namespace nfd {
 
@@ -68,7 +68,7 @@ private:
   struct AuthorizedCerts
   {
     bool allowAny = false;
-    std::unordered_map<Name, ndn::PublicKey> certs; ///< keyName => publicKey
+    std::unordered_map<Name, ndn::security::v1::PublicKey> certs; ///< keyName => publicKey
   };
   std::unordered_map<std::string, AuthorizedCerts> m_moduleAuth; ///< module => certs
 

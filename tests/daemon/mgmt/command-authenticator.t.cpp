@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -349,7 +349,7 @@ BOOST_AUTO_TEST_CASE(BadSig)
 {
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
-      setNameComponent(interest, ndn::signed_interest::POS_SIG_VALUE, "bad-signature-bits");
+      setNameComponent(interest, ndn::command_interest::POS_SIG_VALUE, "bad-signature-bits");
     }
   ), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
@@ -360,12 +360,12 @@ BOOST_AUTO_TEST_CASE(InvalidTimestamp)
   name::Component timestampComp;
   BOOST_CHECK_EQUAL(authorize1(
     [&timestampComp] (const Interest& interest) {
-      timestampComp = interest.getName().at(ndn::signed_interest::POS_TIMESTAMP);
+      timestampComp = interest.getName().at(ndn::command_interest::POS_TIMESTAMP);
     }
   ), true); // accept first command
   BOOST_CHECK_EQUAL(authorize1(
     [&timestampComp] (Interest& interest) {
-      setNameComponent(interest, ndn::signed_interest::POS_TIMESTAMP, timestampComp);
+      setNameComponent(interest, ndn::command_interest::POS_TIMESTAMP, timestampComp);
     }
   ), false); // reject second command because timestamp equals first command
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);

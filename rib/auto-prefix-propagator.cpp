@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -272,9 +272,9 @@ AutoPrefixPropagator::advertise(const ControlParameters& parameters,
 {
   NFD_LOG_INFO("advertise " << parameters.getName());
 
-  ndn::Scheduler::Event refreshEvent =
+  scheduler::EventCallback refreshEvent =
     bind(&AutoPrefixPropagator::onRefreshTimer, this, parameters, options);
-  ndn::Scheduler::Event retryEvent =
+  scheduler::EventCallback retryEvent =
     bind(&AutoPrefixPropagator::onRetryTimer, this, parameters, options,
          std::min(m_maxRetryWait, retryWaitTime * 2));
 
@@ -381,7 +381,7 @@ AutoPrefixPropagator::afterHubDisconnect()
 void
 AutoPrefixPropagator::afterPropagateSucceed(const ControlParameters& parameters,
                                             const CommandOptions& options,
-                                            const ndn::Scheduler::Event& refreshEvent)
+                                            const scheduler::EventCallback& refreshEvent)
 {
   NFD_LOG_TRACE("success to propagate " << parameters.getName());
 
@@ -403,7 +403,7 @@ AutoPrefixPropagator::afterPropagateFail(const ndn::nfd::ControlResponse& respon
                                          const ControlParameters& parameters,
                                          const CommandOptions& options,
                                          time::seconds retryWaitTime,
-                                         const ndn::Scheduler::Event& retryEvent)
+                                         const scheduler::EventCallback& retryEvent)
 {
   NFD_LOG_TRACE("fail to propagate " << parameters.getName()
                                      << "\n\t reason:" << response.getText()
