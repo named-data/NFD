@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,15 +24,28 @@
  */
 
 #include "rib-manager.hpp"
+#include "readvertise/readvertise.hpp"
+#include "readvertise/client-to-nlsr-readvertise-policy.hpp"
+#include "readvertise/nfd-rib-readvertise-destination.hpp"
+
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+
 #include <ndn-cxx/lp/tags.hpp>
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
+#include <ndn-cxx/mgmt/nfd/control-response.hpp>
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
 namespace nfd {
 namespace rib {
+
+using ndn::nfd::ControlCommand;
+using ndn::nfd::ControlResponse;
+using ndn::nfd::ControlParameters;
+using ndn::nfd::FaceEventNotification;
 
 NFD_LOG_INIT("RibManager");
 
@@ -41,6 +54,7 @@ const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";
 const std::string RibManager::MGMT_MODULE_NAME = "rib";
 const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
 const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
+const Name RibManager::READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
 
 RibManager::RibManager(Dispatcher& dispatcher,
                        ndn::Face& face,
@@ -127,6 +141,7 @@ RibManager::onConfig(const ConfigSection& configSection,
                      const std::string& filename)
 {
   bool isAutoPrefixPropagatorEnabled = false;
+  bool wantReadvertiseToNlsr = false;
 
   for (const auto& item : configSection) {
     if (item.first == "localhost_security") {
@@ -147,6 +162,9 @@ RibManager::onConfig(const ConfigSection& configSection,
 
       m_prefixPropagator.enable();
     }
+    else if (item.first == "readvertise_nlsr") {
+      wantReadvertiseToNlsr = ConfigFile::parseYesNo(item, "rib.readvertise_nlsr");
+    }
     else {
       BOOST_THROW_EXCEPTION(Error("Unrecognized rib property: " + item.first));
     }
@@ -154,6 +172,18 @@ RibManager::onConfig(const ConfigSection& configSection,
 
   if (!isAutoPrefixPropagatorEnabled) {
     m_prefixPropagator.disable();
+  }
+
+  if (wantReadvertiseToNlsr && m_readvertiseNlsr == nullptr) {
+    NFD_LOG_DEBUG("Enabling readvertise-to-nlsr.");
+    m_readvertiseNlsr.reset(new Readvertise(
+      m_rib,
+      make_unique<ClientToNlsrReadvertisePolicy>(),
+      make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib)));
+  }
+  else if (!wantReadvertiseToNlsr && m_readvertiseNlsr != nullptr) {
+    NFD_LOG_DEBUG("Disabling readvertise-to-nlsr.");
+    m_readvertiseNlsr.reset();
   }
 }
 
@@ -189,8 +219,7 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
   route.flags = parameters.getFlags();
 
   if (parameters.hasExpirationPeriod() &&
-      parameters.getExpirationPeriod() != time::milliseconds::max())
-  {
+      parameters.getExpirationPeriod() != time::milliseconds::max()) {
     route.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
 
     // Schedule a new event, the old one will be cancelled during rib insertion.

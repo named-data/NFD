@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,28 +26,24 @@
 #ifndef NFD_RIB_RIB_MANAGER_HPP
 #define NFD_RIB_RIB_MANAGER_HPP
 
-#include "rib.hpp"
-#include "core/config-file.hpp"
-#include "core/manager-base.hpp"
 #include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
+#include "rib.hpp"
+
+#include "core/config-file.hpp"
+#include "core/manager-base.hpp"
 
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/security/validator-config.hpp>
-#include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
-#include <ndn-cxx/mgmt/nfd/control-command.hpp>
-#include <ndn-cxx/mgmt/nfd/control-response.hpp>
-#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 
 namespace nfd {
 namespace rib {
 
-using ndn::nfd::ControlCommand;
-using ndn::nfd::ControlResponse;
-using ndn::nfd::ControlParameters;
-
-using ndn::nfd::FaceEventNotification;
+class AutoPrefixPropagator;
+class Readvertise;
 
 class RibManager : public nfd::ManagerBase
 {
@@ -107,7 +103,7 @@ private: // ControlCommand and StatusDataset
   void
   setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters);
 
-  virtual ndn::mgmt::Authorization
+  ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) override;
 
 private: // Face monitor
@@ -138,7 +134,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    * @param notification
    */
   void
-  onNotification(const FaceEventNotification& notification);
+  onNotification(const ndn::nfd::FaceEventNotification& notification);
 
 private:
   void
@@ -163,6 +159,7 @@ private:
   ndn::ValidatorConfig m_localhopValidator;
   bool m_isLocalhopEnabled;
   AutoPrefixPropagator m_prefixPropagator;
+  unique_ptr<Readvertise> m_readvertiseNlsr;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Rib m_rib;
@@ -175,6 +172,7 @@ private:
   static const Name FACES_LIST_DATASET_PREFIX;
   static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
   scheduler::EventId m_activeFaceFetchEvent;
+  static const Name READVERTISE_NLSR_PREFIX;
 
   typedef std::set<uint64_t> FaceIdSet;
   /** \brief contains FaceIds with one or more Routes in the RIB

@@ -366,4 +366,8 @@ rib
     ; policy. Initially, the wait time is set to base_retry_wait, then it will be doubled for every
     ; retry unless beyond the max_retry_wait, in which case max_retry_wait is set as the wait time.
   }
+
+  ; If enabled, routes registered with origin=client (typically from auto_prefix_propagate)
+  ; will be readvertised into local NLSR daemon.
+  readvertise_nlsr no
 }
