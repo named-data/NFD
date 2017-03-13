@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,12 +25,11 @@
 
 #include "rib/rib-manager.hpp"
 #include "manager-common-fixture.hpp"
-#include "core/random.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
-#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
 namespace nfd {
 namespace rib {
@@ -140,7 +139,7 @@ private:
 public:
   ControlParameters
   makeRegisterParameters(const Name& name, uint64_t id = 0,
-                         const time::milliseconds expiry = time::milliseconds::max())
+                         time::milliseconds expiry = time::milliseconds::max())
   {
     return ControlParameters()
       .setName(name)
@@ -181,10 +180,10 @@ public:
     WRONG_PARAMS_FORMAT,
     WRONG_PARAMS_NAME,
     WRONG_PARAMS_FACE
-   };
+  };
 
   CheckCommandResult
-  checkCommand(size_t idx, const char* verbStr, ControlParameters expectedParams)
+  checkCommand(size_t idx, const char* verbStr, const ControlParameters& expectedParams) const
   {
     if (idx > m_commands.size()) {
       return CheckCommandResult::OUT_OF_BOUNDARY;
@@ -222,9 +221,9 @@ public:
   }
 
 public:
+  static const Name FIB_COMMAND_PREFIX;
   std::vector<Interest>& m_commands;
   ConfigurationStatus m_status;
-  static const Name FIB_COMMAND_PREFIX;
 
 protected:
   RibManager m_manager;
@@ -234,35 +233,26 @@ protected:
 const Name RibManagerFixture::FIB_COMMAND_PREFIX("/localhost/nfd/fib");
 
 std::ostream&
-operator<<(std::ostream& os, const RibManagerFixture::CheckCommandResult& result)
+operator<<(std::ostream& os, RibManagerFixture::CheckCommandResult result)
 {
   switch (result) {
   case RibManagerFixture::CheckCommandResult::OK:
-    os << "OK";
-    break;
+    return os << "OK";
   case RibManagerFixture::CheckCommandResult::OUT_OF_BOUNDARY:
-    os << "OUT_OF_BOUNDARY";
-    break;
+    return os << "OUT_OF_BOUNDARY";
   case RibManagerFixture::CheckCommandResult::WRONG_FORMAT:
-    os << "WRONG_FORMAT";
-    break;
+    return os << "WRONG_FORMAT";
   case RibManagerFixture::CheckCommandResult::WRONG_VERB:
-    os << "WRONG_VERB";
-    break;
+    return os << "WRONG_VERB";
   case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FORMAT:
-    os << "WRONG_COST";
-    break;
+    return os << "WRONG_PARAMS_FORMAT";
   case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_NAME:
-    os << "WRONG_PARAMS_NAME";
-    break;
+    return os << "WRONG_PARAMS_NAME";
   case RibManagerFixture::CheckCommandResult::WRONG_PARAMS_FACE:
-    os << "WRONG_PARAMS_FACE";
-    break;
-  default:
-    break;
+    return os << "WRONG_PARAMS_FACE";
   };
 
-  return os;
+  return os << static_cast<int>(result);
 }
 
 BOOST_AUTO_TEST_SUITE(TestRibManager)
@@ -324,12 +314,12 @@ public:
   }
 };
 
-typedef boost::mpl::vector<
+using AllFixtures = boost::mpl::vector<
   UnauthorizedRibManagerFixture,
   LocalhostAuthorizedRibManagerFixture,
   LocalhopAuthorizedRibManagerFixture,
   AuthorizedRibManagerFixture
-> AllFixtures;
+>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
 {
@@ -437,57 +427,13 @@ BOOST_AUTO_TEST_CASE(Expiration)
 
 BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister
 
-// @todo Remove when ndn::nfd::RibEntry implements operator!=
-class RibEntry : public ndn::nfd::RibEntry
-{
-public:
-  RibEntry() = default;
-
-  RibEntry(const ndn::nfd::RibEntry& entry)
-    : ndn::nfd::RibEntry(entry)
-  {
-  }
-};
-
-bool
-operator!=(const RibEntry& left, const RibEntry& right)
-{
-  if (left.getName() != right.getName()) {
-    return true;
-  }
-
-  auto leftRoutes = left.getRoutes();
-  auto rightRoutes = right.getRoutes();
-  if (leftRoutes.size() != rightRoutes.size()) {
-    return true;
-  }
-
-  for (auto&& route : leftRoutes) {
-    auto hitEntry =
-      std::find_if(rightRoutes.begin(), rightRoutes.end(), [&] (const ndn::nfd::Route& record) {
-          return route.getFaceId() == record.getFaceId() &&
-            route.getCost() == record.getCost() &&
-            route.getOrigin() == record.getOrigin() &&
-            route.getFlags() == record.getFlags() &&
-            route.getExpirationPeriod() == record.getExpirationPeriod();
-        });
-
-    if (hitEntry == rightRoutes.end()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 {
-  std::uniform_int_distribution<uint64_t> dist;
   uint64_t faceId = 0;
-  auto generateRoute = [&dist, &faceId] () -> Route {
+  auto generateRoute = [&faceId] () -> Route {
     Route route;
     route.faceId = ++faceId;
-    route.cost = dist(getGlobalRng());
+    route.cost = route.faceId * 10;
     route.expires = time::steady_clock::TimePoint::max();
     return route;
   };
@@ -506,19 +452,14 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 
   receiveInterest(makeInterest("/localhost/nfd/rib/list"));
 
-  Block content;
-  BOOST_CHECK_NO_THROW(content = concatenateResponses());
-  BOOST_CHECK_NO_THROW(content.parse());
+  Block content = concatenateResponses();
+  content.parse();
   BOOST_REQUIRE_EQUAL(content.elements().size(), nEntries);
 
-  std::vector<RibEntry> receivedRecords, expectedRecords;
+  std::vector<ndn::nfd::RibEntry> receivedRecords, expectedRecords;
   for (size_t idx = 0; idx < nEntries; ++idx) {
-    BOOST_TEST_MESSAGE("processing element: " << idx);
-
-    RibEntry decodedEntry;
-    BOOST_REQUIRE_NO_THROW(decodedEntry.wireDecode(content.elements()[idx]));
+    ndn::nfd::RibEntry decodedEntry(content.elements()[idx]);
     receivedRecords.push_back(decodedEntry);
-
     actualPrefixes.erase(decodedEntry.getName());
 
     auto matchedEntryIt = m_rib.find(decodedEntry.getName());
@@ -527,22 +468,18 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     auto matchedEntry = matchedEntryIt->second;
     BOOST_REQUIRE(matchedEntry != nullptr);
 
-    RibEntry record;
-    record.setName(matchedEntry->getName());
-    const auto& routes = matchedEntry->getRoutes();
-    for (auto&& route : routes) {
-      ndn::nfd::Route routeRecord;
-      routeRecord.setFaceId(route.faceId);
-      routeRecord.setOrigin(route.origin);
-      routeRecord.setFlags(route.flags);
-      routeRecord.setCost(route.cost);
-      record.addRoute(routeRecord);
+    expectedRecords.emplace_back();
+    expectedRecords.back().setName(matchedEntry->getName());
+    for (const auto& route : matchedEntry->getRoutes()) {
+      expectedRecords.back().addRoute(ndn::nfd::Route()
+                                      .setFaceId(route.faceId)
+                                      .setOrigin(route.origin)
+                                      .setCost(route.cost)
+                                      .setFlags(route.flags));
     }
-    expectedRecords.push_back(record);
   }
 
   BOOST_CHECK_EQUAL(actualPrefixes.size(), 0);
-
   BOOST_CHECK_EQUAL_COLLECTIONS(receivedRecords.begin(), receivedRecords.end(),
                                 expectedRecords.begin(), expectedRecords.end());
 }
@@ -609,7 +546,6 @@ BOOST_AUTO_TEST_CASE(OnNotification)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // FaceMonitor
-
 BOOST_AUTO_TEST_SUITE_END() // TestRibManager
 
 } // namespace tests
