@@ -79,7 +79,7 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
 {
   face->setId(faceId);
   auto ret = m_faces.emplace(faceId, face);
-  BOOST_ASSERT(ret.second);
+  BOOST_VERIFY(ret.second);
 
   NFD_LOG_INFO("Added face id=" << faceId <<
                " remote=" << face->getRemoteUri() <<
