@@ -29,6 +29,8 @@
 #include "network-interface.hpp"
 #include "network.hpp"
 
+#include <fnmatch.h>
+
 namespace nfd {
 
 NetworkInterfacePredicate::NetworkInterfacePredicate()
@@ -95,6 +97,14 @@ NetworkInterfacePredicate::parseBlacklist(const boost::property_tree::ptree& lis
 }
 
 static bool
+doesMatchPattern(const std::string& ifname, const std::string& pattern)
+{
+  // use fnmatch(3) to provide unix glob-style matching for interface names
+  // fnmatch returns 0 if there is a match
+  return ::fnmatch(pattern.data(), ifname.data(), 0) == 0;
+}
+
+static bool
 doesMatchRule(const NetworkInterfaceInfo& netif, const std::string& rule)
 {
   // if '/' is in rule, this is a subnet, check if IP in subnet
@@ -108,7 +118,7 @@ doesMatchRule(const NetworkInterfaceInfo& netif, const std::string& rule)
   }
 
   return rule == "*" ||
-         netif.name == rule ||
+         doesMatchPattern(netif.name, rule) ||
          netif.etherAddress.toString() == rule;
 }
 

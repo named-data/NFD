@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -61,6 +61,14 @@ protected:
         {address_v6::from_string("2001:db8::1")},
         address_v4::from_string("198.51.100.255"),
         IFF_MULTICAST | IFF_BROADCAST | IFF_UP});
+    interfaces.push_back(
+      NetworkInterfaceInfo{3, "enp68s0f1",
+        ethernet::Address::fromString("3e:15:c2:8b:65:03"),
+        {address_v4::from_string("192.168.2.3")},
+        {},
+        address_v4::from_string("192.168.2.255"),
+        IFF_UP});
+
   }
 
   void
@@ -94,6 +102,7 @@ BOOST_AUTO_TEST_CASE(Default)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
 }
 
 BOOST_AUTO_TEST_CASE(EmptyWhitelist)
@@ -105,6 +114,7 @@ BOOST_AUTO_TEST_CASE(EmptyWhitelist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(WildcardBlacklist)
@@ -117,6 +127,7 @@ BOOST_AUTO_TEST_CASE(WildcardBlacklist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(IfnameWhitelist)
@@ -130,6 +141,7 @@ BOOST_AUTO_TEST_CASE(IfnameWhitelist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(IfnameBlacklist)
@@ -143,6 +155,72 @@ BOOST_AUTO_TEST_CASE(IfnameBlacklist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
+}
+
+BOOST_AUTO_TEST_CASE(IfnameWildcardStart)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  ifname enp*\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
+}
+
+BOOST_AUTO_TEST_CASE(IfnameWildcardMiddle)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  ifname *th*\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
+}
+
+BOOST_AUTO_TEST_CASE(IfnameWildcardDouble)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  ifname eth**\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
+}
+
+BOOST_AUTO_TEST_CASE(IfnameWildcardOnly)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  ifname *\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
+}
+
+BOOST_AUTO_TEST_CASE(IfnameQuestionMark)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  ifname eth?\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(IfnameMalformed)
@@ -166,6 +244,7 @@ BOOST_AUTO_TEST_CASE(EtherWhitelist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(EtherBlacklist)
@@ -179,6 +258,7 @@ BOOST_AUTO_TEST_CASE(EtherBlacklist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
 }
 
 BOOST_AUTO_TEST_CASE(EtherMalformed)
@@ -201,6 +281,7 @@ BOOST_AUTO_TEST_CASE(SubnetWhitelist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), false);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), true);
 }
 
 BOOST_AUTO_TEST_CASE(SubnetBlacklist)
@@ -213,6 +294,7 @@ BOOST_AUTO_TEST_CASE(SubnetBlacklist)
   BOOST_CHECK_EQUAL(predicate(interfaces[0]), true);
   BOOST_CHECK_EQUAL(predicate(interfaces[1]), false);
   BOOST_CHECK_EQUAL(predicate(interfaces[2]), true);
+  BOOST_CHECK_EQUAL(predicate(interfaces[3]), false);
 }
 
 BOOST_AUTO_TEST_CASE(SubnetMalformed)

@@ -44,7 +44,6 @@ log
 ; The tables section configures the CS, PIT, FIB, Strategy Choice, and Measurements
 tables
 {
-
   ; ContentStore size limit in number of packets
   ; default is 65536, about 500MB with 8KB packet size
   cs_max_packets 65536
@@ -118,7 +117,7 @@ face_system
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
     ; UDP multicast settings
-    ; NFD creates one UDP multicast face per NIC
+    ; By default, NFD creates one UDP multicast face per NIC
     ;
     ; In multi-homed Linux machines these settings will NOT work without
     ; root or settings the appropriate permissions:
@@ -130,11 +129,10 @@ face_system
     mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
 
     ; Whitelist and blacklist can contain, in no particular order:
-    ; interface names (e.g., ifname eth0),
-    ; mac addresses (e.g., ether 85:3b:4d:d3:5f:c2),
-    ; subnets (e.g., subnet 192.0.2.0/24, note that only IPv4 is supported here),
-    ; or a wildcard (*) that matches all interfaces.
-
+    ; interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0'),
+    ; mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2'),
+    ; subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here),
+    ; or a single asterisk ('*') that matches all interfaces.
     whitelist
     {
       *
@@ -170,17 +168,16 @@ face_system
   @IF_HAVE_LIBPCAP@ether
   @IF_HAVE_LIBPCAP@{
   @IF_HAVE_LIBPCAP@  ; Ethernet multicast settings
-  @IF_HAVE_LIBPCAP@  ; NFD creates one Ethernet multicast face per NIC
+  @IF_HAVE_LIBPCAP@  ; By default, NFD creates one Ethernet multicast face per NIC
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
-  @IF_HAVE_LIBPCAP@  ; interface names (e.g., ifname eth0),
-  @IF_HAVE_LIBPCAP@  ; mac addresses (e.g., ether 85:3b:4d:d3:5f:c2),
-  @IF_HAVE_LIBPCAP@  ; subnets (e.g., subnet 192.0.2.0/24, note that only IPv4 is supported here),
-  @IF_HAVE_LIBPCAP@  ; or a wildcard (*) that matches all interfaces.
-  @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  ; interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0'),
+  @IF_HAVE_LIBPCAP@  ; mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2'),
+  @IF_HAVE_LIBPCAP@  ; subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here),
+  @IF_HAVE_LIBPCAP@  ; or a single asterisk ('*') that matches all interfaces.
   @IF_HAVE_LIBPCAP@  whitelist
   @IF_HAVE_LIBPCAP@  {
   @IF_HAVE_LIBPCAP@    *
