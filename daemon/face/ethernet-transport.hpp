@@ -43,9 +43,9 @@ namespace nfd {
 namespace face {
 
 /**
- * \brief A multicast Transport that uses raw Ethernet II frames
+ * @brief Base class for Ethernet-based Transports
  */
-class EthernetTransport final : public Transport
+class EthernetTransport : public Transport
 {
 public:
   class Error : public std::runtime_error
@@ -58,42 +58,29 @@ public:
     }
   };
 
-  /**
-   * @brief Creates an Ethernet-based transport for multicast communication
-   */
-  EthernetTransport(const NetworkInterfaceInfo& interface,
-                    const ethernet::Address& mcastAddress,
-                    ndn::nfd::LinkType linkType);
-
 protected:
+  EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
+                    const ethernet::Address& remoteEndpoint);
+
   void
   doClose() final;
 
-private:
+  /**
+   * @brief Installs a BPF filter on the receiving socket
+   * @param filterString string containing the BPF program source
+   */
   void
-  doSend(Transport::Packet&& packet) final;
+  setPacketFilter(const char* filterString);
 
+private:
   /**
    * @brief Allocates and initializes a libpcap context for live capture
    */
   void
   pcapInit();
 
-  /**
-   * @brief Installs a BPF filter on the receiving socket
-   *
-   * @param filterString string containing the source BPF program
-   */
   void
-  setPacketFilter(const char* filterString);
-
-  /**
-   * @brief Enables receiving frames addressed to our MAC multicast group
-   *
-   * @return true if successful, false otherwise
-   */
-  bool
-  joinMulticastGroup();
+  doSend(Transport::Packet&& packet) final;
 
   /**
    * @brief Sends the specified TLV block on the network wrapped in an Ethernet frame
@@ -130,7 +117,7 @@ private:
   size_t
   getInterfaceMtu();
 
-private:
+protected:
   unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
   boost::asio::posix::stream_descriptor m_socket;
 
@@ -141,6 +128,7 @@ private:
   int m_interfaceIndex;
 #endif
 
+private:
 #ifdef _DEBUG
   /// number of packets dropped by the kernel, as reported by libpcap
   unsigned int m_nDropped;

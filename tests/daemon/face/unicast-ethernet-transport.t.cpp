@@ -23,54 +23,42 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "face/ethernet-transport.hpp"
-
 #include "transport-test-common.hpp"
+
 #include "ethernet-fixture.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-using namespace nfd::tests;
-
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestEthernetTransport, EthernetFixture)
+BOOST_FIXTURE_TEST_SUITE(TestUnicastEthernetTransport, EthernetFixture)
 
 BOOST_AUTO_TEST_CASE(StaticProperties)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeUnicast();
 
-  auto netif = netifs.front();
-  EthernetTransport transport(netif,
-                              ethernet::getDefaultMulticastAddress(),
-                              ndn::nfd::LINK_TYPE_MULTI_ACCESS);
-  checkStaticPropertiesInitialized(transport);
+  checkStaticPropertiesInitialized(*transport);
 
-  BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri::fromDev(netif.name));
-  BOOST_CHECK_EQUAL(transport.getRemoteUri(), FaceUri(ethernet::getDefaultMulticastAddress()));
-  BOOST_CHECK_EQUAL(transport.getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
-  BOOST_CHECK_EQUAL(transport.getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-  BOOST_CHECK_EQUAL(transport.getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("dev://" + localEp));
+  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("ether://[" + remoteEp.toString() + "]"));
+  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 }
 
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-  EthernetTransport transport(netifs.front(),
-                              ethernet::getDefaultMulticastAddress(),
-                              ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  initializeUnicast();
 
-  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
-  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), false);
-  BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), true);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), false);
 }
 
-///\todo #3369 add the equivalent of these test cases from ethernet.t.cpp
-///      as of commit:65caf200924b28748037750449e28bcb548dbc9c
-///      SendPacket, ProcessIncomingPacket
-
-BOOST_AUTO_TEST_SUITE_END() // TestEthernetTransport
+BOOST_AUTO_TEST_SUITE_END() // TestUnicastEthernetTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests

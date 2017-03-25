@@ -24,8 +24,8 @@
  */
 
 #include "ethernet-factory.hpp"
-#include "ethernet-transport.hpp"
 #include "generic-link-service.hpp"
+#include "multicast-ethernet-transport.hpp"
 #include "core/logger.hpp"
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -165,7 +165,7 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& netif,
   opts.allowReassembly = true;
 
   auto linkService = make_unique<face::GenericLinkService>(opts);
-  auto transport = make_unique<face::EthernetTransport>(netif, address, m_mcastConfig.linkType);
+  auto transport = make_unique<face::MulticastEthernetTransport>(netif, address, m_mcastConfig.linkType);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_mcastFaces[key] = face;
