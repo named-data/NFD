@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,7 @@
 #define NFD_DAEMON_FW_ACCESS_STRATEGY_HPP
 
 #include "strategy.hpp"
-#include "rtt-estimator.hpp"
+#include "core/rtt-estimator.hpp"
 #include "retx-suppression-fixed.hpp"
 #include <unordered_set>
 #include <unordered_map>
@@ -56,11 +56,11 @@ public:
   getStrategyName();
 
 public: // triggers
-  virtual void
+  void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
-  virtual void
+  void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override;
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,14 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "fw/rtt-estimator.hpp"
+#include "core/rtt-estimator.hpp"
 
 #include "tests/test-common.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Fw)
 BOOST_FIXTURE_TEST_SUITE(TestRttEstimator, BaseFixture)
 
 static inline double
@@ -76,7 +75,6 @@ BOOST_AUTO_TEST_CASE(Basic)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestRttEstimator
-BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace nfd

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_RTT_ESTIMATOR_HPP
-#define NFD_DAEMON_FW_RTT_ESTIMATOR_HPP
+#ifndef NFD_CORE_RTT_ESTIMATOR_HPP
+#define NFD_CORE_RTT_ESTIMATOR_HPP
 
 #include "core/common.hpp"
 
@@ -80,4 +80,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_RTT_ESTIMATOR_HPP
+#endif // NFD_CORE_RTT_ESTIMATOR_HPP

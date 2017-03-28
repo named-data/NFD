@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -48,9 +48,44 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_options(options)
   , m_fragmenter(m_options.fragmenterOptions, this)
   , m_reassembler(m_options.reassemblerOptions, this)
+  , m_reliability(m_options.reliabilityOptions, this)
   , m_lastSeqNo(-2)
 {
   m_reassembler.beforeTimeout.connect(bind([this] { ++this->nReassemblyTimeouts; }));
+}
+
+void
+GenericLinkService::setOptions(const GenericLinkService::Options& options)
+{
+  m_options = options;
+  m_fragmenter.setOptions(m_options.fragmenterOptions);
+  m_reassembler.setOptions(m_options.reassemblerOptions);
+  m_reliability.setOptions(m_options.reliabilityOptions);
+}
+
+void
+GenericLinkService::requestIdlePacket()
+{
+  // No need to request Acks to attach to this packet from LpReliability, as they are already
+  // attached in sendLpPacket
+  this->sendLpPacket({});
+}
+
+void
+GenericLinkService::sendLpPacket(lp::Packet&& pkt)
+{
+  const ssize_t mtu = this->getTransport()->getMtu();
+  if (m_options.reliabilityOptions.isEnabled) {
+    m_reliability.piggyback(pkt, mtu);
+  }
+
+  Transport::Packet tp(pkt.wireEncode());
+  if (mtu != MTU_UNLIMITED && tp.packet.size() > static_cast<size_t>(mtu)) {
+    ++this->nOutOverMtu;
+    NFD_LOG_FACE_WARN("attempted to send packet over MTU limit");
+    return;
+  }
+  this->sendPacket(std::move(tp));
 }
 
 void
@@ -115,29 +150,30 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
     }
   }
   else {
-    frags.push_back(pkt);
+    frags.push_back(std::move(pkt));
   }
 
-  if (frags.size() > 1) {
-    // sequence is needed only if packet is fragmented
-    this->assignSequences(frags);
-  }
-  else {
+  if (frags.size() == 1) {
     // even if indexed fragmentation is enabled, the fragmenter should not
     // fragment the packet if it can fit in MTU
-    BOOST_ASSERT(frags.size() > 0);
     BOOST_ASSERT(!frags.front().has<lp::FragIndexField>());
     BOOST_ASSERT(!frags.front().has<lp::FragCountField>());
   }
 
-  for (const lp::Packet& frag : frags) {
-    Transport::Packet tp(frag.wireEncode());
-    if (mtu != MTU_UNLIMITED && tp.packet.size() > static_cast<size_t>(mtu)) {
-      ++this->nOutOverMtu;
-      NFD_LOG_FACE_WARN("attempt to send packet over MTU limit");
-      continue;
-    }
-    this->sendPacket(std::move(tp));
+  // Only assign sequences to fragments if reliability enabled and packet contains a fragment,
+  // or there is more than 1 fragment
+  if ((m_options.reliabilityOptions.isEnabled && frags.front().has<lp::FragmentField>()) ||
+      frags.size() > 1) {
+    // Assign sequences to all fragments
+    this->assignSequences(frags);
+  }
+
+  if (m_options.reliabilityOptions.isEnabled && frags.front().has<lp::FragmentField>()) {
+    m_reliability.observeOutgoing(frags);
+  }
+
+  for (lp::Packet& frag : frags) {
+    this->sendLpPacket(std::move(frag));
   }
 }
 
@@ -158,6 +194,10 @@ GenericLinkService::doReceivePacket(Transport::Packet&& packet)
 {
   try {
     lp::Packet pkt(packet.packet);
+
+    if (m_options.reliabilityOptions.isEnabled) {
+      m_reliability.processIncomingPacket(pkt);
+    }
 
     if (!pkt.has<lp::FragmentField>()) {
       NFD_LOG_FACE_TRACE("received IDLE packet: DROP");

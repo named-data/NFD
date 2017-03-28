@@ -32,6 +32,7 @@
 #include "link-service.hpp"
 #include "lp-fragmenter.hpp"
 #include "lp-reassembler.hpp"
+#include "lp-reliability.hpp"
 
 namespace nfd {
 namespace face {
@@ -71,10 +72,24 @@ public:
   /** \brief count of invalid reassembled network-layer packets dropped
    */
   PacketCounter nInNetInvalid;
+
+  /** \brief count of network-layer packets that did not require retransmission of a fragment
+   */
+  PacketCounter nAcknowledged;
+
+  /** \brief count of network-layer packets that had at least one fragment retransmitted, but were
+   *         eventually received in full
+   */
+  PacketCounter nRetransmitted;
+
+  /** \brief count of network-layer packets dropped because a fragment reached the maximum number
+   *         of retransmissions
+   */
+  PacketCounter nRetxExhausted;
 };
 
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
- *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  *  \todo #3941 declare GenericLinkServiceCounters as virtual inheritance
  */
 class GenericLinkService : public LinkService
@@ -108,6 +123,10 @@ public:
     /** \brief options for reassembly
      */
     LpReassembler::Options reassemblerOptions;
+
+    /** \brief options for reliability
+     */
+    LpReliability::Options reliabilityOptions;
   };
 
   /** \brief counters provided by GenericLinkService
@@ -131,6 +150,17 @@ public:
   getCounters() const override;
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
+  /** \brief request an IDLE packet to transmit pending service fields
+   */
+  void
+  requestIdlePacket();
+
+  /** \brief send an LpPacket fragment
+   *  \param pkt LpPacket to send
+   */
+  void
+  sendLpPacket(lp::Packet&& pkt);
+
   /** \brief send Interest
    */
   void
@@ -146,7 +176,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   void
   doSendNack(const ndn::lp::Nack& nack) override;
 
-private:
+private: // send path
   /** \brief encode link protocol fields from tags onto an outgoing LpPacket
    *  \param netPkt network-layer packet to extract tags from
    *  \param lpPacket LpPacket to add link protocol fields to
@@ -222,23 +252,20 @@ private: // receive path
   void
   decodeNack(const Block& netPkt, const lp::Packet& firstPkt);
 
-private:
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   Options m_options;
   LpFragmenter m_fragmenter;
   LpReassembler m_reassembler;
+  LpReliability m_reliability;
   lp::Sequence m_lastSeqNo;
+
+  friend class LpReliability;
 };
 
 inline const GenericLinkService::Options&
 GenericLinkService::getOptions() const
 {
   return m_options;
-}
-
-inline void
-GenericLinkService::setOptions(const GenericLinkService::Options& options)
-{
-  m_options = options;
 }
 
 inline const GenericLinkService::Counters&

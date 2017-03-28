@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,10 +53,15 @@ protected:
   }
 
   void
-  initialize(const GenericLinkService::Options& options)
+  initialize(const GenericLinkService::Options& options, ssize_t mtu = MTU_UNLIMITED)
   {
     face.reset(new Face(make_unique<GenericLinkService>(options),
-                        make_unique<DummyTransport>()));
+                        make_unique<DummyTransport>("dummy://",
+                                                    "dummy://",
+                                                    ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                                                    ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                                    ndn::nfd::LINK_TYPE_POINT_TO_POINT,
+                                                    mtu)));
     service = static_cast<GenericLinkService*>(face->getLinkService());
     transport = static_cast<DummyTransport*>(face->getTransport());
 
@@ -254,7 +259,6 @@ BOOST_AUTO_TEST_CASE(ReceiveIdlePacket)
 
 BOOST_AUTO_TEST_SUITE_END() // SimpleSendReceive
 
-
 BOOST_AUTO_TEST_SUITE(Fragmentation)
 
 BOOST_AUTO_TEST_CASE(FragmentationDisabledExceedMtuDrop)
@@ -393,6 +397,70 @@ BOOST_AUTO_TEST_CASE(ReassemblyDisabledDropFragCount)
 
 BOOST_AUTO_TEST_SUITE_END() // Fragmentation
 
+BOOST_AUTO_TEST_SUITE(Reliability)
+
+BOOST_AUTO_TEST_CASE(SendInterestWithSequence)
+{
+  // Initialize with Options that enables reliability
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  options.reliabilityOptions.isEnabled = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest1 = makeInterest("/localhost/test");
+
+  face->sendInterest(*interest1);
+
+  BOOST_CHECK_EQUAL(service->getCounters().nOutInterests, 1);
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet interest1pkt;
+  BOOST_REQUIRE_NO_THROW(interest1pkt.wireDecode(transport->sentPackets.back().packet));
+  BOOST_CHECK(interest1pkt.has<lp::FragmentField>());
+  BOOST_CHECK(interest1pkt.has<lp::SequenceField>());
+}
+
+BOOST_AUTO_TEST_CASE(SendDataWithSequence)
+{
+  // Initialize with Options that enables reliability
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  options.reliabilityOptions.isEnabled = true;
+  initialize(options);
+
+  shared_ptr<Data> data1 = makeData("/localhost/test");
+
+  face->sendData(*data1);
+
+  BOOST_CHECK_EQUAL(service->getCounters().nOutData, 1);
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet data1pkt;
+  BOOST_REQUIRE_NO_THROW(data1pkt.wireDecode(transport->sentPackets.back().packet));
+  BOOST_CHECK(data1pkt.has<lp::FragmentField>());
+  BOOST_CHECK(data1pkt.has<lp::SequenceField>());
+}
+
+BOOST_AUTO_TEST_CASE(SendNackWithSequence)
+{
+  // Initialize with Options that enables reliability
+  GenericLinkService::Options options;
+  options.allowLocalFields = false;
+  options.reliabilityOptions.isEnabled = true;
+  initialize(options);
+
+  lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
+
+  face->sendNack(nack1);
+
+  BOOST_CHECK_EQUAL(service->getCounters().nOutNacks, 1);
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet nack1pkt;
+  BOOST_REQUIRE_NO_THROW(nack1pkt.wireDecode(transport->sentPackets.back().packet));
+  BOOST_CHECK(nack1pkt.has<lp::NackField>());
+  BOOST_CHECK(nack1pkt.has<lp::FragmentField>());
+  BOOST_CHECK(nack1pkt.has<lp::SequenceField>());
+}
+
+BOOST_AUTO_TEST_SUITE_END() // Reliability
 
 BOOST_AUTO_TEST_SUITE(LpFields)
 
