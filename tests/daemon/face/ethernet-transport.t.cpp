@@ -42,7 +42,9 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   auto netif = netifs.front();
-  EthernetTransport transport(netif, ethernet::getDefaultMulticastAddress());
+  EthernetTransport transport(netif,
+                              ethernet::getDefaultMulticastAddress(),
+                              ndn::nfd::LINK_TYPE_MULTI_ACCESS);
   checkStaticPropertiesInitialized(transport);
 
   BOOST_CHECK_EQUAL(transport.getLocalUri(), FaceUri::fromDev(netif.name));
@@ -55,7 +57,9 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-  EthernetTransport transport(netifs.front(), ethernet::getDefaultMulticastAddress());
+  EthernetTransport transport(netifs.front(),
+                              ethernet::getDefaultMulticastAddress(),
+                              ndn::nfd::LINK_TYPE_MULTI_ACCESS);
 
   BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
   BOOST_CHECK_EQUAL(transport.canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), false);

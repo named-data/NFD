@@ -62,7 +62,8 @@ public:
    * @brief Creates an Ethernet-based transport for multicast communication
    */
   EthernetTransport(const NetworkInterfaceInfo& interface,
-                    const ethernet::Address& mcastAddress);
+                    const ethernet::Address& mcastAddress,
+                    ndn::nfd::LinkType linkType);
 
 protected:
   void

@@ -62,7 +62,8 @@ namespace face {
 NFD_LOG_INIT("EthernetTransport");
 
 EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& interface,
-                                     const ethernet::Address& mcastAddress)
+                                     const ethernet::Address& mcastAddress,
+                                     ndn::nfd::LinkType linkType)
   : m_pcap(nullptr, pcap_close)
   , m_socket(getGlobalIoService())
   , m_srcAddress(interface.etherAddress)
@@ -79,7 +80,7 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& interface,
   this->setRemoteUri(FaceUri(mcastAddress));
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-  this->setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  this->setLinkType(linkType);
 
   NFD_LOG_FACE_INFO("Creating transport");
 

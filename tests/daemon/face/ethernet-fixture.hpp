@@ -43,7 +43,7 @@ protected:
     for (const auto& netif : listNetworkInterfaces()) {
       if (!netif.isLoopback() && netif.isUp()) {
         try {
-          EthernetTransport transport(netif, ethernet::getBroadcastAddress());
+          EthernetTransport transport(netif, ethernet::getBroadcastAddress(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
           netifs.push_back(netif);
         }
         catch (const EthernetTransport::Error&) {

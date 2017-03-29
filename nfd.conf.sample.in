@@ -173,6 +173,7 @@ face_system
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
+  @IF_HAVE_LIBPCAP@  mcast_ad_hoc no ; set to 'yes' to make all Ethernet faces 'ad hoc', default 'no'
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
   @IF_HAVE_LIBPCAP@  ; interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0'),

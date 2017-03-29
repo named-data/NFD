@@ -48,15 +48,15 @@ class EthernetConfigFixture : public EthernetFixture
 {
 public:
   std::vector<const Face*>
-  listEtherMcastFaces() const
+  listEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listFacesByScheme("ether", ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+    return this->listFacesByScheme("ether", linkType);
   }
 
   size_t
-  countEtherMcastFaces() const
+  countEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listEtherMcastFaces().size();
+    return this->listEtherMcastFaces(linkType).size();
   }
 };
 
@@ -73,6 +73,7 @@ BOOST_AUTO_TEST_CASE(Normal)
       {
         mcast yes
         mcast_group 01:00:5E:00:17:AA
+        mcast_ad_hoc no
         whitelist
         {
           *
@@ -90,18 +91,94 @@ BOOST_AUTO_TEST_CASE(Normal)
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
 }
 
-BOOST_AUTO_TEST_CASE(Omitted)
+BOOST_AUTO_TEST_CASE(EnableDisableMcast)
 {
-  const std::string CONFIG = R"CONFIG(
+  const std::string CONFIG_WITH_MCAST = R"CONFIG(
     face_system
     {
+      ether
+      {
+        mcast yes
+      }
+    }
+  )CONFIG";
+  const std::string CONFIG_WITHOUT_MCAST = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        mcast no
+      }
     }
   )CONFIG";
 
-  parseConfig(CONFIG, true);
-  parseConfig(CONFIG, false);
-
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
+
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+
+  parseConfig(CONFIG_WITH_MCAST, false);
+  g_io.poll();
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
+
+  parseConfig(CONFIG_WITHOUT_MCAST, false);
+  g_io.poll();
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(McastAdHoc)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        mcast_ad_hoc yes
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, false);
+  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(ndn::nfd::LINK_TYPE_AD_HOC), netifs.size());
+}
+
+BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        mcast_group 01:00:00:00:00:01
+      }
+    }
+  )CONFIG";
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        mcast_group 01:00:00:00:00:02
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG1, false);
+  auto etherMcastFaces = this->listEtherMcastFaces();
+  BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
+  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
+                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x01)));
+
+  parseConfig(CONFIG2, false);
+  g_io.poll();
+  etherMcastFaces = this->listEtherMcastFaces();
+  BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
+  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
+                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x02)));
 }
 
 BOOST_AUTO_TEST_CASE(Whitelist)
@@ -154,76 +231,18 @@ BOOST_AUTO_TEST_CASE(Blacklist)
   }), 0);
 }
 
-BOOST_AUTO_TEST_CASE(EnableDisableMcast)
+BOOST_AUTO_TEST_CASE(Omitted)
 {
-  const std::string CONFIG_WITH_MCAST = R"CONFIG(
+  const std::string CONFIG = R"CONFIG(
     face_system
     {
-      ether
-      {
-        mcast yes
-      }
-    }
-  )CONFIG";
-  const std::string CONFIG_WITHOUT_MCAST = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast no
-      }
     }
   )CONFIG";
 
-  parseConfig(CONFIG_WITHOUT_MCAST, false);
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
-
-  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-
-  parseConfig(CONFIG_WITH_MCAST, false);
-  g_io.poll();
-  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), netifs.size());
-
-  parseConfig(CONFIG_WITHOUT_MCAST, false);
-  g_io.poll();
-  BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
-{
-  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-
-  const std::string CONFIG1 = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast_group 01:00:00:00:00:01
-      }
-    }
-  )CONFIG";
-  const std::string CONFIG2 = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        mcast_group 01:00:00:00:00:02
-      }
-    }
-  )CONFIG";
-
-  parseConfig(CONFIG1, false);
-  auto etherMcastFaces = this->listEtherMcastFaces();
-  BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
-  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
-                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x01)));
-
-  parseConfig(CONFIG2, false);
-  g_io.poll();
-  etherMcastFaces = this->listEtherMcastFaces();
-  BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
-  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
-                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x02)));
 }
 
 BOOST_AUTO_TEST_CASE(BadMcast)

@@ -52,6 +52,7 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
   // {
   //   mcast yes
   //   mcast_group 01:00:5E:00:17:AA
+  //   mcast_ad_hoc no
   //   whitelist
   //   {
   //     *
@@ -86,6 +87,10 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
                                 valueStr + "' is not a multicast address"));
         }
       }
+      else if (key == "mcast_ad_hoc") {
+        bool wantAdHoc = ConfigFile::parseYesNo(pair, "ether");
+        mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
+      }
       else if (key == "whitelist") {
         mcastConfig.netifPredicate.parseWhitelist(value);
       }
@@ -107,18 +112,21 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
         NFD_LOG_INFO("disabling multicast");
       }
     }
-    else if (m_mcastConfig.group != mcastConfig.group) {
-      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
-                   " to " << mcastConfig.group);
-    }
-    else if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
-      NFD_LOG_INFO("changing whitelist/blacklist");
-    }
-    else {
-      // There's no configuration change, but we still need to re-apply configuration because
-      // netifs may have changed.
+    else if (mcastConfig.isEnabled) {
+      if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
+        NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
+      }
+      if (m_mcastConfig.group != mcastConfig.group) {
+        NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+                     " to " << mcastConfig.group);
+      }
+      if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
+        NFD_LOG_INFO("changing whitelist/blacklist");
+      }
     }
 
+    // Even if there's no configuration change, we still need to re-apply configuration because
+    // netifs may have changed.
     m_mcastConfig = mcastConfig;
     this->applyConfig(context);
   }
@@ -157,7 +165,7 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& netif,
   opts.allowReassembly = true;
 
   auto linkService = make_unique<face::GenericLinkService>(opts);
-  auto transport = make_unique<face::EthernetTransport>(netif, address);
+  auto transport = make_unique<face::EthernetTransport>(netif, address, m_mcastConfig.linkType);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_mcastFaces[key] = face;

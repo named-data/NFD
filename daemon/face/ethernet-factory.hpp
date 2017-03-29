@@ -80,6 +80,7 @@ private:
   {
     bool isEnabled = false;
     ethernet::Address group = ethernet::getDefaultMulticastAddress();
+    ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
   };
 
