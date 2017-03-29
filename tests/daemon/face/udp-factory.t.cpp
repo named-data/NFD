@@ -124,15 +124,15 @@ protected:
   }
 
   std::vector<const Face*>
-  listUdpMcastFaces() const
+  listUdpMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listFacesByScheme("udp4", ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+    return this->listFacesByScheme("udp4", linkType);
   }
 
   size_t
-  countUdpMcastFaces() const
+  countUdpMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
-    return this->listUdpMcastFaces().size();
+    return this->listUdpMcastFaces(linkType).size();
   }
 
   /** \brief determine whether a UDP multicast face is created on \p netif
@@ -197,6 +197,28 @@ BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpMcastConfigFixture)
   parseConfig(CONFIG_WITHOUT_MCAST, false);
   g_io.poll();
   BOOST_CHECK_EQUAL(this->countUdpMcastFaces(), 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(McastAdHoc, UdpMcastConfigFixture)
+{
+#ifdef __linux__
+  // need superuser privilege for creating multicast faces on linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_ad_hoc yes
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, false);
+  BOOST_CHECK_EQUAL(this->countUdpMcastFaces(ndn::nfd::LINK_TYPE_AD_HOC), netifs.size());
 }
 
 BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpMcastConfigFixture)

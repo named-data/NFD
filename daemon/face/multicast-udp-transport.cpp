@@ -35,7 +35,8 @@ NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramTransport, MulticastUdpT
 MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndpoint,
                                              const protocol::endpoint& multicastGroup,
                                              protocol::socket&& recvSocket,
-                                             protocol::socket&& sendSocket)
+                                             protocol::socket&& sendSocket,
+                                             ndn::nfd::LinkType linkType)
   : DatagramTransport(std::move(recvSocket))
   , m_multicastGroup(multicastGroup)
   , m_sendSocket(std::move(sendSocket))
@@ -44,7 +45,7 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndp
   this->setRemoteUri(FaceUri(multicastGroup));
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
-  this->setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  this->setLinkType(linkType);
   this->setMtu(udp::computeMtu(localEndpoint));
 
   NFD_LOG_FACE_INFO("Creating transport");

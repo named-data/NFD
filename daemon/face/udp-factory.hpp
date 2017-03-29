@@ -199,6 +199,7 @@ private:
   {
     bool isEnabled = false;
     udp::Endpoint group = udp::getDefaultMulticastGroup();
+    ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
   };
 

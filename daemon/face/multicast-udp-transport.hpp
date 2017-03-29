@@ -51,11 +51,13 @@ public:
    * \param multicastGroup multicast group
    * \param recvSocket socket used to receive packets
    * \param sendSocket socket used to send to the multicast group
+   * \param linkType either LINK_TYPE_MULTI_ACCESS or LINK_TYPE_AD_HOC
    */
   MulticastUdpTransport(const protocol::endpoint& localEndpoint,
                         const protocol::endpoint& multicastGroup,
                         protocol::socket&& recvSocket,
-                        protocol::socket&& sendSocket);
+                        protocol::socket&& sendSocket,
+                        ndn::nfd::LinkType linkType);
 
 private:
   void

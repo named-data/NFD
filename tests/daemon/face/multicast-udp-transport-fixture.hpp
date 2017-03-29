@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,10 +63,12 @@ protected:
     udp::socket sockTx(g_io);
     localEp = udp::endpoint(address, 7001);
     openMulticastSockets(sockRx, sockTx, localEp.port());
+    ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
 
     face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),
-             make_unique<MulticastUdpTransport>(localEp, multicastEp, std::move(sockRx), std::move(sockTx)));
+             make_unique<MulticastUdpTransport>(localEp, multicastEp, std::move(sockRx),
+                                                std::move(sockTx), linkType));
     transport = static_cast<MulticastUdpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 

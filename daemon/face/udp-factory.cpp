@@ -66,6 +66,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   //   mcast yes
   //   mcast_group 224.0.23.170
   //   mcast_port 56363
+  //   mcast_ad_hoc no
   //   whitelist
   //   {
   //     *
@@ -123,6 +124,10 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       else if (key == "mcast_port") {
         mcastConfig.group.port(ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp"));
       }
+      else if (key == "mcast_ad_hoc") {
+        bool wantAdHoc = ConfigFile::parseYesNo(pair, "face_system.udp");
+        mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
+      }
       else if (key == "whitelist") {
         mcastConfig.netifPredicate.parseWhitelist(value);
       }
@@ -176,18 +181,21 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
         NFD_LOG_INFO("disabling multicast");
       }
     }
-    else if (m_mcastConfig.group != mcastConfig.group) {
-      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
-                   " to " << mcastConfig.group);
-    }
-    else if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
-      NFD_LOG_INFO("changing whitelist/blacklist");
-    }
-    else {
-      // There's no configuration change, but we still need to re-apply configuration because
-      // netifs may have changed.
+    else if (mcastConfig.isEnabled) {
+      if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
+        NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
+      }
+      if (m_mcastConfig.group != mcastConfig.group) {
+        NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+                     " to " << mcastConfig.group);
+      }
+      if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
+        NFD_LOG_INFO("changing whitelist/blacklist");
+      }
     }
 
+    // Even if there's no configuration change, we still need to re-apply configuration because
+    // netifs may have changed.
     m_mcastConfig = mcastConfig;
     this->applyMulticastConfig(context);
   }
@@ -427,7 +435,8 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   auto linkService = make_unique<GenericLinkService>();
   auto transport = make_unique<MulticastUdpTransport>(localEndpoint, multicastEndpoint,
                                                       std::move(receiveSocket),
-                                                      std::move(sendSocket));
+                                                      std::move(sendSocket),
+                                                      m_mcastConfig.linkType);
   face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_mcastFaces[localEndpoint] = face;
