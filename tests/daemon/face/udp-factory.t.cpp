@@ -603,6 +603,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
@@ -611,18 +612,21 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20070"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
-  //test the upgrade
+
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20070"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
@@ -633,13 +637,23 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
   UdpFactory factory;
 
   factory.createChannel("127.0.0.1", "20070");
+  factory.createChannel("127.0.0.1", "20071");
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20070"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
                "Outgoing unicast UDP faces do not support on-demand persistency"});
+
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20071"),
+             FaceUri("udp4://127.0.0.1:20073"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             {CreateFaceExpectedResult::FAILURE, 406,
+               "Unicast UDP faces cannot be created with a LocalUri"});
 }
 
 class FakeNetworkInterfaceFixture : public BaseFixture

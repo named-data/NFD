@@ -78,28 +78,46 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
                         const ControlParameters& parameters,
                         const ndn::mgmt::CommandContinuation& done)
 {
-  FaceUri uri;
-  if (!uri.parse(parameters.getUri())) {
-    NFD_LOG_TRACE("failed to parse URI");
+  FaceUri remoteUri;
+  if (!remoteUri.parse(parameters.getUri())) {
+    NFD_LOG_TRACE("failed to parse remote URI: " << parameters.getUri());
     done(ControlResponse(400, "Malformed command"));
     return;
   }
 
-  if (!uri.isCanonical()) {
-    NFD_LOG_TRACE("received non-canonical URI");
-    done(ControlResponse(400, "Non-canonical URI"));
+  if (!remoteUri.isCanonical()) {
+    NFD_LOG_TRACE("received non-canonical remote URI: " << remoteUri.toString());
+    done(ControlResponse(400, "Non-canonical remote URI"));
     return;
   }
 
-  ProtocolFactory* factory = m_faceSystem.getFactoryByScheme(uri.getScheme());
+  ndn::optional<FaceUri> localUri;
+  if (parameters.hasLocalUri()) {
+    localUri = FaceUri{};
+
+    if (!localUri->parse(parameters.getLocalUri())) {
+      NFD_LOG_TRACE("failed to parse local URI: " << parameters.getLocalUri());
+      done(ControlResponse(400, "Malformed command"));
+      return;
+    }
+
+    if (!localUri->isCanonical()) {
+      NFD_LOG_TRACE("received non-canonical local URI: " << localUri->toString());
+      done(ControlResponse(400, "Non-canonical local URI"));
+      return;
+    }
+  }
+
+  ProtocolFactory* factory = m_faceSystem.getFactoryByScheme(remoteUri.getScheme());
   if (factory == nullptr) {
-    NFD_LOG_TRACE("received create request for unsupported protocol");
+    NFD_LOG_TRACE("received create request for unsupported protocol: " << remoteUri.getScheme());
     done(ControlResponse(406, "Unsupported protocol"));
     return;
   }
 
   try {
-    factory->createFace(uri,
+    factory->createFace(remoteUri,
+      localUri,
       parameters.getFacePersistency(),
       parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
         parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),

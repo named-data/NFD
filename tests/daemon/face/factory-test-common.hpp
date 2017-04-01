@@ -43,12 +43,13 @@ struct CreateFaceExpectedResult
 
 inline void
 createFace(ProtocolFactory& factory,
-           const FaceUri& uri,
+           const FaceUri& remoteUri,
+           const ndn::optional<FaceUri>& localUri,
            ndn::nfd::FacePersistency persistency,
            bool wantLocalFieldsEnabled,
            const CreateFaceExpectedResult& expected)
 {
-  factory.createFace(uri, persistency, wantLocalFieldsEnabled,
+  factory.createFace(remoteUri, localUri, persistency, wantLocalFieldsEnabled,
                      [expected] (const shared_ptr<Face>&) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },

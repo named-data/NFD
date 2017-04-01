@@ -121,13 +121,20 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-TcpFactory::createFace(const FaceUri& uri,
+TcpFactory::createFace(const FaceUri& remoteUri,
+                       const ndn::optional<FaceUri>& localUri,
                        ndn::nfd::FacePersistency persistency,
                        bool wantLocalFieldsEnabled,
                        const FaceCreatedCallback& onCreated,
                        const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(uri.isCanonical());
+  BOOST_ASSERT(remoteUri.isCanonical());
+
+  if (localUri) {
+    NFD_LOG_TRACE("Cannot create unicast TCP face with LocalUri");
+    onFailure(406, "Unicast TCP faces cannot be created with a LocalUri");
+    return;
+  }
 
   if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
     NFD_LOG_TRACE("createFace only supports FACE_PERSISTENCY_PERSISTENT");
@@ -135,8 +142,8 @@ TcpFactory::createFace(const FaceUri& uri,
     return;
   }
 
-  tcp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
-                         boost::lexical_cast<uint16_t>(uri.getPort()));
+  tcp::Endpoint endpoint(ip::address::from_string(remoteUri.getHost()),
+                         boost::lexical_cast<uint16_t>(remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
    NFD_LOG_TRACE("createFace cannot create multicast faces");

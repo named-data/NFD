@@ -116,19 +116,17 @@ public:
 
   /** \brief Try to create Face using the supplied FaceUri
    *
-   * This method should automatically choose channel, based on supplied FaceUri
-   * and create face.
-   *
-   * \param uri remote URI of the new face
+   * \param remoteUri remote URI of the new face
+   * \param localUri local URI of the new face
    * \param persistency persistency of the new face
    * \param wantLocalFieldsEnabled whether local fields should be enabled on the face
-   * \param onCreated callback if face creation succeeds
-   *                  If a face with the same remote URI already exists, its persistency and
-   *                  LocalFieldsEnabled setting will not be modified.
+   * \param onCreated callback if face creation succeeds or face already exists;
+   *                  persistency and local fields settings are not updated on an existing face
    * \param onFailure callback if face creation fails
    */
   virtual void
-  createFace(const FaceUri& uri,
+  createFace(const FaceUri& remoteUri,
+             const ndn::optional<FaceUri>& localUri,
              ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,

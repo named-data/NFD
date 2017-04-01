@@ -172,6 +172,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
@@ -179,7 +180,8 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
   factory.createChannel("127.0.0.1", "20071");
 
   createFace(factory,
-             FaceUri("tcp4://127.0.0.1:20070"),
+             FaceUri("tcp4://127.0.0.1:6363"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
@@ -191,9 +193,11 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 
   factory.createChannel("127.0.0.1", "20070");
   factory.createChannel("127.0.0.1", "20071");
+  factory.createChannel("127.0.0.1", "20072");
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20070"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
@@ -201,10 +205,19 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20071"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
                "Outgoing TCP faces only support persistent persistency"});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
+             FaceUri("udp4://127.0.0.1:20073"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             {CreateFaceExpectedResult::FAILURE, 406,
+               "Unicast TCP faces cannot be created with a LocalUri"});
 }
 
 class FaceCreateTimeoutFixture : public BaseFixture
@@ -240,6 +253,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   shared_ptr<TcpChannel> channel = factory.createChannel("0.0.0.0", "20070");
 
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
+                     {},
                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                      false,
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),

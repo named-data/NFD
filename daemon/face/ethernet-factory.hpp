@@ -50,7 +50,8 @@ public:
   /** \brief unicast face creation is not supported and will always fail
    */
   void
-  createFace(const FaceUri& uri,
+  createFace(const FaceUri& remoteUri,
+             const ndn::optional<FaceUri>& localUri,
              ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onCreated,

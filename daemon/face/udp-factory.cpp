@@ -202,13 +202,20 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UdpFactory::createFace(const FaceUri& uri,
+UdpFactory::createFace(const FaceUri& remoteUri,
+                       const ndn::optional<FaceUri>& localUri,
                        ndn::nfd::FacePersistency persistency,
                        bool wantLocalFieldsEnabled,
                        const FaceCreatedCallback& onCreated,
                        const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(uri.isCanonical());
+  BOOST_ASSERT(remoteUri.isCanonical());
+
+  if (localUri) {
+    NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
+    onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
+    return;
+  }
 
   if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
@@ -216,8 +223,8 @@ UdpFactory::createFace(const FaceUri& uri,
     return;
   }
 
-  udp::Endpoint endpoint(ip::address::from_string(uri.getHost()),
-                         boost::lexical_cast<uint16_t>(uri.getPort()));
+  udp::Endpoint endpoint(ip::address::from_string(remoteUri.getHost()),
+                         boost::lexical_cast<uint16_t>(remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");

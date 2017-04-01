@@ -81,7 +81,8 @@ UnixStreamFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UnixStreamFactory::createFace(const FaceUri& uri,
+UnixStreamFactory::createFace(const FaceUri& remoteUri,
+                              const ndn::optional<FaceUri>& localUri,
                               ndn::nfd::FacePersistency persistency,
                               bool wantLocalFieldsEnabled,
                               const FaceCreatedCallback& onCreated,
