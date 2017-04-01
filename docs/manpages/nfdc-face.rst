@@ -3,9 +3,9 @@ nfdc-face
 
 SYNOPSIS
 --------
-| nfdc face [list]
+| nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
 | nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>]
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>]
 | nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 
@@ -16,11 +16,14 @@ It could be a physical network interface to communicate on a physical link,
 an overlay communication channel between NFD and a remote node,
 or an inter-process communication channel between NFD and a local application.
 
-The **nfdc face list** command shows a list of faces, their properties, and statistics.
+The **nfdc face list** command shows a list of faces, their properties, and statistics,
+optionally filtered by remote endpoint, local endpoint, and FaceUri scheme.
+When multiple filters are specified, returned faces must satisfy all filters.
 
 The **nfdc face show** command shows properties and statistics of one specific face.
 
-The **nfdc face create** command creates a unicast UDP or TCP face.
+The **nfdc face create** command creates a UDP unicast, TCP, or Ethernet unicast face.
+Local FaceUri is required for creating Ethernet unicast faces; otherwise it must be omitted.
 
 The **nfdc face destroy** command destroys an existing face.
 
@@ -34,13 +37,29 @@ OPTIONS
     It is displayed in the output of **nfdc face list** and **nfdc face create** commands.
 
 <FACEURI>
-    An URI representing the remote endpoint of a face.
-    Its syntax is:
+    A URI representing the remote or local endpoint of a face.
+    Examples:
 
-    - udp[4|6]://<IP-or-host>[:<port>]
-    - tcp[4|6]://<IP-or-host>[:<port>]
+    - udp4://192.0.2.1:6363
+    - udp6://[2001:db8::1]:6363
+    - udp://example.net
+    - tcp4://192.0.2.1:6363
+    - tcp6://[2001:db8::1]:6363
+    - tcp://example.net
+    - unix:///var/run/nfd.sock
+    - fd://6
+    - ether://[08:00:27:01:01:01]
+    - dev://eth0
 
     When a hostname is specified, a DNS query is used to obtain the IP address.
+
+<SCHEME>
+    The scheme portion of either remote or local endpoint.
+    Examples:
+
+    - udp4
+    - unix
+    - dev
 
 <PERSISTENCY>
     Either "persistent" or "permanent".

@@ -247,6 +247,7 @@ BOOST_AUTO_TEST_CASE(Creating)
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     BOOST_REQUIRE(req.hasUri());
     BOOST_CHECK_EQUAL(req.getUri(), "udp4://159.242.33.78:6363");
+    BOOST_CHECK(!req.hasLocalUri());
     BOOST_REQUIRE(req.hasFacePersistency());
     BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERSISTENT);
 
@@ -259,6 +260,29 @@ BOOST_AUTO_TEST_CASE(Creating)
   this->execute("face create udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-created id=2130 remote=udp4://159.242.33.78:6363 persistency=persistent\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(CreatingWithLocalUri)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
+    BOOST_REQUIRE(req.hasUri());
+    BOOST_CHECK_EQUAL(req.getUri(), "udp4://22.91.89.51:19903");
+    BOOST_REQUIRE(req.hasLocalUri());
+    BOOST_CHECK_EQUAL(req.getLocalUri(), "udp4://98.68.23.71:6363");
+    BOOST_REQUIRE(req.hasFacePersistency());
+    BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERMANENT);
+
+    ControlParameters resp;
+    resp.setFaceId(301)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-created id=301 remote=udp4://22.91.89.51:19903 persistency=permanent\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -317,6 +341,22 @@ BOOST_AUTO_TEST_CASE(SamePersistency)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-exists id=1172 remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
   BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCanonizeRemote)
+{
+  this->execute("face create invalid://");
+  BOOST_CHECK_EQUAL(exitCode, 4);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error when canonizing 'invalid://': scheme not supported\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCanonizeLocal)
+{
+  this->execute("face create udp4://24.37.20.47:6363 local invalid://");
+  BOOST_CHECK_EQUAL(exitCode, 4);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error when canonizing 'invalid://': scheme not supported\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCreate)

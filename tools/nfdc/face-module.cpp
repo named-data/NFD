@@ -52,7 +52,8 @@ FaceModule::registerCommands(CommandParser& parser)
   defFaceCreate
     .setTitle("create a face")
     .addArg("remote", ArgValueType::FACE_URI, Required::YES, Positional::YES)
-    .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES);
+    .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES)
+    .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -147,23 +148,30 @@ persistencyLessThan(FacePersistency x, FacePersistency y)
 void
 FaceModule::create(ExecuteContext& ctx)
 {
-  auto faceUri = ctx.args.get<FaceUri>("remote");
+  auto remoteUri = ctx.args.get<FaceUri>("remote");
+  auto localUri = ctx.args.getOptional<FaceUri>("local");
   auto persistency = ctx.args.get<FacePersistency>("persistency", FacePersistency::FACE_PERSISTENCY_PERSISTENT);
-  FaceUri canonicalUri;
+  FaceUri canonicalRemote;
+  ndn::optional<FaceUri> canonicalLocal;
+
+  auto handleCanonizeError = [&] (const FaceUri& faceUri, const std::string& error) {
+    ctx.exitCode = 4;
+    ctx.err << "Error when canonizing '" << faceUri << "': " << error << '\n';
+  };
 
   auto printPositiveResult = [&] (const std::string& actionSummary, const ControlParameters& resp) {
     text::ItemAttributes ia;
     ctx.out << actionSummary << ' '
             << ia("id") << resp.getFaceId()
-            << ia("remote") << canonicalUri
+            << ia("remote") << canonicalRemote
             << ia("persistency") << resp.getFacePersistency()
             << '\n';
-    ///\todo #3956 display local=localUri before 'remote' field
+    ///\todo #3956 display local FaceUri before 'remote' field
   };
 
   auto handle409 = [&] (const ControlResponse& resp) {
     ControlParameters respParams(resp.getBody());
-    if (respParams.getUri() != canonicalUri.toString()) {
+    if (respParams.getUri() != canonicalRemote.toString()) {
       // we are conflicting with a different face, which is a general error
       return false;
     }
@@ -183,24 +191,43 @@ FaceModule::create(ExecuteContext& ctx)
     return true;
   };
 
-  faceUri.canonize(
-    [&] (const FaceUri& canonicalUri1) {
-      canonicalUri = canonicalUri1;
-      ctx.controller.start<ndn::nfd::FaceCreateCommand>(
-        ControlParameters().setUri(canonicalUri.toString()).setFacePersistency(persistency),
-        bind(printPositiveResult, "face-created", _1),
-        [&] (const ControlResponse& resp) {
-          if (resp.getCode() == 409 && handle409(resp)) {
-            return;
-          }
-          ctx.makeCommandFailureHandler("creating face")(resp); // invoke general error handler
-        },
-        ctx.makeCommandOptions());
+  auto doCreateFace = [&] {
+    ControlParameters params;
+    params.setUri(canonicalRemote.toString());
+    if (canonicalLocal) {
+      params.setLocalUri(canonicalLocal->toString());
+    }
+    params.setFacePersistency(persistency);
+
+    ctx.controller.start<ndn::nfd::FaceCreateCommand>(
+      params,
+      bind(printPositiveResult, "face-created", _1),
+      [&] (const ControlResponse& resp) {
+        if (resp.getCode() == 409 && handle409(resp)) {
+          return;
+        }
+        ctx.makeCommandFailureHandler("creating face")(resp); // invoke general error handler
+      },
+      ctx.makeCommandOptions());
+  };
+
+  remoteUri.canonize(
+    [&] (const FaceUri& canonicalUri) {
+      canonicalRemote = canonicalUri;
+      if (localUri) {
+        localUri->canonize(
+          [&] (const FaceUri& canonicalUri) {
+            canonicalLocal = canonicalUri;
+            doCreateFace();
+          },
+          bind(handleCanonizeError, *localUri, _1),
+          ctx.face.getIoService(), ctx.getTimeout());
+      }
+      else {
+        doCreateFace();
+      }
     },
-    [&] (const std::string& canonizeError) {
-      ctx.exitCode = 4;
-      ctx.err << "Error when canonizing FaceUri: " << canonizeError << '\n';
-    },
+    bind(handleCanonizeError, remoteUri, _1),
     ctx.face.getIoService(), ctx.getTimeout());
 
   ctx.face.processEvents();
