@@ -58,7 +58,7 @@ MulticastStrategy::MulticastStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 MulticastStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%02");
+  static Name strategyName("/localhost/nfd/strategy/multicast/%FD%03");
   return strategyName;
 }
 
@@ -85,12 +85,15 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
   for (const auto& nexthop : nexthops) {
     Face& outFace = nexthop.getFace();
 
-    if (&outFace != &inFace && !wouldViolateScope(inFace, interest, outFace)) {
-      this->sendInterest(pitEntry, outFace, interest);
-      NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                             << " pitEntry-to=" << outFace.getId());
-      ++nEligibleNextHops;
+    if ((outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
+        wouldViolateScope(inFace, interest, outFace)) {
+      continue;
     }
+
+    this->sendInterest(pitEntry, outFace, interest);
+    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
+                           << " pitEntry-to=" << outFace.getId());
+    ++nEligibleNextHops;
   }
 
   if (nEligibleNextHops == 0) {

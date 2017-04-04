@@ -375,7 +375,8 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
   // foreach pending downstream
   for (Face* pendingDownstream : pendingDownstreams) {
-    if (pendingDownstream == &inFace) {
+    if (pendingDownstream->getId() == inFace.getId() &&
+        pendingDownstream->getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
       continue;
     }
     // goto outgoing Data pipeline
@@ -595,7 +596,7 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
   }
 
   // Dead Nonce List insert
-  if (upstream == 0) {
+  if (upstream == nullptr) {
     // insert all outgoing Nonces
     const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
     std::for_each(outRecords.begin(), outRecords.end(),

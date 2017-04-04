@@ -60,7 +60,7 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
 const Name&
 AsfStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/asf/%FD%01");
+  static Name strategyName("/localhost/nfd/strategy/asf/%FD%02");
   return strategyName;
 }
 
@@ -246,7 +246,8 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
   for (const fib::NextHop& hop : fibEntry.getNextHops()) {
     Face& hopFace = hop.getFace();
 
-    if (hopFace.getId() == inFace.getId() || wouldViolateScope(inFace, interest, hopFace)) {
+    if ((hopFace.getId() == inFace.getId() && hopFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
+         wouldViolateScope(inFace, interest, hopFace)) {
       continue;
     }
 

@@ -57,7 +57,7 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
 const Name&
 BestRouteStrategy2::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%04");
+  static Name strategyName("/localhost/nfd/strategy/best-route/%FD%05");
   return strategyName;
 }
 
@@ -78,8 +78,8 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 {
   const Face& outFace = nexthop.getFace();
 
-  // do not forward back to the same face
-  if (&outFace == &inFace)
+  // do not forward back to the same face, unless it is ad hoc
+  if (outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC)
     return false;
 
   // forwarding would violate scope
