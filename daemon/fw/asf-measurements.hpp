@@ -215,10 +215,15 @@ public:
   void
   extendFaceInfoLifetime(FaceInfo& info, const Face& face);
 
-  FaceInfo&
+  FaceInfo*
   get(nfd::face::FaceId faceId)
   {
-    return m_fit.at(faceId);
+    if (m_fit.find(faceId) != m_fit.end()) {
+      return &m_fit.at(faceId);
+    }
+    else {
+      return nullptr;
+    }
   }
 
   FaceInfoTable::iterator

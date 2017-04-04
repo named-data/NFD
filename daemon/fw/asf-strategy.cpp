@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -97,6 +97,8 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
     return;
   }
 
+  NFD_LOG_TRACE("Forwarding interest to face: " << faceToUse->getId());
+
   forwardInterest(interest, fibEntry, pitEntry, *faceToUse);
 
   // If necessary, send probe
@@ -123,14 +125,17 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
   }
 
   // Record the RTT between the Interest out to Data in
-  FaceInfo& faceInfo = namespaceInfo->get(inFace.getId());
-  faceInfo.recordRtt(pitEntry, inFace);
+  FaceInfo* faceInfo = namespaceInfo->get(inFace.getId());
+  if (faceInfo == nullptr) {
+    return;
+  }
+  faceInfo->recordRtt(pitEntry, inFace);
 
   // Extend lifetime for measurements associated with Face
-  namespaceInfo->extendFaceInfoLifetime(faceInfo, inFace);
+  namespaceInfo->extendFaceInfoLifetime(*faceInfo, inFace);
 
-  if (faceInfo.isTimeoutScheduled()) {
-    faceInfo.cancelTimeoutEvent(data.getName());
+  if (faceInfo->isTimeoutScheduled()) {
+    faceInfo->cancelTimeoutEvent(data.getName());
   }
 }
 
