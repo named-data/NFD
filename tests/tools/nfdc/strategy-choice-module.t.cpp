@@ -25,6 +25,7 @@
 
 #include "nfdc/strategy-choice-module.hpp"
 
+#include "execute-command-fixture.hpp"
 #include "status-fixture.hpp"
 
 namespace nfd {
@@ -33,7 +34,97 @@ namespace nfdc {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestStrategyChoiceModule, StatusFixture<StrategyChoiceModule>)
+BOOST_AUTO_TEST_SUITE(TestStrategyChoiceModule)
+
+class StrategyListFixture : public ExecuteCommandFixture
+{
+protected:
+  bool
+  respondStrategyChoiceDataset(const Interest& interest)
+  {
+    if (!Name("/localhost/nfd/strategy-choice/list").isPrefixOf(interest.getName())) {
+      return false;
+    }
+
+    StrategyChoice entry1;
+    entry1.setName("/");
+    entry1.setStrategy("/strategyP/%FD%01");
+
+    StrategyChoice entry2;
+    entry2.setName("/52VRvpL9/Yqfut4TNHv");
+    entry2.setStrategy("/strategyQ/%FD%02");
+
+    this->sendDataset(interest.getName(), entry1, entry2);
+    return true;
+  }
+};
+
+BOOST_FIXTURE_TEST_SUITE(ListCommand, StrategyListFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondStrategyChoiceDataset(interest));
+  };
+
+  this->execute("strategy list");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("prefix=/ strategy=/strategyP/%FD%01\n"
+                           "prefix=/52VRvpL9/Yqfut4TNHv strategy=/strategyQ/%FD%02\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset or command
+
+  this->execute("strategy list");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when fetching strategy choice dataset: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ListCommand
+
+BOOST_FIXTURE_TEST_SUITE(ShowCommand, StrategyListFixture)
+
+BOOST_AUTO_TEST_CASE(NormalDefaultStrategy)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondStrategyChoiceDataset(interest));
+  };
+
+  this->execute("strategy show /I1Ixgg0X");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("  prefix=/\n"
+                           "strategy=/strategyP/%FD%01\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NormalNonDefaultStrategy)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondStrategyChoiceDataset(interest));
+  };
+
+  this->execute("strategy show /52VRvpL9/Yqfut4TNHv/Y5gY7gom");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("  prefix=/52VRvpL9/Yqfut4TNHv\n"
+                           "strategy=/strategyQ/%FD%02\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorDataset)
+{
+  this->processInterest = nullptr; // no response to dataset or command
+
+  this->execute("strategy show /xVoIhNsJ");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when fetching strategy choice dataset: Timeout\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ShowCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <strategyChoices>
@@ -54,11 +145,11 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 Strategy choices:
-  / strategy=/localhost/nfd/strategy/best-route/%FD%04
-  /localhost strategy=/localhost/nfd/strategy/multicast/%FD%01
+  prefix=/ strategy=/localhost/nfd/strategy/best-route/%FD%04
+  prefix=/localhost strategy=/localhost/nfd/strategy/multicast/%FD%01
 )TEXT").substr(1);
 
-BOOST_AUTO_TEST_CASE(Status)
+BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<StrategyChoiceModule>)
 {
   this->fetchStatus();
   StrategyChoice payload1;

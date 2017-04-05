@@ -4,6 +4,7 @@ nfdc-strategy
 SYNOPSIS
 --------
 | nfdc strategy [list]
+| nfdc strategy show [prefix] <PREFIX>
 | nfdc set-strategy <PREFIX> <STRATEGY>
 | nfdc unset-strategy <PREFIX>
 
@@ -17,7 +18,9 @@ to forward Interests.
 NFD contains multiple forwarding strategy implementations.
 The strategy choice table determines which strategy is used in forwarding an Interest.
 
-The **nfdc strategy list** command shows the strategy choices.
+The **nfdc strategy list** command shows a list of strategy choices.
+
+The **nfdc strategy show** command shows the effective strategy choice for a specific name.
 
 The **nfdc set-strategy** command sets the strategy for a name prefix.
 
@@ -38,6 +41,15 @@ OPTIONS
 <STRATEGY>
     A name that identifies the forwarding strategy.
     Consult NFD Developer's Guide for a complete list of all implemented strategies.
+
+EXIT CODES
+----------
+
+0: Success
+
+1: An unspecified error occurred
+
+2: Malformed command line
 
 SEE ALSO
 --------

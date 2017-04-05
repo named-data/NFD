@@ -30,6 +30,7 @@
 #include "legacy-status.hpp"
 #include "rib-module.hpp"
 #include "status.hpp"
+#include "strategy-choice-module.hpp"
 
 namespace nfd {
 namespace tools {
@@ -42,6 +43,7 @@ registerCommands(CommandParser& parser)
   registerStatusCommands(parser);
   FaceModule::registerCommands(parser);
   RibModule::registerCommands(parser);
+  StrategyChoiceModule::registerCommands(parser);
 
   registerLegacyStatusCommand(parser);
 

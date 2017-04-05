@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP
-#define NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP
+#ifndef NFD_TOOLS_NFDC_STRATEGY_CHOICE_MODULE_HPP
+#define NFD_TOOLS_NFDC_STRATEGY_CHOICE_MODULE_HPP
 
 #include "module.hpp"
+#include "command-parser.hpp"
 
 namespace nfd {
 namespace tools {
@@ -40,13 +41,28 @@ using ndn::nfd::StrategyChoice;
 class StrategyChoiceModule : public Module, noncopyable
 {
 public:
-  virtual void
+  /** \brief register 'strategy list', 'strategy show', 'strategy set', 'strategy unset' commands
+   */
+  static void
+  registerCommands(CommandParser& parser);
+
+  /** \brief the 'strategy list' command
+   */
+  static void
+  list(ExecuteContext& ctx);
+
+  /** \brief the 'strategy show' command
+   */
+  static void
+  show(ExecuteContext& ctx);
+
+  void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) override;
 
-  virtual void
+  void
   formatStatusXml(std::ostream& os) const override;
 
   /** \brief format a single status item as XML
@@ -56,15 +72,16 @@ public:
   void
   formatItemXml(std::ostream& os, const StrategyChoice& item) const;
 
-  virtual void
+  void
   formatStatusText(std::ostream& os) const override;
 
   /** \brief format a single status item as text
    *  \param os output stream
    *  \param item status item
+   *  \param wantMultiLine use multi-line style
    */
-  void
-  formatItemText(std::ostream& os, const StrategyChoice& item) const;
+  static void
+  formatItemText(std::ostream& os, const StrategyChoice& item, bool wantMultiLine = false);
 
 private:
   std::vector<StrategyChoice> m_status;
@@ -74,4 +91,4 @@ private:
 } // namespace tools
 } // namespace nfd
 
-#endif // NFD_TOOLS_NFDC_STARTEGY_CHOICE_MODULE_HPP
+#endif // NFD_TOOLS_NFDC_STRATEGY_CHOICE_MODULE_HPP

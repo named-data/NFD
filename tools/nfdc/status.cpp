@@ -136,11 +136,6 @@ registerStatusCommands(CommandParser& parser)
     .setTitle("print channel list");
   parser.addCommand(defChannelList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantChannels));
 
-  CommandDefinition defStrategyList("strategy", "list");
-  defStrategyList
-    .setTitle("print strategy choices");
-  parser.addCommand(defStrategyList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantStrategyChoice));
-
   CommandDefinition defFibList("fib", "list");
   defFibList
     .setTitle("print FIB entries");
