@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,19 +70,34 @@ Base::onHubConnectSuccess(const ControlParameters& resp)
 {
   std::cerr << "Successfully created face: " << resp << std::endl;
 
-  static const Name TESTBED_PREFIX = "/ndn";
-  registerPrefix(TESTBED_PREFIX, resp.getFaceId());
-
-  static const Name LOCALHOP_NFD_PREFIX = "/localhop/nfd";
-  registerPrefix(LOCALHOP_NFD_PREFIX, resp.getFaceId());
+  registerAutoConfigNames(resp.getFaceId());
 }
 
 void
 Base::onHubConnectError(const ControlResponse& response)
 {
-  std::ostringstream os;
-  os << "Failed to create face: " << response.getText() << " (code: " << response.getCode() << ")";
-  BOOST_THROW_EXCEPTION(Error(os.str()));
+  // If face exists, continue proceeding with the existing face
+  if (response.getCode() == 409) {
+    std::cerr << "Face exists. Proceeding with existing face: " << ControlParameters(response.getBody()) << std::endl;
+
+    registerAutoConfigNames(ControlParameters(response.getBody()).getFaceId());
+  }
+  // Otherwise, report the failure and throw out exception
+  else {
+    std::ostringstream os;
+    os << "Failed to create face: " << response.getText() << " (code: " << response.getCode() << ")";
+    BOOST_THROW_EXCEPTION(Error(os.str()));
+  }
+}
+
+void
+Base::registerAutoConfigNames(uint64_t faceId)
+{
+  static const Name TESTBED_PREFIX = "/ndn";
+  registerPrefix(TESTBED_PREFIX, faceId);
+
+  static const Name LOCALHOP_NFD_PREFIX = "/localhop/nfd";
+  registerPrefix(LOCALHOP_NFD_PREFIX, faceId);
 }
 
 void
