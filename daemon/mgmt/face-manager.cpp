@@ -394,8 +394,8 @@ FaceManager::collectFaceStatus(const Face& face, const time::steady_clock::TimeP
   const face::FaceCounters& counters = face.getCounters();
   status.setNInInterests(counters.nInInterests)
         .setNOutInterests(counters.nOutInterests)
-        .setNInDatas(counters.nInData)
-        .setNOutDatas(counters.nOutData)
+        .setNInData(counters.nInData)
+        .setNOutData(counters.nOutData)
         .setNInNacks(counters.nInNacks)
         .setNOutNacks(counters.nOutNacks)
         .setNInBytes(counters.nInBytes)

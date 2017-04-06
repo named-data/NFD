@@ -333,12 +333,12 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
   os << "<packetCounters>";
   os << "<incomingPackets>"
      << "<nInterests>" << item.getNInInterests() << "</nInterests>"
-     << "<nDatas>" << item.getNInDatas() << "</nDatas>"
+     << "<nData>" << item.getNInData() << "</nData>"
      << "<nNacks>" << item.getNInNacks() << "</nNacks>"
      << "</incomingPackets>";
   os << "<outgoingPackets>"
      << "<nInterests>" << item.getNOutInterests() << "</nInterests>"
-     << "<nDatas>" << item.getNOutDatas() << "</nDatas>"
+     << "<nData>" << item.getNOutData() << "</nData>"
      << "<nNacks>" << item.getNOutNacks() << "</nNacks>"
      << "</outgoingPackets>";
   os << "</packetCounters>";
@@ -378,12 +378,12 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
   os << ia("counters")
      << "{in={"
      << item.getNInInterests() << "i "
-     << item.getNInDatas() << "d "
+     << item.getNInData() << "d "
      << item.getNInNacks() << "n "
      << item.getNInBytes() << "B} "
      << "out={"
      << item.getNOutInterests() << "i "
-     << item.getNOutDatas() << "d "
+     << item.getNOutData() << "d "
      << item.getNOutNacks() << "n "
      << item.getNOutBytes() << "B}}";
 

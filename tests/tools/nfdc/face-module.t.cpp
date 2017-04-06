@@ -59,10 +59,10 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT)
             .setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS)
             .setNInInterests(22562)
-            .setNInDatas(22031)
+            .setNInData(22031)
             .setNInNacks(63)
             .setNOutInterests(30121)
-            .setNOutDatas(20940)
+            .setNOutData(20940)
             .setNOutNacks(1218)
             .setNInBytes(2522915)
             .setNOutBytes(1353592);
@@ -75,10 +75,10 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
             .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
             .setNInInterests(18998)
-            .setNInDatas(26701)
+            .setNInData(26701)
             .setNInNacks(147)
             .setNOutInterests(34779)
-            .setNOutDatas(17028)
+            .setNOutData(17028)
             .setNOutNacks(1176)
             .setNInBytes(4672308)
             .setNOutBytes(8957187);
@@ -116,10 +116,10 @@ BOOST_AUTO_TEST_CASE(NormalQuery)
            .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
            .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
            .setNInInterests(2325)
-           .setNInDatas(1110)
+           .setNInData(1110)
            .setNInNacks(79)
            .setNOutInterests(2278)
-           .setNOutDatas(485)
+           .setNOutData(485)
            .setNOutNacks(841)
            .setNInBytes(4716834)
            .setNOutBytes(308108);
@@ -182,10 +182,10 @@ BOOST_AUTO_TEST_CASE(Normal)
            .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
            .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
            .setNInInterests(28975)
-           .setNInDatas(28232)
+           .setNInData(28232)
            .setNInNacks(212)
            .setNOutInterests(19525)
-           .setNOutDatas(30993)
+           .setNOutData(30993)
            .setNOutNacks(1038)
            .setNInBytes(13307258)
            .setNOutBytes(6231946);
@@ -531,12 +531,12 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <packetCounters>
         <incomingPackets>
           <nInterests>22562</nInterests>
-          <nDatas>22031</nDatas>
+          <nData>22031</nData>
           <nNacks>63</nNacks>
         </incomingPackets>
         <outgoingPackets>
           <nInterests>30121</nInterests>
-          <nDatas>20940</nDatas>
+          <nData>20940</nData>
           <nNacks>1218</nNacks>
         </outgoingPackets>
       </packetCounters>
@@ -558,12 +558,12 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <packetCounters>
         <incomingPackets>
           <nInterests>18998</nInterests>
-          <nDatas>26701</nDatas>
+          <nData>26701</nData>
           <nNacks>147</nNacks>
         </incomingPackets>
         <outgoingPackets>
           <nInterests>34779</nInterests>
-          <nDatas>17028</nDatas>
+          <nData>17028</nData>
           <nNacks>1176</nNacks>
         </outgoingPackets>
       </packetCounters>
@@ -595,10 +595,10 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT)
           .setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS)
           .setNInInterests(22562)
-          .setNInDatas(22031)
+          .setNInData(22031)
           .setNInNacks(63)
           .setNOutInterests(30121)
-          .setNOutDatas(20940)
+          .setNOutData(20940)
           .setNOutNacks(1218)
           .setNInBytes(2522915)
           .setNOutBytes(1353592);
@@ -611,10 +611,10 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
           .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
           .setNInInterests(18998)
-          .setNInDatas(26701)
+          .setNInData(26701)
           .setNInNacks(147)
           .setNOutInterests(34779)
-          .setNOutDatas(17028)
+          .setNOutData(17028)
           .setNOutNacks(1176)
           .setNInBytes(4672308)
           .setNOutBytes(8957187);

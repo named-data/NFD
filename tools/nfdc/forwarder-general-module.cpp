@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -93,12 +93,12 @@ ForwarderGeneralModule::formatItemXml(std::ostream& os, const ForwarderStatus& i
   os << "<packetCounters>";
   os << "<incomingPackets>"
      << "<nInterests>" << item.getNInInterests() << "</nInterests>"
-     << "<nDatas>" << item.getNInDatas() << "</nDatas>"
+     << "<nData>" << item.getNInData() << "</nData>"
      << "<nNacks>" << item.getNInNacks() << "</nNacks>"
      << "</incomingPackets>";
   os << "<outgoingPackets>"
      << "<nInterests>" << item.getNOutInterests() << "</nInterests>"
-     << "<nDatas>" << item.getNOutDatas() << "</nDatas>"
+     << "<nData>" << item.getNOutData() << "</nData>"
      << "<nNacks>" << item.getNOutNacks() << "</nNacks>"
      << "</outgoingPackets>";
   os << "</packetCounters>";
@@ -131,8 +131,8 @@ ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& 
 
   os << "          nInInterests=" << item.getNInInterests() << "\n";
   os << "         nOutInterests=" << item.getNOutInterests() << "\n";
-  os << "              nInDatas=" << item.getNInDatas() << "\n";
-  os << "             nOutDatas=" << item.getNOutDatas() << "\n";
+  os << "               nInData=" << item.getNInData() << "\n";
+  os << "              nOutData=" << item.getNOutData() << "\n";
   os << "              nInNacks=" << item.getNInNacks() << "\n";
   os << "             nOutNacks=" << item.getNOutNacks() << "\n";
 }

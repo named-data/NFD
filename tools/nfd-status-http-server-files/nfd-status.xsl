@@ -105,8 +105,8 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:nCsEntries"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nData"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nData"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nNacks"/></td>
       </tr>
@@ -198,11 +198,11 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
           </xsl:choose>
         </td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nInterests"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nData"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:byteCounters/nfd:incomingBytes"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nInterests"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nDatas"/></td>
+        <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nData"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:byteCounters/nfd:outgoingBytes"/></td>
       </tr>
