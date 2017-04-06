@@ -58,8 +58,8 @@ registerCommands(CommandParser& parser)
     {"unregister", "unregister a prefix", "route remove"},
     {"create", "create a face", "face create"},
     {"destroy", "destroy a face", "face destroy"},
-    {"set-strategy", "set strategy choice on namespace", ""},
-    {"unset-strategy", "unset strategy choice on namespace", ""},
+    {"set-strategy", "set strategy choice on namespace", "strategy set"},
+    {"unset-strategy", "unset strategy choice on namespace", "strategy unset"},
     {"add-nexthop", "add FIB nexthop", "route add"},
     {"remove-nexthop", "remove FIB nexthop", "route remove"}
   };

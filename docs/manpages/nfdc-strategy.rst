@@ -5,8 +5,8 @@ SYNOPSIS
 --------
 | nfdc strategy [list]
 | nfdc strategy show [prefix] <PREFIX>
-| nfdc set-strategy <PREFIX> <STRATEGY>
-| nfdc unset-strategy <PREFIX>
+| nfdc strategy set [prefix] <PREFIX> [strategy] <STRATEGY>
+| nfdc strategy unset [prefix] <PREFIX>
 
 DESCRIPTION
 -----------
@@ -22,21 +22,21 @@ The **nfdc strategy list** command shows a list of strategy choices.
 
 The **nfdc strategy show** command shows the effective strategy choice for a specific name.
 
-The **nfdc set-strategy** command sets the strategy for a name prefix.
+The **nfdc strategy set** command sets the strategy for a name prefix.
+The strategy for ``/'' prefix is the default strategy.
 
-The **nfdc unset-strategy** command clears the strategy choice at a name prefix,
+The **nfdc strategy unset** command clears the strategy choice at a name prefix,
 so that a strategy choice at a shorter prefix or the default strategy will be used.
-It undoes a prior **nfdc set-strategy** command on the same name prefix.
+It undoes a prior **nfdc strategy set** command on the same name prefix.
+It is prohibited to unset the strategy choice for ``/'' prefix because there must always be a
+default strategy.
 
 OPTIONS
 -------
 <PREFIX>
     The name prefix of a strategy choice.
     The strategy choice is effective for all Interests under the name prefix,
-    unless overridden by another strategy choice.
-    Specifying ``ndn:/`` as the prefix in **nfdc set-strategy** changes the default strategy.
-    Specifying ``ndn:/`` as the prefix in **nfdc unset-strategy** is disallowed,
-    because NFD must always have a default strategy.
+    unless overridden by another strategy choice at a longer prefix.
 
 <STRATEGY>
     A name that identifies the forwarding strategy.
@@ -50,6 +50,8 @@ EXIT CODES
 1: An unspecified error occurred
 
 2: Malformed command line
+
+7: Strategy not found (**nfdc strategy set** only)
 
 SEE ALSO
 --------

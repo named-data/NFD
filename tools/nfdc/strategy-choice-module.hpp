@@ -56,6 +56,16 @@ public:
   static void
   show(ExecuteContext& ctx);
 
+  /** \brief the 'strategy set' command
+   */
+  static void
+  set(ExecuteContext& ctx);
+
+  /** \brief the 'strategy unset' command
+   */
+  static void
+  unset(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,

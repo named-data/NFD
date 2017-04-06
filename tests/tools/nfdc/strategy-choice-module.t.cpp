@@ -126,6 +126,100 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
 
 BOOST_AUTO_TEST_SUITE_END() // ShowCommand
 
+BOOST_FIXTURE_TEST_SUITE(SetCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/strategy-choice/set");
+    BOOST_REQUIRE(req.hasName());
+    BOOST_CHECK_EQUAL(req.getName(), "/VBXSJg3m/XYs81ARNhx");
+    BOOST_REQUIRE(req.hasStrategy());
+    BOOST_CHECK_EQUAL(req.getStrategy(), "/strategyP");
+
+    ControlParameters resp;
+    resp.setName("/VBXSJg3m/XYs81ARNhx");
+    resp.setStrategy("/strategyP/%FD%05");
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("strategy set /VBXSJg3m/XYs81ARNhx /strategyP");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("strategy-set prefix=/VBXSJg3m/XYs81ARNhx strategy=/strategyP/%FD%05\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(UnknownStrategy)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/strategy-choice/set");
+
+    ControlParameters resp;
+    this->failCommand(interest, 404, "strategy not found");
+  };
+
+  this->execute("strategy set /zezRSP1I /strategyQ");
+  BOOST_CHECK_EQUAL(exitCode, 7);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Unknown strategy: /strategyQ\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = nullptr; // no response to command
+
+  this->execute("strategy set /LJdNFfQJ8 /strategyP");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when setting strategy: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // SetCommand
+
+BOOST_FIXTURE_TEST_SUITE(UnsetCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/strategy-choice/unset");
+    BOOST_REQUIRE(req.hasName());
+    BOOST_CHECK_EQUAL(req.getName(), "/CFVecryP");
+
+    ControlParameters resp;
+    resp.setName("/CFVecryP");
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("strategy unset /CFVecryP");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("strategy-unset prefix=/CFVecryP\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(CannotUnsetDefault)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_ERROR("unexpected command");
+  };
+
+  this->execute("strategy unset /");
+  BOOST_CHECK_EQUAL(exitCode, 2);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Unsetting default strategy is prohibited\n"));
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = nullptr; // no response to command
+
+  this->execute("strategy unset /GQcEsG96");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when unsetting strategy: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // UnsetCommand
+
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <strategyChoices>
     <strategyChoice>

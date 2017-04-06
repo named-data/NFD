@@ -43,6 +43,19 @@ StrategyChoiceModule::registerCommands(CommandParser& parser)
     .setTitle("show strategy choice of an entry")
     .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES);
   parser.addCommand(defStrategyShow, &StrategyChoiceModule::show);
+
+  CommandDefinition defStrategySet("strategy", "set");
+  defStrategySet
+    .setTitle("set strategy choice for a name prefix")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
+    .addArg("strategy", ArgValueType::NAME, Required::YES, Positional::YES);
+  parser.addCommand(defStrategySet, &StrategyChoiceModule::set);
+
+  CommandDefinition defStrategyUnset("strategy", "unset");
+  defStrategyUnset
+    .setTitle("clear strategy choice at a name prefix")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES);
+  parser.addCommand(defStrategyUnset, &StrategyChoiceModule::unset);
 }
 
 void
@@ -78,6 +91,58 @@ StrategyChoiceModule::show(ExecuteContext& ctx)
       formatItemText(ctx.out, match, true);
     },
     ctx.makeDatasetFailureHandler("strategy choice dataset"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
+StrategyChoiceModule::set(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+  auto strategy = ctx.args.get<Name>("strategy");
+
+  ctx.controller.start<ndn::nfd::StrategyChoiceSetCommand>(
+    ControlParameters().setName(prefix).setStrategy(strategy),
+    [&] (const ControlParameters& resp) {
+      ctx.out << "strategy-set ";
+      text::ItemAttributes ia;
+      ctx.out << ia("prefix") << resp.getName()
+              << ia("strategy") << resp.getStrategy() << '\n';
+    },
+    [&] (const ControlResponse& resp) {
+      if (resp.getCode() == 404) {
+        ctx.exitCode = 7;
+        ctx.err << "Unknown strategy: " << strategy << '\n';
+        ///\todo #3887 list available strategies
+        return;
+      }
+      ctx.makeCommandFailureHandler("setting strategy")(resp); // invoke general error handler
+    },
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
+StrategyChoiceModule::unset(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+
+  if (prefix.empty()) {
+    ctx.exitCode = 2;
+    ctx.err << "Unsetting default strategy is prohibited\n";
+    return;
+  }
+
+  ctx.controller.start<ndn::nfd::StrategyChoiceUnsetCommand>(
+    ControlParameters().setName(prefix),
+    [&] (const ControlParameters& resp) {
+      ctx.out << "strategy-unset ";
+      text::ItemAttributes ia;
+      ctx.out << ia("prefix") << resp.getName() << '\n';
+    },
+    ctx.makeCommandFailureHandler("unsetting strategy"),
     ctx.makeCommandOptions());
 
   ctx.face.processEvents();
