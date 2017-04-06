@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,8 @@ namespace nfd {
 namespace tcp {
 typedef boost::asio::ip::tcp::endpoint Endpoint;
 } // namespace tcp
+
+namespace face {
 
 /**
  * \brief Class implementing TCP-based channel to create faces
@@ -129,6 +131,7 @@ TcpChannel::isListening() const
   return m_acceptor.is_open();
 }
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_TCP_CHANNEL_HPP

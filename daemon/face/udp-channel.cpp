@@ -29,10 +29,11 @@
 #include "core/global-io.hpp"
 
 namespace nfd {
+namespace face {
 
 NFD_LOG_INIT("UdpChannel");
 
-using namespace boost::asio;
+namespace ip = boost::asio::ip;
 
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
                        const time::seconds& timeout)
@@ -136,7 +137,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     onFaceCreated(face);
 
   // dispatch the datagram to the face for processing
-  static_cast<face::UnicastUdpTransport*>(face->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
+  static_cast<UnicastUdpTransport*>(face->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
   this->waitForNewPeer(onFaceCreated, onReceiveFailed);
 }
@@ -156,8 +157,8 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   socket.bind(m_localEndpoint);
   socket.connect(remoteEndpoint);
 
-  auto linkService = make_unique<face::GenericLinkService>();
-  auto transport = make_unique<face::UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
+  auto linkService = make_unique<GenericLinkService>();
+  auto transport = make_unique<UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;
@@ -170,4 +171,5 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   return {true, face};
 }
 
+} // namespace face
 } // namespace nfd

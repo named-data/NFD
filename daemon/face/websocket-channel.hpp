@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,8 @@ namespace nfd {
 namespace websocket {
 typedef boost::asio::ip::tcp::endpoint Endpoint;
 } // namespace websocket
+
+namespace face {
 
 /**
  * \brief Class implementing WebSocket-based channel to create faces
@@ -114,6 +116,7 @@ WebSocketChannel::isListening() const
   return m_server.is_listening();
 }
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_WEBSOCKET_CHANNEL_HPP

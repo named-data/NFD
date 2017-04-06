@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,6 +33,8 @@ namespace nfd {
 namespace unix_stream {
 typedef boost::asio::local::stream_protocol::endpoint Endpoint;
 } // namespace unix_stream
+
+namespace face {
 
 /**
  * \brief Class implementing a local channel to create faces
@@ -101,6 +103,7 @@ UnixStreamChannel::isListening() const
   return m_acceptor.is_open();
 }
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_UNIX_STREAM_CHANNEL_HPP

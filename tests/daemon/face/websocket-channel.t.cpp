@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 #include "test-ip.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
 namespace ip = boost::asio::ip;
@@ -37,7 +38,7 @@ namespace ip = boost::asio::ip;
 class WebSocketChannelFixture : public ChannelFixture<WebSocketChannel, websocket::Endpoint>
 {
 protected:
-  virtual unique_ptr<WebSocketChannel>
+  unique_ptr<WebSocketChannel>
   makeChannel(const ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
@@ -319,4 +320,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestWebSocketChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

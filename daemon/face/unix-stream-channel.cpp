@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,7 @@
 #include <sys/stat.h> // for chmod()
 
 namespace nfd {
+namespace face {
 
 NFD_LOG_INIT("UnixStreamChannel");
 
@@ -132,8 +133,8 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
 
   NFD_LOG_DEBUG("[" << m_endpoint << "] Incoming connection");
 
-  auto linkService = make_unique<face::GenericLinkService>();
-  auto transport = make_unique<face::UnixStreamTransport>(std::move(m_socket));
+  auto linkService = make_unique<GenericLinkService>();
+  auto transport = make_unique<UnixStreamTransport>(std::move(m_socket));
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
   onFaceCreated(face);
 
@@ -141,4 +142,5 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
   accept(onFaceCreated, onAcceptFailed);
 }
 
+} // namespace face
 } // namespace nfd

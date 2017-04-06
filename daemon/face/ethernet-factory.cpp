@@ -161,12 +161,12 @@ EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& netif,
     return found->second;
   }
 
-  face::GenericLinkService::Options opts;
+  GenericLinkService::Options opts;
   opts.allowFragmentation = true;
   opts.allowReassembly = true;
 
-  auto linkService = make_unique<face::GenericLinkService>(opts);
-  auto transport = make_unique<face::MulticastEthernetTransport>(netif, address, m_mcastConfig.linkType);
+  auto linkService = make_unique<GenericLinkService>(opts);
+  auto transport = make_unique<MulticastEthernetTransport>(netif, address, m_mcastConfig.linkType);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_mcastFaces[key] = face;

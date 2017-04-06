@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
                     CheckResponseResult::OK);
 }
 
-class TestChannel : public Channel
+class TestChannel : public face::Channel
 {
 public:
   explicit
@@ -263,12 +263,12 @@ public:
              const ndn::optional<FaceUri>& localUri,
              ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onConnectFailed) final
+             const face::FaceCreatedCallback& onCreated,
+             const face::FaceCreationFailedCallback& onConnectFailed) final
   {
   }
 
-  std::vector<shared_ptr<const Channel>>
+  std::vector<shared_ptr<const face::Channel>>
   getChannels() const final
   {
     return m_channels;
@@ -284,7 +284,7 @@ public:
   }
 
 private:
-  std::vector<shared_ptr<const Channel>> m_channels;
+  std::vector<shared_ptr<const face::Channel>> m_channels;
 };
 
 BOOST_AUTO_TEST_CASE(ChannelDataset)

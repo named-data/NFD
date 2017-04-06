@@ -30,6 +30,7 @@
 #include "udp-protocol.hpp"
 
 namespace nfd {
+namespace face {
 
 /**
  * \brief Class implementing UDP-based channel to create faces
@@ -133,6 +134,7 @@ UdpChannel::isListening() const
   return m_socket.is_open();
 }
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_UDP_CHANNEL_HPP

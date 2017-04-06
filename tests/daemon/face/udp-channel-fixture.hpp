@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,12 +32,13 @@
 #include "channel-fixture.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
 class UdpChannelFixture : public ChannelFixture<UdpChannel, udp::Endpoint>
 {
 protected:
-  virtual unique_ptr<UdpChannel>
+  unique_ptr<UdpChannel>
   makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0) final
   {
     if (port == 0)
@@ -46,7 +47,7 @@ protected:
     return make_unique<UdpChannel>(udp::Endpoint(addr, port), time::seconds(2));
   }
 
-  virtual void
+  void
   connect(UdpChannel& channel) final
   {
     g_io.post([&] {
@@ -68,6 +69,7 @@ protected:
 };
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_TESTS_DAEMON_FACE_UDP_CHANNEL_FIXTURE_HPP

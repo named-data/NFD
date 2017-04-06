@@ -29,6 +29,7 @@
 #include "face.hpp"
 
 namespace nfd {
+namespace face {
 
 /**
  * \brief Prototype for the callback that is invoked when the face
@@ -82,6 +83,7 @@ Channel::getUri() const
 void
 connectFaceClosedSignal(Face& face, const std::function<void()>& f);
 
+} // namespace face
 } // namespace nfd
 
 #endif // NFD_DAEMON_FACE_CHANNEL_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,6 +31,7 @@
 #include <fstream>
 
 namespace nfd {
+namespace face {
 namespace tests {
 
 namespace fs = boost::filesystem;
@@ -44,7 +45,7 @@ protected:
     listenerEp = unix_stream::Endpoint("nfd-test-unix-stream-channel.sock");
   }
 
-  virtual unique_ptr<UnixStreamChannel>
+  unique_ptr<UnixStreamChannel>
   makeChannel() final
   {
     return make_unique<UnixStreamChannel>(listenerEp);
@@ -174,4 +175,5 @@ BOOST_AUTO_TEST_SUITE_END() // TestUnixStreamChannel
 BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

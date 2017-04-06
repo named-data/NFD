@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "core/global-io.hpp"
 
 namespace nfd {
+namespace face {
 
 NFD_LOG_INIT("TcpChannel");
 
@@ -108,12 +109,12 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
   if (it == m_channelFaces.end()) {
     auto persistency = isOnDemand ? ndn::nfd::FACE_PERSISTENCY_ON_DEMAND
                                   : ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
-    auto linkService = make_unique<face::GenericLinkService>();
+    auto linkService = make_unique<GenericLinkService>();
     auto options = linkService->getOptions();
     options.allowLocalFields = wantLocalFieldsEnabled;
     linkService->setOptions(options);
 
-    auto transport = make_unique<face::TcpTransport>(std::move(socket), persistency);
+    auto transport = make_unique<TcpTransport>(std::move(socket), persistency);
 
     face = make_shared<Face>(std::move(linkService), std::move(transport));
 
@@ -220,4 +221,5 @@ TcpChannel::handleConnectTimeout(const shared_ptr<ip::tcp::socket>& socket,
     onConnectFailed(504, "Connect to remote endpoint timed out");
 }
 
+} // namespace face
 } // namespace nfd

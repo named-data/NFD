@@ -50,7 +50,7 @@ protected:
 
 /** \brief implements a forwarder-side transport that can be paired with another
  */
-class InternalForwarderTransport : public face::Transport, public InternalTransportBase
+class InternalForwarderTransport : public Transport, public InternalTransportBase
 {
 public:
   InternalForwarderTransport(const FaceUri& localUri = FaceUri("internal://"),

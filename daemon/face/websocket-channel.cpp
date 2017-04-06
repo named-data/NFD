@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "core/global-io.hpp"
 
 namespace nfd {
+namespace face {
 
 NFD_LOG_INIT("WebSocketChannel");
 
@@ -77,7 +78,7 @@ WebSocketChannel::handlePongTimeout(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getTransport())->handlePongTimeout();
+    static_cast<WebSocketTransport*>(it->second->getTransport())->handlePongTimeout();
   }
   else {
     NFD_LOG_WARN("Pong timeout on unknown transport");
@@ -89,7 +90,7 @@ WebSocketChannel::handlePong(websocketpp::connection_hdl hdl)
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getTransport())->handlePong();
+    static_cast<WebSocketTransport*>(it->second->getTransport())->handlePong();
   }
   else {
     NFD_LOG_WARN("Pong received on unknown transport");
@@ -102,7 +103,7 @@ WebSocketChannel::handleMessage(websocketpp::connection_hdl hdl,
 {
   auto it = m_channelFaces.find(hdl);
   if (it != m_channelFaces.end()) {
-    static_cast<face::WebSocketTransport*>(it->second->getTransport())->receiveMessage(msg->get_payload());
+    static_cast<WebSocketTransport*>(it->second->getTransport())->receiveMessage(msg->get_payload());
   }
   else {
     NFD_LOG_WARN("Message received on unknown transport");
@@ -112,8 +113,8 @@ WebSocketChannel::handleMessage(websocketpp::connection_hdl hdl,
 void
 WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
 {
-  auto linkService = make_unique<face::GenericLinkService>();
-  auto transport = make_unique<face::WebSocketTransport>(hdl, ref(m_server), m_pingInterval);
+  auto linkService = make_unique<GenericLinkService>();
+  auto transport = make_unique<WebSocketTransport>(hdl, ref(m_server), m_pingInterval);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[hdl] = face;
@@ -153,4 +154,5 @@ WebSocketChannel::size() const
   return m_channelFaces.size();
 }
 
+} // namespace face
 } // namespace nfd
