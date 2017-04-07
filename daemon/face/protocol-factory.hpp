@@ -28,6 +28,7 @@
 
 #include "channel.hpp"
 #include "face-system.hpp"
+
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -159,9 +160,6 @@ protected:
 };
 
 } // namespace face
-
-using face::ProtocolFactory;
-
 } // namespace nfd
 
 /** \brief registers a protocol factory

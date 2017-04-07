@@ -108,7 +108,7 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
     }
   }
 
-  ProtocolFactory* factory = m_faceSystem.getFactoryByScheme(remoteUri.getScheme());
+  face::ProtocolFactory* factory = m_faceSystem.getFactoryByScheme(remoteUri.getScheme());
   if (factory == nullptr) {
     NFD_LOG_TRACE("received create request for unsupported protocol: " << remoteUri.getScheme());
     done(ControlResponse(406, "Unsupported protocol"));
@@ -299,8 +299,8 @@ void
 FaceManager::listChannels(const Name& topPrefix, const Interest& interest,
                           ndn::mgmt::StatusDatasetContext& context)
 {
-  std::set<const ProtocolFactory*> factories = m_faceSystem.listProtocolFactories();
-  for (const ProtocolFactory* factory : factories) {
+  std::set<const face::ProtocolFactory*> factories = m_faceSystem.listProtocolFactories();
+  for (const auto* factory : factories) {
     for (const auto& channel : factory->getChannels()) {
       ndn::nfd::ChannelStatus entry;
       entry.setLocalUri(channel->getUri().toString());

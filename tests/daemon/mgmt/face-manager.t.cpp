@@ -249,7 +249,7 @@ public:
   }
 };
 
-class TestProtocolFactory : public ProtocolFactory
+class TestProtocolFactory : public face::ProtocolFactory
 {
 public:
   void
