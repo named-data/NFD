@@ -44,12 +44,6 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   setUri(FaceUri(m_localEndpoint));
 }
 
-size_t
-UdpChannel::size() const
-{
-  return m_channelFaces.size();
-}
-
 void
 UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
                     ndn::nfd::FacePersistency persistency,

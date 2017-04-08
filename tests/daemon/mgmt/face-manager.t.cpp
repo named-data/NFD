@@ -247,6 +247,18 @@ public:
   {
     setUri(FaceUri(uri));
   }
+
+  bool
+  isListening() const final
+  {
+    return false;
+  }
+
+  size_t
+  size() const final
+  {
+    return 0;
+  }
 };
 
 class TestProtocolFactory : public face::ProtocolFactory

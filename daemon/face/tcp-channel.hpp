@@ -56,6 +56,18 @@ public:
   explicit
   TcpChannel(const tcp::Endpoint& localEndpoint);
 
+  bool
+  isListening() const override
+  {
+    return m_acceptor.is_open();
+  }
+
+  size_t
+  size() const override
+  {
+    return m_channelFaces.size();
+  }
+
   /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
@@ -71,23 +83,14 @@ public:
          int backlog = boost::asio::ip::tcp::acceptor::max_connections);
 
   /**
-   * \brief Create a face by establishing connection to remote endpoint
+   * \brief Create a face by establishing a TCP connection to \p remoteEndpoint
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
           bool wantLocalFieldsEnabled,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed,
-          const time::seconds& timeout = time::seconds(4));
-
-  /**
-   * \brief Get number of faces in the channel
-   */
-  size_t
-  size() const;
-
-  bool
-  isListening() const;
+          time::nanoseconds timeout = time::seconds(4));
 
 private:
   void
@@ -124,12 +127,6 @@ private:
   boost::asio::ip::tcp::acceptor m_acceptor;
   boost::asio::ip::tcp::socket m_acceptSocket;
 };
-
-inline bool
-TcpChannel::isListening() const
-{
-  return m_acceptor.is_open();
-}
 
 } // namespace face
 } // namespace nfd

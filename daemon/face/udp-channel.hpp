@@ -51,11 +51,17 @@ public:
   UdpChannel(const udp::Endpoint& localEndpoint,
              const time::seconds& timeout);
 
-  /**
-   * \brief Get number of faces in the channel
-   */
+  bool
+  isListening() const override
+  {
+    return m_socket.is_open();
+  }
+
   size_t
-  size() const;
+  size() const override
+  {
+    return m_channelFaces.size();
+  }
 
   /**
    * \brief Create a face by establishing connection to remote endpoint
@@ -83,9 +89,6 @@ public:
   void
   listen(const FaceCreatedCallback& onFaceCreated,
          const FaceCreationFailedCallback& onReceiveFailed);
-
-  bool
-  isListening() const;
 
 private:
   void
@@ -127,12 +130,6 @@ private:
 
   uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
 };
-
-inline bool
-UdpChannel::isListening() const
-{
-  return m_socket.is_open();
-}
 
 } // namespace face
 } // namespace nfd

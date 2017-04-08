@@ -103,13 +103,13 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   this->listen();
 
   BOOST_CHECK_EQUAL(listenerChannel->isListening(), true);
-  BOOST_CHECK_EQUAL(listenerFaces.size(), 0);
+  BOOST_CHECK_EQUAL(listenerChannel->size(), 0);
 
   local::stream_protocol::socket client1(g_io);
   this->clientConnect(client1);
 
   BOOST_CHECK_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
-  BOOST_CHECK_EQUAL(listenerFaces.size(), 1);
+  BOOST_CHECK_EQUAL(listenerChannel->size(), 1);
 
   local::stream_protocol::socket client2(g_io);
   local::stream_protocol::socket client3(g_io);
@@ -117,6 +117,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   this->clientConnect(client3);
 
   BOOST_CHECK_EQUAL(limitedIo.run(4, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(listenerChannel->size(), 3);
   BOOST_CHECK_EQUAL(listenerFaces.size(), 3);
 
   // check face persistency

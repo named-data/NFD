@@ -148,11 +148,5 @@ WebSocketChannel::listen(const FaceCreatedCallback& onFaceCreated)
   m_server.start_accept();
 }
 
-size_t
-WebSocketChannel::size() const
-{
-  return m_channelFaces.size();
-}
-
 } // namespace face
 } // namespace nfd

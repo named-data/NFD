@@ -70,7 +70,7 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
                     bool wantLocalFieldsEnabled,
                     const FaceCreatedCallback& onFaceCreated,
                     const FaceCreationFailedCallback& onConnectFailed,
-                    const time::seconds& timeout/* = time::seconds(4)*/)
+                    time::nanoseconds timeout)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
@@ -88,12 +88,6 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
                                    boost::asio::placeholders::error, clientSocket,
                                    wantLocalFieldsEnabled, connectTimeoutEvent,
                                    onFaceCreated, onConnectFailed));
-}
-
-size_t
-TcpChannel::size() const
-{
-  return m_channelFaces.size();
 }
 
 void

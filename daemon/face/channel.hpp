@@ -31,16 +31,14 @@
 namespace nfd {
 namespace face {
 
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        is created (as a response to incoming connection or after
- *        connection is established)
+class Face;
+
+/** \brief Prototype for the callback that is invoked when a face is created
+ *         (in response to an incoming connection or after a connection is established)
  */
 typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
 
-/**
- * \brief Prototype for the callback that is invoked when the face
- *        fails to be created
+/** \brief Prototype for the callback that is invoked when a face fails to be created
  */
 typedef function<void(uint32_t status, const std::string& reason)> FaceCreationFailedCallback;
 
@@ -57,7 +55,20 @@ public:
   ~Channel();
 
   const FaceUri&
-  getUri() const;
+  getUri() const
+  {
+    return m_uri;
+  }
+
+  /** \brief Returns whether the channel is listening
+   */
+  virtual bool
+  isListening() const = 0;
+
+  /** \brief Returns the number of faces in the channel
+   */
+  virtual size_t
+  size() const = 0;
 
 protected:
   void
@@ -66,12 +77,6 @@ protected:
 private:
   FaceUri m_uri;
 };
-
-inline const FaceUri&
-Channel::getUri() const
-{
-  return m_uri;
-}
 
 /** \brief invokes a callback when the face is closed
  *  \param face the face

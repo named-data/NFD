@@ -53,6 +53,18 @@ public:
   explicit
   WebSocketChannel(const websocket::Endpoint& localEndpoint);
 
+  bool
+  isListening() const override
+  {
+    return m_server.is_listening();
+  }
+
+  size_t
+  size() const override
+  {
+    return m_channelFaces.size();
+  }
+
   /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
@@ -61,15 +73,6 @@ public:
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated);
-
-  /**
-   * \brief Get number of faces in the channel
-   */
-  size_t
-  size() const;
-
-  bool
-  isListening() const;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \pre listen hasn't been invoked
@@ -109,12 +112,6 @@ private:
   FaceCreatedCallback m_onFaceCreatedCallback;
   time::milliseconds m_pingInterval;
 };
-
-inline bool
-WebSocketChannel::isListening() const
-{
-  return m_server.is_listening();
-}
 
 } // namespace face
 } // namespace nfd

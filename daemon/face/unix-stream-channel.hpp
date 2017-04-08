@@ -48,9 +48,14 @@ public:
   /**
    * \brief UnixStreamChannel-related error
    */
-  struct Error : public std::runtime_error
+  class Error : public std::runtime_error
   {
-    Error(const std::string& what) : std::runtime_error(what) {}
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
   };
 
   /**
@@ -63,6 +68,18 @@ public:
   UnixStreamChannel(const unix_stream::Endpoint& endpoint);
 
   ~UnixStreamChannel() override;
+
+  bool
+  isListening() const override
+  {
+    return m_acceptor.is_open();
+  }
+
+  size_t
+  size() const override
+  {
+    return m_size;
+  }
 
   /**
    * \brief Enable listening on the local endpoint, accept connections,
@@ -78,9 +95,6 @@ public:
          const FaceCreationFailedCallback& onAcceptFailed,
          int backlog = boost::asio::local::stream_protocol::acceptor::max_connections);
 
-  bool
-  isListening() const;
-
 private:
   void
   accept(const FaceCreatedCallback& onFaceCreated,
@@ -95,13 +109,8 @@ private:
   unix_stream::Endpoint m_endpoint;
   boost::asio::local::stream_protocol::acceptor m_acceptor;
   boost::asio::local::stream_protocol::socket m_socket;
+  size_t m_size;
 };
-
-inline bool
-UnixStreamChannel::isListening() const
-{
-  return m_acceptor.is_open();
-}
 
 } // namespace face
 } // namespace nfd

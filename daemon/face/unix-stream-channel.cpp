@@ -40,6 +40,7 @@ UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint)
   : m_endpoint(endpoint)
   , m_acceptor(getGlobalIoService())
   , m_socket(getGlobalIoService())
+  , m_size(0)
 {
   setUri(FaceUri(m_endpoint));
 }
@@ -136,6 +137,10 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
   auto linkService = make_unique<GenericLinkService>();
   auto transport = make_unique<UnixStreamTransport>(std::move(m_socket));
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
+
+  ++m_size;
+  connectFaceClosedSignal(*face, [this] { --m_size; });
+
   onFaceCreated(face);
 
   // prepare accepting the next connection
