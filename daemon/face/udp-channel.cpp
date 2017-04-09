@@ -91,8 +91,7 @@ void
 UdpChannel::waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
-  m_socket.async_receive_from(boost::asio::buffer(m_inputBuffer, ndn::MAX_NDN_PACKET_SIZE),
-                              m_remoteEndpoint,
+  m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint,
                               bind(&UdpChannel::handleNewPeer, this,
                                    boost::asio::placeholders::error,
                                    boost::asio::placeholders::bytes_transferred,
@@ -133,7 +132,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
 
   // dispatch the datagram to the face for processing
   auto* transport = static_cast<UnicastUdpTransport*>(face->getTransport());
-  transport->receiveDatagram(m_inputBuffer, nBytesReceived, error);
+  transport->receiveDatagram(m_receiveBuffer.data(), nBytesReceived, error);
 
   waitForNewPeer(onFaceCreated, onReceiveFailed);
 }

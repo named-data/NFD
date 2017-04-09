@@ -29,6 +29,8 @@
 #include "channel.hpp"
 #include "udp-protocol.hpp"
 
+#include <array>
+
 namespace nfd {
 namespace face {
 
@@ -112,7 +114,7 @@ private:
   udp::Endpoint m_remoteEndpoint; ///< The latest peer that started communicating with us
   boost::asio::ip::udp::socket m_socket; ///< Socket used to "accept" new peers
   std::map<udp::Endpoint, shared_ptr<Face>> m_channelFaces;
-  uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
+  std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
   time::seconds m_idleFaceTimeout; ///< Timeout for automatic closure of idle on-demand faces
 };
 
