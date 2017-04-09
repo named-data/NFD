@@ -95,7 +95,7 @@ public:
 private:
   void
   createFace(boost::asio::ip::tcp::socket&& socket,
-             bool isOnDemand,
+             ndn::nfd::FacePersistency persistency,
              bool wantLocalFieldsEnabled,
              const FaceCreatedCallback& onFaceCreated);
 
@@ -110,6 +110,7 @@ private:
 
   void
   handleConnect(const boost::system::error_code& error,
+                const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                 bool wantLocalFieldsEnabled,
                 const scheduler::EventId& connectTimeoutEvent,
@@ -117,15 +118,15 @@ private:
                 const FaceCreationFailedCallback& onConnectFailed);
 
   void
-  handleConnectTimeout(const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+  handleConnectTimeout(const tcp::Endpoint& remoteEndpoint,
+                       const shared_ptr<boost::asio::ip::tcp::socket>& socket,
                        const FaceCreationFailedCallback& onConnectFailed);
 
 private:
-  std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
-
-  tcp::Endpoint m_localEndpoint;
+  const tcp::Endpoint m_localEndpoint;
   boost::asio::ip::tcp::acceptor m_acceptor;
-  boost::asio::ip::tcp::socket m_acceptSocket;
+  boost::asio::ip::tcp::socket m_socket;
+  std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
 };
 
 } // namespace face

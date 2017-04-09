@@ -310,8 +310,6 @@ shared_ptr<UdpChannel>
 UdpFactory::createChannel(const udp::Endpoint& endpoint,
                           const time::seconds& timeout)
 {
-  NFD_LOG_DEBUG("Creating unicast channel " << endpoint);
-
   auto channel = findChannel(endpoint);
   if (channel)
     return channel;
@@ -331,7 +329,6 @@ UdpFactory::createChannel(const udp::Endpoint& endpoint,
   channel = std::make_shared<UdpChannel>(endpoint, timeout);
   m_channels[endpoint] = channel;
   prohibitEndpoint(endpoint);
-
   return channel;
 }
 

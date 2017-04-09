@@ -24,7 +24,6 @@
  */
 
 #include "tcp-factory.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace face {
@@ -229,8 +228,6 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
   channel = make_shared<TcpChannel>(endpoint);
   m_channels[endpoint] = channel;
   prohibitEndpoint(endpoint);
-
-  NFD_LOG_DEBUG("Channel [" << endpoint << "] created");
   return channel;
 }
 

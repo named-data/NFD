@@ -77,18 +77,16 @@ public:
   /**
    * \brief Enable listening on the local endpoint, accept connections,
    *        and create faces when remote host makes a connection
-   * \param onFaceCreated  Callback to notify successful creation of the face
-   * \param onReceiveFailed Callback to notify when channel fails
+   *
+   * \param onFaceCreated Callback to notify successful creation of a face
+   * \param onFaceCreationFailed Callback to notify errors
    *
    * Once a face is created, if it doesn't send/receive anything for
    * a period of time equal to timeout, it will be destroyed
-   * \todo this functionality has to be implemented
-   *
-   * \throws UdpChannel::Error if called multiple times
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
-         const FaceCreationFailedCallback& onReceiveFailed);
+         const FaceCreationFailedCallback& onFaceCreationFailed);
 
 private:
   void
@@ -106,29 +104,16 @@ private:
                 const FaceCreationFailedCallback& onReceiveFailed);
 
   std::pair<bool, shared_ptr<Face>>
-  createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency);
+  createFace(const udp::Endpoint& remoteEndpoint,
+             ndn::nfd::FacePersistency persistency);
 
 private:
+  const udp::Endpoint m_localEndpoint;
+  udp::Endpoint m_remoteEndpoint; ///< The latest peer that started communicating with us
+  boost::asio::ip::udp::socket m_socket; ///< Socket used to "accept" new peers
   std::map<udp::Endpoint, shared_ptr<Face>> m_channelFaces;
-
-  udp::Endpoint m_localEndpoint;
-
-  /**
-   * \brief The latest peer that started communicating with us
-   */
-  udp::Endpoint m_remoteEndpoint;
-
-  /**
-   * \brief Socket used to "accept" new communication
-   */
-  boost::asio::ip::udp::socket m_socket;
-
-  /**
-   * \brief When this timeout expires, all idle on-demand faces will be closed
-   */
-  time::seconds m_idleFaceTimeout;
-
   uint8_t m_inputBuffer[ndn::MAX_NDN_PACKET_SIZE];
+  time::seconds m_idleFaceTimeout; ///< Timeout for automatic closure of idle on-demand faces
 };
 
 } // namespace face

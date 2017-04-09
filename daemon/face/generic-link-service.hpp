@@ -26,9 +26,6 @@
 #ifndef NFD_DAEMON_FACE_GENERIC_LINK_SERVICE_HPP
 #define NFD_DAEMON_FACE_GENERIC_LINK_SERVICE_HPP
 
-#include "core/common.hpp"
-#include "core/logger.hpp"
-
 #include "link-service.hpp"
 #include "lp-fragmenter.hpp"
 #include "lp-reassembler.hpp"

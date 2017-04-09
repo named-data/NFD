@@ -23,72 +23,39 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_FACE_LOG_HPP
-#define NFD_DAEMON_FACE_FACE_LOG_HPP
+#ifndef NFD_DAEMON_FACE_CHANNEL_LOG_HPP
+#define NFD_DAEMON_FACE_CHANNEL_LOG_HPP
 
 #include "core/logger.hpp"
 
-namespace nfd {
-namespace face {
-
-/** \brief for internal use by FaceLogging macros
+/** \defgroup ChannelLogging Channel logging macros
  *
- *  FaceLogHelper wraps a Face, LinkService, or Transport object.
- *
- *  std::ostream& operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
- *  should be specialized to print "[id=888,local=scheme://local/uri,remote=scheme://remote/uri] "
- *  which appears as part of the log message.
- */
-template<typename T>
-class FaceLogHelper
-{
-public:
-  explicit
-  FaceLogHelper(const T& obj1)
-    : obj(obj1)
-  {
-  }
-
-public:
-  const T& obj;
-};
-
-} // namespace face
-} // namespace nfd
-
-/** \defgroup FaceLogging Face logging macros
- *
- * These macros augment the log message with some face-specific information,
- * such as the face ID, that are useful to distinguish which face produced the
- * message. It is strongly recommended to use these macros instead of the
- * generic ones for all logging inside Face, LinkService, Transport subclasses.
+ * These macros augment the log message with some channel-specific information,
+ * such as the local URI, that are useful to distinguish which channel produced
+ * the message. It is strongly recommended to use these macros instead of the
+ * generic ones for all logging inside Channel subclasses.
  * @{
  */
 
 /** \internal */
-#define NFD_LOG_FACE(level, msg) NFD_LOG_##level( \
-  ::nfd::face::FaceLogHelper< \
-    typename std::remove_cv< \
-      typename std::remove_reference<decltype(*this)>::type \
-    >::type \
-  >(*this) \
-  << msg)
+#define NFD_LOG_CHAN(level, msg) NFD_LOG_##level( \
+  "[" << this->getUri() << "] " << msg)
 
 /** \brief Log a message at TRACE level */
-#define NFD_LOG_FACE_TRACE(msg) NFD_LOG_FACE(TRACE, msg)
+#define NFD_LOG_CHAN_TRACE(msg) NFD_LOG_CHAN(TRACE, msg)
 
 /** \brief Log a message at DEBUG level */
-#define NFD_LOG_FACE_DEBUG(msg) NFD_LOG_FACE(DEBUG, msg)
+#define NFD_LOG_CHAN_DEBUG(msg) NFD_LOG_CHAN(DEBUG, msg)
 
 /** \brief Log a message at INFO level */
-#define NFD_LOG_FACE_INFO(msg)  NFD_LOG_FACE(INFO,  msg)
+#define NFD_LOG_CHAN_INFO(msg)  NFD_LOG_CHAN(INFO,  msg)
 
 /** \brief Log a message at WARN level */
-#define NFD_LOG_FACE_WARN(msg)  NFD_LOG_FACE(WARN,  msg)
+#define NFD_LOG_CHAN_WARN(msg)  NFD_LOG_CHAN(WARN,  msg)
 
 /** \brief Log a message at ERROR level */
-#define NFD_LOG_FACE_ERROR(msg) NFD_LOG_FACE(ERROR, msg)
+#define NFD_LOG_CHAN_ERROR(msg) NFD_LOG_CHAN(ERROR, msg)
 
 /** @} */
 
-#endif // NFD_DAEMON_FACE_FACE_LOG_HPP
+#endif // NFD_DAEMON_FACE_CHANNEL_LOG_HPP

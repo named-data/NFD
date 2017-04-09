@@ -103,12 +103,10 @@ private:
   handleClose(websocketpp::connection_hdl hdl);
 
 private:
-  websocket::Endpoint m_localEndpoint;
+  const websocket::Endpoint m_localEndpoint;
   websocket::Server m_server;
-
   std::map<websocketpp::connection_hdl, shared_ptr<Face>,
            std::owner_less<websocketpp::connection_hdl>> m_channelFaces;
-
   FaceCreatedCallback m_onFaceCreatedCallback;
   time::milliseconds m_pingInterval;
 };

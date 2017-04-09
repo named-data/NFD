@@ -26,11 +26,8 @@
 #ifndef NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 #define NFD_DAEMON_FACE_LP_RELIABILITY_HPP
 
-#include "core/common.hpp"
 #include "core/rtt-estimator.hpp"
 #include "core/scheduler.hpp"
-
-#include "face-log.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
 #include <ndn-cxx/lp/sequence.hpp>

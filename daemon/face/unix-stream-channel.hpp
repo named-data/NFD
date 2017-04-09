@@ -106,7 +106,7 @@ private:
                const FaceCreationFailedCallback& onAcceptFailed);
 
 private:
-  unix_stream::Endpoint m_endpoint;
+  const unix_stream::Endpoint m_endpoint;
   boost::asio::local::stream_protocol::acceptor m_acceptor;
   boost::asio::local::stream_protocol::socket m_socket;
   size_t m_size;

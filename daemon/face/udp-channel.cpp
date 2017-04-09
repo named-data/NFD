@@ -42,6 +42,7 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
   , m_idleFaceTimeout(timeout)
 {
   setUri(FaceUri(m_localEndpoint));
+  NFD_LOG_CHAN_INFO("Creating channel");
 }
 
 void
@@ -55,9 +56,9 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
     face = createFace(remoteEndpoint, persistency).second;
   }
   catch (const boost::system::system_error& e) {
-    NFD_LOG_WARN("[" << m_localEndpoint << "] Connect failed: " << e.what());
+    NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
     if (onConnectFailed)
-      onConnectFailed(504, std::string("Connect failed: ") + e.what());
+      onConnectFailed(504, std::string("Face creation failed: ") + e.what());
     return;
   }
 
@@ -68,20 +69,22 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
 
 void
 UdpChannel::listen(const FaceCreatedCallback& onFaceCreated,
-                   const FaceCreationFailedCallback& onReceiveFailed)
+                   const FaceCreationFailedCallback& onFaceCreationFailed)
 {
   if (isListening()) {
-    NFD_LOG_WARN("[" << m_localEndpoint << "] Already listening");
+    NFD_LOG_CHAN_WARN("Already listening");
     return;
   }
 
   m_socket.open(m_localEndpoint.protocol());
   m_socket.set_option(ip::udp::socket::reuse_address(true));
-  if (m_localEndpoint.address().is_v6())
+  if (m_localEndpoint.address().is_v6()) {
     m_socket.set_option(ip::v6_only(true));
-
+  }
   m_socket.bind(m_localEndpoint);
-  this->waitForNewPeer(onFaceCreated, onReceiveFailed);
+
+  waitForNewPeer(onFaceCreated, onFaceCreationFailed);
+  NFD_LOG_CHAN_DEBUG("Started listening");
 }
 
 void
@@ -103,16 +106,15 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
                           const FaceCreationFailedCallback& onReceiveFailed)
 {
   if (error) {
-    if (error == boost::asio::error::operation_aborted) // when the socket is closed by someone
-      return;
-
-    NFD_LOG_DEBUG("[" << m_localEndpoint << "] Receive failed: " << error.message());
-    if (onReceiveFailed)
-      onReceiveFailed(500, "Receive failed: " + error.message());
+    if (error != boost::asio::error::operation_aborted) {
+      NFD_LOG_CHAN_DEBUG("Receive failed: " << error.message());
+      if (onReceiveFailed)
+        onReceiveFailed(500, "Receive failed: " + error.message());
+    }
     return;
   }
 
-  NFD_LOG_DEBUG("[" << m_localEndpoint << "] New peer " << m_remoteEndpoint);
+  NFD_LOG_CHAN_TRACE("New peer " << m_remoteEndpoint);
 
   bool isCreated = false;
   shared_ptr<Face> face;
@@ -120,10 +122,9 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     std::tie(isCreated, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   }
   catch (const boost::system::system_error& e) {
-    NFD_LOG_WARN("[" << m_localEndpoint << "] Failed to create face for peer "
-                 << m_remoteEndpoint << ": " << e.what());
+    NFD_LOG_CHAN_DEBUG("Face creation for " << m_remoteEndpoint << " failed: " << e.what());
     if (onReceiveFailed)
-      onReceiveFailed(504, "Failed to create face for peer");
+      onReceiveFailed(504, std::string("Face creation failed: ") + e.what());
     return;
   }
 
@@ -131,17 +132,20 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
     onFaceCreated(face);
 
   // dispatch the datagram to the face for processing
-  static_cast<UnicastUdpTransport*>(face->getTransport())->receiveDatagram(m_inputBuffer, nBytesReceived, error);
+  auto* transport = static_cast<UnicastUdpTransport*>(face->getTransport());
+  transport->receiveDatagram(m_inputBuffer, nBytesReceived, error);
 
-  this->waitForNewPeer(onFaceCreated, onReceiveFailed);
+  waitForNewPeer(onFaceCreated, onReceiveFailed);
 }
 
 std::pair<bool, shared_ptr<Face>>
-UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersistency persistency)
+UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
+                       ndn::nfd::FacePersistency persistency)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
     // we already have a face for this endpoint, so reuse it
+    NFD_LOG_CHAN_TRACE("Reusing existing face for " << remoteEndpoint);
     return {false, it->second};
   }
 
@@ -156,11 +160,7 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint, ndn::nfd::FacePersis
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;
-  connectFaceClosedSignal(*face,
-    [this, remoteEndpoint] {
-      NFD_LOG_TRACE("Erasing " << remoteEndpoint << " from channel face map");
-      m_channelFaces.erase(remoteEndpoint);
-    });
+  connectFaceClosedSignal(*face, [this, remoteEndpoint] { m_channelFaces.erase(remoteEndpoint); });
 
   return {true, face};
 }

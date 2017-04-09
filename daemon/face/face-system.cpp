@@ -25,7 +25,6 @@
 
 #include "face-system.hpp"
 #include "protocol-factory.hpp"
-#include "core/logger.hpp"
 #include "fw/face-table.hpp"
 
 namespace nfd {

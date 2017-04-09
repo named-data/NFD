@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FACE_CHANNEL_HPP
 #define NFD_DAEMON_FACE_CHANNEL_HPP
 
+#include "channel-log.hpp"
 #include "face.hpp"
 
 namespace nfd {

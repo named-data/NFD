@@ -26,7 +26,6 @@
 #include "ethernet-factory.hpp"
 #include "generic-link-service.hpp"
 #include "multicast-ethernet-transport.hpp"
-#include "core/logger.hpp"
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
 

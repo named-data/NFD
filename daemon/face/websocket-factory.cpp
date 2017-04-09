@@ -24,7 +24,6 @@
  */
 
 #include "websocket-factory.hpp"
-#include "core/logger.hpp"
 
 namespace nfd {
 namespace face {

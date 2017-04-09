@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -292,13 +292,6 @@ Face::getCounters() const
 
 std::ostream&
 operator<<(std::ostream& os, const FaceLogHelper<Face>& flh);
-
-template<typename T>
-typename std::enable_if<std::is_base_of<Face, T>::value, std::ostream&>::type
-operator<<(std::ostream& os, const FaceLogHelper<T>& flh)
-{
-  return os << FaceLogHelper<Face>(flh.obj);
-}
 
 } // namespace face
 

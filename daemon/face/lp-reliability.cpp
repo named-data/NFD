@@ -298,12 +298,5 @@ LpReliability::NetPkt::NetPkt()
 {
 }
 
-std::ostream&
-operator<<(std::ostream& os, const FaceLogHelper<LpReliability>& flh)
-{
-  os << FaceLogHelper<LinkService>(*flh.obj.getLinkService());
-  return os;
-}
-
 } // namespace face
 } // namespace nfd

@@ -24,7 +24,6 @@
  */
 
 #include "unix-stream-factory.hpp"
-#include "core/logger.hpp"
 
 #include <boost/filesystem.hpp>
 
