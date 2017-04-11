@@ -135,9 +135,9 @@ TcpFactory::createFace(const FaceUri& remoteUri,
     return;
   }
 
-  if (persistency != ndn::nfd::FACE_PERSISTENCY_PERSISTENT) {
-    NFD_LOG_TRACE("createFace only supports FACE_PERSISTENCY_PERSISTENT");
-    onFailure(406, "Outgoing TCP faces only support persistent persistency");
+  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    onFailure(406, "Outgoing TCP faces do not support on-demand persistency");
     return;
   }
 
@@ -145,9 +145,9 @@ TcpFactory::createFace(const FaceUri& remoteUri,
                          boost::lexical_cast<uint16_t>(remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
-   NFD_LOG_TRACE("createFace cannot create multicast faces");
-   onFailure(406, "Cannot create multicast TCP faces");
-   return;
+    NFD_LOG_TRACE("createFace does not support multicast faces");
+    onFailure(406, "Cannot create multicast TCP faces");
+    return;
   }
 
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
@@ -167,7 +167,7 @@ TcpFactory::createFace(const FaceUri& remoteUri,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, wantLocalFieldsEnabled, onCreated, onFailure);
+      i.second->connect(endpoint, persistency, wantLocalFieldsEnabled, onCreated, onFailure);
       return;
     }
   }

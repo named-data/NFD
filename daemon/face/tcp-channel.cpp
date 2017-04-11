@@ -68,6 +68,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
+                    ndn::nfd::FacePersistency persistency,
                     bool wantLocalFieldsEnabled,
                     const FaceCreatedCallback& onFaceCreated,
                     const FaceCreationFailedCallback& onConnectFailed,
@@ -88,8 +89,8 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleConnect, this,
                                    boost::asio::placeholders::error, remoteEndpoint,
-                                   clientSocket, wantLocalFieldsEnabled, timeoutEvent,
-                                   onFaceCreated, onConnectFailed));
+                                   clientSocket, persistency, wantLocalFieldsEnabled,
+                                   timeoutEvent, onFaceCreated, onConnectFailed));
 }
 
 void
@@ -153,9 +154,7 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
   }
 
   NFD_LOG_CHAN_TRACE("Incoming connection from " << m_socket.remote_endpoint());
-
-  createFace(std::move(m_socket), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-             false, onFaceCreated);
+  createFace(std::move(m_socket), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, false, onFaceCreated);
 
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
@@ -165,6 +164,7 @@ void
 TcpChannel::handleConnect(const boost::system::error_code& error,
                           const tcp::Endpoint& remoteEndpoint,
                           const shared_ptr<ip::tcp::socket>& socket,
+                          ndn::nfd::FacePersistency persistency,
                           bool wantLocalFieldsEnabled,
                           const scheduler::EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
@@ -190,8 +190,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
   }
 
   NFD_LOG_CHAN_TRACE("Connected to " << socket->remote_endpoint());
-  createFace(std::move(*socket), ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             wantLocalFieldsEnabled, onFaceCreated);
+  createFace(std::move(*socket), persistency, wantLocalFieldsEnabled, onFaceCreated);
 }
 
 void

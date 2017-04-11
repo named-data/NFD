@@ -50,7 +50,7 @@ protected:
   connect(TcpChannel& channel) final
   {
     g_io.post([&] {
-      channel.connect(listenerEp, false,
+      channel.connect(listenerEp, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false,
         [this] (const shared_ptr<Face>& newFace) {
           BOOST_REQUIRE(newFace != nullptr);
           connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });

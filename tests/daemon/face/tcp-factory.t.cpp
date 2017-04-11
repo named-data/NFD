@@ -185,23 +185,28 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:6363"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   TcpFactory factory;
 
-  factory.createChannel("127.0.0.1", "20070");
   factory.createChannel("127.0.0.1", "20071");
   factory.createChannel("127.0.0.1", "20072");
-
-  createFace(factory,
-             FaceUri("tcp4://127.0.0.1:20070"),
-             {},
-             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-             false,
-             {CreateFaceExpectedResult::FAILURE, 406,
-               "Outgoing TCP faces only support persistent persistency"});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20071"),
@@ -209,11 +214,11 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
-               "Outgoing TCP faces only support persistent persistency"});
+               "Outgoing TCP faces do not support on-demand persistency"});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
-             FaceUri("udp4://127.0.0.1:20073"),
+             FaceUri("tcp4://127.0.0.1:20073"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
@@ -227,8 +232,7 @@ public:
   onFaceCreated(const shared_ptr<Face>& newFace)
   {
     BOOST_CHECK_MESSAGE(false, "Timeout expected");
-    BOOST_CHECK(!static_cast<bool>(face1));
-    face1 = newFace;
+    face = newFace;
 
     limitedIo.afterOp();
   }
@@ -243,14 +247,13 @@ public:
 
 public:
   LimitedIo limitedIo;
-
-  shared_ptr<Face> face1;
+  shared_ptr<Face> face;
 };
 
 BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
 {
   TcpFactory factory;
-  shared_ptr<TcpChannel> channel = factory.createChannel("0.0.0.0", "20070");
+  factory.createChannel("0.0.0.0", "20070");
 
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
                      {},
@@ -259,10 +262,8 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
                      bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _2));
 
-  BOOST_CHECK_MESSAGE(limitedIo.run(1, time::seconds(10)) == LimitedIo::EXCEED_OPS,
-                      "TcpChannel error: cannot connect or cannot accept connection");
-
-  BOOST_CHECK_EQUAL(static_cast<bool>(face1), false);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(10)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK(face == nullptr);
 }
 
 class FakeNetworkInterfaceFixture : public BaseFixture

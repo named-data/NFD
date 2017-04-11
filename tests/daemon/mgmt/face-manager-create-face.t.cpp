@@ -27,8 +27,6 @@
 #include "face-manager-command-fixture.hpp"
 #include "nfd-manager-common-fixture.hpp"
 
-#include <thread>
-
 namespace nfd {
 namespace tests {
 
@@ -40,7 +38,7 @@ BOOST_FIXTURE_TEST_SUITE(CreateFace, BaseFixture)
 class TcpFaceOnDemand
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -52,7 +50,7 @@ public:
 class TcpFacePersistent
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -64,7 +62,7 @@ public:
 class TcpFacePermanent
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -76,7 +74,7 @@ public:
 class UdpFaceOnDemand
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -88,7 +86,7 @@ public:
 class UdpFacePersistent
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -100,7 +98,7 @@ public:
 class UdpFacePermanent
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -113,7 +111,7 @@ class UdpFaceConnectToSelf // face that will cause afterCreateFaceFailure to be 
                            // fails because remote endpoint is prohibited
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -124,7 +122,7 @@ public:
 class LocalTcpFaceLocalFieldsEnabled
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -137,7 +135,7 @@ public:
 class LocalTcpFaceLocalFieldsDisabled
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -150,7 +148,7 @@ public:
 class NonLocalUdpFaceLocalFieldsEnabled // won't work because non-local scope
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -163,7 +161,7 @@ public:
 class NonLocalUdpFaceLocalFieldsDisabled
 {
 public:
-  ControlParameters
+  static ControlParameters
   getParameters()
   {
     return ControlParameters()
@@ -176,9 +174,10 @@ public:
 namespace mpl = boost::mpl;
 
 // pairs of CreateCommand and Success/Failure status
-typedef mpl::vector<mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
+using TestCases = mpl::vector<
+                    mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<TcpFacePersistent, CommandSuccess>,
-                    mpl::pair<TcpFacePermanent, CommandFailure<406>>,
+                    mpl::pair<TcpFacePermanent, CommandSuccess>,
                     mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<UdpFacePersistent, CommandSuccess>,
                     mpl::pair<UdpFacePermanent, CommandSuccess>,
@@ -186,16 +185,16 @@ typedef mpl::vector<mpl::pair<TcpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
                     mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
                     mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>> Faces;
+                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>>;
 
-BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixture)
 {
-  typedef typename T::first FaceType;
-  typedef typename T::second CreateResult;
+  using FaceType = typename T::first;
+  using CreateResult = typename T::second;
 
   Name commandName("/localhost/nfd/faces");
   commandName.append("create");
-  commandName.append(FaceType().getParameters().wireEncode());
+  commandName.append(FaceType::getParameters().wireEncode());
   auto command = makeInterest(commandName);
   m_keyChain.sign(*command);
 
@@ -206,12 +205,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
     }
 
     ControlResponse actual(response.getContent().blockFromValue());
-    ControlResponse expected(CreateResult().getExpected());
+    ControlResponse expected(CreateResult::getExpected());
     BOOST_TEST_MESSAGE(actual.getText());
     BOOST_CHECK_EQUAL(expected.getCode(), actual.getCode());
 
     if (actual.getBody().hasWire()) {
-      ControlParameters expectedParams(FaceType().getParameters());
+      ControlParameters expectedParams(FaceType::getParameters());
       ControlParameters actualParams(actual.getBody());
 
       BOOST_CHECK(actualParams.hasFaceId());
@@ -234,7 +233,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, Faces, FaceManagerCommandFixture)
 
     if (actual.getCode() != 200) {
       // ensure face not created
-      FaceUri uri(FaceType().getParameters().getUri());
+      FaceUri uri(FaceType::getParameters().getUri());
       auto& faceTable = this->node1.manager.m_faceTable;
       BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
         return face.getRemoteUri() == uri;
@@ -259,7 +258,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
-    commandName.append(FaceType().getParameters().wireEncode());
+    commandName.append(FaceType::getParameters().wireEncode());
     auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 
@@ -268,7 +267,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
   }
 
   // find the created face
-  auto foundFace = this->node1.findFaceByUri(FaceType().getParameters().getUri());
+  auto foundFace = this->node1.findFaceByUri(FaceType::getParameters().getUri());
   BOOST_REQUIRE(foundFace != nullptr);
 
   {
@@ -276,7 +275,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
     Name commandName("/localhost/nfd/faces");
     commandName.append("create");
-    commandName.append(FaceType().getParameters().wireEncode());
+    commandName.append(FaceType::getParameters().wireEncode());
     auto command = makeInterest(commandName);
     m_keyChain.sign(*command);
 

@@ -87,6 +87,7 @@ public:
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
+          ndn::nfd::FacePersistency persistency,
           bool wantLocalFieldsEnabled,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed,
@@ -112,6 +113,7 @@ private:
   handleConnect(const boost::system::error_code& error,
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
+                ndn::nfd::FacePersistency persistency,
                 bool wantLocalFieldsEnabled,
                 const scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,

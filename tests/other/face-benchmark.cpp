@@ -128,6 +128,7 @@ private:
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port),
+                           ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                            false,
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
                            bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));

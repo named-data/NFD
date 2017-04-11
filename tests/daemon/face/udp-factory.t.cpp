@@ -611,14 +611,14 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
   factory.createChannel("127.0.0.1", "20071");
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20070"),
+             FaceUri("udp4://127.0.0.1:6363"),
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20070"),
+             FaceUri("udp4://127.0.0.1:6363"),
              {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
@@ -636,11 +636,11 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   UdpFactory factory;
 
-  factory.createChannel("127.0.0.1", "20070");
   factory.createChannel("127.0.0.1", "20071");
+  factory.createChannel("127.0.0.1", "20072");
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20070"),
+             FaceUri("udp4://127.0.0.1:20071"),
              {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
                "Outgoing unicast UDP faces do not support on-demand persistency"});
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20071"),
+             FaceUri("udp4://127.0.0.1:20072"),
              FaceUri("udp4://127.0.0.1:20073"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
