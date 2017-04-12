@@ -54,6 +54,8 @@ operator<<(std::ostream& os, ArgValueType vt)
       return os << "FaceId or FaceUri";
     case ArgValueType::FACE_PERSISTENCY:
       return os << "FacePersistency";
+    case ArgValueType::ROUTE_ORIGIN:
+      return os << "RouteOrigin";
   }
   return os << static_cast<int>(vt);
 }
@@ -80,6 +82,8 @@ getMetavarFromType(ArgValueType vt)
       return "face";
     case ArgValueType::FACE_PERSISTENCY:
       return "persistency";
+    case ArgValueType::ROUTE_ORIGIN:
+      return "origin";
   }
   BOOST_ASSERT(false);
   return "";
@@ -260,6 +264,9 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
 
     case ArgValueType::FACE_PERSISTENCY:
       return parseFacePersistency(token);
+
+    case ArgValueType::ROUTE_ORIGIN:
+      return boost::lexical_cast<RouteOrigin>(token);
   }
 
   BOOST_ASSERT(false);

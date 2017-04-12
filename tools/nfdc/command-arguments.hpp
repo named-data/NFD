@@ -37,6 +37,7 @@ namespace tools {
 namespace nfdc {
 
 using ndn::nfd::FacePersistency;
+using ndn::nfd::RouteOrigin;
 using ndn::util::FaceUri;
 
 /** \brief contains named command arguments

@@ -309,6 +309,28 @@ BOOST_AUTO_TEST_CASE(FacePersistencyType)
   BOOST_CHECK_THROW(cs.parse(std::vector<std::string>{"a", "on-demand"}), CommandDefinition::Error);
 }
 
+BOOST_AUTO_TEST_CASE(RouteOriginType)
+{
+  CommandDefinition cs("noun", "verb");
+  cs.addArg("a", ArgValueType::ROUTE_ORIGIN, Required::YES);
+
+  CommandArguments ca;
+
+  ca = cs.parse(std::vector<std::string>{"a", "Nlsr"});
+  BOOST_CHECK_EQUAL(ca.size(), 1);
+  BOOST_CHECK(ca.at("a").type() == typeid(RouteOrigin));
+  BOOST_CHECK_EQUAL(ca.get<RouteOrigin>("a"),
+                    RouteOrigin::ROUTE_ORIGIN_NLSR);
+
+  ca = cs.parse(std::vector<std::string>{"a", "27"});
+  BOOST_CHECK_EQUAL(ca.size(), 1);
+  BOOST_CHECK(ca.at("a").type() == typeid(RouteOrigin));
+  BOOST_CHECK_EQUAL(ca.get<RouteOrigin>("a"),
+                    static_cast<RouteOrigin>(27));
+
+  BOOST_CHECK_THROW(cs.parse(std::vector<std::string>{"a", "not-RouteOrigin"}), CommandDefinition::Error);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // ParseValue
 
 BOOST_AUTO_TEST_SUITE_END() // TestCommandDefinition

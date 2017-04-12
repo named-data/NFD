@@ -38,7 +38,7 @@ RibModule::registerCommands(CommandParser& parser)
   defRouteList
     .setTitle("print RIB routes")
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::NO, Positional::YES)
-    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+    .addArg("origin", ArgValueType::ROUTE_ORIGIN, Required::NO, Positional::NO);
   parser.addCommand(defRouteList, &RibModule::list);
 
   CommandDefinition defRouteShow("route", "show");
@@ -52,7 +52,7 @@ RibModule::registerCommands(CommandParser& parser)
     .setTitle("add a route")
     .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES)
-    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("origin", ArgValueType::ROUTE_ORIGIN, Required::NO, Positional::NO)
     .addArg("cost", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
     .addArg("no-inherit", ArgValueType::NONE, Required::NO, Positional::NO)
     .addArg("capture", ArgValueType::NONE, Required::NO, Positional::NO)
@@ -64,7 +64,7 @@ RibModule::registerCommands(CommandParser& parser)
     .setTitle("remove a route")
     .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::YES, Positional::YES)
-    .addArg("origin", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+    .addArg("origin", ArgValueType::ROUTE_ORIGIN, Required::NO, Positional::NO);
   parser.addCommand(defRouteRemove, &RibModule::remove);
 }
 
@@ -73,7 +73,7 @@ RibModule::list(ExecuteContext& ctx)
 {
   auto nexthopIt = ctx.args.find("nexthop");
   std::set<uint64_t> nexthops;
-  auto origin = ctx.args.getOptional<uint64_t>("origin");
+  auto origin = ctx.args.getOptional<RouteOrigin>("origin");
 
   if (nexthopIt != ctx.args.end()) {
     FindFace findFace(ctx);
@@ -144,7 +144,7 @@ RibModule::add(ExecuteContext& ctx)
 {
   auto prefix = ctx.args.get<Name>("prefix");
   const boost::any& nexthop = ctx.args.at("nexthop");
-  auto origin = ctx.args.get<uint64_t>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
+  auto origin = ctx.args.get<RouteOrigin>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
   auto cost = ctx.args.get<uint64_t>("cost", 0);
   bool wantChildInherit = !ctx.args.get<bool>("no-inherit", false);
   bool wantCapture = ctx.args.get<bool>("capture", false);
@@ -191,7 +191,7 @@ RibModule::add(ExecuteContext& ctx)
       text::ItemAttributes ia;
       ctx.out << ia("prefix") << resp.getName()
               << ia("nexthop") << resp.getFaceId()
-              << ia("origin") << resp.getOrigin()
+              << ia("origin") << static_cast<RouteOrigin>(resp.getOrigin())
               << ia("cost") << resp.getCost()
               << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
       if (resp.hasExpirationPeriod()) {
@@ -212,7 +212,7 @@ RibModule::remove(ExecuteContext& ctx)
 {
   auto prefix = ctx.args.get<Name>("prefix");
   const boost::any& nexthop = ctx.args.at("nexthop");
-  auto origin = ctx.args.get<uint64_t>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
+  auto origin = ctx.args.get<RouteOrigin>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
 
   FindFace findFace(ctx);
   FindFace::Code res = findFace.execute(nexthop, true);
@@ -245,7 +245,7 @@ RibModule::remove(ExecuteContext& ctx)
         text::ItemAttributes ia;
         ctx.out << ia("prefix") << resp.getName()
                 << ia("nexthop") << resp.getFaceId()
-                << ia("origin") << resp.getOrigin()
+                << ia("origin") << static_cast<RouteOrigin>(resp.getOrigin())
                 << '\n';
       },
       ctx.makeCommandFailureHandler("removing route"),
@@ -290,7 +290,7 @@ RibModule::formatItemXml(std::ostream& os, const RibEntry& item) const
   for (const Route& route : item.getRoutes()) {
     os << "<route>"
        << "<faceId>" << route.getFaceId() << "</faceId>"
-       << "<origin>" << route.getOrigin() << "</origin>"
+       << "<origin>" << static_cast<RouteOrigin>(route.getOrigin()) << "</origin>"
        << "<cost>" << route.getCost() << "</cost>";
     if (route.getFlags() == ndn::nfd::ROUTE_FLAGS_NONE) {
        os << "<flags/>";
@@ -352,7 +352,7 @@ RibModule::formatRouteText(std::ostream& os, const RibEntry& entry, const Route&
     os << ia("prefix") << entry.getName();
   }
   os << ia("nexthop") << route.getFaceId();
-  os << ia("origin") << static_cast<uint64_t>(route.getOrigin());
+  os << ia("origin") << static_cast<RouteOrigin>(route.getOrigin());
   os << ia("cost") << route.getCost();
   os << ia("flags") << static_cast<ndn::nfd::RouteFlags>(route.getFlags());
 

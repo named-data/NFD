@@ -81,10 +81,10 @@ protected:
 BOOST_FIXTURE_TEST_SUITE(ListShowCommand, RouteListFixture)
 
 const std::string NOFILTER_OUTPUT = std::string(R"TEXT(
-prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
-prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
-prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
-prefix=/aDPTKCio nexthop=31066 origin=65 cost=4617 flags=capture expires=never
+prefix=/5BBmTevRJ nexthop=6720 origin=client cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=static cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=static cost=9140 flags=child-inherit expires=never
+prefix=/aDPTKCio nexthop=31066 origin=client cost=4617 flags=capture expires=never
 )TEXT").substr(1);
 
 BOOST_AUTO_TEST_CASE(ListNoFilter)
@@ -100,9 +100,9 @@ BOOST_AUTO_TEST_CASE(ListNoFilter)
 }
 
 const std::string NEXTHOP_OUTPUT = std::string(R"TEXT(
-prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
-prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
-prefix=/aDPTKCio nexthop=31066 origin=65 cost=4617 flags=capture expires=never
+prefix=/5BBmTevRJ nexthop=6720 origin=client cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=static cost=425 flags=none expires=never
+prefix=/aDPTKCio nexthop=31066 origin=client cost=4617 flags=capture expires=never
 )TEXT").substr(1);
 
 BOOST_AUTO_TEST_CASE(ListByNexthop)
@@ -118,11 +118,11 @@ BOOST_AUTO_TEST_CASE(ListByNexthop)
 }
 
 const std::string ORIGIN_OUTPUT = std::string(R"TEXT(
-prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
-prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
+prefix=/5BBmTevRJ nexthop=6720 origin=static cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=static cost=9140 flags=child-inherit expires=never
 )TEXT").substr(1);
 
-BOOST_AUTO_TEST_CASE(ListByOrigin)
+BOOST_AUTO_TEST_CASE(ListByOriginNumeric)
 {
   this->processInterest = [this] (const Interest& interest) {
     BOOST_CHECK(this->respondRibDataset(interest));
@@ -134,10 +134,22 @@ BOOST_AUTO_TEST_CASE(ListByOrigin)
   BOOST_CHECK(err.is_empty());
 }
 
+BOOST_AUTO_TEST_CASE(ListByOriginString)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(this->respondRibDataset(interest));
+  };
+
+  this->execute("route list origin static");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(ORIGIN_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
 const std::string PREFIX_OUTPUT = std::string(R"TEXT(
-prefix=/5BBmTevRJ nexthop=6720 origin=65 cost=2956 flags=child-inherit|capture expires=29950s
-prefix=/5BBmTevRJ nexthop=6720 origin=255 cost=425 flags=none expires=never
-prefix=/5BBmTevRJ nexthop=8599 origin=255 cost=9140 flags=child-inherit expires=never
+prefix=/5BBmTevRJ nexthop=6720 origin=client cost=2956 flags=child-inherit|capture expires=29950s
+prefix=/5BBmTevRJ nexthop=6720 origin=static cost=425 flags=none expires=never
+prefix=/5BBmTevRJ nexthop=8599 origin=static cost=9140 flags=child-inherit expires=never
 )TEXT").substr(1);
 
 BOOST_AUTO_TEST_CASE(ShowByPrefix)
@@ -213,7 +225,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
 
   this->execute("route add /vxXoEaWeDB 10156 no-inherit");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("route-add-accepted prefix=/vxXoEaWeDB nexthop=10156 origin=255 "
+  BOOST_CHECK(out.is_equal("route-add-accepted prefix=/vxXoEaWeDB nexthop=10156 origin=static "
                            "cost=0 flags=none expires=never\n"));
   BOOST_CHECK(err.is_empty());
 }
@@ -338,7 +350,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
 
   this->execute("route remove /2B5NUGjpt 10156");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("route-removed prefix=/2B5NUGjpt nexthop=10156 origin=255\n"));
+  BOOST_CHECK(out.is_equal("route-removed prefix=/2B5NUGjpt nexthop=10156 origin=static\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -388,8 +400,8 @@ BOOST_AUTO_TEST_CASE(MultipleFaces)
   this->execute("route remove /nm5y8X8b2 udp4://225.131.75.231:56363");
   BOOST_CHECK(faceIds.empty());
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("route-removed prefix=/nm5y8X8b2 nexthop=6720 origin=255\n"
-                           "route-removed prefix=/nm5y8X8b2 nexthop=31066 origin=255\n"));
+  BOOST_CHECK(out.is_equal("route-removed prefix=/nm5y8X8b2 nexthop=6720 origin=static\n"
+                           "route-removed prefix=/nm5y8X8b2 nexthop=31066 origin=static\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -441,7 +453,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <routes>
         <route>
           <faceId>262</faceId>
-          <origin>255</origin>
+          <origin>static</origin>
           <cost>9</cost>
           <flags>
             <ribCapture/>
@@ -449,13 +461,13 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
         </route>
         <route>
           <faceId>272</faceId>
-          <origin>255</origin>
+          <origin>static</origin>
           <cost>50</cost>
           <flags/>
         </route>
         <route>
           <faceId>274</faceId>
-          <origin>255</origin>
+          <origin>static</origin>
           <cost>78</cost>
           <flags>
             <childInherit/>
@@ -464,7 +476,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
         </route>
         <route>
           <faceId>276</faceId>
-          <origin>255</origin>
+          <origin>static</origin>
           <cost>79</cost>
           <flags>
             <childInherit/>
@@ -478,7 +490,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <routes>
         <route>
           <faceId>258</faceId>
-          <origin>0</origin>
+          <origin>app</origin>
           <cost>0</cost>
           <flags>
             <childInherit/>
@@ -491,11 +503,11 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT =
   "RIB:\n"
-  "  / routes={nexthop=262 origin=255 cost=9 flags=capture expires=never, "
-              "nexthop=272 origin=255 cost=50 flags=none expires=never, "
-              "nexthop=274 origin=255 cost=78 flags=child-inherit|capture expires=never, "
-              "nexthop=276 origin=255 cost=79 flags=child-inherit expires=47s}\n"
-  "  /localhost/nfd routes={nexthop=258 origin=0 cost=0 flags=child-inherit expires=never}\n";
+  "  / routes={nexthop=262 origin=static cost=9 flags=capture expires=never, "
+              "nexthop=272 origin=static cost=50 flags=none expires=never, "
+              "nexthop=274 origin=static cost=78 flags=child-inherit|capture expires=never, "
+              "nexthop=276 origin=static cost=79 flags=child-inherit expires=47s}\n"
+  "  /localhost/nfd routes={nexthop=258 origin=app cost=0 flags=child-inherit expires=never}\n";
 
 BOOST_AUTO_TEST_CASE(Status)
 {
