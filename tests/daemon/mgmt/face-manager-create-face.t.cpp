@@ -171,6 +171,39 @@ public:
   }
 };
 
+class FaceUriMalformed
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:not-a-port");
+  }
+};
+
+class FaceUriNonCanonical
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp://localhost");
+  }
+};
+
+class FaceUriUnsupportedScheme
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("dev://eth0");
+  }
+};
+
 namespace mpl = boost::mpl;
 
 // pairs of CreateCommand and Success/Failure status
@@ -185,7 +218,10 @@ using TestCases = mpl::vector<
                     mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
                     mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
                     mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
-                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>>;
+                    mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
+                    mpl::pair<FaceUriMalformed, CommandFailure<400>>,
+                    mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
+                    mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixture)
 {
@@ -232,12 +268,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
     }
 
     if (actual.getCode() != 200) {
-      // ensure face not created
-      FaceUri uri(FaceType::getParameters().getUri());
-      auto& faceTable = this->node1.manager.m_faceTable;
-      BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
-        return face.getRemoteUri() == uri;
-      }));
+      FaceUri uri;
+      if (uri.parse(FaceType::getParameters().getUri())) {
+        // ensure face not created
+        auto& faceTable = this->node1.manager.m_faceTable;
+        BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
+          return face.getRemoteUri() == uri;
+        }));
+      }
+      else {
+        // do not check malformed FaceUri
+      }
     }
 
     hasCallbackFired = true;
