@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -22,6 +22,9 @@
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+#ifndef NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
+#define NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
 
 #include "rib/fib-updater.hpp"
 #include "rib-test-common.hpp"
@@ -67,7 +70,9 @@ public:
   }
 
   void
-  insertRoute(const Name& name, uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
+  insertRoute(const Name& name, uint64_t faceId,
+              std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
+              uint64_t cost, uint64_t flags)
   {
     Route route = createRoute(faceId, origin, cost, flags);
 
@@ -80,7 +85,8 @@ public:
   }
 
   void
-  eraseRoute(const Name& name, uint64_t faceId, uint64_t origin)
+  eraseRoute(const Name& name, uint64_t faceId,
+             std::underlying_type<ndn::nfd::RouteOrigin>::type origin)
   {
     Route route = createRoute(faceId, origin, 0, 0);
 
@@ -175,3 +181,5 @@ public:
 } // namespace tests
 } // namespace rib
 } // namespace nfd
+
+#endif // NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP

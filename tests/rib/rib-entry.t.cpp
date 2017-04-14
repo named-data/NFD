@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,16 +40,16 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   rib::Route route1;
   route1.faceId = 1;
-  route1.origin = 0;
+  route1.origin = ndn::nfd::ROUTE_ORIGIN_APP;
 
-  std::tie(entryIt, didInsert) =  entry.insertRoute(route1);
+  std::tie(entryIt, didInsert) = entry.insertRoute(route1);
   BOOST_CHECK_EQUAL(entry.getRoutes().size(), 1);
   BOOST_CHECK(entryIt == entry.findRoute(route1));
   BOOST_CHECK(didInsert);
 
   Route route2;
   route2.faceId = 1;
-  route2.origin = 128;
+  route2.origin = ndn::nfd::ROUTE_ORIGIN_NLSR;
 
   std::tie(entryIt, didInsert) = entry.insertRoute(route2);
   BOOST_CHECK_EQUAL(entry.getRoutes().size(), 2);

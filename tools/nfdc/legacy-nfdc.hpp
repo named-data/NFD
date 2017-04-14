@@ -27,6 +27,8 @@
 #define NFD_TOOLS_NFDC_LEGACY_NFDC_HPP
 
 #include "execute-command.hpp"
+
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 
 namespace nfd {
@@ -160,7 +162,7 @@ public:
   uint64_t m_flags;
   uint64_t m_cost;
   uint64_t m_faceId;
-  uint64_t m_origin;
+  ndn::nfd::RouteOrigin m_origin;
   time::milliseconds m_expires;
   std::string m_name;
   ndn::nfd::FacePersistency m_facePersistency;

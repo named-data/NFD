@@ -341,6 +341,7 @@ legacyNfdcMain(ExecuteContext& ctx, const std::string& replacementCommand)
   bool wantCapture = false;
   bool wantPermanentFace = false;
   int64_t expires = -1;
+  std::underlying_type<ndn::nfd::RouteOrigin>::type origin = ndn::nfd::ROUTE_ORIGIN_STATIC;
 
   namespace po = boost::program_options;
   po::options_description options;
@@ -349,7 +350,7 @@ legacyNfdcMain(ExecuteContext& ctx, const std::string& replacementCommand)
     (",C", po::bool_switch(&wantCapture))
     (",c", po::value<uint64_t>(&p.m_cost))
     (",e", po::value<int64_t>(&expires))
-    (",o", po::value<uint64_t>(&p.m_origin))
+    (",o", po::value<std::underlying_type<ndn::nfd::RouteOrigin>::type>(&origin))
     (",P", po::bool_switch(&wantPermanentFace));
   po::variables_map vm;
   std::vector<std::string> unparsed;
@@ -376,6 +377,7 @@ legacyNfdcMain(ExecuteContext& ctx, const std::string& replacementCommand)
     // accept negative values as no expiration
     p.m_expires = time::milliseconds(expires);
   }
+  p.m_origin = static_cast<ndn::nfd::RouteOrigin>(origin);
   if (wantPermanentFace) {
     p.m_facePersistency = ndn::nfd::FACE_PERSISTENCY_PERMANENT;
   }

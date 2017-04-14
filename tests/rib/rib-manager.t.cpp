@@ -137,26 +137,26 @@ private:
   }
 
 public:
-  ControlParameters
-  makeRegisterParameters(const Name& name, uint64_t id = 0,
+  static ControlParameters
+  makeRegisterParameters(const Name& name, uint64_t faceId = 0,
                          time::milliseconds expiry = time::milliseconds::max())
   {
     return ControlParameters()
       .setName(name)
-      .setFaceId(id)
-      .setOrigin(128)
+      .setFaceId(faceId)
+      .setOrigin(ndn::nfd::ROUTE_ORIGIN_NLSR)
       .setCost(10)
       .setFlags(0)
       .setExpirationPeriod(expiry);
   }
 
-  ControlParameters
-  makeUnregisterParameters(const Name& name, uint64_t id = 0)
+  static ControlParameters
+  makeUnregisterParameters(const Name& name, uint64_t faceId = 0)
   {
     return ControlParameters()
       .setName(name)
-      .setFaceId(id)
-      .setOrigin(128);
+      .setFaceId(faceId)
+      .setOrigin(ndn::nfd::ROUTE_ORIGIN_NLSR);
   }
 
   void

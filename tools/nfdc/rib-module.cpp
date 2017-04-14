@@ -191,7 +191,7 @@ RibModule::add(ExecuteContext& ctx)
       text::ItemAttributes ia;
       ctx.out << ia("prefix") << resp.getName()
               << ia("nexthop") << resp.getFaceId()
-              << ia("origin") << static_cast<RouteOrigin>(resp.getOrigin())
+              << ia("origin") << resp.getOrigin()
               << ia("cost") << resp.getCost()
               << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
       if (resp.hasExpirationPeriod()) {
@@ -245,7 +245,7 @@ RibModule::remove(ExecuteContext& ctx)
         text::ItemAttributes ia;
         ctx.out << ia("prefix") << resp.getName()
                 << ia("nexthop") << resp.getFaceId()
-                << ia("origin") << static_cast<RouteOrigin>(resp.getOrigin())
+                << ia("origin") << resp.getOrigin()
                 << '\n';
       },
       ctx.makeCommandFailureHandler("removing route"),
@@ -290,7 +290,7 @@ RibModule::formatItemXml(std::ostream& os, const RibEntry& item) const
   for (const Route& route : item.getRoutes()) {
     os << "<route>"
        << "<faceId>" << route.getFaceId() << "</faceId>"
-       << "<origin>" << static_cast<RouteOrigin>(route.getOrigin()) << "</origin>"
+       << "<origin>" << route.getOrigin() << "</origin>"
        << "<cost>" << route.getCost() << "</cost>";
     if (route.getFlags() == ndn::nfd::ROUTE_FLAGS_NONE) {
        os << "<flags/>";
@@ -352,14 +352,9 @@ RibModule::formatRouteText(std::ostream& os, const RibEntry& entry, const Route&
     os << ia("prefix") << entry.getName();
   }
   os << ia("nexthop") << route.getFaceId();
-  os << ia("origin") << static_cast<RouteOrigin>(route.getOrigin());
+  os << ia("origin") << route.getOrigin();
   os << ia("cost") << route.getCost();
   os << ia("flags") << static_cast<ndn::nfd::RouteFlags>(route.getFlags());
-
-  // 'origin' field is printed as a number, because printing 'origin' as string may mislead user
-  // into passing strings to 'origin' command line argument which currently only accepts numbers.
-  ///\todo #3987 print 'origin' with RouteOrigin stream insertion operator
-
   if (route.hasExpirationPeriod()) {
     os << ia("expires") << text::formatDuration(route.getExpirationPeriod());
   }

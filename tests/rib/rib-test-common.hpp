@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,6 +23,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef NFD_TESTS_RIB_RIB_TEST_COMMON_HPP
+#define NFD_TESTS_RIB_RIB_TEST_COMMON_HPP
+
 #include "rib/route.hpp"
 
 namespace nfd {
@@ -30,11 +33,14 @@ namespace rib {
 namespace tests {
 
 inline Route
-createRoute(uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
+createRoute(uint64_t faceId,
+            std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
+            uint64_t cost = 0,
+            uint64_t flags = 0)
 {
   Route temp;
   temp.faceId = faceId;
-  temp.origin = origin;
+  temp.origin = static_cast<ndn::nfd::RouteOrigin>(origin);
   temp.cost = cost;
   temp.flags = flags;
 
@@ -44,3 +50,5 @@ createRoute(uint64_t faceId, uint64_t origin, uint64_t cost, uint64_t flags)
 } // namespace tests
 } // namespace rib
 } // namespace nfd
+
+#endif // NFD_TESTS_RIB_RIB_TEST_COMMON_HPP

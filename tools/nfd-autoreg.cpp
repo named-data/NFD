@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,16 +41,11 @@
 #include "core/network.hpp"
 
 using namespace ndn::nfd;
-using ndn::Face;
-using ndn::KeyChain;
-using ndn::nfd::FaceEventNotification;
 using ndn::util::FaceUri;
 using ::nfd::Network;
 
 namespace ndn {
 namespace nfd_autoreg {
-
-namespace po = boost::program_options;
 
 class AutoregServer : boost::noncopyable
 {
@@ -123,10 +118,9 @@ public:
   }
 
   void
-  registerPrefixesForFace(uint64_t faceId,
-                          const std::vector<ndn::Name>& prefixes)
+  registerPrefixesForFace(uint64_t faceId, const std::vector<Name>& prefixes)
   {
-    for (std::vector<ndn::Name>::const_iterator prefix = prefixes.begin();
+    for (std::vector<Name>::const_iterator prefix = prefixes.begin();
          prefix != prefixes.end();
          ++prefix)
       {
@@ -179,37 +173,35 @@ public:
       }
   }
 
-
   void
   signalHandler()
   {
     m_face.shutdown();
   }
 
-
   void
   usage(std::ostream& os,
-        const po::options_description& optionDesciption,
+        const boost::program_options::options_description& desc,
         const char* programName)
   {
     os << "Usage:\n"
        << "  " << programName << " --prefix=</autoreg/prefix> [--prefix=/another/prefix] ...\n"
        << "\n";
-    os << optionDesciption;
+    os << desc;
   }
 
   void
   startProcessing()
   {
     std::cerr << "AUTOREG prefixes: " << std::endl;
-    for (std::vector<ndn::Name>::const_iterator prefix = m_autoregPrefixes.begin();
+    for (std::vector<Name>::const_iterator prefix = m_autoregPrefixes.begin();
          prefix != m_autoregPrefixes.end();
          ++prefix)
       {
         std::cout << "  " << *prefix << std::endl;
       }
     std::cerr << "ALL-FACES-AUTOREG prefixes: " << std::endl;
-    for (std::vector<ndn::Name>::const_iterator prefix = m_allFacesPrefixes.begin();
+    for (std::vector<Name>::const_iterator prefix = m_allFacesPrefixes.begin();
          prefix != m_allFacesPrefixes.end();
          ++prefix)
       {
@@ -248,8 +240,8 @@ public:
   startFetchingFaceStatusDataset()
   {
     m_controller.fetch<FaceDataset>(
-      [this] (const std::vector<ndn::nfd::FaceStatus>& faces) {
-        for (const ndn::nfd::FaceStatus& faceStatus : faces) {
+      [this] (const std::vector<FaceStatus>& faces) {
+        for (const auto& faceStatus : faces) {
           registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
                                    faceStatus.getFacePersistency());
         }
@@ -260,20 +252,22 @@ public:
   int
   main(int argc, char* argv[])
   {
+    namespace po = boost::program_options;
+
     po::options_description optionDesciption;
     optionDesciption.add_options()
       ("help,h", "produce help message")
-      ("prefix,i", po::value<std::vector<ndn::Name> >(&m_autoregPrefixes)->composing(),
+      ("prefix,i", po::value<std::vector<Name>>(&m_autoregPrefixes)->composing(),
        "prefix that should be automatically registered when new a remote non-local face is "
        "established")
-      ("all-faces-prefix,a", po::value<std::vector<ndn::Name> >(&m_allFacesPrefixes)->composing(),
+      ("all-faces-prefix,a", po::value<std::vector<Name>>(&m_allFacesPrefixes)->composing(),
        "prefix that should be automatically registered for all TCP and UDP non-local faces "
        "(blacklists and whitelists do not apply to this prefix)")
       ("cost,c", po::value<uint64_t>(&m_cost)->default_value(255),
        "FIB cost which should be assigned to autoreg nexthops")
-      ("whitelist,w", po::value<std::vector<Network> >(&m_whiteList)->composing(),
+      ("whitelist,w", po::value<std::vector<Network>>(&m_whiteList)->composing(),
        "Whitelisted network, e.g., 192.168.2.0/24 or ::1/128")
-      ("blacklist,b", po::value<std::vector<Network> >(&m_blackList)->composing(),
+      ("blacklist,b", po::value<std::vector<Network>>(&m_blackList)->composing(),
        "Blacklisted network, e.g., 192.168.2.32/30 or ::1/128")
       ("version,V", "show version and exit")
       ;
@@ -284,7 +278,7 @@ public:
         po::store(po::command_line_parser(argc, argv).options(optionDesciption).run(), options);
         po::notify(options);
       }
-    catch (std::exception& e)
+    catch (const std::exception& e)
       {
         std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
         usage(std::cerr, optionDesciption, argv[0]);
@@ -323,7 +317,7 @@ public:
         startFetchingFaceStatusDataset();
         startProcessing();
       }
-    catch (std::exception& e)
+    catch (const std::exception& e)
       {
         std::cerr << "ERROR: " << e.what() << std::endl;
         return 2;
@@ -337,8 +331,8 @@ private:
   KeyChain m_keyChain;
   Controller m_controller;
   FaceMonitor m_faceMonitor;
-  std::vector<ndn::Name> m_autoregPrefixes;
-  std::vector<ndn::Name> m_allFacesPrefixes;
+  std::vector<Name> m_autoregPrefixes;
+  std::vector<Name> m_allFacesPrefixes;
   uint64_t m_cost;
   std::vector<Network> m_whiteList;
   std::vector<Network> m_blackList;

@@ -1,6 +1,6 @@
- /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
+/* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,9 +25,8 @@
 
 #include "rib/rib.hpp"
 
+#include "rib-test-common.hpp"
 #include "tests/test-common.hpp"
-
-#include <ndn-cxx/encoding/tlv-nfd.hpp>
 
 namespace nfd {
 namespace rib {
@@ -39,40 +38,28 @@ BOOST_AUTO_TEST_CASE(Parent)
 {
   rib::Rib rib;
 
-  Route root;
   Name name1("/");
-  root.faceId = 1;
-  root.origin = 20;
-  rib.insert(name1, root);
+  rib.insert(name1, createRoute(1, 20));
 
-  Route route1;
   Name name2("/hello");
-  route1.faceId = 2;
-  route1.origin = 20;
-  rib.insert(name2, route1);
+  rib.insert(name2, createRoute(2, 20));
 
-  Route route2;
   Name name3("/hello/world");
-  route2.faceId = 3;
-  route2.origin = 20;
-  rib.insert(name3, route2);
+  rib.insert(name3, createRoute(3, 20));
 
   shared_ptr<rib::RibEntry> ribEntry = rib.findParent(name3);
-  BOOST_REQUIRE(static_cast<bool>(ribEntry));
+  BOOST_REQUIRE(ribEntry != nullptr);
   BOOST_CHECK_EQUAL(ribEntry->getRoutes().front().faceId, 2);
 
   ribEntry = rib.findParent(name2);
-  BOOST_REQUIRE(static_cast<bool>(ribEntry));
+  BOOST_REQUIRE(ribEntry != nullptr);
   BOOST_CHECK_EQUAL(ribEntry->getRoutes().front().faceId, 1);
 
-  Route route3;
   Name name4("/hello/test/foo/bar");
-  route2.faceId = 3;
-  route2.origin = 20;
-  rib.insert(name4, route3);
+  rib.insert(name4, createRoute(3, 20));
 
   ribEntry = rib.findParent(name4);
-  BOOST_CHECK(ribEntry != shared_ptr<rib::RibEntry>());
+  BOOST_REQUIRE(ribEntry != nullptr);
   BOOST_CHECK(ribEntry->getRoutes().front().faceId == 2);
 }
 
@@ -80,33 +67,21 @@ BOOST_AUTO_TEST_CASE(Children)
 {
   rib::Rib rib;
 
-  Route route1;
   Name name1("/");
-  route1.faceId = 1;
-  route1.origin = 20;
-  rib.insert(name1, route1);
+  rib.insert(name1, createRoute(1, 20));
 
-  Route route2;
   Name name2("/hello/world");
-  route2.faceId = 2;
-  route2.origin = 20;
-  rib.insert(name2, route2);
+  rib.insert(name2, createRoute(2, 20));
 
-  Route route3;
   Name name3("/hello/test/foo/bar");
-  route3.faceId = 3;
-  route3.origin = 20;
-  rib.insert(name3, route3);
+  rib.insert(name3, createRoute(3, 20));
 
   BOOST_CHECK_EQUAL((rib.find(name1)->second)->getChildren().size(), 2);
   BOOST_CHECK_EQUAL((rib.find(name2)->second)->getChildren().size(), 0);
   BOOST_CHECK_EQUAL((rib.find(name3)->second)->getChildren().size(), 0);
 
-  Route entry4;
   Name name4("/hello");
-  entry4.faceId = 4;
-  entry4.origin = 20;
-  rib.insert(name4, entry4);
+  rib.insert(name4, createRoute(4, 20));
 
   BOOST_CHECK_EQUAL((rib.find(name1)->second)->getChildren().size(), 1);
   BOOST_CHECK_EQUAL((rib.find(name2)->second)->getChildren().size(), 0);
@@ -126,30 +101,22 @@ BOOST_AUTO_TEST_CASE(EraseFace)
 {
   rib::Rib rib;
 
-  Route route1;
+  Route route1 = createRoute(1, 20);
   Name name1("/");
-  route1.faceId = 1;
-  route1.origin = 20;
   rib.insert(name1, route1);
 
-  Route route2;
+  Route route2 = createRoute(2, 20);
   Name name2("/hello/world");
-  route2.faceId = 2;
-  route2.origin = 20;
   rib.insert(name2, route2);
 
-  Route route3;
+  Route route3 = createRoute(1, 20);
   Name name3("/hello/world");
-  route3.faceId = 1;
-  route3.origin = 20;
   rib.insert(name3, route3);
 
-  Route entry4;
+  Route route4 = createRoute(1, 20);
   Name name4("/not/inserted");
-  entry4.faceId = 1;
-  entry4.origin = 20;
 
-  rib.erase(name4, entry4);
+  rib.erase(name4, route4);
   rib.erase(name1, route1);
 
   BOOST_CHECK(rib.find(name1) == rib.end());
@@ -164,30 +131,22 @@ BOOST_AUTO_TEST_CASE(EraseFace)
 
   BOOST_CHECK(rib.find(name2) == rib.end());
 
-  rib.erase(name4, entry4);
+  rib.erase(name4, route4);
 }
 
 BOOST_AUTO_TEST_CASE(EraseRibEntry)
 {
   rib::Rib rib;
 
-  Route route1;
   Name name1("/");
-  route1.faceId = 1;
-  route1.origin = 20;
-  rib.insert(name1, route1);
+  rib.insert(name1, createRoute(1, 20));
 
-  Route route2;
+  Route route2 = createRoute(2, 20);
   Name name2("/hello");
-  route2.faceId = 2;
-  route2.origin = 20;
   rib.insert(name2, route2);
 
-  Route route3;
   Name name3("/hello/world");
-  route3.faceId = 1;
-  route3.origin = 20;
-  rib.insert(name3, route3);
+  rib.insert(name3, createRoute(1, 20));
 
   shared_ptr<rib::RibEntry> ribEntry1 = rib.find(name1)->second;
   shared_ptr<rib::RibEntry> ribEntry2 = rib.find(name2)->second;
@@ -208,7 +167,6 @@ BOOST_AUTO_TEST_CASE(Basic)
   Route route1;
   Name name1("/hello/world");
   route1.faceId = 1;
-  route1.origin = 20;
   route1.cost = 10;
   route1.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE;
   route1.expires = time::steady_clock::now() + time::milliseconds(1500);
@@ -222,7 +180,6 @@ BOOST_AUTO_TEST_CASE(Basic)
   Route route2;
   Name name2("/hello/world");
   route2.faceId = 1;
-  route2.origin = 20;
   route2.cost = 100;
   route2.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
   route2.expires = time::steady_clock::now() + time::seconds(0);
@@ -241,7 +198,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.insert(name3, route2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
-  route2.origin = 1;
+  route2.origin = ndn::nfd::ROUTE_ORIGIN_AUTOCONF;
   rib.insert(name3, route2);
   BOOST_CHECK_EQUAL(rib.size(), 4);
 
@@ -252,12 +209,12 @@ BOOST_AUTO_TEST_CASE(Basic)
   rib.erase(name4, route2);
   BOOST_CHECK_EQUAL(rib.size(), 3);
 
-  route2.origin = 20;
+  route2.origin = ndn::nfd::ROUTE_ORIGIN_APP;
   rib.erase(name4, route2);
   BOOST_CHECK_EQUAL(rib.size(), 2);
 
-  BOOST_CHECK_EQUAL(rib.find(name2, route2), static_cast<Route*>(0));
-  BOOST_CHECK_NE(rib.find(name1, route1), static_cast<Route*>(0));
+  BOOST_CHECK(rib.find(name2, route2) == nullptr);
+  BOOST_CHECK(rib.find(name1, route1) != nullptr);
 
   rib.erase(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
@@ -270,15 +227,8 @@ BOOST_AUTO_TEST_CASE(RibSignals)
   Route route;
   Name name("/hello/world");
 
-  Route route1;
-  route1.faceId = 1;
-  route1.origin = 20;
-  route1.cost = 10;
-
-  Route route2;
-  route2.faceId = 2;
-  route2.origin = 30;
-  route2.cost = 20;
+  Route route1 = createRoute(1, 20, 10);
+  Route route2 = createRoute(2, 30, 20);
 
   RibRouteRef routeInfo;
 
@@ -333,31 +283,24 @@ BOOST_AUTO_TEST_CASE(RibSignals)
   rib.erase(name, route);
   BOOST_CHECK_EQUAL(nBeforeRemoveRouteInvocations, 2);
   BOOST_CHECK_EQUAL(nAfterEraseEntryInvocations, 1);
-
 }
 
 BOOST_AUTO_TEST_CASE(Output)
 {
   rib::Rib rib;
 
-  Route root;
+  Route root = createRoute(1, 20);
   Name name1("/");
-  root.faceId = 1;
-  root.origin = 20;
   root.expires = time::steady_clock::TimePoint::max();
   rib.insert(name1, root);
 
-  Route route1;
+  Route route1 = createRoute(2, 20);
   Name name2("/hello");
-  route1.faceId = 2;
-  route1.origin = 20;
   route1.expires = time::steady_clock::TimePoint::max();
   rib.insert(name2, route1);
 
-  Route route2;
+  Route route2 = createRoute(3, 20);
   Name name3("/hello/world");
-  route2.faceId = 3;
-  route2.origin = 20;
   route2.expires = time::steady_clock::TimePoint::max();
   rib.insert(name3, route2);
 

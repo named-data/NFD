@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_RIB_ROUTE_HPP
 
 #include "core/scheduler.hpp"
+
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
@@ -39,11 +40,10 @@ class Route
 public:
   Route()
     : faceId(0)
-    , origin(0)
+    , origin(ndn::nfd::ROUTE_ORIGIN_APP)
     , flags(0)
     , cost(0)
     , expires(time::steady_clock::TimePoint::min())
-    , m_expirationEvent()
   {
   }
 
@@ -77,7 +77,7 @@ public:
 
 public:
   uint64_t faceId;
-  uint64_t origin;
+  ndn::nfd::RouteOrigin origin;
   uint64_t flags;
   uint64_t cost;
   time::steady_clock::TimePoint expires;
