@@ -41,9 +41,6 @@ namespace face {
 class GenericLinkServiceCounters : public virtual LinkService::Counters
 {
 public:
-  explicit
-  GenericLinkServiceCounters(const LpReassembler& reassembler);
-
   /** \brief count of failed fragmentations
    */
   PacketCounter nFragmentationErrors;
@@ -87,10 +84,9 @@ public:
 
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
- *  \todo #3941 declare GenericLinkServiceCounters as virtual inheritance
  */
 class GenericLinkService : public LinkService
-                         , protected GenericLinkServiceCounters
+                         , protected virtual GenericLinkServiceCounters
 {
 public:
   /** \brief Options that control the behavior of GenericLinkService

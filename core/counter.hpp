@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -107,15 +107,17 @@ public:
 
 /** \brief provides a counter that observes the size of a table
  *  \tparam T a type that provides a size() const member function
+ *
+ *  if table not specified in constructor, it can be added later by invoking observe()
  */
 template<typename T>
 class SizeCounter
 {
 public:
-  typedef size_t rep;
+  typedef size_t Rep;
 
-  constexpr
-  SizeCounter(const T& table)
+  explicit constexpr
+  SizeCounter(const T* table = nullptr)
     : m_table(table)
   {
   }
@@ -125,15 +127,22 @@ public:
   SizeCounter&
   operator=(const SizeCounter&) = delete;
 
+  void
+  observe(const T* table)
+  {
+    m_table = table;
+  }
+
   /** \brief observe the counter
    */
-  operator rep() const
+  operator Rep() const
   {
-    return m_table.size();
+    BOOST_ASSERT(m_table != nullptr);
+    return m_table->size();
   }
 
 private:
-  const T& m_table;
+  const T* m_table;
 };
 
 } // namespace nfd

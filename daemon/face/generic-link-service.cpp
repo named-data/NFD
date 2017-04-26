@@ -31,11 +31,6 @@ namespace face {
 
 NFD_LOG_INIT("GenericLinkService");
 
-GenericLinkServiceCounters::GenericLinkServiceCounters(const LpReassembler& reassembler)
-  : nReassembling(reassembler)
-{
-}
-
 GenericLinkService::Options::Options()
   : allowLocalFields(false)
   , allowFragmentation(false)
@@ -44,14 +39,14 @@ GenericLinkService::Options::Options()
 }
 
 GenericLinkService::GenericLinkService(const GenericLinkService::Options& options)
-  : GenericLinkServiceCounters(m_reassembler)
-  , m_options(options)
+  : m_options(options)
   , m_fragmenter(m_options.fragmenterOptions, this)
   , m_reassembler(m_options.reassemblerOptions, this)
   , m_reliability(m_options.reliabilityOptions, this)
   , m_lastSeqNo(-2)
 {
   m_reassembler.beforeTimeout.connect(bind([this] { ++this->nReassemblyTimeouts; }));
+  nReassembling.observe(&m_reassembler);
 }
 
 void
