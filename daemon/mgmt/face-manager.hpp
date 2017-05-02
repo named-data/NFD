@@ -83,7 +83,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
                         ControlParameters& response);
 
   static ControlParameters
-  collectFaceProperties(const Face& face);
+  collectFaceProperties(const Face& face, bool wantUris);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
   void

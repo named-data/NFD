@@ -233,6 +233,7 @@ protected:
     ControlParameters body;
     body.setFaceId(1172)
         .setUri("udp4://100.77.30.65:6363")
+        .setLocalUri("udp4://68.62.26.57:24087")
         .setFacePersistency(persistency)
         .setFlags(0);
     this->failCommand(interest, 409, "conflict-409", body);
@@ -253,13 +254,16 @@ BOOST_AUTO_TEST_CASE(Creating)
 
     ControlParameters resp;
     resp.setFaceId(2130)
+        .setUri("udp4://159.242.33.78:6363")
+        .setLocalUri("udp4://179.63.153.45:28835")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
     this->succeedCommand(interest, resp);
   };
 
   this->execute("face create udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-created id=2130 remote=udp4://159.242.33.78:6363 persistency=persistent\n"));
+  BOOST_CHECK(out.is_equal("face-created id=2130 local=udp4://179.63.153.45:28835 "
+                           "remote=udp4://159.242.33.78:6363 persistency=persistent\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -276,13 +280,16 @@ BOOST_AUTO_TEST_CASE(CreatingWithLocalUri)
 
     ControlParameters resp;
     resp.setFaceId(301)
+        .setUri("udp4://22.91.89.51:19903")
+        .setLocalUri("udp4://98.68.23.71:6363")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
     this->succeedCommand(interest, resp);
   };
 
   this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-created id=301 remote=udp4://22.91.89.51:19903 persistency=permanent\n"));
+  BOOST_CHECK(out.is_equal("face-created id=301 local=udp4://98.68.23.71:6363 "
+                           "remote=udp4://22.91.89.51:19903 persistency=permanent\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -313,7 +320,8 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-updated id=1172 remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -326,7 +334,8 @@ BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
 
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-exists id=1172 remote=udp4://100.77.30.65:6363 persistency=permanent\n"));
+  BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=permanent\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -339,7 +348,8 @@ BOOST_AUTO_TEST_CASE(SamePersistency)
 
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal("face-exists id=1172 remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+  BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
   BOOST_CHECK(err.is_empty());
 }
 

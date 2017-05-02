@@ -144,8 +144,7 @@ FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
   if (face->getId() != face::INVALID_FACEID) {// Face already exists
     NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
 
-    ControlParameters response = collectFaceProperties(*face);
-    response.setUri(face->getRemoteUri().toString());
+    ControlParameters response = collectFaceProperties(*face, true);
     done(ControlResponse(409, "Face with remote URI already exists").setBody(response.wireEncode()));
     return;
   }
@@ -159,7 +158,7 @@ FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
 
   m_faceTable.add(face);
 
-  ControlParameters response = collectFaceProperties(*face);
+  ControlParameters response = collectFaceProperties(*face, true);
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
 
@@ -233,7 +232,7 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
   setLinkServiceOptions(*face, parameters, response);
 
   // Set ControlResponse fields
-  response = collectFaceProperties(*face);
+  response = collectFaceProperties(*face, false);
 
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
@@ -271,16 +270,21 @@ FaceManager::setLinkServiceOptions(Face& face,
 }
 
 ControlParameters
-FaceManager::collectFaceProperties(const Face& face)
+FaceManager::collectFaceProperties(const Face& face, bool wantUris)
 {
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
   BOOST_ASSERT(linkService != nullptr);
   auto options = linkService->getOptions();
 
-  return ControlParameters()
-    .setFaceId(face.getId())
-    .setFacePersistency(face.getPersistency())
-    .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
+  ControlParameters params;
+  params.setFaceId(face.getId())
+        .setFacePersistency(face.getPersistency())
+        .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
+  if (wantUris) {
+    params.setUri(face.getRemoteUri().toString())
+          .setLocalUri(face.getLocalUri().toString());
+  }
+  return params;
 }
 
 void

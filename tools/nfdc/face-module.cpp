@@ -163,10 +163,10 @@ FaceModule::create(ExecuteContext& ctx)
     text::ItemAttributes ia;
     ctx.out << actionSummary << ' '
             << ia("id") << resp.getFaceId()
-            << ia("remote") << canonicalRemote
+            << ia("local") << resp.getLocalUri()
+            << ia("remote") << resp.getUri()
             << ia("persistency") << resp.getFacePersistency()
             << '\n';
-    ///\todo #3956 display local FaceUri before 'remote' field
   };
 
   auto handle409 = [&] (const ControlResponse& resp) {
@@ -180,7 +180,12 @@ FaceModule::create(ExecuteContext& ctx)
       // need to upgrade persistency
       ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
           ControlParameters().setFaceId(respParams.getFaceId()).setFacePersistency(persistency),
-          bind(printPositiveResult, "face-updated", _1),
+          [respParams, &printPositiveResult] (ControlParameters resp2) {
+            // faces/update response does not have FaceUris, copy from faces/create response
+            resp2.setLocalUri(respParams.getLocalUri())
+                 .setUri(respParams.getUri());
+            printPositiveResult("face-updated", resp2);
+          },
           ctx.makeCommandFailureHandler("upgrading face persistency"),
           ctx.makeCommandOptions());
     }
