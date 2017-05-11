@@ -256,7 +256,8 @@ BOOST_AUTO_TEST_CASE(Creating)
     resp.setFaceId(2130)
         .setUri("udp4://159.242.33.78:6363")
         .setLocalUri("udp4://179.63.153.45:28835")
-        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setFlags(0);
     this->succeedCommand(interest, resp);
   };
 
@@ -282,7 +283,8 @@ BOOST_AUTO_TEST_CASE(CreatingWithLocalUri)
     resp.setFaceId(301)
         .setUri("udp4://22.91.89.51:19903")
         .setLocalUri("udp4://98.68.23.71:6363")
-        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT);
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT)
+        .setFlags(0);
     this->succeedCommand(interest, resp);
   };
 
