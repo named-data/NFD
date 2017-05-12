@@ -55,9 +55,9 @@ UnicastEthernetTransport::UnicastEthernetTransport(const NetworkInterfaceInfo& l
   snprintf(filter, sizeof(filter),
            "(ether proto 0x%x) && (ether src %s) && (ether dst %s) && (not vlan)",
            ethernet::ETHERTYPE_NDN,
-           m_destAddress.toString().c_str(),
-           m_srcAddress.toString().c_str());
-  setPacketFilter(filter);
+           m_destAddress.toString().data(),
+           m_srcAddress.toString().data());
+  m_pcap.setPacketFilter(filter);
 
   // TODO: implement close on idle and persistency change
 }

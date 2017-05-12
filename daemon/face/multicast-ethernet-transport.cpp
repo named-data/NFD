@@ -54,6 +54,9 @@ MulticastEthernetTransport::MulticastEthernetTransport(const NetworkInterfaceInf
                                                        const ethernet::Address& mcastAddress,
                                                        ndn::nfd::LinkType linkType)
   : EthernetTransport(localEndpoint, mcastAddress)
+#if defined(__linux__)
+  , m_interfaceIndex(localEndpoint.index)
+#endif
 {
   this->setLocalUri(FaceUri::fromDev(m_interfaceName));
   this->setRemoteUri(FaceUri(m_destAddress));
@@ -71,13 +74,13 @@ MulticastEthernetTransport::MulticastEthernetTransport(const NetworkInterfaceInf
   snprintf(filter, sizeof(filter),
            "(ether proto 0x%x) && (ether dst %s) && (not ether src %s) && (not vlan)",
            ethernet::ETHERTYPE_NDN,
-           m_destAddress.toString().c_str(),
-           m_srcAddress.toString().c_str());
-  setPacketFilter(filter);
+           m_destAddress.toString().data(),
+           m_srcAddress.toString().data());
+  m_pcap.setPacketFilter(filter);
 
   if (!m_destAddress.isBroadcast() && !joinMulticastGroup()) {
     NFD_LOG_FACE_WARN("Falling back to promiscuous mode");
-    pcap_set_promisc(m_pcap.get(), 1);
+    pcap_set_promisc(m_pcap, 1);
   }
 }
 
@@ -100,7 +103,7 @@ MulticastEthernetTransport::joinMulticastGroup()
 
 #if defined(SIOCADDMULTI)
   ifreq ifr{};
-  std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
+  std::strncpy(ifr.ifr_name, m_interfaceName.data(), sizeof(ifr.ifr_name) - 1);
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
   // see bug #2327

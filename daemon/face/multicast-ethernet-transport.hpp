@@ -51,6 +51,11 @@ private:
    */
   bool
   joinMulticastGroup();
+
+private:
+#if defined(__linux__)
+  int m_interfaceIndex;
+#endif
 };
 
 } // namespace face

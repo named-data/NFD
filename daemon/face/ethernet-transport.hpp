@@ -26,18 +26,9 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 
-#include "core/common.hpp"
+#include "pcap-helper.hpp"
 #include "transport.hpp"
 #include "core/network-interface.hpp"
-
-#ifndef HAVE_LIBPCAP
-#error "Cannot include this file when libpcap is not available"
-#endif
-
-// forward declarations
-struct pcap;
-typedef pcap pcap_t;
-struct pcap_pkthdr;
 
 namespace nfd {
 namespace face {
@@ -65,20 +56,7 @@ protected:
   void
   doClose() final;
 
-  /**
-   * @brief Installs a BPF filter on the receiving socket
-   * @param filterString string containing the BPF program source
-   */
-  void
-  setPacketFilter(const char* filterString);
-
 private:
-  /**
-   * @brief Allocates and initializes a libpcap context for live capture
-   */
-  void
-  pcapInit();
-
   void
   doSend(Transport::Packet&& packet) final;
 
@@ -89,22 +67,19 @@ private:
   sendPacket(const ndn::Block& block);
 
   /**
-   * @brief Receive callback
+   * @brief async_read_some() callback
    */
   void
   handleRead(const boost::system::error_code& error, size_t nBytesRead);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /**
-   * @brief Processes an incoming frame as captured by libpcap
-   *
-   * @param header pointer to capture metadata
-   * @param packet pointer to the received frame, including the link-layer header
+   * @brief Processes an incoming packet as captured by libpcap
+   * @param packet Pointer to the received packet, including the link-layer header
+   * @param length Packet length
    */
   void
-  processIncomingPacket(const pcap_pkthdr* header, const uint8_t* packet);
+  processIncomingPacket(const uint8_t* packet, size_t length);
 
-private:
   /**
    * @brief Handles errors encountered by Boost.Asio on the receive path
    */
@@ -114,24 +89,20 @@ private:
   /**
    * @brief Returns the MTU of the underlying network interface
    */
-  size_t
+  int
   getInterfaceMtu();
 
 protected:
-  unique_ptr<pcap_t, void(*)(pcap_t*)> m_pcap;
   boost::asio::posix::stream_descriptor m_socket;
-
+  PcapHelper m_pcap;
   ethernet::Address m_srcAddress;
   ethernet::Address m_destAddress;
   std::string m_interfaceName;
-#if defined(__linux__)
-  int m_interfaceIndex;
-#endif
 
 private:
 #ifdef _DEBUG
   /// number of packets dropped by the kernel, as reported by libpcap
-  unsigned int m_nDropped;
+  size_t m_nDropped;
 #endif
 };
 

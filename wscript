@@ -201,7 +201,8 @@ def build(bld):
         name='daemon-objects',
         features='cxx',
         source=bld.path.ant_glob(['daemon/**/*.cpp'],
-                                 excl=['daemon/face/ethernet-*.cpp',
+                                 excl=['daemon/face/*ethernet*.cpp',
+                                       'daemon/face/*pcap*.cpp',
                                        'daemon/face/unix-*.cpp',
                                        'daemon/face/websocket-*.cpp',
                                        'daemon/main.cpp']),
@@ -210,7 +211,8 @@ def build(bld):
         export_includes='daemon')
 
     if bld.env['HAVE_LIBPCAP']:
-        nfd_objects.source += bld.path.ant_glob('daemon/face/ethernet-*.cpp')
+        nfd_objects.source += bld.path.ant_glob('daemon/face/*ethernet*.cpp')
+        nfd_objects.source += bld.path.ant_glob('daemon/face/*pcap*.cpp')
         nfd_objects.use += ' LIBPCAP'
 
     if bld.env['HAVE_UNIX_SOCKETS']:

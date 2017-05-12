@@ -34,11 +34,6 @@
 #include <net/ethernet.h> // for struct ether_header
 #include <net/if.h>       // for struct ifreq
 #include <sys/ioctl.h>    // for ioctl()
-#include <unistd.h>       // for dup()
-
-#if !defined(PCAP_NETMASK_UNKNOWN)
-#define PCAP_NETMASK_UNKNOWN  0xffffffff
-#endif
 
 namespace nfd {
 namespace face {
@@ -47,28 +42,22 @@ NFD_LOG_INIT("EthernetTransport");
 
 EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
                                      const ethernet::Address& remoteEndpoint)
-  : m_pcap(nullptr, pcap_close)
-  , m_socket(getGlobalIoService())
+  : m_socket(getGlobalIoService())
+  , m_pcap(localEndpoint.name)
   , m_srcAddress(localEndpoint.etherAddress)
   , m_destAddress(remoteEndpoint)
   , m_interfaceName(localEndpoint.name)
-#if defined(__linux__)
-  , m_interfaceIndex(localEndpoint.index)
-#endif
 #ifdef _DEBUG
   , m_nDropped(0)
 #endif
 {
-  pcapInit();
-
-  int fd = pcap_get_selectable_fd(m_pcap.get());
-  if (fd < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_get_selectable_fd failed"));
-
-  // need to duplicate the fd, otherwise both pcap_close()
-  // and stream_descriptor::close() will try to close the
-  // same fd and one of them will fail
-  m_socket.assign(::dup(fd));
+  try {
+    m_pcap.activate(DLT_EN10MB);
+    m_socket.assign(m_pcap.getFd());
+  }
+  catch (const PcapHelper::Error& e) {
+    BOOST_THROW_EXCEPTION(Error(e.what()));
+  }
 
   // do this after assigning m_socket because getInterfaceMtu uses it
   this->setMtu(getInterfaceMtu());
@@ -77,14 +66,6 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
                            bind(&EthernetTransport::handleRead, this,
                                 boost::asio::placeholders::error,
                                 boost::asio::placeholders::bytes_transferred));
-}
-
-void
-EthernetTransport::doSend(Transport::Packet&& packet)
-{
-  NFD_LOG_FACE_TRACE(__func__);
-
-  sendPacket(packet.packet);
 }
 
 void
@@ -99,7 +80,7 @@ EthernetTransport::doClose()
     m_socket.cancel(error);
     m_socket.close(error);
   }
-  m_pcap.reset();
+  m_pcap.close();
 
   // Ensure that the Transport stays alive at least
   // until all pending handlers are dispatched
@@ -109,50 +90,16 @@ EthernetTransport::doClose()
 }
 
 void
-EthernetTransport::pcapInit()
+EthernetTransport::doSend(Transport::Packet&& packet)
 {
-  char errbuf[PCAP_ERRBUF_SIZE] = {};
-  m_pcap.reset(pcap_create(m_interfaceName.c_str(), errbuf));
-  if (!m_pcap)
-    BOOST_THROW_EXCEPTION(Error("pcap_create: " + std::string(errbuf)));
+  NFD_LOG_FACE_TRACE(__func__);
 
-#ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
-  // Enable "immediate mode", effectively disabling any read buffering in the kernel.
-  // This corresponds to the BIOCIMMEDIATE ioctl on BSD-like systems (including macOS)
-  // where libpcap uses a BPF device. On Linux this forces libpcap not to use TPACKET_V3,
-  // even if the kernel supports it, thus preventing bug #1511.
-  pcap_set_immediate_mode(m_pcap.get(), 1);
-#endif
-
-  if (pcap_activate(m_pcap.get()) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_activate failed"));
-
-  if (pcap_set_datalink(m_pcap.get(), DLT_EN10MB) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_set_datalink: " + std::string(pcap_geterr(m_pcap.get()))));
-
-  if (pcap_setdirection(m_pcap.get(), PCAP_D_IN) < 0)
-    // no need to throw on failure, BPF will filter unwanted packets anyway
-    NFD_LOG_FACE_WARN("pcap_setdirection failed: " << pcap_geterr(m_pcap.get()));
-}
-
-void
-EthernetTransport::setPacketFilter(const char* filterString)
-{
-  bpf_program filter;
-  if (pcap_compile(m_pcap.get(), &filter, filterString, 1, PCAP_NETMASK_UNKNOWN) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_compile: " + std::string(pcap_geterr(m_pcap.get()))));
-
-  int ret = pcap_setfilter(m_pcap.get(), &filter);
-  pcap_freecode(&filter);
-  if (ret < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_setfilter: " + std::string(pcap_geterr(m_pcap.get()))));
+  sendPacket(packet.packet);
 }
 
 void
 EthernetTransport::sendPacket(const ndn::Block& block)
 {
-  /// \todo Right now there is no reserve when packet is received, but
-  ///       we should reserve some space at the beginning and at the end
   ndn::EncodingBuffer buffer(block);
 
   // pad with zeroes if the payload is too short
@@ -168,9 +115,9 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
 
   // send the packet
-  int sent = pcap_inject(m_pcap.get(), buffer.buf(), buffer.size());
+  int sent = pcap_inject(m_pcap, buffer.buf(), buffer.size());
   if (sent < 0)
-    NFD_LOG_FACE_ERROR("pcap_inject failed: " << pcap_geterr(m_pcap.get()));
+    NFD_LOG_FACE_ERROR("pcap_inject failed: " << m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
     NFD_LOG_FACE_ERROR("Failed to send the full frame: bufsize=" << buffer.size() << " sent=" << sent);
   else
@@ -184,29 +131,21 @@ EthernetTransport::handleRead(const boost::system::error_code& error, size_t)
   if (error)
     return processErrorCode(error);
 
-  pcap_pkthdr* header;
-  const uint8_t* packet;
+  const uint8_t* pkt;
+  size_t len;
+  std::string err;
+  std::tie(pkt, len, err) = m_pcap.readNextPacket();
 
-  // read the pcap header and packet data
-  int ret = pcap_next_ex(m_pcap.get(), &header, &packet);
-  if (ret < 0)
-    NFD_LOG_FACE_ERROR("pcap_next_ex failed: " << pcap_geterr(m_pcap.get()));
-  else if (ret == 0)
-    NFD_LOG_FACE_WARN("Read timeout");
+  if (pkt == nullptr)
+    NFD_LOG_FACE_ERROR("Read error: " << err);
   else
-    processIncomingPacket(header, packet);
+    processIncomingPacket(pkt, len);
 
 #ifdef _DEBUG
-  pcap_stat ps{};
-  ret = pcap_stats(m_pcap.get(), &ps);
-  if (ret < 0) {
-    NFD_LOG_FACE_DEBUG("pcap_stats failed: " << pcap_geterr(m_pcap.get()));
-  }
-  else if (ret == 0) {
-    if (ps.ps_drop - m_nDropped > 0)
-      NFD_LOG_FACE_DEBUG("Detected " << ps.ps_drop - m_nDropped << " dropped packet(s)");
-    m_nDropped = ps.ps_drop;
-  }
+  size_t nDropped = m_pcap.getNDropped();
+  if (nDropped - m_nDropped > 0)
+    NFD_LOG_FACE_DEBUG("Detected " << nDropped - m_nDropped << " dropped packet(s)");
+  m_nDropped = nDropped;
 #endif
 
   m_socket.async_read_some(boost::asio::null_buffers(),
@@ -216,9 +155,8 @@ EthernetTransport::handleRead(const boost::system::error_code& error, size_t)
 }
 
 void
-EthernetTransport::processIncomingPacket(const pcap_pkthdr* header, const uint8_t* packet)
+EthernetTransport::processIncomingPacket(const uint8_t* packet, size_t length)
 {
-  size_t length = header->caplen;
   if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN) {
     NFD_LOG_FACE_WARN("Received frame is too short (" << length << " bytes)");
     return;
@@ -274,7 +212,7 @@ EthernetTransport::processErrorCode(const boost::system::error_code& error)
   NFD_LOG_FACE_WARN("Receive operation failed: " << error.message());
 }
 
-size_t
+int
 EthernetTransport::getInterfaceMtu()
 {
 #ifdef SIOCGIFMTU
@@ -288,11 +226,11 @@ EthernetTransport::getInterfaceMtu()
 #endif
 
   ifreq ifr{};
-  std::strncpy(ifr.ifr_name, m_interfaceName.c_str(), sizeof(ifr.ifr_name) - 1);
+  std::strncpy(ifr.ifr_name, m_interfaceName.data(), sizeof(ifr.ifr_name) - 1);
 
   if (::ioctl(fd, SIOCGIFMTU, &ifr) == 0) {
     NFD_LOG_FACE_DEBUG("Interface MTU is " << ifr.ifr_mtu);
-    return static_cast<size_t>(ifr.ifr_mtu);
+    return ifr.ifr_mtu;
   }
 
   NFD_LOG_FACE_WARN("Failed to get interface MTU: " << std::strerror(errno));
