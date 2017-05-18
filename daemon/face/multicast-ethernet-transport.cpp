@@ -26,8 +26,6 @@
 #include "multicast-ethernet-transport.hpp"
 #include "core/global-io.hpp"
 
-#include <pcap/pcap.h>
-
 #include <cerrno>         // for errno
 #include <cstring>        // for memcpy(), strerror(), strncpy()
 #include <net/if.h>       // for struct ifreq
@@ -78,13 +76,12 @@ MulticastEthernetTransport::MulticastEthernetTransport(const NetworkInterfaceInf
            m_srcAddress.toString().data());
   m_pcap.setPacketFilter(filter);
 
-  if (!m_destAddress.isBroadcast() && !joinMulticastGroup()) {
-    NFD_LOG_FACE_WARN("Falling back to promiscuous mode");
-    pcap_set_promisc(m_pcap, 1);
-  }
+  BOOST_ASSERT(m_destAddress.isMulticast());
+  if (!m_destAddress.isBroadcast())
+    joinMulticastGroup();
 }
 
-bool
+void
 MulticastEthernetTransport::joinMulticastGroup()
 {
 #if defined(__linux__)
@@ -96,7 +93,7 @@ MulticastEthernetTransport::joinMulticastGroup()
 
   if (::setsockopt(m_socket.native_handle(), SOL_PACKET,
                    PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) == 0)
-    return true; // success
+    return; // success
 
   NFD_LOG_FACE_WARN("setsockopt(PACKET_ADD_MEMBERSHIP) failed: " << std::strerror(errno));
 #endif
@@ -141,12 +138,12 @@ MulticastEthernetTransport::joinMulticastGroup()
 #endif
 
   if (::ioctl(fd, SIOCADDMULTI, &ifr) == 0)
-    return true; // success
+    return; // success
 
   NFD_LOG_FACE_WARN("ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
 #endif
 
-  return false;
+  BOOST_THROW_EXCEPTION(Error("Failed to join multicast group"));
 }
 
 } // namespace face

@@ -47,9 +47,8 @@ public:
 private:
   /**
    * @brief Enables receiving frames addressed to our MAC multicast group
-   * @return true if successful, false otherwise
    */
-  bool
+  void
   joinMulticastGroup();
 
 private:
