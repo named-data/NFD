@@ -24,16 +24,16 @@
  */
 
 #include "ethernet-transport.hpp"
+#include "ethernet-protocol.hpp"
 #include "core/global-io.hpp"
 
 #include <pcap/pcap.h>
 
-#include <cerrno>         // for errno
-#include <cstring>        // for memcpy(), strerror(), strncpy()
-#include <arpa/inet.h>    // for htons() and ntohs()
-#include <net/ethernet.h> // for struct ether_header
-#include <net/if.h>       // for struct ifreq
-#include <sys/ioctl.h>    // for ioctl()
+#include <cerrno>       // for errno
+#include <cstring>      // for memcpy(), strerror(), strncpy()
+#include <arpa/inet.h>  // for htons()
+#include <net/if.h>     // for struct ifreq
+#include <sys/ioctl.h>  // for ioctl()
 
 namespace nfd {
 namespace face {
@@ -62,10 +62,7 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
   // do this after assigning m_socket because getInterfaceMtu uses it
   this->setMtu(getInterfaceMtu());
 
-  m_socket.async_read_some(boost::asio::null_buffers(),
-                           bind(&EthernetTransport::handleRead, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+  asyncRead();
 }
 
 void
@@ -114,19 +111,27 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   buffer.prependByteArray(m_srcAddress.data(), m_srcAddress.size());
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
 
-  // send the packet
+  // send the frame
   int sent = pcap_inject(m_pcap, buffer.buf(), buffer.size());
   if (sent < 0)
     NFD_LOG_FACE_ERROR("pcap_inject failed: " << m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
-    NFD_LOG_FACE_ERROR("Failed to send the full frame: bufsize=" << buffer.size() << " sent=" << sent);
+    NFD_LOG_FACE_ERROR("Failed to send the full frame: size=" << buffer.size() << " sent=" << sent);
   else
     // print block size because we don't want to count the padding in buffer
     NFD_LOG_FACE_TRACE("Successfully sent: " << block.size() << " bytes");
 }
 
 void
-EthernetTransport::handleRead(const boost::system::error_code& error, size_t)
+EthernetTransport::asyncRead()
+{
+  m_socket.async_read_some(boost::asio::null_buffers(),
+                           bind(&EthernetTransport::handleRead, this,
+                                boost::asio::placeholders::error));
+}
+
+void
+EthernetTransport::handleRead(const boost::system::error_code& error)
 {
   if (error)
     return processErrorCode(error);
@@ -136,63 +141,54 @@ EthernetTransport::handleRead(const boost::system::error_code& error, size_t)
   std::string err;
   std::tie(pkt, len, err) = m_pcap.readNextPacket();
 
-  if (pkt == nullptr)
+  if (pkt == nullptr) {
     NFD_LOG_FACE_ERROR("Read error: " << err);
-  else
-    processIncomingPacket(pkt, len);
+  }
+  else {
+    const ether_header* eh;
+    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_srcAddress,
+                                                   m_destAddress.isMulticast() ? m_destAddress : m_srcAddress);
+    if (eh == nullptr) {
+      NFD_LOG_FACE_DEBUG(err);
+    }
+    else {
+      ethernet::Address sender(eh->ether_shost);
+      pkt += ethernet::HDR_LEN;
+      len -= ethernet::HDR_LEN;
+      receivePayload(pkt, len, sender);
+    }
+  }
 
 #ifdef _DEBUG
   size_t nDropped = m_pcap.getNDropped();
   if (nDropped - m_nDropped > 0)
-    NFD_LOG_FACE_DEBUG("Detected " << nDropped - m_nDropped << " dropped packet(s)");
+    NFD_LOG_FACE_DEBUG("Detected " << nDropped - m_nDropped << " dropped frame(s)");
   m_nDropped = nDropped;
 #endif
 
-  m_socket.async_read_some(boost::asio::null_buffers(),
-                           bind(&EthernetTransport::handleRead, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+  asyncRead();
 }
 
 void
-EthernetTransport::processIncomingPacket(const uint8_t* packet, size_t length)
+EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
+                                  const ethernet::Address& sender)
 {
-  if (length < ethernet::HDR_LEN + ethernet::MIN_DATA_LEN) {
-    NFD_LOG_FACE_WARN("Received frame is too short (" << length << " bytes)");
-    return;
-  }
-
-  const ether_header* eh = reinterpret_cast<const ether_header*>(packet);
-  const ethernet::Address sourceAddress(eh->ether_shost);
-
-  // in some cases VLAN-tagged frames may survive the BPF filter,
-  // make sure we do not process those frames (see #3348)
-  if (ntohs(eh->ether_type) != ethernet::ETHERTYPE_NDN)
-    return;
-
-  // check that our BPF filter is working correctly
-  BOOST_ASSERT_MSG(ethernet::Address(eh->ether_dhost) == m_destAddress,
-                   "Received frame addressed to another host or multicast group");
-  BOOST_ASSERT_MSG(sourceAddress != m_srcAddress,
-                   "Received frame sent by this host");
-
-  packet += ethernet::HDR_LEN;
-  length -= ethernet::HDR_LEN;
-
   bool isOk = false;
   Block element;
-  std::tie(isOk, element) = Block::fromBuffer(packet, length);
+  std::tie(isOk, element) = Block::fromBuffer(payload, length);
   if (!isOk) {
-    NFD_LOG_FACE_WARN("Received invalid packet from " << sourceAddress.toString());
+    NFD_LOG_FACE_WARN("Received invalid packet from " << sender);
     return;
   }
 
-  NFD_LOG_FACE_TRACE("Received: " << element.size() << " bytes from " << sourceAddress.toString());
+  NFD_LOG_FACE_TRACE("Received: " << element.size() << " bytes from " << sender);
 
   Transport::Packet tp(std::move(element));
   static_assert(sizeof(tp.remoteEndpoint) >= ethernet::ADDR_LEN,
                 "Transport::Packet::remoteEndpoint is too small");
-  std::memcpy(&tp.remoteEndpoint, sourceAddress.data(), sourceAddress.size());
+  if (m_destAddress.isMulticast()) {
+    std::memcpy(&tp.remoteEndpoint, sender.data(), sender.size());
+  }
   this->receive(std::move(tp));
 }
 

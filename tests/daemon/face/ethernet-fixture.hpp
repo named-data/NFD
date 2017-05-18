@@ -56,7 +56,7 @@ protected:
   }
 
   void
-  initializeUnicast(ethernet::Address remoteAddr = {0x0A, 0x01, 0x23, 0x45, 0x67, 0x89},
+  initializeUnicast(ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e},
                     ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   {
     BOOST_ASSERT(netifs.size() > 0);
@@ -67,7 +67,7 @@ protected:
   }
 
   void
-  initializeMulticast(ethernet::Address mcastGroup = ethernet::getDefaultMulticastAddress(),
+  initializeMulticast(ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e},
                       ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS)
   {
     BOOST_ASSERT(netifs.size() > 0);

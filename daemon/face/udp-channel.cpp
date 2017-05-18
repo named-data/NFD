@@ -36,10 +36,10 @@ NFD_LOG_INIT("UdpChannel");
 namespace ip = boost::asio::ip;
 
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
-                       const time::seconds& timeout)
+                       time::nanoseconds idleTimeout)
   : m_localEndpoint(localEndpoint)
   , m_socket(getGlobalIoService())
-  , m_idleFaceTimeout(timeout)
+  , m_idleFaceTimeout(idleTimeout)
 {
   setUri(FaceUri(m_localEndpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -129,6 +129,8 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
 
   if (isCreated)
     onFaceCreated(face);
+  else
+    NFD_LOG_CHAN_DEBUG("Received datagram for existing face");
 
   // dispatch the datagram to the face for processing
   auto* transport = static_cast<UnicastUdpTransport*>(face->getTransport());

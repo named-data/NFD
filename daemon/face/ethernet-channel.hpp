@@ -23,37 +23,48 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_UDP_CHANNEL_HPP
-#define NFD_DAEMON_FACE_UDP_CHANNEL_HPP
+#ifndef NFD_DAEMON_FACE_ETHERNET_CHANNEL_HPP
+#define NFD_DAEMON_FACE_ETHERNET_CHANNEL_HPP
 
 #include "channel.hpp"
-#include "udp-protocol.hpp"
-
-#include <array>
+#include "pcap-helper.hpp"
+#include "core/network-interface.hpp"
 
 namespace nfd {
 namespace face {
 
 /**
- * \brief Class implementing UDP-based channel to create faces
+ * \brief Class implementing Ethernet-based channel to create faces
  */
-class UdpChannel : public Channel
+class EthernetChannel : public Channel
 {
 public:
   /**
-   * \brief Create a UDP channel on the given \p localEndpoint
+   * \brief EthernetChannel-related error
+   */
+  class Error : public std::runtime_error
+  {
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
+  };
+
+  /**
+   * \brief Create an Ethernet channel on the given \p localEndpoint (network interface)
    *
    * To enable creation of faces upon incoming connections,
-   * one needs to explicitly call UdpChannel::listen method.
-   * The created socket is bound to \p localEndpoint.
+   * one needs to explicitly call EthernetChannel::listen method.
    */
-  UdpChannel(const udp::Endpoint& localEndpoint,
-             time::nanoseconds idleTimeout);
+  EthernetChannel(const NetworkInterfaceInfo& localEndpoint,
+                  time::nanoseconds idleTimeout);
 
   bool
   isListening() const override
   {
-    return m_socket.is_open();
+    return m_isListening;
   }
 
   size_t
@@ -63,15 +74,15 @@ public:
   }
 
   /**
-   * \brief Create a unicast UDP face toward \p remoteEndpoint
+   * \brief Create a unicast Ethernet face toward \p remoteEndpoint
    *
-   * \param remoteEndpoint The remote UDP endpoint
+   * \param remoteEndpoint The remote Ethernet endpoint
    * \param persistency Persistency of the newly created face
    * \param onFaceCreated Callback to notify successful creation of the face
    * \param onConnectFailed Callback to notify errors
    */
   void
-  connect(const udp::Endpoint& remoteEndpoint,
+  connect(const ethernet::Address& remoteEndpoint,
           ndn::nfd::FacePersistency persistency,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed);
@@ -79,13 +90,14 @@ public:
   /**
    * \brief Start listening
    *
-   * Enable listening on the local endpoint, waiting for incoming datagrams,
-   * and creating a face when a datagram is received from a new remote host.
+   * Enable listening on the local endpoint, waiting for incoming frames,
+   * and creating a face when a frame is received from a new remote host.
    *
    * Faces created in this way will have on-demand persistency.
    *
    * \param onFaceCreated Callback to notify successful creation of a face
    * \param onFaceCreationFailed Callback to notify errors
+   * \throw Error
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,
@@ -93,33 +105,42 @@ public:
 
 private:
   void
-  waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
-                 const FaceCreationFailedCallback& onReceiveFailed);
+  asyncRead(const FaceCreatedCallback& onFaceCreated,
+            const FaceCreationFailedCallback& onReceiveFailed);
 
-  /**
-   * \brief The channel has received a packet from a remote
-   *        endpoint not associated with any UDP face yet
-   */
   void
-  handleNewPeer(const boost::system::error_code& error,
-                size_t nBytesReceived,
-                const FaceCreatedCallback& onFaceCreated,
-                const FaceCreationFailedCallback& onReceiveFailed);
+  handleRead(const boost::system::error_code& error,
+             const FaceCreatedCallback& onFaceCreated,
+             const FaceCreationFailedCallback& onReceiveFailed);
+
+  void
+  processIncomingPacket(const uint8_t* packet, size_t length,
+                        const ethernet::Address& sender,
+                        const FaceCreatedCallback& onFaceCreated,
+                        const FaceCreationFailedCallback& onReceiveFailed);
 
   std::pair<bool, shared_ptr<Face>>
-  createFace(const udp::Endpoint& remoteEndpoint,
+  createFace(const ethernet::Address& remoteEndpoint,
              ndn::nfd::FacePersistency persistency);
 
+  void
+  updateFilter();
+
 private:
-  const udp::Endpoint m_localEndpoint;
-  udp::Endpoint m_remoteEndpoint; ///< The latest peer that started communicating with us
-  boost::asio::ip::udp::socket m_socket; ///< Socket used to "accept" new peers
-  std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
-  std::map<udp::Endpoint, shared_ptr<Face>> m_channelFaces;
+  const NetworkInterfaceInfo m_localEndpoint;
+  bool m_isListening;
+  boost::asio::posix::stream_descriptor m_socket;
+  PcapHelper m_pcap;
+  std::map<ethernet::Address, shared_ptr<Face>> m_channelFaces;
   const time::nanoseconds m_idleFaceTimeout; ///< Timeout for automatic closure of idle on-demand faces
+
+#ifdef _DEBUG
+  /// number of frames dropped by the kernel, as reported by libpcap
+  size_t m_nDropped;
+#endif
 };
 
 } // namespace face
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_UDP_CHANNEL_HPP
+#endif // NFD_DAEMON_FACE_ETHERNET_CHANNEL_HPP

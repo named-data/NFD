@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
     {
       ether
       {
-        mcast_group 01:00:00:00:00:01
+        mcast_group 01:00:5e:90:10:01
       }
     }
   )CONFIG";
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
     {
       ether
       {
-        mcast_group 01:00:00:00:00:02
+        mcast_group 01:00:5e:90:10:02
       }
     }
   )CONFIG";
@@ -171,14 +171,14 @@ BOOST_AUTO_TEST_CASE(ChangeMcastGroup)
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
   BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
-                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x01)));
+                    FaceUri(ethernet::Address{0x01, 0x00, 0x5e, 0x90, 0x10, 0x01}));
 
   parseConfig(CONFIG2, false);
   g_io.poll();
   etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), netifs.size());
   BOOST_CHECK_EQUAL(etherMcastFaces.front()->getRemoteUri(),
-                    FaceUri(ethernet::Address(0x01, 0x00, 0x00, 0x00, 0x00, 0x02)));
+                    FaceUri(ethernet::Address{0x01, 0x00, 0x5e, 0x90, 0x10, 0x02}));
 }
 
 BOOST_AUTO_TEST_CASE(Whitelist)
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE(UnicastMcastGroup)
       ether
       {
         mcast yes
-        mcast_group 02:00:00:00:00:01
+        mcast_group 00:00:5e:00:53:5e
       }
     }
   )CONFIG";

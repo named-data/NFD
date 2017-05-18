@@ -82,13 +82,19 @@ public:
   }
 
   /**
-   * \brief Enable listening on the local endpoint, accept connections,
-   *        and create faces when a connection is made
+   * \brief Start listening
+   *
+   * Enable listening on the Unix socket, waiting for incoming connections,
+   * and creating a face when a connection is made.
+   *
+   * Faces created in this way will have on-demand persistency.
+   *
    * \param onFaceCreated  Callback to notify successful creation of the face
    * \param onAcceptFailed Callback to notify when channel fails (accept call
    *                       returns an error)
    * \param backlog        The maximum length of the queue of pending incoming
    *                       connections
+   * \throw Error
    */
   void
   listen(const FaceCreatedCallback& onFaceCreated,

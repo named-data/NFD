@@ -49,6 +49,16 @@ public:
     }
   };
 
+  /**
+   * @brief Processes the payload of an incoming frame
+   * @param payload Pointer to the first byte of data after the Ethernet header
+   * @param length Payload length
+   * @param sender Sender address
+   */
+  void
+  receivePayload(const uint8_t* payload, size_t length,
+                 const ethernet::Address& sender);
+
 protected:
   EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
                     const ethernet::Address& remoteEndpoint);
@@ -66,19 +76,11 @@ private:
   void
   sendPacket(const ndn::Block& block);
 
-  /**
-   * @brief async_read_some() callback
-   */
   void
-  handleRead(const boost::system::error_code& error, size_t nBytesRead);
+  asyncRead();
 
-  /**
-   * @brief Processes an incoming packet as captured by libpcap
-   * @param packet Pointer to the received packet, including the link-layer header
-   * @param length Packet length
-   */
   void
-  processIncomingPacket(const uint8_t* packet, size_t length);
+  handleRead(const boost::system::error_code& error);
 
   /**
    * @brief Handles errors encountered by Boost.Asio on the receive path
@@ -101,7 +103,7 @@ protected:
 
 private:
 #ifdef _DEBUG
-  /// number of packets dropped by the kernel, as reported by libpcap
+  /// number of frames dropped by the kernel, as reported by libpcap
   size_t m_nDropped;
 #endif
 };
