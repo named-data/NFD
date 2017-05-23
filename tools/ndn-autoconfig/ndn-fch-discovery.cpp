@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -143,6 +143,8 @@ NdnFchDiscovery::NdnFchDiscovery(Face& face, KeyChain& keyChain,
 void
 NdnFchDiscovery::start()
 {
+  std::cerr << "Trying NDN-FCH service..." << std::endl;
+
   try {
     using namespace boost::asio::ip;
     tcp::iostream requestStream;
@@ -186,12 +188,11 @@ NdnFchDiscovery::start()
 
     std::getline(responseStream, statusMessage);
     if (!static_cast<bool>(requestStream) || httpVersion.substr(0, 5) != "HTTP/") {
-      throw HttpException("HTTP communication error");
+      BOOST_THROW_EXCEPTION(HttpException("HTTP communication error"));
     }
     if (statusCode != 200) {
       boost::trim(statusMessage);
-      throw HttpException("HTTP request failed: " +
-                          std::to_string(statusCode) + " " + statusMessage);
+      BOOST_THROW_EXCEPTION(HttpException("HTTP request failed: " + std::to_string(statusCode) + " " + statusMessage));
     }
     std::string header;
     while (std::getline(requestStream, header) && header != "\r")
@@ -201,7 +202,7 @@ NdnFchDiscovery::start()
     requestStream >> hubHost;
 
     if (hubHost.empty()) {
-      throw HttpException("NDN-FCH did not return hub host");
+      BOOST_THROW_EXCEPTION(HttpException("NDN-FCH did not return hub host"));
     }
 
     this->connectToHub("udp://" + hubHost);

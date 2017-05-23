@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@ GuessFromIdentityName::GuessFromIdentityName(Face& face, KeyChain& keyChain,
 void
 GuessFromIdentityName::start()
 {
-  std::cerr << "Trying to find home router based on the default identity name..." << std::endl;
+  std::cerr << "Trying default identity name..." << std::endl;
 
   Name identity = m_keyChain.getDefaultIdentity();
 

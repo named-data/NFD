@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,6 +38,8 @@ GuessFromSearchDomains::GuessFromSearchDomains(Face& face, KeyChain& keyChain,
 void
 GuessFromSearchDomains::start()
 {
+  std::cerr << "Trying default suffix DNS query..." << std::endl;
+
   try {
     std::string hubUri = BaseDns::querySrvRrSearch();
     this->connectToHub(hubUri);
