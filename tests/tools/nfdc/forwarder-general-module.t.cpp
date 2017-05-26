@@ -54,8 +54,8 @@ protected:
   {
     module.setNfdIdCollector(*validator);
 
-    this->systemClock->setNow(time::seconds(1468784936));
-    BOOST_REQUIRE(this->addIdentity("/nfd-status/test-nfdid"));
+    BOOST_REQUIRE(this->addIdentity("/nfd-status/test-nfdid",
+                                    ndn::EcKeyParams(name::Component("KEYID"))));
   }
 
 private:
@@ -68,7 +68,7 @@ private:
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <generalStatus>
-    <nfdId>/nfd-status/test-nfdid/KEY/ksk-1468784936000/ID-CERT</nfdId>
+    <nfdId>/nfd-status/test-nfdid/KEY/KEYID</nfdId>
     <version>0.4.1-1-g704430c</version>
     <startTime>2016-06-24T15:13:46.856000</startTime>
     <currentTime>2016-07-17T17:55:54.109000</currentTime>
@@ -95,7 +95,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 General NFD status:
-                 nfdId=/nfd-status/test-nfdid/KEY/ksk-1468784936000/ID-CERT
+                 nfdId=/nfd-status/test-nfdid/KEY/KEYID
                version=0.4.1-1-g704430c
              startTime=20160624T151346.856000
            currentTime=20160717T175554.109000

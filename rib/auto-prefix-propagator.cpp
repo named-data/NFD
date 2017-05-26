@@ -26,6 +26,9 @@
 #include "auto-prefix-propagator.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+#include <ndn-cxx/security/pib/identity.hpp>
+#include <ndn-cxx/security/pib/identity-container.hpp>
+#include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
 #include <vector>
 
@@ -121,20 +124,18 @@ AutoPrefixPropagator::disable()
 AutoPrefixPropagator::PrefixPropagationParameters
 AutoPrefixPropagator::getPrefixPropagationParameters(const Name& localRibPrefix)
 {
-  // get all identities from the KeyChain
-  std::vector<Name> identities;
-  m_keyChain.getAllIdentities(identities, false); // get all except the default
-  identities.push_back(m_keyChain.getDefaultIdentity()); // get the default
-
   // shortest prefix matching to all identies.
-  Name propagatedPrefix, signingIdentity;
+  Name propagatedPrefix;
+  ndn::security::pib::Identity signingIdentity;
   bool isFound = false;
-  for (auto&& i : identities) {
-    Name prefix = !i.empty() && IGNORE_COMMPONENT == i.at(-1) ? i.getPrefix(-1) : i;
-    if (prefix.isPrefixOf(localRibPrefix) && (!isFound || i.size() < signingIdentity.size())) {
+  for (auto&& identity : m_keyChain.getPib().getIdentities()) {
+    Name idName = identity.getName();
+    Name prefix = !idName.empty() && IGNORE_COMMPONENT == idName.at(-1) ?
+                  idName.getPrefix(-1) : idName;
+    if (prefix.isPrefixOf(localRibPrefix) && (!isFound || prefix.size() < propagatedPrefix.size())) {
       isFound = true;
       propagatedPrefix = prefix;
-      signingIdentity = i;
+      signingIdentity = identity;
     }
   }
 
@@ -147,7 +148,7 @@ AutoPrefixPropagator::getPrefixPropagationParameters(const Name& localRibPrefix)
     propagateParameters.parameters = m_controlParameters;
     propagateParameters.options = m_commandOptions;
     propagateParameters.parameters.setName(propagatedPrefix);
-    propagateParameters.options.setSigningInfo(signingByIdentity(signingIdentity));
+    propagateParameters.options.setSigningInfo(ndn::security::signingByIdentity(signingIdentity));
   }
 
   return propagateParameters;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,9 @@
 #include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/security/pib/identity.hpp>
+#include <ndn-cxx/security/pib/key.hpp>
+#include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/mgmt/nfd/control-command.hpp>
 
 namespace nfd {
@@ -60,7 +63,7 @@ public:
   {
   }
 
-  virtual ndn::mgmt::Authorization
+  ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) override
   {
     return [this] (const Name& prefix, const Interest& interest,
@@ -145,7 +148,7 @@ BOOST_AUTO_TEST_CASE(ExtractRequester)
 
   requesterName = "";
   m_manager.extractRequester(*signedCommand, testAccept);
-  auto keyLocator = m_keyChain.getDefaultCertificateNameForIdentity(m_identityName).getPrefix(-1);
+  auto keyLocator = m_keyChain.getPib().getIdentity(m_identityName).getDefaultKey().getName();
   BOOST_CHECK_EQUAL(requesterName, keyLocator.toUri());
 }
 

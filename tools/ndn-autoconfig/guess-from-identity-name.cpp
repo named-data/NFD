@@ -24,6 +24,8 @@
  */
 
 #include "guess-from-identity-name.hpp"
+#include <ndn-cxx/security/pib/identity.hpp>
+#include <ndn-cxx/security/pib/pib.hpp>
 
 namespace ndn {
 namespace tools {
@@ -40,7 +42,7 @@ GuessFromIdentityName::start()
 {
   std::cerr << "Trying default identity name..." << std::endl;
 
-  Name identity = m_keyChain.getDefaultIdentity();
+  Name identity = m_keyChain.getPib().getDefaultIdentity().getName();
 
   std::ostringstream serverName;
   for (auto i = identity.rbegin(); i != identity.rend(); ++i) {

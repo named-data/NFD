@@ -26,8 +26,8 @@
 #include "command-authenticator.hpp"
 #include "core/logger.hpp"
 
-#include <ndn-cxx/security/v1/identity-certificate.hpp>
-#include <ndn-cxx/security/validator-null.hpp>
+#include <ndn-cxx/security/security-common.hpp>
+#include <ndn-cxx/security/verification-helpers.hpp>
 #include <ndn-cxx/util/io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -38,8 +38,6 @@ NFD_LOG_INIT("CommandAuthenticator");
 // INFO: configuration change, etc
 // DEBUG: per authentication request result
 
-using ndn::security::v1::IdentityCertificate;
-
 shared_ptr<CommandAuthenticator>
 CommandAuthenticator::create()
 {
@@ -47,8 +45,8 @@ CommandAuthenticator::create()
 }
 
 CommandAuthenticator::CommandAuthenticator()
-  : m_validator(make_unique<ndn::ValidatorNull>())
 {
+  NFD_LOG_WARN("Command Interest timestamp checking is currently bypassed.");
 }
 
 void
@@ -91,7 +89,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     }
 
     bool isAny = false;
-    shared_ptr<IdentityCertificate> cert;
+    shared_ptr<ndn::security::v2::Certificate> cert;
     if (certfile == "any") {
       isAny = true;
       NFD_LOG_WARN("'certfile any' is intended for demo purposes only and "
@@ -100,7 +98,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
     else {
       using namespace boost::filesystem;
       path certfilePath = absolute(certfile, path(filename).parent_path());
-      cert = ndn::io::load<IdentityCertificate>(certfilePath.string());
+      cert = ndn::io::load<ndn::security::v2::Certificate>(certfilePath.string());
       if (cert == nullptr) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error(
           "cannot load certfile " + certfilePath.string() +
@@ -137,8 +135,8 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
         NFD_LOG_INFO("authorize module=" << module << " signer=any");
       }
       else {
-        const Name& keyName = cert->getPublicKeyName();
-        found->second.certs.emplace(keyName, cert->getPublicKeyInfo());
+        const Name& keyName = cert->getKeyName();
+        found->second.certs.emplace(keyName, *cert);
         NFD_LOG_INFO("authorize module=" << module << " signer=" << keyName <<
                      " certfile=" << certfile);
       }
@@ -181,22 +179,26 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
       return;
     }
 
-    bool hasGoodSig = ndn::Validator::verifySignature(interest, found->second);
+    bool hasGoodSig = ndn::security::verifySignature(interest, found->second);
     if (!hasGoodSig) {
       NFD_LOG_DEBUG("reject " << interest.getName() << " signer=" << keyName << " bad-sig");
       reject(ndn::mgmt::RejectReply::STATUS403);
       return;
     }
 
-    self->m_validator.validate(interest,
-      bind([=] {
-        NFD_LOG_DEBUG("accept " << interest.getName() << " signer=" << keyName);
-        accept(keyName.toUri());
-      }),
-      bind([=] {
-        NFD_LOG_DEBUG("reject " << interest.getName() << " signer=" << keyName << " invalid-timestamp");
-        reject(ndn::mgmt::RejectReply::STATUS403);
-      }));
+    //self->m_validator.validate(interest,
+    //  bind([=] {
+    //    NFD_LOG_DEBUG("accept " << interest.getName() << " signer=" << keyName);
+    //    accept(keyName.toUri());
+    //  }),
+    //  bind([=] {
+    //    NFD_LOG_DEBUG("reject " << interest.getName() << " signer=" << keyName << " invalid-timestamp");
+    //    reject(ndn::mgmt::RejectReply::STATUS403);
+    //  }));
+
+    /// \todo restore timestamp checking
+    NFD_LOG_DEBUG("accept " << interest.getName() << " signer=" << keyName);
+    accept(keyName.toUri());
   };
 }
 
@@ -226,9 +228,9 @@ CommandAuthenticator::extractKeyName(const Interest& interest)
   }
 
   try {
-    return {true, IdentityCertificate::certificateNameToPublicKeyName(keyLocator.getName())};
+    return {true, keyLocator.getName()};
   }
-  catch (const IdentityCertificate::Error&) {
+  catch (const std::invalid_argument&) {
     return {false, Name()};
   }
 }

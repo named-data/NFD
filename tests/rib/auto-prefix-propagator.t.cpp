@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,9 +25,10 @@
 
 #include "rib/auto-prefix-propagator.hpp"
 
-#include "tests/identity-management-fixture.hpp"
-
+#include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
+
+#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -335,7 +336,7 @@ BOOST_AUTO_TEST_CASE(RedoPropagation)
   BOOST_CHECK_EQUAL(checkRequest(0, "register", "/test/A"), CheckRequestResult::OK);
   BOOST_CHECK(m_entries.find("test/A") != m_entries.end());
 
-  BOOST_CHECK_NO_THROW(m_keyChain.deleteIdentity("/test/B"));
+  m_keyChain.deleteIdentity(m_keyChain.getPib().getIdentity("/test/B"));
   testRedoPropagation("/test/B"); // signingIdentity no longer exists
   BOOST_REQUIRE_EQUAL(m_requests.size(), 1);
   BOOST_CHECK_EQUAL(checkRequest(0, "register", "/test/B/C"), CheckRequestResult::OK);

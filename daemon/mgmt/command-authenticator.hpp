@@ -28,8 +28,7 @@
 
 #include "core/config-file.hpp"
 #include <ndn-cxx/mgmt/dispatcher.hpp>
-#include <ndn-cxx/security/command-interest-validator.hpp>
-#include <ndn-cxx/security/v1/public-key.hpp>
+#include <ndn-cxx/security/v2/certificate.hpp>
 
 namespace nfd {
 
@@ -68,11 +67,9 @@ private:
   struct AuthorizedCerts
   {
     bool allowAny = false;
-    std::unordered_map<Name, ndn::security::v1::PublicKey> certs; ///< keyName => publicKey
+    std::unordered_map<Name, ndn::security::v2::Certificate> certs; ///< keyName => cert
   };
   std::unordered_map<std::string, AuthorizedCerts> m_moduleAuth; ///< module => certs
-
-  ndn::security::CommandInterestValidator m_validator;
 };
 
 } // namespace nfd
