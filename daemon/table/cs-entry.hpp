@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,8 +76,8 @@ public: // exposed through ContentStore enumeration
     return m_isUnsolicited;
   }
 
-  /** \return the absolute time when the stored Data becomes expired
-   *  \retval time::steady_clock::TimePoint::max() if the stored Data never expires
+  /** \return the absolute time when the stored Data becomes stale
+   *  \note if the returned TimePoint is in the past, the Data is stale
    *  \pre hasData()
    */
   const time::steady_clock::TimePoint&

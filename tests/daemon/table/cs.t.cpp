@@ -47,7 +47,6 @@ protected:
   insert(uint32_t id, const Name& name, const std::function<void(Data&)>& modifyData = nullptr)
   {
     shared_ptr<Data> data = makeData(name);
-    data->setFreshnessPeriod(time::milliseconds(99999));
     data->setContent(reinterpret_cast<const uint8_t*>(&id), sizeof(id));
 
     if (modifyData != nullptr) {
@@ -253,15 +252,12 @@ BOOST_AUTO_TEST_CASE(MaxSuffixComponents)
   CHECK_CS_FIND(6);
 }
 
-BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(MustBeFresh, 1)
 BOOST_AUTO_TEST_CASE(MustBeFresh)
 {
-  ///\todo #3944 add /A/1 without FreshnessPeriod, which is same as FreshnessPeriod=0ms
+  insert(1, "/A/1"); // omitted FreshnessPeriod means FreshnessPeriod = 0 ms
   insert(2, "/A/2", [] (Data& data) { data.setFreshnessPeriod(time::seconds(0)); });
   insert(3, "/A/3", [] (Data& data) { data.setFreshnessPeriod(time::seconds(1)); });
   insert(4, "/A/4", [] (Data& data) { data.setFreshnessPeriod(time::seconds(3600)); });
-  insert(5, "/A/5"); // omitted FreshnessPeriod means infinite
-  ///\todo #3944 delete /A/5
 
   // lookup at exact same moment as insertion is not tested because this won't happen in reality
 
@@ -283,8 +279,7 @@ BOOST_AUTO_TEST_CASE(MustBeFresh)
   this->advanceClocks(time::seconds(3500)); // @7002s
   startInterest("/A")
     .setMustBeFresh(true);
-  CHECK_CS_FIND(5); // expected failure https://redmine.named-data.net/issues/3944#note-2
-  ///\todo #3944 this should not find any Data
+  CHECK_CS_FIND(0);
 }
 
 BOOST_AUTO_TEST_CASE(DigestOrder)

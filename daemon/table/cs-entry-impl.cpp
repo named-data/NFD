@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,13 +44,6 @@ bool
 EntryImpl::isQuery() const
 {
   return !this->hasData();
-}
-
-bool
-EntryImpl::canStale() const
-{
-  BOOST_ASSERT(!this->isQuery());
-  return this->getStaleTime() < time::steady_clock::TimePoint::max();
 }
 
 void

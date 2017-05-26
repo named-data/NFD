@@ -300,7 +300,7 @@ Forwarder::onInterestUnsatisfied(const shared_ptr<pit::Entry>& pitEntry)
 
 void
 Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                              time::milliseconds dataFreshnessPeriod)
+                              ndn::optional<time::milliseconds> dataFreshnessPeriod)
 {
   NFD_LOG_DEBUG("onInterestFinalize interest=" << pitEntry->getName() <<
                 (isSatisfied ? " satisfied" : " unsatisfied"));
@@ -552,7 +552,7 @@ Forwarder::setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry)
 
 void
 Forwarder::setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                             time::milliseconds dataFreshnessPeriod)
+                             ndn::optional<time::milliseconds> dataFreshnessPeriod)
 {
   time::nanoseconds stragglerTime = time::milliseconds(100);
 
@@ -577,18 +577,15 @@ insertNonceToDnl(DeadNonceList& dnl, const pit::Entry& pitEntry,
 
 void
 Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
-                               time::milliseconds dataFreshnessPeriod, Face* upstream)
+                               ndn::optional<time::milliseconds> dataFreshnessPeriod, Face* upstream)
 {
   // need Dead Nonce List insert?
-  bool needDnl = false;
+  bool needDnl = true;
   if (isSatisfied) {
-    bool hasFreshnessPeriod = dataFreshnessPeriod >= time::milliseconds::zero();
-    // Data never becomes stale if it doesn't have FreshnessPeriod field
+    BOOST_ASSERT(dataFreshnessPeriod);
+    BOOST_ASSERT(*dataFreshnessPeriod >= time::milliseconds::zero());
     needDnl = static_cast<bool>(pitEntry.getInterest().getMustBeFresh()) &&
-              (hasFreshnessPeriod && dataFreshnessPeriod < m_deadNonceList.getLifetime());
-  }
-  else {
-    needDnl = true;
+              *dataFreshnessPeriod < m_deadNonceList.getLifetime();
   }
 
   if (!needDnl) {

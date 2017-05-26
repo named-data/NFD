@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -178,8 +178,6 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
 BOOST_AUTO_TEST_CASE(Lifetime)
 {
   shared_ptr<Interest> interest = makeInterest("ndn:/7oIEurbgy6");
-  // library uses -1 to indicate unset lifetime
-  BOOST_ASSERT(interest->getInterestLifetime() < time::milliseconds::zero());
 
   shared_ptr<Face> face = make_shared<DummyFace>();
   Entry entry(*interest);

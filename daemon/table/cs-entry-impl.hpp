@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,11 +51,6 @@ public:
   /** \brief construct Entry for storage
    */
   EntryImpl(shared_ptr<const Data> data, bool isUnsolicited);
-
-  /** \return true if entry can become stale, false if entry is never stale
-   */
-  bool
-  canStale() const;
 
   void
   unsetUnsolicited();
