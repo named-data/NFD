@@ -26,7 +26,7 @@ sudo rm -Rf ndn-cxx-latest
 
 git clone --depth 1 git://github.com/named-data/ndn-cxx ndn-cxx-latest
 
-LATEST_VERSION=$(git -C ndn-cxx rev-parse HEAD 2>/dev/null || echo UNKNOWN)
+LATEST_VERSION=$(git -C ndn-cxx-latest rev-parse HEAD 2>/dev/null || echo UNKNOWN)
 
 if [[ $INSTALLED_VERSION != $LATEST_VERSION ]]; then
     sudo rm -Rf ndn-cxx
