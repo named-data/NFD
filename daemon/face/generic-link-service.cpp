@@ -305,14 +305,10 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
   }
 
   if (firstPkt.has<lp::CachePolicyField>()) {
-    if (m_options.allowLocalFields) {
-      // In case of an invalid CachePolicyType, get<lp::CachePolicyField> will throw,
-      // so it's unnecessary to check here.
-      data->setTag(make_shared<lp::CachePolicyTag>(firstPkt.get<lp::CachePolicyField>()));
-    }
-    else {
-      NFD_LOG_FACE_WARN("received CachePolicy, but local fields disabled: IGNORE");
-    }
+    // CachePolicy is unprivileged and does not require allowLocalFields option.
+    // In case of an invalid CachePolicyType, get<lp::CachePolicyField> will throw,
+    // so it's unnecessary to check here.
+    data->setTag(make_shared<lp::CachePolicyTag>(firstPkt.get<lp::CachePolicyField>()));
   }
 
   if (firstPkt.has<lp::IncomingFaceIdField>()) {

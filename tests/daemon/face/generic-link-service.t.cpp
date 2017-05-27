@@ -537,12 +537,13 @@ BOOST_AUTO_TEST_CASE(ReceiveNextHopFaceIdDropNack)
   BOOST_CHECK(receivedNacks.empty());
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveCacheControl)
+BOOST_AUTO_TEST_CASE(ReceiveCachePolicy)
 {
-  // Initialize with Options that enables local fields
+  // Initialize with Options that disables local fields
   GenericLinkService::Options options;
-  options.allowLocalFields = true;
+  options.allowLocalFields = false;
   initialize(options);
+  // CachePolicy is unprivileged and does not require allowLocalFields option.
 
   shared_ptr<Data> data = makeData("/12345678");
   lp::Packet packet(data->wireEncode());
@@ -556,27 +557,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCacheControl)
   BOOST_CHECK_EQUAL(tag->get().getPolicy(), lp::CachePolicyType::NO_CACHE);
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveCacheControlDisabled)
-{
-  // Initialize with Options that disables local fields
-  GenericLinkService::Options options;
-  options.allowLocalFields = false;
-  initialize(options);
-
-  shared_ptr<Data> data = makeData("/12345678");
-  lp::Packet packet(data->wireEncode());
-  lp::CachePolicy policy;
-  policy.setPolicy(lp::CachePolicyType::NO_CACHE);
-  packet.set<lp::CachePolicyField>(policy);
-
-  transport->receivePacket(packet.wireEncode());
-
-  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
-  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
-  BOOST_CHECK(receivedData.back().getTag<lp::CachePolicyTag>() == nullptr);
-}
-
-BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropInterest)
+BOOST_AUTO_TEST_CASE(ReceiveCachePolicyDropInterest)
 {
   // Initialize with Options that enables local fields
   GenericLinkService::Options options;
@@ -595,7 +576,7 @@ BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropInterest)
   BOOST_CHECK(receivedInterests.empty());
 }
 
-BOOST_AUTO_TEST_CASE(ReceiveCacheControlDropNack)
+BOOST_AUTO_TEST_CASE(ReceiveCachePolicyDropNack)
 {
   // Initialize with Options that enables local fields
   GenericLinkService::Options options;
