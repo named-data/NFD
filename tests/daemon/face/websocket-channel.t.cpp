@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   this->clientConnect(client3);
 
   BOOST_CHECK_EQUAL(limitedIo.run(4, // 2 listenerOnFaceCreated, 2 clientHandleOpen
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                    time::seconds(2)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 3);
 
   // check face persistency
