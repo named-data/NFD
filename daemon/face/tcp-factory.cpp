@@ -144,11 +144,8 @@ TcpFactory::createFace(const FaceUri& remoteUri,
   tcp::Endpoint endpoint(ip::address::from_string(remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(remoteUri.getPort()));
 
-  if (endpoint.address().is_multicast()) {
-    NFD_LOG_TRACE("createFace does not support multicast faces");
-    onFailure(406, "Cannot create multicast TCP faces");
-    return;
-  }
+  // a canonical tcp4/tcp6 FaceUri cannot have a multicast address
+  BOOST_ASSERT(!endpoint.address().is_multicast());
 
   if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
     NFD_LOG_TRACE("Requested endpoint is prohibited "
@@ -172,7 +169,7 @@ TcpFactory::createFace(const FaceUri& remoteUri,
     }
   }
 
-  NFD_LOG_TRACE("No channels available to connect to " + boost::lexical_cast<std::string>(endpoint));
+  NFD_LOG_TRACE("No channels available to connect to " << endpoint);
   onFailure(504, "No channels available to connect");
 }
 

@@ -81,13 +81,13 @@ tables
 face_system
 {
   ; The unix section contains settings of Unix stream faces and channels.
-  ; Unix channel is always listening; delete unix section to disable
+  ; A Unix channel is always listening; delete the unix section to disable
   ; Unix stream faces and channels.
   ;
-  ; The ndn-cxx library expects unix:///var/run/nfd.sock
-  ; to be used as the default transport option. Please change
-  ; the "transport" field in client.conf to an appropriate tcp4 FaceUri
-  ; if you need to disable unix sockets.
+  ; The ndn-cxx library expects unix:///var/run/nfd.sock to be used as
+  ; the default transport option. Please change the "transport" field
+  ; in client.conf to an appropriate tcp4 FaceUri if you want to
+  ; disable Unix sockets and use TCP instead.
   unix
   {
     path /var/run/nfd.sock ; Unix stream listener path
@@ -103,37 +103,40 @@ face_system
   }
 
   ; The udp section contains settings of UDP faces and channels.
-  ; UDP channel is always listening; delete udp section to disable UDP
   udp
   {
+    ; UDP unicast settings.
+    ; UDP channels are always listening; delete the udp section to disable them
     port 6363 ; UDP unicast port number
     enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
     enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
 
-    ; idle time (seconds) before closing a UDP unicast face, the actual timeout would be
-    ; anywhere within [idle_timeout, 2*idle_timeout), default is 600
+    ; Time (in seconds) before closing an idle UDP unicast face.
+    ; The actual timeout will occur anytime between idle_timeout and 2*idle_timeout.
+    ; The default is 600 (10 minutes).
     idle_timeout 600
 
     keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
-    ; UDP multicast settings
-    ; By default, NFD creates one UDP multicast face per NIC
+    ; UDP multicast settings.
+    ; By default, NFD creates one UDP multicast face per NIC.
     ;
     ; In multi-homed Linux machines these settings will NOT work without
-    ; root or settings the appropriate permissions:
+    ; root or setting the appropriate permissions:
     ;
-    ;    sudo setcap cap_net_raw=eip /full/path/nfd
+    ;    sudo setcap cap_net_raw=eip /path/to/nfd
     ;
     mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
     mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
     mcast_port 56363 ; UDP multicast port number
-    mcast_ad_hoc no ; set 'yes' to make all UDP multicast faces "ad hoc", default 'no'
+    mcast_ad_hoc no ; set to 'yes' to make all UDP multicast faces "ad hoc", default 'no'
 
     ; Whitelist and blacklist can contain, in no particular order:
-    ; interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0'),
-    ; mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2'),
-    ; subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here),
-    ; or a single asterisk ('*') that matches all interfaces.
+    ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
+    ; - mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
+    ; - subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here)
+    ; - a single asterisk ('*') that matches all interfaces
+    ; By default, all interfaces are whitelisted.
     whitelist
     {
       *
@@ -147,7 +150,7 @@ face_system
   ; These settings will NOT work without root or setting the appropriate
   ; permissions:
   ;
-  ;    sudo setcap cap_net_raw,cap_net_admin=eip /full/path/nfd
+  ;    sudo setcap cap_net_raw,cap_net_admin=eip /path/to/nfd
   ;
   ; You may need to install a package to use setcap:
   ;
@@ -168,18 +171,26 @@ face_system
   ;
   @IF_HAVE_LIBPCAP@ether
   @IF_HAVE_LIBPCAP@{
-  @IF_HAVE_LIBPCAP@  ; Ethernet multicast settings
-  @IF_HAVE_LIBPCAP@  ; By default, NFD creates one Ethernet multicast face per NIC
+  @IF_HAVE_LIBPCAP@  ; Ethernet unicast settings.
+  @IF_HAVE_LIBPCAP@  listen yes ; set to 'no' to disable Ethernet listener, default 'yes'
   @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  ; Time (in seconds) before closing an idle Ethernet unicast face.
+  @IF_HAVE_LIBPCAP@  ; The actual timeout will occur anytime between idle_timeout and 2*idle_timeout.
+  @IF_HAVE_LIBPCAP@  ; The default is 600 (10 minutes).
+  @IF_HAVE_LIBPCAP@  idle_timeout 600
+  @IF_HAVE_LIBPCAP@
+  @IF_HAVE_LIBPCAP@  ; Ethernet multicast settings.
+  @IF_HAVE_LIBPCAP@  ; By default, NFD creates one Ethernet multicast face per NIC.
   @IF_HAVE_LIBPCAP@  mcast yes ; set to 'no' to disable Ethernet multicast, default 'yes'
   @IF_HAVE_LIBPCAP@  mcast_group 01:00:5E:00:17:AA ; Ethernet multicast group
-  @IF_HAVE_LIBPCAP@  mcast_ad_hoc no ; set to 'yes' to make all Ethernet faces 'ad hoc', default 'no'
+  @IF_HAVE_LIBPCAP@  mcast_ad_hoc no ; set to 'yes' to make all Ethernet multicast faces "ad hoc", default 'no'
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
-  @IF_HAVE_LIBPCAP@  ; interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0'),
-  @IF_HAVE_LIBPCAP@  ; mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2'),
-  @IF_HAVE_LIBPCAP@  ; subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here),
-  @IF_HAVE_LIBPCAP@  ; or a single asterisk ('*') that matches all interfaces.
+  @IF_HAVE_LIBPCAP@  ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
+  @IF_HAVE_LIBPCAP@  ; - mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
+  @IF_HAVE_LIBPCAP@  ; - subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here)
+  @IF_HAVE_LIBPCAP@  ; - a single asterisk ('*') that matches all interfaces
+  @IF_HAVE_LIBPCAP@  ; By default, all interfaces are whitelisted.
   @IF_HAVE_LIBPCAP@  whitelist
   @IF_HAVE_LIBPCAP@  {
   @IF_HAVE_LIBPCAP@    *

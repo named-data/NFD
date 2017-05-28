@@ -204,25 +204,39 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   TcpFactory factory;
-
   factory.createChannel("127.0.0.1", "20071");
-  factory.createChannel("127.0.0.1", "20072");
 
   createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
              FaceUri("tcp4://127.0.0.1:20071"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "Unicast TCP faces cannot be created with a LocalUri"});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
              {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
-               "Outgoing TCP faces do not support on-demand persistency"});
+              "Outgoing TCP faces do not support on-demand persistency"});
 
   createFace(factory,
-             FaceUri("tcp4://127.0.0.1:20072"),
-             FaceUri("tcp4://127.0.0.1:20073"),
+             FaceUri("tcp4://127.0.0.1:20071"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
-               "Unicast TCP faces cannot be created with a LocalUri"});
+              "Requested endpoint is prohibited"});
+
+  createFace(factory,
+             FaceUri("tcp4://198.51.100.100:6363"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             true,
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "Local fields can only be enabled on faces with local scope"});
 }
 
 class FaceCreateTimeoutFixture : public BaseFixture

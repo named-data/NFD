@@ -27,13 +27,12 @@
 #define NFD_DAEMON_FACE_ETHERNET_FACTORY_HPP
 
 #include "protocol-factory.hpp"
+#include "ethernet-channel.hpp"
 
 namespace nfd {
 namespace face {
 
 /** \brief protocol factory for Ethernet
- *
- *  Currently, only Ethernet multicast is supported.
  */
 class EthernetFactory : public ProtocolFactory
 {
@@ -47,8 +46,6 @@ public:
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context) override;
 
-  /** \brief unicast face creation is not supported and will always fail
-   */
   void
   createFace(const FaceUri& remoteUri,
              const ndn::optional<FaceUri>& localUri,
@@ -57,26 +54,45 @@ public:
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) override;
 
-  /** \return empty container, because Ethernet unicast is not supported
+  /**
+   * \brief Create Ethernet-based channel on the specified network interface
+   *
+   * If this method is called twice with the same endpoint, only one channel
+   * will be created. The second call will just return the existing channel.
+   *
+   * \return always a valid pointer to a EthernetChannel object, an exception
+   *         is thrown if it cannot be created.
+   * \throw PcapHelper::Error
    */
+  shared_ptr<EthernetChannel>
+  createChannel(const NetworkInterfaceInfo& localEndpoint,
+                time::nanoseconds idleTimeout);
+
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
-private:
-  /** \brief Create a face to communicate on the given Ethernet multicast group
-   *  \param netif local network interface
-   *  \param group multicast group address
-   *  \note Calling this method again with same arguments returns the existing face on the given
-   *        interface and multicast group rather than creating a new one.
-   *  \throw EthernetTransport::Error transport creation fails
+  /**
+   * \brief Create a face to communicate on the given Ethernet multicast group
+   *
+   * If this method is called twice with the same arguments, only one face
+   * will be created. The second call will just return the existing face.
+   *
+   * \param netif local network interface
+   * \param group multicast group address
+   *
+   * \throw EthernetTransport::Error transport creation fails
    */
   shared_ptr<Face>
-  createMulticastFace(const NetworkInterfaceInfo& netif, const ethernet::Address& group);
+  createMulticastFace(const NetworkInterfaceInfo& netif,
+                      const ethernet::Address& group);
 
+private:
   void
   applyConfig(const FaceSystem::ConfigContext& context);
 
 private:
+  std::map<std::string, shared_ptr<EthernetChannel>> m_channels; ///< ifname => channel
+
   struct MulticastConfig
   {
     bool isEnabled = false;

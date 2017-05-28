@@ -59,15 +59,11 @@ public:
    *
    * tcp::Endpoint is really an alias for boost::asio::ip::tcp::endpoint.
    *
-   * If this method called twice with the same endpoint, only one channel
-   * will be created.  The second call will just retrieve the existing
-   * channel.
+   * If this method is called twice with the same endpoint, only one channel
+   * will be created. The second call will just return the existing channel.
    *
-   * \returns always a valid pointer to a TcpChannel object, an exception
-   *          is thrown if it cannot be created.
-   *
-   * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__tcp/endpoint.html
-   *      for details on ways to create tcp::Endpoint
+   * \return always a valid pointer to a TcpChannel object, an exception
+   *         is thrown if it cannot be created.
    */
   shared_ptr<TcpChannel>
   createChannel(const tcp::Endpoint& localEndpoint);
@@ -75,10 +71,11 @@ public:
   /**
    * \brief Create TCP-based channel using specified IP address and port number
    *
-   * This method is just a helper that converts a string representation of localIp and port to
-   * tcp::Endpoint and calls the other createChannel overload.
+   * This method is just a helper that converts the string representation of \p localIp
+   * and \p localPort to tcp::Endpoint and calls the other createChannel overload.
    *
-   * \throws std::runtime_error
+   * \return always a valid pointer to a UdpChannel object, an exception
+   *         is thrown if it cannot be created.
    */
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort);
@@ -100,8 +97,8 @@ private:
   /**
    * \brief Look up TcpChannel using specified local endpoint
    *
-   * \returns shared pointer to the existing TcpChannel object
-   *          or empty shared pointer when such channel does not exist
+   * \return shared pointer to the existing TcpChannel object
+   *         or empty shared pointer when such channel does not exist
    */
   shared_ptr<TcpChannel>
   findChannel(const tcp::Endpoint& localEndpoint) const;

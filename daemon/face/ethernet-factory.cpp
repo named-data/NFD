@@ -49,6 +49,8 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
 {
   // ether
   // {
+  //   listen yes
+  //   idle_timeout 600
   //   mcast yes
   //   mcast_group 01:00:5E:00:17:AA
   //   mcast_ad_hoc no
@@ -61,6 +63,8 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
   //   }
   // }
 
+  bool wantListen = true;
+  uint32_t idleTimeout = 600;
   MulticastConfig mcastConfig;
 
   if (configSection) {
@@ -71,8 +75,14 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
       const std::string& key = pair.first;
       const ConfigSection& value = pair.second;
 
-      if (key == "mcast") {
-        mcastConfig.isEnabled = ConfigFile::parseYesNo(pair, "ether");
+      if (key == "listen") {
+        wantListen = ConfigFile::parseYesNo(pair, "face_system.ether");
+      }
+      else if (key == "idle_timeout") {
+        idleTimeout = ConfigFile::parseNumber<uint32_t>(pair, "face_system.ether");
+      }
+      else if (key == "mcast") {
+        mcastConfig.isEnabled = ConfigFile::parseYesNo(pair, "face_system.ether");
       }
       else if (key == "mcast_group") {
         const std::string& valueStr = value.get_value<std::string>();
@@ -87,7 +97,7 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
         }
       }
       else if (key == "mcast_ad_hoc") {
-        bool wantAdHoc = ConfigFile::parseYesNo(pair, "ether");
+        bool wantAdHoc = ConfigFile::parseYesNo(pair, "face_system.ether");
         mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
       }
       else if (key == "whitelist") {
@@ -103,6 +113,32 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
   }
 
   if (!context.isDryRun) {
+    if (configSection) {
+      providedSchemes.insert("ether");
+
+      // determine the interfaces on which channels should be created
+      auto netifs = context.listNetifs() |
+                    boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
+                      return netif.isUp() && !netif.isLoopback();
+                    });
+
+      // create channels
+      for (const auto& netif : netifs) {
+        auto channel = this->createChannel(netif, time::seconds(idleTimeout));
+        if (wantListen && !channel->isListening()) {
+          try {
+            channel->listen(context.addFace, nullptr);
+          }
+          catch (const EthernetChannel::Error& e) {
+            NFD_LOG_WARN("Cannot listen on " << netif.name << ": " << e.what());
+          }
+        }
+      }
+    }
+    else if (!m_channels.empty()) {
+      NFD_LOG_WARN("Cannot disable dev channels after initialization");
+    }
+
     if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
       if (mcastConfig.isEnabled) {
         NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
@@ -139,13 +175,66 @@ EthernetFactory::createFace(const FaceUri& remoteUri,
                             const FaceCreatedCallback& onCreated,
                             const FaceCreationFailedCallback& onFailure)
 {
-  onFailure(406, "Unsupported protocol");
+  BOOST_ASSERT(remoteUri.isCanonical());
+
+  if (!localUri || localUri->getScheme() != "dev") {
+    NFD_LOG_TRACE("Cannot create unicast Ethernet face without dev:// LocalUri");
+    onFailure(406, "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme");
+    return;
+  }
+  BOOST_ASSERT(localUri->isCanonical());
+
+  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+    NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
+    onFailure(406, "Outgoing Ethernet faces do not support on-demand persistency");
+    return;
+  }
+
+  ethernet::Address remoteEndpoint(ethernet::Address::fromString(remoteUri.getHost()));
+  std::string localEndpoint(localUri->getHost());
+
+  if (remoteEndpoint.isMulticast()) {
+    NFD_LOG_TRACE("createFace does not support multicast faces");
+    onFailure(406, "Cannot create multicast Ethernet faces");
+    return;
+  }
+
+  if (wantLocalFieldsEnabled) {
+    // Ethernet faces are never local
+    NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
+    onFailure(406, "Local fields can only be enabled on faces with local scope");
+    return;
+  }
+
+  for (const auto& i : m_channels) {
+    if (i.first == localEndpoint) {
+      i.second->connect(remoteEndpoint, persistency, onCreated, onFailure);
+      return;
+    }
+  }
+
+  NFD_LOG_TRACE("No channels available to connect to " << remoteEndpoint);
+  onFailure(504, "No channels available to connect");
+}
+
+shared_ptr<EthernetChannel>
+EthernetFactory::createChannel(const NetworkInterfaceInfo& localEndpoint,
+                               time::nanoseconds idleTimeout)
+{
+  auto it = m_channels.find(localEndpoint.name);
+  if (it != m_channels.end())
+    return it->second;
+
+  auto channel = std::make_shared<EthernetChannel>(localEndpoint, idleTimeout);
+  m_channels[localEndpoint.name] = channel;
+
+  return channel;
 }
 
 std::vector<shared_ptr<const Channel>>
 EthernetFactory::getChannels() const
 {
-  return {};
+  return getChannelsFromMap(m_channels);
 }
 
 shared_ptr<Face>
@@ -197,8 +286,7 @@ EthernetFactory::applyConfig(const FaceSystem::ConfigContext& context)
         face = this->createMulticastFace(netif, m_mcastConfig.group);
       }
       catch (const EthernetTransport::Error& e) {
-        NFD_LOG_ERROR("Cannot create Ethernet multicast face on " << netif.name << ": " <<
-                      e.what() << ", continuing");
+        NFD_LOG_WARN("Cannot create Ethernet multicast face on " << netif.name << ": " << e.what());
         continue;
       }
 

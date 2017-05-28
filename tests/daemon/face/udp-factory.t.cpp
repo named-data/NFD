@@ -635,25 +635,47 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
   UdpFactory factory;
-
   factory.createChannel("127.0.0.1", "20071");
-  factory.createChannel("127.0.0.1", "20072");
 
   createFace(factory,
+             FaceUri("udp4://127.0.0.1:20072"),
              FaceUri("udp4://127.0.0.1:20071"),
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "Unicast UDP faces cannot be created with a LocalUri"});
+
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20072"),
              {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
-               "Outgoing unicast UDP faces do not support on-demand persistency"});
+              "Outgoing UDP faces do not support on-demand persistency"});
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20072"),
-             FaceUri("udp4://127.0.0.1:20073"),
+             FaceUri("udp4://233.252.0.1:23252"),
+             {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
-               "Unicast UDP faces cannot be created with a LocalUri"});
+              "Cannot create multicast UDP faces"});
+
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20071"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "Requested endpoint is prohibited"});
+
+  createFace(factory,
+             FaceUri("udp4://127.0.0.1:20072"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             true,
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "Local fields can only be enabled on faces with local scope"});
 }
 
 class FakeNetworkInterfaceFixture : public BaseFixture

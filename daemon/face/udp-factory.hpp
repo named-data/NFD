@@ -75,46 +75,37 @@ public:
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
-   * If this method called twice with the same endpoint, only one channel
-   * will be created.  The second call will just retrieve the existing
-   * channel.
+   * If this method is called twice with the same endpoint, only one channel
+   * will be created. The second call will just return the existing channel.
    *
    * If a multicast face is already active on the same local endpoint,
-   * the creation fails and an exception is thrown
+   * the creation fails and an exception is thrown.
    *
-   * Once a face is created, if it doesn't send/receive anything for
-   * a period of time equal to timeout, it will be destroyed
-   * @todo this funcionality has to be implemented
-   *
-   * \returns always a valid pointer to a UdpChannel object, an exception
-   *          is thrown if it cannot be created.
-   *
-   * \throws UdpFactory::Error
-   *
-   * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__udp/endpoint.html
-   *      for details on ways to create udp::Endpoint
+   * \return always a valid pointer to a UdpChannel object, an exception
+   *         is thrown if it cannot be created.
+   * \throw UdpFactory::Error
    */
   shared_ptr<UdpChannel>
   createChannel(const udp::Endpoint& localEndpoint,
-                const time::seconds& timeout = time::seconds(600));
+                time::nanoseconds idleTimeout);
 
   /**
    * \brief Create UDP-based channel using specified IP address and port number
    *
-   * This method is just a helper that converts a string representation of localIp and port to
-   * udp::Endpoint and calls the other createChannel overload.
+   * This method is just a helper that converts the string representation of \p localIp
+   * and \p localPort to udp::Endpoint and calls the other createChannel overload.
    *
-   * If localHost is a IPv6 address of a specific device, it must be in the form:
-   * ip address%interface name
-   * Example: fe80::5e96:9dff:fe7d:9c8d%en1
-   * Otherwise, you can use ::
+   * If \p localIp is an IPv6 address of a specific device, it must be in the form
+   * <tt>[ip address]%[interface name]</tt>, e.g. <tt>"fe80::5e96:9dff:fe7d:9c8d%en1"</tt>.
+   * Otherwise, you can use <tt>"::"</tt>.
    *
-   * \throws UdpChannel::Error if the bind on the socket fails
-   * \throws UdpFactory::Error
+   * \return always a valid pointer to a UdpChannel object, an exception
+   *         is thrown if it cannot be created.
+   * \throw UdpFactory::Error
    */
   shared_ptr<UdpChannel>
   createChannel(const std::string& localIp, const std::string& localPort,
-                const time::seconds& timeout = time::seconds(600));
+                time::nanoseconds idleTimeout = time::seconds(600));
 
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
@@ -124,14 +115,13 @@ public:
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
-   * The face will join the multicast group
+   * The face will join the specified multicast group.
    *
-   * If this method called twice with the same endpoint and group, only one face
-   * will be created.  The second call will just retrieve the existing
-   * channel.
+   * If this method is called twice with the same pair of endpoints, only one
+   * face will be created. The second call will just return the existing face.
    *
    * If an unicast face is already active on the same local NIC and port, the
-   * creation fails and an exception is thrown
+   * creation fails and an exception is thrown.
    *
    * \param localEndpoint local endpoint
    * \param multicastEndpoint multicast endpoint
@@ -141,14 +131,9 @@ public:
    *        An empty string can be provided in other system or in linux machine with only one
    *        MulticastUdpFace per multicast group
    *
-   *
-   * \returns always a valid pointer to a MulticastUdpFace object, an exception
-   *          is thrown if it cannot be created.
-   *
-   * \throws UdpFactory::Error
-   *
-   * \see http://www.boost.org/doc/libs/1_42_0/doc/html/boost_asio/reference/ip__udp/endpoint.html
-   *      for details on ways to create udp::Endpoint
+   * \return always a valid pointer to a MulticastUdpFace object, an exception
+   *         is thrown if it cannot be created.
+   * \throw UdpFactory::Error
    */
   shared_ptr<Face>
   createMulticastFace(const udp::Endpoint& localEndpoint,
@@ -172,24 +157,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   prohibitAllIpv6Endpoints(uint16_t port);
 
 private:
-  /**
-   * \brief Look up UdpChannel using specified local endpoint
-   *
-   * \returns shared pointer to the existing UdpChannel object
-   *          or nullptr when such channel does not exist
-   */
-  shared_ptr<UdpChannel>
-  findChannel(const udp::Endpoint& localEndpoint) const;
-
-  /**
-   * \brief Look up multicast UdpFace using specified local endpoint
-   *
-   * \returns shared pointer to the existing multicast UdpFace object
-   *          or nullptr when such face does not exist
-   */
-  shared_ptr<Face>
-  findMulticastFace(const udp::Endpoint& localEndpoint) const;
-
   void
   applyMulticastConfig(const FaceSystem::ConfigContext& context);
 
