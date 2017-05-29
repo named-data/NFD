@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE(ErrorCanonization)
   BOOST_CHECK_EQUAL(exitCode, 4);
   BOOST_CHECK(out.is_empty());
   BOOST_CHECK(err.is_equal("Error during remote FaceUri canonization: "
-                           "No endpoints match the specified address selector\n"));
+                           "IPv4/v6 mismatch\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorDataset)
