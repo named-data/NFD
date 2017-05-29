@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,18 +24,27 @@
  */
 
 #include "route.hpp"
+#include <ndn-cxx/util/string-helper.hpp>
 
 namespace nfd {
 namespace rib {
 
-bool
-Route::operator==(const Route& other) const
+Route::Route()
+  : faceId(0)
+  , origin(ndn::nfd::ROUTE_ORIGIN_APP)
+  , cost(0)
+  , flags(ndn::nfd::ROUTE_FLAGS_NONE)
 {
-  return (this->faceId == other.faceId &&
-          this->origin == other.origin &&
-          this->flags == other.flags &&
-          this->cost == other.cost &&
-          this->expires == other.expires);
+}
+
+bool
+operator==(const Route& lhs, const Route& rhs)
+{
+  return lhs.faceId == rhs.faceId &&
+         lhs.origin == rhs.origin &&
+         lhs.flags == rhs.flags &&
+         lhs.cost == rhs.cost &&
+         lhs.expires == rhs.expires;
 }
 
 std::ostream&
@@ -45,9 +54,9 @@ operator<<(std::ostream& os, const Route& route)
      << "faceid: " << route.faceId
      << ", origin: " << route.origin
      << ", cost: " << route.cost
-     << ", flags: " << route.flags;
-  if (route.expires != time::steady_clock::TimePoint::max()) {
-    os << ", expires in: " << (route.expires - time::steady_clock::now());
+     << ", flags: " << ndn::AsHex{route.flags};
+  if (route.expires) {
+    os << ", expires in: " << time::duration_cast<time::milliseconds>(*route.expires - time::steady_clock::now());
   }
   else {
     os << ", never expires";

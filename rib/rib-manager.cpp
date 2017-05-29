@@ -33,12 +33,10 @@
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/control-command.hpp>
-#include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
-
-#include <boost/range/adaptor/transformed.hpp>
 
 namespace nfd {
 namespace rib {
@@ -219,14 +217,14 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
     scheduler::EventId eventId = scheduler::schedule(parameters.getExpirationPeriod(),
       bind(&Rib::onRouteExpiration, &m_rib, parameters.getName(), route));
 
-    NFD_LOG_TRACE("Scheduled unregistration at: " << route.expires <<
+    NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires <<
                   " with EventId: " << eventId);
 
     // Set the  NewEventId of this entry
     route.setExpirationEvent(eventId);
   }
   else {
-    route.expires = time::steady_clock::TimePoint::max();
+    route.expires = ndn::nullopt;
   }
 
   NFD_LOG_INFO("Adding route " << parameters.getName() << " nexthop=" << route.faceId
@@ -276,25 +274,23 @@ void
 RibManager::listEntries(const Name& topPrefix, const Interest& interest,
                         ndn::mgmt::StatusDatasetContext& context)
 {
-  for (const auto& ribTableEntry : m_rib) {
-    const auto& ribEntry = *ribTableEntry.second;
-    const auto& routes = ribEntry.getRoutes() |
-                         boost::adaptors::transformed([] (const Route& route) {
-                           auto r = ndn::nfd::Route()
-                                    .setFaceId(route.faceId)
-                                    .setOrigin(route.origin)
-                                    .setCost(route.cost)
-                                    .setFlags(route.flags);
-                           if (route.expires < time::steady_clock::TimePoint::max()) {
-                             r.setExpirationPeriod(time::duration_cast<time::milliseconds>(
-                                                     route.expires - time::steady_clock::now()));
-                           }
-                           return r;
-                         });
-    context.append(ndn::nfd::RibEntry()
-                   .setName(ribEntry.getName())
-                   .setRoutes(std::begin(routes), std::end(routes))
-                   .wireEncode());
+  auto now = time::steady_clock::now();
+  for (const auto& kv : m_rib) {
+    const RibEntry& entry = *kv.second;
+    ndn::nfd::RibEntry item;
+    item.setName(entry.getName());
+    for (const Route& route : entry.getRoutes()) {
+      ndn::nfd::Route r;
+      r.setFaceId(route.faceId);
+      r.setOrigin(route.origin);
+      r.setCost(route.cost);
+      r.setFlags(route.flags);
+      if (route.expires) {
+        r.setExpirationPeriod(time::duration_cast<time::milliseconds>(*route.expires - now));
+      }
+      item.addRoute(r);
+    }
+    context.append(item.wireEncode());
   }
   context.end();
 }
@@ -409,7 +405,7 @@ RibManager::onCommandPrefixAddNextHopSuccess(const Name& prefix,
   Route route;
   route.faceId = result.getFaceId();
   route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
-  route.expires = time::steady_clock::TimePoint::max();
+  route.expires = ndn::nullopt;
   route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
 
   m_rib.insert(prefix, route);

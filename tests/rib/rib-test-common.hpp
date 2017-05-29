@@ -36,7 +36,7 @@ inline Route
 createRoute(uint64_t faceId,
             std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
             uint64_t cost = 0,
-            uint64_t flags = 0)
+            std::underlying_type<ndn::nfd::RouteFlags>::type flags = ndn::nfd::ROUTE_FLAGS_NONE)
 {
   Route temp;
   temp.faceId = faceId;

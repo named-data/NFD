@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -249,10 +249,10 @@ std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry)
 {
   os << "RibEntry {\n";
-  os << "\tName: " << entry.getName() << "\n";
+  os << "  Name: " << entry.getName() << "\n";
 
   for (const Route& route : entry) {
-    os << "\t" << route << "\n";
+    os << "  " << route << "\n";
   }
 
   os << "}";

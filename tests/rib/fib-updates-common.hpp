@@ -72,7 +72,7 @@ public:
   void
   insertRoute(const Name& name, uint64_t faceId,
               std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
-              uint64_t cost, uint64_t flags)
+              uint64_t cost, std::underlying_type<ndn::nfd::RouteFlags>::type flags)
   {
     Route route = createRoute(faceId, origin, cost, flags);
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -71,9 +71,8 @@ FibUpdater::computeUpdates(const RibUpdateBatch& batch)
   NFD_LOG_DEBUG("Computing updates for batch with faceID: " << batch.getFaceId());
 
   // Compute updates and add to m_fibUpdates
-  for (const RibUpdate& update : batch)
-    {
-      switch(update.getAction()) {
+  for (const RibUpdate& update : batch) {
+    switch (update.getAction()) {
       case RibUpdate::REGISTER:
         computeUpdatesForRegistration(update);
         break;
@@ -87,8 +86,8 @@ FibUpdater::computeUpdates(const RibUpdateBatch& batch)
         // since they will be rejected by the FIB
         m_updatesForBatchFaceId.clear();
         break;
-      }
     }
+  }
 }
 
 void
@@ -108,7 +107,7 @@ FibUpdater::computeUpdatesForRegistration(const RibUpdate& update)
     // Route will be new
     if (existingRoute == entry->end()) {
       // Will the new route change the namespace's capture flag?
-      bool willCaptureBeTurnedOn = (entry->hasCapture() == false && route.isCapture());
+      bool willCaptureBeTurnedOn = (entry->hasCapture() == false && route.isRibCapture());
 
       createFibUpdatesForNewRoute(*entry, route, willCaptureBeTurnedOn);
     }
@@ -383,11 +382,11 @@ FibUpdater::createFibUpdatesForNewRibEntry(const Name& name, const Route& route,
   addFibUpdate(FibUpdate::createAddUpdate(name, route.faceId, route.cost));
 
   // No flags are set
-  if (!route.isChildInherit() && !route.isCapture()) {
+  if (!route.isChildInherit() && !route.isRibCapture()) {
     // Add ancestor routes to self
     addInheritedRoutes(name, m_rib.getAncestorRoutes(name), route);
   }
-  else if (route.isChildInherit() && route.isCapture()) {
+  else if (route.isChildInherit() && route.isRibCapture()) {
     // Add route to children
     Rib::RouteSet routesToAdd;
     routesToAdd.insert(route);
@@ -416,7 +415,7 @@ FibUpdater::createFibUpdatesForNewRibEntry(const Name& name, const Route& route,
     // Add ancestor routes to children
     modifyChildrensInheritedRoutes(children, ancestorRoutes, Rib::RouteSet());
   }
-  else if (route.isCapture()) {
+  else if (route.isRibCapture()) {
     // Remove routes blocked by capture
     modifyChildrensInheritedRoutes(children, Rib::RouteSet(), m_rib.getAncestorRoutes(name));
   }
@@ -540,7 +539,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
   }
 
   // Capture was turned on
-  if (!existingRoute.isCapture() && route.isCapture()) {
+  if (!existingRoute.isRibCapture() && route.isRibCapture()) {
     Rib::RouteSet ancestorRoutes = m_rib.getAncestorRoutes(entry);
 
     // Remove ancestor routes from self
@@ -549,7 +548,7 @@ FibUpdater::createFibUpdatesForUpdatedRoute(const RibEntry& entry, const Route& 
     // Remove ancestor routes from children
     modifyChildrensInheritedRoutes(entry.getChildren(), Rib::RouteSet(), ancestorRoutes);
   }  // Capture was turned off
-  else if (existingRoute.isCapture() && !route.isCapture()) {
+  else if (existingRoute.isRibCapture() && !route.isRibCapture()) {
     Rib::RouteSet ancestorRoutes = m_rib.getAncestorRoutes(entry);
 
     // Add ancestor routes to self
@@ -566,7 +565,7 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
 {
   addFibUpdate(FibUpdate::createRemoveUpdate(entry.getName(), route.faceId));
 
-  if (route.isChildInherit() && route.isCapture()) {
+  if (route.isChildInherit() && route.isRibCapture()) {
     // Remove self from children
     Rib::RouteSet routesToRemove;
     routesToRemove.insert(route);
@@ -597,7 +596,7 @@ FibUpdater::createFibUpdatesForErasedRoute(const RibEntry& entry, const Route& r
     // Add ancestor routes to children
     modifyChildrensInheritedRoutes(entry.getChildren(), routesToAdd, routesToRemove);
   }
-  else if (route.isCapture()) {
+  else if (route.isRibCapture()) {
     // If capture is turned off for the route and another route is installed in the RibEntry,
     // add ancestors to self
     Rib::RouteSet routesToAdd;

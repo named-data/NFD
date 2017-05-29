@@ -291,31 +291,31 @@ BOOST_AUTO_TEST_CASE(Output)
 
   Route root = createRoute(1, 20);
   Name name1("/");
-  root.expires = time::steady_clock::TimePoint::max();
+  root.expires = ndn::nullopt;
   rib.insert(name1, root);
 
   Route route1 = createRoute(2, 20);
   Name name2("/hello");
-  route1.expires = time::steady_clock::TimePoint::max();
+  route1.expires = ndn::nullopt;
   rib.insert(name2, route1);
 
   Route route2 = createRoute(3, 20);
   Name name3("/hello/world");
-  route2.expires = time::steady_clock::TimePoint::max();
+  route2.expires = ndn::nullopt;
   rib.insert(name3, route2);
 
   const std::string ribStr = std::string(R"TEXT(
 RibEntry {
-	Name: /
-	Route(faceid: 1, origin: 20, cost: 0, flags: 0, never expires)
+  Name: /
+  Route(faceid: 1, origin: 20, cost: 0, flags: 0x0, never expires)
 }
 RibEntry {
-	Name: /hello
-	Route(faceid: 2, origin: 20, cost: 0, flags: 0, never expires)
+  Name: /hello
+  Route(faceid: 2, origin: 20, cost: 0, flags: 0x0, never expires)
 }
 RibEntry {
-	Name: /hello/world
-	Route(faceid: 3, origin: 20, cost: 0, flags: 0, never expires)
+  Name: /hello/world
+  Route(faceid: 3, origin: 20, cost: 0, flags: 0x0, never expires)
 }
 )TEXT").substr(1);
 

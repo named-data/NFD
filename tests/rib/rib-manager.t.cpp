@@ -434,7 +434,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     Route route;
     route.faceId = ++faceId;
     route.cost = route.faceId * 10;
-    route.expires = time::steady_clock::TimePoint::max();
+    route.expires = ndn::nullopt;
     return route;
   };
 
