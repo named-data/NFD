@@ -178,9 +178,15 @@ AutoPrefixPropagator::afterInsertRibEntry(const Name& prefix)
   auto entryIt = m_propagatedEntries.find(propagateParameters.parameters.getName());
   if (entryIt != m_propagatedEntries.end()) {
     // in addition to PROPAGATED and PROPAGATE_FAIL, the state may also be NEW,
-    // if its propagation was suspended because there was no connectivity to the Hub.
-    NFD_LOG_INFO("prefix has already been propagated: "
-                 << propagateParameters.parameters.getName());
+    // if there is no hub connected to propagate this prefix.
+    if (entryIt->second.isNew()) {
+      NFD_LOG_INFO("no hub connected to propagate "
+                   << propagateParameters.parameters.getName());
+    }
+    else {
+      NFD_LOG_INFO("prefix has already been propagated: "
+                   << propagateParameters.parameters.getName());
+    }
     return;
   }
 
