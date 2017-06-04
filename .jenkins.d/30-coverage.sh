@@ -19,6 +19,11 @@ if [[ $JOB_NAME == *"code-coverage" ]]; then
          --directory . \
          --no-external \
          --rc lcov_branch_coverage=1 \
+         --output-file build/coverage-with-tests-and-websocketpp.info
+
+    lcov --quiet \
+         --remove build/coverage-with-tests-and-websocketpp.info "$PWD/websocketpp/*" \
+         --rc lcov_branch_coverage=1 \
          --output-file build/coverage-with-tests.info
 
     lcov --quiet \
