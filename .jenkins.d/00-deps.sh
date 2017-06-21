@@ -7,9 +7,18 @@ source "$JDIR"/util.sh
 set -x
 
 if has OSX $NODE_LABELS; then
+    FORMULAE=(boost pkg-config cryptopp openssl)
     brew update
-    brew upgrade
-    brew install boost pkg-config cryptopp openssl
+    if [[ -n $TRAVIS ]]; then
+        # travis images come with a large number of brew packages
+        # pre-installed, don't waste time upgrading all of them
+        for FORMULA in "${FORMULAE[@]}"; do
+            brew outdated $FORMULA || brew upgrade $FORMULA
+        done
+    else
+        brew upgrade
+    fi
+    brew install "${FORMULAE[@]}"
     brew cleanup
 fi
 
