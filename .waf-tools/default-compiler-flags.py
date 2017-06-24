@@ -4,13 +4,22 @@ from waflib import Logs, Configure, Utils
 
 def options(opt):
     opt.add_option('--debug', '--with-debug', action='store_true', default=False, dest='debug',
-                   help='''Compile in debugging mode without optimizations (-O0 or -Og)''')
+                   help='''Compile in debugging mode with minimal optimizations (-O0 or -Og)''')
 
 def configure(conf):
     cxx = conf.env['CXX_NAME'] # CXX_NAME represents generic name of the compiler
+    ccver = tuple(int(i) for i in conf.env['CC_VERSION'])
     if cxx == 'gcc':
+        if ccver < (4, 8, 2):
+            conf.fatal('The version of gcc you are using (%s) is too old.\n'
+                       'The minimum supported gcc version is 4.8.2.' %
+                       '.'.join(conf.env['CC_VERSION']))
         flags = GccFlags()
     elif cxx == 'clang':
+        if ccver < (3, 4, 0):
+            conf.fatal('The version of clang you are using (%s) is too old.\n'
+                       'The minimum supported clang version is 3.4.0.' %
+                       '.'.join(conf.env['CC_VERSION']))
         flags = ClangFlags()
     else:
         flags = CompilerFlags()
@@ -98,9 +107,15 @@ class GccBasicFlags(CompilerFlags):
     """
     This class defines basic flags that work for both gcc and clang compilers
     """
+    def getGeneralFlags(self, conf):
+        flags = super(GccBasicFlags, self).getGeneralFlags(conf)
+        flags['CXXFLAGS'] += ['-std=c++11']
+        return flags
+
     def getDebugFlags(self, conf):
         flags = super(GccBasicFlags, self).getDebugFlags(conf)
         flags['CXXFLAGS'] += ['-O0',
+                              '-Og', # gcc >= 4.8, clang >= 4.0
                               '-g3',
                               '-pedantic',
                               '-Wall',
@@ -110,6 +125,7 @@ class GccBasicFlags(CompilerFlags):
                               '-Wno-error=maybe-uninitialized', # Bug #1615
                               '-Wno-error=deprecated-declarations', # Bug #3795
                               ]
+        flags['LINKFLAGS'] += ['-fuse-ld=gold', '-Wl,-O1']
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -121,28 +137,16 @@ class GccBasicFlags(CompilerFlags):
                               '-Wextra',
                               '-Wno-unused-parameter',
                               ]
+        flags['LINKFLAGS'] += ['-fuse-ld=gold', '-Wl,-O1']
         return flags
 
 class GccFlags(GccBasicFlags):
-    def getGeneralFlags(self, conf):
-        flags = super(GccFlags, self).getGeneralFlags(conf)
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (4, 8, 2):
-            conf.fatal('The version of gcc you are using (%s) is too old.\n' %
-                       '.'.join(conf.env['CC_VERSION']) +
-                       'The minimum supported gcc version is 4.8.2.')
-        else:
-            flags['CXXFLAGS'] += ['-std=c++11']
-        return flags
-
     def getDebugFlags(self, conf):
         flags = super(GccFlags, self).getDebugFlags(conf)
         version = tuple(int(i) for i in conf.env['CC_VERSION'])
         if version < (5, 1, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-field-initializers']
-        flags['CXXFLAGS'] += ['-Og', # gcc >= 4.8
-                              '-fdiagnostics-color', # gcc >= 4.9
-                              ]
+        flags['CXXFLAGS'] += ['-fdiagnostics-color'] # gcc >= 4.9
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -156,7 +160,6 @@ class GccFlags(GccBasicFlags):
 class ClangFlags(GccBasicFlags):
     def getGeneralFlags(self, conf):
         flags = super(ClangFlags, self).getGeneralFlags(conf)
-        flags['CXXFLAGS'] += ['-std=c++11']
         if Utils.unversioned_sys_platform() == 'darwin':
             flags['CXXFLAGS'] += ['-stdlib=libc++']
             flags['LINKFLAGS'] += ['-stdlib=libc++']
