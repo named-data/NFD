@@ -26,12 +26,12 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
 
-#include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
+#include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
-#include <ndn-cxx/encoding/buffer-stream.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/face-uri.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -40,12 +40,11 @@
 #include "core/version.hpp"
 #include "core/network.hpp"
 
-using namespace ndn::nfd;
-using ndn::util::FaceUri;
-using ::nfd::Network;
-
 namespace ndn {
 namespace nfd_autoreg {
+
+using util::FaceUri;
+using ::nfd::Network;
 
 class AutoregServer : boost::noncopyable
 {
@@ -89,15 +88,8 @@ public:
   bool
   isBlacklisted(const boost::asio::ip::address& address)
   {
-    for (std::vector<Network>::const_iterator network = m_blackList.begin();
-         network != m_blackList.end();
-         ++network)
-      {
-        if (network->doesContain(address))
-          return true;
-      }
-
-    return false;
+    return std::any_of(m_blackList.begin(), m_blackList.end(),
+                       bind(&Network::doesContain, _1, address));
   }
 
   /**
@@ -106,38 +98,28 @@ public:
   bool
   isWhitelisted(const boost::asio::ip::address& address)
   {
-    for (std::vector<Network>::const_iterator network = m_whiteList.begin();
-         network != m_whiteList.end();
-         ++network)
-      {
-        if (network->doesContain(address))
-          return true;
-      }
-
-    return false;
+    return std::any_of(m_whiteList.begin(), m_whiteList.end(),
+                       bind(&Network::doesContain, _1, address));
   }
 
   void
   registerPrefixesForFace(uint64_t faceId, const std::vector<Name>& prefixes)
   {
-    for (std::vector<Name>::const_iterator prefix = prefixes.begin();
-         prefix != prefixes.end();
-         ++prefix)
-      {
-        m_controller.start<RibRegisterCommand>(
-          ControlParameters()
-            .setName(*prefix)
-            .setFaceId(faceId)
-            .setOrigin(ROUTE_ORIGIN_AUTOREG)
-            .setCost(m_cost)
-            .setExpirationPeriod(time::milliseconds::max()),
-          bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, *prefix),
-          bind(&AutoregServer::onRegisterCommandFailure, this, faceId, *prefix, _1));
-      }
+    for (const Name& prefix : prefixes) {
+      m_controller.start<nfd::RibRegisterCommand>(
+        nfd::ControlParameters()
+          .setName(prefix)
+          .setFaceId(faceId)
+          .setOrigin(nfd::ROUTE_ORIGIN_AUTOREG)
+          .setCost(m_cost)
+          .setExpirationPeriod(time::milliseconds::max()),
+        bind(&AutoregServer::onRegisterCommandSuccess, this, faceId, prefix),
+        bind(&AutoregServer::onRegisterCommandFailure, this, faceId, prefix, _1));
+    }
   }
 
   void
-  registerPrefixesIfNeeded(uint64_t faceId, const FaceUri& uri, FacePersistency facePersistency)
+  registerPrefixesIfNeeded(uint64_t faceId, const FaceUri& uri, nfd::FacePersistency facePersistency)
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
@@ -148,7 +130,7 @@ public:
         registerPrefixesForFace(faceId, m_allFacesPrefixes);
 
         // register autoreg prefixes if new face is on-demand and not blacklisted and whitelisted
-        if (facePersistency == FACE_PERSISTENCY_ON_DEMAND &&
+        if (facePersistency == nfd::FACE_PERSISTENCY_ON_DEMAND &&
             !isBlacklisted(address) && isWhitelisted(address)) {
           registerPrefixesForFace(faceId, m_autoregPrefixes);
         }
@@ -157,20 +139,18 @@ public:
   }
 
   void
-  onNotification(const FaceEventNotification& notification)
+  onNotification(const nfd::FaceEventNotification& notification)
   {
-    if (notification.getKind() == FACE_EVENT_CREATED &&
-        notification.getFaceScope() != FACE_SCOPE_LOCAL)
-      {
-        std::cerr << "PROCESSING: " << notification << std::endl;
+    if (notification.getKind() == nfd::FACE_EVENT_CREATED &&
+        notification.getFaceScope() != nfd::FACE_SCOPE_LOCAL) {
+      std::cerr << "PROCESSING: " << notification << std::endl;
 
-        registerPrefixesIfNeeded(notification.getFaceId(), FaceUri(notification.getRemoteUri()),
-                                 notification.getFacePersistency());
-      }
-    else
-      {
-        std::cerr << "IGNORED: " << notification << std::endl;
-      }
+      registerPrefixesIfNeeded(notification.getFaceId(), FaceUri(notification.getRemoteUri()),
+                               notification.getFacePersistency());
+    }
+    else {
+      std::cerr << "IGNORED: " << notification << std::endl;
+    }
   }
 
   void
@@ -194,38 +174,25 @@ public:
   startProcessing()
   {
     std::cerr << "AUTOREG prefixes: " << std::endl;
-    for (std::vector<Name>::const_iterator prefix = m_autoregPrefixes.begin();
-         prefix != m_autoregPrefixes.end();
-         ++prefix)
-      {
-        std::cout << "  " << *prefix << std::endl;
-      }
+    for (const Name& prefix : m_autoregPrefixes) {
+      std::cout << "  " << prefix << std::endl;
+    }
     std::cerr << "ALL-FACES-AUTOREG prefixes: " << std::endl;
-    for (std::vector<Name>::const_iterator prefix = m_allFacesPrefixes.begin();
-         prefix != m_allFacesPrefixes.end();
-         ++prefix)
-      {
-        std::cout << "  " << *prefix << std::endl;
-      }
+    for (const Name& prefix : m_allFacesPrefixes) {
+      std::cout << "  " << prefix << std::endl;
+    }
 
-    if (!m_blackList.empty())
-      {
-        std::cerr << "Blacklisted networks: " << std::endl;
-        for (std::vector<Network>::const_iterator network = m_blackList.begin();
-             network != m_blackList.end();
-             ++network)
-          {
-            std::cout << "  " << *network << std::endl;
-          }
+    if (!m_blackList.empty()) {
+      std::cerr << "Blacklisted networks: " << std::endl;
+      for (const Network& network : m_blackList) {
+        std::cout << "  " << network << std::endl;
       }
+    }
 
     std::cerr << "Whitelisted networks: " << std::endl;
-    for (std::vector<Network>::const_iterator network = m_whiteList.begin();
-         network != m_whiteList.end();
-         ++network)
-      {
-        std::cout << "  " << *network << std::endl;
-      }
+    for (const Network& network : m_whiteList) {
+      std::cout << "  " << network << std::endl;
+    }
 
     m_faceMonitor.onNotification.connect(bind(&AutoregServer::onNotification, this, _1));
     m_faceMonitor.start();
@@ -239,8 +206,8 @@ public:
   void
   startFetchingFaceStatusDataset()
   {
-    m_controller.fetch<FaceDataset>(
-      [this] (const std::vector<FaceStatus>& faces) {
+    m_controller.fetch<nfd::FaceDataset>(
+      [this] (const std::vector<nfd::FaceStatus>& faces) {
         for (const auto& faceStatus : faces) {
           registerPrefixesIfNeeded(faceStatus.getFaceId(), FaceUri(faceStatus.getRemoteUri()),
                                    faceStatus.getFacePersistency());
@@ -273,55 +240,47 @@ public:
       ;
 
     po::variables_map options;
-    try
-      {
-        po::store(po::command_line_parser(argc, argv).options(optionDesciption).run(), options);
-        po::notify(options);
-      }
-    catch (const std::exception& e)
-      {
-        std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-        usage(std::cerr, optionDesciption, argv[0]);
-        return 1;
-      }
+    try {
+      po::store(po::command_line_parser(argc, argv).options(optionDesciption).run(), options);
+      po::notify(options);
+    }
+    catch (const std::exception& e) {
+      std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
+      usage(std::cerr, optionDesciption, argv[0]);
+      return 1;
+    }
 
-    if (options.count("help"))
-      {
-        usage(std::cout, optionDesciption, argv[0]);
-        return 0;
-      }
+    if (options.count("help")) {
+      usage(std::cout, optionDesciption, argv[0]);
+      return 0;
+    }
 
-    if (options.count("version"))
-      {
-        std::cout << NFD_VERSION_BUILD_STRING << std::endl;
-        return 0;
-      }
+    if (options.count("version")) {
+      std::cout << NFD_VERSION_BUILD_STRING << std::endl;
+      return 0;
+    }
 
-    if (m_autoregPrefixes.empty() && m_allFacesPrefixes.empty())
-      {
-        std::cerr << "ERROR: at least one --prefix or --all-faces-prefix must be specified"
-                  << std::endl << std::endl;
-        usage(std::cerr, optionDesciption, argv[0]);
-        return 2;
-      }
+    if (m_autoregPrefixes.empty() && m_allFacesPrefixes.empty()) {
+      std::cerr << "ERROR: at least one --prefix or --all-faces-prefix must be specified"
+                << std::endl << std::endl;
+      usage(std::cerr, optionDesciption, argv[0]);
+      return 2;
+    }
 
-    if (m_whiteList.empty())
-      {
-        // Allow everything
-        m_whiteList.push_back(Network::getMaxRangeV4());
-        m_whiteList.push_back(Network::getMaxRangeV6());
-      }
+    if (m_whiteList.empty()) {
+      // Allow everything
+      m_whiteList.push_back(Network::getMaxRangeV4());
+      m_whiteList.push_back(Network::getMaxRangeV6());
+    }
 
-    try
-      {
-        startFetchingFaceStatusDataset();
-        startProcessing();
-      }
-    catch (const std::exception& e)
-      {
-        std::cerr << "ERROR: " << e.what() << std::endl;
-        return 2;
-      }
+    try {
+      startFetchingFaceStatusDataset();
+      startProcessing();
+    }
+    catch (const std::exception& e) {
+      std::cerr << "ERROR: " << e.what() << std::endl;
+      return 2;
+    }
 
     return 0;
   }
@@ -329,8 +288,8 @@ public:
 private:
   Face m_face;
   KeyChain m_keyChain;
-  Controller m_controller;
-  FaceMonitor m_faceMonitor;
+  nfd::Controller m_controller;
+  nfd::FaceMonitor m_faceMonitor;
   std::vector<Name> m_autoregPrefixes;
   std::vector<Name> m_allFacesPrefixes;
   uint64_t m_cost;
