@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,7 @@
 #include "ndn-fch-discovery.hpp"
 #include "guess-from-identity-name.hpp"
 
-#include <ndn-cxx/util/network-monitor.hpp>
+#include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 
@@ -93,7 +93,7 @@ public:
                })
   {
     if (m_isDaemonMode) {
-      m_networkMonitor.reset(new ndn::util::NetworkMonitor(m_io));
+      m_networkMonitor.reset(new net::NetworkMonitor(m_io));
       m_networkMonitor->onNetworkStateChanged.connect([this] {
           // delay stages, so if multiple events are triggered in short sequence,
           // only one auto-detection procedure is triggered
@@ -154,7 +154,7 @@ private:
   boost::asio::io_service m_io;
   Face m_face;
   KeyChain m_keyChain;
-  unique_ptr<util::NetworkMonitor> m_networkMonitor;
+  unique_ptr<net::NetworkMonitor> m_networkMonitor;
   util::Scheduler m_scheduler;
   util::scheduler::ScopedEventId m_startStagesEvent;
   bool m_isDaemonMode;

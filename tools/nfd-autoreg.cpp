@@ -30,8 +30,8 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
 
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -43,7 +43,6 @@
 namespace ndn {
 namespace nfd_autoreg {
 
-using util::FaceUri;
 using ::nfd::Network;
 
 class AutoregServer : boost::noncopyable

@@ -76,13 +76,13 @@ enum class ArgValueType {
 
   /** \brief FaceUri
    *
-   *  The argument appears in CommandArguments as ndn::util::FaceUri.
+   *  The argument appears in CommandArguments as ndn::FaceUri.
    */
   FACE_URI,
 
   /** \brief FaceId or FaceUri
    *
-   *  The argument appears in CommandArguments as either uint64_t or ndn::util::FaceUri.
+   *  The argument appears in CommandArguments as either uint64_t or ndn::FaceUri.
    */
   FACE_ID_OR_URI,
 

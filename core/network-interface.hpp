@@ -28,14 +28,14 @@
 
 #include "common.hpp"
 
-#include <ndn-cxx/util/ethernet.hpp>
+#include <ndn-cxx/net/ethernet.hpp>
 
 #include <net/if.h>
 
 namespace nfd {
 
 namespace ethernet {
-using namespace ndn::util::ethernet;
+using namespace ndn::ethernet;
 } // namespace ethernet
 
 /** \brief contains information about a network interface

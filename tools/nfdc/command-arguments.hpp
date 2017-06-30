@@ -29,7 +29,6 @@
 #include "core/common.hpp"
 #include "status-report.hpp"
 #include <ndn-cxx/encoding/nfd-constants.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
 #include <boost/any.hpp>
 
 namespace nfd {
@@ -38,7 +37,6 @@ namespace nfdc {
 
 using ndn::nfd::FacePersistency;
 using ndn::nfd::RouteOrigin;
-using ndn::util::FaceUri;
 
 /** \brief contains named command arguments
  */

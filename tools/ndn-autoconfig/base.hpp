@@ -31,8 +31,8 @@
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
 
 namespace ndn {
 namespace tools {
@@ -40,7 +40,6 @@ namespace autoconfig {
 
 using ndn::nfd::ControlParameters;
 using ndn::nfd::ControlResponse;
-using ndn::util::FaceUri;
 
 /**
  * @brief Base class for discovery stages

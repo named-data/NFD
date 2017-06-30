@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,13 +56,15 @@
 #include <utility>
 #include <vector>
 
-#include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/exclude.hpp>
+#include <ndn-cxx/interest.hpp>
+#include <ndn-cxx/link.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
 #include <ndn-cxx/lp/nack.hpp>
+#include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/backports.hpp>
-#include <ndn-cxx/util/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
 #include <boost/asio.hpp>
@@ -96,14 +98,14 @@ using std::cref;
 
 using ndn::to_string;
 
-using ndn::Interest;
+using ndn::Block;
 using ndn::Data;
+using ndn::Exclude;
+using ndn::FaceUri;
+using ndn::Interest;
 using ndn::Name;
 using ndn::PartialName;
-using ndn::Exclude;
 using ndn::Link;
-using ndn::Block;
-using ndn::util::FaceUri;
 
 namespace tlv {
 // Don't write "namespace tlv = ndn::tlv", because NFD can add other members into this namespace.

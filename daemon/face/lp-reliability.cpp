@@ -141,8 +141,7 @@ LpReliability::piggyback(lp::Packet& pkt, ssize_t mtu)
   if (mtu > 0) {
     // Ack Type (3 octets) + Ack Length (1 octet) + sizeof(lp::Sequence)
     size_t ackSize = 3 + 1 + sizeof(lp::Sequence);
-    ndn::EncodingEstimator estimator;
-    maxAcks = (mtu - pkt.wireEncode(estimator)) / ackSize;
+    maxAcks = (mtu - pkt.wireEncode().size()) / ackSize;
   }
 
   ssize_t nAcksInPkt = 0;

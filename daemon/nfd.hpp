@@ -29,8 +29,8 @@
 #include "core/config-file.hpp"
 #include "core/scheduler.hpp"
 
+#include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
-#include <ndn-cxx/util/network-monitor.hpp>
 
 namespace ndn {
 class Face;
@@ -119,7 +119,7 @@ private:
   unique_ptr<FibManager> m_fibManager;
   unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
 
-  unique_ptr<ndn::util::NetworkMonitor> m_networkMonitor;
+  unique_ptr<ndn::net::NetworkMonitor> m_networkMonitor;
   scheduler::ScopedEventId m_reloadConfigEvent;
 };
 

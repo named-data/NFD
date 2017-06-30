@@ -46,13 +46,13 @@ NFD_LOG_INIT("Nfd");
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
-static inline ndn::util::NetworkMonitor*
+static inline ndn::net::NetworkMonitor*
 makeNetworkMonitor()
 {
   try {
-    return new ndn::util::NetworkMonitor(getGlobalIoService());
+    return new ndn::net::NetworkMonitor(getGlobalIoService());
   }
-  catch (const ndn::util::NetworkMonitor::Error& e) {
+  catch (const ndn::net::NetworkMonitor::Error& e) {
     NFD_LOG_WARN(e.what());
     return nullptr;
   }
