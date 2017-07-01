@@ -24,12 +24,12 @@ fi
 
 if has Ubuntu $NODE_LABELS; then
     sudo apt-get -qq update
-    sudo apt-get -qq install build-essential pkg-config libboost-all-dev \
+    sudo apt-get -qy install build-essential pkg-config libboost-all-dev \
                              libcrypto++-dev libsqlite3-dev libssl-dev \
                              libpcap-dev
 
     if [[ $JOB_NAME == *"code-coverage" ]]; then
-        sudo apt-get -qq install lcov libgd-perl python-setuptools
+        sudo apt-get -qy install lcov libgd-perl python-setuptools
         sudo easy_install --upgrade gcovr
     fi
 fi

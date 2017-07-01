@@ -11,34 +11,34 @@ git submodule sync
 git submodule update
 
 # Cleanup
-sudo ./waf -j1 --color=yes distclean
+sudo ./waf --color=yes distclean
 
 if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
   # Configure/build in optimized mode with tests
-  ./waf -j1 --color=yes configure --with-tests
-  ./waf -j1 --color=yes build
+  ./waf --color=yes configure --with-tests
+  ./waf --color=yes build -j${WAF_JOBS:-1}
 
   # Cleanup
-  sudo ./waf -j1 --color=yes distclean
+  sudo ./waf --color=yes distclean
 
   # Configure/build in optimized mode without tests
-  ./waf -j1 --color=yes configure
-  ./waf -j1 --color=yes build
+  ./waf --color=yes configure
+  ./waf --color=yes build -j${WAF_JOBS:-1}
 
   # Cleanup
-  sudo ./waf -j1 --color=yes distclean
+  sudo ./waf --color=yes distclean
 fi
 
 # Configure/build in debug mode with tests and without precompiled headers
 if [[ $JOB_NAME == *"code-coverage" ]]; then
     COVERAGE="--with-coverage"
-elif ! has OSX-10.9 $NODE_LABELS && ! has OSX-10.11 $NODE_LABELS; then
+elif [[ -n $BUILD_WITH_ASAN || -z $TRAVIS ]]; then
     ASAN="--with-sanitizer=address"
 fi
-./waf -j1 --color=yes configure --debug --with-tests --without-pch $COVERAGE $ASAN
-./waf -j1 --color=yes build
+./waf --color=yes configure --debug --with-tests --without-pch $COVERAGE $ASAN
+./waf --color=yes build -j${WAF_JOBS:-1}
 
 # (tests will be run against debug version)
 
 # Install
-sudo ./waf -j1 --color=yes install
+sudo ./waf --color=yes install

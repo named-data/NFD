@@ -32,3 +32,5 @@ Environment Variables Used in Build Scripts
 
 - `CACHE_DIR`: the variable defines a path to folder containing cached files from previous builds,
   e.g., a compiled version of ndn-cxx library.  If not set, `/tmp` is used.
+
+- `WAF_JOBS`: number of parallel build jobs used by waf, defaults to 1.
