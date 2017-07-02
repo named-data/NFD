@@ -276,10 +276,13 @@ template<class T>
 void
 StreamTransport<T>::handleError(const boost::system::error_code& error)
 {
-  if (error != boost::asio::error::eof)
+  if (error == boost::asio::error::eof) {
+    this->setState(TransportState::CLOSING);
+  }
+  else {
     NFD_LOG_FACE_ERROR("Send or receive operation failed: " << error.message());
-
-  this->setState(TransportState::FAILED);
+    this->setState(TransportState::FAILED);
+  }
   doClose();
 }
 

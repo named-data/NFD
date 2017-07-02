@@ -40,9 +40,9 @@ class LinkService;
  */
 enum class TransportState {
   NONE,
-  UP, ///< the transport is up
-  DOWN, ///< the transport is down temporarily, and is being recovered
-  CLOSING, ///< the transport is requested to be closed
+  UP, ///< the transport is up and can transmit packets
+  DOWN, ///< the transport is temporarily down, and is being recovered
+  CLOSING, ///< the transport is being closed gracefully, either by the peer or by a call to close()
   FAILED, ///< the transport is being closed due to a failure
   CLOSED ///< the transport is closed, and can be safely deallocated
 };
