@@ -79,10 +79,10 @@ protected:
   processErrorCode(const boost::system::error_code& error);
 
   bool
-  hasBeenUsedRecently() const;
+  hasRecentlyReceived() const;
 
   void
-  resetRecentUsage();
+  resetRecentlyReceived();
 
   static EndpointId
   makeEndpointId(const typename protocol::endpoint& ep);
@@ -95,14 +95,14 @@ protected:
 
 private:
   std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;
-  bool m_hasBeenUsedRecently;
+  bool m_hasRecentlyReceived;
 };
 
 
 template<class T, class U>
 DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol::socket&& socket)
   : m_socket(std::move(socket))
-  , m_hasBeenUsedRecently(false)
+  , m_hasRecentlyReceived(false)
 {
   m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
                               bind(&DatagramTransport<T, U>::handleReceive, this,
@@ -167,7 +167,7 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
     // This packet won't extend the face lifetime
     return;
   }
-  m_hasBeenUsedRecently = true;
+  m_hasRecentlyReceived = true;
 
   Transport::Packet tp(std::move(element));
   tp.remoteEndpoint = makeEndpointId(m_sender);
@@ -226,16 +226,16 @@ DatagramTransport<T, U>::processErrorCode(const boost::system::error_code& error
 
 template<class T, class U>
 bool
-DatagramTransport<T, U>::hasBeenUsedRecently() const
+DatagramTransport<T, U>::hasRecentlyReceived() const
 {
-  return m_hasBeenUsedRecently;
+  return m_hasRecentlyReceived;
 }
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::resetRecentUsage()
+DatagramTransport<T, U>::resetRecentlyReceived()
 {
-  m_hasBeenUsedRecently = false;
+  m_hasRecentlyReceived = false;
 }
 
 template<class T, class U>

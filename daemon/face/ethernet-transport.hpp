@@ -67,15 +67,15 @@ protected:
   doClose() final;
 
   bool
-  hasBeenUsedRecently() const
+  hasRecentlyReceived() const
   {
-    return m_hasBeenUsedRecently;
+    return m_hasRecentlyReceived;
   }
 
   void
-  resetRecentUsage()
+  resetRecentlyReceived()
   {
-    m_hasBeenUsedRecently = false;
+    m_hasRecentlyReceived = false;
   }
 
 private:
@@ -111,7 +111,7 @@ protected:
   std::string m_interfaceName;
 
 private:
-  bool m_hasBeenUsedRecently;
+  bool m_hasRecentlyReceived;
 #ifdef _DEBUG
   /// number of frames dropped by the kernel, as reported by libpcap
   size_t m_nDropped;

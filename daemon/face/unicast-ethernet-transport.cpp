@@ -88,12 +88,12 @@ void
 UnicastEthernetTransport::scheduleClosureWhenIdle()
 {
   m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, [this] {
-    if (!hasBeenUsedRecently()) {
+    if (!hasRecentlyReceived()) {
       NFD_LOG_FACE_INFO("Closing due to inactivity");
       this->close();
     }
     else {
-      resetRecentUsage();
+      resetRecentlyReceived();
       scheduleClosureWhenIdle();
     }
   });

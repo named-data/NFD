@@ -47,7 +47,7 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
   , m_srcAddress(localEndpoint.etherAddress)
   , m_destAddress(remoteEndpoint)
   , m_interfaceName(localEndpoint.name)
-  , m_hasBeenUsedRecently(false)
+  , m_hasRecentlyReceived(false)
 #ifdef _DEBUG
   , m_nDropped(0)
 #endif
@@ -194,7 +194,7 @@ EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
     // This packet won't extend the face lifetime
     return;
   }
-  m_hasBeenUsedRecently = true;
+  m_hasRecentlyReceived = true;
 
   Transport::Packet tp(std::move(element));
   static_assert(sizeof(tp.remoteEndpoint) >= ethernet::ADDR_LEN,
