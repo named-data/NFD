@@ -66,6 +66,18 @@ protected:
   void
   doClose() final;
 
+  bool
+  hasBeenUsedRecently() const
+  {
+    return m_hasBeenUsedRecently;
+  }
+
+  void
+  resetRecentUsage()
+  {
+    m_hasBeenUsedRecently = false;
+  }
+
 private:
   void
   doSend(Transport::Packet&& packet) final;
@@ -82,11 +94,8 @@ private:
   void
   handleRead(const boost::system::error_code& error);
 
-  /**
-   * @brief Handles errors encountered by Boost.Asio on the receive path
-   */
   void
-  processErrorCode(const boost::system::error_code& error);
+  handleError(const std::string& errorMessage);
 
   /**
    * @brief Returns the MTU of the underlying network interface
@@ -102,6 +111,7 @@ protected:
   std::string m_interfaceName;
 
 private:
+  bool m_hasBeenUsedRecently;
 #ifdef _DEBUG
   /// number of frames dropped by the kernel, as reported by libpcap
   size_t m_nDropped;

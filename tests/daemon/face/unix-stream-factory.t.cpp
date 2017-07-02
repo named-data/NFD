@@ -33,8 +33,6 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-using namespace nfd::tests;
-
 #define CHANNEL_PATH1 "unix-stream-test.1.sock"
 #define CHANNEL_PATH2 "unix-stream-test.2.sock"
 

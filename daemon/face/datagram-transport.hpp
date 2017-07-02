@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -61,10 +61,10 @@ public:
                   const boost::system::error_code& error);
 
 protected:
-  virtual void
+  void
   doClose() override;
 
-  virtual void
+  void
   doSend(Transport::Packet&& packet) override;
 
   void
@@ -152,13 +152,13 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
   if (error)
     return processErrorCode(error);
 
-  NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
+  NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes from " << m_sender);
 
   bool isOk = false;
   Block element;
   std::tie(isOk, element) = Block::fromBuffer(buffer, nBytesReceived);
   if (!isOk) {
-    NFD_LOG_FACE_WARN("Failed to parse incoming packet");
+    NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << m_sender);
     // This packet won't extend the face lifetime
     return;
   }
@@ -209,38 +209,37 @@ DatagramTransport<T, U>::processErrorCode(const boost::system::error_code& error
   if (getState() == TransportState::CLOSING ||
       getState() == TransportState::FAILED ||
       getState() == TransportState::CLOSED ||
-      error == boost::asio::error::operation_aborted)
+      error == boost::asio::error::operation_aborted) {
     // transport is shutting down, ignore any errors
     return;
+  }
 
-  if (getPersistency() == ndn::nfd::FacePersistency::FACE_PERSISTENCY_PERMANENT) {
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
     NFD_LOG_FACE_DEBUG("Permanent face ignores error: " << error.message());
     return;
   }
 
-  if (error != boost::asio::error::eof)
-    NFD_LOG_FACE_WARN("Send or receive operation failed: " << error.message());
-
+  NFD_LOG_FACE_ERROR("Send or receive operation failed: " << error.message());
   this->setState(TransportState::FAILED);
   doClose();
 }
 
 template<class T, class U>
-inline bool
+bool
 DatagramTransport<T, U>::hasBeenUsedRecently() const
 {
   return m_hasBeenUsedRecently;
 }
 
 template<class T, class U>
-inline void
+void
 DatagramTransport<T, U>::resetRecentUsage()
 {
   m_hasBeenUsedRecently = false;
 }
 
 template<class T, class U>
-inline Transport::EndpointId
+Transport::EndpointId
 DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint& ep)
 {
   return 0;

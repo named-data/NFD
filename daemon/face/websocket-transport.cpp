@@ -117,12 +117,12 @@ WebSocketTransport::sendPing()
 {
   NFD_LOG_FACE_TRACE(__func__);
 
-  ++this->nOutPings;
-
   websocketpp::lib::error_code error;
   m_server.ping(m_handle, "NFD-WebSocket", error);
   if (error)
     return processErrorCode(error);
+
+  ++this->nOutPings;
 
   this->schedulePing();
 }
@@ -138,7 +138,7 @@ WebSocketTransport::handlePong()
 void
 WebSocketTransport::handlePongTimeout()
 {
-  NFD_LOG_FACE_WARN(__func__);
+  NFD_LOG_FACE_ERROR("Pong timeout");
   this->setState(TransportState::FAILED);
   doClose();
 }
@@ -154,8 +154,7 @@ WebSocketTransport::processErrorCode(const websocketpp::lib::error_code& error)
     // transport is shutting down, ignore any errors
     return;
 
-  NFD_LOG_FACE_WARN("Send or ping operation failed: " << error.message());
-
+  NFD_LOG_FACE_ERROR("Send or ping operation failed: " << error.message());
   this->setState(TransportState::FAILED);
   doClose();
 }

@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_UNICAST_ETHERNET_TRANSPORT_HPP
 
 #include "ethernet-transport.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace face {
@@ -45,8 +46,20 @@ public:
                            ndn::nfd::FacePersistency persistency,
                            time::nanoseconds idleTimeout);
 
+protected:
+  bool
+  canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const final;
+
+  void
+  afterChangePersistency(ndn::nfd::FacePersistency oldPersistency) final;
+
+private:
+  void
+  scheduleClosureWhenIdle();
+
 private:
   const time::nanoseconds m_idleTimeout;
+  scheduler::ScopedEventId m_closeIfIdleEvent;
 };
 
 } // namespace face

@@ -59,7 +59,45 @@ UnicastEthernetTransport::UnicastEthernetTransport(const NetworkInterfaceInfo& l
            m_srcAddress.toString().data());
   m_pcap.setPacketFilter(filter);
 
-  // TODO: implement close on idle and persistency change
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&
+      m_idleTimeout > time::nanoseconds::zero()) {
+    scheduleClosureWhenIdle();
+  }
+}
+
+bool
+UnicastEthernetTransport::canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const
+{
+  return true;
+}
+
+void
+UnicastEthernetTransport::afterChangePersistency(ndn::nfd::FacePersistency oldPersistency)
+{
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND &&
+      m_idleTimeout > time::nanoseconds::zero()) {
+    scheduleClosureWhenIdle();
+  }
+  else {
+    m_closeIfIdleEvent.cancel();
+    setExpirationTime(time::steady_clock::TimePoint::max());
+  }
+}
+
+void
+UnicastEthernetTransport::scheduleClosureWhenIdle()
+{
+  m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, [this] {
+    if (!hasBeenUsedRecently()) {
+      NFD_LOG_FACE_INFO("Closing due to inactivity");
+      this->close();
+    }
+    else {
+      resetRecentUsage();
+      scheduleClosureWhenIdle();
+    }
+  });
+  setExpirationTime(time::steady_clock::now() + m_idleTimeout);
 }
 
 } // namespace face

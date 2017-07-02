@@ -47,6 +47,7 @@ EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
   , m_srcAddress(localEndpoint.etherAddress)
   , m_destAddress(remoteEndpoint)
   , m_interfaceName(localEndpoint.name)
+  , m_hasBeenUsedRecently(false)
 #ifdef _DEBUG
   , m_nDropped(0)
 #endif
@@ -114,9 +115,10 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   // send the frame
   int sent = pcap_inject(m_pcap, buffer.buf(), buffer.size());
   if (sent < 0)
-    NFD_LOG_FACE_ERROR("pcap_inject failed: " << m_pcap.getLastError());
+    handleError("Send operation failed: " + m_pcap.getLastError());
   else if (static_cast<size_t>(sent) < buffer.size())
-    NFD_LOG_FACE_ERROR("Failed to send the full frame: size=" << buffer.size() << " sent=" << sent);
+    handleError("Failed to send the full frame: size=" + to_string(buffer.size()) +
+                " sent=" + to_string(sent));
   else
     // print block size because we don't want to count the padding in buffer
     NFD_LOG_FACE_TRACE("Successfully sent: " << block.size() << " bytes");
@@ -133,8 +135,17 @@ EthernetTransport::asyncRead()
 void
 EthernetTransport::handleRead(const boost::system::error_code& error)
 {
-  if (error)
-    return processErrorCode(error);
+  if (error) {
+    // boost::asio::error::operation_aborted must be checked first: in that case, the Transport
+    // may already have been destructed, therefore it's unsafe to call getState() or do logging.
+    if (error != boost::asio::error::operation_aborted &&
+        getState() != TransportState::CLOSING &&
+        getState() != TransportState::FAILED &&
+        getState() != TransportState::CLOSED) {
+      handleError("Receive operation failed: " + error.message());
+    }
+    return;
+  }
 
   const uint8_t* pkt;
   size_t len;
@@ -142,14 +153,14 @@ EthernetTransport::handleRead(const boost::system::error_code& error)
   std::tie(pkt, len, err) = m_pcap.readNextPacket();
 
   if (pkt == nullptr) {
-    NFD_LOG_FACE_ERROR("Read error: " << err);
+    NFD_LOG_FACE_WARN("Read error: " << err);
   }
   else {
     const ether_header* eh;
     std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_srcAddress,
                                                    m_destAddress.isMulticast() ? m_destAddress : m_srcAddress);
     if (eh == nullptr) {
-      NFD_LOG_FACE_DEBUG(err);
+      NFD_LOG_FACE_WARN(err);
     }
     else {
       ethernet::Address sender(eh->ether_shost);
@@ -173,15 +184,17 @@ void
 EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
                                   const ethernet::Address& sender)
 {
+  NFD_LOG_FACE_TRACE("Received: " << length << " bytes from " << sender);
+
   bool isOk = false;
   Block element;
   std::tie(isOk, element) = Block::fromBuffer(payload, length);
   if (!isOk) {
-    NFD_LOG_FACE_WARN("Received invalid packet from " << sender);
+    NFD_LOG_FACE_WARN("Failed to parse incoming packet from " << sender);
+    // This packet won't extend the face lifetime
     return;
   }
-
-  NFD_LOG_FACE_TRACE("Received: " << element.size() << " bytes from " << sender);
+  m_hasBeenUsedRecently = true;
 
   Transport::Packet tp(std::move(element));
   static_assert(sizeof(tp.remoteEndpoint) >= ethernet::ADDR_LEN,
@@ -193,19 +206,16 @@ EthernetTransport::receivePayload(const uint8_t* payload, size_t length,
 }
 
 void
-EthernetTransport::processErrorCode(const boost::system::error_code& error)
+EthernetTransport::handleError(const std::string& errorMessage)
 {
-  // boost::asio::error::operation_aborted must be checked first. In that situation, the Transport
-  // may already have been destructed, and it's unsafe to call getState() or do logging.
-  if (error == boost::asio::error::operation_aborted ||
-      getState() == TransportState::CLOSING ||
-      getState() == TransportState::FAILED ||
-      getState() == TransportState::CLOSED) {
-    // transport is shutting down, ignore any errors
+  if (getPersistency() == ndn::nfd::FACE_PERSISTENCY_PERMANENT) {
+    NFD_LOG_FACE_DEBUG("Permanent face ignores error: " << errorMessage);
     return;
   }
 
-  NFD_LOG_FACE_WARN("Receive operation failed: " << error.message());
+  NFD_LOG_FACE_ERROR(errorMessage);
+  this->setState(TransportState::FAILED);
+  doClose();
 }
 
 int

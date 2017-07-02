@@ -33,7 +33,6 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-using namespace nfd::tests;
 namespace ip = boost::asio::ip;
 
 BOOST_AUTO_TEST_SUITE(Face)

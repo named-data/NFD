@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -140,14 +140,19 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, DatagramTransportFixtures, T)
   SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
   this->initialize(this->defaultAddr);
 
+  this->transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+    BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
+  });
+
   this->transport->close();
-  BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::CLOSING);
 
   this->transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
     BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
     this->limitedIo.afterOp();
   });
+
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
 }
 

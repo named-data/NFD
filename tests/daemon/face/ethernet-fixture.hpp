@@ -30,13 +30,15 @@
 #include "face/multicast-ethernet-transport.hpp"
 #include "face/unicast-ethernet-transport.hpp"
 
-#include "test-common.hpp"
+#include "tests/limited-io.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-class EthernetFixture : public virtual nfd::tests::BaseFixture
+using namespace nfd::tests;
+
+class EthernetFixture : public virtual BaseFixture
 {
 protected:
   EthernetFixture()
@@ -56,19 +58,19 @@ protected:
   }
 
   void
-  initializeUnicast(ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e},
-                    ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+  initializeUnicast(ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                    ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e})
   {
     BOOST_ASSERT(netifs.size() > 0);
     localEp = netifs.front().name;
     remoteEp = remoteAddr;
     transport = make_unique<UnicastEthernetTransport>(netifs.front(), remoteEp,
-                                                      persistency, time::seconds(5));
+                                                      persistency, time::seconds(2));
   }
 
   void
-  initializeMulticast(ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e},
-                      ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS)
+  initializeMulticast(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
+                      ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e})
   {
     BOOST_ASSERT(netifs.size() > 0);
     localEp = netifs.front().name;
@@ -77,6 +79,7 @@ protected:
   }
 
 protected:
+  LimitedIo limitedIo;
   unique_ptr<EthernetTransport> transport;
   std::string localEp;
   ethernet::Address remoteEp;

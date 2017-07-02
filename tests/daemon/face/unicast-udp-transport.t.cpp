@@ -113,16 +113,28 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 }
 
+BOOST_AUTO_TEST_CASE(ExpirationTime)
+{
+  auto address = getTestIp<ip::address_v4>();
+  SKIP_IF_IP_UNAVAILABLE(address);
+  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+}
+
 BOOST_AUTO_TEST_CASE(IdleClose)
 {
   auto address = getTestIp<ip::address_v4>();
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
 
-  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
-
   int nStateChanges = 0;
-  this->transport->afterStateChange.connect(
+  transport->afterStateChange.connect(
     [this, &nStateChanges] (TransportState oldState, TransportState newState) {
       switch (nStateChanges) {
       case 0:
@@ -137,17 +149,16 @@ BOOST_AUTO_TEST_CASE(IdleClose)
         BOOST_CHECK(false);
       }
       nStateChanges++;
-      this->limitedIo.afterOp();
+      limitedIo.afterOp();
     });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(10)), LimitedIo::EXCEED_OPS);
-
+  BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(8)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(nStateChanges, 2);
 }
 
-typedef std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND> OnDemand;
-typedef std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_PERSISTENT> Persistent;
-typedef boost::mpl::vector<OnDemand, Persistent> RemoteClosePersistencies;
+using OnDemand = std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND>;
+using Persistent = std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_PERSISTENT>;
+using RemoteClosePersistencies = boost::mpl::vector<OnDemand, Persistent>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies)
 {
@@ -201,7 +212,7 @@ BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
   remoteSocket.async_receive(boost::asio::buffer(readBuf),
     [this] (const boost::system::error_code& error, size_t) {
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
-      this->limitedIo.afterOp();
+      limitedIo.afterOp();
     });
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
 
@@ -215,17 +226,6 @@ BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
   BOOST_CHECK_EQUAL(transport->getCounters().nInBytes, block2.size());
   BOOST_CHECK_EQUAL(receivedPackets->size(), 1);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
-}
-
-BOOST_AUTO_TEST_CASE(ChangePersistencyNoExpirationTime)
-{
-  auto address = getTestIp<ip::address_v4>();
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
-
-  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
-  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnicastUdpTransport

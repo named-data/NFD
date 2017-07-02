@@ -35,8 +35,6 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-using namespace nfd::tests;
-
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, BaseFixture)
 

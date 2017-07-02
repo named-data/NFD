@@ -53,9 +53,71 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
   initializeUnicast();
 
-  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), true);
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), true);
-  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), false);
+  BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
+}
+
+BOOST_AUTO_TEST_CASE(ExpirationTime)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeUnicast(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+
+  transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
+}
+
+BOOST_AUTO_TEST_CASE(Close)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeUnicast();
+
+  transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+    BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
+  });
+
+  transport->close();
+
+  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
+    BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
+    limitedIo.afterOp();
+  });
+
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+}
+
+BOOST_AUTO_TEST_CASE(IdleClose)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeUnicast(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+
+  int nStateChanges = 0;
+  transport->afterStateChange.connect(
+    [this, &nStateChanges] (TransportState oldState, TransportState newState) {
+      switch (nStateChanges) {
+      case 0:
+        BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+        BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
+        break;
+      case 1:
+        BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
+        BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
+        break;
+      default:
+        BOOST_CHECK(false);
+      }
+      nStateChanges++;
+      limitedIo.afterOp();
+    });
+
+  BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(nStateChanges, 2);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnicastEthernetTransport

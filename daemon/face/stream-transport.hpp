@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,13 +52,13 @@ public:
   StreamTransport(typename protocol::socket&& socket);
 
 protected:
-  virtual void
+  void
   doClose() override;
 
   void
   deferredClose();
 
-  virtual void
+  void
   doSend(Transport::Packet&& packet) override;
 
   void
@@ -124,9 +124,9 @@ StreamTransport<T>::doClose()
 
   // Ensure that the Transport stays alive at least until
   // all pending handlers are dispatched
-  getGlobalIoService().post(bind(&StreamTransport<T>::deferredClose, this));
+  getGlobalIoService().post([this] { deferredClose(); });
 
-  // Some bug or feature of Boost.Asio (see http://redmine.named-data.net/issues/1856):
+  // Some bug or feature of Boost.Asio (see https://redmine.named-data.net/issues/1856):
   //
   // When doClose is called from a socket event handler (e.g., from handleReceive),
   // m_socket.shutdown() does not trigger the cancellation of the handleSend callback.
@@ -221,12 +221,10 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   NFD_LOG_FACE_TRACE("Received: " << nBytesReceived << " bytes");
 
   m_receiveBufferSize += nBytesReceived;
-
   size_t offset = 0;
-
   bool isOk = true;
-  Block element;
   while (m_receiveBufferSize - offset > 0) {
+    Block element;
     std::tie(isOk, element) = Block::fromBuffer(m_receiveBuffer + offset, m_receiveBufferSize - offset);
     if (!isOk)
       break;
@@ -238,7 +236,7 @@ StreamTransport<T>::handleReceive(const boost::system::error_code& error,
   }
 
   if (!isOk && m_receiveBufferSize == ndn::MAX_NDN_PACKET_SIZE && offset == 0) {
-    NFD_LOG_FACE_WARN("Failed to parse incoming packet or packet too large to process");
+    NFD_LOG_FACE_ERROR("Failed to parse incoming packet or packet too large to process");
     this->setState(TransportState::FAILED);
     doClose();
     return;
@@ -279,7 +277,7 @@ void
 StreamTransport<T>::handleError(const boost::system::error_code& error)
 {
   if (error != boost::asio::error::eof)
-    NFD_LOG_FACE_WARN("Send or receive operation failed: " << error.message());
+    NFD_LOG_FACE_ERROR("Send or receive operation failed: " << error.message());
 
   this->setState(TransportState::FAILED);
   doClose();

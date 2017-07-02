@@ -58,9 +58,26 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 }
 
-///\todo #3369 add the equivalent of these test cases from ethernet.t.cpp
-///      as of commit:65caf200924b28748037750449e28bcb548dbc9c
-///      SendPacket, ProcessIncomingPacket
+BOOST_AUTO_TEST_CASE(Close)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeMulticast();
+
+  transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+    BOOST_CHECK_EQUAL(newState, TransportState::CLOSING);
+  });
+
+  transport->close();
+
+  transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
+    BOOST_CHECK_EQUAL(newState, TransportState::CLOSED);
+    limitedIo.afterOp();
+  });
+
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+}
 
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastEthernetTransport
 BOOST_AUTO_TEST_SUITE_END() // Face
