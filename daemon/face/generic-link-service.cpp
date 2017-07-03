@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -134,7 +134,14 @@ void
 GenericLinkService::sendNetPacket(lp::Packet&& pkt)
 {
   std::vector<lp::Packet> frags;
-  const ssize_t mtu = this->getTransport()->getMtu();
+  ssize_t mtu = this->getTransport()->getMtu();
+
+  // Make space for feature fields in fragments
+  if (m_options.reliabilityOptions.isEnabled && mtu != MTU_UNLIMITED) {
+    mtu -= LpReliability::RESERVED_HEADER_SPACE;
+    BOOST_ASSERT(mtu > 0);
+  }
+
   if (m_options.allowFragmentation && mtu != MTU_UNLIMITED) {
     bool isOk = false;
     std::tie(isOk, frags) = m_fragmenter.fragmentPacket(pkt, mtu);
@@ -155,16 +162,14 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
     BOOST_ASSERT(!frags.front().has<lp::FragCountField>());
   }
 
-  // Only assign sequences to fragments if reliability enabled and packet contains a fragment,
-  // or there is more than 1 fragment
-  if ((m_options.reliabilityOptions.isEnabled && frags.front().has<lp::FragmentField>()) ||
-      frags.size() > 1) {
+  // Only assign sequences to fragments if packet contains more than 1 fragment
+  if (frags.size() > 1) {
     // Assign sequences to all fragments
     this->assignSequences(frags);
   }
 
   if (m_options.reliabilityOptions.isEnabled && frags.front().has<lp::FragmentField>()) {
-    m_reliability.observeOutgoing(frags);
+    m_reliability.handleOutgoing(frags);
   }
 
   for (lp::Packet& frag : frags) {

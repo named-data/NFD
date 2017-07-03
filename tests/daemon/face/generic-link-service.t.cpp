@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_SUITE_END() // Fragmentation
 
 BOOST_AUTO_TEST_SUITE(Reliability)
 
-BOOST_AUTO_TEST_CASE(SendInterestWithSequence)
+BOOST_AUTO_TEST_CASE(SendInterest)
 {
   // Initialize with Options that enables reliability
   GenericLinkService::Options options;
@@ -416,10 +416,10 @@ BOOST_AUTO_TEST_CASE(SendInterestWithSequence)
   lp::Packet interest1pkt;
   BOOST_REQUIRE_NO_THROW(interest1pkt.wireDecode(transport->sentPackets.back().packet));
   BOOST_CHECK(interest1pkt.has<lp::FragmentField>());
-  BOOST_CHECK(interest1pkt.has<lp::SequenceField>());
+  BOOST_CHECK(interest1pkt.has<lp::TxSequenceField>());
 }
 
-BOOST_AUTO_TEST_CASE(SendDataWithSequence)
+BOOST_AUTO_TEST_CASE(SendData)
 {
   // Initialize with Options that enables reliability
   GenericLinkService::Options options;
@@ -436,10 +436,10 @@ BOOST_AUTO_TEST_CASE(SendDataWithSequence)
   lp::Packet data1pkt;
   BOOST_REQUIRE_NO_THROW(data1pkt.wireDecode(transport->sentPackets.back().packet));
   BOOST_CHECK(data1pkt.has<lp::FragmentField>());
-  BOOST_CHECK(data1pkt.has<lp::SequenceField>());
+  BOOST_CHECK(data1pkt.has<lp::TxSequenceField>());
 }
 
-BOOST_AUTO_TEST_CASE(SendNackWithSequence)
+BOOST_AUTO_TEST_CASE(SendNack)
 {
   // Initialize with Options that enables reliability
   GenericLinkService::Options options;
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE(SendNackWithSequence)
   BOOST_REQUIRE_NO_THROW(nack1pkt.wireDecode(transport->sentPackets.back().packet));
   BOOST_CHECK(nack1pkt.has<lp::NackField>());
   BOOST_CHECK(nack1pkt.has<lp::FragmentField>());
-  BOOST_CHECK(nack1pkt.has<lp::SequenceField>());
+  BOOST_CHECK(nack1pkt.has<lp::TxSequenceField>());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // Reliability

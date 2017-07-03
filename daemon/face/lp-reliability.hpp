@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -79,11 +79,11 @@ public:
   const GenericLinkService*
   getLinkService() const;
 
-  /** \brief observe outgoing fragment(s) of a network packet
+  /** \brief observe outgoing fragment(s) of a network packet and store for potential retransmission
    *  \param frags fragments of network packet
    */
   void
-  observeOutgoing(const std::vector<lp::Packet>& frags);
+  handleOutgoing(std::vector<lp::Packet>& frags);
 
   /** \brief extract and parse all Acks and add Ack for contained Fragment (if any) to AckQueue
    *  \param pkt incoming LpPacket
@@ -99,6 +99,19 @@ public:
   piggyback(lp::Packet& pkt, ssize_t mtu);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  class UnackedFrag;
+  class NetPkt;
+  using UnackedFrags = std::map<lp::Sequence, UnackedFrag>;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /** \brief assign TxSequence number to a fragment
+   *  \param frag fragment to assign TxSequence to
+   *  \return assigned TxSequence number
+   *  \throw std::length_error assigned TxSequence is equal to the start of the existing window
+   */
+  lp::Sequence
+  assignTxSequence(lp::Packet& frag);
+
   /** \brief start the idle Ack timer
    *
    * This timer requests an IDLE packet to acknowledge pending fragments not already piggybacked.
@@ -113,44 +126,46 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   stopIdleAckTimer();
 
-private:
-  /** \brief find and mark as lost fragments where a configurable number of Acks have been received
-   *         for greater sequence numbers
-   *  \param ackSeq sequence number of received Ack
-   *  \return vector containing sequence numbers marked lost by this mechanism
+  /** \brief find and mark as lost fragments where a configurable number of Acks
+   *         (\p m_options.seqNumLossThreshold) have been received for greater TxSequence numbers
+   *  \param ackIt iterator pointing to acknowledged fragment
+   *  \return vector containing iterators to fragments marked lost by this mechanism
    */
-  std::vector<lp::Sequence>
-  findLostLpPackets(lp::Sequence ackSeq);
+  std::vector<UnackedFrags::iterator>
+  findLostLpPackets(UnackedFrags::iterator ackIt);
 
-  /** \brief resend (or declare as lost) a lost fragment
+  /** \brief resend (or give up on) a lost fragment
    */
   void
-  onLpPacketLost(lp::Sequence seq);
-
-  class UnackedFrag;
-  class NetPkt;
+  onLpPacketLost(UnackedFrags::iterator txSeqIt);
 
   /** \brief remove the fragment with the given sequence number from the map of unacknowledged
-   *         fragments as well as its associated network packet
-   *  \param fragIt iterator to fragment to be removed
+   *         fragments, as well as its associated network packet (if any)
+   *  \param fragIt iterator to acknowledged fragment
    *
-   *  If the given sequence marks the beginning of the send window, the window will be incremented.
+   *  If the given TxSequence marks the beginning of the send window, the window will be incremented.
    *  If the associated network packet has been fully transmitted, it will be removed.
    */
   void
-  onLpPacketAcknowledged(std::map<lp::Sequence, UnackedFrag>::iterator fragIt,
-                         std::map<lp::Sequence, NetPkt>::iterator netPktIt);
+  onLpPacketAcknowledged(UnackedFrags::iterator fragIt);
 
-  std::map<lp::Sequence, NetPkt>::iterator
-  getNetPktByFrag(lp::Sequence seq);
+  /** \brief delete a fragment from UnackedFrags and advance acknowledge window if necessary
+   *  \param fragIt iterator to an UnackedFrag, must be dereferencable
+   *  \post fragIt is not in m_unackedFrags
+   *  \post if was equal to m_firstUnackedFrag,
+   *        m_firstUnackedFrag is set to the UnackedFrag after fragIt with consideration of
+   *        TxSequence number wraparound, or set to m_unackedFrags.end() if m_unackedFrags is empty
+   */
+  void
+  deleteUnackedFrag(UnackedFrags::iterator fragIt);
 
-private:
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief contains a sent fragment that has not been acknowledged and associated data
    */
   class UnackedFrag
   {
   public:
-    // Allows implicit conversion from an lp::Packet
+    explicit
     UnackedFrag(lp::Packet pkt);
 
   public:
@@ -159,7 +174,7 @@ private:
     time::steady_clock::TimePoint sendTime;
     size_t retxCount;
     size_t nGreaterSeqAcks; //!< number of Acks received for sequences greater than this fragment
-    bool wasTimedOutBySeq; //!< whether this fragment has been timed out by the sequence number mechanic
+    shared_ptr<NetPkt> netPkt;
   };
 
   /** \brief contains a network-layer packet with unacknowledged fragments
@@ -167,20 +182,26 @@ private:
   class NetPkt
   {
   public:
-    NetPkt();
-
-  public:
-    std::set<lp::Sequence> unackedFrags;
-    bool didRetx;
+    std::vector<UnackedFrags::iterator> unackedFrags;
+    bool didRetx = false;
   };
+
+public:
+  /// TxSequence TLV-TYPE (3 octets) + TxSequence TLV-LENGTH (1 octet) + sizeof(lp::Sequence)
+  static constexpr size_t RESERVED_HEADER_SPACE = 3 + 1 + sizeof(lp::Sequence);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Options m_options;
   GenericLinkService* m_linkService;
-  std::map<lp::Sequence, UnackedFrag> m_unackedFrags;
-  std::map<lp::Sequence, UnackedFrag>::iterator m_firstUnackedFrag;
-  std::map<lp::Sequence, NetPkt> m_netPkts;
+  UnackedFrags m_unackedFrags;
+  /** An iterator that points to the first unacknowledged fragment in the current window. The window
+   *  can wrap around so that the beginning of the window is at a TxSequence greater than other
+   *  fragments in the window. When the window is moved past the last item in the iterator, the
+   *  first fragment in the map will become the start of the window.
+   */
+  UnackedFrags::iterator m_firstUnackedFrag;
   std::queue<lp::Sequence> m_ackQueue;
+  lp::Sequence m_lastTxSeqNo;
   scheduler::ScopedEventId m_idleAckTimer;
   bool m_isIdleAckTimerRunning;
   RttEstimator m_rto;
