@@ -228,15 +228,11 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
   using FaceType = typename T::first;
   using CreateResult = typename T::second;
 
-  Name commandName("/localhost/nfd/faces");
-  commandName.append("create");
-  commandName.append(FaceType::getParameters().wireEncode());
-  auto command = makeInterest(commandName);
-  m_keyChain.sign(*command);
+  Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
 
   bool hasCallbackFired = false;
-  this->node1.face.onSendData.connect([this, command, &hasCallbackFired] (const Data& response) {
-    if (!command->getName().isPrefixOf(response.getName())) {
+  this->node1.face.onSendData.connect([this, req, &hasCallbackFired] (const Data& response) {
+    if (!req.getName().isPrefixOf(response.getName())) {
       return;
     }
 
@@ -284,7 +280,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
     hasCallbackFired = true;
   });
 
-  this->node1.face.receive(*command);
+  this->node1.face.receive(req);
   this->advanceClocks(time::milliseconds(1), 5);
 
   BOOST_CHECK(hasCallbackFired);
@@ -296,14 +292,8 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
   {
     // create face
-
-    Name commandName("/localhost/nfd/faces");
-    commandName.append("create");
-    commandName.append(FaceType::getParameters().wireEncode());
-    auto command = makeInterest(commandName);
-    m_keyChain.sign(*command);
-
-    this->node1.face.receive(*command);
+    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
+    this->node1.face.receive(req);
     this->advanceClocks(time::milliseconds(1), 5);
   }
 
@@ -313,17 +303,12 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
   {
     // re-create face
-
-    Name commandName("/localhost/nfd/faces");
-    commandName.append("create");
-    commandName.append(FaceType::getParameters().wireEncode());
-    auto command = makeInterest(commandName);
-    m_keyChain.sign(*command);
+    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
 
     bool hasCallbackFired = false;
     this->node1.face.onSendData.connect(
-      [this, command, &hasCallbackFired, foundFace] (const Data& response) {
-        if (!command->getName().isPrefixOf(response.getName())) {
+      [this, req, &hasCallbackFired, foundFace] (const Data& response) {
+        if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }
 
@@ -338,7 +323,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
         hasCallbackFired = true;
       });
 
-    this->node1.face.receive(*command);
+    this->node1.face.receive(req);
     this->advanceClocks(time::milliseconds(1), 5);
 
     BOOST_CHECK(hasCallbackFired);

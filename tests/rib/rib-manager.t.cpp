@@ -338,10 +338,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CommandAuthorization, T, AllFixtures, T)
   auto expectedLocalhopResponse = this->m_status.isLocalhopConfigured ? successResp : failureResp;
 
   BOOST_REQUIRE_EQUAL(this->m_responses.size(), nExpectedResponses);
-  BOOST_CHECK_EQUAL(this->checkResponse(0, commandHost->getName(), expectedLocalhostResponse),
+  BOOST_CHECK_EQUAL(this->checkResponse(0, commandHost.getName(), expectedLocalhostResponse),
                     ManagerCommonFixture::CheckResponseResult::OK);
   if (nExpectedResponses == 2) {
-    BOOST_CHECK_EQUAL(this->checkResponse(1, commandHop->getName(), expectedLocalhopResponse),
+    BOOST_CHECK_EQUAL(this->checkResponse(1, commandHop.getName(), expectedLocalhopResponse),
                       ManagerCommonFixture::CheckResponseResult::OK);
   }
 }
@@ -353,20 +353,18 @@ BOOST_AUTO_TEST_CASE(Basic)
   auto paramsRegister    = makeRegisterParameters("/test-register-unregister", 9527);
   auto paramsUnregister  = makeUnregisterParameters("/test-register-unregister", 9527);
 
-  auto setInFaceId = [] (shared_ptr<Interest> commandInterest) {
-    commandInterest->setTag(make_shared<lp::IncomingFaceIdTag>(1234));
-  };
-
-  auto commandRegister   = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister, setInFaceId);
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister, setInFaceId);
+  auto commandRegister = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister);
+  commandRegister.setTag(make_shared<lp::IncomingFaceIdTag>(1234));
+  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(1234));
 
   receiveInterest(commandRegister);
   receiveInterest(commandUnregister);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister->getName(), makeResponse(200, "Success", paramsRegister)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "Success", paramsRegister)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister->getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
@@ -382,11 +380,10 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
   BOOST_CHECK_EQUAL(paramsUnregister.getFaceId(), 0);
 
   const uint64_t inFaceId = 9527;
-  auto setInFaceId = [&inFaceId] (shared_ptr<Interest> commandInterest) {
-    commandInterest->setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
-  };
-  auto commandRegister   = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister, setInFaceId);
-  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister, setInFaceId);
+  auto commandRegister = makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister);
+  commandRegister.setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
+  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(inFaceId));
 
   receiveInterest(commandRegister);
   receiveInterest(commandUnregister);
@@ -395,9 +392,9 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
   paramsUnregister.setFaceId(inFaceId);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
-  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister->getName(), makeResponse(200, "Success", paramsRegister)),
+  BOOST_CHECK_EQUAL(checkResponse(0, commandRegister.getName(), makeResponse(200, "Success", paramsRegister)),
                     CheckResponseResult::OK);
-  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister->getName(), makeResponse(200, "Success", paramsUnregister)),
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
                     CheckResponseResult::OK);
 
   BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
@@ -450,7 +447,7 @@ BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
     }
   }
 
-  receiveInterest(makeInterest("/localhost/nfd/rib/list"));
+  receiveInterest(Interest("/localhost/nfd/rib/list"));
 
   Block content = concatenateResponses();
   content.parse();

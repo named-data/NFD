@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,15 +31,48 @@
 #include "core/manager-base.hpp"
 
 #include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/security/command-interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
 
+/** \brief a fixture that provides a CommandInterestSigner
+ */
+class CommandInterestSignerFixture : public IdentityManagementTimeFixture
+{
+protected:
+  CommandInterestSignerFixture();
+
+  /** \brief sign a command Interest
+   *  \param name command name include prefix and parameters
+   *  \param identity signing identity
+   *  \return a command Interest
+   */
+  Interest
+  makeCommandInterest(const Name& name, const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
+
+  /** \brief create a ControlCommand request
+   *  \param commandName command name including prefix, such as "/localhost/nfd/fib/add-nexthop"
+   *  \param params command parameters
+   *  \param identity signing identity
+   *  \return a command Interest
+   */
+  Interest
+  makeControlCommandRequest(Name commandName, const ControlParameters& params,
+                            const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
+
+protected:
+  static const Name DEFAULT_COMMAND_SIGNER_IDENTITY;
+
+private:
+  ndn::security::CommandInterestSigner m_commandInterestSigner;
+};
+
 /**
  * @brief a collection of common functions shared by all manager's testing fixtures.
  */
-class ManagerCommonFixture : public IdentityManagementTimeFixture
+class ManagerCommonFixture : public CommandInterestSignerFixture
 {
 public: // initialize
   ManagerCommonFixture();
@@ -55,26 +88,6 @@ public: // initialize
   setTopPrefix(const Name& topPrefix);
 
 public: // test
-  typedef std::function<void(shared_ptr<Interest> interest)> InterestHandler;
-
-  /**
-   * @brief create a ControlCommand request
-   *
-   * step1: append the @param parameters to the @param commandName and make an Interest.
-   * step2: call @param beforeSinging to do something with the Interest.
-   * step3: sign the generated command
-   *
-   * @param commandName the command name
-   * @param parameters the ControlParameters
-   * @param beforeSigning a callback that can modify the Interest before it's signed
-   *
-   * @return the signed ControlCommand request
-   */
-  shared_ptr<Interest>
-  makeControlCommandRequest(Name commandName,
-                            const ControlParameters& parameters,
-                            const InterestHandler& beforeSigning = nullptr);
-
   /**
    * @brief cause management to receive an Interest
    *
@@ -84,7 +97,7 @@ public: // test
    * @param interest the Interest to receive
    */
   void
-  receiveInterest(shared_ptr<Interest> interest);
+  receiveInterest(const Interest& interest);
 
 public: // verify
   ControlResponse
@@ -145,11 +158,10 @@ protected:
   ndn::util::DummyClientFace m_face;
   ndn::mgmt::Dispatcher m_dispatcher;
   std::vector<Data>& m_responses; ///< a reference of m_face->sentData
-  Name m_identityName; ///< the identity to sign requests
 };
 
 std::ostream&
-operator<<(std::ostream &os, const ManagerCommonFixture::CheckResponseResult& result);
+operator<<(std::ostream& os, const ManagerCommonFixture::CheckResponseResult& result);
 
 } // namespace tests
 } // namespace nfd

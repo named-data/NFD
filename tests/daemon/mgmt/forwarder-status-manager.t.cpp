@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,9 +70,8 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
 
   // request
   time::system_clock::TimePoint beforeRequest = time::system_clock::now();
-  auto request = makeInterest("ndn:/localhost/nfd/status/general");
-  request->setMustBeFresh(true);
-  request->setChildSelector(1);
+  Interest request("/localhost/nfd/status/general");
+  request.setMustBeFresh(true).setChildSelector(1);
   this->receiveInterest(request);
   time::system_clock::TimePoint afterRequest = time::system_clock::now();
 

@@ -29,13 +29,34 @@
 namespace nfd {
 namespace tests {
 
+const Name CommandInterestSignerFixture::DEFAULT_COMMAND_SIGNER_IDENTITY("/CommandInterestSignerFixture-identity");
+
+CommandInterestSignerFixture::CommandInterestSignerFixture()
+  : m_commandInterestSigner(m_keyChain)
+{
+  BOOST_REQUIRE(this->addIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY));
+}
+
+Interest
+CommandInterestSignerFixture::makeCommandInterest(const Name& name, const Name& identity)
+{
+  return m_commandInterestSigner.makeCommandInterest(name, ndn::security::signingByIdentity(identity));
+}
+
+Interest
+CommandInterestSignerFixture::makeControlCommandRequest(Name commandName,
+                                                        const ControlParameters& params,
+                                                        const Name& identity)
+{
+  commandName.append(params.wireEncode());
+  return this->makeCommandInterest(commandName, identity);
+}
+
 ManagerCommonFixture::ManagerCommonFixture()
   : m_face(getGlobalIoService(), m_keyChain, {true, true})
   , m_dispatcher(m_face, m_keyChain, ndn::security::SigningInfo())
   , m_responses(m_face.sentData)
-  , m_identityName("/unit-test/ManagerCommonFixture/identity")
 {
-  BOOST_REQUIRE(this->addIdentity(m_identityName));
 }
 
 void
@@ -45,25 +66,10 @@ ManagerCommonFixture::setTopPrefix(const Name& topPrefix)
   advanceClocks(time::milliseconds(1));
 }
 
-shared_ptr<Interest>
-ManagerCommonFixture::makeControlCommandRequest(Name commandName,
-                                                const ControlParameters& parameters,
-                                                const InterestHandler& beforeSigning)
-{
-  shared_ptr<Interest> command = makeInterest(commandName.append(parameters.wireEncode()));
-
-  if (beforeSigning != nullptr) {
-    beforeSigning(command);
-  }
-
-  m_keyChain.sign(*command, ndn::security::signingByIdentity(m_identityName));
-  return command;
-}
-
 void
-ManagerCommonFixture::receiveInterest(shared_ptr<Interest> interest)
+ManagerCommonFixture::receiveInterest(const Interest& interest)
 {
-  m_face.receive(*interest);
+  m_face.receive(interest);
   advanceClocks(time::milliseconds(1));
 }
 
@@ -146,7 +152,7 @@ ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
     Name prefix = name.getPrefix(-1);
     uint64_t segmentNo = name.at(-1).toSegment() + 1;
     // request for the next segment
-    receiveInterest(makeInterest(prefix.appendSegment(segmentNo)));
+    receiveInterest(Interest(prefix.appendSegment(segmentNo)));
   }
 
   size_t endIndex = startIndex + nResponses; // not included
@@ -166,41 +172,29 @@ ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
 }
 
 std::ostream&
-operator<<(std::ostream &os, const ManagerCommonFixture::CheckResponseResult& result)
+operator<<(std::ostream& os, const ManagerCommonFixture::CheckResponseResult& result)
 {
   switch (result) {
-  case ManagerCommonFixture::CheckResponseResult::OK:
-    os << "OK";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::OUT_OF_BOUNDARY:
-    os << "OUT_OF_BOUNDARY";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_NAME:
-    os << "WRONG_NAME";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_CONTENT_TYPE:
-    os << "WRONG_CONTENT_TYPE";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::INVALID_RESPONSE:
-    os << "INVALID_RESPONSE";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_CODE:
-    os << "WRONG_CODE";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_TEXT:
-    os << "WRONG_TEXT";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_SIZE:
-    os << "WRONG_BODY_SIZE";
-    break;
-  case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_VALUE:
-    os << "WRONG_BODY_VALUE";
-    break;
-  default:
-    break;
-  };
-
-  return os;
+    case ManagerCommonFixture::CheckResponseResult::OK:
+      return os << "OK";
+    case ManagerCommonFixture::CheckResponseResult::OUT_OF_BOUNDARY:
+      return os << "OUT_OF_BOUNDARY";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_NAME:
+      return os << "WRONG_NAME";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_CONTENT_TYPE:
+      return os << "WRONG_CONTENT_TYPE";
+    case ManagerCommonFixture::CheckResponseResult::INVALID_RESPONSE:
+      return os << "INVALID_RESPONSE";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_CODE:
+      return os << "WRONG_CODE";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_TEXT:
+      return os << "WRONG_TEXT";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_SIZE:
+      return os << "WRONG_BODY_SIZE";
+    case ManagerCommonFixture::CheckResponseResult::WRONG_BODY_VALUE:
+      return os << "WRONG_BODY_VALUE";
+  }
+  return os << static_cast<int>(result);
 }
 
 } // namespace tests

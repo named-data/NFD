@@ -24,16 +24,15 @@
  */
 
 #include "mgmt/command-authenticator.hpp"
-#include <ndn-cxx/security/signing-helpers.hpp>
 #include <boost/filesystem.hpp>
 
 #include "tests/test-common.hpp"
-#include "tests/identity-management-fixture.hpp"
+#include "tests/manager-common-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
-class CommandAuthenticatorFixture : public IdentityManagementTimeFixture
+class CommandAuthenticatorFixture : public CommandInterestSignerFixture
 {
 protected:
   CommandAuthenticatorFixture()
@@ -63,17 +62,17 @@ protected:
   authorize(const std::string& module, const Name& identity,
             const function<void(Interest&)>& modifyInterest = nullptr)
   {
-    auto interest = makeInterest(Name("/prefix").append(module).append("verb"));
-    m_keyChain.sign(*interest, signingByIdentity(identity));
+    Interest interest = this->makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
+                        ControlParameters(), identity);
     if (modifyInterest != nullptr) {
-      modifyInterest(*interest);
+      modifyInterest(interest);
     }
 
     ndn::mgmt::Authorization authorization = authorizations.at(module);
 
     bool isAccepted = false;
     bool isRejected = false;
-    authorization(Name("/prefix"), *interest, nullptr,
+    authorization(Name("/prefix"), interest, nullptr,
       [this, &isAccepted, &isRejected] (const std::string& requester) {
         BOOST_REQUIRE_MESSAGE(!isAccepted && !isRejected,
                               "authorization function should invoke only one continuation");

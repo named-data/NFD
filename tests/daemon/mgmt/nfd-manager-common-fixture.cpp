@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,7 +42,7 @@ NfdManagerCommonFixture::setTopPrefix()
 void
 NfdManagerCommonFixture::setPrivilege(const std::string& privilege)
 {
-  this->saveIdentityCertificate(m_identityName, "ManagerCommonFixture.ndncert");
+  this->saveIdentityCertificate(DEFAULT_COMMAND_SIGNER_IDENTITY, "ManagerCommonFixture.ndncert");
 
   const std::string& config = R"CONFIG(
     authorizations

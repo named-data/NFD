@@ -125,14 +125,13 @@ BOOST_AUTO_TEST_CASE(Existing)
   auto addedFace = addFace(REMOVE_LAST_NOTIFICATION | SET_SCOPE_LOCAL); // clear notification for creation
 
   auto parameters = ControlParameters().setFaceId(addedFace->getId());
-  auto command = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
-
-  receiveInterest(command);
+  auto req = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
+  receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2); // one response and one notification
   // notification is already tested, so ignore it
 
-  BOOST_CHECK_EQUAL(checkResponse(1, command->getName(), makeResponse(200, "OK", parameters)),
+  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(), makeResponse(200, "OK", parameters)),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(addedFace->getId(), face::INVALID_FACEID);
@@ -141,13 +140,11 @@ BOOST_AUTO_TEST_CASE(Existing)
 BOOST_AUTO_TEST_CASE(NonExisting)
 {
   auto parameters = ControlParameters().setFaceId(65535);
-  auto command = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
-
-  receiveInterest(command);
+  auto req = makeControlCommandRequest("/localhost/nfd/faces/destroy", parameters);
+  receiveInterest(req);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
-
-  BOOST_CHECK_EQUAL(checkResponse(0, command->getName(), makeResponse(200, "OK", parameters)),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), makeResponse(200, "OK", parameters)),
                     CheckResponseResult::OK);
 }
 
@@ -162,7 +159,7 @@ BOOST_AUTO_TEST_CASE(FaceDataset)
     addFace(REMOVE_LAST_NOTIFICATION | SET_URI_TEST | RANDOMIZE_COUNTERS);
   }
 
-  receiveInterest(makeInterest("/localhost/nfd/faces/list"));
+  receiveInterest(Interest("/localhost/nfd/faces/list"));
 
   Block content;
   BOOST_CHECK_NO_THROW(content = concatenateResponses());
@@ -202,10 +199,10 @@ BOOST_AUTO_TEST_CASE(FaceQuery)
   auto invalidQueryName =
     Name("/localhost/nfd/faces/query").append(ndn::makeStringBlock(tlv::Content, "invalid"));
 
-  receiveInterest(makeInterest(querySchemeName)); // face1 and face2 expected
-  receiveInterest(makeInterest(queryIdName)); // face1 expected
-  receiveInterest(makeInterest(queryScopeName)); // face1 and face3 expected
-  receiveInterest(makeInterest(invalidQueryName)); // nack expected
+  receiveInterest(Interest(querySchemeName)); // face1 and face2 expected
+  receiveInterest(Interest(queryIdName)); // face1 expected
+  receiveInterest(Interest(queryScopeName)); // face1 and face3 expected
+  receiveInterest(Interest(invalidQueryName)); // nack expected
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 4);
 
@@ -311,7 +308,7 @@ BOOST_AUTO_TEST_CASE(ChannelDataset)
     addedChannels[channel->getUri().toString()] = channel;
   }
 
-  receiveInterest(makeInterest("/localhost/nfd/faces/channels"));
+  receiveInterest(Interest("/localhost/nfd/faces/channels"));
 
   Block content;
   BOOST_CHECK_NO_THROW(content = concatenateResponses());

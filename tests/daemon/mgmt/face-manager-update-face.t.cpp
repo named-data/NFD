@@ -68,18 +68,15 @@ public:
   createFace(const ControlParameters& createParams,
              bool isForOnDemandFace = false)
   {
-    Name commandName("/localhost/nfd/faces/create");
-    commandName.append(createParams.wireEncode());
-    auto command = makeInterest(commandName);
-    m_keyChain.sign(*command);
+    Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", createParams);
 
     // if this creation if for on-demand face then create it on node2
     FaceManagerCommandNode& target = isForOnDemandFace ? this->node2 : this->node1;
 
     bool hasCallbackFired = false;
     signal::ScopedConnection connection = target.face.onSendData.connect(
-      [&, command, isForOnDemandFace, this] (const Data& response) {
-        if (!command->getName().isPrefixOf(response.getName())) {
+      [&, req, isForOnDemandFace, this] (const Data& response) {
+        if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }
 
@@ -101,7 +98,7 @@ public:
         }
       });
 
-    target.face.receive(*command);
+    target.face.receive(req);
     this->advanceClocks(time::milliseconds(1), 5);
 
     if (isForOnDemandFace) {
@@ -117,19 +114,16 @@ public:
              bool isSelfUpdating,
              const function<void(const ControlResponse& resp)>& checkResp)
   {
-    Name commandName("/localhost/nfd/faces/update");
-    commandName.append(requestParams.wireEncode());
-    auto command = makeInterest(commandName);
+    Interest req = makeControlCommandRequest("/localhost/nfd/faces/update", requestParams);
     if (isSelfUpdating) {
       // Attach IncomingFaceIdTag to interest
-      command->setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
+      req.setTag(make_shared<lp::IncomingFaceIdTag>(faceId));
     }
-    m_keyChain.sign(*command);
 
     bool hasCallbackFired = false;
     signal::ScopedConnection connection = this->node1.face.onSendData.connect(
-      [this, command, &hasCallbackFired, &checkResp] (const Data& response) {
-        if (!command->getName().isPrefixOf(response.getName())) {
+      [this, req, &hasCallbackFired, &checkResp] (const Data& response) {
+        if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }
 
@@ -139,7 +133,7 @@ public:
         hasCallbackFired = true;
       });
 
-    this->node1.face.receive(*command);
+    this->node1.face.receive(req);
     this->advanceClocks(time::milliseconds(1), 5);
 
     BOOST_CHECK(hasCallbackFired);
@@ -156,15 +150,12 @@ private:
     ControlParameters params;
     params.setFaceId(faceId);
 
-    Name commandName("/localhost/nfd/faces/destroy");
-    commandName.append(params.wireEncode());
-    auto command = makeInterest(commandName);
-    m_keyChain.sign(*command);
+    Interest req = makeControlCommandRequest("/localhost/nfd/faces/destroy", params);
 
     bool hasCallbackFired = false;
     signal::ScopedConnection connection = this->node1.face.onSendData.connect(
-      [this, command, &hasCallbackFired] (const Data& response) {
-        if (!command->getName().isPrefixOf(response.getName())) {
+      [this, req, &hasCallbackFired] (const Data& response) {
+        if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }
 
@@ -175,7 +166,7 @@ private:
         hasCallbackFired = true;
       });
 
-    this->node1.face.receive(*command);
+    this->node1.face.receive(req);
     this->advanceClocks(time::milliseconds(1), 5);
 
     BOOST_CHECK(hasCallbackFired);

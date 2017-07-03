@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(SetSuccess)
   expectedResp.setCode(200)
               .setText("OK")
               .setBody(expectedParams.wireEncode());
-  BOOST_CHECK_EQUAL(checkResponse(0, req->getName(), expectedResp),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(getInstanceName("/A"), strategyNameP);
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE(SetUnknownStrategy)
   ControlResponse expectedResp;
   expectedResp.setCode(404)
               .setText("Strategy not registered");
-  BOOST_CHECK_EQUAL(checkResponse(0, req->getName(), expectedResp),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(hasEntry("/A"), false);
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(UnsetSuccess)
   expectedResp.setCode(200)
               .setText("OK")
               .setBody(expectedParams.wireEncode());
-  BOOST_CHECK_EQUAL(checkResponse(0, req->getName(), expectedResp),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(hasEntry("/A"), false);
@@ -153,7 +153,7 @@ BOOST_AUTO_TEST_CASE(UnsetNoop)
   expectedResp.setCode(200)
               .setText("OK")
               .setBody(expectedParams.wireEncode());
-  BOOST_CHECK_EQUAL(checkResponse(0, req->getName(), expectedResp),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(hasEntry("/A"), false);
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(UnsetRootForbidden)
   ControlResponse expectedResp;
   expectedResp.setCode(400)
               .setText("failed in validating parameters");
-  BOOST_CHECK_EQUAL(checkResponse(0, req->getName(), expectedResp),
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(hasEntry("/"), true);
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
     expected[name] = strategy;
   }
 
-  receiveInterest(makeInterest("/localhost/nfd/strategy-choice/list"));
+  receiveInterest(Interest("/localhost/nfd/strategy-choice/list"));
   Block dataset = concatenateResponses();
   dataset.parse();
   BOOST_CHECK_EQUAL(dataset.elements_size(), expected.size());

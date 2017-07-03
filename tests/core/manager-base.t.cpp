@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
   m_manager.registerStatusDatasetHandler("test-status", handler);
   setTopPrefix("/localhost/nfd");
 
-  receiveInterest(makeInterest("/localhost/nfd/test-module/test-status"));
+  receiveInterest(Interest("/localhost/nfd/test-module/test-status"));
   BOOST_CHECK(isStatusDatasetCalled);
 }
 
@@ -140,15 +140,12 @@ BOOST_AUTO_TEST_CASE(ExtractRequester)
   std::string requesterName;
   auto testAccept = [&] (const std::string& requester) { requesterName = requester; };
 
-  auto unsignedCommand = makeInterest("/test/interest/unsigned");
-  auto signedCommand = makeControlCommandRequest("/test/interest/signed", ControlParameters());
-
-  m_manager.extractRequester(*unsignedCommand, testAccept);
+  m_manager.extractRequester(Interest("/test/interest/unsigned"), testAccept);
   BOOST_CHECK(requesterName.empty());
 
   requesterName = "";
-  m_manager.extractRequester(*signedCommand, testAccept);
-  auto keyLocator = m_keyChain.getPib().getIdentity(m_identityName).getDefaultKey().getName();
+  m_manager.extractRequester(makeControlCommandRequest("/test/interest/signed", ControlParameters()), testAccept);
+  auto keyLocator = m_keyChain.getPib().getIdentity(DEFAULT_COMMAND_SIGNER_IDENTITY).getDefaultKey().getName();
   BOOST_CHECK_EQUAL(requesterName, keyLocator.toUri());
 }
 
