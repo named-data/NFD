@@ -339,7 +339,6 @@ BOOST_AUTO_TEST_CASE(BadSig)
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
 }
 
-BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(InvalidTimestamp, 2)
 BOOST_AUTO_TEST_CASE(InvalidTimestamp)
 {
   name::Component timestampComp;

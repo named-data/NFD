@@ -28,7 +28,14 @@
 
 #include "core/config-file.hpp"
 #include <ndn-cxx/mgmt/dispatcher.hpp>
-#include <ndn-cxx/security/v2/certificate.hpp>
+
+namespace ndn {
+namespace security {
+namespace v2 {
+class Validator;
+} // namespace v2
+} // namespace security
+} // namespace ndn
 
 namespace nfd {
 
@@ -60,16 +67,9 @@ private:
   void
   processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename);
 
-  static std::pair<bool, Name>
-  extractKeyName(const Interest& interest);
-
 private:
-  struct AuthorizedCerts
-  {
-    bool allowAny = false;
-    std::unordered_map<Name, ndn::security::v2::Certificate> certs; ///< keyName => cert
-  };
-  std::unordered_map<std::string, AuthorizedCerts> m_moduleAuth; ///< module => certs
+  /// module => validator
+  std::unordered_map<std::string, shared_ptr<ndn::security::v2::Validator>> m_validators;
 };
 
 } // namespace nfd
