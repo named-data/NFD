@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -65,7 +65,7 @@ public:
  * @{
  */
 
-/** \internal */
+/** \cond */
 #define NFD_LOG_FACE(level, msg) NFD_LOG_##level( \
   ::nfd::face::FaceLogHelper< \
     typename std::remove_cv< \
@@ -73,6 +73,7 @@ public:
     >::type \
   >(*this) \
   << msg)
+/** \endcond */
 
 /** \brief Log a message at TRACE level */
 #define NFD_LOG_FACE_TRACE(msg) NFD_LOG_FACE(TRACE, msg)

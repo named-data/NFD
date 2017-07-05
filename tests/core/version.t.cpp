@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,9 +47,9 @@ BOOST_AUTO_TEST_CASE(VersionString)
 {
   BOOST_TEST_MESSAGE("NFD_VERSION_STRING = " NFD_VERSION_STRING);
 
-  BOOST_STATIC_ASSERT(NFD_VERSION_MAJOR < 1000);
-  BOOST_STATIC_ASSERT(NFD_VERSION_MINOR < 1000);
-  BOOST_STATIC_ASSERT(NFD_VERSION_PATCH < 1000);
+  static_assert(NFD_VERSION_MAJOR < 1000, "");
+  static_assert(NFD_VERSION_MINOR < 1000, "");
+  static_assert(NFD_VERSION_PATCH < 1000, "");
   char buf[12];
   ::snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
 

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -37,9 +37,10 @@
  * @{
  */
 
-/** \internal */
+/** \cond */
 #define NFD_LOG_CHAN(level, msg) NFD_LOG_##level( \
   "[" << this->getUri() << "] " << msg)
+/** \endcond */
 
 /** \brief Log a message at TRACE level */
 #define NFD_LOG_CHAN_TRACE(msg) NFD_LOG_CHAN(TRACE, msg)

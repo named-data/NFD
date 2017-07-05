@@ -11,7 +11,7 @@ files:
 Include the following license boilerplate into all `.hpp` and `.cpp` files:
 
     /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-    /**
+    /*
      * Copyright (c) [Year(s)],  [Copyright Holder(s)].
      *
      * This file is part of NFD (Named Data Networking Forwarding Daemon).
