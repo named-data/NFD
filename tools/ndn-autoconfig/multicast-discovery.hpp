@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #ifndef NFD_TOOLS_NDN_AUTOCONFIG_MULTICAST_DISCOVERY_HPP
 #define NFD_TOOLS_NDN_AUTOCONFIG_MULTICAST_DISCOVERY_HPP
 
-#include "base.hpp"
+#include "stage.hpp"
 
 namespace ndn {
 namespace tools {
@@ -47,12 +47,11 @@ namespace autoconfig {
  *     TLV-encoded Uri block.  The value of this block is the URI for the HUB, preferably a
  *     UDP tunnel.
  */
-class MulticastDiscovery : public Base
+class MulticastDiscovery : public Stage
 {
 public:
   /**
    * @brief Create multicast discovery stage
-   * @sa Base::Base
    */
   MulticastDiscovery(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
 

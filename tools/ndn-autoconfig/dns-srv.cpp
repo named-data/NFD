@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base-dns.hpp"
+#include "dns-srv.hpp"
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -38,72 +38,18 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-union BaseDns::QueryAnswer
+union QueryAnswer
 {
   HEADER header;
   uint8_t buf[NS_PACKETSZ];
 };
 
-BaseDns::BaseDns(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure)
-  : Base(face, keyChain, nextStageOnFailure)
-{
-}
-
-std::string
-BaseDns::querySrvRr(const std::string& fqdn)
-{
-  std::string srvDomain = "_ndn._udp." + fqdn;
-  std::cerr << "Sending DNS query for SRV record for " << srvDomain << std::endl;
-
-  res_init();
-
-  _res.retrans = 1;
-  _res.retry = 2;
-  _res.ndots = 10;
-
-  QueryAnswer queryAnswer;
-  int answerSize = res_query(srvDomain.c_str(),
-                             ns_c_in,
-                             ns_t_srv,
-                             queryAnswer.buf,
-                             sizeof(queryAnswer));
-  if (answerSize == 0) {
-    BOOST_THROW_EXCEPTION(Error("No DNS SRV records found for " + srvDomain));
-  }
-  return parseSrvRr(queryAnswer, answerSize);
-}
-
-/**
- * @brief Send DNS SRV request using search domain list
+/** \brief Parse SRV record
+ *  \return FaceUri of the hub from the SRV record
+ *  \throw DnsSrvError if SRV record cannot be parsed
  */
-std::string
-BaseDns::querySrvRrSearch()
-{
-  std::cerr << "Sending DNS query for SRV record for _ndn._udp" << std::endl;
-
-  QueryAnswer queryAnswer;
-
-  res_init();
-
-  _res.retrans = 1;
-  _res.retry = 2;
-  _res.ndots = 10;
-
-  int answerSize = res_search("_ndn._udp",
-                              ns_c_in,
-                              ns_t_srv,
-                              queryAnswer.buf,
-                              sizeof(queryAnswer));
-
-  if (answerSize == 0) {
-    BOOST_THROW_EXCEPTION(Error("No DNS SRV records found for _ndn._udp"));
-  }
-
-  return parseSrvRr(queryAnswer, answerSize);
-}
-
-std::string
-BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
+static std::string
+parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
 {
   // The references of the next classes are:
   // http://www.diablotin.com/librairie/networking/dnsbind/ch14_02.htm
@@ -125,7 +71,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
   };
 
   if (ntohs(queryAnswer.header.ancount) == 0) {
-    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed"));
+    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed"));
   }
 
   const uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
@@ -139,7 +85,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                  srvName,                       // expanded server name
                                  NS_MAXDNAME);
   if (serverNameSize <= 0) {
-    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed (error decoding domain name)"));
+    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed (error decoding domain name)"));
   }
 
   const srv_t* server = reinterpret_cast<const srv_t*>(&blob[sizeof(rechdr)]);
@@ -154,7 +100,7 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                hostName,                      // expanded host name
                                NS_MAXDNAME);
   if (hostNameSize <= 0) {
-    BOOST_THROW_EXCEPTION(Error("SRV record cannot be parsed (error decoding host name)"));
+    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed (error decoding host name)"));
   }
 
   std::string uri = "udp://";
@@ -163,6 +109,59 @@ BaseDns::parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
   uri.append(to_string(convertedPort));
 
   return uri;
+}
+
+std::string
+querySrvRr(const std::string& fqdn)
+{
+  std::string srvDomain = "_ndn._udp." + fqdn;
+  std::cerr << "Sending DNS query for SRV record for " << srvDomain << std::endl;
+
+  res_init();
+
+  _res.retrans = 1;
+  _res.retry = 2;
+  _res.ndots = 10;
+
+  QueryAnswer queryAnswer;
+  int answerSize = res_query(srvDomain.data(),
+                             ns_c_in,
+                             ns_t_srv,
+                             queryAnswer.buf,
+                             sizeof(queryAnswer));
+  if (answerSize == 0) {
+    BOOST_THROW_EXCEPTION(DnsSrvError("No DNS SRV records found for " + srvDomain));
+  }
+  return parseSrvRr(queryAnswer, answerSize);
+}
+
+/**
+ * @brief Send DNS SRV request using search domain list
+ */
+std::string
+querySrvRrSearch()
+{
+  std::cerr << "Sending DNS query for SRV record for _ndn._udp" << std::endl;
+
+  QueryAnswer queryAnswer;
+
+  res_init();
+
+  _res.retrans = 1;
+  _res.retry = 2;
+  _res.ndots = 10;
+
+  int answerSize = res_search("_ndn._udp",
+                              ns_c_in,
+                              ns_t_srv,
+                              queryAnswer.buf,
+                              sizeof(queryAnswer));
+
+  if (answerSize == 0) {
+    BOOST_THROW_EXCEPTION(DnsSrvError("No DNS SRV records found for _ndn._udp"));
+  }
+
+  return parseSrvRr(queryAnswer, answerSize);
 }
 
 } // namespace autoconfig

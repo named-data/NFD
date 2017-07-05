@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -135,7 +135,7 @@ public:
 NdnFchDiscovery::NdnFchDiscovery(Face& face, KeyChain& keyChain,
                                  const std::string& url,
                                  const NextStageCallback& nextStageOnFailure)
-  : Base(face, keyChain, nextStageOnFailure)
+  : Stage(face, keyChain, nextStageOnFailure)
   , m_url(url)
 {
 }

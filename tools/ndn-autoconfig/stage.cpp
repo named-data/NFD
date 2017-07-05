@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -23,13 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "base.hpp"
+#include "stage.hpp"
 
 namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-Base::Base(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure)
+Stage::Stage(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure)
   : m_face(face)
   , m_keyChain(keyChain)
   , m_controller(face, keyChain)
@@ -38,35 +38,35 @@ Base::Base(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnF
 }
 
 void
-Base::connectToHub(const std::string& uri)
+Stage::connectToHub(const std::string& uri)
 {
   FaceUri faceUri(uri);
   std::cerr << "About to connect to: " << uri << std::endl;
 
-  faceUri.canonize(bind(&Base::onCanonizeSuccess, this, _1),
-                   bind(&Base::onCanonizeFailure, this, _1),
+  faceUri.canonize(bind(&Stage::onCanonizeSuccess, this, _1),
+                   bind(&Stage::onCanonizeFailure, this, _1),
                    m_face.getIoService(), time::seconds(4));
 
 }
 
 
 void
-Base::onCanonizeSuccess(const FaceUri& canonicalUri)
+Stage::onCanonizeSuccess(const FaceUri& canonicalUri)
 {
   m_controller.start<ndn::nfd::FaceCreateCommand>(
     ControlParameters().setUri(canonicalUri.toString()),
-    bind(&Base::onHubConnectSuccess, this, _1),
-    bind(&Base::onHubConnectError, this, _1));
+    bind(&Stage::onHubConnectSuccess, this, _1),
+    bind(&Stage::onHubConnectError, this, _1));
 }
 
 void
-Base::onCanonizeFailure(const std::string& reason)
+Stage::onCanonizeFailure(const std::string& reason)
 {
   BOOST_THROW_EXCEPTION(Error("FaceUri canonization failed: " + reason));
 }
 
 void
-Base::onHubConnectSuccess(const ControlParameters& resp)
+Stage::onHubConnectSuccess(const ControlParameters& resp)
 {
   std::cerr << "Successfully created face: " << resp << std::endl;
 
@@ -74,7 +74,7 @@ Base::onHubConnectSuccess(const ControlParameters& resp)
 }
 
 void
-Base::onHubConnectError(const ControlResponse& response)
+Stage::onHubConnectError(const ControlResponse& response)
 {
   // If face exists, continue proceeding with the existing face
   if (response.getCode() == 409) {
@@ -91,7 +91,7 @@ Base::onHubConnectError(const ControlResponse& response)
 }
 
 void
-Base::registerAutoConfigNames(uint64_t faceId)
+Stage::registerAutoConfigNames(uint64_t faceId)
 {
   static const Name TESTBED_PREFIX = "/ndn";
   registerPrefix(TESTBED_PREFIX, faceId);
@@ -101,7 +101,7 @@ Base::registerAutoConfigNames(uint64_t faceId)
 }
 
 void
-Base::registerPrefix(const Name& prefix, uint64_t faceId)
+Stage::registerPrefix(const Name& prefix, uint64_t faceId)
 {
   // Register a prefix in RIB
   m_controller.start<ndn::nfd::RibRegisterCommand>(
@@ -111,18 +111,18 @@ Base::registerPrefix(const Name& prefix, uint64_t faceId)
       .setOrigin(ndn::nfd::ROUTE_ORIGIN_AUTOCONF)
       .setCost(100)
       .setExpirationPeriod(time::milliseconds::max()),
-    bind(&Base::onPrefixRegistrationSuccess, this, _1),
-    bind(&Base::onPrefixRegistrationError, this, _1));
+    bind(&Stage::onPrefixRegistrationSuccess, this, _1),
+    bind(&Stage::onPrefixRegistrationError, this, _1));
 }
 
 void
-Base::onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult)
+Stage::onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult)
 {
   std::cerr << "Successful in name registration: " << commandSuccessResult << std::endl;
 }
 
 void
-Base::onPrefixRegistrationError(const ControlResponse& response)
+Stage::onPrefixRegistrationError(const ControlResponse& response)
 {
   BOOST_THROW_EXCEPTION(Error("Failed in name registration, " + response.getText() +
                               " (code: " + to_string(response.getCode()) + ")"));

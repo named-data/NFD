@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NDN_AUTOCONFIG_BASE_HPP
-#define NFD_TOOLS_NDN_AUTOCONFIG_BASE_HPP
+#ifndef NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
+#define NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
 
 #include "core/common.hpp"
 
@@ -44,7 +44,7 @@ using ndn::nfd::ControlResponse;
 /**
  * @brief Base class for discovery stages
  */
-class Base : boost::noncopyable
+class Stage : boost::noncopyable
 {
 public:
   class Error : public std::runtime_error
@@ -75,11 +75,11 @@ protected:
    * @param keyChain KeyChain object
    * @param nextStageOnFailure Callback to be called after the stage failed
    */
-  Base(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
+  Stage(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
 
   /**
    * @brief Attempt to connect to local hub using the \p uri FaceUri
-   * @throw Base::Error when failed to establish the tunnel
+   * @throw Error when failed to establish the tunnel
    */
   void
   connectToHub(const std::string& uri);
@@ -120,4 +120,4 @@ protected:
 } // namespace tools
 } // namespace ndn
 
-#endif // NFD_TOOLS_NDN_AUTOCONFIG_BASE_HPP
+#endif // NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP

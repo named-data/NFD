@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -35,7 +35,7 @@ static const Name LOCALHOP_HUB_DISCOVERY_PREFIX = "/localhop/ndn-autoconf/hub";
 
 MulticastDiscovery::MulticastDiscovery(Face& face, KeyChain& keyChain,
                                        const NextStageCallback& nextStageOnFailure)
-  : Base(face, keyChain, nextStageOnFailure)
+  : Stage(face, keyChain, nextStageOnFailure)
   , m_nRequestedRegs(0)
   , m_nFinishedRegs(0)
 {

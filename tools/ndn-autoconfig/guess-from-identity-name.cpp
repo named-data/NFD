@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -24,6 +24,7 @@
  */
 
 #include "guess-from-identity-name.hpp"
+#include "dns-srv.hpp"
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
 
@@ -33,7 +34,7 @@ namespace autoconfig {
 
 GuessFromIdentityName::GuessFromIdentityName(Face& face, KeyChain& keyChain,
                                              const NextStageCallback& nextStageOnFailure)
-  : BaseDns(face, keyChain, nextStageOnFailure)
+  : Stage(face, keyChain, nextStageOnFailure)
 {
 }
 
@@ -51,10 +52,10 @@ GuessFromIdentityName::start()
   serverName << "_homehub._autoconf.named-data.net";
 
   try {
-    std::string hubUri = BaseDns::querySrvRr(serverName.str());
+    std::string hubUri = querySrvRr(serverName.str());
     this->connectToHub(hubUri);
   }
-  catch (const BaseDns::Error& e) {
+  catch (const DnsSrvError& e) {
     m_nextStageOnFailure(std::string("Failed to find a home router based on the default identity "
                                      "name (") + e.what() + ")");
   }
