@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -27,6 +27,7 @@
 #define NFD_CORE_NETWORK_INTERFACE_PREDICATE_HPP
 
 #include "common.hpp"
+#include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
 
@@ -60,6 +61,9 @@ public:
 
   bool
   operator()(const NetworkInterfaceInfo& netif) const;
+
+  bool
+  operator()(const ndn::net::NetworkInterface& netif) const;
 
   bool
   operator==(const NetworkInterfacePredicate& other) const;

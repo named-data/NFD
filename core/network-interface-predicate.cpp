@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -122,11 +122,36 @@ doesMatchRule(const NetworkInterfaceInfo& netif, const std::string& rule)
          netif.etherAddress.toString() == rule;
 }
 
+static bool
+doesMatchRule2(const ndn::net::NetworkInterface& netif, const std::string& rule)
+{
+  // if '/' is in rule, this is a subnet, check if IP in subnet
+  if (rule.find('/') != std::string::npos) {
+    Network n = boost::lexical_cast<Network>(rule);
+    for (const auto& addr : netif.getNetworkAddresses()) {
+      if (n.doesContain(addr.getIp())) {
+        return true;
+      }
+    }
+  }
+
+  return rule == "*" ||
+         doesMatchPattern(netif.getName(), rule) ||
+         netif.getEthernetAddress().toString() == rule;
+}
+
 bool
 NetworkInterfacePredicate::operator()(const NetworkInterfaceInfo& netif) const
 {
   return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule, netif, _1)) &&
          std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule, netif, _1));
+}
+
+bool
+NetworkInterfacePredicate::operator()(const ndn::net::NetworkInterface& netif) const
+{
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule2, cref(netif), _1)) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule2, cref(netif), _1));
 }
 
 bool
