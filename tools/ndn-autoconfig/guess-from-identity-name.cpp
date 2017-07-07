@@ -32,14 +32,13 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-GuessFromIdentityName::GuessFromIdentityName(Face& face, KeyChain& keyChain,
-                                             const NextStageCallback& nextStageOnFailure)
-  : Stage(face, keyChain, nextStageOnFailure)
+GuessFromIdentityName::GuessFromIdentityName(KeyChain& keyChain)
+  : m_keyChain(keyChain)
 {
 }
 
 void
-GuessFromIdentityName::start()
+GuessFromIdentityName::doStart()
 {
   std::cerr << "Trying default identity name..." << std::endl;
 
@@ -53,11 +52,10 @@ GuessFromIdentityName::start()
 
   try {
     std::string hubUri = querySrvRr(serverName.str());
-    this->connectToHub(hubUri);
+    this->provideHubFaceUri(hubUri);
   }
   catch (const DnsSrvError& e) {
-    m_nextStageOnFailure(std::string("Failed to find a home router based on the default identity "
-                                     "name (") + e.what() + ")");
+    this->fail(e.what());
   }
 }
 

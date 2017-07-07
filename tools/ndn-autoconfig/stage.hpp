@@ -27,22 +27,14 @@
 #define NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
 
 #include "core/common.hpp"
-
-#include <ndn-cxx/face.hpp>
-#include <ndn-cxx/mgmt/nfd/controller.hpp>
-#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/net/face-uri.hpp>
-#include <ndn-cxx/security/key-chain.hpp>
+#include <ndn-cxx/util/signal.hpp>
 
 namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-using ndn::nfd::ControlParameters;
-using ndn::nfd::ControlResponse;
-
-/**
- * @brief Base class for discovery stages
+/** \brief a discovery stage
  */
 class Stage : boost::noncopyable
 {
@@ -57,63 +49,51 @@ public:
     }
   };
 
-  /**
-   * @brief Callback to be called when the stage fails
-   */
-  typedef std::function<void(const std::string&)> NextStageCallback;
+  virtual ~Stage() = default;
 
-  /**
-   * @brief Start the stage
+  /** \brief get stage name
+   *  \return stage name as a phrase, typically starting with lower case
    */
-  virtual void
-  start() = 0;
+  virtual const std::string&
+  getName() const = 0;
 
-protected:
-  /**
-   * @brief Initialize variables and create Controller instance
-   * @param face Face to be used for all operations (e.g., will send registration commands)
-   * @param keyChain KeyChain object
-   * @param nextStageOnFailure Callback to be called after the stage failed
-   */
-  Stage(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
-
-  /**
-   * @brief Attempt to connect to local hub using the \p uri FaceUri
-   * @throw Error when failed to establish the tunnel
+  /** \brief start running this stage
+   *  \throw Error stage is already running
    */
   void
-  connectToHub(const std::string& uri);
+  start();
+
+protected:
+  /** \brief parse HUB FaceUri from string and declare success
+   */
+  void
+  provideHubFaceUri(const std::string& s);
+
+  void
+  succeed(const FaceUri& hubFaceUri);
+
+  void
+  fail(const std::string& msg);
 
 private:
-  void
-  onCanonizeSuccess(const FaceUri& canonicalUri);
+  virtual void
+  doStart() = 0;
 
-  void
-  onCanonizeFailure(const std::string& reason);
+public:
+  /** \brief signal when a HUB FaceUri is found
+   *
+   *  Argument is HUB FaceUri, may not be canonical.
+   */
+  util::Signal<Stage, FaceUri> onSuccess;
 
-  void
-  onHubConnectSuccess(const ControlParameters& resp);
+  /** \brief signal when discovery fails
+   *
+   *  Argument is error message.
+   */
+  util::Signal<Stage, std::string> onFailure;
 
-  void
-  onHubConnectError(const ControlResponse& response);
-
-  void
-  registerAutoConfigNames(uint64_t faceId);
-
-  void
-  registerPrefix(const Name& prefix, uint64_t faceId);
-
-  void
-  onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult);
-
-  void
-  onPrefixRegistrationError(const ControlResponse& response);
-
-protected:
-  Face& m_face;
-  KeyChain& m_keyChain;
-  ndn::nfd::Controller m_controller;
-  NextStageCallback m_nextStageOnFailure;
+private:
+  bool m_isInProgress = false;
 };
 
 } // namespace autoconfig

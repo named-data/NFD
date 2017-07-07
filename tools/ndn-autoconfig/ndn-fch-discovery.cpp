@@ -132,19 +132,14 @@ public:
   }
 };
 
-NdnFchDiscovery::NdnFchDiscovery(Face& face, KeyChain& keyChain,
-                                 const std::string& url,
-                                 const NextStageCallback& nextStageOnFailure)
-  : Stage(face, keyChain, nextStageOnFailure)
-  , m_url(url)
+NdnFchDiscovery::NdnFchDiscovery(const std::string& url)
+  : m_url(url)
 {
 }
 
 void
-NdnFchDiscovery::start()
+NdnFchDiscovery::doStart()
 {
-  std::cerr << "Trying NDN-FCH service..." << std::endl;
-
   try {
     using namespace boost::asio::ip;
     tcp::iostream requestStream;
@@ -205,10 +200,10 @@ NdnFchDiscovery::start()
       BOOST_THROW_EXCEPTION(HttpException("NDN-FCH did not return hub host"));
     }
 
-    this->connectToHub("udp://" + hubHost);
+    this->provideHubFaceUri("udp://" + hubHost);
   }
   catch (const std::runtime_error& e) {
-    m_nextStageOnFailure(std::string("Failed to find NDN router using NDN-FCH service (") + e.what() + ")");
+    this->fail(e.what());
   }
 }
 

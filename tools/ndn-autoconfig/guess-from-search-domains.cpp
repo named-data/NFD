@@ -30,24 +30,15 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-GuessFromSearchDomains::GuessFromSearchDomains(Face& face, KeyChain& keyChain,
-                                               const NextStageCallback& nextStageOnFailure)
-  : Stage(face, keyChain, nextStageOnFailure)
-{
-}
-
 void
-GuessFromSearchDomains::start()
+GuessFromSearchDomains::doStart()
 {
-  std::cerr << "Trying default suffix DNS query..." << std::endl;
-
   try {
     std::string hubUri = querySrvRrSearch();
-    this->connectToHub(hubUri);
+    this->provideHubFaceUri(hubUri);
   }
   catch (const DnsSrvError& e) {
-    m_nextStageOnFailure(std::string("Failed to find NDN router using default suffix DNS query (") +
-                         e.what() + ")");
+    this->fail(e.what());
   }
 }
 

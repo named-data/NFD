@@ -27,6 +27,9 @@
 #define NFD_TOOLS_NDN_AUTOCONFIG_MULTICAST_DISCOVERY_HPP
 
 #include "stage.hpp"
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 
 namespace ndn {
 namespace tools {
@@ -53,29 +56,36 @@ public:
   /**
    * @brief Create multicast discovery stage
    */
-  MulticastDiscovery(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure);
+  MulticastDiscovery(Face& face, nfd::Controller& controller);
 
-  void
-  start() override;
+  const std::string&
+  getName() const override
+  {
+    static const std::string STAGE_NAME("multicast discovery");
+    return STAGE_NAME;
+  }
 
 private:
+  void
+  doStart() override;
+
   void
   collectMulticastFaces();
 
   void
-  registerHubDiscoveryPrefix(const std::vector<ndn::nfd::FaceStatus>& dataset);
+  registerHubDiscoveryPrefix(const std::vector<nfd::FaceStatus>& dataset);
 
   void
   onRegisterSuccess();
 
   void
-  onRegisterFailure(const ControlResponse& response);
+  onRegisterFailure(const nfd::ControlResponse& response);
 
   void
   setStrategy();
 
   void
-  onSetStrategyFailure(const ControlResponse& response);
+  onSetStrategyFailure(const nfd::ControlResponse& response);
 
   // Start to look for a hub (NDN hub discovery first stage)
   void
@@ -85,6 +95,8 @@ private:
   onSuccess(const Data& data);
 
 private:
+  Face& m_face;
+  nfd::Controller& m_controller;
   size_t m_nRequestedRegs;
   size_t m_nFinishedRegs;
 };

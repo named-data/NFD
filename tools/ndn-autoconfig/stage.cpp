@@ -29,105 +29,45 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-Stage::Stage(Face& face, KeyChain& keyChain, const NextStageCallback& nextStageOnFailure)
-  : m_face(face)
-  , m_keyChain(keyChain)
-  , m_controller(face, keyChain)
-  , m_nextStageOnFailure(nextStageOnFailure)
-{
-}
-
 void
-Stage::connectToHub(const std::string& uri)
+Stage::start()
 {
-  FaceUri faceUri(uri);
-  std::cerr << "About to connect to: " << uri << std::endl;
-
-  faceUri.canonize(bind(&Stage::onCanonizeSuccess, this, _1),
-                   bind(&Stage::onCanonizeFailure, this, _1),
-                   m_face.getIoService(), time::seconds(4));
-
-}
-
-
-void
-Stage::onCanonizeSuccess(const FaceUri& canonicalUri)
-{
-  m_controller.start<ndn::nfd::FaceCreateCommand>(
-    ControlParameters().setUri(canonicalUri.toString()),
-    bind(&Stage::onHubConnectSuccess, this, _1),
-    bind(&Stage::onHubConnectError, this, _1));
-}
-
-void
-Stage::onCanonizeFailure(const std::string& reason)
-{
-  BOOST_THROW_EXCEPTION(Error("FaceUri canonization failed: " + reason));
-}
-
-void
-Stage::onHubConnectSuccess(const ControlParameters& resp)
-{
-  std::cerr << "Successfully created face: " << resp << std::endl;
-
-  registerAutoConfigNames(resp.getFaceId());
-}
-
-void
-Stage::onHubConnectError(const ControlResponse& response)
-{
-  // If face exists, continue proceeding with the existing face
-  if (response.getCode() == 409) {
-    std::cerr << "Face exists. Proceeding with existing face: " << ControlParameters(response.getBody()) << std::endl;
-
-    registerAutoConfigNames(ControlParameters(response.getBody()).getFaceId());
+  if (m_isInProgress) {
+    BOOST_THROW_EXCEPTION(Error("Cannot start a stage when it's in progress"));
   }
-  // Otherwise, report the failure and throw out exception
+  m_isInProgress = true;
+
+  std::cerr << "Starting " << this->getName() << " stage" << std::endl;
+  this->doStart();
+}
+
+void
+Stage::provideHubFaceUri(const std::string& s)
+{
+  FaceUri u;
+  if (u.parse(s)) {
+    this->succeed(u);
+  }
   else {
-    std::ostringstream os;
-    os << "Failed to create face: " << response.getText() << " (code: " << response.getCode() << ")";
-    BOOST_THROW_EXCEPTION(Error(os.str()));
+    this->fail("Cannot parse FaceUri: " + s);
   }
 }
 
 void
-Stage::registerAutoConfigNames(uint64_t faceId)
+Stage::succeed(const FaceUri& hubFaceUri)
 {
-  static const Name TESTBED_PREFIX = "/ndn";
-  registerPrefix(TESTBED_PREFIX, faceId);
-
-  static const Name LOCALHOP_NFD_PREFIX = "/localhop/nfd";
-  registerPrefix(LOCALHOP_NFD_PREFIX, faceId);
+  std::cerr << "Stage " << this->getName() << " succeeded with " << hubFaceUri << std::endl;
+  this->onSuccess(hubFaceUri);
+  m_isInProgress = false;
 }
 
 void
-Stage::registerPrefix(const Name& prefix, uint64_t faceId)
+Stage::fail(const std::string& msg)
 {
-  // Register a prefix in RIB
-  m_controller.start<ndn::nfd::RibRegisterCommand>(
-    ControlParameters()
-      .setName(prefix)
-      .setFaceId(faceId)
-      .setOrigin(ndn::nfd::ROUTE_ORIGIN_AUTOCONF)
-      .setCost(100)
-      .setExpirationPeriod(time::milliseconds::max()),
-    bind(&Stage::onPrefixRegistrationSuccess, this, _1),
-    bind(&Stage::onPrefixRegistrationError, this, _1));
+  std::cerr << "Stage " << this->getName() << " failed: " << msg << std::endl;
+  this->onFailure(msg);
+  m_isInProgress = false;
 }
-
-void
-Stage::onPrefixRegistrationSuccess(const ControlParameters& commandSuccessResult)
-{
-  std::cerr << "Successful in name registration: " << commandSuccessResult << std::endl;
-}
-
-void
-Stage::onPrefixRegistrationError(const ControlResponse& response)
-{
-  BOOST_THROW_EXCEPTION(Error("Failed in name registration, " + response.getText() +
-                              " (code: " + to_string(response.getCode()) + ")"));
-}
-
 
 } // namespace autoconfig
 } // namespace tools

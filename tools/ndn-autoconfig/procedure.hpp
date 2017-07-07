@@ -23,46 +23,70 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NDN_AUTOCONFIG_NDN_FCH_DISCOVERY_HPP
-#define NFD_TOOLS_NDN_AUTOCONFIG_NDN_FCH_DISCOVERY_HPP
+#ifndef NFD_TOOLS_NDN_AUTOCONFIG_PROCEDURE_HPP
+#define NFD_TOOLS_NDN_AUTOCONFIG_PROCEDURE_HPP
 
 #include "stage.hpp"
+#include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-/**
- * @brief Discovery NDN hub using NDN-FCH protocol
- *
- * @see https://github.com/cawka/ndn-fch/blob/master/README.md
- */
-class NdnFchDiscovery : public Stage
+struct Options
+{
+  std::string ndnFchUrl = "http://ndn-fch.named-data.net"; ///< HTTP base URL of NDN-FCH service
+};
+
+class Procedure : noncopyable
 {
 public:
-  /**
-   * @brief Create stage to discover NDN hub using NDN-FCH protocol
-   */
-  explicit
-  NdnFchDiscovery(const std::string& url);
+  Procedure(Face& face, KeyChain& keyChain);
 
-  const std::string&
-  getName() const override
+  void
+  initialize(const Options& options);
+
+  /** \brief run HUB discovery procedure once
+   */
+  void
+  runOnce();
+
+  boost::asio::io_service&
+  getIoService()
   {
-    static const std::string STAGE_NAME("NDN-FCH");
-    return STAGE_NAME;
+    return m_face.getIoService();
   }
 
 private:
+  VIRTUAL_WITH_TESTS void
+  makeStages(const Options& options);
+
   void
-  doStart() override;
+  connect(const FaceUri& hubFaceUri);
+
+  void
+  registerPrefixes(uint64_t hubFaceId, size_t index = 0);
+
+public:
+  /** \brief signal when procedure completes
+   *
+   *  Argument indicates whether the procedure succeeds (true) or fails (false).
+   */
+  util::Signal<Procedure, bool> onComplete;
+
+PROTECTED_WITH_TESTS_ELSE_PRIVATE:
+  std::vector<unique_ptr<Stage>> m_stages;
 
 private:
-  std::string m_url;
+  Face& m_face;
+  KeyChain& m_keyChain;
+  nfd::Controller m_controller;
 };
 
 } // namespace autoconfig
 } // namespace tools
 } // namespace ndn
 
-#endif // NFD_TOOLS_NDN_AUTOCONFIG_NDN_FCH_DISCOVERY_HPP
+#endif // NFD_TOOLS_NDN_AUTOCONFIG_PROCEDURE_HPP

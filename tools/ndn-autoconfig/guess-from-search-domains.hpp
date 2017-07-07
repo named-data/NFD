@@ -49,14 +49,16 @@ namespace autoconfig {
 class GuessFromSearchDomains : public Stage
 {
 public:
-  /**
-   * @brief Create stage to guess home router based on DNS query with default suffix
-   */
-  GuessFromSearchDomains(Face& face, KeyChain& keyChain,
-                         const NextStageCallback& nextStageOnFailure);
+  const std::string&
+  getName() const override
+  {
+    static const std::string STAGE_NAME("guess from search domains");
+    return STAGE_NAME;
+  }
 
+private:
   void
-  start() override;
+  doStart() override;
 };
 
 } // namespace autoconfig
