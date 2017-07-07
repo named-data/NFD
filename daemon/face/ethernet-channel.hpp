@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -27,8 +27,9 @@
 #define NFD_DAEMON_FACE_ETHERNET_CHANNEL_HPP
 
 #include "channel.hpp"
+#include "ethernet-protocol.hpp"
 #include "pcap-helper.hpp"
-#include "core/network-interface.hpp"
+#include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
 namespace face {
@@ -58,7 +59,7 @@ public:
    * To enable creation of faces upon incoming connections,
    * one needs to explicitly call EthernetChannel::listen method.
    */
-  EthernetChannel(const NetworkInterfaceInfo& localEndpoint,
+  EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                   time::nanoseconds idleTimeout);
 
   bool
@@ -127,7 +128,7 @@ private:
   updateFilter();
 
 private:
-  const NetworkInterfaceInfo m_localEndpoint;
+  shared_ptr<const ndn::net::NetworkInterface> m_localEndpoint;
   bool m_isListening;
   boost::asio::posix::stream_descriptor m_socket;
   PcapHelper m_pcap;

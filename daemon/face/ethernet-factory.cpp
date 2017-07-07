@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -118,9 +118,10 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
 
       // determine the interfaces on which channels should be created
       auto netifs = context.listNetifs() |
-                    boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
-                      return netif.isUp() && !netif.isLoopback();
-                    });
+        boost::adaptors::transformed([] (const NetworkInterfaceInfo& nii) { return nii.asNetworkInterface(); }) |
+        boost::adaptors::filtered([] (const shared_ptr<const ndn::net::NetworkInterface>& netif) {
+          return netif->isUp() && !netif->isLoopback();
+        });
 
       // create channels
       for (const auto& netif : netifs) {
@@ -130,7 +131,7 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
             channel->listen(context.addFace, nullptr);
           }
           catch (const EthernetChannel::Error& e) {
-            NFD_LOG_WARN("Cannot listen on " << netif.name << ": " << e.what());
+            NFD_LOG_WARN("Cannot listen on " << netif->getName() << ": " << e.what());
           }
         }
       }
@@ -218,15 +219,15 @@ EthernetFactory::createFace(const FaceUri& remoteUri,
 }
 
 shared_ptr<EthernetChannel>
-EthernetFactory::createChannel(const NetworkInterfaceInfo& localEndpoint,
+EthernetFactory::createChannel(const shared_ptr<const ndn::net::NetworkInterface>& localEndpoint,
                                time::nanoseconds idleTimeout)
 {
-  auto it = m_channels.find(localEndpoint.name);
+  auto it = m_channels.find(localEndpoint->getName());
   if (it != m_channels.end())
     return it->second;
 
   auto channel = std::make_shared<EthernetChannel>(localEndpoint, idleTimeout);
-  m_channels[localEndpoint.name] = channel;
+  m_channels[localEndpoint->getName()] = channel;
 
   return channel;
 }
@@ -238,12 +239,12 @@ EthernetFactory::getChannels() const
 }
 
 shared_ptr<Face>
-EthernetFactory::createMulticastFace(const NetworkInterfaceInfo& netif,
+EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
                                      const ethernet::Address& address)
 {
   BOOST_ASSERT(address.isMulticast());
 
-  auto key = std::make_pair(netif.name, address);
+  auto key = std::make_pair(netif.getName(), address);
   auto found = m_mcastFaces.find(key);
   if (found != m_mcastFaces.end()) {
     return found->second;
@@ -274,19 +275,19 @@ EthernetFactory::applyConfig(const FaceSystem::ConfigContext& context)
   if (m_mcastConfig.isEnabled) {
     // determine interfaces on which faces should be created or retained
     auto capableNetifs = context.listNetifs() |
-                         boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
-                           return netif.isUp() && netif.isMulticastCapable() &&
-                                  m_mcastConfig.netifPredicate(netif);
-                         });
+      boost::adaptors::transformed([] (const NetworkInterfaceInfo& nii) { return nii.asNetworkInterface(); }) |
+      boost::adaptors::filtered([this] (const shared_ptr<const ndn::net::NetworkInterface>& netif) {
+        return netif->isUp() && netif->canMulticast() && m_mcastConfig.netifPredicate(*netif);
+      });
 
     // create faces
     for (const auto& netif : capableNetifs) {
       shared_ptr<Face> face;
       try {
-        face = this->createMulticastFace(netif, m_mcastConfig.group);
+        face = this->createMulticastFace(*netif, m_mcastConfig.group);
       }
       catch (const EthernetTransport::Error& e) {
-        NFD_LOG_WARN("Cannot create Ethernet multicast face on " << netif.name << ": " << e.what());
+        NFD_LOG_WARN("Cannot create Ethernet multicast face on " << netif->getName() << ": " << e.what());
         continue;
       }
 

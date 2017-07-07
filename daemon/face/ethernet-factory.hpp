@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -62,10 +62,10 @@ public:
    *
    * \return always a valid pointer to a EthernetChannel object, an exception
    *         is thrown if it cannot be created.
-   * \throw PcapHelper::Error
+   * \throw PcapHelper::Error channel creation failed
    */
   shared_ptr<EthernetChannel>
-  createChannel(const NetworkInterfaceInfo& localEndpoint,
+  createChannel(const shared_ptr<const ndn::net::NetworkInterface>& localEndpoint,
                 time::nanoseconds idleTimeout);
 
   std::vector<shared_ptr<const Channel>>
@@ -77,13 +77,13 @@ public:
    * If this method is called twice with the same arguments, only one face
    * will be created. The second call will just return the existing face.
    *
-   * \param netif local network interface
+   * \param localEndpoint local network interface
    * \param group multicast group address
    *
    * \throw EthernetTransport::Error transport creation fails
    */
   shared_ptr<Face>
-  createMulticastFace(const NetworkInterfaceInfo& netif,
+  createMulticastFace(const ndn::net::NetworkInterface& localEndpoint,
                       const ethernet::Address& group);
 
 private:

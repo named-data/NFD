@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -26,9 +26,10 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_ETHERNET_TRANSPORT_HPP
 
+#include "ethernet-protocol.hpp"
 #include "pcap-helper.hpp"
 #include "transport.hpp"
-#include "core/network-interface.hpp"
+#include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
 namespace face {
@@ -60,7 +61,7 @@ public:
                  const ethernet::Address& sender);
 
 protected:
-  EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
+  EthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                     const ethernet::Address& remoteEndpoint);
 
   void

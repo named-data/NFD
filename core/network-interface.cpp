@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "network-interface.hpp"
 #include "core/logger.hpp"
+#include <ndn-cxx/net/network-monitor-stub.hpp>
 
 #include <cerrno>
 #include <cstring>
@@ -58,6 +59,29 @@ static_assert(std::is_standard_layout<NetworkInterfaceInfo>::value,
 static_assert(std::is_default_constructible<NetworkInterfaceInfo>::value,
               "NetworkInterfaceInfo must provide a default constructor");
 #endif
+
+shared_ptr<ndn::net::NetworkInterface>
+NetworkInterfaceInfo::asNetworkInterface() const
+{
+  using namespace ndn::net;
+
+  shared_ptr<NetworkInterface> netif = NetworkMonitorStub::makeNetworkInterface();
+  netif->setIndex(this->index);
+  netif->setName(this->name);
+  netif->setEthernetAddress(this->etherAddress);
+  netif->setFlags(this->flags);
+
+  for (const auto& a4 : this->ipv4Addresses) {
+    netif->addNetworkAddress(NetworkAddress(AddressFamily::V4, a4, this->broadcastAddress,
+                                            32, AddressScope::GLOBAL, 0));
+  }
+  for (const auto& a6 : this->ipv6Addresses) {
+    netif->addNetworkAddress(NetworkAddress(AddressFamily::V6, a6, {},
+                                            128, AddressScope::GLOBAL, 0));
+  }
+
+  return netif;
+}
 
 #ifdef WITH_TESTS
 static shared_ptr<std::vector<NetworkInterfaceInfo>> s_debugNetworkInterfaces = nullptr;
@@ -100,59 +124,59 @@ listNetworkInterfaces()
 
     switch (ifa->ifa_addr->sa_family) {
 
-    case AF_INET: {
-      const sockaddr_in* sin = reinterpret_cast<sockaddr_in*>(ifa->ifa_addr);
-      char address[INET_ADDRSTRLEN];
-      if (::inet_ntop(AF_INET, &sin->sin_addr, address, sizeof(address))) {
-        netif.ipv4Addresses.push_back(address_v4::from_string(address));
-        NFD_LOG_TRACE(ifname << ": added IPv4 address " << address);
+      case AF_INET: {
+        const sockaddr_in* sin = reinterpret_cast<sockaddr_in*>(ifa->ifa_addr);
+        char address[INET_ADDRSTRLEN];
+        if (::inet_ntop(AF_INET, &sin->sin_addr, address, sizeof(address))) {
+          netif.ipv4Addresses.push_back(address_v4::from_string(address));
+          NFD_LOG_TRACE(ifname << ": added IPv4 address " << address);
+        }
+        else
+          NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET) failed: " << strerror(errno));
+        break;
       }
-      else
-        NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET) failed: " << strerror(errno));
-      break;
-    }
 
-    case AF_INET6: {
-      const sockaddr_in6* sin6 = reinterpret_cast<sockaddr_in6*>(ifa->ifa_addr);
-      char address[INET6_ADDRSTRLEN];
-      if (::inet_ntop(AF_INET6, &sin6->sin6_addr, address, sizeof(address))) {
-        netif.ipv6Addresses.push_back(address_v6::from_string(address));
-        NFD_LOG_TRACE(ifname << ": added IPv6 address " << address);
+      case AF_INET6: {
+        const sockaddr_in6* sin6 = reinterpret_cast<sockaddr_in6*>(ifa->ifa_addr);
+        char address[INET6_ADDRSTRLEN];
+        if (::inet_ntop(AF_INET6, &sin6->sin6_addr, address, sizeof(address))) {
+          netif.ipv6Addresses.push_back(address_v6::from_string(address));
+          NFD_LOG_TRACE(ifname << ": added IPv6 address " << address);
+        }
+        else
+          NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET6) failed: " << strerror(errno));
+        break;
       }
-      else
-        NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET6) failed: " << strerror(errno));
-      break;
-    }
 
 #if defined(__linux__)
-    case AF_PACKET: {
-      const sockaddr_ll* sll = reinterpret_cast<sockaddr_ll*>(ifa->ifa_addr);
-      netif.index = sll->sll_ifindex;
-      if (sll->sll_hatype == ARPHRD_ETHER && sll->sll_halen == ethernet::ADDR_LEN) {
-        netif.etherAddress = ethernet::Address(sll->sll_addr);
-        NFD_LOG_TRACE(ifname << ": added Ethernet address " << netif.etherAddress);
+      case AF_PACKET: {
+        const sockaddr_ll* sll = reinterpret_cast<sockaddr_ll*>(ifa->ifa_addr);
+        netif.index = sll->sll_ifindex;
+        if (sll->sll_hatype == ARPHRD_ETHER && sll->sll_halen == ethernet::ADDR_LEN) {
+          netif.etherAddress = ethernet::Address(sll->sll_addr);
+          NFD_LOG_TRACE(ifname << ": added Ethernet address " << netif.etherAddress);
+        }
+        else if (sll->sll_hatype != ARPHRD_LOOPBACK) {
+          NFD_LOG_DEBUG(ifname << ": ignoring link-layer address for unhandled hardware type "
+                        << sll->sll_hatype);
+        }
+        break;
       }
-      else if (sll->sll_hatype != ARPHRD_LOOPBACK) {
-        NFD_LOG_DEBUG(ifname << ": ignoring link-layer address for unhandled hardware type "
-                      << sll->sll_hatype);
-      }
-      break;
-    }
 
 #elif defined(__APPLE__) || defined(__FreeBSD__)
-    case AF_LINK: {
-      const sockaddr_dl* sdl = reinterpret_cast<sockaddr_dl*>(ifa->ifa_addr);
-      netif.index = sdl->sdl_index;
-      if (sdl->sdl_type == IFT_ETHER && sdl->sdl_alen == ethernet::ADDR_LEN) {
-        netif.etherAddress = ethernet::Address(reinterpret_cast<uint8_t*>(LLADDR(sdl)));
-        NFD_LOG_TRACE(ifname << ": added Ethernet address " << netif.etherAddress);
+      case AF_LINK: {
+        const sockaddr_dl* sdl = reinterpret_cast<sockaddr_dl*>(ifa->ifa_addr);
+        netif.index = sdl->sdl_index;
+        if (sdl->sdl_type == IFT_ETHER && sdl->sdl_alen == ethernet::ADDR_LEN) {
+          netif.etherAddress = ethernet::Address(reinterpret_cast<uint8_t*>(LLADDR(sdl)));
+          NFD_LOG_TRACE(ifname << ": added Ethernet address " << netif.etherAddress);
+        }
+        else if (sdl->sdl_type != IFT_LOOP) {
+          NFD_LOG_DEBUG(ifname << ": ignoring link-layer address for unhandled interface type "
+                        << sdl->sdl_type);
+        }
+        break;
       }
-      else if (sdl->sdl_type != IFT_LOOP) {
-        NFD_LOG_DEBUG(ifname << ": ignoring link-layer address for unhandled interface type "
-                      << sdl->sdl_type);
-      }
-      break;
-    }
 #endif
     }
 

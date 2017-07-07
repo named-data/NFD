@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -27,8 +27,8 @@
 #define NFD_CORE_NETWORK_INTERFACE_HPP
 
 #include "common.hpp"
-
 #include <ndn-cxx/net/ethernet.hpp>
+#include <ndn-cxx/net/network-interface.hpp>
 
 #include <net/if.h>
 
@@ -43,15 +43,6 @@ using namespace ndn::ethernet;
 class NetworkInterfaceInfo
 {
 public:
-
-  int index;
-  std::string name;
-  ethernet::Address etherAddress;
-  std::vector<boost::asio::ip::address_v4> ipv4Addresses;
-  std::vector<boost::asio::ip::address_v6> ipv6Addresses;
-  boost::asio::ip::address_v4 broadcastAddress;
-  unsigned int flags;
-
   bool
   isLoopback() const;
 
@@ -64,6 +55,22 @@ public:
   bool
   isUp() const;
 
+  /** \brief Export to ndn::net::NetworkInterface
+   *  \warning This is a temporary adaptation during the transition from NetworkInterfaceInfo to
+   *           ndn::net::NetworkInterface. The return value carries the information in this instance
+   *           and will not track changes in the actual network interface or emit signals.
+   */
+  shared_ptr<ndn::net::NetworkInterface>
+  asNetworkInterface() const;
+
+public:
+  int index;
+  std::string name;
+  ethernet::Address etherAddress;
+  std::vector<boost::asio::ip::address_v4> ipv4Addresses;
+  std::vector<boost::asio::ip::address_v6> ipv6Addresses;
+  boost::asio::ip::address_v4 broadcastAddress;
+  unsigned int flags;
 };
 
 inline bool

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -46,7 +46,8 @@ protected:
     for (const auto& netif : listNetworkInterfaces()) {
       if (!netif.isLoopback() && netif.isUp()) {
         try {
-          MulticastEthernetTransport transport(netif, ethernet::getBroadcastAddress(),
+          MulticastEthernetTransport transport(*netif.asNetworkInterface(),
+                                               ethernet::getBroadcastAddress(),
                                                ndn::nfd::LINK_TYPE_MULTI_ACCESS);
           netifs.push_back(netif);
         }
@@ -64,8 +65,8 @@ protected:
     BOOST_ASSERT(netifs.size() > 0);
     localEp = netifs.front().name;
     remoteEp = remoteAddr;
-    transport = make_unique<UnicastEthernetTransport>(netifs.front(), remoteEp,
-                                                      persistency, time::seconds(2));
+    transport = make_unique<UnicastEthernetTransport>(*netifs.front().asNetworkInterface(),
+                                                      remoteEp, persistency, time::seconds(2));
   }
 
   void
@@ -75,7 +76,8 @@ protected:
     BOOST_ASSERT(netifs.size() > 0);
     localEp = netifs.front().name;
     remoteEp = mcastGroup;
-    transport = make_unique<MulticastEthernetTransport>(netifs.front(), remoteEp, linkType);
+    transport = make_unique<MulticastEthernetTransport>(*netifs.front().asNetworkInterface(),
+                                                        remoteEp, linkType);
   }
 
 protected:

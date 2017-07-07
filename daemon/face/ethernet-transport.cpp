@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -40,13 +40,13 @@ namespace face {
 
 NFD_LOG_INIT("EthernetTransport");
 
-EthernetTransport::EthernetTransport(const NetworkInterfaceInfo& localEndpoint,
+EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                                      const ethernet::Address& remoteEndpoint)
   : m_socket(getGlobalIoService())
-  , m_pcap(localEndpoint.name)
-  , m_srcAddress(localEndpoint.etherAddress)
+  , m_pcap(localEndpoint.getName())
+  , m_srcAddress(localEndpoint.getEthernetAddress())
   , m_destAddress(remoteEndpoint)
-  , m_interfaceName(localEndpoint.name)
+  , m_interfaceName(localEndpoint.getName())
   , m_hasRecentlyReceived(false)
 #ifdef _DEBUG
   , m_nDropped(0)

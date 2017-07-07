@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -40,7 +40,7 @@ public:
   /**
    * @brief Creates an Ethernet-based transport for multicast communication
    */
-  MulticastEthernetTransport(const NetworkInterfaceInfo& localEndpoint,
+  MulticastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                              const ethernet::Address& mcastAddress,
                              ndn::nfd::LinkType linkType);
 

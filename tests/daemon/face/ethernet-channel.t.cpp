@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -38,7 +38,7 @@ protected:
   makeChannel()
   {
     BOOST_ASSERT(netifs.size() > 0);
-    return make_unique<EthernetChannel>(netifs.front(), time::seconds(2));
+    return make_unique<EthernetChannel>(netifs.front().asNetworkInterface(), time::seconds(2));
   }
 };
 

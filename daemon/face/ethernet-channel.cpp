@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -37,18 +37,18 @@ namespace face {
 
 NFD_LOG_INIT("EthernetChannel");
 
-EthernetChannel::EthernetChannel(const NetworkInterfaceInfo& localEndpoint,
+EthernetChannel::EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                                  time::nanoseconds idleTimeout)
-  : m_localEndpoint(localEndpoint)
+  : m_localEndpoint(std::move(localEndpoint))
   , m_isListening(false)
   , m_socket(getGlobalIoService())
-  , m_pcap(m_localEndpoint.name)
+  , m_pcap(m_localEndpoint->getName())
   , m_idleFaceTimeout(idleTimeout)
 #ifdef _DEBUG
   , m_nDropped(0)
 #endif
 {
-  setUri(FaceUri::fromDev(m_localEndpoint.name));
+  setUri(FaceUri::fromDev(m_localEndpoint->getName()));
   NFD_LOG_CHAN_INFO("Creating channel");
 }
 
@@ -131,8 +131,8 @@ EthernetChannel::handleRead(const boost::system::error_code& error,
   }
   else {
     const ether_header* eh;
-    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_localEndpoint.etherAddress,
-                                                   m_localEndpoint.etherAddress);
+    std::tie(eh, err) = ethernet::checkFrameHeader(pkt, len, m_localEndpoint->getEthernetAddress(),
+                                                   m_localEndpoint->getEthernetAddress());
     if (eh == nullptr) {
       NFD_LOG_CHAN_DEBUG(err);
     }
@@ -197,7 +197,7 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
 
   // else, create a new face
   auto linkService = make_unique<GenericLinkService>();
-  auto transport = make_unique<UnicastEthernetTransport>(m_localEndpoint, remoteEndpoint,
+  auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
                                                          persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
@@ -218,7 +218,7 @@ EthernetChannel::updateFilter()
     return;
 
   std::string filter = "(ether proto " + to_string(ethernet::ETHERTYPE_NDN) +
-                       ") && (ether dst " + m_localEndpoint.etherAddress.toString() + ")";
+                       ") && (ether dst " + m_localEndpoint->getEthernetAddress().toString() + ")";
   for (const auto& addr : m_channelFaces | boost::adaptors::map_keys) {
     filter += " && (not ether src " + addr.toString() + ")";
   }

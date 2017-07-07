@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -26,12 +26,14 @@
 #ifndef NFD_DAEMON_FACE_ETHERNET_PROTOCOL_HPP
 #define NFD_DAEMON_FACE_ETHERNET_PROTOCOL_HPP
 
-#include "core/network-interface.hpp"
-
+#include "core/common.hpp"
+#include <ndn-cxx/net/ethernet.hpp>
 #include <net/ethernet.h>
 
 namespace nfd {
 namespace ethernet {
+
+using namespace ndn::ethernet;
 
 std::pair<const ether_header*, std::string>
 checkFrameHeader(const uint8_t* packet, size_t length,

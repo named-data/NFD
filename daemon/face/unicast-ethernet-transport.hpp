@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -41,7 +41,7 @@ public:
   /**
    * @brief Creates an Ethernet-based transport for unicast communication
    */
-  UnicastEthernetTransport(const NetworkInterfaceInfo& localEndpoint,
+  UnicastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                            const ethernet::Address& remoteEndpoint,
                            ndn::nfd::FacePersistency persistency,
                            time::nanoseconds idleTimeout);
