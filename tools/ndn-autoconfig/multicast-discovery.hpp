@@ -35,31 +35,28 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-/**
- * @brief Multicast discovery stage
+/** \brief multicast discovery stage
  *
- * - Request
+ *  This stage locates an NDN gateway router, commonly known as a "hub", in the local network by
+ *  sending a hub discovery Interest ndn:/localhop/ndn-autoconf/hub via multicast. This class
+ *  configures routes and strategy on local NFD, so that this Interest is multicast to all
+ *  multi-access faces.
  *
- *     The end host sends an Interest over a multicast face.
+ *  If an NDN gateway router is present in the local network, it should reply with a Data
+ *  containing its own FaceUri. The Data payload contains a Uri element, and the value of this
+ *  element is an ASCII-encoded string of the router's FaceUri. The router may use
+ *  ndn-autoconfig-server program to serve this Data.
  *
- *     Interest Name is /localhop/ndn-autoconf/hub.
- *
- * - Response
- *
- *     A producer app on the HUB answer this Interest with a Data packet that contains a
- *     TLV-encoded Uri block.  The value of this block is the URI for the HUB, preferably a
- *     UDP tunnel.
+ *  Signature on this Data is currently not verified. This stage succeeds when the Data is
+ *  successfully decoded.
  */
 class MulticastDiscovery : public Stage
 {
 public:
-  /**
-   * @brief Create multicast discovery stage
-   */
   MulticastDiscovery(Face& face, nfd::Controller& controller);
 
   const std::string&
-  getName() const override
+  getName() const final
   {
     static const std::string STAGE_NAME("multicast discovery");
     return STAGE_NAME;
@@ -67,38 +64,27 @@ public:
 
 private:
   void
-  doStart() override;
-
-  void
-  collectMulticastFaces();
+  doStart() final;
 
   void
   registerHubDiscoveryPrefix(const std::vector<nfd::FaceStatus>& dataset);
 
   void
-  onRegisterSuccess();
-
-  void
-  onRegisterFailure(const nfd::ControlResponse& response);
+  afterReg();
 
   void
   setStrategy();
 
   void
-  onSetStrategyFailure(const nfd::ControlResponse& response);
-
-  // Start to look for a hub (NDN hub discovery first stage)
-  void
   requestHubData();
-
-  void
-  onSuccess(const Data& data);
 
 private:
   Face& m_face;
   nfd::Controller& m_controller;
-  size_t m_nRequestedRegs;
-  size_t m_nFinishedRegs;
+
+  int m_nRegs = 0;
+  int m_nRegSuccess = 0;
+  int m_nRegFailure = 0;
 };
 
 } // namespace autoconfig
