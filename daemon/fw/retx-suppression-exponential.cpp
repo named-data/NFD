@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "retx-suppression-exponential.hpp"
-#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {
@@ -69,16 +68,15 @@ RetxSuppressionExponential::RetxSuppressionExponential(const Duration& initialIn
   BOOST_ASSERT(maxInterval >= initialInterval);
 }
 
-RetxSuppression::Result
-RetxSuppressionExponential::decide(const Face& inFace, const Interest& interest,
-                                   pit::Entry& pitEntry) const
+RetxSuppressionResult
+RetxSuppressionExponential::decidePerPitEntry(pit::Entry& pitEntry)
 {
   bool isNewPitEntry = !hasPendingOutRecords(pitEntry);
   if (isNewPitEntry) {
-    return NEW;
+    return RetxSuppressionResult::NEW;
   }
 
-  time::steady_clock::TimePoint lastOutgoing = this->getLastOutgoing(pitEntry);
+  time::steady_clock::TimePoint lastOutgoing = getLastOutgoing(pitEntry);
   time::steady_clock::TimePoint now = time::steady_clock::now();
   time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
 
@@ -86,12 +84,45 @@ RetxSuppressionExponential::decide(const Face& inFace, const Interest& interest,
   bool shouldSuppress = sinceLastOutgoing < pi->suppressionInterval;
 
   if (shouldSuppress) {
-    return SUPPRESS;
+    return RetxSuppressionResult::SUPPRESS;
   }
 
   pi->suppressionInterval = std::min(m_maxInterval,
-      time::duration_cast<Duration>(pi->suppressionInterval * m_multiplier));
-  return FORWARD;
+    time::duration_cast<Duration>(pi->suppressionInterval * m_multiplier));
+
+  return RetxSuppressionResult::FORWARD;
+}
+
+RetxSuppressionResult
+RetxSuppressionExponential::decidePerUpstream(pit::Entry& pitEntry, Face& outFace)
+{
+  // NEW if outRecord for the face does not exist
+  auto outRecord = pitEntry.getOutRecord(outFace);
+  if (outRecord == pitEntry.out_end()) {
+    return RetxSuppressionResult::NEW;
+  }
+
+  time::steady_clock::TimePoint lastOutgoing = outRecord->getLastRenewed();
+  time::steady_clock::TimePoint now = time::steady_clock::now();
+  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
+
+  // insertStrategyInfo does not insert m_initialInterval again if it already exists
+  PitInfo* pi = outRecord->insertStrategyInfo<PitInfo>(m_initialInterval).first;
+  bool shouldSuppress = sinceLastOutgoing < pi->suppressionInterval;
+
+  if (shouldSuppress) {
+    return RetxSuppressionResult::SUPPRESS;
+  }
+
+  return RetxSuppressionResult::FORWARD;
+}
+
+void
+RetxSuppressionExponential::incrementIntervalForOutRecord(pit::OutRecord& outRecord)
+{
+  PitInfo* pi = outRecord.insertStrategyInfo<PitInfo>(m_initialInterval).first;
+  pi->suppressionInterval = std::min(m_maxInterval,
+    time::duration_cast<Duration>(pi->suppressionInterval * m_multiplier));
 }
 
 } // namespace fw

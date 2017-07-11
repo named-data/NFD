@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -124,8 +124,8 @@ void
 BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& interest,
                                          const shared_ptr<pit::Entry>& pitEntry)
 {
-  RetxSuppression::Result suppression = m_retxSuppression.decide(inFace, interest, *pitEntry);
-  if (suppression == RetxSuppression::SUPPRESS) {
+  RetxSuppressionResult suppression = m_retxSuppression.decidePerPitEntry(*pitEntry);
+  if (suppression == RetxSuppressionResult::SUPPRESS) {
     NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
                            << " suppressed");
     return;
@@ -135,7 +135,7 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& int
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
   fib::NextHopList::const_iterator it = nexthops.end();
 
-  if (suppression == RetxSuppression::NEW) {
+  if (suppression == RetxSuppressionResult::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(),
       bind(&isNextHopEligible, cref(inFace), interest, _1, pitEntry,

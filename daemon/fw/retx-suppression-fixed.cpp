@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "retx-suppression-fixed.hpp"
-#include "algorithm.hpp"
 
 namespace nfd {
 namespace fw {
@@ -37,20 +36,19 @@ RetxSuppressionFixed::RetxSuppressionFixed(const time::milliseconds& minRetxInte
   BOOST_ASSERT(minRetxInterval > time::milliseconds::zero());
 }
 
-RetxSuppression::Result
-RetxSuppressionFixed::decide(const Face& inFace, const Interest& interest,
-                             pit::Entry& pitEntry) const
+RetxSuppressionResult
+RetxSuppressionFixed::decidePerPitEntry(pit::Entry& pitEntry) const
 {
   bool isNewPitEntry = !hasPendingOutRecords(pitEntry);
   if (isNewPitEntry) {
-    return NEW;
+    return RetxSuppressionResult::NEW;
   }
 
-  time::steady_clock::TimePoint lastOutgoing = this->getLastOutgoing(pitEntry);
+  time::steady_clock::TimePoint lastOutgoing = getLastOutgoing(pitEntry);
   time::steady_clock::TimePoint now = time::steady_clock::now();
   time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
   bool shouldSuppress = sinceLastOutgoing < m_minRetxInterval;
-  return shouldSuppress ? SUPPRESS : FORWARD;
+  return shouldSuppress ? RetxSuppressionResult::SUPPRESS : RetxSuppressionResult::FORWARD;
 }
 
 } // namespace fw

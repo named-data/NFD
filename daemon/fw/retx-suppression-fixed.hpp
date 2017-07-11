@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_FIXED_HPP
 
+#include "algorithm.hpp"
 #include "retx-suppression.hpp"
 
 namespace nfd {
@@ -34,7 +35,7 @@ namespace fw {
 /** \brief a retransmission suppression decision algorithm that
  *         suppresses retransmissions within a fixed duration
  */
-class RetxSuppressionFixed : public RetxSuppression
+class RetxSuppressionFixed
 {
 public:
   explicit
@@ -43,9 +44,8 @@ public:
   /** \brief determines whether Interest is a retransmission,
    *         and if so, whether it shall be forwarded or suppressed
    */
-  virtual Result
-  decide(const Face& inFace, const Interest& interest,
-         pit::Entry& pitEntry) const override;
+  RetxSuppressionResult
+  decidePerPitEntry(pit::Entry& pitEntry) const;
 
 public:
   static const time::milliseconds DEFAULT_MIN_RETX_INTERVAL;

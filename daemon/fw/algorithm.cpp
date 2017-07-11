@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,6 +118,19 @@ hasPendingOutRecords(const pit::Entry& pitEntry)
                         return outRecord.getExpiry() >= now &&
                                outRecord.getIncomingNack() == nullptr;
                       });
+}
+
+time::steady_clock::TimePoint
+getLastOutgoing(const pit::Entry& pitEntry)
+{
+  pit::OutRecordCollection::const_iterator lastOutgoing = std::max_element(
+    pitEntry.out_begin(), pitEntry.out_end(),
+    [] (const pit::OutRecord& a, const pit::OutRecord& b) {
+      return a.getLastRenewed() < b.getLastRenewed();
+    });
+  BOOST_ASSERT(lastOutgoing != pitEntry.out_end());
+
+  return lastOutgoing->getLastRenewed();
 }
 
 } // namespace fw

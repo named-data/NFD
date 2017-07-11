@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,42 +26,23 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_HPP
 
-#include "strategy.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 namespace fw {
 
-/** \brief helper for consumer retransmission suppression
- */
-class RetxSuppression : noncopyable
-{
-public:
-  enum Result {
-    /** \brief Interest is new (not a retransmission)
-     */
-    NEW,
-
-    /** \brief Interest is retransmission and should be forwarded
-     */
-    FORWARD,
-
-    /** \brief Interest is retransmission and should be suppressed
-     */
-    SUPPRESS
-  };
-
-  /** \brief determines whether Interest is a retransmission,
-   *         and if so, whether it shall be forwarded or suppressed
+enum class RetxSuppressionResult {
+  /** \brief Interest is new (not a retransmission)
    */
-  virtual Result
-  decide(const Face& inFace, const Interest& interest, pit::Entry& pitEntry) const = 0;
+  NEW,
 
-protected:
-  /** \return last out-record time
-   *  \pre pitEntry has one or more unexpired out-records
+  /** \brief Interest is retransmission and should be forwarded
    */
-  time::steady_clock::TimePoint
-  getLastOutgoing(const pit::Entry& pitEntry) const;
+  FORWARD,
+
+  /** \brief Interest is retransmission and should be suppressed
+   */
+  SUPPRESS
 };
 
 } // namespace fw

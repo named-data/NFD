@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
 #define NFD_DAEMON_FW_RETX_SUPPRESSION_EXPONENTIAL_HPP
 
+#include "algorithm.hpp"
 #include "retx-suppression.hpp"
 
 namespace nfd {
@@ -37,7 +38,7 @@ namespace fw {
  *  The i-th retransmission will be suppressed if the last transmission (out-record)
  *  occurred within MIN(initialInterval * multiplier^(i-1), maxInterval)
  */
-class RetxSuppressionExponential : public RetxSuppression
+class RetxSuppressionExponential
 {
 public:
   /** \brief time granularity
@@ -49,12 +50,22 @@ public:
                              float multiplier = DEFAULT_MULTIPLIER,
                              const Duration& maxInterval = DEFAULT_MAX_INTERVAL);
 
-  /** \brief determines whether Interest is a retransmission,
+  /** \brief determines whether Interest is a retransmission per pit entry
    *         and if so, whether it shall be forwarded or suppressed
    */
-  virtual Result
-  decide(const Face& inFace, const Interest& interest,
-         pit::Entry& pitEntry) const override;
+  RetxSuppressionResult
+  decidePerPitEntry(pit::Entry& pitEntry);
+
+  /** \brief determines whether Interest is a retransmission per upstream
+   *         and if so, whether it shall be forwarded or suppressed
+   */
+  RetxSuppressionResult
+  decidePerUpstream(pit::Entry& pitEntry, Face& outFace);
+
+  /** \brief Increment the suppression interval for out record
+   */
+  void
+  incrementIntervalForOutRecord(pit::OutRecord& outRecord);
 
 public:
   /** \brief StrategyInfo on pit::Entry

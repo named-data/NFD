@@ -108,6 +108,12 @@ findDuplicateNonce(const pit::Entry& pitEntry, uint32_t nonce, const Face& face)
 bool
 hasPendingOutRecords(const pit::Entry& pitEntry);
 
+/** \return last out-record time
+ *  \pre pitEntry has one or more unexpired out-records
+ */
+time::steady_clock::TimePoint
+getLastOutgoing(const pit::Entry& pitEntry);
+
 } // namespace fw
 } // namespace nfd
 

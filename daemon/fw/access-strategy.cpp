@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,15 +60,15 @@ void
 AccessStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-  RetxSuppression::Result suppressResult = m_retxSuppression.decide(inFace, interest, *pitEntry);
+  RetxSuppressionResult suppressResult = m_retxSuppression.decidePerPitEntry(*pitEntry);
   switch (suppressResult) {
-  case RetxSuppression::NEW:
+  case RetxSuppressionResult::NEW:
     this->afterReceiveNewInterest(inFace, interest, pitEntry);
     break;
-  case RetxSuppression::FORWARD:
+  case RetxSuppressionResult::FORWARD:
     this->afterReceiveRetxInterest(inFace, interest, pitEntry);
     break;
-  case RetxSuppression::SUPPRESS:
+  case RetxSuppressionResult::SUPPRESS:
     NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-suppress");
     break;
   default:
