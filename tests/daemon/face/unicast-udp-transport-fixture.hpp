@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,7 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "test-ip.hpp"
+#include "test-netif-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -47,7 +47,7 @@ protected:
   UnicastUdpTransportFixture()
     : transport(nullptr)
     , remoteSocket(g_io)
-    , defaultAddr(getTestIp<ip::address_v4>())
+    , defaultAddr(getTestIp<AddressFamily::V4>())
     , receivedPackets(nullptr)
   {
   }

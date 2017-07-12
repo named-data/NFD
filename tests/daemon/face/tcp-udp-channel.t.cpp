@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -26,8 +26,7 @@
 #include "tcp-channel-fixture.hpp"
 #include "udp-channel-fixture.hpp"
 
-#include "test-ip.hpp"
-
+#include "test-netif-ip.hpp"
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -37,18 +36,19 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestTcpUdpChannel)
 
-template<typename F, typename A>
+template<typename F, AddressFamily AF>
 struct FixtureAndAddress
 {
   using Fixture = F;
-  using Address = A;
+  static constexpr AddressFamily ADDRESS_FAMILY = AF;
+  using Address = typename IpAddressFromFamily<AF>::type;
 };
 
 using FixtureAndAddressList = boost::mpl::vector<
-  FixtureAndAddress<TcpChannelFixture, boost::asio::ip::address_v4>,
-  FixtureAndAddress<TcpChannelFixture, boost::asio::ip::address_v6>,
-  FixtureAndAddress<UdpChannelFixture, boost::asio::ip::address_v4>,
-  FixtureAndAddress<UdpChannelFixture, boost::asio::ip::address_v6>
+  FixtureAndAddress<TcpChannelFixture, AddressFamily::V4>,
+  FixtureAndAddress<TcpChannelFixture, AddressFamily::V6>,
+  FixtureAndAddress<UdpChannelFixture, AddressFamily::V4>,
+  FixtureAndAddress<UdpChannelFixture, AddressFamily::V6>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Uri, T, FixtureAndAddressList, T::Fixture)
@@ -73,7 +73,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Listen, T, FixtureAndAddressList, T::Fixture)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::Fixture)
 {
-  auto address = getTestIp<typename T::Address>(LoopbackAddress::Yes);
+  auto address = getTestIp<T::ADDRESS_FAMILY>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 
@@ -125,7 +125,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::F
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceClosure, T, FixtureAndAddressList, T::Fixture)
 {
-  auto address = getTestIp<typename T::Address>(LoopbackAddress::Yes);
+  auto address = getTestIp<T::ADDRESS_FAMILY>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 

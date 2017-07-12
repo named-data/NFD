@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -28,6 +28,7 @@
 #include "factory-test-common.hpp"
 #include "face-system-fixture.hpp"
 #include "tests/limited-io.hpp"
+#include "test-netif-ip.hpp"
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/range/algorithm.hpp>
 
@@ -114,8 +115,8 @@ class UdpMcastConfigFixture : public FaceSystemFixture
 protected:
   UdpMcastConfigFixture()
   {
-    for (const auto& netif : listNetworkInterfaces()) {
-      if (netif.isUp() && netif.isMulticastCapable() && !netif.ipv4Addresses.empty()) {
+    for (const auto& netif : collectNetworkInterfaces()) {
+      if (netif->isUp() && netif->canMulticast() && hasAddressFamily<AddressFamily::V4>(*netif)) {
         netifs.push_back(netif);
       }
     }
@@ -136,16 +137,17 @@ protected:
   /** \brief determine whether a UDP multicast face is created on \p netif
    */
   static bool
-  isFaceOnNetif(const Face& face, const NetworkInterfaceInfo& netif)
+  isFaceOnNetif(const Face& face, const shared_ptr<const ndn::net::NetworkInterface>& netif)
   {
     auto ip = boost::asio::ip::address_v4::from_string(face.getLocalUri().getHost());
-    return boost::count(netif.ipv4Addresses, ip) > 0;
+    return std::any_of(netif->getNetworkAddresses().begin(), netif->getNetworkAddresses().end(),
+                       [ip] (const ndn::net::NetworkAddress& a) { return a.getIp() == ip; });
   }
 
 protected:
   /** \brief MulticastUdpTransport-capable network interfaces
    */
-  std::vector<NetworkInterfaceInfo> netifs;
+  std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
 };
 
 #define SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(n) \
@@ -282,7 +284,7 @@ BOOST_FIXTURE_TEST_CASE(Whitelist, UdpMcastConfigFixture)
       }
     }
   )CONFIG";
-  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+  boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
   auto udpMcastFaces = this->listUdpMcastFaces();
@@ -310,7 +312,7 @@ BOOST_FIXTURE_TEST_CASE(Blacklist, UdpMcastConfigFixture)
       }
     }
   )CONFIG";
-  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+  boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
   auto udpMcastFaces = this->listUdpMcastFaces();
@@ -341,8 +343,8 @@ BOOST_FIXTURE_TEST_CASE(ChangePredicate, UdpMcastConfigFixture)
     }
   )CONFIG";
   std::string CONFIG2 = CONFIG1;
-  boost::replace_first(CONFIG1, "%ifname", netifs.front().name);
-  boost::replace_first(CONFIG2, "%ifname", netifs.back().name);
+  boost::replace_first(CONFIG1, "%ifname", netifs.front()->getName());
+  boost::replace_first(CONFIG2, "%ifname", netifs.back()->getName());
 
   parseConfig(CONFIG1, false);
   auto udpMcastFaces = this->listUdpMcastFaces();

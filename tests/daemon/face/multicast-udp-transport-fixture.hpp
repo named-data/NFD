@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -30,7 +30,7 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "test-ip.hpp"
+#include "test-netif-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -47,7 +47,7 @@ protected:
   MulticastUdpTransportFixture()
     : transport(nullptr)
     , multicastEp(ip::address::from_string("230.15.19.47"), 7070)
-    , defaultAddr(getTestIp<ip::address_v4>(LoopbackAddress::No, MulticastInterface::Yes))
+    , defaultAddr(getTestIp<AddressFamily::V4>(LoopbackAddress::No, MulticastInterface::Yes))
     , receivedPackets(nullptr)
     , remoteSockRx(g_io)
     , remoteSockTx(g_io)

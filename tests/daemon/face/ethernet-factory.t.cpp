@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -195,12 +195,12 @@ BOOST_AUTO_TEST_CASE(Whitelist)
       }
     }
   )CONFIG";
-  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+  boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_REQUIRE_EQUAL(etherMcastFaces.size(), 1);
-  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getLocalUri().getHost(), netifs.front().name);
+  BOOST_CHECK_EQUAL(etherMcastFaces.front()->getLocalUri().getHost(), netifs.front()->getName());
 }
 
 BOOST_AUTO_TEST_CASE(Blacklist)
@@ -219,13 +219,13 @@ BOOST_AUTO_TEST_CASE(Blacklist)
       }
     }
   )CONFIG";
-  boost::replace_first(CONFIG, "%ifname", netifs.front().name);
+  boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size() - 1);
   BOOST_CHECK_EQUAL(boost::count_if(etherMcastFaces, [=] (const Face* face) {
-    return face->getLocalUri().getHost() == netifs.front().name;
+    return face->getLocalUri().getHost() == netifs.front()->getName();
   }), 0);
 }
 

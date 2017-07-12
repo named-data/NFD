@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -27,7 +27,7 @@
 #include "face/websocket-transport.hpp"
 
 #include "channel-fixture.hpp"
-#include "test-ip.hpp"
+#include "test-netif-ip.hpp"
 
 namespace nfd {
 namespace face {
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(Listen)
 
 BOOST_AUTO_TEST_CASE(MultipleAccepts)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
   auto transport = listenerFaces.front()->getTransport();
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(Send)
 
 BOOST_AUTO_TEST_CASE(Receive)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(Receive)
 
 BOOST_AUTO_TEST_CASE(FaceClosure)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(FaceClosure)
 
 BOOST_AUTO_TEST_CASE(RemoteClose)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(RemoteClose)
 BOOST_AUTO_TEST_CASE(SetPingInterval)
 {
   auto pingInterval = time::milliseconds(300);
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address, pingInterval, time::milliseconds(1000));
 
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(SetPingInterval)
 
 BOOST_AUTO_TEST_CASE(SetPongTimeOut)
 {
-  auto address = getTestIp<ip::address_v4>(LoopbackAddress::Yes);
+  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address, time::milliseconds(500), time::milliseconds(300));
   clientShouldPong = false;

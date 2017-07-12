@@ -38,7 +38,7 @@ protected:
   makeChannel()
   {
     BOOST_ASSERT(netifs.size() > 0);
-    return make_unique<EthernetChannel>(netifs.front().asNetworkInterface(), time::seconds(2));
+    return make_unique<EthernetChannel>(netifs.front(), time::seconds(2));
   }
 };
 
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Uri)
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
   auto channel = makeChannel();
-  BOOST_CHECK_EQUAL(channel->getUri(), FaceUri::fromDev(netifs.front().name));
+  BOOST_CHECK_EQUAL(channel->getUri(), FaceUri::fromDev(netifs.front()->getName()));
 }
 
 BOOST_AUTO_TEST_CASE(Listen)

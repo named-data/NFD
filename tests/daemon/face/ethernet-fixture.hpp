@@ -26,11 +26,11 @@
 #ifndef NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP
 #define NFD_TESTS_DAEMON_FACE_ETHERNET_FIXTURE_HPP
 
-#include "core/network-interface.hpp"
 #include "face/multicast-ethernet-transport.hpp"
 #include "face/unicast-ethernet-transport.hpp"
 
 #include "tests/limited-io.hpp"
+#include "test-netif-ip.hpp"
 
 namespace nfd {
 namespace face {
@@ -38,16 +38,17 @@ namespace tests {
 
 using namespace nfd::tests;
 
+/** \brief a fixture providing a list of EthernetTransport-capable network interfaces
+ */
 class EthernetFixture : public virtual BaseFixture
 {
 protected:
   EthernetFixture()
   {
-    for (const auto& netif : listNetworkInterfaces()) {
-      if (!netif.isLoopback() && netif.isUp()) {
+    for (const auto& netif : collectNetworkInterfaces()) {
+      if (!netif->isLoopback() && netif->isUp()) {
         try {
-          MulticastEthernetTransport transport(*netif.asNetworkInterface(),
-                                               ethernet::getBroadcastAddress(),
+          MulticastEthernetTransport transport(*netif, ethernet::getBroadcastAddress(),
                                                ndn::nfd::LINK_TYPE_MULTI_ACCESS);
           netifs.push_back(netif);
         }
@@ -58,37 +59,40 @@ protected:
     }
   }
 
+  /** \brief create a UnicastEthernetTransport
+   */
   void
   initializeUnicast(ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e})
   {
     BOOST_ASSERT(netifs.size() > 0);
-    localEp = netifs.front().name;
+    localEp = netifs.front()->getName();
     remoteEp = remoteAddr;
-    transport = make_unique<UnicastEthernetTransport>(*netifs.front().asNetworkInterface(),
-                                                      remoteEp, persistency, time::seconds(2));
+    transport = make_unique<UnicastEthernetTransport>(*netifs.front(), remoteEp, persistency, time::seconds(2));
   }
 
+  /** \brief create a MulticastEthernetTransport
+   */
   void
   initializeMulticast(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
                       ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e})
   {
     BOOST_ASSERT(netifs.size() > 0);
-    localEp = netifs.front().name;
+    localEp = netifs.front()->getName();
     remoteEp = mcastGroup;
-    transport = make_unique<MulticastEthernetTransport>(*netifs.front().asNetworkInterface(),
-                                                        remoteEp, linkType);
+    transport = make_unique<MulticastEthernetTransport>(*netifs.front(), remoteEp, linkType);
   }
 
 protected:
   LimitedIo limitedIo;
-  unique_ptr<EthernetTransport> transport;
-  std::string localEp;
-  ethernet::Address remoteEp;
 
   /** \brief EthernetTransport-capable network interfaces
    */
-  std::vector<NetworkInterfaceInfo> netifs;
+  std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
+
+  unique_ptr<EthernetTransport> transport;
+  std::string localEp;
+  ethernet::Address remoteEp;
 };
 
 #define SKIP_IF_ETHERNET_NETIF_COUNT_LT(n) \
