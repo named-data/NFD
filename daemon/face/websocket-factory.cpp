@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -105,7 +105,7 @@ WebSocketFactory::processConfig(OptionalConfigSection configSection,
 
     auto channel = this->createChannel(endpoint);
     if (!channel->isListening()) {
-      channel->listen(context.addFace);
+      channel->listen(this->addFace);
       if (m_channels.size() > 1) {
         NFD_LOG_WARN("Adding WebSocket channel for new endpoint; cannot close existing channels");
       }

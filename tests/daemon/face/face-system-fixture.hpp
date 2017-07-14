@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -32,6 +32,7 @@
 #include "fw/face-table.hpp"
 
 #include "tests/test-common.hpp"
+#include <ndn-cxx/net/network-monitor-stub.hpp>
 
 namespace nfd {
 namespace face {
@@ -43,7 +44,8 @@ class FaceSystemFixture : public virtual BaseFixture
 {
 public:
   FaceSystemFixture()
-    : faceSystem(faceTable)
+    : netmon(make_shared<ndn::net::NetworkMonitorStub>(~0))
+    , faceSystem(faceTable, netmon)
   {
     faceSystem.setConfigFile(configFile);
   }
@@ -107,6 +109,7 @@ public:
 protected:
   ConfigFile configFile;
   FaceTable faceTable;
+  shared_ptr<ndn::net::NetworkMonitorStub> netmon;
   FaceSystem faceSystem;
 };
 

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -74,7 +74,7 @@ UnixStreamFactory::processConfig(OptionalConfigSection configSection,
   if (!context.isDryRun) {
     auto channel = this->createChannel(path);
     if (!channel->isListening()) {
-      channel->listen(context.addFace, nullptr);
+      channel->listen(this->addFace, nullptr);
     }
   }
 }

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -97,7 +97,7 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
       tcp::Endpoint endpoint(ip::tcp::v4(), port);
       shared_ptr<TcpChannel> v4Channel = this->createChannel(endpoint);
       if (wantListen && !v4Channel->isListening()) {
-        v4Channel->listen(context.addFace, nullptr);
+        v4Channel->listen(this->addFace, nullptr);
       }
       providedSchemes.insert("tcp4");
     }
@@ -109,7 +109,7 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
       tcp::Endpoint endpoint(ip::tcp::v6(), port);
       shared_ptr<TcpChannel> v6Channel = this->createChannel(endpoint);
       if (wantListen && !v6Channel->isListening()) {
-        v6Channel->listen(context.addFace, nullptr);
+        v6Channel->listen(this->addFace, nullptr);
       }
       providedSchemes.insert("tcp6");
     }

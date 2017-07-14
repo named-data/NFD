@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -38,11 +38,19 @@ ProtocolFactory::getRegistry()
 }
 
 unique_ptr<ProtocolFactory>
-ProtocolFactory::create(const std::string& id)
+ProtocolFactory::create(const std::string& id, shared_ptr<ndn::net::NetworkMonitor> netmon,
+                        const FaceCreatedCallback& addFace)
 {
   Registry& registry = getRegistry();
   auto found = registry.find(id);
-  return found == registry.end() ? nullptr : found->second();
+  if (found == registry.end()) {
+    return nullptr;
+  }
+
+  auto factory = found->second();
+  factory->netmon = std::move(netmon);
+  factory->addFace = addFace;
+  return factory;
 }
 
 std::set<std::string>

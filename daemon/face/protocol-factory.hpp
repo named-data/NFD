@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -29,14 +29,14 @@
 #include "channel.hpp"
 #include "face-system.hpp"
 
-#include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
 namespace face {
 
-/** \brief provide support for an underlying protocol
+/** \brief Provides support for an underlying protocol
  *  \sa FaceSystem
  *
  *  A protocol factory provides support for an underlying protocol and owns Channel objects.
@@ -46,7 +46,7 @@ namespace face {
 class ProtocolFactory : noncopyable
 {
 public: // registry
-  /** \brief register a protocol factory type
+  /** \brief Register a protocol factory type
    *  \tparam S subclass of ProtocolFactory
    *  \param id factory identifier
    */
@@ -59,20 +59,21 @@ public: // registry
     registry[id] = &make_unique<PF>;
   }
 
-  /** \return a protocol factory instance
+  /** \brief Create a protocol factory instance
    *  \retval nullptr if factory with \p id is not registered
    */
   static unique_ptr<ProtocolFactory>
-  create(const std::string& id);
+  create(const std::string& id, shared_ptr<ndn::net::NetworkMonitor> netmon,
+         const FaceCreatedCallback& addFace);
 
-  /** \return registered protocol factory ids
+  /** \brief Get registered protocol factory ids
    */
   static std::set<std::string>
   listRegistered();
 
 public:
   /**
-   * \brief Base class for all exceptions thrown by protocol factories
+   * \brief Base class for all exceptions thrown by ProtocolFactory subclasses
    */
   class Error : public std::runtime_error
   {
@@ -88,7 +89,7 @@ public:
   ~ProtocolFactory() = default;
 
 #ifdef DOXYGEN
-  /** \return protocol factory id
+  /** \brief Get id for this ProtocolFactory
    *
    *  face_system.factory-id config section is processed by the protocol factory.
    */
@@ -96,7 +97,7 @@ public:
   getId();
 #endif
 
-  /** \brief process face_system subsection that corresponds to this ProtocolFactory type
+  /** \brief Process face_system subsection that corresponds to this ProtocolFactory type
    *  \param configSection the configuration section or boost::null to indicate it is omitted
    *  \param context provides access to data structures and contextual information
    *  \throw ConfigFile::Error invalid configuration
@@ -107,7 +108,7 @@ public:
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context) = 0;
 
-  /** \return FaceUri schemes accepted by this ProtocolFactory
+  /** \brief Get FaceUri schemes accepted by this ProtocolFactory
    */
   const std::set<std::string>&
   getProvidedSchemes()
@@ -154,9 +155,16 @@ private: // registry
   getRegistry();
 
 protected:
-  /** \brief FaceUri schemes provided by this ProtocolFactory
+  std::set<std::string> providedSchemes; ///< FaceUri schemes provided by this ProtocolFactory
+
+  /** \brief NetworkMonitor for listing available network interfaces and monitoring their changes
+   *
+   *  ProtocolFactory subclass should check the NetworkMonitor has sufficient capabilities prior
+   *  to usage.
    */
-  std::set<std::string> providedSchemes;
+  shared_ptr<ndn::net::NetworkMonitor> netmon;
+
+  FaceCreatedCallback addFace; ///< callback when a new face is created
 };
 
 } // namespace face

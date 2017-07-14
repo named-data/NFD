@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -25,6 +25,7 @@
 
 #include "face-system.hpp"
 #include "protocol-factory.hpp"
+#include "core/global-io.hpp"
 #include "fw/face-table.hpp"
 
 namespace nfd {
@@ -32,13 +33,21 @@ namespace face {
 
 NFD_LOG_INIT("FaceSystem");
 
-FaceSystem::FaceSystem(FaceTable& faceTable)
+FaceSystem::FaceSystem(FaceTable& faceTable, const shared_ptr<ndn::net::NetworkMonitor>& netmon)
   : m_faceTable(faceTable)
 {
+  BOOST_ASSERT(netmon != nullptr);
+
+  auto addFace = bind(&FaceTable::add, &m_faceTable, _1);
   for (const std::string& id : ProtocolFactory::listRegistered()) {
     NFD_LOG_TRACE("creating factory " << id);
-    m_factories[id] = ProtocolFactory::create(id);
+    m_factories[id] = ProtocolFactory::create(id, netmon, addFace);
   }
+}
+
+FaceSystem::FaceSystem(FaceTable& faceTable)
+  : FaceSystem(faceTable, make_shared<ndn::net::NetworkMonitor>(getGlobalIoService()))
+{
 }
 
 FaceSystem::~FaceSystem() = default;
@@ -78,7 +87,6 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
 {
   ConfigContext context;
   context.isDryRun = isDryRun;
-  context.addFace = bind(&FaceTable::add, &m_faceTable, _1);
   context.m_netifs = listNetworkInterfaces();
 
   // process sections in protocol factories

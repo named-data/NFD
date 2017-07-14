@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -46,30 +46,22 @@ NFD_LOG_INIT("Nfd");
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
-static inline ndn::net::NetworkMonitor*
-makeNetworkMonitor()
+Nfd::Nfd(ndn::KeyChain& keyChain)
+  : m_keyChain(keyChain)
+  , m_netmon(make_shared<ndn::net::NetworkMonitor>(getGlobalIoService()))
 {
-  try {
-    return new ndn::net::NetworkMonitor(getGlobalIoService());
-  }
-  catch (const ndn::net::NetworkMonitor::Error& e) {
-    NFD_LOG_WARN(e.what());
-    return nullptr;
-  }
 }
 
 Nfd::Nfd(const std::string& configFile, ndn::KeyChain& keyChain)
-  : m_configFile(configFile)
-  , m_keyChain(keyChain)
-  , m_networkMonitor(makeNetworkMonitor())
+  : Nfd(keyChain)
 {
+  m_configFile = configFile;
 }
 
 Nfd::Nfd(const ConfigSection& config, ndn::KeyChain& keyChain)
-  : m_configSection(config)
-  , m_keyChain(keyChain)
-  , m_networkMonitor(makeNetworkMonitor())
+  : Nfd(keyChain)
 {
+  m_configSection = config;
 }
 
 // It is necessary to explicitly define the destructor, because some member variables (e.g.,
@@ -87,23 +79,21 @@ Nfd::initialize()
   FaceTable& faceTable = m_forwarder->getFaceTable();
   faceTable.addReserved(face::makeNullFace(), face::FACEID_NULL);
   faceTable.addReserved(face::makeNullFace(FaceUri("contentstore://")), face::FACEID_CONTENT_STORE);
-  m_faceSystem.reset(new face::FaceSystem(faceTable));
+  m_faceSystem = make_unique<face::FaceSystem>(faceTable, m_netmon);
 
   initializeManagement();
 
   PrivilegeHelper::drop();
 
-  if (m_networkMonitor) {
-    m_networkMonitor->onNetworkStateChanged.connect([this] {
-        // delay stages, so if multiple events are triggered in short sequence,
-        // only one auto-detection procedure is triggered
-        m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
-          [this] {
-            NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
-            this->reloadConfigFileFaceSection();
-          });
-      });
-  }
+  m_netmon->onNetworkStateChanged.connect([this] {
+      // delay stages, so if multiple events are triggered in short sequence,
+      // only one auto-detection procedure is triggered
+      m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
+        [this] {
+          NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
+          this->reloadConfigFileFaceSection();
+        });
+    });
 }
 
 void

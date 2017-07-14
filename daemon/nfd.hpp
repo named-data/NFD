@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -93,6 +93,9 @@ public:
   reloadConfigFile();
 
 private:
+  explicit
+  Nfd(ndn::KeyChain& keyChain);
+
   void
   initializeLogging();
 
@@ -119,7 +122,7 @@ private:
   unique_ptr<FibManager> m_fibManager;
   unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
 
-  unique_ptr<ndn::net::NetworkMonitor> m_networkMonitor;
+  shared_ptr<ndn::net::NetworkMonitor> m_netmon;
   scheduler::ScopedEventId m_reloadConfigEvent;
 };
 

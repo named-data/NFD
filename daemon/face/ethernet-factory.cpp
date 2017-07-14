@@ -128,7 +128,7 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
         auto channel = this->createChannel(netif, time::seconds(idleTimeout));
         if (wantListen && !channel->isListening()) {
           try {
-            channel->listen(context.addFace, nullptr);
+            channel->listen(this->addFace, nullptr);
           }
           catch (const EthernetChannel::Error& e) {
             NFD_LOG_WARN("Cannot listen on " << netif->getName() << ": " << e.what());
@@ -293,7 +293,7 @@ EthernetFactory::applyConfig(const FaceSystem::ConfigContext& context)
 
       if (face->getId() == face::INVALID_FACEID) {
         // new face: register with forwarding
-        context.addFace(face);
+        this->addFace(face);
       }
       else {
         // existing face: don't destroy

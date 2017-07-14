@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -30,6 +30,9 @@
 #include "core/config-file.hpp"
 #include "core/network-interface.hpp"
 #include "core/network-interface-predicate.hpp"
+#include <ndn-cxx/net/network-address.hpp>
+#include <ndn-cxx/net/network-interface.hpp>
+#include <ndn-cxx/net/network-monitor.hpp>
 
 namespace nfd {
 
@@ -47,8 +50,11 @@ class ProtocolFactory;
 class FaceSystem : noncopyable
 {
 public:
+  FaceSystem(FaceTable& faceTable, const shared_ptr<ndn::net::NetworkMonitor>& netmon);
+
+  DEPRECATED(
   explicit
-  FaceSystem(FaceTable& faceTable);
+  FaceSystem(FaceTable& faceTable));
 
   ~FaceSystem();
 
@@ -83,17 +89,15 @@ public:
   class ConfigContext : noncopyable
   {
   public:
+    /// \deprecated use NetworkMonitor provided as ProtocolFactory::netmon
     const std::vector<NetworkInterfaceInfo>&
     listNetifs() const
     {
-      ///\todo get netifs from NetworkMonitor
       return m_netifs;
     }
 
   public:
     bool isDryRun;
-    FaceCreatedCallback addFace;
-    ///\todo add NetworkMonitor
 
   private:
     std::vector<NetworkInterfaceInfo> m_netifs;

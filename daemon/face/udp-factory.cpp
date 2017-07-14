@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -151,7 +151,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       udp::Endpoint endpoint(ip::udp::v4(), port);
       shared_ptr<UdpChannel> v4Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
       if (!v4Channel->isListening()) {
-        v4Channel->listen(context.addFace, nullptr);
+        v4Channel->listen(this->addFace, nullptr);
       }
       providedSchemes.insert("udp");
       providedSchemes.insert("udp4");
@@ -164,7 +164,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       udp::Endpoint endpoint(ip::udp::v6(), port);
       shared_ptr<UdpChannel> v6Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
       if (!v6Channel->isListening()) {
-        v6Channel->listen(context.addFace, nullptr);
+        v6Channel->listen(this->addFace, nullptr);
       }
       providedSchemes.insert("udp");
       providedSchemes.insert("udp6");
@@ -485,7 +485,7 @@ UdpFactory::applyMulticastConfig(const FaceSystem::ConfigContext& context)
                                                         needIfname ? netif.name : "");
       if (face->getId() == INVALID_FACEID) {
         // new face: register with forwarding
-        context.addFace(face);
+        this->addFace(face);
       }
       else {
         // existing face: don't destroy
