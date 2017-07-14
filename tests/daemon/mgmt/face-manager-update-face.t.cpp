@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -54,12 +54,14 @@ public:
   void
   createFace(const std::string& uri = "tcp4://127.0.0.1:26363",
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             bool enableLocalFields = false)
+             bool enableLocalFields = false,
+             bool enableReliability = false)
   {
     ControlParameters params;
     params.setUri(uri);
     params.setFacePersistency(persistency);
     params.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, enableLocalFields);
+    params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, enableReliability);
 
     createFace(params);
   }
@@ -541,6 +543,57 @@ BOOST_AUTO_TEST_CASE(UpdateLocalFieldsEnableDisable)
       BOOST_REQUIRE(actualParams.hasFlags());
       // Check if flags indicate local fields disabled
       BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+    }
+    else {
+      BOOST_ERROR("Disable: Response does not contain ControlParameters");
+    }
+  });
+}
+
+BOOST_AUTO_TEST_CASE(UpdateReliabilityEnableDisable)
+{
+  createFace("udp4://127.0.0.1:26363");
+
+  ControlParameters enableParams;
+  enableParams.setFaceId(faceId);
+  enableParams.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
+
+  ControlParameters disableParams;
+  disableParams.setFaceId(faceId);
+  disableParams.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
+
+  updateFace(enableParams, false, [] (const ControlResponse& actual) {
+    ControlResponse expected(200, "OK");
+    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_CHECK(actualParams.hasFacePersistency());
+      BOOST_REQUIRE(actualParams.hasFlags());
+      // Check if flags indicate reliability enabled
+      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+    }
+    else {
+      BOOST_ERROR("Enable: Response does not contain ControlParameters");
+    }
+  });
+
+  updateFace(disableParams, false, [] (const ControlResponse& actual) {
+    ControlResponse expected(200, "OK");
+    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_CHECK(actualParams.hasFacePersistency());
+      BOOST_REQUIRE(actualParams.hasFlags());
+      // Check if flags indicate reliability disabled
+      BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
     }
     else {
       BOOST_ERROR("Disable: Response does not contain ControlParameters");

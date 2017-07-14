@@ -46,10 +46,11 @@ createFace(ProtocolFactory& factory,
            const FaceUri& remoteUri,
            const ndn::optional<FaceUri>& localUri,
            ndn::nfd::FacePersistency persistency,
-           bool wantLocalFieldsEnabled,
+           bool wantLocalFields,
+           bool wantLpReliability,
            const CreateFaceExpectedResult& expected)
 {
-  factory.createFace({remoteUri, localUri, persistency, wantLocalFieldsEnabled},
+  factory.createFace({remoteUri, localUri, persistency, wantLocalFields, wantLpReliability},
                      [expected] (const shared_ptr<Face>&) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },

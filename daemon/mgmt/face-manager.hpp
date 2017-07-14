@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -79,8 +79,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
 
   static void
   setLinkServiceOptions(Face& face,
-                        const ControlParameters& parameters,
-                        ControlParameters& response);
+                        const ControlParameters& parameters);
 
   static ControlParameters
   collectFaceProperties(const Face& face, bool wantUris);

@@ -55,12 +55,13 @@ EthernetChannel::EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> lo
 void
 EthernetChannel::connect(const ethernet::Address& remoteEndpoint,
                          ndn::nfd::FacePersistency persistency,
+                         bool wantLpReliability,
                          const FaceCreatedCallback& onFaceCreated,
                          const FaceCreationFailedCallback& onConnectFailed)
 {
   shared_ptr<Face> face;
   try {
-    face = createFace(remoteEndpoint, persistency).second;
+    face = createFace(remoteEndpoint, persistency, wantLpReliability).second;
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
@@ -165,7 +166,7 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
   bool isCreated = false;
   shared_ptr<Face> face;
   try {
-    std::tie(isCreated, face) = createFace(sender, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+    std::tie(isCreated, face) = createFace(sender, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, false);
   }
   catch (const EthernetTransport::Error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << sender << " failed: " << e.what());
@@ -186,7 +187,8 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
 
 std::pair<bool, shared_ptr<Face>>
 EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
-                            ndn::nfd::FacePersistency persistency)
+                            ndn::nfd::FacePersistency persistency,
+                            bool wantLpReliability)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
@@ -196,7 +198,9 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
   }
 
   // else, create a new face
-  auto linkService = make_unique<GenericLinkService>();
+  GenericLinkService::Options options;
+  options.reliabilityOptions.isEnabled = wantLpReliability;
+  auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
                                                          persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));

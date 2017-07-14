@@ -139,7 +139,8 @@ public:
     FaceUri remoteUri;
     ndn::optional<FaceUri> localUri;
     ndn::nfd::FacePersistency persistency;
-    bool wantLocalFieldsEnabled;
+    bool wantLocalFields;
+    bool wantLpReliability;
   };
 
   /** \brief Try to create face using the supplied parameters

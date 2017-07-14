@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -130,12 +130,14 @@ private:
       m_tcpChannel.connect(tcp::Endpoint(addr, port),
                            ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                            false,
+                           false,
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
                            bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
     else if (uriR.getScheme() == "udp4") {
       m_udpChannel.connect(udp::Endpoint(addr, port),
                            ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                           false,
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
                            bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }

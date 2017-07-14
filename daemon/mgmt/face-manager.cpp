@@ -118,7 +118,9 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   try {
     factory->createFace({remoteUri, localUri, parameters.getFacePersistency(),
         parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
-        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)},
+        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),
+        parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) &&
+        parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)},
       bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
       bind(&FaceManager::afterCreateFaceFailure, this, _1, _2, done));
   }
@@ -227,7 +229,7 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
   if (parameters.hasFacePersistency()) {
     face->setPersistency(parameters.getFacePersistency());
   }
-  setLinkServiceOptions(*face, parameters, response);
+  setLinkServiceOptions(*face, parameters);
 
   // Set ControlResponse fields
   response = collectFaceProperties(*face, false);
@@ -250,8 +252,7 @@ FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
 
 void
 FaceManager::setLinkServiceOptions(Face& face,
-                                   const ControlParameters& parameters,
-                                   ControlParameters& response)
+                                   const ControlParameters& parameters)
 {
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
   BOOST_ASSERT(linkService != nullptr);
@@ -261,10 +262,10 @@ FaceManager::setLinkServiceOptions(Face& face,
       face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
     options.allowLocalFields = parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
   }
+  if (parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+    options.reliabilityOptions.isEnabled = parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
+  }
   linkService->setOptions(options);
-
-  // Set Flags for ControlResponse
-  response.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
 }
 
 ControlParameters
@@ -277,7 +278,8 @@ FaceManager::collectFaceProperties(const Face& face, bool wantUris)
   ControlParameters params;
   params.setFaceId(face.getId())
         .setFacePersistency(face.getPersistency())
-        .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false);
+        .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false)
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false);
   if (wantUris) {
     params.setUri(face.getRemoteUri().toString())
           .setLocalUri(face.getLocalUri().toString());

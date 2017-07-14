@@ -441,6 +441,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              FaceUri("dev://eth0"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
@@ -451,12 +452,14 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              localUri,
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              localUri,
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
@@ -465,6 +468,15 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              localUri,
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
+             false,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
+
+  createFace(factory,
+             FaceUri("ether://[00:00:5e:00:53:57]"),
+             localUri,
+             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
+             true,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -475,6 +487,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme"});
 
@@ -482,6 +495,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              FaceUri("udp4://127.0.0.1:20071"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme"});
@@ -491,6 +505,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("dev://eth0"),
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
              false,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing Ethernet faces do not support on-demand persistency"});
 
@@ -498,6 +513,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("ether://[01:00:5e:90:10:5e]"),
              FaceUri("dev://eth0"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Cannot create multicast Ethernet faces"});
@@ -507,6 +523,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("dev://eth0"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              true,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
 }

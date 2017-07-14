@@ -162,6 +162,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   factory.createChannel("127.0.0.1", "20071");
@@ -171,12 +172,14 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
+             false,
              false,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
@@ -185,6 +188,15 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              {},
              ndn::nfd::FACE_PERSISTENCY_PERMANENT,
              false,
+             false,
+             {CreateFaceExpectedResult::SUCCESS, 0, ""});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20073"),
+             {},
+             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             false,
+             true,
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -197,6 +209,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("tcp4://127.0.0.1:20071"),
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              false,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Unicast TCP faces cannot be created with a LocalUri"});
 
@@ -204,6 +217,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              FaceUri("tcp4://127.0.0.1:20072"),
              {},
              ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+             false,
              false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing TCP faces do not support on-demand persistency"});
@@ -213,6 +227,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              true,
+             false,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
 }
@@ -247,7 +262,7 @@ BOOST_FIXTURE_TEST_CASE(CreateFaceTimeout, CreateFaceTimeoutFixture)
   factory.createChannel("0.0.0.0", "20070");
 
   factory.createFace({FaceUri("tcp4://192.0.2.1:20070"), {},
-                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false},
+                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false, false},
                      bind(&CreateFaceTimeoutFixture::onFaceCreated, this, _1),
                      bind(&CreateFaceTimeoutFixture::onConnectFailed, this, _2));
 

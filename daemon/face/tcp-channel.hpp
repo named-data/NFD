@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -88,16 +88,26 @@ public:
   void
   connect(const tcp::Endpoint& remoteEndpoint,
           ndn::nfd::FacePersistency persistency,
-          bool wantLocalFieldsEnabled,
+          bool wantLocalFields,
+          bool wantLpReliability,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed,
           time::nanoseconds timeout = time::seconds(4));
 
 private:
+  struct ConnectParams
+  {
+    ndn::nfd::FacePersistency persistency;
+    bool wantLocalFields;
+    bool wantLpReliability;
+  };
+
+private:
   void
   createFace(boost::asio::ip::tcp::socket&& socket,
              ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
+             bool wantLocalFields,
+             bool wantLpReliability,
              const FaceCreatedCallback& onFaceCreated);
 
   void
@@ -113,8 +123,7 @@ private:
   handleConnect(const boost::system::error_code& error,
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                ndn::nfd::FacePersistency persistency,
-                bool wantLocalFieldsEnabled,
+                ConnectParams params,
                 const scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onConnectFailed);

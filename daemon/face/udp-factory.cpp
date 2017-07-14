@@ -236,7 +236,7 @@ UdpFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  if (params.wantLocalFieldsEnabled) {
+  if (params.wantLocalFields) {
     // UDP faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -247,7 +247,8 @@ UdpFactory::createFace(const CreateFaceParams& params,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, params.persistency, onCreated, onFailure);
+      i.second->connect(endpoint, params.persistency, params.wantLpReliability,
+                        onCreated, onFailure);
       return;
     }
   }

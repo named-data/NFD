@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -48,12 +48,13 @@ UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
 void
 UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
                     ndn::nfd::FacePersistency persistency,
+                    bool wantLpReliability,
                     const FaceCreatedCallback& onFaceCreated,
                     const FaceCreationFailedCallback& onConnectFailed)
 {
   shared_ptr<Face> face;
   try {
-    face = createFace(remoteEndpoint, persistency).second;
+    face = createFace(remoteEndpoint, persistency, wantLpReliability).second;
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
@@ -118,7 +119,8 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
   bool isCreated = false;
   shared_ptr<Face> face;
   try {
-    std::tie(isCreated, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+    std::tie(isCreated, face) = createFace(m_remoteEndpoint, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                           false);
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << m_remoteEndpoint << " failed: " << e.what());
@@ -141,7 +143,8 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
 
 std::pair<bool, shared_ptr<Face>>
 UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
-                       ndn::nfd::FacePersistency persistency)
+                       ndn::nfd::FacePersistency persistency,
+                       bool wantLpReliability)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
@@ -156,7 +159,9 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
   socket.bind(m_localEndpoint);
   socket.connect(remoteEndpoint);
 
-  auto linkService = make_unique<GenericLinkService>();
+  GenericLinkService::Options options;
+  options.reliabilityOptions.isEnabled = wantLpReliability;
+  auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 

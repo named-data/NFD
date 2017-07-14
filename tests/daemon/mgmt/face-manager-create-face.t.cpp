@@ -159,6 +159,58 @@ public:
   }
 };
 
+class TcpFaceLpReliabilityEnabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
+  }
+};
+
+class TcpFaceLpReliabilityDisabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
+  }
+};
+
+class UdpFaceLpReliabilityEnabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
+  }
+};
+
+class UdpFaceLpReliabilityDisabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
+  }
+};
+
 class FaceUriMalformed
 {
 public:
@@ -206,6 +258,10 @@ using TestCases = mpl::vector<
                     mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
                     mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,
                     mpl::pair<NonLocalUdpFaceLocalFieldsDisabled, CommandSuccess>,
+                    mpl::pair<TcpFaceLpReliabilityEnabled, CommandSuccess>,
+                    mpl::pair<TcpFaceLpReliabilityDisabled, CommandSuccess>,
+                    mpl::pair<UdpFaceLpReliabilityEnabled, CommandSuccess>,
+                    mpl::pair<UdpFaceLpReliabilityDisabled, CommandSuccess>,
                     mpl::pair<FaceUriMalformed, CommandFailure<400>>,
                     mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
                     mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
@@ -239,10 +295,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
         if (expectedParams.hasFlags()) {
           BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),
                             actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+          BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED),
+                            actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
         }
         else {
           // local fields are disabled by default
           BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED), false);
+          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED), false);
         }
       }
       else {

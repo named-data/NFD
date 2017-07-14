@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, F, AddressFamilies)
 
   auto channel = this->makeChannel(typename IpAddressFromFamily<F::value>::type());
   channel->connect(tcp::Endpoint(address, 7040),
-    ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false,
+    ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false, false,
     [this] (const shared_ptr<nfd::Face>&) {
       BOOST_FAIL("Connect succeeded when it should have failed");
       this->limitedIo.afterOp();

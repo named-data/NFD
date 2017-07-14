@@ -193,7 +193,7 @@ EthernetFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  if (params.wantLocalFieldsEnabled) {
+  if (params.wantLocalFields) {
     // Ethernet faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -202,7 +202,8 @@ EthernetFactory::createFace(const CreateFaceParams& params,
 
   for (const auto& i : m_channels) {
     if (i.first == localEndpoint) {
-      i.second->connect(remoteEndpoint, params.persistency, onCreated, onFailure);
+      i.second->connect(remoteEndpoint, params.persistency, params.wantLpReliability,
+                        onCreated, onFailure);
       return;
     }
   }

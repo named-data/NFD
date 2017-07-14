@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -51,7 +51,7 @@ protected:
   connect(UdpChannel& channel) final
   {
     g_io.post([&] {
-      channel.connect(listenerEp, ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+      channel.connect(listenerEp, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false,
         [this] (const shared_ptr<Face>& newFace) {
           BOOST_REQUIRE(newFace != nullptr);
           connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });
