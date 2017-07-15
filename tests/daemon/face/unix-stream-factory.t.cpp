@@ -25,9 +25,8 @@
 
 #include "face/unix-stream-factory.hpp"
 
-#include "factory-test-common.hpp"
 #include "face-system-fixture.hpp"
-#include "tests/limited-io.hpp"
+#include "factory-test-common.hpp"
 
 namespace nfd {
 namespace face {
@@ -97,38 +96,31 @@ BOOST_AUTO_TEST_CASE(UnknownOption)
 
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
-BOOST_AUTO_TEST_CASE(ChannelMap)
+BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  shared_ptr<UnixStreamChannel> channel1 = factory.createChannel(CHANNEL_PATH1);
-  shared_ptr<UnixStreamChannel> channel1a = factory.createChannel(CHANNEL_PATH1);
-  BOOST_CHECK_EQUAL(channel1, channel1a);
-  std::string channel1uri = channel1->getUri().toString();
-  BOOST_CHECK_EQUAL(channel1uri.find("unix:///"), 0); // third '/' is the path separator
-  BOOST_CHECK_EQUAL(channel1uri.rfind(CHANNEL_PATH1),
-                    channel1uri.size() - std::string(CHANNEL_PATH1).size());
+  BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
-  shared_ptr<UnixStreamChannel> channel2 = factory.createChannel(CHANNEL_PATH2);
+  std::set<std::string> expected;
+  expected.insert(factory.createChannel(CHANNEL_PATH1)->getUri().toString());
+  expected.insert(factory.createChannel(CHANNEL_PATH2)->getUri().toString());
+  checkChannelListEqual(factory, expected);
+}
+
+BOOST_AUTO_TEST_CASE(CreateChannel)
+{
+  auto channel1 = factory.createChannel(CHANNEL_PATH1);
+  auto channel1a = factory.createChannel(CHANNEL_PATH1);
+  BOOST_CHECK_EQUAL(channel1, channel1a);
+  std::string uri = channel1->getUri().toString();
+  BOOST_CHECK_EQUAL(uri.find("unix:///"), 0); // third '/' is the path separator
+  BOOST_CHECK_EQUAL(uri.rfind(CHANNEL_PATH1),
+                    uri.size() - std::string(CHANNEL_PATH1).size());
+
+  auto channel2 = factory.createChannel(CHANNEL_PATH2);
   BOOST_CHECK_NE(channel1, channel2);
 }
 
-BOOST_AUTO_TEST_CASE(GetChannels)
-{
-  BOOST_CHECK(factory.getChannels().empty());
-
-  std::vector<shared_ptr<const Channel>> expectedChannels;
-  expectedChannels.push_back(factory.createChannel(CHANNEL_PATH1));
-  expectedChannels.push_back(factory.createChannel(CHANNEL_PATH2));
-
-  for (const auto& channel : factory.getChannels()) {
-    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), channel);
-    BOOST_REQUIRE(pos != expectedChannels.end());
-    expectedChannels.erase(pos);
-  }
-
-  BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),

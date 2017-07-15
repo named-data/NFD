@@ -25,12 +25,12 @@
 
 #include "face/udp-factory.hpp"
 
-#include "factory-test-common.hpp"
 #include "face-system-fixture.hpp"
-#include "tests/limited-io.hpp"
+#include "factory-test-common.hpp"
 #include "test-netif-ip.hpp"
+
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/range/algorithm.hpp>
+#include <boost/range/algorithm/count_if.hpp>
 
 namespace nfd {
 namespace face {
@@ -318,7 +318,7 @@ BOOST_FIXTURE_TEST_CASE(Blacklist, UdpMcastConfigFixture)
   parseConfig(CONFIG, false);
   auto udpMcastFaces = this->listUdpMcastFaces();
   BOOST_CHECK_EQUAL(udpMcastFaces.size(), netifs.size() - 1);
-  BOOST_CHECK_EQUAL(boost::count_if(udpMcastFaces, [=] (const Face* face) {
+  BOOST_CHECK_EQUAL(boost::count_if(udpMcastFaces, [this] (const Face* face) {
     return isFaceOnNetif(*face, netifs.front());
   }), 0);
 }
@@ -492,20 +492,13 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
+  BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
-  std::vector<shared_ptr<const Channel>> expectedChannels;
-  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
-  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
-  expectedChannels.push_back(factory.createChannel("::1", "20071"));
-
-  for (const auto& i : factory.getChannels()) {
-    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), i);
-    BOOST_REQUIRE(pos != expectedChannels.end());
-    expectedChannels.erase(pos);
-  }
-
-  BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
+  std::set<std::string> expected;
+  expected.insert(factory.createChannel("127.0.0.1", "20070")->getUri().toString());
+  expected.insert(factory.createChannel("127.0.0.1", "20071")->getUri().toString());
+  expected.insert(factory.createChannel("::1", "20071")->getUri().toString());
+  checkChannelListEqual(factory, expected);
 }
 
 BOOST_AUTO_TEST_CASE(CreateChannel)
@@ -592,7 +585,7 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
                         });
 }
 
-BOOST_AUTO_TEST_CASE(FaceCreate)
+BOOST_AUTO_TEST_CASE(CreateFace)
 {
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
@@ -625,7 +618,7 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
-BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
   factory.createChannel("127.0.0.1", "20071");
 

@@ -25,9 +25,8 @@
 
 #include "face/websocket-factory.hpp"
 
-#include "factory-test-common.hpp"
 #include "face-system-fixture.hpp"
-#include "tests/limited-io.hpp"
+#include "factory-test-common.hpp"
 
 namespace nfd {
 namespace face {
@@ -173,23 +172,16 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
+  BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
-  std::vector<shared_ptr<const Channel>> expectedChannels;
-  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20070"));
-  expectedChannels.push_back(factory.createChannel("127.0.0.1", "20071"));
-  expectedChannels.push_back(factory.createChannel("::1", "20071"));
-
-  for (const auto& i : factory.getChannels()) {
-    auto pos = std::find(expectedChannels.begin(), expectedChannels.end(), i);
-    BOOST_REQUIRE(pos != expectedChannels.end());
-    expectedChannels.erase(pos);
-  }
-
-  BOOST_CHECK_EQUAL(expectedChannels.size(), 0);
+  std::set<std::string> expected;
+  expected.insert(factory.createChannel("127.0.0.1", "20070")->getUri().toString());
+  expected.insert(factory.createChannel("127.0.0.1", "20071")->getUri().toString());
+  expected.insert(factory.createChannel("::1", "20071")->getUri().toString());
+  checkChannelListEqual(factory, expected);
 }
 
-BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
+BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
   createFace(factory,
              FaceUri("ws://127.0.0.1:20070"),
