@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -35,6 +35,7 @@
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
 #include <ndn-cxx/mgmt/nfd/channel-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
+#include <ndn-cxx/net/network-monitor-stub.hpp>
 
 namespace nfd {
 namespace tests {
@@ -261,6 +262,11 @@ public:
 class TestProtocolFactory : public face::ProtocolFactory
 {
 public:
+  TestProtocolFactory(const CtorParams& params)
+    : ProtocolFactory(params)
+  {
+  }
+
   void
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context) final
@@ -298,7 +304,8 @@ private:
 
 BOOST_AUTO_TEST_CASE(ChannelDataset)
 {
-  m_manager.m_faceSystem.m_factories["test"] = make_unique<TestProtocolFactory>();
+  m_manager.m_faceSystem.m_factories["test"] =
+    make_unique<TestProtocolFactory>(m_faceSystem.makePFCtorParams());
   auto factory = static_cast<TestProtocolFactory*>(m_manager.m_faceSystem.getFactoryById("test"));
 
   std::map<std::string, shared_ptr<TestChannel>> addedChannels;

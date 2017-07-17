@@ -42,6 +42,10 @@ EthernetFactory::getId()
   return id;
 }
 
+EthernetFactory::EthernetFactory(const CtorParams& params)
+  : ProtocolFactory(params)
+{
+}
 
 void
 EthernetFactory::processConfig(OptionalConfigSection configSection,

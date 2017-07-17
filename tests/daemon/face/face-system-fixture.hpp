@@ -113,6 +113,21 @@ protected:
   FaceSystem faceSystem;
 };
 
+/** \brief FaceSystemFixture with a ProtocolFactory reference
+ */
+template<typename FactoryType>
+class FaceSystemFactoryFixture : public FaceSystemFixture
+{
+protected:
+  FaceSystemFactoryFixture()
+    : factory(getFactoryById<FactoryType>(FactoryType::getId()))
+  {
+  }
+
+protected:
+  FactoryType& factory;
+};
+
 } // namespace tests
 } // namespace face
 } // namespace nfd

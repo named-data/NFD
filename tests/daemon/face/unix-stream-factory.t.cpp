@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -36,12 +36,14 @@ namespace tests {
 #define CHANNEL_PATH1 "unix-stream-test.1.sock"
 #define CHANNEL_PATH2 "unix-stream-test.2.sock"
 
+using UnixStreamFactoryFixture = FaceSystemFactoryFixture<UnixStreamFactory>;
+
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestUnixStreamFactory, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestUnixStreamFactory, UnixStreamFactoryFixture)
 
 using nfd::Face;
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
@@ -97,8 +99,6 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
-  UnixStreamFactory factory;
-
   shared_ptr<UnixStreamChannel> channel1 = factory.createChannel(CHANNEL_PATH1);
   shared_ptr<UnixStreamChannel> channel1a = factory.createChannel(CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
@@ -113,7 +113,6 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  UnixStreamFactory factory;
   BOOST_CHECK(factory.getChannels().empty());
 
   std::vector<shared_ptr<const Channel>> expectedChannels;
@@ -131,8 +130,6 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  UnixStreamFactory factory;
-
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},

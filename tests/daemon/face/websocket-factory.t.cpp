@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -35,10 +35,12 @@ namespace tests {
 
 namespace ip = boost::asio::ip;
 
-BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestWebSocketFactory, BaseFixture)
+using WebSocketFactoryFixture = FaceSystemFactoryFixture<WebSocketFactory>;
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestWebSocketFactory, WebSocketFactoryFixture)
+
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
@@ -58,7 +60,6 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://[::]:9696"});
 }
 
@@ -80,7 +81,6 @@ BOOST_AUTO_TEST_CASE(EnableIpv4Only)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://0.0.0.0:9696"});
 }
 
@@ -137,7 +137,6 @@ BOOST_AUTO_TEST_CASE(NoListen)
     }
   )CONFIG";
 
-  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
 }
 
@@ -154,7 +153,6 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
   )CONFIG";
 
   parseConfig(CONFIG1, false);
-  auto& factory = this->getFactoryById<WebSocketFactory>("websocket");
   checkChannelListEqual(factory, {"ws://[::]:9001"});
 
   const std::string CONFIG2 = R"CONFIG(
@@ -175,7 +173,6 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  WebSocketFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
   std::vector<shared_ptr<const Channel>> expectedChannels;
@@ -194,8 +191,6 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  WebSocketFactory factory;
-
   createFace(factory,
              FaceUri("ws://127.0.0.1:20070"),
              {},

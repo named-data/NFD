@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -39,6 +39,9 @@ class UnixStreamFactory : public ProtocolFactory
 public:
   static const std::string&
   getId();
+
+  explicit
+  UnixStreamFactory(const CtorParams& params);
 
   /** \brief process face_system.unix config section
    */

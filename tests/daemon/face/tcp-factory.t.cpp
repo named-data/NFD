@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -33,12 +33,14 @@ namespace nfd {
 namespace face {
 namespace tests {
 
+using TcpFactoryFixture = FaceSystemFactoryFixture<TcpFactory>;
+
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestTcpFactory, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestTcpFactory, TcpFactoryFixture)
 
 using nfd::Face;
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
@@ -58,7 +60,6 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<TcpFactory>("tcp");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
 }
 
@@ -73,7 +74,6 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<TcpFactory>("tcp");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
 }
 
@@ -131,8 +131,6 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(ChannelMap)
 {
-  TcpFactory factory;
-
   shared_ptr<TcpChannel> channel1 = factory.createChannel("127.0.0.1", "20070");
   shared_ptr<TcpChannel> channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
@@ -148,7 +146,6 @@ BOOST_AUTO_TEST_CASE(ChannelMap)
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  TcpFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
   std::vector<shared_ptr<const Channel>> expectedChannels;
@@ -166,8 +163,6 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 
 BOOST_AUTO_TEST_CASE(FaceCreate)
 {
-  TcpFactory factory;
-
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
@@ -201,7 +196,6 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  TcpFactory factory;
   factory.createChannel("127.0.0.1", "20071");
 
   createFace(factory,
@@ -237,7 +231,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
               "Local fields can only be enabled on faces with local scope"});
 }
 
-class FaceCreateTimeoutFixture : public BaseFixture
+class FaceCreateTimeoutFixture : public TcpFactoryFixture
 {
 public:
   void
@@ -264,7 +258,6 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
 {
-  TcpFactory factory;
   factory.createChannel("0.0.0.0", "20070");
 
   factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
@@ -278,7 +271,7 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
   BOOST_CHECK(face == nullptr);
 }
 
-class FakeNetworkInterfaceFixture : public BaseFixture
+class FakeNetworkInterfaceFixture : public TcpFactoryFixture
 {
 public:
   FakeNetworkInterfaceFixture()
@@ -322,7 +315,6 @@ BOOST_FIXTURE_TEST_CASE(Bug2292, FakeNetworkInterfaceFixture)
 {
   using namespace boost::asio::ip;
 
-  TcpFactory factory;
   factory.prohibitEndpoint(tcp::Endpoint(address_v4::from_string("192.168.2.1"), 1024));
   BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 1);
   BOOST_CHECK((factory.m_prohibitedEndpoints ==

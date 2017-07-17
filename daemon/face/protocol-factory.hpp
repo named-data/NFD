@@ -36,6 +36,19 @@
 namespace nfd {
 namespace face {
 
+/** \brief Parameters to ProtocolFactory constructor
+ *
+ *  Every ProtocolFactory subclass is expected to have a constructor that accepts CtorParams,
+ *  which in turn passes it to ProtocolFactory base class constructor. Parameters are passed as a
+ *  struct rather than individually, so that a future change in list of parameters does not
+ *  require updates to subclass constructors.
+ */
+struct ProtocolFactoryCtorParams
+{
+  FaceCreatedCallback addFace;
+  shared_ptr<ndn::net::NetworkMonitor> netmon;
+};
+
 /** \brief Provides support for an underlying protocol
  *  \sa FaceSystem
  *
@@ -46,6 +59,8 @@ namespace face {
 class ProtocolFactory : noncopyable
 {
 public: // registry
+  using CtorParams = ProtocolFactoryCtorParams;
+
   /** \brief Register a protocol factory type
    *  \tparam S subclass of ProtocolFactory
    *  \param id factory identifier
@@ -56,15 +71,14 @@ public: // registry
   {
     Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(id) == 0);
-    registry[id] = &make_unique<PF>;
+    registry[id] = &make_unique<PF, const CtorParams&>;
   }
 
   /** \brief Create a protocol factory instance
    *  \retval nullptr if factory with \p id is not registered
    */
   static unique_ptr<ProtocolFactory>
-  create(const std::string& id, shared_ptr<ndn::net::NetworkMonitor> netmon,
-         const FaceCreatedCallback& addFace);
+  create(const std::string& id, const CtorParams& params);
 
   /** \brief Get registered protocol factory ids
    */
@@ -72,8 +86,7 @@ public: // registry
   listRegistered();
 
 public:
-  /**
-   * \brief Base class for all exceptions thrown by ProtocolFactory subclasses
+  /** \brief Base class for all exceptions thrown by ProtocolFactory subclasses
    */
   class Error : public std::runtime_error
   {
@@ -138,6 +151,9 @@ public:
   getChannels() const = 0;
 
 protected:
+  explicit
+  ProtocolFactory(const CtorParams& params);
+
   template<typename ChannelMap>
   static std::vector<shared_ptr<const Channel>>
   getChannelsFromMap(const ChannelMap& channelMap)
@@ -148,8 +164,8 @@ protected:
   }
 
 private: // registry
-  typedef std::function<unique_ptr<ProtocolFactory>()> CreateFunc;
-  typedef std::map<std::string, CreateFunc> Registry; // indexed by factory id
+  using CreateFunc = std::function<unique_ptr<ProtocolFactory>(const CtorParams&)>;
+  using Registry = std::map<std::string, CreateFunc>; // indexed by factory id
 
   static Registry&
   getRegistry();
@@ -157,14 +173,14 @@ private: // registry
 protected:
   std::set<std::string> providedSchemes; ///< FaceUri schemes provided by this ProtocolFactory
 
+  FaceCreatedCallback addFace; ///< callback when a new face is created
+
   /** \brief NetworkMonitor for listing available network interfaces and monitoring their changes
    *
    *  ProtocolFactory subclass should check the NetworkMonitor has sufficient capabilities prior
    *  to usage.
    */
   shared_ptr<ndn::net::NetworkMonitor> netmon;
-
-  FaceCreatedCallback addFace; ///< callback when a new face is created
 };
 
 } // namespace face

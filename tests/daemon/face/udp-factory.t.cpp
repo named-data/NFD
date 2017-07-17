@@ -36,12 +36,14 @@ namespace nfd {
 namespace face {
 namespace tests {
 
+using UdpFactoryFixture = FaceSystemFactoryFixture<UdpFactory>;
+
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, UdpFactoryFixture)
 
 using nfd::Face;
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, FaceSystemFixture)
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Channels)
 {
@@ -62,7 +64,6 @@ BOOST_AUTO_TEST_CASE(Channels)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UdpFactory>("udp");
   checkChannelListEqual(factory, {"udp4://0.0.0.0:7001", "udp6://[::]:7001"});
 }
 
@@ -84,7 +85,6 @@ BOOST_AUTO_TEST_CASE(ChannelV4)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UdpFactory>("udp");
   checkChannelListEqual(factory, {"udp4://0.0.0.0:7001"});
 }
 
@@ -106,11 +106,10 @@ BOOST_AUTO_TEST_CASE(ChannelV6)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UdpFactory>("udp");
   checkChannelListEqual(factory, {"udp6://[::]:7001"});
 }
 
-class UdpMcastConfigFixture : public FaceSystemFixture
+class UdpMcastConfigFixture : public UdpFactoryFixture
 {
 protected:
   UdpMcastConfigFixture()
@@ -369,7 +368,6 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UdpFactory>("udp");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
   BOOST_CHECK_EQUAL(this->listFacesByScheme("udp4", ndn::nfd::LINK_TYPE_MULTI_ACCESS).size(), 0);
 }
@@ -492,7 +490,6 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  UdpFactory factory;
   BOOST_REQUIRE_EQUAL(factory.getChannels().empty(), true);
 
   std::vector<shared_ptr<const Channel>> expectedChannels;
@@ -511,8 +508,6 @@ BOOST_AUTO_TEST_CASE(GetChannels)
 
 BOOST_AUTO_TEST_CASE(CreateChannel)
 {
-  UdpFactory factory;
-
   auto channel1 = factory.createChannel("127.0.0.1", "20070");
   auto channel1a = factory.createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
@@ -545,8 +540,6 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 
 BOOST_AUTO_TEST_CASE(CreateMulticastFace)
 {
-  UdpFactory factory;
-
   auto multicastFace1  = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
   auto multicastFace1a = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20070");
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
@@ -599,8 +592,6 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
 
 BOOST_AUTO_TEST_CASE(FaceCreate)
 {
-  UdpFactory factory;
-
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
              {},
@@ -634,7 +625,6 @@ BOOST_AUTO_TEST_CASE(FaceCreate)
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  UdpFactory factory;
   factory.createChannel("127.0.0.1", "20071");
 
   createFace(factory,
@@ -678,7 +668,7 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
               "Local fields can only be enabled on faces with local scope"});
 }
 
-class FakeNetworkInterfaceFixture : public BaseFixture
+class FakeNetworkInterfaceFixture : public UdpFactoryFixture
 {
 public:
   FakeNetworkInterfaceFixture()
@@ -722,7 +712,6 @@ BOOST_FIXTURE_TEST_CASE(Bug2292, FakeNetworkInterfaceFixture)
 {
   using namespace boost::asio::ip;
 
-  UdpFactory factory;
   factory.prohibitEndpoint(udp::Endpoint(address_v4::from_string("192.168.2.1"), 1024));
   BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 1);
   BOOST_CHECK((factory.m_prohibitedEndpoints ==

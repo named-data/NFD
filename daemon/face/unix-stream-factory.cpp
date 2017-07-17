@@ -40,6 +40,10 @@ UnixStreamFactory::getId()
   return id;
 }
 
+UnixStreamFactory::UnixStreamFactory(const CtorParams& params)
+  : ProtocolFactory(params)
+{
+}
 
 void
 UnixStreamFactory::processConfig(OptionalConfigSection configSection,

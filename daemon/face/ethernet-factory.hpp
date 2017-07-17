@@ -40,6 +40,9 @@ public:
   static const std::string&
   getId();
 
+  explicit
+  EthernetFactory(const CtorParams& params);
+
   /** \brief process face_system.ether config section
    */
   void

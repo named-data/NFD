@@ -38,8 +38,7 @@ ProtocolFactory::getRegistry()
 }
 
 unique_ptr<ProtocolFactory>
-ProtocolFactory::create(const std::string& id, shared_ptr<ndn::net::NetworkMonitor> netmon,
-                        const FaceCreatedCallback& addFace)
+ProtocolFactory::create(const std::string& id, const CtorParams& params)
 {
   Registry& registry = getRegistry();
   auto found = registry.find(id);
@@ -47,10 +46,7 @@ ProtocolFactory::create(const std::string& id, shared_ptr<ndn::net::NetworkMonit
     return nullptr;
   }
 
-  auto factory = found->second();
-  factory->netmon = std::move(netmon);
-  factory->addFace = addFace;
-  return factory;
+  return found->second(params);
 }
 
 std::set<std::string>
@@ -60,6 +56,14 @@ ProtocolFactory::listRegistered()
   boost::copy(getRegistry() | boost::adaptors::map_keys,
               std::inserter(factoryIds, factoryIds.end()));
   return factoryIds;
+}
+
+ProtocolFactory::ProtocolFactory(const CtorParams& params)
+  : addFace(params.addFace)
+  , netmon(params.netmon)
+{
+  BOOST_ASSERT(addFace != nullptr);
+  BOOST_ASSERT(netmon != nullptr);
 }
 
 } // namespace face

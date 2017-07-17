@@ -41,6 +41,7 @@ class FaceTable;
 namespace face {
 
 class ProtocolFactory;
+struct ProtocolFactoryCtorParams;
 
 /** \brief entry point of the face system
  *
@@ -50,7 +51,7 @@ class ProtocolFactory;
 class FaceSystem : noncopyable
 {
 public:
-  FaceSystem(FaceTable& faceTable, const shared_ptr<ndn::net::NetworkMonitor>& netmon);
+  FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon);
 
   DEPRECATED(
   explicit
@@ -105,6 +106,10 @@ public:
     friend class FaceSystem;
   };
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  ProtocolFactoryCtorParams
+  makePFCtorParams();
+
 private:
   void
   processConfig(const ConfigSection& configSection, bool isDryRun,
@@ -123,6 +128,8 @@ private:
   std::map<std::string, ProtocolFactory*> m_factoryByScheme;
 
   FaceTable& m_faceTable;
+
+  shared_ptr<ndn::net::NetworkMonitor> m_netmon;
 };
 
 } // namespace face

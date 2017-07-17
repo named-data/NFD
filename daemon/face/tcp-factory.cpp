@@ -40,6 +40,11 @@ TcpFactory::getId()
   return id;
 }
 
+TcpFactory::TcpFactory(const CtorParams& params)
+  : ProtocolFactory(params)
+{
+}
+
 void
 TcpFactory::processConfig(OptionalConfigSection configSection,
                           FaceSystem::ConfigContext& context)

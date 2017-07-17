@@ -40,6 +40,10 @@ WebSocketFactory::getId()
   return id;
 }
 
+WebSocketFactory::WebSocketFactory(const CtorParams& params)
+  : ProtocolFactory(params)
+{
+}
 
 void
 WebSocketFactory::processConfig(OptionalConfigSection configSection,

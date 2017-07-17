@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -40,6 +40,11 @@ BOOST_AUTO_TEST_SUITE(ProcessConfig)
 class DummyProtocolFactory : public ProtocolFactory
 {
 public:
+  DummyProtocolFactory(const CtorParams& params)
+    : ProtocolFactory(params)
+  {
+  }
+
   void
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context) override
@@ -81,8 +86,8 @@ public:
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
-  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>();
-  faceSystem.m_factories["f2"] = make_unique<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
+  faceSystem.m_factories["f2"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
   auto f1 = static_cast<DummyProtocolFactory*>(faceSystem.getFactoryById("f1"));
   auto f2 = static_cast<DummyProtocolFactory*>(faceSystem.getFactoryById("f2"));
 
@@ -119,8 +124,8 @@ BOOST_AUTO_TEST_CASE(Normal)
 
 BOOST_AUTO_TEST_CASE(OmittedSection)
 {
-  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>();
-  faceSystem.m_factories["f2"] = make_unique<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
+  faceSystem.m_factories["f2"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
   auto f1 = static_cast<DummyProtocolFactory*>(faceSystem.getFactoryById("f1"));
   auto f2 = static_cast<DummyProtocolFactory*>(faceSystem.getFactoryById("f2"));
 
@@ -165,7 +170,7 @@ BOOST_AUTO_TEST_CASE(UnknownSection)
 
 BOOST_AUTO_TEST_CASE(ChangeProvidedSchemes)
 {
-  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>();
+  faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
   auto f1 = static_cast<DummyProtocolFactory*>(faceSystem.getFactoryById("f1"));
 
   const std::string CONFIG = R"CONFIG(

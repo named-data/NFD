@@ -36,15 +36,10 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestEthernetFactory, EthernetFixture)
-
-using face::Face;
-
-class EthernetConfigFixture : public EthernetFixture
-                            , public FaceSystemFixture
+class EthernetFactoryFixture : public EthernetFixture
+                             , public FaceSystemFactoryFixture<EthernetFactory>
 {
-public:
+protected:
   std::vector<const Face*>
   listEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {
@@ -58,7 +53,12 @@ public:
   }
 };
 
-BOOST_FIXTURE_TEST_SUITE(ProcessConfig, EthernetConfigFixture)
+BOOST_AUTO_TEST_SUITE(Face)
+BOOST_FIXTURE_TEST_SUITE(TestEthernetFactory, EthernetFactoryFixture)
+
+using nfd::Face;
+
+BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
 BOOST_AUTO_TEST_CASE(Normal)
 {
@@ -313,16 +313,12 @@ BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_CASE(GetChannels)
 {
-  EthernetFactory factory;
-
   auto channels = factory.getChannels();
   BOOST_CHECK_EQUAL(channels.empty(), true);
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
 {
-  EthernetFactory factory;
-
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),
              {},

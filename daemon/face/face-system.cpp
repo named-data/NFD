@@ -33,16 +33,22 @@ namespace face {
 
 NFD_LOG_INIT("FaceSystem");
 
-FaceSystem::FaceSystem(FaceTable& faceTable, const shared_ptr<ndn::net::NetworkMonitor>& netmon)
+FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon)
   : m_faceTable(faceTable)
+  , m_netmon(std::move(netmon))
 {
-  BOOST_ASSERT(netmon != nullptr);
-
-  auto addFace = bind(&FaceTable::add, &m_faceTable, _1);
+  auto pfCtorParams = this->makePFCtorParams();
   for (const std::string& id : ProtocolFactory::listRegistered()) {
     NFD_LOG_TRACE("creating factory " << id);
-    m_factories[id] = ProtocolFactory::create(id, netmon, addFace);
+    m_factories[id] = ProtocolFactory::create(id, pfCtorParams);
   }
+}
+
+ProtocolFactoryCtorParams
+FaceSystem::makePFCtorParams()
+{
+  auto addFace = bind(&FaceTable::add, &m_faceTable, _1);
+  return {addFace, m_netmon};
 }
 
 FaceSystem::FaceSystem(FaceTable& faceTable)

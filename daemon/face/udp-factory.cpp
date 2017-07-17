@@ -51,6 +51,10 @@ UdpFactory::getId()
   return id;
 }
 
+UdpFactory::UdpFactory(const CtorParams& params)
+  : ProtocolFactory(params)
+{
+}
 
 void
 UdpFactory::processConfig(OptionalConfigSection configSection,
