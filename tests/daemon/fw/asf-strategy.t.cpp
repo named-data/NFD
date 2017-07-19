@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,8 @@ BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, UnitTestTimeFixture)
 class AsfGridFixture : public UnitTestTimeFixture
 {
 protected:
-  AsfGridFixture()
+  AsfGridFixture(Name parameters = AsfStrategy::getStrategyName())
+    : parameters(parameters)
   {
     /*
      *                  +---------+
@@ -69,10 +70,10 @@ protected:
     nodeC = topo.addForwarder("C");
     nodeD = topo.addForwarder("D");
 
-    topo.setStrategy<fw::AsfStrategy>(nodeA);
-    topo.setStrategy<fw::AsfStrategy>(nodeB);
-    topo.setStrategy<fw::AsfStrategy>(nodeC);
-    topo.setStrategy<fw::AsfStrategy>(nodeD);
+    topo.setStrategy<AsfStrategy>(nodeA, Name("ndn:/"), parameters);
+    topo.setStrategy<AsfStrategy>(nodeB, Name("ndn:/"), parameters);
+    topo.setStrategy<AsfStrategy>(nodeC, Name("ndn:/"), parameters);
+    topo.setStrategy<AsfStrategy>(nodeD, Name("ndn:/"), parameters);
 
     linkAB = topo.addLink("AB", time::milliseconds(10), {nodeA, nodeB});
     linkAD = topo.addLink("AD", time::milliseconds(100), {nodeA, nodeD});
@@ -89,13 +90,14 @@ protected:
   }
 
   void
-  runConsumer()
+  runConsumer(int numInterests = 30)
   {
-    topo.addIntervalConsumer(consumer->getClientFace(), PRODUCER_PREFIX, time::seconds(1), 30);
-    this->advanceClocks(time::milliseconds(10), time::seconds(30));
+    topo.addIntervalConsumer(consumer->getClientFace(), PRODUCER_PREFIX, time::seconds(1), numInterests);
+    this->advanceClocks(time::milliseconds(10), time::seconds(numInterests));
   }
 
 protected:
+  Name parameters;
   TopologyTester topo;
 
   TopologyNode nodeA;
@@ -112,6 +114,17 @@ protected:
   shared_ptr<TopologyAppLink> producer;
 
   static const Name PRODUCER_PREFIX;
+};
+
+class AsfStrategyParametersGridFixture : public AsfGridFixture
+{
+protected:
+  AsfStrategyParametersGridFixture()
+    : AsfGridFixture(Name(AsfStrategy::getStrategyName())
+                     .append("probing-interval~30000")
+                     .append("n-silent-timeouts~5"))
+  {
+  }
 };
 
 const Name AsfGridFixture::PRODUCER_PREFIX = Name("ndn:/hr/C");
@@ -214,7 +227,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
                nodeD = topo.addForwarder("D");
 
   for (TopologyNode node : {nodeA, nodeB, nodeC, nodeD}) {
-    topo.setStrategy<fw::AsfStrategy>(node);
+    topo.setStrategy<AsfStrategy>(node);
   }
 
   shared_ptr<TopologyLink> linkAB = topo.addLink("AB", time::milliseconds(15), {nodeA, nodeB}),
@@ -302,6 +315,91 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       break;
     }
   }
+}
+
+BOOST_FIXTURE_TEST_CASE(IgnoreTimeouts, AsfStrategyParametersGridFixture)
+{
+  // Both nodeB and nodeD have FIB entries to reach the producer
+  topo.registerPrefix(nodeB, linkBC->getFace(nodeB), PRODUCER_PREFIX);
+  topo.registerPrefix(nodeD, linkCD->getFace(nodeD), PRODUCER_PREFIX);
+
+  // Send 15 interests let it change to use the 10 ms link
+  runConsumer(15);
+
+  int outInterestsBeforeFailure = linkAD->getFace(nodeA).getCounters().nOutInterests;
+
+  // Bring down 10 ms link
+  linkAB->fail();
+
+  // Send 6 interests, first 5 will be ignored and on the 6th it will record the timeout
+  // ready to switch for the next interest
+  runConsumer(6);
+
+  // Check that link has not been switched to 100 ms because n-silent-timeouts = 5
+  BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nOutInterests - outInterestsBeforeFailure, 0);
+
+  // Send 5 interests, check that 100 ms link is used
+  runConsumer(5);
+
+  BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nOutInterests - outInterestsBeforeFailure, 5);
+}
+
+BOOST_FIXTURE_TEST_CASE(ProbingInterval, AsfStrategyParametersGridFixture)
+{
+  // Both nodeB and nodeD have FIB entries to reach the producer
+  topo.registerPrefix(nodeB, linkBC->getFace(nodeB), PRODUCER_PREFIX);
+  topo.registerPrefix(nodeD, linkCD->getFace(nodeD), PRODUCER_PREFIX);
+
+  // Send 6 interests let it change to use the 10 ms link
+  runConsumer(6);
+
+  shared_ptr<TopologyLink> linkAC = topo.addLink("AC", time::milliseconds(5), {nodeA, nodeD});
+  topo.registerPrefix(nodeA, linkAC->getFace(nodeA), PRODUCER_PREFIX, 1);
+
+  BOOST_CHECK_EQUAL(linkAC->getFace(nodeA).getCounters().nOutInterests, 0);
+
+  // After 30 seconds a probe would be sent that would switch make ASF switch
+  runConsumer(30);
+
+  BOOST_CHECK_EQUAL(linkAC->getFace(nodeA).getCounters().nOutInterests, 1);
+}
+
+class ParametersFixture
+{
+public:
+  void
+  checkValidity(std::string parameters, bool isCorrect)
+  {
+    Name strategyName(Name(AsfStrategy::getStrategyName()).append(parameters));
+    if (isCorrect) {
+      BOOST_CHECK_NO_THROW(make_unique<AsfStrategy>(forwarder, strategyName));
+    }
+    else {
+      BOOST_CHECK_THROW(make_unique<AsfStrategy>(forwarder, strategyName), std::invalid_argument);
+    }
+  }
+
+protected:
+  Forwarder forwarder;
+};
+
+BOOST_FIXTURE_TEST_CASE(InstantiationTest, ParametersFixture)
+{
+  checkValidity("/probing-interval~30000/n-silent-timeouts~5", true);
+  checkValidity("/n-silent-timeouts~5/probing-interval~30000", true);
+  checkValidity("/probing-interval~30000", true);
+  checkValidity("/n-silent-timeouts~5", true);
+  checkValidity("", true);
+
+  checkValidity("/probing-interval~500", false); // At least 1 seconds
+  checkValidity("/probing-interval~-5000", false);
+  checkValidity("/n-silent-timeouts~-5", false);
+  checkValidity("/n-silent-timeouts~-5/probing-interval~-30000", false);
+  checkValidity("/n-silent-timeouts", false);
+  checkValidity("/probing-interval~", false);
+  checkValidity("/~1000", false);
+  checkValidity("/probing-interval~foo", false);
+  checkValidity("/n-silent-timeouts~1~2", false);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestAsfStrategy

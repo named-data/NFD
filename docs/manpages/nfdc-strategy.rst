@@ -71,4 +71,4 @@ nfdc strategy unset prefix /ndn
 
 SEE ALSO
 --------
-nfd(1), nfdc(1)
+nfd(1), nfdc(1), nfd-asf-strategy(7)

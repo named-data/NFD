@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -66,6 +66,7 @@ RttStats::computeSrtt(Rtt previousSrtt, Rtt currentRtt)
 
 FaceInfo::FaceInfo()
   : m_isTimeoutScheduled(false)
+  , m_nSilentTimeouts(0)
 {
 }
 
@@ -147,9 +148,9 @@ NamespaceInfo::NamespaceInfo()
 }
 
 FaceInfo*
-NamespaceInfo::getFaceInfo(const fib::Entry& fibEntry, const Face& face)
+NamespaceInfo::getFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
 {
-  FaceInfoTable::iterator it = m_fit.find(face.getId());
+  FaceInfoTable::iterator it = m_fit.find(faceId);
 
   if (it != m_fit.end()) {
     return &it->second;
@@ -160,17 +161,17 @@ NamespaceInfo::getFaceInfo(const fib::Entry& fibEntry, const Face& face)
 }
 
 FaceInfo&
-NamespaceInfo::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Face& face)
+NamespaceInfo::getOrCreateFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
 {
-  FaceInfoTable::iterator it = m_fit.find(face.getId());
+  FaceInfoTable::iterator it = m_fit.find(faceId);
 
   FaceInfo* info = nullptr;
 
   if (it == m_fit.end()) {
-    const auto& pair = m_fit.insert(std::make_pair(face.getId(), FaceInfo()));
+    const auto& pair = m_fit.insert(std::make_pair(faceId, FaceInfo()));
     info = &pair.first->second;
 
-    extendFaceInfoLifetime(*info, face);
+    extendFaceInfoLifetime(*info, faceId);
   }
   else {
     info = &it->second;
@@ -180,20 +181,20 @@ NamespaceInfo::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Face& face)
 }
 
 void
-NamespaceInfo::expireFaceInfo(nfd::face::FaceId faceId)
+NamespaceInfo::expireFaceInfo(FaceId faceId)
 {
   m_fit.erase(faceId);
 }
 
 void
-NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, const Face& face)
+NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
 {
   // Cancel previous expiration
   scheduler::cancel(info.getMeasurementExpirationEventId());
 
   // Refresh measurement
   scheduler::EventId id = scheduler::schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
-    bind(&NamespaceInfo::expireFaceInfo, this, face.getId()));
+    bind(&NamespaceInfo::expireFaceInfo, this, faceId));
 
   info.setMeasurementExpirationEventId(id);
 }
@@ -209,17 +210,18 @@ AsfMeasurements::AsfMeasurements(MeasurementsAccessor& measurements)
 }
 
 FaceInfo*
-AsfMeasurements::getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face)
+AsfMeasurements::getFaceInfo(const fib::Entry& fibEntry, const Interest& interest, FaceId faceId)
 {
   NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
-  return info.getFaceInfo(fibEntry, face);
+  return info.getFaceInfo(fibEntry, faceId);
 }
 
 FaceInfo&
-AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest, const Face& face)
+AsfMeasurements::getOrCreateFaceInfo(const fib::Entry& fibEntry, const Interest& interest,
+                                     FaceId faceId)
 {
   NamespaceInfo& info = getOrCreateNamespaceInfo(fibEntry, interest);
-  return info.getOrCreateFaceInfo(fibEntry, face);
+  return info.getOrCreateFaceInfo(fibEntry, faceId);
 }
 
 NamespaceInfo*

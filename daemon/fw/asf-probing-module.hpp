@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,6 +55,15 @@ public:
   void
   afterForwardingProbe(const fib::Entry& fibEntry, const Interest& interest);
 
+  void
+  setProbingInterval(size_t probingInterval);
+
+  time::milliseconds
+  getProbingInterval() const
+  {
+    return m_probingInterval;
+  }
+
 private:
   // Used to associate FaceInfo with the face in a NextHop
   typedef std::pair<FaceInfo*, Face*> FaceInfoFacePair;
@@ -71,10 +80,11 @@ private:
   getRandomNumber(double start, double end);
 
 public:
-  static constexpr time::seconds DEFAULT_PROBING_INTERVAL = time::seconds(60);
+  static constexpr time::milliseconds DEFAULT_PROBING_INTERVAL = time::milliseconds(60000);
+  static constexpr time::milliseconds MIN_PROBING_INTERVAL = time::milliseconds(1000);
 
 private:
-  time::seconds m_probingInterval;
+  time::milliseconds m_probingInterval;
   AsfMeasurements& m_measurements;
 };
 

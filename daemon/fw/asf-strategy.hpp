@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,15 +51,15 @@ public:
   getStrategyName();
 
 public: // triggers
-  virtual void
+  void
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
-  virtual void
+  void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override;
 
-  virtual void
+  void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
@@ -75,14 +75,21 @@ private:
   getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest, const Face& inFace);
 
   void
-  onTimeout(const Name& interestName, face::FaceId faceId);
+  onTimeout(const Name& interestName, const FaceId faceId);
 
   void
   sendNoRouteNack(const Face& inFace, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
 
+  void
+  processParams(const PartialName& parsed);
+
+  static uint64_t
+  getParamValue(const std::string& param, const std::string& value);
+
 private:
   AsfMeasurements m_measurements;
   ProbingModule m_probing;
+  size_t m_maxSilentTimeouts;
 
 private:
   RetxSuppressionExponential m_retxSuppression;

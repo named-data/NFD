@@ -18,4 +18,5 @@ Manpages
    manpages/ndn-autoconfig-server
    misc/local-prefix-discovery
    manpages/nfd-autoreg
+   manpages/nfd-asf-strategy
    :maxdepth: 1

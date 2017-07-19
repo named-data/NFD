@@ -258,6 +258,7 @@ man_pages = [
     ('manpages/ndn-autoconfig.conf', 'ndn-autoconfig.conf',
         u'NDN auto-configuration client configuration file', None, 5),
     ('manpages/nfd-autoreg', 'nfd-autoreg', u'NFD Auto-registration Server', None, 1),
+    ('manpages/nfd-asf-strategy', 'nfd-asf-strategy', u'NFD ASF Strategy', None, 7),
 ]
 
 

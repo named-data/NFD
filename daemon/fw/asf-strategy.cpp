@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,26 +42,69 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , m_measurements(getMeasurements())
   , m_probing(m_measurements)
+  , m_maxSilentTimeouts(0)
   , m_retxSuppression(RETX_SUPPRESSION_INITIAL,
                       RetxSuppressionExponential::DEFAULT_MULTIPLIER,
                       RETX_SUPPRESSION_MAX)
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (!parsed.parameters.empty()) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument("AsfStrategy does not accept parameters"));
+    processParams(parsed.parameters);
   }
+
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument(
       "AsfStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
+
+  NFD_LOG_DEBUG("Probing interval=" << m_probing.getProbingInterval()
+                << ", Num silent timeouts=" << m_maxSilentTimeouts);
 }
 
 const Name&
 AsfStrategy::getStrategyName()
 {
-  static Name strategyName("/localhost/nfd/strategy/asf/%FD%02");
+  static Name strategyName("/localhost/nfd/strategy/asf/%FD%03");
   return strategyName;
+}
+
+void
+AsfStrategy::processParams(const PartialName& parsed)
+{
+  for (const auto& component : parsed) {
+    std::string parsedStr(reinterpret_cast<const char*>(component.value()), component.value_size());
+    auto n = parsedStr.find("~");
+    if (n == std::string::npos) {
+      BOOST_THROW_EXCEPTION(std::invalid_argument("Format is <parameter>~<value>"));
+    }
+
+    auto f = parsedStr.substr(0, n);
+    auto s = parsedStr.substr(n + 1);
+    if (f == "probing-interval") {
+      m_probing.setProbingInterval(getParamValue(f, s));
+    }
+    else if (f == "n-silent-timeouts") {
+      m_maxSilentTimeouts = getParamValue(f, s);
+    }
+    else {
+      BOOST_THROW_EXCEPTION(std::invalid_argument("Parameter should be probing-interval or n-silent-timeouts"));
+    }
+  }
+}
+
+uint64_t
+AsfStrategy::getParamValue(const std::string& param, const std::string& value)
+{
+  try {
+    if (!value.empty() && value[0] == '-')
+      BOOST_THROW_EXCEPTION(boost::bad_lexical_cast());
+
+    return boost::lexical_cast<uint64_t>(value);
+  }
+  catch (const boost::bad_lexical_cast&) {
+    BOOST_THROW_EXCEPTION(std::invalid_argument("Value of " + param + " must be a non-negative integer"));
+  }
 }
 
 void
@@ -132,7 +175,7 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
   faceInfo->recordRtt(pitEntry, inFace);
 
   // Extend lifetime for measurements associated with Face
-  namespaceInfo->extendFaceInfoLifetime(*faceInfo, inFace);
+  namespaceInfo->extendFaceInfoLifetime(*faceInfo, inFace.getId());
 
   if (faceInfo->isTimeoutScheduled()) {
     faceInfo->cancelTimeoutEvent(data.getName());
@@ -169,11 +212,11 @@ AsfStrategy::forwardInterest(const Interest& interest,
     this->sendInterest(pitEntry, outFace, interest);
   }
 
-  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, outFace);
+  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, outFace.getId());
 
   // Refresh measurements since Face is being used for forwarding
   NamespaceInfo& namespaceInfo = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
-  namespaceInfo.extendFaceInfoLifetime(faceInfo, outFace);
+  namespaceInfo.extendFaceInfoLifetime(faceInfo, outFace.getId());
 
   if (!faceInfo.isTimeoutScheduled()) {
     // Estimate and schedule timeout
@@ -251,7 +294,7 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
       continue;
     }
 
-    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace);
+    FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace.getId());
 
     if (info == nullptr) {
       FaceStats stats = {&hopFace,
@@ -278,10 +321,8 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
 }
 
 void
-AsfStrategy::onTimeout(const Name& interestName, face::FaceId faceId)
+AsfStrategy::onTimeout(const Name& interestName, const face::FaceId faceId)
 {
-  NFD_LOG_TRACE("FaceId: " << faceId << " for " << interestName << " has timed-out");
-
   NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(interestName);
 
   if (namespaceInfo == nullptr) {
@@ -296,7 +337,23 @@ AsfStrategy::onTimeout(const Name& interestName, face::FaceId faceId)
   }
 
   FaceInfo& faceInfo = it->second;
-  faceInfo.recordTimeout(interestName);
+
+  faceInfo.setNSilentTimeouts(faceInfo.getNSilentTimeouts() + 1);
+
+  if (faceInfo.getNSilentTimeouts() <= m_maxSilentTimeouts) {
+    NFD_LOG_TRACE("FaceId " << faceId << " for " << interestName << " has timed-out "
+                  << faceInfo.getNSilentTimeouts() << " time(s), ignoring");
+    // Extend lifetime for measurements associated with Face
+    namespaceInfo->extendFaceInfoLifetime(faceInfo, faceId);
+
+    if (faceInfo.isTimeoutScheduled()) {
+      faceInfo.cancelTimeoutEvent(interestName);
+    }
+  }
+  else {
+    NFD_LOG_TRACE("FaceId " << faceId << " for " << interestName << " has timed-out");
+    faceInfo.recordTimeout(interestName);
+  }
 }
 
 void

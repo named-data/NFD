@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,7 +75,7 @@ public:
 
 using Tests = boost::mpl::vector<
   Test<AccessStrategy, false, 1>,
-  Test<AsfStrategy, true, 2>,
+  Test<AsfStrategy, true, 3>,
   Test<BestRouteStrategy, false, 1>,
   Test<BestRouteStrategy2, false, 5>,
   Test<ClientControlStrategy, false, 2>,

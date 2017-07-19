@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -209,10 +209,11 @@ public:
    */
   template<typename S>
   void
-  setStrategy(TopologyNode i, Name prefix = Name("ndn:/"))
+  setStrategy(TopologyNode i, Name prefix = Name("ndn:/"),
+              Name instanceName = S::getStrategyName())
   {
     Forwarder& forwarder = this->getForwarder(i);
-    choose<S>(forwarder, prefix);
+    choose<S>(forwarder, prefix, instanceName);
   }
 
   /** \brief makes a link that interconnects two or more forwarders
