@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -116,11 +116,9 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   }
 
   try {
-    factory->createFace(remoteUri,
-      localUri,
-      parameters.getFacePersistency(),
-      parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
-        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),
+    factory->createFace({remoteUri, localUri, parameters.getFacePersistency(),
+        parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)},
       bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
       bind(&FaceManager::afterCreateFaceFailure, this, _1, _2, done));
   }

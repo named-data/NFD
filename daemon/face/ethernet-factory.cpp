@@ -173,30 +173,27 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-EthernetFactory::createFace(const FaceUri& remoteUri,
-                            const ndn::optional<FaceUri>& localUri,
-                            ndn::nfd::FacePersistency persistency,
-                            bool wantLocalFieldsEnabled,
+EthernetFactory::createFace(const CreateFaceParams& params,
                             const FaceCreatedCallback& onCreated,
                             const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(remoteUri.isCanonical());
+  BOOST_ASSERT(params.remoteUri.isCanonical());
 
-  if (!localUri || localUri->getScheme() != "dev") {
+  if (!params.localUri || params.localUri->getScheme() != "dev") {
     NFD_LOG_TRACE("Cannot create unicast Ethernet face without dev:// LocalUri");
     onFailure(406, "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme");
     return;
   }
-  BOOST_ASSERT(localUri->isCanonical());
+  BOOST_ASSERT(params.localUri->isCanonical());
 
-  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing Ethernet faces do not support on-demand persistency");
     return;
   }
 
-  ethernet::Address remoteEndpoint(ethernet::Address::fromString(remoteUri.getHost()));
-  std::string localEndpoint(localUri->getHost());
+  ethernet::Address remoteEndpoint(ethernet::Address::fromString(params.remoteUri.getHost()));
+  std::string localEndpoint(params.localUri->getHost());
 
   if (remoteEndpoint.isMulticast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");
@@ -204,7 +201,7 @@ EthernetFactory::createFace(const FaceUri& remoteUri,
     return;
   }
 
-  if (wantLocalFieldsEnabled) {
+  if (params.wantLocalFieldsEnabled) {
     // Ethernet faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -213,7 +210,7 @@ EthernetFactory::createFace(const FaceUri& remoteUri,
 
   for (const auto& i : m_channels) {
     if (i.first == localEndpoint) {
-      i.second->connect(remoteEndpoint, persistency, onCreated, onFailure);
+      i.second->connect(remoteEndpoint, params.persistency, onCreated, onFailure);
       return;
     }
   }

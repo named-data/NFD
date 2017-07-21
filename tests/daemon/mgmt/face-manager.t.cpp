@@ -268,10 +268,7 @@ public:
   }
 
   void
-  createFace(const FaceUri& remoteUri,
-             const ndn::optional<FaceUri>& localUri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
+  createFace(const CreateFaceParams& params,
              const face::FaceCreatedCallback& onCreated,
              const face::FaceCreationFailedCallback& onConnectFailed) final
   {

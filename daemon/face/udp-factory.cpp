@@ -206,29 +206,26 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UdpFactory::createFace(const FaceUri& remoteUri,
-                       const ndn::optional<FaceUri>& localUri,
-                       ndn::nfd::FacePersistency persistency,
-                       bool wantLocalFieldsEnabled,
+UdpFactory::createFace(const CreateFaceParams& params,
                        const FaceCreatedCallback& onCreated,
                        const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(remoteUri.isCanonical());
+  BOOST_ASSERT(params.remoteUri.isCanonical());
 
-  if (localUri) {
+  if (params.localUri) {
     NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
     onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
     return;
   }
 
-  if (persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing UDP faces do not support on-demand persistency");
     return;
   }
 
-  udp::Endpoint endpoint(ip::address::from_string(remoteUri.getHost()),
-                         boost::lexical_cast<uint16_t>(remoteUri.getPort()));
+  udp::Endpoint endpoint(ip::address::from_string(params.remoteUri.getHost()),
+                         boost::lexical_cast<uint16_t>(params.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");
@@ -243,7 +240,7 @@ UdpFactory::createFace(const FaceUri& remoteUri,
     return;
   }
 
-  if (wantLocalFieldsEnabled) {
+  if (params.wantLocalFieldsEnabled) {
     // UDP faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -254,7 +251,7 @@ UdpFactory::createFace(const FaceUri& remoteUri,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, persistency, onCreated, onFailure);
+      i.second->connect(endpoint, params.persistency, onCreated, onFailure);
       return;
     }
   }

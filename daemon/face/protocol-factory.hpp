@@ -129,21 +129,28 @@ public:
     return providedSchemes;
   }
 
-  /** \brief Try to create Face using the supplied FaceUri
+  /** \brief Parameters to ProtocolFactory::createFace
    *
-   * \param remoteUri remote URI of the new face
-   * \param localUri local URI of the new face
-   * \param persistency persistency of the new face
-   * \param wantLocalFieldsEnabled whether local fields should be enabled on the face
+   *  Parameters are passed as a struct rather than individually, so that a future change in the list
+   *  of parameters does not require an update to the method signature in all subclasses.
+   */
+  struct CreateFaceParams
+  {
+    FaceUri remoteUri;
+    ndn::optional<FaceUri> localUri;
+    ndn::nfd::FacePersistency persistency;
+    bool wantLocalFieldsEnabled;
+  };
+
+  /** \brief Try to create face using the supplied parameters
+   *
+   * \param params parameters to create face with
    * \param onCreated callback if face creation succeeds or face already exists;
    *                  persistency and local fields settings are not updated on an existing face
    * \param onFailure callback if face creation fails
    */
   virtual void
-  createFace(const FaceUri& remoteUri,
-             const ndn::optional<FaceUri>& localUri,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFieldsEnabled,
+  createFace(const CreateFaceParams& params,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) = 0;
 

@@ -260,10 +260,8 @@ BOOST_FIXTURE_TEST_CASE(FaceCreateTimeout, FaceCreateTimeoutFixture)
 {
   factory.createChannel("0.0.0.0", "20070");
 
-  factory.createFace(FaceUri("tcp4://192.0.2.1:20070"),
-                     {},
-                     ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                     false,
+  factory.createFace({FaceUri("tcp4://192.0.2.1:20070"), {},
+                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false},
                      bind(&FaceCreateTimeoutFixture::onFaceCreated, this, _1),
                      bind(&FaceCreateTimeoutFixture::onConnectFailed, this, _2));
 

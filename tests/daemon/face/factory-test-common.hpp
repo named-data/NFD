@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -49,7 +49,7 @@ createFace(ProtocolFactory& factory,
            bool wantLocalFieldsEnabled,
            const CreateFaceExpectedResult& expected)
 {
-  factory.createFace(remoteUri, localUri, persistency, wantLocalFieldsEnabled,
+  factory.createFace({remoteUri, localUri, persistency, wantLocalFieldsEnabled},
                      [expected] (const shared_ptr<Face>&) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },

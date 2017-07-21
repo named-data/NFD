@@ -118,10 +118,7 @@ WebSocketFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-WebSocketFactory::createFace(const FaceUri& remoteUri,
-                             const ndn::optional<FaceUri>& localUri,
-                             ndn::nfd::FacePersistency persistency,
-                             bool wantLocalFieldsEnabled,
+WebSocketFactory::createFace(const CreateFaceParams& params,
                              const FaceCreatedCallback& onCreated,
                              const FaceCreationFailedCallback& onFailure)
 {
