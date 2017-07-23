@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -36,23 +36,22 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestForwarderGeneralModule, StatusFixture<ForwarderGeneralModule>)
 
-class MakeNfdIdCollector
-{
-public:
-  unique_ptr<NfdIdCollector>
-  operator()(Face&, KeyChain&) const
-  {
-    return make_unique<NfdIdCollector>(make_unique<ValidatorNull>());
-  };
-};
+// class MakeNfdIdCollector
+// {
+// public:
+//   unique_ptr<NfdIdCollector>
+//   operator()(Face&, KeyChain&) const
+//   {
+//     return make_unique<NfdIdCollector>(make_unique<ValidatorNull>());
+//   };
+// };
 
-class ForwarderGeneralStatusFixture : public StatusFixture<ForwarderGeneralModule,
-                                                           MakeNfdIdCollector>
+class ForwarderGeneralStatusFixture : public StatusFixture<ForwarderGeneralModule>
 {
 protected:
   ForwarderGeneralStatusFixture()
   {
-    module.setNfdIdCollector(*validator);
+    // module.setNfdIdCollector(*validator);
 
     BOOST_REQUIRE(this->addIdentity("/nfd-status/test-nfdid",
                                     ndn::EcKeyParams(name::Component("KEYID"))));
@@ -68,7 +67,7 @@ private:
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <generalStatus>
-    <nfdId>/nfd-status/test-nfdid/KEY/KEYID</nfdId>
+    <nfdId>/nfdId-unavailable</nfdId>
     <version>0.4.1-1-g704430c</version>
     <startTime>2016-06-24T15:13:46.856000</startTime>
     <currentTime>2016-07-17T17:55:54.109000</currentTime>
@@ -95,7 +94,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 General NFD status:
-                 nfdId=/nfd-status/test-nfdid/KEY/KEYID
+                 nfdId=/nfdId-unavailable
                version=0.4.1-1-g704430c
              startTime=20160624T151346.856000
            currentTime=20160717T175554.109000

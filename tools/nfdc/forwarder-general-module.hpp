@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ class ForwarderGeneralModule : public Module, noncopyable
 public:
   ForwarderGeneralModule();
 
-  virtual void
+  void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
@@ -57,7 +57,7 @@ public:
     m_nfdIdCollector = &nfdIdCollector;
   }
 
-  virtual void
+  void
   formatStatusXml(std::ostream& os) const override;
 
   /** \brief format a single status item as XML
@@ -68,7 +68,7 @@ public:
   void
   formatItemXml(std::ostream& os, const ForwarderStatus& item, const Name& nfdId) const;
 
-  virtual void
+  void
   formatStatusText(std::ostream& os) const override;
 
   /** \brief format a single status item as text
@@ -94,6 +94,8 @@ private:
  *  This validator redirects all validation requests to an inner validator.
  *  For the first Data packet accepted by the inner validator that has a Name in KeyLocator,
  *  this Name is collected as NFD's signing certificate name.
+ *
+ *  \todo #4089 re-implement as v2 ValidationPolicy
  */
 class NfdIdCollector : public ndn::Validator
 {
@@ -111,7 +113,7 @@ public:
   getNfdId() const;
 
 protected:
-  virtual void
+  void
   checkPolicy(const Interest& interest, int nSteps,
               const ndn::OnInterestValidated& accept,
               const ndn::OnInterestValidationFailed& reject,
@@ -121,7 +123,7 @@ protected:
     m_inner->validate(interest, accept, reject);
   }
 
-  virtual void
+  void
   checkPolicy(const Data& data, int nSteps,
               const ndn::OnDataValidated& accept,
               const ndn::OnDataValidationFailed& reject,

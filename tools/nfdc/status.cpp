@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -40,17 +40,17 @@ namespace nfdc {
 void
 reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
 {
-  unique_ptr<Validator> validator = make_unique<ndn::ValidatorNull>();
+  unique_ptr<ndn::security::v2::Validator> validator = make_unique<ndn::security::v2::ValidatorNull>();
   CommandOptions ctrlOptions;
 
   StatusReport report;
 
   if (options.wantForwarderGeneral) {
-    auto nfdIdCollector = make_unique<NfdIdCollector>(std::move(validator));
+    // auto nfdIdCollector = make_unique<NfdIdCollector>(std::move(validator));
     auto forwarderGeneralModule = make_unique<ForwarderGeneralModule>();
-    forwarderGeneralModule->setNfdIdCollector(*nfdIdCollector);
+    // forwarderGeneralModule->setNfdIdCollector(*nfdIdCollector);
     report.sections.push_back(std::move(forwarderGeneralModule));
-    validator = std::move(nfdIdCollector);
+    // validator = std::move(nfdIdCollector);
   }
 
   if (options.wantChannels) {

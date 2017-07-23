@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -37,8 +37,8 @@ namespace tests {
 
 using ndn::Face;
 using ndn::KeyChain;
-using ndn::Validator;
-using ndn::ValidatorNull;
+using ndn::security::v2::Validator;
+using ndn::security::v2::ValidatorNull;
 using boost::test_tools::output_test_stream;
 
 class MakeValidatorNull

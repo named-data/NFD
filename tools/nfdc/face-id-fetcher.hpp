@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -29,7 +29,6 @@
 #include "core/common.hpp"
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
-#include <ndn-cxx/security/validator-null.hpp>
 
 namespace nfd {
 namespace tools {
@@ -100,7 +99,6 @@ private:
   bool m_allowCreate;
   SuccessCallback m_onSucceed;
   FailureCallback m_onFail;
-  ndn::ValidatorNull m_validator;
 };
 
 } // namespace nfdc

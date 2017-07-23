@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/security/validator-null.hpp>
 #include <ndn-cxx/util/segment-fetcher.hpp>
 
 namespace nfd {
@@ -114,7 +115,7 @@ FaceIdFetcher::onCanonizeSuccess(const FaceUri& canonicalUri)
   auto interest = std::make_shared<ndn::Interest>(interestPacket);
 
   ndn::util::SegmentFetcher::fetch(
-    m_face, *interest, m_validator,
+    m_face, *interest, ndn::security::v2::getAcceptAllValidator(),
     bind(&FaceIdFetcher::onQuerySuccess, this, _1, canonicalUri),
     bind(&FaceIdFetcher::onQueryFailure, this, _1, canonicalUri));
 }
