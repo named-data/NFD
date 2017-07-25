@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -57,9 +57,10 @@
 #include <vector>
 
 #include <ndn-cxx/data.hpp>
+#include <ndn-cxx/delegation.hpp>
+#include <ndn-cxx/delegation-list.hpp>
 #include <ndn-cxx/exclude.hpp>
 #include <ndn-cxx/interest.hpp>
-#include <ndn-cxx/link.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
 #include <ndn-cxx/lp/nack.hpp>
@@ -100,12 +101,13 @@ using ndn::to_string;
 
 using ndn::Block;
 using ndn::Data;
+using ndn::Delegation;
+using ndn::DelegationList;
 using ndn::Exclude;
 using ndn::FaceUri;
 using ndn::Interest;
 using ndn::Name;
 using ndn::PartialName;
-using ndn::Link;
 
 namespace tlv {
 // Don't write "namespace tlv = ndn::tlv", because NFD can add other members into this namespace.

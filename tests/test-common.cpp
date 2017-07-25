@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -108,14 +108,6 @@ signData(Data& data)
   data.wireEncode();
 
   return data;
-}
-
-shared_ptr<Link>
-makeLink(const Name& name, std::initializer_list<std::pair<uint32_t, Name>> delegations)
-{
-  auto link = make_shared<Link>(name, delegations);
-  signData(link);
-  return link;
 }
 
 lp::Nack

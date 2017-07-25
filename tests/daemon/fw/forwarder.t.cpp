@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -587,61 +587,6 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
   this->advanceClocks(time::milliseconds(100), time::seconds(20));
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
-
-
-class MalformedPacketFixture : public UnitTestTimeFixture
-{
-protected:
-  MalformedPacketFixture()
-    : face1(make_shared<DummyFace>())
-    , face2(make_shared<DummyFace>())
-  {
-    forwarder.addFace(face1);
-    forwarder.addFace(face2);
-  }
-
-  void
-  processInterest(shared_ptr<Interest> badInterest)
-  {
-    forwarder.startProcessInterest(*face1, *badInterest);
-    this->continueProcessPacket();
-  }
-
-  // processData
-
-  // processNack
-
-private:
-  void
-  continueProcessPacket()
-  {
-    this->advanceClocks(time::milliseconds(10), time::seconds(6));
-  }
-
-protected:
-  Forwarder forwarder;
-  shared_ptr<DummyFace> face1; // face of incoming bad packet
-  shared_ptr<DummyFace> face2; // another face for setting up states
-};
-
-BOOST_FIXTURE_TEST_SUITE(MalformedPacket, MalformedPacketFixture)
-
-BOOST_AUTO_TEST_CASE(BadLink)
-{
-  shared_ptr<Interest> goodInterest = makeInterest("ndn:/");
-  Block wire = goodInterest->wireEncode();
-  wire.push_back(ndn::encoding::makeEmptyBlock(tlv::Data)); // bad Link
-  wire.encode();
-
-  auto badInterest = make_shared<Interest>();
-  BOOST_REQUIRE_NO_THROW(badInterest->wireDecode(wire));
-  BOOST_REQUIRE(badInterest->hasLink());
-  BOOST_REQUIRE_THROW(badInterest->getLink(), tlv::Error);
-
-  BOOST_CHECK_NO_THROW(this->processInterest(badInterest));
-}
-
-BOOST_AUTO_TEST_SUITE_END() // MalformedPacket
 
 BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE_END()

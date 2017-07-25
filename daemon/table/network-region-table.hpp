@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,16 +41,16 @@ class NetworkRegionTable : public std::set<Name>
 {
 public:
   /** \brief determines whether an Interest has reached a producer region
-   *  \param link the Link object on an Interest
+   *  \param forwardingHint forwarding hint of an Interest
    *  \retval true the Interest has reached a producer region
    *  \retval false the Interest has not reached a producer region
    *
-   *  If any delegation names in the Link object is a prefix of any region name,
+   *  If any delegation name in the forwarding hint is a prefix of any region name,
    *  the Interest has reached the producer region and should be forwarded according to ‎its Name;
-   *  otherwise, the Interest should be forwarded according to the delegations.
+   *  otherwise, the Interest should be forwarded according to the forwarding hint.
    */
   bool
-  isInProducerRegion(const Link& link) const;
+  isInProducerRegion(const DelegationList& forwardingHint) const;
 };
 
 } // namespace nfd

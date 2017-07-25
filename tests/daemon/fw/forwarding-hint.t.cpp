@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -34,7 +34,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_AUTO_TEST_SUITE(TestLinkForwarding)
+BOOST_AUTO_TEST_SUITE(TestForwardingHint)
 
 /**
  *      /arizona/cs/avenir
@@ -95,8 +95,6 @@ public:
     topo.registerPrefix(nodeH, linkHC->getFace(nodeH), "/ucla", 20);
     topo.registerPrefix(nodeC, linkCS->getFace(nodeC), "/ucla", 10);
     topo.registerPrefix(nodeS, linkSQ->getFace(nodeS), "/net/ndnsim", 10);
-
-    linkObject = makeLink("/net/ndnsim", {{10, "/telia/terabits"}, {20, "/ucla/cs"}});
   }
 
   /** \brief express an Interest with Link object from consumerA
@@ -105,7 +103,7 @@ public:
   consumerExpressInterest(int seq)
   {
     auto interest = makeInterest(Name("/net/ndnsim").appendNumber(seq));
-    interest->setLink(linkObject->wireEncode());
+    interest->setForwardingHint({delTelia, delUcla});
     consumerA->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
   }
 
@@ -114,7 +112,9 @@ public:
   TopologyNode nodeA, nodeH, nodeT, nodeP, nodeC, nodeS, nodeQ;
   shared_ptr<TopologyLink> linkAH, linkHT, linkTP, linkHC, linkCS, linkSQ;
   shared_ptr<TopologyAppLink> consumerA, producerP, producerQ;
-  shared_ptr<Link> linkObject;
+
+  Delegation delTelia = {10, "/telia/terabits"};
+  Delegation delUcla = {20, "/ucla/cs"};
 };
 
 BOOST_FIXTURE_TEST_SUITE(NdnsimTeliaUclaTopology, NdnsimTeliaUclaTopologyFixture)
@@ -124,24 +124,20 @@ BOOST_AUTO_TEST_CASE(FetchTelia)
   this->consumerExpressInterest(1);
   this->advanceClocks(time::milliseconds(11), 20);
 
-  // A forwards Interest according to default route, no change to Link and SelectedDelegation
+  // A forwards Interest according to default route, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkAH->getFace(nodeA).getCounters().nOutInterests, 1);
   const Interest& interestAH = topo.getPcap(linkAH->getFace(nodeA)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestAH.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestAH.hasSelectedDelegation(), false);
+  BOOST_CHECK_EQUAL(interestAH.getForwardingHint(), DelegationList({delTelia, delUcla}));
 
-  // H prefers T, and sets SelectedDelegation
+  // H prefers T, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkHT->getFace(nodeH).getCounters().nOutInterests, 1);
   const Interest& interestHT = topo.getPcap(linkHT->getFace(nodeH)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestHT.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestHT.hasSelectedDelegation(), true);
-  BOOST_CHECK_EQUAL(interestHT.getSelectedDelegation(), "/telia/terabits");
+  BOOST_CHECK_EQUAL(interestHT.getForwardingHint(), DelegationList({delTelia, delUcla}));
 
-  // T forwards to P, Link and SelectedDelegation are stripped when Interest reaches producer region
+  // T forwards to P, forwarding hint stripped when Interest reaches producer region
   BOOST_CHECK_EQUAL(linkTP->getFace(nodeT).getCounters().nOutInterests, 1);
   const Interest& interestTP = topo.getPcap(linkTP->getFace(nodeT)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestTP.hasLink(), false);
-  BOOST_CHECK_EQUAL(interestTP.hasSelectedDelegation(), false);
+  BOOST_CHECK(interestTP.getForwardingHint().empty());
 
   // Data is served by P and reaches A
   BOOST_CHECK_EQUAL(producerP->getForwarderFace().getCounters().nInData, 1);
@@ -157,31 +153,25 @@ BOOST_AUTO_TEST_CASE(FetchUcla)
   this->consumerExpressInterest(1);
   this->advanceClocks(time::milliseconds(11), 20);
 
-  // A forwards Interest according to default route, no change to Link and SelectedDelegation
+  // A forwards Interest according to default route, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkAH->getFace(nodeA).getCounters().nOutInterests, 1);
   const Interest& interestAH = topo.getPcap(linkAH->getFace(nodeA)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestAH.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestAH.hasSelectedDelegation(), false);
+  BOOST_CHECK_EQUAL(interestAH.getForwardingHint(), DelegationList({delTelia, delUcla}));
 
-  // H forwards to C, and sets SelectedDelegation
+  // H forwards to C, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkHC->getFace(nodeH).getCounters().nOutInterests, 1);
   const Interest& interestHC = topo.getPcap(linkHC->getFace(nodeH)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestHC.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestHC.hasSelectedDelegation(), true);
-  BOOST_CHECK_EQUAL(interestHC.getSelectedDelegation(), "/ucla/cs");
+  BOOST_CHECK_EQUAL(interestHC.getForwardingHint(), DelegationList({delTelia, delUcla}));
 
-  // C forwards to S, no change to Link and SelectedDelegation
+  // C forwards to S, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkCS->getFace(nodeC).getCounters().nOutInterests, 1);
   const Interest& interestCS = topo.getPcap(linkCS->getFace(nodeC)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestCS.hasLink(), true);
-  BOOST_CHECK_EQUAL(interestCS.hasSelectedDelegation(), true);
-  BOOST_CHECK_EQUAL(interestCS.getSelectedDelegation(), "/ucla/cs");
+  BOOST_CHECK_EQUAL(interestCS.getForwardingHint(), DelegationList({delTelia, delUcla}));
 
-  // S forwards to Q, Link and SelectedDelegation are stripped when Interest reaches producer region
+  // S forwards to Q, forwarding hint stripped when Interest reaches producer region
   BOOST_CHECK_EQUAL(linkSQ->getFace(nodeS).getCounters().nOutInterests, 1);
   const Interest& interestSQ = topo.getPcap(linkSQ->getFace(nodeS)).sentInterests.at(0);
-  BOOST_CHECK_EQUAL(interestSQ.hasLink(), false);
-  BOOST_CHECK_EQUAL(interestSQ.hasSelectedDelegation(), false);
+  BOOST_CHECK(interestSQ.getForwardingHint().empty());
 
   // Data is served by Q and reaches A
   BOOST_CHECK_EQUAL(producerQ->getForwarderFace().getCounters().nInData, 1);
@@ -190,7 +180,7 @@ BOOST_AUTO_TEST_CASE(FetchUcla)
 
 BOOST_AUTO_TEST_SUITE_END() // NdnsimTeliaUclaTopology
 
-BOOST_AUTO_TEST_SUITE_END() // TestLinkForwarding
+BOOST_AUTO_TEST_SUITE_END() // TestForwardingHint
 BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests

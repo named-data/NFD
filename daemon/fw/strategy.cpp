@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -198,54 +198,36 @@ Strategy::lookupFib(const pit::Entry& pitEntry) const
   const Fib& fib = m_forwarder.getFib();
 
   const Interest& interest = pitEntry.getInterest();
-  // has Link object?
-  if (!interest.hasLink()) {
+  // has forwarding hint?
+  if (interest.getForwardingHint().empty()) {
     // FIB lookup with Interest name
     const fib::Entry& fibEntry = fib.findLongestPrefixMatch(pitEntry);
-    NFD_LOG_TRACE("lookupFib noLinkObject found=" << fibEntry.getPrefix());
+    NFD_LOG_TRACE("lookupFib noForwardingHint found=" << fibEntry.getPrefix());
     return fibEntry;
   }
 
-  const Link& link = interest.getLink();
+  const DelegationList& fh = interest.getForwardingHint();
+  // Forwarding hint should have been stripped by incoming Interest pipeline when reaching producer region
+  BOOST_ASSERT(!m_forwarder.getNetworkRegionTable().isInProducerRegion(fh));
 
-  // Link should have been stripped by incoming Interest pipeline when reaching producer region
-  BOOST_ASSERT(!m_forwarder.getNetworkRegionTable().isInProducerRegion(link));
-
-  // has SelectedDelegation?
-  if (interest.hasSelectedDelegation()) {
-    // FIB lookup with SelectedDelegation
-    Name selectedDelegation = interest.getSelectedDelegation();
-    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(selectedDelegation);
-    NFD_LOG_TRACE("lookupFib hasSelectedDelegation=" << selectedDelegation << " found=" << fibEntry.getPrefix());
-    return fibEntry;
-  }
-
-  // FIB lookup with first delegation Name
-  const fib::Entry& fibEntry0 = fib.findLongestPrefixMatch(link.getDelegations().begin()->second);
-  // in default-free zone?
-  bool isDefaultFreeZone = !(fibEntry0.getPrefix().size() == 0 && fibEntry0.hasNextHops());
-  if (!isDefaultFreeZone) {
-    NFD_LOG_TRACE("lookupFib inConsumerRegion found=" << fibEntry0.getPrefix());
-    return fibEntry0;
-  }
-
-  // choose and set SelectedDelegation
-  for (const std::pair<uint32_t, Name>& delegation : link.getDelegations()) {
-    const Name& delegationName = delegation.second;
-    const fib::Entry& fibEntry = fib.findLongestPrefixMatch(delegationName);
-    if (fibEntry.hasNextHops()) {
-      /// \todo Don't modify in-record Interests.
-      ///       Set SelectedDelegation in outgoing Interest pipeline.
-      std::for_each(pitEntry.in_begin(), pitEntry.in_end(),
-        [&delegationName] (const pit::InRecord& inR) {
-          const_cast<Interest&>(inR.getInterest()).setSelectedDelegation(delegationName);
-        });
-      NFD_LOG_TRACE("lookupFib enterDefaultFreeZone setSelectedDelegation=" << delegationName);
-      return fibEntry;
+  const fib::Entry* fibEntry = nullptr;
+  for (const Delegation& del : fh) {
+    fibEntry = &fib.findLongestPrefixMatch(del.name);
+    if (fibEntry->hasNextHops()) {
+      if (fibEntry->getPrefix().size() == 0) {
+        // in consumer region, return the default route
+        NFD_LOG_TRACE("lookupFib inConsumerRegion found=" << fibEntry->getPrefix());
+      }
+      else {
+        // in default-free zone, use the first delegation that finds a FIB entry
+        NFD_LOG_TRACE("lookupFib delegation=" << del.name << " found=" << fibEntry->getPrefix());
+      }
+      return *fibEntry;
     }
+    BOOST_ASSERT(fibEntry->getPrefix().size() == 0); // only ndn:/ FIB entry can have zero nexthop
   }
-  BOOST_ASSERT(false);
-  return fibEntry0;
+  BOOST_ASSERT(fibEntry != nullptr && fibEntry->getPrefix().size() == 0);
+  return *fibEntry; // only occurs if no delegation finds a FIB nexthop
 }
 
 } // namespace fw

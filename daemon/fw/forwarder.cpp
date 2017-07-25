@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -73,53 +73,6 @@ Forwarder::Forwarder()
 Forwarder::~Forwarder() = default;
 
 void
-Forwarder::startProcessInterest(Face& face, const Interest& interest)
-{
-  // check fields used by forwarding are well-formed
-  try {
-    if (interest.hasLink()) {
-      interest.getLink();
-    }
-  }
-  catch (const tlv::Error&) {
-    NFD_LOG_DEBUG("startProcessInterest face=" << face.getId() <<
-                  " interest=" << interest.getName() << " malformed");
-    // It's safe to call interest.getName() because Name has been fully parsed
-    return;
-  }
-
-  this->onIncomingInterest(face, interest);
-}
-
-void
-Forwarder::startProcessData(Face& face, const Data& data)
-{
-  // check fields used by forwarding are well-formed
-  // (none needed)
-
-  this->onIncomingData(face, data);
-}
-
-void
-Forwarder::startProcessNack(Face& face, const lp::Nack& nack)
-{
-  // check fields used by forwarding are well-formed
-  try {
-    if (nack.getInterest().hasLink()) {
-      nack.getInterest().getLink();
-    }
-  }
-  catch (const tlv::Error&) {
-    NFD_LOG_DEBUG("startProcessNack face=" << face.getId() <<
-                  " nack=" << nack.getInterest().getName() <<
-                  "~" << nack.getReason() << " malformed");
-    return;
-  }
-
-  this->onIncomingNack(face, nack);
-}
-
-void
 Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
 {
   // receive Interest
@@ -146,13 +99,12 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
     return;
   }
 
-  // strip Link object if Interest has reached producer region
-  if (interest.hasLink() && m_networkRegionTable.isInProducerRegion(interest.getLink())) {
+  // strip forwarding hint if Interest has reached producer region
+  if (!interest.getForwardingHint().empty() &&
+      m_networkRegionTable.isInProducerRegion(interest.getForwardingHint())) {
     NFD_LOG_DEBUG("onIncomingInterest face=" << inFace.getId() <<
                   " interest=" << interest.getName() << " reaching-producer-region");
-    Interest& interestRef = const_cast<Interest&>(interest);
-    interestRef.unsetLink();
-    interestRef.unsetSelectedDelegation();
+    const_cast<Interest&>(interest).setForwardingHint({});
   }
 
   // PIT insert

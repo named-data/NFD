@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -106,24 +106,33 @@ public: // faces and policies
 public: // forwarding entrypoints and tables
   /** \brief start incoming Interest processing
    *  \param face face on which Interest is received
-   *  \param interest the incoming Interest, must be created with make_shared
+   *  \param interest the incoming Interest, must be well-formed and created with make_shared
    */
   void
-  startProcessInterest(Face& face, const Interest& interest);
+  startProcessInterest(Face& face, const Interest& interest)
+  {
+    this->onIncomingInterest(face, interest);
+  }
 
   /** \brief start incoming Data processing
    *  \param face face on which Data is received
-   *  \param data the incoming Data, must be created with make_shared
+   *  \param data the incoming Data, must be well-formed and created with make_shared
    */
   void
-  startProcessData(Face& face, const Data& data);
+  startProcessData(Face& face, const Data& data)
+  {
+    this->onIncomingData(face, data);
+  }
 
   /** \brief start incoming Nack processing
    *  \param face face on which Nack is received
-   *  \param nack the incoming Nack, must be created with make_shared
+   *  \param nack the incoming Nack, must be well-formed
    */
   void
-  startProcessNack(Face& face, const lp::Nack& nack);
+  startProcessNack(Face& face, const lp::Nack& nack)
+  {
+    this->onIncomingNack(face, nack);
+  }
 
   NameTree&
   getNameTree()
