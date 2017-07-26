@@ -149,13 +149,6 @@ TcpFactory::createFace(const CreateFaceParams& params,
   // a canonical tcp4/tcp6 FaceUri cannot have a multicast address
   BOOST_ASSERT(!endpoint.address().is_multicast());
 
-  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
-    NFD_LOG_TRACE("Requested endpoint is prohibited "
-                  "(reserved by NFD or disallowed by face management protocol)");
-    onFailure(406, "Requested endpoint is prohibited");
-    return;
-  }
-
   if (params.wantLocalFieldsEnabled && !endpoint.address().is_loopback()) {
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -176,48 +169,6 @@ TcpFactory::createFace(const CreateFaceParams& params,
   onFailure(504, "No channels available to connect");
 }
 
-void
-TcpFactory::prohibitEndpoint(const tcp::Endpoint& endpoint)
-{
-  if (endpoint.address().is_v4() &&
-      endpoint.address() == ip::address_v4::any()) {
-    prohibitAllIpv4Endpoints(endpoint.port());
-  }
-  else if (endpoint.address().is_v6() &&
-           endpoint.address() == ip::address_v6::any()) {
-    prohibitAllIpv6Endpoints(endpoint.port());
-  }
-
-  NFD_LOG_TRACE("prohibiting TCP " << endpoint);
-  m_prohibitedEndpoints.insert(endpoint);
-}
-
-void
-TcpFactory::prohibitAllIpv4Endpoints(uint16_t port)
-{
-  ///\todo prohibited endpoints need to react to dynamic NIC changes
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv4Addresses) {
-      if (addr != ip::address_v4::any()) {
-        prohibitEndpoint(tcp::Endpoint(addr, port));
-      }
-    }
-  }
-}
-
-void
-TcpFactory::prohibitAllIpv6Endpoints(uint16_t port)
-{
-  ///\todo prohibited endpoints need to react to dynamic NIC changes
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv6Addresses) {
-      if (addr != ip::address_v6::any()) {
-        prohibitEndpoint(tcp::Endpoint(addr, port));
-      }
-    }
-  }
-}
-
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 {
@@ -227,7 +178,6 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 
   channel = make_shared<TcpChannel>(endpoint);
   m_channels[endpoint] = channel;
-  prohibitEndpoint(endpoint);
   return channel;
 }
 

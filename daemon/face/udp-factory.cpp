@@ -233,13 +233,6 @@ UdpFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  if (m_prohibitedEndpoints.find(endpoint) != m_prohibitedEndpoints.end()) {
-    NFD_LOG_TRACE("Requested endpoint is prohibited "
-                  "(reserved by this NFD or disallowed by face management protocol)");
-    onFailure(406, "Requested endpoint is prohibited");
-    return;
-  }
-
   if (params.wantLocalFieldsEnabled) {
     // UDP faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
@@ -258,53 +251,6 @@ UdpFactory::createFace(const CreateFaceParams& params,
 
   NFD_LOG_TRACE("No channels available to connect to " << endpoint);
   onFailure(504, "No channels available to connect");
-}
-
-void
-UdpFactory::prohibitEndpoint(const udp::Endpoint& endpoint)
-{
-  if (endpoint.address().is_v4() &&
-      endpoint.address() == ip::address_v4::any()) {
-    prohibitAllIpv4Endpoints(endpoint.port());
-  }
-  else if (endpoint.address().is_v6() &&
-           endpoint.address() == ip::address_v6::any()) {
-    prohibitAllIpv6Endpoints(endpoint.port());
-  }
-
-  NFD_LOG_TRACE("prohibiting UDP " << endpoint);
-  m_prohibitedEndpoints.insert(endpoint);
-}
-
-void
-UdpFactory::prohibitAllIpv4Endpoints(uint16_t port)
-{
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv4Addresses) {
-      if (addr != ip::address_v4::any()) {
-        prohibitEndpoint(udp::Endpoint(addr, port));
-      }
-    }
-
-    if (nic.isBroadcastCapable() &&
-        nic.broadcastAddress != ip::address_v4::any()) {
-      prohibitEndpoint(udp::Endpoint(nic.broadcastAddress, port));
-    }
-  }
-
-  prohibitEndpoint(udp::Endpoint(ip::address_v4::broadcast(), port));
-}
-
-void
-UdpFactory::prohibitAllIpv6Endpoints(uint16_t port)
-{
-  for (const NetworkInterfaceInfo& nic : listNetworkInterfaces()) {
-    for (const auto& addr : nic.ipv6Addresses) {
-      if (addr != ip::address_v6::any()) {
-        prohibitEndpoint(udp::Endpoint(addr, port));
-      }
-    }
-  }
 }
 
 shared_ptr<UdpChannel>
@@ -328,7 +274,6 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
 
   auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout);
   m_channels[localEndpoint] = channel;
-  prohibitEndpoint(localEndpoint);
 
   return channel;
 }
@@ -368,11 +313,6 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   if (m_channels.find(localEndpoint) != m_channels.end()) {
     BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
                                 "endpoint is already allocated for a UDP unicast channel"));
-  }
-
-  if (m_prohibitedEndpoints.find(multicastEndpoint) != m_prohibitedEndpoints.end()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
-                                "remote endpoint is owned by this NFD instance"));
   }
 
   if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {

@@ -83,16 +83,6 @@ public:
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  void
-  prohibitEndpoint(const tcp::Endpoint& endpoint);
-
-  void
-  prohibitAllIpv4Endpoints(uint16_t port);
-
-  void
-  prohibitAllIpv6Endpoints(uint16_t port);
-
 private:
   /**
    * \brief Look up TcpChannel using specified local endpoint
@@ -105,9 +95,6 @@ private:
 
 private:
   std::map<tcp::Endpoint, shared_ptr<TcpChannel>> m_channels;
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  std::set<tcp::Endpoint> m_prohibitedEndpoints;
 };
 
 } // namespace face

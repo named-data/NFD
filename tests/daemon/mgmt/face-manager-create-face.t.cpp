@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -107,18 +107,6 @@ public:
   }
 };
 
-class UdpFaceConnectToSelf // face that will cause afterCreateFaceFailure to be invoked
-                           // fails because remote endpoint is prohibited
-{
-public:
-  static ControlParameters
-  getParameters()
-  {
-    return ControlParameters()
-      .setUri("udp4://0.0.0.0:16363"); // cannot connect to self
-  }
-};
-
 class LocalTcpFaceLocalFieldsEnabled
 {
 public:
@@ -214,7 +202,6 @@ using TestCases = mpl::vector<
                     mpl::pair<UdpFaceOnDemand, CommandFailure<406>>,
                     mpl::pair<UdpFacePersistent, CommandSuccess>,
                     mpl::pair<UdpFacePermanent, CommandSuccess>,
-                    mpl::pair<UdpFaceConnectToSelf, CommandFailure<406>>,
                     mpl::pair<LocalTcpFaceLocalFieldsEnabled, CommandSuccess>,
                     mpl::pair<LocalTcpFaceLocalFieldsDisabled, CommandSuccess>,
                     mpl::pair<NonLocalUdpFaceLocalFieldsEnabled, CommandFailure<406>>,

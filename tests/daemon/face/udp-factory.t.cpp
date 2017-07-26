@@ -652,103 +652,12 @@ BOOST_AUTO_TEST_CASE(UnsupportedFaceCreate)
               "Cannot create multicast UDP faces"});
 
   createFace(factory,
-             FaceUri("udp4://127.0.0.1:20071"),
-             {},
-             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             false,
-             {CreateFaceExpectedResult::FAILURE, 406,
-              "Requested endpoint is prohibited"});
-
-  createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
              {},
              ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
              true,
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
-}
-
-class FakeNetworkInterfaceFixture : public UdpFactoryFixture
-{
-public:
-  FakeNetworkInterfaceFixture()
-  {
-    using namespace boost::asio::ip;
-
-    auto fakeInterfaces = make_shared<std::vector<NetworkInterfaceInfo>>();
-
-    fakeInterfaces->push_back(
-      NetworkInterfaceInfo {0, "eth0",
-        ethernet::Address::fromString("3e:15:c2:8b:65:00"),
-        {address_v4::from_string("0.0.0.0")},
-        {address_v6::from_string("::")},
-        address_v4(),
-        IFF_UP});
-    fakeInterfaces->push_back(
-      NetworkInterfaceInfo {1, "eth0",
-        ethernet::Address::fromString("3e:15:c2:8b:65:00"),
-        {address_v4::from_string("192.168.2.1"), address_v4::from_string("192.168.2.2")},
-        {},
-        address_v4::from_string("192.168.2.255"),
-        0});
-    fakeInterfaces->push_back(
-      NetworkInterfaceInfo {2, "eth1",
-        ethernet::Address::fromString("3e:15:c2:8b:65:00"),
-        {address_v4::from_string("198.51.100.1")},
-        {address_v6::from_string("2001:db8::2"), address_v6::from_string("2001:db8::3")},
-        address_v4::from_string("198.51.100.255"),
-        IFF_MULTICAST | IFF_BROADCAST | IFF_UP});
-
-    setDebugNetworkInterfaces(fakeInterfaces);
-  }
-
-  ~FakeNetworkInterfaceFixture()
-  {
-    setDebugNetworkInterfaces(nullptr);
-  }
-};
-
-BOOST_FIXTURE_TEST_CASE(Bug2292, FakeNetworkInterfaceFixture)
-{
-  using namespace boost::asio::ip;
-
-  factory.prohibitEndpoint(udp::Endpoint(address_v4::from_string("192.168.2.1"), 1024));
-  BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 1);
-  BOOST_CHECK((factory.m_prohibitedEndpoints ==
-               std::set<udp::Endpoint> {
-                 udp::Endpoint(address_v4::from_string("192.168.2.1"), 1024),
-               }));
-
-  factory.m_prohibitedEndpoints.clear();
-  factory.prohibitEndpoint(udp::Endpoint(address_v6::from_string("2001:db8::1"), 2048));
-  BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 1);
-  BOOST_CHECK((factory.m_prohibitedEndpoints ==
-               std::set<udp::Endpoint> {
-                 udp::Endpoint(address_v6::from_string("2001:db8::1"), 2048),
-               }));
-
-  factory.m_prohibitedEndpoints.clear();
-  factory.prohibitEndpoint(udp::Endpoint(address_v4(), 1024));
-  BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 6);
-  BOOST_CHECK((factory.m_prohibitedEndpoints ==
-               std::set<udp::Endpoint> {
-                 udp::Endpoint(address_v4::from_string("192.168.2.1"), 1024),
-                 udp::Endpoint(address_v4::from_string("192.168.2.2"), 1024),
-                 udp::Endpoint(address_v4::from_string("198.51.100.1"), 1024),
-                 udp::Endpoint(address_v4::from_string("198.51.100.255"), 1024),
-                 udp::Endpoint(address_v4::from_string("255.255.255.255"), 1024),
-                 udp::Endpoint(address_v4::from_string("0.0.0.0"), 1024)
-               }));
-
-  factory.m_prohibitedEndpoints.clear();
-  factory.prohibitEndpoint(udp::Endpoint(address_v6(), 2048));
-  BOOST_REQUIRE_EQUAL(factory.m_prohibitedEndpoints.size(), 3);
-  BOOST_CHECK((factory.m_prohibitedEndpoints ==
-               std::set<udp::Endpoint> {
-                 udp::Endpoint(address_v6::from_string("2001:db8::2"), 2048),
-                 udp::Endpoint(address_v6::from_string("2001:db8::3"), 2048),
-                 udp::Endpoint(address_v6::from_string("::"), 2048),
-               }));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUdpFactory

@@ -146,16 +146,6 @@ public:
                       const std::string& multicastPort,
                       const std::string& networkInterfaceName = "");
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  void
-  prohibitEndpoint(const udp::Endpoint& endpoint);
-
-  void
-  prohibitAllIpv4Endpoints(uint16_t port);
-
-  void
-  prohibitAllIpv6Endpoints(uint16_t port);
-
 private:
   void
   applyMulticastConfig(const FaceSystem::ConfigContext& context);
@@ -173,9 +163,6 @@ private:
 
   MulticastConfig m_mcastConfig;
   std::map<udp::Endpoint, shared_ptr<Face>> m_mcastFaces;
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  std::set<udp::Endpoint> m_prohibitedEndpoints;
 };
 
 } // namespace face
