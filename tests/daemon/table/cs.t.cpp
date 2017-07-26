@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -25,7 +25,7 @@
 
 #include "table/cs.hpp"
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/util/crypto.hpp>
+#include <ndn-cxx/util/sha256.hpp>
 
 #include "tests/test-common.hpp"
 
@@ -312,9 +312,9 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   Name n2 = insert(2, "/A");
   insert(3, "/A/B");
 
-  uint8_t digest00[ndn::crypto::SHA256_DIGEST_SIZE];
+  uint8_t digest00[ndn::util::Sha256::DIGEST_SIZE];
   std::fill_n(digest00, sizeof(digest00), 0x00);
-  uint8_t digestFF[ndn::crypto::SHA256_DIGEST_SIZE];
+  uint8_t digestFF[ndn::util::Sha256::DIGEST_SIZE];
   std::fill_n(digestFF, sizeof(digestFF), 0xFF);
 
   Exclude excludeDigest;
