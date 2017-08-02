@@ -307,41 +307,51 @@ intended only for demo purposes and MUST NOT be used in a production environment
 Running
 -------
 
-**You should not run ndnd or ndnd-tlv, otherwise NFD will not work correctly**
-
 Starting
 ~~~~~~~~
 
-In order to use NFD, you need to start two separate daemons: ``nfd`` (the forwarder
-itself) and ``nrd`` (RIB manager that will manage all prefix registrations).  The
-recommended way is to use `nfd-start` script:
+If you have installed NFD from source code, the recommended way of starting NFD is to use the
+`nfd-start` script:
 
 ::
 
     nfd-start
 
-On OS X it may ask for your keychain password or ask ``nfd/nrd wants to sign using key in
+On macOS it may ask for your keychain password or ask ``nfd wants to sign using key in
 your keychain.`` Enter your keychain password and click Always Allow.
 
 Later, you can stop NFD with ``nfd-stop`` or by simply killing the ``nfd`` process.
 
+If you have installed NFD using a package manager, you can start and stop NFD service using the
+operating system's service manager (such as Upstart, systemd, or launchd).
 
 Connecting to remote NFDs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To create a UDP or TCP tunnel to remote NFD and create route toward it, use the following
-command in terminal:
+To create a UDP tunnel to a remote NFD, execute the following command in terminal:
 
 ::
 
-    nfdc register /ndn udp://<other host>
+    nfdc face create udp://<other host>
 
 where ``<other host>`` is the name or IP address of the other host (e.g.,
 ``udp://spurs.cs.ucla.edu``). This outputs:
 
 ::
 
-    Successful in name registration: ControlParameters(Name: /ndn, FaceId: 260, Origin: 255, Cost: 0, Flags: 1, )
+    face-created id=308 local=udp4://10.0.2.15:6363 remote=udp4://131.179.196.46:6363 persistency=persistent
+
+To add a route ``/ndn`` toward the remote NFD, execute the following command in terminal:
+
+::
+
+    nfdc route add /ndn udp://<other host>
+
+This outputs:
+
+::
+
+    route-add-accepted prefix=/ndn nexthop=308 origin=static cost=0 flags=child-inherit expires=never
 
 The ``/ndn`` means that NFD will forward all Interests that start with ``/ndn`` through
 the face to the other host.  If you only want to forward Interests with a certain prefix,
@@ -367,9 +377,6 @@ Sample applications:
    +  examples/producer
    +  examples/consumer
    +  examples/consumer-with-timer
-
-   +  tools/ndncatchunks3
-   +  tools/ndnputchunks3
 
 - `Introductory examples of NDN-CCL
   <https://redmine.named-data.net/projects/application-development-documentation-guides/wiki/Step-By-Step_-_Common_Client_Libraries>`_
