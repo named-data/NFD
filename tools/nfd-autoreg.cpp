@@ -32,6 +32,7 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
+#include <ndn-cxx/net/address-converter.hpp>
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
@@ -123,7 +124,7 @@ public:
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
-      boost::asio::ip::address address = boost::asio::ip::address::from_string(uri.getHost(), ec);
+      boost::asio::ip::address address = ndn::ip::addressFromString(uri.getHost(), ec);
 
       if (!address.is_multicast()) {
         // register all-face prefixes

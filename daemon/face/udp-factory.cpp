@@ -27,6 +27,8 @@
 #include "generic-link-service.hpp"
 #include "multicast-udp-transport.hpp"
 #include "core/global-io.hpp"
+
+#include <ndn-cxx/net/address-converter.hpp>
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -227,7 +229,7 @@ UdpFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  udp::Endpoint endpoint(ip::address::from_string(params.remoteUri.getHost()),
+  udp::Endpoint endpoint(ndn::ip::addressFromString(params.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(params.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
@@ -286,7 +288,7 @@ shared_ptr<UdpChannel>
 UdpFactory::createChannel(const std::string& localIp, const std::string& localPort,
                           time::nanoseconds idleTimeout)
 {
-  udp::Endpoint endpoint(ip::address::from_string(localIp),
+  udp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
                          boost::lexical_cast<uint16_t>(localPort));
   return createChannel(endpoint, idleTimeout);
 }
@@ -387,9 +389,9 @@ UdpFactory::createMulticastFace(const std::string& localIp,
                                 const std::string& multicastPort,
                                 const std::string& networkInterfaceName)
 {
-  udp::Endpoint localEndpoint(ip::address::from_string(localIp),
+  udp::Endpoint localEndpoint(ndn::ip::addressFromString(localIp),
                               boost::lexical_cast<uint16_t>(multicastPort));
-  udp::Endpoint multicastEndpoint(ip::address::from_string(multicastIp),
+  udp::Endpoint multicastEndpoint(ndn::ip::addressFromString(multicastIp),
                                   boost::lexical_cast<uint16_t>(multicastPort));
   return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
 }

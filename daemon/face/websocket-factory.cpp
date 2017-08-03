@@ -25,6 +25,8 @@
 
 #include "websocket-factory.hpp"
 
+#include <ndn-cxx/net/address-converter.hpp>
+
 namespace nfd {
 namespace face {
 
@@ -141,7 +143,7 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 shared_ptr<WebSocketChannel>
 WebSocketFactory::createChannel(const std::string& localIp, const std::string& localPort)
 {
-  websocket::Endpoint endpoint(ip::address::from_string(localIp),
+  websocket::Endpoint endpoint(ndn::ip::addressFromString(localIp),
                                boost::lexical_cast<uint16_t>(localPort));
   return createChannel(endpoint);
 }

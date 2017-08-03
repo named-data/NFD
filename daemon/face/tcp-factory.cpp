@@ -25,6 +25,8 @@
 
 #include "tcp-factory.hpp"
 
+#include <ndn-cxx/net/address-converter.hpp>
+
 namespace nfd {
 namespace face {
 
@@ -143,7 +145,7 @@ TcpFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  tcp::Endpoint endpoint(ip::address::from_string(params.remoteUri.getHost()),
+  tcp::Endpoint endpoint(ndn::ip::addressFromString(params.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(params.remoteUri.getPort()));
 
   // a canonical tcp4/tcp6 FaceUri cannot have a multicast address
@@ -184,7 +186,7 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const std::string& localIp, const std::string& localPort)
 {
-  tcp::Endpoint endpoint(ip::address::from_string(localIp),
+  tcp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
                          boost::lexical_cast<uint16_t>(localPort));
   return createChannel(endpoint);
 }

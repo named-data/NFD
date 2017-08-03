@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -21,10 +21,11 @@
  *
  * You should have received a copy of the GNU General Public License along with
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
- **/
+ */
 
 #include "network.hpp"
 
+#include <ndn-cxx/net/address-converter.hpp>
 #include <boost/utility/value_init.hpp>
 #include <algorithm>
 
@@ -105,11 +106,11 @@ operator>>(std::istream& is, Network& network)
 
   size_t position = networkStr.find('/');
   if (position == std::string::npos) {
-    network.m_minAddress = ip::address::from_string(networkStr);
-    network.m_maxAddress = ip::address::from_string(networkStr);
+    network.m_minAddress = ndn::ip::addressFromString(networkStr);
+    network.m_maxAddress = ndn::ip::addressFromString(networkStr);
   }
   else {
-    ip::address address = ip::address::from_string(networkStr.substr(0, position));
+    ip::address address = ndn::ip::addressFromString(networkStr.substr(0, position));
     size_t mask = boost::lexical_cast<size_t>(networkStr.substr(position+1));
 
     if (address.is_v4()) {
