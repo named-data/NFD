@@ -24,10 +24,12 @@
  */
 
 #include "table/cs.hpp"
-#include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/util/sha256.hpp>
 
 #include "tests/test-common.hpp"
+
+#include <cstring>
+#include <ndn-cxx/lp/tags.hpp>
+#include <ndn-cxx/util/sha256.hpp>
 
 #define CHECK_CS_FIND(expected) find([&] (uint32_t found) { BOOST_CHECK_EQUAL(expected, found); });
 
@@ -74,7 +76,8 @@ protected:
               [&] (const Interest& interest, const Data& data) {
                 hasResult = true;
                 const Block& content = data.getContent();
-                uint32_t found = *reinterpret_cast<const uint32_t*>(content.value());
+                uint32_t found = 0;
+                std::memcpy(&found, content.value(), sizeof(found));
                 check(found);
               },
               bind([&] {
