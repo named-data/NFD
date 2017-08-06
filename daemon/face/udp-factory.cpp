@@ -54,6 +54,7 @@ UdpFactory::getId()
 UdpFactory::UdpFactory(const CtorParams& params)
   : ProtocolFactory(params)
 {
+  m_netifAddConn = netmon->onInterfaceAdded.connect(bind(&UdpFactory::applyMcastConfigToNetif, this, _1));
 }
 
 void
@@ -201,7 +202,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
     // Even if there's no configuration change, we still need to re-apply configuration because
     // netifs may have changed.
     m_mcastConfig = mcastConfig;
-    this->applyMulticastConfig(context);
+    this->applyMcastConfig(context);
   }
 }
 
@@ -349,14 +350,12 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                                      localEndpoint.address().to_v4()));
 
 #ifdef __linux__
-  /*
-   * On Linux, if there is more than one MulticastUdpFace for the same multicast
-   * group but they are bound to different network interfaces, the socket needs
-   * to be bound to the specific interface using SO_BINDTODEVICE, otherwise the
-   * face will receive all packets sent to the other interfaces as well.
-   * This happens only on Linux. On OS X, the ip::multicast::join_group option
-   * is enough to get the desired behaviour.
-   */
+  // On Linux, if there is more than one multicast UDP face for the same multicast
+  // group but they are bound to different network interfaces, the socket needs
+  // to be bound to the specific interface using SO_BINDTODEVICE, otherwise the
+  // face will receive all packets sent to the other interfaces as well.
+  // This happens only on Linux. On macOS, the ip::multicast::join_group option
+  // is enough to get the desired behaviour.
   if (!networkInterfaceName.empty()) {
     if (::setsockopt(receiveSocket.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
                      networkInterfaceName.c_str(), networkInterfaceName.size() + 1) < 0) {
@@ -392,46 +391,75 @@ UdpFactory::createMulticastFace(const std::string& localIp,
   return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
 }
 
+static ndn::optional<ndn::net::NetworkAddress>
+getV4Address(const ndn::net::NetworkInterface& netif)
+{
+  using namespace ndn::net;
+  for (const NetworkAddress& na : netif.getNetworkAddresses()) {
+    if (na.getFamily() == AddressFamily::V4 && na.getScope() != AddressScope::NOWHERE) {
+      return na;
+    }
+  }
+  return ndn::nullopt;
+}
+
+shared_ptr<Face>
+UdpFactory::applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif)
+{
+  if (!m_mcastConfig.isEnabled) {
+    return nullptr;
+  }
+
+  if (!netif->isUp()) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": netif is down");
+    return nullptr;
+  }
+
+  if (!netif->canMulticast()) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": netif cannot multicast");
+    return nullptr;
+  }
+
+  auto address = getV4Address(*netif);
+  if (!address) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": no IPv4 address");
+    // keep an eye on new addresses
+    m_netifConns[netif->getIndex()].addrAddConn =
+      netif->onAddressAdded.connectSingleShot(bind(&UdpFactory::applyMcastConfigToNetif, this, netif));
+    return nullptr;
+  }
+
+  if (!m_mcastConfig.netifPredicate(*netif)) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": rejected by predicate");
+    return nullptr;
+  }
+
+  NFD_LOG_DEBUG("Creating multicast face on " << netif->getName());
+  udp::Endpoint localEndpoint(address->getIp(), m_mcastConfig.group.port());
+  auto face = this->createMulticastFace(localEndpoint, m_mcastConfig.group, netif->getName());
+  // ifname is only used on Linux. It isn't required if there is only one multicast-capable netif,
+  // but it's always supplied because a new netif can be added at anytime.
+
+  if (face->getId() == INVALID_FACEID) {
+    // new face: register with forwarding
+    this->addFace(face);
+  }
+  return face;
+}
+
 void
-UdpFactory::applyMulticastConfig(const FaceSystem::ConfigContext& context)
+UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext& context)
 {
   // collect old faces
   std::set<shared_ptr<Face>> oldFaces;
-  boost::copy(m_mcastFaces | boost::adaptors::map_values,
-              std::inserter(oldFaces, oldFaces.end()));
+  boost::copy(m_mcastFaces | boost::adaptors::map_values, std::inserter(oldFaces, oldFaces.end()));
 
-  if (m_mcastConfig.isEnabled) {
-    // determine interfaces on which faces should be created or retained
-    auto capableNetifRange = context.listNetifs() |
-                             boost::adaptors::filtered([this] (const NetworkInterfaceInfo& netif) {
-                               return netif.isUp() && netif.isMulticastCapable() &&
-                                      !netif.ipv4Addresses.empty() &&
-                                      m_mcastConfig.netifPredicate(netif);
-                             });
-
-    bool needIfname = false;
-#ifdef __linux__
-    std::vector<NetworkInterfaceInfo> capableNetifs;
-    boost::copy(capableNetifRange, std::back_inserter(capableNetifs));
-    // on Linux, ifname is needed to create more than one UDP multicast face on the same group
-    needIfname = capableNetifs.size() > 1;
-#else
-    auto& capableNetifs = capableNetifRange;
-#endif // __linux__
-
-    // create faces
-    for (const auto& netif : capableNetifs) {
-      udp::Endpoint localEndpoint(netif.ipv4Addresses.front(), m_mcastConfig.group.port());
-      shared_ptr<Face> face = this->createMulticastFace(localEndpoint, m_mcastConfig.group,
-                                                        needIfname ? netif.name : "");
-      if (face->getId() == INVALID_FACEID) {
-        // new face: register with forwarding
-        this->addFace(face);
-      }
-      else {
-        // existing face: don't destroy
-        oldFaces.erase(face);
-      }
+  // create faces if requested by config
+  for (const auto& netif : netmon->listNetworkInterfaces()) {
+    auto face = this->applyMcastConfigToNetif(netif);
+    if (face != nullptr) {
+      // don't destroy face
+      oldFaces.erase(face);
     }
   }
 

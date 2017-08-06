@@ -118,7 +118,22 @@ protected:
       if (netif->isUp() && netif->canMulticast() && hasAddressFamily<AddressFamily::V4>(*netif)) {
         netifs.push_back(netif);
       }
+
+      auto copy = netmon->makeNetworkInterface();
+      copy->setIndex(netif->getIndex());
+      copy->setName(netif->getName());
+      copy->setType(netif->getType());
+      copy->setFlags(netif->getFlags());
+      copy->setState(netif->getState());
+      copy->setMtu(netif->getMtu());
+      copy->setEthernetAddress(netif->getEthernetAddress());
+      copy->setEthernetBroadcastAddress(netif->getEthernetBroadcastAddress());
+      for (const auto& na : netif->getNetworkAddresses()) {
+        copy->addNetworkAddress(na);
+      }
+      netmon->addInterface(copy);
     }
+    netmon->emitEnumerationCompleted();
   }
 
   std::vector<const Face*>
@@ -161,7 +176,7 @@ protected:
 BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
 
@@ -201,7 +216,7 @@ BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpMcastConfigFixture)
 BOOST_FIXTURE_TEST_CASE(McastAdHoc, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -223,7 +238,7 @@ BOOST_FIXTURE_TEST_CASE(McastAdHoc, UdpMcastConfigFixture)
 BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -266,7 +281,7 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpMcastConfigFixture)
 BOOST_FIXTURE_TEST_CASE(Whitelist, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -294,7 +309,7 @@ BOOST_FIXTURE_TEST_CASE(Whitelist, UdpMcastConfigFixture)
 BOOST_FIXTURE_TEST_CASE(Blacklist, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -324,7 +339,7 @@ BOOST_FIXTURE_TEST_CASE(Blacklist, UdpMcastConfigFixture)
 BOOST_FIXTURE_TEST_CASE(ChangePredicate, UdpMcastConfigFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on linux
+  // need superuser privilege for creating multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(2);

@@ -111,7 +111,7 @@ public:
   getChannels() const override;
 
   /**
-   * \brief Create MulticastUdpFace using udp::Endpoint
+   * \brief Create multicast UDP face using udp::Endpoint
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
@@ -126,10 +126,10 @@ public:
    * \param localEndpoint local endpoint
    * \param multicastEndpoint multicast endpoint
    * \param networkInterfaceName name of the network interface on which the face will be bound
-   *        (Used only on multihomed linux machine with more than one MulticastUdpFace for
-   *        the same multicast group. If specified, will requires CAP_NET_RAW capability)
+   *        (Used only on multihomed linux machine with more than one multicast UDP face for
+   *        the same multicast group. If specified, will require CAP_NET_RAW capability)
    *        An empty string can be provided in other system or in linux machine with only one
-   *        MulticastUdpFace per multicast group
+   *        multicast UDP face per multicast group
    *
    * \return always a valid pointer to a MulticastUdpFace object, an exception
    *         is thrown if it cannot be created.
@@ -147,8 +147,16 @@ public:
                       const std::string& networkInterfaceName = "");
 
 private:
+  /** \brief Create UDP multicast face on \p netif if needed by \p m_mcastConfig.
+   *  \return new or existing face, or nullptr if no face should be created
+   */
+  shared_ptr<Face>
+  applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
+
+  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig.
+   */
   void
-  applyMulticastConfig(const FaceSystem::ConfigContext& context);
+  applyMcastConfig(const FaceSystem::ConfigContext& context);
 
 private:
   std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
@@ -163,6 +171,13 @@ private:
 
   MulticastConfig m_mcastConfig;
   std::map<udp::Endpoint, shared_ptr<Face>> m_mcastFaces;
+
+  signal::ScopedConnection m_netifAddConn;
+  struct NetifConns
+  {
+    signal::ScopedConnection addrAddConn;
+  };
+  std::map<int, NetifConns> m_netifConns; // ifindex => signal connections
 };
 
 } // namespace face
