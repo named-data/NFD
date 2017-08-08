@@ -29,11 +29,8 @@
 
 #include <pcap/pcap.h>
 
-#include <cerrno>       // for errno
-#include <cstring>      // for memcpy(), strerror(), strncpy()
 #include <arpa/inet.h>  // for htons()
-#include <net/if.h>     // for struct ifreq
-#include <sys/ioctl.h>  // for ioctl()
+#include <cstring>      // for memcpy()
 
 namespace nfd {
 namespace face {
@@ -59,9 +56,6 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
   catch (const PcapHelper::Error& e) {
     BOOST_THROW_EXCEPTION(Error(e.what()));
   }
-
-  // do this after assigning m_socket because getInterfaceMtu uses it
-  this->setMtu(getInterfaceMtu());
 
   asyncRead();
 }
@@ -216,34 +210,6 @@ EthernetTransport::handleError(const std::string& errorMessage)
   NFD_LOG_FACE_ERROR(errorMessage);
   this->setState(TransportState::FAILED);
   doClose();
-}
-
-int
-EthernetTransport::getInterfaceMtu()
-{
-#ifdef SIOCGIFMTU
-#if defined(__APPLE__) || defined(__FreeBSD__)
-  // see bug #2328
-  using boost::asio::ip::udp;
-  udp::socket sock(getGlobalIoService(), udp::v4());
-  int fd = sock.native_handle();
-#else
-  int fd = m_socket.native_handle();
-#endif
-
-  ifreq ifr{};
-  std::strncpy(ifr.ifr_name, m_interfaceName.data(), sizeof(ifr.ifr_name) - 1);
-
-  if (::ioctl(fd, SIOCGIFMTU, &ifr) == 0) {
-    NFD_LOG_FACE_DEBUG("Interface MTU is " << ifr.ifr_mtu);
-    return ifr.ifr_mtu;
-  }
-
-  NFD_LOG_FACE_WARN("Failed to get interface MTU: " << std::strerror(errno));
-#endif
-
-  NFD_LOG_FACE_DEBUG("Assuming default MTU of " << ethernet::MAX_DATA_LEN);
-  return ethernet::MAX_DATA_LEN;
 }
 
 } // namespace face

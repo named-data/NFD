@@ -44,6 +44,7 @@ UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterf
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  this->setMtu(localEndpoint.getMtu());
 
   NFD_LOG_FACE_INFO("Creating transport");
 

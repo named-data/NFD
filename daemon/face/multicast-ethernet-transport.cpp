@@ -61,6 +61,7 @@ MulticastEthernetTransport::MulticastEthernetTransport(const ndn::net::NetworkIn
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   this->setLinkType(linkType);
+  this->setMtu(localEndpoint.getMtu());
 
   NFD_LOG_FACE_INFO("Creating transport");
 

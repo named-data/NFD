@@ -98,12 +98,6 @@ private:
   void
   handleError(const std::string& errorMessage);
 
-  /**
-   * @brief Returns the MTU of the underlying network interface
-   */
-  int
-  getInterfaceMtu();
-
 protected:
   boost::asio::posix::stream_descriptor m_socket;
   PcapHelper m_pcap;
