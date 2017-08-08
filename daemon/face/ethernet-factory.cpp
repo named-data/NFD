@@ -264,13 +264,18 @@ EthernetFactory::applyUnicastConfigToNetif(const shared_ptr<const ndn::net::Netw
     return nullptr;
   }
 
+  if (netif->getType() != ndn::net::InterfaceType::ETHERNET) {
+    NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": incompatible netif type");
+    return nullptr;
+  }
+
   if (!netif->isUp()) {
     NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": netif is down");
     return nullptr;
   }
 
-  if (netif->isLoopback()) {
-    NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": netif is loopback");
+  if (netif->getEthernetAddress().isNull()) {
+    NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": invalid Ethernet address");
     return nullptr;
   }
 
@@ -293,6 +298,11 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
     return nullptr;
   }
 
+  if (netif.getType() != ndn::net::InterfaceType::ETHERNET) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": incompatible netif type");
+    return nullptr;
+  }
+
   if (!netif.isUp()) {
     NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": netif is down");
     return nullptr;
@@ -300,6 +310,11 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
 
   if (!netif.canMulticast()) {
     NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": netif cannot multicast");
+    return nullptr;
+  }
+
+  if (netif.getEthernetAddress().isNull()) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": invalid Ethernet address");
     return nullptr;
   }
 
