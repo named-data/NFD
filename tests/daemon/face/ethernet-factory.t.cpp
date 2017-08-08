@@ -26,9 +26,9 @@
 #include "face/ethernet-factory.hpp"
 #include "face/face.hpp"
 
-#include "factory-test-common.hpp"
 #include "ethernet-fixture.hpp"
 #include "face-system-fixture.hpp"
+#include "factory-test-common.hpp"
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/range/algorithm/count_if.hpp>
 
@@ -40,6 +40,11 @@ class EthernetFactoryFixture : public EthernetFixture
                              , public FaceSystemFactoryFixture<EthernetFactory>
 {
 protected:
+  EthernetFactoryFixture()
+  {
+    this->copyRealNetifsToNetmon();
+  }
+
   std::vector<const Face*>
   listEtherMcastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
   {

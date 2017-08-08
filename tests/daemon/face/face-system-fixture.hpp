@@ -32,6 +32,7 @@
 #include "fw/face-table.hpp"
 
 #include "tests/test-common.hpp"
+#include "test-netif-ip.hpp"
 #include <ndn-cxx/net/network-monitor-stub.hpp>
 
 namespace nfd {
@@ -48,6 +49,31 @@ public:
     , faceSystem(faceTable, netmon)
   {
     faceSystem.setConfigFile(configFile);
+  }
+
+  /** \brief Copy a snapshot of NetworkInterface information to \p netmon
+   *  \pre netmon contains no NetworkInterface
+   */
+  void
+  copyRealNetifsToNetmon()
+  {
+    BOOST_ASSERT(netmon->listNetworkInterfaces().empty());
+    for (const auto& netif : collectNetworkInterfaces()) {
+      auto copy = netmon->makeNetworkInterface();
+      copy->setIndex(netif->getIndex());
+      copy->setName(netif->getName());
+      copy->setType(netif->getType());
+      copy->setFlags(netif->getFlags());
+      copy->setState(netif->getState());
+      copy->setMtu(netif->getMtu());
+      copy->setEthernetAddress(netif->getEthernetAddress());
+      copy->setEthernetBroadcastAddress(netif->getEthernetBroadcastAddress());
+      for (const auto& na : netif->getNetworkAddresses()) {
+        copy->addNetworkAddress(na);
+      }
+      netmon->addInterface(copy);
+    }
+    netmon->emitEnumerationCompleted();
   }
 
   void

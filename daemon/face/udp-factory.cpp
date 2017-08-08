@@ -151,59 +151,61 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
     }
   }
 
-  if (!context.isDryRun) {
-    if (enableV4) {
-      udp::Endpoint endpoint(ip::udp::v4(), port);
-      shared_ptr<UdpChannel> v4Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
-      if (!v4Channel->isListening()) {
-        v4Channel->listen(this->addFace, nullptr);
-      }
-      providedSchemes.insert("udp");
-      providedSchemes.insert("udp4");
-    }
-    else if (providedSchemes.count("udp4") > 0) {
-      NFD_LOG_WARN("Cannot close udp4 channel after its creation");
-    }
-
-    if (enableV6) {
-      udp::Endpoint endpoint(ip::udp::v6(), port);
-      shared_ptr<UdpChannel> v6Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
-      if (!v6Channel->isListening()) {
-        v6Channel->listen(this->addFace, nullptr);
-      }
-      providedSchemes.insert("udp");
-      providedSchemes.insert("udp6");
-    }
-    else if (providedSchemes.count("udp6") > 0) {
-      NFD_LOG_WARN("Cannot close udp6 channel after its creation");
-    }
-
-    if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
-      if (mcastConfig.isEnabled) {
-        NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
-      }
-      else {
-        NFD_LOG_INFO("disabling multicast");
-      }
-    }
-    else if (mcastConfig.isEnabled) {
-      if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
-        NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
-      }
-      if (m_mcastConfig.group != mcastConfig.group) {
-        NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
-                     " to " << mcastConfig.group);
-      }
-      if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
-        NFD_LOG_INFO("changing whitelist/blacklist");
-      }
-    }
-
-    // Even if there's no configuration change, we still need to re-apply configuration because
-    // netifs may have changed.
-    m_mcastConfig = mcastConfig;
-    this->applyMcastConfig(context);
+  if (context.isDryRun) {
+    return;
   }
+
+  if (enableV4) {
+    udp::Endpoint endpoint(ip::udp::v4(), port);
+    shared_ptr<UdpChannel> v4Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
+    if (!v4Channel->isListening()) {
+      v4Channel->listen(this->addFace, nullptr);
+    }
+    providedSchemes.insert("udp");
+    providedSchemes.insert("udp4");
+  }
+  else if (providedSchemes.count("udp4") > 0) {
+    NFD_LOG_WARN("Cannot close udp4 channel after its creation");
+  }
+
+  if (enableV6) {
+    udp::Endpoint endpoint(ip::udp::v6(), port);
+    shared_ptr<UdpChannel> v6Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
+    if (!v6Channel->isListening()) {
+      v6Channel->listen(this->addFace, nullptr);
+    }
+    providedSchemes.insert("udp");
+    providedSchemes.insert("udp6");
+  }
+  else if (providedSchemes.count("udp6") > 0) {
+    NFD_LOG_WARN("Cannot close udp6 channel after its creation");
+  }
+
+  if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
+    if (mcastConfig.isEnabled) {
+      NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
+    }
+    else {
+      NFD_LOG_INFO("disabling multicast");
+    }
+  }
+  else if (mcastConfig.isEnabled) {
+    if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
+      NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
+    }
+    if (m_mcastConfig.group != mcastConfig.group) {
+      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+                   " to " << mcastConfig.group);
+    }
+    if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
+      NFD_LOG_INFO("changing whitelist/blacklist");
+    }
+  }
+
+  // Even if there's no configuration change, we still need to re-apply configuration because
+  // netifs may have changed.
+  m_mcastConfig = mcastConfig;
+  this->applyMcastConfig(context);
 }
 
 void
@@ -430,15 +432,15 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInte
   }
 
   if (!m_mcastConfig.netifPredicate(*netif)) {
-    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": rejected by predicate");
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": rejected by whitelist/blacklist");
     return nullptr;
   }
 
   NFD_LOG_DEBUG("Creating multicast face on " << netif->getName());
   udp::Endpoint localEndpoint(address->getIp(), m_mcastConfig.group.port());
   auto face = this->createMulticastFace(localEndpoint, m_mcastConfig.group, netif->getName());
-  // ifname is only used on Linux. It isn't required if there is only one multicast-capable netif,
-  // but it's always supplied because a new netif can be added at anytime.
+  // ifname is only used on Linux. It is not required if there is only one multicast-capable netif,
+  // but it is always supplied because a new netif can be added at anytime.
 
   if (face->getId() == INVALID_FACEID) {
     // new face: register with forwarding

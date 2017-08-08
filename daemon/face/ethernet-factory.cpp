@@ -45,6 +45,11 @@ EthernetFactory::getId()
 EthernetFactory::EthernetFactory(const CtorParams& params)
   : ProtocolFactory(params)
 {
+  m_netifAddConn = netmon->onInterfaceAdded.connect(
+    [this] (const shared_ptr<const ndn::net::NetworkInterface>& netif) {
+      this->applyUnicastConfigToNetif(netif);
+      this->applyMcastConfigToNetif(*netif);
+    });
 }
 
 void
@@ -67,23 +72,22 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
   //   }
   // }
 
-  bool wantListen = true;
-  uint32_t idleTimeout = 600;
+  UnicastConfig unicastConfig;
   MulticastConfig mcastConfig;
 
   if (configSection) {
-    // face_system.ether.mcast defaults to 'yes' but only if face_system.ether section is present
-    mcastConfig.isEnabled = true;
+    // listen and mcast default to 'yes' but only if face_system.ether section is present
+    unicastConfig.isEnabled = unicastConfig.wantListen = mcastConfig.isEnabled = true;
 
     for (const auto& pair : *configSection) {
       const std::string& key = pair.first;
       const ConfigSection& value = pair.second;
 
       if (key == "listen") {
-        wantListen = ConfigFile::parseYesNo(pair, "face_system.ether");
+        unicastConfig.wantListen = ConfigFile::parseYesNo(pair, "face_system.ether");
       }
       else if (key == "idle_timeout") {
-        idleTimeout = ConfigFile::parseNumber<uint32_t>(pair, "face_system.ether");
+        unicastConfig.idleTimeout = time::seconds(ConfigFile::parseNumber<uint32_t>(pair, "face_system.ether"));
       }
       else if (key == "mcast") {
         mcastConfig.isEnabled = ConfigFile::parseYesNo(pair, "face_system.ether");
@@ -116,60 +120,48 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
     }
   }
 
-  if (!context.isDryRun) {
-    if (configSection) {
-      providedSchemes.insert("ether");
-
-      // determine the interfaces on which channels should be created
-      auto netifs = context.listNetifs() |
-        boost::adaptors::transformed([] (const NetworkInterfaceInfo& nii) { return nii.asNetworkInterface(); }) |
-        boost::adaptors::filtered([] (const shared_ptr<const ndn::net::NetworkInterface>& netif) {
-          return netif->isUp() && !netif->isLoopback();
-        });
-
-      // create channels
-      for (const auto& netif : netifs) {
-        auto channel = this->createChannel(netif, time::seconds(idleTimeout));
-        if (wantListen && !channel->isListening()) {
-          try {
-            channel->listen(this->addFace, nullptr);
-          }
-          catch (const EthernetChannel::Error& e) {
-            NFD_LOG_WARN("Cannot listen on " << netif->getName() << ": " << e.what());
-          }
-        }
-      }
-    }
-    else if (!m_channels.empty()) {
-      NFD_LOG_WARN("Cannot disable dev channels after initialization");
-    }
-
-    if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
-      if (mcastConfig.isEnabled) {
-        NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
-      }
-      else {
-        NFD_LOG_INFO("disabling multicast");
-      }
-    }
-    else if (mcastConfig.isEnabled) {
-      if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
-        NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
-      }
-      if (m_mcastConfig.group != mcastConfig.group) {
-        NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
-                     " to " << mcastConfig.group);
-      }
-      if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
-        NFD_LOG_INFO("changing whitelist/blacklist");
-      }
-    }
-
-    // Even if there's no configuration change, we still need to re-apply configuration because
-    // netifs may have changed.
-    m_mcastConfig = mcastConfig;
-    this->applyConfig(context);
+  if (context.isDryRun) {
+    return;
   }
+
+  if (unicastConfig.isEnabled) {
+    if (m_unicastConfig.wantListen && !unicastConfig.wantListen && !m_channels.empty()) {
+      NFD_LOG_WARN("Cannot stop listening on Ethernet channels");
+    }
+    if (m_unicastConfig.idleTimeout != unicastConfig.idleTimeout && !m_channels.empty()) {
+      NFD_LOG_WARN("Idle timeout setting applies to new Ethernet channels only");
+    }
+  }
+  else if (m_unicastConfig.isEnabled && !m_channels.empty()) {
+    NFD_LOG_WARN("Cannot disable Ethernet channels after initialization");
+  }
+
+  if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
+    if (mcastConfig.isEnabled) {
+      NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
+    }
+    else {
+      NFD_LOG_INFO("disabling multicast");
+    }
+  }
+  else if (mcastConfig.isEnabled) {
+    if (m_mcastConfig.linkType != mcastConfig.linkType && !m_mcastFaces.empty()) {
+      NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
+    }
+    if (m_mcastConfig.group != mcastConfig.group) {
+      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+                   " to " << mcastConfig.group);
+    }
+    if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
+      NFD_LOG_INFO("changing whitelist/blacklist");
+    }
+  }
+
+  // Even if there's no configuration change, we still need to re-apply configuration because
+  // netifs may have changed.
+  m_unicastConfig = unicastConfig;
+  m_mcastConfig = mcastConfig;
+  this->applyConfig(context);
 }
 
 void
@@ -265,45 +257,100 @@ EthernetFactory::createMulticastFace(const ndn::net::NetworkInterface& netif,
   return face;
 }
 
+shared_ptr<EthernetChannel>
+EthernetFactory::applyUnicastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif)
+{
+  if (!m_unicastConfig.isEnabled) {
+    return nullptr;
+  }
+
+  if (!netif->isUp()) {
+    NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": netif is down");
+    return nullptr;
+  }
+
+  if (netif->isLoopback()) {
+    NFD_LOG_DEBUG("Not creating channel on " << netif->getName() << ": netif is loopback");
+    return nullptr;
+  }
+
+  auto channel = this->createChannel(netif, m_unicastConfig.idleTimeout);
+  if (m_unicastConfig.wantListen && !channel->isListening()) {
+    try {
+      channel->listen(this->addFace, nullptr);
+    }
+    catch (const EthernetChannel::Error& e) {
+      NFD_LOG_WARN("Cannot listen on " << netif->getName() << ": " << e.what());
+    }
+  }
+  return channel;
+}
+
+shared_ptr<Face>
+EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif)
+{
+  if (!m_mcastConfig.isEnabled) {
+    return nullptr;
+  }
+
+  if (!netif.isUp()) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": netif is down");
+    return nullptr;
+  }
+
+  if (!netif.canMulticast()) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": netif cannot multicast");
+    return nullptr;
+  }
+
+  if (!m_mcastConfig.netifPredicate(netif)) {
+    NFD_LOG_DEBUG("Not creating multicast face on " << netif.getName() << ": rejected by whitelist/blacklist");
+    return nullptr;
+  }
+
+  NFD_LOG_DEBUG("Creating multicast face on " << netif.getName());
+  shared_ptr<Face> face;
+  try {
+    face = this->createMulticastFace(netif, m_mcastConfig.group);
+  }
+  catch (const EthernetTransport::Error& e) {
+    NFD_LOG_WARN("Cannot create multicast face on " << netif.getName() << ": " << e.what());
+    return nullptr;
+  }
+
+  if (face->getId() == face::INVALID_FACEID) {
+    // new face: register with forwarding
+    this->addFace(face);
+  }
+  return face;
+}
+
 void
 EthernetFactory::applyConfig(const FaceSystem::ConfigContext& context)
 {
-  // collect old faces
+  if (m_unicastConfig.isEnabled) {
+    providedSchemes.insert("ether");
+  }
+  else {
+    providedSchemes.erase("ether");
+  }
+
+  // collect old multicast faces
   std::set<shared_ptr<Face>> oldFaces;
-  boost::copy(m_mcastFaces | boost::adaptors::map_values,
-              std::inserter(oldFaces, oldFaces.end()));
+  boost::copy(m_mcastFaces | boost::adaptors::map_values, std::inserter(oldFaces, oldFaces.end()));
 
-  if (m_mcastConfig.isEnabled) {
-    // determine interfaces on which faces should be created or retained
-    auto capableNetifs = context.listNetifs() |
-      boost::adaptors::transformed([] (const NetworkInterfaceInfo& nii) { return nii.asNetworkInterface(); }) |
-      boost::adaptors::filtered([this] (const shared_ptr<const ndn::net::NetworkInterface>& netif) {
-        return netif->isUp() && netif->canMulticast() && m_mcastConfig.netifPredicate(*netif);
-      });
+  // create channels and multicast faces if requested by config
+  for (const auto& netif : netmon->listNetworkInterfaces()) {
+    this->applyUnicastConfigToNetif(netif);
 
-    // create faces
-    for (const auto& netif : capableNetifs) {
-      shared_ptr<Face> face;
-      try {
-        face = this->createMulticastFace(*netif, m_mcastConfig.group);
-      }
-      catch (const EthernetTransport::Error& e) {
-        NFD_LOG_WARN("Cannot create Ethernet multicast face on " << netif->getName() << ": " << e.what());
-        continue;
-      }
-
-      if (face->getId() == face::INVALID_FACEID) {
-        // new face: register with forwarding
-        this->addFace(face);
-      }
-      else {
-        // existing face: don't destroy
-        oldFaces.erase(face);
-      }
+    auto face = this->applyMcastConfigToNetif(*netif);
+    if (face != nullptr) {
+      // don't destroy face
+      oldFaces.erase(face);
     }
   }
 
-  // destroy old faces that are not needed in new configuration
+  // destroy old multicast faces that are not needed in new configuration
   for (const auto& face : oldFaces) {
     face->close();
   }

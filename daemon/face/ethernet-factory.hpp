@@ -87,11 +87,31 @@ public:
                       const ethernet::Address& group);
 
 private:
+  /** \brief Create EthernetChannel on \p netif if requested by \p m_unicastConfig.
+   *  \return new or existing channel, or nullptr if no channel should be created
+   */
+  shared_ptr<EthernetChannel>
+  applyUnicastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
+
+  /** \brief Create Ethernet multicast face on \p netif if requested by \p m_mcastConfig.
+   *  \return new or existing face, or nullptr if no face should be created
+   */
+  shared_ptr<Face>
+  applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif);
+
   void
   applyConfig(const FaceSystem::ConfigContext& context);
 
 private:
   std::map<std::string, shared_ptr<EthernetChannel>> m_channels; ///< ifname => channel
+
+  struct UnicastConfig
+  {
+    bool isEnabled = false;
+    bool wantListen = false;
+    time::nanoseconds idleTimeout = time::seconds(600);
+  };
+  UnicastConfig m_unicastConfig;
 
   struct MulticastConfig
   {
@@ -100,11 +120,12 @@ private:
     ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
   };
-
   MulticastConfig m_mcastConfig;
 
   /// (ifname, group) => face
   std::map<std::pair<std::string, ethernet::Address>, shared_ptr<Face>> m_mcastFaces;
+
+  signal::ScopedConnection m_netifAddConn;
 };
 
 } // namespace face

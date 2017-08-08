@@ -118,22 +118,9 @@ protected:
       if (netif->isUp() && netif->canMulticast() && hasAddressFamily<AddressFamily::V4>(*netif)) {
         netifs.push_back(netif);
       }
-
-      auto copy = netmon->makeNetworkInterface();
-      copy->setIndex(netif->getIndex());
-      copy->setName(netif->getName());
-      copy->setType(netif->getType());
-      copy->setFlags(netif->getFlags());
-      copy->setState(netif->getState());
-      copy->setMtu(netif->getMtu());
-      copy->setEthernetAddress(netif->getEthernetAddress());
-      copy->setEthernetBroadcastAddress(netif->getEthernetBroadcastAddress());
-      for (const auto& na : netif->getNetworkAddresses()) {
-        copy->addNetworkAddress(na);
-      }
-      netmon->addInterface(copy);
     }
-    netmon->emitEnumerationCompleted();
+
+    this->copyRealNetifsToNetmon();
   }
 
   std::vector<const Face*>
