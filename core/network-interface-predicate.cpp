@@ -26,7 +26,6 @@
 #include "network-interface-predicate.hpp"
 
 #include "config-file.hpp"
-#include "network-interface.hpp"
 #include "network.hpp"
 
 #include <fnmatch.h>
@@ -66,7 +65,7 @@ parseList(std::set<std::string>& set, const boost::property_tree::ptree& list, c
     else if (item.first == "ether") {
       // validate ethernet address
       auto addr = item.second.get_value<std::string>();
-      if (ethernet::Address::fromString(addr).isNull()) {
+      if (ndn::ethernet::Address::fromString(addr).isNull()) {
         BOOST_THROW_EXCEPTION(ConfigFile::Error("Malformed ether address \"" + addr +
                                                 "\" in \"" + section + "\" section"));
       }
@@ -105,25 +104,7 @@ doesMatchPattern(const std::string& ifname, const std::string& pattern)
 }
 
 static bool
-doesMatchRule(const NetworkInterfaceInfo& netif, const std::string& rule)
-{
-  // if '/' is in rule, this is a subnet, check if IP in subnet
-  if (rule.find('/') != std::string::npos) {
-    Network n = boost::lexical_cast<Network>(rule);
-    for (const auto& addr : netif.ipv4Addresses) {
-      if (n.doesContain(addr)) {
-        return true;
-      }
-    }
-  }
-
-  return rule == "*" ||
-         doesMatchPattern(netif.name, rule) ||
-         netif.etherAddress.toString() == rule;
-}
-
-static bool
-doesMatchRule2(const ndn::net::NetworkInterface& netif, const std::string& rule)
+doesMatchRule(const ndn::net::NetworkInterface& netif, const std::string& rule)
 {
   // if '/' is in rule, this is a subnet, check if IP in subnet
   if (rule.find('/') != std::string::npos) {
@@ -141,17 +122,10 @@ doesMatchRule2(const ndn::net::NetworkInterface& netif, const std::string& rule)
 }
 
 bool
-NetworkInterfacePredicate::operator()(const NetworkInterfaceInfo& netif) const
-{
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule, netif, _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule, netif, _1));
-}
-
-bool
 NetworkInterfacePredicate::operator()(const ndn::net::NetworkInterface& netif) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule2, cref(netif), _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule2, cref(netif), _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesMatchRule, cref(netif), _1)) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesMatchRule, cref(netif), _1));
 }
 
 bool

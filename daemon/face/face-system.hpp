@@ -28,7 +28,6 @@
 
 #include "channel.hpp"
 #include "core/config-file.hpp"
-#include "core/network-interface.hpp"
 #include "core/network-interface-predicate.hpp"
 #include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
@@ -90,20 +89,7 @@ public:
   class ConfigContext : noncopyable
   {
   public:
-    /// \deprecated use NetworkMonitor provided as ProtocolFactory::netmon
-    const std::vector<NetworkInterfaceInfo>&
-    listNetifs() const
-    {
-      return m_netifs;
-    }
-
-  public:
     bool isDryRun;
-
-  private:
-    std::vector<NetworkInterfaceInfo> m_netifs;
-
-    friend class FaceSystem;
   };
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:

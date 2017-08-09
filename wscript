@@ -105,9 +105,8 @@ main(int, char**)
   return 0;
 }
 '''):
-      Logs.warn('Dropping privileges is not supported on this platform')
+        Logs.warn('Dropping privileges is not supported on this platform')
 
-    conf.check_cxx(header_name='ifaddrs.h', mandatory=False)
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
     boost_libs = 'system chrono program_options thread log log_setup'
@@ -140,7 +139,7 @@ main(int, char**)
                                  errmsg='not found, but required for Ethernet face support. '
                                         'Specify --without-libpcap to disable Ethernet face support.')
         else:
-            Logs.warn('Warning: Ethernet face support is not supported on this platform with Boost libraries version 1.56. '
+            Logs.warn('Warning: Ethernet face is not supported on this platform with Boost libraries version 1.56. '
                       'See https://redmine.named-data.net/issues/1877 for more details')
     if conf.env['HAVE_LIBPCAP']:
         conf.check_cxx(function_name='pcap_set_immediate_mode', header_name='pcap/pcap.h',

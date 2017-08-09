@@ -31,8 +31,6 @@
 
 namespace nfd {
 
-class NetworkInterfaceInfo;
-
 /**
  * \brief Represents a predicate to accept or reject a NetworkInterfaceInfo.
  *
@@ -58,9 +56,6 @@ public:
 
   void
   parseBlacklist(const boost::property_tree::ptree& list);
-
-  bool
-  operator()(const NetworkInterfaceInfo& netif) const;
 
   bool
   operator()(const ndn::net::NetworkInterface& netif) const;

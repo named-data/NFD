@@ -93,7 +93,6 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
 {
   ConfigContext context;
   context.isDryRun = isDryRun;
-  context.m_netifs = listNetworkInterfaces();
 
   // process sections in protocol factories
   for (const auto& pair : m_factories) {
