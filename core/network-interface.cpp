@@ -32,11 +32,11 @@
 #include <type_traits>
 #include <unordered_map>
 
-#ifdef HAVE_IFADDRS_H
-#include <ifaddrs.h>     // for getifaddrs()
-
 #include <arpa/inet.h>   // for inet_ntop()
 #include <netinet/in.h>  // for struct sockaddr_in{,6}
+
+#ifdef HAVE_IFADDRS_H
+#include <ifaddrs.h>     // for getifaddrs()
 
 #if defined(__linux__)
 #include <net/if_arp.h>        // for ARPHRD_* constants
@@ -45,6 +45,13 @@
 #include <net/if_dl.h>         // for struct sockaddr_dl
 #include <net/if_types.h>      // for IFT_* constants
 #endif
+
+#else
+
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <stdlib.h>
 
 #endif // HAVE_IFADDRS_H
 
@@ -102,13 +109,13 @@ listNetworkInterfaces()
   }
 #endif
 
-#ifdef HAVE_IFADDRS_H
   using namespace boost::asio::ip;
   using std::strerror;
 
   std::unordered_map<std::string, NetworkInterfaceInfo> ifmap;
-  ifaddrs* ifa_list = nullptr;
 
+#ifdef HAVE_IFADDRS_H
+  ifaddrs* ifa_list = nullptr;
   if (::getifaddrs(&ifa_list) < 0)
     BOOST_THROW_EXCEPTION(std::runtime_error(std::string("getifaddrs() failed: ") +
                                              strerror(errno)));
@@ -202,7 +209,93 @@ listNetworkInterfaces()
 
   return v;
 #else
-  return {};
+  int fd;
+
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+  if (fd < 0) {
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+            "Get socket failed")));
+  }
+
+  struct ifconf ifconf;
+  struct ifreq *ifreq;
+
+  ifconf.ifc_req = NULL;
+  if (ioctl(fd, SIOCGIFCONF, &ifconf)) {
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+            "ioctl SIOCGIFCONF len failed")));
+  }
+
+  ifconf.ifc_buf = (char*) malloc(ifconf.ifc_len);
+  if (!ifconf.ifc_buf) {
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+            "ifconf.ifc_buf allocation failed")));
+  }
+
+  if (ioctl(fd, SIOCGIFCONF, &ifconf)) {
+    BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+            "ioctl SIOCGIFCONF failed")));
+  }
+
+  int n_faces = ifconf.ifc_len / sizeof(struct ifreq);
+
+  NFD_LOG_TRACE("Found " << boost::lexical_cast<std::string>(n_faces) << " faces");
+
+  ifreq = ifconf.ifc_req;
+  for (int i = 0; i < (ifconf.ifc_len / sizeof(struct ifreq)); i++) {
+
+    std::string ifname(ifreq->ifr_name);
+    NetworkInterfaceInfo& netif = ifmap[ifname];
+    netif.name = ifname;
+
+    if (ioctl(fd, SIOCGIFFLAGS, ifreq)) {
+      BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+              "ioctl SIOCGIFFLAGS failed")));
+    }
+    netif.flags = ifreq->ifr_flags;
+
+    if (ioctl(fd, SIOCGIFADDR, ifreq)) {
+      BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+              "ioctl SIOCGIFADDR failed")));
+    }
+    const sockaddr_in* sin = reinterpret_cast<sockaddr_in*>(&ifreq->ifr_addr);
+    char address[INET_ADDRSTRLEN];
+
+    if (::inet_ntop(AF_INET, &sin->sin_addr, address, sizeof(address))) {
+      netif.ipv4Addresses.push_back(address_v4::from_string(address));
+      NFD_LOG_TRACE(ifname << ": added IPv4 address " << address);
+    } else {
+      NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET) failed: " << strerror(errno));
+    }
+
+    if (ioctl(fd, SIOCGIFBRDADDR, ifreq)) {
+      BOOST_THROW_EXCEPTION(std::runtime_error(std::string(
+              "ioctl SIOCGIFBRDADDR failed")));
+    }
+    if (netif.isBroadcastCapable()) {
+      const sockaddr_in* sin = reinterpret_cast<sockaddr_in*>(&ifreq->ifr_broadaddr);
+      char address[INET_ADDRSTRLEN];
+      if (::inet_ntop(AF_INET, &sin->sin_addr, address, sizeof(address))) {
+        if (strcmp(address, "0.0.0.0")) {
+          netif.broadcastAddress = address_v4::from_string(address);
+          NFD_LOG_TRACE(ifname << ": added IPv4 broadcast address " << address);
+        }
+      } else {
+        NFD_LOG_WARN(ifname << ": inet_ntop(AF_INET) for broadaddr failed: " << strerror(errno));
+      }
+    }
+
+    ifreq++;
+  }
+  free(ifconf.ifc_buf);
+
+  std::vector<NetworkInterfaceInfo> v;
+  v.reserve(ifmap.size());
+  for (auto&& element : ifmap) {
+    v.push_back(element.second);
+  }
+
+  return v;
 #endif // HAVE_IFADDRS_H
 }
 
