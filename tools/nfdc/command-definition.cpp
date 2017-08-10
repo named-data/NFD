@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -40,6 +40,8 @@ operator<<(std::ostream& os, ArgValueType vt)
       return os << "none";
     case ArgValueType::ANY:
       return os << "any";
+    case ArgValueType::BOOLEAN:
+      return os << "boolean";
     case ArgValueType::UNSIGNED:
       return os << "non-negative integer";
     case ArgValueType::STRING:
@@ -68,6 +70,8 @@ getMetavarFromType(ArgValueType vt)
       return "";
     case ArgValueType::ANY:
       return "args";
+    case ArgValueType::BOOLEAN:
+      return "bool";
     case ArgValueType::UNSIGNED:
       return "uint";
     case ArgValueType::STRING:
@@ -138,7 +142,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
       const Arg& arg = namedArg->second;
       if (arg.valueType == ArgValueType::NONE) {
         ca[arg.name] = true;
-        NDN_LOG_TRACE(token << " is a boolean argument");
+        NDN_LOG_TRACE(token << " is a no-param argument");
       }
       else if (i + 1 >= tokens.size()) {
         BOOST_THROW_EXCEPTION(Error(arg.name + ": " + arg.metavar + " is missing"));
@@ -212,6 +216,18 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
   return ca;
 }
 
+static bool
+parseBoolean(const std::string& s)
+{
+  if (s == "on" || s == "true" || s == "enabled" || s == "yes" || s == "1") {
+    return true;
+  }
+  if (s == "off" || s == "false" || s == "disabled" || s == "no" || s == "0") {
+    return false;
+  }
+  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized boolean value '" + s + "'"));
+}
+
 static FacePersistency
 parseFacePersistency(const std::string& s)
 {
@@ -221,7 +237,7 @@ parseFacePersistency(const std::string& s)
   if (s == "permanent") {
     return FacePersistency::FACE_PERSISTENCY_PERMANENT;
   }
-  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized FacePersistency"));
+  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized FacePersistency '" + s + "'"));
 }
 
 boost::any
@@ -233,11 +249,15 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
       BOOST_ASSERT(false);
       return boost::any();
 
+    case ArgValueType::BOOLEAN: {
+      return parseBoolean(token);
+    }
+
     case ArgValueType::UNSIGNED: {
       // boost::lexical_cast<uint64_t> will accept negative number
       int64_t v = boost::lexical_cast<int64_t>(token);
       if (v < 0) {
-        BOOST_THROW_EXCEPTION(std::out_of_range("value is negative"));
+        BOOST_THROW_EXCEPTION(std::out_of_range("value '" + token + "' is negative"));
       }
       return static_cast<uint64_t>(v);
     }

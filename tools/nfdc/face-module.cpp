@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -53,7 +53,8 @@ FaceModule::registerCommands(CommandParser& parser)
     .setTitle("create a face")
     .addArg("remote", ArgValueType::FACE_URI, Required::YES, Positional::YES)
     .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES)
-    .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO);
+    .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO)
+    .addArg("reliability", ArgValueType::BOOLEAN, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -151,6 +152,8 @@ FaceModule::create(ExecuteContext& ctx)
   auto remoteUri = ctx.args.get<FaceUri>("remote");
   auto localUri = ctx.args.getOptional<FaceUri>("local");
   auto persistency = ctx.args.get<FacePersistency>("persistency", FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+  auto lpReliability = ctx.args.getTribool("reliability");
+
   FaceUri canonicalRemote;
   ndn::optional<FaceUri> canonicalLocal;
 
@@ -166,7 +169,15 @@ FaceModule::create(ExecuteContext& ctx)
             << ia("local") << resp.getLocalUri()
             << ia("remote") << resp.getUri()
             << ia("persistency") << resp.getFacePersistency()
+            << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
             << '\n';
+  };
+
+  auto updateFace = [&printPositiveResult] (ControlParameters respParams, ControlParameters resp) {
+    // faces/update response does not have FaceUris, copy from faces/create response
+    resp.setLocalUri(respParams.getLocalUri())
+        .setUri(respParams.getUri());
+    printPositiveResult("face-updated", resp);
   };
 
   auto handle409 = [&] (const ControlResponse& resp) {
@@ -178,19 +189,39 @@ FaceModule::create(ExecuteContext& ctx)
 
     if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
       // need to upgrade persistency
+      ControlParameters params;
+      params.setFaceId(respParams.getFaceId()).setFacePersistency(persistency);
+      if (!boost::logic::indeterminate(lpReliability)) {
+        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+      }
       ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
-          ControlParameters().setFaceId(respParams.getFaceId()).setFacePersistency(persistency),
-          [respParams, &printPositiveResult] (ControlParameters resp2) {
-            // faces/update response does not have FaceUris, copy from faces/create response
-            resp2.setLocalUri(respParams.getLocalUri())
-                 .setUri(respParams.getUri());
-            printPositiveResult("face-updated", resp2);
-          },
+          params,
+          bind(updateFace, respParams, _1),
           ctx.makeCommandFailureHandler("upgrading face persistency"),
           ctx.makeCommandOptions());
     }
+    else if (lpReliability && !respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+      // enable reliability
+      ControlParameters params;
+      params.setFaceId(respParams.getFaceId()).setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
+      ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
+          params,
+          bind(updateFace, respParams, _1),
+          ctx.makeCommandFailureHandler("enabling reliability"),
+          ctx.makeCommandOptions());
+    }
+    else if (!lpReliability && respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+      // disable reliability
+      ControlParameters params;
+      params.setFaceId(respParams.getFaceId()).setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
+      ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
+          params,
+          bind(updateFace, respParams, _1),
+          ctx.makeCommandFailureHandler("disabling reliability"),
+          ctx.makeCommandOptions());
+    }
     else {
-      // don't downgrade persistency
+      // don't do anything
       printPositiveResult("face-exists", respParams);
     }
     return true;
@@ -203,6 +234,9 @@ FaceModule::create(ExecuteContext& ctx)
       params.setLocalUri(canonicalLocal->toString());
     }
     params.setFacePersistency(persistency);
+    if (!boost::logic::indeterminate(lpReliability)) {
+      params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+    }
 
     ctx.controller.start<ndn::nfd::FaceCreateCommand>(
       params,
@@ -275,7 +309,9 @@ FaceModule::destroy(ExecuteContext& ctx)
       ctx.out << ia("id") << face.getFaceId()
               << ia("local") << face.getLocalUri()
               << ia("remote") << face.getRemoteUri()
-              << ia("persistency") << face.getFacePersistency() << '\n';
+              << ia("persistency") << face.getFacePersistency()
+              << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
+              << '\n';
     },
     ctx.makeCommandFailureHandler("destroying face"),
     ctx.makeCommandOptions());
@@ -331,6 +367,9 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
     os << "<flags>";
     if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
       os << "<localFieldsEnabled/>";
+    }
+    if (item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+      os << "<lpReliabilityEnabled/>";
     }
     os << "</flags>";
   }
@@ -399,6 +438,9 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
   os << flagSep << item.getLinkType();
   if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
     os << flagSep << "local-fields";
+  }
+  if (item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+    os << flagSep << "lp-reliability";
   }
   os << '}';
 

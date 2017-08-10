@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -28,8 +28,11 @@
 
 #include "core/common.hpp"
 #include "status-report.hpp"
+
 #include <ndn-cxx/encoding/nfd-constants.hpp>
+
 #include <boost/any.hpp>
+#include <boost/logic/tribool.hpp>
 
 namespace nfd {
 namespace tools {
@@ -64,6 +67,19 @@ public:
       return ndn::nullopt;
     }
     return boost::any_cast<T>(i->second);
+  }
+
+  /** \brief get an optional boolean argument as tribool
+   *  \return the argument value, or boost::logic::indeterminate if the argument is omitted on command line
+   */
+  boost::logic::tribool
+  getTribool(const std::string& key) const
+  {
+    auto value = getOptional<bool>(key);
+    if (value) {
+      return *value;
+    }
+    return boost::logic::indeterminate;
   }
 };
 

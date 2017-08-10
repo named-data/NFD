@@ -5,7 +5,7 @@ SYNOPSIS
 --------
 | nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
 | nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>]
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>] [reliability on|off]
 | nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 
@@ -24,6 +24,9 @@ The **nfdc face show** command shows properties and statistics of one specific f
 
 The **nfdc face create** command creates a UDP unicast, TCP, or Ethernet unicast face.
 Local FaceUri is required for creating Ethernet unicast faces; otherwise it must be omitted.
+The NDNLPv2 unicast reliability feature may be explicitly enabled by specifying **reliability on**
+or explicitly disabled by specifying **reliability off**.
+If enabled, this feature must also be enabled on the other endpoint to function properly.
 
 The **nfdc face destroy** command destroys an existing face.
 

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -48,6 +48,12 @@ enum class ArgValueType {
    *  It must be declared as positional, and will consume all subsequent tokens.
    */
   ANY,
+
+  /** \brief boolean
+   *
+   * The argument appears in CommandArguments as bool.
+   */
+  BOOLEAN,
 
   /** \brief non-negative integer
    *

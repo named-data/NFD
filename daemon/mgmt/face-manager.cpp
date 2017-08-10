@@ -424,6 +424,8 @@ FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
   if (linkService != nullptr) {
     auto linkServiceOptions = linkService->getOptions();
     traits.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, linkServiceOptions.allowLocalFields);
+    traits.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED,
+                      linkServiceOptions.reliabilityOptions.isEnabled);
   }
 }
 

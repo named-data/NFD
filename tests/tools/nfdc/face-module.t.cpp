@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -46,7 +46,7 @@ const std::string NONQUERY_OUTPUT =
     " flags={non-local permanent multi-access}\n"
   "faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " flags={local on-demand point-to-point local-fields}\n";
+    " flags={local on-demand point-to-point local-fields lp-reliability}\n";
 
 BOOST_AUTO_TEST_CASE(NormalNonQuery)
 {
@@ -74,6 +74,7 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
             .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
             .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
+            .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true)
             .setNInInterests(18998)
             .setNInData(26701)
             .setNInNacks(147)
@@ -227,7 +228,7 @@ class ExecuteFaceCreateCommandFixture : public ExecuteCommandFixture
 {
 protected:
   void
-  respond409(const Interest& interest, FacePersistency persistency)
+  respond409(const Interest& interest, FacePersistency persistency, bool enableLpReliability = false)
   {
     MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     ControlParameters body;
@@ -236,6 +237,9 @@ protected:
         .setLocalUri("udp4://68.62.26.57:24087")
         .setFacePersistency(persistency)
         .setFlags(0);
+    if (enableLpReliability) {
+      body.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
+    }
     this->failCommand(interest, 409, "conflict-409", body);
   }
 };
@@ -264,11 +268,12 @@ BOOST_AUTO_TEST_CASE(Creating)
   this->execute("face create udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-created id=2130 local=udp4://179.63.153.45:28835 "
-                           "remote=udp4://159.242.33.78:6363 persistency=persistent\n"));
+                           "remote=udp4://159.242.33.78:6363 persistency=persistent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
-BOOST_AUTO_TEST_CASE(CreatingWithLocalUri)
+BOOST_AUTO_TEST_CASE(CreatingWithParams)
 {
   this->processInterest = [this] (const Interest& interest) {
     ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
@@ -278,20 +283,23 @@ BOOST_AUTO_TEST_CASE(CreatingWithLocalUri)
     BOOST_CHECK_EQUAL(req.getLocalUri(), "udp4://98.68.23.71:6363");
     BOOST_REQUIRE(req.hasFacePersistency());
     BOOST_CHECK_EQUAL(req.getFacePersistency(), FacePersistency::FACE_PERSISTENCY_PERMANENT);
+    BOOST_CHECK(req.hasFlags());
+    BOOST_CHECK(req.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
 
     ControlParameters resp;
     resp.setFaceId(301)
         .setUri("udp4://22.91.89.51:19903")
         .setLocalUri("udp4://98.68.23.71:6363")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT)
-        .setFlags(0);
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
     this->succeedCommand(interest, resp);
   };
 
-  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71");
+  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71 reliability on");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-created id=301 local=udp4://98.68.23.71:6363 "
-                           "remote=udp4://22.91.89.51:19903 persistency=permanent\n"));
+                           "remote=udp4://22.91.89.51:19903 persistency=permanent "
+                           "reliability=on\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -323,7 +331,8 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
   BOOST_CHECK(hasUpdateCommand);
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
-                           "remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -337,7 +346,8 @@ BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
-                           "remote=udp4://100.77.30.65:6363 persistency=permanent\n"));
+                           "remote=udp4://100.77.30.65:6363 persistency=permanent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -351,7 +361,70 @@ BOOST_AUTO_TEST_CASE(SamePersistency)
   this->execute("face create udp://100.77.30.65");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
-                           "remote=udp4://100.77.30.65:6363 persistency=persistent\n"));
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(EnablingReliability)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+    BOOST_CHECK(req.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 reliability on");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=on\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(DisablingReliability)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT, true);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+    BOOST_CHECK(!req.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 reliability off");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -438,7 +511,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
   this->execute("face destroy 10156");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-destroyed id=10156 local=tcp4://151.26.163.27:22967 "
-                           "remote=tcp4://198.57.27.40:6363 persistency=persistent\n"));
+                           "remote=tcp4://198.57.27.40:6363 persistency=persistent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -461,7 +535,8 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
   this->execute("face destroy tcp://32.121.182.82");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-destroyed id=2249 local=tcp4://30.99.87.98:31414 "
-                           "remote=tcp4://32.121.182.82:6363 persistency=persistent\n"));
+                           "remote=tcp4://32.121.182.82:6363 persistency=persistent "
+                           "reliability=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -566,6 +641,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <linkType>point-to-point</linkType>
       <flags>
         <localFieldsEnabled/>
+        <lpReliabilityEnabled/>
       </flags>
       <packetCounters>
         <incomingPackets>
@@ -594,7 +670,7 @@ const std::string STATUS_TEXT =
     " flags={non-local permanent multi-access}\n"
   "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " flags={local on-demand point-to-point local-fields}\n";
+    " flags={local on-demand point-to-point local-fields lp-reliability}\n";
 
 BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
 {
@@ -622,6 +698,7 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
           .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
+          .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true)
           .setNInInterests(18998)
           .setNInData(26701)
           .setNInNacks(147)

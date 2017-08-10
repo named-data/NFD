@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,7 @@ parseReportFormat(const std::string& s)
   if (s == "text") {
     return ReportFormat::TEXT;
   }
-  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized ReportFormat"));
+  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized ReportFormat '" + s + "'"));
 }
 
 std::ostream&
@@ -64,7 +64,7 @@ StatusReport::collect(Face& face, KeyChain& keyChain, Validator& validator, cons
     Module& module = *sections[i];
     module.fetchStatus(
       controller,
-      [] {},
+      []{},
       [i, &errorCode] (uint32_t code, const std::string& reason) {
         errorCode = i * 1000000 + code;
       },
