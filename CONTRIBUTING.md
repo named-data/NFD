@@ -104,13 +104,14 @@ for version control:
 
 - [Main NDN codebase](https://github.com/named-data)
 - [NDN codebase for mobile platforms](https://github.com/named-data-mobile)
-- [NDN codebase for IoT](https://github.com/named-data-ndnSIM)
-- [ndnSIM codebase](https://github.com/named-data-iot)
+- [NDN codebase for IoT](https://github.com/named-data-iot)
+- [ndnSIM codebase](https://github.com/named-data-ndnSIM)
 - [Other NDN codebase (REMAP)](https://github.com/remap)
 
-If you are unfamiliar with git, some kind of tutorial on git
-should be your first step,
-[such as this one](https://git-scm.com/book/en/v1/Getting-Started).
+If you are unfamiliar with git, some kind
+of [tutorial on git](https://git-scm.com/book/en/v1/Getting-Started)
+should be your first step.
+
 There is also a [Git game](http://learngitbranching.js.org/index.html)
 you can play. Finally, there is a
 [wiki page](https://redmine.named-data.net/projects/nfd/wiki#Development-process)
@@ -175,9 +176,8 @@ Explaining this:
     clickable links, and it is useful to reviewers to gain background
     understanding of the issue. You can have multiple by separating
     them with commas.
--   `Change-Id` should be filled in
-    [automatically][change-id-hook]. It is used by Gerrit to track
-    changes.
+-   `Change-Id` should be filled automatically. It is used by Gerrit
+    to track changes.
 
 ### Unit Tests ###
 With a few exceptions, every patch needs to have unit tests that
@@ -261,16 +261,14 @@ The first-time Gerrit setup goes like this:
     2. Click on your name in the top right corner and click "Settings" in the pop-up box.
     3. In the `Username` box, check for a name. If there's already one there, great.
     4. If not, type one in, and this will be used in later steps.
-2.  [Add Gerrit as a remote location to your local git repo.](https://gerrit.named-data.net/Documentation/user-upload.html) **Note:**
-    when the documentation specifies `HEAD:refs/for/branch`, this
-    means e.g. `HEAD:refs/for/master` or
-    `HEAD:refs/for/some-other-branch`. In most cases, you will be
-    uploading a Change for master.
-3.  Set up your Gerrit credentials. This will depend on how you
+
+2.  Set up your Gerrit credentials. This will depend on how you
     configured your Gerrit remote in step 1. Among other things, you
     need to set up identities so that the email on your Gerrit profile
     matches whatever email you will be committing with on your git
     repo.
+    **Note:** We only support using
+    [SSH access to Gerrit](https://gerrit.named-data.net/Documentation/user-upload.html#ssh).
 
     This shows what the identities panel looks like. If you do
     not see the email here that you have configured git to use, you
@@ -283,28 +281,23 @@ The first-time Gerrit setup goes like this:
     Gerrit itself has
     [extensive documentation](https://gerrit.named-data.net/Documentation/error-messages.html)
     regarding error messages, and this identity-based one is by far the most
-    common. Its specific documentation can be found
-    [here.](https://gerrit.named-data.net/Documentation/error-invalid-author.html)
+    common. This is the
+    [documentation for an identity error.](https://gerrit.named-data.net/Documentation/error-invalid-author.html)
 
-4.  <span id=#change-id-hook></span>Set up commit hooks. You will
-    encounter an error if you attempt to push to Gerrit and haven't
-    done this. We recommend that you set up commit hooks by copy and
-    pasting this into your terminal: `` curl -kLo `git rev-parse
-    --git-dir`/hooks/commit-msg
-    https://gerrit.named-data.net/tools/hooks/commit-msg; chmod +x
-    `git rev-parse --git-dir`/hooks/commit-msg) ``.  Whenever you
-    write a commit message from this repo (i.e. the base directory of
-    the project), the git commit-hook should automatically assign the
-    commit a `Change-Id`.
+3.  Clone the source for a project from Gerrit.
+    1. While logged in to Gerrit, there will be a link in the top-left
+       area, `Projects`.
+    2. From this project view, click on the `Clone with commit-msg
+       hook` tab.
+    3. Click on the `ssh` tab to select cloning over SSH. **Note:**
+       This will require setting up SSH access to Gerrit first.
+    4. Copy-and-paste the `git clone ...` command into your terminal
+       to fetch the project source.
 
-    The prompt to set up the commit hooks should look something like this:
-
-        remote: ERROR: [4311462] missing Change-Id in commit message footer
-        remote:
-        remote: Hint: To automatically insert Change-Id, install the hook:
-        remote:   gitdir=$(git rev-parse --git-dir); scp -p -P 29418 someuser@gerrit.named-data.net:hooks/commit-msg ${gitdir}/hooks/
-        remote: And then amend the commit:
-        remote:   git commit --amend
+    After this, your remotes will be set up correctly, and pushing to
+    Gerrit will only require `git push origin HEAD:refs/for/master` after
+    committing work.  This section has some
+    [git tips and tricks to type less][type-less].
 
 ### Uploading patches ###
 
@@ -317,17 +310,18 @@ After writing some changes, commit them locally as normal. After
 saving and exiting your editor, the commit hook will insert a unique
 `Change-Id` to the message.
 
+
 Once you have a commit message you are happy with, simply run `git
-push gerrit HEAD:refs/for/master` to upload your patch.
+push HEAD:refs/for/master`.
 
 **Note:** Gerrit separates commits into patch sets by the unique
 `Change-Id`s. As a result, it is important that you either:
 
-1.  Amend your commit with any new changes using `git commit --amend`,
-    or, more complicatedly
-2.  Collapse your various commits into one with `git rebase -i
-    <initial commit>`, ensuring that the ultimate `Change-Id` in the
-    commit is the one on the patch set on Gerrit.
+*  Squash your various commits into one with `git rebase -i
+   <initial commit>`, ensuring that the ultimate `Change-Id` in the
+   commit is the one on the patch set on Gerrit. This workflow is
+   generally preferred.
+*  Amend your commit with any new changes using `git commit --amend`.
 
 If you do not do this, what will happen is that each commit will be
 interpreted by Gerrit as a separate patch set. This is probably not
@@ -443,10 +437,17 @@ checking yourself first.
 
 ### Gerrit Change-Id Commit Hook ###
 
-<span id=#change-id-hook-explanation></span> If you have done work in
-your local repo before you upload to Gerrit, your commits may not have
-Change-Ids in them. So, you have to add them after you've set up your
-commit hooks.
+If you encounter an error like this when trying to push work:
+
+        remote: ERROR: [4311462] missing Change-Id in commit message footer
+        remote:
+        remote: Hint: To automatically insert Change-Id, install the hook:
+        remote:   gitdir=$(git rev-parse --git-dir); scp -p -P 29418 someuser@gerrit.named-data.net:hooks/commit-msg ${gitdir}/hooks/
+        remote: And then amend the commit:
+        remote:   git commit --amend
+
+Then your commit hook has not been set up correctly, somehow. Follow
+the instructions in the terminal to resolve this.
 
 ### Code Style Robot ###
 
@@ -459,5 +460,26 @@ are style problems. Further, since this automated check is not
 perfect, you should take steps (e.g., configure your editor or run a
 linter before you commit) to ensure you adhere to code style rules.
 
-[change-id-hook]: #change-id-hook
-[change-id-hook-explanation]: #change-id-hook-explanation
+### <a name="type-less"></a> Typing Less to Upload Patches to Gerrit ###
+
+If typing `HEAD:refs/for/master` feels
+repetitive, you have a few options:
+
+*  You can configure git to do the work for you, as described
+   in [this blog post](https://yoursunny.com/t/2017/NFD-devbox/#Uploading-to-Gerrit)
+
+*  Git has an alias system that you can use to specify certain
+   commands. For example, you can use `git config --global alias.pg
+   "push origin HEAD:refs/for/master"` to make `git pg` push to Gerrit. You
+   can [learn about git aliases.](https://githowto.com/aliases)
+
+*  If using Linux or macOS, it is relatively simple to create a shell
+   alias: `alias gs="git status"` for example, or `alias gitpush="git
+   push origin HEAD:refs/for/master`. The alias itself must be one
+   word, but it can represent multiple words. To persist your
+   aliases, they need to go in your environment file, which is
+   generally at `~/.bashrc` or `~/.zshrc` or `~/.profile`. The exact
+   syntax of aliases and the environment variables file will vary by
+   shell. You should be careful not to overuse aliases, however.
+
+[type-less]: #type-less
