@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -26,8 +26,6 @@
 #include "available-commands.hpp"
 #include "face-module.hpp"
 #include "help.hpp"
-#include "legacy-nfdc.hpp"
-#include "legacy-status.hpp"
 #include "rib-module.hpp"
 #include "status.hpp"
 #include "strategy-choice-module.hpp"
@@ -44,35 +42,6 @@ registerCommands(CommandParser& parser)
   FaceModule::registerCommands(parser);
   RibModule::registerCommands(parser);
   StrategyChoiceModule::registerCommands(parser);
-
-  registerLegacyStatusCommand(parser);
-
-  struct LegacyNfdcCommandDefinition
-  {
-    std::string subcommand;
-    std::string title;
-    std::string replacementCommand; ///< replacement for deprecated legacy subcommand
-  };
-  const std::vector<LegacyNfdcCommandDefinition> legacyNfdcSubcommands{
-    {"register", "register a prefix", "route add"},
-    {"unregister", "unregister a prefix", "route remove"},
-    {"create", "create a face", "face create"},
-    {"destroy", "destroy a face", "face destroy"},
-    {"set-strategy", "set strategy choice on namespace", "strategy set"},
-    {"unset-strategy", "unset strategy choice on namespace", "strategy unset"},
-    {"add-nexthop", "add FIB nexthop", "route add"},
-    {"remove-nexthop", "remove FIB nexthop", "route remove"}
-  };
-  for (const LegacyNfdcCommandDefinition& lncd : legacyNfdcSubcommands) {
-    CommandDefinition def(lncd.subcommand, "");
-    def.setTitle(lncd.title);
-    def.addArg("args", ArgValueType::ANY, Required::NO, Positional::YES);
-    auto modes = AVAILABLE_IN_ONE_SHOT | AVAILABLE_IN_HELP;
-    if (!lncd.replacementCommand.empty()) {
-      modes = modes & ~AVAILABLE_IN_HELP;
-    }
-    parser.addCommand(def, bind(&legacyNfdcMain, _1, lncd.replacementCommand), modes);
-  }
 }
 
 } // namespace nfdc

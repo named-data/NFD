@@ -12,8 +12,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
+import datetime
 import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -62,7 +63,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'NFD - Named Data Networking Forwarding Daemon'
-copyright = u'2014-2016, Named Data Networking Project'
+copyright = u'2014-%d, Named Data Networking Project' % datetime.date.today().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -241,21 +242,21 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('manpages/nfd', 'nfd', u'Named Data Networking Forwarding Daemon', None, 1),
+    ('manpages/nfdc', 'nfdc', u'interact with NFD management', None, 1),
+    ('manpages/nfdc-status', 'nfdc-status', u'show NFD status', None, 1),
+    ('manpages/nfdc-face', 'nfdc-face', u'show and manipulate NFD faces', None, 1),
+    ('manpages/nfdc-route', 'nfdc-route', u'show and manipulate NFD routes', None, 1),
+    ('manpages/nfdc-strategy', 'nfdc-strategy', u'show and manipulate NFD strategy choices', None, 1),
+    ('manpages/nfd-status', 'nfd-status', u'comprehensive report of NFD status', None, 1),
+    ('manpages/nfd-status-http-server', 'nfd-status-http-server',
+        u'NFD status HTTP server', None, 1),
     ('manpages/ndn-autoconfig-server', 'ndn-autoconfig-server',
         u'NDN auto-configuration server', None, 1),
     ('manpages/ndn-autoconfig', 'ndn-autoconfig',
         u'NDN auto-configuration client', None, 1),
     ('manpages/ndn-autoconfig.conf', 'ndn-autoconfig.conf',
         u'NDN auto-configuration client configuration file', None, 5),
-    ('manpages/nfdc', 'nfdc', u'show / manipulate NFD state and configuration', None, 1),
-    ('manpages/nfdc-status', 'nfdc-status', u'show NFD status', None, 1),
-    ('manpages/nfdc-face', 'nfdc-face', u'show and manipulate NFD faces', None, 1),
-    ('manpages/nfdc-route', 'nfdc-route', u'show and manipulate NFD routes', None, 1),
-    ('manpages/nfdc-strategy', 'nfdc-strategy', u'show and manipulate NFD strategy choices', None, 1),
     ('manpages/nfd-autoreg', 'nfd-autoreg', u'NFD Auto-registration Server', None, 1),
-    ('manpages/nfd-status-http-server', 'nfd-status-http-server',
-        u'NFD status HTTP server', None, 1),
-    ('manpages/nfd-status', 'nfd-status', u'Command-line utility to show NFD status', None, 1),
 ]
 
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -120,7 +120,7 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
       i = m_commands.find({noun, "list"});
     }
     else {
-      // help, exit, quit, legacy nfdc commands
+      // help, exit, quit commands
       i = m_commands.find({noun, ""});
     }
     nameLen = std::min<size_t>(1, tokens.size());

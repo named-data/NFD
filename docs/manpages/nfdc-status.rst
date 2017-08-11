@@ -11,7 +11,7 @@ DESCRIPTION
 The **nfdc status show** command shows general status of NFD, including its version,
 uptime, data structure counters, and global packet counters.
 
-The **nfdc status report** command generates a comprehensive report of NFD status, including:
+The **nfdc status report** command prints a comprehensive report of NFD status, including:
 
 - general status (individually available from **nfdc status show**)
 - list of channels (individually available from **nfdc channel list**)
