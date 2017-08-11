@@ -132,6 +132,7 @@ matrix:
 
 before_script:
   - ${CXX:-c++} --version
+  - python --version
 
 script:
   - ./.jenkins
