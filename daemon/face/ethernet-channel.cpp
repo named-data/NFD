@@ -199,7 +199,10 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
 
   // else, create a new face
   GenericLinkService::Options options;
+  options.allowFragmentation = true;
+  options.allowReassembly = true;
   options.reliabilityOptions.isEnabled = wantLpReliability;
+
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
                                                          persistency, m_idleFaceTimeout);
