@@ -24,9 +24,10 @@
  */
 
 #include "nfdc/forwarder-general-module.hpp"
-#include <ndn-cxx/security/signing-helpers.hpp>
 
 #include "status-fixture.hpp"
+
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace tools {
@@ -36,38 +37,8 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestForwarderGeneralModule, StatusFixture<ForwarderGeneralModule>)
 
-// class MakeNfdIdCollector
-// {
-// public:
-//   unique_ptr<NfdIdCollector>
-//   operator()(Face&, KeyChain&) const
-//   {
-//     return make_unique<NfdIdCollector>(make_unique<ValidatorNull>());
-//   };
-// };
-
-class ForwarderGeneralStatusFixture : public StatusFixture<ForwarderGeneralModule>
-{
-protected:
-  ForwarderGeneralStatusFixture()
-  {
-    // module.setNfdIdCollector(*validator);
-
-    BOOST_REQUIRE(this->addIdentity("/nfd-status/test-nfdid",
-                                    ndn::EcKeyParams(name::Component("KEYID"))));
-  }
-
-private:
-  void
-  signDatasetReply(Data& data) override
-  {
-    m_keyChain.sign(data, ndn::security::signingByIdentity("/nfd-status/test-nfdid"));
-  }
-};
-
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <generalStatus>
-    <nfdId>/nfdId-unavailable</nfdId>
     <version>0.4.1-1-g704430c</version>
     <startTime>2016-06-24T15:13:46.856000</startTime>
     <currentTime>2016-07-17T17:55:54.109000</currentTime>
@@ -94,7 +65,6 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 General NFD status:
-                 nfdId=/nfdId-unavailable
                version=0.4.1-1-g704430c
              startTime=20160624T151346.856000
            currentTime=20160717T175554.109000
@@ -112,7 +82,7 @@ General NFD status:
              nOutNacks=26762
 )TEXT").substr(1);
 
-BOOST_FIXTURE_TEST_CASE(Status, ForwarderGeneralStatusFixture)
+BOOST_AUTO_TEST_CASE(Status)
 {
   this->fetchStatus();
   ForwarderStatus payload;

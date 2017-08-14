@@ -27,7 +27,6 @@
 #define NFD_TOOLS_NFDC_FORWARDER_GENERAL_MODULE_HPP
 
 #include "module.hpp"
-#include <ndn-cxx/security/validator.hpp>
 
 namespace nfd {
 namespace tools {
@@ -35,16 +34,12 @@ namespace nfdc {
 
 using ndn::nfd::ForwarderStatus;
 
-class NfdIdCollector;
-
 /** \brief provides access to NFD forwarder general status
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
  */
 class ForwarderGeneralModule : public Module, noncopyable
 {
 public:
-  ForwarderGeneralModule();
-
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
@@ -52,21 +47,14 @@ public:
               const CommandOptions& options) override;
 
   void
-  setNfdIdCollector(const NfdIdCollector& nfdIdCollector)
-  {
-    m_nfdIdCollector = &nfdIdCollector;
-  }
-
-  void
   formatStatusXml(std::ostream& os) const override;
 
   /** \brief format a single status item as XML
    *  \param os output stream
    *  \param item status item
-   *  \param nfdId NFD's signing certificate name
    */
   void
-  formatItemXml(std::ostream& os, const ForwarderStatus& item, const Name& nfdId) const;
+  formatItemXml(std::ostream& os, const ForwarderStatus& item) const;
 
   void
   formatStatusText(std::ostream& os) const override;
@@ -74,65 +62,12 @@ public:
   /** \brief format a single status item as text
    *  \param os output stream
    *  \param item status item
-   *  \param nfdId NFD's signing certificate name
    */
   void
-  formatItemText(std::ostream& os, const ForwarderStatus& item, const Name& nfdId) const;
+  formatItemText(std::ostream& os, const ForwarderStatus& item) const;
 
 private:
-  const Name&
-  getNfdId() const;
-
-private:
-  const NfdIdCollector* m_nfdIdCollector;
   ForwarderStatus m_status;
-};
-
-
-/** \brief a validator that can collect NFD's signing certificate name
- *
- *  This validator redirects all validation requests to an inner validator.
- *  For the first Data packet accepted by the inner validator that has a Name in KeyLocator,
- *  this Name is collected as NFD's signing certificate name.
- *
- *  \todo #4089 re-implement as v2 ValidationPolicy
- */
-class NfdIdCollector : public ndn::Validator
-{
-public:
-  explicit
-  NfdIdCollector(unique_ptr<ndn::Validator> inner);
-
-  bool
-  hasNfdId() const
-  {
-    return m_hasNfdId;
-  }
-
-  const Name&
-  getNfdId() const;
-
-protected:
-  void
-  checkPolicy(const Interest& interest, int nSteps,
-              const ndn::OnInterestValidated& accept,
-              const ndn::OnInterestValidationFailed& reject,
-              std::vector<shared_ptr<ndn::ValidationRequest>>& nextSteps) override
-  {
-    BOOST_ASSERT(nSteps == 0);
-    m_inner->validate(interest, accept, reject);
-  }
-
-  void
-  checkPolicy(const Data& data, int nSteps,
-              const ndn::OnDataValidated& accept,
-              const ndn::OnDataValidationFailed& reject,
-              std::vector<shared_ptr<ndn::ValidationRequest>>& nextSteps) override;
-
-private:
-  unique_ptr<ndn::Validator> m_inner;
-  bool m_hasNfdId;
-  Name m_nfdId;
 };
 
 } // namespace nfdc

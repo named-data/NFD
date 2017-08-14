@@ -22,7 +22,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
     <xsl:variable name="version">
       <xsl:apply-templates select="nfd:nfdStatus/nfd:generalStatus/nfd:version"/>
     </xsl:variable>
-    <span class="grey">Powered by </span><a target="_blank" href="http://named-data.net/doc/NFD/"><span class="green">NFD version <xsl:value-of select="$version"/></span></a><span class="grey">.</span>
+    <span class="grey">Powered by </span><a target="_blank" href="https://named-data.net/doc/NFD/"><span class="green">NFD version <xsl:value-of select="$version"/></span></a><span class="grey">.</span>
   </footer>
   </body>
   </html>
@@ -73,7 +73,6 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   <table class="item-list">
     <thead>
       <tr>
-        <th>NFD ID</th>
         <th>Version</th>
         <th>Start time</th>
         <th>Current time</th>
@@ -93,7 +92,6 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
     </thead>
     <tbody>
       <tr class="center">
-        <td><xsl:apply-templates select="nfd:nfdId"/></td>
         <td><xsl:value-of select="nfd:version"/></td>
         <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:startTime" /></xsl:call-template></td>
         <td><xsl:call-template name="formatDate"><xsl:with-param name="date" select="nfd:currentTime" /></xsl:call-template></td>

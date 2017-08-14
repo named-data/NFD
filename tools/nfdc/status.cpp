@@ -40,17 +40,10 @@ namespace nfdc {
 void
 reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
 {
-  unique_ptr<ndn::security::v2::Validator> validator = make_unique<ndn::security::v2::ValidatorNull>();
-  CommandOptions ctrlOptions;
-
   StatusReport report;
 
   if (options.wantForwarderGeneral) {
-    // auto nfdIdCollector = make_unique<NfdIdCollector>(std::move(validator));
-    auto forwarderGeneralModule = make_unique<ForwarderGeneralModule>();
-    // forwarderGeneralModule->setNfdIdCollector(*nfdIdCollector);
-    report.sections.push_back(std::move(forwarderGeneralModule));
-    // validator = std::move(nfdIdCollector);
+    report.sections.push_back(make_unique<ForwarderGeneralModule>());
   }
 
   if (options.wantChannels) {
@@ -73,7 +66,9 @@ reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
     report.sections.push_back(make_unique<StrategyChoiceModule>());
   }
 
-  uint32_t code = report.collect(ctx.face, ctx.keyChain, *validator, ctrlOptions);
+  uint32_t code = report.collect(ctx.face, ctx.keyChain,
+                                 ndn::security::v2::getAcceptAllValidator(),
+                                 CommandOptions());
   if (code != 0) {
     ctx.exitCode = 1;
     // Give a simple error code for end user.
