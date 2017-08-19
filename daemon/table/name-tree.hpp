@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,9 +59,9 @@ public: // information
   /** \return name tree entry on which a table entry is attached,
    *          or nullptr if the table entry is detached
    */
-  template<typename ENTRY>
+  template<typename EntryT>
   Entry*
-  getEntry(const ENTRY& tableEntry) const
+  getEntry(const EntryT& tableEntry) const
   {
     return Entry::get(tableEntry);
   }
@@ -142,15 +142,20 @@ public: // matching
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
   /** \brief equivalent to .findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)
-   *  \tparam ENTRY fib::Entry or measurements::Entry or strategy_choice::Entry
+   *  \tparam EntryT fib::Entry or measurements::Entry or strategy_choice::Entry
    *  \note This overload is more efficient than
    *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
    *  \warning Undefined behavior may occur if tableEntry is not attached to this name tree.
    */
-  template<typename ENTRY>
+  template<typename EntryT>
   Entry*
-  findLongestPrefixMatch(const ENTRY& tableEntry,
-                         const EntrySelector& entrySelector = AnyEntry()) const;
+  findLongestPrefixMatch(const EntryT& tableEntry,
+                         const EntrySelector& entrySelector = AnyEntry()) const
+  {
+    const Entry* nte = this->getEntry(tableEntry);
+    BOOST_ASSERT(nte != nullptr);
+    return this->findLongestPrefixMatch(*nte, entrySelector);
+  }
 
   /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), entrySelector)
    *  \note This overload is more efficient than

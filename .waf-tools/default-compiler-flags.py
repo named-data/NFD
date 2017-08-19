@@ -7,23 +7,34 @@ def options(opt):
                    help='''Compile in debugging mode with minimal optimizations (-O0 or -Og)''')
 
 def configure(conf):
-    cxx = conf.env['CXX_NAME'] # CXX_NAME represents generic name of the compiler
+    conf.start_msg('Checking C++ compiler version')
+
+    cxx = conf.env['CXX_NAME'] # CXX_NAME is the generic name of the compiler
     ccver = tuple(int(i) for i in conf.env['CC_VERSION'])
+    errmsg = ''
+    warnmsg = ''
     if cxx == 'gcc':
         if ccver < (4, 8, 2):
-            conf.fatal('The version of gcc you are using (%s) is too old.\n'
-                       'The minimum supported gcc version is 4.8.2.' %
-                       '.'.join(conf.env['CC_VERSION']))
+            errmsg = ('The version of gcc you are using is too old.\n'
+                      'The minimum supported gcc version is 4.8.2.')
         flags = GccFlags()
     elif cxx == 'clang':
         if ccver < (3, 4, 0):
-            conf.fatal('The version of clang you are using (%s) is too old.\n'
-                       'The minimum supported clang version is 3.4.0.' %
-                       '.'.join(conf.env['CC_VERSION']))
+            errmsg = ('The version of clang you are using is too old.\n'
+                      'The minimum supported clang version is 3.4.0.')
         flags = ClangFlags()
     else:
+        warnmsg = 'Note: %s compiler is unsupported' % cxx
         flags = CompilerFlags()
-        Logs.warn('The code has not yet been tested with %s compiler' % cxx)
+
+    if errmsg:
+        conf.end_msg('.'.join(conf.env['CC_VERSION']), color='RED')
+        conf.fatal(errmsg)
+    elif warnmsg:
+        conf.end_msg('.'.join(conf.env['CC_VERSION']), color='YELLOW')
+        Logs.warn(warnmsg)
+    else:
+        conf.end_msg('.'.join(conf.env['CC_VERSION']))
 
     areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
 
@@ -121,9 +132,9 @@ class GccBasicFlags(CompilerFlags):
                               '-Wall',
                               '-Wextra',
                               '-Werror',
-                              '-Wno-unused-parameter',
-                              '-Wno-error=maybe-uninitialized', # Bug #1615
                               '-Wno-error=deprecated-declarations', # Bug #3795
+                              '-Wno-error=maybe-uninitialized', # Bug #1615
+                              '-Wno-unused-parameter',
                               ]
         flags['LINKFLAGS'] += ['-fuse-ld=gold', '-Wl,-O1']
         return flags
@@ -168,17 +179,27 @@ class ClangFlags(GccBasicFlags):
     def getDebugFlags(self, conf):
         flags = super(ClangFlags, self).getDebugFlags(conf)
         flags['CXXFLAGS'] += ['-fcolor-diagnostics',
-                              '-Wno-unused-local-typedef', # Bugs #2657 and #3209
-                              '-Wno-error=unneeded-internal-declaration', # Bug #1588
+                              '-Wextra-semi',
+                              '-Wundefined-func-template',
                               '-Wno-error=deprecated-register',
-                              '-Wno-error=keyword-macro', # Bug #3235
                               '-Wno-error=infinite-recursion', # Bug #3358
+                              '-Wno-error=keyword-macro', # Bug #3235
+                              '-Wno-error=unneeded-internal-declaration', # Bug #1588
+                              '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
+        version = tuple(int(i) for i in conf.env['CC_VERSION'])
+        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (9, 0, 0)):
+            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags
 
     def getOptimizedFlags(self, conf):
         flags = super(ClangFlags, self).getOptimizedFlags(conf)
         flags['CXXFLAGS'] += ['-fcolor-diagnostics',
+                              '-Wextra-semi',
+                              '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
+        version = tuple(int(i) for i in conf.env['CC_VERSION'])
+        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (9, 0, 0)):
+            flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags

@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -53,7 +53,7 @@ public:
   isAvailable() const
   {
     return m_isAvailable;
-  };
+  }
 
 protected:
   void

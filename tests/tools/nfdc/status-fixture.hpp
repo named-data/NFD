@@ -48,7 +48,7 @@ public:
   operator()(Face&, KeyChain&) const
   {
     return make_unique<ValidatorNull>();
-  };
+  }
 };
 
 /** \brief fixture to test status fetching routines in a \p Module

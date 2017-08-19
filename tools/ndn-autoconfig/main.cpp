@@ -38,6 +38,11 @@
 #include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 #include <ndn-cxx/util/time.hpp>
 
+// suppress warning caused by boost::program_options::parse_config_file
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wundefined-func-template"
+#endif
+
 namespace ndn {
 namespace tools {
 namespace autoconfig {
