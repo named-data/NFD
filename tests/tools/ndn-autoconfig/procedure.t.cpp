@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(Normal, ProcedureFixture<ProcedureSuccessFailure>)
       BOOST_REQUIRE(req->hasOrigin());
       BOOST_CHECK_EQUAL(req->getOrigin(), nfd::ROUTE_ORIGIN_AUTOCONF);
       BOOST_REQUIRE(req->hasName());
-      if (req->getName() == "/ndn") {
+      if (req->getName() == "/") {
         ++nRegisterNdn;
       }
       else if (req->getName() == "/localhop/nfd") {
@@ -230,7 +230,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
 {
   this->initialize(Options{});
 
-  int nRegisterNdn = 0, nRegisterLocalhopNfd = 0;
+  int nRegisterDefault = 0, nRegisterLocalhopNfd = 0;
   this->processInterest = [&] (const Interest& interest) {
     optional<ControlParameters> req = parseCommand(interest, "/localhost/nfd/faces/create");
     if (req) {
@@ -247,8 +247,8 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
     req = parseCommand(interest, "/localhost/nfd/rib/register");
     if (req) {
       BOOST_REQUIRE(req->hasName());
-      if (req->getName() == "/ndn") {
-        ++nRegisterNdn;
+      if (req->getName() == "/") {
+        ++nRegisterDefault;
       }
       else if (req->getName() == "/localhop/nfd") {
         ++nRegisterLocalhopNfd;
@@ -273,7 +273,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, ProcedureFixture<ProcedureFailureSuccess>)
   BOOST_CHECK_EQUAL(this->runOnce(), true);
   BOOST_CHECK_EQUAL(procedure->nCalls1, 1);
   BOOST_CHECK_EQUAL(procedure->nCalls2, 1);
-  BOOST_CHECK_EQUAL(nRegisterNdn, 1);
+  BOOST_CHECK_EQUAL(nRegisterDefault, 1);
   BOOST_CHECK_EQUAL(nRegisterLocalhopNfd, 1);
 }
 

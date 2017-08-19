@@ -37,7 +37,7 @@ using nfd::ControlParameters;
 using nfd::ControlResponse;
 
 static const time::nanoseconds FACEURI_CANONIZE_TIMEOUT = time::seconds(4);
-static const std::vector<Name> HUB_PREFIXES{"/ndn", "/localhop/nfd"};
+static const std::vector<Name> HUB_PREFIXES{"/", "/localhop/nfd"};
 static const nfd::RouteOrigin HUB_ROUTE_ORIGIN = nfd::ROUTE_ORIGIN_AUTOCONF;
 static const uint64_t HUB_ROUTE_COST = 100;
 
