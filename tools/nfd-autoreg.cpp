@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -23,9 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/network.hpp"
+#include "core/version.hpp"
+
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/name.hpp>
-
 #include <ndn-cxx/encoding/buffer-stream.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
@@ -37,8 +39,7 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
 
-#include "core/version.hpp"
-#include "core/network.hpp"
+#include <iostream>
 
 namespace ndn {
 namespace nfd_autoreg {

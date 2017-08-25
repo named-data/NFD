@@ -25,8 +25,11 @@
 
 #include "guess-from-identity-name.hpp"
 #include "dns-srv.hpp"
+
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
+
+#include <sstream>
 
 namespace ndn {
 namespace tools {

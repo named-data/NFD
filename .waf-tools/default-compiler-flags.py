@@ -188,7 +188,7 @@ class ClangFlags(GccBasicFlags):
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
         version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (9, 0, 0)):
+        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags
 
@@ -200,6 +200,6 @@ class ClangFlags(GccBasicFlags):
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
         version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (9, 0, 0)):
+        if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags

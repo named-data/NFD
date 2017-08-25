@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -24,9 +24,12 @@
  */
 
 #include "program.hpp"
+
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
+
+#include <iostream>
 
 namespace ndn {
 namespace tools {

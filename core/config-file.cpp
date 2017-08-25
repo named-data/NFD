@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,10 +24,10 @@
  */
 
 #include "config-file.hpp"
-#include "logger.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 #include <fstream>
+#include <sstream>
 
 namespace nfd {
 
@@ -42,11 +42,8 @@ ConfigFile::throwErrorOnUnknownSection(const std::string& filename,
                                        const ConfigSection& section,
                                        bool isDryRun)
 {
-  std::string msg = "Error processing configuration file ";
-  msg += filename;
-  msg += ": no module subscribed for section \"" + sectionName + "\"";
-
-  BOOST_THROW_EXCEPTION(ConfigFile::Error(msg));
+  BOOST_THROW_EXCEPTION(Error("Error processing configuration file " + filename +
+                              ": no module subscribed for section \"" + sectionName + "\""));
 }
 
 void
@@ -87,7 +84,7 @@ ConfigFile::parse(const std::string& filename, bool isDryRun)
 {
   std::ifstream inputFile(filename);
   if (!inputFile.good() || !inputFile.is_open()) {
-    BOOST_THROW_EXCEPTION(Error("Failed to read configuration file: " + filename));
+    BOOST_THROW_EXCEPTION(Error("Failed to read configuration file " + filename));
   }
   parse(inputFile, isDryRun, filename);
   inputFile.close();
@@ -107,11 +104,8 @@ ConfigFile::parse(std::istream& input, bool isDryRun, const std::string& filenam
     boost::property_tree::read_info(input, m_global);
   }
   catch (const boost::property_tree::info_parser_error& error) {
-    std::stringstream msg;
-    msg << "Failed to parse configuration file";
-    msg << " " << filename;
-    msg << " " << error.message() << " line " << error.line();
-    BOOST_THROW_EXCEPTION(Error(msg.str()));
+    BOOST_THROW_EXCEPTION(Error("Failed to parse configuration file " + filename +
+                                ": " + error.message() + " on line " + to_string(error.line())));
   }
 
   process(isDryRun, filename);
@@ -130,10 +124,7 @@ ConfigFile::process(bool isDryRun, const std::string& filename) const
   BOOST_ASSERT(!filename.empty());
 
   if (m_global.begin() == m_global.end()) {
-    std::string msg = "Error processing configuration file: ";
-    msg += filename;
-    msg += " no data";
-    BOOST_THROW_EXCEPTION(Error(msg));
+    BOOST_THROW_EXCEPTION(Error("Error processing configuration file " + filename + ": no data"));
   }
 
   for (const auto& i : m_global) {

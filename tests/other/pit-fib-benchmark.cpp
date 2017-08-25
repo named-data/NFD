@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "table/pit.hpp"
 #include "table/fib.hpp"
-
+#include "table/pit.hpp"
 #include "tests/test-common.hpp"
+
+#include <iostream>
 
 #ifdef HAVE_VALGRIND
 #include <valgrind/callgrind.h>
@@ -43,8 +44,7 @@ protected:
     , m_pit(m_nameTree)
   {
 #ifdef _DEBUG
-    BOOST_TEST_MESSAGE("Benchmark compiled in debug mode is unreliable, "
-                       "please compile in release mode.");
+    std::cerr << "Benchmark compiled in debug mode is unreliable, please compile in release mode.\n";
 #endif
   }
 
@@ -150,7 +150,7 @@ BOOST_FIXTURE_TEST_CASE(SimpleExchanges, PitFibBenchmarkFixture)
   CALLGRIND_STOP_INSTRUMENTATION;
 #endif
 
-  BOOST_TEST_MESSAGE(time::duration_cast<time::microseconds>(t2 - t1));
+  std::cout << time::duration_cast<time::microseconds>(t2 - t1) << std::endl;
 }
 
 } // namespace tests

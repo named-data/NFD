@@ -27,8 +27,11 @@
 #define NFD_TOOLS_NDN_AUTOCONFIG_STAGE_HPP
 
 #include "core/common.hpp"
+
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/signal.hpp>
+
+#include <iostream>
 
 namespace ndn {
 namespace tools {

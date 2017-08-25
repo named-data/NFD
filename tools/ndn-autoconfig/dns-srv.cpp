@@ -34,6 +34,8 @@
 #include <arpa/nameser_compat.h>
 #endif
 
+#include <iostream>
+
 namespace ndn {
 namespace tools {
 namespace autoconfig {

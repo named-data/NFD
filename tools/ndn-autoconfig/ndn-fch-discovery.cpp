@@ -24,8 +24,11 @@
  */
 
 #include "ndn-fch-discovery.hpp"
-#include <boost/regex.hpp>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
+
+#include <sstream>
 
 namespace ndn {
 namespace tools {

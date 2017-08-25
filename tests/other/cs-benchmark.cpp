@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,8 +24,9 @@
  */
 
 #include "table/cs.hpp"
-
 #include "tests/test-common.hpp"
+
+#include <iostream>
 
 #ifdef HAVE_VALGRIND
 #include <valgrind/callgrind.h>
@@ -40,8 +41,7 @@ protected:
   CsBenchmarkFixture()
   {
 #ifdef _DEBUG
-    BOOST_TEST_MESSAGE("Benchmark compiled in debug mode is unreliable, "
-                       "please compile in release mode.");
+    std::cerr << "Benchmark compiled in debug mode is unreliable, please compile in release mode.\n";
 #endif
 
     cs.setLimit(CS_CAPACITY);
@@ -123,10 +123,8 @@ protected:
   static constexpr size_t CS_CAPACITY = 50000;
 };
 
-BOOST_FIXTURE_TEST_SUITE(TableCsBenchmark, CsBenchmarkFixture)
-
 // find miss, then insert
-BOOST_AUTO_TEST_CASE(FindMissInsert)
+BOOST_FIXTURE_TEST_CASE(FindMissInsert, CsBenchmarkFixture)
 {
   constexpr size_t N_WORKLOAD = CS_CAPACITY * 2;
   constexpr size_t REPEAT = 4;
@@ -145,11 +143,12 @@ BOOST_AUTO_TEST_CASE(FindMissInsert)
       }
     }
   });
-  BOOST_TEST_MESSAGE("find(miss)-insert " << (N_WORKLOAD * REPEAT) << ": " << d);
+
+  std::cout << "find(miss)-insert " << (N_WORKLOAD * REPEAT) << ": " << d << std::endl;
 }
 
 // insert, then find hit
-BOOST_AUTO_TEST_CASE(InsertFindHit)
+BOOST_FIXTURE_TEST_CASE(InsertFindHit, CsBenchmarkFixture)
 {
   constexpr size_t N_WORKLOAD = CS_CAPACITY * 2;
   constexpr size_t REPEAT = 4;
@@ -168,11 +167,12 @@ BOOST_AUTO_TEST_CASE(InsertFindHit)
       }
     }
   });
-  BOOST_TEST_MESSAGE("insert-find(hit) " << (N_WORKLOAD * REPEAT) << ": " << d);
+
+  std::cout << "insert-find(hit) " << (N_WORKLOAD * REPEAT) << ": " << d << std::endl;
 }
 
 // find(leftmost) hit
-BOOST_AUTO_TEST_CASE(Leftmost)
+BOOST_FIXTURE_TEST_CASE(Leftmost, CsBenchmarkFixture)
 {
   constexpr size_t N_CHILDREN = 10;
   constexpr size_t N_INTERESTS = CS_CAPACITY / N_CHILDREN;
@@ -197,11 +197,12 @@ BOOST_AUTO_TEST_CASE(Leftmost)
       }
     }
   });
-  BOOST_TEST_MESSAGE("find(leftmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d);
+
+  std::cout << "find(leftmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
 }
 
 // find(rightmost) hit
-BOOST_AUTO_TEST_CASE(Rightmost)
+BOOST_FIXTURE_TEST_CASE(Rightmost, CsBenchmarkFixture)
 {
   constexpr size_t N_CHILDREN = 10;
   constexpr size_t N_INTERESTS = CS_CAPACITY / N_CHILDREN;
@@ -226,10 +227,9 @@ BOOST_AUTO_TEST_CASE(Rightmost)
       }
     }
   });
-  BOOST_TEST_MESSAGE("find(rightmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d);
-}
 
-BOOST_AUTO_TEST_SUITE_END()
+  std::cout << "find(rightmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
+}
 
 } // namespace tests
 } // namespace nfd
