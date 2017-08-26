@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -24,10 +24,11 @@
  */
 
 #include "mgmt/command-authenticator.hpp"
-#include <boost/filesystem.hpp>
 
 #include "tests/test-common.hpp"
 #include "tests/manager-common-fixture.hpp"
+
+#include <boost/filesystem.hpp>
 
 namespace nfd {
 namespace tests {
@@ -297,7 +298,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_MissingKeyLocator)
 {
   BOOST_CHECK_EQUAL(authorize1(
     [] (Interest& interest) {
-      ndn::SignatureInfo sigInfo;
+      ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
       setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO,
                        sigInfo.wireEncode().begin(), sigInfo.wireEncode().end());
     }
@@ -311,7 +312,7 @@ BOOST_AUTO_TEST_CASE(BadKeyLocator_BadKeyLocatorType)
     [] (Interest& interest) {
       ndn::KeyLocator kl;
       kl.setKeyDigest(ndn::encoding::makeBinaryBlock(tlv::KeyDigest, "\xDD\xDD\xDD\xDD\xDD\xDD\xDD\xDD", 8));
-      ndn::SignatureInfo sigInfo;
+      ndn::SignatureInfo sigInfo(tlv::SignatureSha256WithRsa);
       sigInfo.setKeyLocator(kl);
       setNameComponent(interest, ndn::signed_interest::POS_SIG_INFO,
                        sigInfo.wireEncode().begin(), sigInfo.wireEncode().end());
