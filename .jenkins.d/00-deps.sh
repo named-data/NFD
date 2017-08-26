@@ -7,7 +7,7 @@ source "$JDIR"/util.sh
 set -x
 
 if has OSX $NODE_LABELS; then
-    FORMULAE=(boost pkg-config cryptopp openssl)
+    FORMULAE=(boost openssl pkg-config)
     brew update
     if [[ -n $TRAVIS ]]; then
         # travis images come with a large number of brew packages
@@ -25,8 +25,7 @@ fi
 if has Ubuntu $NODE_LABELS; then
     sudo apt-get -qq update
     sudo apt-get -qy install build-essential pkg-config libboost-all-dev \
-                             libcrypto++-dev libsqlite3-dev libssl-dev \
-                             libpcap-dev
+                             libsqlite3-dev libssl-dev libpcap-dev
 
     if [[ $JOB_NAME == *"code-coverage" ]]; then
         sudo apt-get -qy install lcov libgd-perl python-setuptools

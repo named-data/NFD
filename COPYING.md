@@ -8,19 +8,16 @@ NFD relies on third-party software and libraries, licensed under the following l
 - Boost libraries licensed under conditions of
   [Boost Software License 1.0](http://www.boost.org/users/license.html)
 
-- CryptoPP library is licensed under conditions of
-  [Boost Software License 1.0](http://www.boost.org/users/license.html)
-
 - SQLite is in [public domain](http://www.sqlite.org/copyright.html)
 
 - WebSocket++ library licensed under conditions of
-  [BSD license](https://github.com/zaphoyd/websocketpp/blob/378437aecdcb1dfe62096ffd5d944bf1f640ccc3/COPYING)
+  [BSD license](https://github.com/zaphoyd/websocketpp/blob/0.7.0/COPYING)
 
 - Libpcap library licensed under conditions of
   [a 3-clause BSD license](http://www.tcpdump.org/license.html).
 
 - waf build system is licensed under conditions of
-  [BSD license](https://github.com/named-data/ndn-cxx/blob/master/waf)
+  [BSD license](https://github.com/named-data/NFD/blob/master/waf)
 
 The GPL license is provided below in this file.  For more information about these licenses, see
 http://www.gnu.org/licenses/
