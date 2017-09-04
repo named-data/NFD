@@ -24,12 +24,13 @@
  */
 
 #include "fw/forwarder.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
-#include "dummy-strategy.hpp"
-#include "choose-strategy.hpp"
-#include <ndn-cxx/lp/tags.hpp>
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
+#include "choose-strategy.hpp"
+#include "dummy-strategy.hpp"
+
+#include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
 namespace tests {
@@ -55,6 +56,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
   face1->receiveInterest(*interestAB);
   this->advanceClocks(time::milliseconds(100), time::seconds(1));
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
@@ -63,6 +66,8 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(*face2->sentInterests[0].getTag<lp::IncomingFaceIdTag>(), face1->getId());
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 1);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 1);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
@@ -101,10 +106,14 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   Cs& cs = forwarder.getCs();
   cs.insert(*dataA);
 
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
   face1->receiveInterest(*interestA);
   this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
   // Interest matching ContentStore should not be forwarded
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 0);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 1);
+  BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
 
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
   // IncomingFaceId field should be reset to represent CS
