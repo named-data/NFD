@@ -40,6 +40,22 @@ public:
   NameTree(size_t nBuckets = 1024);
 
 public: // information
+  /** \brief Maximum depth of the name tree.
+   *
+   *  Calling NameTree::lookup with a name with many components would cause the creation of many
+   *  NameTree entries, which could take very long time. This constant limits the maximum number of
+   *  name components in the name of a NameTree entry. Thus, it limits the number of NameTree
+   *  entries created from a long name, bounding the processing complexity.
+   *
+   *  This constant is currently advisory. It is enforced in NameTree::lookup only if
+   *  \p enforceMaxDepth is set to true. This will become mandatory later.
+   */
+  static size_t
+  getMaxDepth()
+  {
+    return 32;
+  }
+
   /** \return number of name tree entries
    */
   size_t
@@ -69,12 +85,13 @@ public: // information
 public: // mutation
   /** \brief find or insert an entry with specified name
    *  \param name a name prefix
+   *  \param enforceMaxDepth if true, use \p name.getPrefix(getMaxDepth()) in place of \p name
    *  \return an entry with \p name
    *  \post an entry with \p name and all ancestors are created
    *  \note Existing iterators are unaffected.
    */
   Entry&
-  lookup(const Name& name);
+  lookup(const Name& name, bool enforceMaxDepth = false);
 
   /** \brief equivalent to .lookup(fibEntry.getPrefix())
    *  \param fibEntry a FIB entry attached to this name tree, or Fib::s_emptyEntry
@@ -190,7 +207,7 @@ public: // matching
                  const EntrySelector& entrySelector = AnyEntry()) const;
 
 public: // enumeration
-  typedef Iterator const_iterator;
+  using const_iterator = Iterator;
 
   /** \brief enumerate all entries
    *  \return a range where every entry matches \p entrySelector

@@ -41,15 +41,16 @@ NameTree::NameTree(size_t nBuckets)
 }
 
 Entry&
-NameTree::lookup(const Name& name)
+NameTree::lookup(const Name& name, bool enforceMaxDepth)
 {
   NFD_LOG_TRACE("lookup " << name);
+  size_t depth = enforceMaxDepth ? getMaxDepth() : name.size();
 
-  HashSequence hashes = computeHashes(name);
+  HashSequence hashes = computeHashes(name, depth);
   const Node* node = nullptr;
   Entry* parent = nullptr;
 
-  for (size_t prefixLen = 0; prefixLen <= name.size(); ++prefixLen) {
+  for (size_t prefixLen = 0; prefixLen <= depth; ++prefixLen) {
     bool isNew = false;
     std::tie(node, isNew) = m_ht.insert(name, prefixLen, hashes);
 

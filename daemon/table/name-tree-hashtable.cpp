@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,7 +54,7 @@ public:
 
 /** \brief a type with compute static method to compute hash value from a raw buffer
  */
-typedef std::conditional<(sizeof(HashValue) > 4), Hash64, Hash32>::type HashFunc;
+using HashFunc = std::conditional<(sizeof(HashValue) > 4), Hash64, Hash32>::type;
 
 HashValue
 computeHash(const Name& name, ssize_t prefixLen)
@@ -70,17 +70,19 @@ computeHash(const Name& name, ssize_t prefixLen)
 }
 
 HashSequence
-computeHashes(const Name& name)
+computeHashes(const Name& name, ssize_t prefixLen)
 {
   name.wireEncode(); // ensure wire buffer exists
 
+  size_t last = prefixLen < 0 ? name.size() : std::min(static_cast<size_t>(prefixLen), name.size());
   HashSequence seq;
-  seq.reserve(name.size() + 1);
+  seq.reserve(last + 1);
 
   HashValue h = 0;
   seq.push_back(h);
 
-  for (const name::Component& comp : name) {
+  for (size_t i = 0; i < last; ++i) {
+    const name::Component& comp = name[i];
     h ^= HashFunc::compute(comp.wire(), comp.size());
     seq.push_back(h);
   }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,12 +35,12 @@ class Entry;
 
 /** \brief a single hash value
  */
-typedef size_t HashValue;
+using HashValue = size_t;
 
 /** \brief a sequence of hash values
  *  \sa computeHashes
  */
-typedef std::vector<HashValue> HashSequence;
+using HashSequence = std::vector<HashValue>;
 
 /** \brief computes a single hash value
  *  \param name base name
@@ -51,10 +51,13 @@ HashValue
 computeHash(const Name& name, ssize_t prefixLen = -1);
 
 /** \brief computes hash values for each prefix of name
+ *  \param name base name
+ *  \param prefixLen if non-negative, compute up to the first \p prefixLen name components;
+ *                   if negative, compute all hash values
  *  \return a hash sequence, where the i-th hash value equals computeHash(name, i)
  */
 HashSequence
-computeHashes(const Name& name);
+computeHashes(const Name& name, ssize_t prefixLen = -1);
 
 /** \brief a hashtable node
  *

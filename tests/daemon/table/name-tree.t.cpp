@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,6 +47,9 @@ BOOST_AUTO_TEST_CASE(ComputeHash)
   prefix.wireEncode();
   HashSequence hashes = computeHashes(prefix);
   BOOST_CHECK_EQUAL(hashes.size(), prefix.size() + 1);
+
+  hashes = computeHashes(prefix, 2);
+  BOOST_CHECK_EQUAL(hashes.size(), 3);
 }
 
 BOOST_AUTO_TEST_SUITE(Hashtable)
@@ -298,7 +301,7 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   // lookup
 
-  Name nameABC("ndn:/a/b/c");
+  Name nameABC("/a/b/c");
   Entry& npeABC = nt.lookup(nameABC);
   BOOST_CHECK_EQUAL(nt.size(), 4);
 
@@ -412,6 +415,20 @@ BOOST_AUTO_TEST_CASE(Basic)
   if (temp != nullptr)
     nt.eraseIfEmpty(temp);
   BOOST_CHECK_EQUAL(nt.size(), 8);
+}
+
+BOOST_AUTO_TEST_CASE(LongName)
+{
+  Name name;
+  for (int i = 0; i < 2000; ++i) {
+    name.append("X");
+  }
+
+  NameTree nt;
+
+  Entry& entry1 = nt.lookup(name, true);
+  BOOST_CHECK_EQUAL(entry1.getName().size(), NameTree::getMaxDepth());
+  BOOST_CHECK_EQUAL(nt.size(), NameTree::getMaxDepth() + 1);
 }
 
 /** \brief verify a NameTree enumeration contains expected entries
