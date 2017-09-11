@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -30,23 +30,6 @@ namespace nfd {
 namespace fw {
 
 NFD_LOG_INIT("ProcessNackTraits");
-
-/** \brief compare NackReason for severity
- *
- *  lp::NackReason::NONE is treated as most severe
- */
-static bool
-isLessSevere(lp::NackReason x, lp::NackReason y)
-{
-  if (x == lp::NackReason::NONE) {
-    return false;
-  }
-  if (y == lp::NackReason::NONE) {
-    return true;
-  }
-
-  return static_cast<int>(x) < static_cast<int>(y);
-}
 
 void
 ProcessNackTraitsBase::processNack(const Face& inFace, const lp::Nack& nack,
