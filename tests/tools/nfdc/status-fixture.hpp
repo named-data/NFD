@@ -81,8 +81,9 @@ protected: // status fetching
   fetchStatus()
   {
     nFetchStatusSuccess = 0;
-    module.fetchStatus(controller, [this] { ++nFetchStatusSuccess; },
-                       [this] (uint32_t code, const std::string& reason) {
+    module.fetchStatus(controller,
+                       [this] { ++nFetchStatusSuccess; },
+                       [] (uint32_t code, const std::string& reason) {
                          BOOST_FAIL("fetchStatus failure " << code << " " << reason);
                        },
                        CommandOptions());

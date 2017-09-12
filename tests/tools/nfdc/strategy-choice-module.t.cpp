@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(Normal)
 
 BOOST_AUTO_TEST_CASE(CannotUnsetDefault)
 {
-  this->processInterest = [this] (const Interest& interest) {
+  this->processInterest = [] (const Interest&) {
     BOOST_ERROR("unexpected command");
   };
 

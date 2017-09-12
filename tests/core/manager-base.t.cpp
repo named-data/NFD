@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -66,10 +66,10 @@ public:
   ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) override
   {
-    return [this] (const Name& prefix, const Interest& interest,
-                   const ndn::mgmt::ControlParameters* params,
-                   ndn::mgmt::AcceptContinuation accept,
-                   ndn::mgmt::RejectContinuation reject) {
+    return [] (const Name& prefix, const Interest& interest,
+               const ndn::mgmt::ControlParameters* params,
+               ndn::mgmt::AcceptContinuation accept,
+               ndn::mgmt::RejectContinuation reject) {
       accept("requester");
     };
   }

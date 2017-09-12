@@ -124,7 +124,7 @@ public:
 
     bool hasCallbackFired = false;
     signal::ScopedConnection connection = this->node1.face.onSendData.connect(
-      [this, req, &hasCallbackFired, &checkResp] (const Data& response) {
+      [req, &hasCallbackFired, &checkResp] (const Data& response) {
         if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }

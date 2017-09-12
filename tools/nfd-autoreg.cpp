@@ -213,7 +213,7 @@ public:
                                    faceStatus.getFacePersistency());
         }
       },
-      [this] (uint32_t code, const std::string& reason) {});
+      [] (uint32_t code, const std::string& reason) {});
   }
 
   int

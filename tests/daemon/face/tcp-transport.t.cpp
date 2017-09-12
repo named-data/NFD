@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(ChangePersistencyFromPermanentWhenDown)
 
   bool didStateChange = false;
   transport->afterStateChange.connectSingleShot(
-    [this, &didStateChange] (TransportState oldState, TransportState newState) {
+    [&didStateChange] (TransportState oldState, TransportState newState) {
       didStateChange = true;
       BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
       BOOST_CHECK_EQUAL(newState, TransportState::FAILED);

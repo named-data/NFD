@@ -353,7 +353,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
 
     bool hasCallbackFired = false;
     this->node1.face.onSendData.connect(
-      [this, req, &hasCallbackFired, foundFace] (const Data& response) {
+      [req, foundFace, &hasCallbackFired] (const Data& response) {
         if (!req.getName().isPrefixOf(response.getName())) {
           return;
         }
