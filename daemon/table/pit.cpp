@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   // ensure NameTree entry exists
   name_tree::Entry* nte = nullptr;
   if (allowInsert) {
-    nte = &m_nameTree.lookup(nteName);
+    nte = &m_nameTree.lookup(nteName, true);
   }
   else {
     nte = m_nameTree.findExactMatch(nteName);
@@ -61,7 +61,7 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
   }
 
   // check if PIT entry already exists
-  size_t nteNameLen = nteName.size();
+  size_t nteNameLen = nte->getName().size();
   const std::vector<shared_ptr<Entry>>& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
     [&interest, nteNameLen] (const shared_ptr<Entry>& entry) {

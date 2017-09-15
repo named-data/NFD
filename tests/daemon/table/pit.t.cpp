@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -306,6 +306,44 @@ BOOST_AUTO_TEST_CASE(MatchFullName) // Bug 3363
   BOOST_REQUIRE_EQUAL(std::distance(matches.begin(), matches.end()), 1);
   shared_ptr<Entry> found = *matches.begin();
   BOOST_CHECK_EQUAL(found->getName(), fullName);
+}
+
+BOOST_AUTO_TEST_CASE(InsertMatchLongName)
+{
+  NameTree nameTree(16);
+  Pit pit(nameTree);
+
+  Name n1;
+  while (n1.size() < NameTree::getMaxDepth()) {
+    n1.append("A");
+  }
+  Name n2 = n1;
+  while (n2.size() < NameTree::getMaxDepth() * 2) {
+    n2.append("B");
+  }
+  Name n3 = n1;
+  while (n3.size() < NameTree::getMaxDepth() * 2) {
+    n3.append("C");
+  }
+  auto d2 = makeData(n2);
+  auto i2 = makeInterest(n2);
+  auto d3 = makeData(n3);
+  auto i3 = makeInterest(d3->getFullName());
+
+  shared_ptr<Entry> entry2 = pit.insert(*i2).first;
+  shared_ptr<Entry> entry3 = pit.insert(*i3).first;
+
+  BOOST_CHECK_EQUAL(pit.size(), 2);
+  BOOST_CHECK_EQUAL(nameTree.size(), 1 + NameTree::getMaxDepth()); // root node + max depth
+  BOOST_CHECK(entry2->getInterest().matchesInterest(*i2));
+  BOOST_CHECK(entry3->getInterest().matchesInterest(*i3));
+
+  DataMatchResult matches2 = pit.findAllDataMatches(*d2);
+  BOOST_REQUIRE_EQUAL(std::distance(matches2.begin(), matches2.end()), 1);
+  BOOST_CHECK(*matches2.begin() == entry2);
+  DataMatchResult matches3 = pit.findAllDataMatches(*d3);
+  BOOST_REQUIRE_EQUAL(std::distance(matches3.begin(), matches3.end()), 1);
+  BOOST_CHECK(*matches3.begin() == entry3);
 }
 
 BOOST_AUTO_TEST_CASE(Iterator)

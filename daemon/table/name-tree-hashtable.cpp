@@ -57,12 +57,12 @@ public:
 using HashFunc = std::conditional<(sizeof(HashValue) > 4), Hash64, Hash32>::type;
 
 HashValue
-computeHash(const Name& name, ssize_t prefixLen)
+computeHash(const Name& name, size_t prefixLen)
 {
   name.wireEncode(); // ensure wire buffer exists
 
   HashValue h = 0;
-  for (size_t i = 0, last = prefixLen < 0 ? name.size() : prefixLen; i < last; ++i) {
+  for (size_t i = 0, last = std::min(prefixLen, name.size()); i < last; ++i) {
     const name::Component& comp = name[i];
     h ^= HashFunc::compute(comp.wire(), comp.size());
   }
@@ -70,11 +70,11 @@ computeHash(const Name& name, ssize_t prefixLen)
 }
 
 HashSequence
-computeHashes(const Name& name, ssize_t prefixLen)
+computeHashes(const Name& name, size_t prefixLen)
 {
   name.wireEncode(); // ensure wire buffer exists
 
-  size_t last = prefixLen < 0 ? name.size() : std::min(static_cast<size_t>(prefixLen), name.size());
+  size_t last = std::min(prefixLen, name.size());
   HashSequence seq;
   seq.reserve(last + 1);
 

@@ -136,10 +136,10 @@ public: // mutation
 
 public: // matching
   /** \brief exact match lookup
-   *  \return entry with \p name, or nullptr if it does not exist
+   *  \return entry with \p name.getPrefix(prefixLen), or nullptr if it does not exist
    */
   Entry*
-  findExactMatch(const Name& name) const;
+  findExactMatch(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max()) const;
 
   /** \brief longest prefix matching
    *  \return entry whose name is a prefix of \p name and passes \p entrySelector,

@@ -42,22 +42,16 @@ using HashValue = size_t;
  */
 using HashSequence = std::vector<HashValue>;
 
-/** \brief computes a single hash value
- *  \param name base name
- *  \param prefixLen if non-negative, compute hash value for name.getPrefix(prefixLen);
- *                   if negative, compute hash value for complete name
+/** \brief computes hash value of \p name.getPrefix(prefixLen)
  */
 HashValue
-computeHash(const Name& name, ssize_t prefixLen = -1);
+computeHash(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max());
 
-/** \brief computes hash values for each prefix of name
- *  \param name base name
- *  \param prefixLen if non-negative, compute up to the first \p prefixLen name components;
- *                   if negative, compute all hash values
+/** \brief computes hash values for each prefix of \p name.getPrefix(prefixLen)
  *  \return a hash sequence, where the i-th hash value equals computeHash(name, i)
  */
 HashSequence
-computeHashes(const Name& name, ssize_t prefixLen = -1);
+computeHashes(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max());
 
 /** \brief a hashtable node
  *

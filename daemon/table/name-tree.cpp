@@ -44,7 +44,7 @@ Entry&
 NameTree::lookup(const Name& name, bool enforceMaxDepth)
 {
   NFD_LOG_TRACE("lookup " << name);
-  size_t depth = enforceMaxDepth ? getMaxDepth() : name.size();
+  size_t depth = enforceMaxDepth ? std::min(name.size(), getMaxDepth()) : name.size();
 
   HashSequence hashes = computeHashes(name, depth);
   const Node* node = nullptr;
@@ -146,9 +146,9 @@ NameTree::eraseIfEmpty(Entry* entry, bool canEraseAncestors)
 }
 
 Entry*
-NameTree::findExactMatch(const Name& name) const
+NameTree::findExactMatch(const Name& name, size_t prefixLen) const
 {
-  const Node* node = m_ht.find(name, name.size());
+  const Node* node = m_ht.find(name, std::min(name.size(), prefixLen));
   return node == nullptr ? nullptr : &node->entry;
 }
 
@@ -186,13 +186,13 @@ NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntrySelector
   const Entry* nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
 
+  // PIT entry Interest name either exceeds depth limit or ends with an implicit digest: go deeper
   if (nte->getName().size() < pitEntry.getName().size()) {
-    // special case: PIT entry whose Interest name ends with an implicit digest
-    // are attached to the name tree entry with one-shorter-prefix.
-    BOOST_ASSERT(pitEntry.getName().at(-1).isImplicitSha256Digest());
-    BOOST_ASSERT(nte->getName() == pitEntry.getName().getPrefix(-1));
-    const Entry* exact = this->findExactMatch(pitEntry.getName());
-    if (exact != nullptr) {
+    for (size_t prefixLen = nte->getName().size() + 1; prefixLen <= pitEntry.getName().size(); ++prefixLen) {
+      const Entry* exact = this->findExactMatch(pitEntry.getName(), prefixLen);
+      if (exact == nullptr) {
+        break;
+      }
       nte = exact;
     }
   }
