@@ -287,13 +287,13 @@ BOOST_AUTO_TEST_CASE(RemoteClose)
 
 BOOST_AUTO_TEST_CASE(SetPingInterval)
 {
-  auto pingInterval = time::milliseconds(300);
+  const time::milliseconds pingInterval(800);
   auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address, pingInterval, time::milliseconds(1000));
 
   BOOST_CHECK_EQUAL(limitedIo.run(2, // clientHandlePing
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                    pingInterval * 3), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_LE(measuredPingInterval, pingInterval * 1.1);
   BOOST_CHECK_GE(measuredPingInterval, pingInterval * 0.9);
 }
