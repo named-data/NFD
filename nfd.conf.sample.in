@@ -302,13 +302,12 @@ rib
   ;
   ;   rule
   ;   {
-  ;     id "NRD Prefix Registration Command Rule"
+  ;     id "RIB Registration Command Rule"
   ;     for interest                         ; rule for Interests (to validate CommandInterests)
   ;     filter
   ;     {
-  ;       type name                          ; condition on interest name (w/o signature)
-  ;       regex ^[<localhop><localhost>]<nfd><rib>[<register><unregister>]<>$ ; prefix before
-  ;                                                                           ; timestamp
+  ;       type name                          ; condition on interest name (w/o SignatureInfo/SignatureValue)
+  ;       regex ^[<localhop><localhost>]<nfd><rib>[<register><unregister>]<><><>$
   ;     }
   ;     checker
   ;     {
@@ -318,7 +317,7 @@ rib
   ;       {
   ;         type name                        ; key locator must be the certificate name of the
   ;                                          ; signing key
-  ;         regex ^[^<KEY>]*<KEY><>*<ksk-.*><ID-CERT>$
+  ;         regex ^<>*<KEY><>$
   ;       }
   ;     }
   ;   }
@@ -329,7 +328,7 @@ rib
   ;     filter
   ;     {
   ;       type name                          ; condition on data name
-  ;       regex ^[^<KEY>]*<KEY><>*<ksk-.*><ID-CERT><>$
+  ;       regex ^<>*<KEY><><><>$
   ;     }
   ;     checker
   ;     {
