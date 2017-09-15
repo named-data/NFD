@@ -101,7 +101,9 @@ matrix:
       dist: trusty
       addons:
         apt:
-          sources: llvm-toolchain-trusty-3.9
+          sources:
+            - llvm-toolchain-trusty-3.9
+            - ubuntu-toolchain-r-test
           packages: clang-3.9
       env:
         - CXX=clang++-3.9
@@ -110,10 +112,24 @@ matrix:
       dist: trusty
       addons:
         apt:
-          sources: llvm-toolchain-trusty-4.0
+          sources:
+            - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test
           packages: clang-4.0
       env:
         - CXX=clang++-4.0
+        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
+        - BUILD_WITH_ASAN=yes
+    - os: linux
+      dist: trusty
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
+          packages: clang-5.0
+      env:
+        - CXX=clang++-5.0
         - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
         - BUILD_WITH_ASAN=yes
 
