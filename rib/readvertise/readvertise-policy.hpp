@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -45,6 +45,9 @@ struct ReadvertiseAction
 class ReadvertisePolicy : noncopyable
 {
 public:
+  virtual
+  ~ReadvertisePolicy() = default;
+
   /** \brief decide whether to readvertise a route, and what prefix to readvertise
    */
   virtual ndn::optional<ReadvertiseAction>

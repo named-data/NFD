@@ -45,6 +45,9 @@ class Procedure : noncopyable
 public:
   Procedure(Face& face, KeyChain& keyChain);
 
+  virtual
+  ~Procedure() = default;
+
   void
   initialize(const Options& options);
 

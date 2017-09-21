@@ -26,10 +26,10 @@
 #ifndef NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP
 #define NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP
 
-#include <ndn-cxx/util/dummy-client-face.hpp>
-
 #include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
+
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tools {
@@ -55,6 +55,9 @@ protected:
       });
     });
   }
+
+  virtual
+  ~MockNfdMgmtFixture() = default;
 
 protected: // ControlCommand
   /** \brief check the Interest is a command with specified prefix

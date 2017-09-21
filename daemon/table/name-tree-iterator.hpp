@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -139,6 +139,9 @@ public:
   explicit
   EnumerationImpl(const NameTree& nt);
 
+  virtual
+  ~EnumerationImpl() = default;
+
   virtual void
   advance(Iterator& i) = 0;
 
@@ -154,7 +157,7 @@ class FullEnumerationImpl : public EnumerationImpl
 public:
   FullEnumerationImpl(const NameTree& nt, const EntrySelector& pred);
 
-  virtual void
+  void
   advance(Iterator& i) override;
 
 private:
@@ -171,7 +174,7 @@ class PartialEnumerationImpl : public EnumerationImpl
 public:
   PartialEnumerationImpl(const NameTree& nt, const EntrySubTreeSelector& pred);
 
-  virtual void
+  void
   advance(Iterator& i) override;
 
 private:
@@ -188,7 +191,7 @@ public:
   PrefixMatchImpl(const NameTree& nt, const EntrySelector& pred);
 
 private:
-  virtual void
+  void
   advance(Iterator& i) override;
 
 private:
