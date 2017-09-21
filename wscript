@@ -150,6 +150,8 @@ main(int, char**)
         conf.env['INCLUDES_CUSTOM_LOGGER'] = [conf.options.with_custom_logger]
         conf.env['HAVE_CUSTOM_LOGGER'] = 1
 
+    conf.check_compiler_flags()
+
     conf.load('coverage')
 
     conf.load('sanitizers')

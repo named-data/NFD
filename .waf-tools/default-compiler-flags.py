@@ -17,15 +17,15 @@ def configure(conf):
         if ccver < (4, 8, 2):
             errmsg = ('The version of gcc you are using is too old.\n'
                       'The minimum supported gcc version is 4.8.2.')
-        flags = GccFlags()
+        conf.flags = GccFlags()
     elif cxx == 'clang':
         if ccver < (3, 4, 0):
             errmsg = ('The version of clang you are using is too old.\n'
                       'The minimum supported clang version is 3.4.0.')
-        flags = ClangFlags()
+        conf.flags = ClangFlags()
     else:
         warnmsg = 'Note: %s compiler is unsupported' % cxx
-        flags = CompilerFlags()
+        conf.flags = CompilerFlags()
 
     if errmsg:
         conf.end_msg('.'.join(conf.env['CC_VERSION']), color='RED')
@@ -36,29 +36,31 @@ def configure(conf):
     else:
         conf.end_msg('.'.join(conf.env['CC_VERSION']))
 
-    areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
+    conf.areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
 
     # General flags are always applied (e.g., selecting C++11 mode)
-    generalFlags = flags.getGeneralFlags(conf)
+    generalFlags = conf.flags.getGeneralFlags(conf)
     conf.add_supported_cxxflags(generalFlags['CXXFLAGS'])
     conf.add_supported_linkflags(generalFlags['LINKFLAGS'])
     conf.env.DEFINES += generalFlags['DEFINES']
 
+@Configure.conf
+def check_compiler_flags(conf):
     # Debug or optimized CXXFLAGS and LINKFLAGS are applied only if the
     # corresponding environment variables are not set.
     # DEFINES are always applied.
     if conf.options.debug:
-        extraFlags = flags.getDebugFlags(conf)
-        if areCustomCxxflagsPresent:
+        extraFlags = conf.flags.getDebugFlags(conf)
+        if conf.areCustomCxxflagsPresent:
             missingFlags = [x for x in extraFlags['CXXFLAGS'] if x not in conf.env.CXXFLAGS]
             if len(missingFlags) > 0:
                 Logs.warn("Selected debug mode, but CXXFLAGS is set to a custom value '%s'"
                           % " ".join(conf.env.CXXFLAGS))
                 Logs.warn("Default flags '%s' are not activated" % " ".join(missingFlags))
     else:
-        extraFlags = flags.getOptimizedFlags(conf)
+        extraFlags = conf.flags.getOptimizedFlags(conf)
 
-    if not areCustomCxxflagsPresent:
+    if not conf.areCustomCxxflagsPresent:
         conf.add_supported_cxxflags(extraFlags['CXXFLAGS'])
         conf.add_supported_linkflags(extraFlags['LINKFLAGS'])
 
@@ -75,9 +77,10 @@ def add_supported_cxxflags(self, cxxflags):
     self.start_msg('Checking supported CXXFLAGS')
 
     supportedFlags = []
-    for flag in cxxflags:
-        if self.check_cxx(cxxflags=['-Werror', flag], mandatory=False):
-            supportedFlags += [flag]
+    for flags in cxxflags:
+        flags = Utils.to_list(flags)
+        if self.check_cxx(cxxflags=['-Werror'] + flags, mandatory=False):
+            supportedFlags += flags
 
     self.end_msg(' '.join(supportedFlags))
     self.env.prepend_value('CXXFLAGS', supportedFlags)
@@ -93,9 +96,10 @@ def add_supported_linkflags(self, linkflags):
     self.start_msg('Checking supported LINKFLAGS')
 
     supportedFlags = []
-    for flag in linkflags:
-        if self.check_cxx(linkflags=['-Werror', flag], mandatory=False):
-            supportedFlags += [flag]
+    for flags in linkflags:
+        flags = Utils.to_list(flags)
+        if self.check_cxx(linkflags=['-Werror'] + flags, mandatory=False):
+            supportedFlags += flags
 
     self.end_msg(' '.join(supportedFlags))
     self.env.prepend_value('LINKFLAGS', supportedFlags)
@@ -171,9 +175,10 @@ class GccFlags(GccBasicFlags):
 class ClangFlags(GccBasicFlags):
     def getGeneralFlags(self, conf):
         flags = super(ClangFlags, self).getGeneralFlags(conf)
-        if Utils.unversioned_sys_platform() == 'darwin':
-            flags['CXXFLAGS'] += ['-stdlib=libc++']
-            flags['LINKFLAGS'] += ['-stdlib=libc++']
+        version = tuple(int(i) for i in conf.env['CC_VERSION'])
+        if Utils.unversioned_sys_platform() == 'darwin' and version >= (9, 0, 0): # Bug #4296
+            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
+                                  ['-isystem', '/opt/local/include']] # for MacPorts
         return flags
 
     def getDebugFlags(self, conf):
