@@ -120,9 +120,11 @@ private: // NotificationStream
   void
   connectFaceStateChangeSignal(const Face& face);
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+private:
   FaceSystem& m_faceSystem;
   FaceTable& m_faceTable;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
 
 private:

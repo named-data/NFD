@@ -313,7 +313,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
       FaceUri uri;
       if (uri.parse(FaceType::getParameters().getUri())) {
         // ensure face not created
-        auto& faceTable = this->node1.manager.m_faceTable;
+        const auto& faceTable = this->node1.faceTable;
         BOOST_CHECK(std::none_of(faceTable.begin(), faceTable.end(), [uri] (Face& face) {
           return face.getRemoteUri() == uri;
         }));

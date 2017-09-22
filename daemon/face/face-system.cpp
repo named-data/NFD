@@ -51,11 +51,6 @@ FaceSystem::makePFCtorParams()
   return {addFace, m_netmon};
 }
 
-FaceSystem::FaceSystem(FaceTable& faceTable)
-  : FaceSystem(faceTable, make_shared<ndn::net::NetworkMonitor>(getGlobalIoService()))
-{
-}
-
 FaceSystem::~FaceSystem() = default;
 
 std::set<const ProtocolFactory*>

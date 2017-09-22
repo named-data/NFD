@@ -44,7 +44,7 @@ class FaceManagerFixture : public NfdManagerCommonFixture
 public:
   FaceManagerFixture()
     : m_faceTable(m_forwarder.getFaceTable())
-    , m_faceSystem(m_faceTable)
+    , m_faceSystem(m_faceTable, make_shared<ndn::net::NetworkMonitorStub>(0))
     , m_manager(m_faceSystem, m_dispatcher, *m_authenticator)
   {
     setTopPrefix();
@@ -295,9 +295,9 @@ private:
 
 BOOST_AUTO_TEST_CASE(ChannelDataset)
 {
-  m_manager.m_faceSystem.m_factories["test"] =
+  m_faceSystem.m_factories["test"] =
     make_unique<TestProtocolFactory>(m_faceSystem.makePFCtorParams());
-  auto factory = static_cast<TestProtocolFactory*>(m_manager.m_faceSystem.getFactoryById("test"));
+  auto factory = static_cast<TestProtocolFactory*>(m_faceSystem.getFactoryById("test"));
 
   const size_t nEntries = 404;
   std::map<std::string, shared_ptr<TestChannel>> addedChannels;

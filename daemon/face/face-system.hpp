@@ -52,10 +52,6 @@ class FaceSystem : noncopyable
 public:
   FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon);
 
-  DEPRECATED(
-  explicit
-  FaceSystem(FaceTable& faceTable));
-
   ~FaceSystem();
 
   /** \return ProtocolFactory objects owned by the FaceSystem

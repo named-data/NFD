@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -25,6 +25,8 @@
 
 #include "face-manager-command-fixture.hpp"
 
+#include <ndn-cxx/net/network-monitor-stub.hpp>
+
 namespace nfd {
 namespace tests {
 
@@ -32,7 +34,7 @@ FaceManagerCommandNode::FaceManagerCommandNode(ndn::KeyChain& keyChain, uint16_t
   : face(getGlobalIoService(), keyChain, {true, true})
   , dispatcher(face, keyChain, ndn::security::SigningInfo())
   , authenticator(CommandAuthenticator::create())
-  , faceSystem(faceTable)
+  , faceSystem(faceTable, make_shared<ndn::net::NetworkMonitorStub>(0))
   , manager(faceSystem, dispatcher, *authenticator)
 {
   dispatcher.addTopPrefix("/localhost/nfd");
