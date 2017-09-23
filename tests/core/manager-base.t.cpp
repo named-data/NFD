@@ -57,11 +57,7 @@ public:
 class ManagerTester : public ManagerBase
 {
 public:
-  ManagerTester(Dispatcher& dispatcher,
-                const std::string& module)
-    : ManagerBase(dispatcher, module)
-  {
-  }
+  using ManagerBase::ManagerBase;
 
   ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) override
@@ -127,7 +123,8 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
   auto post = m_manager.registerNotificationStream("test-notification");
   setTopPrefix("/localhost/nfd");
 
-  post(Block("\x82\x01\x02", 3));
+  const uint8_t buf[] = {0x82, 0x01, 0x02};
+  post(Block(buf, sizeof(buf)));
   advanceClocks(time::milliseconds(1));
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
