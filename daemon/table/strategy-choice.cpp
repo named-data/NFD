@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -69,6 +69,10 @@ StrategyChoice::setDefaultStrategy(const Name& strategyName)
 StrategyChoice::InsertResult
 StrategyChoice::insert(const Name& prefix, const Name& strategyName)
 {
+  if (prefix.size() > NameTree::getMaxDepth()) {
+    return InsertResult::DEPTH_EXCEEDED;
+  }
+
   unique_ptr<Strategy> strategy;
   try {
     strategy = Strategy::create(strategyName, m_forwarder);
@@ -83,7 +87,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     return InsertResult::NOT_REGISTERED;
   }
 
-  name_tree::Entry& nte = m_nameTree.lookup(prefix);
+  name_tree::Entry& nte = m_nameTree.lookup(prefix, true);
   Entry* entry = nte.getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {
@@ -125,6 +129,9 @@ operator<<(std::ostream& os, const StrategyChoice::InsertResult& res)
       return os << "Strategy not registered";
     case StrategyChoice::InsertResult::EXCEPTION:
       return os << "Error instantiating strategy: " << res.m_exceptionMessage;
+    case StrategyChoice::InsertResult::DEPTH_EXCEEDED:
+      return os << "Prefix has too many components (limit is "
+                 << to_string(NameTree::getMaxDepth()) << ")";
   }
   return os;
 }

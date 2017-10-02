@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -142,6 +142,21 @@ BOOST_AUTO_TEST_CASE(Parameters)
   // parameter without version is disallowed
   Name oneParamUnversioned = strategyNameP.getPrefix(-1).append("param");
   BOOST_CHECK(!sc.insert("/D", oneParamUnversioned));
+}
+
+BOOST_AUTO_TEST_CASE(InsertLongName)
+{
+  Name n1;
+  while (n1.size() < NameTree::getMaxDepth()) {
+    n1.append("A");
+  }
+  Name n2 = n1;
+  while (n2.size() < NameTree::getMaxDepth() * 2) {
+    n2.append("B");
+  }
+
+  BOOST_CHECK(sc.insert(n1, strategyNameP));
+  BOOST_CHECK(!sc.insert(n2, strategyNameP));
 }
 
 BOOST_AUTO_TEST_CASE(Get)
