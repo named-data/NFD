@@ -28,13 +28,23 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
+#include <ndn-cxx/net/address-converter.hpp>
+
 namespace nfd {
 namespace face {
 namespace tests {
 
-namespace ip = boost::asio::ip;
-
-using WebSocketFactoryFixture = FaceSystemFactoryFixture<WebSocketFactory>;
+class WebSocketFactoryFixture : public FaceSystemFactoryFixture<WebSocketFactory>
+{
+protected:
+  shared_ptr<WebSocketChannel>
+  createChannel(const std::string& localIp, const std::string& localPort)
+  {
+    websocket::Endpoint endpoint(ndn::ip::addressFromString(localIp),
+                                 boost::lexical_cast<uint16_t>(localPort));
+    return factory.createChannel(endpoint);
+  }
+};
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestWebSocketFactory, WebSocketFactoryFixture)
@@ -175,9 +185,9 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
   std::set<std::string> expected;
-  expected.insert(factory.createChannel("127.0.0.1", "20070")->getUri().toString());
-  expected.insert(factory.createChannel("127.0.0.1", "20071")->getUri().toString());
-  expected.insert(factory.createChannel("::1", "20071")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20070")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20071")->getUri().toString());
+  expected.insert(createChannel("::1", "20071")->getUri().toString());
   checkChannelListEqual(factory, expected);
 }
 

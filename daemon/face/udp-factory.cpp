@@ -284,15 +284,6 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
   return channel;
 }
 
-shared_ptr<UdpChannel>
-UdpFactory::createChannel(const std::string& localIp, const std::string& localPort,
-                          time::nanoseconds idleTimeout)
-{
-  udp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
-                         boost::lexical_cast<uint16_t>(localPort));
-  return createChannel(endpoint, idleTimeout);
-}
-
 std::vector<shared_ptr<const Channel>>
 UdpFactory::getChannels() const
 {

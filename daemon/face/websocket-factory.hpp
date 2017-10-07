@@ -71,27 +71,8 @@ public:
   shared_ptr<WebSocketChannel>
   createChannel(const websocket::Endpoint& localEndpoint);
 
-  /**
-   * \brief Create WebSocket-based channel using specified IP address and port number
-   *
-   * This method is just a helper that converts a string representation of localIp and port to
-   * websocket::Endpoint and calls the other createChannel overload.
-   */
-  shared_ptr<WebSocketChannel>
-  createChannel(const std::string& localIp, const std::string& localPort);
-
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
-
-private:
-  /**
-   * \brief Look up WebSocketChannel using specified local endpoint
-   *
-   * \returns shared pointer to the existing WebSocketChannel object
-   *          or empty shared pointer when such channel does not exist
-   */
-  shared_ptr<WebSocketChannel>
-  findChannel(const websocket::Endpoint& endpoint) const;
 
 private:
   std::map<websocket::Endpoint, shared_ptr<WebSocketChannel>> m_channels;

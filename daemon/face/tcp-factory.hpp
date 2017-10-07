@@ -68,30 +68,8 @@ public:
   shared_ptr<TcpChannel>
   createChannel(const tcp::Endpoint& localEndpoint);
 
-  /**
-   * \brief Create TCP-based channel using specified IP address and port number
-   *
-   * This method is just a helper that converts the string representation of \p localIp
-   * and \p localPort to tcp::Endpoint and calls the other createChannel overload.
-   *
-   * \return always a valid pointer to a UdpChannel object, an exception
-   *         is thrown if it cannot be created.
-   */
-  shared_ptr<TcpChannel>
-  createChannel(const std::string& localIp, const std::string& localPort);
-
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
-
-private:
-  /**
-   * \brief Look up TcpChannel using specified local endpoint
-   *
-   * \return shared pointer to the existing TcpChannel object
-   *         or empty shared pointer when such channel does not exist
-   */
-  shared_ptr<TcpChannel>
-  findChannel(const tcp::Endpoint& localEndpoint) const;
 
 private:
   std::map<tcp::Endpoint, shared_ptr<TcpChannel>> m_channels;

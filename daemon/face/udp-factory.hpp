@@ -89,24 +89,6 @@ public:
   createChannel(const udp::Endpoint& localEndpoint,
                 time::nanoseconds idleTimeout);
 
-  /**
-   * \brief Create UDP-based channel using specified IP address and port number
-   *
-   * This method is just a helper that converts the string representation of \p localIp
-   * and \p localPort to udp::Endpoint and calls the other createChannel overload.
-   *
-   * If \p localIp is an IPv6 address of a specific device, it must be in the form
-   * <tt>[ip address]%[interface name]</tt>, e.g. <tt>"fe80::5e96:9dff:fe7d:9c8d%en1"</tt>.
-   * Otherwise, you can use <tt>"::"</tt>.
-   *
-   * \return always a valid pointer to a UdpChannel object, an exception
-   *         is thrown if it cannot be created.
-   * \throw UdpFactory::Error
-   */
-  shared_ptr<UdpChannel>
-  createChannel(const std::string& localIp, const std::string& localPort,
-                time::nanoseconds idleTimeout = time::seconds(600));
-
   std::vector<shared_ptr<const Channel>>
   getChannels() const override;
 

@@ -174,37 +174,19 @@ TcpFactory::createFace(const CreateFaceParams& params,
 shared_ptr<TcpChannel>
 TcpFactory::createChannel(const tcp::Endpoint& endpoint)
 {
-  auto channel = findChannel(endpoint);
-  if (channel)
-    return channel;
+  auto it = m_channels.find(endpoint);
+  if (it != m_channels.end())
+    return it->second;
 
-  channel = make_shared<TcpChannel>(endpoint);
+  auto channel = make_shared<TcpChannel>(endpoint);
   m_channels[endpoint] = channel;
   return channel;
-}
-
-shared_ptr<TcpChannel>
-TcpFactory::createChannel(const std::string& localIp, const std::string& localPort)
-{
-  tcp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
-                         boost::lexical_cast<uint16_t>(localPort));
-  return createChannel(endpoint);
 }
 
 std::vector<shared_ptr<const Channel>>
 TcpFactory::getChannels() const
 {
   return getChannelsFromMap(m_channels);
-}
-
-shared_ptr<TcpChannel>
-TcpFactory::findChannel(const tcp::Endpoint& localEndpoint) const
-{
-  auto i = m_channels.find(localEndpoint);
-  if (i != m_channels.end())
-    return i->second;
-  else
-    return nullptr;
 }
 
 } // namespace face

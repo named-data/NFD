@@ -29,11 +29,23 @@
 #include "factory-test-common.hpp"
 #include "tests/limited-io.hpp"
 
+#include <ndn-cxx/net/address-converter.hpp>
+
 namespace nfd {
 namespace face {
 namespace tests {
 
-using TcpFactoryFixture = FaceSystemFactoryFixture<TcpFactory>;
+class TcpFactoryFixture : public FaceSystemFactoryFixture<TcpFactory>
+{
+protected:
+  shared_ptr<TcpChannel>
+  createChannel(const std::string& localIp, const std::string& localPort)
+  {
+    tcp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
+                           boost::lexical_cast<uint16_t>(localPort));
+    return factory.createChannel(endpoint);
+  }
+};
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestTcpFactory, TcpFactoryFixture)
@@ -134,23 +146,23 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
   std::set<std::string> expected;
-  expected.insert(factory.createChannel("127.0.0.1", "20070")->getUri().toString());
-  expected.insert(factory.createChannel("127.0.0.1", "20071")->getUri().toString());
-  expected.insert(factory.createChannel("::1", "20071")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20070")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20071")->getUri().toString());
+  expected.insert(createChannel("::1", "20071")->getUri().toString());
   checkChannelListEqual(factory, expected);
 }
 
 BOOST_AUTO_TEST_CASE(CreateChannel)
 {
-  auto channel1 = factory.createChannel("127.0.0.1", "20070");
-  auto channel1a = factory.createChannel("127.0.0.1", "20070");
+  auto channel1 = createChannel("127.0.0.1", "20070");
+  auto channel1a = createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1->getUri().toString(), "tcp4://127.0.0.1:20070");
 
-  auto channel2 = factory.createChannel("127.0.0.1", "20071");
+  auto channel2 = createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
 
-  auto channel3 = factory.createChannel("::1", "20071");
+  auto channel3 = createChannel("::1", "20071");
   BOOST_CHECK_NE(channel2, channel3);
   BOOST_CHECK_EQUAL(channel3->getUri().toString(), "tcp6://[::1]:20071");
 }
@@ -165,7 +177,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
-  factory.createChannel("127.0.0.1", "20071");
+  createChannel("127.0.0.1", "20071");
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
@@ -202,7 +214,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
 
 BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
-  factory.createChannel("127.0.0.1", "20071");
+  createChannel("127.0.0.1", "20071");
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
@@ -259,7 +271,7 @@ public:
 
 BOOST_FIXTURE_TEST_CASE(CreateFaceTimeout, CreateFaceTimeoutFixture)
 {
-  factory.createChannel("0.0.0.0", "20070");
+  createChannel("0.0.0.0", "20070");
 
   factory.createFace({FaceUri("tcp4://192.0.2.1:20070"), {},
                       ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false, false},

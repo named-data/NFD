@@ -31,12 +31,23 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/range/algorithm/count_if.hpp>
+#include <ndn-cxx/net/address-converter.hpp>
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-using UdpFactoryFixture = FaceSystemFactoryFixture<UdpFactory>;
+class UdpFactoryFixture : public FaceSystemFactoryFixture<UdpFactory>
+{
+protected:
+  shared_ptr<UdpChannel>
+  createChannel(const std::string& localIp, const std::string& localPort)
+  {
+    udp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
+                           boost::lexical_cast<uint16_t>(localPort));
+    return factory.createChannel(endpoint, time::minutes(5));
+  }
+};
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, UdpFactoryFixture)
@@ -495,28 +506,28 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
 
   std::set<std::string> expected;
-  expected.insert(factory.createChannel("127.0.0.1", "20070")->getUri().toString());
-  expected.insert(factory.createChannel("127.0.0.1", "20071")->getUri().toString());
-  expected.insert(factory.createChannel("::1", "20071")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20070")->getUri().toString());
+  expected.insert(createChannel("127.0.0.1", "20071")->getUri().toString());
+  expected.insert(createChannel("::1", "20071")->getUri().toString());
   checkChannelListEqual(factory, expected);
 }
 
 BOOST_AUTO_TEST_CASE(CreateChannel)
 {
-  auto channel1 = factory.createChannel("127.0.0.1", "20070");
-  auto channel1a = factory.createChannel("127.0.0.1", "20070");
+  auto channel1 = createChannel("127.0.0.1", "20070");
+  auto channel1a = createChannel("127.0.0.1", "20070");
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1->getUri().toString(), "udp4://127.0.0.1:20070");
 
-  auto channel2 = factory.createChannel("127.0.0.1", "20071");
+  auto channel2 = createChannel("127.0.0.1", "20071");
   BOOST_CHECK_NE(channel1, channel2);
 
-  auto channel3 = factory.createChannel("::1", "20071");
+  auto channel3 = createChannel("::1", "20071");
   BOOST_CHECK_NE(channel2, channel3);
   BOOST_CHECK_EQUAL(channel3->getUri().toString(), "udp6://[::1]:20071");
 
   // createChannel with multicast address
-  BOOST_CHECK_EXCEPTION(factory.createChannel("224.0.0.1", "20070"), UdpFactory::Error,
+  BOOST_CHECK_EXCEPTION(createChannel("224.0.0.1", "20070"), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "createChannel is only for unicast channels. The provided endpoint "
@@ -525,7 +536,7 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 
   // createChannel with a local endpoint that has already been allocated for a UDP multicast face
   auto multicastFace = factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20072");
-  BOOST_CHECK_EXCEPTION(factory.createChannel("127.0.0.1", "20072"), UdpFactory::Error,
+  BOOST_CHECK_EXCEPTION(createChannel("127.0.0.1", "20072"), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "Cannot create the requested UDP unicast channel, local "
@@ -540,7 +551,7 @@ BOOST_AUTO_TEST_CASE(CreateMulticastFace)
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
 
   // createMulticastFace with a local endpoint that is already used by a channel
-  auto channel = factory.createChannel("127.0.0.1", "20071");
+  auto channel = createChannel("127.0.0.1", "20071");
   BOOST_CHECK_EXCEPTION(factory.createMulticastFace("127.0.0.1", "224.0.0.1", "20071"), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
@@ -595,7 +606,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              false,
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
-  factory.createChannel("127.0.0.1", "20071");
+  createChannel("127.0.0.1", "20071");
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:6363"),
@@ -633,7 +644,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
 
 BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
 {
-  factory.createChannel("127.0.0.1", "20071");
+  createChannel("127.0.0.1", "20071");
 
   createFace(factory,
              FaceUri("udp4://127.0.0.1:20072"),
