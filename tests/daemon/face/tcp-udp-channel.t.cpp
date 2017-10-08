@@ -73,7 +73,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Listen, T, FixtureAndAddressList, T::Fixture)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::Fixture)
 {
-  auto address = getTestIp<T::ADDRESS_FAMILY>(LoopbackAddress::Yes);
+  auto address = getTestIp(T::ADDRESS_FAMILY, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 
@@ -125,7 +125,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::F
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceClosure, T, FixtureAndAddressList, T::Fixture)
 {
-  auto address = getTestIp<T::ADDRESS_FAMILY>(LoopbackAddress::Yes);
+  auto address = getTestIp(T::ADDRESS_FAMILY, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 

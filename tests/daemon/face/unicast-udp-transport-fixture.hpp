@@ -47,7 +47,7 @@ protected:
   UnicastUdpTransportFixture()
     : transport(nullptr)
     , remoteSocket(g_io)
-    , defaultAddr(getTestIp<AddressFamily::V4>())
+    , defaultAddr(getTestIp(AddressFamily::V4, AddressScope::Loopback))
     , receivedPackets(nullptr)
   {
   }

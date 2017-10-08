@@ -36,7 +36,7 @@ BOOST_FIXTURE_TEST_SUITE(TestTcpTransport, TcpTransportFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 {
-  auto address = getTestIp<AddressFamily::V6>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V6, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::No);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Global);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 {
-  auto address = getTestIp<AddressFamily::V6>(LoopbackAddress::No);
+  auto address = getTestIp(AddressFamily::V6, AddressScope::Global);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
 
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address);
 
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 
 BOOST_AUTO_TEST_CASE(PermanentReconnect)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address, ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(ChangePersistencyFromPermanentWhenDown)
   // when persistency is changed out of permanent while transport is DOWN,
   // the transport immediately goes into FAILED state
 
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   initialize(address, ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
@@ -206,7 +206,7 @@ asFloatMilliseconds(const time::nanoseconds& t)
 
 BOOST_AUTO_TEST_CASE(PermanentReconnectWithExponentialBackoff)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
 
   tcp::endpoint remoteEp(address, 7070);

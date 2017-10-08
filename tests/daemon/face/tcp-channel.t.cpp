@@ -41,7 +41,7 @@ using AddressFamilies = boost::mpl::vector<
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, F, AddressFamilies)
 {
-  auto address = getTestIp<F::value>(LoopbackAddress::Yes);
+  auto address = getTestIp(F::value, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   // do not listen
 

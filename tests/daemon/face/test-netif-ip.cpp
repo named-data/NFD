@@ -25,6 +25,7 @@
 
 #include "test-netif-ip.hpp"
 #include "core/global-io.hpp"
+
 #include <ndn-cxx/net/network-monitor.hpp>
 
 namespace nfd {
@@ -56,67 +57,37 @@ collectNetworkInterfaces(bool allowCached)
   return cached;
 }
 
-namespace {
-
 template<typename E>
-bool
+static bool
 matchTristate(E e, bool b)
 {
-  return (e == E::DontCare) ||
+  return (e == E::Unspecified) ||
          (e == E::Yes && b) ||
          (e == E::No && !b);
 }
 
-template<AddressFamily AF>
-typename IpAddressFromFamily<AF>::type
-fromIpAddress(const boost::asio::ip::address& a);
-
-template<>
-IpAddressFromFamily<AddressFamily::V4>::type
-fromIpAddress<AddressFamily::V4>(const boost::asio::ip::address& a)
-{
-  return a.to_v4();
-}
-
-template<>
-IpAddressFromFamily<AddressFamily::V6>::type
-fromIpAddress<AddressFamily::V6>(const boost::asio::ip::address& a)
-{
-  return a.to_v6();
-}
-
-} // unnamed namespace
-
-template<AddressFamily AF>
-typename IpAddressFromFamily<AF>::type
-getTestIp(LoopbackAddress loopback, MulticastInterface mcast)
+boost::asio::ip::address
+getTestIp(AddressFamily family, AddressScope scope, MulticastInterface mcast)
 {
   for (const auto& interface : collectNetworkInterfaces()) {
     if (!interface->isUp() ||
-        !matchTristate(loopback, interface->isLoopback()) ||
         !matchTristate(mcast, interface->canMulticast())) {
       continue;
     }
     for (const auto& address : interface->getNetworkAddresses()) {
-      if (isAddressFamily<AF>(address) &&
-          !address.getIp().is_unspecified() &&
-          address.getScope() != ndn::net::AddressScope::NOWHERE &&
-          address.getScope() != ndn::net::AddressScope::LINK && // link-local addresses are not supported yet (#1428)
-          matchTristate(loopback, address.getIp().is_loopback())) {
-        return fromIpAddress<AF>(address.getIp());
+      if (!address.getIp().is_unspecified() &&
+          (family == AddressFamily::UNSPECIFIED ||
+           family == address.getFamily()) &&
+          (scope == AddressScope::Unspecified ||
+           static_cast<int>(scope) == static_cast<int>(address.getScope())) &&
+          (scope != AddressScope::Loopback ||
+           address.getIp().is_loopback())) {
+        return address.getIp();
       }
     }
   }
   return {};
 }
-
-template
-IpAddressFromFamily<AddressFamily::V4>::type
-getTestIp<AddressFamily::V4>(LoopbackAddress loopback, MulticastInterface mcast);
-
-template
-IpAddressFromFamily<AddressFamily::V6>::type
-getTestIp<AddressFamily::V6>(LoopbackAddress loopback, MulticastInterface mcast);
 
 } // namespace tests
 } // namespace nfd

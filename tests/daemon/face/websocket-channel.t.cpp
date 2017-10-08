@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(Listen)
 
 BOOST_AUTO_TEST_CASE(MultipleAccepts)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->listen(address);
 
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
   auto transport = listenerFaces.front()->getTransport();
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE(Send)
 
 BOOST_AUTO_TEST_CASE(Receive)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -265,7 +265,7 @@ BOOST_AUTO_TEST_CASE(Receive)
 
 BOOST_AUTO_TEST_CASE(FaceClosure)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE(FaceClosure)
 
 BOOST_AUTO_TEST_CASE(RemoteClose)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address);
 
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(RemoteClose)
 BOOST_AUTO_TEST_CASE(SetPingInterval)
 {
   const time::milliseconds pingInterval(800);
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address, pingInterval, time::milliseconds(1000));
 
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE(SetPingInterval)
 
 BOOST_AUTO_TEST_CASE(SetPongTimeOut)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->initialize(address, time::milliseconds(500), time::milliseconds(300));
   clientShouldPong = false;

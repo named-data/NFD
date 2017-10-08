@@ -227,7 +227,7 @@ BOOST_FIXTURE_TEST_SUITE(TestWebSocketTransport, SingleWebSocketFixture)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address);
   ip::tcp::endpoint ep(address, 20070);
   this->endToEndInitialize(ep);
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 {
-  auto address = getTestIp<AddressFamily::V4>(LoopbackAddress::No);
+  auto address = getTestIp(AddressFamily::V4, AddressScope::Global);
   SKIP_IF_IP_UNAVAILABLE(address);
   ip::tcp::endpoint ep(address, 20070);
   this->endToEndInitialize(ep);
@@ -261,9 +261,9 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
 
 BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4MappedIpv6)
 {
-  auto address4 = getTestIp<AddressFamily::V4>(LoopbackAddress::Yes);
+  auto address4 = getTestIp(AddressFamily::V4, AddressScope::Loopback);
   SKIP_IF_IP_UNAVAILABLE(address4);
-  auto address6 = ip::address_v6::v4_mapped(address4);
+  auto address6 = ip::address_v6::v4_mapped(address4.to_v4());
   BOOST_REQUIRE(address6.is_v4_mapped());
   ip::tcp::endpoint ep(address6, 20070);
   this->endToEndInitialize(ep);
@@ -280,7 +280,7 @@ BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4MappedIpv6)
 
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
@@ -291,7 +291,7 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 
 BOOST_AUTO_TEST_CASE(PingPong)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070),
                            time::milliseconds(500), time::milliseconds(300));
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(PingPong)
 
 BOOST_AUTO_TEST_CASE(Send)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(Send)
 
 BOOST_AUTO_TEST_CASE(ReceiveNormal)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
@@ -365,7 +365,7 @@ BOOST_AUTO_TEST_CASE(ReceiveNormal)
 
 BOOST_AUTO_TEST_CASE(ReceiveMalformed)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(ReceiveMalformed)
 
 BOOST_AUTO_TEST_CASE(Close)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(Close)
 
 BOOST_AUTO_TEST_CASE(RemoteClose)
 {
-  auto address = getTestIp<AddressFamily::V4>();
+  auto address = getTestIp(AddressFamily::V4);
   SKIP_IF_IP_UNAVAILABLE(address);
   this->endToEndInitialize(ip::tcp::endpoint(address, 20070));
 

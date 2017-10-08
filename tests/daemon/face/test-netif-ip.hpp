@@ -27,9 +27,8 @@
 #define NFD_TESTS_DAEMON_FACE_TEST_NETIF_IP_HPP
 
 #include "core/common.hpp"
-#include <type_traits>
-#include <boost/asio/ip/address_v4.hpp>
-#include <boost/asio/ip/address_v6.hpp>
+
+#include <boost/asio/ip/address.hpp>
 #include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 
@@ -52,33 +51,25 @@ collectNetworkInterfaces(bool allowCached = true);
 
 template<AddressFamily AF>
 bool
-isAddressFamily(const NetworkAddress& a)
-{
-  return a.getFamily() == AF;
-}
-
-template<AddressFamily AF>
-bool
 hasAddressFamily(const NetworkInterface& netif)
 {
   return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
-                     &isAddressFamily<AF>);
+                     [] (const NetworkAddress& a) { return a.getFamily() == AF; });
 }
 
 // ---- IP address ----
 
-enum class LoopbackAddress {
-  No,
-  Yes,
-  DontCare,
-  Default = Yes
+enum class AddressScope {
+  Loopback  = static_cast<int>(ndn::net::AddressScope::HOST),
+  LinkLocal = static_cast<int>(ndn::net::AddressScope::LINK),
+  Global    = static_cast<int>(ndn::net::AddressScope::GLOBAL),
+  Unspecified
 };
 
 enum class MulticastInterface {
   No,
   Yes,
-  DontCare,
-  Default = DontCare
+  Unspecified
 };
 
 /** \brief Derives IP address type from AddressFamily
@@ -99,32 +90,24 @@ struct IpAddressFromFamily<AddressFamily::V6>
 };
 
 /** \brief Get an IP address from any available network interface
- *  \tparam F address family, either AddressFamily::V4 or AddressFamily::V6
- *  \param loopback specifies if the address can, must, or must not be a loopback address
+ *  \param family the desired address family
+ *  \param scope the desired address scope
  *  \param mcast specifies if the address can, must, or must not be chosen from a multicast-capable interface
  *  \return an IP address, either boost::asio::ip::address_v4 or boost::asio::ip::address_v6
  *  \retval unspecified address, if no appropriate address is available
  */
-template<AddressFamily F>
-typename IpAddressFromFamily<F>::type
-getTestIp(LoopbackAddress loopback = LoopbackAddress::Default,
-          MulticastInterface mcast = MulticastInterface::Default);
+boost::asio::ip::address
+getTestIp(AddressFamily family = AddressFamily::UNSPECIFIED,
+          AddressScope scope = AddressScope::Unspecified,
+          MulticastInterface mcast = MulticastInterface::Unspecified);
 
-extern template
-IpAddressFromFamily<AddressFamily::V4>::type
-getTestIp<AddressFamily::V4>(LoopbackAddress loopback, MulticastInterface mcast);
-
-extern template
-IpAddressFromFamily<AddressFamily::V6>::type
-getTestIp<AddressFamily::V6>(LoopbackAddress loopback, MulticastInterface mcast);
-
-/** \brief Skip rest of the test case if \p address is unavailable
+/** \brief Skip the rest of the test case if \p address is unavailable
  *
- *  This macro can be used in conjunction with \p nfd::tests::getTestIp in a test case. Example:
+ *  This macro can be used in conjunction with nfd::tests::getTestIp in a test case. Example:
  *  \code
  *  BOOST_AUTO_TEST_CASE(TestCase)
  *  {
- *    auto ip = getTestIp<AddressFamily::V4>();
+ *    auto ip = getTestIp(AddressFamily::V4);
  *    SKIP_IF_IP_UNAVAILABLE(ip);
  *    // Test something that requires an IPv4 address.
  *  }

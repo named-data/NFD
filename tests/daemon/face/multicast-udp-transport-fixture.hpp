@@ -47,7 +47,7 @@ protected:
   MulticastUdpTransportFixture()
     : transport(nullptr)
     , multicastEp(ip::address::from_string("230.15.19.47"), 7070)
-    , defaultAddr(getTestIp<AddressFamily::V4>(LoopbackAddress::No, MulticastInterface::Yes))
+    , defaultAddr(getTestIp(AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes))
     , receivedPackets(nullptr)
     , remoteSockRx(g_io)
     , remoteSockTx(g_io)
@@ -55,7 +55,7 @@ protected:
   }
 
   void
-  initialize(ip::address_v4 address)
+  initialize(ip::address address)
   {
     openMulticastSockets(remoteSockRx, remoteSockTx, multicastEp.port());
 
@@ -119,7 +119,7 @@ protected:
   MulticastUdpTransport* transport;
   udp::endpoint localEp;
   udp::endpoint multicastEp;
-  const ip::address_v4 defaultAddr;
+  const ip::address defaultAddr;
   std::vector<Transport::Packet>* receivedPackets;
 
 private:
