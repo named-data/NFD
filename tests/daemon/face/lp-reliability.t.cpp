@@ -134,7 +134,7 @@ public:
 
     lp::Packet pkt;
     ndn::Buffer buf(payloadSize);
-    std::memcpy(buf.buf(), &pktNo, sizeof(pktNo));
+    std::memcpy(buf.data(), &pktNo, sizeof(pktNo));
     pkt.set<lp::FragmentField>(make_pair(buf.cbegin(), buf.cend()));
     return pkt;
   }

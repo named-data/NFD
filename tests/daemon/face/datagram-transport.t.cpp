@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -76,10 +76,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures
   SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
   this->initialize(this->defaultAddr);
 
-  std::vector<uint8_t> buf{
-    0x05, 0x03, 0x00, 0x01,
-  };
-  this->remoteWrite(buf);
+  this->remoteWrite({0x05, 0x03, 0x00, 0x01});
 
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 0);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, 0);
@@ -95,8 +92,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFix
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world");
   ndn::Buffer buf(pkt1.size() + pkt2.size());
-  std::copy(pkt1.begin(), pkt1.end(), buf.buf());
-  std::copy(pkt2.begin(), pkt2.end(), buf.buf() + pkt1.size());
+  std::copy(pkt1.begin(), pkt1.end(), buf.begin());
+  std::copy(pkt2.begin(), pkt2.end(), buf.begin() + pkt1.size());
 
   this->remoteWrite(buf);
 
