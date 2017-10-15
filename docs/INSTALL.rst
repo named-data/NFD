@@ -5,67 +5,18 @@ Installing NFD from Binaries
 ----------------------------
 
 We provide NFD binaries for the supported platforms, which are the preferred installation
-method. In addition to simplifying installation, the binary release also includes
-automatic initial configuration and platform-specific tools to automatically start NFD and
-related daemons.  In particular, on OS X and macOS NFD is controlled using `launchd
-<https://github.com/named-data/NFD/tree/master/contrib/osx-launchd>`__ and on Ubuntu using
-`upstart <https://github.com/named-data/NFD/tree/master/contrib/upstart>`__ mechanisms.
-In both cases, `nfd-start` and `nfd-stop` scripts are convenience wrappers for launchd and
-upstart.
+method. In addition to simplifying installation, the binary release also includes automatic
+initial configuration and platform-specific tools to automatically start NFD and related
+daemons.  In particular, on macOS the binary release of NFD comes as part of `NDN Control
+Center <https://named-data.net/codebase/applications/ndn-control-center/>`__ and provides a
+convenient way to configure and launch NFD daemon.  :ref:`PPA packages for Ubuntu <Install NFD
+Using the NDN PPA Repository on Ubuntu Linux>` include ``upstart`` and ``systemd``
+configuration to automatically start daemon after boot.
 
-On OS X and macOS, NFD can be installed with MacPorts.  Refer to :ref:`Install NFD Using the NDN
-MacPorts Repository on OS X and macOS` for more details.
-
-On Ubuntu 14.04 and 16.04, NFD can be installed from NDN PPA repository.  Refer to
-:ref:`Install NFD Using the NDN PPA Repository on Ubuntu Linux`.
-
-Future releases could include support for other platforms.  Please send us feedback on the
-platforms you're using, so we can prioritize our goals.  We would also appreciate help
-packaging the current NFD release for other platforms.
-
-
-.. _Install NFD Using the NDN MacPorts Repository on OS X and macOS:
-
-Install NFD Using the NDN MacPorts Repository on OS X and macOS
----------------------------------------------------------------
-
-OS X and macOS users have the opportunity to seamlessly install and run NFD as well as other
-related applications via `MacPorts <https://www.macports.org/>`_.  If you are not using MacPorts
-yet, go to the `MacPorts website <https://www.macports.org/install.php>`_ and install the
-MacPorts package.
-
-NFD and related ports are not part of the official MacPorts repository. In order to use
-these ports, you will need to add the NDN MacPorts repository to your local configuration.
-In particular, you will need to modify the list of source URLs for MacPorts.  For example,
-if your MacPorts are installed in ``/opt/local``, add the following line to
-`/opt/local/etc/macports/sources.conf` before or after the default port repository:
-
-::
-
-    rsync://macports.named-data.net/macports/
-
-After this step, you can use ``sudo port selfupdate`` to fetch updated port definitions.
-
-The following command will install NFD using MacPorts:
-
-::
-
-    sudo port install nfd
-
-.. note::
-
-    You have to have XCode installed on your machine. This can be installed from the
-    AppStore (free) on OS X 10.7 or later. Older editions of OS X can download an
-    appropriate version of XCode from http://developer.apple.com.
-
-
-One advantage of using MacPorts is that you can easily upgrade NFD and other packages to
-the latest version.  The following commands will do this job:
-
-::
-
-    sudo port selfupdate
-    sudo port upgrade nfd
+Besides officially supported platforms, NFD is known to work on: Fedora 20+, CentOS 6+, Gentoo
+Linux, Raspberry Pi, OpenWRT, FreeBSD 10+, and several `other platforms
+<https://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms>`__.
+We would also appreciate feedback and help packaging NDN releases for other platforms.
 
 .. _Install NFD Using the NDN PPA Repository on Ubuntu Linux:
 
@@ -76,8 +27,8 @@ NFD binaries and related tools for Ubuntu 14.04 and 16.04 can be installed using
 packages from named-data repository.  First, you will need to add ``named-data/ppa``
 repository to binary package sources and update list of available packages.
 
-Preliminary steps if you haven't used PPA packages before
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Preliminary steps if you have not used PPA packages before
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To simplify adding new PPA repositories, Ubuntu provides ``add-apt-repository`` tool,
 which is not installed by default on some systems.
@@ -120,7 +71,7 @@ Downloading from Git
 
 The first step is to obtain the source code for ``NFD`` and, its main dependency, the
 ``ndn-cxx`` library.  If you are not planning to work with the bleeding edge code, make
-sure you checkout the correct release tag (e.g., ``*-0.2.0``) for both repositories:
+sure you checkout the correct release tag (e.g., ``*-0.6.0``) for both repositories:
 
 ::
 
@@ -130,67 +81,49 @@ sure you checkout the correct release tag (e.g., ``*-0.2.0``) for both repositor
     # Download NFD
     git clone --recursive https://github.com/named-data/NFD
 
+.. note::
+   While we strive to ensure that the latest version (master branch) of NFD and ndn-cxx
+   always properly compiles and works, sometimes there could be problems.  In these cases, use
+   the latest released version.
+
 Prerequisites
 ~~~~~~~~~~~~~
 
--  Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`_
-   and its requirements
+Install the `ndn-cxx library <https://named-data.net/doc/ndn-cxx/current/INSTALL.html>`__ and its requirements
 
--  ``pkg-config``
-
-   On OS X / macOS with MacPorts:
+-  On macOS with Homebrew:
 
    ::
 
-       sudo port install pkgconfig
+      brew install boost openssl pkg-config
 
-   On Ubuntu:
-
-   ::
-
-       sudo apt-get install pkg-config
-
--  ``libpcap``
-
-   Comes with the base system on OS X / macOS.
-
-   On Ubuntu:
+- On Ubuntu:
 
    ::
 
-       sudo apt-get install libpcap-dev
+       sudo apt-get install build-essential pkg-config libboost-all-dev \
+                            libsqlite3-dev libssl-dev libpcap-dev
 
 To build manpages and API documentation:
 
--  ``doxygen``
--  ``graphviz``
--  ``python-sphinx``
-
-   On OS X / macOS with MacPorts:
+- On macOS with Homebrew:
 
    ::
 
-       sudo port install doxygen graphviz py27-sphinx sphinx_select
-       sudo port select sphinx py27-sphinx
+       brew install doxygen graphviz
+       sudo easy_install pip
+       sudo pip Sphinx
 
-   On Ubuntu:
+- On Ubuntu:
 
    ::
 
        sudo apt-get install doxygen graphviz python-sphinx
 
-
-Besides officially supported platforms, NFD is known to work on: Fedora 20, CentOS 6/7, Gentoo Linux,
-Raspberry Pi, OpenWRT, FreeBSD 10.0, and several other platforms.  We are soliciting help
-with documenting common problems / pitfalls in installing/using NFD on different platforms
-on `NFD Wiki
-<https://redmine.named-data.net/projects/nfd/wiki/Wiki#Installation-experiences-for-selected-platforms>`__.
-
-
 Build
 ~~~~~
 
-The following basic commands should be used to build NFD on Ubuntu:
+The following basic commands should be used to build NFD on Ubuntu and macOS with Homebrew:
 
 ::
 
@@ -198,7 +131,7 @@ The following basic commands should be used to build NFD on Ubuntu:
     ./waf
     sudo ./waf install
 
-If you have installed `ndn-cxx` library and/or other dependencies into a non-standard paths, you
+If you have installed ``ndn-cxx`` library and/or other dependencies into a non-standard path, you
 may need to modify ``PKG_CONFIG_PATH`` environment variable before running ``./waf configure``.
 For example,
 
@@ -208,7 +141,6 @@ For example,
     ./waf configure
     ./waf
     sudo ./waf install
-
 
 Refer to ``./waf --help`` for more options that can be used during ``configure`` stage and
 how to properly configure and run NFD.
@@ -234,11 +166,14 @@ with configuration in ``/etc`` folder.
     ./waf
     sudo ./waf install
 
+.. note::
+   For Ubuntu PPA packages debug symbols are available in ``*-dbg`` packages.
+
 Customize Compiler
 ~~~~~~~~~~~~~~~~~~
 
 To choose a custom C++ compiler for building NFD, set the ``CXX`` environment variable
-to point to the compiler binary. For example, when using the clang compiler on a Linux
+to point to the compiler binary. For example, to select the clang compiler on a Linux
 system, use the following:
 
 ::
@@ -271,7 +206,6 @@ location can be changed during ``./waf configure`` stage using ``--prefix``,
 
 For more details, refer to ``./waf --help``.
 
-
 Initial configuration
 ---------------------
 
@@ -297,7 +231,7 @@ NFD provides mechanisms to enable strict authorization for all management comman
 particular, one can authorize only specific public keys to create new Faces or change the
 forwarding strategy for specific namespaces. For more information about how to generate
 private/public key pair, generate self-signed certificate, and use this self-signed
-certificate to authorize NFD management commands refer to :ref:`How to configure NFD
+certificate to authorize NFD management commands, refer to :ref:`How to configure NFD
 security` FAQ question.
 
 In the sample configuration file, all authorizations are disabled, effectively allowing
@@ -310,8 +244,8 @@ Running
 Starting
 ~~~~~~~~
 
-If you have installed NFD from source code, the recommended way of starting NFD is to use the
-`nfd-start` script:
+If you have installed NFD from source code, it is recommended to start NFD with the
+``nfd-start`` script:
 
 ::
 
@@ -323,7 +257,8 @@ your keychain.`` Enter your keychain password and click Always Allow.
 Later, you can stop NFD with ``nfd-stop`` or by simply killing the ``nfd`` process.
 
 If you have installed NFD using a package manager, you can start and stop NFD service using the
-operating system's service manager (such as Upstart, systemd, or launchd).
+operating system's service manager (such as Upstart, systemd, or launchd) or using
+"Automatically start NFD" option in NDN Control Center app.
 
 Connecting to remote NFDs
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -353,14 +288,11 @@ This outputs:
 
     route-add-accepted prefix=/ndn nexthop=308 origin=static cost=0 flags=child-inherit expires=never
 
-The ``/ndn`` means that NFD will forward all Interests that start with ``/ndn`` through
-the face to the other host.  If you only want to forward Interests with a certain prefix,
-use it instead of ``/ndn``.  This only forwards Interests to the other host, but there is
-no "back route" for the other host to forward Interests to you.  For that, you must go to
-the other host and use ``nfdc`` to add the route.
-
-The "back route" can also be automatically configured with ``nfd-autoreg``. For more
-information refer to :doc:`manpages/nfd-autoreg`.
+The ``/ndn`` means that NFD will forward all Interests that start with ``/ndn`` through the
+face to the other host.  If you only want to forward Interests with a certain prefix, use it
+instead of ``/ndn``.  This only forwards Interests to the other host, but there is no "back
+route" for the other host to forward Interests to you.  For that, you can rely on automatic
+prefix propagation feature of NFD or go to the other host and use ``nfdc`` to add the route.
 
 Playing with NFD
 ----------------
