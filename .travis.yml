@@ -145,6 +145,11 @@ matrix:
       env:
         - NODE_LABELS="OSX OSX-10.12"
         - BUILD_WITH_ASAN=yes
+    - os: osx
+      osx_image: xcode9
+      env:
+        - NODE_LABELS="OSX OSX-10.12"
+        - BUILD_WITH_ASAN=yes
 
 before_script:
   - ${CXX:-c++} --version
