@@ -30,7 +30,7 @@
 #include "face/unicast-ethernet-transport.hpp"
 
 #include "tests/limited-io.hpp"
-#include "test-netif-ip.hpp"
+#include "test-netif.hpp"
 
 namespace nfd {
 namespace face {

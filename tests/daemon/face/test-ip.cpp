@@ -23,45 +23,62 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "test-netif-ip.hpp"
-#include "core/global-io.hpp"
-
-#include <ndn-cxx/net/network-monitor.hpp>
+#include "test-ip.hpp"
+#include "test-netif.hpp"
 
 namespace nfd {
+namespace face {
 namespace tests {
 
-std::vector<shared_ptr<const NetworkInterface>>
-collectNetworkInterfaces(bool allowCached)
+std::ostream&
+operator<<(std::ostream& os, AddressFamily family)
 {
-  using ndn::net::NetworkMonitor;
-
-  static std::vector<shared_ptr<const NetworkInterface>> cached;
-  // cached.empty() indicates there's no cached list of netifs.
-  // Although it could also mean a system without any network interface, this situation is rare
-  // because the loopback interface is present on almost all systems.
-
-  if (!allowCached || cached.empty()) {
-    NetworkMonitor netmon(getGlobalIoService());
-    if ((netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) == 0) {
-      BOOST_THROW_EXCEPTION(NetworkMonitor::Error("NetworkMonitor::CAP_ENUM is unavailable"));
-    }
-
-    netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
-    getGlobalIoService().run();
-    getGlobalIoService().reset();
-
-    cached = netmon.listNetworkInterfaces();
+  switch (family) {
+    case AddressFamily::V4:
+      return os << "IPv4";
+    case AddressFamily::V6:
+      return os << "IPv6";
+    case AddressFamily::Any:
+      return os << "Any";
   }
+  return os << '?';
+}
 
-  return cached;
+std::ostream&
+operator<<(std::ostream& os, AddressScope scope)
+{
+  switch (scope) {
+    case AddressScope::Loopback:
+      return os << "Loopback";
+    case AddressScope::LinkLocal:
+      return os << "LinkLocal";
+    case AddressScope::Global:
+      return os << "Global";
+    case AddressScope::Any:
+      return os << "Any";
+  }
+  return os << '?';
+}
+
+std::ostream&
+operator<<(std::ostream& os, MulticastInterface mcast)
+{
+  switch (mcast) {
+    case MulticastInterface::No:
+      return os << "No";
+    case MulticastInterface::Yes:
+      return os << "Yes";
+    case MulticastInterface::Any:
+      return os << "Any";
+  }
+  return os << '?';
 }
 
 template<typename E>
 static bool
 matchTristate(E e, bool b)
 {
-  return (e == E::Unspecified) ||
+  return (e == E::Any) ||
          (e == E::Yes && b) ||
          (e == E::No && !b);
 }
@@ -76,9 +93,9 @@ getTestIp(AddressFamily family, AddressScope scope, MulticastInterface mcast)
     }
     for (const auto& address : interface->getNetworkAddresses()) {
       if (!address.getIp().is_unspecified() &&
-          (family == AddressFamily::UNSPECIFIED ||
-           family == address.getFamily()) &&
-          (scope == AddressScope::Unspecified ||
+          (family == AddressFamily::Any ||
+           static_cast<int>(family) == static_cast<int>(address.getFamily())) &&
+          (scope == AddressScope::Any ||
            static_cast<int>(scope) == static_cast<int>(address.getScope())) &&
           (scope != AddressScope::Loopback ||
            address.getIp().is_loopback())) {
@@ -90,4 +107,5 @@ getTestIp(AddressFamily family, AddressScope scope, MulticastInterface mcast)
 }
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

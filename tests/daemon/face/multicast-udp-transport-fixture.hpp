@@ -30,7 +30,6 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "test-netif-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -47,7 +46,6 @@ protected:
   MulticastUdpTransportFixture()
     : transport(nullptr)
     , multicastEp(ip::address::from_string("230.15.19.47"), 7070)
-    , defaultAddr(getTestIp(AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes))
     , receivedPackets(nullptr)
     , remoteSockRx(g_io)
     , remoteSockTx(g_io)
@@ -63,12 +61,11 @@ protected:
     udp::socket sockTx(g_io);
     localEp = udp::endpoint(address, 7001);
     openMulticastSockets(sockRx, sockTx, localEp.port());
-    ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
 
     face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),
              make_unique<MulticastUdpTransport>(localEp, multicastEp, std::move(sockRx),
-                                                std::move(sockTx), linkType));
+                                                std::move(sockTx), ndn::nfd::LINK_TYPE_MULTI_ACCESS));
     transport = static_cast<MulticastUdpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 
@@ -119,7 +116,6 @@ protected:
   MulticastUdpTransport* transport;
   udp::endpoint localEp;
   udp::endpoint multicastEp;
-  const ip::address defaultAddr;
   std::vector<Transport::Packet>* receivedPackets;
 
 private:

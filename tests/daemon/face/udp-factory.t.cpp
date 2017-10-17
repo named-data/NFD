@@ -27,7 +27,6 @@
 
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
-#include "test-netif-ip.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/range/algorithm/count_if.hpp>
@@ -126,7 +125,8 @@ protected:
   UdpMcastConfigFixture()
   {
     for (const auto& netif : collectNetworkInterfaces()) {
-      if (netif->isUp() && netif->canMulticast() && hasAddressFamily<AddressFamily::V4>(*netif)) {
+      if (netif->isUp() && netif->canMulticast() &&
+          hasAddressFamily(*netif, ndn::net::AddressFamily::V4)) {
         netifs.push_back(netif);
       }
     }
@@ -146,20 +146,29 @@ protected:
     return this->listUdpMcastFaces(linkType).size();
   }
 
+  /** \brief determine whether \p netif has at least one address of the given family
+   */
+  static bool
+  hasAddressFamily(const NetworkInterface& netif, ndn::net::AddressFamily af)
+  {
+    return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
+                       [af] (const NetworkAddress& a) { return a.getFamily() == af; });
+  }
+
   /** \brief determine whether a UDP multicast face is created on \p netif
    */
   static bool
-  isFaceOnNetif(const Face& face, const shared_ptr<const ndn::net::NetworkInterface>& netif)
+  isFaceOnNetif(const Face& face, const shared_ptr<const NetworkInterface>& netif)
   {
     auto ip = boost::asio::ip::address_v4::from_string(face.getLocalUri().getHost());
     return std::any_of(netif->getNetworkAddresses().begin(), netif->getNetworkAddresses().end(),
-                       [ip] (const ndn::net::NetworkAddress& a) { return a.getIp() == ip; });
+                       [ip] (const NetworkAddress& a) { return a.getIp() == ip; });
   }
 
 protected:
   /** \brief MulticastUdpTransport-capable network interfaces
    */
-  std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
+  std::vector<shared_ptr<const NetworkInterface>> netifs;
 };
 
 #define SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(n) \

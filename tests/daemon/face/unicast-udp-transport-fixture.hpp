@@ -30,7 +30,6 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "test-netif-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -47,13 +46,12 @@ protected:
   UnicastUdpTransportFixture()
     : transport(nullptr)
     , remoteSocket(g_io)
-    , defaultAddr(getTestIp(AddressFamily::V4, AddressScope::Loopback))
     , receivedPackets(nullptr)
   {
   }
 
   void
-  initialize(ip::address address = ip::address_v4::loopback(),
+  initialize(ip::address address,
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   {
     udp::socket sock(g_io);
@@ -111,7 +109,6 @@ protected:
   UnicastUdpTransport* transport;
   udp::endpoint localEp;
   udp::socket remoteSocket;
-  const ip::address defaultAddr;
   std::vector<Transport::Packet>* receivedPackets;
 
 private:

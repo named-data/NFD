@@ -32,7 +32,7 @@
 #include "fw/face-table.hpp"
 
 #include "tests/test-common.hpp"
-#include "test-netif-ip.hpp"
+#include "test-netif.hpp"
 #include <ndn-cxx/net/network-monitor-stub.hpp>
 
 namespace nfd {

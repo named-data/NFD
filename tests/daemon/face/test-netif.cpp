@@ -23,47 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "tcp-channel-fixture.hpp"
+#include "test-netif.hpp"
+#include "core/global-io.hpp"
 
-#include "test-ip.hpp"
-#include <boost/mpl/vector.hpp>
+#include <ndn-cxx/net/network-monitor.hpp>
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestTcpChannel, TcpChannelFixture)
-
-using AddressFamilies = boost::mpl::vector<
-  std::integral_constant<AddressFamily, AddressFamily::V4>,
-  std::integral_constant<AddressFamily, AddressFamily::V6>>;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(ConnectTimeout, F, AddressFamilies)
+std::vector<shared_ptr<const NetworkInterface>>
+collectNetworkInterfaces(bool allowCached)
 {
-  auto address = getTestIp(F::value, AddressScope::Loopback);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  // do not listen
+  using ndn::net::NetworkMonitor;
 
-  auto channel = this->makeChannel(typename IpAddressFromFamily<F::value>::type());
-  channel->connect(tcp::Endpoint(address, 7040),
-    ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false, false,
-    [this] (const shared_ptr<nfd::Face>&) {
-      BOOST_FAIL("Connect succeeded when it should have failed");
-      this->limitedIo.afterOp();
-    },
-    [this] (uint32_t, const std::string& reason) {
-      BOOST_CHECK_EQUAL(reason.empty(), false);
-      this->limitedIo.afterOp();
-    },
-    time::seconds(1));
+  static std::vector<shared_ptr<const NetworkInterface>> cached;
+  // cached.empty() indicates there's no cached list of netifs.
+  // Although it could also mean a system without any network interface, this situation is rare
+  // because the loopback interface is present on almost all systems.
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(1, time::seconds(2)), LimitedIo::EXCEED_OPS);
-  BOOST_CHECK_EQUAL(channel->size(), 0);
+  if (!allowCached || cached.empty()) {
+    NetworkMonitor netmon(getGlobalIoService());
+    if ((netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) == 0) {
+      BOOST_THROW_EXCEPTION(NetworkMonitor::Error("NetworkMonitor::CAP_ENUM is unavailable"));
+    }
+
+    netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
+    getGlobalIoService().run();
+    getGlobalIoService().reset();
+
+    cached = netmon.listNetworkInterfaces();
+  }
+
+  return cached;
 }
-
-BOOST_AUTO_TEST_SUITE_END() // TestTcpChannel
-BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace face

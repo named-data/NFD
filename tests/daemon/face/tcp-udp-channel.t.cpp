@@ -26,7 +26,7 @@
 #include "tcp-channel-fixture.hpp"
 #include "udp-channel-fixture.hpp"
 
-#include "test-netif-ip.hpp"
+#include "test-ip.hpp"
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {

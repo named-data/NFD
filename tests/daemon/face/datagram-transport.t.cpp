@@ -26,6 +26,8 @@
 #include "unicast-udp-transport-fixture.hpp"
 #include "multicast-udp-transport-fixture.hpp"
 
+#include "transport-test-common.hpp"
+
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -35,14 +37,14 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestDatagramTransport)
 
-typedef boost::mpl::vector<UnicastUdpTransportFixture,
-                           MulticastUdpTransportFixture
-                           > DatagramTransportFixtures;
+using DatagramTransportFixtures = boost::mpl::vector<
+  GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(UnicastUdpTransportFixture),
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>
+>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   auto block1 = ndn::encoding::makeStringBlock(300, "hello");
   this->transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
@@ -58,8 +60,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   Block pkt = ndn::encoding::makeStringBlock(300, "hello");
   ndn::Buffer buf(pkt.begin(), pkt.end());
@@ -73,8 +74,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, DatagramTransportFixtures, T)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   this->remoteWrite({0x05, 0x03, 0x00, 0x01});
 
@@ -86,8 +86,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveIncomplete, T, DatagramTransportFixtures
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world");
@@ -105,8 +104,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTrailingGarbage, T, DatagramTransportFix
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   std::vector<uint8_t> bytes(ndn::MAX_NDN_PACKET_SIZE, 0);
   Block pkt1 = ndn::encoding::makeBinaryBlock(300, bytes.data(), bytes.size() - 6);
@@ -134,8 +132,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveTooLarge, T, DatagramTransportFixtures, 
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, DatagramTransportFixtures, T)
 {
-  SKIP_IF_IP_UNAVAILABLE(this->defaultAddr);
-  this->initialize(this->defaultAddr);
+  TRANSPORT_TEST_INIT();
 
   this->transport->afterStateChange.connectSingleShot([] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);

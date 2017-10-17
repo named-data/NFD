@@ -27,86 +27,38 @@
 
 #include "unicast-udp-transport-fixture.hpp"
 
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/vector_c.hpp>
+
 namespace nfd {
 namespace face {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Face)
-BOOST_FIXTURE_TEST_SUITE(TestUnicastUdpTransport, UnicastUdpTransportFixture)
+BOOST_FIXTURE_TEST_SUITE(TestUnicastUdpTransport, IpTransportFixture<UnicastUdpTransportFixture>)
 
-BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv4)
+using UnicastUdpTransportFixtures = boost::mpl::vector<
+  GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(UnicastUdpTransportFixture)
+>;
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, UnicastUdpTransportFixtures, T)
 {
-  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address);
+  TRANSPORT_TEST_INIT();
 
-  checkStaticPropertiesInitialized(*transport);
+  checkStaticPropertiesInitialized(*this->transport);
 
-  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("udp4://127.0.0.1:" + to_string(localEp.port())));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("udp4://127.0.0.1:7070"));
-  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL); // UDP is never local
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport->getMtu(), 65535 - 60 - 8);
-}
-
-BOOST_AUTO_TEST_CASE(StaticPropertiesLocalIpv6)
-{
-  auto address = getTestIp(AddressFamily::V6, AddressScope::Loopback);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address);
-
-  checkStaticPropertiesInitialized(*transport);
-
-  BOOST_CHECK_EQUAL(transport->getLocalUri(), FaceUri("udp6://[::1]:" + to_string(localEp.port())));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri(), FaceUri("udp6://[::1]:7070"));
-  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL); // UDP is never local
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport->getMtu(), 65535 - 8);
-}
-
-BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv4)
-{
-  auto address = getTestIp(AddressFamily::V4, AddressScope::Global);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address);
-
-  checkStaticPropertiesInitialized(*transport);
-
-  BOOST_CHECK_EQUAL(transport->getLocalUri(),
-                    FaceUri("udp4://" + address.to_string() + ":" + to_string(localEp.port())));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri(),
-                    FaceUri("udp4://" + address.to_string() + ":7070"));
-  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport->getMtu(), 65535 - 60 - 8);
-}
-
-BOOST_AUTO_TEST_CASE(StaticPropertiesNonLocalIpv6)
-{
-  auto address = getTestIp(AddressFamily::V6, AddressScope::Global);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address);
-
-  checkStaticPropertiesInitialized(*transport);
-
-  BOOST_CHECK_EQUAL(transport->getLocalUri(),
-                    FaceUri("udp6://[" + address.to_string() + "]:" + to_string(localEp.port())));
-  BOOST_CHECK_EQUAL(transport->getRemoteUri(),
-                    FaceUri("udp6://[" + address.to_string() + "]:7070"));
-  BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  BOOST_CHECK_EQUAL(transport->getMtu(), 65535 - 8);
+  BOOST_CHECK_EQUAL(this->transport->getLocalUri(), FaceUri(udp::endpoint(this->address, this->localEp.port())));
+  BOOST_CHECK_EQUAL(this->transport->getRemoteUri(), FaceUri(udp::endpoint(this->address, 7070)));
+  BOOST_CHECK_EQUAL(this->transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL); // UDP is never local
+  BOOST_CHECK_EQUAL(this->transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
+  BOOST_CHECK_EQUAL(this->transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  BOOST_CHECK_EQUAL(this->transport->getMtu(),
+                    this->addressFamily == AddressFamily::V4 ? (65535 - 60 - 8) : (65535 - 8));
 }
 
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
-  auto address = getTestIp(AddressFamily::V4);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address);
+  TRANSPORT_TEST_INIT();
 
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND), true);
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERSISTENT), true);
@@ -115,9 +67,7 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 
 BOOST_AUTO_TEST_CASE(ExpirationTime)
 {
-  auto address = getTestIp(AddressFamily::V4);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_NE(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 
   transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
@@ -129,9 +79,7 @@ BOOST_AUTO_TEST_CASE(ExpirationTime)
 
 BOOST_AUTO_TEST_CASE(IdleClose)
 {
-  auto address = getTestIp(AddressFamily::V4);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
 
   int nStateChanges = 0;
   transport->afterStateChange.connect(
@@ -156,15 +104,15 @@ BOOST_AUTO_TEST_CASE(IdleClose)
   BOOST_CHECK_EQUAL(nStateChanges, 2);
 }
 
-using OnDemand = std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND>;
-using Persistent = std::integral_constant<ndn::nfd::FacePersistency, ndn::nfd::FACE_PERSISTENCY_PERSISTENT>;
-using RemoteClosePersistencies = boost::mpl::vector<OnDemand, Persistent>;
+using RemoteCloseFixture = IpTransportFixture<UnicastUdpTransportFixture,
+                                              AddressFamily::Any, AddressScope::Loopback>;
+using RemoteClosePersistencies = boost::mpl::vector_c<ndn::nfd::FacePersistency,
+                                                      ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
+                                                      ndn::nfd::FACE_PERSISTENCY_PERSISTENT>;
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies)
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies, RemoteCloseFixture)
 {
-  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address, Persistency::value);
+  TRANSPORT_TEST_INIT(Persistency::value);
 
   transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
@@ -186,11 +134,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistencies
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
 }
 
-BOOST_AUTO_TEST_CASE(RemoteClosePermanent)
+BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
 {
-  auto address = getTestIp(AddressFamily::V4, AddressScope::Loopback);
-  SKIP_IF_IP_UNAVAILABLE(address);
-  initialize(address, ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+  TRANSPORT_TEST_INIT(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
 
   remoteSocket.close();
 

@@ -30,7 +30,6 @@
 #include "face/face.hpp"
 
 #include "dummy-receive-link-service.hpp"
-#include "test-netif-ip.hpp"
 #include "tests/limited-io.hpp"
 
 namespace nfd {
@@ -74,7 +73,7 @@ protected:
   }
 
   void
-  initialize(ip::address address = ip::address_v4::loopback(),
+  initialize(ip::address address,
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
   {
     tcp::endpoint remoteEp(address, 7070);

@@ -27,7 +27,7 @@
 #include "face/websocket-transport.hpp"
 
 #include "channel-fixture.hpp"
-#include "test-netif-ip.hpp"
+#include "test-ip.hpp"
 
 namespace nfd {
 namespace face {

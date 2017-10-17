@@ -23,54 +23,45 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_TEST_NETIF_IP_HPP
-#define NFD_TESTS_DAEMON_FACE_TEST_NETIF_IP_HPP
+#ifndef NFD_TESTS_DAEMON_FACE_TEST_IP_HPP
+#define NFD_TESTS_DAEMON_FACE_TEST_IP_HPP
 
 #include "core/common.hpp"
 
 #include <boost/asio/ip/address.hpp>
 #include <ndn-cxx/net/network-address.hpp>
-#include <ndn-cxx/net/network-interface.hpp>
 
 namespace nfd {
+namespace face {
 namespace tests {
 
-using ndn::net::AddressFamily;
-using ndn::net::NetworkAddress;
-using ndn::net::NetworkInterface;
+enum class AddressFamily {
+  V4 = static_cast<int>(ndn::net::AddressFamily::V4),
+  V6 = static_cast<int>(ndn::net::AddressFamily::V6),
+  Any
+};
 
-// ---- network interface ----
-
-/** \brief Collect information about network interfaces
- *  \param allowCached if true, previously collected information can be returned
- *  \note This function is blocking if \p allowCached is false or no previous information exists
- *  \throw ndn::net::NetworkMonitor::Error NetworkMonitor::CAP_ENUM is unavailable
- */
-std::vector<shared_ptr<const NetworkInterface>>
-collectNetworkInterfaces(bool allowCached = true);
-
-template<AddressFamily AF>
-bool
-hasAddressFamily(const NetworkInterface& netif)
-{
-  return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
-                     [] (const NetworkAddress& a) { return a.getFamily() == AF; });
-}
-
-// ---- IP address ----
+std::ostream&
+operator<<(std::ostream& os, AddressFamily family);
 
 enum class AddressScope {
   Loopback  = static_cast<int>(ndn::net::AddressScope::HOST),
   LinkLocal = static_cast<int>(ndn::net::AddressScope::LINK),
   Global    = static_cast<int>(ndn::net::AddressScope::GLOBAL),
-  Unspecified
+  Any
 };
+
+std::ostream&
+operator<<(std::ostream& os, AddressScope scope);
 
 enum class MulticastInterface {
   No,
   Yes,
-  Unspecified
+  Any
 };
+
+std::ostream&
+operator<<(std::ostream& os, MulticastInterface mcast);
 
 /** \brief Derives IP address type from AddressFamily
  */
@@ -97,9 +88,9 @@ struct IpAddressFromFamily<AddressFamily::V6>
  *  \retval unspecified address, if no appropriate address is available
  */
 boost::asio::ip::address
-getTestIp(AddressFamily family = AddressFamily::UNSPECIFIED,
-          AddressScope scope = AddressScope::Unspecified,
-          MulticastInterface mcast = MulticastInterface::Unspecified);
+getTestIp(AddressFamily family = AddressFamily::Any,
+          AddressScope scope = AddressScope::Any,
+          MulticastInterface mcast = MulticastInterface::Any);
 
 /** \brief Skip the rest of the test case if \p address is unavailable
  *
@@ -122,6 +113,7 @@ getTestIp(AddressFamily family = AddressFamily::UNSPECIFIED,
   } while (false)
 
 } // namespace tests
+} // namespace face
 } // namespace nfd
 
-#endif // NFD_TESTS_DAEMON_FACE_TEST_NETIF_IP_HPP
+#endif // NFD_TESTS_DAEMON_FACE_TEST_IP_HPP
