@@ -29,7 +29,7 @@
 #include "core/global-io.hpp"
 
 #include <ndn-cxx/net/address-converter.hpp>
-#include <boost/range/adaptors.hpp>
+#include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
 #ifdef __linux__
@@ -42,6 +42,7 @@ namespace nfd {
 namespace face {
 
 namespace ip = boost::asio::ip;
+namespace net = ndn::net;
 
 NFD_LOG_INIT("UdpFactory");
 NFD_REGISTER_PROTOCOL_FACTORY(UdpFactory);
@@ -118,7 +119,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.group.address(boost::asio::ip::address_v4::from_string(valueStr, ec));
+        mcastConfig.group.address(ip::address_v4::from_string(valueStr, ec));
         if (ec) {
           BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group: '" +
                                 valueStr + "' cannot be parsed as an IPv4 address"));
@@ -293,9 +294,12 @@ UdpFactory::getChannels() const
 shared_ptr<Face>
 UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                 const udp::Endpoint& multicastEndpoint,
-                                const std::string& networkInterfaceName)
+                                const net::NetworkInterface& netif)
 {
-  // checking if the local and multicast endpoints are already in use for a multicast face
+  BOOST_ASSERT(multicastEndpoint.address().is_multicast());
+  BOOST_ASSERT(localEndpoint.port() == multicastEndpoint.port());
+
+  // check if the local and multicast endpoints are already in use for a multicast face
   auto it = m_mcastFaces.find(localEndpoint);
   if (it != m_mcastFaces.end()) {
     if (it->second->getRemoteUri() == FaceUri(multicastEndpoint))
@@ -306,7 +310,7 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
                                   "on a different multicast group"));
   }
 
-  // checking if the local endpoint is already in use for a unicast channel
+  // check if the local endpoint is already used by a unicast channel
   if (m_channels.find(localEndpoint) != m_channels.end()) {
     BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
                                 "endpoint is already allocated for a UDP unicast channel"));
@@ -315,16 +319,6 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {
     BOOST_THROW_EXCEPTION(Error("IPv6 multicast is not supported yet. Please provide an IPv4 "
                                 "address"));
-  }
-
-  if (localEndpoint.port() != multicastEndpoint.port()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
-                                "both endpoints should have the same port number. "));
-  }
-
-  if (!multicastEndpoint.address().is_multicast()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, "
-                                "the multicast group given as input is not a multicast address"));
   }
 
   ip::udp::socket receiveSocket(getGlobalIoService());
@@ -352,12 +346,10 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   // face will receive all packets sent to the other interfaces as well.
   // This happens only on Linux. On macOS, the ip::multicast::join_group option
   // is enough to get the desired behaviour.
-  if (!networkInterfaceName.empty()) {
-    if (::setsockopt(receiveSocket.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
-                     networkInterfaceName.c_str(), networkInterfaceName.size() + 1) < 0) {
-      BOOST_THROW_EXCEPTION(Error("Cannot bind multicast face to " + networkInterfaceName +
-                                  ": " + std::strerror(errno)));
-    }
+  if (::setsockopt(receiveSocket.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
+                   netif.getName().data(), netif.getName().size() + 1) < 0) {
+    BOOST_THROW_EXCEPTION(Error("Cannot bind multicast face to " + netif.getName() +
+                                ": " + std::strerror(errno)));
   }
 #endif // __linux__
 
@@ -374,34 +366,22 @@ UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
   return face;
 }
 
-shared_ptr<Face>
-UdpFactory::createMulticastFace(const std::string& localIp,
-                                const std::string& multicastIp,
-                                const std::string& multicastPort,
-                                const std::string& networkInterfaceName)
+static ndn::optional<ip::address>
+getV4Address(const net::NetworkInterface& netif)
 {
-  udp::Endpoint localEndpoint(ndn::ip::addressFromString(localIp),
-                              boost::lexical_cast<uint16_t>(multicastPort));
-  udp::Endpoint multicastEndpoint(ndn::ip::addressFromString(multicastIp),
-                                  boost::lexical_cast<uint16_t>(multicastPort));
-  return createMulticastFace(localEndpoint, multicastEndpoint, networkInterfaceName);
-}
-
-static ndn::optional<ndn::net::NetworkAddress>
-getV4Address(const ndn::net::NetworkInterface& netif)
-{
-  using namespace ndn::net;
-  for (const NetworkAddress& na : netif.getNetworkAddresses()) {
-    if (na.getFamily() == AddressFamily::V4 && na.getScope() != AddressScope::NOWHERE) {
-      return na;
+  for (const auto& na : netif.getNetworkAddresses()) {
+    if (na.getFamily() == net::AddressFamily::V4 && na.getScope() != net::AddressScope::NOWHERE) {
+      return na.getIp();
     }
   }
   return ndn::nullopt;
 }
 
 shared_ptr<Face>
-UdpFactory::applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif)
+UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface>& netif)
 {
+  BOOST_ASSERT(netif != nullptr);
+
   if (!m_mcastConfig.isEnabled) {
     return nullptr;
   }
@@ -431,8 +411,8 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInte
   }
 
   NFD_LOG_DEBUG("Creating multicast face on " << netif->getName());
-  udp::Endpoint localEndpoint(address->getIp(), m_mcastConfig.group.port());
-  auto face = this->createMulticastFace(localEndpoint, m_mcastConfig.group, netif->getName());
+  udp::Endpoint localEndpoint(*address, m_mcastConfig.group.port());
+  auto face = this->createMulticastFace(localEndpoint, m_mcastConfig.group, *netif);
   // ifname is only used on Linux. It is not required if there is only one multicast-capable netif,
   // but it is always supplied because a new netif can be added at anytime.
 

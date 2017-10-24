@@ -93,7 +93,7 @@ public:
   getChannels() const override;
 
   /**
-   * \brief Create multicast UDP face using udp::Endpoint
+   * \brief Create a multicast UDP face
    *
    * udp::Endpoint is really an alias for boost::asio::ip::udp::endpoint.
    *
@@ -102,40 +102,30 @@ public:
    * If this method is called twice with the same pair of endpoints, only one
    * face will be created. The second call will just return the existing face.
    *
-   * If an unicast face is already active on the same local NIC and port, the
-   * creation fails and an exception is thrown.
+   * If a UDP channel, unicast face, or multicast face already exists on the
+   * same local endpoint, the creation fails and an exception is thrown.
    *
-   * \param localEndpoint local endpoint
-   * \param multicastEndpoint multicast endpoint
-   * \param networkInterfaceName name of the network interface on which the face will be bound
-   *        (Used only on multihomed linux machine with more than one multicast UDP face for
-   *        the same multicast group. If specified, will require CAP_NET_RAW capability)
-   *        An empty string can be provided in other system or in linux machine with only one
-   *        multicast UDP face per multicast group
+   * \param localEndpoint the local endpoint
+   * \param multicastEndpoint the multicast endpoint
+   * \param netif the network interface to which the face will be bound
    *
-   * \return always a valid pointer to a MulticastUdpFace object, an exception
-   *         is thrown if it cannot be created.
+   * \return always a valid shared pointer to the created face;
+   *         an exception is thrown if the face cannot be created.
    * \throw UdpFactory::Error
    */
   shared_ptr<Face>
   createMulticastFace(const udp::Endpoint& localEndpoint,
                       const udp::Endpoint& multicastEndpoint,
-                      const std::string& networkInterfaceName = "");
-
-  shared_ptr<Face>
-  createMulticastFace(const std::string& localIp,
-                      const std::string& multicastIp,
-                      const std::string& multicastPort,
-                      const std::string& networkInterfaceName = "");
+                      const ndn::net::NetworkInterface& netif);
 
 private:
-  /** \brief Create UDP multicast face on \p netif if needed by \p m_mcastConfig.
+  /** \brief Create UDP multicast face on \p netif if needed by \p m_mcastConfig
    *  \return new or existing face, or nullptr if no face should be created
    */
   shared_ptr<Face>
   applyMcastConfigToNetif(const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
-  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig.
+  /** \brief Create and destroy UDP multicast faces according to \p m_mcastConfig
    */
   void
   applyMcastConfig(const FaceSystem::ConfigContext& context);
