@@ -135,7 +135,12 @@ protected:
   handleReconnect(const boost::system::error_code& error) final
   {
     TcpTransport::handleReconnect(error);
-    m_io.afterOp();
+
+    // don't count this invocation as an "op" if the reconnection attempt failed,
+    // because in that case we will instead count the handleReconnectTimeout()
+    // that will eventually be called as well
+    if (getState() == TransportState::UP)
+      m_io.afterOp();
   }
 
   void
@@ -179,30 +184,34 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   this->remoteSocket.close();
 
   // measure retry intervals
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
   auto retryTime1 = time::steady_clock::now();
-  BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  auto expectedWait1 = TcpTransport::s_initialReconnectWait;
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + time::seconds(1)), // add some slack
+                      LimitedIo::EXCEED_OPS);
   auto retryTime2 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  auto expectedWait2 = time::duration_cast<time::nanoseconds>(expectedWait1 *
+                                                              TcpTransport::s_reconnectWaitMultiplier);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait2 + time::seconds(1)), // add some slack
+                      LimitedIo::EXCEED_OPS);
   auto retryTime3 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   // check that the backoff algorithm works
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime2 - retryTime1),
-                    asFloatMilliseconds(TcpTransport::s_initialReconnectWait),
-                    10.0);
+                    asFloatMilliseconds(expectedWait1), 10.0);
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime3 - retryTime2),
-                    asFloatMilliseconds(TcpTransport::s_initialReconnectWait) * TcpTransport::s_reconnectWaitMultiplier,
-                    10.0);
+                    asFloatMilliseconds(expectedWait2), 10.0);
 
   // reestablish the TCP connection
   this->startAccept(remoteEp);
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(3, time::seconds(10)), LimitedIo::EXCEED_OPS);
+  auto expectedWait3 = time::duration_cast<time::nanoseconds>(expectedWait2 *
+                                                              TcpTransport::s_reconnectWaitMultiplier);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(3, // reconnect, handleReconnect, async_accept
+                                          expectedWait3 + time::seconds(1)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::UP);
 
   // break the TCP connection again
@@ -210,18 +219,15 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   this->remoteSocket.close();
 
   // measure retry intervals
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
   auto retryTime4 = time::steady_clock::now();
-  BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
-
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + time::seconds(1)), // add some slack
+                      LimitedIo::EXCEED_OPS);
   auto retryTime5 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   // check that the timeout restarts from the initial value after a successful reconnection
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime5 - retryTime4),
-                    asFloatMilliseconds(TcpTransport::s_initialReconnectWait),
-                    10.0);
+                    asFloatMilliseconds(expectedWait1), 10.0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestTcpTransport
