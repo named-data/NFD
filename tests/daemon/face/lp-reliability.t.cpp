@@ -54,7 +54,10 @@ public:
   sendLpPackets(std::vector<lp::Packet> frags)
   {
     if (frags.front().has<lp::FragmentField>()) {
-      m_reliability.handleOutgoing(frags);
+      Interest interest("/test/prefix");
+      lp::Packet pkt;
+      pkt.add<lp::FragmentField>(make_pair(interest.wireEncode().begin(), interest.wireEncode().end()));
+      m_reliability.handleOutgoing(frags, std::move(pkt), true);
     }
 
     for (lp::Packet frag : frags) {
@@ -176,6 +179,7 @@ BOOST_AUTO_TEST_CASE(SendNoFragmentField)
   linkService->sendLpPackets({pkt});
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 }
 
 BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
@@ -190,6 +194,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK(!cached1.has<lp::SequenceField>());
   lp::Sequence firstTxSeq = cached1.get<lp::TxSequenceField>();
   BOOST_CHECK_EQUAL(getPktNo(cached1), 1024);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+500ms
   // 1024 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
@@ -208,6 +213,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 1).retxCount, 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+1250ms
   // 1024 rto: 1000ms, txSeq: 4, started T+1000ms, retx 1
@@ -222,6 +228,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 1).retxCount, 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq + 1);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 3);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+2250ms
   // 1024 rto: 1000ms, txSeq: 6, started T+2000ms, retx 2
@@ -237,6 +244,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 3).retxCount, 1);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq + 3);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 5);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+3250ms
   // 1024 rto: 1000ms, txSeq: 8, started T+3000ms, retx 3
@@ -252,6 +260,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 5).retxCount, 2);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq + 5);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 7);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+4250ms
   // 1024 rto: expired, removed
@@ -266,6 +275,8 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq + 7);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 8);
 
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 1);
+
   // T+4750ms
   // 1024 rto: expired, removed
   // 3000 rto: expired, removed
@@ -274,6 +285,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 8);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 2);
 }
 
 BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
@@ -297,6 +309,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   BOOST_REQUIRE(cached3.has<lp::TxSequenceField>());
   BOOST_CHECK_EQUAL(cached3.get<lp::TxSequenceField>(), 4);
   BOOST_CHECK_EQUAL(getPktNo(cached3), 2050);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+0ms
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
@@ -324,6 +337,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 2);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 3);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+250ms
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
@@ -354,6 +368,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   BOOST_CHECK(netPktHasUnackedFrag(reliability->m_unackedFrags.at(2).netPkt, 4));
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 2);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 4);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+500ms
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
@@ -384,6 +399,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   BOOST_CHECK(netPktHasUnackedFrag(reliability->m_unackedFrags.at(2).netPkt, 4));
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 2);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 5);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+750ms
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
@@ -414,6 +430,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   BOOST_CHECK(netPktHasUnackedFrag(reliability->m_unackedFrags.at(2).netPkt, 4));
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 2);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 6);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   // T+850ms
   // 2048 rto: expired, removed
@@ -424,6 +441,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 1);
 }
 
 BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also tests wraparound
@@ -449,6 +467,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(3), 1); // pkt5
   BOOST_CHECK(reliability->m_unackedFrags.at(3).netPkt);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 0xFFFFFFFFFFFFFFFF);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   lp::Packet ackPkt1;
   ackPkt1.add<lp::AckField>(0);
@@ -473,6 +492,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(3).nGreaterSeqAcks, 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 0xFFFFFFFFFFFFFFFF);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 5);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   lp::Packet ackPkt2;
   ackPkt2.add<lp::AckField>(2);
@@ -497,6 +517,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(101010), 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 0xFFFFFFFFFFFFFFFF);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 5);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   lp::Packet ackPkt3;
   ackPkt3.add<lp::AckField>(1);
@@ -523,6 +544,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(sentRetxPkt.get<lp::TxSequenceField>(), 4);
   BOOST_REQUIRE(sentRetxPkt.has<lp::FragmentField>());
   BOOST_CHECK_EQUAL(getPktNo(sentRetxPkt), 1);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 
   lp::Packet ackPkt4;
   ackPkt4.add<lp::AckField>(4);
@@ -542,6 +564,7 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(4), 0); // pkt1 new TxSeq
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, 3);
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 6);
+  BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // Sender

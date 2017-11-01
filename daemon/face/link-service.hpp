@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,8 @@
 #define NFD_DAEMON_FACE_LINK_SERVICE_HPP
 
 #include "core/counter.hpp"
-#include "transport.hpp"
 #include "face-log.hpp"
+#include "transport.hpp"
 
 namespace nfd {
 namespace face {
@@ -50,11 +50,15 @@ public:
    */
   PacketCounter nOutInterests;
 
-  /** \brief count of incoming Data
+  /** \brief count of Interests dropped by reliability system for exceeding allowed number of retx
+   */
+  PacketCounter nDroppedInterests;
+
+  /** \brief count of incoming Data packets
    */
   PacketCounter nInData;
 
-  /** \brief count of outgoing Data
+  /** \brief count of outgoing Data packets
    */
   PacketCounter nOutData;
 
@@ -138,6 +142,10 @@ public: // upper interface to be used by forwarding
    */
   signal::Signal<LinkService, lp::Nack> afterReceiveNack;
 
+  /** \brief signals on Interest dropped by reliability system for exceeding allowed number of retx
+   */
+  signal::Signal<LinkService, Interest> onDroppedInterest;
+
 public: // lower interface to be invoked by Transport
   /** \brief performs LinkService specific operations to receive a lower-layer packet
    */
@@ -165,6 +173,10 @@ protected: // lower interface to be invoked in subclass (send path termination)
    */
   void
   sendPacket(Transport::Packet&& packet);
+
+protected:
+  void
+  notifyDroppedInterest(const Interest& packet);
 
 private: // upper interface to be overridden in subclass (send path entrypoint)
   /** \brief performs LinkService specific operations to send an Interest

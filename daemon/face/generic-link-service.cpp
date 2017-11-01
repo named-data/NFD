@@ -46,6 +46,7 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_lastSeqNo(-2)
 {
   m_reassembler.beforeTimeout.connect(bind([this] { ++this->nReassemblyTimeouts; }));
+  m_reliability.onDroppedInterest.connect([this] (const Interest& i) { this->notifyDroppedInterest(i); });
   nReassembling.observe(&m_reassembler);
 }
 
@@ -90,7 +91,7 @@ GenericLinkService::doSendInterest(const Interest& interest)
 
   encodeLpFields(interest, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket), true);
 }
 
 void
@@ -100,7 +101,7 @@ GenericLinkService::doSendData(const Data& data)
 
   encodeLpFields(data, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket), false);
 }
 
 void
@@ -111,11 +112,11 @@ GenericLinkService::doSendNack(const lp::Nack& nack)
 
   encodeLpFields(nack, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket));
+  this->sendNetPacket(std::move(lpPacket), false);
 }
 
 void
-GenericLinkService::encodeLpFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket)
+GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket)
 {
   if (m_options.allowLocalFields) {
     shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = netPkt.getTag<lp::IncomingFaceIdTag>();
@@ -131,7 +132,7 @@ GenericLinkService::encodeLpFields(const ndn::TagHost& netPkt, lp::Packet& lpPac
 }
 
 void
-GenericLinkService::sendNetPacket(lp::Packet&& pkt)
+GenericLinkService::sendNetPacket(lp::Packet&& pkt, bool isInterest)
 {
   std::vector<lp::Packet> frags;
   ssize_t mtu = this->getTransport()->getMtu();
@@ -152,7 +153,12 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
     }
   }
   else {
-    frags.push_back(std::move(pkt));
+    if (m_options.reliabilityOptions.isEnabled) {
+      frags.push_back(pkt);
+    }
+    else {
+      frags.push_back(std::move(pkt));
+    }
   }
 
   if (frags.size() == 1) {
@@ -169,7 +175,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt)
   }
 
   if (m_options.reliabilityOptions.isEnabled && frags.front().has<lp::FragmentField>()) {
-    m_reliability.handleOutgoing(frags);
+    m_reliability.handleOutgoing(frags, std::move(pkt), isInterest);
   }
 
   for (lp::Packet& frag : frags) {

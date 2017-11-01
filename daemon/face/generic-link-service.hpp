@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -175,13 +175,14 @@ private: // send path
    *  \param lpPacket LpPacket to add link protocol fields to
    */
   void
-  encodeLpFields(const ndn::TagHost& netPkt, lp::Packet& lpPacket);
+  encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lpPacket);
 
   /** \brief send a complete network layer packet
    *  \param pkt LpPacket containing a complete network layer packet
+   *  \param isInterest whether the network layer packet is an Interest
    */
   void
-  sendNetPacket(lp::Packet&& pkt);
+  sendNetPacket(lp::Packet&& pkt, bool isInterest);
 
   /** \brief assign a sequence number to an LpPacket
    */

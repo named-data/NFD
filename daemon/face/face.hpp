@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -23,13 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FACE_HPP
-#define NFD_DAEMON_FACE_HPP
+#ifndef NFD_DAEMON_FACE_FACE_HPP
+#define NFD_DAEMON_FACE_FACE_HPP
 
-#include "transport.hpp"
-#include "link-service.hpp"
 #include "face-counters.hpp"
 #include "face-log.hpp"
+#include "link-service.hpp"
+#include "transport.hpp"
 
 namespace nfd {
 namespace face {
@@ -106,6 +106,10 @@ public: // upper interface connected to forwarding
   /** \brief signals on Nack received
    */
   signal::Signal<LinkService, lp::Nack>& afterReceiveNack;
+
+  /** \brief signals on Interest dropped by reliability system for exceeding allowed number of retx
+   */
+  signal::Signal<LinkService, Interest>& onDroppedInterest;
 
 public: // static properties
   /** \return face ID
@@ -300,4 +304,4 @@ using face::Face;
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_FACE_HPP
+#endif // NFD_DAEMON_FACE_FACE_HPP

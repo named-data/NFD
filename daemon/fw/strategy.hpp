@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -180,6 +180,13 @@ public: // triggers
   virtual void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry);
+
+  /** \brief trigger after Interest dropped for exceeding allowed retransmissions
+   *
+   *  In the base class this method does nothing.
+   */
+  virtual void
+  onDroppedInterest(const Face& outFace, const Interest& interest);
 
 protected: // actions
   /** \brief send Interest to outFace

@@ -252,6 +252,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace, const lp::NackHeader& nack);
 
+  VIRTUAL_WITH_TESTS void
+  onDroppedInterest(Face& outFace, const Interest& interest);
+
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
   setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry);

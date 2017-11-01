@@ -67,6 +67,10 @@ public:
 
   LpReliability(const Options& options, GenericLinkService* linkService);
 
+  /** \brief signals on Interest dropped by reliability system for exceeding allowed number of retx
+   */
+  signal::Signal<LpReliability, Interest> onDroppedInterest;
+
   /** \brief set options for reliability
    */
   void
@@ -81,9 +85,11 @@ public:
 
   /** \brief observe outgoing fragment(s) of a network packet and store for potential retransmission
    *  \param frags fragments of network packet
+   *  \param pkt encapsulated network packet
+   *  \param isInterest whether the network packet is an Interest
    */
   void
-  handleOutgoing(std::vector<lp::Packet>& frags);
+  handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, bool isInterest);
 
   /** \brief extract and parse all Acks and add Ack for contained Fragment (if any) to AckQueue
    *  \param pkt incoming LpPacket
@@ -182,8 +188,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   class NetPkt
   {
   public:
+    NetPkt(lp::Packet&& pkt, bool isInterest);
+
+  public:
     std::vector<UnackedFrags::iterator> unackedFrags;
-    bool didRetx = false;
+    lp::Packet pkt;
+    bool isInterest;
+    bool didRetx;
   };
 
 public:

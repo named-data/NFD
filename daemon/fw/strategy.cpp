@@ -171,6 +171,12 @@ Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
 }
 
 void
+Strategy::onDroppedInterest(const Face& outFace, const Interest& interest)
+{
+  NFD_LOG_DEBUG("onDroppedInterest outFace=" << outFace.getId() << " name=" << interest.getName());
+}
+
+void
 Strategy::sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
                     std::initializer_list<const Face*> exceptFaces)
 {

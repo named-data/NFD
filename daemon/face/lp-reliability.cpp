@@ -61,14 +61,14 @@ LpReliability::getLinkService() const
 }
 
 void
-LpReliability::handleOutgoing(std::vector<lp::Packet>& frags)
+LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, bool isInterest)
 {
   BOOST_ASSERT(m_options.isEnabled);
 
   auto unackedFragsIt = m_unackedFrags.begin();
   auto sendTime = time::steady_clock::now();
 
-  auto netPkt = make_shared<NetPkt>();
+  auto netPkt = make_shared<NetPkt>(std::move(pkt), isInterest);
   netPkt->unackedFrags.reserve(frags.size());
 
   for (lp::Packet& frag : frags) {
@@ -250,6 +250,16 @@ LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
     }
 
     ++m_linkService->nRetxExhausted;
+
+    // Notify strategy of dropped Interest (if any)
+    if (netPkt->isInterest) {
+      BOOST_ASSERT(netPkt->pkt.has<lp::FragmentField>());
+      ndn::Buffer::const_iterator fragBegin, fragEnd;
+      std::tie(fragBegin, fragEnd) = netPkt->pkt.get<lp::FragmentField>();
+      Block frag(&*fragBegin, std::distance(fragBegin, fragEnd));
+      onDroppedInterest(Interest(frag));
+    }
+
     deleteUnackedFrag(txSeqIt);
   }
   else {
@@ -334,6 +344,13 @@ LpReliability::UnackedFrag::UnackedFrag(lp::Packet pkt)
   , sendTime(time::steady_clock::now())
   , retxCount(0)
   , nGreaterSeqAcks(0)
+{
+}
+
+LpReliability::NetPkt::NetPkt(lp::Packet&& pkt, bool isInterest)
+  : pkt(std::move(pkt))
+  , isInterest(isInterest)
+  , didRetx(false)
 {
 }
 

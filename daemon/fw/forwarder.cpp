@@ -61,6 +61,10 @@ Forwarder::Forwarder()
       [this, &face] (const lp::Nack& nack) {
         this->startProcessNack(face, nack);
       });
+    face.onDroppedInterest.connect(
+      [this, &face] (const Interest& interest) {
+        this->onDroppedInterest(face, interest);
+      });
   });
 
   m_faceTable.beforeRemove.connect([this] (Face& face) {
@@ -479,6 +483,12 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& ou
   // send Nack on face
   const_cast<Face&>(outFace).sendNack(nackPkt);
   ++m_counters.nOutNacks;
+}
+
+void
+Forwarder::onDroppedInterest(Face& outFace, const Interest& interest)
+{
+  m_strategyChoice.findEffectiveStrategy(interest.getName()).onDroppedInterest(outFace, interest);
 }
 
 static inline bool
