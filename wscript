@@ -225,6 +225,9 @@ def build(bld):
     if bld.env['HAVE_WEBSOCKET']:
         nfd_objects.source += bld.path.ant_glob('daemon/face/websocket-*.cpp')
 
+    if bld.env['WITH_OTHER_TESTS']:
+        nfd_objects.source += bld.path.ant_glob('tests/other/fw/*.cpp')
+
     rib_objects = bld(
         target='rib-objects',
         name='rib-objects',
