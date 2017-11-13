@@ -10,7 +10,6 @@ Usage
 
     ndn-autoconfig-server [-h] [-p <PREFIX>] [-p <PREFIX>] ... <FACEURI>
 
-
 Description
 -----------
 
@@ -20,9 +19,6 @@ Description
 This daemon essentially waits for Interests for ``/localhop/ndn-autoconf/hub`` and
 satisfies them with a Data packet that contains a TLV-encoded FaceUri block.  The value of
 this block is the ``Uri`` for the HUB, preferably a UDP tunnel.
-
-``-h``
-  print usage and exit.
 
 ``<FACEURI>``
   FaceUri for this NDN hub.
@@ -34,6 +30,23 @@ this block is the ``Uri`` for the HUB, preferably a UDP tunnel.
   as described in :ref:`local-prefix-discovery`.  If no prefix is specified,
   auto-config-server will not serve any local prefix discovery data.
 
+``-h``
+  Print usage and exit.
+
+``-V``
+  Print version number and exit.
+
+Exit status
+-----------
+
+0: No error.
+
+1: An unspecified error occurred.
+
+2: Malformed command line, e.g., invalid, missing, or unknown argument.
+
+4: Insufficient privileges.
+
 Examples
 --------
 
@@ -42,7 +55,6 @@ Examples
     ndn-autoconfig-server tcp://spurs.cs.ucla.edu
 
     ndn-autoconfig-server -p /ndn/edu/ucla tcp://spurs.cs.ucla.edu
-
 
 See also
 --------

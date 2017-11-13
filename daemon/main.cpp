@@ -26,18 +26,19 @@
 #include "nfd.hpp"
 #include "rib/service.hpp"
 
-#include "core/version.hpp"
+#include "core/extended-error-message.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "core/logger-factory.hpp"
 #include "core/privilege-helper.hpp"
-#include "core/extended-error-message.hpp"
+#include "core/version.hpp"
 
 #include <string.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options/options_description.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
+#include <boost/program_options/variables_map.hpp>
 
 // boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
 // see http://www.boost.org/doc/libs/1_54_0/doc/html/thread/thread_local_storage.html
@@ -47,9 +48,11 @@
 #include <condition_variable>
 #include <iostream>
 
-namespace nfd {
+namespace po = boost::program_options;
 
 NFD_LOG_INIT("NFD");
+
+namespace nfd {
 
 /** \brief Executes NFD with RIB manager
  *
@@ -78,33 +81,6 @@ public:
     m_reloadSignalSet.async_wait(bind(&NfdRunner::reload, this, _1, _2));
   }
 
-  static void
-  printUsage(std::ostream& os, const std::string& programName)
-  {
-    os << "Usage: \n"
-       << "  " << programName << " [options]\n"
-       << "\n"
-       << "Run NFD forwarding daemon\n"
-       << "\n"
-       << "Options:\n"
-       << "  [--help]    - print this help message\n"
-       << "  [--version] - print version and exit\n"
-       << "  [--modules] - list available logging modules\n"
-       << "  [--config /path/to/nfd.conf] - path to configuration file "
-       << "(default: " << DEFAULT_CONFIG_FILE << ")\n"
-      ;
-  }
-
-  static void
-  printModules(std::ostream& os)
-  {
-    os << "Available logging modules: \n";
-
-    for (const auto& module : LoggerFactory::getInstance().getModules()) {
-      os << module << "\n";
-    }
-  }
-
   void
   initialize()
   {
@@ -114,10 +90,8 @@ public:
   int
   run()
   {
-    /** \brief return value
-     *  A non-zero value is assigned when either NFD or RIB manager (running in a separate
-     *  thread) fails.
-     */
+    // Return value: a non-zero value is assigned when either NFD or RIB manager (running in
+    // a separate thread) fails.
     std::atomic_int retval(0);
 
     boost::asio::io_service* const mainIo = &getGlobalIoService();
@@ -148,7 +122,7 @@ public:
         }
         catch (const std::exception& e) {
           NFD_LOG_FATAL(e.what());
-          retval = 6;
+          retval = 1;
           mainIo->stop();
         }
 
@@ -170,11 +144,11 @@ public:
     }
     catch (const std::exception& e) {
       NFD_LOG_FATAL(getExtendedErrorMessage(e));
-      retval = 4;
+      retval = 1;
     }
     catch (const PrivilegeHelper::Error& e) {
       NFD_LOG_FATAL(e.what());
-      retval = 5;
+      retval = 4;
     }
 
     {
@@ -221,6 +195,25 @@ private:
   boost::asio::signal_set m_reloadSignalSet;
 };
 
+static void
+printUsage(std::ostream& os, const char* programName,
+           const po::options_description& opts)
+{
+  os << "Usage: " << programName << " [options]\n"
+     << "Run the NDN Forwarding Daemon (NFD)\n"
+     << "\n"
+     << opts;
+}
+
+static void
+printLogModules(std::ostream& os)
+{
+  const auto& factory = LoggerFactory::getInstance();
+  for (const auto& module : factory.getModules()) {
+    os << module << "\n";
+  }
+}
+
 } // namespace nfd
 
 int
@@ -228,33 +221,32 @@ main(int argc, char** argv)
 {
   using namespace nfd;
 
-  namespace po = boost::program_options;
-
-  po::options_description description;
-
   std::string configFile = DEFAULT_CONFIG_FILE;
+
+  po::options_description description("Options");
   description.add_options()
-    ("help,h",    "print this help message")
-    ("version,V", "print version and exit")
+    ("help,h",    "print this message and exit")
+    ("version,V", "show version information and exit")
+    ("config,c",  po::value<std::string>(&configFile),
+                  "path to configuration file (default: " DEFAULT_CONFIG_FILE ")")
     ("modules,m", "list available logging modules")
-    ("config,c",  po::value<std::string>(&configFile), "path to configuration file")
     ;
 
   po::variables_map vm;
   try {
-    po::store(po::command_line_parser(argc, argv).options(description).run(), vm);
+    po::store(po::parse_command_line(argc, argv, description), vm);
     po::notify(vm);
   }
   catch (const std::exception& e) {
     // avoid NFD_LOG_FATAL to ensure that errors related to command-line parsing always appear on the
     // terminal and are not littered with timestamps and other things added by the logging subsystem
-    std::cerr << "ERROR: " << e.what() << std::endl;
-    NfdRunner::printUsage(std::cerr, argv[0]);
-    return 1;
+    std::cerr << "ERROR: " << e.what() << "\n\n";
+    printUsage(std::cerr, argv[0], description);
+    return 2;
   }
 
   if (vm.count("help") > 0) {
-    NfdRunner::printUsage(std::cout, argv[0]);
+    printUsage(std::cout, argv[0], description);
     return 0;
   }
 
@@ -264,36 +256,36 @@ main(int argc, char** argv)
   }
 
   if (vm.count("modules") > 0) {
-    NfdRunner::printModules(std::cout);
+    printLogModules(std::cout);
     return 0;
   }
 
-  NfdRunner runner(configFile);
+  NFD_LOG_INFO("Version " NFD_VERSION_BUILD_STRING " starting");
 
+  NfdRunner runner(configFile);
   try {
     runner.initialize();
   }
   catch (const boost::filesystem::filesystem_error& e) {
     if (e.code() == boost::system::errc::permission_denied) {
-      NFD_LOG_FATAL("Permissions denied for " << e.path1() << ". " <<
-                    argv[0] << " should be run as superuser");
-      return 3;
+      NFD_LOG_FATAL("Permission denied for " << e.path1() <<
+                    ". This program should be run as superuser");
+      return 4;
     }
     else {
       NFD_LOG_FATAL(getExtendedErrorMessage(e));
-      return 2;
+      return 1;
     }
   }
   catch (const std::exception& e) {
     NFD_LOG_FATAL(getExtendedErrorMessage(e));
-    return 2;
+    return 1;
   }
   catch (const PrivilegeHelper::Error& e) {
     // PrivilegeHelper::Errors do not inherit from std::exception
     // and represent seteuid/gid failures
-
     NFD_LOG_FATAL(e.what());
-    return 3;
+    return 4;
   }
 
   return runner.run();

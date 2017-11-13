@@ -37,16 +37,16 @@ namespace autoconfig_server {
 static void
 usage(const char* programName)
 {
-  std::cout << "Usage:\n" << programName  << " [-h] [-V] [-p prefix] [-p prefix] ... hub-face\n"
+  std::cout << "Usage: " << programName << " [-h] [-V] [-p prefix]... <hub-face>\n"
+            << "\n"
+            << "Options:\n"
             << "  -h        - print usage and exit\n"
             << "  -V        - print version number and exit\n"
             << "  -p prefix - a local prefix of the HUB\n"
-            << "\n"
-            << "  hub-face  - a FaceUri to reach the HUB\n"
-            << std::endl;
+            << "  hub-face  - a FaceUri to reach the HUB\n";
 }
 
-int
+static int
 main(int argc, char** argv)
 {
   Options options;
@@ -75,7 +75,7 @@ main(int argc, char** argv)
   }
 
   if (!options.hubFaceUri.parse(argv[::optind])) {
-    std::cerr << "ERROR: cannot parse HUB FaceUri\n";
+    std::cerr << "ERROR: cannot parse HUB FaceUri" << std::endl;
     return 2;
   }
 

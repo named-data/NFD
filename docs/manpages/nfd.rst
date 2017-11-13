@@ -8,24 +8,36 @@ Usage
 
     nfd [options]
 
-
 Description
 -----------
 
 NFD forwarding daemon.
 
+Options
+-------
 
-Options:
---------
-
-``--help``
-  Print this help message.
-
-``--modules``
-  List available logging modules
-
-``--config <path/to/nfd.conf>``
+``-c <path/to/nfd.conf>`` or ``--config <path/to/nfd.conf>``
   Specify the path to nfd configuration file (default: ``${SYSCONFDIR}/ndn/nfd.conf``).
+
+``-m`` or ``--modules``
+  List available logging modules.
+
+``-h`` or ``--help``
+  Print help message and exit.
+
+``-V`` or ``--version``
+  Show version information and exit.
+
+Exit status
+-----------
+
+0: No error.
+
+1: An unspecified error occurred.
+
+2: Malformed command line, e.g., invalid, missing, or unknown argument.
+
+4: Insufficient privileges.
 
 Examples
 --------

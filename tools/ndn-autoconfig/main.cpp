@@ -43,11 +43,11 @@
 #pragma clang diagnostic ignored "-Wundefined-func-template"
 #endif
 
+// ndn-autoconfig is an NDN tool not an NFD tool, so it uses ndn::tools::autoconfig namespace.
+// It lives in NFD repository because nfd-start can automatically start ndn-autoconfig in daemon mode.
 namespace ndn {
 namespace tools {
 namespace autoconfig {
-// ndn-autoconfig is an NDN tool not an NFD tool, so it uses ndn::tools::autoconfig namespace.
-// It lives in NFD repository because nfd-start can automatically start ndn-autoconfig in daemon mode.
 
 static const time::nanoseconds DAEMON_INITIAL_DELAY = time::milliseconds(100);
 static const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = time::hours(1);
@@ -57,13 +57,12 @@ namespace po = boost::program_options;
 
 static void
 usage(std::ostream& os,
-      const po::options_description& optionsDescription,
+      const po::options_description& opts,
       const char* programName)
 {
-  os << "Usage:\n"
-     << "  " << programName << " [options]\n"
-     << "\n";
-  os << optionsDescription;
+  os << "Usage: " << programName << " [options]\n"
+     << "\n"
+     << opts;
 }
 
 static void
@@ -77,7 +76,7 @@ runDaemon(Procedure& proc)
       return;
     }
     const char* signalName = ::strsignal(signalNo);
-    std::cerr << "Exit on signal ";
+    std::cerr << "Exiting on signal ";
     if (signalName == nullptr) {
       std::cerr << signalNo;
     }
@@ -115,15 +114,15 @@ main(int argc, char** argv)
   po::options_description optionsDescription("Options");
   optionsDescription.add_options()
     ("help,h", "print this message and exit")
-    ("version,V", "display version and exit")
+    ("version,V", "show version information and exit")
     ("daemon,d", po::bool_switch(&isDaemon)->default_value(isDaemon),
-     "run in daemon mode, detecting network change events and re-running auto-discovery procedure. "
+     "Run in daemon mode, detecting network change events and re-running the auto-discovery procedure. "
      "In addition, the auto-discovery procedure is unconditionally re-run every hour.\n"
-     "NOTE: if connection to NFD fails, the daemon will be terminated.")
+     "NOTE: if the connection to NFD fails, the daemon will exit.")
     ("ndn-fch-url", po::value<std::string>(&options.ndnFchUrl)->default_value(options.ndnFchUrl),
      "URL for NDN-FCH (Find Closest Hub) service")
     ("config,c", po::value<std::string>(&configFile),
-     "configuration file. Exit immediately if `enabled = true` is not specified in config file.")
+     "Configuration file. Exit immediately unless 'enabled = true' is specified in the config file.")
     ;
 
   po::variables_map vm;
@@ -132,7 +131,7 @@ main(int argc, char** argv)
     po::notify(vm);
   }
   catch (const std::exception& e) {
-    std::cerr << "ERROR: " << e.what() << "\n" << "\n\n";
+    std::cerr << "ERROR: " << e.what() << "\n\n";
     usage(std::cerr, optionsDescription, argv[0]);
     return 2;
   }
@@ -177,7 +176,7 @@ main(int argc, char** argv)
       runDaemon(proc);
     }
     else {
-      proc.onComplete.connect([&exitCode] (bool isSuccess) { exitCode = isSuccess ? 0 : 3; });
+      proc.onComplete.connect([&exitCode] (bool isSuccess) { exitCode = isSuccess ? 0 : 1; });
       proc.runOnce();
       face.processEvents();
     }
@@ -186,6 +185,7 @@ main(int argc, char** argv)
     std::cerr << ::nfd::getExtendedErrorMessage(e) << std::endl;
     return 1;
   }
+
   return exitCode;
 }
 

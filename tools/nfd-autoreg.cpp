@@ -23,6 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "core/extended-error-message.hpp"
 #include "core/network.hpp"
 #include "core/version.hpp"
 
@@ -75,19 +76,19 @@ public:
   /**
    * \return true if uri has schema allowed to do auto-registrations
    */
-  bool
+  static bool
   hasAllowedSchema(const FaceUri& uri)
   {
     const std::string& scheme = uri.getScheme();
-    return (scheme == "udp4" || scheme == "tcp4" ||
-            scheme == "udp6" || scheme == "tcp6");
+    return scheme == "udp4" || scheme == "tcp4" ||
+           scheme == "udp6" || scheme == "tcp6";
   }
 
   /**
    * \return true if address is blacklisted
    */
   bool
-  isBlacklisted(const boost::asio::ip::address& address)
+  isBlacklisted(const boost::asio::ip::address& address) const
   {
     return std::any_of(m_blackList.begin(), m_blackList.end(),
                        bind(&Network::doesContain, _1, address));
@@ -97,7 +98,7 @@ public:
    * \return true if address is whitelisted
    */
   bool
-  isWhitelisted(const boost::asio::ip::address& address)
+  isWhitelisted(const boost::asio::ip::address& address) const
   {
     return std::any_of(m_whiteList.begin(), m_whiteList.end(),
                        bind(&Network::doesContain, _1, address));
@@ -160,15 +161,14 @@ public:
     m_face.shutdown();
   }
 
-  void
+  static void
   usage(std::ostream& os,
         const boost::program_options::options_description& desc,
         const char* programName)
   {
-    os << "Usage:\n"
-       << "  " << programName << " --prefix=</autoreg/prefix> [--prefix=/another/prefix] ...\n"
-       << "\n";
-    os << desc;
+    os << "Usage: " << programName << " [--prefix=</autoreg/prefix>]... [options]\n"
+       << "\n"
+       << desc;
   }
 
   void
@@ -222,41 +222,40 @@ public:
   {
     namespace po = boost::program_options;
 
-    po::options_description optionDesciption;
-    optionDesciption.add_options()
-      ("help,h", "produce help message")
+    po::options_description optionsDesc("Options");
+    optionsDesc.add_options()
+      ("help,h", "print this message and exit")
+      ("version,V", "show version information and exit")
       ("prefix,i", po::value<std::vector<Name>>(&m_autoregPrefixes)->composing(),
-       "prefix that should be automatically registered when new a remote non-local face is "
-       "established")
+       "prefix that should be automatically registered when a new non-local face is created")
       ("all-faces-prefix,a", po::value<std::vector<Name>>(&m_allFacesPrefixes)->composing(),
        "prefix that should be automatically registered for all TCP and UDP non-local faces "
        "(blacklists and whitelists do not apply to this prefix)")
       ("cost,c", po::value<uint64_t>(&m_cost)->default_value(255),
-       "FIB cost which should be assigned to autoreg nexthops")
+       "FIB cost that should be assigned to autoreg nexthops")
       ("whitelist,w", po::value<std::vector<Network>>(&m_whiteList)->composing(),
        "Whitelisted network, e.g., 192.168.2.0/24 or ::1/128")
       ("blacklist,b", po::value<std::vector<Network>>(&m_blackList)->composing(),
        "Blacklisted network, e.g., 192.168.2.32/30 or ::1/128")
-      ("version,V", "show version and exit")
       ;
 
     po::variables_map options;
     try {
-      po::store(po::command_line_parser(argc, argv).options(optionDesciption).run(), options);
+      po::store(po::parse_command_line(argc, argv, optionsDesc), options);
       po::notify(options);
     }
     catch (const std::exception& e) {
       std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
-      usage(std::cerr, optionDesciption, argv[0]);
-      return 1;
+      usage(std::cerr, optionsDesc, argv[0]);
+      return 2;
     }
 
-    if (options.count("help")) {
-      usage(std::cout, optionDesciption, argv[0]);
+    if (options.count("help") > 0) {
+      usage(std::cout, optionsDesc, argv[0]);
       return 0;
     }
 
-    if (options.count("version")) {
+    if (options.count("version") > 0) {
       std::cout << NFD_VERSION_BUILD_STRING << std::endl;
       return 0;
     }
@@ -264,7 +263,7 @@ public:
     if (m_autoregPrefixes.empty() && m_allFacesPrefixes.empty()) {
       std::cerr << "ERROR: at least one --prefix or --all-faces-prefix must be specified"
                 << std::endl << std::endl;
-      usage(std::cerr, optionDesciption, argv[0]);
+      usage(std::cerr, optionsDesc, argv[0]);
       return 2;
     }
 
@@ -279,8 +278,8 @@ public:
       startProcessing();
     }
     catch (const std::exception& e) {
-      std::cerr << "ERROR: " << e.what() << std::endl;
-      return 2;
+      std::cerr << "ERROR: " << ::nfd::getExtendedErrorMessage(e) << std::endl;
+      return 1;
     }
 
     return 0;

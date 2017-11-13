@@ -18,9 +18,6 @@ Client tool to run :ref:`NDN hub discovery procedure`.
 Options
 -------
 
-``-h`` or ``--help``
-  Print usage information.
-
 ``-d`` or ``--daemon``
   Run ndn-autoconfig in daemon mode, detecting network change events and re-running
   auto-discovery procedure.  In addition, the auto-discovery procedure is unconditionally
@@ -36,8 +33,11 @@ Options
   Use the specified URL to find the closest hub (NDN-FCH protocol).  If not specified,
   ``http://ndn-fch.named-data.net`` will be used.  Only ``http://`` URLs are supported.
 
+``-h`` or ``--help``
+  Print help message and exit.
+
 ``-V`` or ``--version``
-  Print version information.
+  Show version information and exit.
 
 .. _NDN hub discovery procedure:
 
@@ -179,6 +179,16 @@ Stage 4
   If this query is answered, connect to the home HUB and terminate auto-discovery.
   Otherwise, the auto-discovery fails.
 
+Exit status
+-----------
+
+0: No error.
+
+1: An unspecified error occurred.
+
+2: Malformed command line, e.g., invalid, missing, or unknown argument.
+
+4: Insufficient privileges.
 
 See also
 --------
