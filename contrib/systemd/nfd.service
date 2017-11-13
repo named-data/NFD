@@ -1,10 +1,10 @@
-# Copyright (c) 2015,  Regents of the University of California,
-#                      Arizona Board of Regents,
-#                      Colorado State University,
-#                      University Pierre & Marie Curie, Sorbonne University,
-#                      Washington University in St. Louis,
-#                      Beijing Institute of Technology,
-#                      The University of Memphis.
+# Copyright (c) 2015-2017, Regents of the University of California,
+#                          Arizona Board of Regents,
+#                          Colorado State University,
+#                          University Pierre & Marie Curie, Sorbonne University,
+#                          Washington University in St. Louis,
+#                          Beijing Institute of Technology,
+#                          The University of Memphis.
 #
 # This file is part of NFD (Named Data Networking Forwarding Daemon).
 # See AUTHORS.md for complete list of NFD authors and contributors.
@@ -21,10 +21,11 @@
 # NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Author: Eric Newberry <enewberry@email.arizona.edu>
+# Author: Davide Pesavento <davide.pesavento@lip6.fr>
 
 [Unit]
 Description=NDN Forwarding Daemon
-Documentation=man:nfd man:nfdc man:nfd-status
+Documentation=man:nfd(1) man:nfdc(1)
 Wants=network-online.target
 After=network-online.target
 
@@ -32,11 +33,20 @@ After=network-online.target
 Environment=HOME=/usr/local/var/lib/ndn/nfd
 ExecStart=/usr/local/bin/nfd --config /usr/local/etc/ndn/nfd.conf
 ExecStartPost=/bin/sh -ec 'sleep 2; if [ -f /usr/local/etc/ndn/nfd-init.sh ]; then . /usr/local/etc/ndn/nfd-init.sh; fi'
+ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
-ProtectSystem=full
+RestartPreventExitStatus=2 4
 PrivateTmp=yes
 PrivateDevices=yes
+ProtectSystem=full
 ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+SystemCallFilter=~@clock @cpu-emulation @debug @keyring @module @mount @obsolete @raw-io @reboot @swap
+SystemCallArchitectures=native
+MemoryDenyWriteExecute=yes
+RestrictRealtime=yes
 
 [Install]
 WantedBy=multi-user.target
