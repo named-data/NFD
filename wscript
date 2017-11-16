@@ -109,14 +109,17 @@ main(int, char**)
 
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
-    boost_libs = 'system chrono program_options thread log log_setup'
     if conf.options.with_tests:
         conf.env['WITH_TESTS'] = 1
         conf.define('WITH_TESTS', 1)
-        boost_libs += ' unit_test_framework'
 
     if conf.options.with_other_tests:
         conf.env['WITH_OTHER_TESTS'] = 1
+        conf.define('WITH_OTHER_TESTS', 1)
+
+    boost_libs = 'system chrono program_options thread log log_setup'
+    if conf.options.with_tests or conf.options.with_other_tests:
+        boost_libs += ' unit_test_framework'
 
     conf.check_boost(lib=boost_libs, mt=True)
     if conf.env.BOOST_VERSION_NUMBER < 105400:

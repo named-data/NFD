@@ -21,8 +21,8 @@ if [[ $JOB_NAME != *"code-coverage" && $JOB_NAME != *"limited-build" ]]; then
   # Cleanup
   sudo env "PATH=$PATH" ./waf --color=yes distclean
 
-  # Configure/build in optimized mode without tests
-  ./waf --color=yes configure
+  # Configure/build in optimized mode without tests, but with "other tests"
+  ./waf --color=yes configure --with-other-tests
   ./waf --color=yes build -j${WAF_JOBS:-1}
 
   # Cleanup

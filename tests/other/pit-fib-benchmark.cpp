@@ -23,9 +23,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "benchmark-helpers.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
-#include "tests/test-common.hpp"
 
 #include <iostream>
 
@@ -36,7 +36,7 @@
 namespace nfd {
 namespace tests {
 
-class PitFibBenchmarkFixture : public BaseFixture
+class PitFibBenchmarkFixture
 {
 protected:
   PitFibBenchmarkFixture()

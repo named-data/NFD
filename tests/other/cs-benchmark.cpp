@@ -23,8 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "benchmark-helpers.hpp"
 #include "table/cs.hpp"
-#include "tests/test-common.hpp"
+
+#include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
 
 #include <iostream>
 
@@ -35,7 +37,7 @@
 namespace nfd {
 namespace tests {
 
-class CsBenchmarkFixture : public BaseFixture
+class CsBenchmarkFixture
 {
 protected:
   CsBenchmarkFixture()
@@ -63,6 +65,17 @@ protected:
 #endif
 
     return time::duration_cast<time::microseconds>(t2 - t1);
+  }
+
+  static shared_ptr<Data>
+  makeData(const Name& name)
+  {
+    auto data = make_shared<Data>(name);
+    ndn::SignatureSha256WithRsa fakeSignature;
+    fakeSignature.setValue(ndn::encoding::makeEmptyBlock(tlv::SignatureValue));
+    data->setSignature(fakeSignature);
+    data->wireEncode();
+    return data;
   }
 
   void
@@ -102,7 +115,7 @@ protected:
     std::vector<shared_ptr<Interest>> workload(count);
     for (size_t i = 0; i < count; ++i) {
       Name name = genName(i);
-      workload[i] = makeInterest(name);
+      workload[i] = make_shared<Interest>(name);
     }
     return workload;
   }
