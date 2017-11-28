@@ -34,7 +34,9 @@ NFD_LOG_INIT("CongestionMarkStrategy");
 NFD_REGISTER_STRATEGY(CongestionMarkStrategy);
 
 CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name& name)
-  : BestRouteStrategy2(forwarder, name)
+  // Specifying BestRouteStrategy2's own name in its constructor prevents an exception from occuring
+  // when specifying parameters to CongestionMarkStrategy
+  : BestRouteStrategy2(forwarder, BestRouteStrategy2::getStrategyName())
   , m_congestionMark(1)
   , m_shouldPreserveMark(true)
 {
