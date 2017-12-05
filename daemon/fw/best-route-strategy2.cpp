@@ -49,7 +49,7 @@ BestRouteStrategy2::BestRouteStrategy2(Forwarder& forwarder, const Name& name)
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument(
-      "BestRouteStrategy2 does not support version " + std::to_string(*parsed.version)));
+      "BestRouteStrategy2 does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }

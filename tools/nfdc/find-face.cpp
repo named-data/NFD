@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -134,7 +134,7 @@ FindFace::query()
   };
   auto failureCb = [this] (uint32_t code, const std::string& reason) {
     m_res = Code::ERROR;
-    m_errorReason = "Error " + std::to_string(code) + " when querying face: " + reason;
+    m_errorReason = "Error " + to_string(code) + " when querying face: " + reason;
   };
 
   if (m_filter.empty()) {

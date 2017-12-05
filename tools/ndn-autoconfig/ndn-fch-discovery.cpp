@@ -190,7 +190,7 @@ NdnFchDiscovery::doStart()
     }
     if (statusCode != 200) {
       boost::trim(statusMessage);
-      BOOST_THROW_EXCEPTION(HttpException("HTTP request failed: " + std::to_string(statusCode) + " " + statusMessage));
+      BOOST_THROW_EXCEPTION(HttpException("HTTP request failed: " + to_string(statusCode) + " " + statusMessage));
     }
     std::string header;
     while (std::getline(requestStream, header) && header != "\r")

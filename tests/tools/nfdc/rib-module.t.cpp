@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(MultipleFaces)
     cmd.validateRequest(req);
     cmd.applyDefaultsToRequest(req);
     BOOST_CHECK_EQUAL(req.getName(), "/nm5y8X8b2");
-    BOOST_CHECK_MESSAGE(faceIds.erase(req.getFaceId()), "expected face " + std::to_string(req.getFaceId()));
+    BOOST_CHECK_MESSAGE(faceIds.erase(req.getFaceId()), "expected face " + to_string(req.getFaceId()));
     BOOST_CHECK_EQUAL(req.getOrigin(), ndn::nfd::ROUTE_ORIGIN_STATIC);
 
     this->succeedCommand(interest, req);

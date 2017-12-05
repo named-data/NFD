@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument(
-      "NccStrategy does not support version " + std::to_string(*parsed.version)));
+      "NccStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }

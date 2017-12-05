@@ -62,7 +62,7 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
 
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
     BOOST_THROW_EXCEPTION(std::invalid_argument(
-      "CongestionMarkStrategy does not support version " + std::to_string(*parsed.version)));
+      "CongestionMarkStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
