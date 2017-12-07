@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -67,6 +67,24 @@ BOOST_AUTO_TEST_CASE(Get_Parent)
   Entry* entry0c = measurements.getParent(*entryA);
   BOOST_REQUIRE(entry0c != nullptr);
   BOOST_CHECK_EQUAL(&entry0, entry0c);
+}
+
+BOOST_AUTO_TEST_CASE(GetLongName)
+{
+  Name n;
+  while (n.size() < NameTree::getMaxDepth() - 1) {
+    n.append("A");
+  }
+  Entry& entry1 = measurements.get(n);
+  BOOST_CHECK_EQUAL(entry1.getName().size(), NameTree::getMaxDepth() - 1);
+
+  n.append("B");
+  Entry& entry2 = measurements.get(n);
+  BOOST_CHECK_EQUAL(entry2.getName().size(), NameTree::getMaxDepth());
+
+  n.append("C");
+  Entry& entry3 = measurements.get(n);
+  BOOST_CHECK_EQUAL(entry3.getName().size(), NameTree::getMaxDepth());
 }
 
 BOOST_AUTO_TEST_CASE(GetWithFibEntry)

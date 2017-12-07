@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,6 +40,8 @@ Measurements::Measurements(NameTree& nameTree)
 Entry&
 Measurements::get(name_tree::Entry& nte)
 {
+  BOOST_ASSERT(nte.getName().size() <= NameTree::getMaxDepth());
+
   Entry* entry = nte.getMeasurementsEntry();
   if (entry != nullptr) {
     return *entry;
@@ -59,21 +61,21 @@ Measurements::get(name_tree::Entry& nte)
 Entry&
 Measurements::get(const Name& name)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(name);
+  name_tree::Entry& nte = m_nameTree.lookup(name, true);
   return this->get(nte);
 }
 
 Entry&
 Measurements::get(const fib::Entry& fibEntry)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(fibEntry);
+  name_tree::Entry& nte = m_nameTree.lookup(fibEntry.getPrefix(), true);
   return this->get(nte);
 }
 
 Entry&
 Measurements::get(const pit::Entry& pitEntry)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(pitEntry);
+  name_tree::Entry& nte = m_nameTree.lookup(pitEntry.getName(), true);
   return this->get(nte);
 }
 
@@ -108,13 +110,13 @@ Measurements::findLongestPrefixMatchImpl(const K& key, const EntryPredicate& pre
 Entry*
 Measurements::findLongestPrefixMatch(const Name& name, const EntryPredicate& pred) const
 {
-  return this->findLongestPrefixMatchImpl(name, pred);
+  return this->findLongestPrefixMatchImpl(name.getPrefix(NameTree::getMaxDepth()), pred);
 }
 
 Entry*
 Measurements::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntryPredicate& pred) const
 {
-  return this->findLongestPrefixMatchImpl(pitEntry, pred);
+  return this->findLongestPrefixMatch(pitEntry.getName(), pred);
 }
 
 Entry*
