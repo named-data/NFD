@@ -265,6 +265,7 @@ LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
   else {
     // Assign new TxSequence
     lp::Sequence newTxSeq = assignTxSequence(txFrag.pkt);
+    netPkt->didRetx = true;
 
     // Move fragment to new TxSequence mapping
     auto newTxFragIt = m_unackedFrags.emplace_hint(
