@@ -25,12 +25,9 @@
 
 #include "congestion-mark-strategy.hpp"
 
-#include <ndn-cxx/lp/tags.hpp>
-
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT("CongestionMarkStrategy");
 NFD_REGISTER_STRATEGY(CongestionMarkStrategy);
 
 CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name& name)
@@ -43,18 +40,23 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
   ParsedInstanceName parsed = parseInstanceName(name);
   switch (parsed.parameters.size()) {
   case 2:
-    if (!parsed.parameters.at(1).isNumber()) {
-      BOOST_THROW_EXCEPTION(
-        std::invalid_argument("Second parameter to CongestionMarkStrategy must be a non-negative integer"));
+    if (parsed.parameters.at(1).toUri() != "true" && parsed.parameters.at(1).toUri() != "false") {
+      BOOST_THROW_EXCEPTION(std::invalid_argument(
+        "Second parameter to CongestionMarkStrategy must be either 'true' or 'false'"));
     }
-    m_shouldPreserveMark = parsed.parameters.at(1).toNumber() != 0;
+    m_shouldPreserveMark = parsed.parameters.at(1).toUri() == "true";
     NDN_CXX_FALLTHROUGH;
   case 1:
-    if (!parsed.parameters.at(0).isNumber()) {
-      BOOST_THROW_EXCEPTION(
-        std::invalid_argument("First parameter to CongestionMarkStrategy must be a non-negative integer"));
+    try {
+      auto s = parsed.parameters.at(0).toUri();
+      if (!s.empty() && s[0] == '-')
+        BOOST_THROW_EXCEPTION(boost::bad_lexical_cast());
+      m_congestionMark = boost::lexical_cast<uint64_t>(s);
     }
-    m_congestionMark = parsed.parameters.at(0).toNumber();
+    catch (const boost::bad_lexical_cast&) {
+      BOOST_THROW_EXCEPTION(std::invalid_argument(
+        "First parameter to CongestionMarkStrategy must be a non-negative integer"));
+    }
     NDN_CXX_FALLTHROUGH;
   case 0:
     break;
