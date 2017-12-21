@@ -46,6 +46,10 @@ NFD Documentation
   A comprehensive guide to the design and implementation of NFD. The developer's guide also contains
   suggestions and hints for anyone wanting to modify or extend NFD.
 
+* `NDN Software Contributor's Guide
+  <https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md>`__
+  (guide for newcomers to the NDN community of software)
+
 * `NFD Wiki <https://redmine.named-data.net/projects/nfd/wiki>`_
 
   + `NFD Management protocol <https://redmine.named-data.net/projects/nfd/wiki/Management>`_

@@ -1,6 +1,9 @@
 Notes for NFD developers
 ========================
 
+If you are new to the NDN software community, please read the
+[Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md)
+
 Requirements
 ------------
 

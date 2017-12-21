@@ -6,6 +6,9 @@ NFD - Named Data Networking Forwarding Daemon
 For complete documentation, including step-by-step installation instructions and
 tutorials, please visit the [NFD homepage](https://named-data.net/doc/NFD/).
 
+If you are new to the NDN software community, please read README-dev.md and the
+[Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md).
+
 ## Overview
 
 NFD is a network forwarder that implements and evolves together with the Named Data
