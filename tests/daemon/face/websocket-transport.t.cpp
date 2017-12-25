@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,6 +54,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, WebSocketTransportFixtures
   BOOST_CHECK_EQUAL(this->transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
   BOOST_CHECK_EQUAL(this->transport->getLinkType(), ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   BOOST_CHECK_EQUAL(this->transport->getMtu(), MTU_UNLIMITED);
+  BOOST_CHECK_EQUAL(this->transport->getSendQueueCapacity(), QUEUE_UNSUPPORTED);
 }
 
 using StaticPropertiesV4MappedFixtures = boost::mpl::vector<
@@ -244,6 +245,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, WebSocketTransportFixtures, T)
                     time::seconds(1)), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(nStateChanges, 2);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(SendQueueLength, T, WebSocketTransportFixtures, T)
+{
+  TRANSPORT_TEST_INIT();
+
+  BOOST_CHECK_EQUAL(this->transport->getSendQueueLength(), QUEUE_UNSUPPORTED);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestWebSocketTransport

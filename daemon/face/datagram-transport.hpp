@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_DATAGRAM_TRANSPORT_HPP
 
 #include "transport.hpp"
+#include "socket-utils.hpp"
 #include "core/global-io.hpp"
 
 #include <array>
@@ -53,6 +54,9 @@ public:
    */
   explicit
   DatagramTransport(typename protocol::socket&& socket);
+
+  ssize_t
+  getSendQueueLength() override;
 
   /** \brief Receive datagram, translate buffer into packet, deliver to parent class.
    */
@@ -104,10 +108,32 @@ DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol:
   : m_socket(std::move(socket))
   , m_hasRecentlyReceived(false)
 {
+  boost::asio::socket_base::send_buffer_size sendBufferSizeOption;
+  boost::system::error_code error;
+  m_socket.get_option(sendBufferSizeOption, error);
+  if (error) {
+    NFD_LOG_FACE_WARN("Failed to obtain send queue capacity from socket: " << error.message());
+    this->setSendQueueCapacity(QUEUE_ERROR);
+  }
+  else {
+    this->setSendQueueCapacity(sendBufferSizeOption.value());
+  }
+
   m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
                               bind(&DatagramTransport<T, U>::handleReceive, this,
                                    boost::asio::placeholders::error,
                                    boost::asio::placeholders::bytes_transferred));
+}
+
+template<class T, class U>
+ssize_t
+DatagramTransport<T, U>::getSendQueueLength()
+{
+  ssize_t queueLength = getTxQueueLength(m_socket.native_handle());
+  if (queueLength == QUEUE_ERROR) {
+    NFD_LOG_FACE_WARN("Failed to obtain send queue length from socket: " << std::strerror(errno));
+  }
+  return queueLength;
 }
 
 template<class T, class U>

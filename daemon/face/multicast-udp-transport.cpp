@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "multicast-udp-transport.hpp"
+#include "socket-utils.hpp"
 #include "udp-protocol.hpp"
 
 #ifdef __linux__
@@ -54,7 +55,28 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndp
   this->setLinkType(linkType);
   this->setMtu(udp::computeMtu(localEndpoint));
 
+  protocol::socket::send_buffer_size sendBufferSizeOption;
+  boost::system::error_code error;
+  m_sendSocket.get_option(sendBufferSizeOption);
+  if (error) {
+    NFD_LOG_FACE_WARN("Failed to obtain send queue capacity from socket: " << error.message());
+    this->setSendQueueCapacity(QUEUE_ERROR);
+  }
+  else {
+    this->setSendQueueCapacity(sendBufferSizeOption.value());
+  }
+
   NFD_LOG_FACE_INFO("Creating transport");
+}
+
+ssize_t
+MulticastUdpTransport::getSendQueueLength()
+{
+  ssize_t queueLength = getTxQueueLength(m_sendSocket.native_handle());
+  if (queueLength == QUEUE_ERROR) {
+    NFD_LOG_FACE_WARN("Failed to obtain send queue length from socket: " << std::strerror(errno));
+  }
+  return queueLength;
 }
 
 void

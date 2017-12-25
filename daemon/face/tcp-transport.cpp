@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,11 @@
  */
 
 #include "tcp-transport.hpp"
+
+#if defined(__linux__)
+#include <linux/sockios.h>
+#include <sys/ioctl.h>
+#endif
 
 namespace nfd {
 namespace face {
@@ -53,6 +58,28 @@ TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency 
   this->setMtu(MTU_UNLIMITED);
 
   NFD_LOG_FACE_INFO("Creating transport");
+}
+
+ssize_t
+TcpTransport::getSendQueueLength()
+{
+  int queueLength = getSendQueueBytes();
+
+  // We want to obtain the amount of "not sent" bytes instead of the amount of "not sent" + "not
+  // acked" bytes. On Linux, we use SIOCOUTQNSD for this reason. However, macOS does not provide an
+  // efficient mechanism to obtain this value (SO_NWRITE includes both "not sent" and "not acked").
+#if defined(__linux__)
+  int nsd;
+  if (ioctl(m_socket.native_handle(), SIOCOUTQNSD, &nsd) < 0) {
+    NFD_LOG_FACE_WARN("Failed to obtain send queue length from socket: " << std::strerror(errno));
+  }
+  else if (nsd > 0) {
+    NFD_LOG_FACE_TRACE("SIOCOUTQNSD=" << nsd);
+    queueLength += nsd;
+  }
+#endif
+
+  return queueLength;
 }
 
 bool

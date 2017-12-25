@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -212,6 +212,13 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, StreamTransportFixtures, T)
   });
 
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+}
+
+BOOST_FIXTURE_TEST_CASE_TEMPLATE(SendQueueLength, T, StreamTransportFixtures, T)
+{
+  TRANSPORT_TEST_INIT();
+
+  BOOST_CHECK_EQUAL(this->transport->getSendQueueLength(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestStreamTransport

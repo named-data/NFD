@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "core/counter.hpp"
 #include "face-log.hpp"
+
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 
 namespace nfd {
@@ -97,6 +98,14 @@ const ssize_t MTU_UNLIMITED = -1;
 /** \brief (for internal use) indicates MTU field is unset
  */
 const ssize_t MTU_INVALID = -2;
+
+/** \brief indicates that the transport does not support reading the queue capacity/length
+ */
+const ssize_t QUEUE_UNSUPPORTED = -1;
+
+/** \brief indicates that the transport was unable to retrieve the queue capacity/length
+ */
+const ssize_t QUEUE_ERROR = -2;
 
 /** \brief the lower part of a Face
  *  \sa Face
@@ -254,6 +263,13 @@ public: // static properties
   ssize_t
   getMtu() const;
 
+  /** \return capacity of the send queue (in bytes)
+   *  \retval QUEUE_UNSUPPORTED transport does not support queue capacity retrieval
+   *  \retval QUEUE_ERROR transport was unable to retrieve the queue capacity
+   */
+  ssize_t
+  getSendQueueCapacity() const;
+
 public: // dynamic properties
   /** \return transport state
    */
@@ -270,6 +286,13 @@ public: // dynamic properties
   time::steady_clock::TimePoint
   getExpirationTime() const;
 
+  /** \return current send queue length of the transport (in octets)
+   *  \retval QUEUE_UNSUPPORTED transport does not support queue length retrieval
+   *  \retval QUEUE_ERROR transport was unable to retrieve the queue length
+   */
+  virtual ssize_t
+  getSendQueueLength();
+
 protected: // properties to be set by subclass
   void
   setLocalUri(const FaceUri& uri);
@@ -285,6 +308,9 @@ protected: // properties to be set by subclass
 
   void
   setMtu(ssize_t mtu);
+
+  void
+  setSendQueueCapacity(ssize_t sendQueueCapacity);
 
   /** \brief set transport state
    *
@@ -346,6 +372,7 @@ private:
   ndn::nfd::FacePersistency m_persistency;
   ndn::nfd::LinkType m_linkType;
   ssize_t m_mtu;
+  size_t m_sendQueueCapacity;
   TransportState m_state;
   time::steady_clock::TimePoint m_expirationTime;
 };
@@ -439,6 +466,18 @@ Transport::setMtu(ssize_t mtu)
 {
   BOOST_ASSERT(mtu == MTU_UNLIMITED || mtu > 0);
   m_mtu = mtu;
+}
+
+inline ssize_t
+Transport::getSendQueueCapacity() const
+{
+  return m_sendQueueCapacity;
+}
+
+inline void
+Transport::setSendQueueCapacity(ssize_t sendQueueCapacity)
+{
+  m_sendQueueCapacity = sendQueueCapacity;
 }
 
 inline TransportState

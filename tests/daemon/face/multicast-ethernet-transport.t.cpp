@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,6 +46,7 @@ BOOST_AUTO_TEST_CASE(StaticProperties)
   BOOST_CHECK_EQUAL(transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_CHECK_EQUAL(transport->getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
+  BOOST_CHECK_EQUAL(transport->getSendQueueCapacity(), QUEUE_UNSUPPORTED);
 }
 
 BOOST_AUTO_TEST_CASE(PersistencyChange)
@@ -77,6 +78,14 @@ BOOST_AUTO_TEST_CASE(Close)
   });
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+}
+
+BOOST_AUTO_TEST_CASE(SendQueueLength)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeMulticast();
+
+  BOOST_CHECK_EQUAL(transport->getSendQueueLength(), QUEUE_UNSUPPORTED);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestMulticastEthernetTransport

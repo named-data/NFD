@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,6 +118,14 @@ BOOST_AUTO_TEST_CASE(IdleClose)
 
   BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(nStateChanges, 2);
+}
+
+BOOST_AUTO_TEST_CASE(SendQueueLength)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeUnicast();
+
+  BOOST_CHECK_EQUAL(transport->getSendQueueLength(), QUEUE_UNSUPPORTED);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestUnicastEthernetTransport

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -80,6 +80,10 @@ public:
    *         of retransmissions
    */
   PacketCounter nRetxExhausted;
+
+  /** \brief count of outgoing LpPackets that were marked with congestion marks
+   */
+  PacketCounter nCongestionMarked;
 };
 
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
@@ -120,6 +124,18 @@ public:
     /** \brief options for reliability
      */
     LpReliability::Options reliabilityOptions;
+
+    /** \brief enables send queue congestion detection and marking
+     */
+    bool allowCongestionMarking;
+
+    /** \brief starting value for congestion marking interval
+     */
+    time::nanoseconds baseCongestionMarkingInterval;
+
+    /** \brief default congestion threshold in bytes
+     */
+    size_t defaultCongestionThreshold;
   };
 
   /** \brief counters provided by GenericLinkService
@@ -194,6 +210,13 @@ private: // send path
   void
   assignSequences(std::vector<lp::Packet>& pkts);
 
+  /** \brief if the send queue is found to be congested, add a congestion mark to the packet
+   *         according to CoDel
+   *  \sa https://tools.ietf.org/html/rfc8289
+   */
+  void
+  checkCongestionLevel(lp::Packet& pkt);
+
 private: // receive path
   /** \brief receive Packet from Transport
    */
@@ -252,6 +275,16 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   LpReassembler m_reassembler;
   LpReliability m_reliability;
   lp::Sequence m_lastSeqNo;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  /// CongestionMark TLV-TYPE (3 octets) + CongestionMark TLV-LENGTH (1 octet) + sizeof(uint64_t)
+  static constexpr size_t CONGESTION_MARK_SIZE = 3 + 1 + sizeof(uint64_t);
+  /// Time to mark next packet due to send queue congestion
+  time::steady_clock::TimePoint m_nextMarkTime;
+  /// Time last packet was marked
+  time::steady_clock::TimePoint m_lastMarkTime;
+  /// number of marked packets in the current incident of congestion
+  size_t m_nMarkedSinceInMarkingState;
 
   friend class LpReliability;
 };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,6 +63,7 @@ Transport::Transport()
   , m_persistency(ndn::nfd::FACE_PERSISTENCY_NONE)
   , m_linkType(ndn::nfd::LINK_TYPE_NONE)
   , m_mtu(MTU_INVALID)
+  , m_sendQueueCapacity(QUEUE_UNSUPPORTED)
   , m_state(TransportState::UP)
   , m_expirationTime(time::steady_clock::TimePoint::max())
 {
@@ -123,6 +124,12 @@ Transport::receive(Packet&& packet)
   this->nInBytes += packet.packet.size();
 
   m_service->receivePacket(std::move(packet));
+}
+
+ssize_t
+Transport::getSendQueueLength()
+{
+  return QUEUE_UNSUPPORTED;
 }
 
 bool

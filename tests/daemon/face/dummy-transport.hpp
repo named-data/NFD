@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,8 +44,10 @@ public:
                  ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
                  ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                  ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT,
-                 ssize_t mtu = MTU_UNLIMITED)
+                 ssize_t mtu = MTU_UNLIMITED,
+                 ssize_t sendQueueCapacity = QUEUE_UNSUPPORTED)
     : isClosed(false)
+    , m_sendQueueLength(0)
   {
     this->setLocalUri(FaceUri(localUri));
     this->setRemoteUri(FaceUri(remoteUri));
@@ -53,6 +55,7 @@ public:
     this->setPersistency(persistency);
     this->setLinkType(linkType);
     this->setMtu(mtu);
+    this->setSendQueueCapacity(sendQueueCapacity);
   }
 
   void
@@ -65,6 +68,18 @@ public:
   setState(FaceState state)
   {
     this->Transport::setState(state);
+  }
+
+  ssize_t
+  getSendQueueLength() override
+  {
+    return m_sendQueueLength;
+  }
+
+  void
+  setSendQueueLength(ssize_t sendQueueLength)
+  {
+    m_sendQueueLength = sendQueueLength;
   }
 
   void
@@ -87,14 +102,14 @@ protected:
   }
 
 private:
-  virtual void
+  void
   doClose() override
   {
     isClosed = true;
     this->setState(TransportState::CLOSED);
   }
 
-  virtual void
+  void
   doSend(Packet&& packet) override
   {
     sentPackets.push_back(std::move(packet));
@@ -103,6 +118,9 @@ private:
 public:
   bool isClosed;
   std::vector<Packet> sentPackets;
+
+private:
+  ssize_t m_sendQueueLength;
 };
 
 } // namespace tests
