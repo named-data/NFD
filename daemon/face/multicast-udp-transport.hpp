@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -28,6 +28,8 @@
 
 #include "datagram-transport.hpp"
 
+#include <ndn-cxx/net/network-interface.hpp>
+
 namespace nfd {
 namespace face {
 
@@ -45,6 +47,16 @@ DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protoco
 class MulticastUdpTransport final : public DatagramTransport<boost::asio::ip::udp, Multicast>
 {
 public:
+  class Error : public std::runtime_error
+  {
+  public:
+    explicit
+    Error(const std::string& what)
+      : std::runtime_error(what)
+    {
+    }
+  };
+
   /**
    * \brief Creates a UDP-based transport for multicast communication
    * \param localEndpoint local endpoint
@@ -58,6 +70,17 @@ public:
                         protocol::socket&& recvSocket,
                         protocol::socket&& sendSocket,
                         ndn::nfd::LinkType linkType);
+
+  static void
+  openRxSocket(protocol::socket& sock,
+               const protocol::endpoint& multicastGroup,
+               const boost::asio::ip::address& localAddress,
+               const shared_ptr<const ndn::net::NetworkInterface>& netif = nullptr);
+
+  static void
+  openTxSocket(protocol::socket& sock,
+               const protocol::endpoint& localEndpoint,
+               bool enableLoopback = false);
 
 private:
   void

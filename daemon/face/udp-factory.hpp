@@ -116,7 +116,7 @@ public:
   shared_ptr<Face>
   createMulticastFace(const udp::Endpoint& localEndpoint,
                       const udp::Endpoint& multicastEndpoint,
-                      const ndn::net::NetworkInterface& netif);
+                      const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
 private:
   /** \brief Create UDP multicast face on \p netif if needed by \p m_mcastConfig

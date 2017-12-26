@@ -1,5 +1,5 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
+/*
  * Copyright (c) 2014-2017,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
@@ -25,6 +25,12 @@
 
 #include "multicast-udp-transport.hpp"
 #include "udp-protocol.hpp"
+
+#ifdef __linux__
+#include <cerrno>       // for errno
+#include <cstring>      // for std::strerror()
+#include <sys/socket.h> // for setsockopt()
+#endif // __linux__
 
 namespace nfd {
 namespace face {
@@ -77,6 +83,67 @@ MulticastUdpTransport::doClose()
   }
 
   DatagramTransport::doClose();
+}
+
+void
+MulticastUdpTransport::openRxSocket(protocol::socket& sock,
+                                    const protocol::endpoint& multicastGroup,
+                                    const boost::asio::ip::address& localAddress,
+                                    const shared_ptr<const ndn::net::NetworkInterface>& netif)
+{
+  BOOST_ASSERT(!sock.is_open());
+
+  sock.open(multicastGroup.protocol());
+  sock.set_option(protocol::socket::reuse_address(true));
+  sock.bind(protocol::endpoint(multicastGroup.protocol(), multicastGroup.port()));
+
+  if (multicastGroup.address().is_v4()) {
+    BOOST_ASSERT(localAddress.is_v4());
+    sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v4(),
+                                                           localAddress.to_v4()));
+  }
+  else {
+    // IPv6 multicast is not supported
+    BOOST_ASSERT(false);
+  }
+
+#ifdef __linux__
+  if (netif) {
+    // On Linux, if there is more than one MulticastUdpTransport for the same multicast
+    // group but they are on different network interfaces, each socket needs to be bound
+    // to the corresponding interface using SO_BINDTODEVICE, otherwise the transport will
+    // receive all packets sent to the other interfaces as well.
+    // This is needed only on Linux. On macOS, the boost::asio::ip::multicast::join_group
+    // option is sufficient to obtain the desired behavior.
+    if (::setsockopt(sock.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
+                     netif->getName().data(), netif->getName().size() + 1) < 0) {
+      BOOST_THROW_EXCEPTION(Error("Cannot bind multicast rx socket to " + netif->getName() +
+                                  ": " + std::strerror(errno)));
+    }
+  }
+#endif // __linux__
+}
+
+void
+MulticastUdpTransport::openTxSocket(protocol::socket& sock,
+                                    const protocol::endpoint& localEndpoint,
+                                    bool enableLoopback)
+{
+  BOOST_ASSERT(!sock.is_open());
+
+  sock.open(localEndpoint.protocol());
+  sock.set_option(protocol::socket::reuse_address(true));
+  sock.set_option(boost::asio::ip::multicast::enable_loopback(enableLoopback));
+  sock.bind(localEndpoint);
+
+  if (localEndpoint.address().is_v4()) {
+    if (!localEndpoint.address().is_unspecified())
+      sock.set_option(boost::asio::ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
+  }
+  else {
+    // IPv6 multicast is not supported
+    BOOST_ASSERT(false);
+  }
 }
 
 template<>

@@ -55,12 +55,16 @@ protected:
   void
   initialize(ip::address address)
   {
-    openMulticastSockets(remoteSockRx, remoteSockTx, multicastEp.port());
+    localEp = udp::endpoint(address, 7001);
+
+    MulticastUdpTransport::openRxSocket(remoteSockRx, multicastEp, ip::address_v4::any());
+    MulticastUdpTransport::openTxSocket(remoteSockTx, udp::endpoint(udp::v4(), 0), true);
 
     udp::socket sockRx(g_io);
     udp::socket sockTx(g_io);
-    localEp = udp::endpoint(address, 7001);
-    openMulticastSockets(sockRx, sockTx, localEp.port());
+    MulticastUdpTransport::openRxSocket(sockRx, udp::endpoint(multicastEp.address(), localEp.port()),
+                                        ip::address_v4::any());
+    MulticastUdpTransport::openTxSocket(sockTx, udp::endpoint(udp::v4(), 0), true);
 
     face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),
@@ -70,20 +74,6 @@ protected:
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
-  }
-
-  void
-  openMulticastSockets(udp::socket& rx, udp::socket& tx, uint16_t port)
-  {
-    rx.open(udp::v4());
-    rx.set_option(udp::socket::reuse_address(true));
-    rx.bind(udp::endpoint(multicastEp.address(), port));
-    rx.set_option(ip::multicast::join_group(multicastEp.address()));
-
-    tx.open(udp::v4());
-    tx.set_option(udp::socket::reuse_address(true));
-    tx.set_option(ip::multicast::enable_loopback(true));
-    tx.bind(udp::endpoint(ip::address_v4::any(), port));
   }
 
   void

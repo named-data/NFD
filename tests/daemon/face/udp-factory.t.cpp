@@ -68,7 +68,7 @@ protected:
     BOOST_ASSERT(!netifs.empty());
     udp::Endpoint localEndpoint(ndn::ip::addressFromString(localIp), mcastPort);
     udp::Endpoint mcastEndpoint(ndn::ip::addressFromString(mcastIp), mcastPort);
-    return factory.createMulticastFace(localEndpoint, mcastEndpoint, *netifs.front());
+    return factory.createMulticastFace(localEndpoint, mcastEndpoint, netifs.front());
   }
 
   std::vector<const Face*>

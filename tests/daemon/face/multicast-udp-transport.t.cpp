@@ -79,10 +79,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
 
   // remoteSockRx2 unnecessary for this test case - only remoteSockTx2 is needed
   udp::socket remoteSockTx2(this->g_io);
-  remoteSockTx2.open(udp::v4());
-  remoteSockTx2.set_option(udp::socket::reuse_address(true));
-  remoteSockTx2.set_option(ip::multicast::enable_loopback(true));
-  remoteSockTx2.bind(udp::endpoint(ip::address_v4::any(), 7071));
+  MulticastUdpTransport::openTxSocket(remoteSockTx2, udp::endpoint(udp::v4(), 7071), true);
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   ndn::Buffer buf1(pkt1.begin(), pkt1.end());
