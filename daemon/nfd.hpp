@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,10 +43,13 @@ namespace nfd {
 
 class Forwarder;
 class CommandAuthenticator;
-class FibManager;
-class FaceManager;
-class StrategyChoiceManager;
+
+// forward-declare management modules, in the order as defined in management protocol
 class ForwarderStatusManager;
+class FaceManager;
+class FibManager;
+class CsManager;
+class StrategyChoiceManager;
 
 namespace face {
 class Face;
@@ -120,6 +123,7 @@ private:
   unique_ptr<ForwarderStatusManager> m_forwarderStatusManager;
   unique_ptr<FaceManager> m_faceManager;
   unique_ptr<FibManager> m_fibManager;
+  unique_ptr<CsManager> m_csManager;
   unique_ptr<StrategyChoiceManager> m_strategyChoiceManager;
 
   shared_ptr<ndn::net::NetworkMonitor> m_netmon;

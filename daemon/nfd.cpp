@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,19 +25,20 @@
 
 #include "nfd.hpp"
 
+#include "core/config-file.hpp"
 #include "core/global-io.hpp"
 #include "core/logger-factory.hpp"
 #include "core/privilege-helper.hpp"
-#include "core/config-file.hpp"
-#include "fw/forwarder.hpp"
 #include "face/face-system.hpp"
-#include "face/null-face.hpp"
 #include "face/internal-face.hpp"
-#include "mgmt/fib-manager.hpp"
+#include "face/null-face.hpp"
+#include "fw/forwarder.hpp"
+#include "mgmt/cs-manager.hpp"
 #include "mgmt/face-manager.hpp"
-#include "mgmt/strategy-choice-manager.hpp"
+#include "mgmt/fib-manager.hpp"
 #include "mgmt/forwarder-status-manager.hpp"
 #include "mgmt/general-config-section.hpp"
+#include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/tables-config-section.hpp"
 
 namespace nfd {
@@ -140,6 +141,8 @@ Nfd::initializeManagement()
   m_faceManager.reset(new FaceManager(*m_faceSystem, *m_dispatcher, *m_authenticator));
   m_fibManager.reset(new FibManager(m_forwarder->getFib(), m_forwarder->getFaceTable(),
                                     *m_dispatcher, *m_authenticator));
+  m_csManager.reset(new CsManager(m_forwarder->getCs(), m_forwarder->getCounters(),
+                                  *m_dispatcher, *m_authenticator));
   m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
                                                           *m_dispatcher, *m_authenticator));
 
