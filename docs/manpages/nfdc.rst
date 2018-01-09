@@ -45,4 +45,4 @@ Show how to use ``nfdc face create`` command:
 
 SEE ALSO
 --------
-nfdc-status(1), nfdc-face(1), nfdc-route(1), nfdc-strategy(1)
+nfdc-status(1), nfdc-face(1), nfdc-route(1), nfdc-cs(1), nfdc-strategy(1)

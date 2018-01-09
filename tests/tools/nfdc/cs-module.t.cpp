@@ -23,48 +23,49 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_STATUS_HPP
-#define NFD_TOOLS_NFDC_STATUS_HPP
+#include "nfdc/cs-module.hpp"
 
-#include "status-report.hpp"
-#include "command-parser.hpp"
+#include "status-fixture.hpp"
+
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
+namespace tests {
 
-struct StatusReportOptions
+BOOST_AUTO_TEST_SUITE(Nfdc)
+BOOST_FIXTURE_TEST_SUITE(TestCsModule, StatusFixture<CsModule>)
+
+const std::string STATUS_XML = stripXmlSpaces(R"XML(
+  <cs>
+    <nHits>14363</nHits>
+    <nMisses>27462</nMisses>
+  </cs>
+)XML");
+
+const std::string STATUS_TEXT = std::string(R"TEXT(
+CS information:
+  nHits=14363 nMisses=27462
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(Status)
 {
-  ReportFormat output = ReportFormat::TEXT;
-  bool wantForwarderGeneral = false;
-  bool wantChannels = false;
-  bool wantFaces = false;
-  bool wantFib = false;
-  bool wantRib = false;
-  bool wantCs = false;
-  bool wantStrategyChoice = false;
-};
+  this->fetchStatus();
+  CsInfo payload;
+  payload.setNHits(14363)
+         .setNMisses(27462);
+  this->sendDataset("/localhost/nfd/cs/info", payload);
+  this->prepareStatusOutput();
 
-/** \brief collect a status report and write to stdout
- */
-void
-reportStatus(ExecuteContext& ctx, const StatusReportOptions& options);
+  BOOST_CHECK(statusXml.is_equal(STATUS_XML));
+  BOOST_CHECK(statusText.is_equal(STATUS_TEXT));
+}
 
-/** \brief registers status commands
- *
- *  Providing the following commands:
- *  \li status report
- *  \li status show
- *  \li channel list
- *  \li strategy list
- *  \li fib list
- *  \li route list
- */
-void
-registerStatusCommands(CommandParser& parser);
+BOOST_AUTO_TEST_SUITE_END() // TestCsModule
+BOOST_AUTO_TEST_SUITE_END() // Nfdc
 
+} // namespace tests
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
-
-#endif // NFD_TOOLS_NFDC_STATUS_HPP

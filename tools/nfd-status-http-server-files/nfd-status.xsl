@@ -336,6 +336,24 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   </table>
 </xsl:template>
 
+<xsl:template match="nfd:cs">
+  <h2>CS Information</h2>
+  <table class="item-list">
+    <thead>
+      <tr>
+        <th>Hits</th>
+        <th>Misses</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="center">
+        <td><xsl:value-of select="nfd:nHits"/></td>
+        <td><xsl:value-of select="nfd:nMisses"/></td>
+      </tr>
+    </tbody>
+  </table>
+</xsl:template>
+
 <xsl:template match="nfd:strategyChoices">
   <h2>Strategy Choices</h2>
   <table class="item-list">

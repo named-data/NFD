@@ -23,48 +23,47 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TOOLS_NFDC_STATUS_HPP
-#define NFD_TOOLS_NFDC_STATUS_HPP
-
-#include "status-report.hpp"
-#include "command-parser.hpp"
+#include "cs-module.hpp"
+#include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
 namespace nfdc {
 
-struct StatusReportOptions
+void
+CsModule::fetchStatus(Controller& controller,
+                      const function<void()>& onSuccess,
+                      const Controller::DatasetFailCallback& onFailure,
+                      const CommandOptions& options)
 {
-  ReportFormat output = ReportFormat::TEXT;
-  bool wantForwarderGeneral = false;
-  bool wantChannels = false;
-  bool wantFaces = false;
-  bool wantFib = false;
-  bool wantRib = false;
-  bool wantCs = false;
-  bool wantStrategyChoice = false;
-};
+  controller.fetch<ndn::nfd::CsInfoDataset>(
+    [this, onSuccess] (const CsInfo& result) {
+      m_status = result;
+      onSuccess();
+    },
+    onFailure, options);
+}
 
-/** \brief collect a status report and write to stdout
- */
 void
-reportStatus(ExecuteContext& ctx, const StatusReportOptions& options);
+CsModule::formatStatusXml(std::ostream& os) const
+{
+  os << "<cs>";
+  os << "<nHits>" << m_status.getNHits() << "</nHits>";
+  os << "<nMisses>" << m_status.getNMisses() << "</nMisses>";
+  os << "</cs>";
+}
 
-/** \brief registers status commands
- *
- *  Providing the following commands:
- *  \li status report
- *  \li status show
- *  \li channel list
- *  \li strategy list
- *  \li fib list
- *  \li route list
- */
 void
-registerStatusCommands(CommandParser& parser);
+CsModule::formatStatusText(std::ostream& os) const
+{
+  os << "CS information:\n  ";
+  text::ItemAttributes ia;
+  os << ia("nHits") << m_status.getNHits()
+     << ia("nMisses") << m_status.getNMisses()
+     << ia.end();
+  os << '\n';
+}
 
 } // namespace nfdc
 } // namespace tools
 } // namespace nfd
-
-#endif // NFD_TOOLS_NFDC_STATUS_HPP

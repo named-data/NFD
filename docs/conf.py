@@ -246,6 +246,7 @@ man_pages = [
     ('manpages/nfdc-status', 'nfdc-status', u'show NFD status', None, 1),
     ('manpages/nfdc-face', 'nfdc-face', u'show and manipulate NFD faces', None, 1),
     ('manpages/nfdc-route', 'nfdc-route', u'show and manipulate NFD routes', None, 1),
+    ('manpages/nfdc-cs', 'nfdc-cs', u'show and manipulate NFD Content Store', None, 1),
     ('manpages/nfdc-strategy', 'nfdc-strategy', u'show and manipulate NFD strategy choices', None, 1),
     ('manpages/nfd-status', 'nfd-status', u'comprehensive report of NFD status', None, 1),
     ('manpages/nfd-status-http-server', 'nfd-status-http-server',

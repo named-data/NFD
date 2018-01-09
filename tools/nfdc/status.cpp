@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,6 +29,7 @@
 #include "face-module.hpp"
 #include "fib-module.hpp"
 #include "rib-module.hpp"
+#include "cs-module.hpp"
 #include "strategy-choice-module.hpp"
 
 #include <ndn-cxx/security/validator-null.hpp>
@@ -60,6 +61,10 @@ reportStatus(ExecuteContext& ctx, const StatusReportOptions& options)
 
   if (options.wantRib) {
     report.sections.push_back(make_unique<RibModule>());
+  }
+
+  if (options.wantCs) {
+    report.sections.push_back(make_unique<CsModule>());
   }
 
   if (options.wantStrategyChoice) {
@@ -106,8 +111,8 @@ reportStatusComprehensive(ExecuteContext& ctx)
 {
   StatusReportOptions options;
   options.output = ctx.args.get<ReportFormat>("format", ReportFormat::TEXT);
-  options.wantForwarderGeneral = options.wantChannels = options.wantFaces =
-    options.wantFib = options.wantRib = options.wantStrategyChoice = true;
+  options.wantForwarderGeneral = options.wantChannels = options.wantFaces = options.wantFib =
+    options.wantRib = options.wantCs = options.wantStrategyChoice = true;
   reportStatus(ctx, options);
 }
 
@@ -135,6 +140,11 @@ registerStatusCommands(CommandParser& parser)
   defFibList
     .setTitle("print FIB entries");
   parser.addCommand(defFibList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantFib));
+
+  CommandDefinition defCsInfo("cs", "info");
+  defCsInfo
+    .setTitle("print CS information");
+  parser.addCommand(defCsInfo, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantCs));
 }
 
 } // namespace nfdc
