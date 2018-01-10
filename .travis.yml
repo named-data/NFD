@@ -1,5 +1,6 @@
+language: cpp
+dist: trusty
 sudo: required
-language: generic
 env:
   global:
     - JOB_NAME=limited-build
@@ -8,150 +9,104 @@ env:
 matrix:
   include:
     # Linux/gcc
+    # https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test/+packages
     - os: linux
-      dist: trusty
-      env:
-        - CXX=g++-4.8
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
+      env: COMPILER=g++-4.8
     - os: linux
-      dist: trusty
+      env: COMPILER=g++-4.9
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-4.9
-      env:
-        - CXX=g++-4.9
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=g++-5
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-5
-      env:
-        - CXX=g++-5
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=g++-6
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-6
-      env:
-        - CXX=g++-6
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=g++-7
       addons:
         apt:
           sources: ubuntu-toolchain-r-test
           packages: g++-7
-      env:
-        - CXX=g++-7
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
 
     # Linux/clang
+    # https://apt.llvm.org/
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-3.5
       addons:
         apt:
           packages: clang-3.5
-      env:
-        - CXX=clang++-3.5
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-3.6
       addons:
         apt:
           packages: clang-3.6
-      env:
-        - CXX=clang++-3.6
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
       addons:
         apt:
-          sources:
-            - llvm-toolchain-precise-3.7
-            - ubuntu-toolchain-r-test
+          sources: ["llvm-toolchain-precise-3.7", "ubuntu-toolchain-r-test"]
           packages: clang-3.7
-      env:
-        - CXX=clang++-3.7
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-3.8
       addons:
         apt:
-          sources:
-            - llvm-toolchain-precise-3.8
-            - ubuntu-toolchain-r-test
+          sources: ["llvm-toolchain-precise-3.8", "ubuntu-toolchain-r-test"]
           packages: clang-3.8
-      env:
-        - CXX=clang++-3.8
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-3.9 DISABLE_ASAN=yes
       addons:
         apt:
-          sources:
-            - llvm-toolchain-trusty-3.9
-            - ubuntu-toolchain-r-test
+          sources: ["llvm-toolchain-trusty-3.9", "ubuntu-toolchain-r-test"]
           packages: clang-3.9
-      env:
-        - CXX=clang++-3.9
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-4.0
       addons:
         apt:
-          sources:
-            - llvm-toolchain-trusty-4.0
-            - ubuntu-toolchain-r-test
+          sources: ["llvm-toolchain-trusty-4.0", "ubuntu-toolchain-r-test"]
           packages: clang-4.0
-      env:
-        - CXX=clang++-4.0
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
     - os: linux
-      dist: trusty
+      env: COMPILER=clang++-5.0
       addons:
         apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-            - ubuntu-toolchain-r-test
+          sources: ["llvm-toolchain-trusty-5.0", "ubuntu-toolchain-r-test"]
           packages: clang-5.0
-      env:
-        - CXX=clang++-5.0
-        - NODE_LABELS="Linux Ubuntu Ubuntu-14.04"
-        - BUILD_WITH_ASAN=yes
+    - os: linux
+      env: COMPILER=clang++-6.0
+      addons:
+        apt:
+          sources: ["llvm-toolchain-trusty", "ubuntu-toolchain-r-test"]
+          packages: clang-6.0
 
     # macOS/clang
     # https://docs.travis-ci.com/user/osx-ci-environment/#OS-X-Version
     - os: osx
       osx_image: xcode7.3
-      env:
-        - NODE_LABELS="OSX OSX-10.11"
-        - BUILD_WITH_ASAN=yes
+      env: OSX_VERSION=10.11
     - os: osx
       osx_image: xcode8.3
-      env:
-        - NODE_LABELS="OSX OSX-10.12"
-        - BUILD_WITH_ASAN=yes
+      env: OSX_VERSION=10.12
     - os: osx
-      osx_image: xcode9
-      env:
-        - NODE_LABELS="OSX OSX-10.12"
-        - BUILD_WITH_ASAN=yes
+      osx_image: xcode9.2
+      env: OSX_VERSION=10.12
+
+  allow_failures:
+    - env: COMPILER=clang++-6.0
+
+  fast_finish: true
 
 before_script:
+  - if [[ ${TRAVIS_OS_NAME} == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-14.04"; fi
+  - if [[ ${TRAVIS_OS_NAME} == osx ]]; then export NODE_LABELS="OSX OSX-${OSX_VERSION}"; fi
+  - if [[ -n ${COMPILER} ]]; then export CXX=${COMPILER}; fi
   - ${CXX:-c++} --version
   - python --version
 
