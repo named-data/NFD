@@ -27,6 +27,8 @@
 #include "socket-utils.hpp"
 #include "udp-protocol.hpp"
 
+#include <boost/functional/hash.hpp>
+
 #ifdef __linux__
 #include <cerrno>       // for errno
 #include <cstring>      // for std::strerror()
@@ -39,8 +41,7 @@ namespace face {
 NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramTransport, MulticastUdpTransport::protocol,
                                                 Multicast, "MulticastUdpTransport");
 
-MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndpoint,
-                                             const protocol::endpoint& multicastGroup,
+MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& multicastGroup,
                                              protocol::socket&& recvSocket,
                                              protocol::socket&& sendSocket,
                                              ndn::nfd::LinkType linkType)
@@ -48,12 +49,12 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& localEndp
   , m_multicastGroup(multicastGroup)
   , m_sendSocket(std::move(sendSocket))
 {
-  this->setLocalUri(FaceUri(localEndpoint));
+  this->setLocalUri(FaceUri(m_sendSocket.local_endpoint()));
   this->setRemoteUri(FaceUri(multicastGroup));
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   this->setLinkType(linkType);
-  this->setMtu(udp::computeMtu(localEndpoint));
+  this->setMtu(udp::computeMtu(m_sendSocket.local_endpoint()));
 
   protocol::socket::send_buffer_size sendBufferSizeOption;
   boost::system::error_code error;
@@ -117,16 +118,25 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
 
   sock.open(multicastGroup.protocol());
   sock.set_option(protocol::socket::reuse_address(true));
-  sock.bind(protocol::endpoint(multicastGroup.protocol(), multicastGroup.port()));
 
   if (multicastGroup.address().is_v4()) {
     BOOST_ASSERT(localAddress.is_v4());
+    sock.bind(multicastGroup);
     sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v4(),
                                                            localAddress.to_v4()));
   }
   else {
-    // IPv6 multicast is not supported
-    BOOST_ASSERT(false);
+    BOOST_ASSERT(localAddress.is_v6());
+    sock.set_option(boost::asio::ip::v6_only(true));
+#ifdef WITH_TESTS
+    // To simplify unit tests, we bind to the "any" IPv6 address if the supplied multicast
+    // address lacks a scope id. Calling bind() without a scope id would otherwise fail.
+    if (multicastGroup.address().to_v6().scope_id() == 0)
+      sock.bind(protocol::endpoint(boost::asio::ip::address_v6::any(), multicastGroup.port()));
+    else
+#endif
+      sock.bind(multicastGroup);
+    sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v6()));
   }
 
 #ifdef __linux__
@@ -149,6 +159,7 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
 void
 MulticastUdpTransport::openTxSocket(protocol::socket& sock,
                                     const protocol::endpoint& localEndpoint,
+                                    const shared_ptr<const ndn::net::NetworkInterface>& netif,
                                     bool enableLoopback)
 {
   BOOST_ASSERT(!sock.is_open());
@@ -156,15 +167,17 @@ MulticastUdpTransport::openTxSocket(protocol::socket& sock,
   sock.open(localEndpoint.protocol());
   sock.set_option(protocol::socket::reuse_address(true));
   sock.set_option(boost::asio::ip::multicast::enable_loopback(enableLoopback));
-  sock.bind(localEndpoint);
 
   if (localEndpoint.address().is_v4()) {
+    sock.bind(localEndpoint);
     if (!localEndpoint.address().is_unspecified())
       sock.set_option(boost::asio::ip::multicast::outbound_interface(localEndpoint.address().to_v4()));
   }
   else {
-    // IPv6 multicast is not supported
-    BOOST_ASSERT(false);
+    sock.set_option(boost::asio::ip::v6_only(true));
+    sock.bind(localEndpoint);
+    if (netif)
+      sock.set_option(boost::asio::ip::multicast::outbound_interface(netif->getIndex()));
   }
 }
 
@@ -172,11 +185,17 @@ template<>
 Transport::EndpointId
 DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep)
 {
-  // IPv6 multicast is not supported
-  BOOST_ASSERT(ep.address().is_v4());
-
-  return (static_cast<uint64_t>(ep.port()) << 32) |
-          static_cast<uint64_t>(ep.address().to_v4().to_ulong());
+  if (ep.address().is_v4()) {
+    return (static_cast<uint64_t>(ep.port()) << 32) |
+            static_cast<uint64_t>(ep.address().to_v4().to_ulong());
+  }
+  else {
+    size_t seed = 0;
+    const auto& addrBytes = ep.address().to_v6().to_bytes();
+    boost::hash_range(seed, addrBytes.begin(), addrBytes.end());
+    boost::hash_combine(seed, ep.port());
+    return seed;
+  }
 }
 
 } // namespace face

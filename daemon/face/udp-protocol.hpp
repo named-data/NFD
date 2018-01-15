@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,13 +38,20 @@ typedef boost::asio::ip::udp::endpoint Endpoint;
 ssize_t
 computeMtu(const Endpoint& localEndpoint);
 
-/** \return default multicast group: 224.0.23.170:56363
+/** \return default IPv4 multicast group: 224.0.23.170:56363
  */
 inline Endpoint
 getDefaultMulticastGroup()
 {
-  // 224.0.23.170:56363
   return {boost::asio::ip::address_v4(0xE00017AA), 56363};
+}
+
+/** \return default IPv6 multicast group: [FF02::1234]:56363
+ */
+inline Endpoint
+getDefaultMulticastGroupV6()
+{
+  return {boost::asio::ip::address_v6::from_string("FF02::1234"), 56363};
 }
 
 } // namespace udp

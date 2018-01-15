@@ -127,8 +127,10 @@ face_system
     ;    sudo setcap cap_net_raw=eip /path/to/nfd
     ;
     mcast yes ; set to 'no' to disable UDP multicast, default 'yes'
-    mcast_group 224.0.23.170 ; UDP multicast group (IPv4 only)
-    mcast_port 56363 ; UDP multicast port number
+    mcast_group 224.0.23.170 ; UDP multicast group (IPv4)
+    mcast_port 56363 ; UDP multicast port number (IPv4)
+    mcast_group_v6 ff02::1234 ; UDP multicast group (IPv6)
+    mcast_port_v6 56363 ; UDP multicast port number (IPv6)
     mcast_ad_hoc no ; set to 'yes' to make all UDP multicast faces "ad hoc", default 'no'
 
     ; Whitelist and blacklist can contain, in no particular order:

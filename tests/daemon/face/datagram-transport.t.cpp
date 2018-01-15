@@ -39,7 +39,9 @@ BOOST_AUTO_TEST_SUITE(TestDatagramTransport)
 
 using DatagramTransportFixtures = boost::mpl::vector<
   GENERATE_IP_TRANSPORT_FIXTURE_INSTANTIATIONS(UnicastUdpTransportFixture),
-  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>,
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::LinkLocal, MulticastInterface::Yes>,
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::Global, MulticastInterface::Yes>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, DatagramTransportFixtures, T)

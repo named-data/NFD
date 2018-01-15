@@ -36,17 +36,15 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Face)
 
 using MulticastUdpTransportFixtureWithAddress =
-  // TODO: change to AddressFamily::Any after IPv6 support is implemented
-  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4,
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::Any,
                      AddressScope::Global, MulticastInterface::Yes>;
 
 BOOST_FIXTURE_TEST_SUITE(TestMulticastUdpTransport, MulticastUdpTransportFixtureWithAddress)
 
 using MulticastUdpTransportFixtures = boost::mpl::vector<
-  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>
-  // TODO: IPv6 not supported yet
-  //IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::LinkLocal, MulticastInterface::Yes>,
-  //IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::Global, MulticastInterface::Yes>
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V4, AddressScope::Global, MulticastInterface::Yes>,
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::LinkLocal, MulticastInterface::Yes>,
+  IpTransportFixture<MulticastUdpTransportFixture, AddressFamily::V6, AddressScope::Global, MulticastInterface::Yes>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, MulticastUdpTransportFixtures, T)
@@ -55,8 +53,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(StaticProperties, T, MulticastUdpTransportFixtu
 
   checkStaticPropertiesInitialized(*this->transport);
 
-  BOOST_CHECK_EQUAL(this->transport->getLocalUri(), FaceUri(udp::endpoint(this->address, this->localEp.port())));
-  BOOST_CHECK_EQUAL(this->transport->getRemoteUri(), FaceUri(this->multicastEp));
+  BOOST_CHECK_EQUAL(this->transport->getLocalUri(), FaceUri(udp::endpoint(this->address, this->txPort)));
+  BOOST_CHECK_EQUAL(this->transport->getRemoteUri(), FaceUri(this->mcastEp));
   BOOST_CHECK_EQUAL(this->transport->getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
   BOOST_CHECK_EQUAL(this->transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_CHECK_EQUAL(this->transport->getLinkType(), ndn::nfd::LINK_TYPE_MULTI_ACCESS);
@@ -78,9 +76,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
 {
   TRANSPORT_TEST_INIT();
 
-  // remoteSockRx2 unnecessary for this test case - only remoteSockTx2 is needed
+  // we need a second remote tx socket for this test case
   udp::socket remoteSockTx2(this->g_io);
-  MulticastUdpTransport::openTxSocket(remoteSockTx2, udp::endpoint(udp::v4(), 7071), true);
+  MulticastUdpTransport::openTxSocket(remoteSockTx2, udp::endpoint(this->address, 0), nullptr, true);
 
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   ndn::Buffer buf1(pkt1.begin(), pkt1.end());
@@ -98,15 +96,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
   BOOST_CHECK_EQUAL(this->receivedPackets->at(0).remoteEndpoint,
                     this->receivedPackets->at(1).remoteEndpoint);
 
-  udp::endpoint destEp(this->multicastEp.address(), this->localEp.port());
-  remoteSockTx2.async_send_to(boost::asio::buffer(buf1), destEp,
-    [] (const boost::system::error_code& error, size_t) {
-      BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
-    });
-  remoteSockTx2.async_send_to(boost::asio::buffer(buf2), destEp,
-    [] (const boost::system::error_code& error, size_t) {
-      BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
-    });
+  this->sendToGroup(remoteSockTx2, buf1);
+  this->sendToGroup(remoteSockTx2, buf2);
   this->limitedIo.defer(time::seconds(1));
 
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 4);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -68,6 +68,8 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   //   mcast yes
   //   mcast_group 224.0.23.170
   //   mcast_port 56363
+  //   mcast_group_v6 ff02::1234
+  //   mcast_port_v6 56363
   //   mcast_ad_hoc no
   //   whitelist
   //   {
@@ -126,6 +128,22 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       else if (key == "mcast_port") {
         mcastConfig.group.port(ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp"));
       }
+      else if (key == "mcast_group_v6") {
+        const std::string& valueStr = value.get_value<std::string>();
+        boost::system::error_code ec;
+        mcastConfig.groupV6.address(ndn::ip::addressV6FromString(valueStr, ec));
+        if (ec) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
+                                valueStr + "' cannot be parsed as an IPv6 address"));
+        }
+        else if (!mcastConfig.groupV6.address().is_multicast()) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
+                                valueStr + "' is not a multicast address"));
+        }
+      }
+      else if (key == "mcast_port_v6") {
+        mcastConfig.groupV6.port(ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp"));
+      }
       else if (key == "mcast_ad_hoc") {
         bool wantAdHoc = ConfigFile::parseYesNo(pair, "face_system.udp");
         mcastConfig.linkType = wantAdHoc ? ndn::nfd::LINK_TYPE_AD_HOC : ndn::nfd::LINK_TYPE_MULTI_ACCESS;
@@ -181,6 +199,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   if (m_mcastConfig.isEnabled != mcastConfig.isEnabled) {
     if (mcastConfig.isEnabled) {
       NFD_LOG_INFO("enabling multicast on " << mcastConfig.group);
+      NFD_LOG_INFO("enabling multicast on " << mcastConfig.groupV6);
     }
     else {
       NFD_LOG_INFO("disabling multicast");
@@ -191,8 +210,12 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       NFD_LOG_WARN("Cannot change ad hoc setting on existing faces");
     }
     if (m_mcastConfig.group != mcastConfig.group) {
-      NFD_LOG_INFO("changing multicast group from " << m_mcastConfig.group <<
+      NFD_LOG_INFO("changing IPv4 multicast group from " << m_mcastConfig.group <<
                    " to " << mcastConfig.group);
+    }
+    if (m_mcastConfig.groupV6 != mcastConfig.groupV6) {
+      NFD_LOG_INFO("changing IPv6 multicast group from " << m_mcastConfig.groupV6 <<
+                   " to " << mcastConfig.groupV6);
     }
     if (m_mcastConfig.netifPredicate != mcastConfig.netifPredicate) {
       NFD_LOG_INFO("changing whitelist/blacklist");
@@ -262,15 +285,11 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
   if (it != m_channels.end())
     return it->second;
 
-  if (localEndpoint.address().is_multicast()) {
-    BOOST_THROW_EXCEPTION(Error("createChannel is only for unicast channels. The provided endpoint "
-                                "is multicast. Use createMulticastFace to create a multicast face"));
-  }
-
   // check if the endpoint is already used by a multicast face
   if (m_mcastFaces.find(localEndpoint) != m_mcastFaces.end()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP unicast channel, local "
-                                "endpoint is already allocated for a UDP multicast face"));
+    BOOST_THROW_EXCEPTION(Error("Cannot create UDP channel on " +
+                                boost::lexical_cast<std::string>(localEndpoint) +
+                                ", endpoint already allocated for a UDP multicast face"));
   }
 
   auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout);
@@ -286,126 +305,148 @@ UdpFactory::getChannels() const
 }
 
 shared_ptr<Face>
-UdpFactory::createMulticastFace(const udp::Endpoint& localEndpoint,
-                                const udp::Endpoint& multicastEndpoint,
-                                const shared_ptr<const ndn::net::NetworkInterface>& netif)
+UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& netif,
+                                const ip::address& localAddress,
+                                const udp::Endpoint& multicastEndpoint)
 {
   BOOST_ASSERT(multicastEndpoint.address().is_multicast());
-  BOOST_ASSERT(localEndpoint.port() == multicastEndpoint.port());
 
-  // check if the local and multicast endpoints are already in use for a multicast face
-  auto it = m_mcastFaces.find(localEndpoint);
+  udp::Endpoint localEp(localAddress, multicastEndpoint.port());
+  BOOST_ASSERT(localEp.protocol() == multicastEndpoint.protocol());
+
+  auto mcastEp = multicastEndpoint;
+  if (mcastEp.address().is_v6()) {
+    // in IPv6, a scope id on the multicast address is always required
+    auto mcastAddress = mcastEp.address().to_v6();
+    mcastAddress.scope_id(netif->getIndex());
+    mcastEp.address(mcastAddress);
+  }
+
+  // check if the local endpoint is already used by another multicast face
+  auto it = m_mcastFaces.find(localEp);
   if (it != m_mcastFaces.end()) {
-    if (it->second->getRemoteUri() == FaceUri(multicastEndpoint))
+    if (it->second->getRemoteUri() == FaceUri(mcastEp))
       return it->second;
     else
-      BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
-                                  "endpoint is already allocated for a UDP multicast face "
-                                  "on a different multicast group"));
+      BOOST_THROW_EXCEPTION(Error("Cannot create UDP multicast face on " +
+                                  boost::lexical_cast<std::string>(localEp) +
+                                  ", endpoint already allocated for a different UDP multicast face"));
   }
 
   // check if the local endpoint is already used by a unicast channel
-  if (m_channels.find(localEndpoint) != m_channels.end()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create the requested UDP multicast face, local "
-                                "endpoint is already allocated for a UDP unicast channel"));
-  }
-
-  if (localEndpoint.address().is_v6() || multicastEndpoint.address().is_v6()) {
-    BOOST_THROW_EXCEPTION(Error("IPv6 multicast is not supported yet. Please provide an IPv4 "
-                                "address"));
+  if (m_channels.find(localEp) != m_channels.end()) {
+    BOOST_THROW_EXCEPTION(Error("Cannot create UDP multicast face on " +
+                                boost::lexical_cast<std::string>(localEp) +
+                                ", endpoint already allocated for a UDP channel"));
   }
 
   ip::udp::socket rxSock(getGlobalIoService());
-  MulticastUdpTransport::openRxSocket(rxSock, multicastEndpoint, localEndpoint.address(), netif);
+  MulticastUdpTransport::openRxSocket(rxSock, mcastEp, localAddress, netif);
   ip::udp::socket txSock(getGlobalIoService());
-  MulticastUdpTransport::openTxSocket(txSock, localEndpoint);
+  MulticastUdpTransport::openTxSocket(txSock, udp::Endpoint(localAddress, 0), netif);
 
   auto linkService = make_unique<GenericLinkService>();
-  auto transport = make_unique<MulticastUdpTransport>(localEndpoint, multicastEndpoint,
-                                                      std::move(rxSock), std::move(txSock),
+  auto transport = make_unique<MulticastUdpTransport>(mcastEp, std::move(rxSock), std::move(txSock),
                                                       m_mcastConfig.linkType);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
-  m_mcastFaces[localEndpoint] = face;
-  connectFaceClosedSignal(*face, [this, localEndpoint] { m_mcastFaces.erase(localEndpoint); });
+  m_mcastFaces[localEp] = face;
+  connectFaceClosedSignal(*face, [this, localEp] { m_mcastFaces.erase(localEp); });
 
   return face;
 }
 
 static ndn::optional<ip::address>
-getV4Address(const net::NetworkInterface& netif)
+pickAddress(const net::NetworkInterface& netif, net::AddressFamily af)
 {
   for (const auto& na : netif.getNetworkAddresses()) {
-    if (na.getFamily() == net::AddressFamily::V4 && na.getScope() != net::AddressScope::NOWHERE) {
+    if (na.getFamily() == af &&
+        (na.getScope() == net::AddressScope::LINK || na.getScope() == net::AddressScope::GLOBAL)) {
       return na.getIp();
     }
   }
   return ndn::nullopt;
 }
 
-shared_ptr<Face>
+std::vector<shared_ptr<Face>>
 UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface>& netif)
 {
   BOOST_ASSERT(netif != nullptr);
 
   if (!m_mcastConfig.isEnabled) {
-    return nullptr;
+    return {};
   }
 
   if (!netif->isUp()) {
-    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": netif is down");
-    return nullptr;
+    NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": netif is down");
+    return {};
+  }
+
+  if (netif->isLoopback()) {
+    NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": netif is loopback");
+    return {};
   }
 
   if (!netif->canMulticast()) {
-    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": netif cannot multicast");
-    return nullptr;
-  }
-
-  auto address = getV4Address(*netif);
-  if (!address) {
-    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": no IPv4 address");
-    // keep an eye on new addresses
-    m_netifConns[netif->getIndex()].addrAddConn =
-      netif->onAddressAdded.connectSingleShot(bind(&UdpFactory::applyMcastConfigToNetif, this, netif));
-    return nullptr;
+    NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": netif cannot multicast");
+    return {};
   }
 
   if (!m_mcastConfig.netifPredicate(*netif)) {
-    NFD_LOG_DEBUG("Not creating multicast face on " << netif->getName() << ": rejected by whitelist/blacklist");
-    return nullptr;
+    NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": rejected by whitelist/blacklist");
+    return {};
   }
 
-  NFD_LOG_DEBUG("Creating multicast face on " << netif->getName());
-
-  udp::Endpoint localEndpoint(*address, m_mcastConfig.group.port());
-  auto face = this->createMulticastFace(localEndpoint, m_mcastConfig.group, netif);
-  if (face->getId() == INVALID_FACEID) {
-    // new face: register with forwarding
-    this->addFace(face);
+  std::vector<ip::address> addrs;
+  for (auto af : {net::AddressFamily::V4, net::AddressFamily::V6}) {
+    auto addr = pickAddress(*netif, af);
+    if (addr)
+      addrs.push_back(*addr);
   }
 
-  return face;
+  if (addrs.empty()) {
+    NFD_LOG_DEBUG("Not creating multicast faces on " << netif->getName() << ": no viable IP address");
+    // keep an eye on new addresses
+    m_netifConns[netif->getIndex()].addrAddConn =
+      netif->onAddressAdded.connect(bind(&UdpFactory::applyMcastConfigToNetif, this, netif));
+    return {};
+  }
+
+  NFD_LOG_DEBUG("Creating multicast faces on " << netif->getName());
+
+  std::vector<shared_ptr<Face>> faces;
+  for (const auto& addr : addrs) {
+    auto face = this->createMulticastFace(netif, addr,
+                                          addr.is_v4() ? m_mcastConfig.group : m_mcastConfig.groupV6);
+    if (face->getId() == INVALID_FACEID) {
+      // new face: register with forwarding
+      this->addFace(face);
+    }
+    faces.push_back(std::move(face));
+  }
+
+  return faces;
 }
 
 void
 UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext& context)
 {
   // collect old faces
-  std::set<shared_ptr<Face>> oldFaces;
-  boost::copy(m_mcastFaces | boost::adaptors::map_values, std::inserter(oldFaces, oldFaces.end()));
+  std::set<shared_ptr<Face>> facesToClose;
+  boost::copy(m_mcastFaces | boost::adaptors::map_values,
+              std::inserter(facesToClose, facesToClose.end()));
 
   // create faces if requested by config
   for (const auto& netif : netmon->listNetworkInterfaces()) {
-    auto face = this->applyMcastConfigToNetif(netif);
-    if (face != nullptr) {
+    auto facesToKeep = this->applyMcastConfigToNetif(netif);
+    for (const auto& face : facesToKeep) {
       // don't destroy face
-      oldFaces.erase(face);
+      facesToClose.erase(face);
     }
   }
 
   // destroy old faces that are not needed in new configuration
-  for (const auto& face : oldFaces) {
+  for (const auto& face : facesToClose) {
     face->close();
   }
 }

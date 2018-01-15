@@ -59,14 +59,12 @@ public:
 
   /**
    * \brief Creates a UDP-based transport for multicast communication
-   * \param localEndpoint local endpoint
    * \param multicastGroup multicast group
-   * \param recvSocket socket used to receive packets
+   * \param recvSocket socket used to receive multicast packets
    * \param sendSocket socket used to send to the multicast group
-   * \param linkType either LINK_TYPE_MULTI_ACCESS or LINK_TYPE_AD_HOC
+   * \param linkType either `ndn::nfd::LINK_TYPE_MULTI_ACCESS` or `ndn::nfd::LINK_TYPE_AD_HOC`
    */
-  MulticastUdpTransport(const protocol::endpoint& localEndpoint,
-                        const protocol::endpoint& multicastGroup,
+  MulticastUdpTransport(const protocol::endpoint& multicastGroup,
                         protocol::socket&& recvSocket,
                         protocol::socket&& sendSocket,
                         ndn::nfd::LinkType linkType);
@@ -83,6 +81,7 @@ public:
   static void
   openTxSocket(protocol::socket& sock,
                const protocol::endpoint& localEndpoint,
+               const shared_ptr<const ndn::net::NetworkInterface>& netif = nullptr,
                bool enableLoopback = false);
 
 private:

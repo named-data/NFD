@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,6 @@
 #include "factory-test-common.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/range/algorithm/count_if.hpp>
 #include <ndn-cxx/net/address-converter.hpp>
 
 namespace nfd {
@@ -53,22 +52,54 @@ protected:
   UdpFactoryMcastFixture()
   {
     for (const auto& netif : collectNetworkInterfaces()) {
-      if (netif->isUp() && netif->canMulticast() &&
-          hasAddressFamily(*netif, ndn::net::AddressFamily::V4)) {
-        netifs.push_back(netif);
+      // same filtering logic as UdpFactory::applyMcastConfigToNetif()
+      if (netif->isUp() && !netif->isLoopback() && netif->canMulticast()) {
+        bool hasValidIpAddress = false;
+        if (hasAddressFamily(*netif, ndn::net::AddressFamily::V4)) {
+          hasValidIpAddress = true;
+          netifsV4.push_back(netif);
+        }
+        if (hasAddressFamily(*netif, ndn::net::AddressFamily::V6)) {
+          hasValidIpAddress = true;
+          netifsV6.push_back(netif);
+        }
+        if (hasValidIpAddress) {
+          netifs.push_back(netif);
+        }
       }
     }
-
     this->copyRealNetifsToNetmon();
   }
 
   shared_ptr<Face>
   createMulticastFace(const std::string& localIp, const std::string& mcastIp, uint16_t mcastPort)
   {
-    BOOST_ASSERT(!netifs.empty());
-    udp::Endpoint localEndpoint(ndn::ip::addressFromString(localIp), mcastPort);
+    auto localAddress = ndn::ip::addressFromString(localIp);
     udp::Endpoint mcastEndpoint(ndn::ip::addressFromString(mcastIp), mcastPort);
-    return factory.createMulticastFace(localEndpoint, mcastEndpoint, netifs.front());
+
+    if (localAddress.is_v4()) {
+      BOOST_ASSERT(!netifsV4.empty());
+      return factory.createMulticastFace(netifsV4.front(), localAddress, mcastEndpoint);
+    }
+    else {
+      BOOST_ASSERT(!netifsV6.empty());
+      return factory.createMulticastFace(netifsV6.front(), localAddress, mcastEndpoint);
+    }
+  }
+
+  /** \brief returns a non-loopback IP address suitable for the creation of a UDP multicast face
+   */
+  boost::asio::ip::address
+  findNonLoopbackAddressForMulticastFace(ndn::net::AddressFamily af) const
+  {
+    const auto& netifList = af == ndn::net::AddressFamily::V4 ? netifsV4 : netifsV6;
+    for (const auto& netif : netifList) {
+      for (const auto& a : netif->getNetworkAddresses()) {
+        if (a.getFamily() == af && !a.getIp().is_loopback())
+          return a.getIp();
+      }
+    }
+    return {};
   }
 
   std::vector<const Face*>
@@ -77,7 +108,13 @@ protected:
     return this->listFacesByScheme("udp4", linkType);
   }
 
-  /** \brief determine whether \p netif has at least one address of the given family
+  std::vector<const Face*>
+  listUdp6McastFaces(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS) const
+  {
+    return this->listFacesByScheme("udp6", linkType);
+  }
+
+  /** \brief determine whether \p netif has at least one IP address of the given family
    */
   static bool
   hasAddressFamily(const NetworkInterface& netif, ndn::net::AddressFamily af)
@@ -89,17 +126,27 @@ protected:
   /** \brief determine whether a UDP multicast face is created on \p netif
    */
   static bool
-  isFaceOnNetif(const Face& face, const shared_ptr<const NetworkInterface>& netif)
+  isFaceOnNetif(const Face& face, const NetworkInterface& netif)
   {
-    auto ip = boost::asio::ip::address_v4::from_string(face.getLocalUri().getHost());
-    return std::any_of(netif->getNetworkAddresses().begin(), netif->getNetworkAddresses().end(),
+    auto ip = ndn::ip::addressFromString(face.getLocalUri().getHost());
+    return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
                        [ip] (const NetworkAddress& a) { return a.getIp() == ip; });
   }
 
 protected:
-  /** \brief MulticastUdpTransport-capable network interfaces
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 + IPv6)
+   *
+   *  This should be used in test cases that do not depend on a specific address family
    */
   std::vector<shared_ptr<const NetworkInterface>> netifs;
+
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv4 only)
+   */
+  std::vector<shared_ptr<const NetworkInterface>> netifsV4;
+
+  /** \brief MulticastUdpTransport-capable network interfaces (IPv6 only)
+   */
+  std::vector<shared_ptr<const NetworkInterface>> netifsV6;
 };
 
 #define SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(n) \
@@ -107,6 +154,24 @@ protected:
     if (this->netifs.size() < (n)) { \
       BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
                                 " or more MulticastUdpTransport-capable network interfaces"); \
+      return; \
+    } \
+  } while (false)
+
+#define SKIP_IF_UDP_MCAST_V4_NETIF_COUNT_LT(n) \
+  do { \
+    if (this->netifsV4.size() < (n)) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
+                                " or more IPv4 MulticastUdpTransport-capable network interfaces"); \
+      return; \
+    } \
+  } while (false)
+
+#define SKIP_IF_UDP_MCAST_V6_NETIF_COUNT_LT(n) \
+  do { \
+    if (this->netifsV6.size() < (n)) { \
+      BOOST_WARN_MESSAGE(false, "skipping assertions that require " #n \
+                                " or more IPv6 MulticastUdpTransport-capable network interfaces"); \
       return; \
     } \
   } while (false)
@@ -184,11 +249,6 @@ BOOST_AUTO_TEST_CASE(ChannelV6)
 
 BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpFactoryMcastFixture)
 {
-#ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
-  SKIP_IF_NOT_SUPERUSER();
-#endif // __linux__
-
   const std::string CONFIG_WITH_MCAST = R"CONFIG(
     face_system
     {
@@ -210,22 +270,28 @@ BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpFactoryMcastFixture)
 
   parseConfig(CONFIG_WITHOUT_MCAST, false);
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 0);
 
-  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+#ifdef __linux__
+  // need superuser privileges to create multicast faces on Linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
 
   parseConfig(CONFIG_WITH_MCAST, false);
   g_io.poll();
-  BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), netifs.size());
+  BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), netifsV4.size());
+  BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), netifsV6.size());
 
   parseConfig(CONFIG_WITHOUT_MCAST, false);
   g_io.poll();
   BOOST_CHECK_EQUAL(this->listUdp4McastFaces().size(), 0);
+  BOOST_CHECK_EQUAL(this->listUdp6McastFaces().size(), 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(McastAdHoc, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -241,16 +307,17 @@ BOOST_FIXTURE_TEST_CASE(McastAdHoc, UdpFactoryMcastFixture)
   )CONFIG";
 
   parseConfig(CONFIG, false);
-  BOOST_CHECK_EQUAL(this->listUdp4McastFaces(ndn::nfd::LINK_TYPE_AD_HOC).size(), netifs.size());
+  BOOST_CHECK_EQUAL(this->listUdp4McastFaces(ndn::nfd::LINK_TYPE_AD_HOC).size(), netifsV4.size());
+  BOOST_CHECK_EQUAL(this->listUdp6McastFaces(ndn::nfd::LINK_TYPE_AD_HOC).size(), netifsV6.size());
 }
 
-BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpFactoryMcastFixture)
+BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpointV4, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
-  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+  SKIP_IF_UDP_MCAST_V4_NETIF_COUNT_LT(1);
 
   const std::string CONFIG1 = R"CONFIG(
     face_system
@@ -275,22 +342,65 @@ BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpoint, UdpFactoryMcastFixture)
 
   parseConfig(CONFIG1, false);
   auto udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifs.size());
-  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(),
-                    FaceUri("udp4://239.66.30.1:7011"));
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV4.size());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri("udp4://239.66.30.1:7011"));
 
   parseConfig(CONFIG2, false);
   g_io.poll();
   udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifs.size());
-  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(),
-                    FaceUri("udp4://239.66.30.2:7012"));
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV4.size());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri("udp4://239.66.30.2:7012"));
+}
+
+BOOST_FIXTURE_TEST_CASE(ChangeMcastEndpointV6, UdpFactoryMcastFixture)
+{
+#ifdef __linux__
+  // need superuser privileges to create multicast faces on Linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_V6_NETIF_COUNT_LT(1);
+
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group_v6 ff02::1101
+        mcast_port_v6 7011
+      }
+    }
+  )CONFIG";
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group_v6 ff02::1102
+        mcast_port_v6 7012
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG1, false);
+  auto udpMcastFaces = this->listUdp6McastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV6.size());
+  auto expectedAddr = boost::asio::ip::address_v6::from_string("ff02::1101");
+  expectedAddr.scope_id(netifsV6.front()->getIndex());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri(udp::Endpoint(expectedAddr, 7011)));
+
+  parseConfig(CONFIG2, false);
+  g_io.poll();
+  udpMcastFaces = this->listUdp6McastFaces();
+  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), netifsV6.size());
+  expectedAddr = boost::asio::ip::address_v6::from_string("ff02::1102");
+  expectedAddr.scope_id(netifsV6.front()->getIndex());
+  BOOST_CHECK_EQUAL(udpMcastFaces.front()->getRemoteUri(), FaceUri(udp::Endpoint(expectedAddr, 7012)));
 }
 
 BOOST_FIXTURE_TEST_CASE(Whitelist, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -310,15 +420,21 @@ BOOST_FIXTURE_TEST_CASE(Whitelist, UdpFactoryMcastFixture)
   boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
+
   auto udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
-  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.front()));
+  BOOST_CHECK_LE(udpMcastFaces.size(), 1);
+  auto udpMcastFacesV6 = this->listUdp6McastFaces();
+  BOOST_CHECK_LE(udpMcastFacesV6.size(), 1);
+  udpMcastFaces.insert(udpMcastFaces.end(), udpMcastFacesV6.begin(), udpMcastFacesV6.end());
+  BOOST_CHECK_GE(udpMcastFaces.size(), 1);
+  BOOST_CHECK(std::all_of(udpMcastFaces.begin(), udpMcastFaces.end(),
+                          [this] (const Face* face) { return isFaceOnNetif(*face, *netifs.front()); }));
 }
 
 BOOST_FIXTURE_TEST_CASE(Blacklist, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
@@ -338,17 +454,21 @@ BOOST_FIXTURE_TEST_CASE(Blacklist, UdpFactoryMcastFixture)
   boost::replace_first(CONFIG, "%ifname", netifs.front()->getName());
 
   parseConfig(CONFIG, false);
+
   auto udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_CHECK_EQUAL(udpMcastFaces.size(), netifs.size() - 1);
-  BOOST_CHECK_EQUAL(boost::count_if(udpMcastFaces, [this] (const Face* face) {
-    return isFaceOnNetif(*face, netifs.front());
-  }), 0);
+  BOOST_CHECK_GE(udpMcastFaces.size(), netifsV4.size() - 1);
+  auto udpMcastFacesV6 = this->listUdp6McastFaces();
+  BOOST_CHECK_GE(udpMcastFacesV6.size(), netifsV6.size() - 1);
+  udpMcastFaces.insert(udpMcastFaces.end(), udpMcastFacesV6.begin(), udpMcastFacesV6.end());
+  BOOST_CHECK_LT(udpMcastFaces.size(), netifsV4.size() + netifsV6.size());
+  BOOST_CHECK(std::none_of(udpMcastFaces.begin(), udpMcastFaces.end(),
+                           [this] (const Face* face) { return isFaceOnNetif(*face, *netifs.front()); }));
 }
 
 BOOST_FIXTURE_TEST_CASE(ChangePredicate, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
   SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(2);
@@ -370,15 +490,23 @@ BOOST_FIXTURE_TEST_CASE(ChangePredicate, UdpFactoryMcastFixture)
   boost::replace_first(CONFIG2, "%ifname", netifs.back()->getName());
 
   parseConfig(CONFIG1, false);
+
   auto udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
-  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.front()));
+  auto udpMcastFacesV6 = this->listUdp6McastFaces();
+  udpMcastFaces.insert(udpMcastFaces.end(), udpMcastFacesV6.begin(), udpMcastFacesV6.end());
+  BOOST_CHECK_GE(udpMcastFaces.size(), 1);
+  BOOST_CHECK(std::all_of(udpMcastFaces.begin(), udpMcastFaces.end(),
+                          [this] (const Face* face) { return isFaceOnNetif(*face, *netifs.front()); }));
 
   parseConfig(CONFIG2, false);
   g_io.poll();
+
   udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_REQUIRE_EQUAL(udpMcastFaces.size(), 1);
-  BOOST_CHECK(isFaceOnNetif(*udpMcastFaces.front(), netifs.back()));
+  udpMcastFacesV6 = this->listUdp6McastFaces();
+  udpMcastFaces.insert(udpMcastFaces.end(), udpMcastFacesV6.begin(), udpMcastFacesV6.end());
+  BOOST_CHECK_GE(udpMcastFaces.size(), 1);
+  BOOST_CHECK(std::all_of(udpMcastFaces.begin(), udpMcastFaces.end(),
+                          [this] (const Face* face) { return isFaceOnNetif(*face, *netifs.back()); }));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -394,6 +522,7 @@ BOOST_AUTO_TEST_CASE(Omitted)
 
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
   BOOST_CHECK_EQUAL(this->listFacesByScheme("udp4", ndn::nfd::LINK_TYPE_MULTI_ACCESS).size(), 0);
+  BOOST_CHECK_EQUAL(this->listFacesByScheme("udp6", ndn::nfd::LINK_TYPE_MULTI_ACCESS).size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(AllDisabled)
@@ -446,7 +575,7 @@ BOOST_AUTO_TEST_CASE(BadMcast)
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(BadMcastGroup)
+BOOST_AUTO_TEST_CASE(BadMcastGroupV4)
 {
   // not an address
   const std::string CONFIG1 = R"CONFIG(
@@ -491,7 +620,52 @@ BOOST_AUTO_TEST_CASE(BadMcastGroup)
   BOOST_CHECK_THROW(parseConfig(CONFIG3, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(BadMcastPort)
+BOOST_AUTO_TEST_CASE(BadMcastGroupV6)
+{
+  // not an address
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group_v6 foo
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // non-multicast address
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group_v6 fe80::1234
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
+
+  // wrong address family
+  const std::string CONFIG3 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_group_v6 224.0.23.170
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcastPortV4)
 {
   const std::string CONFIG1 = R"CONFIG(
     face_system
@@ -512,6 +686,35 @@ BOOST_AUTO_TEST_CASE(BadMcastPort)
       udp
       {
         mcast_port 99999
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadMcastPortV6)
+{
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_port_v6 bar
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        mcast_port_v6 99999
       }
     }
   )CONFIG";
@@ -563,67 +766,107 @@ BOOST_FIXTURE_TEST_CASE(CreateChannel, UdpFactoryMcastFixture)
   BOOST_CHECK_NE(channel2, channel3);
   BOOST_CHECK_EQUAL(channel3->getUri().toString(), "udp6://[::1]:20071");
 
-  // createChannel with multicast address
-  BOOST_CHECK_EXCEPTION(createChannel("224.0.0.1", 20070), UdpFactory::Error,
-                        [] (const UdpFactory::Error& e) {
-                          return strcmp(e.what(),
-                                        "createChannel is only for unicast channels. The provided endpoint "
-                                        "is multicast. Use createMulticastFace to create a multicast face") == 0;
-                        });
-
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
-  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
 
   // createChannel with a local endpoint that has already been allocated for a UDP multicast face
-  auto multicastFace = createMulticastFace("127.0.0.1", "224.0.0.1", 20072);
-  BOOST_CHECK_EXCEPTION(createChannel("127.0.0.1", 20072), UdpFactory::Error,
-                        [] (const UdpFactory::Error& e) {
-                          return strcmp(e.what(),
-                                        "Cannot create the requested UDP unicast channel, local "
-                                        "endpoint is already allocated for a UDP multicast face") == 0;
-                        });
+  if (!netifsV4.empty()) {
+    auto mcastFace = createMulticastFace("127.0.0.1", "224.0.0.254", 20072);
+    BOOST_CHECK_EXCEPTION(createChannel("127.0.0.1", 20072), UdpFactory::Error,
+                          [] (const UdpFactory::Error& e) {
+                            return strcmp(e.what(),
+                                          "Cannot create UDP channel on 127.0.0.1:20072, "
+                                          "endpoint already allocated for a UDP multicast face") == 0;
+                          });
+  }
+  if (!netifsV6.empty()) {
+    auto mcastFace = createMulticastFace("::1", "ff02::114", 20072);
+    BOOST_CHECK_EXCEPTION(createChannel("::1", 20072), UdpFactory::Error,
+                          [] (const UdpFactory::Error& e) {
+                            return strcmp(e.what(),
+                                          "Cannot create UDP channel on [::1]:20072, "
+                                          "endpoint already allocated for a UDP multicast face") == 0;
+                          });
+  }
 }
 
-BOOST_FIXTURE_TEST_CASE(CreateMulticastFace, UdpFactoryMcastFixture)
+BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV4, UdpFactoryMcastFixture)
 {
 #ifdef __linux__
-  // need superuser privilege for creating multicast faces on Linux
+  // need superuser privileges to create multicast faces on Linux
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
-  SKIP_IF_UDP_MCAST_NETIF_COUNT_LT(1);
+  SKIP_IF_UDP_MCAST_V4_NETIF_COUNT_LT(1);
 
-  auto multicastFace1  = createMulticastFace("127.0.0.1", "224.0.0.1", 20070);
-  auto multicastFace1a = createMulticastFace("127.0.0.1", "224.0.0.1", 20070);
+  auto multicastFace1  = createMulticastFace("127.0.0.1", "224.0.0.254", 20070);
+  auto multicastFace1a = createMulticastFace("127.0.0.1", "224.0.0.254", 20070);
+  auto multicastFace2  = createMulticastFace("127.0.0.1", "224.0.0.254", 20030);
   BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
+  BOOST_CHECK_NE(multicastFace1, multicastFace2);
 
-  // createMulticastFace with an IPv4 local endpoint already used by a channel
+  auto address = findNonLoopbackAddressForMulticastFace(ndn::net::AddressFamily::V4);
+  if (!address.is_unspecified()) {
+    auto multicastFace3  = createMulticastFace(address.to_string(), "224.0.0.254", 20070);
+    BOOST_CHECK_NE(multicastFace1, multicastFace3);
+    BOOST_CHECK_NE(multicastFace2, multicastFace3);
+  }
+
+  // create with a local endpoint already used by a channel
   auto channel = createChannel("127.0.0.1", 20071);
-  BOOST_CHECK_EXCEPTION(createMulticastFace("127.0.0.1", "224.0.0.1", 20071), UdpFactory::Error,
+  BOOST_CHECK_EXCEPTION(createMulticastFace("127.0.0.1", "224.0.0.254", 20071), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
-                                        "Cannot create the requested UDP multicast face, local "
-                                        "endpoint is already allocated for a UDP unicast channel") == 0;
+                                        "Cannot create UDP multicast face on 127.0.0.1:20071, "
+                                        "endpoint already allocated for a UDP channel") == 0;
                         });
 
-  // createMulticastFace with an IPv4 local endpoint already
-  // used by a multicast face on a different multicast group
+  // create with a local endpoint already used by a multicast face on a different multicast group
   BOOST_CHECK_EXCEPTION(createMulticastFace("127.0.0.1", "224.0.0.42", 20070), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
-                                        "Cannot create the requested UDP multicast face, local "
-                                        "endpoint is already allocated for a UDP multicast face "
-                                        "on a different multicast group") == 0;
+                                        "Cannot create UDP multicast face on 127.0.0.1:20070, "
+                                        "endpoint already allocated for a different UDP multicast face") == 0;
                         });
+}
 
-  // createMulticastFace with an IPv6 multicast address
-  BOOST_CHECK_EXCEPTION(createMulticastFace("::1", "ff01::114", 20073), UdpFactory::Error,
+BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV6, UdpFactoryMcastFixture)
+{
+#ifdef __linux__
+  // need superuser privileges to create multicast faces on Linux
+  SKIP_IF_NOT_SUPERUSER();
+#endif // __linux__
+  SKIP_IF_UDP_MCAST_V6_NETIF_COUNT_LT(1);
+
+  auto multicastFace1  = createMulticastFace("::1", "ff02::114", 20070);
+  auto multicastFace1a = createMulticastFace("::1", "ff02::114", 20070);
+  auto multicastFace2  = createMulticastFace("::1", "ff02::114", 20030);
+  BOOST_CHECK_EQUAL(multicastFace1, multicastFace1a);
+  BOOST_CHECK_NE(multicastFace1, multicastFace2);
+
+  auto address = findNonLoopbackAddressForMulticastFace(ndn::net::AddressFamily::V6);
+  if (!address.is_unspecified()) {
+    auto multicastFace3  = createMulticastFace(address.to_string(), "ff02::114", 20070);
+    BOOST_CHECK_NE(multicastFace1, multicastFace3);
+    BOOST_CHECK_NE(multicastFace2, multicastFace3);
+  }
+
+  // create with a local endpoint already used by a channel
+  auto channel = createChannel("::1", 20071);
+  BOOST_CHECK_EXCEPTION(createMulticastFace("::1", "ff02::114", 20071), UdpFactory::Error,
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
-                                        "IPv6 multicast is not supported yet. Please provide an IPv4 "
-                                        "address") == 0;
+                                        "Cannot create UDP multicast face on [::1]:20071, "
+                                        "endpoint already allocated for a UDP channel") == 0;
+                        });
+
+  // create with a local endpoint already used by a multicast face on a different multicast group
+  BOOST_CHECK_EXCEPTION(createMulticastFace("::1", "ff02::42", 20070), UdpFactory::Error,
+                        [] (const UdpFactory::Error& e) {
+                          return strcmp(e.what(),
+                                        "Cannot create UDP multicast face on [::1]:20070, "
+                                        "endpoint already allocated for a different UDP multicast face") == 0;
                         });
 }
 
