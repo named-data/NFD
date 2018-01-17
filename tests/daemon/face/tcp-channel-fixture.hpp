@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,7 +43,7 @@ protected:
     if (port == 0)
       port = getNextPort();
 
-    return make_unique<TcpChannel>(tcp::Endpoint(addr, port));
+    return make_unique<TcpChannel>(tcp::Endpoint(addr, port), false);
   }
 
   void

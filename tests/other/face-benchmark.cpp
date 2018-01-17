@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,8 +45,8 @@ class FaceBenchmark
 public:
   FaceBenchmark(const char* configFileName)
     : m_terminationSignalSet{getGlobalIoService()}
-    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}}
-    , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, time::minutes{10}}
+    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false}
+    , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, time::minutes{10}, false}
   {
     m_terminationSignalSet.add(SIGINT);
     m_terminationSignalSet.add(SIGTERM);

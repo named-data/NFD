@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -49,7 +49,8 @@ public:
   processConfig(OptionalConfigSection configSection,
                 FaceSystem::ConfigContext& context) override
   {
-    processConfigHistory.push_back({configSection, context.isDryRun});
+    processConfigHistory.push_back({configSection, context.isDryRun,
+                                    context.generalConfig.wantCongestionMarking});
     if (!context.isDryRun) {
       this->providedSchemes = this->newProvidedSchemes;
     }
@@ -75,6 +76,7 @@ public:
   {
     OptionalConfigSection configSection;
     bool isDryRun;
+    bool wantCongestionMarking;
   };
   std::vector<ProcessConfigArgs> processConfigHistory;
 
@@ -91,6 +93,10 @@ BOOST_AUTO_TEST_CASE(Normal)
   const std::string CONFIG = R"CONFIG(
     face_system
     {
+      general
+      {
+        enable_congestion_marking yes
+      }
       f1
       {
         key v1
@@ -104,18 +110,22 @@ BOOST_AUTO_TEST_CASE(Normal)
 
   parseConfig(CONFIG, true);
   BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 1);
-  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, true);
+  BOOST_CHECK(f1->processConfigHistory.back().isDryRun);
+  BOOST_CHECK(f1->processConfigHistory.back().wantCongestionMarking);
   BOOST_CHECK_EQUAL(f1->processConfigHistory.back().configSection->get<std::string>("key"), "v1");
   BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 1);
-  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, true);
+  BOOST_CHECK(f2->processConfigHistory.back().isDryRun);
+  BOOST_CHECK(f2->processConfigHistory.back().wantCongestionMarking);
   BOOST_CHECK_EQUAL(f2->processConfigHistory.back().configSection->get<std::string>("key"), "v2");
 
   parseConfig(CONFIG, false);
   BOOST_REQUIRE_EQUAL(f1->processConfigHistory.size(), 2);
-  BOOST_CHECK_EQUAL(f1->processConfigHistory.back().isDryRun, false);
+  BOOST_CHECK(!f1->processConfigHistory.back().isDryRun);
+  BOOST_CHECK(f1->processConfigHistory.back().wantCongestionMarking);
   BOOST_CHECK_EQUAL(f1->processConfigHistory.back().configSection->get<std::string>("key"), "v1");
   BOOST_REQUIRE_EQUAL(f2->processConfigHistory.size(), 2);
-  BOOST_CHECK_EQUAL(f2->processConfigHistory.back().isDryRun, false);
+  BOOST_CHECK(!f2->processConfigHistory.back().isDryRun);
+  BOOST_CHECK(f2->processConfigHistory.back().wantCongestionMarking);
   BOOST_CHECK_EQUAL(f2->processConfigHistory.back().configSection->get<std::string>("key"), "v2");
 }
 

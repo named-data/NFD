@@ -80,6 +80,8 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   //   }
   // }
 
+  m_wantCongestionMarking = context.generalConfig.wantCongestionMarking;
+
   uint16_t port = 6363;
   bool enableV4 = false;
   bool enableV6 = false;
@@ -292,7 +294,7 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
                                 ", endpoint already allocated for a UDP multicast face"));
   }
 
-  auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout);
+  auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout, m_wantCongestionMarking);
   m_channels[localEndpoint] = channel;
 
   return channel;
@@ -345,7 +347,9 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   ip::udp::socket txSock(getGlobalIoService());
   MulticastUdpTransport::openTxSocket(txSock, udp::Endpoint(localAddress, 0), netif);
 
-  auto linkService = make_unique<GenericLinkService>();
+  GenericLinkService::Options options;
+  options.allowCongestionMarking = m_wantCongestionMarking;
+  auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<MulticastUdpTransport>(mcastEp, std::move(rxSock), std::move(txSock),
                                                       m_mcastConfig.linkType);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));

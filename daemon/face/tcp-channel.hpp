@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,8 +53,7 @@ public:
    * To enable creation faces upon incoming connections,
    * one needs to explicitly call TcpChannel::listen method.
    */
-  explicit
-  TcpChannel(const tcp::Endpoint& localEndpoint);
+  TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking);
 
   bool
   isListening() const override
@@ -138,6 +137,7 @@ private:
   boost::asio::ip::tcp::acceptor m_acceptor;
   boost::asio::ip::tcp::socket m_socket;
   std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
+  bool m_wantCongestionMarking;
 };
 
 } // namespace face

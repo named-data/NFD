@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,6 +54,8 @@ UnixStreamFactory::processConfig(OptionalConfigSection configSection,
   //   path /var/run/nfd.sock
   // }
 
+  m_wantCongestionMarking = context.generalConfig.wantCongestionMarking;
+
   if (!configSection) {
     if (!context.isDryRun && !m_channels.empty()) {
       NFD_LOG_WARN("Cannot disable unix channel after initialization");
@@ -102,7 +104,7 @@ UnixStreamFactory::createChannel(const std::string& unixSocketPath)
   if (channel)
     return channel;
 
-  channel = make_shared<UnixStreamChannel>(endpoint);
+  channel = make_shared<UnixStreamChannel>(endpoint, m_wantCongestionMarking);
   m_channels[endpoint] = channel;
   return channel;
 }

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -89,6 +89,21 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   ConfigContext context;
   context.isDryRun = isDryRun;
 
+  // process general protocol factory config section
+  auto generalSection = configSection.get_child_optional("general");
+  if (generalSection) {
+    for (const auto& pair : *generalSection) {
+      const std::string& key = pair.first;
+      if (key == "enable_congestion_marking") {
+        // false by default
+        context.generalConfig.wantCongestionMarking = ConfigFile::parseYesNo(pair, "face_system.general");
+      }
+      else {
+        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.general." + key));
+      }
+    }
+  }
+
   // process sections in protocol factories
   for (const auto& pair : m_factories) {
     const std::string& sectionName = pair.first;
@@ -123,7 +138,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate section face_system." + sectionName));
     }
 
-    if (m_factories.count(sectionName) > 0) {
+    if (sectionName == "general" || m_factories.count(sectionName) > 0) {
       continue;
     }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,10 +35,11 @@ NFD_LOG_INIT("TcpChannel");
 
 namespace ip = boost::asio::ip;
 
-TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint)
+TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking)
   : m_localEndpoint(localEndpoint)
   , m_acceptor(getGlobalIoService())
   , m_socket(getGlobalIoService())
+  , m_wantCongestionMarking(wantCongestionMarking)
 {
   setUri(FaceUri(m_localEndpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -111,6 +112,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
     GenericLinkService::Options options;
     options.allowLocalFields = wantLocalFields;
     options.reliabilityOptions.isEnabled = wantLpReliability;
+    options.allowCongestionMarking = m_wantCongestionMarking;
     auto linkService = make_unique<GenericLinkService>(options);
 
     auto transport = make_unique<TcpTransport>(std::move(socket), persistency);

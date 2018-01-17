@@ -80,6 +80,12 @@ tables
 ; The face_system section defines what faces and channels are created.
 face_system
 {
+  ; This section contains options that apply to multiple face protocols.
+  general
+  {
+    enable_congestion_marking no ; set to 'yes' to perform congestion marking on supported faces, default 'no'
+  }
+
   ; The unix section contains settings of Unix stream faces and channels.
   ; A Unix channel is always listening; delete the unix section to disable
   ; Unix stream faces and channels.

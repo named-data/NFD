@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,10 +36,12 @@ NFD_LOG_INIT("UdpChannel");
 namespace ip = boost::asio::ip;
 
 UdpChannel::UdpChannel(const udp::Endpoint& localEndpoint,
-                       time::nanoseconds idleTimeout)
+                       time::nanoseconds idleTimeout,
+                       bool wantCongestionMarking)
   : m_localEndpoint(localEndpoint)
   , m_socket(getGlobalIoService())
   , m_idleFaceTimeout(idleTimeout)
+  , m_wantCongestionMarking(wantCongestionMarking)
 {
   setUri(FaceUri(m_localEndpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -161,6 +163,7 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
 
   GenericLinkService::Options options;
   options.reliabilityOptions.isEnabled = wantLpReliability;
+  options.allowCongestionMarking = m_wantCongestionMarking;
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastUdpTransport>(std::move(socket), persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));

@@ -133,6 +133,7 @@ private:
 
 private:
   std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
+  bool m_wantCongestionMarking;
 
   struct MulticastConfig
   {

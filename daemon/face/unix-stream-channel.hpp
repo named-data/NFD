@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,8 +64,7 @@ public:
    * To enable creation of faces upon incoming connections, one
    * needs to explicitly call UnixStreamChannel::listen method.
    */
-  explicit
-  UnixStreamChannel(const unix_stream::Endpoint& endpoint);
+  UnixStreamChannel(const unix_stream::Endpoint& endpoint, bool wantCongestionMarking);
 
   ~UnixStreamChannel() override;
 
@@ -116,6 +115,7 @@ private:
   boost::asio::local::stream_protocol::acceptor m_acceptor;
   boost::asio::local::stream_protocol::socket m_socket;
   size_t m_size;
+  bool m_wantCongestionMarking;
 };
 
 } // namespace face

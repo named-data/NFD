@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,11 +36,13 @@ namespace face {
 
 NFD_LOG_INIT("UnixStreamChannel");
 
-UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint)
+UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint,
+                                     bool wantCongestionMarking)
   : m_endpoint(endpoint)
   , m_acceptor(getGlobalIoService())
   , m_socket(getGlobalIoService())
   , m_size(0)
+  , m_wantCongestionMarking(wantCongestionMarking)
 {
   setUri(FaceUri(m_endpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -132,7 +134,9 @@ UnixStreamChannel::handleAccept(const boost::system::error_code& error,
 
   NFD_LOG_CHAN_TRACE("Incoming connection via fd " << m_socket.native_handle());
 
-  auto linkService = make_unique<GenericLinkService>();
+  GenericLinkService::Options options;
+  options.allowCongestionMarking = m_wantCongestionMarking;
+  auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnixStreamTransport>(std::move(m_socket));
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
