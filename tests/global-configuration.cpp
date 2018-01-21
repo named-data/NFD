@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,56 +23,61 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "test-common.hpp"
-#include "core/logger.hpp"
 #include "core/config-file.hpp"
+#include "core/logger-factory.hpp"
+
+#include "boost-test.hpp"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include <stdlib.h>
 
 namespace nfd {
 namespace tests {
 
-class GlobalConfigurationFixture
+class GlobalConfiguration
 {
 public:
-  GlobalConfigurationFixture()
+  GlobalConfiguration()
   {
+    const char* envHome = ::getenv("HOME");
+    if (envHome)
+      m_home = envHome;
+
     const std::string filename = "unit-tests.conf";
-    if (boost::filesystem::exists(filename))
-      {
-        ConfigFile config;
-        LoggerFactory::getInstance().setConfigFile(config);
+    if (boost::filesystem::exists(filename)) {
+      ConfigFile config;
+      LoggerFactory::getInstance().setConfigFile(config);
+      config.parse(filename, false);
+    }
 
-        config.parse(filename, false);
-      }
+    boost::filesystem::path dir{UNIT_TEST_CONFIG_PATH};
+    dir /= "test-home";
+    ::setenv("HOME", dir.c_str(), 1);
 
-    if (std::getenv("HOME"))
-      m_home = std::getenv("HOME");
-
-    boost::filesystem::path dir(UNIT_TEST_CONFIG_PATH "test-home");
-    setenv("HOME", dir.generic_string().c_str(), 1);
     boost::filesystem::create_directories(dir);
-    std::ofstream clientConf((dir / ".ndn" / "client.conf").generic_string().c_str());
-    clientConf << "pib=pib-sqlite3\n"
+    std::ofstream clientConf((dir / ".ndn" / "client.conf").c_str());
+    clientConf << "pib=pib-sqlite3" << std::endl
                << "tpm=tpm-file" << std::endl;
   }
 
-  ~GlobalConfigurationFixture()
+  ~GlobalConfiguration()
   {
-    if (!m_home.empty()) {
-      setenv("HOME", m_home.c_str(), 1);
-    }
+    if (!m_home.empty())
+      ::setenv("HOME", m_home.data(), 1);
   }
 
 private:
   std::string m_home;
 };
 
-BOOST_GLOBAL_FIXTURE(GlobalConfigurationFixture)
-#if BOOST_VERSION >= 105900
-;
-#endif // BOOST_VERSION >= 105900
+#if BOOST_VERSION >= 106500
+BOOST_TEST_GLOBAL_CONFIGURATION(GlobalConfiguration);
+#elif BOOST_VERSION >= 105900
+BOOST_GLOBAL_FIXTURE(GlobalConfiguration);
+#else
+BOOST_GLOBAL_FIXTURE(GlobalConfiguration)
+#endif
 
 } // namespace tests
 } // namespace nfd
