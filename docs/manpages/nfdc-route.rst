@@ -67,7 +67,6 @@ capture
 
 EXIT CODES
 ----------
-
 0: Success
 
 1: An unspecified error occurred
@@ -81,6 +80,29 @@ EXIT CODES
 5: Ambiguous: multiple matching faces are found (**nfdc route add** only)
 
 6: Route not found (**nfdc route list** and **nfdc route show** only)
+
+EXAMPLES
+--------
+nfdc route list
+    List all routes.
+
+nfdc route list nexthop 300
+    List routes whose nexthop is face 300.
+
+nfdc route list origin static
+    List static routes.
+
+nfdc route show prefix /localhost/nfd
+    List routes with name prefix "/localhost/nfd".
+
+nfdc route add prefix /ndn nexthop 300 cost 100
+    Add a route with prefix "/ndn" toward face 300, with administrative cost 100.
+
+nfdc route add prefix / nexthop udp://router.example.net
+    Add a route with prefix "/" toward a face with the specified remote FaceUri.
+
+nfdc route remove prefix /ndn nexthop 300 origin static
+    Remove the route whose prefix is "/ndn", nexthop is face 300, and origin is "static".
 
 SEE ALSO
 --------

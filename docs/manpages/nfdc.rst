@@ -33,15 +33,11 @@ OPTIONS
 
 EXAMPLES
 --------
-Print a list of all subcommands:
-::
+nfdc
+    List all subcommands.
 
-    $ nfdc
-
-Show how to use ``nfdc face create`` command:
-::
-
-    $ nfdc help face create
+nfdc help face create
+    Show how to use the ``nfdc face create`` subcommand.
 
 SEE ALSO
 --------

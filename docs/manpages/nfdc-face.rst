@@ -71,7 +71,6 @@ OPTIONS
 
 EXIT CODES
 ----------
-
 0: Success
 
 1: An unspecified error occurred
@@ -83,6 +82,32 @@ EXIT CODES
 4: FaceUri canonization failed (**nfdc face create** and **nfdc face destroy** only)
 
 5: Ambiguous: multiple matching faces are found (**nfdc face destroy** only)
+
+EXAMPLES
+--------
+nfdc face list
+    List all faces.
+
+nfdc face list scheme udp4
+    List all UDP-over-IPv4 faces.
+
+nfdc face show id 300
+    Show information about the face whose FaceId is 300.
+
+nfdc face create remote udp://router.example.net
+    Create a face with the specified remote FaceUri, keeping all other settings at their defaults.
+
+nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency permanent
+    Create a face with the specified remote FaceUri, local FaceUri, and persistency.
+
+nfdc face create remote udp://router.example.net reliability on
+    Create a face with the specified remote FaceUri and enable NDNLP reliability.
+
+nfdc face destroy 300
+    Destroy the face whose FaceId is 300.
+
+nfdc face destroy udp4://192.0.2.1:6363
+    Destroy the face whose remote FaceUri is "udp4://192.0.2.1:6363".
 
 SEE ALSO
 --------
