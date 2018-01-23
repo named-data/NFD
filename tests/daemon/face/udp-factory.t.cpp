@@ -456,9 +456,11 @@ BOOST_FIXTURE_TEST_CASE(Blacklist, UdpFactoryMcastFixture)
   parseConfig(CONFIG, false);
 
   auto udpMcastFaces = this->listUdp4McastFaces();
-  BOOST_CHECK_GE(udpMcastFaces.size(), netifsV4.size() - 1);
+  if (!netifsV4.empty())
+    BOOST_CHECK_GE(udpMcastFaces.size(), netifsV4.size() - 1);
   auto udpMcastFacesV6 = this->listUdp6McastFaces();
-  BOOST_CHECK_GE(udpMcastFacesV6.size(), netifsV6.size() - 1);
+  if (!netifsV6.empty())
+    BOOST_CHECK_GE(udpMcastFacesV6.size(), netifsV6.size() - 1);
   udpMcastFaces.insert(udpMcastFaces.end(), udpMcastFacesV6.begin(), udpMcastFacesV6.end());
   BOOST_CHECK_LT(udpMcastFaces.size(), netifsV4.size() + netifsV6.size());
   BOOST_CHECK(std::none_of(udpMcastFaces.begin(), udpMcastFaces.end(),
