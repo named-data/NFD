@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -85,37 +85,7 @@ public:
        const HitCallback& hitCallback,
        const MissCallback& missCallback) const;
 
-  void
-  erase(const Name& exactName)
-  {
-    BOOST_ASSERT_MSG(false, "not implemented");
-  }
-
-  /** \brief changes capacity (in number of packets)
-   */
-  void
-  setLimit(size_t nMaxPackets);
-
-  /** \return capacity (in number of packets)
-   */
-  size_t
-  getLimit() const;
-
-  /** \brief changes cs replacement policy
-   *  \pre size() == 0
-   */
-  void
-  setPolicy(unique_ptr<Policy> policy);
-
-  /** \return cs replacement policy
-   */
-  Policy*
-  getPolicy() const
-  {
-    return m_policy.get();
-  }
-
-  /** \return number of stored packets
+  /** \brief get number of stored packets
    */
   size_t
   size() const
@@ -123,9 +93,66 @@ public:
     return m_table.size();
   }
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+public: // configuration
+  /** \brief get capacity (in number of packets)
+   */
+  size_t
+  getLimit() const
+  {
+    return m_policy->getLimit();
+  }
+
+  /** \brief change capacity (in number of packets)
+   */
   void
-  dump();
+  setLimit(size_t nMaxPackets)
+  {
+    return m_policy->setLimit(nMaxPackets);
+  }
+
+  /** \brief get replacement policy
+   */
+  Policy*
+  getPolicy() const
+  {
+    return m_policy.get();
+  }
+
+  /** \brief change replacement policy
+   *  \pre size() == 0
+   */
+  void
+  setPolicy(unique_ptr<Policy> policy);
+
+  /** \brief get CS_ENABLE_ADMIT flag
+   *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
+   */
+  bool
+  shouldAdmit() const
+  {
+    return m_shouldAdmit;
+  }
+
+  /** \brief set CS_ENABLE_ADMIT flag
+   *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
+   */
+  void
+  enableAdmit(bool shouldAdmit);
+
+  /** \brief get CS_ENABLE_SERVE flag
+   *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
+   */
+  bool
+  shouldServe() const
+  {
+    return m_shouldServe;
+  }
+
+  /** \brief set CS_ENABLE_SERVE flag
+   *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt#Update-config
+   */
+  void
+  enableServe(bool shouldServe);
 
 public: // enumeration
   struct EntryFromEntryImpl
@@ -177,10 +204,17 @@ private: // find
   void
   setPolicyImpl(unique_ptr<Policy> policy);
 
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  void
+  dump();
+
 private:
   Table m_table;
   unique_ptr<Policy> m_policy;
-  ndn::util::signal::ScopedConnection m_beforeEvictConnection;
+  signal::ScopedConnection m_beforeEvictConnection;
+
+  bool m_shouldAdmit; ///< if false, no Data will be admitted
+  bool m_shouldServe; ///< if false, all lookups will miss
 };
 
 } // namespace cs

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -381,6 +381,37 @@ BOOST_FIXTURE_TEST_CASE(ZeroCapacity, FindFixture)
 
   startInterest("/A");
   CHECK_CS_FIND(0);
+}
+
+BOOST_FIXTURE_TEST_CASE(EnablementFlags, FindFixture)
+{
+  BOOST_CHECK_EQUAL(m_cs.shouldAdmit(), true);
+  BOOST_CHECK_EQUAL(m_cs.shouldServe(), true);
+
+  insert(1, "/A");
+  m_cs.enableAdmit(false);
+  insert(2, "/B");
+  m_cs.enableAdmit(true);
+  insert(3, "/C");
+
+  startInterest("/A");
+  CHECK_CS_FIND(1);
+  startInterest("/B");
+  CHECK_CS_FIND(0);
+  startInterest("/C");
+  CHECK_CS_FIND(3);
+
+  m_cs.enableServe(false);
+  startInterest("/A");
+  CHECK_CS_FIND(0);
+  startInterest("/C");
+  CHECK_CS_FIND(0);
+
+  m_cs.enableServe(true);
+  startInterest("/A");
+  CHECK_CS_FIND(1);
+  startInterest("/C");
+  CHECK_CS_FIND(3);
 }
 
 BOOST_FIXTURE_TEST_CASE(CachePolicyNoCache, FindFixture)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,42 +44,20 @@ makeDefaultPolicy()
 }
 
 Cs::Cs(size_t nMaxPackets)
+  : m_shouldAdmit(true)
+  , m_shouldServe(true)
 {
   this->setPolicyImpl(makeDefaultPolicy());
   m_policy->setLimit(nMaxPackets);
 }
 
 void
-Cs::setLimit(size_t nMaxPackets)
-{
-  m_policy->setLimit(nMaxPackets);
-}
-
-size_t
-Cs::getLimit() const
-{
-  return m_policy->getLimit();
-}
-
-void
-Cs::setPolicy(unique_ptr<Policy> policy)
-{
-  BOOST_ASSERT(policy != nullptr);
-  BOOST_ASSERT(m_policy != nullptr);
-  size_t limit = m_policy->getLimit();
-  this->setPolicyImpl(std::move(policy));
-  m_policy->setLimit(limit);
-}
-
-void
 Cs::insert(const Data& data, bool isUnsolicited)
 {
-  NFD_LOG_DEBUG("insert " << data.getName());
-
-  if (m_policy->getLimit() == 0) {
-    // shortcut for disabled CS
+  if (!m_shouldAdmit || m_policy->getLimit() == 0) {
     return;
   }
+  NFD_LOG_DEBUG("insert " << data.getName());
 
   // recognize CachePolicy
   shared_ptr<lp::CachePolicyTag> tag = data.getTag<lp::CachePolicyTag>();
@@ -90,10 +68,9 @@ Cs::insert(const Data& data, bool isUnsolicited)
     }
   }
 
-  bool isNewEntry = false;
   iterator it;
-  // use .insert because gcc46 does not support .emplace
-  std::tie(it, isNewEntry) = m_table.insert(EntryImpl(data.shared_from_this(), isUnsolicited));
+  bool isNewEntry = false;
+  std::tie(it, isNewEntry) = m_table.emplace(data.shared_from_this(), isUnsolicited);
   EntryImpl& entry = const_cast<EntryImpl&>(*it);
 
   entry.updateStaleTime();
@@ -119,6 +96,10 @@ Cs::find(const Interest& interest,
   BOOST_ASSERT(static_cast<bool>(hitCallback));
   BOOST_ASSERT(static_cast<bool>(missCallback));
 
+  if (!m_shouldServe || m_policy->getLimit() == 0) {
+    missCallback(interest);
+    return;
+  }
   const Name& prefix = interest.getName();
   bool isRightmost = interest.getChildSelector() == 1;
   NFD_LOG_DEBUG("find " << prefix << (isRightmost ? " R" : " L"));
@@ -192,6 +173,25 @@ Cs::findRightmostAmongExact(const Interest& interest, iterator first, iterator l
 }
 
 void
+Cs::dump()
+{
+  NFD_LOG_DEBUG("dump table");
+  for (const EntryImpl& entry : m_table) {
+    NFD_LOG_TRACE(entry.getFullName());
+  }
+}
+
+void
+Cs::setPolicy(unique_ptr<Policy> policy)
+{
+  BOOST_ASSERT(policy != nullptr);
+  BOOST_ASSERT(m_policy != nullptr);
+  size_t limit = m_policy->getLimit();
+  this->setPolicyImpl(std::move(policy));
+  m_policy->setLimit(limit);
+}
+
+void
 Cs::setPolicyImpl(unique_ptr<Policy> policy)
 {
   NFD_LOG_DEBUG("set-policy " << policy->getName());
@@ -205,12 +205,23 @@ Cs::setPolicyImpl(unique_ptr<Policy> policy)
 }
 
 void
-Cs::dump()
+Cs::enableAdmit(bool shouldAdmit)
 {
-  NFD_LOG_DEBUG("dump table");
-  for (const EntryImpl& entry : m_table) {
-    NFD_LOG_TRACE(entry.getFullName());
+  if (m_shouldAdmit == shouldAdmit) {
+    return;
   }
+  m_shouldAdmit = shouldAdmit;
+  NFD_LOG_INFO((shouldAdmit ? "Enabling" : "Disabling") << " Data admittance");
+}
+
+void
+Cs::enableServe(bool shouldServe)
+{
+  if (m_shouldServe == shouldServe) {
+    return;
+  }
+  m_shouldServe = shouldServe;
+  NFD_LOG_INFO((shouldServe ? "Enabling" : "Disabling") << " Data serving");
 }
 
 } // namespace cs
