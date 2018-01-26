@@ -29,6 +29,8 @@
 #include "channel-log.hpp"
 #include "face.hpp"
 
+#include <boost/logic/tribool.hpp>
+
 namespace nfd {
 namespace face {
 
@@ -90,13 +92,17 @@ public:
     : persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
     , wantLocalFields(false)
     , wantLpReliability(false)
+    , wantCongestionMarking(boost::logic::indeterminate)
   {
   }
 
 public:
   ndn::nfd::FacePersistency persistency;
+  ndn::optional<time::nanoseconds> baseCongestionMarkingInterval;
+  ndn::optional<uint64_t> defaultCongestionThreshold;
   bool wantLocalFields;
   bool wantLpReliability;
+  boost::logic::tribool wantCongestionMarking;
 };
 
 /** \brief invokes a callback when the face is closed

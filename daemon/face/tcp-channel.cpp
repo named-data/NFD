@@ -105,9 +105,23 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
     GenericLinkService::Options options;
     options.allowLocalFields = params.wantLocalFields;
     options.reliabilityOptions.isEnabled = params.wantLpReliability;
-    options.allowCongestionMarking = m_wantCongestionMarking;
-    auto linkService = make_unique<GenericLinkService>(options);
 
+    if (boost::logic::indeterminate(params.wantCongestionMarking)) {
+      // Use default value for this channel if parameter is indeterminate
+      options.allowCongestionMarking = m_wantCongestionMarking;
+    }
+    else {
+      options.allowCongestionMarking = params.wantCongestionMarking;
+    }
+
+    if (params.baseCongestionMarkingInterval) {
+      options.baseCongestionMarkingInterval = *params.baseCongestionMarkingInterval;
+    }
+    if (params.defaultCongestionThreshold) {
+      options.defaultCongestionThreshold = *params.defaultCongestionThreshold;
+    }
+
+    auto linkService = make_unique<GenericLinkService>(options);
     auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency);
     face = make_shared<Face>(std::move(linkService), std::move(transport));
 

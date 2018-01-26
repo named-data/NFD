@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,8 @@
 
 #include <thread>
 
+#include <boost/logic/tribool.hpp>
+
 namespace nfd {
 namespace tests {
 
@@ -54,14 +56,30 @@ public:
   void
   createFace(const std::string& uri = "tcp4://127.0.0.1:26363",
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+             ndn::optional<time::nanoseconds> baseCongestionMarkingInterval = {},
+             ndn::optional<uint64_t> defaultCongestionThreshold = {},
              bool enableLocalFields = false,
-             bool enableReliability = false)
+             bool enableReliability = false,
+             boost::logic::tribool enableCongestionMarking = boost::logic::indeterminate)
   {
     ControlParameters params;
     params.setUri(uri);
     params.setFacePersistency(persistency);
+
+    if (baseCongestionMarkingInterval) {
+      params.setBaseCongestionMarkingInterval(*baseCongestionMarkingInterval);
+    }
+
+    if (defaultCongestionThreshold) {
+      params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
+    }
+
     params.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, enableLocalFields);
     params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, enableReliability);
+
+    if (!boost::logic::indeterminate(enableCongestionMarking)) {
+      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, enableCongestionMarking);
+    }
 
     createFace(params);
   }
@@ -474,7 +492,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(UpdateLocalFields, T, LocalFieldFaces)
   typedef typename T::first TestType;
   typedef typename T::second ResultType;
 
-  createFace(TestType().getUri(), TestType().getPersistency(), TestType().getInitLocalFieldsEnabled());
+  createFace(TestType().getUri(), TestType().getPersistency(), {}, {},
+             TestType().getInitLocalFieldsEnabled());
 
   ControlParameters requestParams;
   requestParams.setFaceId(faceId);
@@ -594,6 +613,71 @@ BOOST_AUTO_TEST_CASE(UpdateReliabilityEnableDisable)
       BOOST_REQUIRE(actualParams.hasFlags());
       // Check if flags indicate reliability disabled
       BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+    }
+    else {
+      BOOST_ERROR("Disable: Response does not contain ControlParameters");
+    }
+  });
+}
+
+BOOST_AUTO_TEST_CASE(UpdateCongestionMarkingEnableDisable)
+{
+  createFace("udp4://127.0.0.1:26363");
+
+  ControlParameters enableParams;
+  enableParams.setFaceId(faceId);
+  enableParams.setBaseCongestionMarkingInterval(time::milliseconds(50));
+  enableParams.setDefaultCongestionThreshold(10000);
+  enableParams.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true);
+
+  ControlParameters disableParams;
+  disableParams.setFaceId(faceId);
+  disableParams.setBaseCongestionMarkingInterval(time::milliseconds(70));
+  disableParams.setDefaultCongestionThreshold(5000);
+  disableParams.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
+
+  updateFace(enableParams, false, [] (const ControlResponse& actual) {
+    ControlResponse expected(200, "OK");
+    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_CHECK(actualParams.hasFacePersistency());
+      // Check that congestion marking parameters changed
+      BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
+      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), time::milliseconds(50));
+      BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
+      BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 10000);
+      BOOST_REQUIRE(actualParams.hasFlags());
+      // Check if flags indicate congestion marking enabled
+      BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+    }
+    else {
+      BOOST_ERROR("Enable: Response does not contain ControlParameters");
+    }
+  });
+
+  updateFace(disableParams, false, [] (const ControlResponse& actual) {
+    ControlResponse expected(200, "OK");
+    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    BOOST_TEST_MESSAGE(actual.getText());
+
+    if (actual.getBody().hasWire()) {
+      ControlParameters actualParams(actual.getBody());
+
+      BOOST_CHECK(actualParams.hasFaceId());
+      BOOST_CHECK(actualParams.hasFacePersistency());
+      // Check that congestion marking parameters changed, even though feature disabled
+      BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
+      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), time::milliseconds(70));
+      BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
+      BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 5000);
+      BOOST_REQUIRE(actualParams.hasFlags());
+      // Check if flags indicate marking disabled
+      BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
     }
     else {
       BOOST_ERROR("Disable: Response does not contain ControlParameters");

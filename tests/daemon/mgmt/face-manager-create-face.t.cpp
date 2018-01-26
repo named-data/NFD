@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "mgmt/face-manager.hpp"
+#include "face/generic-link-service.hpp"
 #include "face-manager-command-fixture.hpp"
 #include "nfd-manager-common-fixture.hpp"
 
@@ -192,7 +193,7 @@ public:
   getParameters()
   {
     return ControlParameters()
-      .setUri("tcp4://127.0.0.1:26363")
+      .setUri("udp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
   }
@@ -205,9 +206,39 @@ public:
   getParameters()
   {
     return ControlParameters()
-      .setUri("tcp4://127.0.0.1:26363")
+      .setUri("udp4://127.0.0.1:26363")
       .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
       .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
+  }
+};
+
+class TcpFaceCongestionMarkingEnabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setBaseCongestionMarkingInterval(50_ms)
+      .setDefaultCongestionThreshold(1000)
+      .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true);
+  }
+};
+
+class TcpFaceCongestionMarkingDisabled
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setBaseCongestionMarkingInterval(50_ms)
+      .setDefaultCongestionThreshold(1000)
+      .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
   }
 };
 
@@ -262,6 +293,8 @@ using TestCases = mpl::vector<
                     mpl::pair<TcpFaceLpReliabilityDisabled, CommandSuccess>,
                     mpl::pair<UdpFaceLpReliabilityEnabled, CommandSuccess>,
                     mpl::pair<UdpFaceLpReliabilityDisabled, CommandSuccess>,
+                    mpl::pair<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
+                    mpl::pair<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
                     mpl::pair<FaceUriMalformed, CommandFailure<400>>,
                     mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
                     mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
@@ -297,11 +330,30 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
                             actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
           BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED),
                             actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+          BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED),
+                            actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
         }
         else {
           // local fields are disabled by default
           BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED), false);
           BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED), false);
+          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED), false);
+        }
+
+        if (expectedParams.hasBaseCongestionMarkingInterval()) {
+          BOOST_CHECK_EQUAL(expectedParams.getBaseCongestionMarkingInterval(),
+                            actualParams.getBaseCongestionMarkingInterval());
+        }
+        else {
+          BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 100_ms);
+        }
+
+        if (expectedParams.hasDefaultCongestionThreshold()) {
+          BOOST_CHECK_EQUAL(expectedParams.getDefaultCongestionThreshold(),
+                            actualParams.getDefaultCongestionThreshold());
+        }
+        else {
+          BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 65536);
         }
       }
       else {
@@ -327,7 +379,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
   });
 
   this->node1.face.receive(req);
-  this->advanceClocks(time::milliseconds(1), 5);
+  this->advanceClocks(1_ms, 5);
 
   BOOST_CHECK(hasCallbackFired);
 }
@@ -340,7 +392,7 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
     // create face
     Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", FaceType::getParameters());
     this->node1.face.receive(req);
-    this->advanceClocks(time::milliseconds(1), 5);
+    this->advanceClocks(1_ms, 5);
   }
 
   // find the created face
@@ -365,12 +417,17 @@ BOOST_FIXTURE_TEST_CASE(ExistingFace, FaceManagerCommandFixture)
         BOOST_CHECK_EQUAL(foundFace->getId(), actualParams.getFaceId());
         BOOST_CHECK_EQUAL(foundFace->getRemoteUri().toString(), actualParams.getUri());
         BOOST_CHECK_EQUAL(foundFace->getPersistency(), actualParams.getFacePersistency());
+        auto linkService = dynamic_cast<face::GenericLinkService*>(foundFace->getLinkService());
+        BOOST_CHECK_EQUAL(linkService->getOptions().baseCongestionMarkingInterval,
+                          actualParams.getBaseCongestionMarkingInterval());
+        BOOST_CHECK_EQUAL(linkService->getOptions().defaultCongestionThreshold,
+                          actualParams.getDefaultCongestionThreshold());
 
         hasCallbackFired = true;
       });
 
     this->node1.face.receive(req);
-    this->advanceClocks(time::milliseconds(1), 5);
+    this->advanceClocks(1_ms, 5);
 
     BOOST_CHECK(hasCallbackFired);
   }

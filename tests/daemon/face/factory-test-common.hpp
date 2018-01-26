@@ -36,12 +36,19 @@ namespace tests {
 
 struct TestFaceParams : public FaceParams
 {
-  TestFaceParams(ndn::nfd::FacePersistency persistency, bool wantLocalFields,
-                 bool wantLpReliability) noexcept
+  TestFaceParams(ndn::nfd::FacePersistency persistency,
+                 ndn::optional<time::nanoseconds> baseCongestionMarkingInterval,
+                 ndn::optional<uint64_t> defaultCongestionThreshold,
+                 bool wantLocalFields,
+                 bool wantLpReliability,
+                 boost::logic::tribool wantCongestionMarking) noexcept
   {
     this->persistency = persistency;
+    this->baseCongestionMarkingInterval = baseCongestionMarkingInterval;
+    this->defaultCongestionThreshold = defaultCongestionThreshold;
     this->wantLocalFields = wantLocalFields;
     this->wantLpReliability = wantLpReliability;
+    this->wantCongestionMarking = wantCongestionMarking;
   }
 };
 

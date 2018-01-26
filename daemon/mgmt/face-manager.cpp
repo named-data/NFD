@@ -28,6 +28,8 @@
 #include "face/protocol-factory.hpp"
 #include "fw/face-table.hpp"
 
+#include <boost/logic/tribool.hpp>
+
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/channel-status.hpp>
 
@@ -117,10 +119,19 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
 
   face::FaceParams faceParams;
   faceParams.persistency = parameters.getFacePersistency();
+  if (parameters.hasBaseCongestionMarkingInterval()) {
+    faceParams.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
+  }
+  if (parameters.hasDefaultCongestionThreshold()) {
+    faceParams.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
+  }
   faceParams.wantLocalFields = parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
                                parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
   faceParams.wantLpReliability = parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) &&
                                  parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
+  if (parameters.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+    faceParams.wantCongestionMarking = parameters.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED);
+  }
   try {
     factory->createFace({remoteUri, localUri, faceParams},
                         bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
@@ -267,6 +278,15 @@ FaceManager::setLinkServiceOptions(Face& face,
   if (parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
     options.reliabilityOptions.isEnabled = parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
   }
+  if (parameters.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+    options.allowCongestionMarking = parameters.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED);
+  }
+  if (parameters.hasBaseCongestionMarkingInterval()) {
+    options.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
+  }
+  if (parameters.hasDefaultCongestionThreshold()) {
+    options.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
+  }
   linkService->setOptions(options);
 }
 
@@ -280,8 +300,11 @@ FaceManager::collectFaceProperties(const Face& face, bool wantUris)
   ControlParameters params;
   params.setFaceId(face.getId())
         .setFacePersistency(face.getPersistency())
+        .setBaseCongestionMarkingInterval(options.baseCongestionMarkingInterval)
+        .setDefaultCongestionThreshold(options.defaultCongestionThreshold)
         .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false)
-        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false);
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false)
+        .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, options.allowCongestionMarking, false);
   if (wantUris) {
     params.setUri(face.getRemoteUri().toString())
           .setLocalUri(face.getLocalUri().toString());
@@ -393,8 +416,16 @@ FaceManager::collectFaceStatus(const Face& face, const time::steady_clock::TimeP
 
   time::steady_clock::TimePoint expirationTime = face.getExpirationTime();
   if (expirationTime != time::steady_clock::TimePoint::max()) {
-    status.setExpirationPeriod(std::max(time::milliseconds(0),
+    status.setExpirationPeriod(std::max(0_ms,
                                         time::duration_cast<time::milliseconds>(expirationTime - now)));
+  }
+
+  // Get LinkService options
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  if (linkService != nullptr) {
+    auto linkServiceOptions = linkService->getOptions();
+    status.setBaseCongestionMarkingInterval(linkServiceOptions.baseCongestionMarkingInterval);
+    status.setDefaultCongestionThreshold(linkServiceOptions.defaultCongestionThreshold);
   }
 
   const face::FaceCounters& counters = face.getCounters();

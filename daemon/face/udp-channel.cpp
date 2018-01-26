@@ -162,7 +162,22 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
 
   GenericLinkService::Options options;
   options.reliabilityOptions.isEnabled = params.wantLpReliability;
-  options.allowCongestionMarking = m_wantCongestionMarking;
+
+  if (boost::logic::indeterminate(params.wantCongestionMarking)) {
+    // Use default value for this channel if parameter is indeterminate
+    options.allowCongestionMarking = m_wantCongestionMarking;
+  }
+  else {
+    options.allowCongestionMarking = params.wantCongestionMarking;
+  }
+
+  if (params.baseCongestionMarkingInterval) {
+    options.baseCongestionMarkingInterval = *params.baseCongestionMarkingInterval;
+  }
+  if (params.defaultCongestionThreshold) {
+    options.defaultCongestionThreshold = *params.defaultCongestionThreshold;
+  }
+
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastUdpTransport>(std::move(socket), params.persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
