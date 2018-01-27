@@ -43,6 +43,7 @@ GenericLinkService::Options::Options()
   , allowCongestionMarking(false)
   , baseCongestionMarkingInterval(time::milliseconds(100)) // Interval from RFC 8289 (CoDel)
   , defaultCongestionThreshold(65536) // This default value works well for a queue capacity of 200KiB
+  , allowSelfLearning(false)
 {
 }
 
@@ -144,6 +145,18 @@ GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lp
   shared_ptr<lp::CongestionMarkTag> congestionMarkTag = netPkt.getTag<lp::CongestionMarkTag>();
   if (congestionMarkTag != nullptr) {
     lpPacket.add<lp::CongestionMarkField>(*congestionMarkTag);
+  }
+
+  if (m_options.allowSelfLearning) {
+    shared_ptr<lp::NonDiscoveryTag> nonDiscoveryTag = netPkt.getTag<lp::NonDiscoveryTag>();
+    if (nonDiscoveryTag != nullptr) {
+      lpPacket.add<lp::NonDiscoveryField>(*nonDiscoveryTag);
+    }
+
+    shared_ptr<lp::PrefixAnnouncementTag> prefixAnnouncementTag = netPkt.getTag<lp::PrefixAnnouncementTag>();
+    if (prefixAnnouncementTag != nullptr) {
+      lpPacket.add<lp::PrefixAnnouncementField>(*prefixAnnouncementTag);
+    }
   }
 }
 
@@ -366,6 +379,21 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
     interest->setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
   }
 
+  if (firstPkt.has<lp::NonDiscoveryField>()) {
+    if (m_options.allowSelfLearning) {
+      interest->setTag(make_shared<lp::NonDiscoveryTag>(firstPkt.get<lp::NonDiscoveryField>()));
+    }
+    else {
+      NFD_LOG_FACE_WARN("received NonDiscovery, but self-learning disabled: IGNORE");
+    }
+  }
+
+  if (firstPkt.has<lp::PrefixAnnouncementField>()) {
+    ++this->nInNetInvalid;
+    NFD_LOG_FACE_WARN("received PrefixAnnouncement with Interest: DROP");
+    return;
+  }
+
   this->receiveInterest(*interest);
 }
 
@@ -404,6 +432,21 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
     data->setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
   }
 
+  if (firstPkt.has<lp::NonDiscoveryField>()) {
+    ++this->nInNetInvalid;
+    NFD_LOG_FACE_WARN("received NonDiscovery with Data: DROP");
+    return;
+  }
+
+  if (firstPkt.has<lp::PrefixAnnouncementField>()) {
+    if (m_options.allowSelfLearning) {
+      data->setTag(make_shared<lp::PrefixAnnouncementTag>(firstPkt.get<lp::PrefixAnnouncementField>()));
+    }
+    else {
+      NFD_LOG_FACE_WARN("received PrefixAnnouncement, but self-learning disabled: IGNORE");
+    }
+  }
+
   this->receiveData(*data);
 }
 
@@ -434,6 +477,18 @@ GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt)
 
   if (firstPkt.has<lp::CongestionMarkField>()) {
     nack.setTag(make_shared<lp::CongestionMarkTag>(firstPkt.get<lp::CongestionMarkField>()));
+  }
+
+  if (firstPkt.has<lp::NonDiscoveryField>()) {
+    ++this->nInNetInvalid;
+    NFD_LOG_FACE_WARN("received NonDiscovery with Nack: DROP");
+    return;
+  }
+
+  if (firstPkt.has<lp::PrefixAnnouncementField>()) {
+    ++this->nInNetInvalid;
+    NFD_LOG_FACE_WARN("received PrefixAnnouncement with Nack: DROP");
+    return;
   }
 
   this->receiveNack(nack);

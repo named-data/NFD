@@ -29,6 +29,8 @@
 #include "test-common.hpp"
 #include "dummy-transport.hpp"
 
+#include <ndn-cxx/lp/empty-value.hpp>
+#include <ndn-cxx/lp/prefix-announcement.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
@@ -36,6 +38,13 @@ namespace face {
 namespace tests {
 
 using namespace nfd::tests;
+
+static lp::PrefixAnnouncement
+makePrefixAnnouncement(Name announcedName)
+{
+  Name paName = Name("self-learning").append(announcedName).appendVersion();
+  return lp::PrefixAnnouncement(makeData(paName));
+}
 
 BOOST_AUTO_TEST_SUITE(Face)
 
@@ -1123,6 +1132,218 @@ BOOST_AUTO_TEST_CASE(ReceiveCongestionMarkNack)
   shared_ptr<lp::CongestionMarkTag> tag = receivedNacks.back().getTag<lp::CongestionMarkTag>();
   BOOST_REQUIRE(tag != nullptr);
   BOOST_CHECK_EQUAL(*tag, 1);
+}
+
+BOOST_AUTO_TEST_CASE(SendNonDiscovery)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
+
+  face->sendInterest(*interest);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_CHECK(sent.has<lp::NonDiscoveryField>());
+}
+
+BOOST_AUTO_TEST_CASE(SendNonDiscoveryDisabled)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = false;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
+
+  face->sendInterest(*interest);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_CHECK(!sent.has<lp::NonDiscoveryField>());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveNonDiscovery)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
+  shared_ptr<lp::NonDiscoveryTag> tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
+  BOOST_CHECK(tag != nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDisabled)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = false;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
+  BOOST_CHECK_EQUAL(receivedInterests.size(), 1);
+
+  shared_ptr<lp::NonDiscoveryTag> tag = receivedInterests.back().getTag<lp::NonDiscoveryTag>();
+  BOOST_CHECK(tag == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDropData)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 1);
+  BOOST_CHECK(receivedData.empty());
+}
+
+BOOST_AUTO_TEST_CASE(ReceiveNonDiscoveryDropNack)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::Packet packet;
+  packet.set<lp::FragmentField>(std::make_pair(
+    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::NackField>(nack.getHeader());
+  packet.set<lp::NonDiscoveryField>(lp::EmptyValue{});
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 1);
+  BOOST_CHECK(receivedNacks.empty());
+}
+
+BOOST_AUTO_TEST_CASE(SendPrefixAnnouncement)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pa));
+
+  face->sendData(*data);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_CHECK(sent.has<lp::PrefixAnnouncementField>());
+}
+
+BOOST_AUTO_TEST_CASE(SendPrefixAnnouncementDisabled)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = false;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pa));
+
+  face->sendData(*data);
+
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
+  lp::Packet sent(transport->sentPackets.back().packet);
+  BOOST_CHECK(!sent.has<lp::PrefixAnnouncementField>());
+}
+
+BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncement)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::PrefixAnnouncementField>(pa);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
+  shared_ptr<lp::PrefixAnnouncementTag> tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
+  BOOST_REQUIRE_EQUAL(tag->get().getAnnouncedName(), "/local/ndn/prefix");
+}
+
+BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDisabled)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = false;
+  initialize(options);
+
+  shared_ptr<Data> data = makeData("/12345678");
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  lp::Packet packet(data->wireEncode());
+  packet.set<lp::PrefixAnnouncementField>(pa);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
+  BOOST_CHECK_EQUAL(receivedData.size(), 1);
+
+  shared_ptr<lp::NonDiscoveryTag> tag = receivedData.back().getTag<lp::NonDiscoveryTag>();
+  BOOST_CHECK(tag == nullptr);
+}
+
+BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropInterest)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  shared_ptr<Interest> interest = makeInterest("/12345678");
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  lp::Packet packet(interest->wireEncode());
+  packet.set<lp::PrefixAnnouncementField>(pa);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 1);
+  BOOST_CHECK(receivedInterests.empty());
+}
+
+BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropNack)
+{
+  GenericLinkService::Options options;
+  options.allowSelfLearning = true;
+  initialize(options);
+
+  lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
+  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
+  lp::Packet packet;
+  packet.set<lp::FragmentField>(std::make_pair(
+    nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
+  packet.set<lp::NackField>(nack.getHeader());
+  packet.set<lp::PrefixAnnouncementField>(pa);
+
+  transport->receivePacket(packet.wireEncode());
+
+  BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 1);
+  BOOST_CHECK(receivedNacks.empty());
 }
 
 BOOST_AUTO_TEST_SUITE_END() // LpFields

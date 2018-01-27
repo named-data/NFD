@@ -136,6 +136,10 @@ public:
     /** \brief default congestion threshold in bytes
      */
     size_t defaultCongestionThreshold;
+
+    /** \brief enables self-learning forwarding support
+     */
+    bool allowSelfLearning;
   };
 
   /** \brief counters provided by GenericLinkService
