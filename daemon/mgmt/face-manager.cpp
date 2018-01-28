@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -115,14 +115,16 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
     return;
   }
 
+  face::FaceParams faceParams;
+  faceParams.persistency = parameters.getFacePersistency();
+  faceParams.wantLocalFields = parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+                               parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
+  faceParams.wantLpReliability = parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) &&
+                                 parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
   try {
-    factory->createFace({remoteUri, localUri, parameters.getFacePersistency(),
-        parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
-        parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED),
-        parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) &&
-        parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)},
-      bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
-      bind(&FaceManager::afterCreateFaceFailure, this, _1, _2, done));
+    factory->createFace({remoteUri, localUri, faceParams},
+                        bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
+                        bind(&FaceManager::afterCreateFaceFailure, this, _1, _2, done));
   }
   catch (const std::runtime_error& error) {
     NFD_LOG_ERROR("Face creation failed: " << error.what());

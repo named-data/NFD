@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -125,25 +125,19 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             ndn::nfd::FACE_PERSISTENCY_PERMANENT,
-             false,
-             false,
+             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             ndn::nfd::FACE_PERSISTENCY_ON_DEMAND,
-             false,
-             false,
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             false,
-             false,
+             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 }
 

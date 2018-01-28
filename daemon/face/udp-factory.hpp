@@ -66,7 +66,7 @@ public:
                 FaceSystem::ConfigContext& context) override;
 
   void
-  createFace(const CreateFaceParams& params,
+  createFace(const CreateFaceRequest& req,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) override;
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,16 +32,14 @@
 namespace nfd {
 namespace face {
 
-class Face;
-
 /** \brief Prototype for the callback that is invoked when a face is created
  *         (in response to an incoming connection or after a connection is established)
  */
-typedef function<void(const shared_ptr<Face>& newFace)> FaceCreatedCallback;
+using FaceCreatedCallback = function<void(const shared_ptr<Face>& face)>;
 
 /** \brief Prototype for the callback that is invoked when a face fails to be created
  */
-typedef function<void(uint32_t status, const std::string& reason)> FaceCreationFailedCallback;
+using FaceCreationFailedCallback = function<void(uint32_t status, const std::string& reason)>;
 
 /** \brief represent a channel that communicates on a local endpoint
  *  \sa FaceSystem
@@ -77,6 +75,28 @@ protected:
 
 private:
   FaceUri m_uri;
+};
+
+/** \brief Parameters used to set Transport properties or LinkService options on a newly created face
+ *
+ *  Parameters are passed as a struct rather than individually, so that a future change in the list
+ *  of parameters does not require an update to the method signature in all subclasses.
+ */
+class FaceParams
+{
+public:
+  // get rid of this constructor and use aggregate init + NSDMIs when we switch to C++14
+  FaceParams() noexcept
+    : persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+    , wantLocalFields(false)
+    , wantLpReliability(false)
+  {
+  }
+
+public:
+  ndn::nfd::FacePersistency persistency;
+  bool wantLocalFields;
+  bool wantLpReliability;
 };
 
 /** \brief invokes a callback when the face is closed

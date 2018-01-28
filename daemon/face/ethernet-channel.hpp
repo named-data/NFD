@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,17 +76,10 @@ public:
 
   /**
    * \brief Create a unicast Ethernet face toward \p remoteEndpoint
-   *
-   * \param remoteEndpoint The remote Ethernet endpoint
-   * \param persistency Persistency of the newly created face
-   * \param wantLpReliability whether LpReliability should be enabled
-   * \param onFaceCreated Callback to notify successful creation of the face
-   * \param onConnectFailed Callback to notify errors
    */
   void
   connect(const ethernet::Address& remoteEndpoint,
-          ndn::nfd::FacePersistency persistency,
-          bool wantLpReliability,
+          const FaceParams& params,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed);
 
@@ -124,8 +117,7 @@ private:
 
   std::pair<bool, shared_ptr<Face>>
   createFace(const ethernet::Address& remoteEndpoint,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLpReliability);
+             const FaceParams& params);
 
   void
   updateFilter();

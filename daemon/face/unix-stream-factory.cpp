@@ -86,7 +86,7 @@ UnixStreamFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UnixStreamFactory::createFace(const CreateFaceParams& params,
+UnixStreamFactory::createFace(const CreateFaceRequest& req,
                               const FaceCreatedCallback& onCreated,
                               const FaceCreationFailedCallback& onFailure)
 {

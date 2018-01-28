@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,14 +54,13 @@ EthernetChannel::EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> lo
 
 void
 EthernetChannel::connect(const ethernet::Address& remoteEndpoint,
-                         ndn::nfd::FacePersistency persistency,
-                         bool wantLpReliability,
+                         const FaceParams& params,
                          const FaceCreatedCallback& onFaceCreated,
                          const FaceCreationFailedCallback& onConnectFailed)
 {
   shared_ptr<Face> face;
   try {
-    face = createFace(remoteEndpoint, persistency, wantLpReliability).second;
+    face = createFace(remoteEndpoint, params).second;
   }
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
@@ -166,7 +165,9 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
   bool isCreated = false;
   shared_ptr<Face> face;
   try {
-    std::tie(isCreated, face) = createFace(sender, ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, false);
+    FaceParams params;
+    params.persistency = ndn::nfd::FACE_PERSISTENCY_ON_DEMAND;
+    std::tie(isCreated, face) = createFace(sender, params);
   }
   catch (const EthernetTransport::Error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << sender << " failed: " << e.what());
@@ -187,8 +188,7 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
 
 std::pair<bool, shared_ptr<Face>>
 EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
-                            ndn::nfd::FacePersistency persistency,
-                            bool wantLpReliability)
+                            const FaceParams& params)
 {
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it != m_channelFaces.end()) {
@@ -201,11 +201,11 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
   GenericLinkService::Options options;
   options.allowFragmentation = true;
   options.allowReassembly = true;
-  options.reliabilityOptions.isEnabled = wantLpReliability;
+  options.reliabilityOptions.isEnabled = params.wantLpReliability;
 
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
-                                                         persistency, m_idleFaceTimeout);
+                                                         params.persistency, m_idleFaceTimeout);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;

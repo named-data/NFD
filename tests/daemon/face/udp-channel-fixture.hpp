@@ -51,7 +51,7 @@ protected:
   connect(UdpChannel& channel) final
   {
     g_io.post([&] {
-      channel.connect(listenerEp, ndn::nfd::FACE_PERSISTENCY_PERSISTENT, false,
+      channel.connect(listenerEp, {},
         [this] (const shared_ptr<Face>& newFace) {
           BOOST_REQUIRE(newFace != nullptr);
           connectFaceClosedSignal(*newFace, [this] { limitedIo.afterOp(); });

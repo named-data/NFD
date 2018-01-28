@@ -69,9 +69,7 @@ TcpChannel::listen(const FaceCreatedCallback& onFaceCreated,
 
 void
 TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
-                    ndn::nfd::FacePersistency persistency,
-                    bool wantLocalFields,
-                    bool wantLpReliability,
+                    const FaceParams& params,
                     const FaceCreatedCallback& onFaceCreated,
                     const FaceCreationFailedCallback& onConnectFailed,
                     time::nanoseconds timeout)
@@ -91,17 +89,12 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   clientSocket->async_connect(remoteEndpoint,
                               bind(&TcpChannel::handleConnect, this,
                                    boost::asio::placeholders::error, remoteEndpoint, clientSocket,
-                                   // Creating a parameters struct works around limit on number of
-                                   // parameters to bind
-                                   ConnectParams{persistency, wantLocalFields, wantLpReliability},
-                                   timeoutEvent, onFaceCreated, onConnectFailed));
+                                   params, timeoutEvent, onFaceCreated, onConnectFailed));
 }
 
 void
 TcpChannel::createFace(ip::tcp::socket&& socket,
-                       ndn::nfd::FacePersistency persistency,
-                       bool wantLocalFields,
-                       bool wantLpReliability,
+                       const FaceParams& params,
                        const FaceCreatedCallback& onFaceCreated)
 {
   shared_ptr<Face> face;
@@ -110,12 +103,12 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
   auto it = m_channelFaces.find(remoteEndpoint);
   if (it == m_channelFaces.end()) {
     GenericLinkService::Options options;
-    options.allowLocalFields = wantLocalFields;
-    options.reliabilityOptions.isEnabled = wantLpReliability;
+    options.allowLocalFields = params.wantLocalFields;
+    options.reliabilityOptions.isEnabled = params.wantLpReliability;
     options.allowCongestionMarking = m_wantCongestionMarking;
     auto linkService = make_unique<GenericLinkService>(options);
 
-    auto transport = make_unique<TcpTransport>(std::move(socket), persistency);
+    auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency);
     face = make_shared<Face>(std::move(linkService), std::move(transport));
 
     m_channelFaces[remoteEndpoint] = face;
@@ -160,7 +153,10 @@ TcpChannel::handleAccept(const boost::system::error_code& error,
   }
 
   NFD_LOG_CHAN_TRACE("Incoming connection from " << m_socket.remote_endpoint());
-  createFace(std::move(m_socket), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, false, false, onFaceCreated);
+
+  FaceParams params;
+  params.persistency = ndn::nfd::FACE_PERSISTENCY_ON_DEMAND;
+  createFace(std::move(m_socket), params, onFaceCreated);
 
   // prepare accepting the next connection
   accept(onFaceCreated, onAcceptFailed);
@@ -170,7 +166,7 @@ void
 TcpChannel::handleConnect(const boost::system::error_code& error,
                           const tcp::Endpoint& remoteEndpoint,
                           const shared_ptr<ip::tcp::socket>& socket,
-                          TcpChannel::ConnectParams params,
+                          const FaceParams& params,
                           const scheduler::EventId& connectTimeoutEvent,
                           const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onConnectFailed)
@@ -195,8 +191,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
   }
 
   NFD_LOG_CHAN_TRACE("Connected to " << socket->remote_endpoint());
-  createFace(std::move(*socket), params.persistency, params.wantLocalFields,
-             params.wantLpReliability, onFaceCreated);
+  createFace(std::move(*socket), params, onFaceCreated);
 }
 
 void

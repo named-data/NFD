@@ -128,17 +128,12 @@ private:
     auto addr = ndn::ip::addressFromString(uriR.getHost());
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
-      m_tcpChannel.connect(tcp::Endpoint(addr, port),
-                           ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                           false,
-                           false,
+      m_tcpChannel.connect(tcp::Endpoint(addr, port), {},
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
                            bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }
     else if (uriR.getScheme() == "udp4") {
-      m_udpChannel.connect(udp::Endpoint(addr, port),
-                           ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                           false,
+      m_udpChannel.connect(udp::Endpoint(addr, port), {},
                            bind(&FaceBenchmark::onRightFaceCreated, this, faceL, _1),
                            bind(&FaceBenchmark::onFaceCreationFailed, _1, _2));
     }

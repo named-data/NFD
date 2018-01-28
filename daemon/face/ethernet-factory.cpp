@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "ethernet-factory.hpp"
 #include "generic-link-service.hpp"
 #include "multicast-ethernet-transport.hpp"
+
 #include <boost/range/adaptors.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -165,27 +166,27 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-EthernetFactory::createFace(const CreateFaceParams& params,
+EthernetFactory::createFace(const CreateFaceRequest& req,
                             const FaceCreatedCallback& onCreated,
                             const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(params.remoteUri.isCanonical());
+  BOOST_ASSERT(req.remoteUri.isCanonical());
 
-  if (!params.localUri || params.localUri->getScheme() != "dev") {
+  if (!req.localUri || req.localUri->getScheme() != "dev") {
     NFD_LOG_TRACE("Cannot create unicast Ethernet face without dev:// LocalUri");
     onFailure(406, "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme");
     return;
   }
-  BOOST_ASSERT(params.localUri->isCanonical());
+  BOOST_ASSERT(req.localUri->isCanonical());
 
-  if (params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing Ethernet faces do not support on-demand persistency");
     return;
   }
 
-  ethernet::Address remoteEndpoint(ethernet::Address::fromString(params.remoteUri.getHost()));
-  std::string localEndpoint(params.localUri->getHost());
+  ethernet::Address remoteEndpoint(ethernet::Address::fromString(req.remoteUri.getHost()));
+  std::string localEndpoint(req.localUri->getHost());
 
   if (remoteEndpoint.isMulticast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");
@@ -193,7 +194,7 @@ EthernetFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  if (params.wantLocalFields) {
+  if (req.params.wantLocalFields) {
     // Ethernet faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -202,8 +203,7 @@ EthernetFactory::createFace(const CreateFaceParams& params,
 
   for (const auto& i : m_channels) {
     if (i.first == localEndpoint) {
-      i.second->connect(remoteEndpoint, params.persistency, params.wantLpReliability,
-                        onCreated, onFailure);
+      i.second->connect(remoteEndpoint, req.params, onCreated, onFailure);
       return;
     }
   }

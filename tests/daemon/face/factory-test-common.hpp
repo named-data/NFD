@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,17 @@ namespace nfd {
 namespace face {
 namespace tests {
 
+struct TestFaceParams : public FaceParams
+{
+  TestFaceParams(ndn::nfd::FacePersistency persistency, bool wantLocalFields,
+                 bool wantLpReliability) noexcept
+  {
+    this->persistency = persistency;
+    this->wantLocalFields = wantLocalFields;
+    this->wantLpReliability = wantLpReliability;
+  }
+};
+
 struct CreateFaceExpectedResult
 {
   enum { FAILURE, SUCCESS } result;
@@ -45,12 +56,10 @@ inline void
 createFace(ProtocolFactory& factory,
            const FaceUri& remoteUri,
            const ndn::optional<FaceUri>& localUri,
-           ndn::nfd::FacePersistency persistency,
-           bool wantLocalFields,
-           bool wantLpReliability,
+           const TestFaceParams& params,
            const CreateFaceExpectedResult& expected)
 {
-  factory.createFace({remoteUri, localUri, persistency, wantLocalFields, wantLpReliability},
+  factory.createFace({remoteUri, localUri, params},
                      [expected] (const shared_ptr<Face>&) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
                      },

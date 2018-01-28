@@ -129,31 +129,31 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-TcpFactory::createFace(const CreateFaceParams& params,
+TcpFactory::createFace(const CreateFaceRequest& req,
                        const FaceCreatedCallback& onCreated,
                        const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(params.remoteUri.isCanonical());
+  BOOST_ASSERT(req.remoteUri.isCanonical());
 
-  if (params.localUri) {
+  if (req.localUri) {
     NFD_LOG_TRACE("Cannot create unicast TCP face with LocalUri");
     onFailure(406, "Unicast TCP faces cannot be created with a LocalUri");
     return;
   }
 
-  if (params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing TCP faces do not support on-demand persistency");
     return;
   }
 
-  tcp::Endpoint endpoint(ndn::ip::addressFromString(params.remoteUri.getHost()),
-                         boost::lexical_cast<uint16_t>(params.remoteUri.getPort()));
+  tcp::Endpoint endpoint(ndn::ip::addressFromString(req.remoteUri.getHost()),
+                         boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   // a canonical tcp4/tcp6 FaceUri cannot have a multicast address
   BOOST_ASSERT(!endpoint.address().is_multicast());
 
-  if (params.wantLocalFields && !endpoint.address().is_loopback()) {
+  if (req.params.wantLocalFields && !endpoint.address().is_loopback()) {
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
     return;
@@ -163,8 +163,7 @@ TcpFactory::createFace(const CreateFaceParams& params,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, params.persistency, params.wantLocalFields,
-                        params.wantLpReliability, onCreated, onFailure);
+      i.second->connect(endpoint, req.params, onCreated, onFailure);
       return;
     }
   }

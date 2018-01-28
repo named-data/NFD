@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@ NFD_LOG_INIT("WebSocketChannel");
 
 WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   : m_localEndpoint(localEndpoint)
-  , m_pingInterval(time::seconds(10))
+  , m_pingInterval(10_s)
 {
   setUri(FaceUri(m_localEndpoint, "ws"));
   NFD_LOG_CHAN_INFO("Creating channel");

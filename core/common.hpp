@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -109,15 +109,17 @@ using ndn::Interest;
 using ndn::Name;
 using ndn::PartialName;
 
+// Not using a namespace alias (namespace tlv = ndn::tlv), because
+// it doesn't allow NFD to add other members to the namespace
 namespace tlv {
-// Don't write "namespace tlv = ndn::tlv", because NFD can add other members into this namespace.
 using namespace ndn::tlv;
 } // namespace tlv
 
 namespace lp = ndn::lp;
 namespace name = ndn::name;
-namespace time = ndn::time;
 namespace signal = ndn::util::signal;
+namespace time = ndn::time;
+using namespace ndn::time_literals;
 
 } // namespace nfd
 

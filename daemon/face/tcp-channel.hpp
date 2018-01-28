@@ -86,27 +86,15 @@ public:
    */
   void
   connect(const tcp::Endpoint& remoteEndpoint,
-          ndn::nfd::FacePersistency persistency,
-          bool wantLocalFields,
-          bool wantLpReliability,
+          const FaceParams& params,
           const FaceCreatedCallback& onFaceCreated,
           const FaceCreationFailedCallback& onConnectFailed,
-          time::nanoseconds timeout = time::seconds(4));
-
-private:
-  struct ConnectParams
-  {
-    ndn::nfd::FacePersistency persistency;
-    bool wantLocalFields;
-    bool wantLpReliability;
-  };
+          time::nanoseconds timeout = 8_s);
 
 private:
   void
   createFace(boost::asio::ip::tcp::socket&& socket,
-             ndn::nfd::FacePersistency persistency,
-             bool wantLocalFields,
-             bool wantLpReliability,
+             const FaceParams& params,
              const FaceCreatedCallback& onFaceCreated);
 
   void
@@ -122,7 +110,7 @@ private:
   handleConnect(const boost::system::error_code& error,
                 const tcp::Endpoint& remoteEndpoint,
                 const shared_ptr<boost::asio::ip::tcp::socket>& socket,
-                ConnectParams params,
+                const FaceParams& params,
                 const scheduler::EventId& connectTimeoutEvent,
                 const FaceCreatedCallback& onFaceCreated,
                 const FaceCreationFailedCallback& onConnectFailed);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -76,9 +76,7 @@ BOOST_AUTO_TEST_CASE(FaceClosure)
   BOOST_CHECK_EQUAL(channel->size(), 0);
 
   shared_ptr<nfd::Face> face;
-  channel->connect({0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e},
-                   ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                   false,
+  channel->connect({0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e}, {},
                    [&face] (const shared_ptr<nfd::Face>& newFace) {
                      BOOST_REQUIRE(newFace != nullptr);
                      face = newFace;

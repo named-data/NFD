@@ -47,7 +47,7 @@ public:
 
   void
   processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) override
+                FaceSystem::ConfigContext& context) final
   {
     processConfigHistory.push_back({configSection, context.isDryRun,
                                     context.generalConfig.wantCongestionMarking});
@@ -57,15 +57,15 @@ public:
   }
 
   void
-  createFace(const CreateFaceParams& params,
+  createFace(const CreateFaceRequest& req,
              const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override
+             const FaceCreationFailedCallback& onFailure) final
   {
     BOOST_FAIL("createFace should not be called");
   }
 
   std::vector<shared_ptr<const Channel>>
-  getChannels() const override
+  getChannels() const final
   {
     BOOST_FAIL("getChannels should not be called");
     return {};

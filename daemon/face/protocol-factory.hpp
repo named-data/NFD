@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -129,29 +129,27 @@ public:
     return providedSchemes;
   }
 
-  /** \brief Parameters to ProtocolFactory::createFace
+  /** \brief Encapsulates a face creation request and all its parameters
    *
    *  Parameters are passed as a struct rather than individually, so that a future change in the list
    *  of parameters does not require an update to the method signature in all subclasses.
    */
-  struct CreateFaceParams
+  struct CreateFaceRequest
   {
     FaceUri remoteUri;
     ndn::optional<FaceUri> localUri;
-    ndn::nfd::FacePersistency persistency;
-    bool wantLocalFields;
-    bool wantLpReliability;
+    FaceParams params;
   };
 
-  /** \brief Try to create face using the supplied parameters
+  /** \brief Try to create a unicast face using the supplied parameters
    *
-   * \param params parameters to create face with
-   * \param onCreated callback if face creation succeeds or face already exists;
-   *                  persistency and local fields settings are not updated on an existing face
+   * \param req request object containing the face creation parameters
+   * \param onCreated callback if face creation succeeds or face already exists; the settings
+   *                  of an existing face are not updated if they differ from the request
    * \param onFailure callback if face creation fails
    */
   virtual void
-  createFace(const CreateFaceParams& params,
+  createFace(const CreateFaceRequest& req,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) = 0;
 
@@ -180,7 +178,6 @@ private: // registry
 
 protected:
   std::set<std::string> providedSchemes; ///< FaceUri schemes provided by this ProtocolFactory
-
   FaceCreatedCallback addFace; ///< callback when a new face is created
 
   /** \brief NetworkMonitor for listing available network interfaces and monitoring their changes

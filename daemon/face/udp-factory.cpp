@@ -231,26 +231,26 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UdpFactory::createFace(const CreateFaceParams& params,
+UdpFactory::createFace(const CreateFaceRequest& req,
                        const FaceCreatedCallback& onCreated,
                        const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(params.remoteUri.isCanonical());
+  BOOST_ASSERT(req.remoteUri.isCanonical());
 
-  if (params.localUri) {
+  if (req.localUri) {
     NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
     onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
     return;
   }
 
-  if (params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
+  if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
     onFailure(406, "Outgoing UDP faces do not support on-demand persistency");
     return;
   }
 
-  udp::Endpoint endpoint(ndn::ip::addressFromString(params.remoteUri.getHost()),
-                         boost::lexical_cast<uint16_t>(params.remoteUri.getPort()));
+  udp::Endpoint endpoint(ndn::ip::addressFromString(req.remoteUri.getHost()),
+                         boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {
     NFD_LOG_TRACE("createFace does not support multicast faces");
@@ -258,7 +258,7 @@ UdpFactory::createFace(const CreateFaceParams& params,
     return;
   }
 
-  if (params.wantLocalFields) {
+  if (req.params.wantLocalFields) {
     // UDP faces are never local
     NFD_LOG_TRACE("createFace cannot create non-local face with local fields enabled");
     onFailure(406, "Local fields can only be enabled on faces with local scope");
@@ -269,8 +269,7 @@ UdpFactory::createFace(const CreateFaceParams& params,
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||
         (i.first.address().is_v6() && endpoint.address().is_v6())) {
-      i.second->connect(endpoint, params.persistency, params.wantLpReliability,
-                        onCreated, onFailure);
+      i.second->connect(endpoint, req.params, onCreated, onFailure);
       return;
     }
   }

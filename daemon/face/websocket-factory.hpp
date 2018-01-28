@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ public:
   /** \brief unicast face creation is not supported and will always fail
    */
   void
-  createFace(const CreateFaceParams& params,
+  createFace(const CreateFaceRequest& req,
              const FaceCreatedCallback& onCreated,
              const FaceCreationFailedCallback& onFailure) override;
 
