@@ -36,7 +36,26 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
 
 <xsl:template name="formatDuration">
   <xsl:param name="duration" />
-  <xsl:variable name="seconds"><xsl:value-of select="substring($duration, 3, string-length($duration)-3)" /></xsl:variable>
+  <xsl:variable name="milliseconds">
+    <xsl:choose>
+      <xsl:when test="contains($duration, '.')">
+        <xsl:value-of select="substring($duration, string-length($duration)-4, 3)" />
+      </xsl:when>
+      <xsl:otherwise>
+        0
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
+  <xsl:variable name="seconds">
+    <xsl:choose>
+      <xsl:when test="contains($duration, '.')">
+        <xsl:value-of select="substring($duration, 3, string-length($duration)-7)" />
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:value-of select="substring($duration, 3, string-length($duration)-3)" />
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:variable>
   <xsl:variable name="days"><xsl:value-of select="floor($seconds div 86400)" /></xsl:variable>
   <xsl:variable name="hours"><xsl:value-of select="floor($seconds div 3600)" /></xsl:variable>
   <xsl:variable name="minutes"><xsl:value-of select="floor($seconds div 60)" /></xsl:variable>
@@ -65,6 +84,12 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
     <xsl:otherwise>
       <xsl:value-of select="$seconds"/> seconds
     </xsl:otherwise>
+    <xsl:when test="$milliseconds > 1">
+      <xsl:value-of select="$milliseconds"/> milliseconds
+    </xsl:when>
+    <xsl:when test="$milliseconds = 1">
+      <xsl:value-of select="$milliseconds"/> millisecond
+    </xsl:when>
   </xsl:choose>
 </xsl:template>
 
@@ -182,6 +207,12 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
           <xsl:choose>
             <xsl:when test="nfd:flags/nfd:localFieldsEnabled">
               local-fields
+            </xsl:when>
+            <xsl:when test="nfd:flags/nfd:lpReliabilityEnabled">
+              reliability
+            </xsl:when>
+            <xsl:when test="nfd:flags/nfd:congestionMarkingEnabled">
+              congestion-marking
             </xsl:when>
           </xsl:choose>
         </td>

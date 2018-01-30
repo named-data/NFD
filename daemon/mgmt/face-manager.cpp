@@ -459,6 +459,8 @@ FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
     traits.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, linkServiceOptions.allowLocalFields);
     traits.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED,
                       linkServiceOptions.reliabilityOptions.isEnabled);
+    traits.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED,
+                      linkServiceOptions.allowCongestionMarking);
   }
 }
 

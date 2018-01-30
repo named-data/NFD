@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,7 +64,8 @@ ForwarderGeneralModule::formatItemXml(std::ostream& os, const ForwarderStatus& i
   os << "<version>" << xml::Text{item.getNfdVersion()} << "</version>";
   os << "<startTime>" << xml::formatTimestamp(item.getStartTimestamp()) << "</startTime>";
   os << "<currentTime>" << xml::formatTimestamp(item.getCurrentTimestamp()) << "</currentTime>";
-  os << "<uptime>" << xml::formatDuration(calculateUptime(item)) << "</uptime>";
+  os << "<uptime>" << xml::formatDuration(time::duration_cast<time::seconds>(calculateUptime(item)))
+     << "</uptime>";
 
   os << "<nNameTreeEntries>" << item.getNNameTreeEntries() << "</nNameTreeEntries>";
   os << "<nFibEntries>" << item.getNFibEntries() << "</nFibEntries>";
@@ -101,7 +102,7 @@ ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& 
   os << "               version=" << item.getNfdVersion() << "\n";
   os << "             startTime=" << text::formatTimestamp(item.getStartTimestamp()) << "\n";
   os << "           currentTime=" << text::formatTimestamp(item.getCurrentTimestamp()) << "\n";
-  os << "                uptime=" << text::formatDuration(calculateUptime(item), true) << "\n";
+  os << "                uptime=" << text::formatDuration<time::seconds>(calculateUptime(item), true) << "\n";
 
   os << "      nNameTreeEntries=" << item.getNNameTreeEntries() << "\n";
   os << "           nFibEntries=" << item.getNFibEntries() << "\n";

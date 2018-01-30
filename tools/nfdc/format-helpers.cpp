@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,9 @@
  */
 
 #include "format-helpers.hpp"
+
+#include <iomanip>
+#include <sstream>
 
 namespace nfd {
 namespace tools {
@@ -73,9 +76,28 @@ operator<<(std::ostream& os, const Text& text)
 }
 
 std::string
-formatSeconds(time::seconds d)
+formatDuration(time::nanoseconds d)
 {
-  return "PT" + to_string(d.count()) + "S";
+  std::ostringstream str;
+
+  if (d < 0_ns) {
+    str << "-";
+  }
+
+  str << "PT";
+
+  time::seconds seconds(time::duration_cast<time::seconds>(time::abs(d)));
+  time::milliseconds ms(time::duration_cast<time::milliseconds>(time::abs(d) - seconds));
+
+  str << seconds.count();
+
+  if (ms >= 1_ms) {
+    str << "." << std::setfill('0') << std::setw(3) << ms.count();
+  }
+
+  str << "S";
+
+  return str.str();
 }
 
 std::string
@@ -153,12 +175,6 @@ operator<<(std::ostream& os, const ItemAttributes::Attribute& attr)
     }
   }
   return os << attr.attribute << '=';
-}
-
-std::string
-formatSeconds(time::seconds d, bool isLong)
-{
-  return to_string(d.count()) + (isLong ? " seconds" : "s");
 }
 
 std::string

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,6 +46,30 @@ BOOST_AUTO_TEST_CASE(TextEscaping)
 
   BOOST_CHECK(os.is_equal("&quot;less than&quot; &amp; &apos;greater than&apos;"
                           " surround XML &lt;element&gt; tag name"));
+}
+
+BOOST_AUTO_TEST_CASE(DurationFormatting)
+{
+  time::nanoseconds d1 = 53000_s + 87_ms + 3_us;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d1), "PT53000.087S");
+
+  time::nanoseconds d2 = 56_s;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d2), "PT56S");
+
+  time::nanoseconds d3 = 3_min;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d3), "PT180S");
+
+  time::nanoseconds d4 = 0_ns;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d4), "PT0S");
+
+  time::nanoseconds d5 = 1_ms;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d5), "PT0.001S");
+
+  time::nanoseconds d6 = -53_s - 250_ms;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d6), "-PT53.250S");
+
+  time::nanoseconds d7 = 1_us;
+  BOOST_CHECK_EQUAL(xml::formatDuration(d7), "PT0S");
 }
 
 BOOST_AUTO_TEST_SUITE_END() // Xml

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -42,11 +42,13 @@ BOOST_FIXTURE_TEST_SUITE(ListCommand, ExecuteCommandFixture)
 
 const std::string NONQUERY_OUTPUT =
   "faceid=134 remote=udp4://233.252.0.4:6363 local=udp4://192.0.2.1:6363"
+    " congestion={base-marking-interval=12345ms default-threshold=54321B}"
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
   "faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
+    " congestion={base-marking-interval=100ms default-threshold=65536B}"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " flags={local on-demand point-to-point local-fields lp-reliability}\n";
+    " flags={local on-demand point-to-point local-fields lp-reliability congestion-marking}\n";
 
 BOOST_AUTO_TEST_CASE(NormalNonQuery)
 {
@@ -58,6 +60,8 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
             .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT)
             .setLinkType(ndn::nfd::LINK_TYPE_MULTI_ACCESS)
+            .setBaseCongestionMarkingInterval(12345_ms)
+            .setDefaultCongestionThreshold(54321)
             .setNInInterests(22562)
             .setNInData(22031)
             .setNInNacks(63)
@@ -73,8 +77,11 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
             .setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL)
             .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
             .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+            .setBaseCongestionMarkingInterval(100_ms)
+            .setDefaultCongestionThreshold(65536)
             .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
             .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true)
+            .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true)
             .setNInInterests(18998)
             .setNInData(26701)
             .setNInNacks(147)
@@ -94,6 +101,7 @@ BOOST_AUTO_TEST_CASE(NormalNonQuery)
 
 const std::string QUERY_OUTPUT =
   "faceid=177 remote=tcp4://53.239.9.114:6363 local=tcp4://164.0.31.106:20396"
+    " congestion={base-marking-interval=555ms default-threshold=10000B}"
     " counters={in={2325i 1110d 79n 4716834B} out={2278i 485d 841n 308108B}}"
     " flags={non-local persistent point-to-point}\n";
 
@@ -116,6 +124,8 @@ BOOST_AUTO_TEST_CASE(NormalQuery)
            .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
            .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
            .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setBaseCongestionMarkingInterval(555_ms)
+           .setDefaultCongestionThreshold(10000)
            .setNInInterests(2325)
            .setNInData(1110)
            .setNInNacks(79)
@@ -159,15 +169,145 @@ BOOST_AUTO_TEST_SUITE_END() // ListCommand
 
 BOOST_FIXTURE_TEST_SUITE(ShowCommand, ExecuteCommandFixture)
 
-const std::string NORMAL_OUTPUT = std::string(R"TEXT(
-  faceid=256
-  remote=udp4://84.67.35.111:6363
-   local=udp4://79.91.49.215:6363
-counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
-   flags={non-local on-demand point-to-point}
+const std::string NORMAL_ALL_CONGESTION_OUTPUT = std::string(R"TEXT(
+    faceid=256
+    remote=udp4://84.67.35.111:6363
+     local=udp4://79.91.49.215:6363
+congestion={base-marking-interval=123ms default-threshold=10000B}
+  counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
+     flags={non-local on-demand point-to-point}
 )TEXT").substr(1);
 
-BOOST_AUTO_TEST_CASE(Normal)
+BOOST_AUTO_TEST_CASE(NormalAllCongestionParams)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(256));
+
+    FaceStatus payload;
+    payload.setFaceId(256)
+           .setRemoteUri("udp4://84.67.35.111:6363")
+           .setLocalUri("udp4://79.91.49.215:6363")
+           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setBaseCongestionMarkingInterval(123_ms)
+           .setDefaultCongestionThreshold(10000)
+           .setNInInterests(28975)
+           .setNInData(28232)
+           .setNInNacks(212)
+           .setNOutInterests(19525)
+           .setNOutData(30993)
+           .setNOutNacks(1038)
+           .setNInBytes(13307258)
+           .setNOutBytes(6231946);
+
+    this->sendDataset(interest.getName(), payload);
+  };
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NORMAL_ALL_CONGESTION_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string NORMAL_INTERVAL_CONGESTION_OUTPUT = std::string(R"TEXT(
+    faceid=256
+    remote=udp4://84.67.35.111:6363
+     local=udp4://79.91.49.215:6363
+congestion={base-marking-interval=123ms}
+  counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
+     flags={non-local on-demand point-to-point}
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(NormalIntervalCongestionParams)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(256));
+
+    FaceStatus payload;
+    payload.setFaceId(256)
+           .setRemoteUri("udp4://84.67.35.111:6363")
+           .setLocalUri("udp4://79.91.49.215:6363")
+           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setBaseCongestionMarkingInterval(123_ms)
+           .setNInInterests(28975)
+           .setNInData(28232)
+           .setNInNacks(212)
+           .setNOutInterests(19525)
+           .setNOutData(30993)
+           .setNOutNacks(1038)
+           .setNInBytes(13307258)
+           .setNOutBytes(6231946);
+
+    this->sendDataset(interest.getName(), payload);
+  };
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NORMAL_INTERVAL_CONGESTION_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string NORMAL_THRESHOLD_CONGESTION_OUTPUT = std::string(R"TEXT(
+    faceid=256
+    remote=udp4://84.67.35.111:6363
+     local=udp4://79.91.49.215:6363
+congestion={default-threshold=10000B}
+  counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
+     flags={non-local on-demand point-to-point}
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(NormalThresholdCongestionParams)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
+    BOOST_CHECK_EQUAL(interest.getName().size(), 5);
+    FaceQueryFilter filter(interest.getName().at(4).blockFromValue());
+    BOOST_CHECK_EQUAL(filter, FaceQueryFilter().setFaceId(256));
+
+    FaceStatus payload;
+    payload.setFaceId(256)
+           .setRemoteUri("udp4://84.67.35.111:6363")
+           .setLocalUri("udp4://79.91.49.215:6363")
+           .setFaceScope(ndn::nfd::FACE_SCOPE_NON_LOCAL)
+           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
+           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+           .setDefaultCongestionThreshold(10000)
+           .setNInInterests(28975)
+           .setNInData(28232)
+           .setNInNacks(212)
+           .setNOutInterests(19525)
+           .setNOutData(30993)
+           .setNOutNacks(1038)
+           .setNInBytes(13307258)
+           .setNOutBytes(6231946);
+
+    this->sendDataset(interest.getName(), payload);
+  };
+
+  this->execute("face show 256");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal(NORMAL_THRESHOLD_CONGESTION_OUTPUT));
+  BOOST_CHECK(err.is_empty());
+}
+
+const std::string NORMAL_NO_CONGESTION_OUTPUT = std::string(R"TEXT(
+    faceid=256
+    remote=udp4://84.67.35.111:6363
+     local=udp4://79.91.49.215:6363
+  counters={in={28975i 28232d 212n 13307258B} out={19525i 30993d 1038n 6231946B}}
+     flags={non-local on-demand point-to-point}
+)TEXT").substr(1);
+
+BOOST_AUTO_TEST_CASE(NormalNoCongestionParams)
 {
   this->processInterest = [this] (const Interest& interest) {
     BOOST_CHECK(Name("/localhost/nfd/faces/query").isPrefixOf(interest.getName()));
@@ -196,7 +336,7 @@ BOOST_AUTO_TEST_CASE(Normal)
 
   this->execute("face show 256");
   BOOST_CHECK_EQUAL(exitCode, 0);
-  BOOST_CHECK(out.is_equal(NORMAL_OUTPUT));
+  BOOST_CHECK(out.is_equal(NORMAL_NO_CONGESTION_OUTPUT));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -228,7 +368,9 @@ class ExecuteFaceCreateCommandFixture : public ExecuteCommandFixture
 {
 protected:
   void
-  respond409(const Interest& interest, FacePersistency persistency, bool enableLpReliability = false)
+  respond409(const Interest& interest, FacePersistency persistency,
+             bool enableLpReliability = false,
+             bool enableCongestionMarking = false)
   {
     MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/create");
     ControlParameters body;
@@ -239,6 +381,9 @@ protected:
         .setFlags(0);
     if (enableLpReliability) {
       body.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
+    }
+    if (enableCongestionMarking) {
+      body.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true, false);
     }
     this->failCommand(interest, 409, "conflict-409", body);
   }
@@ -269,7 +414,7 @@ BOOST_AUTO_TEST_CASE(Creating)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-created id=2130 local=udp4://179.63.153.45:28835 "
                            "remote=udp4://159.242.33.78:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -291,15 +436,21 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
         .setUri("udp4://22.91.89.51:19903")
         .setLocalUri("udp4://98.68.23.71:6363")
         .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERMANENT)
-        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false);
+        .setBaseCongestionMarkingInterval(100_ms)
+        .setDefaultCongestionThreshold(65536)
+        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true, false)
+        .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true, false);
     this->succeedCommand(interest, resp);
   };
 
-  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71 reliability on");
+  this->execute("face create udp://22.91.89.51:19903 permanent local udp://98.68.23.71 reliability on "
+                "congestion-marking on congestion-marking-interval 100 "
+                "default-congestion-threshold 65536");
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-created id=301 local=udp4://98.68.23.71:6363 "
                            "remote=udp4://22.91.89.51:19903 persistency=permanent "
-                           "reliability=on\n"));
+                           "reliability=on congestion-marking=on "
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -332,7 +483,7 @@ BOOST_AUTO_TEST_CASE(UpgradingPersistency)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -347,7 +498,7 @@ BOOST_AUTO_TEST_CASE(NotDowngradingPersistency)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=permanent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -362,7 +513,7 @@ BOOST_AUTO_TEST_CASE(SamePersistency)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-exists id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -393,7 +544,7 @@ BOOST_AUTO_TEST_CASE(EnablingReliability)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=on\n"));
+                           "reliability=on congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -424,7 +575,79 @@ BOOST_AUTO_TEST_CASE(DisablingReliability)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
                            "remote=udp4://100.77.30.65:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(EnablingCongestionMarking)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+    BOOST_CHECK(req.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+    BOOST_CHECK(!req.hasBaseCongestionMarkingInterval());
+    BOOST_CHECK(!req.hasDefaultCongestionThreshold());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setBaseCongestionMarkingInterval(100_ms)
+        .setDefaultCongestionThreshold(65536)
+        .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 congestion-marking on");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off congestion-marking=on "
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(DisablingCongestionMarking)
+{
+  bool hasUpdateCommand = false;
+  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+    if (parseCommand(interest, "/localhost/nfd/faces/create")) {
+      this->respond409(interest, FacePersistency::FACE_PERSISTENCY_PERSISTENT, false, true);
+      return;
+    }
+
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/faces/update");
+    hasUpdateCommand = true;
+    BOOST_REQUIRE(req.hasFaceId());
+    BOOST_CHECK_EQUAL(req.getFaceId(), 1172);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+    BOOST_CHECK(!req.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+    BOOST_CHECK(!req.hasBaseCongestionMarkingInterval());
+    BOOST_CHECK(!req.hasDefaultCongestionThreshold());
+
+    ControlParameters resp;
+    resp.setFaceId(1172)
+        .setFacePersistency(FacePersistency::FACE_PERSISTENCY_PERSISTENT)
+        .setBaseCongestionMarkingInterval(100_ms)
+        .setDefaultCongestionThreshold(65536)
+        .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("face create udp://100.77.30.65 congestion-marking off");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("face-updated id=1172 local=udp4://68.62.26.57:24087 "
+                           "remote=udp4://100.77.30.65:6363 persistency=persistent "
+                           "reliability=off congestion-marking=off "
+                           "congestion-marking-interval=100ms default-congestion-threshold=65536B\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -512,7 +735,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceId)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-destroyed id=10156 local=tcp4://151.26.163.27:22967 "
                            "remote=tcp4://198.57.27.40:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -536,7 +759,7 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
   BOOST_CHECK_EQUAL(exitCode, 0);
   BOOST_CHECK(out.is_equal("face-destroyed id=2249 local=tcp4://30.99.87.98:31414 "
                            "remote=tcp4://32.121.182.82:6363 persistency=persistent "
-                           "reliability=off\n"));
+                           "reliability=off congestion-marking=off\n"));
   BOOST_CHECK(err.is_empty());
 }
 
@@ -614,6 +837,7 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <faceScope>non-local</faceScope>
       <facePersistency>permanent</facePersistency>
       <linkType>multi-access</linkType>
+      <congestion/>
       <flags/>
       <packetCounters>
         <incomingPackets>
@@ -639,9 +863,14 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
       <faceScope>local</faceScope>
       <facePersistency>on-demand</facePersistency>
       <linkType>point-to-point</linkType>
+      <congestion>
+        <baseMarkingInterval>PT0.100S</baseMarkingInterval>
+        <defaultThreshold>65536</defaultThreshold>
+      </congestion>
       <flags>
         <localFieldsEnabled/>
         <lpReliabilityEnabled/>
+        <congestionMarkingEnabled/>
       </flags>
       <packetCounters>
         <incomingPackets>
@@ -669,8 +898,9 @@ const std::string STATUS_TEXT =
     " counters={in={22562i 22031d 63n 2522915B} out={30121i 20940d 1218n 1353592B}}"
     " flags={non-local permanent multi-access}\n"
   "  faceid=745 remote=fd://75 local=unix:///var/run/nfd.sock"
+    " congestion={base-marking-interval=100ms default-threshold=65536B}"
     " counters={in={18998i 26701d 147n 4672308B} out={34779i 17028d 1176n 8957187B}}"
-    " flags={local on-demand point-to-point local-fields lp-reliability}\n";
+    " flags={local on-demand point-to-point local-fields lp-reliability congestion-marking}\n";
 
 BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
 {
@@ -697,8 +927,11 @@ BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<FaceModule>)
           .setFaceScope(ndn::nfd::FACE_SCOPE_LOCAL)
           .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
           .setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT)
+          .setBaseCongestionMarkingInterval(100_ms)
+          .setDefaultCongestionThreshold(65536)
           .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true)
           .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true)
+          .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true)
           .setNInInterests(18998)
           .setNInData(26701)
           .setNInNacks(147)

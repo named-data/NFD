@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,6 @@
 
 #include "face-module.hpp"
 #include "find-face.hpp"
-#include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
@@ -54,7 +53,10 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("remote", ArgValueType::FACE_URI, Required::YES, Positional::YES)
     .addArg("persistency", ArgValueType::FACE_PERSISTENCY, Required::NO, Positional::YES)
     .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO)
-    .addArg("reliability", ArgValueType::BOOLEAN, Required::NO, Positional::NO);
+    .addArg("reliability", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
+    .addArg("congestion-marking", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
+    .addArg("congestion-marking-interval", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("default-congestion-threshold", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -153,6 +155,9 @@ FaceModule::create(ExecuteContext& ctx)
   auto localUri = ctx.args.getOptional<FaceUri>("local");
   auto persistency = ctx.args.get<FacePersistency>("persistency", FacePersistency::FACE_PERSISTENCY_PERSISTENT);
   auto lpReliability = ctx.args.getTribool("reliability");
+  auto congestionMarking = ctx.args.getTribool("congestion-marking");
+  auto baseCongestionMarkingIntervalMs = ctx.args.getOptional<uint64_t>("congestion-marking-interval");
+  auto defaultCongestionThreshold = ctx.args.getOptional<uint64_t>("default-congestion-threshold");
 
   FaceUri canonicalRemote;
   ndn::optional<FaceUri> canonicalLocal;
@@ -168,9 +173,8 @@ FaceModule::create(ExecuteContext& ctx)
             << ia("id") << resp.getFaceId()
             << ia("local") << resp.getLocalUri()
             << ia("remote") << resp.getUri()
-            << ia("persistency") << resp.getFacePersistency()
-            << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
-            << '\n';
+            << ia("persistency") << resp.getFacePersistency();
+    printFaceParams(ctx.out, ia, resp);
   };
 
   auto updateFace = [&printPositiveResult] (ControlParameters respParams, ControlParameters resp) {
@@ -200,24 +204,36 @@ FaceModule::create(ExecuteContext& ctx)
           ctx.makeCommandFailureHandler("upgrading face persistency"),
           ctx.makeCommandOptions());
     }
-    else if (lpReliability && !respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-      // enable reliability
+    else if ((!boost::logic::indeterminate(lpReliability) &&
+              lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) ||
+             (!boost::logic::indeterminate(congestionMarking) &&
+              congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) ||
+             baseCongestionMarkingIntervalMs ||
+             defaultCongestionThreshold) {
       ControlParameters params;
-      params.setFaceId(respParams.getFaceId()).setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, true);
+      params.setFaceId(respParams.getFaceId());
+
+      if (!boost::logic::indeterminate(lpReliability) &&
+          lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+      }
+      if (!boost::logic::indeterminate(congestionMarking) &&
+          congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+        params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, congestionMarking);
+      }
+
+      if (baseCongestionMarkingIntervalMs) {
+        params.setBaseCongestionMarkingInterval(time::milliseconds(*baseCongestionMarkingIntervalMs));
+      }
+
+      if (defaultCongestionThreshold) {
+        params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
+      }
+
       ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
           params,
           bind(updateFace, respParams, _1),
-          ctx.makeCommandFailureHandler("enabling reliability"),
-          ctx.makeCommandOptions());
-    }
-    else if (!lpReliability && respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-      // disable reliability
-      ControlParameters params;
-      params.setFaceId(respParams.getFaceId()).setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, false);
-      ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
-          params,
-          bind(updateFace, respParams, _1),
-          ctx.makeCommandFailureHandler("disabling reliability"),
+          ctx.makeCommandFailureHandler("updating face"),
           ctx.makeCommandOptions());
     }
     else {
@@ -236,6 +252,15 @@ FaceModule::create(ExecuteContext& ctx)
     params.setFacePersistency(persistency);
     if (!boost::logic::indeterminate(lpReliability)) {
       params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+    }
+    if (!boost::logic::indeterminate(congestionMarking)) {
+      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, congestionMarking);
+    }
+    if (baseCongestionMarkingIntervalMs) {
+      params.setBaseCongestionMarkingInterval(time::milliseconds(*baseCongestionMarkingIntervalMs));
+    }
+    if (defaultCongestionThreshold) {
+      params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
     }
 
     ctx.controller.start<ndn::nfd::FaceCreateCommand>(
@@ -309,9 +334,8 @@ FaceModule::destroy(ExecuteContext& ctx)
       ctx.out << ia("id") << face.getFaceId()
               << ia("local") << face.getLocalUri()
               << ia("remote") << face.getRemoteUri()
-              << ia("persistency") << face.getFacePersistency()
-              << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
-              << '\n';
+              << ia("persistency") << face.getFacePersistency();
+      printFaceParams(ctx.out, ia, resp);
     },
     ctx.makeCommandFailureHandler("destroying face"),
     ctx.makeCommandOptions());
@@ -360,6 +384,21 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
   os << "<facePersistency>" << item.getFacePersistency() << "</facePersistency>";
   os << "<linkType>" << item.getLinkType() << "</linkType>";
 
+  if (!item.hasBaseCongestionMarkingInterval() && !item.hasDefaultCongestionThreshold()) {
+    os << "<congestion/>";
+  }
+  else {
+    os << "<congestion>";
+    if (item.hasBaseCongestionMarkingInterval()) {
+      os << "<baseMarkingInterval>" << xml::formatDuration(item.getBaseCongestionMarkingInterval())
+         << "</baseMarkingInterval>";
+    }
+    if (item.hasDefaultCongestionThreshold()) {
+      os << "<defaultThreshold>" << item.getDefaultCongestionThreshold() << "</defaultThreshold>";
+    }
+    os << "</congestion>";
+  }
+
   if (item.getFlags() == 0) {
     os << "<flags/>";
   }
@@ -370,6 +409,9 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
     }
     if (item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
       os << "<lpReliabilityEnabled/>";
+    }
+    if (item.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+      os << "<congestionMarkingEnabled/>";
     }
     os << "</flags>";
   }
@@ -409,14 +451,27 @@ FaceModule::formatStatusText(std::ostream& os) const
 void
 FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMultiLine)
 {
-  text::ItemAttributes ia(wantMultiLine, 8);
+  text::ItemAttributes ia(wantMultiLine, 10);
 
   os << ia("faceid") << item.getFaceId();
   os << ia("remote") << item.getRemoteUri();
   os << ia("local") << item.getLocalUri();
 
   if (item.hasExpirationPeriod()) {
-    os << ia("expires") << text::formatDuration(item.getExpirationPeriod());
+    os << ia("expires") << text::formatDuration<time::seconds>(item.getExpirationPeriod());
+  }
+
+  if (item.hasBaseCongestionMarkingInterval() || item.hasDefaultCongestionThreshold()) {
+    os << ia("congestion") << "{";
+    text::Separator congestionSep("", " ");
+    if (item.hasBaseCongestionMarkingInterval()) {
+      os << congestionSep << "base-marking-interval="
+         << text::formatDuration<time::milliseconds>(item.getBaseCongestionMarkingInterval());
+    }
+    if (item.hasDefaultCongestionThreshold()) {
+      os << congestionSep << "default-threshold=" << item.getDefaultCongestionThreshold() << "B";
+    }
+    os << "}";
   }
 
   os << ia("counters")
@@ -442,9 +497,27 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
   if (item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
     os << flagSep << "lp-reliability";
   }
+  if (item.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+    os << flagSep << "congestion-marking";
+  }
   os << '}';
 
   os << ia.end();
+}
+
+void
+FaceModule::printFaceParams(std::ostream& os, text::ItemAttributes& ia, const ControlParameters& resp)
+{
+  os << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
+     << ia("congestion-marking") << (resp.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED) ? "on" : "off");
+  if (resp.hasBaseCongestionMarkingInterval()) {
+    os << ia("congestion-marking-interval")
+       << text::formatDuration<time::milliseconds>(resp.getBaseCongestionMarkingInterval());
+  }
+  if (resp.hasDefaultCongestionThreshold()) {
+    os << ia("default-congestion-threshold") << resp.getDefaultCongestionThreshold() << "B";
+  }
+  os << '\n';
 }
 
 } // namespace nfdc

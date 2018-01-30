@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "module.hpp"
 #include "command-parser.hpp"
+#include "format-helpers.hpp"
 
 namespace nfd {
 namespace tools {
@@ -92,6 +93,14 @@ public:
    */
   static void
   formatItemText(std::ostream& os, const FaceStatus& item, bool wantMultiLine);
+
+  /** \brief print face response parameters to specified ostream
+   *  \param os output stream
+   *  \param ia ItemAttributes used to format output
+   *  \param resp response control parameters to print
+   */
+  static void
+  printFaceParams(std::ostream& os, text::ItemAttributes& ia, const ControlParameters& resp);
 
 private:
   std::vector<FaceStatus> m_status;

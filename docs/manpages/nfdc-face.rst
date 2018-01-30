@@ -5,7 +5,7 @@ SYNOPSIS
 --------
 | nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
 | nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>] [reliability on|off]
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>] [reliability on|off] [congestion-marking on|off] [congestion-marking-interval <MARKING-INTERVAL>] [default-congestion-threshold <CONGESTION-THRESHOLD>]
 | nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 
@@ -27,6 +27,12 @@ Local FaceUri is required for creating Ethernet unicast faces; otherwise it must
 The NDNLPv2 unicast reliability feature may be explicitly enabled by specifying **reliability on**
 or explicitly disabled by specifying **reliability off**.
 If enabled, this feature must also be enabled on the other endpoint to function properly.
+Reliability is disabled by default.
+The send queue congestion detection and signaling feature may be explicitly enabled by specifying
+**congestion-marking on** or explicitly disabled by specifying **congestion-marking off**.
+Congestion marking is disabled by default.
+Parameters for this feature can set with the **congestion-marking-interval** option (specified in
+milliseconds) and the **default-congestion-threshold** option (specified in bytes).
 
 The **nfdc face destroy** command destroys an existing face.
 
@@ -69,6 +75,14 @@ OPTIONS
     A "persistent" face (the default) is closed when a socket error occurs.
     A "permanent" face survives socket errors, and is closed only with a **nfdc destroy** command.
 
+<MARKING-INTERVAL>
+    The initial marking interval (in milliseconds) during an incident of congestion.
+
+<CONGESTION-THRESHOLD>
+    This value serves two purposes:
+    It is the maximum bound of the congestion threshold for the face, as well as the default
+    threshold used if the face does not support retrieving the capacity of the send queue.
+
 EXIT CODES
 ----------
 0: Success
@@ -102,6 +116,10 @@ nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency
 
 nfdc face create remote udp://router.example.net reliability on
     Create a face with the specified remote FaceUri and enable NDNLP reliability.
+
+nfdc face create remote udp://router.example.net congestion-marking on congestion-marking-interval 100 default-congestion-threshold 65536
+    Create a face with the specified remote FaceUri and enable congestion marking. Set the base
+    congestion marking interval to 100 ms and the default congestion threshold to 65536 bytes.
 
 nfdc face destroy 300
     Destroy the face whose FaceId is 300.

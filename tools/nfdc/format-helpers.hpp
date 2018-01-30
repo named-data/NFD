@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,16 +50,17 @@ struct Text
 std::ostream&
 operator<<(std::ostream& os, const Text& text);
 
+/** \return duration in XML duration format
+ *
+ *  Definition of this format: https://www.w3.org/TR/xmlschema11-2/#duration
+ */
 std::string
-formatSeconds(time::seconds d);
+formatDuration(time::nanoseconds d);
 
-template<typename DURATION>
-std::string
-formatDuration(DURATION d)
-{
-  return formatSeconds(time::duration_cast<time::seconds>(d));
-}
-
+/** \return timestamp in XML dateTime format
+ *
+ *  Definition of this format: https://www.w3.org/TR/xmlschema11-2/#dateTime
+ */
 std::string
 formatTimestamp(time::system_clock::TimePoint t);
 
@@ -164,14 +165,69 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 
-std::string
-formatSeconds(time::seconds d, bool isLong = false);
+namespace detail {
 
-template<typename DURATION>
+template<typename DurationT>
 std::string
-formatDuration(DURATION d, bool isLong = false)
+getTimeUnit(bool isLong);
+
+template<>
+inline std::string
+getTimeUnit<time::nanoseconds>(bool isLong)
 {
-  return formatSeconds(time::duration_cast<time::seconds>(d), isLong);
+  return isLong ? "nanoseconds" : "ns";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::microseconds>(bool isLong)
+{
+  return isLong ? "microseconds" : "us";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::milliseconds>(bool isLong)
+{
+  return isLong ? "milliseconds" : "ms";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::seconds>(bool isLong)
+{
+  return isLong ? "seconds" : "s";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::minutes>(bool isLong)
+{
+  return isLong ? "minutes" : "m";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::hours>(bool isLong)
+{
+  return isLong ? "hours" : "h";
+}
+
+template<>
+inline std::string
+getTimeUnit<time::days>(bool isLong)
+{
+  return isLong ? "days" : "d";
+}
+
+} // namespace detail
+
+template<typename OutputPrecision>
+std::string
+formatDuration(time::nanoseconds d, bool isLong = false)
+{
+  return to_string(time::duration_cast<OutputPrecision>(d).count()) +
+         (isLong ? " " : "") + detail::getTimeUnit<OutputPrecision>(isLong);
 }
 
 std::string

@@ -4,6 +4,12 @@
 targetNamespace="ndn:/localhost/nfd/status/1" xmlns:nfd="ndn:/localhost/nfd/status/1"
 elementFormDefault="qualified">
 
+<xs:simpleType name="emptyType">
+  <xs:restriction base="xs:string">
+    <xs:maxLength value="0"/>
+  </xs:restriction>
+</xs:simpleType>
+
 <xs:complexType name="unidirectionalPacketCountersType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="nInterests"/>
@@ -53,6 +59,21 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="congestionParamsType">
+  <xs:sequence>
+    <xs:element type="xs:duration" name="baseMarkingInterval" minOccurs="0"/>
+    <xs:element type="xs:nonNegativeInteger" name="defaultThreshold" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="faceFlagsType">
+  <xs:sequence>
+    <xs:element type="nfd:emptyType" name="localFieldsEnabled" minOccurs="0"/>
+    <xs:element type="nfd:emptyType" name="lpReliabilityEnabled" minOccurs="0"/>
+    <xs:element type="nfd:emptyType" name="congestionMarkingEnabled" minOccurs="0"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="faceType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
@@ -62,6 +83,8 @@ elementFormDefault="qualified">
     <xs:element type="xs:string" name="faceScope"/>
     <xs:element type="xs:string" name="facePersistency"/>
     <xs:element type="xs:string" name="linkType"/>
+    <xs:element type="nfd:congestionParamsType" name="congestion"/>
+    <xs:element type="nfd:faceFlagsType" name="flags"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
     <xs:element type="nfd:bidirectionalByteCountersType" name="byteCounters"/>
   </xs:sequence>

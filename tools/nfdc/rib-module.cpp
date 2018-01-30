@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -195,7 +195,7 @@ RibModule::add(ExecuteContext& ctx)
               << ia("cost") << resp.getCost()
               << ia("flags") << static_cast<ndn::nfd::RouteFlags>(resp.getFlags());
       if (resp.hasExpirationPeriod()) {
-        ctx.out << ia("expires") << resp.getExpirationPeriod().count() << "ms\n";
+        ctx.out << ia("expires") << text::formatDuration<time::milliseconds>(resp.getExpirationPeriod()) << "\n";
       }
       else {
         ctx.out<< ia("expires") << "never\n";
@@ -307,7 +307,7 @@ RibModule::formatItemXml(std::ostream& os, const RibEntry& item) const
     }
     if (route.hasExpirationPeriod()) {
       os << "<expirationPeriod>"
-         << xml::formatDuration(route.getExpirationPeriod())
+         << xml::formatDuration(time::duration_cast<time::seconds>(route.getExpirationPeriod()))
          << "</expirationPeriod>";
     }
     os << "</route>";
@@ -356,7 +356,7 @@ RibModule::formatRouteText(std::ostream& os, const RibEntry& entry, const Route&
   os << ia("cost") << route.getCost();
   os << ia("flags") << static_cast<ndn::nfd::RouteFlags>(route.getFlags());
   if (route.hasExpirationPeriod()) {
-    os << ia("expires") << text::formatDuration(route.getExpirationPeriod());
+    os << ia("expires") << text::formatDuration<time::seconds>(route.getExpirationPeriod());
   }
   else {
     os << ia("expires") << "never";
