@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ public: // information
    *  This constant is currently advisory. It is enforced in NameTree::lookup only if
    *  \p enforceMaxDepth is set to true. This will become mandatory later.
    */
-  static size_t
+  static constexpr size_t
   getMaxDepth()
   {
     return 32;

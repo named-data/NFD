@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "rib/rib-manager.hpp"
 #include "manager-common-fixture.hpp"
+#include "core/fib-max-depth.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
@@ -420,6 +421,25 @@ BOOST_AUTO_TEST_CASE(Expiration)
   advanceClocks(time::milliseconds(55));
   BOOST_REQUIRE_EQUAL(m_commands.size(), 1); // the registered route is still active
   BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
+}
+
+BOOST_AUTO_TEST_CASE(NameTooLong)
+{
+  Name prefix;
+  while (prefix.size() <= FIB_MAX_DEPTH) {
+    prefix.append("A");
+  }
+  auto params = makeRegisterParameters(prefix, 2899);
+  auto command = makeControlCommandRequest("/localhost/nfd/rib/register", params);
+  receiveInterest(command);
+
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
+  BOOST_CHECK_EQUAL(checkResponse(0, command.getName(), ControlResponse(414,
+                      "Route prefix cannot exceed " + ndn::to_string(FIB_MAX_DEPTH) +
+                      " components")),
+                    CheckResponseResult::OK);
+
+  BOOST_CHECK_EQUAL(m_commands.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister

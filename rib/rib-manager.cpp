@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 #include "readvertise/client-to-nlsr-readvertise-policy.hpp"
 #include "readvertise/nfd-rib-readvertise-destination.hpp"
 
+#include "core/fib-max-depth.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
 
@@ -198,6 +199,12 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
                           ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
+  if (parameters.getName().size() > FIB_MAX_DEPTH) {
+    done(ControlResponse(414, "Route prefix cannot exceed " + ndn::to_string(FIB_MAX_DEPTH) +
+                              " components"));
+    return;
+  }
+
   setFaceForSelfRegistration(interest, parameters);
 
   // Respond since command is valid and authorized

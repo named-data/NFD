@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,8 @@
 
 #include "fib-entry.hpp"
 #include "name-tree.hpp"
+
+#include "core/fib-max-depth.hpp"
 
 #include <boost/range/adaptor/transformed.hpp>
 
@@ -82,6 +84,17 @@ public: // lookup
   findExactMatch(const Name& prefix);
 
 public: // mutation
+  /** \brief Maximum number of components in a FIB entry prefix.
+   *
+   *  This constant is currently advisory, but will become mandatory later.
+   */
+  static constexpr size_t
+  getMaxDepth()
+  {
+    static_assert(FIB_MAX_DEPTH == NameTree::getMaxDepth(), "");
+    return FIB_MAX_DEPTH;
+  }
+
   /** \brief inserts a FIB entry for prefix
    *
    *  If an entry for exact same prefix exists, that entry is returned.
