@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -210,42 +210,46 @@ CommandAuthenticator::makeAuthorization(const std::string& module, const std::st
   m_validators[module]; // declares module, so that privilege is recognized
 
   auto self = this->shared_from_this();
-  return [=] (const Name& prefix, const Interest& interest,
-              const ndn::mgmt::ControlParameters* params,
+  return [=] (const Name&, const Interest& interest,
+              const ndn::mgmt::ControlParameters*,
               const ndn::mgmt::AcceptContinuation& accept,
               const ndn::mgmt::RejectContinuation& reject) {
-    shared_ptr<sec2::Validator> validator = self->m_validators.at(module);
-    validator->validate(interest,
-      [accept, validator] (const Interest& interest1) {
-        auto signer1 = getSignerFromTag(interest1);
-        BOOST_ASSERT(signer1 || // signer must be available unless 'certfile any'
-          dynamic_cast<sec2::ValidationPolicyAcceptAll*>(&validator->getPolicy()) != nullptr);
-        std::string signer = signer1.value_or("*");
-        NFD_LOG_DEBUG("accept " << interest1.getName() << " signer=" << signer);
-        accept(signer);
-      },
-      [reject] (const Interest& interest1, const sec2::ValidationError& err) {
-        NFD_LOG_DEBUG("reject " << interest1.getName() << " signer=" <<
-                      getSignerFromTag(interest1).value_or("?") << ' ' << err);
-
-        using ndn::mgmt::RejectReply;
-        RejectReply reply = RejectReply::STATUS403;
-        using ErrCode = sec2::ValidationError::Code;
-        switch (err.getCode()) {
-          case ErrCode::NO_SIGNATURE:
-          case ErrCode::INVALID_KEY_LOCATOR:
-            reply = RejectReply::SILENT;
-            break;
-          case ErrCode::POLICY_ERROR:
-            if (interest1.getName().size() < ndn::command_interest::MIN_SIZE) { // "name too short"
-              reply = RejectReply::SILENT;
-            }
-            break;
-          default:
-            break;
+    auto validator = self->m_validators.at(module);
+    auto successCb = [accept, validator] (const Interest& interest1) {
+      auto signer1 = getSignerFromTag(interest1);
+      BOOST_ASSERT(signer1 || // signer must be available unless 'certfile any'
+                   dynamic_cast<sec2::ValidationPolicyAcceptAll*>(&validator->getPolicy()) != nullptr);
+      std::string signer = signer1.value_or("*");
+      NFD_LOG_DEBUG("accept " << interest1.getName() << " signer=" << signer);
+      accept(signer);
+    };
+    auto failureCb = [reject] (const Interest& interest1, const sec2::ValidationError& err) {
+      using ndn::mgmt::RejectReply;
+      RejectReply reply = RejectReply::STATUS403;
+      switch (err.getCode()) {
+      case sec2::ValidationError::NO_SIGNATURE:
+      case sec2::ValidationError::INVALID_KEY_LOCATOR:
+        reply = RejectReply::SILENT;
+        break;
+      case sec2::ValidationError::POLICY_ERROR:
+        if (interest1.getName().size() < ndn::command_interest::MIN_SIZE) { // "name too short"
+          reply = RejectReply::SILENT;
         }
-        reject(reply);
-      });
+        break;
+      }
+      NFD_LOG_DEBUG("reject " << interest1.getName() << " signer=" <<
+                    getSignerFromTag(interest1).value_or("?") << " reason=" << err);
+      reject(reply);
+    };
+
+    if (validator) {
+      validator->validate(interest, successCb, failureCb);
+    }
+    else {
+      NFD_LOG_DEBUG("reject " << interest.getName() << " signer=" <<
+                    getSignerFromTag(interest).value_or("?") << " reason=Unauthorized");
+      reject(ndn::mgmt::RejectReply::STATUS403);
+    }
   };
 }
 

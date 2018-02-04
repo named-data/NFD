@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,8 +52,7 @@ protected:
   void
   loadConfig(const std::string& config)
   {
-    boost::filesystem::path configPath = boost::filesystem::current_path() /=
-                                         "command-authenticator-test.conf";
+    auto configPath = boost::filesystem::current_path() / "command-authenticator-test.conf";
     ConfigFile cf;
     authenticator->setConfigFile(cf);
     cf.parse(config, false, configPath.c_str());
@@ -64,7 +63,7 @@ protected:
             const function<void(Interest&)>& modifyInterest = nullptr)
   {
     Interest interest = this->makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
-                        ControlParameters(), identity);
+                                                        ControlParameters(), identity);
     if (modifyInterest != nullptr) {
       modifyInterest(interest);
     }
@@ -87,7 +86,7 @@ protected:
         lastRejectReply = act;
       });
 
-    this->advanceClocks(time::milliseconds(1), 10);
+    this->advanceClocks(1_ms, 10);
     BOOST_REQUIRE_MESSAGE(isAccepted || isRejected,
                           "authorization function should invoke one continuation");
     return isAccepted;
@@ -353,6 +352,18 @@ BOOST_AUTO_TEST_CASE(InvalidTimestamp)
       setNameComponent(interest, ndn::command_interest::POS_TIMESTAMP, timestampComp);
     }
   ), false); // reject second command because timestamp equals first command
+  BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
+}
+
+BOOST_FIXTURE_TEST_CASE(MissingAuthorizationsSection, CommandAuthenticatorFixture)
+{
+  Name id0("/localhost/CommandAuthenticator/0");
+  BOOST_REQUIRE(addIdentity(id0));
+
+  makeModules({"module42"});
+  loadConfig("");
+
+  BOOST_CHECK_EQUAL(authorize("module42", id0), false);
   BOOST_CHECK(lastRejectReply == ndn::mgmt::RejectReply::STATUS403);
 }
 
