@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,44 +36,16 @@ namespace tests {
 
 BOOST_FIXTURE_TEST_SUITE(TestConfigFile, BaseFixture)
 
-// a
-// {
-//    akey "avalue"
-// }
-// b
-// {
-//   bkey "bvalue"
-// }
-
-const std::string CONFIG =
-"a\n"
-"{\n"
-"        akey \"avalue\"\n"
-"}\n"
-"b\n"
-"{\n"
-"        bkey \"bvalue\"\n"
-"}\n";
-
-
-// a
-// {
-//    akey "avalue"
-// }
-// b
-//
-//   bkey "bvalue"
-// }
-
-const std::string MALFORMED_CONFIG =
-"a\n"
-"{\n"
-"        akey \"avalue\"\n"
-"}\n"
-"b\n"
-"\n"
-"        bkey \"bvalue\"\n"
-"}\n";
+static const std::string CONFIG = R"CONFIG(
+  a
+  {
+    akey avalue
+  }
+  b
+  {
+    bkey bvalue
+  }
+)CONFIG";
 
 // counts of the respective section counts in config_example.info
 const int CONFIG_N_A_SECTIONS = 1;
@@ -90,9 +62,6 @@ public:
     , m_expectDryRun(expectDryRun)
   {
   }
-
-  virtual
-  ~DummySubscriber() = default;
 
   void
   onA(const ConfigSection& section, bool isDryRun)
@@ -133,11 +102,9 @@ private:
 class DummyAllSubscriber : public DummySubscriber
 {
 public:
+  explicit
   DummyAllSubscriber(ConfigFile& config, bool expectDryRun = false)
-    : DummySubscriber(config,
-                      CONFIG_N_A_SECTIONS,
-                      CONFIG_N_B_SECTIONS,
-                      expectDryRun)
+    : DummySubscriber(config, CONFIG_N_A_SECTIONS, CONFIG_N_B_SECTIONS, expectDryRun)
   {
     config.addSectionHandler("a", bind(&DummySubscriber::onA, this, _1, _2));
     config.addSectionHandler("b", bind(&DummySubscriber::onB, this, _1, _2));
@@ -147,29 +114,21 @@ public:
 class DummyOneSubscriber : public DummySubscriber
 {
 public:
-  DummyOneSubscriber(ConfigFile& config,
-                     const std::string& sectionName,
-                     bool expectDryRun = false)
+  DummyOneSubscriber(ConfigFile& config, const std::string& sectionName, bool expectDryRun = false)
     : DummySubscriber(config,
                       (sectionName == "a"),
                       (sectionName == "b"),
                       expectDryRun)
   {
-    if (sectionName == "a")
-      {
-        config.addSectionHandler(sectionName, bind(&DummySubscriber::onA, this, _1, _2));
-      }
-    else if (sectionName == "b")
-      {
-        config.addSectionHandler(sectionName, bind(&DummySubscriber::onB, this, _1, _2));
-      }
-    else
-      {
-        BOOST_FAIL("Test setup error: "
-                   << "Unexpected section name "
-                   <<"\"" << sectionName << "\"");
-      }
-
+    if (sectionName == "a") {
+      config.addSectionHandler(sectionName, bind(&DummySubscriber::onA, this, _1, _2));
+    }
+    else if (sectionName == "b") {
+      config.addSectionHandler(sectionName, bind(&DummySubscriber::onB, this, _1, _2));
+    }
+    else {
+      BOOST_FAIL("Test setup error: Unexpected section name '" << sectionName << "'");
+    }
   }
 };
 
@@ -182,31 +141,42 @@ public:
   }
 };
 
-BOOST_AUTO_TEST_CASE(OnConfigStream)
+BOOST_AUTO_TEST_CASE(ParseFromStream)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
-  std::ifstream input;
 
-  input.open("tests/core/config_example.info");
+  std::ifstream input("tests/core/config_example.info");
   BOOST_REQUIRE(input.is_open());
 
   file.parse(input, false, "config_example.info");
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigStreamEmptyStream)
+BOOST_AUTO_TEST_CASE(ParseFromEmptyStream)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  std::ifstream input;
+  std::istringstream input;
 
-  BOOST_CHECK_THROW(file.parse(input, false, "unknown"), ConfigFile::Error);
+  file.parse(input, false, "empty");
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigSection)
+BOOST_AUTO_TEST_CASE(ParseFromStreamDryRun)
+{
+  ConfigFile file;
+  DummyAllSubscriber sub(file, true);
+
+  std::ifstream input("tests/core/config_example.info");
+  BOOST_REQUIRE(input.is_open());
+
+  file.parse(input, true, "tests/core/config_example.info");
+  BOOST_CHECK(sub.allCallbacksFired());
+}
+
+BOOST_AUTO_TEST_CASE(ParseFromConfigSection)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
@@ -219,91 +189,80 @@ BOOST_AUTO_TEST_CASE(OnConfigSection)
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigString)
+BOOST_AUTO_TEST_CASE(ParseFromString)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
   file.parse(CONFIG, false, "dummy-config");
-
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigStringEmpty)
+BOOST_AUTO_TEST_CASE(ParseFromEmptyString)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse(std::string(), false, "dummy-config"), ConfigFile::Error);
+  file.parse("", false, "empty");
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigStringMalformed)
+BOOST_AUTO_TEST_CASE(ParseFromMalformedString)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse(MALFORMED_CONFIG, false, "dummy-config"), ConfigFile::Error);
+  const std::string malformed = R"CONFIG(
+    a
+    {
+      akey avalue
+    }
+    b
+      bkey bvalue
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(file.parse(malformed, false, "dummy-config"), ConfigFile::Error);
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigStringDryRun)
+BOOST_AUTO_TEST_CASE(ParseFromStringDryRun)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file, true);
 
   file.parse(CONFIG, true, "dummy-config");
-
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigFilename)
+BOOST_AUTO_TEST_CASE(ParseFromFilename)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
   file.parse("tests/core/config_example.info", false);
-
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigFilenameNoFile)
+BOOST_AUTO_TEST_CASE(ParseFromFilenameNonExistent)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
   BOOST_CHECK_THROW(file.parse("i_made_this_up.info", false), ConfigFile::Error);
-
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigFilenameMalformed)
+BOOST_AUTO_TEST_CASE(ParseFromFilenameMalformed)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
   BOOST_CHECK_THROW(file.parse("tests/core/config_malformed.info", false), ConfigFile::Error);
-
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigStreamDryRun)
-{
-  ConfigFile file;
-  DummyAllSubscriber sub(file, true);
-  std::ifstream input;
-
-  input.open("tests/core/config_example.info");
-  BOOST_REQUIRE(input.is_open());
-
-  file.parse(input, true, "tests/core/config_example.info");
-
-  BOOST_CHECK(sub.allCallbacksFired());
-
-  input.close();
-}
-
-BOOST_AUTO_TEST_CASE(OnConfigFilenameDryRun)
+BOOST_AUTO_TEST_CASE(ParseFromFilenameDryRun)
 {
   ConfigFile file;
   DummyAllSubscriber sub(file, true);
@@ -312,7 +271,7 @@ BOOST_AUTO_TEST_CASE(OnConfigFilenameDryRun)
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigReplaceSubscriber)
+BOOST_AUTO_TEST_CASE(ReplaceSubscriber)
 {
   ConfigFile file;
   DummyAllSubscriber sub1(file);
@@ -327,11 +286,6 @@ BOOST_AUTO_TEST_CASE(OnConfigReplaceSubscriber)
 class MissingCallbackFixture : public BaseFixture
 {
 public:
-  MissingCallbackFixture()
-    : m_missingFired(false)
-  {
-  }
-
   void
   checkMissingHandler(const std::string& filename,
                       const std::string& sectionName,
@@ -342,18 +296,16 @@ public:
   }
 
 protected:
-  bool m_missingFired;
+  bool m_missingFired = false;
 };
 
-BOOST_FIXTURE_TEST_CASE(OnConfigUncoveredSections, MissingCallbackFixture)
+BOOST_FIXTURE_TEST_CASE(UncoveredSections, MissingCallbackFixture)
 {
   ConfigFile file;
-
   BOOST_REQUIRE_THROW(file.parse(CONFIG, false, "dummy-config"), ConfigFile::Error);
 
   ConfigFile permissiveFile(bind(&MissingCallbackFixture::checkMissingHandler,
                                  this, _1, _2, _3, _4));
-
   DummyOneSubscriber subA(permissiveFile, "a");
 
   BOOST_REQUIRE_NO_THROW(permissiveFile.parse(CONFIG, false, "dummy-config"));
@@ -361,7 +313,7 @@ BOOST_FIXTURE_TEST_CASE(OnConfigUncoveredSections, MissingCallbackFixture)
   BOOST_CHECK(m_missingFired);
 }
 
-BOOST_AUTO_TEST_CASE(OnConfigCoveredByPartialSubscribers)
+BOOST_AUTO_TEST_CASE(CoveredByPartialSubscribers)
 {
   ConfigFile file;
   DummyOneSubscriber subA(file, "a");
