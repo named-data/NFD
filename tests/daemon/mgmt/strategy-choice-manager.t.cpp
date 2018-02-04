@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,6 +118,28 @@ BOOST_AUTO_TEST_CASE(SetUnknownStrategy)
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(hasEntry("/A"), false);
+}
+
+BOOST_AUTO_TEST_CASE(SetNameTooLong)
+{
+  Name prefix;
+  while (prefix.size() <= FIB_MAX_DEPTH) {
+    prefix.append("A");
+  }
+  ControlParameters reqParams;
+  reqParams.setName(prefix)
+           .setStrategy(strategyNameP);
+  auto req = makeControlCommandRequest("/localhost/nfd/strategy-choice/set", reqParams);
+  receiveInterest(req);
+
+  ControlResponse expectedResp;
+  expectedResp.setCode(414)
+              .setText("Prefix has too many components (limit is " +
+                       to_string(NameTree::getMaxDepth()) + ")");
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expectedResp),
+                    CheckResponseResult::OK);
+
+  BOOST_CHECK_EQUAL(hasEntry(prefix), false);
 }
 
 BOOST_AUTO_TEST_CASE(UnsetSuccess)

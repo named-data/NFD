@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,7 +57,7 @@ StrategyChoiceManager::setStrategy(ControlParameters parameters,
   StrategyChoice::InsertResult res = m_table.insert(prefix, strategy);
   if (!res) {
     NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): cannot-create " << res);
-    return done(ControlResponse(404, boost::lexical_cast<std::string>(res)));
+    return done(ControlResponse(res.getStatusCode(), boost::lexical_cast<std::string>(res)));
   }
 
   NFD_LOG_DEBUG("strategy-choice/set(" << prefix << "," << strategy << "): OK");

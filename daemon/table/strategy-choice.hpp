@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,12 +83,20 @@ public: // Strategy Choice table
       return m_status == OK || m_status == EXCEPTION;
     }
 
+    /** \brief get a status code for use in management command response
+     */
+    int
+    getStatusCode() const
+    {
+      return static_cast<int>(m_status);
+    }
+
   private:
     enum Status {
-      OK,
-      NOT_REGISTERED,
-      EXCEPTION,
-      DEPTH_EXCEEDED
+      OK             = 200,
+      NOT_REGISTERED = 404,
+      EXCEPTION      = 409,
+      DEPTH_EXCEEDED = 414,
     };
 
     // implicitly constructible from Status
