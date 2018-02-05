@@ -42,7 +42,7 @@ protected:
   createChannel(const std::string& localIp, uint16_t localPort)
   {
     udp::Endpoint endpoint(ndn::ip::addressFromString(localIp), localPort);
-    return factory.createChannel(endpoint, time::minutes(5));
+    return factory.createChannel(endpoint, 5_min);
   }
 };
 
@@ -179,21 +179,37 @@ protected:
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUdpFactory, UdpFactoryFixture)
 
-using nfd::Face;
-
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-BOOST_AUTO_TEST_CASE(Channels)
+using nfd::Face;
+
+BOOST_AUTO_TEST_CASE(Defaults)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"udp4://0.0.0.0:6363", "udp6://[::]:6363"});
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
+                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+}
+
+BOOST_AUTO_TEST_CASE(DisableListen)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
     {
       udp
       {
+        listen no
         port 7001
-        enable_v4 yes
-        enable_v6 yes
-        idle_timeout 30
         mcast no
       }
     }
@@ -203,30 +219,12 @@ BOOST_AUTO_TEST_CASE(Channels)
   parseConfig(CONFIG, false);
 
   checkChannelListEqual(factory, {"udp4://0.0.0.0:7001", "udp6://[::]:7001"});
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
+                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
 }
 
-BOOST_AUTO_TEST_CASE(ChannelV4)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      udp
-      {
-        port 7001
-        enable_v4 yes
-        enable_v6 no
-        mcast no
-      }
-    }
-  )CONFIG";
-
-  parseConfig(CONFIG, true);
-  parseConfig(CONFIG, false);
-
-  checkChannelListEqual(factory, {"udp4://0.0.0.0:7001"});
-}
-
-BOOST_AUTO_TEST_CASE(ChannelV6)
+BOOST_AUTO_TEST_CASE(DisableV4)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
@@ -245,6 +243,27 @@ BOOST_AUTO_TEST_CASE(ChannelV6)
   parseConfig(CONFIG, false);
 
   checkChannelListEqual(factory, {"udp6://[::]:7001"});
+}
+
+BOOST_AUTO_TEST_CASE(DisableV6)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port 7001
+        enable_v4 yes
+        enable_v6 no
+        mcast no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"udp4://0.0.0.0:7001"});
 }
 
 BOOST_FIXTURE_TEST_CASE(EnableDisableMcast, UdpFactoryMcastFixture)
@@ -545,9 +564,73 @@ BOOST_AUTO_TEST_CASE(AllDisabled)
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(BadIdleTimeout)
+BOOST_AUTO_TEST_CASE(BadListen)
 {
   const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        listen hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadPort, 2) // Bug #4489
+BOOST_AUTO_TEST_CASE(BadPort)
+{
+  // not a number
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // negative number
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port -1
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
+
+  // out of range
+  const std::string CONFIG3 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        port 65536
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadIdleTimeout, 2) // Bug #4489
+BOOST_AUTO_TEST_CASE(BadIdleTimeout)
+{
+  // not a number
+  const std::string CONFIG1 = R"CONFIG(
     face_system
     {
       udp
@@ -557,8 +640,22 @@ BOOST_AUTO_TEST_CASE(BadIdleTimeout)
     }
   )CONFIG";
 
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // negative number
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      udp
+      {
+        idle_timeout -15
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(BadMcast)

@@ -32,15 +32,13 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-#define CHANNEL_PATH1 "unix-stream-test.1.sock"
-#define CHANNEL_PATH2 "unix-stream-test.2.sock"
-
 using UnixStreamFactoryFixture = FaceSystemFactoryFixture<UnixStreamFactory>;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestUnixStreamFactory, UnixStreamFactoryFixture)
 
-using nfd::Face;
+static const std::string CHANNEL_PATH1("unix-stream-test.1.sock");
+static const std::string CHANNEL_PATH2("unix-stream-test.2.sock");
 
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
@@ -51,7 +49,7 @@ BOOST_AUTO_TEST_CASE(Normal)
     {
       unix
       {
-        path /tmp/nfd.sock
+        path /tmp/nfd-test.sock
       }
     }
   )CONFIG";
@@ -59,8 +57,10 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UnixStreamFactory>("unix");
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 1);
+  BOOST_REQUIRE_EQUAL(factory.getChannels().size(), 1);
+  const auto& uri = factory.getChannels().front()->getUri();
+  BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
+  BOOST_CHECK_NE(uri.getPath().find("nfd-test.sock"), std::string::npos);
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -74,7 +74,6 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<UnixStreamFactory>("unix");
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
 }
 
@@ -111,10 +110,12 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
   auto channel1 = factory.createChannel(CHANNEL_PATH1);
   auto channel1a = factory.createChannel(CHANNEL_PATH1);
   BOOST_CHECK_EQUAL(channel1, channel1a);
-  std::string uri = channel1->getUri().toString();
-  BOOST_CHECK_EQUAL(uri.find("unix:///"), 0); // third '/' is the path separator
-  BOOST_CHECK_EQUAL(uri.rfind(CHANNEL_PATH1),
-                    uri.size() - std::string(CHANNEL_PATH1).size());
+
+  const auto& uri = channel1->getUri();
+  BOOST_CHECK_EQUAL(uri.getScheme(), "unix");
+  BOOST_CHECK_EQUAL(uri.getHost(), "");
+  BOOST_CHECK_EQUAL(uri.getPort(), "");
+  BOOST_CHECK_EQUAL(uri.getPath().rfind(CHANNEL_PATH1), uri.getPath().size() - CHANNEL_PATH1.size());
 
   auto channel2 = factory.createChannel(CHANNEL_PATH2);
   BOOST_CHECK_NE(channel1, channel2);

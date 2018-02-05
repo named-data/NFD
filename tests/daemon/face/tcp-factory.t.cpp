@@ -50,20 +50,57 @@ protected:
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestTcpFactory, TcpFactoryFixture)
 
-using nfd::Face;
-
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-BOOST_AUTO_TEST_CASE(Normal)
+BOOST_AUTO_TEST_CASE(Defaults)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"tcp4://0.0.0.0:6363", "tcp6://[::]:6363"});
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
+                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+}
+
+BOOST_AUTO_TEST_CASE(DisableListen)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
     {
       tcp
       {
-        listen yes
-        port 16363
-        enable_v4 yes
+        listen no
+        port 7001
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"tcp4://0.0.0.0:7001", "tcp6://[::]:7001"});
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
+                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+}
+
+BOOST_AUTO_TEST_CASE(DisableV4)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        port 7001
+        enable_v4 no
         enable_v6 yes
       }
     }
@@ -72,7 +109,27 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 2);
+  checkChannelListEqual(factory, {"tcp6://[::]:7001"});
+}
+
+BOOST_AUTO_TEST_CASE(DisableV6)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        port 7001
+        enable_v4 yes
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"tcp4://0.0.0.0:7001"});
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -87,6 +144,23 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, false);
 
   BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(AllDisabled)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        enable_v4 no
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(BadListen)
@@ -105,22 +179,50 @@ BOOST_AUTO_TEST_CASE(BadListen)
   BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(ChannelsDisabled)
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadPort, 2) // Bug #4489
+BOOST_AUTO_TEST_CASE(BadPort)
 {
-  const std::string CONFIG = R"CONFIG(
+  // not a number
+  const std::string CONFIG1 = R"CONFIG(
     face_system
     {
       tcp
       {
-        port 6363
-        enable_v4 no
-        enable_v6 no
+        port hello
       }
     }
   )CONFIG";
 
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // negative number
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        port -1
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
+
+  // out of range
+  const std::string CONFIG3 = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        port 65536
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(UnknownOption)
@@ -238,7 +340,7 @@ class CreateFaceTimeoutFixture : public TcpFactoryFixture
 {
 public:
   void
-  onFaceCreated(const shared_ptr<Face>& newFace)
+  onFaceCreated(const shared_ptr<nfd::Face>& newFace)
   {
     BOOST_CHECK_MESSAGE(false, "Timeout expected");
     face = newFace;
@@ -256,7 +358,7 @@ public:
 
 public:
   LimitedIo limitedIo;
-  shared_ptr<Face> face;
+  shared_ptr<nfd::Face> face;
 };
 
 BOOST_FIXTURE_TEST_CASE(CreateFaceTimeout, CreateFaceTimeoutFixture)

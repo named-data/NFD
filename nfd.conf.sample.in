@@ -86,7 +86,7 @@ face_system
     enable_congestion_marking no ; set to 'yes' to perform congestion marking on supported faces, default 'no'
   }
 
-  ; The unix section contains settings of Unix stream faces and channels.
+  ; The unix section contains settings for Unix stream faces and channels.
   ; A Unix channel is always listening; delete the unix section to disable
   ; Unix stream faces and channels.
   ;
@@ -99,7 +99,7 @@ face_system
     path /var/run/nfd.sock ; Unix stream listener path
   }
 
-  ; The tcp section contains settings of TCP faces and channels.
+  ; The tcp section contains settings for TCP faces and channels.
   tcp
   {
     listen yes ; set to 'no' to disable TCP listener, default 'yes'
@@ -108,12 +108,12 @@ face_system
     enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
   }
 
-  ; The udp section contains settings of UDP faces and channels.
+  ; The udp section contains settings for UDP faces and channels.
   udp
   {
     ; UDP unicast settings.
-    ; UDP channels are always listening; delete the udp section to disable them
-    port 6363 ; UDP unicast port number
+    listen yes ; set to 'no' to disable UDP listener, default 'yes'
+    port 6363 ; UDP listener port number
     enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
     enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
 
@@ -121,8 +121,6 @@ face_system
     ; The actual timeout will occur anytime between idle_timeout and 2*idle_timeout.
     ; The default is 600 (10 minutes).
     idle_timeout 600
-
-    keep_alive_interval 25; interval (seconds) between keep-alive refreshes
 
     ; UDP multicast settings.
     ; By default, NFD creates one UDP multicast face per NIC.
@@ -154,7 +152,7 @@ face_system
     }
   }
 
-  ; The ether section contains settings of Ethernet faces and channels.
+  ; The ether section contains settings for Ethernet faces and channels.
   ; These settings will NOT work without root or setting the appropriate
   ; permissions:
   ;
@@ -208,7 +206,7 @@ face_system
   @IF_HAVE_LIBPCAP@  }
   @IF_HAVE_LIBPCAP@}
 
-  ; The websocket section contains settings of WebSocket faces and channels.
+  ; The websocket section contains settings for WebSocket faces and channels.
   @IF_HAVE_WEBSOCKET@websocket
   @IF_HAVE_WEBSOCKET@{
   @IF_HAVE_WEBSOCKET@  listen yes ; set to 'no' to disable WebSocket listener, default 'yes'

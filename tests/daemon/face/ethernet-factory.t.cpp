@@ -24,14 +24,12 @@
  */
 
 #include "face/ethernet-factory.hpp"
-#include "face/face.hpp"
 
 #include "ethernet-fixture.hpp"
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/range/algorithm/count_if.hpp>
 
 namespace nfd {
 namespace face {
@@ -73,11 +71,9 @@ protected:
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestEthernetFactory, EthernetFactoryFixture)
 
-using nfd::Face;
-
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-BOOST_AUTO_TEST_CASE(ListeningChannels)
+BOOST_AUTO_TEST_CASE(Defaults)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
@@ -86,8 +82,6 @@ BOOST_AUTO_TEST_CASE(ListeningChannels)
     {
       ether
       {
-        listen yes
-        idle_timeout 60
         mcast no
       }
     }
@@ -96,16 +90,14 @@ BOOST_AUTO_TEST_CASE(ListeningChannels)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<EthernetFactory>("ether");
   checkChannelListEqual(factory, this->listUrisOfAvailableNetifs());
-  for (const auto& channel : factory.getChannels()) {
-    BOOST_CHECK_EQUAL(channel->isListening(), true);
-  }
-
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
+                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
-BOOST_AUTO_TEST_CASE(NonListeningChannels)
+BOOST_AUTO_TEST_CASE(DisableListen)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
@@ -124,29 +116,11 @@ BOOST_AUTO_TEST_CASE(NonListeningChannels)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  auto& factory = this->getFactoryById<EthernetFactory>("ether");
   checkChannelListEqual(factory, this->listUrisOfAvailableNetifs());
-  for (const auto& channel : factory.getChannels()) {
-    BOOST_CHECK_EQUAL(channel->isListening(), false);
-  }
-
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
+                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
-}
-
-BOOST_AUTO_TEST_CASE(BadListen)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      ether
-      {
-        listen hello
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(McastNormal)
@@ -323,9 +297,11 @@ BOOST_AUTO_TEST_CASE(Blacklist)
 
   auto etherMcastFaces = this->listEtherMcastFaces();
   BOOST_CHECK_EQUAL(etherMcastFaces.size(), netifs.size() - 1);
-  BOOST_CHECK_EQUAL(boost::count_if(etherMcastFaces, [ifname] (const Face* face) {
-    return face->getLocalUri() == FaceUri::fromDev(ifname);
-  }), 0);
+  BOOST_CHECK(std::none_of(etherMcastFaces.begin(), etherMcastFaces.end(),
+    [ifname] (const nfd::Face* face) {
+      return face->getLocalUri() == FaceUri::fromDev(ifname);
+    }
+  ));
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -340,6 +316,54 @@ BOOST_AUTO_TEST_CASE(Omitted)
   parseConfig(CONFIG, false);
 
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(BadListen)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        listen hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadIdleTimeout, 2) // Bug #4489
+BOOST_AUTO_TEST_CASE(BadIdleTimeout)
+{
+  // not a number
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        idle_timeout hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // negative number
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      ether
+      {
+        idle_timeout -15
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(BadMcast)
@@ -360,36 +384,33 @@ BOOST_AUTO_TEST_CASE(BadMcast)
 
 BOOST_AUTO_TEST_CASE(BadMcastGroup)
 {
-  const std::string CONFIG = R"CONFIG(
+  // not an address
+  const std::string CONFIG1 = R"CONFIG(
     face_system
     {
       ether
       {
-        mcast yes
         mcast_group hello
       }
     }
   )CONFIG";
 
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
 
-BOOST_AUTO_TEST_CASE(UnicastMcastGroup)
-{
-  const std::string CONFIG = R"CONFIG(
+  // non-multicast address
+  const std::string CONFIG2 = R"CONFIG(
     face_system
     {
       ether
       {
-        mcast yes
         mcast_group 00:00:5e:00:53:5e
       }
     }
   )CONFIG";
 
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_CASE(UnknownOption)

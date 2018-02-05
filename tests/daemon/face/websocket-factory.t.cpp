@@ -51,18 +51,12 @@ BOOST_FIXTURE_TEST_SUITE(TestWebSocketFactory, WebSocketFactoryFixture)
 
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-BOOST_AUTO_TEST_CASE(Normal)
+BOOST_AUTO_TEST_CASE(Defaults)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
     {
       websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 yes
-        enable_v6 yes
-      }
     }
   )CONFIG";
 
@@ -70,17 +64,56 @@ BOOST_AUTO_TEST_CASE(Normal)
   parseConfig(CONFIG, false);
 
   checkChannelListEqual(factory, {"ws://[::]:9696"});
+  auto channels = factory.getChannels();
+  BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
+                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
 }
 
-BOOST_AUTO_TEST_CASE(EnableIpv4Only)
+BOOST_AUTO_TEST_CASE(DisableListen)
 {
   const std::string CONFIG = R"CONFIG(
     face_system
     {
       websocket
       {
-        listen yes
-        port 9696
+        listen no
+        port 7001
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(DisableV4)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port 7001
+        enable_v4 no
+        enable_v6 yes
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(DisableV6)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port 7001
         enable_v4 yes
         enable_v6 no
       }
@@ -90,63 +123,7 @@ BOOST_AUTO_TEST_CASE(EnableIpv4Only)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  checkChannelListEqual(factory, {"ws://0.0.0.0:9696"});
-}
-
-BOOST_AUTO_TEST_CASE(UnsupportedIpv6Only)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 no
-        enable_v6 yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(ChannelsDisabled)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen yes
-        port 9696
-        enable_v4 no
-        enable_v6 no
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
-}
-
-BOOST_AUTO_TEST_CASE(NoListen)
-{
-  const std::string CONFIG = R"CONFIG(
-    face_system
-    {
-      websocket
-      {
-        listen no
-        port 9696
-        enable_v4 yes
-        enable_v6 yes
-      }
-    }
-  )CONFIG";
-
-  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+  checkChannelListEqual(factory, {"ws://0.0.0.0:7001"});
 }
 
 BOOST_AUTO_TEST_CASE(ChangeEndpoint)
@@ -176,6 +153,115 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
 
   parseConfig(CONFIG2, false);
   checkChannelListEqual(factory, {"ws://[::]:9001", "ws://[::]:9002"});
+}
+
+BOOST_AUTO_TEST_CASE(Omitted)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  BOOST_CHECK_EQUAL(factory.getChannels().size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(AllDisabled)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        enable_v4 no
+        enable_v6 no
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(BadListen)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        listen hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(BadPort, 2) // Bug #4489
+BOOST_AUTO_TEST_CASE(BadPort)
+{
+  // not a number
+  const std::string CONFIG1 = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG1, false), ConfigFile::Error);
+
+  // negative number
+  const std::string CONFIG2 = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port -1
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG2, false), ConfigFile::Error);
+
+  // out of range
+  const std::string CONFIG3 = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        port 65536
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG3, false), ConfigFile::Error);
+}
+
+BOOST_AUTO_TEST_CASE(UnknownOption)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      websocket
+      {
+        hello
+      }
+    }
+  )CONFIG";
+
+  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
+  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig

@@ -60,11 +60,11 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 {
   // udp
   // {
+  //   listen yes
   //   port 6363
   //   enable_v4 yes
   //   enable_v6 yes
   //   idle_timeout 600
-  //   keep_alive_interval 25 ; acceptable but ignored
   //   mcast yes
   //   mcast_group 224.0.23.170
   //   mcast_port 56363
@@ -82,6 +82,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 
   m_wantCongestionMarking = context.generalConfig.wantCongestionMarking;
 
+  bool wantListen = true;
   uint16_t port = 6363;
   bool enableV4 = false;
   bool enableV6 = false;
@@ -96,7 +97,10 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       const std::string& key = pair.first;
       const ConfigSection& value = pair.second;
 
-      if (key == "port") {
+      if (key == "listen") {
+        wantListen = ConfigFile::parseYesNo(pair, "face_system.udp");
+      }
+      else if (key == "port") {
         port = ConfigFile::parseNumber<uint16_t>(pair, "face_system.udp");
       }
       else if (key == "enable_v4") {
@@ -175,7 +179,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   if (enableV4) {
     udp::Endpoint endpoint(ip::udp::v4(), port);
     shared_ptr<UdpChannel> v4Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
-    if (!v4Channel->isListening()) {
+    if (wantListen && !v4Channel->isListening()) {
       v4Channel->listen(this->addFace, nullptr);
     }
     providedSchemes.insert("udp");
@@ -188,7 +192,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
   if (enableV6) {
     udp::Endpoint endpoint(ip::udp::v6(), port);
     shared_ptr<UdpChannel> v6Channel = this->createChannel(endpoint, time::seconds(idleTimeout));
-    if (!v6Channel->isListening()) {
+    if (wantListen && !v6Channel->isListening()) {
       v6Channel->listen(this->addFace, nullptr);
     }
     providedSchemes.insert("udp");
