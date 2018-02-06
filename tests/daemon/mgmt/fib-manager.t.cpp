@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -169,6 +169,24 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
 
   // double check that the next hop was not added
   BOOST_CHECK_EQUAL(checkNextHop("/hello", nullopt, nullopt, 101), CheckNextHopResult::NO_FIB_ENTRY);
+}
+
+BOOST_AUTO_TEST_CASE(NameTooLong)
+{
+  Name prefix;
+  while (prefix.size() <= FIB_MAX_DEPTH) {
+    prefix.append("A");
+  }
+
+  auto req = makeControlCommandRequest("/localhost/nfd/fib/add-nexthop",
+                                       makeParameters(prefix, addFace()));
+  receiveInterest(req);
+
+  ControlResponse expected(414, "FIB entry prefix cannot exceed " +
+                                ndn::to_string(Fib::getMaxDepth()) + " components");
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(), expected), CheckResponseResult::OK);
+
+  BOOST_CHECK_EQUAL(checkNextHop(prefix), CheckNextHopResult::NO_FIB_ENTRY);
 }
 
 BOOST_AUTO_TEST_CASE(ImplicitFaceId)
