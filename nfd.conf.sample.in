@@ -251,6 +251,7 @@ authorizations
     {
       faces
       fib
+      cs
       strategy-choice
     }
   }

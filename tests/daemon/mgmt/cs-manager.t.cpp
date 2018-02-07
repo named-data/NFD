@@ -39,7 +39,7 @@ public:
     , m_manager(m_cs, m_fwCnt, m_dispatcher, *m_authenticator)
   {
     setTopPrefix();
-    // setPrivilege("cs"); not needed until there's a control command
+    setPrivilege("cs");
   }
 
 protected:
@@ -50,6 +50,51 @@ protected:
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_FIXTURE_TEST_SUITE(TestCsManager, CsManagerFixture)
+
+BOOST_AUTO_TEST_CASE(Config)
+{
+  using ndn::nfd::CsFlagBit;
+  const Name cmdPrefix("/localhost/nfd/cs/config");
+
+  // setup initial CS config
+  m_cs.setLimit(22129);
+  m_cs.enableAdmit(false);
+  m_cs.enableServe(true);
+
+  // send empty cs/config command
+  auto req = makeControlCommandRequest(cmdPrefix, ControlParameters());
+  receiveInterest(req);
+
+  // response shall reflect current config
+  ControlParameters body;
+  body.setCapacity(22129);
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, false, false);
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, true, false);
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // send filled cs/config command
+  ControlParameters parameters;
+  parameters.setCapacity(18609);
+  parameters.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, true);
+  parameters.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, false);
+  req = makeControlCommandRequest(cmdPrefix, parameters);
+  receiveInterest(req);
+
+  // response shall reflect updated config
+  body.setCapacity(18609);
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, true, false);
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, false, false);
+  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // CS shall have updated config
+  BOOST_CHECK_EQUAL(m_cs.getLimit(), 18609);
+  BOOST_CHECK_EQUAL(m_cs.shouldAdmit(), true);
+  BOOST_CHECK_EQUAL(m_cs.shouldServe(), false);
+}
 
 BOOST_AUTO_TEST_CASE(Info)
 {

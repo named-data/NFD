@@ -31,9 +31,38 @@ namespace nfd {
 CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCnt,
                      Dispatcher& dispatcher, CommandAuthenticator& authenticator)
   : NfdManagerBase(dispatcher, authenticator, "cs")
+  , m_cs(cs)
   , m_fwCnt(fwCnt)
 {
+  registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
+    bind(&CsManager::changeConfig, this, _4, _5));
+
   registerStatusDatasetHandler("info", bind(&CsManager::serveInfo, this, _1, _2, _3));
+}
+
+void
+CsManager::changeConfig(const ControlParameters& parameters,
+                        const ndn::mgmt::CommandContinuation& done)
+{
+  using ndn::nfd::CsFlagBit;
+
+  if (parameters.hasCapacity()) {
+    m_cs.setLimit(parameters.getCapacity());
+  }
+
+  if (parameters.hasFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT)) {
+    m_cs.enableAdmit(parameters.getFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT));
+  }
+
+  if (parameters.hasFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE)) {
+    m_cs.enableServe(parameters.getFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE));
+  }
+
+  ControlParameters body;
+  body.setCapacity(m_cs.getLimit());
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, m_cs.shouldAdmit(), false);
+  body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, m_cs.shouldServe(), false);
+  done(ControlResponse(200, "OK").setBody(body.wireEncode()));
 }
 
 void

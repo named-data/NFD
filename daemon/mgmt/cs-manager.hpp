@@ -42,6 +42,10 @@ public:
             Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
+  void
+  changeConfig(const ControlParameters& parameters,
+               const ndn::mgmt::CommandContinuation& done);
+
   /** \brief serve CS information dataset
    */
   void
@@ -49,6 +53,7 @@ private:
             ndn::mgmt::StatusDatasetContext& context) const;
 
 private:
+  Cs& m_cs;
   const ForwarderCounters& m_fwCnt;
 };
 
