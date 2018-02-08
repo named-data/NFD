@@ -70,6 +70,10 @@ CsManager::serveInfo(const Name& topPrefix, const Interest& interest,
                      ndn::mgmt::StatusDatasetContext& context) const
 {
   ndn::nfd::CsInfo info;
+  info.setCapacity(m_cs.getLimit());
+  info.setEnableAdmit(m_cs.shouldAdmit());
+  info.setEnableServe(m_cs.shouldServe());
+  info.setNEntries(m_cs.size());
   info.setNHits(m_fwCnt.nCsHits);
   info.setNMisses(m_fwCnt.nCsMisses);
 

@@ -98,6 +98,12 @@ BOOST_AUTO_TEST_CASE(Config)
 
 BOOST_AUTO_TEST_CASE(Info)
 {
+  m_cs.setLimit(2681);
+  for (int i = 0; i < 310; ++i) {
+    m_cs.insert(*makeData(Name("/Q8H4oi4g").appendSequenceNumber(i)));
+  }
+  m_cs.enableAdmit(false);
+  m_cs.enableServe(true);
   m_fwCnt.nCsHits.set(362);
   m_fwCnt.nCsMisses.set(1493);
 
@@ -107,6 +113,10 @@ BOOST_AUTO_TEST_CASE(Info)
   BOOST_REQUIRE_EQUAL(dataset.elements_size(), 1);
 
   ndn::nfd::CsInfo info(*dataset.elements_begin());
+  BOOST_CHECK_EQUAL(info.getCapacity(), 2681);
+  BOOST_CHECK_EQUAL(info.getEnableAdmit(), false);
+  BOOST_CHECK_EQUAL(info.getEnableServe(), true);
+  BOOST_CHECK_EQUAL(info.getNEntries(), 310);
   BOOST_CHECK_EQUAL(info.getNHits(), 362);
   BOOST_CHECK_EQUAL(info.getNMisses(), 1493);
 }
