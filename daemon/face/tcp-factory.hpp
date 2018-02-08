@@ -72,8 +72,8 @@ public:
   getChannels() const override;
 
 private:
+  bool m_wantCongestionMarking = false;
   std::map<tcp::Endpoint, shared_ptr<TcpChannel>> m_channels;
-  bool m_wantCongestionMarking;
 };
 
 } // namespace face

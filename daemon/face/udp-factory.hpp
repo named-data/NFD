@@ -132,8 +132,8 @@ private:
   applyMcastConfig(const FaceSystem::ConfigContext& context);
 
 private:
+  bool m_wantCongestionMarking = false;
   std::map<udp::Endpoint, shared_ptr<UdpChannel>> m_channels;
-  bool m_wantCongestionMarking;
 
   struct MulticastConfig
   {
@@ -143,7 +143,6 @@ private:
     ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS;
     NetworkInterfacePredicate netifPredicate;
   };
-
   MulticastConfig m_mcastConfig;
   std::map<udp::Endpoint, shared_ptr<Face>> m_mcastFaces;
 

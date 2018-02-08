@@ -81,8 +81,8 @@ private:
   findChannel(const unix_stream::Endpoint& endpoint) const;
 
 private:
+  bool m_wantCongestionMarking = false;
   std::map<unix_stream::Endpoint, shared_ptr<UnixStreamChannel>> m_channels;
-  bool m_wantCongestionMarking;
 };
 
 } // namespace face
