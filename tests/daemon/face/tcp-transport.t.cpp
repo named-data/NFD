@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(ChangePersistencyFromPermanentWhenDown)
       limitedIo.afterOp();
     });
   remoteSocket.close();
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   bool didStateChange = false;
   transport->afterStateChange.connectSingleShot(
@@ -104,7 +104,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnect, T, TcpTransportFixtures, T)
       this->limitedIo.afterOp();
     });
   this->remoteSocket.close();
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   this->transport->afterStateChange.connectSingleShot(
     [this] (TransportState oldState, TransportState newState) {
@@ -112,7 +112,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnect, T, TcpTransportFixtures, T)
       BOOST_CHECK_EQUAL(newState, TransportState::UP);
       this->limitedIo.afterOp();
     });
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 class PermanentTcpTransportReconnectObserver : public TcpTransport
@@ -174,7 +174,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
     BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
     this->limitedIo.afterOp();
   });
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
   auto transportObserver =
     make_unique<PermanentTcpTransportReconnectObserver>(std::move(sock), std::ref(this->limitedIo));
@@ -188,23 +188,23 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   auto retryTime1 = time::steady_clock::now();
 
   auto expectedWait1 = TcpTransport::s_initialReconnectWait;
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + time::seconds(1)), // add some slack
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + 1_s), // add some slack
                       LimitedIo::EXCEED_OPS);
   auto retryTime2 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   auto expectedWait2 = time::duration_cast<time::nanoseconds>(expectedWait1 *
                                                               TcpTransport::s_reconnectWaitMultiplier);
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait2 + time::seconds(1)), // add some slack
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait2 + 1_s), // add some slack
                       LimitedIo::EXCEED_OPS);
   auto retryTime3 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   // check that the backoff algorithm works
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime2 - retryTime1),
-                    asFloatMilliseconds(expectedWait1), 10.0);
+                    asFloatMilliseconds(expectedWait1), 20.0); // 200ms tolerance
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime3 - retryTime2),
-                    asFloatMilliseconds(expectedWait2), 10.0);
+                    asFloatMilliseconds(expectedWait2), 10.0); // 200ms tolerance
 
   // reestablish the TCP connection
   this->startAccept(remoteEp);
@@ -212,7 +212,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   auto expectedWait3 = time::duration_cast<time::nanoseconds>(expectedWait2 *
                                                               TcpTransport::s_reconnectWaitMultiplier);
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(3, // reconnect, handleReconnect, async_accept
-                                          expectedWait3 + time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                          expectedWait3 + 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::UP);
 
   // break the TCP connection again
@@ -221,14 +221,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
 
   // measure retry intervals
   auto retryTime4 = time::steady_clock::now();
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + time::seconds(1)), // add some slack
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, expectedWait1 + 1_s), // add some slack
                       LimitedIo::EXCEED_OPS);
   auto retryTime5 = time::steady_clock::now();
   BOOST_CHECK_EQUAL(transportObserver->getState(), TransportState::DOWN);
 
   // check that the timeout restarts from the initial value after a successful reconnection
   BOOST_CHECK_CLOSE(asFloatMilliseconds(retryTime5 - retryTime4),
-                    asFloatMilliseconds(expectedWait1), 10.0);
+                    asFloatMilliseconds(expectedWait1), 20.0); // 200ms tolerance
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestTcpTransport

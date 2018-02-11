@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "ndn-autoconfig-server/program.hpp"
 
 #include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/encoding/buffer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -48,11 +49,11 @@ public:
   initialize(const Options& options)
   {
     program = make_unique<Program>(options, face, m_keyChain);
-    face.processEvents(time::milliseconds(1));
+    face.processEvents(500_ms);
     face.sentInterests.clear();
   }
 
-public:
+protected:
   util::DummyClientFace face;
   unique_ptr<Program> program;
 };
@@ -68,10 +69,10 @@ BOOST_AUTO_TEST_CASE(HubData)
 
   Interest interest("/localhop/ndn-autoconf/hub");
   face.receive(interest);
-  face.processEvents(time::milliseconds(1));
+  face.processEvents(500_ms);
 
-  BOOST_CHECK_EQUAL(face.sentData.size(), 1);
-  const Name& dataName = face.sentData.at(0).getName();
+  BOOST_REQUIRE_EQUAL(face.sentData.size(), 1);
+  const Name& dataName = face.sentData[0].getName();
   BOOST_CHECK_EQUAL(dataName.size(), interest.getName().size() + 1);
   BOOST_CHECK(interest.getName().isPrefixOf(dataName));
   BOOST_CHECK(dataName.at(-1).isVersion());
@@ -79,7 +80,7 @@ BOOST_AUTO_TEST_CASE(HubData)
   // interest2 asks for a different version, and should not be responded
   Interest interest2(Name(interest.getName()).appendVersion(dataName.at(-1).toVersion() - 1));
   face.receive(interest2);
-  face.processEvents(time::milliseconds(1));
+  face.processEvents(500_ms);
   BOOST_CHECK_EQUAL(face.sentData.size(), 1);
 }
 
@@ -87,18 +88,18 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
 {
   Options options;
   options.hubFaceUri = FaceUri("udp4://192.0.2.1:6363");
-  const int nRoutablePrefixes = 2000;
-  for (int i = 0; i < nRoutablePrefixes; ++i) {
+  const size_t nRoutablePrefixes = 2000;
+  for (size_t i = 0; i < nRoutablePrefixes; ++i) {
     options.routablePrefixes.push_back(Name("/PREFIX").appendNumber(i));
   }
   this->initialize(options);
 
   Interest interest("/localhop/nfd/rib/routable-prefixes");
   face.receive(interest);
-  face.processEvents(time::milliseconds(1));
+  face.processEvents(500_ms);
 
-  BOOST_CHECK_EQUAL(face.sentData.size(), 1);
-  const Name& dataName0 = face.sentData.at(0).getName();
+  BOOST_REQUIRE_EQUAL(face.sentData.size(), 1);
+  const Name& dataName0 = face.sentData[0].getName();
   BOOST_CHECK_EQUAL(dataName0.size(), interest.getName().size() + 2);
   BOOST_CHECK(interest.getName().isPrefixOf(dataName0));
   BOOST_CHECK(dataName0.at(-2).isVersion());
@@ -108,7 +109,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
     const Name& lastName = face.sentData.back().getName();
     Interest interest2(lastName.getPrefix(-1).appendSegment(lastName.at(-1).toSegment() + 1));
     face.receive(interest2);
-    face.processEvents(time::milliseconds(1));
+    face.processEvents(500_ms);
   }
 
   auto buffer = make_shared<Buffer>();
@@ -119,9 +120,9 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
 
   Block payload(tlv::Content, buffer);
   payload.parse();
-  BOOST_CHECK_EQUAL(payload.elements_size(), nRoutablePrefixes);
-  for (int i = 0; i < nRoutablePrefixes; ++i) {
-    BOOST_CHECK_EQUAL(Name(payload.elements().at(i)), options.routablePrefixes.at(i));
+  BOOST_REQUIRE_EQUAL(payload.elements_size(), nRoutablePrefixes);
+  for (size_t i = 0; i < nRoutablePrefixes; ++i) {
+    BOOST_CHECK_EQUAL(Name(payload.elements()[i]), options.routablePrefixes[i]);
   }
 }
 
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDisabled)
 
   Interest interest("/localhop/nfd/rib/routable-prefixes");
   face.receive(interest);
-  face.processEvents(time::milliseconds(1));
+  face.processEvents(500_ms);
   BOOST_CHECK_EQUAL(face.sentData.size(), 0);
 }
 
