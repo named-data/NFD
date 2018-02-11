@@ -9,6 +9,7 @@ Manpages
    manpages/nfdc-status
    manpages/nfdc-face
    manpages/nfdc-route
+   manpages/nfdc-cs
    manpages/nfdc-strategy
    manpages/nfd-status
    schema

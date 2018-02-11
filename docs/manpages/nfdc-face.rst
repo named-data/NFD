@@ -30,7 +30,8 @@ If enabled, this feature must also be enabled on the other endpoint to function 
 Reliability is disabled by default.
 The send queue congestion detection and signaling feature may be explicitly enabled by specifying
 **congestion-marking on** or explicitly disabled by specifying **congestion-marking off**.
-Congestion marking is disabled by default.
+Congestion marking is enabled by default on TCP, UDP, and Unix stream faces and is disabled by
+default on all other face types.
 Parameters for this feature can set with the **congestion-marking-interval** option (specified in
 milliseconds) and the **default-congestion-threshold** option (specified in bytes).
 
@@ -117,9 +118,12 @@ nfdc face create remote ether://[08:00:27:01:01:01] local dev://eth2 persistency
 nfdc face create remote udp://router.example.net reliability on
     Create a face with the specified remote FaceUri and enable NDNLP reliability.
 
-nfdc face create remote udp://router.example.net congestion-marking on congestion-marking-interval 100 default-congestion-threshold 65536
-    Create a face with the specified remote FaceUri and enable congestion marking. Set the base
-    congestion marking interval to 100 ms and the default congestion threshold to 65536 bytes.
+nfdc face create remote udp://router.example.net congestion-marking-interval 100 default-congestion-threshold 65536
+    Create a face with the specified remote FaceUri. Set the base congestion marking interval to
+    100 ms and the default congestion threshold to 65536 bytes.
+
+nfdc face create remote udp://router.example.net congestion-marking off
+    Create a face with the specified remote FaceUri and explicitly disable congestion marking.
 
 nfdc face destroy 300
     Destroy the face whose FaceId is 300.

@@ -83,7 +83,7 @@ face_system
   ; This section contains options that apply to multiple face protocols.
   general
   {
-    enable_congestion_marking no ; set to 'yes' to perform congestion marking on supported faces, default 'no'
+    enable_congestion_marking yes ; set to 'no' to disable congestion marking on supported faces, default 'yes'
   }
 
   ; The unix section contains settings for Unix stream faces and channels.

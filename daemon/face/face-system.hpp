@@ -84,7 +84,7 @@ public:
    */
   struct GeneralConfig
   {
-    bool wantCongestionMarking = false;
+    bool wantCongestionMarking = true;
   };
 
   /** \brief context for processing a config section in ProtocolFactory

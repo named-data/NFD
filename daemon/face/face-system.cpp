@@ -95,7 +95,6 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     for (const auto& pair : *generalSection) {
       const std::string& key = pair.first;
       if (key == "enable_congestion_marking") {
-        // false by default
         context.generalConfig.wantCongestionMarking = ConfigFile::parseYesNo(pair, "face_system.general");
       }
       else {

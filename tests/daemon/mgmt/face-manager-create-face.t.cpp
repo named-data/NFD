@@ -330,14 +330,20 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
                             actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
           BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED),
                             actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
-          BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED),
-                            actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+          if (expectedParams.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+            BOOST_CHECK_EQUAL(expectedParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED),
+                              actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+          }
+          else {
+            BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
+          }
         }
         else {
-          // local fields are disabled by default
-          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED), false);
-          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED), false);
-          BOOST_CHECK_EQUAL(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED), false);
+          // local fields and LpReliability are disabled by default, congestion marking is enabled
+          // by default on TCP, UDP, and Unix stream
+          BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED));
+          BOOST_CHECK(!actualParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED));
+          BOOST_CHECK(actualParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED));
         }
 
         if (expectedParams.hasBaseCongestionMarkingInterval()) {
