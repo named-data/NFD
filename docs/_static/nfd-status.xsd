@@ -1,19 +1,19 @@
 <?xml version="1.0"?>
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-targetNamespace="ndn:/localhost/nfd/status/1" xmlns:nfd="ndn:/localhost/nfd/status/1"
-elementFormDefault="qualified">
+           xmlns:nfd="ndn:/localhost/nfd/status/1"
+           targetNamespace="ndn:/localhost/nfd/status/1"
+           elementFormDefault="qualified">
 
-<xs:simpleType name="emptyType">
-  <xs:restriction base="xs:string">
-    <xs:maxLength value="0"/>
-  </xs:restriction>
-</xs:simpleType>
+<xs:complexType name="emptyType">
+  <xs:sequence/>
+</xs:complexType>
 
 <xs:complexType name="unidirectionalPacketCountersType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="nInterests"/>
-    <xs:element type="xs:nonNegativeInteger" name="nDatas"/>
+    <xs:element type="xs:nonNegativeInteger" name="nData"/>
+    <xs:element type="xs:nonNegativeInteger" name="nNacks"/>
   </xs:sequence>
 </xs:complexType>
 
@@ -33,7 +33,6 @@ elementFormDefault="qualified">
 
 <xs:complexType name="generalStatusType">
   <xs:sequence>
-    <xs:element type="xs:anyURI" name="nfdId"/>
     <xs:element type="xs:string" name="version"/>
     <xs:element type="xs:dateTime" name="startTime"/>
     <xs:element type="xs:dateTime" name="currentTime"/>
@@ -124,15 +123,15 @@ elementFormDefault="qualified">
 
 <xs:complexType name="ribFlagsType">
   <xs:sequence>
-    <xs:element type="xs:string" name="childInherit" minOccurs="0"/>
-    <xs:element type="xs:string" name="ribCapture" minOccurs="0"/>
+    <xs:element type="nfd:emptyType" name="childInherit" minOccurs="0"/>
+    <xs:element type="nfd:emptyType" name="ribCapture" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
 
 <xs:complexType name="routeType">
   <xs:sequence>
     <xs:element type="xs:nonNegativeInteger" name="faceId"/>
-    <xs:element type="xs:nonNegativeInteger" name="origin"/>
+    <xs:element type="xs:string" name="origin"/>
     <xs:element type="xs:nonNegativeInteger" name="cost"/>
     <xs:element type="nfd:ribFlagsType" name="flags"/>
     <xs:element type="xs:duration" name="expirationPeriod" minOccurs="0"/>
@@ -158,6 +157,13 @@ elementFormDefault="qualified">
   </xs:sequence>
 </xs:complexType>
 
+<xs:complexType name="csType">
+  <xs:sequence>
+    <xs:element type="xs:nonNegativeInteger" name="nHits"/>
+    <xs:element type="xs:nonNegativeInteger" name="nMisses"/>
+  </xs:sequence>
+</xs:complexType>
+
 <xs:complexType name="strategyType">
   <xs:sequence>
     <xs:element type="xs:anyURI" name="name"/>
@@ -173,8 +179,7 @@ elementFormDefault="qualified">
 
 <xs:complexType name="strategyChoicesType">
   <xs:sequence>
-    <xs:element type="nfd:strategyChoiceType" name="strategyChoice"
-                maxOccurs="unbounded" minOccurs="0"/>
+    <xs:element type="nfd:strategyChoiceType" name="strategyChoice" maxOccurs="unbounded" minOccurs="0"/>
   </xs:sequence>
 </xs:complexType>
 
@@ -186,6 +191,7 @@ elementFormDefault="qualified">
       <xs:element type="nfd:facesType" name="faces"/>
       <xs:element type="nfd:fibType" name="fib"/>
       <xs:element type="nfd:ribType" name="rib"/>
+      <xs:element type="nfd:csType" name="cs"/>
       <xs:element type="nfd:strategyChoicesType" name="strategyChoices"/>
     </xs:sequence>
   </xs:complexType>

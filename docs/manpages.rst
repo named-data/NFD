@@ -11,13 +11,13 @@ Manpages
    manpages/nfdc-route
    manpages/nfdc-cs
    manpages/nfdc-strategy
+   manpages/nfd-asf-strategy
    manpages/nfd-status
-   schema
    manpages/nfd-status-http-server
+   schema
    manpages/ndn-autoconfig
    manpages/ndn-autoconfig.conf
    manpages/ndn-autoconfig-server
-   misc/local-prefix-discovery
+   local-prefix-discovery
    manpages/nfd-autoreg
-   manpages/nfd-asf-strategy
    :maxdepth: 1
