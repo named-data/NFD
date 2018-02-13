@@ -23,12 +23,12 @@ The **nfdc strategy list** command shows a list of strategy choices.
 The **nfdc strategy show** command shows the effective strategy choice for a specific name.
 
 The **nfdc strategy set** command sets the strategy for a name prefix.
-The strategy for ``/'' prefix is the default strategy.
+The strategy for ``"/"`` prefix is the default strategy.
 
 The **nfdc strategy unset** command clears the strategy choice at a name prefix,
 so that a strategy choice at a shorter prefix or the default strategy will be used.
 It undoes a prior **nfdc strategy set** command on the same name prefix.
-It is prohibited to unset the strategy choice for ``/'' prefix because there must always be a
+It is prohibited to unset the strategy choice for ``"/"`` prefix because there must always be a
 default strategy.
 
 OPTIONS

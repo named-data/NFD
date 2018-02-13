@@ -5,6 +5,8 @@ NFD Versions
    :hidden:
    :maxdepth: 1
 
+
+   release-notes/release-notes-0.6.1
    release-notes/release-notes-0.6.0
    release-notes/release-notes-0.5.1
    release-notes/release-notes-0.5.0
@@ -17,6 +19,12 @@ NFD Versions
    release-notes/release-notes-0.3.0
    release-notes/release-notes-0.2.0
    release-notes/release-notes-0.1.0
+
+* **NFD version 0.6.1**
+  (:doc:`Release Notes <release-notes/release-notes-0.6.1>`, `Documentation <https://named-data.net/doc/NFD/0.6.1/>`__)
+
+  `src (git) <https://github.com/named-data/NFD/releases/tag/NFD-0.6.1>`__,
+  `src (tarball) <https://named-data.net/downloads/nfd-0.6.1.tar.bz2>`__ (`checksum <https://named-data.net/downloads/nfd-0.6.1.tar.bz2.sha256>`__)
 
 * **NFD version 0.6.0**
   (:doc:`Release Notes <release-notes/release-notes-0.6.0>`, `Documentation <https://named-data.net/doc/NFD/0.6.0/>`__)
