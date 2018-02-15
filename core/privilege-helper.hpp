@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,6 @@ namespace nfd {
 class PrivilegeHelper
 {
 public:
-
   /** \brief represents a serious seteuid/gid failure
    *
    *  This should only be caught by main as part of a graceful program termination.
@@ -53,7 +52,7 @@ public:
     const char*
     what() const
     {
-      return m_whatMessage.c_str();
+      return m_whatMessage.data();
     }
 
   private:
@@ -66,11 +65,22 @@ public:
   static void
   drop();
 
+  template<class F>
   static void
-  runElevated(function<void()> f);
+  runElevated(F&& f)
+  {
+    raise();
+    try {
+      f();
+    }
+    catch (...) {
+      drop();
+      throw;
+    }
+    drop();
+  }
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-
   static void
   raise();
 

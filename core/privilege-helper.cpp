@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,8 +29,6 @@
 #include <pwd.h>
 #include <grp.h>
 
-#include <sstream>
-
 namespace nfd {
 
 NFD_LOG_INIT("PrivilegeHelper");
@@ -58,80 +56,63 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
 
   // workflow from man getpwnam_r
 
-  if (!groupName.empty())
-    {
-      static int groupSize = ::sysconf(_SC_GETGR_R_SIZE_MAX);
+  if (!groupName.empty()) {
+    static long groupSize = ::sysconf(_SC_GETGR_R_SIZE_MAX);
 
-      if (groupSize == -1)
-        {
-          groupSize = FALLBACK_GROUP_BUFFER_SIZE;
-        }
+    if (groupSize == -1)
+      groupSize = FALLBACK_GROUP_BUFFER_SIZE;
 
-      std::vector<char> groupBuffer(groupSize);
-      struct group group;
-      struct group* groupResult = 0;
+    std::vector<char> groupBuffer(groupSize);
+    struct group group;
+    struct group* groupResult = nullptr;
 
-      int errorCode = getgrnam_r(groupName.c_str(), &group,
-                                 &groupBuffer[0], groupSize, &groupResult);
+    int errorCode = getgrnam_r(groupName.data(), &group,
+                               &groupBuffer[0], groupBuffer.size(), &groupResult);
 
-      while (errorCode == ERANGE)
-        {
-          if (groupBuffer.size() * 2 > MAX_GROUP_BUFFER_SIZE)
-            {
-              throw PrivilegeHelper::Error("Cannot allocate large enough buffer for struct group");
-            }
+    while (errorCode == ERANGE) {
+      if (groupBuffer.size() * 2 > MAX_GROUP_BUFFER_SIZE)
+        throw Error("Cannot allocate large enough buffer for struct group");
 
-          groupBuffer.resize(groupBuffer.size() * 2);
+      groupBuffer.resize(groupBuffer.size() * 2);
 
-          errorCode = getgrnam_r(groupName.c_str(), &group,
-                                 &groupBuffer[0], groupBuffer.size(), &groupResult);
-        }
-
-      if (errorCode != 0 || !groupResult)
-        {
-          throw PrivilegeHelper::Error("Failed to get gid for \"" + groupName + "\"");
-        }
-
-      s_normalGid = group.gr_gid;
+      errorCode = getgrnam_r(groupName.data(), &group,
+                             &groupBuffer[0], groupBuffer.size(), &groupResult);
     }
 
-  if (!userName.empty())
-    {
-      static int passwdSize = ::sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (errorCode != 0 || !groupResult)
+      throw Error("Failed to get gid for \"" + groupName + "\"");
 
-      if (passwdSize == -1)
-        {
-          passwdSize = FALLBACK_PASSWD_BUFFER_SIZE;
-        }
+    s_normalGid = group.gr_gid;
+  }
 
-      std::vector<char> passwdBuffer(passwdSize);
-      struct passwd passwd;
-      struct passwd* passwdResult = 0;
+  if (!userName.empty()) {
+    static long passwdSize = ::sysconf(_SC_GETPW_R_SIZE_MAX);
 
-      int errorCode =
-        getpwnam_r(userName.c_str(), &passwd,
-                   &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
+    if (passwdSize == -1)
+      passwdSize = FALLBACK_PASSWD_BUFFER_SIZE;
 
-      while (errorCode == ERANGE)
-        {
-          if (passwdBuffer.size() * 2 > MAX_PASSWD_BUFFER_SIZE)
-            {
-              throw PrivilegeHelper::Error("Cannot allocate large enough buffer for struct passwd");
-            }
+    std::vector<char> passwdBuffer(passwdSize);
+    struct passwd passwd;
+    struct passwd* passwdResult = nullptr;
 
-          passwdBuffer.resize(passwdBuffer.size() * 2);
+    int errorCode = getpwnam_r(userName.data(), &passwd,
+                               &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
 
-          errorCode = getpwnam_r(userName.c_str(), &passwd,
-                                 &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
-        }
+    while (errorCode == ERANGE) {
+      if (passwdBuffer.size() * 2 > MAX_PASSWD_BUFFER_SIZE)
+        throw Error("Cannot allocate large enough buffer for struct passwd");
 
-      if (errorCode != 0 || !passwdResult)
-        {
-          throw PrivilegeHelper::Error("Failed to get uid for \"" + userName + "\"");
-        }
+      passwdBuffer.resize(passwdBuffer.size() * 2);
 
-      s_normalUid = passwd.pw_uid;
+      errorCode = getpwnam_r(userName.data(), &passwd,
+                             &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
     }
+
+    if (errorCode != 0 || !passwdResult)
+      throw Error("Failed to get uid for \"" + userName + "\"");
+
+    s_normalUid = passwd.pw_uid;
+  }
 #else
   if (!userName.empty() || !groupName.empty()) {
     throw Error("Dropping and raising privileges is not supported on this platform");
@@ -145,21 +126,11 @@ PrivilegeHelper::drop()
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("dropping to effective gid=" << s_normalGid);
   if (::setegid(s_normalGid) != 0)
-    {
-      std::stringstream error;
-      error << "Failed to drop to effective gid=" << s_normalGid;
-
-      throw PrivilegeHelper::Error(error.str());
-    }
+    throw Error("Failed to drop to effective gid=" + to_string(s_normalGid));
 
   NFD_LOG_TRACE("dropping to effective uid=" << s_normalUid);
   if (::seteuid(s_normalUid) != 0)
-    {
-      std::stringstream error;
-      error << "Failed to drop to effective uid=" << s_normalUid;
-
-      throw PrivilegeHelper::Error(error.str());
-    }
+    throw Error("Failed to drop to effective uid=" + to_string(s_normalUid));
 
   NFD_LOG_INFO("dropped to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
@@ -173,42 +144,16 @@ PrivilegeHelper::raise()
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("elevating to effective uid=" << s_privilegedUid);
   if (::seteuid(s_privilegedUid) != 0)
-    {
-      std::stringstream error;
-      error << "Failed to elevate to effective uid=" << s_privilegedUid;
-
-      throw PrivilegeHelper::Error(error.str());
-    }
+    throw Error("Failed to elevate to effective uid=" + to_string(s_privilegedUid));
 
   NFD_LOG_TRACE("elevating to effective gid=" << s_privilegedGid);
   if (::setegid(s_privilegedGid) != 0)
-    {
-      std::stringstream error;
-      error << "Failed to elevate to effective gid=" << s_privilegedGid;
+    throw Error("Failed to elevate to effective gid=" + to_string(s_privilegedGid));
 
-      throw PrivilegeHelper::Error(error.str());
-    }
   NFD_LOG_INFO("elevated to effective uid=" << ::geteuid() << " gid=" << ::getegid());
 #else
   NFD_LOG_WARN("Elevating privileges is not supported on this platform");
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
-}
-
-void
-PrivilegeHelper::runElevated(function<void()> f)
-{
-  raise();
-
-  try
-    {
-      f();
-    }
-  catch (...)
-    {
-      drop();
-      throw;
-    }
-  drop();
 }
 
 } // namespace nfd
