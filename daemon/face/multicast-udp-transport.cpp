@@ -27,6 +27,8 @@
 #include "socket-utils.hpp"
 #include "udp-protocol.hpp"
 
+#include "core/privilege-helper.hpp"
+
 #include <boost/functional/hash.hpp>
 
 #ifdef __linux__
@@ -108,6 +110,26 @@ MulticastUdpTransport::doClose()
   DatagramTransport::doClose();
 }
 
+static void
+bindToDevice(int fd, const std::string& ifname)
+{
+  // On Linux, if there is more than one MulticastUdpTransport for the same multicast
+  // group but they are on different network interfaces, each socket needs to be bound
+  // to the corresponding interface using SO_BINDTODEVICE, otherwise the transport will
+  // receive all packets sent to the other interfaces as well.
+  // This is needed only on Linux. On macOS, the boost::asio::ip::multicast::join_group
+  // option is sufficient to obtain the desired behavior.
+
+#ifdef __linux__
+  PrivilegeHelper::runElevated([=] {
+    if (::setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname.data(), ifname.size() + 1) < 0) {
+      BOOST_THROW_EXCEPTION(MulticastUdpTransport::Error("Cannot bind multicast rx socket to " +
+                                                         ifname + ": " + std::strerror(errno)));
+    }
+  });
+#endif // __linux__
+}
+
 void
 MulticastUdpTransport::openRxSocket(protocol::socket& sock,
                                     const protocol::endpoint& multicastGroup,
@@ -139,21 +161,8 @@ MulticastUdpTransport::openRxSocket(protocol::socket& sock,
     sock.set_option(boost::asio::ip::multicast::join_group(multicastGroup.address().to_v6()));
   }
 
-#ifdef __linux__
-  if (netif) {
-    // On Linux, if there is more than one MulticastUdpTransport for the same multicast
-    // group but they are on different network interfaces, each socket needs to be bound
-    // to the corresponding interface using SO_BINDTODEVICE, otherwise the transport will
-    // receive all packets sent to the other interfaces as well.
-    // This is needed only on Linux. On macOS, the boost::asio::ip::multicast::join_group
-    // option is sufficient to obtain the desired behavior.
-    if (::setsockopt(sock.native_handle(), SOL_SOCKET, SO_BINDTODEVICE,
-                     netif->getName().data(), netif->getName().size() + 1) < 0) {
-      BOOST_THROW_EXCEPTION(Error("Cannot bind multicast rx socket to " + netif->getName() +
-                                  ": " + std::strerror(errno)));
-    }
-  }
-#endif // __linux__
+  if (netif)
+    bindToDevice(sock.native_handle(), netif->getName());
 }
 
 void
