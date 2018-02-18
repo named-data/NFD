@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "command-definition.hpp"
 #include "execute-command.hpp"
+
 #include <type_traits>
 
 namespace nfd {
@@ -62,12 +63,11 @@ operator<<(std::ostream& os, ParseMode mode);
 class CommandParser : noncopyable
 {
 public:
-  class Error : public std::invalid_argument
+  class NoSuchCommandError : public std::invalid_argument
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::invalid_argument(what)
+    NoSuchCommandError(const std::string& noun, const std::string& verb)
+      : std::invalid_argument("No such command: " + noun + " " + verb)
     {
     }
   };
@@ -98,12 +98,12 @@ public:
   /** \brief parse a command line
    *  \param tokens command line
    *  \param mode parser mode, must be ParseMode::ONE_SHOT, other modes are not implemented
-   *  \throw Error command is not found
+   *  \throw NoSuchCommandError command not found
    *  \throw CommandDefinition::Error command arguments are invalid
    *  \return noun, verb, arguments, execute function
    */
   std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
-  parse(const std::vector<std::string>& tokens, ParseMode mode) const;
+  parse(std::vector<std::string> tokens, ParseMode mode) const;
 
 private:
   typedef std::pair<std::string, std::string> CommandName;

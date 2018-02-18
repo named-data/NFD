@@ -3,10 +3,10 @@ nfdc
 
 SYNOPSIS
 --------
-| nfdc COMMAND ARGUMENTS
-| nfdc [-h]
-| nfdc -V
-| nfdc help COMMAND
+| nfdc COMMAND [ARGUMENTS] ...
+| nfdc help [COMMAND]
+| nfdc [-h|--help]
+| nfdc -V|--version
 
 DESCRIPTION
 -----------
@@ -25,11 +25,11 @@ OPTIONS
 <ARGUMENTS>
     Arguments to the subcommand.
 
--h
-    Print a list of available subcommands.
+``-h`` or ``--help``
+    Print a list of available subcommands and exit.
 
--V
-    Print version number.
+``-V`` or ``--version``
+    Show version information and exit.
 
 EXAMPLES
 --------

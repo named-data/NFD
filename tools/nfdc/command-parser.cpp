@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "command-parser.hpp"
 #include "format-helpers.hpp"
+
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd {
@@ -74,6 +75,7 @@ CommandParser::addCommand(const CommandDefinition& def, const ExecuteCommand& ex
                           std::underlying_type<AvailableIn>::type modes)
 {
   BOOST_ASSERT(modes != AVAILABLE_IN_NONE);
+
   m_commands[{def.getNoun(), def.getVerb()}].reset(
     new Command{def, execute, static_cast<AvailableIn>(modes)});
 
@@ -95,7 +97,7 @@ std::vector<const CommandDefinition*>
 CommandParser::listCommands(const std::string& noun, ParseMode mode) const
 {
   std::vector<const CommandDefinition*> results;
-  for (CommandContainer::const_iterator i : m_commandOrder) {
+  for (auto i : m_commandOrder) {
     const Command& command = *i->second;
     if ((command.modes & static_cast<AvailableIn>(mode)) != 0 &&
         (noun.empty() || noun == command.def.getNoun())) {
@@ -106,7 +108,7 @@ CommandParser::listCommands(const std::string& noun, ParseMode mode) const
 }
 
 std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
-CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) const
+CommandParser::parse(std::vector<std::string> tokens, ParseMode mode) const
 {
   BOOST_ASSERT(mode == ParseMode::ONE_SHOT);
 
@@ -114,23 +116,42 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
   const std::string& verb = tokens.size() > 1 ? tokens[1] : "";
   size_t nameLen = std::min<size_t>(2, tokens.size());
 
+  NDN_LOG_TRACE("parse mode=" << mode << " noun=" << noun << " verb=" << verb);
+
   auto i = m_commands.find({noun, verb});
   if (i == m_commands.end()) {
     if (verb.empty()) {
+      NDN_LOG_TRACE("fallback to noun=" << noun << " verb=list");
       i = m_commands.find({noun, "list"});
     }
     else {
       // help, exit, quit commands
+      NDN_LOG_TRACE("fallback to noun=" << noun << " verb=");
       i = m_commands.find({noun, ""});
     }
     nameLen = std::min<size_t>(1, tokens.size());
+
+    if (i == m_commands.end()) {
+      const auto helpStrings = {"help", "--help", "-h"};
+      auto helpIt = std::find_first_of(tokens.begin(), tokens.end(),
+                                       helpStrings.begin(), helpStrings.end());
+      if (helpIt != tokens.end()) {
+        NDN_LOG_TRACE("fallback to noun=help verb=");
+        i = m_commands.find({"help", ""});
+        if (i != m_commands.end()) {
+          tokens.erase(helpIt);
+          nameLen = 0;
+        }
+      }
+    }
   }
+
   if (i == m_commands.end() || (i->second->modes & static_cast<AvailableIn>(mode)) == 0) {
-    BOOST_THROW_EXCEPTION(Error("no such command: " + noun + " " + verb));
+    BOOST_THROW_EXCEPTION(NoSuchCommandError(noun, verb));
   }
 
   const CommandDefinition& def = i->second->def;
-  NDN_LOG_TRACE("found command " << def.getNoun() << " " << def.getVerb());
+  NDN_LOG_TRACE("found command noun=" << def.getNoun() << " verb=" << def.getVerb());
 
   return std::make_tuple(def.getNoun(), def.getVerb(), def.parse(tokens, nameLen), i->second->execute);
 }

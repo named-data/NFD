@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,12 +41,12 @@ main(int argc, char** argv)
   CommandParser parser;
   registerCommands(parser);
 
-  if (args.empty() || args[0] == "-h") {
+  if (args.empty() || args[0] == "-h" || args[0] == "--help") {
     helpList(std::cout, parser);
     return 0;
   }
 
-  if (args[0] == "-V") {
+  if (args[0] == "-V" || args[0] == "--version") {
     std::cout << NFD_VERSION_BUILD_STRING << std::endl;
     return 0;
   }
@@ -55,7 +55,7 @@ main(int argc, char** argv)
   CommandArguments ca;
   ExecuteCommand execute;
   try {
-    std::tie(noun, verb, ca, execute) = parser.parse(args, ParseMode::ONE_SHOT);
+    std::tie(noun, verb, ca, execute) = parser.parse(std::move(args), ParseMode::ONE_SHOT);
   }
   catch (const std::invalid_argument& e) {
     std::cerr << e.what() << std::endl;

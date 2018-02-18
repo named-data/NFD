@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,10 +37,28 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestCommandParser, BaseFixture)
 
+BOOST_AUTO_TEST_CASE(PrintAvailableIn)
+{
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(AVAILABLE_IN_NONE), "hidden");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(AVAILABLE_IN_ONE_SHOT), "one-shot|hidden");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(AVAILABLE_IN_BATCH), "batch|hidden");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(AVAILABLE_IN_HELP), "none");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(AVAILABLE_IN_ALL), "one-shot|batch");
+}
+
+BOOST_AUTO_TEST_CASE(PrintParseMode)
+{
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(ParseMode::ONE_SHOT), "one-shot");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(ParseMode::BATCH), "batch");
+  BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(static_cast<ParseMode>(0xFF)), "255");
+}
+
 BOOST_AUTO_TEST_CASE(Basic)
 {
   CommandParser parser;
-  ExecuteCommand dummyExecute = [] (ExecuteContext&) { return 0; };
+  ExecuteCommand dummyExecute = [] (ExecuteContext&) { BOOST_ERROR("should not be called"); };
+
+  BOOST_CHECK(parser.listCommands("", ParseMode::ONE_SHOT).empty());
 
   CommandDefinition defHelp("help", "");
   defHelp
@@ -65,48 +83,59 @@ BOOST_AUTO_TEST_CASE(Basic)
   parser.addCommand(defRouteAdd, dummyExecute);
   parser.addAlias("route", "add", "add2");
 
+  BOOST_CHECK_EQUAL(parser.listCommands("", ParseMode::ONE_SHOT).size(), 3);
+  BOOST_CHECK_EQUAL(parser.listCommands("", ParseMode::BATCH).size(), 3);
+  BOOST_CHECK_EQUAL(parser.listCommands("route", ParseMode::ONE_SHOT).size(), 2);
+  BOOST_CHECK_EQUAL(parser.listCommands("unknown", ParseMode::ONE_SHOT).size(), 0);
 
   std::string noun, verb;
   CommandArguments ca;
   ExecuteCommand execute;
 
-  std::tie(noun, verb, ca, execute) = parser.parse(
-    std::vector<std::string>{"help"}, ParseMode::ONE_SHOT);
+  std::tie(noun, verb, ca, execute) = parser.parse({"help"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "help");
   BOOST_CHECK_EQUAL(verb, "");
 
-  std::tie(noun, verb, ca, execute) = parser.parse(
-    std::vector<std::string>{"status"}, ParseMode::ONE_SHOT);
+  std::tie(noun, verb, ca, execute) = parser.parse({"help", "foo"}, ParseMode::ONE_SHOT);
+  BOOST_CHECK_EQUAL(noun, "help");
+  BOOST_CHECK_EQUAL(verb, "");
+
+  std::tie(noun, verb, ca, execute) = parser.parse({"foo", "help"}, ParseMode::ONE_SHOT);
+  BOOST_CHECK_EQUAL(noun, "help");
+  BOOST_CHECK_EQUAL(verb, "");
+
+  std::tie(noun, verb, ca, execute) = parser.parse({"foo", "bar", "-h"}, ParseMode::ONE_SHOT);
+  BOOST_CHECK_EQUAL(noun, "help");
+  BOOST_CHECK_EQUAL(verb, "");
+
+  std::tie(noun, verb, ca, execute) = parser.parse({"status"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "status");
   BOOST_CHECK_EQUAL(verb, "show");
 
-  std::tie(noun, verb, ca, execute) = parser.parse(
-    std::vector<std::string>{"route", "add", "/n", "300"}, ParseMode::ONE_SHOT);
+  std::tie(noun, verb, ca, execute) = parser.parse({"route", "add", "/n", "300"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
   BOOST_CHECK_EQUAL(verb, "add");
   BOOST_CHECK_EQUAL(boost::any_cast<Name>(ca.at("prefix")), "/n");
   BOOST_CHECK_EQUAL(boost::any_cast<uint64_t>(ca.at("nexthop")), 300);
 
-  std::tie(noun, verb, ca, execute) = parser.parse(
-    std::vector<std::string>{"route", "add2", "/n", "300"}, ParseMode::ONE_SHOT);
+  std::tie(noun, verb, ca, execute) = parser.parse({"route", "add2", "/n", "300"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
   BOOST_CHECK_EQUAL(verb, "add");
 
-  std::tie(noun, verb, ca, execute) = parser.parse(
-    std::vector<std::string>{"route", "list", "400"}, ParseMode::ONE_SHOT);
+  std::tie(noun, verb, ca, execute) = parser.parse({"route", "list", "400"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
   BOOST_CHECK_EQUAL(verb, "list");
   BOOST_CHECK_EQUAL(boost::any_cast<uint64_t>(ca.at("nexthop")), 400);
 
-  BOOST_CHECK_THROW(parser.parse(std::vector<std::string>{}, ParseMode::ONE_SHOT),
-                    CommandParser::Error);
-  BOOST_CHECK_THROW(parser.parse(std::vector<std::string>{"cant-help"}, ParseMode::ONE_SHOT),
-                    CommandParser::Error);
-  BOOST_CHECK_THROW(parser.parse(std::vector<std::string>{"status", "hide"}, ParseMode::ONE_SHOT),
-                    CommandParser::Error);
-  BOOST_CHECK_THROW(parser.parse(std::vector<std::string>{"route", "400"}, ParseMode::ONE_SHOT),
-                    CommandParser::Error);
-  BOOST_CHECK_THROW(parser.parse(std::vector<std::string>{"route", "add"}, ParseMode::ONE_SHOT),
+  BOOST_CHECK_THROW(parser.parse({}, ParseMode::ONE_SHOT),
+                    CommandParser::NoSuchCommandError);
+  BOOST_CHECK_THROW(parser.parse({"cant-help"}, ParseMode::ONE_SHOT),
+                    CommandParser::NoSuchCommandError);
+  BOOST_CHECK_THROW(parser.parse({"status", "hide"}, ParseMode::ONE_SHOT),
+                    CommandParser::NoSuchCommandError);
+  BOOST_CHECK_THROW(parser.parse({"route", "66"}, ParseMode::ONE_SHOT),
+                    CommandParser::NoSuchCommandError);
+  BOOST_CHECK_THROW(parser.parse({"route", "add"}, ParseMode::ONE_SHOT),
                     CommandDefinition::Error);
 }
 
