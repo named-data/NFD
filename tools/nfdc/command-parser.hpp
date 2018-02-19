@@ -103,7 +103,7 @@ public:
    *  \return noun, verb, arguments, execute function
    */
   std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
-  parse(std::vector<std::string> tokens, ParseMode mode) const;
+  parse(const std::vector<std::string>& tokens, ParseMode mode) const;
 
 private:
   typedef std::pair<std::string, std::string> CommandName;

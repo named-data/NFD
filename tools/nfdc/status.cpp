@@ -121,7 +121,7 @@ registerStatusCommands(CommandParser& parser)
 {
   CommandDefinition defStatusReport("status", "report");
   defStatusReport
-    .setTitle("print NFD status report")
+    .setTitle("print full status report")
     .addArg("format", ArgValueType::REPORT_FORMAT, Required::NO, Positional::YES);
   parser.addCommand(defStatusReport, &reportStatusComprehensive);
 

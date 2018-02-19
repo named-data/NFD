@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   defHelp
     .addArg("noun", ArgValueType::STRING, Required::NO, Positional::YES)
     .addArg("verb", ArgValueType::STRING, Required::NO, Positional::YES);
-  parser.addCommand(defHelp, dummyExecute, AVAILABLE_IN_ONE_SHOT);
+  parser.addCommand(defHelp, dummyExecute, AVAILABLE_IN_ONE_SHOT | AVAILABLE_IN_HELP);
 
   CommandDefinition defStatusShow("status", "show");
   parser.addCommand(defStatusShow, dummyExecute);
@@ -83,7 +83,10 @@ BOOST_AUTO_TEST_CASE(Basic)
   parser.addCommand(defRouteAdd, dummyExecute);
   parser.addAlias("route", "add", "add2");
 
-  BOOST_CHECK_EQUAL(parser.listCommands("", ParseMode::ONE_SHOT).size(), 3);
+  CommandDefinition defHidden("hidden", "");
+  parser.addCommand(defHidden, dummyExecute, AVAILABLE_IN_BATCH);
+
+  BOOST_CHECK_EQUAL(parser.listCommands("", ParseMode::ONE_SHOT).size(), 4);
   BOOST_CHECK_EQUAL(parser.listCommands("", ParseMode::BATCH).size(), 3);
   BOOST_CHECK_EQUAL(parser.listCommands("route", ParseMode::ONE_SHOT).size(), 2);
   BOOST_CHECK_EQUAL(parser.listCommands("unknown", ParseMode::ONE_SHOT).size(), 0);
@@ -97,14 +100,6 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_EQUAL(verb, "");
 
   std::tie(noun, verb, ca, execute) = parser.parse({"help", "foo"}, ParseMode::ONE_SHOT);
-  BOOST_CHECK_EQUAL(noun, "help");
-  BOOST_CHECK_EQUAL(verb, "");
-
-  std::tie(noun, verb, ca, execute) = parser.parse({"foo", "help"}, ParseMode::ONE_SHOT);
-  BOOST_CHECK_EQUAL(noun, "help");
-  BOOST_CHECK_EQUAL(verb, "");
-
-  std::tie(noun, verb, ca, execute) = parser.parse({"foo", "bar", "-h"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "help");
   BOOST_CHECK_EQUAL(verb, "");
 
@@ -137,6 +132,8 @@ BOOST_AUTO_TEST_CASE(Basic)
                     CommandParser::NoSuchCommandError);
   BOOST_CHECK_THROW(parser.parse({"route", "add"}, ParseMode::ONE_SHOT),
                     CommandDefinition::Error);
+  BOOST_CHECK_THROW(parser.parse({"hidden"}, ParseMode::ONE_SHOT),
+                    CommandParser::NoSuchCommandError);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestCommandParser

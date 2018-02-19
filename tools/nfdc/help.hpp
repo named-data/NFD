@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,19 +32,29 @@ namespace nfd {
 namespace tools {
 namespace nfdc {
 
+/** \brief writes the list of available commands to a stream
+ *  \param os the output stream to write the list to
+ *  \param parser instance of CommandParser containing the commands to list
+ *  \param mode only the commands available in this mode are listed
+ *  \param noun if not empty, only the commands starting with this noun are listed
+ */
 void
 helpList(std::ostream& os, const CommandParser& parser,
          ParseMode mode = ParseMode::ONE_SHOT, const std::string& noun = "");
 
-/** \brief the 'help' command
+/** \brief tries to help the user, if requested on the command line
+ *
+ *  Depending on the provided command line arguments \p args, this function can either
+ *  open the man page for a specific command, or list all commands available in \p parser.
+ *  In the former case, this function never returns if successful.
+ *
+ *  \retval 0 a list of available commands was successfully written to \p os
+ *  \retval 1 help was requested, but an error was encountered while exec'ing the `man` binary
+ *  \retval 2 help was not provided because \p args did not contain any help-related options
  */
-void
-help(ExecuteContext& ctx, const CommandParser& parser);
-
-/** \brief registers 'help' command
- */
-void
-registerHelpCommand(CommandParser& parser);
+int
+help(std::ostream& os, const CommandParser& parser,
+     std::vector<std::string> args);
 
 } // namespace nfdc
 } // namespace tools

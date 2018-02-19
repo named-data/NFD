@@ -108,7 +108,7 @@ CommandParser::listCommands(const std::string& noun, ParseMode mode) const
 }
 
 std::tuple<std::string, std::string, CommandArguments, ExecuteCommand>
-CommandParser::parse(std::vector<std::string> tokens, ParseMode mode) const
+CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) const
 {
   BOOST_ASSERT(mode == ParseMode::ONE_SHOT);
 
@@ -130,20 +130,6 @@ CommandParser::parse(std::vector<std::string> tokens, ParseMode mode) const
       i = m_commands.find({noun, ""});
     }
     nameLen = std::min<size_t>(1, tokens.size());
-
-    if (i == m_commands.end()) {
-      const auto helpStrings = {"help", "--help", "-h"};
-      auto helpIt = std::find_first_of(tokens.begin(), tokens.end(),
-                                       helpStrings.begin(), helpStrings.end());
-      if (helpIt != tokens.end()) {
-        NDN_LOG_TRACE("fallback to noun=help verb=");
-        i = m_commands.find({"help", ""});
-        if (i != m_commands.end()) {
-          tokens.erase(helpIt);
-          nameLen = 0;
-        }
-      }
-    }
   }
 
   if (i == m_commands.end() || (i->second->modes & static_cast<AvailableIn>(mode)) == 0) {

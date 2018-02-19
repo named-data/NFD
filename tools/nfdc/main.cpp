@@ -41,7 +41,7 @@ main(int argc, char** argv)
   CommandParser parser;
   registerCommands(parser);
 
-  if (args.empty() || args[0] == "-h" || args[0] == "--help") {
+  if (args.empty()) {
     helpList(std::cout, parser);
     return 0;
   }
@@ -55,11 +55,13 @@ main(int argc, char** argv)
   CommandArguments ca;
   ExecuteCommand execute;
   try {
-    std::tie(noun, verb, ca, execute) = parser.parse(std::move(args), ParseMode::ONE_SHOT);
+    std::tie(noun, verb, ca, execute) = parser.parse(args, ParseMode::ONE_SHOT);
   }
   catch (const std::invalid_argument& e) {
-    std::cerr << e.what() << std::endl;
-    return 2;
+    int ret = help(std::cout, parser, std::move(args));
+    if (ret == 2)
+      std::cerr << e.what() << std::endl;
+    return ret;
   }
 
   try {

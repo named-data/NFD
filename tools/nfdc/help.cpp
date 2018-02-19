@@ -28,6 +28,8 @@
 
 #include <ndn-cxx/util/logger.hpp>
 
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
 
 namespace nfd {
@@ -71,33 +73,29 @@ helpCommand(const std::string& noun, const std::string& verb)
   std::string manpage = "nfdc-" + noun;
 
   ::execlp("man", "man", manpage.data(), nullptr);
-  NDN_LOG_FATAL("Error opening man page for " << manpage);
+  NDN_LOG_FATAL("Error opening man page for " << manpage << ": " << std::strerror(errno));
 }
 
-void
-help(ExecuteContext& ctx, const CommandParser& parser)
+int
+help(std::ostream& os, const CommandParser& parser, std::vector<std::string> args)
 {
-  auto noun = ctx.args.get<std::string>("noun", "");
-  auto verb = ctx.args.get<std::string>("verb", "");
+  const auto helpOpts = {"help", "--help", "-h"};
+  auto it = std::find_first_of(args.begin(), args.end(), helpOpts.begin(), helpOpts.end());
+  if (it == args.end())
+    return 2;
+
+  args.erase(it);
+  auto noun = args.size() > 0 ? args[0] : "";
+  auto verb = args.size() > 1 ? args[1] : "";
 
   if (noun.empty()) {
-    helpList(ctx.out, parser);
+    helpList(os, parser);
+    return 0;
   }
   else {
     helpCommand(noun, verb); // should not return
-    ctx.exitCode = 1;
+    return 1;
   }
-}
-
-void
-registerHelpCommand(CommandParser& parser)
-{
-  CommandDefinition defHelp("help", "");
-  defHelp
-    .setTitle("display help information")
-    .addArg("noun", ArgValueType::STRING, Required::NO, Positional::YES)
-    .addArg("verb", ArgValueType::STRING, Required::NO, Positional::YES);
-  parser.addCommand(defHelp, bind(&help, _1, cref(parser)));
 }
 
 } // namespace nfdc
