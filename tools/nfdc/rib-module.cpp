@@ -40,6 +40,7 @@ RibModule::registerCommands(CommandParser& parser)
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::NO, Positional::YES)
     .addArg("origin", ArgValueType::ROUTE_ORIGIN, Required::NO, Positional::NO);
   parser.addCommand(defRouteList, &RibModule::list);
+  parser.addAlias("route", "list", "");
 
   CommandDefinition defRouteShow("route", "show");
   defRouteShow

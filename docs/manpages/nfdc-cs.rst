@@ -3,7 +3,7 @@ nfdc-cs
 
 SYNOPSIS
 --------
-| nfdc cs info
+| nfdc cs [info]
 
 DESCRIPTION
 -----------

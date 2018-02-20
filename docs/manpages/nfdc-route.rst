@@ -5,8 +5,8 @@ SYNOPSIS
 --------
 | nfdc route [list [[nexthop] <FACEID|FACEURI>] [origin <ORIGIN>]]
 | nfdc route show [prefix] <PREFIX>
-| nfdc route add [prefix] <PREFIX> [nexthop] <FACEID|FACEURI> [origin <ORIGIN>] [cost <COST>]
-|   [no-inherit] [capture] [expires <EXPIRATION-MILLIS>]
+| nfdc route add [prefix] <PREFIX> [nexthop] <FACEID|FACEURI> [origin <ORIGIN>]
+|                [cost <COST>] [no-inherit] [capture] [expires <EXPIRATION-MILLIS>]
 | nfdc route remove [prefix] <PREFIX> [nexthop] <FACEID|FACEURI> [origin <ORIGIN>]
 | nfdc fib [list]
 

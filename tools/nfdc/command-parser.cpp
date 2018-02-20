@@ -114,24 +114,10 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
 
   const std::string& noun = tokens.size() > 0 ? tokens[0] : "";
   const std::string& verb = tokens.size() > 1 ? tokens[1] : "";
-  size_t nameLen = std::min<size_t>(2, tokens.size());
 
   NDN_LOG_TRACE("parse mode=" << mode << " noun=" << noun << " verb=" << verb);
 
   auto i = m_commands.find({noun, verb});
-  if (i == m_commands.end()) {
-    if (verb.empty()) {
-      NDN_LOG_TRACE("fallback to noun=" << noun << " verb=list");
-      i = m_commands.find({noun, "list"});
-    }
-    else {
-      // help, exit, quit commands
-      NDN_LOG_TRACE("fallback to noun=" << noun << " verb=");
-      i = m_commands.find({noun, ""});
-    }
-    nameLen = std::min<size_t>(1, tokens.size());
-  }
-
   if (i == m_commands.end() || (i->second->modes & static_cast<AvailableIn>(mode)) == 0) {
     BOOST_THROW_EXCEPTION(NoSuchCommandError(noun, verb));
   }
@@ -139,7 +125,8 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
   const CommandDefinition& def = i->second->def;
   NDN_LOG_TRACE("found command noun=" << def.getNoun() << " verb=" << def.getVerb());
 
-  return std::make_tuple(def.getNoun(), def.getVerb(), def.parse(tokens, nameLen), i->second->execute);
+  size_t nConsumed = std::min<size_t>(2, tokens.size());
+  return std::make_tuple(def.getNoun(), def.getVerb(), def.parse(tokens, nConsumed), i->second->execute);
 }
 
 } // namespace nfdc

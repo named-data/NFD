@@ -40,6 +40,7 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("local", ArgValueType::FACE_URI, Required::NO, Positional::NO)
     .addArg("scheme", ArgValueType::STRING, Required::NO, Positional::NO, "scheme");
   parser.addCommand(defFaceList, &FaceModule::list);
+  parser.addAlias("face", "list", "");
 
   CommandDefinition defFaceShow("face", "show");
   defFaceShow

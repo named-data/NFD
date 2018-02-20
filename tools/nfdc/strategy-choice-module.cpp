@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,6 +37,7 @@ StrategyChoiceModule::registerCommands(CommandParser& parser)
   defStrategyList
     .setTitle("print strategy choices");
   parser.addCommand(defStrategyList, &StrategyChoiceModule::list);
+  parser.addAlias("strategy", "list", "");
 
   CommandDefinition defStrategyShow("strategy", "show");
   defStrategyShow

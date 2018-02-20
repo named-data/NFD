@@ -129,22 +129,25 @@ registerStatusCommands(CommandParser& parser)
   defStatusShow
     .setTitle("print general status");
   parser.addCommand(defStatusShow, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantForwarderGeneral));
-  parser.addAlias("status", "show", "list");
+  parser.addAlias("status", "show", "");
 
   CommandDefinition defChannelList("channel", "list");
   defChannelList
     .setTitle("print channel list");
   parser.addCommand(defChannelList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantChannels));
+  parser.addAlias("channel", "list", "");
 
   CommandDefinition defFibList("fib", "list");
   defFibList
     .setTitle("print FIB entries");
   parser.addCommand(defFibList, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantFib));
+  parser.addAlias("fib", "list", "");
 
   CommandDefinition defCsInfo("cs", "info");
   defCsInfo
     .setTitle("print CS information");
   parser.addCommand(defCsInfo, bind(&reportStatusSingleSection, _1, &StatusReportOptions::wantCs));
+  parser.addAlias("cs", "info", "");
 }
 
 } // namespace nfdc

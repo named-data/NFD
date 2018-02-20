@@ -5,7 +5,10 @@ SYNOPSIS
 --------
 | nfdc face [list [[remote] <FACEURI>] [local <FACEURI>] [scheme <SCHEME>]]
 | nfdc face show [id] <FACEID>
-| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>] [reliability on|off] [congestion-marking on|off] [congestion-marking-interval <MARKING-INTERVAL>] [default-congestion-threshold <CONGESTION-THRESHOLD>]
+| nfdc face create [remote] <FACEURI> [[persistency] <PERSISTENCY>] [local <FACEURI>]
+|                  [reliability on|off] [congestion-marking on|off]
+|                  [congestion-marking-interval <MARKING-INTERVAL>]
+|                  [default-congestion-threshold <CONGESTION-THRESHOLD>]
 | nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 

@@ -60,14 +60,12 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   BOOST_CHECK(parser.listCommands("", ParseMode::ONE_SHOT).empty());
 
-  CommandDefinition defHelp("help", "");
-  defHelp
-    .addArg("noun", ArgValueType::STRING, Required::NO, Positional::YES)
-    .addArg("verb", ArgValueType::STRING, Required::NO, Positional::YES);
-  parser.addCommand(defHelp, dummyExecute, AVAILABLE_IN_ONE_SHOT | AVAILABLE_IN_HELP);
+  CommandDefinition defFoo("foo", "");
+  parser.addCommand(defFoo, dummyExecute, AVAILABLE_IN_ONE_SHOT | AVAILABLE_IN_HELP);
 
   CommandDefinition defStatusShow("status", "show");
   parser.addCommand(defStatusShow, dummyExecute);
+  parser.addAlias("status", "show", "");
   parser.addAlias("status", "show", "list");
   BOOST_CHECK_THROW(parser.addAlias("status", "show2", "list"), std::out_of_range);
 
@@ -75,6 +73,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   defRouteList
     .addArg("nexthop", ArgValueType::FACE_ID_OR_URI, Required::NO, Positional::YES);
   parser.addCommand(defRouteList, dummyExecute);
+  parser.addAlias("route", "list", "");
 
   CommandDefinition defRouteAdd("route", "add");
   defRouteAdd
@@ -95,15 +94,15 @@ BOOST_AUTO_TEST_CASE(Basic)
   CommandArguments ca;
   ExecuteCommand execute;
 
-  std::tie(noun, verb, ca, execute) = parser.parse({"help"}, ParseMode::ONE_SHOT);
-  BOOST_CHECK_EQUAL(noun, "help");
-  BOOST_CHECK_EQUAL(verb, "");
-
-  std::tie(noun, verb, ca, execute) = parser.parse({"help", "foo"}, ParseMode::ONE_SHOT);
-  BOOST_CHECK_EQUAL(noun, "help");
+  std::tie(noun, verb, ca, execute) = parser.parse({"foo"}, ParseMode::ONE_SHOT);
+  BOOST_CHECK_EQUAL(noun, "foo");
   BOOST_CHECK_EQUAL(verb, "");
 
   std::tie(noun, verb, ca, execute) = parser.parse({"status"}, ParseMode::ONE_SHOT);
+  BOOST_CHECK_EQUAL(noun, "status");
+  BOOST_CHECK_EQUAL(verb, "show");
+
+  std::tie(noun, verb, ca, execute) = parser.parse({"status", "list"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "status");
   BOOST_CHECK_EQUAL(verb, "show");
 
@@ -124,10 +123,12 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   BOOST_CHECK_THROW(parser.parse({}, ParseMode::ONE_SHOT),
                     CommandParser::NoSuchCommandError);
-  BOOST_CHECK_THROW(parser.parse({"cant-help"}, ParseMode::ONE_SHOT),
+  BOOST_CHECK_THROW(parser.parse({"bar"}, ParseMode::ONE_SHOT),
                     CommandParser::NoSuchCommandError);
   BOOST_CHECK_THROW(parser.parse({"status", "hide"}, ParseMode::ONE_SHOT),
                     CommandParser::NoSuchCommandError);
+  BOOST_CHECK_THROW(parser.parse({"status", "show", "something"}, ParseMode::ONE_SHOT),
+                    CommandDefinition::Error);
   BOOST_CHECK_THROW(parser.parse({"route", "66"}, ParseMode::ONE_SHOT),
                     CommandParser::NoSuchCommandError);
   BOOST_CHECK_THROW(parser.parse({"route", "add"}, ParseMode::ONE_SHOT),
