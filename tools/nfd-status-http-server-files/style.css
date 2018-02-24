@@ -150,7 +150,6 @@ h5 {
     min-width: 20px;
 }
 
-
 tr.center td
 {
     text-align: center;
@@ -173,7 +172,7 @@ tfoot {
     padding: 0;
 }
 
-.odd {
+table.alt-row-colors > tbody > tr:nth-of-type(even) {
     background-color: #eeeeee;
 }
 

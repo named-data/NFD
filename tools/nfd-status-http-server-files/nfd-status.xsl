@@ -138,7 +138,7 @@
 
 <xsl:template match="nfd:channels">
   <h2>Channels</h2>
-  <table class="item-list">
+  <table class="item-list alt-row-colors">
     <thead>
       <tr>
         <th>Channel URI</th>
@@ -146,17 +146,9 @@
     </thead>
     <tbody>
       <xsl:for-each select="nfd:channel">
-        <xsl:variable name="style">
-          <xsl:choose>
-            <xsl:when test="position() mod 2 = 1">
-              <xsl:text>odd</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>even</xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <tr class="{$style}">
-          <td><xsl:value-of select="nfd:localUri"/></td>
-        </tr>
+      <tr>
+        <td><xsl:value-of select="nfd:localUri"/></td>
+      </tr>
       </xsl:for-each>
     </tbody>
   </table>
@@ -164,7 +156,7 @@
 
 <xsl:template match="nfd:faces">
   <h2>Faces</h2>
-  <table class="item-list">
+  <table class="item-list alt-row-colors">
     <thead>
       <tr>
         <th>Face ID</th>
@@ -187,15 +179,7 @@
     </thead>
     <tbody>
       <xsl:for-each select="nfd:face">
-      <xsl:variable name="style">
-        <xsl:choose>
-          <xsl:when test="position() mod 2 = 1">
-            <xsl:text>odd</xsl:text>
-          </xsl:when>
-          <xsl:otherwise>even</xsl:otherwise>
-        </xsl:choose>
-      </xsl:variable>
-      <tr class="{$style}">
+      <tr>
         <td><xsl:value-of select="nfd:faceId"/></td>
         <td><xsl:value-of select="nfd:remoteUri"/></td>
         <td><xsl:value-of select="nfd:localUri"/></td>
@@ -233,7 +217,7 @@
 
 <xsl:template match="nfd:fib">
   <h2>FIB</h2>
-  <table class="item-list">
+  <table class="item-list alt-row-colors">
     <thead>
       <tr>
         <th width="20%">Prefix</th>
@@ -242,15 +226,7 @@
     </thead>
     <tbody>
       <xsl:for-each select="nfd:fibEntry">
-        <xsl:variable name="style">
-          <xsl:choose>
-            <xsl:when test="position() mod 2 = 1">
-              <xsl:text>odd</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>even</xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <tr class="{$style}">
+      <tr>
         <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
         <td>
           <table class="item-sublist">
@@ -276,7 +252,7 @@
 
 <xsl:template match="nfd:rib">
   <h2>RIB</h2>
-  <table class="item-list">
+  <table class="item-list alt-row-colors">
     <thead>
       <tr>
         <th width="20%">Prefix</th>
@@ -285,15 +261,7 @@
     </thead>
     <tbody>
       <xsl:for-each select="nfd:ribEntry">
-        <xsl:variable name="style">
-          <xsl:choose>
-            <xsl:when test="position() mod 2 = 1">
-              <xsl:text>odd</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>even</xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <tr class="{$style}">
+      <tr>
         <td style="text-align:left;vertical-align:top;padding:0"><xsl:value-of select="nfd:prefix"/></td>
         <td>
           <table class="item-sublist">
@@ -374,7 +342,7 @@
 
 <xsl:template match="nfd:strategyChoices">
   <h2>Strategy Choices</h2>
-  <table class="item-list">
+  <table class="item-list alt-row-colors">
     <thead>
       <tr>
         <th width="20%">Namespace</th>
