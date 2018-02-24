@@ -1,13 +1,13 @@
 <xsl:stylesheet version="1.0"
-xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-xmlns:nfd="ndn:/localhost/nfd/status/1">
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:nfd="ndn:/localhost/nfd/status/1">
 <xsl:output method="html" encoding="utf-8" indent="yes" doctype-system="about:legacy-compat"/>
 
 <xsl:template match="/">
   <html>
   <head>
-  <title>NFD Status</title>
-  <link rel="stylesheet" type="text/css" href="style.css" />
+    <title>NFD Status</title>
+    <link rel="stylesheet" type="text/css" href="style.css" />
   </head>
   <body>
   <header>
@@ -27,7 +27,6 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
   </body>
   </html>
 </xsl:template>
-
 
 <xsl:template name="formatDate">
   <xsl:param name="date" />
@@ -204,17 +203,9 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
         <td><xsl:value-of select="nfd:facePersistency"/></td>
         <td><xsl:value-of select="nfd:linkType"/></td>
         <td>
-          <xsl:choose>
-            <xsl:when test="nfd:flags/nfd:localFieldsEnabled">
-              local-fields
-            </xsl:when>
-            <xsl:when test="nfd:flags/nfd:lpReliabilityEnabled">
-              reliability
-            </xsl:when>
-            <xsl:when test="nfd:flags/nfd:congestionMarkingEnabled">
-              congestion-marking
-            </xsl:when>
-          </xsl:choose>
+          <xsl:if test="nfd:flags/nfd:localFieldsEnabled">local-fields </xsl:if>
+          <xsl:if test="nfd:flags/nfd:lpReliabilityEnabled">reliability </xsl:if>
+          <xsl:if test="nfd:flags/nfd:congestionMarkingEnabled">congestion-marking </xsl:if>
         </td>
         <td>
           <xsl:choose>
@@ -328,9 +319,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
               <th>ChildInherit</th>
               <xsl:for-each select="nfd:routes/nfd:route">
                 <td>
-                  <xsl:if test="nfd:flags/nfd:childInherit">
-                    Y
-                  </xsl:if>
+                  <xsl:if test="nfd:flags/nfd:childInherit">Y</xsl:if>
                 </td>
               </xsl:for-each>
             </tr>
@@ -338,9 +327,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
               <th>RibCapture</th>
               <xsl:for-each select="nfd:routes/nfd:route">
                 <td>
-                  <xsl:if test="nfd:flags/nfd:ribCapture">
-                    Y
-                  </xsl:if>
+                  <xsl:if test="nfd:flags/nfd:ribCapture">Y</xsl:if>
                 </td>
               </xsl:for-each>
             </tr>
@@ -368,7 +355,7 @@ xmlns:nfd="ndn:/localhost/nfd/status/1">
 </xsl:template>
 
 <xsl:template match="nfd:cs">
-  <h2>CS Information</h2>
+  <h2>Content Store</h2>
   <table class="item-list">
     <thead>
       <tr>
