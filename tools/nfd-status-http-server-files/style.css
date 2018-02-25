@@ -1,7 +1,6 @@
-@import 'reset.css';
-@import 'text.css';
-
 @charset "utf-8";
+@import "reset.css";
+@import "text.css";
 
 body {
     background-color: #ffffff;
@@ -42,21 +41,11 @@ footer {
     text-align: right;
 
     position: fixed;
-    font-height: 10px;
     bottom: 0;
     left: 5%;
 }
 
-h1 {
-    font-family: sans-serif;
-}
-
-h3 {
-    font-family: sans-serif;
-}
-
 h5 {
-    font-family: sans-serif;
     color: #727272;
 }
 
@@ -82,21 +71,18 @@ h5 {
 }
 
 /* */
-.item-list
-{
+.item-list {
     border-radius: 6px;
 
     margin-top: 10px;
     margin-bottom: 10px;
-    font-family: sans-serif;
     width: 100%;
     text-align: left;
 }
 
-.item-list th
-{
+.item-list th {
     font-weight: normal;
-    padding: 8px;
+    padding: 6px;
     background: #EAF4EF;
     border-top: 1px solid #99CCB2;
     color: #727272;
@@ -106,43 +92,39 @@ h5 {
 .item-list th.border-left {
 }
 
-.item-list td
-{
+.item-list th.name-prefix {
+    width: 20%;
+}
+
+.item-list td {
     padding: 2px;
     border-bottom: 1px solid #fff;
     color: #000;
     border-top: 1px solid transparent;
 }
 
-.item-sublist
-{
-    border-collapse:collapse;
-    border:1px solid gray;
+.item-sublist {
+    border-collapse: collapse;
+    border: 1px solid gray;
 
     padding: 4px;
-    font-family: sans-serif;
     text-align: center;
     margin-bottom: 0;
 }
 
-.item-sublist th
-{
+.item-sublist th {
     background-color: transparent;
     font-weight: bold;
     padding: 4px;
     text-align: center;
 
-    border-collapse:collapse;
-    border:1px solid gray;
+    border-collapse: collapse;
+    border: 1px solid gray;
 }
 
-.item-sublist th.border-left {
-}
-
-.item-sublist td
-{
-    border-collapse:collapse;
-    border:1px solid gray;
+.item-sublist td {
+    border-collapse: collapse;
+    border: 1px solid gray;
 
     padding: 2px;
     color: #000;
@@ -150,8 +132,7 @@ h5 {
     min-width: 20px;
 }
 
-tr.center td
-{
+tr.center td {
     text-align: center;
 }
 
@@ -174,9 +155,4 @@ tfoot {
 
 table.alt-row-colors > tbody > tr:nth-of-type(even) {
     background-color: #eeeeee;
-}
-
-.highlighted {
-    background-color: #cccccc;
-    cursor: pointer;
 }

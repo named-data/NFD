@@ -1,7 +1,7 @@
 <xsl:stylesheet version="1.0"
                 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:nfd="ndn:/localhost/nfd/status/1">
-<xsl:output method="html" encoding="utf-8" indent="yes" doctype-system="about:legacy-compat"/>
+<xsl:output method="html" encoding="UTF-8" doctype-system="about:legacy-compat"/>
 
 <xsl:template match="/">
   <html>
@@ -93,7 +93,7 @@
 </xsl:template>
 
 <xsl:template match="nfd:generalStatus">
-  <h2>General NFD status</h2>
+  <h2>General Status</h2>
   <table class="item-list">
     <thead>
       <tr>
@@ -220,7 +220,7 @@
   <table class="item-list alt-row-colors">
     <thead>
       <tr>
-        <th width="20%">Prefix</th>
+        <th class="name-prefix">Prefix</th>
         <th>NextHops</th>
       </tr>
     </thead>
@@ -255,7 +255,7 @@
   <table class="item-list alt-row-colors">
     <thead>
       <tr>
-        <th width="20%">Prefix</th>
+        <th class="name-prefix">Prefix</th>
         <th>Routes</th>
       </tr>
     </thead>
@@ -332,7 +332,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr class="center">
+      <tr>
         <td><xsl:value-of select="nfd:nHits"/></td>
         <td><xsl:value-of select="nfd:nMisses"/></td>
       </tr>
@@ -345,7 +345,7 @@
   <table class="item-list alt-row-colors">
     <thead>
       <tr>
-        <th width="20%">Namespace</th>
+        <th class="name-prefix">Namespace</th>
         <th>Strategy Name</th>
       </tr>
     </thead>
