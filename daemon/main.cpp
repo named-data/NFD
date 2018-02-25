@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,22 +35,31 @@
 
 #include <string.h>
 
+#include <boost/config.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
-
 // boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
 // see http://www.boost.org/doc/libs/1_54_0/doc/html/thread/thread_local_storage.html
 #include <boost/thread.hpp>
+#include <boost/version.hpp>
 
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
 
+#include <ndn-cxx/version.hpp>
+#ifdef HAVE_LIBPCAP
+#include <pcap/pcap.h>
+#endif
+#ifdef HAVE_WEBSOCKET
+#include <websocketpp/version.hpp>
+#endif
+
 namespace po = boost::program_options;
 
-NFD_LOG_INIT("NFD");
+NFD_LOG_INIT("Main");
 
 namespace nfd {
 
@@ -260,7 +269,32 @@ main(int argc, char** argv)
     return 0;
   }
 
-  NFD_LOG_INFO("Version " NFD_VERSION_BUILD_STRING " starting");
+  const std::string boostBuildInfo =
+      "with Boost version " + to_string(BOOST_VERSION / 100000) +
+      "." + to_string(BOOST_VERSION / 100 % 1000) +
+      "." + to_string(BOOST_VERSION % 100);
+  const std::string pcapBuildInfo =
+#ifdef HAVE_LIBPCAP
+      "with " + std::string(pcap_lib_version());
+#else
+      "without libpcap";
+#endif
+  const std::string wsBuildInfo =
+#ifdef HAVE_WEBSOCKET
+      "with WebSocket++ version " + to_string(websocketpp::major_version) +
+      "." + to_string(websocketpp::minor_version) +
+      "." + to_string(websocketpp::patch_version);
+#else
+      "without WebSocket++";
+#endif
+
+  NFD_LOG_INFO("NFD version " NFD_VERSION_BUILD_STRING " starting");
+  NFD_LOG_INFO("Built with " BOOST_COMPILER
+               ", with " BOOST_STDLIB
+               ", " << boostBuildInfo <<
+               ", " << pcapBuildInfo <<
+               ", " << wsBuildInfo <<
+               ", with ndn-cxx version " NDN_CXX_VERSION_BUILD_STRING);
 
   NfdRunner runner(configFile);
   try {
