@@ -27,15 +27,17 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from socketserver import ThreadingMixIn
+from urllib.parse import urlsplit
 import argparse, ipaddress, os, socket, subprocess
 
 
 class NfdStatusHandler(SimpleHTTPRequestHandler):
     """ The handler class to handle requests """
     def do_GET(self):
-        if self.path == "/":
+        path = urlsplit(self.path).path
+        if path == "/":
             self.__serveReport()
-        elif self.path == "/robots.txt" and self.server.allowRobots:
+        elif path == "/robots.txt" and self.server.allowRobots:
             self.send_error(404)
         else:
             super().do_GET()
