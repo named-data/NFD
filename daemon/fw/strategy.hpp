@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -147,22 +147,6 @@ public: // triggers
   virtual void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data);
-
-  /** \brief trigger before PIT entry expires
-   *
-   *  PIT entry expires when InterestLifetime has elapsed for all InRecords,
-   *  and it is not satisfied by an incoming Data.
-   *
-   *  This trigger is not invoked for PIT entry already satisfied.
-   *
-   *  In this base class this method does nothing.
-   *
-   *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
-   *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>,
-   *           although this isn't useful here because PIT entry would be deleted shortly after.
-   */
-  virtual void
-  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief trigger after Nack is received
    *

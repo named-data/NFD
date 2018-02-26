@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,6 @@ DummyStrategy::DummyStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
   , afterReceiveInterest_count(0)
   , beforeSatisfyInterest_count(0)
-  , beforeExpirePendingInterest_count(0)
   , afterReceiveNack_count(0)
 {
   this->setInstanceName(name);
@@ -71,12 +70,6 @@ DummyStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                                      const Face& inFace, const Data& data)
 {
   ++beforeSatisfyInterest_count;
-}
-
-void
-DummyStrategy::beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry)
-{
-  ++beforeExpirePendingInterest_count;
 }
 
 void

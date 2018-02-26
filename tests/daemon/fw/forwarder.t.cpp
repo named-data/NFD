@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -298,12 +298,6 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
   interest4->setInterestLifetime(time::milliseconds(5000));
   forwarder.startProcessInterest(*face1, *interest4);
-
-  strategyA.beforeExpirePendingInterest_count = 0;
-  strategyB.beforeExpirePendingInterest_count = 0;
-  this->advanceClocks(time::milliseconds(10), time::milliseconds(100));
-  BOOST_CHECK_EQUAL(strategyA.beforeExpirePendingInterest_count, 1);
-  BOOST_CHECK_EQUAL(strategyB.beforeExpirePendingInterest_count, 0);
 }
 
 BOOST_AUTO_TEST_CASE(IncomingData)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -213,11 +213,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
    */
   VIRTUAL_WITH_TESTS void
   onInterestReject(const shared_ptr<pit::Entry>& pitEntry);
-
-  /** \brief Interest unsatisfied pipeline
-   */
-  VIRTUAL_WITH_TESTS void
-  onInterestUnsatisfied(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief Interest finalize pipeline
    *  \param isSatisfied whether the Interest has been satisfied

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -241,19 +241,6 @@ Forwarder::onInterestReject(const shared_ptr<pit::Entry>& pitEntry)
 
   // set PIT straggler timer
   this->setStragglerTimer(pitEntry, false);
-}
-
-void
-Forwarder::onInterestUnsatisfied(const shared_ptr<pit::Entry>& pitEntry)
-{
-  NFD_LOG_DEBUG("onInterestUnsatisfied interest=" << pitEntry->getName());
-
-  // invoke PIT unsatisfied callback
-  this->dispatchToStrategy(*pitEntry,
-    [&] (fw::Strategy& strategy) { strategy.beforeExpirePendingInterest(pitEntry); });
-
-  // goto Interest Finalize pipeline
-  this->onInterestFinalize(pitEntry, false);
 }
 
 void
@@ -511,7 +498,7 @@ Forwarder::setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry)
 
   scheduler::cancel(pitEntry->m_unsatisfyTimer);
   pitEntry->m_unsatisfyTimer = scheduler::schedule(lastExpiryFromNow,
-    bind(&Forwarder::onInterestUnsatisfied, this, pitEntry));
+    bind(&Forwarder::onInterestFinalize, this, pitEntry, false, ndn::nullopt));
 }
 
 void

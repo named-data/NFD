@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,9 +69,6 @@ public:
                         const Face& inFace, const Data& data) override;
 
   void
-  beforeExpirePendingInterest(const shared_ptr<pit::Entry>& pitEntry) override;
-
-  void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
@@ -91,7 +88,6 @@ protected:
 public:
   int afterReceiveInterest_count;
   int beforeSatisfyInterest_count;
-  int beforeExpirePendingInterest_count;
   int afterReceiveNack_count;
 
   shared_ptr<Face> interestOutFace;
