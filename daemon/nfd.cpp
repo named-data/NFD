@@ -75,7 +75,7 @@ Nfd::initialize()
 {
   initializeLogging();
 
-  m_forwarder.reset(new Forwarder());
+  m_forwarder = make_unique<Forwarder>();
 
   FaceTable& faceTable = m_forwarder->getFaceTable();
   faceTable.addReserved(face::makeNullFace(), face::FACEID_NULL);
@@ -134,17 +134,17 @@ Nfd::initializeManagement()
   std::tie(m_internalFace, m_internalClientFace) = face::makeInternalFace(m_keyChain);
   m_forwarder->getFaceTable().addReserved(m_internalFace, face::FACEID_INTERNAL_FACE);
 
-  m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_internalClientFace, m_keyChain));
+  m_dispatcher = make_unique<ndn::mgmt::Dispatcher>(*m_internalClientFace, m_keyChain);
   m_authenticator = CommandAuthenticator::create();
 
-  m_forwarderStatusManager.reset(new ForwarderStatusManager(*m_forwarder, *m_dispatcher));
-  m_faceManager.reset(new FaceManager(*m_faceSystem, *m_dispatcher, *m_authenticator));
-  m_fibManager.reset(new FibManager(m_forwarder->getFib(), m_forwarder->getFaceTable(),
-                                    *m_dispatcher, *m_authenticator));
-  m_csManager.reset(new CsManager(m_forwarder->getCs(), m_forwarder->getCounters(),
-                                  *m_dispatcher, *m_authenticator));
-  m_strategyChoiceManager.reset(new StrategyChoiceManager(m_forwarder->getStrategyChoice(),
-                                                          *m_dispatcher, *m_authenticator));
+  m_forwarderStatusManager = make_unique<ForwarderStatusManager>(*m_forwarder, *m_dispatcher);
+  m_faceManager = make_unique<FaceManager>(*m_faceSystem, *m_dispatcher, *m_authenticator);
+  m_fibManager = make_unique<FibManager>(m_forwarder->getFib(), m_forwarder->getFaceTable(),
+                                         *m_dispatcher, *m_authenticator);
+  m_csManager = make_unique<CsManager>(m_forwarder->getCs(), m_forwarder->getCounters(),
+                                       *m_dispatcher, *m_authenticator);
+  m_strategyChoiceManager = make_unique<StrategyChoiceManager>(m_forwarder->getStrategyChoice(),
+                                                               *m_dispatcher, *m_authenticator);
 
   ConfigFile config(&ignoreRibAndLogSections);
   general::setConfigFile(config);
@@ -153,7 +153,7 @@ Nfd::initializeManagement()
   tablesConfig.setConfigFile(config);
 
   m_authenticator->setConfigFile(config);
-  m_faceManager->setConfigFile(config);
+  m_faceSystem->setConfigFile(config);
 
   // parse config file
   if (!m_configFile.empty()) {
@@ -178,7 +178,6 @@ Nfd::reloadConfigFile()
 {
   // Logging
   initializeLogging();
-  /// \todo Reopen log file
 
   // Other stuff
   ConfigFile config(&ignoreRibAndLogSections);
@@ -189,7 +188,7 @@ Nfd::reloadConfigFile()
   tablesConfig.setConfigFile(config);
 
   m_authenticator->setConfigFile(config);
-  m_faceManager->setConfigFile(config);
+  m_faceSystem->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);
@@ -204,7 +203,7 @@ Nfd::reloadConfigFileFaceSection()
 {
   // reload only face_system section of the config file to re-initialize multicast faces
   ConfigFile config(&ConfigFile::ignoreUnknownSection);
-  m_faceManager->setConfigFile(config);
+  m_faceSystem->setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, false);

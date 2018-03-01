@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "nfd-manager-base.hpp"
 #include "face/face-system.hpp"
+
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
@@ -42,13 +43,8 @@ class FaceManager : public NfdManagerBase
 {
 public:
   FaceManager(FaceSystem& faceSystem,
-              Dispatcher& dispatcher, CommandAuthenticator& authenticator);
-
-  /**
-   * @brief Subscribe to face_system section for the config file
-   */
-  void
-  setConfigFile(ConfigFile& configFile);
+              Dispatcher& dispatcher,
+              CommandAuthenticator& authenticator);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE: // ControlCommand
   void

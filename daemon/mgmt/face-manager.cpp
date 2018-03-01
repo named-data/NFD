@@ -38,7 +38,8 @@ namespace nfd {
 NFD_LOG_INIT("FaceManager");
 
 FaceManager::FaceManager(FaceSystem& faceSystem,
-                         Dispatcher& dispatcher, CommandAuthenticator& authenticator)
+                         Dispatcher& dispatcher,
+                         CommandAuthenticator& authenticator)
   : NfdManagerBase(dispatcher, authenticator, "faces")
   , m_faceSystem(faceSystem)
   , m_faceTable(faceSystem.getFaceTable())
@@ -67,12 +68,6 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   m_faceRemoveConn = m_faceTable.beforeRemove.connect([this] (const Face& face) {
     notifyFaceEvent(face, ndn::nfd::FACE_EVENT_DESTROYED);
   });
-}
-
-void
-FaceManager::setConfigFile(ConfigFile& configFile)
-{
-  m_faceSystem.setConfigFile(configFile);
 }
 
 void
