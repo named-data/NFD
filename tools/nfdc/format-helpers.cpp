@@ -177,6 +177,12 @@ operator<<(std::ostream& os, const ItemAttributes::Attribute& attr)
   return os << attr.attribute << '=';
 }
 
+std::ostream&
+operator<<(std::ostream& os, OnOff v)
+{
+  return os << (v.flag ? "on" : "off");
+}
+
 std::string
 formatTimestamp(time::system_clock::TimePoint t)
 {

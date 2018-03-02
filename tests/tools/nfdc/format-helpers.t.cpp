@@ -118,6 +118,14 @@ BOOST_AUTO_TEST_CASE(ItemAttributesMultiLine)
   BOOST_CHECK(os.is_equal(" id=500\nuri=udp4://192.0.2.1:6363\n"));
 }
 
+BOOST_AUTO_TEST_CASE(OnOff)
+{
+  output_test_stream os;
+  os << 'A' << text::OnOff{true} << 'B' << text::OnOff{false} << 'C';
+
+  BOOST_CHECK(os.is_equal("AonBoffC"));
+}
+
 BOOST_AUTO_TEST_SUITE_END() // Text
 
 BOOST_AUTO_TEST_SUITE_END() // TestFormatHelpers

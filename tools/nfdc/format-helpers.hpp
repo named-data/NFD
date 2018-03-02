@@ -165,6 +165,16 @@ private:
 std::ostream&
 operator<<(std::ostream& os, const ItemAttributes::Attribute& attr);
 
+/** \brief print boolean as 'on' or 'off'
+ */
+struct OnOff
+{
+  bool flag;
+};
+
+std::ostream&
+operator<<(std::ostream& os, OnOff v);
+
 namespace detail {
 
 template<typename DurationT>

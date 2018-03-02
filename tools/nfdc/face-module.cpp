@@ -509,8 +509,8 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
 void
 FaceModule::printFaceParams(std::ostream& os, text::ItemAttributes& ia, const ControlParameters& resp)
 {
-  os << ia("reliability") << (resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) ? "on" : "off")
-     << ia("congestion-marking") << (resp.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED) ? "on" : "off");
+  os << ia("reliability") << text::OnOff{resp.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)}
+     << ia("congestion-marking") << text::OnOff{resp.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)};
   if (resp.hasBaseCongestionMarkingInterval()) {
     os << ia("congestion-marking-interval")
        << text::formatDuration<time::milliseconds>(resp.getBaseCongestionMarkingInterval());
