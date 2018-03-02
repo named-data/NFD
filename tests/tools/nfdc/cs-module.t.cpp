@@ -26,8 +26,7 @@
 #include "nfdc/cs-module.hpp"
 
 #include "status-fixture.hpp"
-
-#include <ndn-cxx/security/signing-helpers.hpp>
+#include "execute-command-fixture.hpp"
 
 namespace nfd {
 namespace tools {
@@ -35,7 +34,64 @@ namespace nfdc {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
-BOOST_FIXTURE_TEST_SUITE(TestCsModule, StatusFixture<CsModule>)
+BOOST_AUTO_TEST_SUITE(TestCsModule)
+
+BOOST_FIXTURE_TEST_SUITE(ConfigCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(Normal)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/config");
+    BOOST_REQUIRE(req.hasCapacity());
+    BOOST_CHECK_EQUAL(req.getCapacity(), 29850);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT));
+    BOOST_CHECK_EQUAL(req.getFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT), false);
+    BOOST_CHECK(req.hasFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE));
+    BOOST_CHECK_EQUAL(req.getFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE), true);
+
+    ControlParameters resp(req);
+    resp.unsetMask();
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("cs config admit off serve on capacity 29850");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("cs-config-updated capacity=29850 admit=off serve=on\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(NoUpdate)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/config");
+    BOOST_CHECK(!req.hasCapacity());
+    BOOST_CHECK(!req.hasFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT));
+    BOOST_CHECK(!req.hasFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE));
+
+    ControlParameters resp;
+    resp.setCapacity(573599);
+    resp.setFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT, true, false);
+    resp.setFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE, false, false);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("cs config");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("cs-config-updated capacity=573599 admit=on serve=off\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = nullptr; // no response to command
+
+  this->execute("cs config capacity 19956");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when updating CS config: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // ConfigCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <cs>
@@ -49,7 +105,7 @@ CS information:
   nHits=14363 nMisses=27462
 )TEXT").substr(1);
 
-BOOST_AUTO_TEST_CASE(Status)
+BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<CsModule>)
 {
   this->fetchStatus();
   CsInfo payload;

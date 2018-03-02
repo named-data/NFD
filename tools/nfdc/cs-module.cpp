@@ -31,6 +31,53 @@ namespace tools {
 namespace nfdc {
 
 void
+CsModule::registerCommands(CommandParser& parser)
+{
+  CommandDefinition defCsConfig("cs", "config");
+  defCsConfig
+    .setTitle("change CS configuration")
+    .addArg("capacity", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("admit", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
+    .addArg("serve", ArgValueType::BOOLEAN, Required::NO, Positional::NO);
+  parser.addCommand(defCsConfig, &CsModule::config);
+}
+
+void
+CsModule::config(ExecuteContext& ctx)
+{
+  using boost::logic::indeterminate;
+
+  auto capacity = ctx.args.getOptional<uint64_t>("capacity");
+  auto enableAdmit = ctx.args.getTribool("admit");
+  auto enableServe = ctx.args.getTribool("serve");
+
+  ControlParameters p;
+  if (capacity) {
+    p.setCapacity(*capacity);
+  }
+  if (!indeterminate(enableAdmit)) {
+    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT, enableAdmit);
+  }
+  if (!indeterminate(enableServe)) {
+    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE, enableServe);
+  }
+
+  ctx.controller.start<ndn::nfd::CsConfigCommand>(p,
+    [&] (const ControlParameters& resp) {
+      text::ItemAttributes ia;
+      ctx.out << "cs-config-updated "
+              << ia("capacity") << resp.getCapacity()
+              << ia("admit") << text::OnOff{resp.getFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT)}
+              << ia("serve") << text::OnOff{resp.getFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE)}
+              << '\n';
+    },
+    ctx.makeCommandFailureHandler("updating CS config"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
 CsModule::fetchStatus(Controller& controller,
                       const function<void()>& onSuccess,
                       const Controller::DatasetFailCallback& onFailure,

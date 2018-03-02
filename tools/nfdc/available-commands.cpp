@@ -24,6 +24,7 @@
  */
 
 #include "available-commands.hpp"
+#include "cs-module.hpp"
 #include "face-module.hpp"
 #include "rib-module.hpp"
 #include "status.hpp"
@@ -39,6 +40,7 @@ registerCommands(CommandParser& parser)
   registerStatusCommands(parser);
   FaceModule::registerCommands(parser);
   RibModule::registerCommands(parser);
+  CsModule::registerCommands(parser);
   StrategyChoiceModule::registerCommands(parser);
 }
 

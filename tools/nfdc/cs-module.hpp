@@ -26,6 +26,7 @@
 #ifndef NFD_TOOLS_NFDC_CS_MODULE_HPP
 #define NFD_TOOLS_NFDC_CS_MODULE_HPP
 
+#include "command-parser.hpp"
 #include "module.hpp"
 
 namespace nfd {
@@ -40,6 +41,16 @@ using ndn::nfd::CsInfo;
 class CsModule : public Module, noncopyable
 {
 public:
+  /** \brief register 'cs config' command
+   */
+  static void
+  registerCommands(CommandParser& parser);
+
+  /** \brief the 'cs config' command
+   */
+  static void
+  config(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const function<void()>& onSuccess,
