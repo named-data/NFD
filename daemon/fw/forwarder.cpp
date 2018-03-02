@@ -205,8 +205,11 @@ Forwarder::onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& p
   data.setTag(make_shared<lp::IncomingFaceIdTag>(face::FACEID_CONTENT_STORE));
   // XXX should we lookup PIT for other Interests that also match csMatch?
 
+  pitEntry->isSatisfied = true;
+  pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
+
   // set PIT straggler timer
-  this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
+  this->setStragglerTimer(pitEntry);
 
   // goto outgoing Data pipeline
   this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
@@ -240,18 +243,17 @@ Forwarder::onInterestReject(const shared_ptr<pit::Entry>& pitEntry)
   this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
 
   // set PIT straggler timer
-  this->setStragglerTimer(pitEntry, false);
+  this->setStragglerTimer(pitEntry);
 }
 
 void
-Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                              ndn::optional<time::milliseconds> dataFreshnessPeriod)
+Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
 {
   NFD_LOG_DEBUG("onInterestFinalize interest=" << pitEntry->getName() <<
-                (isSatisfied ? " satisfied" : " unsatisfied"));
+                (pitEntry->isSatisfied ? " satisfied" : " unsatisfied"));
 
   // Dead Nonce List insert if necessary
-  this->insertDeadNonceList(*pitEntry, isSatisfied, dataFreshnessPeriod, 0);
+  this->insertDeadNonceList(*pitEntry, 0);
 
   // PIT delete
   this->cancelUnsatisfyAndStragglerTimer(*pitEntry);
@@ -307,15 +309,18 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->dispatchToStrategy(*pitEntry,
       [&] (fw::Strategy& strategy) { strategy.beforeSatisfyInterest(pitEntry, inFace, data); });
 
+    pitEntry->isSatisfied = true;
+    pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
+
     // Dead Nonce List insert if necessary (for out-record of inFace)
-    this->insertDeadNonceList(*pitEntry, true, data.getFreshnessPeriod(), &inFace);
+    this->insertDeadNonceList(*pitEntry, &inFace);
 
     // mark PIT satisfied
     pitEntry->clearInRecords();
     pitEntry->deleteOutRecord(inFace);
 
     // set PIT straggler timer
-    this->setStragglerTimer(pitEntry, true, data.getFreshnessPeriod());
+    this->setStragglerTimer(pitEntry);
   }
 
   // foreach pending downstream
@@ -498,18 +503,17 @@ Forwarder::setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry)
 
   scheduler::cancel(pitEntry->m_unsatisfyTimer);
   pitEntry->m_unsatisfyTimer = scheduler::schedule(lastExpiryFromNow,
-    bind(&Forwarder::onInterestFinalize, this, pitEntry, false, ndn::nullopt));
+    bind(&Forwarder::onInterestFinalize, this, pitEntry));
 }
 
 void
-Forwarder::setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                             ndn::optional<time::milliseconds> dataFreshnessPeriod)
+Forwarder::setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry)
 {
   time::nanoseconds stragglerTime = time::milliseconds(100);
 
   scheduler::cancel(pitEntry->m_stragglerTimer);
   pitEntry->m_stragglerTimer = scheduler::schedule(stragglerTime,
-    bind(&Forwarder::onInterestFinalize, this, pitEntry, isSatisfied, dataFreshnessPeriod));
+    bind(&Forwarder::onInterestFinalize, this, pitEntry));
 }
 
 void
@@ -527,16 +531,14 @@ insertNonceToDnl(DeadNonceList& dnl, const pit::Entry& pitEntry,
 }
 
 void
-Forwarder::insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
-                               ndn::optional<time::milliseconds> dataFreshnessPeriod, Face* upstream)
+Forwarder::insertDeadNonceList(pit::Entry& pitEntry, Face* upstream)
 {
   // need Dead Nonce List insert?
   bool needDnl = true;
-  if (isSatisfied) {
-    BOOST_ASSERT(dataFreshnessPeriod);
-    BOOST_ASSERT(*dataFreshnessPeriod >= time::milliseconds::zero());
+  if (pitEntry.isSatisfied) {
+    BOOST_ASSERT(pitEntry.dataFreshnessPeriod >= 0_ms);
     needDnl = static_cast<bool>(pitEntry.getInterest().getMustBeFresh()) &&
-              *dataFreshnessPeriod < m_deadNonceList.getLifetime();
+              pitEntry.dataFreshnessPeriod < m_deadNonceList.getLifetime();
   }
 
   if (!needDnl) {

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,9 @@ namespace nfd {
 namespace pit {
 
 Entry::Entry(const Interest& interest)
-  : m_interest(interest.shared_from_this())
+  : isSatisfied(false)
+  , dataFreshnessPeriod(0_ms)
+  , m_interest(interest.shared_from_this())
   , m_nameTreeEntry(nullptr)
 {
 }

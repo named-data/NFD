@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -235,6 +235,15 @@ public:
    *  except when this entry is being processed in a pipeline.
    */
   scheduler::EventId m_stragglerTimer;
+
+  /** \brief indicate if PIT entry is satisfied
+   */
+  bool isSatisfied;
+
+  /** \brief Data freshness period
+   *  \note This field is meaningful only if isSatisfied is true
+   */
+  time::milliseconds dataFreshnessPeriod;
 
 private:
   shared_ptr<const Interest> m_interest;

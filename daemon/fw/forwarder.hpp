@@ -215,12 +215,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   onInterestReject(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief Interest finalize pipeline
-   *  \param isSatisfied whether the Interest has been satisfied
-   *  \param dataFreshnessPeriod FreshnessPeriod of satisfying Data
    */
   VIRTUAL_WITH_TESTS void
-  onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                     ndn::optional<time::milliseconds> dataFreshnessPeriod = ndn::nullopt);
+  onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief incoming Data pipeline
    */
@@ -255,8 +252,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry);
 
   VIRTUAL_WITH_TESTS void
-  setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry, bool isSatisfied,
-                    ndn::optional<time::milliseconds> dataFreshnessPeriod = ndn::nullopt);
+  setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry);
 
   VIRTUAL_WITH_TESTS void
   cancelUnsatisfyAndStragglerTimer(pit::Entry& pitEntry);
@@ -266,8 +262,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
    *                  if not null, insert Nonce only on the out-records of this face
    */
   VIRTUAL_WITH_TESTS void
-  insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
-                      ndn::optional<time::milliseconds> dataFreshnessPeriod, Face* upstream);
+  insertDeadNonceList(pit::Entry& pitEntry, Face* upstream);
 
   /** \brief call trigger (method) on the effective strategy of pitEntry
    */
