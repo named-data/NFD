@@ -1,7 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-
 """
-Copyright (c) 2014-2016,  Regents of the University of California,
+Copyright (c) 2014-2018,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,55 +27,49 @@ top = '..'
 
 def build(bld):
     # Unit tests
-    if bld.env['WITH_TESTS']:
+    if bld.env.WITH_TESTS:
+        config_path = 'UNIT_TEST_CONFIG_PATH="%s"' % bld.bldnode.make_node('tmp-files')
 
-        # common test modules
-        unit_test_base = bld(
+        # common test objects
+        bld.objects(
             target='unit-tests-base',
-            name='unit-tests-base',
-            features='cxx pch',
-            source=bld.path.ant_glob(['*.cpp'], excl='main.cpp'),
+            features='pch',
+            source=bld.path.ant_glob('*.cpp', excl='main.cpp'),
             use='core-objects',
             headers='../core/common.hpp boost-test.hpp',
-            defines='UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode,
-          )
+            defines=[config_path])
 
         for module, name in {"core": "Core Tests",
                              "daemon": "Daemon Tests",
                              "rib": "RIB Tests",
                              "tools": "Tools Tests"}.items():
-            # main()
-            bld(target='unit-tests-%s-main' % module,
-                name='unit-tests-%s-main' % module,
-                features='cxx',
-                use='BOOST',
-                source='main.cpp',
-                defines=['BOOST_TEST_MODULE=%s' % name]
-              )
+            # main() for the module
+            bld.objects(target='unit-tests-%s-main' % module,
+                        source='main.cpp',
+                        use='BOOST',
+                        defines=['BOOST_TEST_MODULE=%s' % name])
+
+            node = bld.path.find_dir(module)
+            src = node.ant_glob('**/*.cpp', excl=['face/*ethernet*.cpp',
+                                                  'face/pcap*.cpp',
+                                                  'face/unix*.cpp',
+                                                  'face/websocket*.cpp'])
+            if bld.env.HAVE_LIBPCAP:
+                src += node.ant_glob('face/*ethernet*.cpp')
+                src += node.ant_glob('face/pcap*.cpp')
+            if bld.env.HAVE_UNIX_SOCKETS:
+                src += node.ant_glob('face/unix*.cpp')
+            if bld.env.HAVE_WEBSOCKET:
+                src += node.ant_glob('face/websocket*.cpp')
 
             # unit-tests-%module
-            unit_tests = bld.program(
-                target='../unit-tests-%s' % module,
-                features='cxx cxxprogram',
-                source=bld.path.ant_glob(['%s/**/*.cpp' % module],
-                                         excl=['%s/**/ethernet*.cpp' % module,
-                                               '%s/**/unix*.cpp' % module,
-                                               '%s/**/websocket*.cpp' % module]),
-                use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
-                includes='.',
-                install_path=None,
-                defines='UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode,
-              )
+            bld.program(name='unit-tests-%s' % module,
+                        target='../unit-tests-%s' % module,
+                        source=src,
+                        use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
+                        defines=[config_path],
+                        install_path=None)
 
-            if bld.env['HAVE_LIBPCAP']:
-                unit_tests.source += bld.path.ant_glob('%s/**/ethernet*.cpp' % module)
-
-            if bld.env['HAVE_UNIX_SOCKETS']:
-                unit_tests.source += bld.path.ant_glob('%s/**/unix*.cpp' % module)
-
-            if bld.env['HAVE_WEBSOCKET']:
-                unit_tests.source += bld.path.ant_glob('%s/**/websocket*.cpp' % module)
-
-    # Other tests (e.g., stress tests that can be enabled even if unit tests are disabled)
-    if bld.env['WITH_TESTS'] or bld.env['WITH_OTHER_TESTS']:
-        bld.recurse("other")
+    # Other tests (e.g., stress tests and benchmarks that can be enabled even if unit tests are disabled)
+    if bld.env.WITH_TESTS or bld.env.WITH_OTHER_TESTS:
+        bld.recurse('other')

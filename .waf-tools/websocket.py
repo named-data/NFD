@@ -6,7 +6,8 @@ import re
 def addWebsocketOptions(self, opt):
     opt.add_option('--without-websocket', action='store_false', default=True,
                    dest='with_websocket', help='Disable WebSocket face support')
-setattr(Options.OptionsContext, "addWebsocketOptions", addWebsocketOptions)
+
+setattr(Options.OptionsContext, 'addWebsocketOptions', addWebsocketOptions)
 
 @Configure.conf
 def checkWebsocket(self, **kw):
@@ -15,7 +16,7 @@ def checkWebsocket(self, **kw):
 
     isMandatory = kw.get('mandatory', True)
 
-    self.start_msg('Checking for WebSocket includes')
+    self.start_msg('Checking for WebSocket++ includes')
 
     try:
         websocketDir = self.path.find_dir('websocketpp/websocketpp')
@@ -24,40 +25,36 @@ def checkWebsocket(self, **kw):
 
         versionFile = websocketDir.find_node('version.hpp')
         if not websocketDir:
-            raise Errors.WafError('Corrupted: WebSocket version file not found')
+            raise Errors.WafError('WebSocket++ version file not found')
 
         try:
             txt = versionFile.read()
         except (OSError, IOError):
-            raise Errors.WafError('Corrupted: cannot read WebSocket version file')
+            raise Errors.WafError('Cannot read WebSocket++ version file')
 
+        version = [None, None, None]
         # Looking for the following:
         # static int const major_version = 0;
         # static int const minor_version = 7;
         # static int const patch_version = 0;
-
-        version = [None, None, None]
-
         majorVersion = re.compile('^static int const major_version = (\\d+);$', re.M)
         version[0] = majorVersion.search(txt)
-
         minorVersion = re.compile('^static int const minor_version = (\\d+);$', re.M)
         version[1] = minorVersion.search(txt)
-
         patchVersion = re.compile('^static int const patch_version = (\\d+);$', re.M)
         version[2] = patchVersion.search(txt)
 
         if not version[0] or not version[1] or not version[2]:
-            raise Errors.WafError('Corrupted: cannot detect websocket version')
+            raise Errors.WafError('Cannot detect WebSocket++ version')
 
-        self.env['WEBSOCKET_VERSION'] = [i.group(1) for i in version]
+        self.env.WEBSOCKET_VERSION = [i.group(1) for i in version]
 
         # todo: version checking, if necessary
 
-        self.end_msg('.'.join(self.env['WEBSOCKET_VERSION']))
+        self.end_msg('.'.join(self.env.WEBSOCKET_VERSION))
 
-        self.env['INCLUDES_WEBSOCKET'] = websocketDir.parent.abspath()
-        self.env['HAVE_WEBSOCKET'] = True
+        self.env.INCLUDES_WEBSOCKET = websocketDir.parent.abspath()
+        self.env.HAVE_WEBSOCKET = True
         self.define('HAVE_WEBSOCKET', 1)
         self.define('_WEBSOCKETPP_CPP11_STL_', 1)
 
@@ -71,6 +68,6 @@ def checkWebsocket(self, **kw):
             Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/archive/0.7.0.tar.gz > websocket.tar.gz')
             Logs.warn('    tar zxf websocket.tar.gz -C websocketpp/ --strip 1')
             Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
-            self.fatal("The configuration failed")
+            self.fatal('The configuration failed')
         else:
             self.end_msg(str(error))

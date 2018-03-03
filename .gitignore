@@ -1,9 +1,30 @@
-.DS*
-.waf-1*
-.waf3-*
-.lock*
-*.pyc
-*.pyo
-build/
-VERSION
-unit-tests.conf
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+.\#*
+
+# Visual Studio Code
+.vscode/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Waf build system
+/build/
+.waf-*-*/
+.waf3-*-*/
+.lock-waf*
+
+# Compiled python code
+__pycache__/
+*.py[cod]
+
+# Other
+/unit-tests.conf
+/VERSION

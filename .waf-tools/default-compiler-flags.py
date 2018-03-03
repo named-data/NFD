@@ -1,16 +1,17 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-from waflib import Logs, Configure, Utils
+from waflib import Configure, Logs, Utils
 
 def options(opt):
-    opt.add_option('--debug', '--with-debug', action='store_true', default=False, dest='debug',
-                   help='''Compile in debugging mode with minimal optimizations (-O0 or -Og)''')
+    opt.add_option('--debug', '--with-debug', action='store_true', default=False,
+                   help='Compile in debugging mode with minimal optimizations (-O0 or -Og)')
 
 def configure(conf):
     conf.start_msg('Checking C++ compiler version')
 
-    cxx = conf.env['CXX_NAME'] # CXX_NAME is the generic name of the compiler
-    ccver = tuple(int(i) for i in conf.env['CC_VERSION'])
+    cxx = conf.env.CXX_NAME # generic name of the compiler
+    ccver = tuple(int(i) for i in conf.env.CC_VERSION)
+    ccverstr = '.'.join(conf.env.CC_VERSION)
     errmsg = ''
     warnmsg = ''
     if cxx == 'gcc':
@@ -28,13 +29,13 @@ def configure(conf):
         conf.flags = CompilerFlags()
 
     if errmsg:
-        conf.end_msg('.'.join(conf.env['CC_VERSION']), color='RED')
+        conf.end_msg(ccverstr, color='RED')
         conf.fatal(errmsg)
     elif warnmsg:
-        conf.end_msg('.'.join(conf.env['CC_VERSION']), color='YELLOW')
+        conf.end_msg(ccverstr, color='YELLOW')
         Logs.warn(warnmsg)
     else:
-        conf.end_msg('.'.join(conf.env['CC_VERSION']))
+        conf.end_msg(ccverstr)
 
     conf.areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
 
@@ -53,10 +54,10 @@ def check_compiler_flags(conf):
         extraFlags = conf.flags.getDebugFlags(conf)
         if conf.areCustomCxxflagsPresent:
             missingFlags = [x for x in extraFlags['CXXFLAGS'] if x not in conf.env.CXXFLAGS]
-            if len(missingFlags) > 0:
-                Logs.warn("Selected debug mode, but CXXFLAGS is set to a custom value '%s'"
-                          % " ".join(conf.env.CXXFLAGS))
-                Logs.warn("Default flags '%s' are not activated" % " ".join(missingFlags))
+            if missingFlags:
+                Logs.warn('Selected debug mode, but CXXFLAGS is set to a custom value "%s"'
+                          % ' '.join(conf.env.CXXFLAGS))
+                Logs.warn('Default flags "%s" will not be used' % ' '.join(missingFlags))
     else:
         extraFlags = conf.flags.getOptimizedFlags(conf)
 
@@ -106,6 +107,9 @@ def add_supported_linkflags(self, linkflags):
 
 
 class CompilerFlags(object):
+    def getCompilerVersion(self, conf):
+        return tuple(int(i) for i in conf.env.CC_VERSION)
+
     def getGeneralFlags(self, conf):
         """Get dict of CXXFLAGS, LINKFLAGS, and DEFINES that are always needed"""
         return {'CXXFLAGS': [], 'LINKFLAGS': [], 'DEFINES': []}
@@ -160,16 +164,14 @@ class GccBasicFlags(CompilerFlags):
 class GccFlags(GccBasicFlags):
     def getDebugFlags(self, conf):
         flags = super(GccFlags, self).getDebugFlags(conf)
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (5, 1, 0):
+        if self.getCompilerVersion(conf) < (5, 1, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-field-initializers']
         flags['CXXFLAGS'] += ['-fdiagnostics-color'] # gcc >= 4.9
         return flags
 
     def getOptimizedFlags(self, conf):
         flags = super(GccFlags, self).getOptimizedFlags(conf)
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if version < (5, 1, 0):
+        if self.getCompilerVersion(conf) < (5, 1, 0):
             flags['CXXFLAGS'] += ['-Wno-missing-field-initializers']
         flags['CXXFLAGS'] += ['-fdiagnostics-color'] # gcc >= 4.9
         return flags
@@ -177,8 +179,8 @@ class GccFlags(GccBasicFlags):
 class ClangFlags(GccBasicFlags):
     def getGeneralFlags(self, conf):
         flags = super(ClangFlags, self).getGeneralFlags(conf)
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
-        if Utils.unversioned_sys_platform() == 'darwin' and version >= (9, 0, 0): # Bug #4296
+        if Utils.unversioned_sys_platform() == 'darwin' and self.getCompilerVersion(conf) >= (9, 0, 0):
+            # Bug #4296
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
                                   ['-isystem', '/opt/local/include']] # for MacPorts
         return flags
@@ -194,7 +196,7 @@ class ClangFlags(GccBasicFlags):
                               '-Wno-error=unneeded-internal-declaration', # Bug #1588
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
+        version = self.getCompilerVersion(conf)
         if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags
@@ -206,7 +208,7 @@ class ClangFlags(GccBasicFlags):
                               '-Wundefined-func-template',
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
-        version = tuple(int(i) for i in conf.env['CC_VERSION'])
+        version = self.getCompilerVersion(conf)
         if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
         return flags

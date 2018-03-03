@@ -24,8 +24,9 @@
  */
 
 #include "rib/rib-manager.hpp"
-#include "manager-common-fixture.hpp"
 #include "core/fib-max-depth.hpp"
+
+#include "tests/manager-common-fixture.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>

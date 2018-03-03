@@ -26,8 +26,8 @@
 #include "face/generic-link-service.hpp"
 #include "face/face.hpp"
 
-#include "test-common.hpp"
 #include "dummy-transport.hpp"
+#include "tests/test-common.hpp"
 
 #include <ndn-cxx/lp/empty-value.hpp>
 #include <ndn-cxx/lp/prefix-announcement.hpp>

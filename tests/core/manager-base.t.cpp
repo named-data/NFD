@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,13 @@
  */
 
 #include "core/manager-base.hpp"
-#include "manager-common-fixture.hpp"
+#include "tests/manager-common-fixture.hpp"
 
+#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/key.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
-#include <ndn-cxx/mgmt/nfd/control-command.hpp>
 
 namespace nfd {
 namespace tests {

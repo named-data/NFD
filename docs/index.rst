@@ -2,9 +2,8 @@ NFD - Named Data Networking Forwarding Daemon
 =============================================
 
 NFD is a network forwarder that implements and evolves together with the Named Data
-Networking (NDN) `protocol <https://named-data.net/doc/ndn-tlv/>`__. After the initial
-release, NFD will become a core component of the `NDN Platform
-<https://named-data.net/codebase/platform/>`__ and will follow the same release cycle.
+Networking (NDN) `protocol <https://named-data.net/doc/ndn-tlv/>`__. NFD is a core
+component of the `NDN Platform <https://named-data.net/codebase/platform/>`__.
 
 NFD Documentation
 -----------------

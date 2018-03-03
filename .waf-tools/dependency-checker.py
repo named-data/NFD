@@ -4,10 +4,10 @@ from waflib import Options, Logs
 from waflib.Configure import conf
 
 def addDependencyOptions(self, opt, name, extraHelp=''):
-    opt.add_option('--with-%s' % name, type='string', default=None,
-                   dest='with_%s' % name,
+    opt.add_option('--with-%s' % name, metavar='PATH',
                    help='Path to %s, e.g., /usr/local %s' % (name, extraHelp))
-setattr(Options.OptionsContext, "addDependencyOptions", addDependencyOptions)
+
+setattr(Options.OptionsContext, 'addDependencyOptions', addDependencyOptions)
 
 @conf
 def checkDependency(self, name, **kw):
@@ -18,8 +18,8 @@ def checkDependency(self, name, **kw):
     kw['mandatory'] = kw.get('mandatory', True)
 
     if root:
-        isOk = self.check_cxx(includes="%s/include" % root,
-                              libpath="%s/lib" % root,
+        isOk = self.check_cxx(includes='%s/include' % root,
+                              libpath='%s/lib' % root,
                               **kw)
     else:
         isOk = self.check_cxx(**kw)

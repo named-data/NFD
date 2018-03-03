@@ -1,7 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
-
 """
-Copyright (c) 2014-2016,  Regents of the University of California,
+Copyright (c) 2014-2018,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,29 +29,21 @@ def build(bld):
     for module, name in {"cs-benchmark": "CS Benchmark",
                          "pit-fib-benchmark": "PIT & FIB Benchmark"}.items():
         # main
-        bld(target='unit-tests-%s-main' % module,
-            name='unit-tests-%s-main' % module,
-            features='cxx',
-            source='../main.cpp',
-            use='BOOST',
-            defines=['BOOST_TEST_MODULE=%s' % name]
-            )
-
+        bld.objects(target='other-tests-%s-main' % module,
+                    source='../main.cpp',
+                    use='BOOST',
+                    defines=['BOOST_TEST_MODULE=%s' % name])
         # module
-        bld.program(target='../../%s' % module,
-                    features='cxx cxxprogram',
-                    source=bld.path.ant_glob(['%s*.cpp' % module]),
-                    use='daemon-objects unit-tests-base unit-tests-%s-main' % module,
-                    includes='.',
-                    install_path=None,
-                    defines=['UNIT_TEST_CONFIG_PATH=\"%s/tmp-files/\"' % bld.bldnode]
-                    )
+        bld.program(name=module,
+                    target='../../%s' % module,
+                    source=bld.path.ant_glob('%s*.cpp' % module),
+                    use='daemon-objects unit-tests-base other-tests-%s-main' % module,
+                    defines=['UNIT_TEST_CONFIG_PATH="%s"' % bld.bldnode.make_node('tmp-files')],
+                    install_path=None)
 
     # face-benchmark does not rely on Boost.Test
-    bld.program(target='../../face-benchmark',
-                features='cxx cxxprogram',
-                source=bld.path.ant_glob(['face-benchmark*.cpp']),
+    bld.program(name='face-benchmark',
+                target='../../face-benchmark',
+                source=bld.path.ant_glob('face-benchmark*.cpp'),
                 use='daemon-objects',
-                includes='.',
-                install_path=None
-                )
+                install_path=None)

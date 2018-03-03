@@ -1,59 +1,88 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+"""
+Copyright (c) 2014-2018,  Regents of the University of California,
+                          Arizona Board of Regents,
+                          Colorado State University,
+                          University Pierre & Marie Curie, Sorbonne University,
+                          Washington University in St. Louis,
+                          Beijing Institute of Technology,
+                          The University of Memphis.
 
-from waflib import Utils, Context
+This file is part of NFD (Named Data Networking Forwarding Daemon).
+See AUTHORS.md for complete list of NFD authors and contributors.
+
+NFD is free software: you can redistribute it and/or modify it under the terms
+of the GNU General Public License as published by the Free Software Foundation,
+either version 3 of the License, or (at your option) any later version.
+
+NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+"""
 
 top = '..'
 
+from waflib import Context, Utils
+
 def build(bld):
-    TOOLS_DEPENDENCY = 'core-objects NDN_CXX BOOST LIBRESOLV'
+    commonDeps = 'core-objects NDN_CXX BOOST LIBRESOLV'
 
     # Single object tools:
     # tools/example-tool.cpp is a self-contained tool with a main() function
     # and is built as build/bin/example-tool.
     # These tools cannot be unit-tested.
-    for i in bld.path.ant_glob(['*.cpp']):
-        name = str(i)[:-len('.cpp')]
-        bld.program(target='../bin/%s' % name,
-                    source=[i],
-                    use=TOOLS_DEPENDENCY)
+    for tool in bld.path.ant_glob('*.cpp'):
+        name = tool.change_ext('').path_from(bld.path.get_bld())
+        bld.program(name=name,
+                    target='../bin/%s' % name,
+                    source=[tool],
+                    use=commonDeps)
 
     # Sub-directory tools:
     # tools/example-tool/**/*.cpp is compiled and linked into build/bin/example-tool.
     # tools/example-tool/main.cpp must exist and must contain the main() function.
     # All other objects are collected into 'tools-objects' and can be unit-tested.
     testableObjects = []
-    for name in bld.path.ant_glob(['*'], dir=True, src=False):
-        mainFile = bld.path.find_node(['%s/main.cpp' % name])
+    for subdir in bld.path.ant_glob('*', dir=True, src=False):
+        mainFile = subdir.find_node('main.cpp')
         if mainFile is None:
             continue # not a C++ tool
-        srcFiles = bld.path.ant_glob(['%s/**/*.cpp' % name], excl=['%s/main.cpp' % name])
+
+        name = subdir.path_from(bld.path)
+        srcFiles = subdir.ant_glob('**/*.cpp', excl=['main.cpp'])
+        srcObjects = ''
         if srcFiles:
             srcObjects = 'tools-%s-objects' % name
             bld.objects(target=srcObjects,
                         source=srcFiles,
-                        use=TOOLS_DEPENDENCY,
-                        includes='%s' % name)
+                        use=commonDeps,
+                        includes=name)
             testableObjects.append(srcObjects)
-        else:
-            srcObjects = ''
 
-        bld.program(target='../bin/%s' % name,
+        bld.program(name=name,
+                    target='../bin/%s' % name,
                     source=[mainFile],
-                    use=TOOLS_DEPENDENCY + ' ' + srcObjects,
-                    includes='%s' % name)
+                    use=commonDeps + ' ' + srcObjects,
+                    includes=name)
 
-    bld(target='tools-objects',
-        export_includes='.',
-        use=testableObjects)
+    bld.objects(target='tools-objects',
+                source=[],
+                export_includes='.',
+                use=testableObjects)
 
-    scripts = bld.path.ant_glob(['*.sh', '*.py'])
-    bld(features='subst',
-        name='scripts',
-        target=['../bin/%s' % node.change_ext('') for node in scripts],
-        source=scripts,
-        install_path='${BINDIR}',
-        chmod=Utils.O755,
-        VERSION=Context.g_module.VERSION)
+    # Scripts
+    for script in bld.path.ant_glob(['*.sh', '*.py']):
+        name = script.change_ext('').path_from(bld.path.get_bld())
+        bld(features='subst',
+            name=name,
+            target='../bin/%s' % name,
+            source=[script],
+            install_path='${BINDIR}',
+            chmod=Utils.O755,
+            VERSION=Context.g_module.VERSION)
 
     bld.install_files('${DATAROOTDIR}/ndn',
                       bld.path.ant_glob('nfd-status-http-server-files/*'))
