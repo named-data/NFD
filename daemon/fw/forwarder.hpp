@@ -209,11 +209,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace, const Interest& interest);
 
-  /** \brief Interest reject pipeline
-   */
-  VIRTUAL_WITH_TESTS void
-  onInterestReject(const shared_ptr<pit::Entry>& pitEntry);
-
   /** \brief Interest finalize pipeline
    */
   VIRTUAL_WITH_TESTS void
@@ -248,14 +243,10 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   onDroppedInterest(Face& outFace, const Interest& interest);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
-  VIRTUAL_WITH_TESTS void
-  setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry);
-
-  VIRTUAL_WITH_TESTS void
-  setStragglerTimer(const shared_ptr<pit::Entry>& pitEntry);
-
-  VIRTUAL_WITH_TESTS void
-  cancelUnsatisfyAndStragglerTimer(pit::Entry& pitEntry);
+  /** \brief set a new expiry timer (now + \p duration) on a PIT entry
+   */
+  void
+  setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::milliseconds duration);
 
   /** \brief insert Nonce to Dead Nonce List if necessary
    *  \param upstream if null, insert Nonces from all out-records;

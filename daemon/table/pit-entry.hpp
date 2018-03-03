@@ -215,26 +215,11 @@ public: // out-record
   deleteOutRecord(const Face& face);
 
 public:
-  /** \brief unsatisfy timer
+  /** \brief expiry timer
    *
    *  This timer is used in forwarding pipelines to delete the entry
-   *  when it expires without being satisfied.
-   *  It fires when the last InterestLifetime among in-records expires.
-   *
-   *  Either this or the straggler timer should be set at all times,
-   *  except when this entry is being processed in a pipeline.
    */
-  scheduler::EventId m_unsatisfyTimer;
-
-  /** \brief straggler timer
-   *
-   *  This timer is used in forwarding pipelines to delete the entry when it has been satisfied
-   *  and is no longer needed for measurement collection purpose.
-   *
-   *  Either this or the unsatisfy timer should be set at all times,
-   *  except when this entry is being processed in a pipeline.
-   */
-  scheduler::EventId m_stragglerTimer;
+  scheduler::EventId expiryTimer;
 
   /** \brief indicate if PIT entry is satisfied
    */

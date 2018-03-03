@@ -121,11 +121,18 @@ public: // triggers
    *  - cannot be satisfied by ContentStore
    *  - is under a namespace managed by this strategy
    *
+   *  The PIT entry is set to expire after InterestLifetime has elapsed at each downstream.
+   *
    *  The strategy should decide whether and where to forward this Interest.
    *  - If the strategy decides to forward this Interest,
-   *    invoke this->sendInterest one or more times, either now or shortly after
-   *  - If strategy concludes that this Interest cannot be forwarded,
-   *    invoke this->rejectPendingInterest so that PIT entry will be deleted shortly
+   *    invoke \c sendInterest for each upstream, either now or shortly after via a scheduler event,
+   *    but before PIT entry expires.
+   *    Optionally, the strategy can invoke \c setExpiryTimer to adjust how long it would wait for a response.
+   *  - If the strategy has already forwarded this Interest previously and decides to continue waiting,
+   *    do nothing.
+   *    Optionally, the strategy can invoke \c setExpiryTimer to adjust how long it would wait for a response.
+   *  - If the strategy concludes that this Interest cannot be satisfied,
+   *    invoke \c rejectPendingInterest to erase the PIT entry.
    *
    *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
    *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
@@ -137,7 +144,13 @@ public: // triggers
   /** \brief trigger before PIT entry is satisfied
    *
    *  This trigger is invoked when an incoming Data satisfies the PIT entry.
-   *  It can be invoked even if the PIT entry has already been satisfied.
+   *  Normally, only the first incoming Data would satisfy the PIT entry and invoke this trigger,
+   *  after which the PIT entry is erased.
+   *
+   *  If the strategy wishes to collect responses from additional upstream nodes,
+   *  it should invoke \c setExpiryTimer within this function to retain the PIT entry.
+   *  If a Data arrives from another upstream during the extended PIT entry lifetime, this trigger will be invoked again.
+   *  At that time, this function must invoke \c setExpiryTimer again to continue collecting more responses.
    *
    *  In this base class this method does nothing.
    *
@@ -155,6 +168,14 @@ public: // triggers
    *  The Nack has been confirmed to be a response to the last Interest forwarded
    *  to that upstream, i.e. the PIT out-record exists and has a matching Nonce.
    *  The NackHeader has been recorded in the PIT out-record.
+   *
+   *  If the PIT entry is not yet satisfied, its expiry timer remains unchanged.
+   *  Otherwise, the PIT entry normally would expire immediately after this function returns.
+   *
+   *  If the strategy wishes to collect responses from additional upstream nodes,
+   *  it should invoke \c setExpiryTimer within this function to retain the PIT entry.
+   *  If a Nack arrives from another upstream during the extended PIT entry lifetime, this trigger will be invoked again.
+   *  At that time, this function must invoke \c setExpiryTimer again to continue collecting more responses.
    *
    *  In this base class this method does nothing.
    *
@@ -185,16 +206,16 @@ protected: // actions
     m_forwarder.onOutgoingInterest(pitEntry, outFace, interest);
   }
 
-  /** \brief decide that a pending Interest cannot be forwarded
-   *  \param pitEntry PIT entry
+  /** \brief schedule the PIT entry for immediate deletion
    *
-   *  This shall not be called if the pending Interest has been
-   *  forwarded earlier, and does not need to be resent now.
+   *  This helper function sets the PIT entry expiry time to zero.
+   *  The strategy should invoke this function when it concludes that the Interest cannot
+   *  be forwarded and it does not want to wait for responses from existing upstream nodes.
    */
   VIRTUAL_WITH_TESTS void
   rejectPendingInterest(const shared_ptr<pit::Entry>& pitEntry)
   {
-    m_forwarder.onInterestReject(pitEntry);
+    this->setExpiryTimer(pitEntry, 0_ms);
   }
 
   /** \brief send Nack to outFace
@@ -221,6 +242,14 @@ protected: // actions
   void
   sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
             std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
+
+  /** \brief Schedule the PIT entry to be erased after \p duration
+   */
+  void
+  setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::milliseconds duration)
+  {
+    m_forwarder.setExpiryTimer(pitEntry, duration);
+  }
 
 protected: // accessors
   /** \brief performs a FIB lookup, considering Link object if present
