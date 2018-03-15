@@ -83,11 +83,17 @@ matrix:
       env: COMPILER=clang++-6.0
       addons:
         apt:
-          sources: ["llvm-toolchain-trusty", "ubuntu-toolchain-r-test"]
+          sources: ["llvm-toolchain-trusty-6.0", "ubuntu-toolchain-r-test"]
           packages: clang-6.0
+    - os: linux
+      env: COMPILER=clang++-7
+      addons:
+        apt:
+          sources: ["llvm-toolchain-trusty", "ubuntu-toolchain-r-test"]
+          packages: clang-7
 
     # macOS/clang
-    # https://docs.travis-ci.com/user/osx-ci-environment/#OS-X-Version
+    # https://docs.travis-ci.com/user/reference/osx/#OS-X-Version
     - os: osx
       osx_image: xcode7.3
       env: OSX_VERSION=10.11
@@ -97,9 +103,12 @@ matrix:
     - os: osx
       osx_image: xcode9.2
       env: OSX_VERSION=10.12
+    - os: osx
+      osx_image: xcode9.3beta
+      env: OSX_VERSION=10.13
 
   allow_failures:
-    - env: COMPILER=clang++-6.0
+    - env: COMPILER=clang++-7
 
   fast_finish: true
 
