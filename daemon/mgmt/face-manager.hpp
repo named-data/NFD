@@ -74,8 +74,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // helpers for ControlCommand
                          const ndn::mgmt::CommandContinuation& done);
 
   static void
-  setLinkServiceOptions(Face& face,
-                        const ControlParameters& parameters);
+  setLinkServiceOptions(Face& face, const ControlParameters& parameters);
 
   static ControlParameters
   collectFaceProperties(const Face& face, bool wantUris);
@@ -94,7 +93,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // StatusDataset
              ndn::mgmt::StatusDatasetContext& context);
 
 private: // helpers for StatusDataset handler
-  bool
+  static bool
   matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face);
 
   /** \brief get status of face, including properties and counters
@@ -119,14 +118,12 @@ private: // NotificationStream
 private:
   FaceSystem& m_faceSystem;
   FaceTable& m_faceTable;
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
-
-private:
   ndn::mgmt::PostNotification m_postNotification;
   signal::ScopedConnection m_faceAddConn;
   signal::ScopedConnection m_faceRemoveConn;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  std::map<FaceId, signal::ScopedConnection> m_faceStateChangeConn;
 };
 
 } // namespace nfd

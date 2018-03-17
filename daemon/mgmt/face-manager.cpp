@@ -472,18 +472,19 @@ FaceManager::notifyFaceEvent(const Face& face, ndn::nfd::FaceEventKind kind)
 void
 FaceManager::connectFaceStateChangeSignal(const Face& face)
 {
+  using face::FaceState;
+
   FaceId faceId = face.getId();
   m_faceStateChangeConn[faceId] = face.afterStateChange.connect(
-    [this, faceId] (face::FaceState oldState, face::FaceState newState) {
-      const Face& face = *m_faceTable.get(faceId);
-
-      if (newState == face::FaceState::UP) {
+    [this, faceId, &face] (FaceState oldState, FaceState newState) {
+      if (newState == FaceState::UP) {
         notifyFaceEvent(face, ndn::nfd::FACE_EVENT_UP);
       }
-      else if (newState == face::FaceState::DOWN) {
+      else if (newState == FaceState::DOWN) {
         notifyFaceEvent(face, ndn::nfd::FACE_EVENT_DOWN);
       }
-      else if (newState == face::FaceState::CLOSED) {
+      else if (newState == FaceState::CLOSED) {
+        // cannot use face.getId() because it may already be reset to INVALID_FACEID
         m_faceStateChangeConn.erase(faceId);
       }
     });

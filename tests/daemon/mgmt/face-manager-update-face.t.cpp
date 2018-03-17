@@ -40,14 +40,11 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
 
+namespace mpl = boost::mpl;
+
 class FaceManagerUpdateFixture : public FaceManagerCommandFixture
 {
 public:
-  FaceManagerUpdateFixture()
-    : faceId(0)
-  {
-  }
-
   ~FaceManagerUpdateFixture()
   {
     destroyFace();
@@ -85,8 +82,7 @@ public:
   }
 
   void
-  createFace(const ControlParameters& createParams,
-             bool isForOnDemandFace = false)
+  createFace(const ControlParameters& createParams, bool isForOnDemandFace = false)
   {
     Interest req = makeControlCommandRequest("/localhost/nfd/faces/create", createParams);
 
@@ -112,18 +108,17 @@ public:
 
         if (isForOnDemandFace) {
           auto face = target.faceTable.get(static_cast<FaceId>(this->faceId));
-
           // to force creation of on-demand face
           face->sendInterest(*make_shared<Interest>("/hello/world"));
         }
       });
 
     target.face.receive(req);
-    this->advanceClocks(time::milliseconds(1), 5);
+    advanceClocks(1_ms, 5);
 
     if (isForOnDemandFace) {
       std::this_thread::sleep_for(std::chrono::milliseconds(100)); // allow wallclock time for socket IO
-      this->advanceClocks(time::milliseconds(1), 5); // let node1 accept Interest and create on-demand face
+      advanceClocks(1_ms, 5); // let node1 accept Interest and create on-demand face
     }
 
     BOOST_REQUIRE(hasCallbackFired);
@@ -154,9 +149,8 @@ public:
       });
 
     this->node1.face.receive(req);
-    this->advanceClocks(time::milliseconds(1), 5);
-
-    BOOST_CHECK(hasCallbackFired);
+    advanceClocks(1_ms, 5);
+    BOOST_REQUIRE(hasCallbackFired);
   }
 
 private:
@@ -169,7 +163,6 @@ private:
 
     ControlParameters params;
     params.setFaceId(faceId);
-
     Interest req = makeControlCommandRequest("/localhost/nfd/faces/destroy", params);
 
     bool hasCallbackFired = false;
@@ -187,13 +180,12 @@ private:
       });
 
     this->node1.face.receive(req);
-    this->advanceClocks(time::milliseconds(1), 5);
-
-    BOOST_CHECK(hasCallbackFired);
+    advanceClocks(1_ms, 5);
+    BOOST_REQUIRE(hasCallbackFired);
   }
 
-public:
-  FaceId faceId;
+protected:
+  FaceId faceId = 0;
 };
 
 BOOST_FIXTURE_TEST_SUITE(UpdateFace, FaceManagerUpdateFixture)
@@ -221,28 +213,27 @@ public:
 
 protected:
   bool
-  canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const override
+  canChangePersistencyToImpl(ndn::nfd::FacePersistency) const final
   {
     return CAN_CHANGE_PERSISTENCY;
   }
 
   void
-  doClose() override
+  doClose() final
   {
   }
 
 private:
   void
-  doSend(face::Transport::Packet&& packet) override
+  doSend(face::Transport::Packet&&) final
   {
   }
 };
 
-namespace mpl = boost::mpl;
-
-using UpdatePersistencyTests =
-  mpl::vector<mpl::pair<UpdatePersistencyDummyTransport<true>, CommandSuccess>,
-              mpl::pair<UpdatePersistencyDummyTransport<false>, CommandFailure<409>>>;
+using UpdatePersistencyTests = mpl::vector<
+  mpl::pair<UpdatePersistencyDummyTransport<true>, CommandSuccess>,
+  mpl::pair<UpdatePersistencyDummyTransport<false>, CommandFailure<409>>
+>;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, FaceManagerUpdateFixture)
 {
@@ -273,43 +264,37 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, F
 class TcpLocalFieldsEnable
 {
 public:
-  std::string
+  static std::string
   getUri()
   {
     return "tcp4://127.0.0.1:26363";
   }
 
-  boost::asio::ip::address_v4
-  getIpAddress()
-  {
-    return boost::asio::ip::address_v4::from_string("127.0.0.1");
-  }
-
-  ndn::nfd::FacePersistency
+  static constexpr ndn::nfd::FacePersistency
   getPersistency()
   {
     return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   }
 
-  bool
+  static constexpr bool
   getInitLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabled()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabledMask()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   shouldHaveWire()
   {
     return false;
@@ -319,37 +304,37 @@ public:
 class TcpLocalFieldsDisable
 {
 public:
-  std::string
+  static std::string
   getUri()
   {
     return "tcp4://127.0.0.1:26363";
   }
 
-  ndn::nfd::FacePersistency
+  static constexpr ndn::nfd::FacePersistency
   getPersistency()
   {
     return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   }
 
-  bool
+  static constexpr bool
   getInitLocalFieldsEnabled()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabledMask()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   shouldHaveWire()
   {
     return false;
@@ -360,37 +345,37 @@ public:
 class UdpLocalFieldsEnable
 {
 public:
-  std::string
+  static std::string
   getUri()
   {
     return "udp4://127.0.0.1:26363";
   }
 
-  ndn::nfd::FacePersistency
+  static constexpr ndn::nfd::FacePersistency
   getPersistency()
   {
     return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   }
 
-  bool
+  static constexpr bool
   getInitLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabled()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabledMask()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   shouldHaveWire()
   {
     return true;
@@ -402,37 +387,37 @@ public:
 class UdpLocalFieldsDisable
 {
 public:
-  std::string
+  static std::string
   getUri()
   {
     return "udp4://127.0.0.1:26363";
   }
 
-  ndn::nfd::FacePersistency
+  static constexpr ndn::nfd::FacePersistency
   getPersistency()
   {
     return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   }
 
-  bool
+  static constexpr bool
   getInitLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabledMask()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   shouldHaveWire()
   {
     return false;
@@ -444,70 +429,72 @@ public:
 class UdpLocalFieldsEnableNoMaskBit
 {
 public:
-  std::string
+  static std::string
   getUri()
   {
     return "udp4://127.0.0.1:26363";
   }
 
-  ndn::nfd::FacePersistency
+  static constexpr ndn::nfd::FacePersistency
   getPersistency()
   {
     return ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   }
 
-  bool
+  static constexpr bool
   getInitLocalFieldsEnabled()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabled()
   {
     return true;
   }
 
-  bool
+  static constexpr bool
   getLocalFieldsEnabledMask()
   {
     return false;
   }
 
-  bool
+  static constexpr bool
   shouldHaveWire()
   {
     return false;
   }
 };
 
-typedef mpl::vector<mpl::pair<TcpLocalFieldsEnable, CommandSuccess>,
-                    mpl::pair<TcpLocalFieldsDisable, CommandSuccess>,
-                    mpl::pair<UdpLocalFieldsEnable, CommandFailure<409>>,
-                    mpl::pair<UdpLocalFieldsDisable, CommandSuccess>,
-                    mpl::pair<UdpLocalFieldsEnableNoMaskBit, CommandSuccess>> LocalFieldFaces;
+using LocalFieldFaces = mpl::vector<
+  mpl::pair<TcpLocalFieldsEnable, CommandSuccess>,
+  mpl::pair<TcpLocalFieldsDisable, CommandSuccess>,
+  mpl::pair<UdpLocalFieldsEnable, CommandFailure<409>>,
+  mpl::pair<UdpLocalFieldsDisable, CommandSuccess>,
+  mpl::pair<UdpLocalFieldsEnableNoMaskBit, CommandSuccess>
+>;
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(UpdateLocalFields, T, LocalFieldFaces)
 {
-  typedef typename T::first TestType;
-  typedef typename T::second ResultType;
+  using TestType = typename T::first;
+  using ResultType = typename T::second;
 
-  createFace(TestType().getUri(), TestType().getPersistency(), {}, {},
-             TestType().getInitLocalFieldsEnabled());
+  createFace(TestType::getUri(), TestType::getPersistency(), {}, {},
+             TestType::getInitLocalFieldsEnabled());
 
   ControlParameters requestParams;
   requestParams.setFaceId(faceId);
-  requestParams.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, TestType().getLocalFieldsEnabled());
-  if (!TestType().getLocalFieldsEnabledMask()) {
+  requestParams.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, TestType::getLocalFieldsEnabled());
+  if (!TestType::getLocalFieldsEnabledMask()) {
     requestParams.unsetFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
   }
 
   updateFace(requestParams, false, [] (const ControlResponse& actual) {
-    ControlResponse expected(ResultType().getExpected().getCode(), "");
-    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
+    ControlResponse expected(ResultType::getExpected());
     BOOST_TEST_MESSAGE(actual.getText());
+    BOOST_CHECK_EQUAL(actual.getCode(), expected.getCode());
 
-    if (TestType().shouldHaveWire() && actual.getBody().hasWire()) {
+    if (TestType::shouldHaveWire() && actual.getBody().hasWire()) {
       ControlParameters actualParams(actual.getBody());
 
       BOOST_CHECK(!actualParams.hasFacePersistency());
@@ -626,13 +613,13 @@ BOOST_AUTO_TEST_CASE(UpdateCongestionMarkingEnableDisable)
 
   ControlParameters enableParams;
   enableParams.setFaceId(faceId);
-  enableParams.setBaseCongestionMarkingInterval(time::milliseconds(50));
+  enableParams.setBaseCongestionMarkingInterval(50_ms);
   enableParams.setDefaultCongestionThreshold(10000);
   enableParams.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, true);
 
   ControlParameters disableParams;
   disableParams.setFaceId(faceId);
-  disableParams.setBaseCongestionMarkingInterval(time::milliseconds(70));
+  disableParams.setBaseCongestionMarkingInterval(70_ms);
   disableParams.setDefaultCongestionThreshold(5000);
   disableParams.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, false);
 
@@ -648,7 +635,7 @@ BOOST_AUTO_TEST_CASE(UpdateCongestionMarkingEnableDisable)
       BOOST_CHECK(actualParams.hasFacePersistency());
       // Check that congestion marking parameters changed
       BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
-      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), time::milliseconds(50));
+      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 50_ms);
       BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
       BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 10000);
       BOOST_REQUIRE(actualParams.hasFlags());
@@ -672,7 +659,7 @@ BOOST_AUTO_TEST_CASE(UpdateCongestionMarkingEnableDisable)
       BOOST_CHECK(actualParams.hasFacePersistency());
       // Check that congestion marking parameters changed, even though feature disabled
       BOOST_REQUIRE(actualParams.hasBaseCongestionMarkingInterval());
-      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), time::milliseconds(70));
+      BOOST_CHECK_EQUAL(actualParams.getBaseCongestionMarkingInterval(), 70_ms);
       BOOST_REQUIRE(actualParams.hasDefaultCongestionThreshold());
       BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 5000);
       BOOST_REQUIRE(actualParams.hasFlags());
