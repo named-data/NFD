@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,29 +45,28 @@ Pit::findOrInsert(const Interest& interest, bool allowInsert)
 {
   // determine which NameTree entry should the PIT entry be attached onto
   const Name& name = interest.getName();
-  bool isEndWithDigest = name.size() > 0 && name[-1].isImplicitSha256Digest();
-  const Name& nteName = isEndWithDigest ? name.getPrefix(-1) : name;
+  bool hasDigest = name.size() > 0 && name[-1].isImplicitSha256Digest();
+  size_t nteDepth = name.size() - static_cast<int>(hasDigest);
+  nteDepth = std::min(nteDepth, NameTree::getMaxDepth());
 
   // ensure NameTree entry exists
   name_tree::Entry* nte = nullptr;
   if (allowInsert) {
-    nte = &m_nameTree.lookup(nteName, true);
+    nte = &m_nameTree.lookup(name, nteDepth);
   }
   else {
-    nte = m_nameTree.findExactMatch(nteName);
+    nte = m_nameTree.findExactMatch(name, nteDepth);
     if (nte == nullptr) {
       return {nullptr, true};
     }
   }
 
   // check if PIT entry already exists
-  size_t nteNameLen = nte->getName().size();
-  const std::vector<shared_ptr<Entry>>& pitEntries = nte->getPitEntries();
+  const auto& pitEntries = nte->getPitEntries();
   auto it = std::find_if(pitEntries.begin(), pitEntries.end(),
-    [&interest, nteNameLen] (const shared_ptr<Entry>& entry) {
-      // initial part of name is guaranteed to be equal by NameTree
-      // check implicit digest (or its absence) only
-      return entry->canMatch(interest, nteNameLen);
+    [&interest, nteDepth] (const shared_ptr<Entry>& entry) {
+      // NameTree guarantees first nteDepth components are equal
+      return entry->canMatch(interest, nteDepth);
     });
   if (it != pitEntries.end()) {
     return {*it, false};

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "name-tree-entry.hpp"
+#include "name-tree.hpp"
 
 namespace nfd {
 namespace name_tree {
@@ -34,6 +35,7 @@ Entry::Entry(const Name& name, Node* node)
   , m_parent(nullptr)
 {
   BOOST_ASSERT(node != nullptr);
+  BOOST_ASSERT(name.size() <= NameTree::getMaxDepth());
 }
 
 void

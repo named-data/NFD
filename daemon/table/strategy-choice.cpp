@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -87,7 +87,7 @@ StrategyChoice::insert(const Name& prefix, const Name& strategyName)
     return InsertResult::NOT_REGISTERED;
   }
 
-  name_tree::Entry& nte = m_nameTree.lookup(prefix, true);
+  name_tree::Entry& nte = m_nameTree.lookup(prefix);
   Entry* entry = nte.getStrategyChoiceEntry();
   Strategy* oldStrategy = nullptr;
   if (entry != nullptr) {

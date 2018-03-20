@@ -85,19 +85,15 @@ public: // lookup
 
 public: // mutation
   /** \brief Maximum number of components in a FIB entry prefix.
-   *
-   *  This constant is currently advisory, but will become mandatory later.
    */
   static constexpr size_t
   getMaxDepth()
   {
-    static_assert(FIB_MAX_DEPTH == NameTree::getMaxDepth(), "");
     return FIB_MAX_DEPTH;
   }
 
-  /** \brief inserts a FIB entry for prefix
-   *
-   *  If an entry for exact same prefix exists, that entry is returned.
+  /** \brief find or insert a FIB entry
+   *  \param prefix FIB entry name; it must have no more than \c getMaxDepth() components.
    *  \return the entry, and true for new entry or false for existing entry
    */
   std::pair<Entry*, bool>

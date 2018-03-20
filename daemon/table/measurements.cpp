@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,8 +40,6 @@ Measurements::Measurements(NameTree& nameTree)
 Entry&
 Measurements::get(name_tree::Entry& nte)
 {
-  BOOST_ASSERT(nte.getName().size() <= NameTree::getMaxDepth());
-
   Entry* entry = nte.getMeasurementsEntry();
   if (entry != nullptr) {
     return *entry;
@@ -61,21 +59,21 @@ Measurements::get(name_tree::Entry& nte)
 Entry&
 Measurements::get(const Name& name)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(name, true);
+  name_tree::Entry& nte = m_nameTree.lookup(name, std::min(name.size(), getMaxDepth()));
   return this->get(nte);
 }
 
 Entry&
 Measurements::get(const fib::Entry& fibEntry)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(fibEntry.getPrefix(), true);
+  name_tree::Entry& nte = m_nameTree.lookup(fibEntry);
   return this->get(nte);
 }
 
 Entry&
 Measurements::get(const pit::Entry& pitEntry)
 {
-  name_tree::Entry& nte = m_nameTree.lookup(pitEntry.getName(), true);
+  name_tree::Entry& nte = m_nameTree.lookup(pitEntry);
   return this->get(nte);
 }
 

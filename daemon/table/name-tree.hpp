@@ -28,6 +28,8 @@
 
 #include "name-tree-iterator.hpp"
 
+#include "core/fib-max-depth.hpp"
+
 namespace nfd {
 namespace name_tree {
 
@@ -40,20 +42,17 @@ public:
   NameTree(size_t nBuckets = 1024);
 
 public: // information
-  /** \brief Maximum depth of the name tree.
+  /** \brief maximum depth of the name tree
    *
-   *  Calling NameTree::lookup with a name with many components would cause the creation of many
+   *  Calling \c NameTree::lookup with a name with many components would cause the creation of many
    *  NameTree entries, which could take very long time. This constant limits the maximum number of
    *  name components in the name of a NameTree entry. Thus, it limits the number of NameTree
    *  entries created from a long name, bounding the processing complexity.
-   *
-   *  This constant is currently advisory. It is enforced in NameTree::lookup only if
-   *  \p enforceMaxDepth is set to true. This will become mandatory later.
    */
   static constexpr size_t
   getMaxDepth()
   {
-    return 32;
+    return FIB_MAX_DEPTH;
   }
 
   /** \return number of name tree entries
@@ -83,40 +82,51 @@ public: // information
   }
 
 public: // mutation
-  /** \brief find or insert an entry with specified name
-   *  \param name a name prefix
-   *  \param enforceMaxDepth if true, use \p name.getPrefix(getMaxDepth()) in place of \p name
-   *  \return an entry with \p name
-   *  \post an entry with \p name and all ancestors are created
-   *  \note Existing iterators are unaffected.
+  /** \brief find or insert an entry by name
+   *
+   *  This method seeks a name tree entry of name \c name.getPrefix(prefixLen).
+   *  If the entry does not exist, it is created along with all ancestors.
+   *  Existing iterators are unaffected during this operation.
+   *
+   *  \warning \p prefixLen must not exceed \c name.size().
+   *  \warning \p prefixLen must not exceed \c getMaxDepth().
    */
   Entry&
-  lookup(const Name& name, bool enforceMaxDepth = false);
+  lookup(const Name& name, size_t prefixLen);
 
-  /** \brief equivalent to .lookup(fibEntry.getPrefix())
-   *  \param fibEntry a FIB entry attached to this name tree, or Fib::s_emptyEntry
-   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
+  /** \brief equivalent to `lookup(name, name.size())`
+   */
+  Entry&
+  lookup(const Name& name)
+  {
+    return this->lookup(name, name.size());
+  }
+
+  /** \brief equivalent to `lookup(fibEntry.getPrefix())`
+   *  \param fibEntry a FIB entry attached to this name tree, or \c Fib::s_emptyEntry
+   *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const fib::Entry& fibEntry);
 
-  /** \brief equivalent to .lookup(pitEntry.getName()).
+  /** \brief equivalent to
+   *         `lookup(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
    *  \param pitEntry a PIT entry attached to this name tree
-   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
+   *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const pit::Entry& pitEntry);
 
-  /** \brief equivalent to .lookup(measurementsEntry.getName())
+  /** \brief equivalent to `lookup(measurementsEntry.getName())`
    *  \param measurementsEntry a Measurements entry attached to this name tree
-   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
+   *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const measurements::Entry& measurementsEntry);
 
-  /** \brief equivalent to .lookup(strategyChoiceEntry.getPrefix())
+  /** \brief equivalent to `lookup(strategyChoiceEntry.getPrefix())`
    *  \param strategyChoiceEntry a StrategyChoice entry attached to this name tree
-   *  \note This overload is more efficient than .lookup(const Name&) in common cases.
+   *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const strategy_choice::Entry& strategyChoiceEntry);
@@ -126,7 +136,7 @@ public: // mutation
    *  \param canEraseAncestors whether ancestors should be deleted if they become empty
    *  \return number of deleted entries
    *  \sa Entry::isEmpty()
-   *  \post If the entry is empty, it's deleted. If canEraseAncestors is true,
+   *  \post If the entry is empty, it's deleted. If \p canEraseAncestors is true,
    *        ancestors of the entry are also deleted if they become empty.
    *  \note This function must be called after detaching a table entry from a name tree entry,
    *  \note Existing iterators, except those pointing to deleted entries, are unaffected.
@@ -136,7 +146,7 @@ public: // mutation
 
 public: // matching
   /** \brief exact match lookup
-   *  \return entry with \p name.getPrefix(prefixLen), or nullptr if it does not exist
+   *  \return entry with \c name.getPrefix(prefixLen), or nullptr if it does not exist
    */
   Entry*
   findExactMatch(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max()) const;
@@ -150,19 +160,19 @@ public: // matching
   findLongestPrefixMatch(const Name& name,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to .findLongestPrefixMatch(entry.getName(), entrySelector)
+  /** \brief equivalent to `findLongestPrefixMatch(entry.getName(), entrySelector)`
    *  \note This overload is more efficient than
-   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
+   *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
    */
   Entry*
   findLongestPrefixMatch(const Entry& entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to .findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)
-   *  \tparam EntryT fib::Entry or measurements::Entry or strategy_choice::Entry
+  /** \brief equivalent to `findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)`
+   *  \tparam EntryT \c fib::Entry or \c measurements::Entry or \c strategy_choice::Entry
    *  \note This overload is more efficient than
-   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
-   *  \warning Undefined behavior may occur if tableEntry is not attached to this name tree.
+   *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
+   *  \warning Undefined behavior may occur if \p tableEntry is not attached to this name tree.
    */
   template<typename EntryT>
   Entry*
@@ -174,10 +184,10 @@ public: // matching
     return this->findLongestPrefixMatch(*nte, entrySelector);
   }
 
-  /** \brief equivalent to .findLongestPrefixMatch(pitEntry.getName(), entrySelector)
+  /** \brief equivalent to `findLongestPrefixMatch(pitEntry.getName(), entrySelector)`
    *  \note This overload is more efficient than
-   *        .findLongestPrefixMatch(const Name&, const EntrySelector&) in common cases.
-   *  \warning Undefined behavior may occur if pitEntry is not attached to this name tree.
+   *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
+   *  \warning Undefined behavior may occur if \p pitEntry is not attached to this name tree.
    */
   Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,
