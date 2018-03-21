@@ -213,11 +213,12 @@ Forwarder::onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& p
   pitEntry->isSatisfied = true;
   pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
 
-  // finalize Interest
-  this->onInterestFinalize(pitEntry);
+  // set PIT expiry timer to now
+  this->setExpiryTimer(pitEntry, 0_ms);
 
-  // goto outgoing Data pipeline
-  this->onOutgoingData(data, *const_pointer_cast<Face>(inFace.shared_from_this()));
+  // dispatch to strategy: after Content Store hit
+  this->dispatchToStrategy(*pitEntry,
+    [&] (fw::Strategy& strategy) { strategy.afterContentStoreHit(pitEntry, inFace, data); });
 }
 
 void

@@ -29,6 +29,8 @@
 
 #include "tests/test-common.hpp"
 
+#include <ndn-cxx/lp/tags.hpp>
+
 namespace nfd {
 namespace fw {
 namespace tests {
@@ -63,7 +65,7 @@ public:
   afterReceiveInterest(const Face& inFace, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override
   {
-    ++afterReceiveInterest_count;
+    DummyStrategy::afterReceiveInterest(inFace, interest, pitEntry);
 
     if (afterReceiveInterest_count <= 1) {
       setExpiryTimer(pitEntry, 190_ms);
@@ -74,18 +76,29 @@ public:
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data) override
   {
-    ++beforeSatisfyInterest_count;
+    DummyStrategy::beforeSatisfyInterest(pitEntry, inFace, data);
 
-    if (beforeSatisfyInterest_count <= 1 ) {
+    if (beforeSatisfyInterest_count <= 1) {
       setExpiryTimer(pitEntry, 190_ms);
     }
+  }
+
+  void
+  afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
+                       const Face& inFace, const Data& data) override
+  {
+    if (afterContentStoreHit_count == 0) {
+      setExpiryTimer(pitEntry, 190_ms);
+    }
+
+    DummyStrategy::afterContentStoreHit(pitEntry, inFace, data);
   }
 
   void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override
   {
-    ++afterReceiveNack_count;
+    DummyStrategy::afterReceiveNack(inFace, nack, pitEntry);
 
     if (afterReceiveNack_count <= 1) {
       setExpiryTimer(pitEntry, 50_ms);
@@ -137,6 +150,43 @@ BOOST_AUTO_TEST_CASE(SatisfiedInterest)
   this->advanceClocks(30_ms);
   face2->receiveData(*data);
 
+  this->advanceClocks(1_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+}
+
+BOOST_AUTO_TEST_CASE(CsHit)
+{
+  Forwarder forwarder;
+
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+
+  Name strategyA("/strategyA/%FD%01");
+  PitExpiryTestStrategy::registerAs(strategyA);
+  choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
+
+  shared_ptr<Interest> interest = makeInterest("/A/0");
+  interest->setInterestLifetime(90_ms);
+
+  shared_ptr<Data> data = makeData("/A/0");
+  data->setTag(make_shared<lp::IncomingFaceIdTag>(face2->getId()));
+
+  Pit& pit = forwarder.getPit();
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  Cs& cs = forwarder.getCs();
+  cs.insert(*data);
+
+  face1->receiveInterest(*interest);
+  this->advanceClocks(1_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+
+  this->advanceClocks(190_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  face1->receiveInterest(*interest);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }

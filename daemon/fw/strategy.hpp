@@ -161,6 +161,14 @@ public: // triggers
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
                         const Face& inFace, const Data& data);
 
+  /** \brief trigger after a Data is matched in CS
+   *
+   *  In the base class this method sends \p data to \p inFace
+   */
+  virtual void
+  afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
+                       const Face& inFace, const Data& data);
+
   /** \brief trigger after Nack is received
    *
    *  This trigger is invoked when an incoming Nack is received in response to
@@ -177,7 +185,7 @@ public: // triggers
    *  If a Nack arrives from another upstream during the extended PIT entry lifetime, this trigger will be invoked again.
    *  At that time, this function must invoke \c setExpiryTimer again to continue collecting more responses.
    *
-   *  In this base class this method does nothing.
+   *  In the base class this method does nothing.
    *
    *  \warning The strategy must not retain shared_ptr<pit::Entry>, otherwise undefined behavior
    *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
@@ -204,6 +212,19 @@ protected: // actions
                const Interest& interest)
   {
     m_forwarder.onOutgoingInterest(pitEntry, outFace, interest);
+  }
+
+  /** \brief send \p data to \p outFace
+   *  \param pitEntry PIT entry
+   *  \param data the Data packet
+   *  \param outFace face through which to send out the Data
+   */
+  VIRTUAL_WITH_TESTS void
+  sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace)
+  {
+    BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
+
+    m_forwarder.onOutgoingData(data, *const_pointer_cast<Face>(outFace.shared_from_this()));
   }
 
   /** \brief schedule the PIT entry for immediate deletion

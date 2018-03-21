@@ -157,6 +157,16 @@ Strategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
+Strategy::afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
+                               const Face& inFace, const Data& data)
+{
+  NFD_LOG_DEBUG("afterContentStoreHit pitEntry=" << pitEntry->getName() <<
+                " inFace=" << inFace.getId() << " data=" << data.getName());
+
+  this->sendData(pitEntry, data, inFace);
+}
+
+void
 Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                            const shared_ptr<pit::Entry>& pitEntry)
 {
