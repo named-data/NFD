@@ -50,6 +50,17 @@ struct Text
 std::ostream&
 operator<<(std::ostream& os, const Text& text);
 
+/** \brief print true as an empty element and false as nothing
+ */
+struct Flag
+{
+  const char* elementName;
+  bool flag;
+};
+
+std::ostream&
+operator<<(std::ostream& os, Flag v);
+
 /** \return duration in XML duration format
  *
  *  Definition of this format: https://www.w3.org/TR/xmlschema11-2/#duration

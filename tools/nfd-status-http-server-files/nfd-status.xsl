@@ -327,12 +327,28 @@
   <table class="item-list">
     <thead>
       <tr>
+        <th>Enablement Flags</th>
+        <th>Capacity</th>
+        <th>Entries</th>
         <th>Hits</th>
         <th>Misses</th>
       </tr>
     </thead>
     <tbody>
       <tr>
+        <td>
+          <xsl:choose>
+            <xsl:when test="nfd:admitEnabled">admit</xsl:when>
+            <xsl:otherwise>no-admit</xsl:otherwise>
+          </xsl:choose>
+          ,
+          <xsl:choose>
+            <xsl:when test="nfd:serveEnabled">serve</xsl:when>
+            <xsl:otherwise>no-serve</xsl:otherwise>
+          </xsl:choose>
+        </td>
+        <td><xsl:value-of select="nfd:capacity"/></td>
+        <td><xsl:value-of select="nfd:nEntries"/></td>
         <td><xsl:value-of select="nfd:nHits"/></td>
         <td><xsl:value-of select="nfd:nMisses"/></td>
       </tr>

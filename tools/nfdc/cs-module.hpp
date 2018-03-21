@@ -60,8 +60,14 @@ public:
   void
   formatStatusXml(std::ostream& os) const override;
 
+  static void
+  formatItemXml(std::ostream& os, const CsInfo& item);
+
   void
   formatStatusText(std::ostream& os) const override;
+
+  static void
+  formatItemText(std::ostream& os, const CsInfo& item);
 
 private:
   CsInfo m_status;

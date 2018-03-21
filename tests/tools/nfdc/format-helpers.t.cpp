@@ -48,6 +48,14 @@ BOOST_AUTO_TEST_CASE(TextEscaping)
                           " surround XML &lt;element&gt; tag name"));
 }
 
+BOOST_AUTO_TEST_CASE(Flag)
+{
+  output_test_stream os;
+  os << "<A>" << xml::Flag{"B", true} << "</A><C>" << xml::Flag{"D", false} << "</C>";
+
+  BOOST_CHECK(os.is_equal("<A><B/></A><C></C>"));
+}
+
 BOOST_AUTO_TEST_CASE(DurationFormatting)
 {
   time::nanoseconds d1 = 53000_s + 87_ms + 3_us;

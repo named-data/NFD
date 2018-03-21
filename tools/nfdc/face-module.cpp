@@ -405,15 +405,9 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
   }
   else {
     os << "<flags>";
-    if (item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)) {
-      os << "<localFieldsEnabled/>";
-    }
-    if (item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-      os << "<lpReliabilityEnabled/>";
-    }
-    if (item.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
-      os << "<congestionMarkingEnabled/>";
-    }
+    os << xml::Flag{"localFieldsEnabled", item.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED)};
+    os << xml::Flag{"lpReliabilityEnabled", item.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)};
+    os << xml::Flag{"congestionMarkingEnabled", item.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)};
     os << "</flags>";
   }
 

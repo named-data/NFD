@@ -95,6 +95,9 @@ BOOST_AUTO_TEST_SUITE_END() // ConfigCommand
 
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <cs>
+    <capacity>31807</capacity>
+    <admitEnabled/>
+    <nEntries>16131</nEntries>
     <nHits>14363</nHits>
     <nMisses>27462</nMisses>
   </cs>
@@ -102,14 +105,23 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 CS information:
-  nHits=14363 nMisses=27462
+  capacity=31807
+     admit=on
+     serve=off
+  nEntries=16131
+     nHits=14363
+   nMisses=27462
 )TEXT").substr(1);
 
 BOOST_FIXTURE_TEST_CASE(Status, StatusFixture<CsModule>)
 {
   this->fetchStatus();
   CsInfo payload;
-  payload.setNHits(14363)
+  payload.setCapacity(31807)
+         .setEnableAdmit(true)
+         .setEnableServe(false)
+         .setNEntries(16131)
+         .setNHits(14363)
          .setNMisses(27462);
   this->sendDataset("/localhost/nfd/cs/info", payload);
   this->prepareStatusOutput();

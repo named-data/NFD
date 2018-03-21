@@ -26,6 +26,8 @@
 #include "forwarder-general-module.hpp"
 #include "format-helpers.hpp"
 
+#include <ndn-cxx/util/indented-stream.hpp>
+
 namespace nfd {
 namespace tools {
 namespace nfdc {
@@ -53,11 +55,11 @@ calculateUptime(const ForwarderStatus& status)
 void
 ForwarderGeneralModule::formatStatusXml(std::ostream& os) const
 {
-  this->formatItemXml(os, m_status);
+  formatItemXml(os, m_status);
 }
 
 void
-ForwarderGeneralModule::formatItemXml(std::ostream& os, const ForwarderStatus& item) const
+ForwarderGeneralModule::formatItemXml(std::ostream& os, const ForwarderStatus& item)
 {
   os << "<generalStatus>";
 
@@ -93,29 +95,34 @@ void
 ForwarderGeneralModule::formatStatusText(std::ostream& os) const
 {
   os << "General NFD status:\n";
-  this->formatItemText(os, m_status);
+  ndn::util::IndentedStream indented(os, "  ");
+  formatItemText(indented, m_status);
 }
 
 void
-ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& item) const
+ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& item)
 {
-  os << "               version=" << item.getNfdVersion() << "\n";
-  os << "             startTime=" << text::formatTimestamp(item.getStartTimestamp()) << "\n";
-  os << "           currentTime=" << text::formatTimestamp(item.getCurrentTimestamp()) << "\n";
-  os << "                uptime=" << text::formatDuration<time::seconds>(calculateUptime(item), true) << "\n";
+  text::ItemAttributes ia(true, 20);
 
-  os << "      nNameTreeEntries=" << item.getNNameTreeEntries() << "\n";
-  os << "           nFibEntries=" << item.getNFibEntries() << "\n";
-  os << "           nPitEntries=" << item.getNPitEntries() << "\n";
-  os << "  nMeasurementsEntries=" << item.getNMeasurementsEntries() << "\n";
-  os << "            nCsEntries=" << item.getNCsEntries() << "\n";
+  os << ia("version") << item.getNfdVersion()
+     << ia("startTime") << text::formatTimestamp(item.getStartTimestamp())
+     << ia("currentTime") << text::formatTimestamp(item.getCurrentTimestamp())
+     << ia("uptime") << text::formatDuration<time::seconds>(calculateUptime(item), true);
 
-  os << "          nInInterests=" << item.getNInInterests() << "\n";
-  os << "         nOutInterests=" << item.getNOutInterests() << "\n";
-  os << "               nInData=" << item.getNInData() << "\n";
-  os << "              nOutData=" << item.getNOutData() << "\n";
-  os << "              nInNacks=" << item.getNInNacks() << "\n";
-  os << "             nOutNacks=" << item.getNOutNacks() << "\n";
+  os << ia("nNameTreeEntries") << item.getNNameTreeEntries()
+     << ia("nFibEntries") << item.getNFibEntries()
+     << ia("nPitEntries") << item.getNPitEntries()
+     << ia("nMeasurementsEntries") << item.getNMeasurementsEntries()
+     << ia("nCsEntries") << item.getNCsEntries();
+
+  os << ia("nInInterests") << item.getNInInterests()
+     << ia("nOutInterests") << item.getNOutInterests()
+     << ia("nInData") << item.getNInData()
+     << ia("nOutData") << item.getNOutData()
+     << ia("nInNacks") << item.getNInNacks()
+     << ia("nOutNacks") << item.getNOutNacks();
+
+  os << ia.end();
 }
 
 } // namespace nfdc

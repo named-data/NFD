@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,8 +53,8 @@ public:
    *  \param os output stream
    *  \param item status item
    */
-  void
-  formatItemXml(std::ostream& os, const ForwarderStatus& item) const;
+  static void
+  formatItemXml(std::ostream& os, const ForwarderStatus& item);
 
   void
   formatStatusText(std::ostream& os) const override;
@@ -63,8 +63,8 @@ public:
    *  \param os output stream
    *  \param item status item
    */
-  void
-  formatItemText(std::ostream& os, const ForwarderStatus& item) const;
+  static void
+  formatItemText(std::ostream& os, const ForwarderStatus& item);
 
 private:
   ForwarderStatus m_status;

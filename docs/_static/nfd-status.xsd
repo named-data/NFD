@@ -159,6 +159,10 @@
 
 <xs:complexType name="csType">
   <xs:sequence>
+    <xs:element type="xs:nonNegativeInteger" name="capacity"/>
+    <xs:element type="nfd:emptyType" name="admitEnabled" minOccurs="0"/>
+    <xs:element type="nfd:emptyType" name="serveEnabled" minOccurs="0"/>
+    <xs:element type="xs:nonNegativeInteger" name="nEntries"/>
     <xs:element type="xs:nonNegativeInteger" name="nHits"/>
     <xs:element type="xs:nonNegativeInteger" name="nMisses"/>
   </xs:sequence>

@@ -26,6 +26,8 @@
 #include "cs-module.hpp"
 #include "format-helpers.hpp"
 
+#include <ndn-cxx/util/indented-stream.hpp>
+
 namespace nfd {
 namespace tools {
 namespace nfdc {
@@ -94,21 +96,41 @@ CsModule::fetchStatus(Controller& controller,
 void
 CsModule::formatStatusXml(std::ostream& os) const
 {
+  formatItemXml(os, m_status);
+}
+
+void
+CsModule::formatItemXml(std::ostream& os, const CsInfo& item)
+{
   os << "<cs>";
-  os << "<nHits>" << m_status.getNHits() << "</nHits>";
-  os << "<nMisses>" << m_status.getNMisses() << "</nMisses>";
+  os << "<capacity>" << item.getCapacity() << "</capacity>";
+  os << xml::Flag{"admitEnabled", item.getEnableAdmit()};
+  os << xml::Flag{"serveEnabled", item.getEnableServe()};
+  os << "<nEntries>" << item.getNEntries() << "</nEntries>";
+  os << "<nHits>" << item.getNHits() << "</nHits>";
+  os << "<nMisses>" << item.getNMisses() << "</nMisses>";
   os << "</cs>";
 }
 
 void
 CsModule::formatStatusText(std::ostream& os) const
 {
-  os << "CS information:\n  ";
-  text::ItemAttributes ia;
-  os << ia("nHits") << m_status.getNHits()
-     << ia("nMisses") << m_status.getNMisses()
+  os << "CS information:\n";
+  ndn::util::IndentedStream indented(os, "  ");
+  formatItemText(indented, m_status);
+}
+
+void
+CsModule::formatItemText(std::ostream& os, const CsInfo& item)
+{
+  text::ItemAttributes ia(true, 8);
+  os << ia("capacity") << item.getCapacity()
+     << ia("admit") << text::OnOff{item.getEnableAdmit()}
+     << ia("serve") << text::OnOff{item.getEnableServe()}
+     << ia("nEntries") << item.getNEntries()
+     << ia("nHits") << item.getNHits()
+     << ia("nMisses") << item.getNMisses()
      << ia.end();
-  os << '\n';
 }
 
 } // namespace nfdc

@@ -75,6 +75,15 @@ operator<<(std::ostream& os, const Text& text)
   return os;
 }
 
+std::ostream&
+operator<<(std::ostream& os, Flag v)
+{
+  if (!v.flag) {
+    return os;
+  }
+  return os << '<' << v.elementName << "/>";
+}
+
 std::string
 formatDuration(time::nanoseconds d)
 {
