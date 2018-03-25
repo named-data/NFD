@@ -46,7 +46,8 @@ def addExtensionIfExists(extension):
         sys.stderr.write("To install, use \n"
                          "  sudo pip install %s\n" % extension.replace('.', '-'))
 
-addExtensionIfExists('sphinxcontrib.doxylink')
+if sys.version_info[0] >= 3:
+    addExtensionIfExists('sphinxcontrib.doxylink')
 
 # sphinxcontrib.googleanalytics is currently not working with the latest version of Sphinx
 # if os.getenv('GOOGLE_ANALYTICS', None):
