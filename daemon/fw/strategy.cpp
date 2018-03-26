@@ -167,6 +167,18 @@ Strategy::afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
+Strategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
+                           const Face& inFace, const Data& data)
+{
+  NFD_LOG_DEBUG("afterReceiveData pitEntry=" << pitEntry->getName() <<
+                " inFace=" << inFace.getId() << " data=" << data.getName());
+
+  this->beforeSatisfyInterest(pitEntry, inFace, data);
+
+  this->sendDataToAll(pitEntry, inFace, data);
+}
+
+void
 Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                            const shared_ptr<pit::Entry>& pitEntry)
 {
@@ -178,6 +190,40 @@ void
 Strategy::onDroppedInterest(const Face& outFace, const Interest& interest)
 {
   NFD_LOG_DEBUG("onDroppedInterest outFace=" << outFace.getId() << " name=" << interest.getName());
+}
+
+void
+Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace)
+{
+  BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
+
+  // delete the PIT entry's in-record based on outFace,
+  // since Data is sent to outFace from which the Interest was received
+  pitEntry->deleteInRecord(outFace);
+
+  m_forwarder.onOutgoingData(data, *const_pointer_cast<Face>(outFace.shared_from_this()));
+}
+
+void
+Strategy::sendDataToAll(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data)
+{
+  std::set<Face*> pendingDownstreams;
+  auto now = time::steady_clock::now();
+
+  // remember pending downstreams
+  for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+    if (inRecord.getExpiry() > now) {
+      if (inRecord.getFace().getId() == inFace.getId() &&
+          inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
+        continue;
+      }
+      pendingDownstreams.insert(&inRecord.getFace());
+    }
+  }
+
+  for (const Face* pendingDownstream : pendingDownstreams) {
+    this->sendData(pitEntry, data, *pendingDownstream);
+  }
 }
 
 void

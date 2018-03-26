@@ -143,12 +143,15 @@ public: // triggers
 
   /** \brief trigger before PIT entry is satisfied
    *
-   *  This trigger is invoked when an incoming Data satisfies the PIT entry.
-   *  Normally, only the first incoming Data would satisfy the PIT entry and invoke this trigger,
-   *  after which the PIT entry is erased.
+   *  This trigger is invoked when an incoming Data satisfies more than one PIT entry.
+   *  The strategy can collect measurements information, but cannot manipulate Data forwarding.
+   *  When an incoming Data satisfies only one PIT entry, \c afterReceiveData is invoked instead
+   *  and given full control over Data forwarding. If a strategy does not override \c afterReceiveData,
+   *  the default implementation invokes \c beforeSatisfyInterest.
    *
+   *  Normally, PIT entries would be erased after receiving the first matching Data.
    *  If the strategy wishes to collect responses from additional upstream nodes,
-   *  it should invoke \c setExpiryTimer within this function to retain the PIT entry.
+   *  it should invoke \c setExpiryTimer within this function to prolong the PIT entry lifetime.
    *  If a Data arrives from another upstream during the extended PIT entry lifetime, this trigger will be invoked again.
    *  At that time, this function must invoke \c setExpiryTimer again to continue collecting more responses.
    *
@@ -168,6 +171,33 @@ public: // triggers
   virtual void
   afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
                        const Face& inFace, const Data& data);
+
+  /** \brief trigger after Data is received
+   *
+   *  This trigger is invoked when an incoming Data satisfies exactly one PIT entry,
+   *  and gives the strategy full control over Data forwarding.
+   *
+   *  When this trigger is invoked:
+   *  - The Data has been verified to satisfy the PIT entry.
+   *  - The PIT entry expiry timer is set to now
+   *
+   *  Within this function:
+   *  - A strategy should return Data to downstream nodes via \c sendData or \c sendDataToAll.
+   *  - A strategy can modify the Data as long as it still satisfies the PIT entry, such as
+   *    adding or removing congestion marks.
+   *  - A strategy can delay Data forwarding by prolonging the PIT entry lifetime via \c setExpiryTimer,
+   *    and forward Data before the PIT entry is erased.
+   *  - A strategy can collect measurements about the upstream.
+   *  - A strategy can collect responses from additional upstream nodes by prolonging the PIT entry
+   *    lifetime via \c setExpiryTimer every time a Data is received. Note that only one Data should
+   *    be returned to each downstream node.
+   *
+   *  In the base class this method invokes \c beforeSatisfyInterest trigger and then returns
+   *  the Data to downstream faces via \c sendDataToAll.
+   */
+  virtual void
+  afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
+                   const Face& inFace, const Data& data);
 
   /** \brief trigger after Nack is received
    *
@@ -220,12 +250,18 @@ protected: // actions
    *  \param outFace face through which to send out the Data
    */
   VIRTUAL_WITH_TESTS void
-  sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace)
-  {
-    BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
+  sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace);
 
-    m_forwarder.onOutgoingData(data, *const_pointer_cast<Face>(outFace.shared_from_this()));
-  }
+  /** \brief send \p data to all matched and qualified faces
+   *
+   *  A matched face is qualified if it is ad-hoc or it is NOT \p inFace
+   *
+   *  \param pitEntry PIT entry
+   *  \param inFace face through which the Data comes from
+   *  \param data the Data packet
+   */
+  VIRTUAL_WITH_TESTS void
+  sendDataToAll(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data);
 
   /** \brief schedule the PIT entry for immediate deletion
    *

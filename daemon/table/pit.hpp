@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,8 +36,9 @@ namespace pit {
  *  \brief an unordered iterable of all PIT entries matching Data
  *
  *  This type shall support:
- *    iterator<shared_ptr<Entry>> begin()
- *    iterator<shared_ptr<Entry>> end()
+ *  - `iterator<shared_ptr<Entry>> begin()`
+ *  - `iterator<shared_ptr<Entry>> end()`
+ *  - `size_t size() const`
  */
 typedef std::vector<shared_ptr<Entry>> DataMatchResult;
 

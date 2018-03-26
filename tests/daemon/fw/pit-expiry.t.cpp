@@ -78,7 +78,7 @@ public:
   {
     DummyStrategy::beforeSatisfyInterest(pitEntry, inFace, data);
 
-    if (beforeSatisfyInterest_count <= 1) {
+    if (beforeSatisfyInterest_count <= 2) {
       setExpiryTimer(pitEntry, 190_ms);
     }
   }
@@ -92,6 +92,19 @@ public:
     }
 
     DummyStrategy::afterContentStoreHit(pitEntry, inFace, data);
+  }
+
+  void
+  afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
+                   const Face& inFace, const Data& data) override
+  {
+    ++afterReceiveData_count;
+
+    if (afterReceiveData_count <= 2) {
+      setExpiryTimer(pitEntry, 290_ms);
+    }
+
+    this->sendDataToAll(pitEntry, inFace, data);
   }
 
   void
@@ -259,12 +272,70 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
 
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
+  auto face3 = make_shared<DummyFace>();
+  forwarder.addFace(face1);
+  forwarder.addFace(face2);
+  forwarder.addFace(face3);
+
+  Name strategyA("/strategyA/%FD%01");
+  Name strategyB("/strategyB/%FD%01");
+  PitExpiryTestStrategy::registerAs(strategyA);
+  PitExpiryTestStrategy::registerAs(strategyB);
+  auto& sA = choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
+  auto& sB = choose<PitExpiryTestStrategy>(forwarder, "/A/0", strategyB);
+  Pit& pit = forwarder.getPit();
+
+  shared_ptr<Interest> interest1 = makeInterest("/A");
+  shared_ptr<Interest> interest2 = makeInterest("/A/0");
+  interest1->setInterestLifetime(90_ms);
+  interest2->setInterestLifetime(90_ms);
+  shared_ptr<Data> data = makeData("/A/0");
+
+  face1->receiveInterest(*interest1);
+  face2->receiveInterest(*interest2);
+  BOOST_CHECK_EQUAL(pit.size(), 2);
+
+  // beforeSatisfyInterest: the first Data prolongs PIT expiry timer by 190 ms
+  this->advanceClocks(30_ms);
+  face3->receiveData(*data);
+  this->advanceClocks(189_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 2);
+  this->advanceClocks(2_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  face1->receiveInterest(*interest1);
+  face2->receiveInterest(*interest2);
+
+  // beforeSatisfyInterest: the second Data prolongs PIT expiry timer
+  // and the third one sets the timer to now
+  this->advanceClocks(30_ms);
+  face3->receiveData(*data);
+  this->advanceClocks(1_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 2);
+
+  this->advanceClocks(30_ms);
+  face3->receiveData(*data);
+  this->advanceClocks(1_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  BOOST_CHECK_EQUAL(sA.beforeSatisfyInterest_count, 3);
+  BOOST_CHECK_EQUAL(sB.beforeSatisfyInterest_count, 3);
+  BOOST_CHECK_EQUAL(sA.afterReceiveData_count, 0);
+  BOOST_CHECK_EQUAL(sB.afterReceiveData_count, 0);
+}
+
+BOOST_AUTO_TEST_CASE(ResetTimerAfterReceiveData)
+{
+  Forwarder forwarder;
+
+  auto face1 = make_shared<DummyFace>();
+  auto face2 = make_shared<DummyFace>();
   forwarder.addFace(face1);
   forwarder.addFace(face2);
 
   Name strategyA("/strategyA/%FD%01");
   PitExpiryTestStrategy::registerAs(strategyA);
-  choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
+  auto& sA = choose<PitExpiryTestStrategy>(forwarder, "/A", strategyA);
 
   Pit& pit = forwarder.getPit();
 
@@ -274,17 +345,30 @@ BOOST_AUTO_TEST_CASE(ResetTimerBeforeSatisfyInterest)
 
   face1->receiveInterest(*interest);
 
+  // afterReceiveData: the first Data prolongs PIT expiry timer by 290 ms
   this->advanceClocks(30_ms);
   face2->receiveData(*data);
+  this->advanceClocks(289_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 1);
+  this->advanceClocks(2_ms);
+  BOOST_CHECK_EQUAL(pit.size(), 0);
 
+  face1->receiveInterest(*interest);
+
+  // afterReceiveData: the second Data prolongs PIT expiry timer
+  // and the third one sets the timer to now
+  this->advanceClocks(30_ms);
+  face2->receiveData(*data);
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 1);
 
   this->advanceClocks(30_ms);
   face2->receiveData(*data);
-
   this->advanceClocks(1_ms);
   BOOST_CHECK_EQUAL(pit.size(), 0);
+
+  BOOST_CHECK_EQUAL(sA.beforeSatisfyInterest_count, 0);
+  BOOST_CHECK_EQUAL(sA.afterReceiveData_count, 3);
 }
 
 BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)

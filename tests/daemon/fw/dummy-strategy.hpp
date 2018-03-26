@@ -73,6 +73,10 @@ public:
                        const Face& inFace, const Data& data) override;
 
   void
+  afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
+                   const Face& inFace, const Data& data) override;
+
+  void
   afterReceiveNack(const Face& inFace, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
@@ -93,6 +97,7 @@ public:
   int afterReceiveInterest_count;
   int beforeSatisfyInterest_count;
   int afterContentStoreHit_count;
+  int afterReceiveData_count;
   int afterReceiveNack_count;
 
   shared_ptr<Face> interestOutFace;

@@ -47,6 +47,7 @@ DummyStrategy::DummyStrategy(Forwarder& forwarder, const Name& name)
   , afterReceiveInterest_count(0)
   , beforeSatisfyInterest_count(0)
   , afterContentStoreHit_count(0)
+  , afterReceiveData_count(0)
   , afterReceiveNack_count(0)
 {
   this->setInstanceName(name);
@@ -79,7 +80,16 @@ DummyStrategy::afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
 {
   ++afterContentStoreHit_count;
 
-  this->sendData(pitEntry, data, inFace);
+  Strategy::afterContentStoreHit(pitEntry, inFace, data);
+}
+
+void
+DummyStrategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
+                                const Face& inFace, const Data& data)
+{
+  ++afterReceiveData_count;
+
+  Strategy::afterReceiveData(pitEntry, inFace, data);
 }
 
 void
