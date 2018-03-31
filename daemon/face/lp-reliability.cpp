@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,7 +82,7 @@ LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, 
                                                  std::forward_as_tuple(frag));
     unackedFragsIt->second.sendTime = sendTime;
     unackedFragsIt->second.rtoTimer =
-      scheduler::schedule(m_rto.computeRto(), bind(&LpReliability::onLpPacketLost, this, unackedFragsIt));
+      scheduler::schedule(m_rto.computeRto(), bind(&LpReliability::onLpPacketLost, this, txSeq));
     unackedFragsIt->second.netPkt = netPkt;
 
     if (m_unackedFrags.size() == 1) {
@@ -127,9 +127,20 @@ LpReliability::processIncomingPacket(const lp::Packet& pkt)
     // packet. Potentially increment the start of the window.
     onLpPacketAcknowledged(fragIt);
 
+    // This set contains TxSequences that have been removed by onLpPacketLost below because they
+    // were part of a network packet that was removed due to a fragment exceeding retx, as well as
+    // any other TxSequences removed by onLpPacketLost. This prevents onLpPacketLost from being
+    // called later for an invalid iterator.
+    std::set<lp::Sequence> removedLpPackets;
+
     // Resend or fail fragments considered lost. Potentially increment the start of the window.
-    for (UnackedFrags::iterator txSeqIt : lostLpPackets) {
-      this->onLpPacketLost(txSeqIt);
+    for (lp::Sequence txSeq : lostLpPackets) {
+      if (removedLpPackets.find(txSeq) == removedLpPackets.end()) {
+        auto removedThisTxSeq = this->onLpPacketLost(txSeq);
+        for (auto removedTxSeq : removedThisTxSeq) {
+          removedLpPackets.insert(removedTxSeq);
+        }
+      }
     }
   }
 
@@ -206,10 +217,10 @@ LpReliability::stopIdleAckTimer()
   m_isIdleAckTimerRunning = false;
 }
 
-std::vector<LpReliability::UnackedFrags::iterator>
+std::vector<lp::Sequence>
 LpReliability::findLostLpPackets(LpReliability::UnackedFrags::iterator ackIt)
 {
-  std::vector<UnackedFrags::iterator> lostLpPackets;
+  std::vector<lp::Sequence> lostLpPackets;
 
   for (auto it = m_firstUnackedFrag; ; ++it) {
     if (it == m_unackedFrags.end()) {
@@ -224,27 +235,30 @@ LpReliability::findLostLpPackets(LpReliability::UnackedFrags::iterator ackIt)
     unackedFrag.nGreaterSeqAcks++;
 
     if (unackedFrag.nGreaterSeqAcks >= m_options.seqNumLossThreshold) {
-      lostLpPackets.push_back(it);
+      lostLpPackets.push_back(it->first);
     }
   }
 
   return lostLpPackets;
 }
 
-void
-LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
+std::vector<lp::Sequence>
+LpReliability::onLpPacketLost(lp::Sequence txSeq)
 {
-  BOOST_ASSERT(m_unackedFrags.count(txSeqIt->first) > 0);
+  BOOST_ASSERT(m_unackedFrags.count(txSeq) > 0);
+  auto txSeqIt = m_unackedFrags.find(txSeq);
 
   auto& txFrag = txSeqIt->second;
   txFrag.rtoTimer.cancel();
   auto netPkt = txFrag.netPkt;
+  std::vector<lp::Sequence> removedThisTxSeq;
 
   // Check if maximum number of retransmissions exceeded
   if (txFrag.retxCount >= m_options.maxRetx) {
     // Delete all LpPackets of NetPkt from m_unackedFrags (except this one)
     for (size_t i = 0; i < netPkt->unackedFrags.size(); i++) {
       if (netPkt->unackedFrags[i] != txSeqIt) {
+        removedThisTxSeq.push_back(netPkt->unackedFrags[i]->first);
         deleteUnackedFrag(netPkt->unackedFrags[i]);
       }
     }
@@ -260,6 +274,7 @@ LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
       onDroppedInterest(Interest(frag));
     }
 
+    removedThisTxSeq.push_back(txSeqIt->first);
     deleteUnackedFrag(txSeqIt);
   }
   else {
@@ -284,6 +299,7 @@ LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
     BOOST_ASSERT(fragInNetPkt != netPkt->unackedFrags.end());
     *fragInNetPkt = newTxFragIt;
 
+    removedThisTxSeq.push_back(txSeqIt->first);
     deleteUnackedFrag(txSeqIt);
 
     // Retransmit fragment
@@ -291,8 +307,10 @@ LpReliability::onLpPacketLost(UnackedFrags::iterator txSeqIt)
 
     // Start RTO timer for this sequence
     newTxFrag.rtoTimer = scheduler::schedule(m_rto.computeRto(),
-                                          bind(&LpReliability::onLpPacketLost, this, newTxFragIt));
+                                          bind(&LpReliability::onLpPacketLost, this, newTxSeq));
   }
+
+  return removedThisTxSeq;
 }
 
 void

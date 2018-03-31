@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -67,25 +67,25 @@ public:
 
 private:
   void
-  doSendInterest(const Interest& interest) override
+  doSendInterest(const Interest&) final
   {
     BOOST_ASSERT(false);
   }
 
   void
-  doSendData(const Data& data) override
+  doSendData(const Data&) final
   {
     BOOST_ASSERT(false);
   }
 
   void
-  doSendNack(const lp::Nack& nack) override
+  doSendNack(const lp::Nack&) final
   {
     BOOST_ASSERT(false);
   }
 
   void
-  doReceivePacket(Transport::Packet&& packet) override
+  doReceivePacket(Transport::Packet&&) final
   {
     BOOST_ASSERT(false);
   }
@@ -117,12 +117,6 @@ public:
                        [txSeq] (const LpReliability::UnackedFrags::iterator& frag) {
                          return frag->first == txSeq;
                        });
-  }
-
-  LpReliability::UnackedFrags::iterator
-  getIteratorFromTxSeq(lp::Sequence txSeq)
-  {
-    return reliability->m_unackedFrags.find(txSeq);
   }
 
   /** \brief make an LpPacket with fragment of specified size
@@ -161,7 +155,7 @@ public:
     return value;
   }
 
-public:
+protected:
   unique_ptr<DummyLpReliabilityLinkService> linkService;
   unique_ptr<DummyTransport> transport;
   unique_ptr<DummyFace> face;
@@ -169,8 +163,6 @@ public:
 };
 
 BOOST_FIXTURE_TEST_SUITE(TestLpReliability, LpReliabilityFixture)
-
-BOOST_AUTO_TEST_SUITE(Sender)
 
 BOOST_AUTO_TEST_CASE(SendNoFragmentField)
 {
@@ -191,11 +183,12 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   lp::Packet pkt2 = makeFrag(3000, 30);
 
   linkService->sendLpPackets({pkt1});
+  BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet cached1(transport->sentPackets.front().packet);
   BOOST_REQUIRE(cached1.has<lp::TxSequenceField>());
-  BOOST_CHECK_EQUAL(cached1.get<lp::TxSequenceField>(), 2);
   BOOST_CHECK(!cached1.has<lp::SequenceField>());
   lp::Sequence firstTxSeq = cached1.get<lp::TxSequenceField>();
+  BOOST_CHECK_EQUAL(firstTxSeq, 2);
   BOOST_CHECK_EQUAL(getPktNo(cached1), 1024);
   BOOST_CHECK_EQUAL(linkService->getCounters().nAcknowledged, 0);
   BOOST_CHECK_EQUAL(linkService->getCounters().nRetransmitted, 0);
@@ -214,7 +207,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   BOOST_CHECK(reliability->m_unackedFrags.at(firstTxSeq).netPkt);
   BOOST_CHECK(reliability->m_unackedFrags.at(firstTxSeq + 1).netPkt);
   BOOST_CHECK_NE(reliability->m_unackedFrags.at(firstTxSeq).netPkt,
-                    reliability->m_unackedFrags.at(firstTxSeq + 1).netPkt);
+                 reliability->m_unackedFrags.at(firstTxSeq + 1).netPkt);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq).retxCount, 0);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 1).retxCount, 0);
   BOOST_CHECK_EQUAL(reliability->m_firstUnackedFrag->first, firstTxSeq);
@@ -374,7 +367,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2049 rto: 1000ms, txSeq: 5, started T+250ms, retx 1
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
   advanceClocks(time::milliseconds(1), 250);
-  reliability->onLpPacketLost(getIteratorFromTxSeq(3));
+  reliability->onLpPacketLost(3);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(2), 1);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(3), 0);
@@ -408,7 +401,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2049 rto: 1000ms, txSeq: 6, started T+500ms, retx 2
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
   advanceClocks(time::milliseconds(1), 250);
-  reliability->onLpPacketLost(getIteratorFromTxSeq(5));
+  reliability->onLpPacketLost(5);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(2), 1);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(5), 0);
@@ -442,7 +435,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2049 rto: 1000ms, txSeq: 7, started T+750ms, retx 3
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
   advanceClocks(time::milliseconds(1), 250);
-  reliability->onLpPacketLost(getIteratorFromTxSeq(6));
+  reliability->onLpPacketLost(6);
 
   BOOST_REQUIRE_EQUAL(reliability->m_unackedFrags.count(2), 1);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(6), 0);
@@ -476,7 +469,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2049 rto: expired, removed
   // 2050 rto: expired, removed
   advanceClocks(time::milliseconds(1), 100);
-  reliability->onLpPacketLost(getIteratorFromTxSeq(7));
+  reliability->onLpPacketLost(7);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
@@ -515,11 +508,14 @@ BOOST_AUTO_TEST_CASE(AckUnknownTxSeq)
   BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 }
 
-BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also tests wraparound
+BOOST_AUTO_TEST_CASE(LossByGreaterAcks)
 {
+  // Detect loss by 3x greater Acks, also tests wraparound
+
   reliability->m_lastTxSeqNo = 0xFFFFFFFFFFFFFFFE;
 
-  // Passed to sendLpPackets individually since they are from separate, non-fragmented network packets
+  // Passed to sendLpPackets individually since they are
+  // from separate, non-fragmented network packets
   linkService->sendLpPackets({makeFrag(1, 50)});
   linkService->sendLpPackets({makeFrag(2, 50)});
   linkService->sendLpPackets({makeFrag(3, 50)});
@@ -653,6 +649,44 @@ BOOST_AUTO_TEST_CASE(LossByGreaterAcks) // detect loss by 3x greater Acks, also 
   BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 }
 
+BOOST_AUTO_TEST_CASE(SkipFragmentsRemovedInRtt)
+{
+  auto opts = linkService->getOptions();
+  opts.reliabilityOptions.maxRetx = 0; // just to make the test case shorter
+  opts.reliabilityOptions.seqNumLossThreshold = 3;
+  linkService->setOptions(opts);
+
+  lp::Packet frag1 = makeFrag(5001);
+  lp::Packet frag2 = makeFrag(5002);
+  linkService->sendLpPackets({frag1, frag2}); // First packet has 2 fragments
+  linkService->sendLpPackets({makeFrag(5003)});
+  linkService->sendLpPackets({makeFrag(5004)});
+  linkService->sendLpPackets({makeFrag(5005)});
+
+  BOOST_CHECK_EQUAL(transport->sentPackets.size(), 5);
+  BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 5);
+
+  lp::Sequence firstTxSeq = reliability->m_firstUnackedFrag->first;
+
+  // Ack the last 2 packets
+  lp::Packet ackPkt1;
+  ackPkt1.add<lp::AckField>(firstTxSeq + 4);
+  ackPkt1.add<lp::AckField>(firstTxSeq + 3);
+  reliability->processIncomingPacket(ackPkt1);
+
+  BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 3);
+  BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq).nGreaterSeqAcks, 2);
+  BOOST_CHECK_EQUAL(reliability->m_unackedFrags.at(firstTxSeq + 1).nGreaterSeqAcks, 2);
+
+  // Ack the third packet (5003)
+  // This triggers a "loss by greater Acks" for packets 5001 and 5002
+  lp::Packet ackPkt2;
+  ackPkt2.add<lp::AckField>(firstTxSeq + 2);
+  reliability->processIncomingPacket(ackPkt2); // tests crash/assert reported in bug #4479
+
+  BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
+}
+
 BOOST_AUTO_TEST_CASE(CancelLossNotificationOnAck)
 {
   reliability->onDroppedInterest.connect([] (const Interest&) {
@@ -676,10 +710,6 @@ BOOST_AUTO_TEST_CASE(CancelLossNotificationOnAck)
   BOOST_CHECK_EQUAL(linkService->getCounters().nRetxExhausted, 0);
   BOOST_CHECK_EQUAL(linkService->getCounters().nDroppedInterests, 0);
 }
-
-BOOST_AUTO_TEST_SUITE_END() // Sender
-
-BOOST_AUTO_TEST_SUITE(Receiver)
 
 BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
 {
@@ -743,7 +773,7 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtu)
 
   BOOST_CHECK(!reliability->m_ackQueue.empty());
 
-  for (int i = 0; i < 5; i++) {
+  for (uint32_t i = 0; i < 5; i++) {
     lp::Packet pkt = makeFrag(i, 60);
     linkService->sendLpPackets({pkt});
 
@@ -923,7 +953,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
 
   // given Ack of size 6 and MTU of 1500, 249 Acks/IDLE packet
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 5);
-  for (int i = 0; i < 4; i++) {
+  for (size_t i = 0; i < 4; i++) {
     lp::Packet sentPkt(transport->sentPackets[i].packet);
     BOOST_CHECK(!sentPkt.has<lp::TxSequenceField>());
     BOOST_CHECK_EQUAL(sentPkt.count<lp::AckField>(), 249);
@@ -956,7 +986,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
 
   // given Ack of size 6 and MTU of 1500, 249 Acks/IDLE packet
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 10);
-  for (int i = 5; i < 9; i++) {
+  for (size_t i = 5; i < 9; i++) {
     lp::Packet sentPkt(transport->sentPackets[i].packet);
     BOOST_CHECK(!sentPkt.has<lp::TxSequenceField>());
     BOOST_CHECK_EQUAL(sentPkt.count<lp::AckField>(), 249);
@@ -982,7 +1012,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
   // given Ack of size 8 and MTU of 1500, approx 187 Acks/IDLE packet
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 16);
-  for (int i = 10; i < 15; i++) {
+  for (size_t i = 10; i < 15; i++) {
     lp::Packet sentPkt(transport->sentPackets[i].packet);
     BOOST_CHECK(!sentPkt.has<lp::TxSequenceField>());
     BOOST_CHECK_EQUAL(sentPkt.count<lp::AckField>(), 187);
@@ -1001,8 +1031,6 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 16);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
 }
-
-BOOST_AUTO_TEST_SUITE_END() // Receiver
 
 BOOST_AUTO_TEST_SUITE_END() // TestLpReliability
 BOOST_AUTO_TEST_SUITE_END() // Face

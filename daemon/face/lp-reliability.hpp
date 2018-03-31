@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -135,15 +135,16 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /** \brief find and mark as lost fragments where a configurable number of Acks
    *         (\p m_options.seqNumLossThreshold) have been received for greater TxSequence numbers
    *  \param ackIt iterator pointing to acknowledged fragment
-   *  \return vector containing iterators to fragments marked lost by this mechanism
+   *  \return vector containing TxSequences of fragments marked lost by this mechanism
    */
-  std::vector<UnackedFrags::iterator>
+  std::vector<lp::Sequence>
   findLostLpPackets(UnackedFrags::iterator ackIt);
 
   /** \brief resend (or give up on) a lost fragment
+   *  \return vector of the TxSequences of fragments removed due to a network packet being removed
    */
-  void
-  onLpPacketLost(UnackedFrags::iterator txSeqIt);
+  std::vector<lp::Sequence>
+  onLpPacketLost(lp::Sequence txSeq);
 
   /** \brief remove the fragment with the given sequence number from the map of unacknowledged
    *         fragments, as well as its associated network packet (if any)
