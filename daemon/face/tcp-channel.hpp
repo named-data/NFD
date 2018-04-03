@@ -37,6 +37,9 @@ typedef boost::asio::ip::tcp::endpoint Endpoint;
 
 namespace face {
 
+using DetermineFaceScopeFromAddress = std::function<ndn::nfd::FaceScope(const boost::asio::ip::address& local,
+                                                                        const boost::asio::ip::address& remote)>;
+
 /**
  * \brief Class implementing TCP-based channel to create faces
  *
@@ -53,7 +56,8 @@ public:
    * To enable creation faces upon incoming connections,
    * one needs to explicitly call TcpChannel::listen method.
    */
-  TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking);
+  TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking,
+             DetermineFaceScopeFromAddress determineFaceScope);
 
   bool
   isListening() const override
@@ -126,6 +130,7 @@ private:
   boost::asio::ip::tcp::socket m_socket;
   std::map<tcp::Endpoint, shared_ptr<Face>> m_channelFaces;
   bool m_wantCongestionMarking;
+  DetermineFaceScopeFromAddress m_determineFaceScope;
 };
 
 } // namespace face

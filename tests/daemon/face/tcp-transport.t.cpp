@@ -119,7 +119,7 @@ class PermanentTcpTransportReconnectObserver : public TcpTransport
 {
 public:
   PermanentTcpTransportReconnectObserver(protocol::socket&& socket, LimitedIo& io)
-    : TcpTransport(std::move(socket), ndn::nfd::FACE_PERSISTENCY_PERMANENT)
+    : TcpTransport(std::move(socket), ndn::nfd::FACE_PERSISTENCY_PERMANENT, ndn::nfd::FACE_SCOPE_LOCAL)
     , m_io(io)
   {
   }

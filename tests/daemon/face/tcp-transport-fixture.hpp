@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -88,8 +88,17 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
 
     localEp = sock.local_endpoint();
+
+    ndn::nfd::FaceScope scope;
+    if (sock.local_endpoint().address().is_loopback() && sock.remote_endpoint().address().is_loopback()) {
+      scope = ndn::nfd::FACE_SCOPE_LOCAL;
+    }
+    else {
+      scope = ndn::nfd::FACE_SCOPE_NON_LOCAL;
+    }
+
     face = make_unique<Face>(make_unique<DummyReceiveLinkService>(),
-                             make_unique<TcpTransport>(std::move(sock), persistency));
+                             make_unique<TcpTransport>(std::move(sock), persistency, scope));
     transport = static_cast<TcpTransport*>(face->getTransport());
     receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
 

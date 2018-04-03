@@ -64,11 +64,15 @@ createFace(ProtocolFactory& factory,
            const FaceUri& remoteUri,
            const ndn::optional<FaceUri>& localUri,
            const TestFaceParams& params,
-           const CreateFaceExpectedResult& expected)
+           const CreateFaceExpectedResult& expected,
+           const std::function<void(const Face&)>& extraChecks = nullptr)
 {
   factory.createFace({remoteUri, localUri, params},
-                     [expected] (const shared_ptr<Face>&) {
+                     [expected, extraChecks] (const shared_ptr<Face>& face) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::SUCCESS, expected.result);
+                       if (extraChecks) {
+                         extraChecks(*face);
+                       }
                      },
                      [expected] (uint32_t actualStatus, const std::string& actualReason) {
                        BOOST_CHECK_EQUAL(CreateFaceExpectedResult::FAILURE, expected.result);

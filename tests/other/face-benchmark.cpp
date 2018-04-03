@@ -45,7 +45,7 @@ class FaceBenchmark
 public:
   FaceBenchmark(const char* configFileName)
     : m_terminationSignalSet{getGlobalIoService()}
-    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false}
+    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false, bind([] { return ndn::nfd::FACE_SCOPE_NON_LOCAL; })}
     , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, time::minutes{10}, false}
   {
     m_terminationSignalSet.add(SIGINT);

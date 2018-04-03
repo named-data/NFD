@@ -42,7 +42,7 @@ namespace face {
 class TcpTransport FINAL_UNLESS_WITH_TESTS : public StreamTransport<boost::asio::ip::tcp>
 {
 public:
-  TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency);
+  TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope);
 
   ssize_t
   getSendQueueLength() final;

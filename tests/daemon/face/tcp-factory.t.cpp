@@ -45,6 +45,9 @@ protected:
                            boost::lexical_cast<uint16_t>(localPort));
     return factory.createChannel(endpoint);
   }
+
+protected:
+  LimitedIo limitedIo;
 };
 
 BOOST_AUTO_TEST_SUITE(Face)
@@ -68,6 +71,11 @@ BOOST_AUTO_TEST_CASE(Defaults)
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.size(), 2);
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.count("127.0.0.0/8"), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.count("::1/128"), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.size(), 0);
 }
 
 BOOST_AUTO_TEST_CASE(DisableListen)
@@ -130,6 +138,88 @@ BOOST_AUTO_TEST_CASE(DisableV6)
   parseConfig(CONFIG, false);
 
   checkChannelListEqual(factory, {"tcp4://0.0.0.0:7001"});
+}
+
+BOOST_AUTO_TEST_CASE(ConfigureLocal)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        local {
+          whitelist {
+            subnet 127.0.0.0/8
+          }
+
+          blacklist {
+            subnet ::1/128
+          }
+        }
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.size(), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.count("127.0.0.0/8"), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.size(), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.count("::1/128"), 1);
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:6363"),
+             {},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {CreateFaceExpectedResult::SUCCESS, 0, ""},
+             [] (const nfd::Face& face) {
+               BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
+             });
+
+  limitedIo.run(1, 100_ms);
+}
+
+BOOST_AUTO_TEST_CASE(ConfigureNonLocal)
+{
+  const std::string CONFIG = R"CONFIG(
+    face_system
+    {
+      tcp
+      {
+        local {
+          whitelist {
+            *
+          }
+
+          blacklist {
+            subnet 127.0.0.0/8
+            subnet ::1/128
+          }
+        }
+      }
+    }
+  )CONFIG";
+
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.size(), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.count("*"), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.size(), 2);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.count("127.0.0.0/8"), 1);
+  BOOST_CHECK_EQUAL(factory.m_local.m_blacklist.count("::1/128"), 1);
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:6363"),
+             {},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {CreateFaceExpectedResult::SUCCESS, 0, ""},
+             [] (const nfd::Face& face) {
+               BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
+             });
+
+  limitedIo.run(1, 100_ms);
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -357,7 +447,6 @@ public:
   }
 
 public:
-  LimitedIo limitedIo;
   shared_ptr<nfd::Face> face;
 };
 

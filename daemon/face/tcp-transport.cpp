@@ -39,20 +39,14 @@ time::milliseconds TcpTransport::s_initialReconnectWait = time::seconds(1);
 time::milliseconds TcpTransport::s_maxReconnectWait = time::minutes(5);
 float TcpTransport::s_reconnectWaitMultiplier = 2.0f;
 
-TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency)
+TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope)
   : StreamTransport(std::move(socket))
   , m_remoteEndpoint(m_socket.remote_endpoint())
   , m_nextReconnectWait(s_initialReconnectWait)
 {
   this->setLocalUri(FaceUri(m_socket.local_endpoint()));
   this->setRemoteUri(FaceUri(m_socket.remote_endpoint()));
-
-  if (m_socket.local_endpoint().address().is_loopback() &&
-      m_socket.remote_endpoint().address().is_loopback())
-    this->setScope(ndn::nfd::FACE_SCOPE_LOCAL);
-  else
-    this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
-
+  this->setScope(faceScope);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   this->setMtu(MTU_UNLIMITED);

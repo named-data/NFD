@@ -72,8 +72,16 @@ public:
   getChannels() const override;
 
 private:
+  ndn::nfd::FaceScope
+  determineFaceScopeFromAddresses(const boost::asio::ip::address& local,
+                                  const boost::asio::ip::address& remote) const;
+
+private:
   bool m_wantCongestionMarking = false;
   std::map<tcp::Endpoint, shared_ptr<TcpChannel>> m_channels;
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  IpAddressPredicate m_local;
 };
 
 } // namespace face

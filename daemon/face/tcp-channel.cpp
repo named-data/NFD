@@ -24,9 +24,9 @@
  */
 
 #include "tcp-channel.hpp"
+#include "core/global-io.hpp"
 #include "generic-link-service.hpp"
 #include "tcp-transport.hpp"
-#include "core/global-io.hpp"
 
 namespace nfd {
 namespace face {
@@ -35,11 +35,13 @@ NFD_LOG_INIT("TcpChannel");
 
 namespace ip = boost::asio::ip;
 
-TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking)
+TcpChannel::TcpChannel(const tcp::Endpoint& localEndpoint, bool wantCongestionMarking,
+                       DetermineFaceScopeFromAddress determineFaceScope)
   : m_localEndpoint(localEndpoint)
   , m_acceptor(getGlobalIoService())
   , m_socket(getGlobalIoService())
   , m_wantCongestionMarking(wantCongestionMarking)
+  , m_determineFaceScope(std::move(determineFaceScope))
 {
   setUri(FaceUri(m_localEndpoint));
   NFD_LOG_CHAN_INFO("Creating channel");
@@ -122,7 +124,9 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
     }
 
     auto linkService = make_unique<GenericLinkService>(options);
-    auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency);
+    auto faceScope = m_determineFaceScope(socket.local_endpoint().address(),
+                                          socket.remote_endpoint().address());
+    auto transport = make_unique<TcpTransport>(std::move(socket), params.persistency, faceScope);
     face = make_shared<Face>(std::move(linkService), std::move(transport));
 
     m_channelFaces[remoteEndpoint] = face;

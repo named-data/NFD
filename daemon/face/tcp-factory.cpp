@@ -72,6 +72,8 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
   uint16_t port = 6363;
   bool enableV4 = true;
   bool enableV6 = true;
+  IpAddressPredicate local;
+  bool isLocalConfigured = false;
 
   for (const auto& pair : *configSection) {
     const std::string& key = pair.first;
@@ -88,9 +90,27 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
     else if (key == "enable_v6") {
       enableV6 = ConfigFile::parseYesNo(pair, "face_system.tcp");
     }
+    else if (key == "local") {
+      isLocalConfigured = true;
+      for (const auto& localPair : pair.second) {
+        const std::string& localKey = localPair.first;
+        if (localKey == "whitelist") {
+          local.parseWhitelist(localPair.second);
+        }
+        else if (localKey == "blacklist") {
+          local.parseBlacklist(localPair.second);
+        }
+        else {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.tcp.local." + localKey));
+        }
+      }
+    }
     else {
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.tcp." + key));
     }
+  }
+  if (!isLocalConfigured) {
+    local.assign({{"subnet", "127.0.0.0/8"}, {"subnet", "::1/128"}}, {});
   }
 
   if (!enableV4 && !enableV6) {
@@ -125,6 +145,8 @@ TcpFactory::processConfig(OptionalConfigSection configSection,
     else if (providedSchemes.count("tcp6") > 0) {
       NFD_LOG_WARN("Cannot close tcp6 channel after its creation");
     }
+
+    m_local = std::move(local);
   }
 }
 
@@ -179,7 +201,8 @@ TcpFactory::createChannel(const tcp::Endpoint& endpoint)
   if (it != m_channels.end())
     return it->second;
 
-  auto channel = make_shared<TcpChannel>(endpoint, m_wantCongestionMarking);
+  auto channel = make_shared<TcpChannel>(endpoint, m_wantCongestionMarking,
+                                         bind(&TcpFactory::determineFaceScopeFromAddresses, this, _1, _2));
   m_channels[endpoint] = channel;
   return channel;
 }
@@ -188,6 +211,16 @@ std::vector<shared_ptr<const Channel>>
 TcpFactory::getChannels() const
 {
   return getChannelsFromMap(m_channels);
+}
+
+ndn::nfd::FaceScope
+TcpFactory::determineFaceScopeFromAddresses(const boost::asio::ip::address& localAddress,
+                                            const boost::asio::ip::address& remoteAddress) const
+{
+  if (m_local(localAddress) && m_local(remoteAddress)) {
+    return ndn::nfd::FACE_SCOPE_LOCAL;
+  }
+  return ndn::nfd::FACE_SCOPE_NON_LOCAL;
 }
 
 } // namespace face

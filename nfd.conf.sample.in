@@ -106,6 +106,19 @@ face_system
     port 6363 ; TCP listener port number
     enable_v4 yes ; set to 'no' to disable IPv4 channels, default 'yes'
     enable_v6 yes ; set to 'no' to disable IPv6 channels, default 'yes'
+
+    ; A TCP face has local scope if the local and remote IP addresses match the whitelist but not the blacklist
+    local
+    {
+      whitelist
+      {
+        subnet 127.0.0.0/8
+        subnet ::1/128
+      }
+      blacklist
+      {
+      }
+    }
   }
 
   ; The udp section contains settings for UDP faces and channels.
