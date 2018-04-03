@@ -139,8 +139,9 @@ face_system
 
     ; Whitelist and blacklist can contain, in no particular order:
     ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
-    ; - mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
-    ; - subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here)
+    ; - MAC addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
+    ; - IPv4 subnets (e.g., 'subnet 192.0.2.0/24')
+    ; - IPv6 subnets (e.g., 'subnet 2001:db8::/32')
     ; - a single asterisk ('*') that matches all interfaces
     ; By default, all interfaces are whitelisted.
     whitelist
@@ -193,8 +194,9 @@ face_system
   @IF_HAVE_LIBPCAP@
   @IF_HAVE_LIBPCAP@  ; Whitelist and blacklist can contain, in no particular order:
   @IF_HAVE_LIBPCAP@  ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
-  @IF_HAVE_LIBPCAP@  ; - mac addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
-  @IF_HAVE_LIBPCAP@  ; - subnets (e.g., 'subnet 192.0.2.0/24', note that only IPv4 is supported here)
+  @IF_HAVE_LIBPCAP@  ; - MAC addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
+  @IF_HAVE_LIBPCAP@  ; - IPv4 subnets (e.g., 'subnet 192.0.2.0/24')
+  @IF_HAVE_LIBPCAP@  ; - IPv6 subnets (e.g., 'subnet 2001:db8::/32')
   @IF_HAVE_LIBPCAP@  ; - a single asterisk ('*') that matches all interfaces
   @IF_HAVE_LIBPCAP@  ; By default, all interfaces are whitelisted.
   @IF_HAVE_LIBPCAP@  whitelist

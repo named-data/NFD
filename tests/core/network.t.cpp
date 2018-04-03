@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,6 +69,9 @@ BOOST_AUTO_TEST_CASE(RangeV4)
   Network n = boost::lexical_cast<Network>("192.0.2.0/24");
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(n), "192.0.2.0 <-> 192.0.2.255");
 
+  BOOST_CHECK_THROW(boost::lexical_cast<Network>("192.0.2.0/255"), boost::bad_lexical_cast);
+  BOOST_CHECK_THROW(boost::lexical_cast<Network>("256.0.2.0/24"), boost::bad_lexical_cast);
+
   BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), true);
   BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.254")), true);
   BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.1.255")), false);
@@ -105,6 +108,10 @@ BOOST_AUTO_TEST_CASE(RangeV6)
   Network n = boost::lexical_cast<Network>("2001:db8:3f9:1::/64");
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(n),
                     "2001:db8:3f9:1:: <-> 2001:db8:3f9:1:ffff:ffff:ffff:ffff");
+
+  BOOST_CHECK_THROW(boost::lexical_cast<Network>("2001:db8:3f9:1::/129"), boost::bad_lexical_cast);
+  BOOST_CHECK_THROW(boost::lexical_cast<Network>("200x:db8:3f9:1::/64"), boost::bad_lexical_cast);
+  BOOST_CHECK_THROW(boost::lexical_cast<Network>("2001:db8:3f9::1::/64"), boost::bad_lexical_cast);
 
   BOOST_CHECK_EQUAL(n.doesContain(address::from_string("192.0.2.1")), false);
   BOOST_CHECK_EQUAL(n.doesContain(address::from_string("2001:db8:3f9:1:3025:ccc5:eeeb:86d3")),
@@ -167,6 +174,9 @@ BOOST_AUTO_TEST_CASE(IsValidCidr)
   BOOST_CHECK_EQUAL(Network::isValidCidr("foo/"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("foo"), false);
   BOOST_CHECK_EQUAL(Network::isValidCidr("256.0.256.0/24"), false);
+
+  BOOST_CHECK_EQUAL(Network::isValidCidr("::1"), false);
+  BOOST_CHECK_EQUAL(Network::isValidCidr("::1/128"), true);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestNetwork

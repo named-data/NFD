@@ -1,12 +1,12 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
  *                           Washington University in St. Louis,
  *                           Beijing Institute of Technology,
- *                           The University of Memphis
+ *                           The University of Memphis.
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -28,6 +28,7 @@
 #include <ndn-cxx/net/address-converter.hpp>
 #include <boost/utility/value_init.hpp>
 #include <algorithm>
+#include <cctype>
 
 namespace nfd {
 
@@ -66,28 +67,13 @@ Network::isValidCidr(const std::string& cidr)
     return false;
   }
 
-  boost::system::error_code invalidIp;
-  boost::asio::ip::address_v4::from_string(cidr.substr(0, pos), invalidIp);
-  if (invalidIp) {
-    return false;
-  }
-
-  auto prefixLenStr = cidr.substr(pos + 1);
-  if (!std::all_of(prefixLenStr.begin(), prefixLenStr.end(), ::isdigit)) {
-    return false;
-  }
-  int prefixLen = -1;
   try {
-    prefixLen = boost::lexical_cast<int>(prefixLenStr);
+    boost::lexical_cast<Network>(cidr);
+    return true;
   }
   catch (const boost::bad_lexical_cast&) {
     return false;
   }
-  if (prefixLen < 0 || prefixLen > 32) {
-    return false;
-  }
-
-  return true;
 }
 
 std::ostream&
@@ -106,14 +92,44 @@ operator>>(std::istream& is, Network& network)
 
   size_t position = networkStr.find('/');
   if (position == std::string::npos) {
-    network.m_minAddress = ndn::ip::addressFromString(networkStr);
-    network.m_maxAddress = ndn::ip::addressFromString(networkStr);
+    try {
+      network.m_minAddress = ndn::ip::addressFromString(networkStr);
+      network.m_maxAddress = ndn::ip::addressFromString(networkStr);
+    }
+    catch (const boost::system::system_error&) {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
   }
   else {
-    ip::address address = ndn::ip::addressFromString(networkStr.substr(0, position));
-    size_t mask = boost::lexical_cast<size_t>(networkStr.substr(position+1));
+    boost::system::error_code ec;
+    ip::address address = ndn::ip::addressFromString(networkStr.substr(0, position), ec);
+    if (ec) {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
+
+    auto prefixLenStr = networkStr.substr(position + 1);
+    if (!std::all_of(prefixLenStr.begin(), prefixLenStr.end(),
+                     [] (unsigned char c) { return std::isdigit(c); })) {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
+    size_t mask;
+    try {
+      mask = boost::lexical_cast<size_t>(prefixLenStr);
+    }
+    catch (const boost::bad_lexical_cast&) {
+      is.setstate(std::ios::failbit);
+      return is;
+    }
 
     if (address.is_v4()) {
+      if (mask > 32) {
+        is.setstate(std::ios::failbit);
+        return is;
+      }
+
       ip::address_v4::bytes_type maskBytes = boost::initialized_value;
       for (size_t i = 0; i < mask; i++) {
         size_t byteId = i / 8;
@@ -134,6 +150,11 @@ operator>>(std::istream& is, Network& network)
       network.m_maxAddress = ip::address_v4(max);
     }
     else {
+      if (mask > 128) {
+        is.setstate(std::ios::failbit);
+        return is;
+      }
+
       ip::address_v6::bytes_type maskBytes = boost::initialized_value;
       for (size_t i = 0; i < mask; i++) {
         size_t byteId = i / 8;

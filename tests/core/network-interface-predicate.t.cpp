@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,6 +51,9 @@ protected:
     netifs.back()->addNetworkAddress(NetworkAddress(AddressFamily::V4,
       address_v4::from_string("129.82.100.1"), address_v4::from_string("129.82.255.255"),
       16, AddressScope::GLOBAL, 0));
+    netifs.back()->addNetworkAddress(NetworkAddress(AddressFamily::V4,
+      address_v6::from_string("2001:db8:1::1"), address_v6::from_string("2001:db8:1::ffff:ffff:ffff:ffff"),
+      64, AddressScope::GLOBAL, 0));
     netifs.back()->setFlags(IFF_UP);
 
     netifs.push_back(NetworkMonitorStub::makeNetworkInterface());
@@ -60,6 +63,9 @@ protected:
     netifs.back()->addNetworkAddress(NetworkAddress(AddressFamily::V4,
       address_v4::from_string("192.168.2.1"), address_v4::from_string("192.168.2.255"),
       24, AddressScope::GLOBAL, 0));
+    netifs.back()->addNetworkAddress(NetworkAddress(AddressFamily::V4,
+      address_v6::from_string("2001:db8:2::1"), address_v6::from_string("2001:db8:2::ffff:ffff:ffff:ffff"),
+      64, AddressScope::GLOBAL, 0));
     netifs.back()->setFlags(IFF_UP);
 
     netifs.push_back(NetworkMonitorStub::makeNetworkInterface());
@@ -284,7 +290,7 @@ BOOST_AUTO_TEST_CASE(EtherMalformed)
     ConfigFile::Error);
 }
 
-BOOST_AUTO_TEST_CASE(SubnetWhitelist)
+BOOST_AUTO_TEST_CASE(Subnet4Whitelist)
 {
   parseConfig("whitelist\n"
               "{\n"
@@ -297,7 +303,7 @@ BOOST_AUTO_TEST_CASE(SubnetWhitelist)
   BOOST_CHECK_EQUAL(predicate(*netifs[3]), true);
 }
 
-BOOST_AUTO_TEST_CASE(SubnetBlacklist)
+BOOST_AUTO_TEST_CASE(Subnet4Blacklist)
 {
   parseConfig("blacklist\n"
               "{\n"
@@ -308,6 +314,32 @@ BOOST_AUTO_TEST_CASE(SubnetBlacklist)
   BOOST_CHECK_EQUAL(predicate(*netifs[1]), false);
   BOOST_CHECK_EQUAL(predicate(*netifs[2]), true);
   BOOST_CHECK_EQUAL(predicate(*netifs[3]), false);
+}
+
+BOOST_AUTO_TEST_CASE(Subnet6Whitelist)
+{
+  parseConfig("whitelist\n"
+              "{\n"
+              "  subnet 2001:db8:2::1/120\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(*netifs[0]), false);
+  BOOST_CHECK_EQUAL(predicate(*netifs[1]), true);
+  BOOST_CHECK_EQUAL(predicate(*netifs[2]), false);
+  BOOST_CHECK_EQUAL(predicate(*netifs[3]), false);
+}
+
+BOOST_AUTO_TEST_CASE(Subnet6Blacklist)
+{
+  parseConfig("blacklist\n"
+              "{\n"
+              "  subnet 2001:db8:2::1/120\n"
+              "}");
+
+  BOOST_CHECK_EQUAL(predicate(*netifs[0]), true);
+  BOOST_CHECK_EQUAL(predicate(*netifs[1]), false);
+  BOOST_CHECK_EQUAL(predicate(*netifs[2]), true);
+  BOOST_CHECK_EQUAL(predicate(*netifs[3]), true);
 }
 
 BOOST_AUTO_TEST_CASE(SubnetMalformed)
