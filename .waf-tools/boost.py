@@ -54,8 +54,7 @@ from waflib import Utils, Logs, Errors
 from waflib.Configure import conf
 from waflib.TaskGen import feature, after_method
 
-BOOST_LIBS = ['/usr/lib/x86_64-linux-gnu', '/usr/lib/i386-linux-gnu',
-			  '/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
+BOOST_LIBS = ['/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
 BOOST_INCLUDES = ['/usr/include', '/usr/local/include', '/opt/local/include', '/sw/include']
 BOOST_VERSION_FILE = 'boost/version.hpp'
 BOOST_VERSION_CODE = '''
@@ -403,6 +402,11 @@ def check_boost(self, *k, **kw):
 		params[key] = value and value or kw.get(key, '')
 
 	var = kw.get('uselib_store', 'BOOST')
+
+	self.find_program('dpkg-architecture', var='DPKG_ARCHITECTURE', mandatory=False)
+	if self.env.DPKG_ARCHITECTURE:
+		deb_host_multiarch = self.cmd_and_log([self.env.DPKG_ARCHITECTURE[0], '-qDEB_HOST_MULTIARCH'])
+		BOOST_LIBS.insert(0, '/usr/lib/%s' % deb_host_multiarch.strip())
 
 	self.start_msg('Checking boost includes')
 	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
