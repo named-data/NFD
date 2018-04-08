@@ -28,7 +28,7 @@
 
 #include "channel.hpp"
 #include "core/config-file.hpp"
-#include "core/network-interface-predicate.hpp"
+#include "core/network-predicate.hpp"
 #include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
