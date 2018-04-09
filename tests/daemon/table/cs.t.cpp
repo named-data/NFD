@@ -85,8 +85,19 @@ protected:
                 check(0);
               }));
 
-    // current Cs::find implementation performs lookup synchronously
+    // current Cs::find implementation is synchronous
     BOOST_CHECK(hasResult);
+  }
+
+  size_t
+  erase(const Name& prefix, size_t limit)
+  {
+    ndn::optional<size_t> nErased;
+    m_cs.erase(prefix, limit, [&] (size_t nErased1) { nErased = nErased1; });
+
+    // current Cs::erase implementation is synchronous
+    // if callback was not invoked, bad_optional_access would occur
+    return *nErased;
   }
 
 protected:
@@ -363,6 +374,38 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // Find
+
+BOOST_FIXTURE_TEST_CASE(Erase, FindFixture)
+{
+  insert(1, "/A/B/1");
+  insert(2, "/A/B/2");
+  insert(3, "/A/C/3");
+  insert(4, "/A/C/4");
+  insert(5, "/D/5");
+  insert(6, "/E/6");
+  BOOST_CHECK_EQUAL(m_cs.size(), 6);
+
+  BOOST_CHECK_EQUAL(erase("/A", 3), 3);
+  BOOST_CHECK_EQUAL(m_cs.size(), 3);
+  int nDataUnderA = 0;
+  startInterest("/A/B/1");
+  find([&] (uint32_t found) { nDataUnderA += static_cast<int>(found > 0); });
+  startInterest("/A/B/2");
+  find([&] (uint32_t found) { nDataUnderA += static_cast<int>(found > 0); });
+  startInterest("/A/C/3");
+  find([&] (uint32_t found) { nDataUnderA += static_cast<int>(found > 0); });
+  startInterest("/A/C/4");
+  find([&] (uint32_t found) { nDataUnderA += static_cast<int>(found > 0); });
+  BOOST_CHECK_EQUAL(nDataUnderA, 1);
+
+  BOOST_CHECK_EQUAL(erase("/D", 2), 1);
+  BOOST_CHECK_EQUAL(m_cs.size(), 2);
+  startInterest("/D/5");
+  CHECK_CS_FIND(0);
+
+  BOOST_CHECK_EQUAL(erase("/F", 2), 0);
+  BOOST_CHECK_EQUAL(m_cs.size(), 2);
+}
 
 // When the capacity limit is set to zero, Data cannot be inserted;
 // this test case covers this situation.

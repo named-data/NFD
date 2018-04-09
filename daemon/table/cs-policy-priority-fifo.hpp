@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_TABLE_CS_POLICY_FIFO_HPP
-#define NFD_DAEMON_TABLE_CS_POLICY_FIFO_HPP
+#ifndef NFD_DAEMON_TABLE_CS_POLICY_PRIORITY_FIFO_HPP
+#define NFD_DAEMON_TABLE_CS_POLICY_PRIORITY_FIFO_HPP
 
 #include "cs-policy.hpp"
 #include "core/scheduler.hpp"
@@ -61,13 +61,17 @@ struct EntryItComparator
 
 typedef std::map<iterator, EntryInfo*, EntryItComparator> EntryInfoMapFifo;
 
-/** \brief Priority Fifo cs replacement policy
+/** \brief Priority FIFO replacement policy
  *
- * The entries that get removed first are unsolicited Data packets,
- * which are the Data packets that got cached opportunistically without preceding
- * forwarding of the corresponding Interest packet.
- * Next, the Data packets with expired freshness are removed.
- * Last, the Data packets are removed from the Content Store on a pure FIFO basis.
+ *  This policy maintains a set of cleanup queues to decide the eviction order of CS entries.
+ *  The cleanup queues are three doubly linked lists that store Table iterators.
+ *  The three queues keep track of unsolicited, stale, and fresh Data packet, respectively.
+ *  Table iterator is placed into, removed from, and moved between suitable queues
+ *  whenever an Entry is added, removed, or has other attribute changes.
+ *  The Table iterator of an Entry should be in exactly one queue at any moment.
+ *  Within each queue, the iterators are kept in first-in-first-out order.
+ *  Eviction procedure exhausts the first queue before moving onto the next queue,
+ *  in the order of unsolicited, stale, and fresh queue.
  */
 class PriorityFifoPolicy : public Policy
 {
@@ -81,19 +85,19 @@ public:
   static const std::string POLICY_NAME;
 
 private:
-  virtual void
+  void
   doAfterInsert(iterator i) override;
 
-  virtual void
+  void
   doAfterRefresh(iterator i) override;
 
-  virtual void
+  void
   doBeforeErase(iterator i) override;
 
-  virtual void
+  void
   doBeforeUse(iterator i) override;
 
-  virtual void
+  void
   evictEntries() override;
 
 private:
@@ -132,4 +136,4 @@ using priority_fifo::PriorityFifoPolicy;
 } // namespace cs
 } // namespace nfd
 
-#endif // NFD_DAEMON_TABLE_CS_POLICY_FIFO_HPP
+#endif // NFD_DAEMON_TABLE_CS_POLICY_PRIORITY_FIFO_HPP

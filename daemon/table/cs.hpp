@@ -23,28 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** \file
- *
- *  \brief implements the ContentStore
- *
- *  This ContentStore implementation consists of two data structures,
- *  a Table, and a set of cleanup queues.
- *
- *  The Table is a container (std::set) sorted by full Names of stored Data packets.
- *  Data packets are wrapped in Entry objects.
- *  Each Entry contain the Data packet itself,
- *  and a few addition attributes such as the staleness of the Data packet.
- *
- *  The cleanup queues are three doubly linked lists which stores Table iterators.
- *  The three queues keep track of unsolicited, stale, and fresh Data packet, respectively.
- *  Table iterator is placed into, removed from, and moved between suitable queues
- *  whenever an Entry is added, removed, or has other attribute changes.
- *  The Table iterator of an Entry should be in exactly one queue at any moment.
- *  Within each queue, the iterators are kept in first-in-first-out order.
- *  Eviction procedure exhausts the first queue before moving onto the next queue,
- *  in the order of unsolicited, stale, and fresh queue.
- */
-
 #ifndef NFD_DAEMON_TABLE_CS_HPP
 #define NFD_DAEMON_TABLE_CS_HPP
 
@@ -57,7 +35,15 @@
 namespace nfd {
 namespace cs {
 
-/** \brief represents the ContentStore
+/** \brief implements the Content Store
+ *
+ *  This Content Store implementation consists of a Table and a replacement policy.
+ *
+ *  The Table is a container ( \c std::set ) sorted by full Names of stored Data packets.
+ *  Data packets are wrapped in Entry objects. Each Entry contains the Data packet itself,
+ *  and a few additional attributes such as when the Data becomes non-fresh.
+ *
+ *  The replacement policy is implemented in a subclass of \c Policy.
  */
 class Cs : noncopyable
 {
@@ -70,8 +56,19 @@ public:
   void
   insert(const Data& data, bool isUnsolicited = false);
 
-  typedef std::function<void(const Interest&, const Data& data)> HitCallback;
-  typedef std::function<void(const Interest&)> MissCallback;
+  using AfterEraseCallback = std::function<void(size_t nErased)>;
+
+  /** \brief asynchronously erases entries under \p prefix
+   *  \param prefix name prefix of entries
+   *  \param limit max number of entries to erase
+   *  \param cb callback to receive the actual number of erased entries; it may be empty;
+   *            it may be invoked either before or after erase() returns
+   */
+  void
+  erase(const Name& prefix, size_t limit, const AfterEraseCallback& cb);
+
+  using HitCallback = std::function<void(const Interest&, const Data&)>;
+  using MissCallback = std::function<void(const Interest&)>;
 
   /** \brief finds the best matching Data packet
    *  \param interest the Interest for lookup

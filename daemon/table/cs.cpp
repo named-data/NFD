@@ -89,6 +89,29 @@ Cs::insert(const Data& data, bool isUnsolicited)
 }
 
 void
+Cs::erase(const Name& prefix, size_t limit, const AfterEraseCallback& cb)
+{
+  BOOST_ASSERT(static_cast<bool>(cb));
+
+  iterator first = m_table.lower_bound(prefix);
+  iterator last = m_table.end();
+  if (prefix.size() > 0) {
+    last = m_table.lower_bound(prefix.getSuccessor());
+  }
+
+  size_t nErased = 0;
+  while (first != last && nErased < limit) {
+    m_policy->beforeErase(first);
+    first = m_table.erase(first);
+    ++nErased;
+  }
+
+  if (cb) {
+    cb(nErased);
+  }
+}
+
+void
 Cs::find(const Interest& interest,
          const HitCallback& hitCallback,
          const MissCallback& missCallback) const
