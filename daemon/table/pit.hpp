@@ -32,15 +32,15 @@
 namespace nfd {
 namespace pit {
 
-/** \class DataMatchResult
- *  \brief an unordered iterable of all PIT entries matching Data
+/** \class nfd::pit::DataMatchResult
+ *  \brief An unordered iterable of all PIT entries matching Data.
  *
- *  This type shall support:
+ *  This type has the following member functions:
  *  - `iterator<shared_ptr<Entry>> begin()`
  *  - `iterator<shared_ptr<Entry>> end()`
  *  - `size_t size() const`
  */
-typedef std::vector<shared_ptr<Entry>> DataMatchResult;
+using DataMatchResult = std::vector<shared_ptr<Entry>>;
 
 /** \brief represents the Interest Table
  */

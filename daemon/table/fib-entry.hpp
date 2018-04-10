@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,15 +36,15 @@ class Entry;
 
 namespace fib {
 
-/** \class NextHopList
- *  \brief represents a collection of nexthops
+/** \class nfd::fib::NextHopList
+ *  \brief Represents a collection of nexthops.
  *
- *  This type has these methods as public API:
- *    iterator<NextHop> begin()
- *    iterator<NextHop> end()
- *    size_t size()
+ *  This type has the following member functions:
+ *  - `iterator<NextHop> begin()`
+ *  - `iterator<NextHop> end()`
+ *  - `size_t size()`
  */
-typedef std::vector<fib::NextHop> NextHopList;
+using NextHopList = std::vector<NextHop>;
 
 /** \brief represents a FIB entry
  */

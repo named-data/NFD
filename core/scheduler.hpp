@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_CORE_SCHEDULER_HPP
 
 #include "common.hpp"
+
 #include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
@@ -34,40 +35,40 @@ namespace scheduler {
 
 using ndn::Scheduler;
 
-/** \class EventId
- *  \brief Opaque type (shared_ptr) representing ID of a scheduled event
+/** \class nfd::scheduler::EventId
+ *  \brief Opaque handle for a scheduled event.
  */
 using ndn::EventId;
 
 using ndn::util::scheduler::EventCallback;
 
-/** \brief schedule an event
+/** \brief Schedule an event.
  */
 EventId
 schedule(time::nanoseconds after, const EventCallback& event);
 
-/** \brief cancel a scheduled event
+/** \brief Cancel a scheduled event.
  */
 void
 cancel(const EventId& eventId);
 
-/** \brief cancels an event automatically upon destruction
+/** \brief Cancels an event automatically upon destruction.
  */
 class ScopedEventId : noncopyable
 {
 public:
   ScopedEventId();
 
-  /** \brief implicit constructor from EventId
+  /** \brief Implicit constructor from EventId.
    *  \param event the event to be cancelled upon destruction
    */
   ScopedEventId(const EventId& event);
 
-  /** \brief move constructor
+  /** \brief Move constructor.
    */
   ScopedEventId(ScopedEventId&& other);
 
-  /** \brief assigns an event
+  /** \brief Assigns an event.
    *
    *  If a different event has been assigned to this instance previously,
    *  that event will be cancelled immediately.
@@ -75,17 +76,16 @@ public:
   ScopedEventId&
   operator=(const EventId& event);
 
-  /** \brief cancels the event
+  /** \brief Cancels the event.
    */
   ~ScopedEventId();
 
-  /** \brief cancels the event manually
+  /** \brief Cancels the event manually.
    */
   void
   cancel();
 
-  /** \brief releases the event so that it won't be disconnected
-   *         when this ScopedEventId is destructed
+  /** \brief Releases the event so that it won't be cancelled when this ScopedEventId is destructed.
    */
   void
   release();
@@ -95,7 +95,6 @@ private:
 };
 
 } // namespace scheduler
-
 } // namespace nfd
 
 #endif // NFD_CORE_SCHEDULER_HPP
