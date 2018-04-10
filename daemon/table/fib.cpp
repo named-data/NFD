@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,12 +26,13 @@
 #include "fib.hpp"
 #include "pit-entry.hpp"
 #include "measurements-entry.hpp"
-#include "core/asserts.hpp"
+
+#include <ndn-cxx/util/concepts.hpp>
 
 namespace nfd {
 namespace fib {
 
-NFD_ASSERT_FORWARD_ITERATOR(Fib::const_iterator);
+NDN_CXX_ASSERT_FORWARD_ITERATOR(Fib::const_iterator);
 
 const unique_ptr<Entry> Fib::s_emptyEntry = make_unique<Entry>(Name());
 

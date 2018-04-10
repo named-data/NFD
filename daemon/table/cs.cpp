@@ -25,14 +25,15 @@
 
 #include "cs.hpp"
 #include "core/algorithm.hpp"
-#include "core/asserts.hpp"
 #include "core/logger.hpp"
+
 #include <ndn-cxx/lp/tags.hpp>
+#include <ndn-cxx/util/concepts.hpp>
 
 namespace nfd {
 namespace cs {
 
-NFD_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
+NDN_CXX_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
 
 NFD_LOG_INIT("ContentStore");
 

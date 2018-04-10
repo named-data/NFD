@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,14 +24,15 @@
  */
 
 #include "face-table.hpp"
-#include "core/asserts.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "face/channel.hpp"
 
+#include <ndn-cxx/util/concepts.hpp>
+
 namespace nfd {
 
-NFD_ASSERT_FORWARD_ITERATOR(FaceTable::const_iterator);
+NDN_CXX_ASSERT_FORWARD_ITERATOR(FaceTable::const_iterator);
 
 NFD_LOG_INIT("FaceTable");
 
