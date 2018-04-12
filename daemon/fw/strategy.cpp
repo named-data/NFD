@@ -27,13 +27,14 @@
 #include "forwarder.hpp"
 #include "core/logger.hpp"
 #include "core/random.hpp"
+
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT("Strategy");
+NFD_LOG_INIT(Strategy);
 
 Strategy::Registry&
 Strategy::getRegistry()

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,83 +24,58 @@
  */
 
 #include "general-config-section.hpp"
-
-#include "core/logger.hpp"
 #include "core/privilege-helper.hpp"
-#include "core/config-file.hpp"
 
 namespace nfd {
-
 namespace general {
 
-NFD_LOG_INIT("GeneralConfigSection");
-
 static void
-onConfig(const ConfigSection& configSection,
-         bool isDryRun,
-         const std::string& filename)
+onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
 {
   // general
   // {
-  //    ; user "ndn-user"
-  //    ; group "ndn-user"
+  //   user "ndn-user"
+  //   group "ndn-user"
   // }
 
   std::string user;
   std::string group;
 
-  for (ConfigSection::const_iterator i = configSection.begin();
-       i != configSection.end();
-       ++i)
-    {
-      if (i->first == "user")
-        {
-          try
-            {
-              user = i->second.get_value<std::string>("user");
+  for (const auto& i : section) {
+    if (i.first == "user") {
+      try {
+        user = i.second.get_value<std::string>("user");
 
-              if (user.empty())
-                {
-                  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\""
-                                                          " in \"general\" section"));
-                }
-            }
-          catch (const boost::property_tree::ptree_error& error)
-            {
-              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\""
-                                                      " in \"general\" section"));
-            }
+        if (user.empty()) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\" in \"general\" section"));
         }
-      else if (i->first == "group")
-        {
-          try
-            {
-              group = i->second.get_value<std::string>("group");
-
-              if (group.empty())
-                {
-                  BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\""
-                                                          " in \"general\" section"));
-                }
-            }
-          catch (const boost::property_tree::ptree_error& error)
-            {
-              BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\""
-                                                      " in \"general\" section"));
-            }
-        }
+      }
+      catch (const boost::property_tree::ptree_error&) {
+        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\" in \"general\" section"));
+      }
     }
-  NFD_LOG_TRACE("using user \"" << user << "\" group \"" << group << "\"");
+    else if (i.first == "group") {
+      try {
+        group = i.second.get_value<std::string>("group");
+
+        if (group.empty()) {
+          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\" in \"general\" section"));
+        }
+      }
+      catch (const boost::property_tree::ptree_error&) {
+        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\" in \"general\" section"));
+      }
+    }
+  }
 
   PrivilegeHelper::initialize(user, group);
 }
 
 void
-setConfigFile(ConfigFile& configFile)
+setConfigFile(ConfigFile& config)
 {
-  configFile.addSectionHandler("general", &onConfig);
+  config.addSectionHandler("general", &onConfig);
 }
 
 } // namespace general
-
 } // namespace nfd

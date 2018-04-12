@@ -24,6 +24,7 @@
  */
 
 #include "core/network-predicate.hpp"
+#include "core/config-file.hpp"
 
 #include "tests/test-common.hpp"
 

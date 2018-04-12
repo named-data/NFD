@@ -24,6 +24,8 @@
  */
 
 #include "fib-manager.hpp"
+
+#include "core/logger.hpp"
 #include "fw/face-table.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
@@ -33,7 +35,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("FibManager");
+NFD_LOG_INIT(FibManager);
 
 FibManager::FibManager(Fib& fib,
                        const FaceTable& faceTable,

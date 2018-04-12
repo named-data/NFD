@@ -34,7 +34,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("UnixStreamChannel");
+NFD_LOG_INIT(UnixStreamChannel);
 
 UnixStreamChannel::UnixStreamChannel(const unix_stream::Endpoint& endpoint,
                                      bool wantCongestionMarking)

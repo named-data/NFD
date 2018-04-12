@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FACE_INTERNAL_TRANSPORT_HPP
 
 #include "transport.hpp"
+
 #include <ndn-cxx/transport/transport.hpp>
 
 namespace nfd {
@@ -73,7 +74,7 @@ private:
   doSend(Packet&& packet) override;
 
 private:
-  NFD_LOG_INCLASS_DECLARE();
+  NFD_LOG_MEMBER_DECL();
 };
 
 /** \brief implements a client-side transport that can be paired with another
@@ -117,7 +118,7 @@ public:
   send(const Block& header, const Block& payload) override;
 
 private:
-  NFD_LOG_INCLASS_DECLARE();
+  NFD_LOG_MEMBER_DECL();
 
   signal::ScopedConnection m_fwToClientTransmitConn;
   signal::ScopedConnection m_clientToFwTransmitConn;

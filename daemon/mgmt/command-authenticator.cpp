@@ -41,7 +41,7 @@ namespace sec2 = ndn::security::v2;
 
 namespace nfd {
 
-NFD_LOG_INIT("CommandAuthenticator");
+NFD_LOG_INIT(CommandAuthenticator);
 // INFO: configuration change, etc
 // DEBUG: per authentication request result
 

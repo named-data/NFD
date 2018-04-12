@@ -32,6 +32,8 @@
 namespace nfd {
 namespace face {
 
+NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>);
+
 /**
  * \brief A Transport that communicates on a connected TCP socket
  *

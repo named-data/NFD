@@ -24,6 +24,8 @@
  */
 
 #include "face-manager.hpp"
+
+#include "core/logger.hpp"
 #include "face/generic-link-service.hpp"
 #include "face/protocol-factory.hpp"
 #include "fw/face-table.hpp"
@@ -35,7 +37,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("FaceManager");
+NFD_LOG_INIT(FaceManager);
 
 FaceManager::FaceManager(FaceSystem& faceSystem,
                          Dispatcher& dispatcher,

@@ -33,6 +33,8 @@
 namespace nfd {
 namespace face {
 
+NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>));
+
 // Explicit specialization of makeEndpointId for the UDP multicast case.
 // Note that this "shall be declared before the first use of the specialization
 // that would cause an implicit instantiation to take place, in every translation

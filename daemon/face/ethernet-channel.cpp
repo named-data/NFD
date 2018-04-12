@@ -35,7 +35,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("EthernetChannel");
+NFD_LOG_INIT(EthernetChannel);
 
 EthernetChannel::EthernetChannel(shared_ptr<const ndn::net::NetworkInterface> localEndpoint,
                                  time::nanoseconds idleTimeout)

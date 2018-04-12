@@ -56,10 +56,6 @@ def options(opt):
     nfdopt.add_option('--with-other-tests', action='store_true', default=False,
                       help='Build other tests')
 
-    nfdopt.add_option('--with-custom-logger', metavar='PATH',
-                      help='Path to custom-logger.hpp and custom-logger-factory.hpp '
-                           'implementing Logger and LoggerFactory interfaces')
-
 PRIVILEGE_CHECK_CODE = '''
 #include <unistd.h>
 #include <grp.h>
@@ -147,11 +143,6 @@ def configure(conf):
                        fragment='''#include <pcap/pcap.h>
                                    int main() { pcap_t* p; pcap_set_immediate_mode(p, 1); }''')
 
-    if conf.options.with_custom_logger:
-        conf.define('HAVE_CUSTOM_LOGGER', 1)
-        conf.env.HAVE_CUSTOM_LOGGER = True
-        conf.env.INCLUDES_CUSTOM_LOGGER = [conf.options.with_custom_logger]
-
     conf.check_compiler_flags()
 
     # Loading "late" to prevent tests from being compiled with profiling flags
@@ -181,19 +172,14 @@ def build(bld):
         VERSION_MINOR=VERSION_SPLIT[1],
         VERSION_PATCH=VERSION_SPLIT[2])
 
-    core = bld.objects(
+    bld.objects(
         target='core-objects',
         features='pch',
-        source=bld.path.ant_glob('core/**/*.cpp', excl=['core/logger*.cpp']),
+        source=bld.path.ant_glob('core/**/*.cpp'),
         use='version.hpp NDN_CXX BOOST LIBRT',
         includes='.',
         export_includes='.',
         headers='core/common.hpp')
-
-    if bld.env.HAVE_CUSTOM_LOGGER:
-        core.use += ' CUSTOM_LOGGER'
-    else:
-        core.source += bld.path.ant_glob('core/logger*.cpp')
 
     nfd_objects = bld.objects(
         target='daemon-objects',

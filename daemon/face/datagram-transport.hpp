@@ -95,7 +95,7 @@ protected:
   typename protocol::socket m_socket;
   typename protocol::endpoint m_sender;
 
-  NFD_LOG_INCLASS_DECLARE();
+  NFD_LOG_MEMBER_DECL();
 
 private:
   std::array<uint8_t, ndn::MAX_NDN_PACKET_SIZE> m_receiveBuffer;

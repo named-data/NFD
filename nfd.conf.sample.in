@@ -33,7 +33,8 @@ log
   ; Run:
   ;   nfd --modules
   ;
-  ; Or look for NFD_LOG_INIT(<module name>) statements in .cpp files
+  ; Or look for NFD_LOG_INIT(<module name>) statements in source files.
+  ; Note that the "nfd." prefix can be omitted.
   ;
   ; Example module-level settings:
   ;

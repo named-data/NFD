@@ -31,7 +31,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("WebSocketChannel");
+NFD_LOG_INIT(WebSocketChannel);
 
 WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
   : m_localEndpoint(localEndpoint)

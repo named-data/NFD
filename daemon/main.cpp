@@ -29,11 +29,10 @@
 #include "core/extended-error-message.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
-#include "core/logger-factory.hpp"
 #include "core/privilege-helper.hpp"
 #include "core/version.hpp"
 
-#include <string.h>
+#include <string.h> // for strsignal()
 
 #include <boost/config.hpp>
 #include <boost/filesystem.hpp>
@@ -49,7 +48,9 @@
 #include <condition_variable>
 #include <iostream>
 
+#include <ndn-cxx/util/logging.hpp>
 #include <ndn-cxx/version.hpp>
+
 #ifdef HAVE_LIBPCAP
 #include <pcap/pcap.h>
 #endif
@@ -59,7 +60,7 @@
 
 namespace po = boost::program_options;
 
-NFD_LOG_INIT("Main");
+NFD_LOG_INIT(Main);
 
 namespace nfd {
 
@@ -205,10 +206,10 @@ private:
 };
 
 static void
-printUsage(std::ostream& os, const char* programName,
-           const po::options_description& opts)
+printUsage(std::ostream& os, const char* programName, const po::options_description& opts)
 {
   os << "Usage: " << programName << " [options]\n"
+     << "\n"
      << "Run the NDN Forwarding Daemon (NFD)\n"
      << "\n"
      << opts;
@@ -217,10 +218,9 @@ printUsage(std::ostream& os, const char* programName,
 static void
 printLogModules(std::ostream& os)
 {
-  const auto& factory = LoggerFactory::getInstance();
-  for (const auto& module : factory.getModules()) {
-    os << module << "\n";
-  }
+  const auto& modules = ndn::util::Logging::getLoggerNames();
+  std::copy(modules.begin(), modules.end(), ndn::make_ostream_joiner(os, "\n"));
+  os << std::endl;
 }
 
 } // namespace nfd
@@ -247,8 +247,9 @@ main(int argc, char** argv)
     po::notify(vm);
   }
   catch (const std::exception& e) {
-    // avoid NFD_LOG_FATAL to ensure that errors related to command-line parsing always appear on the
-    // terminal and are not littered with timestamps and other things added by the logging subsystem
+    // Cannot use NFD_LOG_* macros here, because the logging subsystem is not initialized yet
+    // at this point. Moreover, we don't want to clutter error messages related to command-line
+    // parsing with timestamps and other useless text added by the macros.
     std::cerr << "ERROR: " << e.what() << "\n\n";
     printUsage(std::cerr, argv[0], description);
     return 2;
@@ -288,13 +289,13 @@ main(int argc, char** argv)
       "without WebSocket++";
 #endif
 
-  NFD_LOG_INFO("NFD version " NFD_VERSION_BUILD_STRING " starting");
-  NFD_LOG_INFO("Built with " BOOST_COMPILER
-               ", with " BOOST_STDLIB
+  std::clog << "NFD version " NFD_VERSION_BUILD_STRING " starting\n"
+            << "Built with " BOOST_COMPILER ", with " BOOST_STDLIB
                ", " << boostBuildInfo <<
                ", " << pcapBuildInfo <<
                ", " << wsBuildInfo <<
-               ", with ndn-cxx version " NDN_CXX_VERSION_BUILD_STRING);
+               ", with ndn-cxx version " NDN_CXX_VERSION_BUILD_STRING
+            << std::endl;
 
   NfdRunner runner(configFile);
   try {

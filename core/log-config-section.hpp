@@ -23,49 +23,18 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "logger.hpp"
+#ifndef NFD_CORE_LOG_CONFIG_SECTION_HPP
+#define NFD_CORE_LOG_CONFIG_SECTION_HPP
 
-#ifdef HAVE_CUSTOM_LOGGER
-#error "This file should not be compiled when custom logger is used"
-#endif
-
-#include <cinttypes>
-#include <cstdlib>
-#include <stdio.h>
-#include <type_traits>
-
-#include <ndn-cxx/util/time.hpp>
+#include "config-file.hpp"
 
 namespace nfd {
+namespace log {
 
-Logger::Logger(const std::string& name, LogLevel level)
-  : m_moduleName(name)
-  , m_enabledLogLevel(level)
-{
-}
+void
+setConfigFile(ConfigFile& config);
 
-std::ostream&
-operator<<(std::ostream& os, const LoggerTimestamp&)
-{
-  using namespace ndn::time;
-
-  const auto sinceEpoch = system_clock::now().time_since_epoch();
-  BOOST_ASSERT(sinceEpoch.count() >= 0);
-  // use abs() to silence truncation warning in snprintf(), see #4365
-  const auto usecs = std::abs(duration_cast<microseconds>(sinceEpoch).count());
-  const auto usecsPerSec = microseconds::period::den;
-
-  // 10 (whole seconds) + '.' + 6 (fraction) + '\0'
-  char buffer[10 + 1 + 6 + 1];
-  BOOST_ASSERT_MSG(usecs / usecsPerSec <= 9999999999, "whole seconds cannot fit in 10 characters");
-
-  static_assert(std::is_same<microseconds::rep, int_least64_t>::value,
-                "PRIdLEAST64 is incompatible with microseconds::rep");
-  // std::snprintf unavailable on some platforms, see #2299
-  ::snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
-             usecs / usecsPerSec, usecs % usecsPerSec);
-
-  return os << buffer;
-}
-
+} // namespace log
 } // namespace nfd
+
+#endif // NFD_CORE_LOG_CONFIG_SECTION_HPP

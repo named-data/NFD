@@ -25,14 +25,13 @@
 
 #include "asf-strategy.hpp"
 #include "algorithm.hpp"
-
 #include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
 namespace asf {
 
-NFD_LOG_INIT("AsfStrategy");
+NFD_LOG_INIT(AsfStrategy);
 NFD_REGISTER_STRATEGY(AsfStrategy);
 
 const time::milliseconds AsfStrategy::RETX_SUPPRESSION_INITIAL(10);

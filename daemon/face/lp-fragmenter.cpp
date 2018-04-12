@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,12 +25,13 @@
 
 #include "lp-fragmenter.hpp"
 #include "link-service.hpp"
+
 #include <ndn-cxx/encoding/tlv.hpp>
 
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("LpFragmenter");
+NFD_LOG_INIT(LpFragmenter);
 
 static_assert(lp::tlv::LpPacket < 253, "LpPacket TLV-TYPE must fit in 1 octet");
 static_assert(lp::tlv::Sequence < 253, "Sequence TLV-TYPE must fit in 1 octet");

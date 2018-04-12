@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FACE_LP_FRAGMENTER_HPP
 #define NFD_DAEMON_FACE_LP_FRAGMENTER_HPP
 
+#include "core/common.hpp"
 #include "face-log.hpp"
 
 #include <ndn-cxx/lp/packet.hpp>
@@ -36,7 +37,7 @@ namespace face {
 class LinkService;
 
 /** \brief fragments network-layer packets into NDNLPv2 link-layer packets
- *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpFragmenter
 {

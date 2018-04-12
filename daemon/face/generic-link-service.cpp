@@ -32,7 +32,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("GenericLinkService");
+NFD_LOG_INIT(GenericLinkService);
 
 constexpr uint32_t DEFAULT_CONGESTION_THRESHOLD_DIVISOR = 2;
 

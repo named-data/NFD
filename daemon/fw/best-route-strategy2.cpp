@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,7 @@
 namespace nfd {
 namespace fw {
 
-NFD_LOG_INIT("BestRouteStrategy2");
+NFD_LOG_INIT(BestRouteStrategy2);
 NFD_REGISTER_STRATEGY(BestRouteStrategy2);
 
 const time::milliseconds BestRouteStrategy2::RETX_SUPPRESSION_INITIAL(10);

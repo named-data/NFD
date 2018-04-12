@@ -38,7 +38,7 @@ namespace face {
 namespace ip = boost::asio::ip;
 namespace net = ndn::net;
 
-NFD_LOG_INIT("UdpFactory");
+NFD_LOG_INIT(UdpFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(UdpFactory);
 
 const std::string&

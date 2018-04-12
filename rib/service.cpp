@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,10 +24,7 @@
  */
 
 #include "service.hpp"
-
 #include "rib-manager.hpp"
-#include "core/config-file.hpp"
-#include "core/logger-factory.hpp"
 #include "core/global-io.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
@@ -52,32 +49,23 @@ Service::Service(const ConfigSection& config, ndn::KeyChain& keyChain)
 {
 }
 
-Service::~Service()
-{
-  // It is necessary to explicitly define the destructor, because some member variables
-  // (e.g., unique_ptr<RibManager>) are forward-declared, but implicitly declared destructor
-  // requires complete types for all members when instantiated.
-}
+// It is necessary to explicitly define the destructor, because some member variables
+// (e.g., unique_ptr<RibManager>) are forward-declared, but implicitly declared destructor
+// requires complete types for all members when instantiated.
+Service::~Service() = default;
 
 void
 Service::initialize()
 {
-  m_face.reset(new ndn::Face(getLocalNfdTransport(), getGlobalIoService(), m_keyChain));
-  m_dispatcher.reset(new ndn::mgmt::Dispatcher(*m_face, m_keyChain));
-
-  initializeLogging();
-
-  m_ribManager.reset(new RibManager(*m_dispatcher, *m_face, m_keyChain));
+  m_face = make_unique<ndn::Face>(getLocalNfdTransport(), getGlobalIoService(), m_keyChain);
+  m_dispatcher = make_unique<ndn::mgmt::Dispatcher>(*m_face, m_keyChain);
+  m_ribManager = make_unique<RibManager>(*m_dispatcher, *m_face, m_keyChain);
 
   ConfigFile config([] (const std::string& filename, const std::string& sectionName,
                         const ConfigSection& section, bool isDryRun) {
-      // Ignore "log" and sections belonging to NFD,
-      // but raise an error if we're missing a handler for a "rib" section.
-      if (sectionName != "rib" || sectionName == "log") {
-        // do nothing
-      }
-      else {
-        // missing "rib" section handler
+      // Ignore sections belonging to NFD, but raise an error
+      // if we're missing a handler for a "rib" section.
+      if (sectionName == "rib") {
         ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
       }
     });
@@ -97,22 +85,6 @@ Service::initialize()
   m_ribManager->enableLocalFields();
 }
 
-void
-Service::initializeLogging()
-{
-  ConfigFile config(&ConfigFile::ignoreUnknownSection);
-  LoggerFactory::getInstance().setConfigFile(config);
-
-  if (!m_configFile.empty()) {
-    config.parse(m_configFile, true);
-    config.parse(m_configFile, false);
-  }
-  else {
-    config.parse(m_configSection, true, INTERNAL_CONFIG);
-    config.parse(m_configSection, false, INTERNAL_CONFIG);
-  }
-}
-
 shared_ptr<ndn::Transport>
 Service::getLocalNfdTransport()
 {
@@ -123,13 +95,14 @@ Service::getLocalNfdTransport()
     // If error is thrown at this point, it is development error
     boost::property_tree::read_info(m_configFile, config);
   }
-  else
+  else {
     config = m_configSection;
+  }
 
   if (config.get_child_optional("face_system.unix")) {
     // unix socket enabled
 
-    auto&& socketPath = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
+    auto socketPath = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
     // default socketPath should be the same as in FaceManager::processSectionUnix
 
     return make_shared<ndn::UnixTransport>(socketPath);
@@ -138,7 +111,7 @@ Service::getLocalNfdTransport()
            config.get<std::string>("face_system.tcp.listen", "yes") == "yes") {
     // tcp is enabled
 
-    auto&& port = config.get<std::string>("face_system.tcp.port", "6363");
+    auto port = config.get<std::string>("face_system.tcp.port", "6363");
     // default port should be the same as in FaceManager::processSectionTcp
 
     return make_shared<ndn::TcpTransport>("localhost", port);

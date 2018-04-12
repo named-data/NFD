@@ -33,7 +33,7 @@
 namespace nfd {
 namespace name_tree {
 
-NFD_LOG_INIT("NameTree");
+NFD_LOG_INIT(NameTree);
 
 NameTree::NameTree(size_t nBuckets)
   : m_ht(HashtableOptions(nBuckets))

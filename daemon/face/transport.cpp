@@ -29,7 +29,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("Transport");
+NFD_LOG_INIT(Transport);
 
 std::ostream&
 operator<<(std::ostream& os, TransportState state)

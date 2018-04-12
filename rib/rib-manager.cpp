@@ -42,7 +42,7 @@
 namespace nfd {
 namespace rib {
 
-NFD_LOG_INIT("RibManager");
+NFD_LOG_INIT(RibManager);
 
 const Name RibManager::LOCAL_HOST_TOP_PREFIX = "/localhost/nfd";
 const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";

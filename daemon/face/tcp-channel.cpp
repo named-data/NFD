@@ -31,7 +31,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("TcpChannel");
+NFD_LOG_INIT(TcpChannel);
 
 namespace ip = boost::asio::ip;
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,11 +29,11 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INCLASS_DEFINE(InternalForwarderTransport, "InternalForwarderTransport");
+NFD_LOG_MEMBER_INIT(InternalForwarderTransport, InternalForwarderTransport);
+NFD_LOG_MEMBER_INIT(InternalClientTransport, InternalClientTransport);
 
-InternalForwarderTransport::InternalForwarderTransport(
-    const FaceUri& localUri, const FaceUri& remoteUri,
-    ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType)
+InternalForwarderTransport::InternalForwarderTransport(const FaceUri& localUri, const FaceUri& remoteUri,
+                                                       ndn::nfd::FaceScope scope, ndn::nfd::LinkType linkType)
 {
   this->setLocalUri(localUri);
   this->setRemoteUri(remoteUri);
@@ -70,8 +70,6 @@ InternalForwarderTransport::doClose()
 
   this->setState(TransportState::CLOSED);
 }
-
-NFD_LOG_INCLASS_DEFINE(InternalClientTransport, "InternalClientTransport");
 
 static void
 asyncReceive(InternalTransportBase* recipient, const Block& packet)

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,14 +24,13 @@
  */
 
 #include "rib.hpp"
-
 #include "fib-updater.hpp"
 #include "core/logger.hpp"
 
-NFD_LOG_INIT("Rib");
-
 namespace nfd {
 namespace rib {
+
+NFD_LOG_INIT(Rib);
 
 bool
 operator<(const RibRouteRef& lhs, const RibRouteRef& rhs)
@@ -52,9 +51,7 @@ Rib::Rib()
 {
 }
 
-Rib::~Rib()
-{
-}
+Rib::~Rib() = default;
 
 void
 Rib::setFibUpdater(FibUpdater* updater)

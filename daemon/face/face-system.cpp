@@ -31,7 +31,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("FaceSystem");
+NFD_LOG_INIT(FaceSystem);
 
 FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon)
   : m_faceTable(faceTable)

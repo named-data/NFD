@@ -100,7 +100,7 @@ private:
   Nfd(ndn::KeyChain& keyChain);
 
   void
-  initializeLogging();
+  configureLogging();
 
   void
   initializeManagement();

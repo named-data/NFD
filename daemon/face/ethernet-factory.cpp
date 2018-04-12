@@ -33,7 +33,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("EthernetFactory");
+NFD_LOG_INIT(EthernetFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(EthernetFactory);
 
 const std::string&

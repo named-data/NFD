@@ -31,7 +31,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("PrivilegeHelper");
+NFD_LOG_INIT(PrivilegeHelper);
 
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
 uid_t PrivilegeHelper::s_normalUid = ::geteuid();
@@ -123,6 +123,9 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
 void
 PrivilegeHelper::drop()
 {
+  if (::geteuid() == s_normalUid && ::getegid() == s_normalGid)
+    return;
+
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("dropping to effective gid=" << s_normalGid);
   if (::setegid(s_normalGid) != 0)
@@ -141,6 +144,9 @@ PrivilegeHelper::drop()
 void
 PrivilegeHelper::raise()
 {
+  if (::geteuid() == s_privilegedUid && ::getegid() == s_privilegedGid)
+    return;
+
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("elevating to effective uid=" << s_privilegedUid);
   if (::seteuid(s_privilegedUid) != 0)

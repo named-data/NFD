@@ -24,16 +24,18 @@
  */
 
 #include "forwarder.hpp"
+
 #include "algorithm.hpp"
 #include "best-route-strategy2.hpp"
 #include "strategy.hpp"
 #include "core/logger.hpp"
 #include "table/cleanup.hpp"
+
 #include <ndn-cxx/lp/tags.hpp>
 
 namespace nfd {
 
-NFD_LOG_INIT("Forwarder");
+NFD_LOG_INIT(Forwarder);
 
 static Name
 getDefaultStrategyName()

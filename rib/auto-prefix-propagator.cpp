@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,16 +26,16 @@
 #include "auto-prefix-propagator.hpp"
 #include "core/logger.hpp"
 #include "core/scheduler.hpp"
+
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/identity-container.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/security/signing-helpers.hpp>
-#include <vector>
 
 namespace nfd {
 namespace rib {
 
-NFD_LOG_INIT("AutoPrefixPropagator");
+NFD_LOG_INIT(AutoPrefixPropagator);
 
 using ndn::nfd::ControlParameters;
 using ndn::nfd::CommandOptions;

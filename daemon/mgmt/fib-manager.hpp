@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,9 +27,8 @@
 #define NFD_DAEMON_MGMT_FIB_MANAGER_HPP
 
 #include "nfd-manager-base.hpp"
-#include "core/logger.hpp"
-#include "table/fib.hpp"
 #include "fw/forwarder.hpp"
+#include "table/fib.hpp"
 
 namespace nfd {
 
@@ -37,7 +36,7 @@ class FaceTable;
 
 /**
  * @brief implement the FIB Management of NFD Management Protocol.
- * @sa http://redmine.named-data.net/projects/nfd/wiki/FibMgmt
+ * @sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
 class FibManager : public NfdManagerBase
 {

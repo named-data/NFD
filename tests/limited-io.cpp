@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,7 +31,7 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT("LimitedIo");
+NFD_LOG_INIT(tests.LimitedIo);
 
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();

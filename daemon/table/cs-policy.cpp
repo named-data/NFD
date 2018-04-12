@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,10 +26,11 @@
 #include "cs-policy.hpp"
 #include "cs.hpp"
 #include "core/logger.hpp"
+
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
-NFD_LOG_INIT("CsPolicy");
+NFD_LOG_INIT(CsPolicy);
 
 namespace nfd {
 namespace cs {

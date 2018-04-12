@@ -2050,12 +2050,13 @@ INCLUDE_FILE_PATTERNS  =
 # This tag requires that the tag ENABLE_PREPROCESSING is set to YES.
 
 PREDEFINED             = DOXYGEN \
-                         NFD_LOG_INIT(x)= \
-                         NFD_LOG_INCLASS_DEFINE(a,b)= \
-                         NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(a,b,c)= \
-                         NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(a,b,c,d)= \
                          BOOST_CONCEPT_ASSERT(x)= \
                          BOOST_CONCEPT_REQUIRES(x)= \
+                         NFD_LOG_INIT(x)= \
+                         NFD_LOG_MEMBER_DECL()= \
+                         NFD_LOG_MEMBER_DECL_SPECIALIZED(x)= \
+                         NFD_LOG_MEMBER_INIT(x,y)= \
+                         NFD_LOG_MEMBER_INIT_SPECIALIZED(x,y)= \
                          VIRTUAL_WITH_TESTS= \
                          PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
                          PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,13 +26,12 @@
 #ifndef NFD_RIB_SERVICE_HPP
 #define NFD_RIB_SERVICE_HPP
 
-#include "core/common.hpp"
 #include "core/config-file.hpp"
 
 #include <ndn-cxx/face.hpp>
+#include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/transport/transport.hpp>
-#include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace nfd {
 namespace rib {
@@ -86,9 +85,6 @@ public:
   initialize();
 
 private:
-  void
-  initializeLogging();
-
   /**
    * \brief Look into the config file and construct appropriate transport to communicate with NFD
    * If NFD-RIB instance was initialized with config file, INFO format is assumed

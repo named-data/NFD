@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,13 @@
  */
 
 #include "name-tree-hashtable.hpp"
-#include "core/logger.hpp"
 #include "core/city-hash.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace name_tree {
 
-NFD_LOG_INIT("NameTreeHashtable");
+NFD_LOG_INIT(NameTreeHashtable);
 
 class Hash32
 {

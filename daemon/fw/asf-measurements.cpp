@@ -29,7 +29,7 @@ namespace nfd {
 namespace fw {
 namespace asf {
 
-NFD_LOG_INIT("AsfMeasurements");
+NFD_LOG_INIT(AsfMeasurements);
 
 const RttStats::Rtt RttStats::RTT_TIMEOUT(-1.0);
 const RttStats::Rtt RttStats::RTT_NO_MEASUREMENT(0.0);

@@ -27,7 +27,7 @@
 
 #include "core/config-file.hpp"
 #include "core/global-io.hpp"
-#include "core/logger-factory.hpp"
+#include "core/log-config-section.hpp"
 #include "core/privilege-helper.hpp"
 #include "face/face-system.hpp"
 #include "face/internal-face.hpp"
@@ -43,7 +43,7 @@
 
 namespace nfd {
 
-NFD_LOG_INIT("Nfd");
+NFD_LOG_INIT(Nfd);
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
@@ -73,7 +73,7 @@ Nfd::~Nfd() = default;
 void
 Nfd::initialize()
 {
-  initializeLogging();
+  configureLogging();
 
   m_forwarder = make_unique<Forwarder>();
 
@@ -98,10 +98,10 @@ Nfd::initialize()
 }
 
 void
-Nfd::initializeLogging()
+Nfd::configureLogging()
 {
   ConfigFile config(&ConfigFile::ignoreUnknownSection);
-  LoggerFactory::getInstance().setConfigFile(config);
+  log::setConfigFile(config);
 
   if (!m_configFile.empty()) {
     config.parse(m_configFile, true);
@@ -176,12 +176,9 @@ Nfd::initializeManagement()
 void
 Nfd::reloadConfigFile()
 {
-  // Logging
-  initializeLogging();
+  configureLogging();
 
-  // Other stuff
   ConfigFile config(&ignoreRibAndLogSections);
-
   general::setConfigFile(config);
 
   TablesConfigSection tablesConfig(*m_forwarder);

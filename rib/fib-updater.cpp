@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "fib-updater.hpp"
-
 #include "core/logger.hpp"
 
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
@@ -32,9 +31,9 @@
 namespace nfd {
 namespace rib {
 
-using ndn::nfd::ControlParameters;
+NFD_LOG_INIT(FibUpdater);
 
-NFD_LOG_INIT("FibUpdater");
+using ndn::nfd::ControlParameters;
 
 const unsigned int FibUpdater::MAX_NUM_TIMEOUTS = 10;
 const uint32_t FibUpdater::ERROR_FACE_NOT_FOUND = 410;

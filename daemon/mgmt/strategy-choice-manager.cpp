@@ -24,13 +24,15 @@
  */
 
 #include "strategy-choice-manager.hpp"
+
+#include "core/logger.hpp"
 #include "table/strategy-choice.hpp"
+
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace nfd {
 
-NFD_LOG_INIT("StrategyChoiceManager");
+NFD_LOG_INIT(StrategyChoiceManager);
 
 StrategyChoiceManager::StrategyChoiceManager(StrategyChoice& strategyChoice,
                                              Dispatcher& dispatcher,

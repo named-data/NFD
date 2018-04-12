@@ -24,6 +24,7 @@
  */
 
 #include "strategy-choice.hpp"
+
 #include "measurements-entry.hpp"
 #include "pit-entry.hpp"
 #include "core/logger.hpp"
@@ -36,7 +37,7 @@ namespace strategy_choice {
 
 NDN_CXX_ASSERT_FORWARD_ITERATOR(StrategyChoice::const_iterator);
 
-NFD_LOG_INIT("StrategyChoice");
+NFD_LOG_INIT(StrategyChoice);
 
 using fw::Strategy;
 

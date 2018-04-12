@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,8 @@
 
 namespace nfd {
 namespace face {
+
+NFD_LOG_MEMBER_DECL_SPECIALIZED(StreamTransport<boost::asio::local::stream_protocol>);
 
 /**
  * \brief A Transport that communicates on a stream-oriented Unix domain socket

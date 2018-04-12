@@ -40,8 +40,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(DatagramTransport, MulticastUdpTransport::protocol,
-                                                Multicast, "MulticastUdpTransport");
+NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multicast>), MulticastUdpTransport);
 
 MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& multicastGroup,
                                              protocol::socket&& recvSocket,

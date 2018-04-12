@@ -36,7 +36,7 @@ namespace name_tree {
 NDN_CXX_ASSERT_FORWARD_ITERATOR(Iterator);
 BOOST_CONCEPT_ASSERT((boost::ForwardRangeConcept<Range>));
 
-NFD_LOG_INIT("NameTreeIterator");
+NFD_LOG_INIT(NameTreeIterator);
 
 Iterator::Iterator()
   : m_entry(nullptr)

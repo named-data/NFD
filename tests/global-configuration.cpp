@@ -24,7 +24,7 @@
  */
 
 #include "core/config-file.hpp"
-#include "core/logger-factory.hpp"
+#include "core/log-config-section.hpp"
 
 #include "boost-test.hpp"
 
@@ -47,7 +47,7 @@ public:
     const std::string filename = "unit-tests.conf";
     if (boost::filesystem::exists(filename)) {
       ConfigFile config;
-      LoggerFactory::getInstance().setConfigFile(config);
+      log::setConfigFile(config);
       config.parse(filename, false);
     }
 

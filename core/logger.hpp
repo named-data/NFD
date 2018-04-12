@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,146 +26,19 @@
 #ifndef NFD_CORE_LOGGER_HPP
 #define NFD_CORE_LOGGER_HPP
 
-#include "common.hpp"
+#include <ndn-cxx/util/logger.hpp>
 
-#ifdef HAVE_CUSTOM_LOGGER
-#include "custom-logger.hpp"
-#else
-#include <boost/log/common.hpp>
-#include <boost/log/sources/logger.hpp>
+#define NFD_LOG_INIT(name)                         NDN_LOG_INIT(nfd.name)
+#define NFD_LOG_MEMBER_DECL()                      NDN_LOG_MEMBER_DECL()
+#define NFD_LOG_MEMBER_DECL_SPECIALIZED(cls)       NDN_LOG_MEMBER_DECL_SPECIALIZED(cls)
+#define NFD_LOG_MEMBER_INIT(cls, name)             NDN_LOG_MEMBER_INIT(cls, nfd.name)
+#define NFD_LOG_MEMBER_INIT_SPECIALIZED(cls, name) NDN_LOG_MEMBER_INIT_SPECIALIZED(cls, nfd.name)
 
-namespace nfd {
-
-/** \brief indicates a log level
- *  \note This type is internal. Logger should be accessed through NFD_LOG_* macros.
- */
-enum LogLevel {
-  LOG_FATAL          = -1, // fatal (will be logged unconditionally)
-  LOG_NONE           = 0, // no messages
-  LOG_ERROR          = 1, // serious error messages
-  LOG_WARN           = 2, // warning messages
-  LOG_INFO           = 3, // informational messages
-  LOG_DEBUG          = 4, // debug messages
-  LOG_TRACE          = 5, // trace messages (most verbose)
-  LOG_ALL            = 255 // all messages
-};
-
-/** \brief provides logging for a module
- *  \note This type is internal. Logger should be accessed through NFD_LOG_* macros.
- *  \note This type is copyable because logger can be declared as a field of
- *        (usually template) classes, and shouldn't prevent those classes to be copyable.
- */
-class Logger
-{
-public:
-  Logger(const std::string& name, LogLevel level);
-
-  bool
-  isEnabled(LogLevel level) const
-  {
-    return m_enabledLogLevel >= level;
-  }
-
-  void
-  setLogLevel(LogLevel level)
-  {
-    m_enabledLogLevel = level;
-  }
-
-  const std::string&
-  getName() const
-  {
-    return m_moduleName;
-  }
-
-  void
-  setName(const std::string& name)
-  {
-    m_moduleName = name;
-  }
-
-public:
-  boost::log::sources::logger boostLogger;
-
-private:
-  std::string m_moduleName;
-  LogLevel    m_enabledLogLevel;
-};
-
-inline std::ostream&
-operator<<(std::ostream& output, const Logger& logger)
-{
-  output << logger.getName();
-  return output;
-}
-
-/**
- * \brief a tag that writes a timestamp upon stream output
- */
-struct LoggerTimestamp
-{
-};
-
-/**
- * \brief write a timestamp to \p os
- * \note This function is thread-safe.
- */
-std::ostream&
-operator<<(std::ostream& os, const LoggerTimestamp&);
-
-} // namespace nfd
-
-#include "core/logger-factory.hpp"
-
-namespace nfd {
-
-#define NFD_LOG_INIT(name) \
-static ::nfd::Logger& g_logger = ::nfd::LoggerFactory::create(name)
-
-#define NFD_LOG_INCLASS_DECLARE() \
-static ::nfd::Logger& g_logger
-
-#define NFD_LOG_INCLASS_DEFINE(cls, name) \
-::nfd::Logger& cls::g_logger = ::nfd::LoggerFactory::create(name)
-
-#define NFD_LOG_INCLASS_TEMPLATE_DEFINE(cls, name) \
-template<class T>                                  \
-::nfd::Logger& cls<T>::g_logger = ::nfd::LoggerFactory::create(name)
-
-#define NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(cls, specialization, name) \
-template<>                                                                        \
-::nfd::Logger& cls<specialization>::g_logger = ::nfd::LoggerFactory::create(name)
-
-#define NFD_LOG_INCLASS_2TEMPLATE_SPECIALIZATION_DEFINE(cls, s1, s2, name) \
-template<>                                                                 \
-::nfd::Logger& cls<s1, s2>::g_logger = ::nfd::LoggerFactory::create(name)
-
-#if (BOOST_VERSION >= 105900) && (BOOST_VERSION < 106000)
-// workaround Boost bug 11549
-#define NFD_BOOST_LOG(x) BOOST_LOG(x) << ""
-#else
-#define NFD_BOOST_LOG(x) BOOST_LOG(x)
-#endif
-
-#define NFD_LOG_LINE(msg, expression) \
-::nfd::LoggerTimestamp{} << " "#msg": " << "[" << g_logger  << "] " << expression
-
-#define NFD_LOG(level, msg, expression)                                 \
-  do {                                                                  \
-    if (g_logger.isEnabled(::nfd::LOG_##level)) {                       \
-      NFD_BOOST_LOG(g_logger.boostLogger) << NFD_LOG_LINE(msg, expression); \
-    }                                                                   \
-  } while (false)
-
-#define NFD_LOG_TRACE(expression) NFD_LOG(TRACE, TRACE,   expression)
-#define NFD_LOG_DEBUG(expression) NFD_LOG(DEBUG, DEBUG,   expression)
-#define NFD_LOG_INFO(expression)  NFD_LOG(INFO,  INFO,    expression)
-#define NFD_LOG_WARN(expression)  NFD_LOG(WARN,  WARNING, expression)
-#define NFD_LOG_ERROR(expression) NFD_LOG(ERROR, ERROR,   expression)
-#define NFD_LOG_FATAL(expression) NFD_LOG(FATAL, FATAL,   expression)
-
-} // namespace nfd
-
-#endif // HAVE_CUSTOM_LOGGER
+#define NFD_LOG_TRACE NDN_LOG_TRACE
+#define NFD_LOG_DEBUG NDN_LOG_DEBUG
+#define NFD_LOG_INFO  NDN_LOG_INFO
+#define NFD_LOG_WARN  NDN_LOG_WARN
+#define NFD_LOG_ERROR NDN_LOG_ERROR
+#define NFD_LOG_FATAL NDN_LOG_FATAL
 
 #endif // NFD_CORE_LOGGER_HPP

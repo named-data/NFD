@@ -30,7 +30,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("UnixStreamFactory");
+NFD_LOG_INIT(UnixStreamFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(UnixStreamFactory);
 
 const std::string&

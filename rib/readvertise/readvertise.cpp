@@ -30,7 +30,7 @@
 namespace nfd {
 namespace rib {
 
-NFD_LOG_INIT("Readvertise");
+NFD_LOG_INIT(Readvertise);
 
 const time::milliseconds Readvertise::RETRY_DELAY_MIN = time::seconds(50);
 const time::milliseconds Readvertise::RETRY_DELAY_MAX = time::seconds(3600);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("UnicastEthernetTransport");
+NFD_LOG_INIT(UnicastEthernetTransport);
 
 UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                                                    const ethernet::Address& remoteEndpoint,

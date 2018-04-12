@@ -97,7 +97,7 @@ protected:
 protected:
   typename protocol::socket m_socket;
 
-  NFD_LOG_INCLASS_DECLARE();
+  NFD_LOG_MEMBER_DECL();
 
 private:
   uint8_t m_receiveBuffer[ndn::MAX_NDN_PACKET_SIZE];

@@ -31,7 +31,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INIT("UdpChannel");
+NFD_LOG_INIT(UdpChannel);
 
 namespace ip = boost::asio::ip;
 

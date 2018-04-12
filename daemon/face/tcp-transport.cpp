@@ -33,7 +33,7 @@
 namespace nfd {
 namespace face {
 
-NFD_LOG_INCLASS_TEMPLATE_SPECIALIZATION_DEFINE(StreamTransport, TcpTransport::protocol, "TcpTransport");
+NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
 
 time::milliseconds TcpTransport::s_initialReconnectWait = time::seconds(1);
 time::milliseconds TcpTransport::s_maxReconnectWait = time::minutes(5);

@@ -34,7 +34,7 @@ namespace nfd {
 
 NDN_CXX_ASSERT_FORWARD_ITERATOR(FaceTable::const_iterator);
 
-NFD_LOG_INIT("FaceTable");
+NFD_LOG_INIT(FaceTable);
 
 FaceTable::FaceTable()
   : m_lastFaceId(face::FACEID_RESERVED_MAX)

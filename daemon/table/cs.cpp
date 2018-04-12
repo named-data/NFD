@@ -35,7 +35,7 @@ namespace cs {
 
 NDN_CXX_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
 
-NFD_LOG_INIT("ContentStore");
+NFD_LOG_INIT(ContentStore);
 
 unique_ptr<Policy>
 makeDefaultPolicy()
