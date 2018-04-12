@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,8 +25,8 @@
 
 #include "rib/readvertise/readvertise.hpp"
 
-#include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <boost/range/adaptor/transformed.hpp>
@@ -41,7 +41,7 @@ using namespace nfd::tests;
 class DummyReadvertisePolicy : public ReadvertisePolicy
 {
 public:
-  ndn::optional<ReadvertiseAction>
+  optional<ReadvertiseAction>
   handleNewRoute(const RibRouteRef& route) const override
   {
     return this->decision;
@@ -54,7 +54,7 @@ public:
   }
 
 public:
-  ndn::optional<ReadvertiseAction> decision;
+  optional<ReadvertiseAction> decision;
 };
 
 class DummyReadvertiseDestination : public ReadvertiseDestination
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveRoute)
 
 BOOST_AUTO_TEST_CASE(NoAdvertise)
 {
-  policy->decision = ndn::nullopt;
+  policy->decision = nullopt;
 
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
   this->insertRoute("/A/2", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);

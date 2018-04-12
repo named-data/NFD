@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,11 +64,11 @@ protected: // ControlCommand
    *  \retval nullopt last Interest is not the expected command
    *  \return command parameters
    */
-  static ndn::optional<ControlParameters>
+  static optional<ControlParameters>
   parseCommand(const Interest& interest, const Name& expectedPrefix)
   {
     if (!expectedPrefix.isPrefixOf(interest.getName())) {
-      return ndn::nullopt;
+      return nullopt;
     }
     return ControlParameters(interest.getName().at(expectedPrefix.size()).blockFromValue());
   }

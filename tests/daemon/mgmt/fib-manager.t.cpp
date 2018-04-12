@@ -35,8 +35,6 @@
 namespace nfd {
 namespace tests {
 
-using ndn::nullopt;
-
 class FibManagerFixture : public NfdManagerCommonFixture
 {
 public:
@@ -98,9 +96,9 @@ public: // for check
    */
   CheckNextHopResult
   checkNextHop(const Name& prefix,
-               ndn::optional<size_t> expectedNNextHops = nullopt,
-               ndn::optional<FaceId> faceId = nullopt,
-               ndn::optional<uint64_t> expectedCost = nullopt) const
+               optional<size_t> expectedNNextHops = nullopt,
+               optional<FaceId> faceId = nullopt,
+               optional<uint64_t> expectedCost = nullopt) const
   {
     const fib::Entry* entry = m_fib.findExactMatch(prefix);
     if (entry == nullptr) {

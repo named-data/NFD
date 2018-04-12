@@ -37,11 +37,11 @@ namespace face {
 /** \brief Prototype for the callback that is invoked when a face is created
  *         (in response to an incoming connection or after a connection is established)
  */
-using FaceCreatedCallback = function<void(const shared_ptr<Face>& face)>;
+using FaceCreatedCallback = std::function<void(const shared_ptr<Face>& face)>;
 
 /** \brief Prototype for the callback that is invoked when a face fails to be created
  */
-using FaceCreationFailedCallback = function<void(uint32_t status, const std::string& reason)>;
+using FaceCreationFailedCallback = std::function<void(uint32_t status, const std::string& reason)>;
 
 /** \brief represent a channel that communicates on a local endpoint
  *  \sa FaceSystem
@@ -98,8 +98,8 @@ public:
 
 public:
   ndn::nfd::FacePersistency persistency;
-  ndn::optional<time::nanoseconds> baseCongestionMarkingInterval;
-  ndn::optional<uint64_t> defaultCongestionThreshold;
+  optional<time::nanoseconds> baseCongestionMarkingInterval;
+  optional<uint64_t> defaultCongestionThreshold;
   bool wantLocalFields;
   bool wantLpReliability;
   boost::logic::tribool wantCongestionMarking;

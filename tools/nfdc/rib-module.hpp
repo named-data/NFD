@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,7 +69,7 @@ public:
 
   void
   fetchStatus(Controller& controller,
-              const function<void()>& onSuccess,
+              const std::function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
               const CommandOptions& options) override;
 
@@ -80,7 +80,7 @@ public:
   formatStatusText(std::ostream& os) const override;
 
 private:
-  using RoutePredicate = function<bool(const RibEntry&, const Route&)>;
+  using RoutePredicate = std::function<bool(const RibEntry&, const Route&)>;
 
   static void
   listRoutesImpl(ExecuteContext& ctx, const RoutePredicate& filter);

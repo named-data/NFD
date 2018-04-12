@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   scheduler::EventId retxFrom4Evt;
   size_t nSentLast = strategy.sendInterestHistory.size();
   time::steady_clock::TimePoint timeSentLast = time::steady_clock::now();
-  function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
+  std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
     pitEntry->insertOrUpdateInRecord(*face3, *interest);
     strategy.afterReceiveInterest(*face3, *interest, pitEntry);

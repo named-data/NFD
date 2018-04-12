@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "find-face.hpp"
 #include "format-helpers.hpp"
+
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd {
@@ -105,7 +106,7 @@ FindFace::execute(const FaceQueryFilter& filter, bool allowMulti)
   return m_res;
 }
 
-ndn::optional<FaceUri>
+optional<FaceUri>
 FindFace::canonize(const std::string& fieldName, const FaceUri& input)
 {
   if (!FaceUri::canCanonize(input.getScheme())) {
@@ -113,7 +114,7 @@ FindFace::canonize(const std::string& fieldName, const FaceUri& input)
     return input;
   }
 
-  ndn::optional<FaceUri> result;
+  optional<FaceUri> result;
   input.canonize(
     [&result] (const FaceUri& canonicalUri) { result = canonicalUri; },
     [this, fieldName] (const std::string& errorReason) {

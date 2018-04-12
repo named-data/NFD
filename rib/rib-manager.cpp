@@ -231,7 +231,7 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
     route.setExpirationEvent(eventId);
   }
   else {
-    route.expires = ndn::nullopt;
+    route.expires = nullopt;
   }
 
   NFD_LOG_INFO("Adding route " << parameters.getName() << " nexthop=" << route.faceId
@@ -412,7 +412,7 @@ RibManager::onCommandPrefixAddNextHopSuccess(const Name& prefix,
   Route route;
   route.faceId = result.getFaceId();
   route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
-  route.expires = ndn::nullopt;
+  route.expires = nullopt;
   route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
 
   m_rib.insert(prefix, route);

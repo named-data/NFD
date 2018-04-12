@@ -88,7 +88,7 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
     return;
   }
 
-  ndn::optional<FaceUri> localUri;
+  optional<FaceUri> localUri;
   if (parameters.hasLocalUri()) {
     localUri = FaceUri{};
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,21 +28,21 @@
 namespace nfd {
 namespace rib {
 
-ndn::optional<ReadvertiseAction>
+optional<ReadvertiseAction>
 ClientToNlsrReadvertisePolicy::handleNewRoute(const RibRouteRef& ribRoute) const
 {
   if (ribRoute.route->origin == ndn::nfd::ROUTE_ORIGIN_CLIENT) {
     return ReadvertiseAction{ribRoute.entry->getName(), ndn::security::SigningInfo()};
   }
   else {
-    return ndn::nullopt;
+    return nullopt;
   }
 }
 
 time::milliseconds
 ClientToNlsrReadvertisePolicy::getRefreshInterval() const
 {
-  return time::seconds(3600);
+  return 1_h;
 }
 
 } // namespace rib

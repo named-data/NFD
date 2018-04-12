@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,10 @@
 #define NFD_RIB_ROUTE_HPP
 
 #include "core/scheduler.hpp"
+
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <ndn-cxx/mgmt/nfd/route-flags-traits.hpp>
+
 #include <type_traits>
 
 namespace nfd {
@@ -64,7 +66,7 @@ public:
   ndn::nfd::RouteOrigin origin;
   uint64_t cost;
   std::underlying_type<ndn::nfd::RouteFlags>::type flags;
-  ndn::optional<time::steady_clock::TimePoint> expires;
+  optional<time::steady_clock::TimePoint> expires;
 
 private:
   scheduler::EventId m_expirationEvent;

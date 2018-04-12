@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,11 @@
  */
 
 #include "table/pit.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
+#include "tests/daemon/face/dummy-face.hpp"
 #include "tests/test-common.hpp"
+
+#include <ndn-cxx/exclude.hpp>
 
 namespace nfd {
 namespace pit {
@@ -60,9 +62,9 @@ BOOST_AUTO_TEST_CASE(Insert)
 {
   Name name1("ndn:/5vzBNnMst");
   Name name2("ndn:/igSGfEIM62");
-  Exclude exclude1;
+  ndn::Exclude exclude1;
   exclude1.excludeOne(Name::Component("u26p47oep"));
-  Exclude exclude2;
+  ndn::Exclude exclude2;
   exclude2.excludeBefore(Name::Component("u26p47oep"));
   ndn::KeyLocator keyLocator1("ndn:/sGAE3peMHA");
   ndn::KeyLocator keyLocator2("ndn:/nIJH6pr4");

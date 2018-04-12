@@ -336,7 +336,7 @@ protected: // instance name
   struct ParsedInstanceName
   {
     Name strategyName; ///< strategy name without parameters
-    ndn::optional<uint64_t> version; ///< whether strategyName contains a version component
+    optional<uint64_t> version; ///< whether strategyName contains a version component
     PartialName parameters; ///< parameter components
   };
 

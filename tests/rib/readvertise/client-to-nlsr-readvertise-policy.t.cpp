@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(ReadvertiseClientRoute)
   RibRouteRef rrr{entry, routeIt};
 
   ClientToNlsrReadvertisePolicy policy;
-  ndn::optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
+  optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
 
   BOOST_REQUIRE(action);
   BOOST_CHECK_EQUAL(action->prefix, "/test/A");
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(DontReadvertiseRoute)
   RibRouteRef rrr{entry, routeIt};
 
   ClientToNlsrReadvertisePolicy policy;
-  ndn::optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
+  optional<ReadvertiseAction> action = policy.handleNewRoute(rrr);
 
   BOOST_CHECK(!action);
 }

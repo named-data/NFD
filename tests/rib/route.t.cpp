@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "rib/route.hpp"
+
 #include "tests/test-common.hpp"
 
 namespace nfd {
@@ -63,9 +64,9 @@ BOOST_AUTO_TEST_CASE(Equality)
   BOOST_CHECK_NE(a, b);
   a.cost = 103;
 
-  b.expires = ndn::nullopt;
+  b.expires = nullopt;
   BOOST_CHECK_NE(a, b);
-  a.expires = ndn::nullopt;
+  a.expires = nullopt;
 
   BOOST_CHECK_EQUAL(a, b);
 }
@@ -84,7 +85,7 @@ BOOST_FIXTURE_TEST_CASE(Output, UnitTestTimeFixture)
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
                     "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, expires in: 791214234 milliseconds)");
 
-  r.expires = ndn::nullopt;
+  r.expires = nullopt;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),
                     "Route(faceid: 4980, origin: static, cost: 2312, flags: 0x1, never expires)");
 }

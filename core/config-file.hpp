@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,24 +34,23 @@ namespace nfd {
 
 /** \brief a config file section
  */
-typedef boost::property_tree::ptree ConfigSection;
+using ConfigSection = boost::property_tree::ptree;
 
 /** \brief an optional config file section
  */
-typedef boost::optional<const ConfigSection&> OptionalConfigSection;
+using OptionalConfigSection = boost::optional<const ConfigSection&>;
 
 /** \brief callback to process a config file section
  */
-typedef function<void(const ConfigSection& section,
-                      bool isDryRun,
-                      const std::string& filename)> ConfigSectionHandler;
+using ConfigSectionHandler = std::function<void(const ConfigSection& section, bool isDryRun,
+                                                const std::string& filename)>;
 
 /** \brief callback to process a config file section without a \p ConfigSectionHandler
  */
-typedef function<void(const std::string& filename,
-                      const std::string& sectionName,
-                      const ConfigSection& section,
-                      bool isDryRun)> UnknownConfigSectionHandler;
+using UnknownConfigSectionHandler = std::function<void(const std::string& filename,
+                                                       const std::string& sectionName,
+                                                       const ConfigSection& section,
+                                                       bool isDryRun)>;
 
 /** \brief configuration file parsing utility
  */

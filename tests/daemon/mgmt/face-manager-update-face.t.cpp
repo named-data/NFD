@@ -53,8 +53,8 @@ public:
   void
   createFace(const std::string& uri = "tcp4://127.0.0.1:26363",
              ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-             ndn::optional<time::nanoseconds> baseCongestionMarkingInterval = {},
-             ndn::optional<uint64_t> defaultCongestionThreshold = {},
+             optional<time::nanoseconds> baseCongestionMarkingInterval = {},
+             optional<uint64_t> defaultCongestionThreshold = {},
              bool enableLocalFields = false,
              bool enableReliability = false,
              boost::logic::tribool enableCongestionMarking = boost::logic::indeterminate)
@@ -127,7 +127,7 @@ public:
   void
   updateFace(const ControlParameters& requestParams,
              bool isSelfUpdating,
-             const function<void(const ControlResponse& resp)>& checkResp)
+             const std::function<void(const ControlResponse& resp)>& checkResp)
   {
     Interest req = makeControlCommandRequest("/localhost/nfd/faces/update", requestParams);
     if (isSelfUpdating) {

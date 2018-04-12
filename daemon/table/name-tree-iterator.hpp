@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,31 +35,31 @@ class NameTree;
 
 /** \brief a predicate to accept or reject an Entry in find operations
  */
-typedef function<bool(const Entry& entry)> EntrySelector;
+using EntrySelector = std::function<bool(const Entry&)>;
 
 /** \brief an EntrySelector that accepts every Entry
  */
 struct AnyEntry
 {
   bool
-  operator()(const Entry& entry) const
+  operator()(const Entry&) const
   {
     return true;
   }
 };
 
 /** \brief a predicate to accept or reject an Entry and its children
- *  \return .first indicates whether entry should be accepted;
- *          .second indicates whether entry's children should be visited
+ *  \return `.first` indicates whether entry should be accepted;
+ *          `.second` indicates whether entry's children should be visited
  */
-typedef function<std::pair<bool,bool>(const Entry& entry)> EntrySubTreeSelector;
+using EntrySubTreeSelector = std::function<std::pair<bool, bool>(const Entry&)>;
 
 /** \brief an EntrySubTreeSelector that accepts every Entry and its children
  */
 struct AnyEntrySubTree
 {
   std::pair<bool, bool>
-  operator()(const Entry& entry) const
+  operator()(const Entry&) const
   {
     return {true, true};
   }
@@ -203,7 +203,7 @@ private:
  *  This type has .begin() and .end() methods which return Iterator.
  *  This type is usable with range-based for.
  */
-typedef boost::iterator_range<Iterator> Range;
+using Range = boost::iterator_range<Iterator>;
 
 } // namespace name_tree
 } // namespace nfd

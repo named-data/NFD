@@ -190,7 +190,7 @@ public:
 
 protected:
   void
-  dispatchToStrategy(pit::Entry& pitEntry, function<void(fw::Strategy&)> trigger) override
+  dispatchToStrategy(pit::Entry&, std::function<void(fw::Strategy&)>) override
   {
     ++dispatchToStrategy_count;
   }

@@ -363,7 +363,7 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
   return face;
 }
 
-static ndn::optional<ip::address>
+static optional<ip::address>
 pickAddress(const net::NetworkInterface& netif, net::AddressFamily af)
 {
   for (const auto& na : netif.getNetworkAddresses()) {
@@ -372,7 +372,7 @@ pickAddress(const net::NetworkInterface& netif, net::AddressFamily af)
       return na.getIp();
     }
   }
-  return ndn::nullopt;
+  return nullopt;
 }
 
 std::vector<shared_ptr<Face>>

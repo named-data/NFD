@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -69,11 +69,11 @@ public:
     m_delay = delay;
   }
 
-  virtual void
+  void
   fetchStatus(Controller& controller,
-              const function<void()>& onSuccess,
+              const std::function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
-              const CommandOptions& options) override
+              const CommandOptions& options) final
   {
     ++nFetchStatusCalls;
     scheduler::schedule(m_delay, [=] {
@@ -86,14 +86,14 @@ public:
     });
   }
 
-  virtual void
-  formatStatusXml(std::ostream& os) const override
+  void
+  formatStatusXml(std::ostream& os) const final
   {
     os << '<' << m_moduleName << "/>";
   }
 
-  virtual void
-  formatStatusText(std::ostream& os) const override
+  void
+  formatStatusText(std::ostream& os) const final
   {
     os << m_moduleName << '\n';
   }
@@ -110,7 +110,7 @@ private:
 class StatusReportTester : public StatusReport
 {
 private:
-  virtual void
+  void
   processEvents(Face&) override
   {
     processEventsFunc();

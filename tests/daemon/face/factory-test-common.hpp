@@ -37,8 +37,8 @@ namespace tests {
 struct TestFaceParams : public FaceParams
 {
   TestFaceParams(ndn::nfd::FacePersistency persistency,
-                 ndn::optional<time::nanoseconds> baseCongestionMarkingInterval,
-                 ndn::optional<uint64_t> defaultCongestionThreshold,
+                 optional<time::nanoseconds> baseCongestionMarkingInterval,
+                 optional<uint64_t> defaultCongestionThreshold,
                  bool wantLocalFields,
                  bool wantLpReliability,
                  boost::logic::tribool wantCongestionMarking) noexcept
@@ -62,7 +62,7 @@ struct CreateFaceExpectedResult
 inline void
 createFace(ProtocolFactory& factory,
            const FaceUri& remoteUri,
-           const ndn::optional<FaceUri>& localUri,
+           const optional<FaceUri>& localUri,
            const TestFaceParams& params,
            const CreateFaceExpectedResult& expected,
            const std::function<void(const Face&)>& extraChecks = nullptr)

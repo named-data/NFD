@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ public:
 
   /** \brief decide whether to readvertise a route, and what prefix to readvertise
    */
-  virtual ndn::optional<ReadvertiseAction>
+  virtual optional<ReadvertiseAction>
   handleNewRoute(const RibRouteRef& ribRoute) const = 0;
 
   /** \return how often readvertisements made by this policy should be refreshed.

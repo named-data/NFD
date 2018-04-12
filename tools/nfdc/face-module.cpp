@@ -161,7 +161,7 @@ FaceModule::create(ExecuteContext& ctx)
   auto defaultCongestionThreshold = ctx.args.getOptional<uint64_t>("default-congestion-threshold");
 
   FaceUri canonicalRemote;
-  ndn::optional<FaceUri> canonicalLocal;
+  optional<FaceUri> canonicalLocal;
 
   auto handleCanonizeError = [&] (const FaceUri& faceUri, const std::string& error) {
     ctx.exitCode = 4;
@@ -346,7 +346,7 @@ FaceModule::destroy(ExecuteContext& ctx)
 
 void
 FaceModule::fetchStatus(Controller& controller,
-                        const function<void()>& onSuccess,
+                        const std::function<void()>& onSuccess,
                         const Controller::DatasetFailCallback& onFailure,
                         const CommandOptions& options)
 {

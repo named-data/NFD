@@ -59,7 +59,6 @@
 #include <ndn-cxx/data.hpp>
 #include <ndn-cxx/delegation.hpp>
 #include <ndn-cxx/delegation-list.hpp>
-#include <ndn-cxx/exclude.hpp>
 #include <ndn-cxx/interest.hpp>
 #include <ndn-cxx/name.hpp>
 #include <ndn-cxx/encoding/block.hpp>
@@ -92,18 +91,18 @@ using std::static_pointer_cast;
 using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
 
-using std::function;
 using std::bind;
-using std::ref;
 using std::cref;
+using std::ref;
 
+using ndn::optional;
+using ndn::nullopt;
 using ndn::to_string;
 
 using ndn::Block;
 using ndn::Data;
 using ndn::Delegation;
 using ndn::DelegationList;
-using ndn::Exclude;
 using ndn::FaceUri;
 using ndn::Interest;
 using ndn::Name;

@@ -137,7 +137,7 @@ public:
   struct CreateFaceRequest
   {
     FaceUri remoteUri;
-    ndn::optional<FaceUri> localUri;
+    optional<FaceUri> localUri;
     FaceParams params;
   };
 

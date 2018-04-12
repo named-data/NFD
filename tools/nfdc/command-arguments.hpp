@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,12 +59,12 @@ public:
   /** \return the argument value, or nullopt if the argument is omitted on command line
    */
   template<typename T>
-  ndn::optional<T>
+  optional<T>
   getOptional(const std::string& key) const
   {
     auto i = find(key);
     if (i == end()) {
-      return ndn::nullopt;
+      return nullopt;
     }
     return boost::any_cast<T>(i->second);
   }

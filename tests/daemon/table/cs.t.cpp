@@ -28,6 +28,8 @@
 #include "tests/test-common.hpp"
 
 #include <cstring>
+
+#include <ndn-cxx/exclude.hpp>
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/sha256.hpp>
 
@@ -92,7 +94,7 @@ protected:
   size_t
   erase(const Name& prefix, size_t limit)
   {
-    ndn::optional<size_t> nErased;
+    optional<size_t> nErased;
     m_cs.erase(prefix, limit, [&] (size_t nErased1) { nErased = nErased1; });
 
     // current Cs::erase implementation is synchronous
@@ -331,7 +333,7 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
   uint8_t digestFF[ndn::util::Sha256::DIGEST_SIZE];
   std::fill_n(digestFF, sizeof(digestFF), 0xFF);
 
-  Exclude excludeDigest;
+  ndn::Exclude excludeDigest;
   excludeDigest.excludeRange(
     name::Component::fromImplicitSha256Digest(digest00, sizeof(digest00)),
     name::Component::fromImplicitSha256Digest(digestFF, sizeof(digestFF)));
@@ -346,7 +348,7 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
     .setExclude(excludeDigest);
   CHECK_CS_FIND(3);
 
-  Exclude excludeGeneric;
+  ndn::Exclude excludeGeneric;
   excludeGeneric.excludeAfter(name::Component(static_cast<uint8_t*>(nullptr), 0));
 
   startInterest("/A")
@@ -359,7 +361,7 @@ BOOST_AUTO_TEST_CASE(DigestExclude)
     .setExclude(excludeGeneric);
   find([] (uint32_t found) { BOOST_CHECK(found == 1 || found == 2); });
 
-  Exclude exclude2 = excludeGeneric;
+  ndn::Exclude exclude2 = excludeGeneric;
   exclude2.excludeOne(n2.get(-1));
 
   startInterest("/A")

@@ -125,7 +125,7 @@ Strategy::parseInstanceName(const Name& input)
       return {input.getPrefix(i + 1), input[i].toVersion(), input.getSubName(i + 1)};
     }
   }
-  return {input, ndn::nullopt, PartialName()};
+  return {input, nullopt, PartialName()};
 }
 
 Name

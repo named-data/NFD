@@ -34,7 +34,7 @@ namespace nfdc {
 
 void
 ForwarderGeneralModule::fetchStatus(Controller& controller,
-                                    const function<void()>& onSuccess,
+                                    const std::function<void()>& onSuccess,
                                     const Controller::DatasetFailCallback& onFailure,
                                     const CommandOptions& options)
 {

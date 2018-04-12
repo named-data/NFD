@@ -60,7 +60,7 @@ protected:
 
   bool
   authorize(const std::string& module, const Name& identity,
-            const function<void(Interest&)>& modifyInterest = nullptr)
+            const std::function<void(Interest&)>& modifyInterest = nullptr)
   {
     Interest interest = this->makeControlCommandRequest(Name("/prefix/" + module + "/verb"),
                                                         ControlParameters(), identity);
@@ -262,7 +262,7 @@ protected:
   }
 
   bool
-  authorize1(const function<void(Interest&)>& modifyInterest)
+  authorize1(const std::function<void(Interest&)>& modifyInterest)
   {
     return authorize("module1", id1, modifyInterest);
   }

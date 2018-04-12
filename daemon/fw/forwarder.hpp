@@ -259,7 +259,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
    */
 #ifdef WITH_TESTS
   virtual void
-  dispatchToStrategy(pit::Entry& pitEntry, function<void(fw::Strategy&)> trigger)
+  dispatchToStrategy(pit::Entry& pitEntry, std::function<void(fw::Strategy&)> trigger)
 #else
   template<class Function>
   void

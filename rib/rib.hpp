@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -112,8 +112,8 @@ public:
   findDescendantsForNonInsertedName(const Name& prefix) const;
 
 public:
-  typedef function<void()> UpdateSuccessCallback;
-  typedef function<void(uint32_t code, const std::string& error)> UpdateFailureCallback;
+  using UpdateSuccessCallback = std::function<void()>;
+  using UpdateFailureCallback = std::function<void(uint32_t code, const std::string& error)>;
 
   /** \brief passes the provided RibUpdateBatch to FibUpdater to calculate and send FibUpdates.
    *
@@ -176,7 +176,7 @@ private:
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   // Used by RibManager unit-tests to get sent batch to simulate successful FIB update
-  function<void(RibUpdateBatch)> m_onSendBatchFromQueue;
+  std::function<void(RibUpdateBatch)> m_onSendBatchFromQueue;
 
   void
   erase(const Name& prefix, const Route& route);

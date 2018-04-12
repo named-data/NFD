@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,8 +54,8 @@ public:
 public:
   typedef std::list<FibUpdate> FibUpdateList;
 
-  typedef function<void(RibUpdateList inheritedRoutes)> FibUpdateSuccessCallback;
-  typedef function<void(uint32_t code, const std::string& error)> FibUpdateFailureCallback;
+  typedef std::function<void(RibUpdateList inheritedRoutes)> FibUpdateSuccessCallback;
+  typedef std::function<void(uint32_t code, const std::string& error)> FibUpdateFailureCallback;
 
   FibUpdater(Rib& rib, ndn::nfd::Controller& controller);
 

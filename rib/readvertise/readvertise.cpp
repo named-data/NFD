@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,7 +64,7 @@ Readvertise::Readvertise(Rib& rib, unique_ptr<ReadvertisePolicy> policy,
 void
 Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
 {
-  ndn::optional<ReadvertiseAction> action = m_policy->handleNewRoute(ribRoute);
+  optional<ReadvertiseAction> action = m_policy->handleNewRoute(ribRoute);
   if (!action) {
     NFD_LOG_DEBUG("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<
                   ',' << ribRoute.route->origin << ") not-readvertising");

@@ -51,12 +51,12 @@ using SignerTag = ndn::SimpleTag<Name, 20>;
 
 /** \brief obtain signer from SignerTag attached to Interest, if available
  */
-static ndn::optional<std::string>
+static optional<std::string>
 getSignerFromTag(const Interest& interest)
 {
   shared_ptr<SignerTag> signerTag = interest.getTag<SignerTag>();
   if (signerTag == nullptr) {
-    return ndn::nullopt;
+    return nullopt;
   }
   else {
     return signerTag->get().toUri();
