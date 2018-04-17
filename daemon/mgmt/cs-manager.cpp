@@ -28,6 +28,8 @@
 
 namespace nfd {
 
+constexpr size_t CsManager::ERASE_LIMIT;
+
 CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCnt,
                      Dispatcher& dispatcher, CommandAuthenticator& authenticator)
   : NfdManagerBase(dispatcher, authenticator, "cs")
@@ -36,6 +38,8 @@ CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCnt,
 {
   registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
     bind(&CsManager::changeConfig, this, _4, _5));
+  registerCommandHandler<ndn::nfd::CsEraseCommand>("erase",
+    bind(&CsManager::erase, this, _4, _5));
 
   registerStatusDatasetHandler("info", bind(&CsManager::serveInfo, this, _1, _2, _3));
 }
@@ -63,6 +67,34 @@ CsManager::changeConfig(const ControlParameters& parameters,
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_ADMIT, m_cs.shouldAdmit(), false);
   body.setFlagBit(CsFlagBit::BIT_CS_ENABLE_SERVE, m_cs.shouldServe(), false);
   done(ControlResponse(200, "OK").setBody(body.wireEncode()));
+}
+
+void
+CsManager::erase(const ControlParameters& parameters,
+                 const ndn::mgmt::CommandContinuation& done)
+{
+  size_t count = parameters.hasCount() ?
+                 parameters.getCount() :
+                 std::numeric_limits<size_t>::max();
+  m_cs.erase(parameters.getName(), std::min(count, ERASE_LIMIT),
+    [=] (size_t nErased) {
+      ControlParameters body;
+      body.setName(parameters.getName());
+      body.setCount(nErased);
+      if (nErased == ERASE_LIMIT && count > ERASE_LIMIT) {
+        m_cs.find(Interest(parameters.getName()).setCanBePrefix(true),
+          [=] (const Interest&, const Data&) mutable {
+            body.setCapacity(ERASE_LIMIT);
+            done(ControlResponse(200, "OK").setBody(body.wireEncode()));
+          },
+          [=] (const Interest&) {
+            done(ControlResponse(200, "OK").setBody(body.wireEncode()));
+          });
+      }
+      else {
+        done(ControlResponse(200, "OK").setBody(body.wireEncode()));
+      }
+    });
 }
 
 void

@@ -96,6 +96,106 @@ BOOST_AUTO_TEST_CASE(Config)
   BOOST_CHECK_EQUAL(m_cs.shouldServe(), false);
 }
 
+BOOST_AUTO_TEST_CASE(Erase)
+{
+  m_cs.setLimit(CsManager::ERASE_LIMIT * 5);
+  m_cs.insert(*makeData("/B/C/1"));
+  m_cs.insert(*makeData("/B/C/2"));
+  m_cs.insert(*makeData("/B/D/3"));
+  m_cs.insert(*makeData("/B/D/4"));
+  for (size_t i = 0; i < CsManager::ERASE_LIMIT - 1; ++i) {
+    m_cs.insert(*makeData(Name("/E").appendSequenceNumber(i)));
+  }
+  for (size_t i = 0; i < CsManager::ERASE_LIMIT; ++i) {
+    m_cs.insert(*makeData(Name("/F").appendSequenceNumber(i)));
+  }
+  for (size_t i = 0; i < CsManager::ERASE_LIMIT + 1; ++i) {
+    m_cs.insert(*makeData(Name("/G").appendSequenceNumber(i)));
+  }
+  for (size_t i = 0; i < CsManager::ERASE_LIMIT + 1; ++i) {
+    m_cs.insert(*makeData(Name("/H").appendSequenceNumber(i)));
+  }
+  const Name cmdPrefix("/localhost/nfd/cs/erase");
+
+  // requested Name matches no Data
+  auto req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/A").setCount(1));
+  receiveInterest(req);
+
+  // response should include zero as actual Count
+  ControlParameters body;
+  body.setName("/A");
+  body.setCount(0);
+  BOOST_CHECK_EQUAL(checkResponse(0, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // requested Count is less than erase limit
+  req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/B").setCount(3));
+  receiveInterest(req);
+
+  // response should include actual Count and omit Capacity
+  body.setName("/B");
+  body.setCount(3);
+  BOOST_CHECK_EQUAL(checkResponse(1, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // requested Count equals erase limit
+  req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/E").setCount(CsManager::ERASE_LIMIT));
+  receiveInterest(req);
+
+  // response should include actual Count and omit Capacity
+  body.setName("/E");
+  body.setCount(CsManager::ERASE_LIMIT - 1);
+  BOOST_CHECK_EQUAL(checkResponse(2, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // requested Count exceeds erase limit, but there are no more Data
+  req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/F").setCount(CsManager::ERASE_LIMIT + 1));
+  receiveInterest(req);
+
+  // response should include actual Count and omit Capacity
+  body.setName("/F");
+  body.setCount(CsManager::ERASE_LIMIT);
+  BOOST_CHECK_EQUAL(checkResponse(3, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // requested Count exceeds erase limit, and there are more Data
+  req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/G").setCount(CsManager::ERASE_LIMIT + 1));
+  receiveInterest(req);
+
+  // response should include both actual Count and Capacity
+  body.setName("/G");
+  body.setCount(CsManager::ERASE_LIMIT);
+  body.setCapacity(CsManager::ERASE_LIMIT);
+  BOOST_CHECK_EQUAL(checkResponse(4, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // request omit Count, which implies "no limit" aka exceeds erase limit
+  req = makeControlCommandRequest(cmdPrefix,
+    ControlParameters().setName("/H"));
+  receiveInterest(req);
+
+  // response should include both actual Count and Capacity since there are more Data
+  body.setName("/H");
+  body.setCount(CsManager::ERASE_LIMIT);
+  body.setCapacity(CsManager::ERASE_LIMIT);
+  BOOST_CHECK_EQUAL(checkResponse(5, req.getName(),
+                                  ControlResponse(200, "OK").setBody(body.wireEncode())),
+                    CheckResponseResult::OK);
+
+  // one Data each under /A, /G, /H remain, all other Data are erased
+  BOOST_CHECK_EQUAL(m_cs.size(), 3);
+}
+
 BOOST_AUTO_TEST_CASE(Info)
 {
   m_cs.setLimit(2681);

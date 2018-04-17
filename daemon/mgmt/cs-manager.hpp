@@ -32,7 +32,7 @@
 
 namespace nfd {
 
-/** \brief implement the CS Management of NFD Management Protocol.
+/** \brief Implement the CS Management of NFD Management Protocol.
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
 class CsManager : public NfdManagerBase
@@ -42,15 +42,26 @@ public:
             Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
+  /** \brief Process cs/config command.
+   */
   void
   changeConfig(const ControlParameters& parameters,
                const ndn::mgmt::CommandContinuation& done);
 
-  /** \brief serve CS information dataset
+  /** \brief Process cs/erase command.
+   */
+  void
+  erase(const ControlParameters& parameters,
+        const ndn::mgmt::CommandContinuation& done);
+
+  /** \brief Serve CS information dataset.
    */
   void
   serveInfo(const Name& topPrefix, const Interest& interest,
             ndn::mgmt::StatusDatasetContext& context) const;
+
+public:
+  static constexpr size_t ERASE_LIMIT = 256;
 
 private:
   Cs& m_cs;
