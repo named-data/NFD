@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,12 +29,14 @@
 #include "dummy-receive-link-service.hpp"
 #include "transport-test-common.hpp"
 
-#include <boost/mpl/empty_sequence.hpp>
+#include <boost/mpl/fold.hpp>
 #include <boost/mpl/int.hpp>
-#include <boost/mpl/joint_view.hpp>
+#include <boost/mpl/lambda.hpp>
 #include <boost/mpl/map.hpp>
+#include <boost/mpl/pair.hpp>
+#include <boost/mpl/push_back.hpp>
 #include <boost/mpl/set.hpp>
-#include <boost/mpl/transform_view.hpp>
+#include <boost/mpl/vector.hpp>
 
 namespace nfd {
 namespace face {
@@ -93,6 +95,7 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 }
 
 /** \brief a macro to declare a TransportState as a integral constant
+ *  \note we cannot use mpl::integral_c because TransportState is not an integral type
  */
 #define TRANSPORT_STATE_C(X) mpl::int_<static_cast<int>(TransportState::X)>
 
@@ -141,28 +144,23 @@ typedef mpl::set<
   mpl::pair<TRANSPORT_STATE_C(FAILED), TRANSPORT_STATE_C(CLOSED)>
 > ValidStateTransitions;
 
-/** \brief a metafunction class to generate a sequence of all state transitions
+/** \brief a metafunction to generate a sequence of all state transitions
  *         from a specified state
  */
-struct StateTransitionsFrom
+template<typename FromState, typename Result>
+struct StateTransitionsFrom : mpl::fold<
+                                States,
+                                Result,
+                                mpl::push_back<mpl::_1, mpl::pair<FromState, mpl::_2>>>
 {
-  template<typename FROM>
-  struct apply
-  {
-    typedef typename mpl::fold<
-      States,
-      mpl::vector<>,
-      mpl::push_back<mpl::_1, mpl::pair<FROM, mpl::_2>>
-    >::type type;
-  };
 };
 
 /** \brief a sequence of all state transitions
  */
 typedef mpl::fold<
   States,
-  mpl::empty_sequence,
-  mpl::joint_view<mpl::_1, mpl::apply<StateTransitionsFrom, mpl::protect<mpl::_1>>::type>
+  mpl::vector<>,
+  mpl::lambda<StateTransitionsFrom<mpl::_2, mpl::_1>>
 >::type AllStateTransitions;
 
 #undef TRANSPORT_STATE_C

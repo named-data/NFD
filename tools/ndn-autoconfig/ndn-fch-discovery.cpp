@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "ndn-fch-discovery.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/regex.hpp>
 
 #include <sstream>
@@ -144,22 +145,22 @@ void
 NdnFchDiscovery::doStart()
 {
   try {
-    using namespace boost::asio::ip;
-    tcp::iostream requestStream;
-
-    requestStream.expires_from_now(boost::posix_time::milliseconds(3000));
+    boost::asio::ip::tcp::iostream requestStream;
+#if BOOST_VERSION >= 106700
+    requestStream.expires_after(std::chrono::seconds(3));
+#else
+    requestStream.expires_from_now(boost::posix_time::seconds(3));
+#endif // BOOST_VERSION >= 106700
 
     Url url(m_url);
     if (!url.isValid()) {
       BOOST_THROW_EXCEPTION(HttpException("Invalid NDN-FCH URL: " + m_url));
     }
-
     if (!boost::iequals(url.getScheme(), "http")) {
       BOOST_THROW_EXCEPTION(HttpException("Only http:// NDN-FCH URLs are supported"));
     }
 
     requestStream.connect(url.getHost(), url.getPort());
-
     if (!requestStream) {
       BOOST_THROW_EXCEPTION(HttpException("HTTP connection error to " + m_url));
     }
@@ -198,7 +199,6 @@ NdnFchDiscovery::doStart()
 
     std::string hubHost;
     requestStream >> hubHost;
-
     if (hubHost.empty()) {
       BOOST_THROW_EXCEPTION(HttpException("NDN-FCH did not return hub host"));
     }
