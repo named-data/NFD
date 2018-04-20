@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,10 +29,12 @@
 #error "This file should not be compiled when custom logger is used"
 #endif
 
-#include <ndn-cxx/util/time.hpp>
 #include <cinttypes>
+#include <cstdlib>
 #include <stdio.h>
 #include <type_traits>
+
+#include <ndn-cxx/util/time.hpp>
 
 namespace nfd {
 
@@ -47,22 +49,21 @@ operator<<(std::ostream& os, const LoggerTimestamp&)
 {
   using namespace ndn::time;
 
-  static const microseconds::rep ONE_SECOND = 1000000;
-  microseconds::rep microsecondsSinceEpoch = duration_cast<microseconds>(
-    system_clock::now().time_since_epoch()).count();
+  const auto sinceEpoch = system_clock::now().time_since_epoch();
+  BOOST_ASSERT(sinceEpoch.count() >= 0);
+  // use abs() to silence truncation warning in snprintf(), see #4365
+  const auto usecs = std::abs(duration_cast<microseconds>(sinceEpoch).count());
+  const auto usecsPerSec = microseconds::period::den;
 
   // 10 (whole seconds) + '.' + 6 (fraction) + '\0'
   char buffer[10 + 1 + 6 + 1];
-  BOOST_ASSERT_MSG(microsecondsSinceEpoch / ONE_SECOND <= 9999999999L,
-                   "whole seconds cannot fit in 10 characters");
+  BOOST_ASSERT_MSG(usecs / usecsPerSec <= 9999999999, "whole seconds cannot fit in 10 characters");
 
   static_assert(std::is_same<microseconds::rep, int_least64_t>::value,
                 "PRIdLEAST64 is incompatible with microseconds::rep");
-  // - std::snprintf not found in some environments
-  //   http://redmine.named-data.net/issues/2299 for more information
-  snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
-           microsecondsSinceEpoch / ONE_SECOND,
-           microsecondsSinceEpoch % ONE_SECOND);
+  // std::snprintf unavailable on some platforms, see #2299
+  ::snprintf(buffer, sizeof(buffer), "%" PRIdLEAST64 ".%06" PRIdLEAST64,
+             usecs / usecsPerSec, usecs % usecsPerSec);
 
   return os << buffer;
 }
