@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(RoutablePrefixesDataset)
   BOOST_CHECK(dataName0.at(-2).isVersion());
   BOOST_CHECK(dataName0.at(-1).isSegment());
 
-  while (face.sentData.back().getFinalBlockId() != face.sentData.back().getName().at(-1)) {
+  while (face.sentData.back().getFinalBlock() != face.sentData.back().getName().at(-1)) {
     const Name& lastName = face.sentData.back().getName();
     Interest interest2(lastName.getPrefix(-1).appendSegment(lastName.at(-1).toSegment() + 1));
     face.receive(interest2);

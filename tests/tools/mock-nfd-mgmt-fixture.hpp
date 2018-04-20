@@ -29,6 +29,8 @@
 #include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
+#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
+#include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
@@ -148,11 +150,11 @@ private:
   virtual void
   processEventsOverride(time::milliseconds timeout)
   {
-    if (timeout <= time::milliseconds::zero()) {
+    if (timeout <= 0_ms) {
       // give enough time to finish execution
-      timeout = time::seconds(30);
+      timeout = 30_s;
     }
-    this->advanceClocks(time::milliseconds(100), timeout);
+    this->advanceClocks(100_ms, timeout);
   }
 
   void
@@ -167,8 +169,7 @@ private:
   sendCommandReply(const Interest& interest, uint32_t code, const std::string& text,
                    const Block& body)
   {
-    this->sendCommandReply(interest,
-                           ndn::nfd::ControlResponse(code, text).setBody(body));
+    this->sendCommandReply(interest, ndn::nfd::ControlResponse(code, text).setBody(body));
   }
 
   /** \brief send a payload in reply to StatusDataset request
@@ -193,7 +194,7 @@ private:
     }
 
     auto data = make_shared<Data>(name);
-    data->setFinalBlockId(name[-1]);
+    data->setFinalBlock(name[-1]);
     data->setContent(std::forward<ContentArgs>(contentArgs)...);
     this->signDatasetReply(*data);
     face.receive(*data);

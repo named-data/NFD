@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -62,15 +62,15 @@ ManagerCommonFixture::ManagerCommonFixture()
 void
 ManagerCommonFixture::setTopPrefix(const Name& topPrefix)
 {
-  m_dispatcher.addTopPrefix(topPrefix); // such that all filters are added
-  advanceClocks(time::milliseconds(1));
+  m_dispatcher.addTopPrefix(topPrefix); // so that all filters are added
+  advanceClocks(1_ms);
 }
 
 void
 ManagerCommonFixture::receiveInterest(const Interest& interest)
 {
   m_face.receive(interest);
-  advanceClocks(time::milliseconds(1));
+  advanceClocks(1_ms);
 }
 
 ControlResponse
@@ -142,12 +142,7 @@ ManagerCommonFixture::checkResponse(size_t idx,
 Block
 ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
 {
-  auto isFinalSegment = [] (const Data& data) -> bool {
-    const name::Component& lastComponent = data.getName().at(-1);
-    return !lastComponent.isSegment() || lastComponent == data.getFinalBlockId();
-  };
-
-  while (!isFinalSegment(m_responses.back())) {
+  while (m_responses.back().getName().at(-1) != m_responses.back().getFinalBlock()) {
     const Name& name = m_responses.back().getName();
     Name prefix = name.getPrefix(-1);
     uint64_t segmentNo = name.at(-1).toSegment() + 1;
