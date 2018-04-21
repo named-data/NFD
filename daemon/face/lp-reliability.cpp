@@ -168,11 +168,10 @@ LpReliability::piggyback(lp::Packet& pkt, ssize_t mtu)
 
   while (!m_ackQueue.empty()) {
     lp::Sequence ackSeq = m_ackQueue.front();
-    // Ack Size = Ack Type (3 octets) + Ack Length (1 octet) + Value (1, 2, 4, or 8 octets)
-    ssize_t ackSize = tlv::sizeOfVarNumber(lp::tlv::Ack) +
-                      tlv::sizeOfVarNumber(
-                        tlv::sizeOfNonNegativeInteger(std::numeric_limits<lp::Sequence>::max())) +
-                      tlv::sizeOfNonNegativeInteger(ackSeq);
+    // Ack size = Ack TLV-TYPE (3 octets) + TLV-LENGTH (1 octet) + uint64_t (8 octets)
+    const ssize_t ackSize = tlv::sizeOfVarNumber(lp::tlv::Ack) +
+                            tlv::sizeOfVarNumber(sizeof(lp::Sequence)) +
+                            sizeof(lp::Sequence);
 
     if (ackSize > remainingSpace) {
       break;
