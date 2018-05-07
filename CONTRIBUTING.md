@@ -139,7 +139,7 @@ There is a
 for Python. It applies many of the provisions from the C++ guide, in
 addition to some other Python-specific things.
 
-Some NDN projects are writtin in JavaScript, and there is a [style guide](https://named-data.net/codebase/platform/documentation/ndn-platform-development-guidelines/cpp-code-guidelines/) for that language, too.
+Some NDN projects are written in JavaScript, and there is a [style guide](https://named-data.net/codebase/platform/documentation/ndn-platform-development-guidelines/cpp-code-guidelines/) for that language, too.
 
 #### Commit Messages ####
 
@@ -151,7 +151,7 @@ understand the timeline of a project. Commit messages should:
     they change. A good rule of thumb is a maximum length of 65
     characters.
 -   If including a body, leave a blank line between the first line and
-    the rest, and ensure that it's no longer than 72 characters.
+    the rest, and ensure that each line is no longer than 72 characters.
 -   Include Redmine issue numbers. The exact syntax is given below.
 -   Be written in an imperative mood. E.g. `"Make foo a bar"` and not
     `"Foo is now a bar"`
@@ -161,6 +161,10 @@ understand the timeline of a project. Commit messages should:
 To explain, the anatomy of a typical commit message is like this:
 
     docs: write contributing guide and code of conduct
+
+    This commit adds a guide that may be useful for new-comers to NDN in
+    becoming productive contributors. This commit also adds a code of
+    conduct.
 
     refs: #3898
     Change-Id: Ife89360305027dba9020f0b298793c1121ae1fd6c
@@ -315,7 +319,7 @@ Once you have a commit message you are happy with, simply run `git
 push HEAD:refs/for/master`.
 
 **Note:** Gerrit separates commits into patch sets by the unique
-`Change-Id`s. As a result, it is important that you either:
+`Change-Id`s. As a result, you must either:
 
 *  Squash your various commits into one with `git rebase -i
    <initial commit>`, ensuring that the ultimate `Change-Id` in the
@@ -470,8 +474,8 @@ repetitive, you have a few options:
 
 *  Git has an alias system that you can use to specify certain
    commands. For example, you can use `git config --global alias.pg
-   "push origin HEAD:refs/for/master"` to make `git pg` push to Gerrit. You
-   can [learn about git aliases.](https://githowto.com/aliases)
+   "push origin HEAD:refs/for/master"` to make `git pg` push to
+   Gerrit. [Learn about git aliases here.](https://githowto.com/aliases)
 
 *  If using Linux or macOS, it is relatively simple to create a shell
    alias: `alias gs="git status"` for example, or `alias gitpush="git
