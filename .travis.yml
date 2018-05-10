@@ -1,5 +1,5 @@
 language: cpp
-dist: trusty
+dist: xenial
 sudo: required
 env:
   global:
@@ -11,92 +11,34 @@ matrix:
     # Linux/gcc
     # https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test/+packages
     - os: linux
-      env: COMPILER=g++-4.8
-    - os: linux
-      env: COMPILER=g++-4.9
-      addons:
-        apt:
-          sources: ubuntu-toolchain-r-test
-          packages: g++-4.9
-    - os: linux
       env: COMPILER=g++-5
-      addons:
-        apt:
-          sources: ubuntu-toolchain-r-test
-          packages: g++-5
     - os: linux
       env: COMPILER=g++-6
-      addons:
-        apt:
-          sources: ubuntu-toolchain-r-test
-          packages: g++-6
     - os: linux
       env: COMPILER=g++-7
-      addons:
-        apt:
-          sources: ubuntu-toolchain-r-test
-          packages: g++-7
     - os: linux
       env: COMPILER=g++-8
-      addons:
-        apt:
-          sources: ubuntu-toolchain-r-test
-          packages: g++-8
 
     # Linux/clang
     # https://apt.llvm.org/
     - os: linux
       env: COMPILER=clang++-3.5
-      addons:
-        apt:
-          packages: clang-3.5
     - os: linux
       env: COMPILER=clang++-3.6
-      addons:
-        apt:
-          packages: clang-3.6
     - os: linux
       env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
-      addons:
-        apt:
-          sources: ["llvm-toolchain-precise-3.7", "ubuntu-toolchain-r-test"]
-          packages: clang-3.7
     - os: linux
       env: COMPILER=clang++-3.8
-      addons:
-        apt:
-          sources: ["llvm-toolchain-precise-3.8", "ubuntu-toolchain-r-test"]
-          packages: clang-3.8
     - os: linux
-      env: COMPILER=clang++-3.9 DISABLE_ASAN=yes
-      addons:
-        apt:
-          sources: ["llvm-toolchain-trusty-3.9", "ubuntu-toolchain-r-test"]
-          packages: clang-3.9
+      env: COMPILER=clang++-3.9
     - os: linux
       env: COMPILER=clang++-4.0
-      addons:
-        apt:
-          sources: ["llvm-toolchain-trusty-4.0", "ubuntu-toolchain-r-test"]
-          packages: clang-4.0
     - os: linux
       env: COMPILER=clang++-5.0
-      addons:
-        apt:
-          sources: ["llvm-toolchain-trusty-5.0", "ubuntu-toolchain-r-test"]
-          packages: clang-5.0
     - os: linux
       env: COMPILER=clang++-6.0
-      addons:
-        apt:
-          sources: ["llvm-toolchain-trusty-6.0", "ubuntu-toolchain-r-test"]
-          packages: clang-6.0
     - os: linux
       env: COMPILER=clang++-7
-      addons:
-        apt:
-          sources: ["llvm-toolchain-trusty", "ubuntu-toolchain-r-test"]
-          packages: clang-7
 
     # macOS/clang
     # https://docs.travis-ci.com/user/reference/osx/#OS-X-Version
@@ -111,12 +53,41 @@ matrix:
       env: OSX_VERSION=10.13
 
   allow_failures:
+    - env: COMPILER=g++-6
+    - env: COMPILER=g++-7
+    - env: COMPILER=g++-8
+    - env: COMPILER=clang++-3.5
+    - env: COMPILER=clang++-3.6
+    - env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
+    - env: COMPILER=clang++-3.8
+    - env: COMPILER=clang++-3.9
+    - env: COMPILER=clang++-4.0
+    - env: COMPILER=clang++-5.0
+    - env: COMPILER=clang++-6.0
     - env: COMPILER=clang++-7
 
   fast_finish: true
 
+install: |
+    case ${COMPILER} in
+      g++-[6789])
+        travis_retry sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        travis_retry sudo apt-get -qq update
+        travis_retry sudo apt-get -qy install "${COMPILER}"
+        ;;
+      clang++-*)
+        CLANG_VERSION=${COMPILER/clang++}
+        if [[ ${CLANG_VERSION} != "-3."* ]]; then
+          wget -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
+          travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial${CLANG_VERSION/-7} main"
+        fi
+        travis_retry sudo apt-get -qq update
+        travis_retry sudo apt-get -qy install "clang${CLANG_VERSION}"
+        ;;
+    esac
+
 before_script:
-  - if [[ ${TRAVIS_OS_NAME} == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-14.04"; fi
+  - if [[ ${TRAVIS_OS_NAME} == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-16.04"; fi
   - if [[ ${TRAVIS_OS_NAME} == osx ]]; then export NODE_LABELS="OSX OSX-${OSX_VERSION}"; fi
   - if [[ -n ${COMPILER} ]]; then export CXX=${COMPILER}; fi
   - ${CXX:-c++} --version

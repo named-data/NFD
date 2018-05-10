@@ -15,14 +15,14 @@ def configure(conf):
     errmsg = ''
     warnmsg = ''
     if cxx == 'gcc':
-        if ccver < (4, 8, 2):
+        if ccver < (5, 3, 0):
             errmsg = ('The version of gcc you are using is too old.\n'
-                      'The minimum supported gcc version is 4.8.2.')
+                      'The minimum supported gcc version is 5.3.0.')
         conf.flags = GccFlags()
     elif cxx == 'clang':
-        if ccver < (3, 4, 0):
+        if ccver < (3, 5, 0):
             errmsg = ('The version of clang you are using is too old.\n'
-                      'The minimum supported clang version is 3.4.0.')
+                      'The minimum supported clang version is 3.5.0.')
         conf.flags = ClangFlags()
     else:
         warnmsg = 'Note: %s compiler is unsupported' % cxx
@@ -164,16 +164,12 @@ class GccBasicFlags(CompilerFlags):
 class GccFlags(GccBasicFlags):
     def getDebugFlags(self, conf):
         flags = super(GccFlags, self).getDebugFlags(conf)
-        if self.getCompilerVersion(conf) < (5, 1, 0):
-            flags['CXXFLAGS'] += ['-Wno-missing-field-initializers']
-        flags['CXXFLAGS'] += ['-fdiagnostics-color'] # gcc >= 4.9
+        flags['CXXFLAGS'] += ['-fdiagnostics-color']
         return flags
 
     def getOptimizedFlags(self, conf):
         flags = super(GccFlags, self).getOptimizedFlags(conf)
-        if self.getCompilerVersion(conf) < (5, 1, 0):
-            flags['CXXFLAGS'] += ['-Wno-missing-field-initializers']
-        flags['CXXFLAGS'] += ['-fdiagnostics-color'] # gcc >= 4.9
+        flags['CXXFLAGS'] += ['-fdiagnostics-color']
         return flags
 
 class ClangFlags(GccBasicFlags):

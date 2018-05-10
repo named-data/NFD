@@ -62,11 +62,11 @@ def checkWebsocket(self, **kw):
         if isMandatory:
             self.end_msg(str(error), color='RED')
             Logs.warn('If you are using git NFD repository, checkout websocketpp submodule: ')
-            Logs.warn('    git submodule init && git submodule update')
+            Logs.warn('    git submodule update --init')
             Logs.warn('Otherwise, manually download and extract websocketpp library:')
             Logs.warn('    mkdir websocketpp')
             Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/archive/0.7.0.tar.gz > websocket.tar.gz')
-            Logs.warn('    tar zxf websocket.tar.gz -C websocketpp/ --strip 1')
+            Logs.warn('    tar xf websocket.tar.gz -C websocketpp/ --strip 1')
             Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
             self.fatal('The configuration failed')
         else:

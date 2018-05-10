@@ -40,7 +40,7 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 // boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
-// see http://www.boost.org/doc/libs/1_54_0/doc/html/thread/thread_local_storage.html
+// see https://www.boost.org/doc/libs/1_58_0/doc/html/thread/thread_local_storage.html
 #include <boost/thread.hpp>
 #include <boost/version.hpp>
 

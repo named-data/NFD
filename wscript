@@ -34,8 +34,8 @@ GIT_TAG_PREFIX = 'NFD-'
 
 def options(opt):
     opt.load(['compiler_cxx', 'gnu_dirs'])
-    opt.load(['default-compiler-flags', 'compiler-features', 'type_traits',
-              'coverage', 'pch', 'sanitizers', 'boost', 'boost-kqueue',
+    opt.load(['default-compiler-flags', 'compiler-features',
+              'coverage', 'pch', 'sanitizers', 'boost',
               'dependency-checker', 'unix-socket', 'websocket',
               'doxygen', 'sphinx_build'],
              tooldir=['.waf-tools'])
@@ -83,8 +83,8 @@ int main()
 
 def configure(conf):
     conf.load(['compiler_cxx', 'gnu_dirs',
-               'default-compiler-flags', 'compiler-features', 'type_traits',
-               'pch', 'boost', 'boost-kqueue', 'dependency-checker', 'websocket',
+               'default-compiler-flags', 'compiler-features',
+               'pch', 'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
     conf.find_program('bash', var='BASH')
@@ -116,32 +116,18 @@ def configure(conf):
         boost_libs += ' unit_test_framework'
 
     conf.check_boost(lib=boost_libs, mt=True)
-    if conf.env.BOOST_VERSION_NUMBER < 105400:
-        conf.fatal('Minimum required Boost version is 1.54.0\n'
+    if conf.env.BOOST_VERSION_NUMBER < 105800:
+        conf.fatal('Minimum required Boost version is 1.58.0\n'
                    'Please upgrade your distribution or manually install a newer version of Boost'
                    ' (https://redmine.named-data.net/projects/nfd/wiki/Boost_FAQ)')
-
-    if conf.env.CXX_NAME == 'clang' and conf.env.BOOST_VERSION_NUMBER < 105800:
-        conf.define('BOOST_ASIO_HAS_STD_ARRAY', 1) # Workaround for https://redmine.named-data.net/issues/3360#note-14
-        conf.define('BOOST_ASIO_HAS_STD_CHRONO', 1) # Solution documented at https://redmine.named-data.net/issues/3588#note-10
 
     conf.load('unix-socket')
     conf.checkWebsocket(mandatory=True)
 
     if not conf.options.without_libpcap:
-        conf.check_asio_pcap_support()
-        if conf.env.HAVE_ASIO_PCAP_SUPPORT:
-            conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
-                                 errmsg='not found, but required for Ethernet face support. '
-                                        'Specify --without-libpcap to disable Ethernet face support.')
-        else:
-            Logs.warn('Warning: Ethernet face is not supported on this platform with Boost libraries version 1.56. '
-                      'See https://redmine.named-data.net/issues/1877 for more details')
-    if conf.env.HAVE_LIBPCAP:
-        conf.check_cxx(msg='Checking if libpcap supports pcap_set_immediate_mode', mandatory=False,
-                       define_name='HAVE_PCAP_SET_IMMEDIATE_MODE', use='LIBPCAP',
-                       fragment='''#include <pcap/pcap.h>
-                                   int main() { pcap_t* p; pcap_set_immediate_mode(p, 1); }''')
+        conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
+                             errmsg='not found, but required for Ethernet face support. '
+                                    'Specify --without-libpcap to disable Ethernet face support.')
 
     conf.check_compiler_flags()
 
@@ -303,7 +289,7 @@ def version(ctx):
             else:
                 # no tags matched
                 Context.g_module.VERSION = '%s-commit-%s' % (VERSION_BASE, out)
-    except subprocess.CalledProcessError:
+    except (OSError, subprocess.CalledProcessError):
         pass
 
     versionFile = ctx.path.find_node('VERSION')

@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(Test1)
   int i = 0;
 
   // For reference of available Boost.Test macros, see
-  // http://www.boost.org/doc/libs/1_54_0/libs/test/doc/html/utf/testing-tools/reference.html
+  // https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/utf/testing-tools/reference.html
 
   BOOST_CHECK_EQUAL(i, 0);
   BOOST_CHECK_GT(++i, 0);

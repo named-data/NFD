@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,17 +31,14 @@
 #define NFD_TESTS_CHECK_TYPEID_HPP
 
 #include "boost-test.hpp"
+
+#include <boost/core/demangle.hpp>
 #include <typeinfo>
 
 /** \def NFD_TYPEID_NAME(x)
  *  \return type name of typeid(x) as std::string
  */
-#if BOOST_VERSION >= 105600
-#include <boost/core/demangle.hpp>
 #define NFD_TYPEID_NAME(x) (::boost::core::demangle(typeid(x).name()))
-#else
-#define NFD_TYPEID_NAME(x) (::std::string(typeid(x).name()))
-#endif
 
 /** (implementation detail)
  */

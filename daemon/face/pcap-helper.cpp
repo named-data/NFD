@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,14 +43,12 @@ PcapHelper::PcapHelper(const std::string& interfaceName)
   if (!m_pcap)
     BOOST_THROW_EXCEPTION(Error("pcap_create: " + std::string(errbuf)));
 
-#ifdef HAVE_PCAP_SET_IMMEDIATE_MODE
   // Enable "immediate mode", effectively disabling any read buffering in the kernel.
   // This corresponds to the BIOCIMMEDIATE ioctl on BSD-like systems (including macOS)
   // where libpcap uses a BPF device. On Linux this forces libpcap not to use TPACKET_V3,
   // even if the kernel supports it, thus preventing bug #1511.
   if (pcap_set_immediate_mode(m_pcap, 1) < 0)
     BOOST_THROW_EXCEPTION(Error("pcap_set_immediate_mode failed"));
-#endif
 }
 
 PcapHelper::~PcapHelper()
