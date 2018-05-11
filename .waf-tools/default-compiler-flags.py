@@ -39,7 +39,7 @@ def configure(conf):
 
     conf.areCustomCxxflagsPresent = (len(conf.env.CXXFLAGS) > 0)
 
-    # General flags are always applied (e.g., selecting C++11 mode)
+    # General flags are always applied (e.g., selecting C++ language standard)
     generalFlags = conf.flags.getGeneralFlags(conf)
     conf.add_supported_cxxflags(generalFlags['CXXFLAGS'])
     conf.add_supported_linkflags(generalFlags['LINKFLAGS'])
@@ -128,7 +128,7 @@ class GccBasicFlags(CompilerFlags):
     """
     def getGeneralFlags(self, conf):
         flags = super(GccBasicFlags, self).getGeneralFlags(conf)
-        flags['CXXFLAGS'] += ['-std=c++11']
+        flags['CXXFLAGS'] += ['-std=c++14']
         return flags
 
     def getDebugFlags(self, conf):

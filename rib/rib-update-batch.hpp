@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,15 +26,16 @@
 #ifndef NFD_RIB_RIB_UPDATE_BATCH_HPP
 #define NFD_RIB_RIB_UPDATE_BATCH_HPP
 
-#include "core/common.hpp"
 #include "rib-update.hpp"
+
+#include <list>
 
 namespace nfd {
 namespace rib {
 
 typedef std::list<RibUpdate> RibUpdateList;
 
-/** \brief represents a collection of RibUpdates to be applied to a single FaceId
+/** \brief Represents a collection of RibUpdates to be applied to a single FaceId.
  */
 class RibUpdateBatch
 {

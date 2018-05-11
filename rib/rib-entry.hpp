@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,12 +28,14 @@
 
 #include "route.hpp"
 
+#include <list>
+
 namespace nfd {
 namespace rib {
 
-/** \brief represents a RIB entry, which contains one or more Routes with the same prefix
+/** \brief Represents a RIB entry, which contains one or more Routes with the same prefix.
  */
-class RibEntry : public enable_shared_from_this<RibEntry>
+class RibEntry : public std::enable_shared_from_this<RibEntry>
 {
 public:
   typedef std::list<Route> RouteList;

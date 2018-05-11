@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,10 +27,8 @@
 #define NFD_DAEMON_FW_ACCESS_STRATEGY_HPP
 
 #include "strategy.hpp"
-#include "core/rtt-estimator.hpp"
 #include "retx-suppression-fixed.hpp"
-#include <unordered_set>
-#include <unordered_map>
+#include "core/rtt-estimator.hpp"
 
 namespace nfd {
 namespace fw {

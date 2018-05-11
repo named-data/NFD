@@ -29,6 +29,8 @@
 #include "cs-policy.hpp"
 #include "core/scheduler.hpp"
 
+#include <list>
+
 namespace nfd {
 namespace cs {
 namespace priority_fifo {

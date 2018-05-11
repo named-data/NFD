@@ -46,10 +46,10 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
-#include <list>
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -84,8 +84,7 @@ using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
 using std::make_shared;
-using ndn::make_unique;
-using std::enable_shared_from_this;
+using std::make_unique;
 
 using std::static_pointer_cast;
 using std::dynamic_pointer_cast;

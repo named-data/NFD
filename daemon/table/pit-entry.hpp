@@ -30,6 +30,8 @@
 #include "pit-out-record.hpp"
 #include "core/scheduler.hpp"
 
+#include <list>
+
 namespace nfd {
 
 namespace name_tree {

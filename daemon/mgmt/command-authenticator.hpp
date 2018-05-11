@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_MGMT_COMMAND_AUTHENTICATOR_HPP
 
 #include "core/config-file.hpp"
+
 #include <ndn-cxx/mgmt/dispatcher.hpp>
 
 namespace ndn {
@@ -39,9 +40,9 @@ class Validator;
 
 namespace nfd {
 
-/** \brief provides ControlCommand authorization according to NFD configuration file
+/** \brief Provides ControlCommand authorization according to NFD configuration file.
  */
-class CommandAuthenticator : public enable_shared_from_this<CommandAuthenticator>, noncopyable
+class CommandAuthenticator : public std::enable_shared_from_this<CommandAuthenticator>, noncopyable
 {
 public:
   static shared_ptr<CommandAuthenticator>

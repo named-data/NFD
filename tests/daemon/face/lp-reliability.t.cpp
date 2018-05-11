@@ -32,7 +32,6 @@
 #include "dummy-transport.hpp"
 
 #include <cstring>
-#include <unordered_set>
 
 namespace nfd {
 namespace face {
