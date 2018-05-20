@@ -29,8 +29,6 @@
 #include "factory-test-common.hpp"
 #include "tests/limited-io.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
-
 namespace nfd {
 namespace face {
 namespace tests {
@@ -41,7 +39,7 @@ protected:
   shared_ptr<TcpChannel>
   createChannel(const std::string& localIp, const std::string& localPort)
   {
-    tcp::Endpoint endpoint(ndn::ip::addressFromString(localIp),
+    tcp::Endpoint endpoint(boost::asio::ip::address::from_string(localIp),
                            boost::lexical_cast<uint16_t>(localPort));
     return factory.createChannel(endpoint);
   }

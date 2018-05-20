@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,6 @@
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
-#include <ndn-cxx/net/address-converter.hpp>
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
@@ -125,7 +124,7 @@ public:
   {
     if (hasAllowedSchema(uri)) {
       boost::system::error_code ec;
-      boost::asio::ip::address address = ndn::ip::addressFromString(uri.getHost(), ec);
+      auto address = boost::asio::ip::address::from_string(uri.getHost(), ec);
 
       if (!address.is_multicast()) {
         // register all-face prefixes

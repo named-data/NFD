@@ -29,7 +29,6 @@
 #include "factory-test-common.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
-#include <ndn-cxx/net/address-converter.hpp>
 
 namespace nfd {
 namespace face {
@@ -41,7 +40,7 @@ protected:
   shared_ptr<UdpChannel>
   createChannel(const std::string& localIp, uint16_t localPort)
   {
-    udp::Endpoint endpoint(ndn::ip::addressFromString(localIp), localPort);
+    udp::Endpoint endpoint(boost::asio::ip::address::from_string(localIp), localPort);
     return factory.createChannel(endpoint, 5_min);
   }
 };
@@ -74,8 +73,8 @@ protected:
   shared_ptr<Face>
   createMulticastFace(const std::string& localIp, const std::string& mcastIp, uint16_t mcastPort)
   {
-    auto localAddress = ndn::ip::addressFromString(localIp);
-    udp::Endpoint mcastEndpoint(ndn::ip::addressFromString(mcastIp), mcastPort);
+    auto localAddress = boost::asio::ip::address::from_string(localIp);
+    udp::Endpoint mcastEndpoint(boost::asio::ip::address::from_string(mcastIp), mcastPort);
 
     if (localAddress.is_v4()) {
       BOOST_ASSERT(!netifsV4.empty());
@@ -128,7 +127,7 @@ protected:
   static bool
   isFaceOnNetif(const Face& face, const NetworkInterface& netif)
   {
-    auto ip = ndn::ip::addressFromString(face.getLocalUri().getHost());
+    auto ip = boost::asio::ip::address::from_string(face.getLocalUri().getHost());
     return std::any_of(netif.getNetworkAddresses().begin(), netif.getNetworkAddresses().end(),
                        [ip] (const NetworkAddress& a) { return a.getIp() == ip; });
   }

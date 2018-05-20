@@ -28,8 +28,6 @@
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
-
 namespace nfd {
 namespace face {
 namespace tests {
@@ -40,7 +38,7 @@ protected:
   shared_ptr<WebSocketChannel>
   createChannel(const std::string& localIp, const std::string& localPort)
   {
-    websocket::Endpoint endpoint(ndn::ip::addressFromString(localIp),
+    websocket::Endpoint endpoint(boost::asio::ip::address::from_string(localIp),
                                  boost::lexical_cast<uint16_t>(localPort));
     return factory.createChannel(endpoint);
   }

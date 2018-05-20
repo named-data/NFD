@@ -28,7 +28,6 @@
 #include "multicast-udp-transport.hpp"
 #include "core/global-io.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -137,7 +136,7 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
       else if (key == "mcast_group_v6") {
         const std::string& valueStr = value.get_value<std::string>();
         boost::system::error_code ec;
-        mcastConfig.groupV6.address(ndn::ip::addressV6FromString(valueStr, ec));
+        mcastConfig.groupV6.address(ip::address_v6::from_string(valueStr, ec));
         if (ec) {
           BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
                                 valueStr + "' cannot be parsed as an IPv6 address"));
@@ -253,7 +252,7 @@ UdpFactory::createFace(const CreateFaceRequest& req,
     return;
   }
 
-  udp::Endpoint endpoint(ndn::ip::addressFromString(req.remoteUri.getHost()),
+  udp::Endpoint endpoint(ip::address::from_string(req.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   if (endpoint.address().is_multicast()) {

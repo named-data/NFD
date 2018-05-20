@@ -25,8 +25,6 @@
 
 #include "tcp-factory.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
-
 namespace nfd {
 namespace face {
 
@@ -169,7 +167,7 @@ TcpFactory::createFace(const CreateFaceRequest& req,
     return;
   }
 
-  tcp::Endpoint endpoint(ndn::ip::addressFromString(req.remoteUri.getHost()),
+  tcp::Endpoint endpoint(ip::address::from_string(req.remoteUri.getHost()),
                          boost::lexical_cast<uint16_t>(req.remoteUri.getPort()));
 
   // a canonical tcp4/tcp6 FaceUri cannot have a multicast address

@@ -25,7 +25,6 @@
 
 #include "network.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
 #include <boost/utility/value_init.hpp>
 #include <algorithm>
 #include <cctype>
@@ -93,8 +92,8 @@ operator>>(std::istream& is, Network& network)
   size_t position = networkStr.find('/');
   if (position == std::string::npos) {
     try {
-      network.m_minAddress = ndn::ip::addressFromString(networkStr);
-      network.m_maxAddress = ndn::ip::addressFromString(networkStr);
+      network.m_minAddress = ip::address::from_string(networkStr);
+      network.m_maxAddress = ip::address::from_string(networkStr);
     }
     catch (const boost::system::system_error&) {
       is.setstate(std::ios::failbit);
@@ -103,7 +102,7 @@ operator>>(std::istream& is, Network& network)
   }
   else {
     boost::system::error_code ec;
-    ip::address address = ndn::ip::addressFromString(networkStr.substr(0, position), ec);
+    auto address = ip::address::from_string(networkStr.substr(0, position), ec);
     if (ec) {
       is.setstate(std::ios::failbit);
       return is;

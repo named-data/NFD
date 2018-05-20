@@ -29,7 +29,6 @@
 #include "face/tcp-channel.hpp"
 #include "face/udp-channel.hpp"
 
-#include <ndn-cxx/net/address-converter.hpp>
 #include <fstream>
 #include <iostream>
 
@@ -125,7 +124,7 @@ private:
     }
 
     // create the right face
-    auto addr = ndn::ip::addressFromString(uriR.getHost());
+    auto addr = boost::asio::ip::address::from_string(uriR.getHost());
     auto port = boost::lexical_cast<uint16_t>(uriR.getPort());
     if (uriR.getScheme() == "tcp4") {
       m_tcpChannel.connect(tcp::Endpoint(addr, port), {},
