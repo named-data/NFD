@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,9 @@
  */
 
 #include "core/global-io.hpp"
+#include "core/scheduler.hpp"
 
+#include "tests/rib-io-fixture.hpp"
 #include "tests/test-common.hpp"
 
 #include <boost/thread.hpp>
@@ -47,6 +49,71 @@ BOOST_AUTO_TEST_CASE(ThreadLocalGlobalIoService)
   BOOST_CHECK(s1 != nullptr);
   BOOST_CHECK(s2 != nullptr);
   BOOST_CHECK(s1 != s2);
+}
+
+BOOST_FIXTURE_TEST_CASE(RibIoService, RibIoFixture)
+{
+  boost::asio::io_service* mainIo = &g_io;
+  boost::asio::io_service* ribIo = g_ribIo;
+
+  BOOST_CHECK(mainIo != ribIo);
+  BOOST_CHECK(&getGlobalIoService() == mainIo);
+  BOOST_CHECK(&getRibIoService() == ribIo);
+  auto mainThreadId = boost::this_thread::get_id();
+
+  runOnRibIoService([&] {
+    BOOST_CHECK(mainThreadId != boost::this_thread::get_id());
+    BOOST_CHECK(&getRibIoService() == ribIo);
+    BOOST_CHECK(&getGlobalIoService() == ribIo);
+  });
+}
+
+BOOST_FIXTURE_TEST_CASE(PollInAllThreads, RibIoFixture)
+{
+  bool hasRibRun = false;
+  runOnRibIoService([&] { hasRibRun = true; });
+  boost::this_thread::sleep_for(1_s);
+  BOOST_CHECK_EQUAL(hasRibRun, false);
+
+  poll();
+  BOOST_CHECK_EQUAL(hasRibRun, true);
+
+  hasRibRun = false;
+  bool hasMainRun = false;
+  g_io.post([&] {
+      hasMainRun = true;
+      runOnRibIoService([&] { hasRibRun = true; });
+    });
+  BOOST_CHECK_EQUAL(hasMainRun, false);
+  BOOST_CHECK_EQUAL(hasRibRun, false);
+
+  poll();
+  BOOST_CHECK_EQUAL(hasMainRun, true);
+  BOOST_CHECK_EQUAL(hasRibRun, true);
+}
+
+BOOST_FIXTURE_TEST_CASE(AdvanceClocks, RibIoTimeFixture)
+{
+  bool hasRibRun = false;
+  runOnRibIoService([&] { hasRibRun = true; });
+  boost::this_thread::sleep_for(1_s);
+  BOOST_CHECK_EQUAL(hasRibRun, false);
+
+  advanceClocks(1_ns, 1);
+  BOOST_CHECK_EQUAL(hasRibRun, true);
+
+  hasRibRun = false;
+  bool hasMainRun = false;
+  scheduler::schedule(250_ms, [&] {
+      hasMainRun = true;
+      runOnRibIoService([&] { hasRibRun = true; });
+    });
+  BOOST_CHECK_EQUAL(hasMainRun, false);
+  BOOST_CHECK_EQUAL(hasRibRun, false);
+
+  advanceClocks(260_ms, 2);
+  BOOST_CHECK_EQUAL(hasMainRun, true);
+  BOOST_CHECK_EQUAL(hasRibRun, true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

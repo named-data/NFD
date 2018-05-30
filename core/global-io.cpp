@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,8 +34,8 @@ void
 resetGlobalScheduler();
 } // namespace scheduler
 
-
 static boost::thread_specific_ptr<boost::asio::io_service> g_ioService;
+static boost::asio::io_service* g_ribIoService = nullptr;
 
 boost::asio::io_service&
 getGlobalIoService()
@@ -51,6 +51,25 @@ resetGlobalIoService()
 {
   scheduler::resetGlobalScheduler();
   g_ioService.reset();
+}
+
+void
+setRibIoService(boost::asio::io_service* ribIo)
+{
+  g_ribIoService = ribIo;
+}
+
+boost::asio::io_service&
+getRibIoService()
+{
+  BOOST_ASSERT(g_ribIoService != nullptr);
+  return *g_ribIoService;
+}
+
+void
+runOnRibIoService(const std::function<void()>& f)
+{
+  getRibIoService().post(f);
 }
 
 } // namespace nfd

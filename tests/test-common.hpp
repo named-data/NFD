@@ -58,6 +58,7 @@ class BaseFixture
 protected:
   BaseFixture();
 
+  virtual
   ~BaseFixture();
 
 protected:
@@ -73,6 +74,7 @@ class UnitTestTimeFixture : public virtual BaseFixture
 protected:
   UnitTestTimeFixture();
 
+  virtual
   ~UnitTestTimeFixture();
 
   /** \brief advance steady and system clocks
@@ -83,8 +85,8 @@ protected:
    *  Exceptions thrown during I/O events are propagated to the caller.
    *  Clock advancing would stop in case of an exception.
    */
-  void
-  advanceClocks(const time::nanoseconds& tick, size_t nTicks = 1);
+  virtual void
+  advanceClocks(time::nanoseconds tick, size_t nTicks = 1);
 
   /** \brief advance steady and system clocks
    *
@@ -95,8 +97,8 @@ protected:
    *  Exceptions thrown during I/O events are propagated to the caller.
    *  Clock advancing would stop in case of an exception.
    */
-  void
-  advanceClocks(const time::nanoseconds& tick, const time::nanoseconds& total);
+  virtual void
+  advanceClocks(time::nanoseconds tick, time::nanoseconds total);
 
 protected:
   shared_ptr<time::UnitTestSteadyClock> steadyClock;

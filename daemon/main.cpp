@@ -120,6 +120,7 @@ public:
           std::lock_guard<std::mutex> lock(m);
           ribIo = &getGlobalIoService();
           BOOST_ASSERT(ribIo != mainIo);
+          setRibIoService(ribIo);
         }
         cv.notify_all(); // notify that ribIo has been assigned
 

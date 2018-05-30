@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,13 +52,13 @@ UnitTestTimeFixture::~UnitTestTimeFixture()
 }
 
 void
-UnitTestTimeFixture::advanceClocks(const time::nanoseconds& tick, size_t nTicks)
+UnitTestTimeFixture::advanceClocks(time::nanoseconds tick, size_t nTicks)
 {
-  this->advanceClocks(tick, tick * nTicks);
+  advanceClocks(tick, tick * nTicks);
 }
 
 void
-UnitTestTimeFixture::advanceClocks(const time::nanoseconds& tick, const time::nanoseconds& total)
+UnitTestTimeFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
 {
   BOOST_ASSERT(tick > time::nanoseconds::zero());
   BOOST_ASSERT(total >= time::nanoseconds::zero());

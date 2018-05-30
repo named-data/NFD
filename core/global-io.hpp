@@ -1,11 +1,11 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014  Regents of the University of California,
- *                     Arizona Board of Regents,
- *                     Colorado State University,
- *                     University Pierre & Marie Curie, Sorbonne University,
- *                     Washington University in St. Louis,
- *                     Beijing Institute of Technology
+/*
+ * Copyright (c) 2014-2018  Regents of the University of California,
+ *                          Arizona Board of Regents,
+ *                          Colorado State University,
+ *                          University Pierre & Marie Curie, Sorbonne University,
+ *                          Washington University in St. Louis,
+ *                          Beijing Institute of Technology
  *
  * This file is part of NFD (Named Data Networking Forwarding Daemon).
  * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -34,7 +34,18 @@ namespace nfd {
 boost::asio::io_service&
 getGlobalIoService();
 
+void
+setRibIoService(boost::asio::io_service* ribIo);
+
+/** \brief run a function on the RIB io_service instance
+ */
+void
+runOnRibIoService(const std::function<void()>& f);
+
 #ifdef WITH_TESTS
+boost::asio::io_service&
+getRibIoService();
+
 /** \brief delete the global io_service instance
  *
  *  It will be recreated at the next invocation of getGlobalIoService.
