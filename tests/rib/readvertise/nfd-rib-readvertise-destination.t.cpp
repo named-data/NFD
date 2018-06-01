@@ -46,9 +46,9 @@ public:
     , face(g_io, m_keyChain, {true, false})
     , scheduler(g_io)
     , controller(face, m_keyChain)
-    , dest(controller, Name("/localhost/nlsr"), rib)
+    , dest(controller, rib, ndn::nfd::CommandOptions().setPrefix("/localhost/nlsr"))
     , successCallback([this] { nSuccessCallbacks++; })
-    , failureCallback([this] (const std::string&) { nFailureCallbacks++; })
+    , failureCallback([this] (const std::string& str) { nFailureCallbacks++; })
   {
   }
 

@@ -40,7 +40,6 @@
 namespace nfd {
 namespace rib {
 
-class AutoPrefixPropagator;
 class Readvertise;
 
 /**
@@ -116,8 +115,8 @@ private:
 
   Rib m_rib;
   FibUpdater m_fibUpdater;
-  unique_ptr<AutoPrefixPropagator> m_prefixPropagator;
   unique_ptr<Readvertise> m_readvertiseNlsr;
+  unique_ptr<Readvertise> m_readvertisePropagation;
   ndn::mgmt::Dispatcher m_dispatcher;
   RibManager m_ribManager;
 };

@@ -26,7 +26,6 @@
 #ifndef NFD_RIB_RIB_MANAGER_HPP
 #define NFD_RIB_RIB_MANAGER_HPP
 
-#include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
 #include "rib.hpp"
 
@@ -239,6 +238,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
   void
   onNotification(const ndn::nfd::FaceEventNotification& notification);
+
+public:
+  static const Name LOCALHOP_TOP_PREFIX;
 
 private:
   Rib& m_rib;

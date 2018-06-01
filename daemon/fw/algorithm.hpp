@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #ifndef NFD_DAEMON_FW_PIT_ALGORITHM_HPP
 #define NFD_DAEMON_FW_PIT_ALGORITHM_HPP
 
+#include "core/scope-prefix.hpp"
 #include "table/pit-entry.hpp"
 
 /** \file
@@ -33,38 +34,6 @@
  */
 
 namespace nfd {
-
-/** \brief contain name prefixes that affect namespace-based scope control
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
- */
-namespace scope_prefix {
-
-/** \brief ndn:/localhost
- *
- *  The localhost scope limits propagation to the applications on the originating host.
- *
- *  Interest and Data packets under prefix ndn:/localhost are restricted by these rules:
- *  \li Interest can come from and go to local faces only.
- *  \li Data can come from and go to local faces only.
- */
-extern const Name LOCALHOST;
-
-/** \brief ndn:/localhop
- *
- *  The localhop scope limits propagation to no further than the next node.
- *
- *  Interest packets under prefix ndn:/localhop are restricted by these rules:
- *  \li If an Interest is received from a local face, it can be forwarded to a non-local face.
- *  \li If an Interest is received from a non-local face, it cannot be forwarded to a non-local face.
- *  \li In either case the Interest can be forwarded to a local face.
- *  \li PIT entry can be satisfied by Data from any source.
- *
- *  Data packets under prefix ndn:/localhop are unrestricted.
- */
-extern const Name LOCALHOP;
-
-} // namespace scope_prefix
-
 namespace fw {
 
 /** \brief determine whether forwarding the Interest in \p pitEntry to \p outFace would violate scope
