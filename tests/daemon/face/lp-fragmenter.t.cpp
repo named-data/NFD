@@ -24,6 +24,7 @@
  */
 
 #include "face/lp-fragmenter.hpp"
+#include "face/transport.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -74,7 +75,7 @@ BOOST_AUTO_TEST_CASE(FragmentSingleFragment)
 
 BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
 {
-  size_t mtu = 90;
+  size_t mtu = Transport::MIN_MTU;
 
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);
@@ -89,14 +90,14 @@ BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
   std::tie(isOk, frags) = fragmenter.fragmentPacket(packet, mtu);
 
   BOOST_REQUIRE(isOk);
-  BOOST_REQUIRE_EQUAL(frags.size(), 2);
+  BOOST_REQUIRE_EQUAL(frags.size(), 5);
 
   ndn::Buffer reassembledPayload(63);
 
   BOOST_CHECK(frags[0].has<lp::FragmentField>());
   BOOST_CHECK_EQUAL(frags[0].get<lp::IncomingFaceIdField>(), 123);
   BOOST_CHECK_EQUAL(frags[0].get<lp::FragIndexField>(), 0);
-  BOOST_CHECK_EQUAL(frags[0].get<lp::FragCountField>(), 2);
+  BOOST_CHECK_EQUAL(frags[0].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[0].wireEncode().size(), mtu);
   ndn::Buffer::const_iterator frag0Begin, frag0End;
   std::tie(frag0Begin, frag0End) = frags[0].get<lp::FragmentField>();
@@ -106,13 +107,46 @@ BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
   BOOST_CHECK(frags[1].has<lp::FragmentField>());
   BOOST_CHECK(!frags[1].has<lp::IncomingFaceIdField>());
   BOOST_CHECK_EQUAL(frags[1].get<lp::FragIndexField>(), 1);
-  BOOST_CHECK_EQUAL(frags[1].get<lp::FragCountField>(), 2);
+  BOOST_CHECK_EQUAL(frags[1].get<lp::FragCountField>(), 5);
   BOOST_CHECK_LE(frags[1].wireEncode().size(), mtu);
   ndn::Buffer::const_iterator frag1Begin, frag1End;
   std::tie(frag1Begin, frag1End) = frags[1].get<lp::FragmentField>();
   BOOST_REQUIRE_LE(std::distance(frag1Begin, frag1End),
                    std::distance(reassembledPos, reassembledPayload.end()));
-  std::copy(frag1Begin, frag1End, reassembledPos);
+  reassembledPos = std::copy(frag1Begin, frag1End, reassembledPos);
+
+  BOOST_CHECK(frags[2].has<lp::FragmentField>());
+  BOOST_CHECK(!frags[2].has<lp::IncomingFaceIdField>());
+  BOOST_CHECK_EQUAL(frags[2].get<lp::FragIndexField>(), 2);
+  BOOST_CHECK_EQUAL(frags[2].get<lp::FragCountField>(), 5);
+  BOOST_CHECK_LE(frags[2].wireEncode().size(), mtu);
+  ndn::Buffer::const_iterator frag2Begin, frag2End;
+  std::tie(frag2Begin, frag2End) = frags[2].get<lp::FragmentField>();
+  BOOST_REQUIRE_LE(std::distance(frag2Begin, frag2End),
+                   std::distance(reassembledPos, reassembledPayload.end()));
+  reassembledPos = std::copy(frag2Begin, frag2End, reassembledPos);
+
+  BOOST_CHECK(frags[3].has<lp::FragmentField>());
+  BOOST_CHECK(!frags[3].has<lp::IncomingFaceIdField>());
+  BOOST_CHECK_EQUAL(frags[3].get<lp::FragIndexField>(), 3);
+  BOOST_CHECK_EQUAL(frags[3].get<lp::FragCountField>(), 5);
+  BOOST_CHECK_LE(frags[3].wireEncode().size(), mtu);
+  ndn::Buffer::const_iterator frag3Begin, frag3End;
+  std::tie(frag3Begin, frag3End) = frags[3].get<lp::FragmentField>();
+  BOOST_REQUIRE_LE(std::distance(frag3Begin, frag3End),
+                   std::distance(reassembledPos, reassembledPayload.end()));
+  reassembledPos = std::copy(frag3Begin, frag3End, reassembledPos);
+
+  BOOST_CHECK(frags[4].has<lp::FragmentField>());
+  BOOST_CHECK(!frags[4].has<lp::IncomingFaceIdField>());
+  BOOST_CHECK_EQUAL(frags[4].get<lp::FragIndexField>(), 4);
+  BOOST_CHECK_EQUAL(frags[4].get<lp::FragCountField>(), 5);
+  BOOST_CHECK_LE(frags[4].wireEncode().size(), mtu);
+  ndn::Buffer::const_iterator frag4Begin, frag4End;
+  std::tie(frag4Begin, frag4End) = frags[4].get<lp::FragmentField>();
+  BOOST_REQUIRE_LE(std::distance(frag4Begin, frag4End),
+                   std::distance(reassembledPos, reassembledPayload.end()));
+  std::copy(frag4Begin, frag4End, reassembledPos);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(data->wireEncode().begin(), data->wireEncode().end(),
                                 reassembledPayload.begin(), reassembledPayload.end());
@@ -121,6 +155,7 @@ BOOST_AUTO_TEST_CASE(FragmentMultipleFragments)
 BOOST_AUTO_TEST_CASE(FragmentMtuTooSmall)
 {
   size_t mtu = 20;
+  BOOST_ASSERT(mtu < Transport::MIN_MTU);
 
   lp::Packet packet;
   packet.add<lp::IncomingFaceIdField>(123);

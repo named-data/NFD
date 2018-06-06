@@ -179,6 +179,12 @@ TcpFactory::createFace(const CreateFaceRequest& req,
     return;
   }
 
+  if (req.params.mtu) {
+    NFD_LOG_TRACE("createFace cannot create a TCP face with an overridden MTU");
+    onFailure(406, "TCP faces do not support MTU overrides");
+    return;
+  }
+
   // very simple logic for now
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||

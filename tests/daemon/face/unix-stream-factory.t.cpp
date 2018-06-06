@@ -126,19 +126,19 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 
   createFace(factory,
              FaceUri("unix:///var/run/nfd.sock"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406, "Unsupported protocol"});
 }
 

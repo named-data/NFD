@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE(ConfigureLocal)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""},
              [] (const nfd::Face& face) {
                BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_LOCAL);
@@ -211,7 +211,7 @@ BOOST_AUTO_TEST_CASE(ConfigureNonLocal)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""},
              [] (const nfd::Face& face) {
                BOOST_CHECK_EQUAL(face.getScope(), ndn::nfd::FACE_SCOPE_NON_LOCAL);
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   createChannel("127.0.0.1", "20071");
@@ -370,31 +370,31 @@ BOOST_AUTO_TEST_CASE(CreateFace)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERMANENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20073"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, true, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, true, false},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20073"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, true},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, true},
              {CreateFaceExpectedResult::SUCCESS, 0, ""});
 }
 
@@ -405,23 +405,30 @@ BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
              FaceUri("tcp4://127.0.0.1:20071"),
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Unicast TCP faces cannot be created with a LocalUri"});
 
   createFace(factory,
              FaceUri("tcp4://127.0.0.1:20072"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, false, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_ON_DEMAND, {}, {}, {}, false, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Outgoing TCP faces do not support on-demand persistency"});
 
   createFace(factory,
              FaceUri("tcp4://198.51.100.100:6363"),
              {},
-             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, true, false, false},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, {}, true, false, false},
              {CreateFaceExpectedResult::FAILURE, 406,
               "Local fields can only be enabled on faces with local scope"});
+
+  createFace(factory,
+             FaceUri("tcp4://127.0.0.1:20072"),
+             {},
+             {ndn::nfd::FACE_PERSISTENCY_PERSISTENT, {}, {}, 1000, false, false, false},
+             {CreateFaceExpectedResult::FAILURE, 406,
+              "TCP faces do not support MTU overrides"});
 }
 
 class CreateFaceTimeoutFixture : public TcpFactoryFixture

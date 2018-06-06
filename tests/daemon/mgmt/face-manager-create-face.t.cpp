@@ -23,6 +23,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+#define BOOST_MPL_LIMIT_VECTOR_SIZE 40
+
 #include "mgmt/face-manager.hpp"
 #include "face/generic-link-service.hpp"
 #include "face-manager-command-fixture.hpp"
@@ -242,6 +245,32 @@ public:
   }
 };
 
+class TcpFaceMtuOverride
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("tcp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setMtu(1000);
+  }
+};
+
+class UdpFaceMtuOverride
+{
+public:
+  static ControlParameters
+  getParameters()
+  {
+    return ControlParameters()
+      .setUri("udp4://127.0.0.1:26363")
+      .setFacePersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
+      .setMtu(1000);
+  }
+};
+
 class FaceUriMalformed
 {
 public:
@@ -295,6 +324,8 @@ using TestCases = mpl::vector<
                     mpl::pair<UdpFaceLpReliabilityDisabled, CommandSuccess>,
                     mpl::pair<TcpFaceCongestionMarkingEnabled, CommandSuccess>,
                     mpl::pair<TcpFaceCongestionMarkingDisabled, CommandSuccess>,
+                    mpl::pair<TcpFaceMtuOverride, CommandFailure<406>>,
+                    mpl::pair<UdpFaceMtuOverride, CommandSuccess>,
                     mpl::pair<FaceUriMalformed, CommandFailure<400>>,
                     mpl::pair<FaceUriNonCanonical, CommandFailure<400>>,
                     mpl::pair<FaceUriUnsupportedScheme, CommandFailure<406>>>;
@@ -360,6 +391,10 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(NewFace, T, TestCases, FaceManagerCommandFixtur
         }
         else {
           BOOST_CHECK_EQUAL(actualParams.getDefaultCongestionThreshold(), 65536);
+        }
+
+        if (expectedParams.hasMtu()) {
+          BOOST_CHECK_EQUAL(expectedParams.getMtu(), actualParams.getMtu());
         }
       }
       else {

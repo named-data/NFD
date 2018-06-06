@@ -160,6 +160,8 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
   socket.connect(remoteEndpoint);
 
   GenericLinkService::Options options;
+  options.allowFragmentation = true;
+  options.allowReassembly = true;
   options.reliabilityOptions.isEnabled = params.wantLpReliability;
 
   if (boost::logic::indeterminate(params.wantCongestionMarking)) {
@@ -178,7 +180,8 @@ UdpChannel::createFace(const udp::Endpoint& remoteEndpoint,
   }
 
   auto linkService = make_unique<GenericLinkService>(options);
-  auto transport = make_unique<UnicastUdpTransport>(std::move(socket), params.persistency, m_idleFaceTimeout);
+  auto transport = make_unique<UnicastUdpTransport>(std::move(socket), params.persistency,
+                                                    m_idleFaceTimeout, params.mtu);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;

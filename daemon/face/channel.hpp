@@ -89,6 +89,7 @@ struct FaceParams
   ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   optional<time::nanoseconds> baseCongestionMarkingInterval;
   optional<uint64_t> defaultCongestionThreshold;
+  optional<ssize_t> mtu;
   bool wantLocalFields = false;
   bool wantLpReliability = false;
   boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;

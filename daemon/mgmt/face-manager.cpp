@@ -122,6 +122,9 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   if (parameters.hasDefaultCongestionThreshold()) {
     faceParams.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
   }
+  if (parameters.hasMtu()) {
+    faceParams.mtu = parameters.getMtu();
+  }
   faceParams.wantLocalFields = parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
                                parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
   faceParams.wantLpReliability = parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED) &&
@@ -243,6 +246,7 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
 
   // Set ControlResponse fields
   response = collectFaceProperties(*face, false);
+  response.unsetMtu(); // This parameter is only included with the response to faces/create and FaceStatus
 
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
@@ -294,6 +298,9 @@ FaceManager::collectFaceProperties(const Face& face, bool wantUris)
   BOOST_ASSERT(linkService != nullptr);
   auto options = linkService->getOptions();
 
+  auto transport = face.getTransport();
+  BOOST_ASSERT(transport != nullptr);
+
   ControlParameters params;
   params.setFaceId(face.getId())
         .setFacePersistency(face.getPersistency())
@@ -302,6 +309,14 @@ FaceManager::collectFaceProperties(const Face& face, bool wantUris)
         .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false)
         .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false)
         .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, options.allowCongestionMarking, false);
+
+  if (transport->getMtu() > 0) {
+    params.setMtu(std::min<uint64_t>(transport->getMtu(), ndn::MAX_NDN_PACKET_SIZE));
+  }
+  else if (transport->getMtu() == face::MTU_UNLIMITED) {
+    params.setMtu(ndn::MAX_NDN_PACKET_SIZE);
+  }
+
   if (wantUris) {
     params.setUri(face.getRemoteUri().toString())
           .setLocalUri(face.getLocalUri().toString());

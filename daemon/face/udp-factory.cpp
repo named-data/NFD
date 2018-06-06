@@ -270,6 +270,13 @@ UdpFactory::createFace(const CreateFaceRequest& req,
     return;
   }
 
+  if (req.params.mtu && *req.params.mtu < Transport::MIN_MTU) {
+    // The specified MTU must be greater than the minimum possible
+    NFD_LOG_TRACE("createFace cannot create a face with MTU less than " << Transport::MIN_MTU);
+    onFailure(406, "MTU cannot be less than " + to_string(Transport::MIN_MTU));
+    return;
+  }
+
   // very simple logic for now
   for (const auto& i : m_channels) {
     if ((i.first.address().is_v4() && endpoint.address().is_v4()) ||

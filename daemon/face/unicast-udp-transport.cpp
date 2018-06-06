@@ -40,7 +40,8 @@ NFD_LOG_MEMBER_INIT_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Unicast
 
 UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
                                          ndn::nfd::FacePersistency persistency,
-                                         time::nanoseconds idleTimeout)
+                                         time::nanoseconds idleTimeout,
+                                         optional<ssize_t> overrideMtu)
   : DatagramTransport(std::move(socket))
   , m_idleTimeout(idleTimeout)
 {
@@ -49,7 +50,14 @@ UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  this->setMtu(udp::computeMtu(m_socket.local_endpoint()));
+
+  if (overrideMtu) {
+    this->setMtu(std::min(udp::computeMtu(m_socket.local_endpoint()), *overrideMtu));
+  }
+  else {
+    this->setMtu(udp::computeMtu(m_socket.local_endpoint()));
+  }
+  BOOST_ASSERT(this->getMtu() >= MIN_MTU);
 
   NFD_LOG_FACE_INFO("Creating transport");
 

@@ -795,17 +795,17 @@ BOOST_AUTO_TEST_CASE(PiggybackAcksMtu)
 
 BOOST_AUTO_TEST_CASE(PiggybackAcksMtuNoSpace)
 {
-  // MTU is 250, payload has 230 octets plus 4 octets for LpPacket and Fragment TL and 10 octets for
+  // MTU is 64, payload has 44 octets plus 4 octets for LpPacket and Fragment TL and 10 octets for
   // TxSequence, leaving 6 octets for piggybacking. Each Ack header is 12 octets, so there's no room
   // to piggyback any Ack in LpPacket.
 
-  transport->setMtu(250);
+  transport->setMtu(Transport::MIN_MTU);
 
   for (lp::Sequence i = 1000; i < 1100; i++) {
     reliability->m_ackQueue.push(i);
   }
 
-  lp::Packet pkt = makeFrag(1, 230);
+  lp::Packet pkt = makeFrag(1, 44);
   linkService->sendLpPackets({pkt});
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);

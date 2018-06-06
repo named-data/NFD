@@ -126,12 +126,6 @@ Transport::receive(Packet&& packet)
   m_service->receivePacket(std::move(packet));
 }
 
-ssize_t
-Transport::getSendQueueLength()
-{
-  return QUEUE_UNSUPPORTED;
-}
-
 bool
 Transport::canChangePersistencyTo(ndn::nfd::FacePersistency newPersistency) const
 {

@@ -202,13 +202,6 @@ public: // upper interface
   void
   send(Packet&& packet);
 
-protected: // upper interface to be invoked by subclass
-  /** \brief receive a link-layer packet
-   *  \warning undefined behavior if packet size exceeds MTU limit
-   */
-  void
-  receive(Packet&& packet);
-
 public: // static properties
   /** \return a FaceUri representing local endpoint
    */
@@ -291,7 +284,17 @@ public: // dynamic properties
    *  \retval QUEUE_ERROR transport was unable to retrieve the queue length
    */
   virtual ssize_t
-  getSendQueueLength();
+  getSendQueueLength()
+  {
+    return QUEUE_UNSUPPORTED;
+  }
+
+protected: // upper interface to be invoked by subclass
+  /** \brief receive a link-layer packet
+   *  \warning undefined behavior if packet size exceeds MTU limit
+   */
+  void
+  receive(Packet&& packet);
 
 protected: // properties to be set by subclass
   void
@@ -362,6 +365,13 @@ private: // to be overridden by subclass
    */
   virtual void
   doSend(Packet&& packet) = 0;
+
+public:
+  /** \brief minimum MTU that may be set on a transport
+   *
+   *  This is done to ensure the NDNLPv2 fragmentation feature functions properly.
+   */
+  static constexpr ssize_t MIN_MTU = 64;
 
 private:
   Face* m_face;

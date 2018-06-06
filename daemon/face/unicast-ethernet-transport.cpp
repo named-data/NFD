@@ -35,7 +35,8 @@ NFD_LOG_INIT(UnicastEthernetTransport);
 UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterface& localEndpoint,
                                                    const ethernet::Address& remoteEndpoint,
                                                    ndn::nfd::FacePersistency persistency,
-                                                   time::nanoseconds idleTimeout)
+                                                   time::nanoseconds idleTimeout,
+                                                   optional<ssize_t> overrideMtu)
   : EthernetTransport(localEndpoint, remoteEndpoint)
   , m_idleTimeout(idleTimeout)
 {
@@ -44,7 +45,13 @@ UnicastEthernetTransport::UnicastEthernetTransport(const ndn::net::NetworkInterf
   this->setScope(ndn::nfd::FACE_SCOPE_NON_LOCAL);
   this->setPersistency(persistency);
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
-  this->setMtu(localEndpoint.getMtu());
+
+  if (overrideMtu) {
+    this->setMtu(std::min<ssize_t>(localEndpoint.getMtu(), *overrideMtu));
+  }
+  else {
+    this->setMtu(localEndpoint.getMtu());
+  }
 
   NFD_LOG_FACE_INFO("Creating transport");
 

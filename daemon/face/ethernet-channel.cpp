@@ -203,7 +203,8 @@ EthernetChannel::createFace(const ethernet::Address& remoteEndpoint,
 
   auto linkService = make_unique<GenericLinkService>(options);
   auto transport = make_unique<UnicastEthernetTransport>(*m_localEndpoint, remoteEndpoint,
-                                                         params.persistency, m_idleFaceTimeout);
+                                                         params.persistency, m_idleFaceTimeout,
+                                                         params.mtu);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   m_channelFaces[remoteEndpoint] = face;

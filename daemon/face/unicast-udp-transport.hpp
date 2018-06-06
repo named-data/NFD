@@ -42,7 +42,8 @@ class UnicastUdpTransport final : public DatagramTransport<boost::asio::ip::udp,
 public:
   UnicastUdpTransport(protocol::socket&& socket,
                       ndn::nfd::FacePersistency persistency,
-                      time::nanoseconds idleTimeout);
+                      time::nanoseconds idleTimeout,
+                      optional<ssize_t> overrideMtu = {});
 
 protected:
   bool
