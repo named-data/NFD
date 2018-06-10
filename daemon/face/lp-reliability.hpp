@@ -57,7 +57,7 @@ public:
 
     /** \brief period between sending pending Acks in an IDLE packet
      */
-    time::nanoseconds idleAckTimerPeriod = time::milliseconds(5);
+    time::nanoseconds idleAckTimerPeriod = 5_ms;
 
     /** \brief a fragment is considered lost if this number of fragments with greater sequence
      *         numbers are acknowledged

@@ -56,12 +56,10 @@ RibEntry::insertRoute(const Route& route)
     }
 
     m_routes.push_back(route);
+    return {std::prev(m_routes.end()), true};
+  }
 
-    return std::make_pair(std::prev(m_routes.end()), true);
-  }
-  else {
-    return std::make_pair(it, false);
-  }
+  return {it, false};
 }
 
 void
@@ -96,16 +94,16 @@ RibEntry::getNRoutes() const
 void
 RibEntry::addChild(shared_ptr<RibEntry> child)
 {
-  BOOST_ASSERT(!static_cast<bool>(child->getParent()));
+  BOOST_ASSERT(!child->getParent());
   child->setParent(this->shared_from_this());
-  m_children.push_back(child);
+  m_children.push_back(std::move(child));
 }
 
 void
 RibEntry::removeChild(shared_ptr<RibEntry> child)
 {
   BOOST_ASSERT(child->getParent().get() == this);
-  child->setParent(shared_ptr<RibEntry>());
+  child->setParent(nullptr);
   m_children.remove(child);
 }
 
@@ -136,9 +134,7 @@ RibEntry::addInheritedRoute(const Route& route)
 void
 RibEntry::removeInheritedRoute(const Route& route)
 {
-  RouteList::iterator it = std::find_if(m_inheritedRoutes.begin(), m_inheritedRoutes.end(),
-                                        bind(&compareFaceId, _1, route.faceId));
-  m_inheritedRoutes.erase(it);
+  m_inheritedRoutes.remove_if(bind(&compareFaceId, _1, route.faceId));
 }
 
 RibEntry::RouteList::const_iterator
@@ -151,9 +147,7 @@ RibEntry::findInheritedRoute(const Route& route) const
 bool
 RibEntry::hasInheritedRoute(const Route& route) const
 {
-  RouteList::const_iterator it = findInheritedRoute(route);
-
-  return (it != m_inheritedRoutes.end());
+  return findInheritedRoute(route) != m_inheritedRoutes.end();
 }
 
 bool

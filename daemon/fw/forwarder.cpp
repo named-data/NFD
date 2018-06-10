@@ -132,8 +132,8 @@ Forwarder::onIncomingInterest(Face& inFace, const Interest& interest)
   // is pending?
   if (!pitEntry->hasInRecords()) {
     m_cs.find(interest,
-              bind(&Forwarder::onContentStoreHit, this, ref(inFace), pitEntry, _1, _2),
-              bind(&Forwarder::onContentStoreMiss, this, ref(inFace), pitEntry, _1));
+              bind(&Forwarder::onContentStoreHit, this, std::ref(inFace), pitEntry, _1, _2),
+              bind(&Forwarder::onContentStoreMiss, this, std::ref(inFace), pitEntry, _1));
   }
   else {
     this->onContentStoreMiss(inFace, pitEntry, interest);
@@ -511,15 +511,7 @@ Forwarder::setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::millisec
 
   scheduler::cancel(pitEntry->expiryTimer);
 
-  pitEntry->expiryTimer = scheduler::schedule(duration,
-    bind(&Forwarder::onInterestFinalize, this, pitEntry));
-}
-
-static inline void
-insertNonceToDnl(DeadNonceList& dnl, const pit::Entry& pitEntry,
-                 const pit::OutRecord& outRecord)
-{
-  dnl.add(pitEntry.getName(), outRecord.getLastNonce());
+  pitEntry->expiryTimer = scheduler::schedule(duration, [=] { onInterestFinalize(pitEntry); });
 }
 
 void
@@ -540,13 +532,14 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, Face* upstream)
   // Dead Nonce List insert
   if (upstream == nullptr) {
     // insert all outgoing Nonces
-    const pit::OutRecordCollection& outRecords = pitEntry.getOutRecords();
-    std::for_each(outRecords.begin(), outRecords.end(),
-                  bind(&insertNonceToDnl, ref(m_deadNonceList), cref(pitEntry), _1));
+    const auto& outRecords = pitEntry.getOutRecords();
+    std::for_each(outRecords.begin(), outRecords.end(), [&] (const auto& outRecord) {
+      m_deadNonceList.add(pitEntry.getName(), outRecord.getLastNonce());
+    });
   }
   else {
     // insert outgoing Nonce of a specific face
-    pit::OutRecordCollection::iterator outRecord = pitEntry.getOutRecord(*upstream);
+    auto outRecord = pitEntry.getOutRecord(*upstream);
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }

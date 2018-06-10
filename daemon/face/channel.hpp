@@ -84,25 +84,14 @@ private:
  *  Parameters are passed as a struct rather than individually, so that a future change in the list
  *  of parameters does not require an update to the method signature in all subclasses.
  */
-class FaceParams
+struct FaceParams
 {
-public:
-  // get rid of this constructor and use aggregate init + NSDMIs when we switch to C++14
-  FaceParams() noexcept
-    : persistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT)
-    , wantLocalFields(false)
-    , wantLpReliability(false)
-    , wantCongestionMarking(boost::logic::indeterminate)
-  {
-  }
-
-public:
-  ndn::nfd::FacePersistency persistency;
+  ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT;
   optional<time::nanoseconds> baseCongestionMarkingInterval;
   optional<uint64_t> defaultCongestionThreshold;
-  bool wantLocalFields;
-  bool wantLpReliability;
-  boost::logic::tribool wantCongestionMarking;
+  bool wantLocalFields = false;
+  bool wantLpReliability = false;
+  boost::logic::tribool wantCongestionMarking = boost::logic::indeterminate;
 };
 
 /** \brief invokes a callback when the face is closed

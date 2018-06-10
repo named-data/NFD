@@ -31,8 +31,8 @@ namespace nfd {
 
 NFD_LOG_INIT(DeadNonceList);
 
-const time::nanoseconds DeadNonceList::DEFAULT_LIFETIME = time::seconds(6);
-const time::nanoseconds DeadNonceList::MIN_LIFETIME = time::milliseconds(1);
+const time::nanoseconds DeadNonceList::DEFAULT_LIFETIME = 6_s;
+const time::nanoseconds DeadNonceList::MIN_LIFETIME = 1_ms;
 const size_t DeadNonceList::INITIAL_CAPACITY = (1 << 7);
 const size_t DeadNonceList::MIN_CAPACITY = (1 << 3);
 const size_t DeadNonceList::MAX_CAPACITY = (1 << 24);
@@ -58,9 +58,8 @@ DeadNonceList::DeadNonceList(const time::nanoseconds& lifetime)
     m_queue.push_back(MARK);
   }
 
-  m_markEvent = scheduler::schedule(m_markInterval, bind(&DeadNonceList::mark, this));
-  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval,
-                                              bind(&DeadNonceList::adjustCapacity, this));
+  m_markEvent = scheduler::schedule(m_markInterval, [this] { mark(); });
+  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
 }
 
 DeadNonceList::~DeadNonceList()
@@ -125,15 +124,13 @@ DeadNonceList::mark()
 
   NFD_LOG_TRACE("mark nMarks=" << nMarks);
 
-  scheduler::schedule(m_markInterval, bind(&DeadNonceList::mark, this));
+  m_markEvent = scheduler::schedule(m_markInterval, [this] { mark(); });
 }
 
 void
 DeadNonceList::adjustCapacity()
 {
-  std::pair<std::multiset<size_t>::iterator, std::multiset<size_t>::iterator> equalRange =
-    m_actualMarkCounts.equal_range(EXPECTED_MARK_COUNT);
-
+  auto equalRange = m_actualMarkCounts.equal_range(EXPECTED_MARK_COUNT);
   if (equalRange.second == m_actualMarkCounts.begin()) {
     // all counts are above expected count, adjust down
     m_capacity = std::max(MIN_CAPACITY,
@@ -148,11 +145,9 @@ DeadNonceList::adjustCapacity()
   }
 
   m_actualMarkCounts.clear();
-
   this->evictEntries();
 
-  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval,
-                                              bind(&DeadNonceList::adjustCapacity, this));
+  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
 }
 
 void

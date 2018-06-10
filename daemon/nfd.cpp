@@ -89,7 +89,7 @@ Nfd::initialize()
   m_netmon->onNetworkStateChanged.connect([this] {
       // delay stages, so if multiple events are triggered in short sequence,
       // only one auto-detection procedure is triggered
-      m_reloadConfigEvent = scheduler::schedule(time::seconds(5),
+      m_reloadConfigEvent = scheduler::schedule(5_s,
         [this] {
           NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
           this->reloadConfigFileFaceSection();

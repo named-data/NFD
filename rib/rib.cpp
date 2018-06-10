@@ -68,16 +68,14 @@ Rib::find(const Name& prefix) const
 Route*
 Rib::find(const Name& prefix, const Route& route) const
 {
-  RibTable::const_iterator ribIt = m_rib.find(prefix);
+  auto ribIt = m_rib.find(prefix);
 
   // Name prefix exists
   if (ribIt != m_rib.end()) {
     shared_ptr<RibEntry> entry = ribIt->second;
-
-    RibEntry::iterator routeIt = entry->findRoute(route);
-
+    auto routeIt = entry->findRoute(route);
     if (routeIt != entry->end()) {
-      return &((*routeIt));
+      return &*routeIt;
     }
   }
 
@@ -87,7 +85,7 @@ Rib::find(const Name& prefix, const Route& route) const
 void
 Rib::insert(const Name& prefix, const Route& route)
 {
-  RibTable::iterator ribIt = m_rib.find(prefix);
+  auto ribIt = m_rib.find(prefix);
 
   // Name prefix exists
   if (ribIt != m_rib.end()) {
@@ -125,13 +123,13 @@ Rib::insert(const Name& prefix, const Route& route)
   }
   else {
     // New name prefix
-    shared_ptr<RibEntry> entry = make_shared<RibEntry>();
+    auto entry = make_shared<RibEntry>();
 
     m_rib[prefix] = entry;
     m_nItems++;
 
     entry->setName(prefix);
-    RibEntry::iterator routeIt = entry->insertRoute(route).first;
+    auto routeIt = entry->insertRoute(route).first;
 
     // Find prefix's parent
     shared_ptr<RibEntry> parent = findParent(prefix);
@@ -166,12 +164,12 @@ Rib::insert(const Name& prefix, const Route& route)
 void
 Rib::erase(const Name& prefix, const Route& route)
 {
-  RibTable::iterator ribIt = m_rib.find(prefix);
+  auto ribIt = m_rib.find(prefix);
 
   // Name prefix exists
   if (ribIt != m_rib.end()) {
     shared_ptr<RibEntry> entry = ribIt->second;
-    RibEntry::iterator routeIt = entry->findRoute(route);
+    auto routeIt = entry->findRoute(route);
 
     if (routeIt != entry->end()) {
       beforeRemoveRoute(RibRouteRef{entry, routeIt});
@@ -210,23 +208,21 @@ shared_ptr<RibEntry>
 Rib::findParent(const Name& prefix) const
 {
   for (int i = prefix.size() - 1; i >= 0; i--) {
-    RibTable::const_iterator it = m_rib.find(prefix.getPrefix(i));
-
+    auto it = m_rib.find(prefix.getPrefix(i));
     if (it != m_rib.end()) {
-      return (it->second);
+      return it->second;
     }
   }
 
-  return shared_ptr<RibEntry>();
+  return nullptr;
 }
 
-std::list<shared_ptr<RibEntry> >
+std::list<shared_ptr<RibEntry>>
 Rib::findDescendants(const Name& prefix) const
 {
-  std::list<shared_ptr<RibEntry> > children;
+  std::list<shared_ptr<RibEntry>> children;
 
   RibTable::const_iterator it = m_rib.find(prefix);
-
   if (it != m_rib.end()) {
     ++it;
     for (; it != m_rib.end(); ++it) {
@@ -247,7 +243,7 @@ Rib::findDescendantsForNonInsertedName(const Name& prefix) const
 {
   std::list<shared_ptr<RibEntry>> children;
 
-  for (std::pair<Name, shared_ptr<RibEntry>> pair : m_rib) {
+  for (const auto& pair : m_rib) {
     if (prefix.isPrefixOf(pair.first)) {
       children.push_back(pair.second);
     }
@@ -288,7 +284,7 @@ Rib::eraseEntry(RibTable::iterator it)
     }
   }
 
-  RibTable::iterator nextIt = m_rib.erase(it);
+  auto nextIt = m_rib.erase(it);
 
   // do something after erasing an entry.
   afterEraseEntry(entry->getName());
@@ -462,8 +458,7 @@ void
 Rib::modifyInheritedRoutes(const RibUpdateList& inheritedRoutes)
 {
   for (const RibUpdate& update : inheritedRoutes) {
-    RibTable::iterator ribIt = m_rib.find(update.getName());
-
+    auto ribIt = m_rib.find(update.getName());
     BOOST_ASSERT(ribIt != m_rib.end());
     shared_ptr<RibEntry> entry(ribIt->second);
 
@@ -485,21 +480,18 @@ Rib::findRoutesWithFaceId(uint64_t faceId)
 {
   std::list<NameAndRoute> routes;
 
-  FaceLookupTable::iterator lookupIt = m_faceMap.find(faceId);
-
-  // No RIB entries have this face
+  auto lookupIt = m_faceMap.find(faceId);
   if (lookupIt == m_faceMap.end()) {
+    // No RIB entries have this face
     return routes;
   }
 
-  RibEntryList& ribEntries = lookupIt->second;
-
   // For each RIB entry that has faceId
-  for (const shared_ptr<RibEntry>& entry : ribEntries) {
+  for (const auto& entry : lookupIt->second) {
     // Find the routes in the entry
     for (const Route& route : *entry) {
       if (route.faceId == faceId) {
-        routes.push_back(NameAndRoute(entry->getName(), route));
+        routes.emplace_back(entry->getName(), route);
       }
     }
   }

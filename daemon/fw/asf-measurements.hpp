@@ -254,8 +254,7 @@ public:
   const FaceInfoTable::iterator
   insert(FaceId faceId)
   {
-    const auto& pair = m_fit.insert(std::make_pair(faceId, FaceInfo()));
-    return pair.first;
+    return m_fit.emplace(faceId, FaceInfo()).first;
   }
 
   bool
@@ -317,7 +316,7 @@ private:
   extendLifetime(measurements::Entry& me);
 
 public:
-  static constexpr time::microseconds MEASUREMENTS_LIFETIME = time::seconds(300);
+  static constexpr time::microseconds MEASUREMENTS_LIFETIME = 300_s;
 
 private:
   MeasurementsAccessor& m_measurements;

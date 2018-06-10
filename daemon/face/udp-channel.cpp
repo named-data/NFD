@@ -60,7 +60,7 @@ UdpChannel::connect(const udp::Endpoint& remoteEndpoint,
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
     if (onConnectFailed)
-      onConnectFailed(504, std::string("Face creation failed: ") + e.what());
+      onConnectFailed(504, "Face creation failed: "s + e.what());
     return;
   }
 
@@ -94,10 +94,9 @@ UdpChannel::waitForNewPeer(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
   m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_remoteEndpoint,
-                              bind(&UdpChannel::handleNewPeer, this,
-                                   boost::asio::placeholders::error,
-                                   boost::asio::placeholders::bytes_transferred,
-                                   onFaceCreated, onReceiveFailed));
+                              [=] (auto&&... args) {
+                                this->handleNewPeer(std::forward<decltype(args)>(args)..., onFaceCreated, onReceiveFailed);
+                              });
 }
 
 void
@@ -127,7 +126,7 @@ UdpChannel::handleNewPeer(const boost::system::error_code& error,
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << m_remoteEndpoint << " failed: " << e.what());
     if (onReceiveFailed)
-      onReceiveFailed(504, std::string("Face creation failed: ") + e.what());
+      onReceiveFailed(504, "Face creation failed: "s + e.what());
     return;
   }
 

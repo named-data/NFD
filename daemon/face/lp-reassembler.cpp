@@ -33,12 +33,6 @@ namespace face {
 
 NFD_LOG_INIT(LpReassembler);
 
-LpReassembler::Options::Options()
-  : nMaxFragments(400)
-  , reassemblyTimeout(time::milliseconds(500))
-{
-}
-
 LpReassembler::LpReassembler(const LpReassembler::Options& options, const LinkService* linkService)
   : m_options(options)
   , m_linkService(linkService)
@@ -119,8 +113,7 @@ LpReassembler::receiveFragment(Transport::EndpointId remoteEndpoint, const lp::P
   }
 
   // set drop timer
-  pp.dropTimer = scheduler::schedule(m_options.reassemblyTimeout,
-                                     bind(&LpReassembler::timeoutPartialPacket, this, key));
+  pp.dropTimer = scheduler::schedule(m_options.reassemblyTimeout, [=] { timeoutPartialPacket(key); });
 
   return FALSE_RETURN;
 }
@@ -130,7 +123,7 @@ LpReassembler::doReassembly(const Key& key)
 {
   PartialPacket& pp = m_partialPackets[key];
 
-  size_t payloadSize = std::accumulate(pp.fragments.begin(), pp.fragments.end(), 0,
+  size_t payloadSize = std::accumulate(pp.fragments.begin(), pp.fragments.end(), 0U,
     [&] (size_t sum, const lp::Packet& pkt) -> size_t {
       ndn::Buffer::const_iterator fragBegin, fragEnd;
       std::tie(fragBegin, fragEnd) = pkt.get<lp::FragmentField>();
@@ -138,7 +131,7 @@ LpReassembler::doReassembly(const Key& key)
     });
 
   ndn::Buffer fragBuffer(payloadSize);
-  ndn::Buffer::iterator it = fragBuffer.begin();
+  auto it = fragBuffer.begin();
 
   for (const lp::Packet& frag : pp.fragments) {
     ndn::Buffer::const_iterator fragBegin, fragEnd;

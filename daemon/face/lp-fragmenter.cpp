@@ -57,11 +57,6 @@ static const size_t MAX_FRAG_OVERHEAD =
   1 + 1 + 8 + // FragCount TLV
   1 + 9; // Fragment TLV-TYPE and TLV-LENGTH
 
-LpFragmenter::Options::Options()
-  : nMaxFragments(400)
-{
-}
-
 LpFragmenter::LpFragmenter(const LpFragmenter::Options& options, const LinkService* linkService)
   : m_options(options)
   , m_linkService(linkService)
@@ -122,7 +117,7 @@ LpFragmenter::fragmentPacket(const lp::Packet& packet, size_t mtu)
   // compute FragCount
   if (fragCount > m_options.nMaxFragments) {
     NFD_LOG_FACE_WARN("fragmentation error, FragCount over limit: DROP");
-    return std::make_pair(false, std::vector<lp::Packet>{});
+    return std::make_tuple(false, std::vector<lp::Packet>{});
   }
 
   // populate fragments
@@ -135,7 +130,7 @@ LpFragmenter::fragmentPacket(const lp::Packet& packet, size_t mtu)
     lp::Packet& frag = frags[fragIndex];
     frag.add<lp::FragIndexField>(fragIndex);
     frag.add<lp::FragCountField>(fragCount);
-    frag.set<lp::FragmentField>(std::make_pair(fragBegin, fragEnd));
+    frag.set<lp::FragmentField>({fragBegin, fragEnd});
     BOOST_ASSERT(frag.wireEncode().size() <= mtu);
 
     ++fragIndex;
@@ -144,7 +139,7 @@ LpFragmenter::fragmentPacket(const lp::Packet& packet, size_t mtu)
   }
   BOOST_ASSERT(fragIndex == fragCount);
 
-  return std::make_pair(true, frags);
+  return std::make_tuple(true, frags);
 }
 
 std::ostream&

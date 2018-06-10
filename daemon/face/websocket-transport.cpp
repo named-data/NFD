@@ -97,7 +97,7 @@ WebSocketTransport::receiveMessage(const std::string& msg)
 
   bool isOk = false;
   Block element;
-  std::tie(isOk, element) = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.c_str()), msg.size());
+  std::tie(isOk, element) = Block::fromBuffer(reinterpret_cast<const uint8_t*>(msg.data()), msg.size());
   if (!isOk) {
     NFD_LOG_FACE_WARN("Failed to parse message payload");
     return;
@@ -109,7 +109,7 @@ WebSocketTransport::receiveMessage(const std::string& msg)
 void
 WebSocketTransport::schedulePing()
 {
-  m_pingEventId = scheduler::schedule(m_pingInterval, bind(&WebSocketTransport::sendPing, this));
+  m_pingEventId = scheduler::schedule(m_pingInterval, [this] { sendPing(); });
 }
 
 void

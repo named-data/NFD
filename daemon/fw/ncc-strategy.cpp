@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,9 +32,9 @@ namespace fw {
 
 NFD_REGISTER_STRATEGY(NccStrategy);
 
-const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = time::microseconds(4000);
-const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = time::microseconds(75000);
-const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = time::seconds(16);
+const time::microseconds NccStrategy::DEFER_FIRST_WITHOUT_BEST_FACE = 4_ms;
+const time::microseconds NccStrategy::DEFER_RANGE_WITHOUT_BEST_FACE = 75_ms;
+const time::nanoseconds NccStrategy::MEASUREMENTS_LIFETIME = 16_s;
 
 NccStrategy::NccStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
@@ -118,7 +118,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   }
 
   if (nUpstreams > 0) {
-    pitEntryInfo->maxInterval = std::max(time::microseconds(1),
+    pitEntryInfo->maxInterval = std::max(1_us,
       time::microseconds((2 * deferRange.count() + nUpstreams - 1) / nUpstreams));
   }
   else {
@@ -142,7 +142,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
   if (pitEntry == nullptr) {
     return;
   }
-  pit::InRecordCollection::const_iterator inRecord = pitEntry->getInRecord(*inFace);
+  auto inRecord = pitEntry->getInRecord(*inFace);
   if (inRecord == pitEntry->in_end()) {
     return;
   }
@@ -163,10 +163,9 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
     this->sendInterest(pitEntry, *previousFace, interest);
   }
 
-  const fib::NextHopList& nexthops = fibEntry.getNextHops();
   bool isForwarded = false;
-  for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
-    Face& face = it->getFace();
+  for (const auto& nexthop : fibEntry.getNextHops()) {
+    Face& face = nexthop.getFace();
     if (!wouldViolateScope(*inFace, interest, face) &&
         canForwardToLegacy(*pitEntry, face)) {
       isForwarded = true;
@@ -271,9 +270,9 @@ NccStrategy::getMeasurementsEntryInfo(measurements::Entry* entry)
   return *info;
 }
 
-const time::microseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION = time::microseconds(8192);
-const time::microseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION = time::microseconds(127);
-const time::microseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION = time::milliseconds(160);
+const time::microseconds NccStrategy::MeasurementsEntryInfo::INITIAL_PREDICTION = 8192_us;
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MIN_PREDICTION = 127_us;
+const time::microseconds NccStrategy::MeasurementsEntryInfo::MAX_PREDICTION = 160_ms;
 
 NccStrategy::MeasurementsEntryInfo::MeasurementsEntryInfo()
   : prediction(INITIAL_PREDICTION)

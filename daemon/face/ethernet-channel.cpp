@@ -65,7 +65,7 @@ EthernetChannel::connect(const ethernet::Address& remoteEndpoint,
   catch (const boost::system::system_error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << remoteEndpoint << " failed: " << e.what());
     if (onConnectFailed)
-      onConnectFailed(504, std::string("Face creation failed: ") + e.what());
+      onConnectFailed(504, "Face creation failed: "s + e.what());
     return;
   }
 
@@ -102,9 +102,7 @@ EthernetChannel::asyncRead(const FaceCreatedCallback& onFaceCreated,
                            const FaceCreationFailedCallback& onReceiveFailed)
 {
   m_socket.async_read_some(boost::asio::null_buffers(),
-                           bind(&EthernetChannel::handleRead, this,
-                                boost::asio::placeholders::error,
-                                onFaceCreated, onReceiveFailed));
+                           [=] (const auto& e, auto) { this->handleRead(e, onFaceCreated, onReceiveFailed); });
 }
 
 void
@@ -172,7 +170,7 @@ EthernetChannel::processIncomingPacket(const uint8_t* packet, size_t length,
   catch (const EthernetTransport::Error& e) {
     NFD_LOG_CHAN_DEBUG("Face creation for " << sender << " failed: " << e.what());
     if (onReceiveFailed)
-      onReceiveFailed(504, std::string("Face creation failed: ") + e.what());
+      onReceiveFailed(504, "Face creation failed: "s + e.what());
     return;
   }
 

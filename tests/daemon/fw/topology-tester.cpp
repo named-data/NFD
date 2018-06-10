@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,8 +24,9 @@
  */
 
 #include "topology-tester.hpp"
-#include <ndn-cxx/encoding/encoding-buffer-fwd.hpp>
 #include "face/generic-link-service.hpp"
+
+#include <ndn-cxx/encoding/encoding-buffer-fwd.hpp>
 
 namespace nfd {
 namespace fw {
@@ -247,8 +248,8 @@ void
 TopologyTester::addEchoProducer(ndn::Face& face, const Name& prefix)
 {
   face.setInterestFilter(prefix,
-      [&face] (const ndn::InterestFilter&, const Interest& interest) {
-        shared_ptr<Data> data = makeData(interest.getName());
+      [&face] (const auto&, const Interest& interest) {
+        auto data = makeData(interest.getName());
         face.put(*data);
       });
 }
@@ -266,12 +267,12 @@ TopologyTester::addIntervalConsumer(ndn::Face& face, const Name& prefix,
     name.appendTimestamp();
   }
 
-  shared_ptr<Interest> interest = makeInterest(name);
+  auto interest = makeInterest(name);
   face.expressInterest(*interest, nullptr, nullptr, nullptr);
 
   if (n > 1) {
-    scheduler::schedule(interval, bind(&TopologyTester::addIntervalConsumer, this,
-                                       ref(face), prefix, interval, n - 1, seq));
+    scheduler::schedule(interval,
+                        [=, &face] { addIntervalConsumer(face, prefix, interval, n - 1, seq); });
   }
 }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,7 +118,7 @@ PriorityFifoPolicy::attachQueue(iterator i)
   else {
     entryInfo->queueType = QUEUE_FIFO;
     entryInfo->moveStaleEventId = scheduler::schedule(i->getData().getFreshnessPeriod(),
-                                                      bind(&PriorityFifoPolicy::moveToStaleQueue, this, i));
+                                                      [=] { moveToStaleQueue(i); });
   }
 
   Queue& queue = m_queues[entryInfo->queueType];

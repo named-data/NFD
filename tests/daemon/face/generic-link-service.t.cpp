@@ -57,9 +57,9 @@ protected:
     : service(nullptr)
     , transport(nullptr)
   {
-    this->initialize(GenericLinkService::Options());
     // By default, GenericLinkService is created with default options.
     // Test cases may invoke .initialize with alternate options.
+    this->initialize({});
   }
 
   void
@@ -67,14 +67,14 @@ protected:
              ssize_t mtu = MTU_UNLIMITED,
              ssize_t sendQueueCapacity = QUEUE_UNSUPPORTED)
   {
-    face.reset(new Face(make_unique<GenericLinkService>(options),
-                        make_unique<DummyTransport>("dummy://",
-                                                    "dummy://",
-                                                    ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                                                    ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                                                    ndn::nfd::LINK_TYPE_POINT_TO_POINT,
-                                                    mtu,
-                                                    sendQueueCapacity)));
+    face = make_unique<Face>(make_unique<GenericLinkService>(options),
+                             make_unique<DummyTransport>("dummy://",
+                                                         "dummy://",
+                                                         ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                                                         ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                                                         ndn::nfd::LINK_TYPE_POINT_TO_POINT,
+                                                         mtu,
+                                                         sendQueueCapacity));
     service = static_cast<GenericLinkService*>(face->getLinkService());
     transport = static_cast<DummyTransport*>(face->getTransport());
 
@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(ReassembleFragments)
   lp::Packet packet(interest->wireEncode());
 
   // fragment the packet
-  LpFragmenter fragmenter;
+  LpFragmenter fragmenter({});
   size_t mtu = 100;
   bool isOk = false;
   std::vector<lp::Packet> frags;

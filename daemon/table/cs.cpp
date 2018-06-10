@@ -155,7 +155,7 @@ Cs::find(const Interest& interest,
 iterator
 Cs::findLeftmost(const Interest& interest, iterator first, iterator last) const
 {
-  return std::find_if(first, last, bind(&cs::EntryImpl::canSatisfy, _1, interest));
+  return std::find_if(first, last, [&interest] (const auto& entry) { return entry.canSatisfy(interest); });
 }
 
 iterator
@@ -193,7 +193,7 @@ Cs::findRightmost(const Interest& interest, iterator first, iterator last) const
 iterator
 Cs::findRightmostAmongExact(const Interest& interest, iterator first, iterator last) const
 {
-  return find_last_if(first, last, bind(&EntryImpl::canSatisfy, _1, interest));
+  return find_last_if(first, last, [&interest] (const auto& entry) { return entry.canSatisfy(interest); });
 }
 
 void

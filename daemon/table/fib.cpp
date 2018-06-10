@@ -93,12 +93,12 @@ Fib::insert(const Name& prefix)
   name_tree::Entry& nte = m_nameTree.lookup(prefix);
   Entry* entry = nte.getFibEntry();
   if (entry != nullptr) {
-    return std::make_pair(entry, false);
+    return {entry, false};
   }
 
   nte.setFibEntry(make_unique<Entry>(prefix));
   ++m_nItems;
-  return std::make_pair(nte.getFibEntry(), true);
+  return {nte.getFibEntry(), true};
 }
 
 void

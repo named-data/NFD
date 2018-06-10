@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,11 +28,9 @@
 namespace nfd {
 namespace fw {
 
-const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL =
-    time::milliseconds(1);
-const float RetxSuppressionExponential::DEFAULT_MULTIPLIER = 2.0;
-const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_MAX_INTERVAL =
-    time::milliseconds(250);
+const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_INITIAL_INTERVAL = 1_ms;
+const RetxSuppressionExponential::Duration RetxSuppressionExponential::DEFAULT_MAX_INTERVAL = 250_ms;
+const float RetxSuppressionExponential::DEFAULT_MULTIPLIER = 2.0f;
 
 class RetxSuppressionExponential::PitInfo : public StrategyInfo
 {
@@ -63,8 +61,8 @@ RetxSuppressionExponential::RetxSuppressionExponential(const Duration& initialIn
   , m_multiplier(multiplier)
   , m_maxInterval(maxInterval)
 {
-  BOOST_ASSERT(initialInterval > time::milliseconds::zero());
-  BOOST_ASSERT(multiplier >= 1.0);
+  BOOST_ASSERT(initialInterval > 0_us);
+  BOOST_ASSERT(multiplier >= 1.0f);
   BOOST_ASSERT(maxInterval >= initialInterval);
 }
 
@@ -76,9 +74,9 @@ RetxSuppressionExponential::decidePerPitEntry(pit::Entry& pitEntry)
     return RetxSuppressionResult::NEW;
   }
 
-  time::steady_clock::TimePoint lastOutgoing = getLastOutgoing(pitEntry);
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
+  auto lastOutgoing = getLastOutgoing(pitEntry);
+  auto now = time::steady_clock::now();
+  auto sinceLastOutgoing = now - lastOutgoing;
 
   PitInfo* pi = pitEntry.insertStrategyInfo<PitInfo>(m_initialInterval).first;
   bool shouldSuppress = sinceLastOutgoing < pi->suppressionInterval;
@@ -102,9 +100,9 @@ RetxSuppressionExponential::decidePerUpstream(pit::Entry& pitEntry, Face& outFac
     return RetxSuppressionResult::NEW;
   }
 
-  time::steady_clock::TimePoint lastOutgoing = outRecord->getLastRenewed();
-  time::steady_clock::TimePoint now = time::steady_clock::now();
-  time::steady_clock::Duration sinceLastOutgoing = now - lastOutgoing;
+  auto lastOutgoing = outRecord->getLastRenewed();
+  auto now = time::steady_clock::now();
+  auto sinceLastOutgoing = now - lastOutgoing;
 
   // insertStrategyInfo does not insert m_initialInterval again if it already exists
   PitInfo* pi = outRecord->insertStrategyInfo<PitInfo>(m_initialInterval).first;

@@ -80,8 +80,8 @@ private:
   getRandomNumber(double start, double end);
 
 public:
-  static constexpr time::milliseconds DEFAULT_PROBING_INTERVAL = time::milliseconds(60000);
-  static constexpr time::milliseconds MIN_PROBING_INTERVAL = time::milliseconds(1000);
+  static constexpr time::milliseconds DEFAULT_PROBING_INTERVAL = 1_min;
+  static constexpr time::milliseconds MIN_PROBING_INTERVAL = 1_s;
 
 private:
   time::milliseconds m_probingInterval;

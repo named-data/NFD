@@ -86,7 +86,7 @@ FaceTable::addImpl(shared_ptr<Face> face, FaceId faceId)
                " remote=" << face->getRemoteUri() <<
                " local=" << face->getLocalUri());
 
-  connectFaceClosedSignal(*face, bind(&FaceTable::remove, this, faceId));
+  connectFaceClosedSignal(*face, [=] { remove(faceId); });
 
   this->afterAdd(*face);
 }

@@ -35,8 +35,7 @@ NFD_REGISTER_STRATEGY(AccessStrategy);
 
 AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)
-  , m_removeFaceInfoConn(this->beforeRemoveFace.connect(
-                         bind(&AccessStrategy::removeFaceInfo, this, _1)))
+  , m_removeFaceInfoConn(beforeRemoveFace.connect([this] (const Face& face) { removeFaceInfo(face); }))
 {
   ParsedInstanceName parsed = parseInstanceName(name);
   if (!parsed.parameters.empty()) {
@@ -177,14 +176,13 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, F
     return;
   }
 
-  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(*inFace);
+  auto inRecord = pitEntry->getInRecord(*inFace);
   BOOST_ASSERT(inRecord != pitEntry->in_end());
   // in-record is erased only if Interest is satisfied, and RTO timer should have been cancelled
   // note: if this strategy is extended to send Nacks, that would also erase in-record,
   //       and RTO timer should be cancelled in that case as well
 
   const Interest& interest = inRecord->getInterest();
-
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
   NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId <<
@@ -227,14 +225,14 @@ AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
     return;
   }
 
-  pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(inFace);
+  auto outRecord = pitEntry->getOutRecord(inFace);
   if (outRecord == pitEntry->out_end()) { // no out-record
     NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
                   " no-out-record");
     return;
   }
 
-  time::steady_clock::Duration rtt = time::steady_clock::now() - outRecord->getLastRenewed();
+  auto rtt = time::steady_clock::now() - outRecord->getLastRenewed();
   NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
                 " rtt=" << time::duration_cast<time::microseconds>(rtt).count());
   this->updateMeasurements(inFace, data, time::duration_cast<RttEstimator::Duration>(rtt));
@@ -260,7 +258,7 @@ AccessStrategy::updateMeasurements(const Face& inFace, const Data& data,
 
 AccessStrategy::MtInfo::MtInfo()
   : lastNexthop(face::INVALID_FACEID)
-  , rtt(1, time::milliseconds(1), 0.1)
+  , rtt(1, 1_ms, 0.1)
 {
 }
 
@@ -292,14 +290,13 @@ AccessStrategy::addPrefixMeasurements(const Data& data)
     BOOST_ASSERT(me != nullptr);
   }
 
-  static const time::nanoseconds ME_LIFETIME = time::seconds(8);
-  this->getMeasurements().extendLifetime(*me, ME_LIFETIME);
+  this->getMeasurements().extendLifetime(*me, 8_s);
 
   return me->insertStrategyInfo<MtInfo>().first;
 }
 
 AccessStrategy::FaceInfo::FaceInfo()
-  : rtt(1, time::milliseconds(1), 0.1)
+  : rtt(1, 1_ms, 0.1)
 {
 }
 

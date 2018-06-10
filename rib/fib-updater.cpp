@@ -654,13 +654,11 @@ FibUpdater::traverseSubTree(const RibEntry& entry, Rib::Rib::RouteSet routesToAd
   }
 
   // Remove inherited routes from current namespace
-  for (Rib::RouteSet::const_iterator removeIt = routesToRemove.begin();
-       removeIt != routesToRemove.end(); )
-  {
+  for (auto removeIt = routesToRemove.begin(); removeIt != routesToRemove.end(); ) {
     // If a route on the namespace has the same face ID and child inheritance set,
     // ignore this route
     if (entry.hasChildInheritOnFaceId(removeIt->faceId)) {
-      routesToRemove.erase(removeIt++);
+      removeIt = routesToRemove.erase(removeIt);
       continue;
     }
 
@@ -674,11 +672,10 @@ FibUpdater::traverseSubTree(const RibEntry& entry, Rib::Rib::RouteSet routesToAd
   }
 
   // Add inherited routes to current namespace
-  for (Rib::RouteSet::const_iterator addIt = routesToAdd.begin(); addIt != routesToAdd.end(); ) {
-
+  for (auto addIt = routesToAdd.begin(); addIt != routesToAdd.end(); ) {
     // If a route on the namespace has the same face ID and child inherit set, ignore this face
     if (entry.hasChildInheritOnFaceId(addIt->faceId)) {
-      routesToAdd.erase(addIt++);
+      addIt = routesToAdd.erase(addIt);
       continue;
     }
 

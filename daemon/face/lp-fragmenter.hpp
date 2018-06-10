@@ -44,19 +44,15 @@ class LpFragmenter
 public:
   /** \brief Options that control the behavior of LpFragmenter
    */
-  class Options
+  struct Options
   {
-  public:
-    Options();
-
-  public:
     /** \brief maximum number of fragments in a packet
      */
-    size_t nMaxFragments;
+    size_t nMaxFragments = 400;
   };
 
   explicit
-  LpFragmenter(const Options& options = Options(), const LinkService* linkService = nullptr);
+  LpFragmenter(const Options& options, const LinkService* linkService = nullptr);
 
   /** \brief set options for fragmenter
    */

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,9 +34,15 @@ namespace pit {
 
 /** \brief PIT iterator
  */
-class Iterator : public std::iterator<std::forward_iterator_tag, const Entry>
+class Iterator
 {
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type        = const Entry;
+  using difference_type   = std::ptrdiff_t;
+  using pointer           = value_type*;
+  using reference         = value_type&;
+
   /** \brief constructor
    *  \param ntIt a name tree iterator that visits name tree entries with one or more PIT entries
    *  \param iPitEntry make this iterator to dereference to the i-th PIT entry in name tree entry

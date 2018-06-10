@@ -200,9 +200,7 @@ void
 StreamTransport<T>::sendFromQueue()
 {
   boost::asio::async_write(m_socket, boost::asio::buffer(m_sendQueue.front()),
-                           bind(&StreamTransport<T>::handleSend, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+                           [this] (auto&&... args) { this->handleSend(std::forward<decltype(args)>(args)...); });
 }
 
 template<class T>
@@ -232,9 +230,7 @@ StreamTransport<T>::startReceive()
 
   m_socket.async_receive(boost::asio::buffer(m_receiveBuffer + m_receiveBufferSize,
                                              ndn::MAX_NDN_PACKET_SIZE - m_receiveBufferSize),
-                         bind(&StreamTransport<T>::handleReceive, this,
-                              boost::asio::placeholders::error,
-                              boost::asio::placeholders::bytes_transferred));
+                         [this] (auto&&... args) { this->handleReceive(std::forward<decltype(args)>(args)...); });
 }
 
 template<class T>

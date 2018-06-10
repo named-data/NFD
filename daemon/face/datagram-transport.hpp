@@ -72,12 +72,10 @@ protected:
   doSend(Transport::Packet&& packet) override;
 
   void
-  handleSend(const boost::system::error_code& error,
-             size_t nBytesSent, const Block& payload);
+  handleSend(const boost::system::error_code& error, size_t nBytesSent);
 
   void
-  handleReceive(const boost::system::error_code& error,
-                size_t nBytesReceived);
+  handleReceive(const boost::system::error_code& error, size_t nBytesReceived);
 
   void
   processErrorCode(const boost::system::error_code& error);
@@ -120,9 +118,9 @@ DatagramTransport<T, U>::DatagramTransport(typename DatagramTransport::protocol:
   }
 
   m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
-                              bind(&DatagramTransport<T, U>::handleReceive, this,
-                                   boost::asio::placeholders::error,
-                                   boost::asio::placeholders::bytes_transferred));
+                              [this] (auto&&... args) {
+                                this->handleReceive(std::forward<decltype(args)>(args)...);
+                              });
 }
 
 template<class T, class U>
@@ -164,10 +162,10 @@ DatagramTransport<T, U>::doSend(Transport::Packet&& packet)
   NFD_LOG_FACE_TRACE(__func__);
 
   m_socket.async_send(boost::asio::buffer(packet.packet),
-                      bind(&DatagramTransport<T, U>::handleSend, this,
-                           boost::asio::placeholders::error,
-                           boost::asio::placeholders::bytes_transferred,
-                           packet.packet));
+                      // packet.packet is copied into the lambda to retain the underlying Buffer
+                      [this, p = packet.packet] (auto&&... args) {
+                        this->handleSend(std::forward<decltype(args)>(args)...);
+                      });
 }
 
 template<class T, class U>
@@ -202,23 +200,20 @@ DatagramTransport<T, U>::receiveDatagram(const uint8_t* buffer, size_t nBytesRec
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error,
-                                       size_t nBytesReceived)
+DatagramTransport<T, U>::handleReceive(const boost::system::error_code& error, size_t nBytesReceived)
 {
   receiveDatagram(m_receiveBuffer.data(), nBytesReceived, error);
 
   if (m_socket.is_open())
     m_socket.async_receive_from(boost::asio::buffer(m_receiveBuffer), m_sender,
-                                bind(&DatagramTransport<T, U>::handleReceive, this,
-                                     boost::asio::placeholders::error,
-                                     boost::asio::placeholders::bytes_transferred));
+                                [this] (auto&&... args) {
+                                  this->handleReceive(std::forward<decltype(args)>(args)...);
+                                });
 }
 
 template<class T, class U>
 void
-DatagramTransport<T, U>::handleSend(const boost::system::error_code& error,
-                                    size_t nBytesSent, const Block& payload)
-// 'payload' is unused; it's needed to retain the underlying Buffer
+DatagramTransport<T, U>::handleSend(const boost::system::error_code& error, size_t nBytesSent)
 {
   if (error)
     return processErrorCode(error);
@@ -266,7 +261,7 @@ DatagramTransport<T, U>::resetRecentlyReceived()
 
 template<class T, class U>
 Transport::EndpointId
-DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint& ep)
+DatagramTransport<T, U>::makeEndpointId(const typename protocol::endpoint&)
 {
   return 0;
 }

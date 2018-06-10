@@ -91,8 +91,8 @@ using std::dynamic_pointer_cast;
 using std::const_pointer_cast;
 
 using std::bind;
-using std::cref;
-using std::ref;
+
+using namespace std::string_literals;
 
 using ndn::optional;
 using ndn::nullopt;

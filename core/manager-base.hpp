@@ -161,7 +161,7 @@ ManagerBase::registerCommandHandler(const std::string& verb,
   m_dispatcher.addControlCommand<ControlParameters>(
     makeRelPrefix(verb),
     makeAuthorization(verb),
-    bind(&ManagerBase::validateParameters, cref(*command), _1),
+    bind(&ManagerBase::validateParameters, std::cref(*command), _1),
     bind(&ManagerBase::handleCommand, command, handler, _1, _2, _3, _4));
 }
 

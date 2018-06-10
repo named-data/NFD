@@ -211,7 +211,7 @@ private:
   modifyInheritedRoutes(const RibUpdateList& inheritedRoutes);
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  typedef std::pair<const Name&,const Route&> NameAndRoute;
+  using NameAndRoute = std::pair<const Name&, const Route&>;
 
   std::list<NameAndRoute>
   findRoutesWithFaceId(uint64_t faceId);

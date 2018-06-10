@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,13 +40,13 @@ protected:
   {
     reassembler.beforeTimeout.connect(
       [this] (Transport::EndpointId remoteEp, size_t nDroppedFragments) {
-        timeoutHistory.push_back(std::make_tuple(remoteEp, nDroppedFragments));
+        timeoutHistory.push_back({remoteEp, nDroppedFragments});
       });
   }
 
 protected:
-  LpReassembler reassembler;
-  std::vector<std::tuple<Transport::EndpointId, size_t>> timeoutHistory;
+  LpReassembler reassembler{{}};
+  std::vector<std::pair<Transport::EndpointId, size_t>> timeoutHistory;
 
   static const uint8_t data[10];
 };

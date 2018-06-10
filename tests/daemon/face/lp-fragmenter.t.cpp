@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,14 +33,13 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_AUTO_TEST_SUITE(Face)
-
-class LpFragmenterFixture
+class LpFragmenterFixture : public BaseFixture
 {
-public:
-  LpFragmenter fragmenter;
+protected:
+  LpFragmenter fragmenter{{}};
 };
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_FIXTURE_TEST_SUITE(TestLpFragmenter, LpFragmenterFixture)
 
 BOOST_AUTO_TEST_CASE(FragmentSingleFragment)

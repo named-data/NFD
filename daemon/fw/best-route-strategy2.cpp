@@ -69,7 +69,7 @@ BestRouteStrategy2::getStrategyName()
  *  \param wantUnused if true, NextHop must not have unexpired out-record
  *  \param now time::steady_clock::now(), ignored if !wantUnused
  */
-static inline bool
+static bool
 isNextHopEligible(const Face& inFace, const Interest& interest,
                   const fib::NextHop& nexthop,
                   const shared_ptr<pit::Entry>& pitEntry,
@@ -88,7 +88,7 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 
   if (wantUnused) {
     // nexthop must not have unexpired out-record
-    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(outFace);
+    auto outRecord = pitEntry->getOutRecord(outFace);
     if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
       return false;
     }
@@ -100,23 +100,26 @@ isNextHopEligible(const Face& inFace, const Interest& interest,
 /** \brief pick an eligible NextHop with earliest out-record
  *  \note It is assumed that every nexthop has an out-record.
  */
-static inline fib::NextHopList::const_iterator
+static fib::NextHopList::const_iterator
 findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& interest,
                                          const fib::NextHopList& nexthops,
                                          const shared_ptr<pit::Entry>& pitEntry)
 {
-  fib::NextHopList::const_iterator found = nexthops.end();
-  time::steady_clock::TimePoint earliestRenewed = time::steady_clock::TimePoint::max();
-  for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
+  auto found = nexthops.end();
+  auto earliestRenewed = time::steady_clock::TimePoint::max();
+
+  for (auto it = nexthops.begin(); it != nexthops.end(); ++it) {
     if (!isNextHopEligible(inFace, interest, *it, pitEntry))
       continue;
-    pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(it->getFace());
+
+    auto outRecord = pitEntry->getOutRecord(it->getFace());
     BOOST_ASSERT(outRecord != pitEntry->out_end());
     if (outRecord->getLastRenewed() < earliestRenewed) {
       found = it;
       earliestRenewed = outRecord->getLastRenewed();
     }
   }
+
   return found;
 }
 
@@ -133,13 +136,13 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& int
 
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
-  fib::NextHopList::const_iterator it = nexthops.end();
+  auto it = nexthops.end();
 
   if (suppression == RetxSuppressionResult::NEW) {
     // forward to nexthop with lowest cost except downstream
-    it = std::find_if(nexthops.begin(), nexthops.end(),
-      bind(&isNextHopEligible, cref(inFace), interest, _1, pitEntry,
-           false, time::steady_clock::TimePoint::min()));
+    it = std::find_if(nexthops.begin(), nexthops.end(), [&] (const auto& nexthop) {
+      return isNextHopEligible(inFace, interest, nexthop, pitEntry);
+    });
 
     if (it == nexthops.end()) {
       NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
@@ -160,9 +163,10 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& int
   }
 
   // find an unused upstream with lowest cost except downstream
-  it = std::find_if(nexthops.begin(), nexthops.end(),
-                    bind(&isNextHopEligible, cref(inFace), interest, _1, pitEntry,
-                         true, time::steady_clock::now()));
+  it = std::find_if(nexthops.begin(), nexthops.end(), [&] (const auto& nexthop) {
+    return isNextHopEligible(inFace, interest, nexthop, pitEntry, true, time::steady_clock::now());
+  });
+
   if (it != nexthops.end()) {
     Face& outFace = it->getFace();
     this->sendInterest(pitEntry, outFace, interest);

@@ -56,8 +56,8 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
 
   m_reason = NO_WORK;
   m_nOpsRemaining = nOpsLimit;
-  if (timeLimit >= time::nanoseconds::zero()) {
-    m_timeout = scheduler::schedule(timeLimit, bind(&LimitedIo::afterTimeout, this));
+  if (timeLimit >= 0_ns) {
+    m_timeout = scheduler::schedule(timeLimit, [this] { afterTimeout(); });
   }
 
   try {

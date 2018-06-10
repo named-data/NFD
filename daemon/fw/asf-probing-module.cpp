@@ -70,7 +70,7 @@ ProbingModule::getFaceToProbe(const Face& inFace,
                               const Face& faceUsed)
 {
   FaceInfoFacePairSet rankedFaces(
-    [] (FaceInfoFacePair pairLhs, FaceInfoFacePair pairRhs) -> bool {
+    [] (const auto& pairLhs, const auto& pairRhs) -> bool {
       // Sort by RTT
       // If a face has timed-out, rank it behind non-timed-out faces
       FaceInfo& lhs = *pairLhs.first;
@@ -93,14 +93,13 @@ ProbingModule::getFaceToProbe(const Face& inFace,
     }
 
     FaceInfo* info = m_measurements.getFaceInfo(fibEntry, interest, hopFace.getId());
-
     // If no RTT has been recorded, probe this face
     if (info == nullptr || !info->hasSrttMeasurement()) {
       return &hopFace;
     }
 
     // Add FaceInfo to container sorted by RTT
-    rankedFaces.insert(std::make_pair(info, &hopFace));
+    rankedFaces.insert({info, &hopFace});
   }
 
   if (rankedFaces.empty()) {
@@ -149,7 +148,7 @@ ProbingModule::getFaceBasedOnProbability(const FaceInfoFacePairSet& rankedFaces)
   uint64_t rank = 1;
   double offset = 0.0;
 
-  for (const FaceInfoFacePair pair : rankedFaces) {
+  for (const auto& pair : rankedFaces) {
     double probability = getProbingProbability(rank++, rankSum, rankedFaces.size());
 
     // Is the random number within the bounds of this face's probability + the previous faces'

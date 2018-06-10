@@ -101,7 +101,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor.bind(m_endpoint);
   m_acceptor.listen(backlog);
 
-  if (::chmod(m_endpoint.path().c_str(), 0666) < 0) {
+  if (::chmod(m_endpoint.path().data(), 0666) < 0) {
     BOOST_THROW_EXCEPTION(Error("chmod(" + m_endpoint.path() + ") failed: " + std::strerror(errno)));
   }
 
@@ -113,9 +113,7 @@ void
 UnixStreamChannel::accept(const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onAcceptFailed)
 {
-  m_acceptor.async_accept(m_socket, bind(&UnixStreamChannel::handleAccept, this,
-                                         boost::asio::placeholders::error,
-                                         onFaceCreated, onAcceptFailed));
+  m_acceptor.async_accept(m_socket, [=] (const auto& e) { this->handleAccept(e, onFaceCreated, onAcceptFailed); });
 }
 
 void

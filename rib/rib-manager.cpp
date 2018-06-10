@@ -167,14 +167,14 @@ RibManager::onConfig(const ConfigSection& configSection,
   }
 
   if (wantReadvertiseToNlsr && m_readvertiseNlsr == nullptr) {
-    NFD_LOG_DEBUG("Enabling readvertise-to-nlsr.");
-    m_readvertiseNlsr.reset(new Readvertise(
+    NFD_LOG_DEBUG("Enabling readvertise-to-nlsr");
+    m_readvertiseNlsr = make_unique<Readvertise>(
       m_rib,
       make_unique<ClientToNlsrReadvertisePolicy>(),
-      make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib)));
+      make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
   }
   else if (!wantReadvertiseToNlsr && m_readvertiseNlsr != nullptr) {
-    NFD_LOG_DEBUG("Disabling readvertise-to-nlsr.");
+    NFD_LOG_DEBUG("Disabling readvertise-to-nlsr");
     m_readvertiseNlsr.reset();
   }
 }
@@ -184,11 +184,11 @@ RibManager::registerTopPrefix(const Name& topPrefix)
 {
   // register entry to the FIB
   m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-     ControlParameters()
-       .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
-       .setFaceId(0),
-     bind(&RibManager::onCommandPrefixAddNextHopSuccess, this, cref(topPrefix), _1),
-     bind(&RibManager::onCommandPrefixAddNextHopError, this, cref(topPrefix), _1));
+    ControlParameters()
+        .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
+        .setFaceId(0),
+    [=] (const auto& res) { this->onCommandPrefixAddNextHopSuccess(topPrefix, res); },
+    [=] (const auto& res) { this->onCommandPrefixAddNextHopError(topPrefix, res); });
 
   // add top prefix to the dispatcher
   m_addTopPrefix(topPrefix);
@@ -438,8 +438,7 @@ void
 RibManager::onEnableLocalFieldsError(const ndn::nfd::ControlResponse& response)
 {
   BOOST_THROW_EXCEPTION(Error("Couldn't enable local fields (code: " +
-                              to_string(response.getCode()) + ", info: " + response.getText() +
-                              ")"));
+                              to_string(response.getCode()) + ", info: " + response.getText() + ")"));
 }
 
 } // namespace rib

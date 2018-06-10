@@ -83,15 +83,15 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
     return;
   }
 
-  auto clientSocket = make_shared<ip::tcp::socket>(ref(getGlobalIoService()));
-  auto timeoutEvent = scheduler::schedule(timeout, bind(&TcpChannel::handleConnectTimeout, this,
-                                                        remoteEndpoint, clientSocket, onConnectFailed));
+  auto clientSocket = make_shared<ip::tcp::socket>(std::ref(getGlobalIoService()));
+  auto timeoutEvent = scheduler::schedule(timeout, [=] {
+    handleConnectTimeout(remoteEndpoint, clientSocket, onConnectFailed);
+  });
 
   NFD_LOG_CHAN_TRACE("Connecting to " << remoteEndpoint);
-  clientSocket->async_connect(remoteEndpoint,
-                              bind(&TcpChannel::handleConnect, this,
-                                   boost::asio::placeholders::error, remoteEndpoint, clientSocket,
-                                   params, timeoutEvent, onFaceCreated, onConnectFailed));
+  clientSocket->async_connect(remoteEndpoint, [=] (const auto& e) {
+    this->handleConnect(e, remoteEndpoint, clientSocket, params, timeoutEvent, onFaceCreated, onConnectFailed);
+  });
 }
 
 void
@@ -151,9 +151,7 @@ void
 TcpChannel::accept(const FaceCreatedCallback& onFaceCreated,
                    const FaceCreationFailedCallback& onAcceptFailed)
 {
-  m_acceptor.async_accept(m_socket, bind(&TcpChannel::handleAccept, this,
-                                         boost::asio::placeholders::error,
-                                         onFaceCreated, onAcceptFailed));
+  m_acceptor.async_accept(m_socket, [=] (const auto& e) { this->handleAccept(e, onFaceCreated, onAcceptFailed); });
 }
 
 void

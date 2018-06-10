@@ -122,8 +122,7 @@ void
 EthernetTransport::asyncRead()
 {
   m_socket.async_read_some(boost::asio::null_buffers(),
-                           bind(&EthernetTransport::handleRead, this,
-                                boost::asio::placeholders::error));
+                           [this] (const auto& e, auto) { this->handleRead(e); });
 }
 
 void

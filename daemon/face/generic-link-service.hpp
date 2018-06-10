@@ -98,16 +98,19 @@ public:
   class Options
   {
   public:
-    Options();
+    constexpr
+    Options() noexcept
+    {
+    }
 
   public:
     /** \brief enables encoding of IncomingFaceId, and decoding of NextHopFaceId and CachePolicy
      */
-    bool allowLocalFields;
+    bool allowLocalFields = false;
 
     /** \brief enables fragmentation
      */
-    bool allowFragmentation;
+    bool allowFragmentation = false;
 
     /** \brief options for fragmentation
      */
@@ -115,7 +118,7 @@ public:
 
     /** \brief enables reassembly
      */
-    bool allowReassembly;
+    bool allowReassembly = false;
 
     /** \brief options for reassembly
      */
@@ -127,19 +130,23 @@ public:
 
     /** \brief enables send queue congestion detection and marking
      */
-    bool allowCongestionMarking;
+    bool allowCongestionMarking = false;
 
     /** \brief starting value for congestion marking interval
+     *
+     *  The default value (100 ms) is taken from RFC 8289 (CoDel).
      */
-    time::nanoseconds baseCongestionMarkingInterval;
+    time::nanoseconds baseCongestionMarkingInterval = 100_ms;
 
     /** \brief default congestion threshold in bytes
+     *
+     *  The default value (64 KiB) works well for a queue capacity of 200 KiB.
      */
-    size_t defaultCongestionThreshold;
+    size_t defaultCongestionThreshold = 65536;
 
     /** \brief enables self-learning forwarding support
      */
-    bool allowSelfLearning;
+    bool allowSelfLearning = false;
   };
 
   /** \brief counters provided by GenericLinkService
@@ -147,7 +154,7 @@ public:
   using Counters = GenericLinkServiceCounters;
 
   explicit
-  GenericLinkService(const Options& options = Options());
+  GenericLinkService(const Options& options = {});
 
   /** \brief get Options used by GenericLinkService
    */
@@ -283,6 +290,7 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   /// CongestionMark TLV-TYPE (3 octets) + CongestionMark TLV-LENGTH (1 octet) + sizeof(uint64_t)
   static constexpr size_t CONGESTION_MARK_SIZE = 3 + 1 + sizeof(uint64_t);
+
   /// Time to mark next packet due to send queue congestion
   time::steady_clock::TimePoint m_nextMarkTime;
   /// Time last packet was marked

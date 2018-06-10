@@ -193,8 +193,8 @@ doesNetifMatchRule(const ndn::net::NetworkInterface& netif, const std::string& r
 bool
 NetworkInterfacePredicate::operator()(const ndn::net::NetworkInterface& netif) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesNetifMatchRule, cref(netif), _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesNetifMatchRule, cref(netif), _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesNetifMatchRule, std::cref(netif), _1)) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesNetifMatchRule, std::cref(netif), _1));
 }
 
 static bool
@@ -214,8 +214,8 @@ doesAddressMatchRule(const boost::asio::ip::address& address, const std::string&
 bool
 IpAddressPredicate::operator()(const boost::asio::ip::address& address) const
 {
-  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesAddressMatchRule, cref(address), _1)) &&
-         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesAddressMatchRule, cref(address), _1));
+  return std::any_of(m_whitelist.begin(), m_whitelist.end(), bind(&doesAddressMatchRule, std::cref(address), _1)) &&
+         std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesAddressMatchRule, std::cref(address), _1));
 }
 
 } // namespace nfd

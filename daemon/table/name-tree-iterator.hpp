@@ -69,9 +69,15 @@ class EnumerationImpl;
 
 /** \brief NameTree iterator
  */
-class Iterator : public std::iterator<std::forward_iterator_tag, const Entry>
+class Iterator
 {
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type        = const Entry;
+  using difference_type   = std::ptrdiff_t;
+  using pointer           = value_type*;
+  using reference         = value_type&;
+
   Iterator();
 
   Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref);

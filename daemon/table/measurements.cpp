@@ -50,8 +50,7 @@ Measurements::get(name_tree::Entry& nte)
   entry = nte.getMeasurementsEntry();
 
   entry->m_expiry = time::steady_clock::now() + getInitialLifetime();
-  entry->m_cleanup = scheduler::schedule(getInitialLifetime(),
-                                         bind(&Measurements::cleanup, this, ref(*entry)));
+  entry->m_cleanup = scheduler::schedule(getInitialLifetime(), [=] { cleanup(*entry); });
 
   return *entry;
 }
@@ -137,7 +136,7 @@ Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 
   scheduler::cancel(entry.m_cleanup);
   entry.m_expiry = expiry;
-  entry.m_cleanup = scheduler::schedule(lifetime, bind(&Measurements::cleanup, this, ref(entry)));
+  entry.m_cleanup = scheduler::schedule(lifetime, [&] { cleanup(entry); });
 }
 
 void

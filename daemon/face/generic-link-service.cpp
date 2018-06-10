@@ -36,17 +36,6 @@ NFD_LOG_INIT(GenericLinkService);
 
 constexpr uint32_t DEFAULT_CONGESTION_THRESHOLD_DIVISOR = 2;
 
-GenericLinkService::Options::Options()
-  : allowLocalFields(false)
-  , allowFragmentation(false)
-  , allowReassembly(false)
-  , allowCongestionMarking(false)
-  , baseCongestionMarkingInterval(time::milliseconds(100)) // Interval from RFC 8289 (CoDel)
-  , defaultCongestionThreshold(65536) // This default value works well for a queue capacity of 200KiB
-  , allowSelfLearning(false)
-{
-}
-
 GenericLinkService::GenericLinkService(const GenericLinkService::Options& options)
   : m_options(options)
   , m_fragmenter(m_options.fragmenterOptions, this)
@@ -57,8 +46,8 @@ GenericLinkService::GenericLinkService(const GenericLinkService::Options& option
   , m_lastMarkTime(time::steady_clock::TimePoint::min())
   , m_nMarkedSinceInMarkingState(0)
 {
-  m_reassembler.beforeTimeout.connect(bind([this] { ++this->nReassemblyTimeouts; }));
-  m_reliability.onDroppedInterest.connect([this] (const Interest& i) { this->notifyDroppedInterest(i); });
+  m_reassembler.beforeTimeout.connect([this] (auto...) { ++this->nReassemblyTimeouts; });
+  m_reliability.onDroppedInterest.connect([this] (const auto& i) { this->notifyDroppedInterest(i); });
   nReassembling.observe(&m_reassembler);
 }
 
@@ -226,7 +215,7 @@ GenericLinkService::assignSequence(lp::Packet& pkt)
 void
 GenericLinkService::assignSequences(std::vector<lp::Packet>& pkts)
 {
-  std::for_each(pkts.begin(), pkts.end(), bind(&GenericLinkService::assignSequence, this, _1));
+  std::for_each(pkts.begin(), pkts.end(), [this] (auto& pkt) { this->assignSequence(pkt); });
 }
 
 void

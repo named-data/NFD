@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@ namespace nfd {
 /**
  * \brief implements the Mean-Deviation RTT estimator
  *
- * reference: ns3::RttMeanDeviation
+ * \sa ns3::RttMeanDeviation
  *
  * This RttEstimator algorithm is designed for TCP, which is a continuous stream.
  * NDN Interest-Data traffic is not always a continuous stream,
@@ -43,17 +43,17 @@ namespace nfd {
 class RttEstimator
 {
 public:
-  typedef time::microseconds Duration;
-
-  static Duration
-  getInitialRtt(void)
-  {
-    return time::seconds(1);
-  }
+  using Duration = time::microseconds;
 
   RttEstimator(uint16_t maxMultiplier = 16,
-               Duration minRto = time::milliseconds(1),
+               Duration minRto = 1_ms,
                double gain = 0.1);
+
+  static Duration
+  getInitialRtt()
+  {
+    return 1_s;
+  }
 
   void
   addMeasurement(Duration measure);

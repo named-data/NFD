@@ -47,7 +47,7 @@ FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor
 ProtocolFactoryCtorParams
 FaceSystem::makePFCtorParams()
 {
-  auto addFace = bind(&FaceTable::add, &m_faceTable, _1);
+  auto addFace = [&ft = m_faceTable] (auto face) { ft.add(std::move(face)); };
   return {addFace, m_netmon};
 }
 

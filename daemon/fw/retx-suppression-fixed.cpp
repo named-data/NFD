@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,12 +28,12 @@
 namespace nfd {
 namespace fw {
 
-const time::milliseconds RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL(100);
+const time::milliseconds RetxSuppressionFixed::DEFAULT_MIN_RETX_INTERVAL = 100_ms;
 
 RetxSuppressionFixed::RetxSuppressionFixed(const time::milliseconds& minRetxInterval)
   : m_minRetxInterval(minRetxInterval)
 {
-  BOOST_ASSERT(minRetxInterval > time::milliseconds::zero());
+  BOOST_ASSERT(minRetxInterval > 0_ms);
 }
 
 RetxSuppressionResult

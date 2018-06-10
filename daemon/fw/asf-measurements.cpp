@@ -168,7 +168,7 @@ NamespaceInfo::getOrCreateFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
   FaceInfo* info = nullptr;
 
   if (it == m_fit.end()) {
-    const auto& pair = m_fit.insert(std::make_pair(faceId, FaceInfo()));
+    const auto& pair = m_fit.emplace(faceId, FaceInfo());
     info = &pair.first->second;
 
     extendFaceInfoLifetime(*info, faceId);
@@ -193,9 +193,7 @@ NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
   scheduler::cancel(info.getMeasurementExpirationEventId());
 
   // Refresh measurement
-  scheduler::EventId id = scheduler::schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
-    bind(&NamespaceInfo::expireFaceInfo, this, faceId));
-
+  auto id = scheduler::schedule(AsfMeasurements::MEASUREMENTS_LIFETIME, [=] { expireFaceInfo(faceId); });
   info.setMeasurementExpirationEventId(id);
 }
 

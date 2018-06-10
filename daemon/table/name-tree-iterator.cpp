@@ -46,7 +46,7 @@ Iterator::Iterator()
 }
 
 Iterator::Iterator(shared_ptr<EnumerationImpl> impl, const Entry* ref)
-  : m_impl(impl)
+  : m_impl(std::move(impl))
   , m_entry(nullptr)
   , m_ref(ref)
   , m_state(0)

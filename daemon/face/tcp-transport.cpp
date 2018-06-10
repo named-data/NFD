@@ -35,8 +35,8 @@ namespace face {
 
 NFD_LOG_MEMBER_INIT_SPECIALIZED(StreamTransport<boost::asio::ip::tcp>, TcpTransport);
 
-time::milliseconds TcpTransport::s_initialReconnectWait = time::seconds(1);
-time::milliseconds TcpTransport::s_maxReconnectWait = time::minutes(5);
+time::milliseconds TcpTransport::s_initialReconnectWait = 1_s;
+time::milliseconds TcpTransport::s_maxReconnectWait = 5_min;
 float TcpTransport::s_reconnectWaitMultiplier = 2.0f;
 
 TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope)
@@ -134,10 +134,8 @@ TcpTransport::reconnect()
   this->resetReceiveBuffer();
   this->resetSendQueue();
 
-  m_reconnectEvent = scheduler::schedule(m_nextReconnectWait,
-                                         [this] { handleReconnectTimeout(); });
-  m_socket.async_connect(m_remoteEndpoint,
-                         [this] (const boost::system::error_code& error) { handleReconnect(error); });
+  m_reconnectEvent = scheduler::schedule(m_nextReconnectWait, [this] { this->handleReconnectTimeout(); });
+  m_socket.async_connect(m_remoteEndpoint, [this] (const auto& e) { this->handleReconnect(e); });
 }
 
 void

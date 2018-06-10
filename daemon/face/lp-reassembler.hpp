@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,32 +38,28 @@ namespace face {
 class LinkService;
 
 /** \brief reassembles fragmented network-layer packets
- *  \sa http://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
 class LpReassembler : noncopyable
 {
 public:
   /** \brief Options that control the behavior of LpReassembler
    */
-  class Options
+  struct Options
   {
-  public:
-    Options();
-
-  public:
     /** \brief maximum number of fragments in a packet
      *
      *  LpPackets with FragCount over this limit are dropped.
      */
-    size_t nMaxFragments;
+    size_t nMaxFragments = 400;
 
     /** \brief timeout before a partially reassembled packet is dropped
      */
-    time::nanoseconds reassemblyTimeout;
+    time::nanoseconds reassemblyTimeout = 500_ms;
   };
 
   explicit
-  LpReassembler(const Options& options = Options(), const LinkService* linkService = nullptr);
+  LpReassembler(const Options& options, const LinkService* linkService = nullptr);
 
   /** \brief set options for reassembler
    */

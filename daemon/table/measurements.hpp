@@ -167,7 +167,7 @@ private:
 inline time::nanoseconds
 Measurements::getInitialLifetime()
 {
-  return time::seconds(4);
+  return 4_s;
 }
 
 inline size_t

@@ -87,10 +87,10 @@ MulticastUdpTransport::doSend(Transport::Packet&& packet)
   NFD_LOG_FACE_TRACE(__func__);
 
   m_sendSocket.async_send_to(boost::asio::buffer(packet.packet), m_multicastGroup,
-                             bind(&MulticastUdpTransport::handleSend, this,
-                                  boost::asio::placeholders::error,
-                                  boost::asio::placeholders::bytes_transferred,
-                                  packet.packet));
+                             // packet.packet is copied into the lambda to retain the underlying Buffer
+                             [this, p = packet.packet] (auto&&... args) {
+                               this->handleSend(std::forward<decltype(args)>(args)...);
+                             });
 }
 
 void

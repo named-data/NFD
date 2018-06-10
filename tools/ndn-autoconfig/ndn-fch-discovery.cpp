@@ -27,8 +27,8 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/regex.hpp>
 
+#include <regex>
 #include <sstream>
 
 namespace ndn {
@@ -47,31 +47,31 @@ public:
   Url(const std::string& url)
     : m_isValid(false)
   {
-    static const boost::regex protocolExp("(\\w+\\d?(\\+\\w+)?)://([^/]*)(\\/[^?]*)?");
-    boost::smatch protocolMatch;
-    if (!boost::regex_match(url, protocolMatch, protocolExp)) {
+    static const std::regex protocolExp("(\\w+\\d?(\\+\\w+)?)://([^/]*)(\\/[^?]*)?");
+    std::smatch protocolMatch;
+    if (!std::regex_match(url, protocolMatch, protocolExp)) {
       return;
     }
     m_scheme = protocolMatch[1];
-    const std::string& authority = protocolMatch[3];
+    std::string authority = protocolMatch[3];
     m_path = protocolMatch[4];
 
     // pattern for IPv6 address enclosed in [ ], with optional port number
-    static const boost::regex v6Exp("^\\[([a-fA-F0-9:]+)\\](?:\\:(\\d+))?$");
+    static const std::regex v6Exp("^\\[([a-fA-F0-9:]+)\\](?:\\:(\\d+))?$");
     // pattern for IPv4-mapped IPv6 address, with optional port number
-    static const boost::regex v4MappedV6Exp("^\\[::ffff:(\\d+(?:\\.\\d+){3})\\](?:\\:(\\d+))?$");
+    static const std::regex v4MappedV6Exp("^\\[::ffff:(\\d+(?:\\.\\d+){3})\\](?:\\:(\\d+))?$");
     // pattern for IPv4/hostname/fd/ifname, with optional port number
-    static const boost::regex v4HostExp("^([^:]+)(?:\\:(\\d+))?$");
+    static const std::regex v4HostExp("^([^:]+)(?:\\:(\\d+))?$");
 
     if (authority.empty()) {
       // UNIX, internal
     }
     else {
-      boost::smatch match;
-      bool isV6 = boost::regex_match(authority, match, v6Exp);
+      std::smatch match;
+      bool isV6 = std::regex_match(authority, match, v6Exp);
       if (isV6 ||
-          boost::regex_match(authority, match, v4MappedV6Exp) ||
-          boost::regex_match(authority, match, v4HostExp)) {
+          std::regex_match(authority, match, v4MappedV6Exp) ||
+          std::regex_match(authority, match, v4HostExp)) {
         m_host = match[1];
         m_port = match[2];
       }
