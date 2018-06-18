@@ -165,6 +165,7 @@
         <th>Scope</th>
         <th>Persistency</th>
         <th>LinkType</th>
+        <th>MTU</th>
         <th>Flags</th>
         <th>Expires in</th>
         <th>In Interests</th>
@@ -186,6 +187,16 @@
         <td><xsl:value-of select="nfd:faceScope"/></td>
         <td><xsl:value-of select="nfd:facePersistency"/></td>
         <td><xsl:value-of select="nfd:linkType"/></td>
+        <td>
+          <xsl:choose>
+            <xsl:when test="nfd:mtu">
+              <xsl:value-of select="nfd:mtu"/>
+            </xsl:when>
+            <xsl:otherwise>
+              n/a
+            </xsl:otherwise>
+          </xsl:choose>
+        </td>
         <td>
           <xsl:if test="nfd:flags/nfd:localFieldsEnabled">local-fields </xsl:if>
           <xsl:if test="nfd:flags/nfd:lpReliabilityEnabled">reliability </xsl:if>

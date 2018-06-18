@@ -57,7 +57,8 @@ FaceModule::registerCommands(CommandParser& parser)
     .addArg("reliability", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
     .addArg("congestion-marking", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
     .addArg("congestion-marking-interval", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
-    .addArg("default-congestion-threshold", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+    .addArg("default-congestion-threshold", ArgValueType::UNSIGNED, Required::NO, Positional::NO)
+    .addArg("mtu", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
   parser.addCommand(defFaceCreate, &FaceModule::create);
 
   CommandDefinition defFaceDestroy("face", "destroy");
@@ -159,6 +160,7 @@ FaceModule::create(ExecuteContext& ctx)
   auto congestionMarking = ctx.args.getTribool("congestion-marking");
   auto baseCongestionMarkingIntervalMs = ctx.args.getOptional<uint64_t>("congestion-marking-interval");
   auto defaultCongestionThreshold = ctx.args.getOptional<uint64_t>("default-congestion-threshold");
+  auto mtu = ctx.args.getOptional<uint64_t>("mtu");
 
   FaceUri canonicalRemote;
   optional<FaceUri> canonicalLocal;
@@ -192,7 +194,11 @@ FaceModule::create(ExecuteContext& ctx)
       return false;
     }
 
-    if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
+    if (mtu && (!respParams.hasMtu() || respParams.getMtu() != *mtu)) {
+      // Mtu cannot be changed with faces/update
+      return false;
+    }
+    else if (persistencyLessThan(respParams.getFacePersistency(), persistency)) {
       // need to upgrade persistency
       ControlParameters params;
       params.setFaceId(respParams.getFaceId()).setFacePersistency(persistency);
@@ -262,6 +268,9 @@ FaceModule::create(ExecuteContext& ctx)
     }
     if (defaultCongestionThreshold) {
       params.setDefaultCongestionThreshold(*defaultCongestionThreshold);
+    }
+    if (mtu) {
+      params.setMtu(*mtu);
     }
 
     ctx.controller.start<ndn::nfd::FaceCreateCommand>(
@@ -400,6 +409,10 @@ FaceModule::formatItemXml(std::ostream& os, const FaceStatus& item) const
     os << "</congestion>";
   }
 
+  if (item.hasMtu()) {
+    os << "<mtu>" << item.getMtu() << "</mtu>";
+  }
+
   if (item.getFlags() == 0) {
     os << "<flags/>";
   }
@@ -469,6 +482,10 @@ FaceModule::formatItemText(std::ostream& os, const FaceStatus& item, bool wantMu
     os << "}";
   }
 
+  if (item.hasMtu()) {
+    os << ia("mtu") << item.getMtu();
+  }
+
   os << ia("counters")
      << "{in={"
      << item.getNInInterests() << "i "
@@ -511,6 +528,9 @@ FaceModule::printFaceParams(std::ostream& os, text::ItemAttributes& ia, const Co
   }
   if (resp.hasDefaultCongestionThreshold()) {
     os << ia("default-congestion-threshold") << resp.getDefaultCongestionThreshold() << "B";
+  }
+  if (resp.hasMtu()) {
+    os << ia("mtu") << resp.getMtu();
   }
   os << '\n';
 }

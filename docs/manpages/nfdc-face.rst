@@ -9,6 +9,7 @@ SYNOPSIS
 |                  [reliability on|off] [congestion-marking on|off]
 |                  [congestion-marking-interval <MARKING-INTERVAL>]
 |                  [default-congestion-threshold <CONGESTION-THRESHOLD>]
+|                  [mtu <MTU>]
 | nfdc face destroy [face] <FACEID|FACEURI>
 | nfdc channel [list]
 
@@ -37,6 +38,11 @@ Congestion marking is enabled by default on TCP, UDP, and Unix stream faces and 
 default on all other face types.
 Parameters for this feature can set with the **congestion-marking-interval** option (specified in
 milliseconds) and the **default-congestion-threshold** option (specified in bytes).
+The MTUs of unicast Ethernet and UDP faces may be overridden using the **mtu** parameter (specified
+in bytes).
+However, a face may choose to limit the range of acceptable values for this parameter or disregard
+it altogether when setting its MTU.
+The MTU of an existing face may not be modified using this parameter and will result in an error.
 
 The **nfdc face destroy** command destroys an existing face.
 
@@ -127,6 +133,10 @@ nfdc face create remote udp://router.example.net congestion-marking-interval 100
 
 nfdc face create remote udp://router.example.net congestion-marking off
     Create a face with the specified remote FaceUri and explicitly disable congestion marking.
+
+nfdc face create remote udp://router.example.net mtu 4000
+    Create a face with the specified remote FaceUri and an MTU of 4000 bytes (which may be ignored
+    or limited to within a certain range by the internal logic of the face).
 
 nfdc face destroy 300
     Destroy the face whose FaceId is 300.
