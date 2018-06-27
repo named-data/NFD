@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
   this->execute("route list");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when fetching RIB dataset: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when fetching RIB dataset: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ListShowCommand
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
   this->execute("route add /q1Qf7go7 udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCommand)
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
   this->execute("route remove /YX4xQQN3v5 udp://26.97.248.3");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCommand)

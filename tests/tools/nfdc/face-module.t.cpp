@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(Error)
   this->execute("face list local udp4://31.67.17.2:6363");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ListCommand
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE(Error)
   this->execute("face show 256");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // ShowCommand
@@ -875,7 +875,7 @@ BOOST_AUTO_TEST_CASE(ErrorDataset)
   this->execute("face destroy udp://159.242.33.78");
   BOOST_CHECK_EQUAL(exitCode, 1);
   BOOST_CHECK(out.is_empty());
-  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout\n"));
+  BOOST_CHECK(err.is_equal("Error 10060 when querying face: Timeout exceeded\n"));
 }
 
 BOOST_AUTO_TEST_CASE(ErrorCommand)
