@@ -20,9 +20,9 @@ def configure(conf):
                       'The minimum supported gcc version is 5.3.0.')
         conf.flags = GccFlags()
     elif cxx == 'clang':
-        if ccver < (3, 5, 0):
+        if ccver < (3, 6, 0):
             errmsg = ('The version of clang you are using is too old.\n'
-                      'The minimum supported clang version is 3.5.0.')
+                      'The minimum supported clang version is 3.6.0.')
         conf.flags = ClangFlags()
     else:
         warnmsg = 'Note: %s compiler is unsupported' % cxx

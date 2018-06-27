@@ -478,8 +478,7 @@ BOOST_AUTO_TEST_CASE(CreatingWithParams)
 
 BOOST_AUTO_TEST_CASE(MtuExistingFace)
 {
-  bool hasUpdateCommand = false;
-  this->processInterest = [this, &hasUpdateCommand] (const Interest& interest) {
+  this->processInterest = [this] (const Interest& interest) {
     this->respond409(interest, FacePersistency::FACE_PERSISTENCY_ON_DEMAND, 4000);
     // no command other than faces/create is expected
   };
