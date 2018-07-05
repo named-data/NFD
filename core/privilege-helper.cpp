@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -121,10 +121,10 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
 void
 PrivilegeHelper::drop()
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   if (::geteuid() == s_normalUid && ::getegid() == s_normalGid)
     return;
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("dropping to effective gid=" << s_normalGid);
   if (::setegid(s_normalGid) != 0)
     throw Error("Failed to drop to effective gid=" + to_string(s_normalGid));
@@ -142,10 +142,10 @@ PrivilegeHelper::drop()
 void
 PrivilegeHelper::raise()
 {
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   if (::geteuid() == s_privilegedUid && ::getegid() == s_privilegedGid)
     return;
 
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   NFD_LOG_TRACE("elevating to effective uid=" << s_privilegedUid);
   if (::seteuid(s_privilegedUid) != 0)
     throw Error("Failed to elevate to effective uid=" + to_string(s_privilegedUid));
