@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,9 +26,9 @@
 #include "dns-srv.hpp"
 
 #include <sys/types.h>
+#include <arpa/nameser.h>
 #include <netinet/in.h>
 #include <resolv.h>
-#include <arpa/nameser.h>
 
 #ifdef __APPLE__
 #include <arpa/nameser_compat.h>
@@ -36,9 +36,13 @@
 
 #include <iostream>
 
+#include <boost/endian/conversion.hpp>
+
 namespace ndn {
 namespace tools {
 namespace autoconfig {
+
+using namespace std::string_literals;
 
 union QueryAnswer
 {
@@ -72,12 +76,12 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
     uint8_t* target;
   };
 
-  if (ntohs(queryAnswer.header.ancount) == 0) {
+  uint16_t ancount = queryAnswer.header.ancount;
+  if (boost::endian::big_to_native(ancount) == 0) {
     BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed"));
   }
 
   const uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
-
   blob += dn_skipname(blob, queryAnswer.buf + answerSize) + NS_QFIXEDSZ;
 
   char srvName[NS_MAXDNAME];
@@ -91,7 +95,7 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
   }
 
   const srv_t* server = reinterpret_cast<const srv_t*>(&blob[sizeof(rechdr)]);
-  uint16_t convertedPort = be16toh(server->port);
+  uint16_t port = boost::endian::big_to_native(server->port);
 
   blob += serverNameSize + NS_HFIXEDSZ + NS_QFIXEDSZ;
 
@@ -105,12 +109,7 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
     BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed (error decoding host name)"));
   }
 
-  std::string uri = "udp://";
-  uri.append(hostName);
-  uri.append(":");
-  uri.append(to_string(convertedPort));
-
-  return uri;
+  return "udp://"s + hostName + ":" + to_string(port);
 }
 
 std::string

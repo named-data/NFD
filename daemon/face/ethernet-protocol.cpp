@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "ethernet-protocol.hpp"
 
-#include <arpa/inet.h>  // for ntohs()
+#include <boost/endian/conversion.hpp>
 
 namespace nfd {
 namespace ethernet {
@@ -41,8 +41,9 @@ checkFrameHeader(const uint8_t* packet, size_t length,
 
   // in some cases VLAN-tagged frames may survive the BPF filter,
   // make sure we do not process those frames (see #3348)
-  if (ntohs(eh->ether_type) != ETHERTYPE_NDN)
-    return {nullptr, "Received frame with wrong ethertype: " + to_string(ntohs(eh->ether_type))};
+  uint16_t ethertype = boost::endian::big_to_native(eh->ether_type);
+  if (ethertype != ETHERTYPE_NDN)
+    return {nullptr, "Received frame with wrong ethertype: " + to_string(ethertype)};
 
 #ifdef _DEBUG
   Address shost(eh->ether_shost);

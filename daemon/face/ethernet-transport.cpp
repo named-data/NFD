@@ -29,8 +29,9 @@
 
 #include <pcap/pcap.h>
 
-#include <arpa/inet.h>  // for htons()
-#include <cstring>      // for memcpy()
+#include <cstring> // for memcpy()
+
+#include <boost/endian/conversion.hpp>
 
 namespace nfd {
 namespace face {
@@ -101,7 +102,7 @@ EthernetTransport::sendPacket(const ndn::Block& block)
   }
 
   // construct and prepend the ethernet header
-  static uint16_t ethertype = htons(ethernet::ETHERTYPE_NDN);
+  uint16_t ethertype = boost::endian::native_to_big(ethernet::ETHERTYPE_NDN);
   buffer.prependByteArray(reinterpret_cast<const uint8_t*>(&ethertype), ethernet::TYPE_LEN);
   buffer.prependByteArray(m_srcAddress.data(), m_srcAddress.size());
   buffer.prependByteArray(m_destAddress.data(), m_destAddress.size());
