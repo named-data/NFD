@@ -93,6 +93,83 @@ BOOST_AUTO_TEST_CASE(ErrorCommand)
 
 BOOST_AUTO_TEST_SUITE_END() // ConfigCommand
 
+BOOST_FIXTURE_TEST_SUITE(EraseCommand, ExecuteCommandFixture)
+
+BOOST_AUTO_TEST_CASE(NoCount)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
+    BOOST_REQUIRE(req.hasName());
+    BOOST_CHECK_EQUAL(req.getName(), "/S2NrUoNJcQ");
+    BOOST_CHECK(!req.hasCount());
+
+    ControlParameters resp;
+    resp.setName("/S2NrUoNJcQ");
+    resp.setCount(152);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("cs erase /S2NrUoNJcQ");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("cs-erased prefix=/S2NrUoNJcQ count=152 has-more=no\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(WithCount)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
+    BOOST_REQUIRE(req.hasName());
+    BOOST_CHECK_EQUAL(req.getName(), "/gr7ADmIq");
+    BOOST_REQUIRE(req.hasCount());
+    BOOST_CHECK_EQUAL(req.getCount(), 7568);
+
+    ControlParameters resp;
+    resp.setName("/gr7ADmIq");
+    resp.setCount(141);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("cs erase /gr7ADmIq count 7568");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("cs-erased prefix=/gr7ADmIq count=141 has-more=no\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(HasMore)
+{
+  this->processInterest = [this] (const Interest& interest) {
+    ControlParameters req = MOCK_NFD_MGMT_REQUIRE_COMMAND_IS("/localhost/nfd/cs/erase");
+    BOOST_REQUIRE(req.hasName());
+    BOOST_CHECK_EQUAL(req.getName(), "/8Rq1Merv");
+    BOOST_REQUIRE(req.hasCount());
+    BOOST_CHECK_EQUAL(req.getCount(), 16519);
+
+    ControlParameters resp;
+    resp.setName("/8Rq1Merv");
+    resp.setCount(256);
+    resp.setCapacity(256);
+    this->succeedCommand(interest, resp);
+  };
+
+  this->execute("cs erase /8Rq1Merv count 16519");
+  BOOST_CHECK_EQUAL(exitCode, 0);
+  BOOST_CHECK(out.is_equal("cs-erased prefix=/8Rq1Merv count=256 has-more=yes\n"));
+  BOOST_CHECK(err.is_empty());
+}
+
+BOOST_AUTO_TEST_CASE(ErrorCommand)
+{
+  this->processInterest = nullptr; // no response to command
+
+  this->execute("cs erase /8Rq1Merv count 16519");
+  BOOST_CHECK_EQUAL(exitCode, 1);
+  BOOST_CHECK(out.is_empty());
+  BOOST_CHECK(err.is_equal("Error 10060 when erasing cached Data: request timed out\n"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // EraseCommand
+
 const std::string STATUS_XML = stripXmlSpaces(R"XML(
   <cs>
     <capacity>31807</capacity>

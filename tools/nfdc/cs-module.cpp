@@ -42,6 +42,13 @@ CsModule::registerCommands(CommandParser& parser)
     .addArg("admit", ArgValueType::BOOLEAN, Required::NO, Positional::NO)
     .addArg("serve", ArgValueType::BOOLEAN, Required::NO, Positional::NO);
   parser.addCommand(defCsConfig, &CsModule::config);
+
+  CommandDefinition defCsErase("cs", "erase");
+  defCsErase
+    .setTitle("erase cached Data")
+    .addArg("prefix", ArgValueType::NAME, Required::YES, Positional::YES)
+    .addArg("count", ArgValueType::UNSIGNED, Required::NO, Positional::NO);
+  parser.addCommand(defCsErase, &CsModule::erase);
 }
 
 void
@@ -74,6 +81,34 @@ CsModule::config(ExecuteContext& ctx)
               << '\n';
     },
     ctx.makeCommandFailureHandler("updating CS config"),
+    ctx.makeCommandOptions());
+
+  ctx.face.processEvents();
+}
+
+void
+CsModule::erase(ExecuteContext& ctx)
+{
+  auto prefix = ctx.args.get<Name>("prefix");
+  auto count = ctx.args.getOptional<uint64_t>("count");
+
+  ControlParameters params;
+  params.setName(prefix);
+  if (count) {
+    params.setCount(*count);
+  }
+
+  ctx.controller.start<ndn::nfd::CsEraseCommand>(
+    params,
+    [&] (const ControlParameters& resp) {
+      text::ItemAttributes ia;
+      ctx.out << "cs-erased "
+              << ia("prefix") << resp.getName()
+              << ia("count") << resp.getCount()
+              << ia("has-more") << text::YesNo{resp.hasCapacity()}
+              << '\n';
+    },
+    ctx.makeCommandFailureHandler("erasing cached Data"),
     ctx.makeCommandOptions());
 
   ctx.face.processEvents();

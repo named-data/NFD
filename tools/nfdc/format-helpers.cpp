@@ -192,6 +192,12 @@ operator<<(std::ostream& os, OnOff v)
   return os << (v.flag ? "on" : "off");
 }
 
+std::ostream&
+operator<<(std::ostream& os, YesNo v)
+{
+  return os << (v.flag ? "yes" : "no");
+}
+
 std::string
 formatTimestamp(time::system_clock::TimePoint t)
 {

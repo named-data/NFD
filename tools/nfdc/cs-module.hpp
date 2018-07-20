@@ -51,6 +51,11 @@ public:
   static void
   config(ExecuteContext& ctx);
 
+  /** \brief the 'cs erase' command
+   */
+  static void
+  erase(ExecuteContext& ctx);
+
   void
   fetchStatus(Controller& controller,
               const std::function<void()>& onSuccess,

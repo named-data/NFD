@@ -186,6 +186,16 @@ struct OnOff
 std::ostream&
 operator<<(std::ostream& os, OnOff v);
 
+/** \brief print boolean as 'yes' or 'no'
+ */
+struct YesNo
+{
+  bool flag;
+};
+
+std::ostream&
+operator<<(std::ostream& os, YesNo v);
+
 namespace detail {
 
 template<typename DurationT>
