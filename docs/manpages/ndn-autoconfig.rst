@@ -19,9 +19,8 @@ Options
 -------
 
 ``-d`` or ``--daemon``
-  Run ndn-autoconfig in daemon mode, detecting network change events and re-running
-  auto-discovery procedure.  In addition, the auto-discovery procedure is unconditionally
-  re-run every hour.
+  Run ndn-autoconfig in daemon mode. In this mode, the auto-discovery procedure is re-run
+  hourly or when a network change event is detected.
 
   NOTE: if connection to NFD fails, the daemon will be terminated.
 
@@ -31,7 +30,7 @@ Options
 
 ``--ndn-fch-url=[URL]``
   Use the specified URL to find the closest hub (NDN-FCH protocol).  If not specified,
-  ``http://ndn-fch.named-data.net`` will be used.  Only ``http://`` URLs are supported.
+  ``http://ndn-fch.named-data.net/`` will be used.  Only ``http://`` URLs are supported.
 
 ``-h`` or ``--help``
   Print help message and exit.
@@ -45,8 +44,10 @@ NDN hub discovery procedure
 ---------------------------
 
 When an end host starts up, or detects a change in its network environment, it MAY use
-this procedure to discover a local or home NDN router, in order to gain connectivity to
+this procedure to discover a NDN router, in order to gain connectivity to
 `the NDN research testbed <https://named-data.net/ndn-testbed/>`_.
+This procedure can discover either an NDN router in the local network, or a NDN testbed
+gateway router (commonly known as a "hub").
 
 Overview
 ^^^^^^^^
@@ -61,13 +62,13 @@ This procedure contains four methods to discover a NDN router:
 
 3.  Find closest hub by sending an HTTP request to NDN-FCH server.
 
-4.  Connect to the home NDN router according to user certificate.
+4.  Connect to the home hub according to user certificate.
     This ensures connectivity from anywhere.
 
-After connecting to an NDN router, two prefixes will be automatically registered:
+After connecting, two prefixes will be registered toward the router:
 
-- ``/ndn``
-- ``/localhop/nfd`` --- this to inform RIB manager that there is connectivity to the hub
+- ``/`` --- this allows application communication
+- ``/localhop/nfd`` --- this informs NFD-RIB that there is connectivity to a router
 
 Stage 1: multicast discovery
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -75,16 +76,14 @@ Stage 1: multicast discovery
 Request
 +++++++
 
-The end host sends an Interest over a multicast face.
-
-Interest Name is ``/localhop/ndn-autoconf/hub``.
+The end host sends Interest ``/localhop/ndn-autoconf/hub`` over a multicast face.
 
 Response
 ++++++++
 
-A producer app on the HUB answer this Interest with a Data packet that contains a
-TLV-encoded `Uri` block.  The value of this block is the URI for the HUB, preferrably a
-UDP tunnel.
+A producer app on the router answers this Interest with a Data packet that contains a
+``Uri`` TLV element.  The value of this element is the FaceUri for the router, such as
+a UDP tunnel.
 
 Stage 2: DNS query with default suffix
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -100,7 +99,7 @@ Response
 ++++++++
 
 The DNS server should answer with an SRV record that contains the hostname and UDP port
-number of the NDN router.
+number of a nearby NDN router.
 
 Stage 3: HTTP Request to NDN-FCH server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -111,7 +110,7 @@ to the `NDN-FCH README file <https://github.com/named-data/ndn-fch>`__.
 Request
 +++++++
 
-HTTP/1.0 request for the NDN-FCH server URI (``http://ndn-fch.named-data.net`` by default)
+HTTP/1.0 request for the NDN-FCH server URI (`http://ndn-fch.named-data.net/`__ by default)
 
 Response
 ++++++++
@@ -119,13 +118,12 @@ Response
 The HTTP response is expected to be a hostname or an IP address of the closest hub,
 inferred using IP-geo approximation service.
 
-
 Stage 4: find home router
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This stage assumes that user has configured default certificate using
-`<https://ndncert.named-data.net/>`_ as described in `Certification Architecture
-<https://redmine.named-data.net/attachments/download/23/CertificationArchitecture.pptx>`_.
+`https://ndncert.named-data.net/`__ as described in `Certification Architecture
+<https://redmine.named-data.net/attachments/download/23/CertificationArchitecture.pptx>`__.
 
 Request
 +++++++
@@ -142,7 +140,7 @@ Response
 ++++++++
 
 The DNS server should answer with an SRV record that contains the hostname and UDP port
-number of the home NDN router of this user's site.
+number of the home hub of this user's site.
 
 Client procedure
 ----------------
@@ -151,33 +149,30 @@ Stage 1
 ^^^^^^^
 
 Send a multicast discovery Interest.
-
-If this Interest is answered, connect to the HUB and terminate auto-discovery.
+If this Interest is answered, connect to the router and terminate auto-discovery.
 
 Stage 2
 ^^^^^^^
 
 Send a DNS query with default suffix.
-
-If this query is answered, connect to the HUB and terminate auto-discovery.
+If this query is answered, connect to the router and terminate auto-discovery.
 
 Stage 3
 ^^^^^^^
 
 Send HTTP request to NDN-FCH server.
-
-If request succeeds, attempt to connect to the discovered HUB and terminate
+If request succeeds, attempt to connect to the discovered hub and terminate
 auto-discovery.
 
 Stage 4
 ^^^^^^^
 
-* Load default user identity, and convert it to DNS format; if either fails, the
-  auto-discovery fails.
+Load default user identity, and convert it to DNS format.
+If either fails, the auto-discovery fails.
 
-* Send a DNS query to find home HUB.
-  If this query is answered, connect to the home HUB and terminate auto-discovery.
-  Otherwise, the auto-discovery fails.
+Send a DNS query to find home hub.
+If this query is answered, connect to the home hub and terminate auto-discovery.
+Otherwise, the auto-discovery fails.
 
 Exit status
 -----------
