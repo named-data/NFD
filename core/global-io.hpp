@@ -42,10 +42,10 @@ setRibIoService(boost::asio::io_service* ribIo);
 void
 runOnRibIoService(const std::function<void()>& f);
 
-#ifdef WITH_TESTS
 boost::asio::io_service&
 getRibIoService();
 
+#ifdef WITH_TESTS
 /** \brief delete the global io_service instance
  *
  *  It will be recreated at the next invocation of getGlobalIoService.

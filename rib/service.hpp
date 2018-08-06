@@ -40,6 +40,8 @@ class RibManager;
 
 /**
  * \brief initializes and executes NFD-RIB service thread
+ *
+ * Only one instance of this class can be created at any time
  */
 class Service : noncopyable
 {
@@ -58,6 +60,8 @@ public:
    * \brief create NFD-RIB service
    * \param configFile absolute or relative path of configuration file
    * \param keyChain the KeyChain
+   * \throw std::logic_error Instance of rib::Service has been already constructed
+   * \throw std::logic_error Instance of rib::Service is not constructed on RIB thread
    */
   Service(const std::string& configFile, ndn::KeyChain& keyChain);
 
@@ -68,6 +72,8 @@ public:
    * \note This constructor overload is more appropriate for integrated environments,
    *       such as NS-3 or android. Error messages related to configuration file
    *       will use "internal://nfd.conf" as configuration filename.
+   * \throw std::logic_error Instance of rib::Service has been already constructed
+   * \throw std::logic_error Instance of rib::Service is not constructed on RIB thread
    */
   Service(const ConfigSection& config, ndn::KeyChain& keyChain);
 
@@ -84,6 +90,14 @@ public:
   void
   initialize();
 
+  /**
+   * \brief Get a reference to the only instance of this class
+   * \throw std::logic_error No instance has been constructed
+   * \throw std::logic_error This function is invoked on a thread other than the RIB thread
+   */
+  static Service&
+  get();
+
 private:
   /**
    * \brief Look into the config file and construct appropriate transport to communicate with NFD
@@ -93,6 +107,8 @@ private:
   getLocalNfdTransport();
 
 private:
+  static Service* s_instance;
+
   std::string m_configFile;
   ConfigSection m_configSection;
 

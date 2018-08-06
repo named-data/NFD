@@ -37,22 +37,50 @@ namespace rib {
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
 
+Service* Service::s_instance = nullptr;
+
 Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
   : m_configFile(configFile)
   , m_keyChain(keyChain)
 {
+  if (s_instance != nullptr) {
+    BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
+  }
+  if (&getGlobalIoService() != &getRibIoService()) {
+    BOOST_THROW_EXCEPTION(std::logic_error("RIB service must run on RIB thread"));
+  }
+  s_instance = this;
 }
 
 Service::Service(const ConfigSection& config, ndn::KeyChain& keyChain)
   : m_configSection(config)
   , m_keyChain(keyChain)
 {
+  if (s_instance != nullptr) {
+    BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
+  }
+  if (&getGlobalIoService() != &getRibIoService()) {
+    BOOST_THROW_EXCEPTION(std::logic_error("RIB service must run on RIB thread"));
+  }
+  s_instance = this;
 }
 
-// It is necessary to explicitly define the destructor, because some member variables
-// (e.g., unique_ptr<RibManager>) are forward-declared, but implicitly declared destructor
-// requires complete types for all members when instantiated.
-Service::~Service() = default;
+Service::~Service()
+{
+  s_instance = nullptr;
+}
+
+Service&
+Service::get()
+{
+  if (s_instance == nullptr) {
+    BOOST_THROW_EXCEPTION(std::logic_error("RIB service is not instantiated"));
+  }
+  if (&getGlobalIoService() != &getRibIoService()) {
+    BOOST_THROW_EXCEPTION(std::logic_error("Must get RIB service on RIB thread"));
+  }
+  return *s_instance;
+}
 
 void
 Service::initialize()
