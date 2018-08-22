@@ -24,18 +24,26 @@
  */
 
 #include "service.hpp"
+
+#include "auto-prefix-propagator.hpp"
+#include "fib-updater.hpp"
 #include "rib-manager.hpp"
+#include "readvertise/client-to-nlsr-readvertise-policy.hpp"
+#include "readvertise/nfd-rib-readvertise-destination.hpp"
+#include "readvertise/readvertise.hpp"
+
 #include "core/global-io.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 
-#include <ndn-cxx/transport/unix-transport.hpp>
 #include <ndn-cxx/transport/tcp-transport.hpp>
+#include <ndn-cxx/transport/unix-transport.hpp>
 
 namespace nfd {
 namespace rib {
 
 static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
+static const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
 
 Service* Service::s_instance = nullptr;
 
@@ -52,8 +60,8 @@ Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
   s_instance = this;
 }
 
-Service::Service(const ConfigSection& config, ndn::KeyChain& keyChain)
-  : m_configSection(config)
+Service::Service(const ConfigSection& configSection, ndn::KeyChain& keyChain)
+  : m_configSection(configSection)
   , m_keyChain(keyChain)
 {
   if (s_instance != nullptr) {
@@ -86,8 +94,11 @@ void
 Service::initialize()
 {
   m_face = make_unique<ndn::Face>(getLocalNfdTransport(), getGlobalIoService(), m_keyChain);
+  m_nfdController = make_unique<ndn::nfd::Controller>(*m_face, m_keyChain);
+  m_fibUpdater = make_unique<FibUpdater>(m_rib, *m_nfdController);
+  m_prefixPropagator = make_unique<AutoPrefixPropagator>(*m_nfdController, m_keyChain, m_rib);
   m_dispatcher = make_unique<ndn::mgmt::Dispatcher>(*m_face, m_keyChain);
-  m_ribManager = make_unique<RibManager>(*m_dispatcher, *m_face, m_keyChain);
+  m_ribManager = make_unique<RibManager>(m_rib, *m_dispatcher, *m_face, *m_nfdController, *m_prefixPropagator);
 
   ConfigFile config([] (const std::string& filename, const std::string& sectionName,
                         const ConfigSection& section, bool isDryRun) {
@@ -107,6 +118,23 @@ Service::initialize()
   else {
     config.parse(m_configSection, true, INTERNAL_CONFIG);
     config.parse(m_configSection, false, INTERNAL_CONFIG);
+  }
+
+  if (m_ribManager->wantAutoPrefixPropagator) {
+    m_prefixPropagator->enable();
+  }
+  else {
+    m_prefixPropagator->disable();
+  }
+
+  if (m_ribManager->wantReadvertiseToNlsr && m_readvertiseNlsr == nullptr) {
+    m_readvertiseNlsr = make_unique<Readvertise>(
+      m_rib,
+      make_unique<ClientToNlsrReadvertisePolicy>(),
+      make_unique<NfdRibReadvertiseDestination>(*m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
+  }
+  else if (!m_ribManager->wantReadvertiseToNlsr && m_readvertiseNlsr != nullptr) {
+    m_readvertiseNlsr.reset();
   }
 
   m_ribManager->registerWithNfd();
@@ -131,7 +159,7 @@ Service::getLocalNfdTransport()
     // unix socket enabled
 
     auto socketPath = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
-    // default socketPath should be the same as in FaceManager::processSectionUnix
+    // default socketPath should be the same as in UnixStreamFactory::processConfig
 
     return make_shared<ndn::UnixTransport>(socketPath);
   }
@@ -140,7 +168,7 @@ Service::getLocalNfdTransport()
     // tcp is enabled
 
     auto port = config.get<std::string>("face_system.tcp.port", "6363");
-    // default port should be the same as in FaceManager::processSectionTcp
+    // default port should be the same as in TcpFactory::processConfig
 
     return make_shared<ndn::TcpTransport>("localhost", port);
   }

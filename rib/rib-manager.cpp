@@ -24,9 +24,6 @@
  */
 
 #include "rib-manager.hpp"
-#include "readvertise/readvertise.hpp"
-#include "readvertise/client-to-nlsr-readvertise-policy.hpp"
-#include "readvertise/nfd-rib-readvertise-destination.hpp"
 
 #include "core/fib-max-depth.hpp"
 #include "core/logger.hpp"
@@ -49,21 +46,19 @@ const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";
 const std::string RibManager::MGMT_MODULE_NAME = "rib";
 const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
 const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
-const Name RibManager::READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
 
-RibManager::RibManager(Dispatcher& dispatcher,
+RibManager::RibManager(Rib& rib,
+                       Dispatcher& dispatcher,
                        ndn::Face& face,
-                       ndn::KeyChain& keyChain)
+                       ndn::nfd::Controller& controller,
+                       AutoPrefixPropagator& propagator)
   : ManagerBase(dispatcher, MGMT_MODULE_NAME)
-  , m_face(face)
-  , m_keyChain(keyChain)
-  , m_nfdController(m_face, m_keyChain)
-  , m_faceMonitor(m_face)
-  , m_localhostValidator(m_face)
-  , m_localhopValidator(m_face)
-  , m_isLocalhopEnabled(false)
-  , m_prefixPropagator(m_nfdController, m_keyChain, m_rib)
-  , m_fibUpdater(m_rib, m_nfdController)
+  , m_rib(rib)
+  , m_nfdController(controller)
+  , m_faceMonitor(face)
+  , m_localhostValidator(face)
+  , m_localhopValidator(face)
+  , m_prefixPropagator(propagator)
   , m_addTopPrefix([&dispatcher] (const Name& topPrefix) {
       dispatcher.addTopPrefix(topPrefix, false);
     })
@@ -128,12 +123,10 @@ RibManager::onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std
 }
 
 void
-RibManager::onConfig(const ConfigSection& configSection,
-                     bool isDryRun,
-                     const std::string& filename)
+RibManager::onConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename)
 {
-  bool isAutoPrefixPropagatorEnabled = false;
-  bool wantReadvertiseToNlsr = false;
+  wantAutoPrefixPropagator = false;
+  wantReadvertiseToNlsr = false;
 
   for (const auto& item : configSection) {
     if (item.first == "localhost_security") {
@@ -145,14 +138,7 @@ RibManager::onConfig(const ConfigSection& configSection,
     }
     else if (item.first == "auto_prefix_propagate") {
       m_prefixPropagator.loadConfig(item.second);
-      isAutoPrefixPropagatorEnabled = true;
-
-      // Avoid other actions when isDryRun == true
-      if (isDryRun) {
-        continue;
-      }
-
-      m_prefixPropagator.enable();
+      wantAutoPrefixPropagator = true;
     }
     else if (item.first == "readvertise_nlsr") {
       wantReadvertiseToNlsr = ConfigFile::parseYesNo(item, "rib.readvertise_nlsr");
@@ -160,22 +146,6 @@ RibManager::onConfig(const ConfigSection& configSection,
     else {
       BOOST_THROW_EXCEPTION(Error("Unrecognized rib property: " + item.first));
     }
-  }
-
-  if (!isAutoPrefixPropagatorEnabled) {
-    m_prefixPropagator.disable();
-  }
-
-  if (wantReadvertiseToNlsr && m_readvertiseNlsr == nullptr) {
-    NFD_LOG_DEBUG("Enabling readvertise-to-nlsr");
-    m_readvertiseNlsr = make_unique<Readvertise>(
-      m_rib,
-      make_unique<ClientToNlsrReadvertisePolicy>(),
-      make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
-  }
-  else if (!wantReadvertiseToNlsr && m_readvertiseNlsr != nullptr) {
-    NFD_LOG_DEBUG("Disabling readvertise-to-nlsr");
-    m_readvertiseNlsr.reset();
   }
 }
 

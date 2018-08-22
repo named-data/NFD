@@ -26,16 +26,21 @@
 #ifndef NFD_RIB_SERVICE_HPP
 #define NFD_RIB_SERVICE_HPP
 
+#include "rib.hpp"
 #include "core/config-file.hpp"
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/dispatcher.hpp>
+#include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/transport/transport.hpp>
 
 namespace nfd {
 namespace rib {
 
+class AutoPrefixPropagator;
+class FibUpdater;
+class Readvertise;
 class RibManager;
 
 /**
@@ -67,7 +72,7 @@ public:
 
   /**
    * \brief create NFD-RIB service
-   * \param config parsed configuration section
+   * \param configSection parsed configuration section
    * \param keyChain the KeyChain
    * \note This constructor overload is more appropriate for integrated environments,
    *       such as NS-3 or android. Error messages related to configuration file
@@ -75,7 +80,7 @@ public:
    * \throw std::logic_error Instance of rib::Service has been already constructed
    * \throw std::logic_error Instance of rib::Service is not constructed on RIB thread
    */
-  Service(const ConfigSection& config, ndn::KeyChain& keyChain);
+  Service(const ConfigSection& configSection, ndn::KeyChain& keyChain);
 
   /**
    * \brief Destructor
@@ -113,7 +118,13 @@ private:
   ConfigSection m_configSection;
 
   ndn::KeyChain& m_keyChain;
+  Rib m_rib;
+
   unique_ptr<ndn::Face> m_face;
+  unique_ptr<ndn::nfd::Controller> m_nfdController;
+  unique_ptr<FibUpdater> m_fibUpdater;
+  unique_ptr<AutoPrefixPropagator> m_prefixPropagator;
+  unique_ptr<Readvertise> m_readvertiseNlsr;
   unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
   unique_ptr<RibManager> m_ribManager;
 };

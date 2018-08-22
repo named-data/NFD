@@ -53,8 +53,10 @@ public:
                     bool shouldClearRib)
     : m_commands(m_face.sentInterests)
     , m_status(status)
-    , m_manager(m_dispatcher, m_face, m_keyChain)
-    , m_rib(m_manager.m_rib)
+    , m_nfdController(m_face, m_keyChain)
+    , m_fibUpdater(m_rib, m_nfdController)
+    , m_prefixPropagator(m_nfdController, m_keyChain, m_rib)
+    , m_manager(m_rib, m_dispatcher, m_face, m_nfdController, m_prefixPropagator)
   {
     m_rib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue, this, _1);
 
@@ -168,9 +170,8 @@ public:
     RibUpdate update = *(batch.begin());
 
     // Simulate a successful response from NFD
-    FibUpdater& updater = m_manager.m_fibUpdater;
-    m_manager.m_rib.onFibUpdateSuccess(batch, updater.m_inheritedRoutes,
-                                              bind(&RibManager::onRibUpdateSuccess, &m_manager, update));
+    m_rib.onFibUpdateSuccess(batch, m_fibUpdater.m_inheritedRoutes,
+                             bind(&RibManager::onRibUpdateSuccess, &m_manager, update));
   }
 
 public:
@@ -222,14 +223,16 @@ public:
     return CheckCommandResult::OK;
   }
 
-public:
+protected:
   static const Name FIB_COMMAND_PREFIX;
   std::vector<Interest>& m_commands;
   ConfigurationStatus m_status;
 
-protected:
+  ndn::nfd::Controller m_nfdController;
+  Rib m_rib;
+  FibUpdater m_fibUpdater;
+  AutoPrefixPropagator m_prefixPropagator;
   RibManager m_manager;
-  Rib& m_rib;
 };
 
 const Name RibManagerFixture::FIB_COMMAND_PREFIX("/localhost/nfd/fib");

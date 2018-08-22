@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,7 +59,8 @@ public:
   };
 
 public:
-  RibManager(Dispatcher& dispatcher, ndn::Face& face, ndn::KeyChain& keyChain);
+  RibManager(Rib& rib, Dispatcher& dispatcher, ndn::Face& face,
+             ndn::nfd::Controller& controller, AutoPrefixPropagator& propagator);
 
   ~RibManager() override;
 
@@ -149,20 +150,18 @@ private:
   void
   onEnableLocalFieldsError(const ControlResponse& response);
 
+public:
+  bool wantAutoPrefixPropagator = false;
+  bool wantReadvertiseToNlsr = false;
+
 private:
-  ndn::Face& m_face;
-  ndn::KeyChain& m_keyChain;
-  ndn::nfd::Controller m_nfdController;
+  Rib& m_rib;
+  ndn::nfd::Controller& m_nfdController;
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
-  bool m_isLocalhopEnabled;
-  AutoPrefixPropagator m_prefixPropagator;
-  unique_ptr<Readvertise> m_readvertiseNlsr;
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  Rib m_rib;
-  FibUpdater m_fibUpdater;
+  bool m_isLocalhopEnabled = false;
+  AutoPrefixPropagator& m_prefixPropagator;
 
 private:
   static const Name LOCAL_HOST_TOP_PREFIX;
@@ -171,7 +170,6 @@ private:
   static const Name FACES_LIST_DATASET_PREFIX;
   static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
   scheduler::ScopedEventId m_activeFaceFetchEvent;
-  static const Name READVERTISE_NLSR_PREFIX;
 
   typedef std::set<uint64_t> FaceIdSet;
   /** \brief contains FaceIds with one or more Routes in the RIB
