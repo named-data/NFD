@@ -45,6 +45,14 @@ struct ConfigurationStatus
   bool isLocalhopConfigured;
 };
 
+static ConfigSection
+getValidatorConfigSection()
+{
+  ConfigSection section;
+  section.put("trust-anchor.type", "any");
+  return section;
+}
+
 class RibManagerFixture : public ManagerCommonFixture
 {
 public:
@@ -55,40 +63,19 @@ public:
     , m_status(status)
     , m_nfdController(m_face, m_keyChain)
     , m_fibUpdater(m_rib, m_nfdController)
-    , m_prefixPropagator(m_nfdController, m_keyChain, m_rib)
-    , m_manager(m_rib, m_dispatcher, m_face, m_nfdController, m_prefixPropagator)
+    , m_manager(m_rib, m_face, m_nfdController, m_dispatcher)
   {
     m_rib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue, this, _1);
 
-    const std::string prefix = "rib\n{\n";
-    const std::string suffix = "}";
-    const std::string localhostSection = "  localhost_security\n"
-    "  {\n"
-    "    trust-anchor\n"
-    "    {\n"
-    "      type any\n"
-    "    }\n"
-    "  }\n";
-    const std::string localhopSection = "  localhop_security\n"
-    "  {\n"
-    "    trust-anchor\n"
-    "    {\n"
-    "      type any\n"
-    "    }\n"
-    "  }\n";
-
-    std::string ribSection = "";
     if (m_status.isLocalhostConfigured) {
-      ribSection += localhostSection;
+      m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
     }
     if (m_status.isLocalhopConfigured) {
-      ribSection += localhopSection;
+      m_manager.enableLocalhop(getValidatorConfigSection(), "test");
     }
-    const std::string CONFIG_STR = prefix + ribSection + suffix;
-
-    ConfigFile config;
-    m_manager.setConfigFile(config);
-    config.parse(CONFIG_STR, true, "test-rib");
+    else {
+      m_manager.disableLocalhop();
+    }
 
     registerWithNfd();
 
@@ -231,7 +218,6 @@ protected:
   ndn::nfd::Controller m_nfdController;
   Rib m_rib;
   FibUpdater m_fibUpdater;
-  AutoPrefixPropagator m_prefixPropagator;
   RibManager m_manager;
 };
 

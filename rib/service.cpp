@@ -27,42 +27,89 @@
 
 #include "auto-prefix-propagator.hpp"
 #include "fib-updater.hpp"
-#include "rib-manager.hpp"
 #include "readvertise/client-to-nlsr-readvertise-policy.hpp"
 #include "readvertise/nfd-rib-readvertise-destination.hpp"
 #include "readvertise/readvertise.hpp"
 
 #include "core/global-io.hpp"
+#include "core/logger.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
-
 #include <ndn-cxx/transport/tcp-transport.hpp>
 #include <ndn-cxx/transport/unix-transport.hpp>
 
 namespace nfd {
 namespace rib {
 
-static const std::string INTERNAL_CONFIG = "internal://nfd.conf";
-static const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
+NFD_LOG_INIT(RibService);
 
 Service* Service::s_instance = nullptr;
 
-Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
-  : m_configFile(configFile)
-  , m_keyChain(keyChain)
+static const std::string CFG_SECTION = "rib";
+static const std::string CFG_LOCALHOST_SECURITY = "localhost_security";
+static const std::string CFG_LOCALHOP_SECURITY = "localhop_security";
+static const std::string CFG_PREFIX_PROPAGATE = "auto_prefix_propagate";
+static const std::string CFG_READVERTISE_NLSR = "readvertise_nlsr";
+static const Name READVERTISE_NLSR_PREFIX = "/localhost/nlsr";
+
+static ConfigSection
+loadConfigSectionFromFile(const std::string& filename)
 {
-  if (s_instance != nullptr) {
-    BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
+  ConfigSection config;
+  // Any format errors should have been caught already
+  boost::property_tree::read_info(filename, config);
+  return config;
+}
+
+/**
+ * \brief Look into the config file and construct appropriate transport to communicate with NFD
+ * If NFD-RIB instance was initialized with config file, INFO format is assumed
+ */
+static shared_ptr<ndn::Transport>
+makeLocalNfdTransport(const ConfigSection& config)
+{
+  if (config.get_child_optional("face_system.unix")) {
+    // default socket path should be the same as in UnixStreamFactory::processConfig
+    auto path = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
+    return make_shared<ndn::UnixTransport>(path);
   }
-  if (&getGlobalIoService() != &getRibIoService()) {
-    BOOST_THROW_EXCEPTION(std::logic_error("RIB service must run on RIB thread"));
+  else if (config.get_child_optional("face_system.tcp") &&
+           config.get<std::string>("face_system.tcp.listen", "yes") == "yes") {
+    // default port should be the same as in TcpFactory::processConfig
+    auto port = config.get<std::string>("face_system.tcp.port", "6363");
+    return make_shared<ndn::TcpTransport>("localhost", port);
   }
-  s_instance = this;
+  else {
+    BOOST_THROW_EXCEPTION(ConfigFile::Error("No transport is available to communicate with NFD"));
+  }
+}
+
+Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
+  : Service(keyChain, makeLocalNfdTransport(loadConfigSectionFromFile(configFile)))
+{
+  ConfigFile config(ConfigFile::ignoreUnknownSection);
+  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
+  config.parse(configFile, true);
+  config.parse(configFile, false);
 }
 
 Service::Service(const ConfigSection& configSection, ndn::KeyChain& keyChain)
-  : m_configSection(configSection)
-  , m_keyChain(keyChain)
+  : Service(keyChain, makeLocalNfdTransport(configSection))
+{
+  ConfigFile config(ConfigFile::ignoreUnknownSection);
+  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
+  const std::string INTERNAL_CONFIG = "internal://nfd.conf";
+  config.parse(configSection, true, INTERNAL_CONFIG);
+  config.parse(configSection, false, INTERNAL_CONFIG);
+}
+
+Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport)
+  : m_keyChain(keyChain)
+  , m_face(std::move(localNfdTransport), getGlobalIoService(), m_keyChain)
+  , m_nfdController(m_face, m_keyChain)
+  , m_fibUpdater(m_rib, m_nfdController)
+  , m_dispatcher(m_face, m_keyChain)
+  , m_ribManager(m_rib, m_face, m_nfdController, m_dispatcher)
 {
   if (s_instance != nullptr) {
     BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
@@ -91,90 +138,90 @@ Service::get()
 }
 
 void
-Service::initialize()
+Service::processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename)
 {
-  m_face = make_unique<ndn::Face>(getLocalNfdTransport(), getGlobalIoService(), m_keyChain);
-  m_nfdController = make_unique<ndn::nfd::Controller>(*m_face, m_keyChain);
-  m_fibUpdater = make_unique<FibUpdater>(m_rib, *m_nfdController);
-  m_prefixPropagator = make_unique<AutoPrefixPropagator>(*m_nfdController, m_keyChain, m_rib);
-  m_dispatcher = make_unique<ndn::mgmt::Dispatcher>(*m_face, m_keyChain);
-  m_ribManager = make_unique<RibManager>(m_rib, *m_dispatcher, *m_face, *m_nfdController, *m_prefixPropagator);
+  if (isDryRun) {
+    checkConfig(section, filename);
+  }
+  else {
+    applyConfig(section, filename);
+  }
+}
 
-  ConfigFile config([] (const std::string& filename, const std::string& sectionName,
-                        const ConfigSection& section, bool isDryRun) {
-      // Ignore sections belonging to NFD, but raise an error
-      // if we're missing a handler for a "rib" section.
-      if (sectionName == "rib") {
-        ConfigFile::throwErrorOnUnknownSection(filename, sectionName, section, isDryRun);
+void
+Service::checkConfig(const ConfigSection& section, const std::string& filename)
+{
+  for (const auto& item : section) {
+    const std::string& key = item.first;
+    if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY) {
+      ndn::security::v2::validator_config::ValidationPolicyConfig policy;
+      policy.load(section, filename);
+    }
+    else if (key == CFG_PREFIX_PROPAGATE) {
+      // AutoPrefixPropagator does not support config dry-run
+    }
+    else if (key == CFG_READVERTISE_NLSR) {
+      ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
+    }
+    else {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+    }
+  }
+}
+
+void
+Service::applyConfig(const ConfigSection& section, const std::string& filename)
+{
+  bool wantPrefixPropagate = false;
+  bool wantReadvertiseNlsr = false;
+
+  for (const auto& item : section) {
+    const std::string& key = item.first;
+    const ConfigSection& value = item.second;
+    if (key == CFG_LOCALHOST_SECURITY) {
+      m_ribManager.applyLocalhostConfig(value, filename);
+    }
+    else if (key == CFG_LOCALHOP_SECURITY) {
+      m_ribManager.enableLocalhop(value, filename);
+    }
+    else if (key == CFG_PREFIX_PROPAGATE) {
+      if (m_prefixPropagator == nullptr) {
+        m_prefixPropagator = make_unique<AutoPrefixPropagator>(m_nfdController, m_keyChain, m_rib);
       }
-    });
-  m_ribManager->setConfigFile(config);
+      m_prefixPropagator->loadConfig(item.second);
+      m_prefixPropagator->enable();
+      wantPrefixPropagate = true;
+    }
+    else if (key == CFG_READVERTISE_NLSR) {
+      wantReadvertiseNlsr = ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
+    }
+    else {
+      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+    }
+  }
 
-  // parse config file
-  if (!m_configFile.empty()) {
-    config.parse(m_configFile, true);
-    config.parse(m_configFile, false);
-  }
-  else {
-    config.parse(m_configSection, true, INTERNAL_CONFIG);
-    config.parse(m_configSection, false, INTERNAL_CONFIG);
-  }
-
-  if (m_ribManager->wantAutoPrefixPropagator) {
-    m_prefixPropagator->enable();
-  }
-  else {
+  if (!wantPrefixPropagate && m_prefixPropagator != nullptr) {
     m_prefixPropagator->disable();
   }
 
-  if (m_ribManager->wantReadvertiseToNlsr && m_readvertiseNlsr == nullptr) {
+  if (wantReadvertiseNlsr && m_readvertiseNlsr == nullptr) {
+    NFD_LOG_DEBUG("Enabling readvertise-to-nlsr");
     m_readvertiseNlsr = make_unique<Readvertise>(
       m_rib,
       make_unique<ClientToNlsrReadvertisePolicy>(),
-      make_unique<NfdRibReadvertiseDestination>(*m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
+      make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
   }
-  else if (!m_ribManager->wantReadvertiseToNlsr && m_readvertiseNlsr != nullptr) {
+  else if (!wantReadvertiseNlsr && m_readvertiseNlsr != nullptr) {
+    NFD_LOG_DEBUG("Disabling readvertise-to-nlsr");
     m_readvertiseNlsr.reset();
   }
-
-  m_ribManager->registerWithNfd();
-  m_ribManager->enableLocalFields();
 }
 
-shared_ptr<ndn::Transport>
-Service::getLocalNfdTransport()
+void
+Service::initialize()
 {
-  ConfigSection config;
-
-  if (!m_configFile.empty()) {
-    // Any format errors should have been caught already
-    // If error is thrown at this point, it is development error
-    boost::property_tree::read_info(m_configFile, config);
-  }
-  else {
-    config = m_configSection;
-  }
-
-  if (config.get_child_optional("face_system.unix")) {
-    // unix socket enabled
-
-    auto socketPath = config.get<std::string>("face_system.unix.path", "/var/run/nfd.sock");
-    // default socketPath should be the same as in UnixStreamFactory::processConfig
-
-    return make_shared<ndn::UnixTransport>(socketPath);
-  }
-  else if (config.get_child_optional("face_system.tcp") &&
-           config.get<std::string>("face_system.tcp.listen", "yes") == "yes") {
-    // tcp is enabled
-
-    auto port = config.get<std::string>("face_system.tcp.port", "6363");
-    // default port should be the same as in TcpFactory::processConfig
-
-    return make_shared<ndn::TcpTransport>("localhost", port);
-  }
-  else {
-    BOOST_THROW_EXCEPTION(Error("No transport is available to communicate with NFD"));
-  }
+  m_ribManager.registerWithNfd();
+  m_ribManager.enableLocalFields();
 }
 
 } // namespace rib

@@ -26,7 +26,8 @@
 #ifndef NFD_RIB_SERVICE_HPP
 #define NFD_RIB_SERVICE_HPP
 
-#include "rib.hpp"
+#include "rib-manager.hpp"
+
 #include "core/config-file.hpp"
 
 #include <ndn-cxx/face.hpp>
@@ -39,28 +40,17 @@ namespace nfd {
 namespace rib {
 
 class AutoPrefixPropagator;
-class FibUpdater;
 class Readvertise;
-class RibManager;
 
 /**
  * \brief initializes and executes NFD-RIB service thread
  *
- * Only one instance of this class can be created at any time
+ * Only one instance of this class can be created at any time.
+ * After initialization, NFD-RIB instance can be started by running the global io_service.
  */
 class Service : noncopyable
 {
 public:
-  class Error : public std::runtime_error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
-  };
-
   /**
    * \brief create NFD-RIB service
    * \param configFile absolute or relative path of configuration file
@@ -88,14 +78,6 @@ public:
   ~Service();
 
   /**
-   * \brief Perform initialization of NFD-RIB instance
-   *
-   * After initialization, NFD-RIB instance can be started by running the global io_service
-   */
-  void
-  initialize();
-
-  /**
    * \brief Get a reference to the only instance of this class
    * \throw std::logic_error No instance has been constructed
    * \throw std::logic_error This function is invoked on a thread other than the RIB thread
@@ -104,29 +86,33 @@ public:
   get();
 
 private:
-  /**
-   * \brief Look into the config file and construct appropriate transport to communicate with NFD
-   * If NFD-RIB instance was initialized with config file, INFO format is assumed
-   */
-  shared_ptr<ndn::Transport>
-  getLocalNfdTransport();
+  Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport);
+
+  void
+  processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename);
+
+  void
+  checkConfig(const ConfigSection& section, const std::string& filename);
+
+  void
+  applyConfig(const ConfigSection& section, const std::string& filename);
+
+  void
+  initialize();
 
 private:
   static Service* s_instance;
 
-  std::string m_configFile;
-  ConfigSection m_configSection;
-
   ndn::KeyChain& m_keyChain;
-  Rib m_rib;
+  ndn::Face m_face;
+  ndn::nfd::Controller m_nfdController;
 
-  unique_ptr<ndn::Face> m_face;
-  unique_ptr<ndn::nfd::Controller> m_nfdController;
-  unique_ptr<FibUpdater> m_fibUpdater;
+  Rib m_rib;
+  FibUpdater m_fibUpdater;
   unique_ptr<AutoPrefixPropagator> m_prefixPropagator;
   unique_ptr<Readvertise> m_readvertiseNlsr;
-  unique_ptr<ndn::mgmt::Dispatcher> m_dispatcher;
-  unique_ptr<RibManager> m_ribManager;
+  ndn::mgmt::Dispatcher m_dispatcher;
+  RibManager m_ribManager;
 };
 
 } // namespace rib

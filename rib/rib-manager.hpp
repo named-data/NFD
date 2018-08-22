@@ -42,37 +42,52 @@
 namespace nfd {
 namespace rib {
 
-class AutoPrefixPropagator;
-class Readvertise;
-
+/**
+ * @brief Serve commands and datasets in NFD RIB management protocol.
+ */
 class RibManager : public nfd::ManagerBase
 {
 public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
-public:
-  RibManager(Rib& rib, Dispatcher& dispatcher, ndn::Face& face,
-             ndn::nfd::Controller& controller, AutoPrefixPropagator& propagator);
+  RibManager(Rib& rib, ndn::Face& face, ndn::nfd::Controller& nfdController, Dispatcher& dispatcher);
 
-  ~RibManager() override;
+  /**
+   * @brief Apply localhost_security configuration.
+   */
+  void
+  applyLocalhostConfig(const ConfigSection& section, const std::string& filename);
 
+  /**
+   * @brief Apply localhop_security configuration and allow accepting commands on
+   *        /localhop/nfd/rib prefix.
+   */
+  void
+  enableLocalhop(const ConfigSection& section, const std::string& filename);
+
+  /**
+   * @brief Disallow accepting commands on /localhop/nfd/rib prefix.
+   */
+  void
+  disableLocalhop();
+
+  /**
+   * @brief Start accepting commands and dataset requests.
+   */
   void
   registerWithNfd();
 
+  /**
+   * @brief Enable NDNLP IncomingFaceId field in order to support self-registration commands.
+   */
   void
   enableLocalFields();
 
-  void
-  setConfigFile(ConfigFile& configFile);
-
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   onRibUpdateSuccess(const RibUpdate& update);
 
@@ -80,9 +95,6 @@ public:
   onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error);
 
 private: // initialization helpers
-  void
-  onConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename);
-
   void
   registerTopPrefix(const Name& topPrefix);
 
@@ -150,33 +162,23 @@ private:
   void
   onEnableLocalFieldsError(const ControlResponse& response);
 
-public:
-  bool wantAutoPrefixPropagator = false;
-  bool wantReadvertiseToNlsr = false;
-
 private:
   Rib& m_rib;
   ndn::nfd::Controller& m_nfdController;
+  Dispatcher& m_dispatcher;
+
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
-  bool m_isLocalhopEnabled = false;
-  AutoPrefixPropagator& m_prefixPropagator;
+  bool m_isLocalhopEnabled;
 
 private:
-  static const Name LOCAL_HOST_TOP_PREFIX;
-  static const Name LOCAL_HOP_TOP_PREFIX;
-  static const std::string MGMT_MODULE_NAME;
-  static const Name FACES_LIST_DATASET_PREFIX;
-  static const time::seconds ACTIVE_FACE_FETCH_INTERVAL;
   scheduler::ScopedEventId m_activeFaceFetchEvent;
 
   typedef std::set<uint64_t> FaceIdSet;
   /** \brief contains FaceIds with one or more Routes in the RIB
   */
   FaceIdSet m_registeredFaces;
-
-  std::function<void(const Name& topPrefix)> m_addTopPrefix;
 };
 
 } // namespace rib

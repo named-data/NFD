@@ -35,21 +35,23 @@ BOOST_FIXTURE_TEST_SUITE(TestService, nfd::tests::RibIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
+  ConfigSection section;
+  section.put("face_system.unix.path", "/var/run/nfd.sock");
+
   ndn::KeyChain ribKeyChain;
-  const std::string configFile;
 
   BOOST_CHECK_THROW(Service::get(), std::logic_error);
-  BOOST_CHECK_THROW(Service(configFile, ribKeyChain), std::logic_error);
+  BOOST_CHECK_THROW(Service(section, ribKeyChain), std::logic_error);
 
   runOnRibIoService([&] {
     {
       BOOST_CHECK_THROW(Service::get(), std::logic_error);
-      Service ribService(configFile, ribKeyChain);
+      Service ribService(section, ribKeyChain);
       BOOST_CHECK_EQUAL(&ribService, &Service::get());
     }
     BOOST_CHECK_THROW(Service::get(), std::logic_error);
-    Service ribService(configFile, ribKeyChain);
-    BOOST_CHECK_THROW(Service(configFile, ribKeyChain), std::logic_error);
+    Service ribService(section, ribKeyChain);
+    BOOST_CHECK_THROW(Service(section, ribKeyChain), std::logic_error);
   });
 }
 

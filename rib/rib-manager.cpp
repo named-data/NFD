@@ -41,27 +41,20 @@ namespace rib {
 
 NFD_LOG_INIT(RibManager);
 
-const Name RibManager::LOCAL_HOST_TOP_PREFIX = "/localhost/nfd";
-const Name RibManager::LOCAL_HOP_TOP_PREFIX = "/localhop/nfd";
-const std::string RibManager::MGMT_MODULE_NAME = "rib";
-const Name RibManager::FACES_LIST_DATASET_PREFIX = "/localhost/nfd/faces/list";
-const time::seconds RibManager::ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
+static const std::string MGMT_MODULE_NAME = "rib";
+static const Name LOCALHOST_TOP_PREFIX = "/localhost/nfd";
+static const Name LOCALHOP_TOP_PREFIX = "/localhop/nfd";
+static const time::seconds ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
-RibManager::RibManager(Rib& rib,
-                       Dispatcher& dispatcher,
-                       ndn::Face& face,
-                       ndn::nfd::Controller& controller,
-                       AutoPrefixPropagator& propagator)
+RibManager::RibManager(Rib& rib, ndn::Face& face, ndn::nfd::Controller& nfdController, Dispatcher& dispatcher)
   : ManagerBase(dispatcher, MGMT_MODULE_NAME)
   , m_rib(rib)
-  , m_nfdController(controller)
+  , m_nfdController(nfdController)
+  , m_dispatcher(dispatcher)
   , m_faceMonitor(face)
   , m_localhostValidator(face)
   , m_localhopValidator(face)
-  , m_prefixPropagator(propagator)
-  , m_addTopPrefix([&dispatcher] (const Name& topPrefix) {
-      dispatcher.addTopPrefix(topPrefix, false);
-    })
+  , m_isLocalhopEnabled(false)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
     bind(&RibManager::registerEntry, this, _2, _3, _4, _5));
@@ -71,15 +64,32 @@ RibManager::RibManager(Rib& rib,
   registerStatusDatasetHandler("list", bind(&RibManager::listEntries, this, _1, _2, _3));
 }
 
-RibManager::~RibManager() = default;
+void
+RibManager::applyLocalhostConfig(const ConfigSection& section, const std::string& filename)
+{
+  m_localhostValidator.load(section, filename);
+}
+
+void
+RibManager::enableLocalhop(const ConfigSection& section, const std::string& filename)
+{
+  m_localhopValidator.load(section, filename);
+  m_isLocalhopEnabled = true;
+}
+
+void
+RibManager::disableLocalhop()
+{
+  m_isLocalhopEnabled = false;
+}
 
 void
 RibManager::registerWithNfd()
 {
-  registerTopPrefix(LOCAL_HOST_TOP_PREFIX);
+  registerTopPrefix(LOCALHOST_TOP_PREFIX);
 
   if (m_isLocalhopEnabled) {
-    registerTopPrefix(LOCAL_HOP_TOP_PREFIX);
+    registerTopPrefix(LOCALHOP_TOP_PREFIX);
   }
 
   NFD_LOG_INFO("Start monitoring face create/destroy events");
@@ -100,13 +110,6 @@ RibManager::enableLocalFields()
 }
 
 void
-RibManager::setConfigFile(ConfigFile& configFile)
-{
-  configFile.addSectionHandler("rib",
-                               bind(&RibManager::onConfig, this, _1, _2, _3));
-}
-
-void
 RibManager::onRibUpdateSuccess(const RibUpdate& update)
 {
   NFD_LOG_DEBUG("RIB update succeeded for " << update);
@@ -123,33 +126,6 @@ RibManager::onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std
 }
 
 void
-RibManager::onConfig(const ConfigSection& configSection, bool isDryRun, const std::string& filename)
-{
-  wantAutoPrefixPropagator = false;
-  wantReadvertiseToNlsr = false;
-
-  for (const auto& item : configSection) {
-    if (item.first == "localhost_security") {
-      m_localhostValidator.load(item.second, filename);
-    }
-    else if (item.first == "localhop_security") {
-      m_localhopValidator.load(item.second, filename);
-      m_isLocalhopEnabled = true;
-    }
-    else if (item.first == "auto_prefix_propagate") {
-      m_prefixPropagator.loadConfig(item.second);
-      wantAutoPrefixPropagator = true;
-    }
-    else if (item.first == "readvertise_nlsr") {
-      wantReadvertiseToNlsr = ConfigFile::parseYesNo(item, "rib.readvertise_nlsr");
-    }
-    else {
-      BOOST_THROW_EXCEPTION(Error("Unrecognized rib property: " + item.first));
-    }
-  }
-}
-
-void
 RibManager::registerTopPrefix(const Name& topPrefix)
 {
   // register entry to the FIB
@@ -161,7 +137,7 @@ RibManager::registerTopPrefix(const Name& topPrefix)
     [=] (const auto& res) { this->onCommandPrefixAddNextHopError(topPrefix, res); });
 
   // add top prefix to the dispatcher
-  m_addTopPrefix(topPrefix);
+  m_dispatcher.addTopPrefix(topPrefix, false);
 }
 
 void
@@ -295,9 +271,9 @@ RibManager::makeAuthorization(const std::string& verb)
                  const ndn::mgmt::RejectContinuation& reject) {
     BOOST_ASSERT(params != nullptr);
     BOOST_ASSERT(typeid(*params) == typeid(ndn::nfd::ControlParameters));
-    BOOST_ASSERT(prefix == LOCAL_HOST_TOP_PREFIX || prefix == LOCAL_HOP_TOP_PREFIX);
+    BOOST_ASSERT(prefix == LOCALHOST_TOP_PREFIX || prefix == LOCALHOP_TOP_PREFIX);
 
-    ndn::ValidatorConfig& validator = prefix == LOCAL_HOST_TOP_PREFIX ?
+    ndn::ValidatorConfig& validator = prefix == LOCALHOST_TOP_PREFIX ?
                                       m_localhostValidator : m_localhopValidator;
     validator.validate(interest,
                        bind([&interest, this, accept] { extractRequester(interest, accept); }),

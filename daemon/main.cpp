@@ -128,7 +128,6 @@ public:
           ndn::KeyChain ribKeyChain;
           // must be created inside a separate thread
           rib::Service ribService(configFile, ribKeyChain);
-          ribService.initialize();
           getGlobalIoService().run(); // ribIo is not thread-safe to use here
         }
         catch (const std::exception& e) {
