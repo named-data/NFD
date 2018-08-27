@@ -85,25 +85,24 @@ makeLocalNfdTransport(const ConfigSection& config)
 }
 
 Service::Service(const std::string& configFile, ndn::KeyChain& keyChain)
-  : Service(keyChain, makeLocalNfdTransport(loadConfigSectionFromFile(configFile)))
+  : Service(keyChain, makeLocalNfdTransport(loadConfigSectionFromFile(configFile)),
+            [&configFile] (ConfigFile& config, bool isDryRun) {
+              config.parse(configFile, isDryRun);
+            })
 {
-  ConfigFile config(ConfigFile::ignoreUnknownSection);
-  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
-  config.parse(configFile, true);
-  config.parse(configFile, false);
 }
 
 Service::Service(const ConfigSection& configSection, ndn::KeyChain& keyChain)
-  : Service(keyChain, makeLocalNfdTransport(configSection))
+  : Service(keyChain, makeLocalNfdTransport(configSection),
+            [&configSection] (ConfigFile& config, bool isDryRun) {
+              config.parse(configSection, isDryRun, "internal://nfd.conf");
+            })
 {
-  ConfigFile config(ConfigFile::ignoreUnknownSection);
-  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
-  const std::string INTERNAL_CONFIG = "internal://nfd.conf";
-  config.parse(configSection, true, INTERNAL_CONFIG);
-  config.parse(configSection, false, INTERNAL_CONFIG);
 }
 
-Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport)
+template<typename ConfigParseFunc>
+Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport,
+                 const ConfigParseFunc& configParse)
   : m_keyChain(keyChain)
   , m_face(std::move(localNfdTransport), getGlobalIoService(), m_keyChain)
   , m_nfdController(m_face, m_keyChain)
@@ -118,6 +117,14 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
     BOOST_THROW_EXCEPTION(std::logic_error("RIB service must run on RIB thread"));
   }
   s_instance = this;
+
+  ConfigFile config(ConfigFile::ignoreUnknownSection);
+  config.addSectionHandler(CFG_SECTION, bind(&Service::processConfig, this, _1, _2, _3));
+  configParse(config, true);
+  configParse(config, false);
+
+  m_ribManager.registerWithNfd();
+  m_ribManager.enableLocalFields();
 }
 
 Service::~Service()
@@ -153,9 +160,10 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
 {
   for (const auto& item : section) {
     const std::string& key = item.first;
+    const ConfigSection& value = item.second;
     if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY) {
       ndn::security::v2::validator_config::ValidationPolicyConfig policy;
-      policy.load(section, filename);
+      policy.load(value, filename);
     }
     else if (key == CFG_PREFIX_PROPAGATE) {
       // AutoPrefixPropagator does not support config dry-run
@@ -215,13 +223,6 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
     NFD_LOG_DEBUG("Disabling readvertise-to-nlsr");
     m_readvertiseNlsr.reset();
   }
-}
-
-void
-Service::initialize()
-{
-  m_ribManager.registerWithNfd();
-  m_ribManager.enableLocalFields();
 }
 
 } // namespace rib

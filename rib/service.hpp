@@ -86,7 +86,9 @@ public:
   get();
 
 private:
-  Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport);
+  template<typename ConfigParseFunc>
+  Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport,
+          const ConfigParseFunc& configParse);
 
   void
   processConfig(const ConfigSection& section, bool isDryRun, const std::string& filename);
@@ -96,9 +98,6 @@ private:
 
   void
   applyConfig(const ConfigSection& section, const std::string& filename);
-
-  void
-  initialize();
 
 private:
   static Service* s_instance;
