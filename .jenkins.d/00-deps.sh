@@ -32,3 +32,18 @@ if has Ubuntu $NODE_LABELS; then
         sudo easy_install --upgrade gcovr
     fi
 fi
+
+if has CentOS $NODE_LABELS; then
+    sudo yum -y install yum-utils pkgconfig libpcap-devel \
+                        openssl-devel libtranslit-icu \
+                        python-devel sqlite-devel \
+                        devtoolset-7-libasan-devel \
+                        devtoolset-7-liblsan-devel
+    sudo yum -y groupinstall 'Development Tools'
+
+    svn checkout https://github.com/cmscaltech/sandie-ndn/trunk/packaging/RPMS/x86_64
+    sudo rpm -U --force x86_64/boost-license*
+    sudo rpm -U --force x86_64/boost-doc-html*
+    sudo rpm -U --force x86_64/libboost*
+    sudo rpm -U --force x86_64/boost-devel*
+fi
