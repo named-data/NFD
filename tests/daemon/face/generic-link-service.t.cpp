@@ -27,11 +27,13 @@
 #include "face/face.hpp"
 
 #include "dummy-transport.hpp"
+#include "tests/identity-management-fixture.hpp"
 #include "tests/test-common.hpp"
 
 #include <ndn-cxx/lp/empty-value.hpp>
-#include <ndn-cxx/lp/prefix-announcement.hpp>
+#include <ndn-cxx/lp/prefix-announcement-header.hpp>
 #include <ndn-cxx/lp/tags.hpp>
+#include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
 namespace face {
@@ -39,18 +41,11 @@ namespace tests {
 
 using namespace nfd::tests;
 
-static lp::PrefixAnnouncement
-makePrefixAnnouncement(Name announcedName)
-{
-  Name paName = Name("self-learning").append(announcedName).appendVersion();
-  return lp::PrefixAnnouncement(makeData(paName));
-}
-
 BOOST_AUTO_TEST_SUITE(Face)
 
 using nfd::Face;
 
-class GenericLinkServiceFixture : public UnitTestTimeFixture
+class GenericLinkServiceFixture : public IdentityManagementTimeFixture
 {
 protected:
   GenericLinkServiceFixture()
@@ -84,6 +79,13 @@ protected:
       [this] (const Data& data) { receivedData.push_back(data); });
     face->afterReceiveNack.connect(
       [this] (const lp::Nack& nack) { receivedNacks.push_back(nack); });
+  }
+
+  lp::PrefixAnnouncementHeader
+  makePrefixAnnHeader(const Name& announcedName)
+  {
+    return lp::PrefixAnnouncementHeader{signPrefixAnn(
+      makePrefixAnn(announcedName, 1_h), m_keyChain, ndn::signingWithSha256())};
   }
 
 protected:
@@ -1244,8 +1246,8 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncement)
   initialize(options);
 
   shared_ptr<Data> data = makeData("/12345678");
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
-  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pa));
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
   face->sendData(*data);
 
@@ -1261,8 +1263,8 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncementDisabled)
   initialize(options);
 
   shared_ptr<Data> data = makeData("/12345678");
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
-  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pa));
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
   face->sendData(*data);
 
@@ -1278,15 +1280,15 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncement)
   initialize(options);
 
   shared_ptr<Data> data = makeData("/12345678");
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
   lp::Packet packet(data->wireEncode());
-  packet.set<lp::PrefixAnnouncementField>(pa);
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  packet.set<lp::PrefixAnnouncementField>(pah);
 
   transport->receivePacket(packet.wireEncode());
 
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
   shared_ptr<lp::PrefixAnnouncementTag> tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
-  BOOST_REQUIRE_EQUAL(tag->get().getAnnouncedName(), "/local/ndn/prefix");
+  BOOST_CHECK_EQUAL(tag->get().getPrefixAnn()->getAnnouncedName(), "/local/ndn/prefix");
 }
 
 BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDisabled)
@@ -1296,16 +1298,16 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDisabled)
   initialize(options);
 
   shared_ptr<Data> data = makeData("/12345678");
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
   lp::Packet packet(data->wireEncode());
-  packet.set<lp::PrefixAnnouncementField>(pa);
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  packet.set<lp::PrefixAnnouncementField>(pah);
 
   transport->receivePacket(packet.wireEncode());
 
   BOOST_CHECK_EQUAL(service->getCounters().nInNetInvalid, 0); // not an error
   BOOST_CHECK_EQUAL(receivedData.size(), 1);
 
-  shared_ptr<lp::NonDiscoveryTag> tag = receivedData.back().getTag<lp::NonDiscoveryTag>();
+  shared_ptr<lp::PrefixAnnouncementTag> tag = receivedData.back().getTag<lp::PrefixAnnouncementTag>();
   BOOST_CHECK(tag == nullptr);
 }
 
@@ -1316,9 +1318,9 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropInterest)
   initialize(options);
 
   shared_ptr<Interest> interest = makeInterest("/12345678");
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
   lp::Packet packet(interest->wireEncode());
-  packet.set<lp::PrefixAnnouncementField>(pa);
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  packet.set<lp::PrefixAnnouncementField>(pah);
 
   transport->receivePacket(packet.wireEncode());
 
@@ -1333,12 +1335,12 @@ BOOST_AUTO_TEST_CASE(ReceivePrefixAnnouncementDropNack)
   initialize(options);
 
   lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
-  lp::PrefixAnnouncement pa = makePrefixAnnouncement("/local/ndn/prefix");
   lp::Packet packet;
   packet.set<lp::FragmentField>(std::make_pair(
     nack.getInterest().wireEncode().begin(), nack.getInterest().wireEncode().end()));
   packet.set<lp::NackField>(nack.getHeader());
-  packet.set<lp::PrefixAnnouncementField>(pa);
+  auto pah = makePrefixAnnHeader("/local/ndn/prefix");
+  packet.set<lp::PrefixAnnouncementField>(pah);
 
   transport->receivePacket(packet.wireEncode());
 
