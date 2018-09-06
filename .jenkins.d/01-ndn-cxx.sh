@@ -44,7 +44,7 @@ pushd ndn-cxx >/dev/null
 
 ./waf configure --color=yes --enable-shared --disable-static --without-osx-keychain
 ./waf build --color=yes -j${WAF_JOBS:-1}
-sudo env "PATH=$PATH" ./waf install --color=yes
+sudo_preserve_env PATH -- ./waf install --color=yes
 
 popd >/dev/null
 popd >/dev/null

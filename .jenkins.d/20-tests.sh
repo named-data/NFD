@@ -41,6 +41,9 @@ ASAN_OPTIONS+=":strict_string_checks=true"
 ASAN_OPTIONS+=":strip_path_prefix=${PWD}/"
 export ASAN_OPTIONS
 
+export BOOST_TEST_BUILD_INFO=1
+export BOOST_TEST_COLOR_OUTPUT=1
+
 # First run all tests as unprivileged user
 ./build/unit-tests-core $(ut_log_args core)
 ./build/unit-tests-daemon $(ut_log_args daemon)
@@ -48,7 +51,11 @@ export ASAN_OPTIONS
 ./build/unit-tests-tools $(ut_log_args tools)
 
 # Then use sudo to run those tests that need superuser powers
-sudo -E ./build/unit-tests-core -t TestPrivilegeHelper $(ut_log_args core-privilege)
-sudo -E ./build/unit-tests-daemon -t Face/*Ethernet* $(ut_log_args daemon-ethernet)
-sudo -E ./build/unit-tests-daemon -t Face/TestUdpFactory $(ut_log_args daemon-udp-factory)
-sudo -E ./build/unit-tests-daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig $(ut_log_args daemon-user-config)
+sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
+    ./build/unit-tests-core -t TestPrivilegeHelper $(ut_log_args core-privilege)
+sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
+    ./build/unit-tests-daemon -t Face/*Ethernet* $(ut_log_args daemon-ethernet)
+sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
+    ./build/unit-tests-daemon -t Face/TestUdpFactory $(ut_log_args daemon-udp-factory)
+sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
+    ./build/unit-tests-daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig $(ut_log_args daemon-user-config)
