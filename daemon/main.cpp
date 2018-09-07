@@ -105,6 +105,7 @@ public:
     std::atomic_int retval(0);
 
     boost::asio::io_service* const mainIo = &getGlobalIoService();
+    setMainIoService(mainIo);
     boost::asio::io_service* ribIo = nullptr;
 
     // Mutex and conditional variable to implement synchronization between main and RIB manager

@@ -35,12 +35,23 @@ boost::asio::io_service&
 getGlobalIoService();
 
 void
+setMainIoService(boost::asio::io_service* mainIo);
+
+void
 setRibIoService(boost::asio::io_service* ribIo);
+
+/** \brief run a function on the main io_service instance
+ */
+void
+runOnMainIoService(const std::function<void()>& f);
 
 /** \brief run a function on the RIB io_service instance
  */
 void
 runOnRibIoService(const std::function<void()>& f);
+
+boost::asio::io_service&
+getMainIoService();
 
 boost::asio::io_service&
 getRibIoService();

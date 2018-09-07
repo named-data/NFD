@@ -56,6 +56,10 @@ protected:
   poll();
 
 protected:
+  /** \brief pointer to global main io_service
+   */
+  boost::asio::io_service* g_mainIo = nullptr;
+
   /** \brief pointer to global RIB io_service
    */
   boost::asio::io_service* g_ribIo = nullptr;

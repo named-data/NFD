@@ -35,6 +35,7 @@ resetGlobalScheduler();
 } // namespace scheduler
 
 static boost::thread_specific_ptr<boost::asio::io_service> g_ioService;
+static boost::asio::io_service* g_mainIoService = nullptr;
 static boost::asio::io_service* g_ribIoService = nullptr;
 
 boost::asio::io_service&
@@ -54,9 +55,22 @@ resetGlobalIoService()
 }
 
 void
+setMainIoService(boost::asio::io_service* mainIo)
+{
+  g_mainIoService = mainIo;
+}
+
+void
 setRibIoService(boost::asio::io_service* ribIo)
 {
   g_ribIoService = ribIo;
+}
+
+boost::asio::io_service&
+getMainIoService()
+{
+  BOOST_ASSERT(g_mainIoService != nullptr);
+  return *g_mainIoService;
 }
 
 boost::asio::io_service&
@@ -64,6 +78,12 @@ getRibIoService()
 {
   BOOST_ASSERT(g_ribIoService != nullptr);
   return *g_ribIoService;
+}
+
+void
+runOnMainIoService(const std::function<void()>& f)
+{
+  getMainIoService().post(f);
 }
 
 void

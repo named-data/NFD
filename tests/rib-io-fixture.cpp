@@ -35,6 +35,9 @@ RibIoFixture::RibIoFixture()
   std::mutex m;
   std::condition_variable cv;
 
+  g_mainIo = &getGlobalIoService();
+  setMainIoService(g_mainIo);
+
   g_ribThread = boost::thread([&] {
     {
       std::lock_guard<std::mutex> lock(m);
