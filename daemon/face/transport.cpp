@@ -31,6 +31,8 @@ namespace face {
 
 NFD_LOG_INIT(Transport);
 
+const ssize_t Transport::MIN_MTU;
+
 std::ostream&
 operator<<(std::ostream& os, TransportState state)
 {

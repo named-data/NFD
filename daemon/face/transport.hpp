@@ -382,7 +382,7 @@ private:
   ndn::nfd::FacePersistency m_persistency;
   ndn::nfd::LinkType m_linkType;
   ssize_t m_mtu;
-  size_t m_sendQueueCapacity;
+  ssize_t m_sendQueueCapacity;
   TransportState m_state;
   time::steady_clock::TimePoint m_expirationTime;
 };
