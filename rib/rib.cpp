@@ -396,18 +396,27 @@ Rib::sendBatchFromQueue()
   // Until task #1698, each RibUpdateBatch contains exactly one RIB update
   BOOST_ASSERT(batch.size() == 1);
 
-  const Rib::UpdateSuccessCallback& managerSuccessCallback = item.managerSuccessCallback;
-  const Rib::UpdateFailureCallback& managerFailureCallback = item.managerFailureCallback;
+  auto fibSuccessCb = bind(&Rib::onFibUpdateSuccess, this, batch, _1, item.managerSuccessCallback);
+  auto fibFailureCb = bind(&Rib::onFibUpdateFailure, this, item.managerFailureCallback, _1, _2);
 
-  m_fibUpdater->computeAndSendFibUpdates(batch,
-                                         bind(&Rib::onFibUpdateSuccess, this,
-                                              batch, _1, managerSuccessCallback),
-                                         bind(&Rib::onFibUpdateFailure, this,
-                                              managerFailureCallback, _1, _2));
-
-  if (m_onSendBatchFromQueue != nullptr) {
-    m_onSendBatchFromQueue(batch);
+#ifdef WITH_TESTS
+  if (mockFibResponse != nullptr) {
+    m_fibUpdater->computeAndSendFibUpdates(batch, bind([]{}), bind([]{}));
+    bool shouldFibSucceed = mockFibResponse(batch);
+    if (wantMockFibResponseOnce) {
+      mockFibResponse = nullptr;
+    }
+    if (shouldFibSucceed) {
+      fibSuccessCb(m_fibUpdater->m_inheritedRoutes);
+    }
+    else {
+      fibFailureCb(504, "mocked failure");
+    }
+    return;
   }
+#endif
+
+  m_fibUpdater->computeAndSendFibUpdates(batch, fibSuccessCb, fibFailureCb);
 }
 
 void

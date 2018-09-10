@@ -65,7 +65,11 @@ public:
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_nfdController, m_dispatcher)
   {
-    m_rib.m_onSendBatchFromQueue = bind(&RibManagerFixture::onSendBatchFromQueue, this, _1);
+    m_rib.mockFibResponse = [] (const RibUpdateBatch& batch) {
+      BOOST_CHECK(batch.begin() != batch.end());
+      return true;
+    };
+    m_rib.wantMockFibResponseOnce = false;
 
     if (m_status.isLocalhostConfigured) {
       m_manager.applyLocalhostConfig(getValidatorConfigSection(), "test");
@@ -148,17 +152,6 @@ public:
       .setName(name)
       .setFaceId(faceId)
       .setOrigin(ndn::nfd::ROUTE_ORIGIN_NLSR);
-  }
-
-  void
-  onSendBatchFromQueue(const RibUpdateBatch& batch)
-  {
-    BOOST_ASSERT(batch.begin() != batch.end());
-    RibUpdate update = *(batch.begin());
-
-    // Simulate a successful response from NFD
-    m_rib.onFibUpdateSuccess(batch, m_fibUpdater.m_inheritedRoutes,
-                             bind(&RibManager::onRibUpdateSuccess, &m_manager, update));
   }
 
 public:

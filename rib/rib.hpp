@@ -175,8 +175,16 @@ private:
   sendBatchFromQueue();
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  // Used by RibManager unit-tests to get sent batch to simulate successful FIB update
-  std::function<void(RibUpdateBatch)> m_onSendBatchFromQueue;
+#ifdef WITH_TESTS
+  /** \brief In unit tests, mock FIB update result.
+   *
+   *  If the callback is not nullptr, sendBatchFromQueue() immediately succeeds or fails according
+   *  to the return value of callback function.
+   */
+  std::function<bool(const RibUpdateBatch&)> mockFibResponse;
+
+  bool wantMockFibResponseOnce = false; ///< if true, mockFibResponse is cleared after every use.
+#endif
 
   void
   erase(const Name& prefix, const Route& route);

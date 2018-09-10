@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -81,7 +81,8 @@ public:
           .setName(name)
           .setRoute(route);
 
-    simulateSuccessfulResponse(update);
+    simulateSuccessfulResponse();
+    rib.beginApplyUpdate(update, nullptr, nullptr);
   }
 
   void
@@ -95,51 +96,15 @@ public:
           .setName(name)
           .setRoute(route);
 
-    simulateSuccessfulResponse(update);
-  }
-
-  void
-  onSendBatchFromQueue(const RibUpdateBatch& batch)
-  {
-    Rib::UpdateSuccessCallback managerCallback = bind(&FibUpdatesFixture::onSuccess, this);
-
-    // Only receive callback after the first send
-    rib.m_onSendBatchFromQueue = nullptr;
-
-    rib.onFibUpdateSuccess(batch, fibUpdater.m_inheritedRoutes, managerCallback);
+    simulateSuccessfulResponse();
+    rib.beginApplyUpdate(update, nullptr, nullptr);
   }
 
   void
   destroyFace(uint64_t faceId)
   {
-    rib.m_onSendBatchFromQueue = bind(&FibUpdatesFixture::onSendBatchFromQueue, this, _1);
-
+    simulateSuccessfulResponse();
     rib.beginRemoveFace(faceId);
-  }
-
-  void
-  simulateSuccessfulResponse(const RibUpdate& update)
-  {
-    Rib::UpdateSuccessCallback managerCallback = bind(&FibUpdatesFixture::onSuccess, this);
-
-    rib.beginApplyUpdate(update, managerCallback, nullptr);
-
-    RibUpdateBatch batch(update.getRoute().faceId);
-    batch.add(update);
-
-    // Simulate a successful response from NFD
-    rib.onFibUpdateSuccess(batch, fibUpdater.m_inheritedRoutes, managerCallback);
-  }
-
-  void
-  onSuccess()
-  {
-  }
-
-  void
-  onFailure()
-  {
-    BOOST_FAIL("FibUpdate failed");
   }
 
   const FibUpdater::FibUpdateList&
@@ -152,7 +117,6 @@ public:
 
     return fibUpdates;
   }
-
 
   FibUpdater::FibUpdateList
   getSortedFibUpdates()
@@ -167,6 +131,14 @@ public:
   {
     fibUpdater.m_updatesForBatchFaceId.clear();
     fibUpdater.m_updatesForNonBatchFaceId.clear();
+  }
+
+private:
+  void
+  simulateSuccessfulResponse()
+  {
+    rib.mockFibResponse = [] (const RibUpdateBatch&) { return true; };
+    rib.wantMockFibResponseOnce = true;
   }
 
 public:

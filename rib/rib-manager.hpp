@@ -87,28 +87,56 @@ public:
   void
   enableLocalFields();
 
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+private: // RIB and FibUpdater actions
+  enum class RibUpdateResult
+  {
+    OK,
+    ERROR,
+    EXPIRED,
+  };
+
+  /** \brief Start adding a route to RIB and FIB.
+   *  \param name route name
+   *  \param route route parameters; may contain absolute expiration time
+   *  \param expires relative expiration time; if specified, overwrites \c route.expires
+   *  \param done completion callback
+   */
   void
-  onRibUpdateSuccess(const RibUpdate& update);
+  beginAddRoute(const Name& name, Route route, optional<time::nanoseconds> expires,
+                const std::function<void(RibUpdateResult)>& done);
+
+  /** \brief Start removing a route from RIB and FIB.
+   *  \param name route name
+   *  \param route route parameters
+   *  \param done completion callback
+   */
+  void
+  beginRemoveRoute(const Name& name, const Route& route,
+                   const std::function<void(RibUpdateResult)>& done);
 
   void
-  onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error);
+  beginRibUpdate(const RibUpdate& update, const std::function<void(RibUpdateResult)>& done);
 
-private: // initialization helpers
+private: // management Dispatcher related
   void
   registerTopPrefix(const Name& topPrefix);
 
-private: // ControlCommand and StatusDataset
+  /** \brief Serve rib/register command.
+   */
   void
   registerEntry(const Name& topPrefix, const Interest& interest,
                 ControlParameters parameters,
                 const ndn::mgmt::CommandContinuation& done);
 
+  /** \brief Serve rib/unregister command.
+   */
   void
   unregisterEntry(const Name& topPrefix, const Interest& interest,
                   ControlParameters parameters,
                   const ndn::mgmt::CommandContinuation& done);
 
+  /** \brief Serve rib/list dataset.
+   */
   void
   listEntries(const Name& topPrefix, const Interest& interest,
               ndn::mgmt::StatusDatasetContext& context);
@@ -148,19 +176,6 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
    */
   void
   onNotification(const ndn::nfd::FaceEventNotification& notification);
-
-private:
-  void
-  onCommandPrefixAddNextHopSuccess(const Name& prefix, const ControlParameters& result);
-
-  void
-  onCommandPrefixAddNextHopError(const Name& name, const ControlResponse& response);
-
-  void
-  onEnableLocalFieldsSuccess();
-
-  void
-  onEnableLocalFieldsError(const ControlResponse& response);
 
 private:
   Rib& m_rib;

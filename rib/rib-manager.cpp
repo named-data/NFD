@@ -103,40 +103,112 @@ void
 RibManager::enableLocalFields()
 {
   m_nfdController.start<ndn::nfd::FaceUpdateCommand>(
-    ControlParameters()
-      .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true),
-    bind(&RibManager::onEnableLocalFieldsSuccess, this),
-    bind(&RibManager::onEnableLocalFieldsError, this, _1));
+    ControlParameters().setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true),
+    [] (const ControlParameters& res) {
+      NFD_LOG_DEBUG("Local fields enabled");
+    },
+    [] (const ControlResponse& res) {
+      BOOST_THROW_EXCEPTION(Error("Couldn't enable local fields (" + to_string(res.getCode()) +
+                                  " " + res.getText() + ")"));
+    });
 }
 
 void
-RibManager::onRibUpdateSuccess(const RibUpdate& update)
+RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseconds> expires,
+                          const std::function<void(RibUpdateResult)>& done)
 {
-  NFD_LOG_DEBUG("RIB update succeeded for " << update);
+  if (expires) {
+    if (*expires <= 0_ns) {
+      done(RibUpdateResult::EXPIRED);
+      return;
+    }
+    route.expires = time::steady_clock::now() + *expires;
+  }
+  else if (route.expires) {
+    expires = *route.expires - time::steady_clock::now();
+    if (*expires <= 0_ns) {
+      done(RibUpdateResult::EXPIRED);
+      return;
+    }
+  }
+
+  NFD_LOG_INFO("Adding route " << name << " nexthop=" << route.faceId <<
+               " origin=" << route.origin << " cost=" << route.cost);
+
+  if (expires) {
+    route.setExpirationEvent(scheduler::schedule(
+      *expires, [=] { m_rib.onRouteExpiration(name, route); }));
+    NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
+  }
+
+  m_registeredFaces.insert(route.faceId);
+
+  RibUpdate update;
+  update.setAction(RibUpdate::REGISTER)
+        .setName(name)
+        .setRoute(route);
+  beginRibUpdate(update, done);
 }
 
 void
-RibManager::onRibUpdateFailure(const RibUpdate& update, uint32_t code, const std::string& error)
+RibManager::beginRemoveRoute(const Name& name, const Route& route,
+                             const std::function<void(RibUpdateResult)>& done)
 {
-  NFD_LOG_DEBUG("RIB update failed for " << update << " (code: " << code
-                                                   << ", error: " << error << ")");
+  NFD_LOG_INFO("Removing route " << name << " nexthop=" << route.faceId <<
+               " origin=" << route.origin);
 
-  // Since the FIB rejected the update, clean up invalid routes
-  scheduleActiveFaceFetch(time::seconds(1));
+  RibUpdate update;
+  update.setAction(RibUpdate::UNREGISTER)
+        .setName(name)
+        .setRoute(route);
+  beginRibUpdate(update, done);
+}
+
+void
+RibManager::beginRibUpdate(const RibUpdate& update,
+                           const std::function<void(RibUpdateResult)>& done)
+{
+  m_rib.beginApplyUpdate(update,
+    [=] {
+      NFD_LOG_DEBUG("RIB update succeeded for " << update);
+      done(RibUpdateResult::OK);
+    },
+    [=] (uint32_t code, const std::string& error) {
+      NFD_LOG_DEBUG("RIB update failed for " << update << " (" << code << " " << error << ")");
+
+      // Since the FIB rejected the update, clean up invalid routes
+      scheduleActiveFaceFetch(1_s);
+
+      done(RibUpdateResult::ERROR);
+    });
 }
 
 void
 RibManager::registerTopPrefix(const Name& topPrefix)
 {
-  // register entry to the FIB
+  // add FIB nexthop
   m_nfdController.start<ndn::nfd::FibAddNextHopCommand>(
-    ControlParameters()
-        .setName(Name(topPrefix).append(MGMT_MODULE_NAME))
-        .setFaceId(0),
-    [=] (const auto& res) { this->onCommandPrefixAddNextHopSuccess(topPrefix, res); },
-    [=] (const auto& res) { this->onCommandPrefixAddNextHopError(topPrefix, res); });
+    ControlParameters().setName(Name(topPrefix).append(MGMT_MODULE_NAME))
+                       .setFaceId(0),
+    [=] (const ControlParameters& res) {
+      NFD_LOG_DEBUG("Successfully registered " << topPrefix << " with NFD");
 
-  // add top prefix to the dispatcher
+      // Routes must be inserted into the RIB so route flags can be applied
+      Route route;
+      route.faceId = res.getFaceId();
+      route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
+      route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
+
+      m_rib.insert(topPrefix, route);
+
+      m_registeredFaces.insert(route.faceId);
+    },
+    [=] (const ControlResponse& res) {
+      BOOST_THROW_EXCEPTION(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
+                                  to_string(res.getCode()) + " " + res.getText() + ")"));
+    });
+
+  // add top prefix to the dispatcher without prefix registration
   m_dispatcher.addTopPrefix(topPrefix, false);
 }
 
@@ -162,38 +234,13 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
   route.cost = parameters.getCost();
   route.flags = parameters.getFlags();
 
+  optional<time::nanoseconds> expires;
   if (parameters.hasExpirationPeriod() &&
       parameters.getExpirationPeriod() != time::milliseconds::max()) {
-    route.expires = time::steady_clock::now() + parameters.getExpirationPeriod();
-
-    // Schedule a new event, the old one will be cancelled during rib insertion.
-    scheduler::EventId eventId = scheduler::schedule(parameters.getExpirationPeriod(),
-      bind(&Rib::onRouteExpiration, &m_rib, parameters.getName(), route));
-
-    NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires <<
-                  " with EventId: " << eventId);
-
-    // Set the  NewEventId of this entry
-    route.setExpirationEvent(eventId);
-  }
-  else {
-    route.expires = nullopt;
+    expires = time::duration_cast<time::nanoseconds>(parameters.getExpirationPeriod());
   }
 
-  NFD_LOG_INFO("Adding route " << parameters.getName() << " nexthop=" << route.faceId
-                                                       << " origin=" << route.origin
-                                                       << " cost=" << route.cost);
-
-  RibUpdate update;
-  update.setAction(RibUpdate::REGISTER)
-        .setName(parameters.getName())
-        .setRoute(route);
-
-  m_rib.beginApplyUpdate(update,
-                         bind(&RibManager::onRibUpdateSuccess, this, update),
-                         bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
-
-  m_registeredFaces.insert(route.faceId);
+  beginAddRoute(parameters.getName(), std::move(route), expires, [] (RibUpdateResult) {});
 }
 
 void
@@ -210,17 +257,7 @@ RibManager::unregisterEntry(const Name& topPrefix, const Interest& interest,
   route.faceId = parameters.getFaceId();
   route.origin = parameters.getOrigin();
 
-  NFD_LOG_INFO("Removing route " << parameters.getName() << " nexthop=" << route.faceId
-                                                         << " origin=" << route.origin);
-
-  RibUpdate update;
-  update.setAction(RibUpdate::UNREGISTER)
-        .setName(parameters.getName())
-        .setRoute(route);
-
-  m_rib.beginApplyUpdate(update,
-                         bind(&RibManager::onRibUpdateSuccess, this, update),
-                         bind(&RibManager::onRibUpdateFailure, this, update, _1, _2));
+  beginRemoveRoute(parameters.getName(), route, [] (RibUpdateResult) {});
 }
 
 void
@@ -346,45 +383,6 @@ RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
     scheduler::schedule(time::seconds(0),
                         bind(&RibManager::onFaceDestroyedEvent, this, notification.getFaceId()));
   }
-}
-
-void
-RibManager::onCommandPrefixAddNextHopSuccess(const Name& prefix,
-                                             const ndn::nfd::ControlParameters& result)
-{
-  NFD_LOG_DEBUG("Successfully registered " + prefix.toUri() + " with NFD");
-
-  // Routes must be inserted into the RIB so route flags can be applied
-  Route route;
-  route.faceId = result.getFaceId();
-  route.origin = ndn::nfd::ROUTE_ORIGIN_APP;
-  route.expires = nullopt;
-  route.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
-
-  m_rib.insert(prefix, route);
-
-  m_registeredFaces.insert(route.faceId);
-}
-
-void
-RibManager::onCommandPrefixAddNextHopError(const Name& name,
-                                           const ndn::nfd::ControlResponse& response)
-{
-  BOOST_THROW_EXCEPTION(Error("Error in setting interest filter (" + name.toUri() +
-                              "): " + response.getText()));
-}
-
-void
-RibManager::onEnableLocalFieldsSuccess()
-{
-  NFD_LOG_DEBUG("Local fields enabled");
-}
-
-void
-RibManager::onEnableLocalFieldsError(const ndn::nfd::ControlResponse& response)
-{
-  BOOST_THROW_EXCEPTION(Error("Couldn't enable local fields (code: " +
-                              to_string(response.getCode()) + ", info: " + response.getText() + ")"));
 }
 
 } // namespace rib
