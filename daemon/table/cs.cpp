@@ -37,11 +37,10 @@ NDN_CXX_ASSERT_FORWARD_ITERATOR(Cs::const_iterator);
 
 NFD_LOG_INIT(ContentStore);
 
-unique_ptr<Policy>
+static unique_ptr<Policy>
 makeDefaultPolicy()
 {
-  const std::string DEFAULT_POLICY = "priority_fifo";
-  return Policy::create(DEFAULT_POLICY);
+  return Policy::create("lru");
 }
 
 Cs::Cs(size_t nMaxPackets)

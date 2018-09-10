@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -162,9 +162,9 @@ BOOST_AUTO_TEST_CASE(Default)
     }
   )CONFIG";
 
-  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
+  runConfig(CONFIG, false);
   cs::Policy* currentPolicy = cs.getPolicy();
-  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::PriorityFifoPolicy);
+  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::LruPolicy);
 }
 
 BOOST_AUTO_TEST_CASE(Known)
@@ -172,17 +172,17 @@ BOOST_AUTO_TEST_CASE(Known)
   const std::string CONFIG = R"CONFIG(
     tables
     {
-      cs_policy lru
+      cs_policy priority_fifo
     }
   )CONFIG";
 
-  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, true));
+  runConfig(CONFIG, true);
   cs::Policy* currentPolicy = cs.getPolicy();
-  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::PriorityFifoPolicy);
-
-  BOOST_REQUIRE_NO_THROW(runConfig(CONFIG, false));
-  currentPolicy = cs.getPolicy();
   NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::LruPolicy);
+
+  runConfig(CONFIG, false);
+  currentPolicy = cs.getPolicy();
+  NFD_CHECK_TYPEID_EQUAL(*currentPolicy, cs::PriorityFifoPolicy);
 }
 
 BOOST_AUTO_TEST_CASE(Unknown)

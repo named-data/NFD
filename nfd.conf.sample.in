@@ -51,7 +51,7 @@ tables
 
   ; Set the CS replacement policy.
   ; Available policies are: priority_fifo, lru
-  cs_policy priority_fifo
+  cs_policy lru
 
   ; Set a policy to decide whether to cache or drop unsolicited Data.
   ; Available policies are: drop-all, admit-local, admit-network, admit-all
