@@ -37,6 +37,8 @@ matrix:
       env: COMPILER=clang++-6.0
     - os: linux
       env: COMPILER=clang++-7
+    - os: linux
+      env: COMPILER=clang++-8
 
     # macOS/clang
     # https://docs.travis-ci.com/user/reference/osx/#OS-X-Version
@@ -55,10 +57,14 @@ matrix:
     - os: osx
       osx_image: xcode9.4
       env: OSX_VERSION=10.13
+    - os: osx
+      osx_image: xcode10
+      env: OSX_VERSION=10.13
 
   allow_failures:
     - env: COMPILER=clang++-3.6
     - env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
+    - env: COMPILER=clang++-8
 
   fast_finish: true
 
@@ -72,8 +78,8 @@ install: |
       clang++-*)
         CLANG_VERSION=${COMPILER/clang++}
         if [[ ${CLANG_VERSION} != "-3."* ]]; then
-          wget -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-          travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial${CLANG_VERSION/-7} main"
+          travis_retry wget -nv -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
+          travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial${CLANG_VERSION/-8} main"
         fi
         travis_retry sudo apt-get -qq update
         travis_retry sudo apt-get -qy install "clang${CLANG_VERSION}"

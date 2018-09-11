@@ -186,15 +186,13 @@ class ClangFlags(GccBasicFlags):
         flags['CXXFLAGS'] += ['-fcolor-diagnostics',
                               '-Wextra-semi',
                               '-Wundefined-func-template',
-                              '-Wno-error=deprecated-register',
-                              '-Wno-error=infinite-recursion', # Bug #3358
-                              '-Wno-error=keyword-macro', # Bug #3235
-                              '-Wno-error=unneeded-internal-declaration', # Bug #1588
                               '-Wno-unused-local-typedef', # Bugs #2657 and #3209
                               ]
         version = self.getCompilerVersion(conf)
         if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
+        if version < (6, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -207,4 +205,6 @@ class ClangFlags(GccBasicFlags):
         version = self.getCompilerVersion(conf)
         if version < (3, 9, 0) or (Utils.unversioned_sys_platform() == 'darwin' and version < (8, 1, 0)):
             flags['CXXFLAGS'] += ['-Wno-unknown-pragmas']
+        if version < (6, 0, 0):
+            flags['CXXFLAGS'] += ['-Wno-missing-braces'] # Bug #4721
         return flags
