@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,11 +29,33 @@
 namespace nfd {
 namespace rib {
 
-Route::Route()
-  : faceId(0)
-  , origin(ndn::nfd::ROUTE_ORIGIN_APP)
-  , cost(0)
-  , flags(ndn::nfd::ROUTE_FLAGS_NONE)
+const uint64_t PA_ROUTE_COST = 2048; ///< cost of route created by prefix announcement
+
+static time::steady_clock::TimePoint
+computeExpiration(const ndn::PrefixAnnouncement& ann)
+{
+  time::steady_clock::Duration validityEnd = time::steady_clock::Duration::max();
+  if (ann.getValidityPeriod()) {
+    auto now = time::system_clock::now();
+    if (!ann.getValidityPeriod()->isValid(now)) {
+      validityEnd = time::steady_clock::Duration::zero();
+    }
+    else {
+      validityEnd = ann.getValidityPeriod()->getPeriod().second - now;
+    }
+  }
+  return time::steady_clock::now() +
+    std::min(validityEnd, time::duration_cast<time::steady_clock::Duration>(ann.getExpiration()));
+}
+
+Route::Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId)
+  : faceId(faceId)
+  , origin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN)
+  , cost(PA_ROUTE_COST)
+  , flags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
+  , expires(computeExpiration(ann))
+  , announcement(ann)
+  , annExpires(*expires)
 {
 }
 
@@ -44,7 +66,8 @@ operator==(const Route& lhs, const Route& rhs)
          lhs.origin == rhs.origin &&
          lhs.flags == rhs.flags &&
          lhs.cost == rhs.cost &&
-         lhs.expires == rhs.expires;
+         lhs.expires == rhs.expires &&
+         lhs.announcement == rhs.announcement;
 }
 
 std::ostream&
@@ -61,7 +84,10 @@ operator<<(std::ostream& os, const Route& route)
   else {
     os << ", never expires";
   }
-  os << ")";
+  if (route.announcement) {
+    os << ", announcement: (" << *route.announcement << ')';
+  }
+  os << ')';
 
   return os;
 }

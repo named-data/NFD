@@ -238,6 +238,39 @@ RibEntry::getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const
   return candidate;
 }
 
+ndn::PrefixAnnouncement
+RibEntry::getPrefixAnnouncement(time::milliseconds minExpiration,
+                                time::milliseconds maxExpiration) const
+{
+  const Route* bestAnnRoute = nullptr;
+  auto entryExpiry = time::steady_clock::TimePoint::min();
+
+  for (const Route& route : *this) {
+    if (route.expires) {
+      entryExpiry = std::max(entryExpiry, *route.expires);
+      if (route.announcement) {
+        if (bestAnnRoute == nullptr || *route.expires > *bestAnnRoute->expires) {
+          bestAnnRoute = &route;
+        }
+      }
+    }
+    else {
+      entryExpiry = time::steady_clock::TimePoint::max();
+    }
+  }
+
+  if (bestAnnRoute != nullptr) {
+    return *bestAnnRoute->announcement;
+  }
+
+  ndn::PrefixAnnouncement ann;
+  ann.setAnnouncedName(m_name);
+  ann.setExpiration(ndn::clamp(
+    time::duration_cast<time::milliseconds>(entryExpiry - time::steady_clock::now()),
+    minExpiration, maxExpiration));
+  return ann;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const RibEntry& entry)
 {

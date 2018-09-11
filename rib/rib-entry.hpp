@@ -165,6 +165,22 @@ public:
   const Route*
   getRouteWithLowestCostAndChildInheritByFaceId(uint64_t faceId) const;
 
+  /** \brief Retrieve a prefix announcement suitable for readvertising this route.
+   *
+   *  If one or more routes in this RIB entry contains a prefix announcement, this method returns
+   *  the announcement from the route that expires last.
+   *
+   *  If this RIB entry does not have a route containing a prefix announcement, this method creates
+   *  a new announcement. Its expiration period reflects the remaining lifetime of this RIB entry,
+   *  confined within [\p minExpiration, \p maxExpiration] range. The caller is expected to sign
+   *  this announcement.
+   *
+   *  \warning (minExpiration > maxExpiration) triggers undefined behavior.
+   */
+  ndn::PrefixAnnouncement
+  getPrefixAnnouncement(time::milliseconds minExpiration = 15_s,
+                        time::milliseconds maxExpiration = 1_h) const;
+
   const_iterator
   begin() const;
 

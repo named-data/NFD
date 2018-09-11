@@ -30,6 +30,7 @@
 
 #include "core/global-io.hpp"
 
+#include <ndn-cxx/prefix-announcement.hpp>
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
 
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
@@ -174,6 +175,28 @@ setNameComponent(Packet& packet, ssize_t index, const A& ...a)
   setNameComponent(name, index, a...);
   packet.setName(name);
 }
+
+/** \brief create a prefix announcement without signing
+ */
+ndn::PrefixAnnouncement
+makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
+              optional<ndn::security::ValidityPeriod> validity = nullopt);
+
+/** \brief create a prefix announcement without signing
+ *  \param announcedName announced name
+ *  \param expiration expiration period
+ *  \param validityFromNow validity period, relative from now
+ */
+ndn::PrefixAnnouncement
+makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
+              std::pair<time::seconds, time::seconds> validityFromNow);
+
+/** \brief sign a prefix announcement
+ */
+ndn::PrefixAnnouncement
+signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
+              const ndn::security::SigningInfo& si = ndn::KeyChain::getDefaultSigningInfo(),
+              optional<uint64_t> version = nullopt);
 
 } // namespace tests
 } // namespace nfd

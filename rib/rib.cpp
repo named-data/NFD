@@ -113,12 +113,10 @@ Rib::insert(const Name& prefix, const Route& route)
         scheduler::cancel(entryIt->getExpirationEvent());
       }
 
+      *entryIt = route;
+
       // No checks are required here as the iterator needs to be updated in all cases.
       entryIt->setExpirationEvent(route.getExpirationEvent());
-
-      entryIt->flags = route.flags;
-      entryIt->cost = route.cost;
-      entryIt->expires = route.expires;
     }
   }
   else {

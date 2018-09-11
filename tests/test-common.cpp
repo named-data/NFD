@@ -126,5 +126,33 @@ makeNack(const Name& name, uint32_t nonce, lp::NackReason reason)
   return makeNack(std::move(interest), reason);
 }
 
+ndn::PrefixAnnouncement
+makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
+              optional<ndn::security::ValidityPeriod> validity)
+{
+  ndn::PrefixAnnouncement pa;
+  pa.setAnnouncedName(announcedName);
+  pa.setExpiration(expiration);
+  pa.setValidityPeriod(validity);
+  return pa;
+}
+
+ndn::PrefixAnnouncement
+makePrefixAnn(const Name& announcedName, time::milliseconds expiration,
+              std::pair<time::seconds, time::seconds> validityFromNow)
+{
+  auto now = time::system_clock::now();
+  return makePrefixAnn(announcedName, expiration,
+    ndn::security::ValidityPeriod(now + validityFromNow.first, now + validityFromNow.second));
+}
+
+ndn::PrefixAnnouncement
+signPrefixAnn(ndn::PrefixAnnouncement&& pa, ndn::KeyChain& keyChain,
+              const ndn::security::SigningInfo& si, optional<uint64_t> version)
+{
+  pa.toData(keyChain, si, version);
+  return std::move(pa);
+}
+
 } // namespace tests
 } // namespace nfd

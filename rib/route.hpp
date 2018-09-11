@@ -30,6 +30,7 @@
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <ndn-cxx/mgmt/nfd/route-flags-traits.hpp>
+#include <ndn-cxx/prefix-announcement.hpp>
 
 #include <type_traits>
 
@@ -41,7 +42,15 @@ namespace rib {
 class Route : public ndn::nfd::RouteFlagsTraits<Route>
 {
 public:
-  Route();
+  /** \brief default constructor
+   */
+  Route() = default;
+
+  /** \brief construct from a prefix announcement
+   *  \param ann a prefix announcement that has passed verification
+   *  \param faceId the face on which \p ann arrived
+   */
+  Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId);
 
   void
   setExpirationEvent(const scheduler::EventId eid)
@@ -62,11 +71,27 @@ public:
   }
 
 public:
-  uint64_t faceId;
-  ndn::nfd::RouteOrigin origin;
-  uint64_t cost;
-  std::underlying_type<ndn::nfd::RouteFlags>::type flags;
+  uint64_t faceId = 0;
+  ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
+  uint64_t cost = 0;
+  std::underlying_type<ndn::nfd::RouteFlags>::type flags = ndn::nfd::ROUTE_FLAGS_NONE;
   optional<time::steady_clock::TimePoint> expires;
+
+  /** \brief The prefix announcement that caused the creation of this route.
+   *
+   *  This is nullopt if this route is not created by a prefix announcement.
+   */
+  optional<ndn::PrefixAnnouncement> announcement;
+
+  /** \brief Expiration time of the prefix announcement.
+   *
+   *  Valid only if announcement is not nullopt.
+   *
+   *  If this field is before or equal the current time, it indicates the prefix announcement is
+   *  not yet valid or has expired. In this case, the exact value of this field does not matter.
+   *  If this field is after the current time, it indicates when the prefix announcement expires.
+   */
+  time::steady_clock::TimePoint annExpires;
 
 private:
   scheduler::EventId m_expirationEvent;
