@@ -56,6 +56,4 @@ sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
 sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
     ./build/unit-tests-daemon -t Face/*Ethernet* $(ut_log_args daemon-ethernet)
 sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
-    ./build/unit-tests-daemon -t Face/TestUdpFactory $(ut_log_args daemon-udp-factory)
-sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
-    ./build/unit-tests-daemon -t Mgmt/TestGeneralConfigSection/UserAndGroupConfig,NoUserConfig $(ut_log_args daemon-user-config)
+    ./build/unit-tests-daemon -t Face/TestUdpFactory $(ut_log_args daemon-udp)

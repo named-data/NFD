@@ -1,8 +1,8 @@
 FAQ
 ===
 
-How to change default paths?
-----------------------------
+How to change the default paths?
+--------------------------------
 
 Paths to where NFD is installed can be configured during ``./waf
 configure``:
@@ -48,10 +48,10 @@ respectively.
 
 .. note::
 
-    **IMPORTANT:** NFD may regain elevated permissions as needed during normal
+    **IMPORTANT:** NFD may regain elevated privileges as needed during normal
     execution. Dropping privileges in this manner should not be considered a security
     mechanism (a compromised NFD that was started as root can trivially return to
-    root). However, reducing privileges may limit any damaged caused by well intentioned,
+    root). However, reducing privileges may limit any damage caused by well intentioned,
     but buggy, code.
 
 How to enable Ethernet Face Support?

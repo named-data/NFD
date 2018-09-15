@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,28 +37,37 @@ BOOST_AUTO_TEST_CASE(DropRaise)
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
   SKIP_IF_NOT_SUPERUSER();
 
-  // The following assumes that nobody/nogroup is present on the test system
-  BOOST_CHECK_NO_THROW(PrivilegeHelper::initialize("nobody", "nogroup"));
+  // The following assumes that daemon:daemon is present on the test system
+  PrivilegeHelper::initialize("daemon", "daemon");
   BOOST_CHECK_EQUAL(::geteuid(), 0);
+  BOOST_CHECK_EQUAL(::getegid(), 0);
 
-  BOOST_CHECK_NO_THROW(PrivilegeHelper::drop());
+  PrivilegeHelper::drop();
   BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
 
-  // separate runElevated case to improve log reporting (otherwise output is unreadable)
-  BOOST_CHECK_NO_THROW(PrivilegeHelper::runElevated([]{}));
   PrivilegeHelper::runElevated([] {
     BOOST_CHECK_EQUAL(::geteuid(), 0);
+    BOOST_CHECK_EQUAL(::getegid(), 0);
   });
   BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
 
-  BOOST_CHECK_NO_THROW(PrivilegeHelper::raise());
+  BOOST_CHECK_THROW(PrivilegeHelper::runElevated(std::function<void()>{}),
+                    std::bad_function_call);
+  BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
+
+  PrivilegeHelper::raise();
   BOOST_CHECK_EQUAL(::geteuid(), 0);
+  BOOST_CHECK_EQUAL(::getegid(), 0);
+
 #else
   BOOST_TEST_MESSAGE("Dropping/raising privileges not supported on this platform, skipping");
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestPrivilegeHelper
 
 } // namespace tests
 } // namespace nfd

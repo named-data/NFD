@@ -45,13 +45,13 @@ void
 PrivilegeHelper::initialize(const std::string& userName, const std::string& groupName)
 {
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
-  static const size_t MAX_GROUP_BUFFER_SIZE = 16384; // 16kB
+  static const size_t MAX_GROUP_BUFFER_SIZE = 16384; // 16 KiB
   static const size_t MAX_PASSWD_BUFFER_SIZE = 16384;
 
   static const size_t FALLBACK_GROUP_BUFFER_SIZE = 1024;
   static const size_t FALLBACK_PASSWD_BUFFER_SIZE = 1024;
 
-  NFD_LOG_TRACE("initializing privilege helper with user \"" << userName << "\""
+  NFD_LOG_TRACE("initializing with user \"" << userName << "\""
                 << " group \"" << groupName << "\"");
 
   // workflow from man getpwnam_r
@@ -62,21 +62,20 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
     if (groupSize == -1)
       groupSize = FALLBACK_GROUP_BUFFER_SIZE;
 
-    std::vector<char> groupBuffer(groupSize);
+    std::vector<char> groupBuffer(static_cast<size_t>(groupSize));
     struct group group;
     struct group* groupResult = nullptr;
 
     int errorCode = getgrnam_r(groupName.data(), &group,
-                               &groupBuffer[0], groupBuffer.size(), &groupResult);
+                               groupBuffer.data(), groupBuffer.size(), &groupResult);
 
     while (errorCode == ERANGE) {
       if (groupBuffer.size() * 2 > MAX_GROUP_BUFFER_SIZE)
         throw Error("Cannot allocate large enough buffer for struct group");
 
       groupBuffer.resize(groupBuffer.size() * 2);
-
       errorCode = getgrnam_r(groupName.data(), &group,
-                             &groupBuffer[0], groupBuffer.size(), &groupResult);
+                             groupBuffer.data(), groupBuffer.size(), &groupResult);
     }
 
     if (errorCode != 0 || !groupResult)
@@ -91,21 +90,20 @@ PrivilegeHelper::initialize(const std::string& userName, const std::string& grou
     if (passwdSize == -1)
       passwdSize = FALLBACK_PASSWD_BUFFER_SIZE;
 
-    std::vector<char> passwdBuffer(passwdSize);
+    std::vector<char> passwdBuffer(static_cast<size_t>(passwdSize));
     struct passwd passwd;
     struct passwd* passwdResult = nullptr;
 
     int errorCode = getpwnam_r(userName.data(), &passwd,
-                               &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
+                               passwdBuffer.data(), passwdBuffer.size(), &passwdResult);
 
     while (errorCode == ERANGE) {
       if (passwdBuffer.size() * 2 > MAX_PASSWD_BUFFER_SIZE)
         throw Error("Cannot allocate large enough buffer for struct passwd");
 
       passwdBuffer.resize(passwdBuffer.size() * 2);
-
       errorCode = getpwnam_r(userName.data(), &passwd,
-                             &passwdBuffer[0], passwdBuffer.size(), &passwdResult);
+                             passwdBuffer.data(), passwdBuffer.size(), &passwdResult);
     }
 
     if (errorCode != 0 || !passwdResult)
