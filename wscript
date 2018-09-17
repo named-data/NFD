@@ -26,7 +26,7 @@ NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
 from waflib import Context, Logs, Utils
 import os, subprocess
 
-VERSION = '0.6.2'
+VERSION = '0.6.3'
 APPNAME = 'nfd'
 BUGREPORT = 'https://redmine.named-data.net/projects/nfd'
 URL = 'https://named-data.net/doc/NFD/'
