@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/key.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
+#include <ndn-cxx/security/transform.hpp>
 #include <ndn-cxx/security/v2/certificate.hpp>
 #include <ndn-cxx/util/io.hpp>
 #include <boost/filesystem.hpp>
@@ -82,6 +83,28 @@ IdentityManagementFixture::saveIdentityCertificate(const Name& identity, const s
   catch (const ndn::io::Error&) {
     return false;
   }
+}
+
+std::string
+IdentityManagementFixture::getIdentityCertificateBase64(const Name& identity, bool wantAdd)
+{
+  ndn::security::v2::Certificate cert;
+  try {
+    cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
+  }
+  catch (const ndn::security::Pib::Error&) {
+    if (!wantAdd) {
+      BOOST_THROW_EXCEPTION(std::runtime_error("identity does not exist"));
+    }
+    cert = m_keyChain.createIdentity(identity).getDefaultKey().getDefaultCertificate();
+  }
+
+  Block wire = cert.wireEncode();
+
+  std::ostringstream oss;
+  namespace tr = ndn::security::transform;
+  tr::bufferSource(wire.wire(), wire.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
+  return oss.str();
 }
 
 } // namespace tests

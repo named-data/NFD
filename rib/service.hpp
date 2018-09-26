@@ -85,6 +85,12 @@ public:
   static Service&
   get();
 
+  RibManager&
+  getRibManager()
+  {
+    return m_ribManager;
+  }
+
 private:
   template<typename ConfigParseFunc>
   Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTransport,

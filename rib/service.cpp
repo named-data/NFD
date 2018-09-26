@@ -108,7 +108,7 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
   , m_nfdController(m_face, m_keyChain)
   , m_fibUpdater(m_rib, m_nfdController)
   , m_dispatcher(m_face, m_keyChain)
-  , m_ribManager(m_rib, m_face, m_nfdController, m_dispatcher)
+  , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
 {
   if (s_instance != nullptr) {
     BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));

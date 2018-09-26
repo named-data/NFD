@@ -46,9 +46,11 @@ static const Name LOCALHOST_TOP_PREFIX = "/localhost/nfd";
 static const Name LOCALHOP_TOP_PREFIX = "/localhop/nfd";
 static const time::seconds ACTIVE_FACE_FETCH_INTERVAL = time::seconds(300);
 
-RibManager::RibManager(Rib& rib, ndn::Face& face, ndn::nfd::Controller& nfdController, Dispatcher& dispatcher)
+RibManager::RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
+                       ndn::nfd::Controller& nfdController, Dispatcher& dispatcher)
   : ManagerBase(dispatcher, MGMT_MODULE_NAME)
   , m_rib(rib)
+  , m_keyChain(keyChain)
   , m_nfdController(nfdController)
   , m_dispatcher(dispatcher)
   , m_faceMonitor(face)
@@ -118,18 +120,15 @@ RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseco
                           const std::function<void(RibUpdateResult)>& done)
 {
   if (expires) {
-    if (*expires <= 0_ns) {
-      done(RibUpdateResult::EXPIRED);
-      return;
-    }
     route.expires = time::steady_clock::now() + *expires;
   }
   else if (route.expires) {
     expires = *route.expires - time::steady_clock::now();
-    if (*expires <= 0_ns) {
-      done(RibUpdateResult::EXPIRED);
-      return;
-    }
+  }
+
+  if (expires && *expires <= 0_s) {
+    m_rib.onRouteExpiration(name, route);
+    return done(RibUpdateResult::EXPIRED);
   }
 
   NFD_LOG_INFO("Adding route " << name << " nexthop=" << route.faceId <<
@@ -316,6 +315,116 @@ RibManager::makeAuthorization(const std::string& verb)
                        bind([&interest, this, accept] { extractRequester(interest, accept); }),
                        bind([reject] { reject(ndn::mgmt::RejectReply::STATUS403); }));
   };
+}
+
+std::ostream&
+operator<<(std::ostream& os, RibManager::SlAnnounceResult res)
+{
+  switch (res) {
+    case RibManager::SlAnnounceResult::OK:
+      return os << "OK";
+    case RibManager::SlAnnounceResult::ERROR:
+      return os << "ERROR";
+    case RibManager::SlAnnounceResult::VALIDATION_FAILURE:
+      return os << "VALIDATION_FAILURE";
+    case RibManager::SlAnnounceResult::EXPIRED:
+      return os << "EXPIRED";
+    case RibManager::SlAnnounceResult::NOT_FOUND:
+      return os << "NOT_FOUND";
+  }
+  BOOST_ASSERT_MSG(false, "bad SlAnnounceResult");
+  return os;
+}
+
+RibManager::SlAnnounceResult
+RibManager::getSlAnnounceResultFromRibUpdateResult(RibUpdateResult r)
+{
+  switch (r) {
+  case RibUpdateResult::OK:
+    return SlAnnounceResult::OK;
+  case RibUpdateResult::ERROR:
+    return SlAnnounceResult::ERROR;
+  case RibUpdateResult::EXPIRED:
+    return SlAnnounceResult::EXPIRED;
+  default:
+    BOOST_ASSERT(false);
+    return SlAnnounceResult::ERROR;
+  }
+}
+
+void
+RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
+                       time::milliseconds maxLifetime, const SlAnnounceCallback& cb)
+{
+  BOOST_ASSERT(pa.getData());
+
+  if (!m_isLocalhopEnabled) {
+    NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId <<
+                 ": localhop_security unconfigured");
+    cb(SlAnnounceResult::VALIDATION_FAILURE);
+    return;
+  }
+
+  m_localhopValidator.validate(*pa.getData(),
+    [=] (const Data&) {
+      Route route(pa, faceId);
+      route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
+      beginAddRoute(pa.getAnnouncedName(), route, nullopt,
+        [=] (RibUpdateResult ribRes) {
+          auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
+          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId << ": " << res);
+          cb(res);
+        });
+    },
+    [=] (const Data&, ndn::security::v2::ValidationError err) {
+      NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId <<
+                   " validation error: " << err);
+      cb(SlAnnounceResult::VALIDATION_FAILURE);
+    }
+  );
+}
+
+void
+RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLifetime,
+                    const SlAnnounceCallback& cb)
+{
+  Route routeQuery;
+  routeQuery.faceId = faceId;
+  routeQuery.origin = ndn::nfd::ROUTE_ORIGIN_PREFIXANN;
+  Route* oldRoute = m_rib.find(name, routeQuery);
+  if (oldRoute == nullptr || !oldRoute->announcement) {
+    NFD_LOG_DEBUG("slRenew " << name << ' ' << faceId << ": not found");
+    return cb(SlAnnounceResult::NOT_FOUND);
+  }
+
+  Route route = *oldRoute;
+  route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
+  beginAddRoute(name, route, nullopt,
+    [=] (RibUpdateResult ribRes) {
+      auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
+      NFD_LOG_INFO("slRenew " << name << ' ' << faceId << ": " << res);
+      cb(res);
+    });
+}
+
+void
+RibManager::slFindAnn(const Name& name, const SlFindAnnCallback& cb) const
+{
+  shared_ptr<RibEntry> entry;
+  auto exactMatch = m_rib.find(name);
+  if (exactMatch != m_rib.end()) {
+    entry = exactMatch->second;
+  }
+  else {
+    entry = m_rib.findParent(name);
+  }
+  if (entry == nullptr) {
+    return cb(nullopt);
+  }
+
+  auto pa = entry->getPrefixAnnouncement();
+  pa.toData(m_keyChain);
+  cb(pa);
 }
 
 void

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,6 +58,14 @@ public:
    */
   bool
   saveIdentityCertificate(const Name& identity, const std::string& filename, bool wantAdd = false);
+
+  /** \brief retrieve identity certificate as base64 string
+   *  \param identity identity name
+   *  \param wantAdd if true, add new identity when necessary
+   *  \throw std::runtime_error identity does not exist and wantAdd is false
+   */
+  std::string
+  getIdentityCertificateBase64(const Name& identity, bool wantAdd = false);
 
 protected:
   ndn::KeyChain m_keyChain;

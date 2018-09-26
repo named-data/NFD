@@ -63,7 +63,7 @@ public:
     , m_status(status)
     , m_nfdController(m_face, m_keyChain)
     , m_fibUpdater(m_rib, m_nfdController)
-    , m_manager(m_rib, m_face, m_nfdController, m_dispatcher)
+    , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
   {
     m_rib.mockFibResponse = [] (const RibUpdateBatch& batch) {
       BOOST_CHECK(batch.begin() != batch.end());

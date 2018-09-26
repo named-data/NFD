@@ -54,7 +54,8 @@ public:
     using std::runtime_error::runtime_error;
   };
 
-  RibManager(Rib& rib, ndn::Face& face, ndn::nfd::Controller& nfdController, Dispatcher& dispatcher);
+  RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
+             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher);
 
   /**
    * @brief Apply localhost_security configuration.
@@ -87,6 +88,75 @@ public:
   void
   enableLocalFields();
 
+public: // self-learning support
+  enum class SlAnnounceResult {
+    OK,                 ///< RIB and FIB have been updated
+    ERROR,              ///< unspecified error
+    VALIDATION_FAILURE, ///< the announcement cannot be verified against the trust schema
+    EXPIRED,            ///< the announcement has expired
+    NOT_FOUND,          ///< route does not exist (slRenew only)
+  };
+
+  using SlAnnounceCallback = std::function<void(SlAnnounceResult res)>;
+  using SlFindAnnCallback = std::function<void(optional<ndn::PrefixAnnouncement>)>;
+
+  /** \brief Insert a route by prefix announcement from self-learning strategy.
+   *  \param pa A prefix announcement. It must contain the Data.
+   *  \param faceId Face on which the announcement arrives.
+   *  \param maxLifetime Maximum route lifetime as imposed by self-learning strategy.
+   *  \param cb Callback to receive the operation result.
+   *
+   *  If \p pa passes validation and is unexpired, inserts or replaces a route for the announced
+   *  name and faceId whose lifetime is set to the earlier of now+maxLifetime or prefix
+   *  announcement expiration time, updates FIB, and invokes \p cb with SlAnnounceResult::OK.
+   *  In case \p pa expires when validation completes, invokes \p cb with SlAnnounceResult::EXPIRED.
+   *  If \p pa cannot be verified by the trust schema given in rib.localhop_security config key,
+   *  or the relevant config has not been loaded via \c enableLocalHop, invokes \p cb with
+   *  SlAnnounceResult::VALIDATION_FAILURE.
+   *
+   *  Self-learning strategy invokes this method after receiving a Data carrying a prefix
+   *  announcement.
+   */
+  void
+  slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId, time::milliseconds maxLifetime,
+             const SlAnnounceCallback& cb);
+
+  /** \brief Renew a route created by prefix announcement from self-learning strategy.
+   *  \param name Data name, for finding RIB entry by longest-prefix-match.
+   *  \param faceId Nexthop face.
+   *  \param maxLifetime Maximum route lifetime as imposed by self-learning strategy.
+   *  \param cb Callback to receive the operation result.
+   *
+   *  If the specified route exists, prolongs its lifetime to the earlier of now+maxLifetime or
+   *  prefix announcement expiration time, and invokes \p cb with SlAnnounceResult::OK.
+   *  If the prefix announcement has expired, invokes \p cb with SlAnnounceResult::EXPIRED.
+   *  If the route is not found, invokes \p cb with SlAnnounceResult::NOT_FOUND.
+   *
+   *  Self-learning strategy invokes this method after an Interest forwarded via a learned route
+   *  is satisfied.
+   *
+   *  \bug In current implementation, if an slAnnounce operation is in progress to create a Route
+   *       or replace a prefix announcement, slRenew could fail because Route does not exist in
+   *       existing RIB, or overwrite the new prefix announcement with an old one.
+   */
+  void
+  slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLifetime,
+          const SlAnnounceCallback& cb);
+
+  /** \brief Retrieve an outgoing prefix announcement for self-learning strategy.
+   *  \param name Data name.
+   *  \param cb Callback to receive a prefix announcement that announces a prefix of \p name, or
+   *            nullopt if no RIB entry is found by longest-prefix-match of \p name.
+   *
+   *  Self-learning strategy invokes this method before sending a Data in reply to a discovery
+   *  Interest, so as to attach a prefix announcement onto that Data.
+   *
+   *  \bug In current implementation, if an slAnnounce operation is in progress, slFindAnn does not
+   *       wait for that operation to complete and its result reflects the prior RIB state.
+   */
+  void
+  slFindAnn(const Name& name, const SlFindAnnCallback& cb) const;
+
 private: // RIB and FibUpdater actions
   enum class RibUpdateResult
   {
@@ -94,6 +164,9 @@ private: // RIB and FibUpdater actions
     ERROR,
     EXPIRED,
   };
+
+  static SlAnnounceResult
+  getSlAnnounceResultFromRibUpdateResult(RibUpdateResult r);
 
   /** \brief Start adding a route to RIB and FIB.
    *  \param name route name
@@ -179,6 +252,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 
 private:
   Rib& m_rib;
+  ndn::KeyChain& m_keyChain;
   ndn::nfd::Controller& m_nfdController;
   Dispatcher& m_dispatcher;
 
@@ -186,6 +260,8 @@ private:
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
   bool m_isLocalhopEnabled;
+
+  static const std::map<RibManager::RibUpdateResult, RibManager::SlAnnounceResult> RIB_RESULT_TO_SL_ANNOUNCE_RESULT;
 
 private:
   scheduler::ScopedEventId m_activeFaceFetchEvent;
@@ -195,6 +271,9 @@ private:
   */
   FaceIdSet m_registeredFaces;
 };
+
+std::ostream&
+operator<<(std::ostream& os, RibManager::SlAnnounceResult res);
 
 } // namespace rib
 } // namespace nfd
