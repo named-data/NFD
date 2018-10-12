@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,10 +25,10 @@
 
 #include "rib/auto-prefix-propagator.hpp"
 
+#include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
-
-#include "tests/identity-management-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -43,9 +43,10 @@ class AutoPrefixPropagatorFixture : public IdentityManagementTimeFixture
 {
 public:
   AutoPrefixPropagatorFixture()
-    : m_face(getGlobalIoService(), m_keyChain, {true, true})
+    : m_face(g_io, m_keyChain, {true, true})
+    , m_scheduler(g_io)
     , m_controller(m_face, m_keyChain)
-    , m_propagator(m_controller, m_keyChain, m_rib)
+    , m_propagator(m_controller, m_keyChain, m_scheduler, m_rib)
     , m_requests(m_face.sentInterests)
     , m_entries(m_propagator.m_propagatedEntries)
   {
@@ -174,6 +175,7 @@ public: // helpers for check
 
 protected:
   ndn::util::DummyClientFace m_face;
+  ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_controller;
   Rib m_rib;
   AutoPrefixPropagator m_propagator;
@@ -226,7 +228,7 @@ BOOST_AUTO_TEST_CASE(EnableDisable)
     if (!insertEntryToRib("/test/A/app")) {
       return false;
     }
-    m_entries["/test/A"].succeed(nullptr);
+    m_entries["/test/A"].succeed(m_scheduler, nullptr);
     if (!eraseEntryFromRib("/test/A/app")) {
       return false;
     }
@@ -347,7 +349,7 @@ BOOST_AUTO_TEST_CASE(RedoPropagation)
   BOOST_CHECK(m_requests.empty());
   BOOST_CHECK(m_entries.find("/test/B") == m_entries.end());
 
-  m_entries["/test/B/C"].succeed(nullptr);
+  m_entries["/test/B/C"].succeed(m_scheduler, nullptr);
   testRedoPropagation("/test/B"); // alternative identity has been propagated
   BOOST_CHECK(m_requests.empty());
   BOOST_CHECK(m_entries.find("/test/B") == m_entries.end());
@@ -367,7 +369,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_REQUIRE(addIdentity("/test/A"));
 
   BOOST_REQUIRE(insertEntryToRib("/test/A/app")); // ensure afterInsertEntry signal emitted
-  m_entries["/test/A"].succeed(nullptr); // ensure there is a valid entry inserted
+  m_entries["/test/A"].succeed(m_scheduler, nullptr); // ensure there is a valid entry inserted
   BOOST_REQUIRE(eraseEntryFromRib("/test/A/app")); // ensure afterEraseEntry signal emitted
 
   BOOST_REQUIRE_EQUAL(m_requests.size(), 2);
@@ -383,7 +385,7 @@ BOOST_AUTO_TEST_CASE(LocalPrefix)
   BOOST_REQUIRE(insertEntryToRib("/localhost/A/app"));
   BOOST_CHECK(m_requests.empty());
 
-  m_propagator.m_propagatedEntries["/localhost/A"].succeed(nullptr);
+  m_propagator.m_propagatedEntries["/localhost/A"].succeed(m_scheduler, nullptr);
   BOOST_REQUIRE(eraseEntryFromRib("/localhost/A/app"));
   BOOST_CHECK(m_requests.empty());
 }
@@ -398,7 +400,7 @@ BOOST_AUTO_TEST_CASE(InvalidPropagationParameters)
   BOOST_REQUIRE(insertEntryToRib("/test/A/app"));
   BOOST_CHECK(m_requests.empty());
 
-  m_entries["/test/A"].succeed(nullptr);
+  m_entries["/test/A"].succeed(m_scheduler, nullptr);
   BOOST_REQUIRE(eraseEntryFromRib("/test/A/app"));
   BOOST_CHECK(m_requests.empty());
 }
@@ -410,7 +412,7 @@ BOOST_AUTO_TEST_CASE(NoHubConnectivity)
   BOOST_REQUIRE(insertEntryToRib("/test/A/app"));
   BOOST_CHECK(m_requests.empty());
 
-  m_entries["/test/A"].succeed(nullptr);
+  m_entries["/test/A"].succeed(m_scheduler, nullptr);
   BOOST_REQUIRE(eraseEntryFromRib("/test/A/app"));
   BOOST_CHECK(m_requests.empty());
 }
@@ -522,18 +524,18 @@ BOOST_AUTO_TEST_CASE(AfterRibErase)
     advanceClocks(time::milliseconds(1));
   };
 
-  m_entries["/test/A"].succeed(nullptr);
+  m_entries["/test/A"].succeed(m_scheduler, nullptr);
   testAfterRibInsert("/test/A/app");
   BOOST_CHECK(m_requests.empty()); // no connectivity
   BOOST_CHECK(m_entries.find("/test/A") == m_entries.end()); // has been erased
 
   connectToHub();
-  m_entries["/test/A"].fail(nullptr);
+  m_entries["/test/A"].fail(m_scheduler, nullptr);
   testAfterRibInsert("/test/A/app");
   BOOST_CHECK(m_requests.empty()); // previous propagation has not succeeded
   BOOST_CHECK(m_entries.find("/test/A") == m_entries.end()); // has been erased
 
-  m_entries["/test/A"].succeed(nullptr);
+  m_entries["/test/A"].succeed(m_scheduler, nullptr);
   testAfterRibInsert("/test/A/app");
   BOOST_REQUIRE_EQUAL(m_requests.size(), 1);
   BOOST_CHECK_EQUAL(checkRequest(0, "unregister", "/test/A"), CheckRequestResult::OK);
@@ -658,11 +660,11 @@ BOOST_AUTO_TEST_CASE(AfterRevokeSucceed)
   testAfterRevokeSucceed("/test/A/app"); // in RELEASED state
   BOOST_CHECK(m_requests.empty());
 
-  m_entries["/test/A"].fail(nullptr); // in PROPAGATE_FAIL state
+  m_entries["/test/A"].fail(m_scheduler, nullptr); // in PROPAGATE_FAIL state
   testAfterRevokeSucceed("/test/A/app");
   BOOST_CHECK(m_requests.empty());
 
-  m_entries["/test/A"].succeed(nullptr); // in PROPAGATED state
+  m_entries["/test/A"].succeed(m_scheduler, nullptr); // in PROPAGATED state
   testAfterRevokeSucceed("/test/A/app");
   BOOST_REQUIRE_EQUAL(m_requests.size(), 1);
   BOOST_CHECK_EQUAL(checkRequest(0, "register", "/test/A"), CheckRequestResult::OK);

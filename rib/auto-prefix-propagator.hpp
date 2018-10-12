@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,15 +26,16 @@
 #ifndef NFD_RIB_AUTO_PREFIX_PROPAGATOR_HPP
 #define NFD_RIB_AUTO_PREFIX_PROPAGATOR_HPP
 
+#include "propagated-entry.hpp"
 #include "rib.hpp"
 #include "core/config-file.hpp"
-#include "propagated-entry.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/control-command.hpp>
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 #include <ndn-cxx/mgmt/nfd/command-options.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
 namespace nfd {
@@ -88,6 +89,7 @@ public:
 
   AutoPrefixPropagator(ndn::nfd::Controller& controller,
                        ndn::KeyChain& keyChain,
+                       ndn::util::Scheduler& scheduler,
                        Rib& rib);
   /**
    * @brief load the "auto_prefix_propagate" section from config file
@@ -310,7 +312,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
   void
   afterPropagateSucceed(const ndn::nfd::ControlParameters& parameters,
                         const ndn::nfd::CommandOptions& options,
-                        const scheduler::EventCallback& refreshEvent);
+                        const ndn::util::scheduler::EventCallback& refreshEvent);
 
   /**
    * @brief invoked after propagation fails.
@@ -331,7 +333,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
                      const ndn::nfd::ControlParameters& parameters,
                      const ndn::nfd::CommandOptions& options,
                      time::seconds retryWaitTime,
-                     const scheduler::EventCallback& retryEvent);
+                     const ndn::util::scheduler::EventCallback& retryEvent);
 
   /**
    * @brief invoked after revocation succeeds
@@ -397,6 +399,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // PropagatedEntry state changes
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   ndn::nfd::Controller& m_nfdController;
   ndn::KeyChain& m_keyChain;
+  ndn::util::Scheduler& m_scheduler;
   Rib& m_rib;
   ndn::util::signal::ScopedConnection m_afterInsertConnection;
   ndn::util::signal::ScopedConnection m_afterEraseConnection;

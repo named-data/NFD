@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,6 @@
 #include "readvertise-policy.hpp"
 #include "readvertised-route.hpp"
 #include "../rib.hpp"
-#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace rib {
@@ -47,6 +46,7 @@ class Readvertise : noncopyable
 
 public:
   Readvertise(Rib& rib,
+              ndn::util::Scheduler& scheduler,
               unique_ptr<ReadvertisePolicy> policy,
               unique_ptr<ReadvertiseDestination> destination);
 
@@ -77,6 +77,7 @@ private:
   static const time::milliseconds RETRY_DELAY_MIN;
   static const time::milliseconds RETRY_DELAY_MAX;
 
+  ndn::util::Scheduler& m_scheduler;
   unique_ptr<ReadvertisePolicy> m_policy;
   unique_ptr<ReadvertiseDestination> m_destination;
 

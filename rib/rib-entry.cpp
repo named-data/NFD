@@ -116,8 +116,8 @@ RibEntry::eraseRoute(RouteList::iterator route)
     }
 
     // Cancel any scheduled event
-    NFD_LOG_TRACE("Cancelling expiration eventId: " << route->getExpirationEvent());
-    scheduler::cancel(route->getExpirationEvent());
+    NFD_LOG_TRACE("Cancelling expiration event: " << route->getExpirationEvent());
+    route->cancelExpirationEvent();
 
     return m_routes.erase(route);
   }

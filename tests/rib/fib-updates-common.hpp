@@ -27,6 +27,7 @@
 #define NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
 
 #include "rib/fib-updater.hpp"
+
 #include "rib-test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
 
@@ -63,7 +64,7 @@ class FibUpdatesFixture : public nfd::tests::IdentityManagementFixture
 {
 public:
   FibUpdatesFixture()
-    : face(getGlobalIoService(), m_keyChain)
+    : face(g_io, m_keyChain)
     , controller(face, m_keyChain)
     , fibUpdater(rib, controller)
   {

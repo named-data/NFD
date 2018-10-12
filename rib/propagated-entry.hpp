@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,9 @@
 #ifndef NFD_RIB_PROPAGATED_ENTRY_HPP
 #define NFD_RIB_PROPAGATED_ENTRY_HPP
 
-#include "core/scheduler.hpp"
+#include "core/common.hpp"
+
+#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 
 namespace nfd {
 namespace rib {
@@ -47,7 +49,6 @@ operator<<(std::ostream& out, PropagationStatus status);
 
 /**
  * @brief represents an entry for prefix propagation.
- * @sa http://redmine.named-data.net/issues/3211
  *
  * it consists of a PropagationStatus indicates current state of the state machine, as
  * well as an event scheduled for refresh or retry (i.e., the RefreshTimer and the RetryTimer of
@@ -56,7 +57,7 @@ operator<<(std::ostream& out, PropagationStatus status);
 class PropagatedEntry
 {
 public:
-  PropagatedEntry();
+  PropagatedEntry() = default;
 
   /**
    * @pre other is not in PROPAGATED or PROPAGATE_FAIL state
@@ -95,7 +96,7 @@ public:
    * this is called just after this entry is successfully propagated.
    */
   void
-  succeed(const scheduler::EventId& event);
+  succeed(ndn::util::Scheduler& scheduler, const ndn::util::scheduler::EventId& event);
 
   /**
    * @brief switch the propagation status to PROPAGATE_FAIL, and then set the
@@ -104,7 +105,7 @@ public:
    * this is called just after propagation for this entry fails.
    */
   void
-  fail(const scheduler::EventId& event);
+  fail(ndn::util::Scheduler& scheduler, const ndn::util::scheduler::EventId& event);
 
   /**
    * @brief cancel the events of re-sending propagation commands.
@@ -148,8 +149,8 @@ public:
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   Name m_signingIdentity;
-  scheduler::ScopedEventId m_rePropagateEvent;
-  PropagationStatus m_propagationStatus;
+  optional<ndn::util::scheduler::ScopedEventId> m_rePropagateEvent;
+  PropagationStatus m_propagationStatus = PropagationStatus::NEW;
 };
 
 } // namespace rib

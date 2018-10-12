@@ -36,7 +36,7 @@ namespace tests {
 
 /** \brief a base test fixture that provides both main and RIB io_service
  */
-class RibIoFixture: public virtual BaseFixture
+class RibIoFixture : public virtual BaseFixture
 {
 protected:
   RibIoFixture();

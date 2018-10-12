@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,10 +25,11 @@
 
 #include "rib/readvertise/nfd-rib-readvertise-destination.hpp"
 
-#include "tests/test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
-#include <ndn-cxx/util/dummy-client-face.hpp>
+#include "tests/test-common.hpp"
+
 #include <ndn-cxx/security/signing-info.hpp>
+#include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace rib {
@@ -42,15 +43,12 @@ public:
   NfdRibReadvertiseDestinationFixture()
     : nSuccessCallbacks(0)
     , nFailureCallbacks(0)
-    , face(getGlobalIoService(), m_keyChain, {true, false})
+    , face(g_io, m_keyChain, {true, false})
+    , scheduler(g_io)
     , controller(face, m_keyChain)
     , dest(controller, Name("/localhost/nlsr"), rib)
-    , successCallback([this] {
-        nSuccessCallbacks++;
-      })
-    , failureCallback([this] (const std::string& str) {
-        nFailureCallbacks++;
-      })
+    , successCallback([this] { nSuccessCallbacks++; })
+    , failureCallback([this] (const std::string&) { nFailureCallbacks++; })
   {
   }
 
@@ -60,6 +58,7 @@ public:
 
 protected:
   ndn::util::DummyClientFace face;
+  ndn::util::Scheduler scheduler;
   ndn::nfd::Controller controller;
   Rib rib;
   NfdRibReadvertiseDestination dest;
@@ -123,7 +122,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix);
+  ReadvertisedRoute rr(prefix, scheduler);
   const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/register");
 
   dest.advertise(rr, successCallback, failureCallback);
@@ -201,7 +200,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix);
+  ReadvertisedRoute rr(prefix, scheduler);
   const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/unregister");
 
   dest.withdraw(rr, successCallback, failureCallback);

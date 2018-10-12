@@ -25,7 +25,6 @@
 
 #include "auto-prefix-propagator.hpp"
 #include "core/logger.hpp"
-#include "core/scheduler.hpp"
 
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/identity-container.hpp>
@@ -39,6 +38,7 @@ NFD_LOG_INIT(AutoPrefixPropagator);
 
 using ndn::nfd::ControlParameters;
 using ndn::nfd::CommandOptions;
+using ndn::util::scheduler::EventCallback;
 
 const Name LOCAL_REGISTRATION_PREFIX("/localhost");
 const Name LINK_LOCAL_NFD_PREFIX("/localhop/nfd");
@@ -52,9 +52,11 @@ const time::milliseconds PREFIX_PROPAGATION_DEFAULT_TIMEOUT = time::milliseconds
 
 AutoPrefixPropagator::AutoPrefixPropagator(ndn::nfd::Controller& controller,
                                            ndn::KeyChain& keyChain,
+                                           ndn::util::Scheduler& scheduler,
                                            Rib& rib)
   : m_nfdController(controller)
   , m_keyChain(keyChain)
+  , m_scheduler(scheduler)
   , m_rib(rib)
   , m_refreshInterval(PREFIX_PROPAGATION_DEFAULT_REFRESH_INTERVAL)
   , m_baseRetryWait(PREFIX_PROPAGATION_DEFAULT_BASE_RETRY_WAIT)
@@ -279,9 +281,9 @@ AutoPrefixPropagator::advertise(const ControlParameters& parameters,
 {
   NFD_LOG_INFO("advertise " << parameters.getName());
 
-  scheduler::EventCallback refreshEvent =
+  EventCallback refreshEvent =
     bind(&AutoPrefixPropagator::onRefreshTimer, this, parameters, options);
-  scheduler::EventCallback retryEvent =
+  EventCallback retryEvent =
     bind(&AutoPrefixPropagator::onRetryTimer, this, parameters, options,
          std::min(m_maxRetryWait, retryWaitTime * 2));
 
@@ -388,7 +390,7 @@ AutoPrefixPropagator::afterHubDisconnect()
 void
 AutoPrefixPropagator::afterPropagateSucceed(const ControlParameters& parameters,
                                             const CommandOptions& options,
-                                            const scheduler::EventCallback& refreshEvent)
+                                            const EventCallback& refreshEvent)
 {
   NFD_LOG_TRACE("success to propagate " << parameters.getName());
 
@@ -402,7 +404,7 @@ AutoPrefixPropagator::afterPropagateSucceed(const ControlParameters& parameters,
 
   // PROPAGATING --> PROPAGATED
   BOOST_ASSERT(entryIt->second.isPropagating());
-  entryIt->second.succeed(scheduler::schedule(m_refreshInterval, refreshEvent));
+  entryIt->second.succeed(m_scheduler, m_scheduler.scheduleEvent(m_refreshInterval, refreshEvent));
 }
 
 void
@@ -410,7 +412,7 @@ AutoPrefixPropagator::afterPropagateFail(const ndn::nfd::ControlResponse& respon
                                          const ControlParameters& parameters,
                                          const CommandOptions& options,
                                          time::seconds retryWaitTime,
-                                         const scheduler::EventCallback& retryEvent)
+                                         const EventCallback& retryEvent)
 {
   NFD_LOG_TRACE("fail to propagate " << parameters.getName()
                                      << "\n\t reason:" << response.getText()
@@ -424,7 +426,7 @@ AutoPrefixPropagator::afterPropagateFail(const ndn::nfd::ControlResponse& respon
 
   // PROPAGATING --> PROPAGATE_FAIL
   BOOST_ASSERT(entryIt->second.isPropagating());
-  entryIt->second.fail(scheduler::schedule(retryWaitTime, retryEvent));
+  entryIt->second.fail(m_scheduler, m_scheduler.scheduleEvent(retryWaitTime, retryEvent));
 }
 
 void

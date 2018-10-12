@@ -27,7 +27,6 @@
 
 #include "tests/identity-management-fixture.hpp"
 
-#include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -115,14 +114,15 @@ class ReadvertiseFixture : public IdentityManagementTimeFixture
 {
 public:
   ReadvertiseFixture()
-    : face(getGlobalIoService(), m_keyChain, {false, false})
-    , controller(face, m_keyChain)
+    : m_face(g_io, m_keyChain, {false, false})
+    , m_scheduler(g_io)
   {
     auto policyUnique = make_unique<DummyReadvertisePolicy>();
     policy = policyUnique.get();
     auto destinationUnique = make_unique<DummyReadvertiseDestination>();
     destination = destinationUnique.get();
-    readvertise.reset(new Readvertise(rib, std::move(policyUnique), std::move(destinationUnique)));
+    readvertise = make_unique<Readvertise>(m_rib, m_scheduler,
+                                           std::move(policyUnique), std::move(destinationUnique));
   }
 
   void
@@ -131,7 +131,7 @@ public:
     Route route;
     route.faceId = faceId;
     route.origin = origin;
-    rib.insert(prefix, route);
+    m_rib.insert(prefix, route);
     this->advanceClocks(time::milliseconds(6));
   }
 
@@ -141,7 +141,7 @@ public:
     Route route;
     route.faceId = faceId;
     route.origin = origin;
-    rib.erase(prefix, route);
+    m_rib.erase(prefix, route);
     this->advanceClocks(time::milliseconds(6));
   }
 
@@ -152,14 +152,15 @@ public:
     this->advanceClocks(time::milliseconds(6));
   }
 
-public:
-  ndn::KeyChain m_keyChain;
-  ndn::util::DummyClientFace face;
-  ndn::nfd::Controller controller;
+protected:
   DummyReadvertisePolicy* policy;
   DummyReadvertiseDestination* destination;
-  Rib rib;
   unique_ptr<Readvertise> readvertise;
+
+private:
+  ndn::util::DummyClientFace m_face;
+  ndn::util::Scheduler m_scheduler;
+  Rib m_rib;
 };
 
 BOOST_AUTO_TEST_SUITE(Readvertise)

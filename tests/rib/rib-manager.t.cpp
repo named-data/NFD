@@ -57,13 +57,13 @@ class RibManagerFixture : public ManagerCommonFixture
 {
 public:
   explicit
-  RibManagerFixture(const ConfigurationStatus& status,
-                    bool shouldClearRib)
+  RibManagerFixture(const ConfigurationStatus& status, bool shouldClearRib)
     : m_commands(m_face.sentInterests)
     , m_status(status)
+    , m_scheduler(g_io)
     , m_nfdController(m_face, m_keyChain)
     , m_fibUpdater(m_rib, m_nfdController)
-    , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
+    , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler)
   {
     m_rib.mockFibResponse = [] (const RibUpdateBatch& batch) {
       BOOST_CHECK(batch.begin() != batch.end());
@@ -208,6 +208,7 @@ protected:
   std::vector<Interest>& m_commands;
   ConfigurationStatus m_status;
 
+  ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   Rib m_rib;
   FibUpdater m_fibUpdater;

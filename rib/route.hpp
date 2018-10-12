@@ -26,11 +26,12 @@
 #ifndef NFD_RIB_ROUTE_HPP
 #define NFD_RIB_ROUTE_HPP
 
-#include "core/scheduler.hpp"
+#include "core/common.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 #include <ndn-cxx/mgmt/nfd/route-flags-traits.hpp>
 #include <ndn-cxx/prefix-announcement.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 #include <type_traits>
 
@@ -52,16 +53,24 @@ public:
    */
   Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId);
 
-  void
-  setExpirationEvent(const scheduler::EventId eid)
-  {
-    m_expirationEvent = eid;
-  }
-
-  const scheduler::EventId&
+  const ndn::util::scheduler::EventId&
   getExpirationEvent() const
   {
     return m_expirationEvent;
+  }
+
+  void
+  setExpirationEvent(const ndn::util::scheduler::EventId& eid, ndn::util::Scheduler& scheduler)
+  {
+    m_expirationEvent = eid;
+    m_scheduler = &scheduler;
+  }
+
+  void
+  cancelExpirationEvent() const
+  {
+    if (m_scheduler)
+      m_scheduler->cancelEvent(m_expirationEvent);
   }
 
   std::underlying_type<ndn::nfd::RouteFlags>::type
@@ -94,7 +103,8 @@ public:
   time::steady_clock::TimePoint annExpires;
 
 private:
-  scheduler::EventId m_expirationEvent;
+  ndn::util::scheduler::EventId m_expirationEvent;
+  ndn::util::Scheduler* m_scheduler;
 };
 
 bool

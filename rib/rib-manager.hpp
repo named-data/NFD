@@ -54,8 +54,8 @@ public:
     using std::runtime_error::runtime_error;
   };
 
-  RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
-             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher);
+  RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain, ndn::nfd::Controller& nfdController,
+             Dispatcher& dispatcher, ndn::util::Scheduler& scheduler);
 
   /**
    * @brief Apply localhost_security configuration.
@@ -234,19 +234,9 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE:
   void
   scheduleActiveFaceFetch(const time::seconds& timeToWait);
 
-  /**
-   * @brief remove invalid faces
-   *
-   * @param status Face dataset
-  */
   void
   removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFaces);
 
-  /**
-   * @brief response to face events
-   *
-   * @param notification
-   */
   void
   onNotification(const ndn::nfd::FaceEventNotification& notification);
 
@@ -255,21 +245,16 @@ private:
   ndn::KeyChain& m_keyChain;
   ndn::nfd::Controller& m_nfdController;
   Dispatcher& m_dispatcher;
+  ndn::util::Scheduler& m_scheduler;
 
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
   bool m_isLocalhopEnabled;
 
-  static const std::map<RibManager::RibUpdateResult, RibManager::SlAnnounceResult> RIB_RESULT_TO_SL_ANNOUNCE_RESULT;
-
-private:
-  scheduler::ScopedEventId m_activeFaceFetchEvent;
-
-  typedef std::set<uint64_t> FaceIdSet;
-  /** \brief contains FaceIds with one or more Routes in the RIB
-  */
-  FaceIdSet m_registeredFaces;
+  ndn::util::scheduler::ScopedEventId m_activeFaceFetchEvent;
+  using FaceIdSet = std::set<uint64_t>;
+  FaceIdSet m_registeredFaces; ///< contains FaceIds with one or more Routes in the RIB
 };
 
 std::ostream&

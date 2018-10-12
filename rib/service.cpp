@@ -105,10 +105,11 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
                  const ConfigParseFunc& configParse)
   : m_keyChain(keyChain)
   , m_face(std::move(localNfdTransport), getGlobalIoService(), m_keyChain)
+  , m_scheduler(m_face.getIoService())
   , m_nfdController(m_face, m_keyChain)
   , m_fibUpdater(m_rib, m_nfdController)
   , m_dispatcher(m_face, m_keyChain)
-  , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
+  , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler)
 {
   if (s_instance != nullptr) {
     BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
@@ -194,7 +195,8 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
     }
     else if (key == CFG_PREFIX_PROPAGATE) {
       if (m_prefixPropagator == nullptr) {
-        m_prefixPropagator = make_unique<AutoPrefixPropagator>(m_nfdController, m_keyChain, m_rib);
+        m_prefixPropagator = make_unique<AutoPrefixPropagator>(m_nfdController, m_keyChain,
+                                                               m_scheduler, m_rib);
       }
       m_prefixPropagator->loadConfig(item.second);
       m_prefixPropagator->enable();
@@ -216,6 +218,7 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
     NFD_LOG_DEBUG("Enabling readvertise-to-nlsr");
     m_readvertiseNlsr = make_unique<Readvertise>(
       m_rib,
+      m_scheduler,
       make_unique<ClientToNlsrReadvertisePolicy>(),
       make_unique<NfdRibReadvertiseDestination>(m_nfdController, READVERTISE_NLSR_PREFIX, m_rib));
   }

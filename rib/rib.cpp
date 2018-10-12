@@ -51,8 +51,6 @@ Rib::Rib()
 {
 }
 
-Rib::~Rib() = default;
-
 void
 Rib::setFibUpdater(FibUpdater* updater)
 {
@@ -107,16 +105,12 @@ Rib::insert(const Name& prefix, const Route& route)
     else {
       // Route exists, update fields
       // First cancel old scheduled event, if any, then set the EventId to new one
-      if (static_cast<bool>(entryIt->getExpirationEvent())) {
-        NFD_LOG_TRACE("Cancelling expiration event for " << entry->getName() << " "
-                                                         << (*entryIt));
-        scheduler::cancel(entryIt->getExpirationEvent());
+      if (entryIt->getExpirationEvent()) {
+        NFD_LOG_TRACE("Cancelling expiration event for " << entry->getName() << " " << *entryIt);
+        entryIt->cancelExpirationEvent();
       }
 
       *entryIt = route;
-
-      // No checks are required here as the iterator needs to be updated in all cases.
-      entryIt->setExpirationEvent(route.getExpirationEvent());
     }
   }
   else {

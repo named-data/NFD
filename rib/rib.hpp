@@ -38,8 +38,8 @@ using ndn::nfd::ControlParameters;
 
 class FibUpdater;
 
-  /** \brief references a route
-   */
+/** \brief references a route
+ */
 struct RibRouteRef
 {
   shared_ptr<RibEntry> entry;
@@ -67,8 +67,6 @@ public:
   typedef std::set<Route, RouteComparePredicate> RouteSet;
 
   Rib();
-
-  ~Rib();
 
   void
   setFibUpdater(FibUpdater* updater);

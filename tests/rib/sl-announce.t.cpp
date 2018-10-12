@@ -26,6 +26,7 @@
 #include "rib/rib-manager.hpp"
 
 #include "tests/identity-management-fixture.hpp"
+
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
@@ -40,20 +41,21 @@ public:
   using SlAnnounceResult = RibManager::SlAnnounceResult;
 
   RibManagerSlAnnounceFixture()
-    : m_face(getGlobalIoService(), m_keyChain)
+    : m_face(g_io, m_keyChain)
+    , m_scheduler(g_io)
     , m_nfdController(m_face, m_keyChain)
     , m_dispatcher(m_face, m_keyChain)
     , m_fibUpdater(rib, m_nfdController)
     , m_trustedSigner(m_keyChain.createIdentity("/trusted", ndn::RsaKeyParams()))
     , m_untrustedSigner(m_keyChain.createIdentity("/untrusted", ndn::RsaKeyParams()))
   {
-    rib.mockFibResponse = [] (const RibUpdateBatch& batch) { return true; };
+    rib.mockFibResponse = [] (const RibUpdateBatch&) { return true; };
     rib.wantMockFibResponseOnce = false;
 
     // Face, Controller, Dispatcher are irrelevant to SlAnnounce functions but required by
     // RibManager construction, so they are private. RibManager is a pointer to avoid code style
     // rule 1.4 violation.
-    manager = make_unique<RibManager>(rib, m_face, m_keyChain, m_nfdController, m_dispatcher);
+    manager = make_unique<RibManager>(rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler);
 
     loadTrustSchema();
   }
@@ -84,7 +86,7 @@ public:
         result = res;
       });
 
-    getGlobalIoService().poll();
+    g_io.poll();
     BOOST_CHECK(result);
     return result.value_or(SlAnnounceResult::ERROR);
   }
@@ -101,7 +103,7 @@ public:
         result = res;
       });
 
-    getGlobalIoService().poll();
+    g_io.poll();
     BOOST_CHECK(result);
     return result.value_or(SlAnnounceResult::ERROR);
   }
@@ -118,7 +120,7 @@ public:
         result = found;
       });
 
-    getGlobalIoService().poll();
+    g_io.poll();
     BOOST_CHECK(result);
     return result.value_or(nullopt);
   }
@@ -161,6 +163,7 @@ public:
 
 private:
   ndn::util::DummyClientFace m_face;
+  ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   ndn::mgmt::Dispatcher m_dispatcher;
   FibUpdater m_fibUpdater;

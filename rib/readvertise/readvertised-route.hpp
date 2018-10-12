@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,8 +26,10 @@
 #ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
 #define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
 
-#include "core/scheduler.hpp"
+#include "core/common.hpp"
+
 #include <ndn-cxx/security/signing-info.hpp>
+#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 
 namespace nfd {
 namespace rib {
@@ -37,15 +39,20 @@ namespace rib {
 class ReadvertisedRoute : noncopyable
 {
 public:
-  explicit
-  ReadvertisedRoute(const Name& prefix);
+  ReadvertisedRoute(const Name& prefix, ndn::util::Scheduler& scheduler)
+    : prefix(prefix)
+    , nRibRoutes(0)
+    , retryDelay(0)
+    , retryEvt(scheduler)
+  {
+  }
 
 public:
   Name prefix; ///< readvertised prefix
   mutable ndn::security::SigningInfo signer; ///< signer for commands
   mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
   mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+  mutable ndn::util::scheduler::ScopedEventId retryEvt; ///< retry or refresh event
 };
 
 inline bool

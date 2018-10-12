@@ -50,11 +50,6 @@ operator<<(std::ostream& out, PropagationStatus status)
   }
 }
 
-PropagatedEntry::PropagatedEntry()
-  : m_propagationStatus(PropagationStatus::NEW)
-{
-}
-
 PropagatedEntry::PropagatedEntry(const PropagatedEntry& other)
   : m_signingIdentity(other.m_signingIdentity)
   , m_propagationStatus(other.m_propagationStatus)
@@ -82,24 +77,27 @@ PropagatedEntry::startPropagation()
 }
 
 void
-PropagatedEntry::succeed(const scheduler::EventId& event)
+PropagatedEntry::succeed(ndn::util::Scheduler& scheduler, const ndn::util::scheduler::EventId& event)
 {
   m_propagationStatus = PropagationStatus::PROPAGATED;
-  m_rePropagateEvent = event;
+  m_rePropagateEvent = ndn::util::scheduler::ScopedEventId(scheduler);
+  *m_rePropagateEvent = event;
 }
 
 void
-PropagatedEntry::fail(const scheduler::EventId& event)
+PropagatedEntry::fail(ndn::util::Scheduler& scheduler, const ndn::util::scheduler::EventId& event)
 {
   m_propagationStatus = PropagationStatus::PROPAGATE_FAIL;
-  m_rePropagateEvent = event;
+  m_rePropagateEvent = ndn::util::scheduler::ScopedEventId(scheduler);
+  *m_rePropagateEvent = event;
 }
 
 void
 PropagatedEntry::initialize()
 {
   m_propagationStatus = PropagationStatus::NEW;
-  m_rePropagateEvent.cancel();
+  if (m_rePropagateEvent)
+    m_rePropagateEvent->cancel();
 }
 
 bool

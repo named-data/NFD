@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,16 +55,18 @@ BOOST_AUTO_TEST_CASE(Start)
 
 BOOST_AUTO_TEST_CASE(Succeed)
 {
+  ndn::util::Scheduler scheduler(g_io);
   PropagatedEntry entry;
-  entry.succeed(nullptr);
+  entry.succeed(scheduler, nullptr);
   BOOST_CHECK_EQUAL(PropagationStatus::PROPAGATED, entry.m_propagationStatus);
   BOOST_CHECK(entry.isPropagated());
 }
 
 BOOST_AUTO_TEST_CASE(Fail)
 {
+  ndn::util::Scheduler scheduler(g_io);
   PropagatedEntry entry;
-  entry.fail(nullptr);
+  entry.fail(scheduler, nullptr);
   BOOST_CHECK_EQUAL(PropagationStatus::PROPAGATE_FAIL, entry.m_propagationStatus);
   BOOST_CHECK(entry.isPropagateFail());
 }
