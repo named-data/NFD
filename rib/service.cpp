@@ -162,8 +162,8 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
     const std::string& key = item.first;
     const ConfigSection& value = item.second;
     if (key == CFG_LOCALHOST_SECURITY || key == CFG_LOCALHOP_SECURITY) {
-      ndn::security::v2::validator_config::ValidationPolicyConfig policy;
-      policy.load(value, filename);
+      ndn::ValidatorConfig testValidator(m_face);
+      testValidator.load(value, filename);
     }
     else if (key == CFG_PREFIX_PROPAGATE) {
       // AutoPrefixPropagator does not support config dry-run
