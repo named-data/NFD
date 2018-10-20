@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,7 @@ BOOST_AUTO_TEST_CASE(Basic)
     Name name = Name("/P").appendVersion(i);
 
     fib::Entry* fibEntry = fib.insert(name).first;
-    fibEntry->addNextHop(*face1, 0);
+    fibEntry->addOrUpdateNextHop(*face1, 0, 0);
 
     shared_ptr<Interest> interest = makeInterest(name);
     shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -89,24 +89,24 @@ BOOST_AUTO_TEST_CASE(RemoveFibNexthops)
   BOOST_CHECK_EQUAL(fib.size(), 0);
 
   fib::Entry* entryA = fib.insert("/A").first;
-  entryA->addNextHop(*face1, 0);
-  entryA->addNextHop(*face2, 0);
+  entryA->addOrUpdateNextHop(*face1, 0, 0);
+  entryA->addOrUpdateNextHop(*face2, 0, 0);
   // {'/A':[1,2]}
 
   fib::Entry* entryB = fib.insert("/B").first;
-  entryB->addNextHop(*face1, 0);
+  entryB->addOrUpdateNextHop(*face1, 0, 0);
   // {'/A':[1,2], '/B':[1]}
 
   fib::Entry* entryC = fib.insert("/C").first;
-  entryC->addNextHop(*face2, 1);
+  entryC->addOrUpdateNextHop(*face2, 0, 1);
   // {'/A':[1,2], '/B':[1], '/C':[2]}
 
   fib::Entry* entryB1 = fib.insert("/B/1").first;
-  entryB1->addNextHop(*face1, 0);
+  entryB1->addOrUpdateNextHop(*face1, 0, 0);
   // {'/A':[1,2], '/B':[1], '/B/1':[1], '/C':[2]}
 
   fib::Entry* entryB12 = fib.insert("/B/1/2").first;
-  entryB12->addNextHop(*face1, 0);
+  entryB12->addOrUpdateNextHop(*face1, 0, 0);
   // {'/A':[1,2], '/B':[1], '/B/1':[1], '/B/1/2':[1], '/C':[2]}
 
   // ---- close face1 ----

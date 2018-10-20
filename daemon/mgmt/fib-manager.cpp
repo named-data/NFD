@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,7 +78,7 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
   }
 
   fib::Entry* entry = m_fib.insert(prefix).first;
-  entry->addNextHop(*face, cost);
+  entry->addOrUpdateNextHop(*face, 0, cost);
 
   NFD_LOG_TRACE("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost << "): OK");
   return done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
@@ -107,7 +107,7 @@ FibManager::removeNextHop(const Name& topPrefix, const Interest& interest,
     return;
   }
 
-  entry->removeNextHop(*face);
+  entry->removeNextHop(*face, 0);
   if (!entry->hasNextHops()) {
     m_fib.erase(*entry);
     NFD_LOG_TRACE("fib/remove-nexthop(" << prefix << ',' << faceId << "): OK entry-erased");

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,9 +78,9 @@ BOOST_FIXTURE_TEST_SUITE(TestBestRouteStrategy2, BestRouteStrategy2Fixture)
 BOOST_AUTO_TEST_CASE(Forward)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addNextHop(*face1, 10);
-  fibEntry.addNextHop(*face2, 20);
-  fibEntry.addNextHop(*face3, 30);
+  fibEntry.addOrUpdateNextHop(*face1, 0, 10);
+  fibEntry.addOrUpdateNextHop(*face2, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face3, 0, 30);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/BzgFBchqA");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -129,7 +129,7 @@ BOOST_AUTO_TEST_CASE(Forward)
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[4].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[5].outFaceId, face3->getId());
 
-  fibEntry.removeNextHop(*face1);
+  fibEntry.removeNextHop(*face1, 0);
 
   strategy.sendInterestHistory.clear();
   for (int i = 0; i < 3; ++i) {

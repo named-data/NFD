@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -301,9 +301,9 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_REQUIRE_NE(face3, face::INVALID_FACEID);
 
   fib::Entry* entry = m_fib.insert("/hello").first;
-  entry->addNextHop(*m_faceTable.get(face1), 101);
-  entry->addNextHop(*m_faceTable.get(face2), 202);
-  entry->addNextHop(*m_faceTable.get(face3), 303);
+  entry->addOrUpdateNextHop(*m_faceTable.get(face1), 0, 101);
+  entry->addOrUpdateNextHop(*m_faceTable.get(face2), 0, 202);
+  entry->addOrUpdateNextHop(*m_faceTable.get(face3), 0, 303);
 
   testRemoveNextHop(makeParameters("/hello", face1));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -354,8 +354,8 @@ BOOST_AUTO_TEST_CASE(ImplicitFaceId)
   };
 
   fib::Entry* entry = m_fib.insert("/hello").first;
-  entry->addNextHop(*m_faceTable.get(face1), 101);
-  entry->addNextHop(*m_faceTable.get(face2), 202);
+  entry->addOrUpdateNextHop(*m_faceTable.get(face1), 0, 101);
+  entry->addOrUpdateNextHop(*m_faceTable.get(face2), 0, 202);
 
   testWithImplicitFaceId(ControlParameters().setName("/hello").setFaceId(0), face1);
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE(RecordNotExist)
     receiveInterest(req);
   };
 
-  m_fib.insert("/hello").first->addNextHop(*m_faceTable.get(face1), 101);
+  m_fib.insert("/hello").first->addOrUpdateNextHop(*m_faceTable.get(face1), 0, 101);
 
   testRemoveNextHop(makeParameters("/hello", face2 + 100));
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1); // face does not exist
@@ -410,8 +410,8 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     Name prefix = Name("test").appendSegment(i);
     actualPrefixes.insert(prefix);
     fib::Entry* fibEntry = m_fib.insert(prefix).first;
-    fibEntry->addNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 1);
-    fibEntry->addNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
+    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), 0, std::numeric_limits<uint8_t>::max() - 1);
+    fibEntry->addOrUpdateNextHop(*m_faceTable.get(addFace()), 0, std::numeric_limits<uint8_t>::max() - 2);
   }
 
   receiveInterest(Interest("/localhost/nfd/fib/list").setCanBePrefix(true));

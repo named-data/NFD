@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -105,10 +105,15 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief removes the NextHop record for face
+  /** \brief removes the NextHop record for \p face with a given \p endpointId
    */
   void
-  removeNextHop(Entry& entry, const Face& face);
+  removeNextHop(Entry& entry, const Face& face, uint64_t endpointId);
+
+  /** \brief removes the NextHop record for \p face for any \p endpointId
+   */
+  void
+  removeNextHopByFace(Entry& entry, const Face& face);
 
 public: // enumeration
   typedef boost::transformed_range<name_tree::GetTableEntry<Entry>, const name_tree::Range> Range;
@@ -143,6 +148,11 @@ private:
 
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);
+
+  /** \brief erase \p entry if it contains no nexthop record
+   */
+  void
+  eraseIfEmpty(Entry& entry);
 
   Range
   getRange() const;

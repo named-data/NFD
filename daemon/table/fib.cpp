@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -134,14 +134,26 @@ Fib::erase(const Entry& entry)
 }
 
 void
-Fib::removeNextHop(Entry& entry, const Face& face)
+Fib::eraseIfEmpty(Entry& entry)
 {
-  entry.removeNextHop(face);
-
   if (!entry.hasNextHops()) {
     name_tree::Entry* nte = m_nameTree.getEntry(entry);
     this->erase(nte, false);
   }
+}
+
+void
+Fib::removeNextHop(Entry& entry, const Face& face, uint64_t endpointId)
+{
+  entry.removeNextHop(face, endpointId);
+  this->eraseIfEmpty(entry);
+}
+
+void
+Fib::removeNextHopByFace(Entry& entry, const Face& face)
+{
+  entry.removeNextHopByFace(face);
+  this->eraseIfEmpty(entry);
 }
 
 Fib::Range

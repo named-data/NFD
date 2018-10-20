@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,7 +118,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
-  fibEntry->addNextHop(*this->localFace4, 10);
+  fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
 
   shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -137,7 +137,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
-  fibEntry->addNextHop(*this->nonLocalFace2, 10);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
 
   shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -159,8 +159,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
-  fibEntry->addNextHop(*this->nonLocalFace2, 10);
-  fibEntry->addNextHop(*this->localFace4, 20);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
+  fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 20);
 
   shared_ptr<Interest> interest = makeInterest("/localhost/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
-  fibEntry->addNextHop(*this->nonLocalFace2, 10);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
 
   shared_ptr<Interest> interest = makeInterest("/localhop/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -202,8 +202,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
-  fibEntry->addNextHop(*this->nonLocalFace2, 10);
-  fibEntry->addNextHop(*this->localFace4, 20);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 10);
+  fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 20);
 
   shared_ptr<Interest> interest = makeInterest("/localhop/A/1");
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -223,8 +223,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhost/A").first;
-  fibEntry->addNextHop(*this->localFace4, 10);
-  fibEntry->addNextHop(*this->nonLocalFace2, 20);
+  fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 20);
 
   shared_ptr<Interest> interest = makeInterest("/localhost/A/1", 1460);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
@@ -248,8 +248,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
                                  T, Tests, StrategyScopeControlFixture<typename T::Strategy>)
 {
   fib::Entry* fibEntry = this->fib.insert("/localhop/A").first;
-  fibEntry->addNextHop(*this->localFace4, 10);
-  fibEntry->addNextHop(*this->nonLocalFace2, 20);
+  fibEntry->addOrUpdateNextHop(*this->localFace4, 0, 10);
+  fibEntry->addOrUpdateNextHop(*this->nonLocalFace2, 0, 20);
 
   shared_ptr<Interest> interest = makeInterest("/localhop/A/1", 1377);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;

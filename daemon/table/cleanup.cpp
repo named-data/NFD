@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ cleanupOnFaceRemoval(NameTree& nt, Fib& fib, Pit& pit, const Face& face)
   for (const name_tree::Entry& nte : nt) {
     fib::Entry* fibEntry = nte.getFibEntry();
     if (fibEntry != nullptr) {
-      fib.removeNextHop(*fibEntry, face);
+      fib.removeNextHopByFace(*fibEntry, face);
     }
 
     for (const auto& pitEntry : nte.getPitEntries()) {

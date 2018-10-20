@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   forwarder.addFace(face2);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addNextHop(*face2, 0);
+  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0, 0);
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   dataA->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addNextHop(*face2, 0);
+  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0, 0);
 
   Pit& pit = forwarder.getPit();
   BOOST_CHECK_EQUAL(pit.size(), 0);
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   forwarder.addFace(face3);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addNextHop(*face3, 0);
+  fib.insert("/A").first->addOrUpdateNextHop(*face3, 0, 0);
 
   shared_ptr<Interest> interest = makeInterest("/A/B");
   interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
@@ -498,7 +498,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   forwarder.addFace(face4);
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/zT4XwK0Hnx").first->addNextHop(*face4, 0);
+  fib.insert("/zT4XwK0Hnx").first->addOrUpdateNextHop(*face4, 0, 0);
 
   // receive Interest on face1
   face1->sentNacks.clear();
@@ -550,7 +550,7 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   });
 
   Fib& fib = forwarder.getFib();
-  fib.insert("/A").first->addNextHop(*face2, 0);
+  fib.insert("/A").first->addOrUpdateNextHop(*face2, 0, 0);
 
   // receive an Interest
   shared_ptr<Interest> interest = makeInterest("ndn:/A/1");

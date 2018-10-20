@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -81,7 +81,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   size_t nUpstreams = nexthops.size();
 
   shared_ptr<Face> bestFace = meInfo.getBestFace();
-  if (bestFace != nullptr && fibEntry.hasNextHop(*bestFace) &&
+  if (bestFace != nullptr && fibEntry.hasNextHop(*bestFace, 0) &&
       !wouldViolateScope(inFace, interest, *bestFace) &&
       canForwardToLegacy(*pitEntry, *bestFace)) {
     // TODO Should we use `randlow = 100 + nrand48(h->seed) % 4096U;` ?
@@ -111,7 +111,7 @@ NccStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   }
 
   shared_ptr<Face> previousFace = meInfo.previousFace.lock();
-  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace, 0) &&
       !wouldViolateScope(inFace, interest, *previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     --nUpstreams;
@@ -157,7 +157,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
   MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(pitEntry);
 
   shared_ptr<Face> previousFace = meInfo.previousFace.lock();
-  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace) &&
+  if (previousFace != nullptr && fibEntry.hasNextHop(*previousFace, 0) &&
       !wouldViolateScope(*inFace, interest, *previousFace) &&
       canForwardToLegacy(*pitEntry, *previousFace)) {
     this->sendInterest(pitEntry, *previousFace, interest);

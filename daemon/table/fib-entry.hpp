@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -74,32 +74,36 @@ public:
     return !m_nextHops.empty();
   }
 
-  /** \return whether there is a NextHop record for \p face
+  /** \return whether there is a NextHop record for \p face with the given \p endpointId
    */
   bool
-  hasNextHop(const Face& face) const;
+  hasNextHop(const Face& face, uint64_t endpointId) const;
 
   /** \brief adds a NextHop record
    *
-   *  If a NextHop record for \p face already exists, its cost is updated.
+   *  If a NextHop record for \p face and \p endpointId already exists,
+   *  its cost is updated.
    */
   void
-  addNextHop(Face& face, uint64_t cost);
+  addOrUpdateNextHop(Face& face, uint64_t endpointId, uint64_t cost);
 
-  /** \brief removes a NextHop record
-   *
-   *  If no NextHop record for face exists, do nothing.
+  /** \brief removes the NextHop record for \p face with the given \p endpointId
    */
   void
-  removeNextHop(const Face& face);
+  removeNextHop(const Face& face, uint64_t endpointId);
+
+  /** \brief removes all NextHop records on \p face for any \p endpointId
+   */
+  void
+  removeNextHopByFace(const Face& face);
 
 private:
   /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
-  findNextHop(const Face& face);
+  findNextHop(const Face& face, uint64_t endpointId);
 
-  /** \brief sorts the nexthop list
+  /** \brief sorts the nexthop list by cost
    */
   void
   sortNextHops();

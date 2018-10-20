@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -117,7 +117,7 @@ public:
   void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
-    fixture->fib.insert(Name()).first->addNextHop(*fixture->face1, 10);
+    fixture->fib.insert(Name()).first->addOrUpdateNextHop(*fixture->face1, 0, 10);
   }
 };
 
@@ -134,7 +134,7 @@ public:
   void
   insertFibEntry(StrategyNoRouteFixture<S>* fixture)
   {
-    fixture->fib.insert("/localhop").first->addNextHop(*fixture->face2, 10);
+    fixture->fib.insert("/localhop").first->addOrUpdateNextHop(*fixture->face2, 0, 10);
     // face1 and face2 are both non-local; Interest from face1 cannot be forwarded to face2
   }
 };

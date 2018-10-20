@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -241,7 +241,7 @@ TopologyTester::registerPrefix(TopologyNode i, const Face& face, const Name& pre
 {
   Forwarder& forwarder = this->getForwarder(i);
   Fib& fib = forwarder.getFib();
-  fib.insert(prefix).first->addNextHop(const_cast<Face&>(face), cost);
+  fib.insert(prefix).first->addOrUpdateNextHop(const_cast<Face&>(face), 0, cost);
 }
 
 void

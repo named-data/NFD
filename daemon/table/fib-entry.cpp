@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,40 +35,49 @@ Entry::Entry(const Name& prefix)
 }
 
 NextHopList::iterator
-Entry::findNextHop(const Face& face)
+Entry::findNextHop(const Face& face, uint64_t endpointId)
 {
   return std::find_if(m_nextHops.begin(), m_nextHops.end(),
-                      [&face] (const NextHop& nexthop) {
-                        return &nexthop.getFace() == &face;
+                      [&face, endpointId] (const NextHop& nexthop) {
+                        return &nexthop.getFace() == &face && nexthop.getEndpointId() == endpointId;
                       });
 }
 
 bool
-Entry::hasNextHop(const Face& face) const
+Entry::hasNextHop(const Face& face, uint64_t endpointId) const
 {
-  return const_cast<Entry*>(this)->findNextHop(face) != m_nextHops.end();
+  return const_cast<Entry*>(this)->findNextHop(face, endpointId) != m_nextHops.end();
 }
 
 void
-Entry::addNextHop(Face& face, uint64_t cost)
+Entry::addOrUpdateNextHop(Face& face, uint64_t endpointId, uint64_t cost)
 {
-  auto it = this->findNextHop(face);
+  auto it = this->findNextHop(face, endpointId);
   if (it == m_nextHops.end()) {
-    m_nextHops.emplace_back(face);
+    m_nextHops.emplace_back(face, endpointId);
     it = std::prev(m_nextHops.end());
   }
-
   it->setCost(cost);
   this->sortNextHops();
 }
 
 void
-Entry::removeNextHop(const Face& face)
+Entry::removeNextHop(const Face& face, uint64_t endpointId)
 {
-  auto it = this->findNextHop(face);
+  auto it = this->findNextHop(face, endpointId);
   if (it != m_nextHops.end()) {
     m_nextHops.erase(it);
   }
+}
+
+void
+Entry::removeNextHopByFace(const Face& face)
+{
+  auto it = std::remove_if(m_nextHops.begin(), m_nextHops.end(),
+                           [&face] (const NextHop& nexthop) {
+                             return &nexthop.getFace() == &face;
+                           });
+  m_nextHops.erase(it, m_nextHops.end());
 }
 
 void

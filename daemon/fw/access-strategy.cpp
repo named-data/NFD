@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -137,7 +137,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const Interest& interest,
   }
 
   Face* outFace = this->getFace(mi.lastNexthop);
-  if (outFace == nullptr || !fibEntry.hasNextHop(*outFace)) {
+  if (outFace == nullptr || !fibEntry.hasNextHop(*outFace, 0)) {
     NFD_LOG_DEBUG(pitEntry->getInterest() << " last-nexthop-gone");
     return false;
   }

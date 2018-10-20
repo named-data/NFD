@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,71 +51,138 @@ BOOST_AUTO_TEST_CASE(FibEntry)
   // []
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 
-  entry.addNextHop(*face1, 20);
-  // [(face1,20)]
+  // [(face, cost, endpointId)]
+  entry.addOrUpdateNextHop(*face1, 200, 20);
+  // [(face1,200,20)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
   BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getEndpointId(), 200);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 20);
 
-  entry.addNextHop(*face1, 30);
-  // [(face1,30)]
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
-  BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
-  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 30);
-
-  entry.addNextHop(*face2, 40);
-  // [(face1,30), (face2,40)]
+  entry.addOrUpdateNextHop(*face1, 300, 30);
+  // [(face1,200,20), (face1,300,30)]
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
+  BOOST_CHECK_EQUAL(&entry.getNextHops().begin()->getFace(), face1.get());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getEndpointId(), 200);
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 20);
+
+  entry.addOrUpdateNextHop(*face2, 400, 40);
+  // [(face1,200,20), (face1,300,30), (face2,400,40)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 3);
   {
     NextHopList::const_iterator it = entry.getNextHops().begin();
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 200);
+    BOOST_CHECK_EQUAL(it->getCost(), 20);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 300);
     BOOST_CHECK_EQUAL(it->getCost(), 30);
 
     ++it;
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 400);
     BOOST_CHECK_EQUAL(it->getCost(), 40);
 
     ++it;
     BOOST_CHECK(it == entry.getNextHops().end());
   }
 
-  entry.addNextHop(*face2, 10);
-  // [(face2,10), (face1,30)]
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
+  entry.addOrUpdateNextHop(*face2, 100, 10);
+  // [(face2,100,10), (face1,200,20), (face1,300,30), (face2,400,40)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 4);
   {
     NextHopList::const_iterator it = entry.getNextHops().begin();
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 100);
     BOOST_CHECK_EQUAL(it->getCost(), 10);
 
     ++it;
     BOOST_REQUIRE(it != entry.getNextHops().end());
     BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 200);
+    BOOST_CHECK_EQUAL(it->getCost(), 20);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 300);
     BOOST_CHECK_EQUAL(it->getCost(), 30);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 400);
+    BOOST_CHECK_EQUAL(it->getCost(), 40);
 
     ++it;
     BOOST_CHECK(it == entry.getNextHops().end());
   }
 
-  entry.removeNextHop(*face1);
-  // [(face2,10)]
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  entry.addOrUpdateNextHop(*face1, 200, 50);
+  // [(face2,100,10), (face1,300,30), (face2,400,40), (face1,200,50)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 4);
+  {
+    NextHopList::const_iterator it = entry.getNextHops().begin();
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 100);
+    BOOST_CHECK_EQUAL(it->getCost(), 10);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 300);
+    BOOST_CHECK_EQUAL(it->getCost(), 30);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face2.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 400);
+    BOOST_CHECK_EQUAL(it->getCost(), 40);
+
+    ++it;
+    BOOST_REQUIRE(it != entry.getNextHops().end());
+    BOOST_CHECK_EQUAL(&it->getFace(), face1.get());
+    BOOST_CHECK_EQUAL(it->getEndpointId(), 200);
+    BOOST_CHECK_EQUAL(it->getCost(), 50);
+
+    ++it;
+    BOOST_CHECK(it == entry.getNextHops().end());
+  }
+
+  entry.removeNextHop(*face1, 200);
+  // [(face2,100,10), (face1,300,30), (face2,400,40)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 3);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getEndpointId(), 100);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(*face1);
-  // [(face2,10)]
-  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+  entry.removeNextHop(*face1, 200);
+  // [(face2,100,10), (face1,300,30), (face2,400,40)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 3);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getFace().getId(), face2->getId());
+  BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getEndpointId(), 100);
   BOOST_CHECK_EQUAL(entry.getNextHops().begin()->getCost(), 10);
 
-  entry.removeNextHop(*face2);
+  entry.removeNextHop(*face2,100);
+  // [(face1,300,30), (face2,400,40)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 2);
+
+  entry.removeNextHop(*face2,400);
+  // [(face1,300,30)]
+  BOOST_CHECK_EQUAL(entry.getNextHops().size(), 1);
+
+  entry.removeNextHop(*face1,300);
   // []
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 
-  entry.removeNextHop(*face2);
+  entry.removeNextHop(*face1,300);
   // []
   BOOST_CHECK_EQUAL(entry.getNextHops().size(), 0);
 }

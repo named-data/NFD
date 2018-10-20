@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -96,9 +96,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addNextHop(*this->face3, 10);
-  fibEntry.addNextHop(*this->face4, 20);
-  fibEntry.addNextHop(*this->face5, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/McQYjMbm", 992);
   shared_ptr<Interest> interest2 = makeInterest("/McQYjMbm", 114);
@@ -131,9 +131,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addNextHop(*this->face3, 10);
-  fibEntry.addNextHop(*this->face4, 20);
-  fibEntry.addNextHop(*this->face5, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
@@ -164,9 +164,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
                                  S, Strategies, StrategyNackReturnFixture<S>)
 {
   fib::Entry& fibEntry = *this->fib.insert(Name()).first;
-  fibEntry.addNextHop(*this->face3, 10);
-  fibEntry.addNextHop(*this->face4, 20);
-  fibEntry.addNextHop(*this->face5, 30);
+  fibEntry.addOrUpdateNextHop(*this->face3, 0, 10);
+  fibEntry.addOrUpdateNextHop(*this->face4, 0, 20);
+  fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
   interest1->setInterestLifetime(time::milliseconds(400));
@@ -317,9 +317,9 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinat
                                  StrategyNackReturnFixture<BestRouteStrategy2>)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addNextHop(*face3, 10);
-  fibEntry.addNextHop(*face4, 20);
-  fibEntry.addNextHop(*face5, 30);
+  fibEntry.addOrUpdateNextHop(*face3, 0, 10);
+  fibEntry.addOrUpdateNextHop(*face4, 0, 20);
+  fibEntry.addOrUpdateNextHop(*face5, 0, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/F6sEwB24I", 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;

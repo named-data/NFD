@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,12 +39,18 @@ class NextHop
 {
 public:
   explicit
-  NextHop(Face& face);
+  NextHop(Face& face, uint64_t endpointId);
 
   Face&
   getFace() const
   {
     return *m_face;
+  }
+
+  uint64_t
+  getEndpointId() const
+  {
+    return m_endpointId;
   }
 
   uint64_t
@@ -61,6 +67,7 @@ public:
 
 private:
   Face* m_face;
+  uint64_t m_endpointId;
   uint64_t m_cost;
 };
 

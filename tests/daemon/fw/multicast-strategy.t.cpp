@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -70,9 +70,9 @@ BOOST_FIXTURE_TEST_SUITE(TestMulticastStrategy, MulticastStrategyFixture)
 BOOST_AUTO_TEST_CASE(Forward2)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addNextHop(*face1, 0);
-  fibEntry.addNextHop(*face2, 0);
-  fibEntry.addNextHop(*face3, 0);
+  fibEntry.addOrUpdateNextHop(*face1, 0, 0);
+  fibEntry.addOrUpdateNextHop(*face2, 0, 0);
+  fibEntry.addOrUpdateNextHop(*face3, 0, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
 BOOST_AUTO_TEST_CASE(RejectLoopback)
 {
   fib::Entry& fibEntry = *fib.insert(Name()).first;
-  fibEntry.addNextHop(*face1, 0);
+  fibEntry.addOrUpdateNextHop(*face1, 0, 0);
 
   shared_ptr<Interest> interest = makeInterest("ndn:/H0D6i5fc");
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
