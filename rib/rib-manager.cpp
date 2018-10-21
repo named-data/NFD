@@ -362,7 +362,7 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
   BOOST_ASSERT(pa.getData());
 
   if (!m_isLocalhopEnabled) {
-    NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId <<
+    NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
                  ": localhop_security unconfigured");
     cb(SlAnnounceResult::VALIDATION_FAILURE);
     return;
@@ -375,12 +375,12 @@ RibManager::slAnnounce(const ndn::PrefixAnnouncement& pa, uint64_t faceId,
       beginAddRoute(pa.getAnnouncedName(), route, nullopt,
         [=] (RibUpdateResult ribRes) {
           auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId << ": " << res);
+          NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId << ": " << res);
           cb(res);
         });
     },
     [=] (const Data&, ndn::security::v2::ValidationError err) {
-      NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << ' ' << faceId <<
+      NFD_LOG_INFO("slAnnounce " << pa.getAnnouncedName() << " " << faceId <<
                    " validation error: " << err);
       cb(SlAnnounceResult::VALIDATION_FAILURE);
     }
@@ -394,18 +394,20 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
   Route routeQuery;
   routeQuery.faceId = faceId;
   routeQuery.origin = ndn::nfd::ROUTE_ORIGIN_PREFIXANN;
-  Route* oldRoute = m_rib.find(name, routeQuery);
+  Route* oldRoute = m_rib.findLongestPrefix(name, routeQuery);
+
   if (oldRoute == nullptr || !oldRoute->announcement) {
-    NFD_LOG_DEBUG("slRenew " << name << ' ' << faceId << ": not found");
+    NFD_LOG_DEBUG("slRenew " << name << " " << faceId << ": not found");
     return cb(SlAnnounceResult::NOT_FOUND);
   }
+  Name routeName = oldRoute->announcement->getAnnouncedName();
 
   Route route = *oldRoute;
   route.expires = std::min(route.annExpires, time::steady_clock::now() + maxLifetime);
-  beginAddRoute(name, route, nullopt,
+  beginAddRoute(routeName, route, nullopt,
     [=] (RibUpdateResult ribRes) {
       auto res = getSlAnnounceResultFromRibUpdateResult(ribRes);
-      NFD_LOG_INFO("slRenew " << name << ' ' << faceId << ": " << res);
+      NFD_LOG_INFO("slRenew " << name << " " << faceId << ": " << res << " " << routeName);
       cb(res);
     });
 }

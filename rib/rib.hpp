@@ -77,6 +77,9 @@ public:
   Route*
   find(const Name& prefix, const Route& route) const;
 
+  Route*
+  findLongestPrefix(const Name& prefix, const Route& route) const;
+
   const_iterator
   begin() const;
 

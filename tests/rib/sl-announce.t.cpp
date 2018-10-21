@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(RenewProlong_ArgLifetime)
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 4506, 2_h), SlAnnounceResult::OK);
   advanceClocks(1_h); // Route has 1_h remaining lifetime
 
-  BOOST_CHECK_EQUAL(slRenewSync("/P2IYFqtr", 4506, 2_h), SlAnnounceResult::OK);
+  BOOST_CHECK_EQUAL(slRenewSync("/P2IYFqtr/2321", 4506, 2_h), SlAnnounceResult::OK);
 
   Route* route = findAnnRoute("/P2IYFqtr", 4506);
   BOOST_REQUIRE(route != nullptr);
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(RenewProlong_AnnLifetime)
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 1589, 2_h), SlAnnounceResult::OK);
   advanceClocks(1_h); // Route has 1_h remaining lifetime
 
-  BOOST_CHECK_EQUAL(slRenewSync("/be01Yiba", 1589, 5_h), SlAnnounceResult::OK);
+  BOOST_CHECK_EQUAL(slRenewSync("/be01Yiba/4324", 1589, 5_h), SlAnnounceResult::OK);
 
   Route* route = findAnnRoute("/be01Yiba", 1589);
   BOOST_REQUIRE(route != nullptr);
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(RenewShorten)
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 3851, 4_h), SlAnnounceResult::OK);
   advanceClocks(1_h); // Route has 3_h remaining lifetime
 
-  BOOST_CHECK_EQUAL(slRenewSync("/5XCHYCAd", 3851, 1_h), SlAnnounceResult::OK);
+  BOOST_CHECK_EQUAL(slRenewSync("/5XCHYCAd/98934", 3851, 1_h), SlAnnounceResult::OK);
 
   Route* route = findAnnRoute("/5XCHYCAd", 3851);
   BOOST_REQUIRE(route != nullptr);
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(RenewShorten_Zero)
   BOOST_CHECK_EQUAL(slAnnounceSync(pa, 8031, 4_h), SlAnnounceResult::OK);
   advanceClocks(1_h); // Route has 3_h remaining lifetime
 
-  BOOST_CHECK_EQUAL(slRenewSync("/cdQ7KPNw", 8031, 0_s), SlAnnounceResult::EXPIRED);
+  BOOST_CHECK_EQUAL(slRenewSync("/cdQ7KPNw/8023", 8031, 0_s), SlAnnounceResult::EXPIRED);
 
   BOOST_CHECK(findAnnRoute("/cdQ7KPNw", 8031) == nullptr);
 }

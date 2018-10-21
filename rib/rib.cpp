@@ -80,6 +80,20 @@ Rib::find(const Name& prefix, const Route& route) const
   return nullptr;
 }
 
+Route*
+Rib::findLongestPrefix(const Name& prefix, const Route& route) const
+{
+  Route* existingRoute = find(prefix, route);
+  if (existingRoute == nullptr) {
+    auto parent = findParent(prefix);
+    if (parent) {
+      existingRoute = find(parent->getName(), route);
+    }
+  }
+
+  return existingRoute;
+}
+
 void
 Rib::insert(const Name& prefix, const Route& route)
 {

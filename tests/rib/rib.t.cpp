@@ -216,6 +216,12 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK(rib.find(name2, route2) == nullptr);
   BOOST_CHECK(rib.find(name1, route1) != nullptr);
 
+  Name name5("/hello/world/666");
+  Name name6("/hello/world/cs/ua/edu");
+  BOOST_CHECK(rib.findLongestPrefix(name1, route1) != nullptr);
+  BOOST_CHECK(rib.findLongestPrefix(name5, route1) != nullptr);
+  BOOST_CHECK(rib.findLongestPrefix(name6, route1) != nullptr);
+
   rib.erase(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
 }
