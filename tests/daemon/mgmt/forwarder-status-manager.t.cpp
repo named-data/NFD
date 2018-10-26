@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,10 +63,19 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
   m_forwarder.getMeasurements().get("ndn:/measurements3");
   m_forwarder.getCs().insert(*makeData("ndn:/cs1"));
   m_forwarder.getCs().insert(*makeData("ndn:/cs2"));
+  shared_ptr<pit::Entry> pitA = m_forwarder.getPit().insert(*makeInterest("ndn:/pitA")).first;
+  pitA->isSatisfied = false;
+  m_forwarder.onInterestFinalize(pitA);
+  shared_ptr<pit::Entry> pitB = m_forwarder.getPit().insert(*makeInterest("ndn:/pitB")).first;
+  pitB->isSatisfied = true;
+  m_forwarder.onInterestFinalize(pitB);
+
   BOOST_CHECK_GE(m_forwarder.getFib().size(), 1);
   BOOST_CHECK_GE(m_forwarder.getPit().size(), 4);
   BOOST_CHECK_GE(m_forwarder.getMeasurements().size(), 3);
   BOOST_CHECK_GE(m_forwarder.getCs().size(), 2);
+  BOOST_CHECK_EQUAL(m_forwarder.getCounters().nSatisfiedInterests, 1);
+  BOOST_CHECK_EQUAL(m_forwarder.getCounters().nUnsatisfiedInterests, 1);
 
   // request
   time::system_clock::TimePoint beforeRequest = time::system_clock::now();
@@ -93,6 +102,9 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
   BOOST_CHECK_EQUAL(status.getNMeasurementsEntries(), m_forwarder.getMeasurements().size());
   BOOST_CHECK_EQUAL(status.getNCsEntries(), m_forwarder.getCs().size());
   // TODO#3325 check packet counter values
+
+  BOOST_CHECK_EQUAL(status.getNSatisfiedInterests(), m_forwarder.getCounters().nSatisfiedInterests);
+  BOOST_CHECK_EQUAL(status.getNUnsatisfiedInterests(), m_forwarder.getCounters().nUnsatisfiedInterests);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestForwarderStatusManager

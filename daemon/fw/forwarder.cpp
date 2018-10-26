@@ -246,6 +246,14 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
   // Dead Nonce List insert if necessary
   this->insertDeadNonceList(*pitEntry, 0);
 
+  // Increment satisfied/unsatisfied Interests counter
+  if (pitEntry->isSatisfied) {
+    ++m_counters.nSatisfiedInterests;
+  }
+  else {
+    ++m_counters.nUnsatisfiedInterests;
+  }
+
   // PIT delete
   scheduler::cancel(pitEntry->expiryTimer);
   m_pit.erase(pitEntry.get());
