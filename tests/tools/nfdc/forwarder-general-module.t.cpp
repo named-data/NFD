@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,26 +60,30 @@ const std::string STATUS_XML = stripXmlSpaces(R"XML(
         <nNacks>26762</nNacks>
       </outgoingPackets>
     </packetCounters>
+    <nSatisfiedInterests>123</nSatisfiedInterests>
+    <nUnsatisfiedInterests>321</nUnsatisfiedInterests>
   </generalStatus>
 )XML");
 
 const std::string STATUS_TEXT = std::string(R"TEXT(
 General NFD status:
-               version=0.4.1-1-g704430c
-             startTime=20160624T151346.856000
-           currentTime=20160717T175554.109000
-                uptime=1996927 seconds
-      nNameTreeEntries=668
-           nFibEntries=70
-           nPitEntries=7
-  nMeasurementsEntries=1
-            nCsEntries=65536
-          nInInterests=20699052
-         nOutInterests=36501092
-               nInData=5598070
-              nOutData=5671942
-              nInNacks=7230
-             nOutNacks=26762
+                version=0.4.1-1-g704430c
+              startTime=20160624T151346.856000
+            currentTime=20160717T175554.109000
+                 uptime=1996927 seconds
+       nNameTreeEntries=668
+            nFibEntries=70
+            nPitEntries=7
+   nMeasurementsEntries=1
+             nCsEntries=65536
+           nInInterests=20699052
+          nOutInterests=36501092
+                nInData=5598070
+               nOutData=5671942
+               nInNacks=7230
+              nOutNacks=26762
+    nSatisfiedInterests=123
+  nUnsatisfiedInterests=321
 )TEXT").substr(1);
 
 BOOST_AUTO_TEST_CASE(Status)
@@ -99,7 +103,9 @@ BOOST_AUTO_TEST_CASE(Status)
          .setNInNacks(7230)
          .setNOutInterests(36501092)
          .setNOutData(5671942)
-         .setNOutNacks(26762);
+         .setNOutNacks(26762)
+         .setNSatisfiedInterests(123)
+         .setNUnsatisfiedInterests(321);
   this->sendDataset("/localhost/nfd/status/general", payload);
   this->prepareStatusOutput();
 

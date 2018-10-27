@@ -43,6 +43,8 @@
     <xs:element type="xs:nonNegativeInteger" name="nMeasurementsEntries"/>
     <xs:element type="xs:nonNegativeInteger" name="nCsEntries"/>
     <xs:element type="nfd:bidirectionalPacketCountersType" name="packetCounters"/>
+    <xs:element type="xs:nonNegativeInteger" name="nSatisfiedInterests"/>
+    <xs:element type="xs:nonNegativeInteger" name="nUnsatisfiedInterests"/>
   </xs:sequence>
 </xs:complexType>
 

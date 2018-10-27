@@ -88,6 +88,9 @@ ForwarderGeneralModule::formatItemXml(std::ostream& os, const ForwarderStatus& i
      << "</outgoingPackets>";
   os << "</packetCounters>";
 
+  os << "<nSatisfiedInterests>" << item.getNSatisfiedInterests() << "</nSatisfiedInterests>";
+  os << "<nUnsatisfiedInterests>" << item.getNUnsatisfiedInterests() << "</nUnsatisfiedInterests>";
+
   os << "</generalStatus>";
 }
 
@@ -102,7 +105,7 @@ ForwarderGeneralModule::formatStatusText(std::ostream& os) const
 void
 ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& item)
 {
-  text::ItemAttributes ia(true, 20);
+  text::ItemAttributes ia(true, 21);
 
   os << ia("version") << item.getNfdVersion()
      << ia("startTime") << text::formatTimestamp(item.getStartTimestamp())
@@ -120,7 +123,9 @@ ForwarderGeneralModule::formatItemText(std::ostream& os, const ForwarderStatus& 
      << ia("nInData") << item.getNInData()
      << ia("nOutData") << item.getNOutData()
      << ia("nInNacks") << item.getNInNacks()
-     << ia("nOutNacks") << item.getNOutNacks();
+     << ia("nOutNacks") << item.getNOutNacks()
+     << ia("nSatisfiedInterests") << item.getNSatisfiedInterests()
+     << ia("nUnsatisfiedInterests") << item.getNUnsatisfiedInterests();
 
   os << ia.end();
 }
