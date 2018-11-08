@@ -28,6 +28,7 @@
 
 #include "nfd-manager-common-fixture.hpp"
 #include "../fw/dummy-strategy.hpp"
+
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
 namespace nfd {
@@ -204,7 +205,7 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
     expected[entry.getPrefix()] = entry.getStrategyInstanceName();
   }
 
-  for (int i = expected.size(); i < 1024; ++i) {
+  for (size_t i = expected.size(); i < 1024; ++i) {
     Name name("/SC");
     name.appendNumber(i);
     Name strategy = DummyStrategy::getStrategyName(i);
@@ -214,7 +215,8 @@ BOOST_AUTO_TEST_CASE(StrategyChoiceDataset)
     expected[name] = strategy;
   }
 
-  receiveInterest(Interest("/localhost/nfd/strategy-choice/list"));
+  receiveInterest(Interest("/localhost/nfd/strategy-choice/list").setCanBePrefix(true));
+
   Block dataset = concatenateResponses();
   dataset.parse();
   BOOST_CHECK_EQUAL(dataset.elements_size(), expected.size());

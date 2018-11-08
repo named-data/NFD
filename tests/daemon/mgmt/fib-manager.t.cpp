@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE(FibDataset)
     fibEntry->addNextHop(*m_faceTable.get(addFace()), std::numeric_limits<uint8_t>::max() - 2);
   }
 
-  receiveInterest(Interest("/localhost/nfd/fib/list"));
+  receiveInterest(Interest("/localhost/nfd/fib/list").setCanBePrefix(true));
 
   Block content = concatenateResponses();
   content.parse();

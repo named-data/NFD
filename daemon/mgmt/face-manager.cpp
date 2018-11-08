@@ -30,10 +30,11 @@
 #include "face/protocol-factory.hpp"
 #include "fw/face-table.hpp"
 
-#include <boost/logic/tribool.hpp>
-
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/channel-status.hpp>
+#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
+#include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
+#include <ndn-cxx/mgmt/nfd/face-status.hpp>
 
 namespace nfd {
 
@@ -47,19 +48,14 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
   , m_faceTable(faceSystem.getFaceTable())
 {
   // register handlers for ControlCommand
-  registerCommandHandler<ndn::nfd::FaceCreateCommand>("create",
-    bind(&FaceManager::createFace, this, _2, _3, _4, _5));
-
-  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update",
-    bind(&FaceManager::updateFace, this, _2, _3, _4, _5));
-
-  registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy",
-    bind(&FaceManager::destroyFace, this, _2, _3, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceCreateCommand>("create", bind(&FaceManager::createFace, this, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceUpdateCommand>("update", bind(&FaceManager::updateFace, this, _3, _4, _5));
+  registerCommandHandler<ndn::nfd::FaceDestroyCommand>("destroy", bind(&FaceManager::destroyFace, this, _4, _5));
 
   // register handlers for StatusDataset
-  registerStatusDatasetHandler("list", bind(&FaceManager::listFaces, this, _1, _2, _3));
-  registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _1, _2, _3));
-  registerStatusDatasetHandler("query", bind(&FaceManager::queryFaces, this, _1, _2, _3));
+  registerStatusDatasetHandler("list", bind(&FaceManager::listFaces, this, _3));
+  registerStatusDatasetHandler("channels", bind(&FaceManager::listChannels, this, _3));
+  registerStatusDatasetHandler("query", bind(&FaceManager::queryFaces, this, _2, _3));
 
   // register notification stream
   m_postNotification = registerNotificationStream("events");
@@ -73,8 +69,7 @@ FaceManager::FaceManager(FaceSystem& faceSystem,
 }
 
 void
-FaceManager::createFace(const Name& topPrefix, const Interest& interest,
-                        const ControlParameters& parameters,
+FaceManager::createFace(const ControlParameters& parameters,
                         const ndn::mgmt::CommandContinuation& done)
 {
   FaceUri remoteUri;
@@ -134,8 +129,13 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   }
   try {
     factory->createFace({remoteUri, localUri, faceParams},
-                        bind(&FaceManager::afterCreateFaceSuccess, this, parameters, _1, done),
-                        bind(&FaceManager::afterCreateFaceFailure, this, _1, _2, done));
+                        [this, parameters, done] (const auto& face) {
+                          this->afterCreateFaceSuccess(face, parameters, done);
+                        },
+                        [done] (uint32_t status, const std::string& reason) {
+                          NFD_LOG_DEBUG("Face creation failed: " << reason);
+                          done(ControlResponse(status, reason));
+                        });
   }
   catch (const std::runtime_error& error) {
     NFD_LOG_ERROR("Face creation failed: " << error.what());
@@ -149,15 +149,61 @@ FaceManager::createFace(const Name& topPrefix, const Interest& interest,
   }
 }
 
+template<typename T>
+static void
+copyMtu(const Face& face, T& to)
+{
+  auto transport = face.getTransport();
+  BOOST_ASSERT(transport != nullptr);
+
+  if (transport->getMtu() > 0) {
+    to.setMtu(std::min(static_cast<size_t>(transport->getMtu()), ndn::MAX_NDN_PACKET_SIZE));
+  }
+  else if (transport->getMtu() == face::MTU_UNLIMITED) {
+    to.setMtu(ndn::MAX_NDN_PACKET_SIZE);
+  }
+}
+
+static ControlParameters
+makeUpdateFaceResponse(const Face& face)
+{
+  ControlParameters params;
+  params.setFaceId(face.getId())
+        .setFacePersistency(face.getPersistency());
+
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  if (linkService != nullptr) {
+    const auto& options = linkService->getOptions();
+    params.setBaseCongestionMarkingInterval(options.baseCongestionMarkingInterval)
+          .setDefaultCongestionThreshold(options.defaultCongestionThreshold)
+          .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false)
+          .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false)
+          .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, options.allowCongestionMarking, false);
+  }
+
+  return params;
+}
+
+static ControlParameters
+makeCreateFaceResponse(const Face& face)
+{
+  ControlParameters params = makeUpdateFaceResponse(face);
+  params.setUri(face.getRemoteUri().toString())
+        .setLocalUri(face.getLocalUri().toString());
+
+  copyMtu(face, params);
+
+  return params;
+}
+
 void
-FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
-                                    const shared_ptr<Face>& face,
+FaceManager::afterCreateFaceSuccess(const shared_ptr<Face>& face,
+                                    const ControlParameters& parameters,
                                     const ndn::mgmt::CommandContinuation& done)
 {
-  if (face->getId() != face::INVALID_FACEID) {// Face already exists
+  if (face->getId() != face::INVALID_FACEID) { // Face already exists
     NFD_LOG_TRACE("Attempted to create duplicate face of " << face->getId());
-
-    ControlParameters response = collectFaceProperties(*face, true);
+    ControlParameters response = makeCreateFaceResponse(*face);
     done(ControlResponse(409, "Face with remote URI already exists").setBody(response.wireEncode()));
     return;
   }
@@ -171,29 +217,47 @@ FaceManager::afterCreateFaceSuccess(const ControlParameters& parameters,
 
   m_faceTable.add(face);
 
-  ControlParameters response = collectFaceProperties(*face, true);
+  ControlParameters response = makeCreateFaceResponse(*face);
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
 
-void
-FaceManager::afterCreateFaceFailure(uint32_t status,
-                                    const std::string& reason,
-                                    const ndn::mgmt::CommandContinuation& done)
+static void
+updateLinkServiceOptions(Face& face, const ControlParameters& parameters)
 {
-  NFD_LOG_DEBUG("Face creation failed: " << reason);
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  if (linkService == nullptr) {
+    return;
+  }
+  auto options = linkService->getOptions();
 
-  done(ControlResponse(status, reason));
+  if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
+      face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
+    options.allowLocalFields = parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
+  }
+  if (parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
+    options.reliabilityOptions.isEnabled = parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
+  }
+  if (parameters.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
+    options.allowCongestionMarking = parameters.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED);
+  }
+  if (parameters.hasBaseCongestionMarkingInterval()) {
+    options.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
+  }
+  if (parameters.hasDefaultCongestionThreshold()) {
+    options.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
+  }
+
+  linkService->setOptions(options);
 }
 
 void
-FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
+FaceManager::updateFace(const Interest& interest,
                         const ControlParameters& parameters,
                         const ndn::mgmt::CommandContinuation& done)
 {
   FaceId faceId = parameters.getFaceId();
-  if (faceId == 0) {
-    // Self-updating
-    shared_ptr<lp::IncomingFaceIdTag> incomingFaceIdTag = interest.getTag<lp::IncomingFaceIdTag>();
+  if (faceId == 0) { // Self-update
+    auto incomingFaceIdTag = interest.getTag<lp::IncomingFaceIdTag>();
     if (incomingFaceIdTag == nullptr) {
       NFD_LOG_TRACE("unable to determine face for self-update");
       done(ControlResponse(404, "No FaceId specified and IncomingFaceId not available"));
@@ -203,7 +267,6 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
   }
 
   Face* face = m_faceTable.get(faceId);
-
   if (face == nullptr) {
     NFD_LOG_TRACE("invalid face specified");
     done(ControlResponse(404, "Specified face does not exist"));
@@ -242,18 +305,15 @@ FaceManager::updateFace(const Name& topPrefix, const Interest& interest,
   if (parameters.hasFacePersistency()) {
     face->setPersistency(parameters.getFacePersistency());
   }
-  setLinkServiceOptions(*face, parameters);
+  updateLinkServiceOptions(*face, parameters);
 
-  // Set ControlResponse fields
-  response = collectFaceProperties(*face, false);
-  response.unsetMtu(); // This parameter is only included with the response to faces/create and FaceStatus
-
+  // Prepare and send ControlResponse
+  response = makeUpdateFaceResponse(*face);
   done(ControlResponse(200, "OK").setBody(response.wireEncode()));
 }
 
 void
-FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
-                         const ControlParameters& parameters,
+FaceManager::destroyFace(const ControlParameters& parameters,
                          const ndn::mgmt::CommandContinuation& done)
 {
   Face* face = m_faceTable.get(parameters.getFaceId());
@@ -264,83 +324,75 @@ FaceManager::destroyFace(const Name& topPrefix, const Interest& interest,
   done(ControlResponse(200, "OK").setBody(parameters.wireEncode()));
 }
 
-void
-FaceManager::setLinkServiceOptions(Face& face,
-                                   const ControlParameters& parameters)
+template<typename T>
+static void
+copyFaceProperties(const Face& face, T& to)
 {
-  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
-  BOOST_ASSERT(linkService != nullptr);
+  to.setFaceId(face.getId())
+    .setRemoteUri(face.getRemoteUri().toString())
+    .setLocalUri(face.getLocalUri().toString())
+    .setFaceScope(face.getScope())
+    .setFacePersistency(face.getPersistency())
+    .setLinkType(face.getLinkType());
 
-  auto options = linkService->getOptions();
-  if (parameters.hasFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED) &&
-      face.getScope() == ndn::nfd::FACE_SCOPE_LOCAL) {
-    options.allowLocalFields = parameters.getFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED);
+  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
+  if (linkService != nullptr) {
+    const auto& options = linkService->getOptions();
+    to.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields)
+      .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled)
+      .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, options.allowCongestionMarking);
   }
-  if (parameters.hasFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-    options.reliabilityOptions.isEnabled = parameters.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED);
-  }
-  if (parameters.hasFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
-    options.allowCongestionMarking = parameters.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED);
-  }
-  if (parameters.hasBaseCongestionMarkingInterval()) {
-    options.baseCongestionMarkingInterval = parameters.getBaseCongestionMarkingInterval();
-  }
-  if (parameters.hasDefaultCongestionThreshold()) {
-    options.defaultCongestionThreshold = parameters.getDefaultCongestionThreshold();
-  }
-  linkService->setOptions(options);
 }
 
-ControlParameters
-FaceManager::collectFaceProperties(const Face& face, bool wantUris)
+static ndn::nfd::FaceStatus
+makeFaceStatus(const Face& face, const time::steady_clock::TimePoint& now)
 {
+  ndn::nfd::FaceStatus status;
+  copyFaceProperties(face, status);
+
+  auto expirationTime = face.getExpirationTime();
+  if (expirationTime != time::steady_clock::TimePoint::max()) {
+    status.setExpirationPeriod(std::max(0_ms,
+                                        time::duration_cast<time::milliseconds>(expirationTime - now)));
+  }
+
   auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
-  BOOST_ASSERT(linkService != nullptr);
-  auto options = linkService->getOptions();
-
-  auto transport = face.getTransport();
-  BOOST_ASSERT(transport != nullptr);
-
-  ControlParameters params;
-  params.setFaceId(face.getId())
-        .setFacePersistency(face.getPersistency())
-        .setBaseCongestionMarkingInterval(options.baseCongestionMarkingInterval)
-        .setDefaultCongestionThreshold(options.defaultCongestionThreshold)
-        .setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, options.allowLocalFields, false)
-        .setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, options.reliabilityOptions.isEnabled, false)
-        .setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, options.allowCongestionMarking, false);
-
-  if (transport->getMtu() > 0) {
-    params.setMtu(std::min<uint64_t>(transport->getMtu(), ndn::MAX_NDN_PACKET_SIZE));
-  }
-  else if (transport->getMtu() == face::MTU_UNLIMITED) {
-    params.setMtu(ndn::MAX_NDN_PACKET_SIZE);
+  if (linkService != nullptr) {
+    const auto& options = linkService->getOptions();
+    status.setBaseCongestionMarkingInterval(options.baseCongestionMarkingInterval)
+          .setDefaultCongestionThreshold(options.defaultCongestionThreshold);
   }
 
-  if (wantUris) {
-    params.setUri(face.getRemoteUri().toString())
-          .setLocalUri(face.getLocalUri().toString());
-  }
-  return params;
+  copyMtu(face, status);
+
+  const auto& counters = face.getCounters();
+  status.setNInInterests(counters.nInInterests)
+        .setNOutInterests(counters.nOutInterests)
+        .setNInData(counters.nInData)
+        .setNOutData(counters.nOutData)
+        .setNInNacks(counters.nInNacks)
+        .setNOutNacks(counters.nOutNacks)
+        .setNInBytes(counters.nInBytes)
+        .setNOutBytes(counters.nOutBytes);
+
+  return status;
 }
 
 void
-FaceManager::listFaces(const Name& topPrefix, const Interest& interest,
-                       ndn::mgmt::StatusDatasetContext& context)
+FaceManager::listFaces(ndn::mgmt::StatusDatasetContext& context)
 {
   auto now = time::steady_clock::now();
-  for (const Face& face : m_faceTable) {
-    ndn::nfd::FaceStatus status = collectFaceStatus(face, now);
+  for (const auto& face : m_faceTable) {
+    ndn::nfd::FaceStatus status = makeFaceStatus(face, now);
     context.append(status.wireEncode());
   }
   context.end();
 }
 
 void
-FaceManager::listChannels(const Name& topPrefix, const Interest& interest,
-                          ndn::mgmt::StatusDatasetContext& context)
+FaceManager::listChannels(ndn::mgmt::StatusDatasetContext& context)
 {
-  std::set<const face::ProtocolFactory*> factories = m_faceSystem.listProtocolFactories();
+  auto factories = m_faceSystem.listProtocolFactories();
   for (const auto* factory : factories) {
     for (const auto& channel : factory->getChannels()) {
       ndn::nfd::ChannelStatus entry;
@@ -351,34 +403,8 @@ FaceManager::listChannels(const Name& topPrefix, const Interest& interest,
   context.end();
 }
 
-void
-FaceManager::queryFaces(const Name& topPrefix, const Interest& interest,
-                        ndn::mgmt::StatusDatasetContext& context)
-{
-  ndn::nfd::FaceQueryFilter faceFilter;
-  const Name& query = interest.getName();
-  try {
-    faceFilter.wireDecode(query[-1].blockFromValue());
-  }
-  catch (const tlv::Error& e) {
-    NFD_LOG_DEBUG("Malformed query filter: " << e.what());
-    return context.reject(ControlResponse(400, "Malformed filter"));
-  }
-
-  auto now = time::steady_clock::now();
-  for (const Face& face : m_faceTable) {
-    if (!matchFilter(faceFilter, face)) {
-      continue;
-    }
-    ndn::nfd::FaceStatus status = collectFaceStatus(face, now);
-    context.append(status.wireEncode());
-  }
-
-  context.end();
-}
-
-bool
-FaceManager::matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
+static bool
+matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& face)
 {
   if (filter.hasFaceId() &&
       filter.getFaceId() != static_cast<uint64_t>(face.getId())) {
@@ -419,61 +445,27 @@ FaceManager::matchFilter(const ndn::nfd::FaceQueryFilter& filter, const Face& fa
   return true;
 }
 
-ndn::nfd::FaceStatus
-FaceManager::collectFaceStatus(const Face& face, const time::steady_clock::TimePoint& now)
-{
-  ndn::nfd::FaceStatus status;
-
-  collectFaceProperties(face, status);
-
-  time::steady_clock::TimePoint expirationTime = face.getExpirationTime();
-  if (expirationTime != time::steady_clock::TimePoint::max()) {
-    status.setExpirationPeriod(std::max(0_ms,
-                                        time::duration_cast<time::milliseconds>(expirationTime - now)));
-  }
-
-  // Get LinkService options
-  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
-  if (linkService != nullptr) {
-    auto linkServiceOptions = linkService->getOptions();
-    status.setBaseCongestionMarkingInterval(linkServiceOptions.baseCongestionMarkingInterval);
-    status.setDefaultCongestionThreshold(linkServiceOptions.defaultCongestionThreshold);
-  }
-
-  const face::FaceCounters& counters = face.getCounters();
-  status.setNInInterests(counters.nInInterests)
-        .setNOutInterests(counters.nOutInterests)
-        .setNInData(counters.nInData)
-        .setNOutData(counters.nOutData)
-        .setNInNacks(counters.nInNacks)
-        .setNOutNacks(counters.nOutNacks)
-        .setNInBytes(counters.nInBytes)
-        .setNOutBytes(counters.nOutBytes);
-
-  return status;
-}
-
-template<typename FaceTraits>
 void
-FaceManager::collectFaceProperties(const Face& face, FaceTraits& traits)
+FaceManager::queryFaces(const Interest& interest,
+                        ndn::mgmt::StatusDatasetContext& context)
 {
-  traits.setFaceId(face.getId())
-        .setRemoteUri(face.getRemoteUri().toString())
-        .setLocalUri(face.getLocalUri().toString())
-        .setFaceScope(face.getScope())
-        .setFacePersistency(face.getPersistency())
-        .setLinkType(face.getLinkType());
-
-  // Set Flag bits
-  auto linkService = dynamic_cast<face::GenericLinkService*>(face.getLinkService());
-  if (linkService != nullptr) {
-    auto linkServiceOptions = linkService->getOptions();
-    traits.setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, linkServiceOptions.allowLocalFields);
-    traits.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED,
-                      linkServiceOptions.reliabilityOptions.isEnabled);
-    traits.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED,
-                      linkServiceOptions.allowCongestionMarking);
+  ndn::nfd::FaceQueryFilter faceFilter;
+  try {
+    faceFilter.wireDecode(interest.getName()[-1].blockFromValue());
   }
+  catch (const tlv::Error& e) {
+    NFD_LOG_DEBUG("Malformed query filter: " << e.what());
+    return context.reject(ControlResponse(400, "Malformed filter"));
+  }
+
+  auto now = time::steady_clock::now();
+  for (const auto& face : m_faceTable) {
+    if (matchFilter(faceFilter, face)) {
+      ndn::nfd::FaceStatus status = makeFaceStatus(face, now);
+      context.append(status.wireEncode());
+    }
+  }
+  context.end();
 }
 
 void
@@ -481,7 +473,7 @@ FaceManager::notifyFaceEvent(const Face& face, ndn::nfd::FaceEventKind kind)
 {
   ndn::nfd::FaceEventNotification notification;
   notification.setKind(kind);
-  collectFaceProperties(face, notification);
+  copyFaceProperties(face, notification);
 
   m_postNotification(notification.wireEncode());
 }
