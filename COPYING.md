@@ -11,7 +11,7 @@ NFD relies on third-party software and libraries, licensed under the following l
 - SQLite is in [public domain](http://www.sqlite.org/copyright.html)
 
 - WebSocket++ library licensed under conditions of
-  [BSD license](https://github.com/zaphoyd/websocketpp/blob/0.7.0/COPYING)
+  [BSD license](https://github.com/zaphoyd/websocketpp/blob/0.8.1/COPYING)
 
 - Libpcap library licensed under conditions of
   [a 3-clause BSD license](http://www.tcpdump.org/license.html).
