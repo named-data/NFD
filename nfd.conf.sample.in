@@ -230,6 +230,37 @@ face_system
   @IF_HAVE_WEBSOCKET@  enable_v4 yes ; set to 'no' to disable listening on IPv4 socket, default 'yes'
   @IF_HAVE_WEBSOCKET@  enable_v6 yes ; set to 'no' to disable listening on IPv6 socket, default 'yes'
   @IF_HAVE_WEBSOCKET@}
+
+  ; The netdev_bound section defines faces bound to netdevices.
+  netdev_bound
+  {
+    ; A rule consists of a whitelist, a blacklist, and a set of remote FaceUris, and will cause the
+    ; creation of zero or more faces bound to netdevices. One face will be created per accepted
+    ; netdev per remote. There can be any number of rules in the netdev_bound section.
+
+    ; rule
+    ; {
+    ;   ; Remote FaceUri to which the netdev-bound faces will connect.
+    ;   ; Rule can contain multiple remotes. One face will be created for each remote.
+    ;   ; All FaceUris must be in canonical form. Currently only udp4 and udp6 are supported.
+    ;   remote udp4://192.0.2.1:6363
+    ;
+    ;   ; Whitelist and blacklist can contain, in no particular order:
+    ;   ; - interface names, including wildcard patterns (e.g., 'ifname eth0', 'ifname en*', 'ifname wlp?s0')
+    ;   ; - MAC addresses (e.g., 'ether 85:3b:4d:d3:5f:c2')
+    ;   ; - IPv4 subnets (e.g., 'subnet 192.0.2.0/24')
+    ;   ; - IPv6 subnets (e.g., 'subnet 2001:db8::/32')
+    ;   ; - a single asterisk ('*') that matches all interfaces
+    ;   ; By default, all interfaces are whitelisted.
+    ;   whitelist
+    ;   {
+    ;     *
+    ;   }
+    ;   blacklist
+    ;   {
+    ;   }
+    ; }
+  }
 }
 
 ; The authorizations section grants privileges to authorized keys.

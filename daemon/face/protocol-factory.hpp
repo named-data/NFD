@@ -156,6 +156,18 @@ public:
   virtual std::vector<shared_ptr<const Channel>>
   getChannels() const = 0;
 
+  /** \brief Create a netdev-bound face
+   *  \param remote remote FaceUri, must be canonical
+   *  \param netdev local network interface
+   *  \return new face
+   *  \throw Error cannot create a face using specified arguments
+   *  \note The caller must ensure there is no existing netdev-bound face with same remote FaceUri
+   *        on the same local network interface.
+   */
+  shared_ptr<Face>
+  createNetdevBoundFace(const FaceUri& remote,
+                        const shared_ptr<const ndn::net::NetworkInterface>& netdev);
+
 protected:
   explicit
   ProtocolFactory(const CtorParams& params);
@@ -168,6 +180,26 @@ protected:
     boost::copy(channelMap | boost::adaptors::map_values, std::back_inserter(channels));
     return channels;
   }
+
+private:
+  /** \brief Create a netdev-bound face
+   *  \sa createNetdevBoundFace
+   *
+   *  The base class implementation always throws Error indicating netdev-bound faces are not
+   *  supported.
+   *
+   *  A subclass that offers netdev-bound faces should override this method, and also expose
+   *  "scheme+dev" in providedSchemes. For example, UdpFactory should provide "udp4+dev" scheme,
+   *  in addition to "udp4" scheme.
+   *
+   *  The face should be constructed immediately. Face persistency shall be reported as PERMANENT.
+   *  Face state shall remain DOWN until underlying transport is connected. The face shall remain
+   *  open until after .close() is invoked, and survive all socket errors; in case the network
+   *  interface disappears, the face shall remain DOWN until .close() is invoked.
+   */
+  virtual shared_ptr<Face>
+  doCreateNetdevBoundFace(const FaceUri& remote,
+                          const shared_ptr<const ndn::net::NetworkInterface>& netif);
 
 private: // registry
   using CreateFunc = std::function<unique_ptr<ProtocolFactory>(const CtorParams&)>;

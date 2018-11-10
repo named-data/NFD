@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -64,6 +64,22 @@ ProtocolFactory::ProtocolFactory(const CtorParams& params)
 {
   BOOST_ASSERT(addFace != nullptr);
   BOOST_ASSERT(netmon != nullptr);
+}
+
+shared_ptr<Face>
+ProtocolFactory::createNetdevBoundFace(const FaceUri& remote,
+                                       const shared_ptr<const ndn::net::NetworkInterface>& netif)
+{
+  BOOST_ASSERT(remote.isCanonical());
+  return this->doCreateNetdevBoundFace(remote, netif);
+}
+
+shared_ptr<Face>
+ProtocolFactory::doCreateNetdevBoundFace(const FaceUri& remote,
+                                         const shared_ptr<const ndn::net::NetworkInterface>& netif)
+{
+  BOOST_THROW_EXCEPTION(Error(
+    "this protocol factory does not support netdev-bound faces"));
 }
 
 } // namespace face

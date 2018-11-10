@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,6 +47,7 @@ public:
   FaceSystemFixture()
     : netmon(make_shared<ndn::net::NetworkMonitorStub>(~0))
     , faceSystem(faceTable, netmon)
+    , netdevBound(*faceSystem.m_netdevBound)
   {
     faceSystem.setConfigFile(configFile);
   }
@@ -137,6 +138,7 @@ protected:
   FaceTable faceTable;
   shared_ptr<ndn::net::NetworkMonitorStub> netmon;
   FaceSystem faceSystem;
+  NetdevBound& netdevBound;
 };
 
 /** \brief FaceSystemFixture with a ProtocolFactory reference
@@ -152,6 +154,54 @@ protected:
 
 protected:
   FactoryType& factory;
+};
+
+/** \brief A dummy ProtocolFactory for testing FaceSystem configuration parsing.
+ */
+class DummyProtocolFactory : public ProtocolFactory
+{
+public:
+  DummyProtocolFactory(const CtorParams& params)
+    : ProtocolFactory(params)
+  {
+  }
+
+  void
+  processConfig(OptionalConfigSection configSection,
+                FaceSystem::ConfigContext& context) final
+  {
+    processConfigHistory.push_back({configSection, context.isDryRun,
+                                    context.generalConfig.wantCongestionMarking});
+    if (!context.isDryRun) {
+      this->providedSchemes = this->newProvidedSchemes;
+    }
+  }
+
+  void
+  createFace(const CreateFaceRequest& req,
+             const FaceCreatedCallback& onCreated,
+             const FaceCreationFailedCallback& onFailure) final
+  {
+    BOOST_FAIL("createFace should not be called");
+  }
+
+  std::vector<shared_ptr<const Channel>>
+  getChannels() const final
+  {
+    BOOST_FAIL("getChannels should not be called");
+    return {};
+  }
+
+public:
+  struct ProcessConfigArgs
+  {
+    OptionalConfigSection configSection;
+    bool isDryRun;
+    bool wantCongestionMarking;
+  };
+  std::vector<ProcessConfigArgs> processConfigHistory;
+
+  std::set<std::string> newProvidedSchemes;
 };
 
 } // namespace tests

@@ -37,52 +37,6 @@ BOOST_FIXTURE_TEST_SUITE(TestFaceSystem, FaceSystemFixture)
 
 BOOST_AUTO_TEST_SUITE(ProcessConfig)
 
-class DummyProtocolFactory : public ProtocolFactory
-{
-public:
-  DummyProtocolFactory(const CtorParams& params)
-    : ProtocolFactory(params)
-  {
-  }
-
-  void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) final
-  {
-    processConfigHistory.push_back({configSection, context.isDryRun,
-                                    context.generalConfig.wantCongestionMarking});
-    if (!context.isDryRun) {
-      this->providedSchemes = this->newProvidedSchemes;
-    }
-  }
-
-  void
-  createFace(const CreateFaceRequest& req,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) final
-  {
-    BOOST_FAIL("createFace should not be called");
-  }
-
-  std::vector<shared_ptr<const Channel>>
-  getChannels() const final
-  {
-    BOOST_FAIL("getChannels should not be called");
-    return {};
-  }
-
-public:
-  struct ProcessConfigArgs
-  {
-    OptionalConfigSection configSection;
-    bool isDryRun;
-    bool wantCongestionMarking;
-  };
-  std::vector<ProcessConfigArgs> processConfigHistory;
-
-  std::set<std::string> newProvidedSchemes;
-};
-
 BOOST_AUTO_TEST_CASE(Normal)
 {
   faceSystem.m_factories["f1"] = make_unique<DummyProtocolFactory>(faceSystem.makePFCtorParams());
@@ -208,7 +162,7 @@ BOOST_AUTO_TEST_CASE(ChangeProvidedSchemes)
 BOOST_AUTO_TEST_SUITE_END() // ProcessConfig
 
 BOOST_AUTO_TEST_SUITE_END() // TestFaceSystem
-BOOST_AUTO_TEST_SUITE_END() // Mgmt
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
 } // namespace face

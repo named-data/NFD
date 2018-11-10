@@ -25,6 +25,7 @@
 
 #include "face-system.hpp"
 #include "protocol-factory.hpp"
+#include "netdev-bound.hpp"
 #include "core/global-io.hpp"
 #include "fw/face-table.hpp"
 
@@ -32,6 +33,9 @@ namespace nfd {
 namespace face {
 
 NFD_LOG_INIT(FaceSystem);
+
+static const std::string SECTION_GENERAL = "general";
+static const std::string SECTION_NETDEVBOUND = "netdev_bound";
 
 FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor> netmon)
   : m_faceTable(faceTable)
@@ -42,6 +46,8 @@ FaceSystem::FaceSystem(FaceTable& faceTable, shared_ptr<ndn::net::NetworkMonitor
     NFD_LOG_TRACE("creating factory " << id);
     m_factories[id] = ProtocolFactory::create(id, pfCtorParams);
   }
+
+  m_netdevBound = make_unique<NetdevBound>(pfCtorParams, *this);
 }
 
 ProtocolFactoryCtorParams
@@ -77,6 +83,12 @@ FaceSystem::getFactoryByScheme(const std::string& scheme)
   return found == m_factoryByScheme.end() ? nullptr : found->second;
 }
 
+bool
+FaceSystem::hasFactoryForScheme(const std::string& scheme) const
+{
+  return m_factoryByScheme.count(scheme) > 0;
+}
+
 void
 FaceSystem::setConfigFile(ConfigFile& configFile)
 {
@@ -90,7 +102,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
   context.isDryRun = isDryRun;
 
   // process general protocol factory config section
-  auto generalSection = configSection.get_child_optional("general");
+  auto generalSection = configSection.get_child_optional(SECTION_GENERAL);
   if (generalSection) {
     for (const auto& pair : *generalSection) {
       const std::string& key = pair.first;
@@ -103,7 +115,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     }
   }
 
-  // process sections in protocol factories
+  // process in protocol factories
   for (const auto& pair : m_factories) {
     const std::string& sectionName = pair.first;
     ProtocolFactory* factory = pair.second.get();
@@ -127,6 +139,10 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     }
   }
 
+  // process netdev_bound section, after factories start providing *+dev schemes
+  auto netdevBoundSection = configSection.get_child_optional(SECTION_NETDEVBOUND);
+  m_netdevBound->processConfig(netdevBoundSection, context);
+
   // process other sections
   std::set<std::string> seenSections;
   for (const auto& pair : configSection) {
@@ -137,11 +153,10 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
       BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate section face_system." + sectionName));
     }
 
-    if (sectionName == "general" || m_factories.count(sectionName) > 0) {
+    if (sectionName == SECTION_GENERAL || sectionName == SECTION_NETDEVBOUND ||
+        m_factories.count(sectionName) > 0) {
       continue;
     }
-
-    ///\todo #3521 nicfaces
 
     BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
   }
