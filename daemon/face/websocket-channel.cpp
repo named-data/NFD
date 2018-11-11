@@ -46,6 +46,12 @@ WebSocketChannel::WebSocketChannel(const websocket::Endpoint& localEndpoint)
 
   // Setup WebSocket server
   m_server.init_asio(&getGlobalIoService());
+  m_server.set_tcp_pre_bind_handler([isV6 = m_localEndpoint.address().is_v6()] (const auto& acceptor) {
+    if (isV6) {
+      acceptor->set_option(boost::asio::ip::v6_only(true));
+    }
+    return websocketpp::lib::error_code{};
+  });
   m_server.set_open_handler(bind(&WebSocketChannel::handleOpen, this, _1));
   m_server.set_close_handler(bind(&WebSocketChannel::handleClose, this, _1));
   m_server.set_message_handler(bind(&WebSocketChannel::handleMessage, this, _1, _2));

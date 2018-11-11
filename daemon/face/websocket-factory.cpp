@@ -91,28 +91,30 @@ WebSocketFactory::processConfig(OptionalConfigSection configSection,
       "to disable WebSocket channels or enable at least one channel type."));
   }
 
-  if (!enableV4 && enableV6) {
-    // websocketpp's IPv6 socket always accepts IPv4 connections.
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("NFD does not allow pure IPv6 WebSocket channel."));
+  if (context.isDryRun) {
+    return;
   }
 
-  if (!context.isDryRun) {
-    if (!wantListen) {
-      if (!m_channels.empty()) {
-        NFD_LOG_WARN("Cannot close WebSocket channel after initialization");
-      }
-      return;
+  if (!wantListen) {
+    if (!m_channels.empty()) {
+      NFD_LOG_WARN("Cannot disable WebSocket channels after initialization");
     }
+    return;
+  }
 
-    BOOST_ASSERT(enableV4);
-    websocket::Endpoint endpoint(enableV6 ? ip::tcp::v6() : ip::tcp::v4(), port);
+  if (enableV4) {
+    websocket::Endpoint endpoint(ip::tcp::v4(), port);
+    auto v4Channel = this->createChannel(endpoint);
+    if (!v4Channel->isListening()) {
+      v4Channel->listen(this->addFace);
+    }
+  }
 
-    auto channel = this->createChannel(endpoint);
-    if (!channel->isListening()) {
-      channel->listen(this->addFace);
-      if (m_channels.size() > 1) {
-        NFD_LOG_WARN("Adding WebSocket channel for new endpoint; cannot close existing channels");
-      }
+  if (enableV6) {
+    websocket::Endpoint endpoint(ip::tcp::v6(), port);
+    auto v6Channel = this->createChannel(endpoint);
+    if (!v6Channel->isListening()) {
+      v6Channel->listen(this->addFace);
     }
   }
 }

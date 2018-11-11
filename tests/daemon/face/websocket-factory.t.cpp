@@ -61,10 +61,10 @@ BOOST_AUTO_TEST_CASE(Defaults)
   parseConfig(CONFIG, true);
   parseConfig(CONFIG, false);
 
-  checkChannelListEqual(factory, {"ws://[::]:9696"});
+  checkChannelListEqual(factory, {"ws://0.0.0.0:9696", "ws://[::]:9696"});
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
-                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                          [] (const auto& ch) { return ch->isListening(); }));
 }
 
 BOOST_AUTO_TEST_CASE(DisableListen)
@@ -100,8 +100,10 @@ BOOST_AUTO_TEST_CASE(DisableV4)
     }
   )CONFIG";
 
-  BOOST_CHECK_THROW(parseConfig(CONFIG, true), ConfigFile::Error);
-  BOOST_CHECK_THROW(parseConfig(CONFIG, false), ConfigFile::Error);
+  parseConfig(CONFIG, true);
+  parseConfig(CONFIG, false);
+
+  checkChannelListEqual(factory, {"ws://[::]:7001"});
 }
 
 BOOST_AUTO_TEST_CASE(DisableV6)
@@ -124,7 +126,7 @@ BOOST_AUTO_TEST_CASE(DisableV6)
   checkChannelListEqual(factory, {"ws://0.0.0.0:7001"});
 }
 
-BOOST_AUTO_TEST_CASE(ChangeEndpoint)
+BOOST_AUTO_TEST_CASE(ChangePort)
 {
   const std::string CONFIG1 = R"CONFIG(
     face_system
@@ -137,7 +139,7 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
   )CONFIG";
 
   parseConfig(CONFIG1, false);
-  checkChannelListEqual(factory, {"ws://[::]:9001"});
+  checkChannelListEqual(factory, {"ws://0.0.0.0:9001", "ws://[::]:9001"});
 
   const std::string CONFIG2 = R"CONFIG(
     face_system
@@ -150,7 +152,8 @@ BOOST_AUTO_TEST_CASE(ChangeEndpoint)
   )CONFIG";
 
   parseConfig(CONFIG2, false);
-  checkChannelListEqual(factory, {"ws://[::]:9001", "ws://[::]:9002"});
+  checkChannelListEqual(factory, {"ws://0.0.0.0:9001", "ws://[::]:9001",
+                                  "ws://0.0.0.0:9002", "ws://[::]:9002"});
 }
 
 BOOST_AUTO_TEST_CASE(Omitted)
@@ -273,6 +276,21 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   expected.insert(createChannel("127.0.0.1", "20071")->getUri().toString());
   expected.insert(createChannel("::1", "20071")->getUri().toString());
   checkChannelListEqual(factory, expected);
+}
+
+BOOST_AUTO_TEST_CASE(CreateChannel)
+{
+  auto channel1 = createChannel("127.0.0.1", "20070");
+  auto channel1a = createChannel("127.0.0.1", "20070");
+  BOOST_CHECK_EQUAL(channel1, channel1a);
+  BOOST_CHECK_EQUAL(channel1->getUri().toString(), "ws://127.0.0.1:20070");
+
+  auto channel2 = createChannel("127.0.0.1", "20071");
+  BOOST_CHECK_NE(channel1, channel2);
+
+  auto channel3 = createChannel("::1", "20071");
+  BOOST_CHECK_NE(channel2, channel3);
+  BOOST_CHECK_EQUAL(channel3->getUri().toString(), "ws://[::1]:20071");
 }
 
 BOOST_AUTO_TEST_CASE(UnsupportedCreateFace)
