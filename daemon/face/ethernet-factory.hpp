@@ -32,27 +32,16 @@
 namespace nfd {
 namespace face {
 
-/** \brief protocol factory for Ethernet
+/** \brief Protocol factory for Ethernet
  */
 class EthernetFactory : public ProtocolFactory
 {
 public:
   static const std::string&
-  getId();
+  getId() noexcept;
 
   explicit
   EthernetFactory(const CtorParams& params);
-
-  /** \brief process face_system.ether config section
-   */
-  void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) override;
-
-  void
-  createFace(const CreateFaceRequest& req,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
 
   /**
    * \brief Create Ethernet-based channel on the specified network interface
@@ -67,9 +56,6 @@ public:
   shared_ptr<EthernetChannel>
   createChannel(const shared_ptr<const ndn::net::NetworkInterface>& localEndpoint,
                 time::nanoseconds idleTimeout);
-
-  std::vector<shared_ptr<const Channel>>
-  getChannels() const override;
 
   /**
    * \brief Create a face to communicate on the given Ethernet multicast group
@@ -87,6 +73,20 @@ public:
                       const ethernet::Address& group);
 
 private:
+  /** \brief process face_system.ether config section
+   */
+  void
+  doProcessConfig(OptionalConfigSection configSection,
+                  FaceSystem::ConfigContext& context) override;
+
+  void
+  doCreateFace(const CreateFaceRequest& req,
+               const FaceCreatedCallback& onCreated,
+               const FaceCreationFailedCallback& onFailure) override;
+
+  std::vector<shared_ptr<const Channel>>
+  doGetChannels() const override;
+
   /** \brief Create EthernetChannel on \p netif if requested by \p m_unicastConfig.
    *  \return new or existing channel, or nullptr if no channel should be created
    */

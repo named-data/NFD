@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(Defaults)
   checkChannelListEqual(factory, {"udp4://0.0.0.0:6363", "udp6://[::]:6363"});
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
-                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                          [] (const auto& ch) { return ch->isListening(); }));
 }
 
 BOOST_AUTO_TEST_CASE(DisableListen)
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(DisableListen)
   checkChannelListEqual(factory, {"udp4://0.0.0.0:7001", "udp6://[::]:7001"});
   auto channels = factory.getChannels();
   BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
-                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                           [] (const auto& ch) { return ch->isListening(); }));
 }
 
 BOOST_AUTO_TEST_CASE(DisableV4)

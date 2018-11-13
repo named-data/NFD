@@ -41,7 +41,7 @@ NFD_LOG_INIT(UdpFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(UdpFactory);
 
 const std::string&
-UdpFactory::getId()
+UdpFactory::getId() noexcept
 {
   static std::string id("udp");
   return id;
@@ -56,8 +56,8 @@ UdpFactory::UdpFactory(const CtorParams& params)
 }
 
 void
-UdpFactory::processConfig(OptionalConfigSection configSection,
-                          FaceSystem::ConfigContext& context)
+UdpFactory::doProcessConfig(OptionalConfigSection configSection,
+                            FaceSystem::ConfigContext& context)
 {
   // udp
   // {
@@ -236,12 +236,10 @@ UdpFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-UdpFactory::createFace(const CreateFaceRequest& req,
-                       const FaceCreatedCallback& onCreated,
-                       const FaceCreationFailedCallback& onFailure)
+UdpFactory::doCreateFace(const CreateFaceRequest& req,
+                         const FaceCreatedCallback& onCreated,
+                         const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(req.remoteUri.isCanonical());
-
   if (req.localUri) {
     NFD_LOG_TRACE("Cannot create unicast UDP face with LocalUri");
     onFailure(406, "Unicast UDP faces cannot be created with a LocalUri");
@@ -307,12 +305,11 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
 
   auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout, m_wantCongestionMarking);
   m_channels[localEndpoint] = channel;
-
   return channel;
 }
 
 std::vector<shared_ptr<const Channel>>
-UdpFactory::getChannels() const
+UdpFactory::doGetChannels() const
 {
   return getChannelsFromMap(m_channels);
 }
@@ -444,7 +441,7 @@ UdpFactory::applyMcastConfigToNetif(const shared_ptr<const net::NetworkInterface
 }
 
 void
-UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext& context)
+UdpFactory::applyMcastConfig(const FaceSystem::ConfigContext&)
 {
   // collect old faces
   std::set<shared_ptr<Face>> facesToClose;

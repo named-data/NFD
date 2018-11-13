@@ -37,7 +37,7 @@ NFD_LOG_INIT(EthernetFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(EthernetFactory);
 
 const std::string&
-EthernetFactory::getId()
+EthernetFactory::getId() noexcept
 {
   static std::string id("ether");
   return id;
@@ -53,8 +53,8 @@ EthernetFactory::EthernetFactory(const CtorParams& params)
 }
 
 void
-EthernetFactory::processConfig(OptionalConfigSection configSection,
-                               FaceSystem::ConfigContext& context)
+EthernetFactory::doProcessConfig(OptionalConfigSection configSection,
+                                 FaceSystem::ConfigContext& context)
 {
   // ether
   // {
@@ -165,18 +165,15 @@ EthernetFactory::processConfig(OptionalConfigSection configSection,
 }
 
 void
-EthernetFactory::createFace(const CreateFaceRequest& req,
-                            const FaceCreatedCallback& onCreated,
-                            const FaceCreationFailedCallback& onFailure)
+EthernetFactory::doCreateFace(const CreateFaceRequest& req,
+                              const FaceCreatedCallback& onCreated,
+                              const FaceCreationFailedCallback& onFailure)
 {
-  BOOST_ASSERT(req.remoteUri.isCanonical());
-
   if (!req.localUri || req.localUri->getScheme() != "dev") {
     NFD_LOG_TRACE("Cannot create unicast Ethernet face without dev:// LocalUri");
     onFailure(406, "Creation of unicast Ethernet faces requires a LocalUri with dev:// scheme");
     return;
   }
-  BOOST_ASSERT(req.localUri->isCanonical());
 
   if (req.params.persistency == ndn::nfd::FACE_PERSISTENCY_ON_DEMAND) {
     NFD_LOG_TRACE("createFace does not support FACE_PERSISTENCY_ON_DEMAND");
@@ -228,12 +225,11 @@ EthernetFactory::createChannel(const shared_ptr<const ndn::net::NetworkInterface
 
   auto channel = std::make_shared<EthernetChannel>(localEndpoint, idleTimeout);
   m_channels[localEndpoint->getName()] = channel;
-
   return channel;
 }
 
 std::vector<shared_ptr<const Channel>>
-EthernetFactory::getChannels() const
+EthernetFactory::doGetChannels() const
 {
   return getChannelsFromMap(m_channels);
 }
@@ -348,7 +344,7 @@ EthernetFactory::applyMcastConfigToNetif(const ndn::net::NetworkInterface& netif
 }
 
 void
-EthernetFactory::applyConfig(const FaceSystem::ConfigContext& context)
+EthernetFactory::applyConfig(const FaceSystem::ConfigContext&)
 {
   if (m_unicastConfig.isEnabled) {
     providedSchemes.insert("ether");

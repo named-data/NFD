@@ -34,20 +34,15 @@ NFD_LOG_INIT(WebSocketFactory);
 NFD_REGISTER_PROTOCOL_FACTORY(WebSocketFactory);
 
 const std::string&
-WebSocketFactory::getId()
+WebSocketFactory::getId() noexcept
 {
   static std::string id("websocket");
   return id;
 }
 
-WebSocketFactory::WebSocketFactory(const CtorParams& params)
-  : ProtocolFactory(params)
-{
-}
-
 void
-WebSocketFactory::processConfig(OptionalConfigSection configSection,
-                                FaceSystem::ConfigContext& context)
+WebSocketFactory::doProcessConfig(OptionalConfigSection configSection,
+                                  FaceSystem::ConfigContext& context)
 {
   // websocket
   // {
@@ -119,14 +114,6 @@ WebSocketFactory::processConfig(OptionalConfigSection configSection,
   }
 }
 
-void
-WebSocketFactory::createFace(const CreateFaceRequest& req,
-                             const FaceCreatedCallback& onCreated,
-                             const FaceCreationFailedCallback& onFailure)
-{
-  onFailure(406, "Unsupported protocol");
-}
-
 shared_ptr<WebSocketChannel>
 WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 {
@@ -136,12 +123,11 @@ WebSocketFactory::createChannel(const websocket::Endpoint& endpoint)
 
   auto channel = make_shared<WebSocketChannel>(endpoint);
   m_channels[endpoint] = channel;
-
   return channel;
 }
 
 std::vector<shared_ptr<const Channel>>
-WebSocketFactory::getChannels() const
+WebSocketFactory::doGetChannels() const
 {
   return getChannelsFromMap(m_channels);
 }

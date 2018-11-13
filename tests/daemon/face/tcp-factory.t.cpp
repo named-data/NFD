@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Defaults)
   checkChannelListEqual(factory, {"tcp4://0.0.0.0:6363", "tcp6://[::]:6363"});
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
-                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                          [] (const auto& ch) { return ch->isListening(); }));
 
   BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.size(), 2);
   BOOST_CHECK_EQUAL(factory.m_local.m_whitelist.count("127.0.0.0/8"), 1);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(DisableListen)
   checkChannelListEqual(factory, {"tcp4://0.0.0.0:7001", "tcp6://[::]:7001"});
   auto channels = factory.getChannels();
   BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
-                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                           [] (const auto& ch) { return ch->isListening(); }));
 }
 
 BOOST_AUTO_TEST_CASE(DisableV4)

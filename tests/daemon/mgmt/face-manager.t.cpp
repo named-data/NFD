@@ -291,37 +291,21 @@ public:
 class TestProtocolFactory : public face::ProtocolFactory
 {
 public:
-  TestProtocolFactory(const CtorParams& params)
-    : ProtocolFactory(params)
-  {
-  }
+  using ProtocolFactory::ProtocolFactory;
 
-  void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) final
-  {
-  }
-
-  void
-  createFace(const CreateFaceRequest& req,
-             const face::FaceCreatedCallback& onCreated,
-             const face::FaceCreationFailedCallback& onConnectFailed) final
-  {
-  }
-
-  std::vector<shared_ptr<const face::Channel>>
-  getChannels() const final
-  {
-    return m_channels;
-  }
-
-public:
   shared_ptr<TestChannel>
   addChannel(const std::string& channelUri)
   {
     auto channel = make_shared<TestChannel>(channelUri);
     m_channels.push_back(channel);
     return channel;
+  }
+
+private:
+  std::vector<shared_ptr<const face::Channel>>
+  doGetChannels() const final
+  {
+    return m_channels;
   }
 
 private:

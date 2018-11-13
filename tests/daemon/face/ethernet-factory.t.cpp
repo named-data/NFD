@@ -49,8 +49,8 @@ protected:
   {
     std::set<std::string> uris;
     std::transform(netifs.begin(), netifs.end(), std::inserter(uris, uris.end()),
-                   [] (const shared_ptr<const ndn::net::NetworkInterface>& ni) {
-                     return FaceUri::fromDev(ni->getName()).toString();
+                   [] (const auto& netif) {
+                     return FaceUri::fromDev(netif->getName()).toString();
                    });
     return uris;
   }
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Defaults)
   checkChannelListEqual(factory, this->listUrisOfAvailableNetifs());
   auto channels = factory.getChannels();
   BOOST_CHECK(std::all_of(channels.begin(), channels.end(),
-                          [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                          [] (const auto& ch) { return ch->isListening(); }));
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(DisableListen)
   checkChannelListEqual(factory, this->listUrisOfAvailableNetifs());
   auto channels = factory.getChannels();
   BOOST_CHECK(std::none_of(channels.begin(), channels.end(),
-                           [] (const shared_ptr<const Channel>& ch) { return ch->isListening(); }));
+                           [] (const auto& ch) { return ch->isListening(); }));
   BOOST_CHECK_EQUAL(this->countEtherMcastFaces(), 0);
 }
 

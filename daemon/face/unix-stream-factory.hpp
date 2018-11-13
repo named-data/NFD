@@ -32,27 +32,15 @@
 namespace nfd {
 namespace face {
 
-/** \brief protocol factory for stream-oriented Unix sockets
+/** \brief Protocol factory for stream-oriented Unix sockets
  */
 class UnixStreamFactory : public ProtocolFactory
 {
 public:
   static const std::string&
-  getId();
+  getId() noexcept;
 
-  explicit
-  UnixStreamFactory(const CtorParams& params);
-
-  /** \brief process face_system.unix config section
-   */
-  void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) override;
-
-  void
-  createFace(const CreateFaceRequest& req,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
+  using ProtocolFactory::ProtocolFactory;
 
   /**
    * \brief Create stream-oriented Unix channel using specified socket path
@@ -67,18 +55,15 @@ public:
   shared_ptr<UnixStreamChannel>
   createChannel(const std::string& unixSocketPath);
 
-  std::vector<shared_ptr<const Channel>>
-  getChannels() const override;
-
 private:
-  /**
-   * \brief Look up UnixStreamChannel using specified endpoint
-   *
-   * \returns shared pointer to the existing UnixStreamChannel object
-   *          or empty shared pointer when such channel does not exist
+  /** \brief process face_system.unix config section
    */
-  shared_ptr<UnixStreamChannel>
-  findChannel(const unix_stream::Endpoint& endpoint) const;
+  void
+  doProcessConfig(OptionalConfigSection configSection,
+                  FaceSystem::ConfigContext& context) override;
+
+  std::vector<shared_ptr<const Channel>>
+  doGetChannels() const override;
 
 private:
   bool m_wantCongestionMarking = false;

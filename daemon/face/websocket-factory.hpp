@@ -32,29 +32,15 @@
 namespace nfd {
 namespace face {
 
-/** \brief protocol factory for WebSocket
+/** \brief Protocol factory for WebSocket
  */
 class WebSocketFactory : public ProtocolFactory
 {
 public:
   static const std::string&
-  getId();
+  getId() noexcept;
 
-  explicit
-  WebSocketFactory(const CtorParams& params);
-
-  /** \brief process face_system.websocket config section
-   */
-  void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) override;
-
-  /** \brief unicast face creation is not supported and will always fail
-   */
-  void
-  createFace(const CreateFaceRequest& req,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) override;
+  using ProtocolFactory::ProtocolFactory;
 
   /**
    * \brief Create WebSocket-based channel using websocket::Endpoint
@@ -71,8 +57,15 @@ public:
   shared_ptr<WebSocketChannel>
   createChannel(const websocket::Endpoint& localEndpoint);
 
+private:
+  /** \brief process face_system.websocket config section
+   */
+  void
+  doProcessConfig(OptionalConfigSection configSection,
+                  FaceSystem::ConfigContext& context) override;
+
   std::vector<shared_ptr<const Channel>>
-  getChannels() const override;
+  doGetChannels() const override;
 
 private:
   std::map<websocket::Endpoint, shared_ptr<WebSocketChannel>> m_channels;

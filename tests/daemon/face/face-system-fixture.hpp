@@ -161,35 +161,17 @@ protected:
 class DummyProtocolFactory : public ProtocolFactory
 {
 public:
-  DummyProtocolFactory(const CtorParams& params)
-    : ProtocolFactory(params)
-  {
-  }
+  using ProtocolFactory::ProtocolFactory;
 
   void
-  processConfig(OptionalConfigSection configSection,
-                FaceSystem::ConfigContext& context) final
+  doProcessConfig(OptionalConfigSection configSection,
+                  FaceSystem::ConfigContext& context) final
   {
     processConfigHistory.push_back({configSection, context.isDryRun,
                                     context.generalConfig.wantCongestionMarking});
     if (!context.isDryRun) {
-      this->providedSchemes = this->newProvidedSchemes;
+      providedSchemes = newProvidedSchemes;
     }
-  }
-
-  void
-  createFace(const CreateFaceRequest& req,
-             const FaceCreatedCallback& onCreated,
-             const FaceCreationFailedCallback& onFailure) final
-  {
-    BOOST_FAIL("createFace should not be called");
-  }
-
-  std::vector<shared_ptr<const Channel>>
-  getChannels() const final
-  {
-    BOOST_FAIL("getChannels should not be called");
-    return {};
   }
 
 public:
