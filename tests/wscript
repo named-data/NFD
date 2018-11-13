@@ -63,12 +63,20 @@ def build(bld):
                 src += node.ant_glob('face/websocket*.cpp')
 
             # unit-tests-%module
-            bld.program(name='unit-tests-%s' % module,
-                        target='../unit-tests-%s' % module,
-                        source=src,
-                        use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
-                        defines=[config_path],
-                        install_path=None)
+            if module == "daemon":
+              bld.program(name='unit-tests-%s' % module,
+                          target='../unit-tests-%s' % module,
+                          source=src,
+                          use='%s-objects rib-objects unit-tests-base unit-tests-%s-main' % (module, module),
+                          defines=[config_path],
+                          install_path=None)
+            else:
+              bld.program(name='unit-tests-%s' % module,
+                          target='../unit-tests-%s' % module,
+                          source=src,
+                          use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
+                          defines=[config_path],
+                          install_path=None)
 
     # Other tests (e.g., stress tests and benchmarks that can be enabled even if unit tests are disabled)
     if bld.env.WITH_TESTS or bld.env.WITH_OTHER_TESTS:

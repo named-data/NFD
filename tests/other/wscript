@@ -37,7 +37,7 @@ def build(bld):
         bld.program(name=module,
                     target='../../%s' % module,
                     source=bld.path.ant_glob('%s*.cpp' % module),
-                    use='daemon-objects unit-tests-base other-tests-%s-main' % module,
+                    use='daemon-objects rib-objects unit-tests-base other-tests-%s-main' % module,
                     defines=['UNIT_TEST_CONFIG_PATH="%s"' % bld.bldnode.make_node('tmp-files')],
                     install_path=None)
 
@@ -45,5 +45,5 @@ def build(bld):
     bld.program(name='face-benchmark',
                 target='../../face-benchmark',
                 source=bld.path.ant_glob('face-benchmark*.cpp'),
-                use='daemon-objects',
+                use='daemon-objects rib-objects',
                 install_path=None)
