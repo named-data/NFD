@@ -30,9 +30,10 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
+Type=notify
 Environment=HOME=/usr/local/var/lib/ndn/nfd
 ExecStart=/usr/local/bin/nfd --config /usr/local/etc/ndn/nfd.conf
-ExecStartPost=/bin/sh -ec 'sleep 2; if [ -f /usr/local/etc/ndn/nfd-init.sh ]; then . /usr/local/etc/ndn/nfd-init.sh; fi'
+ExecStartPost=/bin/sh -ec 'if [ -f /usr/local/etc/ndn/nfd-init.sh ]; then . /usr/local/etc/ndn/nfd-init.sh; fi'
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartPreventExitStatus=2 4

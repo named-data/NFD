@@ -54,6 +54,9 @@
 #ifdef HAVE_LIBPCAP
 #include <pcap/pcap.h>
 #endif
+#ifdef HAVE_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 #ifdef HAVE_WEBSOCKET
 #include <websocketpp/version.hpp>
 #endif
@@ -151,6 +154,7 @@ public:
     }
 
     try {
+      systemdNotify("READY=1");
       mainIo->run();
     }
     catch (const std::exception& e) {
@@ -175,6 +179,15 @@ public:
     return retval;
   }
 
+  static void
+  systemdNotify(const char* state)
+  {
+#ifdef HAVE_SYSTEMD
+    sd_notify(0, state);
+#endif
+  }
+
+private:
   void
   terminate(const boost::system::error_code& error, int signalNo)
   {
@@ -182,6 +195,8 @@ public:
       return;
 
     NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', exiting...");
+
+    systemdNotify("STOPPING=1");
     getGlobalIoService().stop();
   }
 
@@ -192,7 +207,10 @@ public:
       return;
 
     NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', reloading...");
+
+    systemdNotify("RELOADING=1");
     m_nfd.reloadConfigFile();
+    systemdNotify("READY=1");
 
     m_reloadSignalSet.async_wait(bind(&NfdRunner::reload, this, _1, _2));
   }

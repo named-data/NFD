@@ -1,8 +1,8 @@
 Starting NFD on Linux with systemd
 ==================================
 
-Newer versions of Ubuntu (starting with 15.04) and some other Linux distributions, including Debian
-use systemd to start system daemons, monitor their health, and restart them when they die.
+Modern versions of Ubuntu (starting with 15.04) and some other Linux distributions, including Debian
+and Fedora, use systemd to start system daemons, monitor their health, and restart them when they die.
 
 Initial setup
 -------------
