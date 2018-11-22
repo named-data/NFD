@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(Basic)
   std::tie(noun, verb, ca, execute) = parser.parse({"route", "add", "/n", "300"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
   BOOST_CHECK_EQUAL(verb, "add");
-  BOOST_CHECK_EQUAL(boost::any_cast<Name>(ca.at("prefix")), "/n");
-  BOOST_CHECK_EQUAL(boost::any_cast<uint64_t>(ca.at("nexthop")), 300);
+  BOOST_CHECK_EQUAL(ndn::any_cast<Name>(ca.at("prefix")), "/n");
+  BOOST_CHECK_EQUAL(ndn::any_cast<uint64_t>(ca.at("nexthop")), 300);
 
   std::tie(noun, verb, ca, execute) = parser.parse({"route", "add2", "/n", "300"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   std::tie(noun, verb, ca, execute) = parser.parse({"route", "list", "400"}, ParseMode::ONE_SHOT);
   BOOST_CHECK_EQUAL(noun, "route");
   BOOST_CHECK_EQUAL(verb, "list");
-  BOOST_CHECK_EQUAL(boost::any_cast<uint64_t>(ca.at("nexthop")), 400);
+  BOOST_CHECK_EQUAL(ndn::any_cast<uint64_t>(ca.at("nexthop")), 400);
 
   BOOST_CHECK_THROW(parser.parse({}, ParseMode::ONE_SHOT),
                     CommandParser::NoSuchCommandError);

@@ -56,14 +56,14 @@ FindFace::execute(uint64_t faceId)
 }
 
 FindFace::Code
-FindFace::execute(const boost::any& faceIdOrUri, bool allowMulti)
+FindFace::execute(const ndn::any& faceIdOrUri, bool allowMulti)
 {
-  const uint64_t* faceId = boost::any_cast<uint64_t>(&faceIdOrUri);
+  const uint64_t* faceId = ndn::any_cast<uint64_t>(&faceIdOrUri);
   if (faceId != nullptr) {
     return this->execute(*faceId);
   }
   else {
-    return this->execute(boost::any_cast<FaceUri>(faceIdOrUri), allowMulti);
+    return this->execute(ndn::any_cast<FaceUri>(faceIdOrUri), allowMulti);
   }
 }
 

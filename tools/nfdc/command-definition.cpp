@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "command-definition.hpp"
+
 #include <ndn-cxx/util/logger.hpp>
 
 namespace nfd {
@@ -240,18 +241,17 @@ parseFacePersistency(const std::string& s)
   BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized FacePersistency '" + s + "'"));
 }
 
-boost::any
+ndn::any
 CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) const
 {
   switch (valueType) {
     case ArgValueType::NONE:
     case ArgValueType::ANY:
       BOOST_ASSERT(false);
-      return boost::any();
+      return {};
 
-    case ArgValueType::BOOLEAN: {
+    case ArgValueType::BOOLEAN:
       return parseBoolean(token);
-    }
 
     case ArgValueType::UNSIGNED: {
       // boost::lexical_cast<uint64_t> will accept negative number
@@ -290,7 +290,7 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
   }
 
   BOOST_ASSERT(false);
-  return boost::any();
+  return {};
 }
 
 } // namespace nfdc

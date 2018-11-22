@@ -144,7 +144,7 @@ void
 RibModule::add(ExecuteContext& ctx)
 {
   auto prefix = ctx.args.get<Name>("prefix");
-  const boost::any& nexthop = ctx.args.at("nexthop");
+  auto nexthop = ctx.args.at("nexthop");
   auto origin = ctx.args.get<RouteOrigin>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
   auto cost = ctx.args.get<uint64_t>("cost", 0);
   bool wantChildInherit = !ctx.args.get<bool>("no-inherit", false);
@@ -212,7 +212,7 @@ void
 RibModule::remove(ExecuteContext& ctx)
 {
   auto prefix = ctx.args.get<Name>("prefix");
-  const boost::any& nexthop = ctx.args.at("nexthop");
+  auto nexthop = ctx.args.at("nexthop");
   auto origin = ctx.args.get<RouteOrigin>("origin", ndn::nfd::ROUTE_ORIGIN_STATIC);
 
   FindFace findFace(ctx);
