@@ -28,8 +28,7 @@ if has Ubuntu $NODE_LABELS; then
                              libsqlite3-dev libssl-dev libpcap-dev libsystemd-dev
 
     if [[ $JOB_NAME == *"code-coverage" ]]; then
-        sudo apt-get -qy install lcov libgd-perl python-setuptools
-        sudo easy_install --upgrade gcovr
+        sudo apt-get -qy install gcovr lcov libgd-perl
     fi
 fi
 

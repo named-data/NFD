@@ -27,7 +27,7 @@ Environment Variables Used in Build Scripts
   Possible values:
 
   * empty: default build process
-  * `code-coverage` (Linux OS is assumed): debug build with tests and code coverage analysis
+  * `code-coverage` (Ubuntu Linux is assumed): debug build with tests and code coverage analysis
   * `limited-build`: only a single debug build with tests
 
 - `CACHE_DIR`: the variable defines a path to folder containing cached files from previous builds,
