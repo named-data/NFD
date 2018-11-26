@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,11 +26,22 @@
 #include "test-netif.hpp"
 #include "core/global-io.hpp"
 
-#include <ndn-cxx/net/network-monitor.hpp>
-
 namespace nfd {
 namespace face {
 namespace tests {
+
+std::vector<shared_ptr<const NetworkInterface>>
+enumerateNetworkInterfaces(NetworkMonitor& netmon)
+{
+  if ((netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) == 0) {
+    BOOST_THROW_EXCEPTION(NetworkMonitor::Error("NetworkMonitor::CAP_ENUM is unavailable"));
+  }
+
+  netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
+  getGlobalIoService().run();
+  getGlobalIoService().reset();
+  return netmon.listNetworkInterfaces();
+}
 
 std::vector<shared_ptr<const NetworkInterface>>
 collectNetworkInterfaces(bool allowCached)
@@ -44,15 +55,7 @@ collectNetworkInterfaces(bool allowCached)
 
   if (!allowCached || cached.empty()) {
     NetworkMonitor netmon(getGlobalIoService());
-    if ((netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) == 0) {
-      BOOST_THROW_EXCEPTION(NetworkMonitor::Error("NetworkMonitor::CAP_ENUM is unavailable"));
-    }
-
-    netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
-    getGlobalIoService().run();
-    getGlobalIoService().reset();
-
-    cached = netmon.listNetworkInterfaces();
+    cached = enumerateNetworkInterfaces(netmon);
   }
 
   return cached;

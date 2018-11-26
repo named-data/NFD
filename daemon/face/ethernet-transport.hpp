@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -81,6 +81,9 @@ protected:
 
 private:
   void
+  handleNetifStateChange(ndn::net::InterfaceState netifState);
+
+  void
   doSend(Transport::Packet&& packet) final;
 
   /**
@@ -106,6 +109,7 @@ protected:
   std::string m_interfaceName;
 
 private:
+  signal::ScopedConnection m_netifStateConn;
   bool m_hasRecentlyReceived;
 #ifdef _DEBUG
   /// number of frames dropped by the kernel, as reported by libpcap

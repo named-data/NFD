@@ -59,6 +59,34 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 }
 
+BOOST_AUTO_TEST_CASE(NetifStateChange)
+{
+  SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
+  initializeMulticast();
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+
+  // simulate 'ip link set IFNAME down'
+  scheduler::schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::DOWN); });
+  transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::UP);
+    BOOST_CHECK_EQUAL(newState, TransportState::DOWN);
+    limitedIo.afterOp();
+  });
+  BOOST_CHECK_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::DOWN);
+
+  // simulate 'ip link set IFNAME up'
+  scheduler::schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::NO_CARRIER); });
+  scheduler::schedule(80_ms, [=] { netif->setState(ndn::net::InterfaceState::RUNNING); });
+  transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
+    BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
+    BOOST_CHECK_EQUAL(newState, TransportState::UP);
+    limitedIo.afterOp();
+  });
+  BOOST_CHECK_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
+}
+
 BOOST_AUTO_TEST_CASE(Close)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);

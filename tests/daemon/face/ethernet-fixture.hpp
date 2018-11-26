@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -57,6 +57,9 @@ protected:
         }
       }
     }
+    if (!netifs.empty()) {
+      netif = const_pointer_cast<ndn::net::NetworkInterface>(netifs.front());
+    }
   }
 
   /** \brief create a UnicastEthernetTransport
@@ -65,10 +68,10 @@ protected:
   initializeUnicast(ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
                     ethernet::Address remoteAddr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x5e})
   {
-    BOOST_ASSERT(netifs.size() > 0);
-    localEp = netifs.front()->getName();
+    BOOST_ASSERT(netif != nullptr);
+    localEp = netif->getName();
     remoteEp = remoteAddr;
-    transport = make_unique<UnicastEthernetTransport>(*netifs.front(), remoteEp, persistency, time::seconds(2));
+    transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, time::seconds(2));
   }
 
   /** \brief create a MulticastEthernetTransport
@@ -77,10 +80,10 @@ protected:
   initializeMulticast(ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_MULTI_ACCESS,
                       ethernet::Address mcastGroup = {0x01, 0x00, 0x5e, 0x90, 0x10, 0x5e})
   {
-    BOOST_ASSERT(netifs.size() > 0);
-    localEp = netifs.front()->getName();
+    BOOST_ASSERT(netif != nullptr);
+    localEp = netif->getName();
     remoteEp = mcastGroup;
-    transport = make_unique<MulticastEthernetTransport>(*netifs.front(), remoteEp, linkType);
+    transport = make_unique<MulticastEthernetTransport>(*netif, remoteEp, linkType);
   }
 
 protected:
@@ -90,6 +93,7 @@ protected:
    */
   std::vector<shared_ptr<const ndn::net::NetworkInterface>> netifs;
 
+  shared_ptr<ndn::net::NetworkInterface> netif;
   unique_ptr<EthernetTransport> transport;
   std::string localEp;
   ethernet::Address remoteEp;

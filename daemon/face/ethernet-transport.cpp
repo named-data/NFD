@@ -58,6 +58,11 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
     BOOST_THROW_EXCEPTION(Error(e.what()));
   }
 
+  m_netifStateConn = localEndpoint.onStateChanged.connect(
+    [=] (ndn::net::InterfaceState, ndn::net::InterfaceState newState) {
+      handleNetifStateChange(newState);
+    });
+
   asyncRead();
 }
 
@@ -80,6 +85,20 @@ EthernetTransport::doClose()
   getGlobalIoService().post([this] {
     this->setState(TransportState::CLOSED);
   });
+}
+
+void
+EthernetTransport::handleNetifStateChange(ndn::net::InterfaceState netifState)
+{
+  NFD_LOG_FACE_TRACE("netif is " << netifState);
+  if (netifState == ndn::net::InterfaceState::RUNNING) {
+    if (getState() == TransportState::DOWN) {
+      this->setState(TransportState::UP);
+    }
+  }
+  else if (getState() == TransportState::UP) {
+    this->setState(TransportState::DOWN);
+  }
 }
 
 void

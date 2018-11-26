@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2018,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 
 #include <ndn-cxx/net/network-address.hpp>
 #include <ndn-cxx/net/network-interface.hpp>
+#include <ndn-cxx/net/network-monitor.hpp>
 
 namespace nfd {
 namespace face {
@@ -37,10 +38,21 @@ namespace tests {
 
 using ndn::net::NetworkAddress;
 using ndn::net::NetworkInterface;
+using ndn::net::NetworkMonitor;
+
+/** \brief Enumerate network interfaces using the given NetworkMonitor
+ *  \param netmon a NetworkMonitor constructed on the global io_service.
+ *  \note This function is blocking
+ *  \warning Signals are supported if caller keeps NetworkMonitor running
+ *  \throw ndn::net::NetworkMonitor::Error NetworkMonitor::CAP_ENUM is unavailable
+ */
+std::vector<shared_ptr<const NetworkInterface>>
+enumerateNetworkInterfaces(NetworkMonitor& netmon);
 
 /** \brief Collect information about network interfaces
  *  \param allowCached if true, previously collected information can be returned
  *  \note This function is blocking if \p allowCached is false or no previous information exists
+ *  \warning Signals are not triggered on returned NetworkInterfaces because NetworkMonitor is not running
  *  \throw ndn::net::NetworkMonitor::Error NetworkMonitor::CAP_ENUM is unavailable
  */
 std::vector<shared_ptr<const NetworkInterface>>
