@@ -129,6 +129,10 @@ class GccBasicFlags(CompilerFlags):
     def getGeneralFlags(self, conf):
         flags = super(GccBasicFlags, self).getGeneralFlags(conf)
         flags['CXXFLAGS'] += ['-std=c++14']
+        if Utils.unversioned_sys_platform() == 'linux':
+            flags['LINKFLAGS'] += ['-fuse-ld=gold']
+        elif Utils.unversioned_sys_platform() == 'freebsd':
+            flags['LINKFLAGS'] += ['-fuse-ld=lld']
         return flags
 
     def getDebugFlags(self, conf):
@@ -145,7 +149,7 @@ class GccBasicFlags(CompilerFlags):
                               '-Wno-error=maybe-uninitialized', # Bug #1615
                               '-Wno-unused-parameter',
                               ]
-        flags['LINKFLAGS'] += ['-fuse-ld=gold', '-Wl,-O1']
+        flags['LINKFLAGS'] += ['-Wl,-O1']
         return flags
 
     def getOptimizedFlags(self, conf):
@@ -158,7 +162,7 @@ class GccBasicFlags(CompilerFlags):
                               '-Wnon-virtual-dtor',
                               '-Wno-unused-parameter',
                               ]
-        flags['LINKFLAGS'] += ['-fuse-ld=gold', '-Wl,-O1']
+        flags['LINKFLAGS'] += ['-Wl,-O1']
         return flags
 
 class GccFlags(GccBasicFlags):
@@ -179,6 +183,8 @@ class ClangFlags(GccBasicFlags):
             # Bug #4296
             flags['CXXFLAGS'] += [['-isystem', '/usr/local/include'], # for Homebrew
                                   ['-isystem', '/opt/local/include']] # for MacPorts
+        if Utils.unversioned_sys_platform() == 'freebsd':
+            flags['CXXFLAGS'] += [['-isystem', '/usr/local/include']] # Bug #4790
         return flags
 
     def getDebugFlags(self, conf):
