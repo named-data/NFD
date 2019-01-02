@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,32 +33,23 @@ namespace tests {
 std::vector<shared_ptr<const NetworkInterface>>
 enumerateNetworkInterfaces(NetworkMonitor& netmon)
 {
-  if ((netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) == 0) {
-    BOOST_THROW_EXCEPTION(NetworkMonitor::Error("NetworkMonitor::CAP_ENUM is unavailable"));
+  if (netmon.getCapabilities() & NetworkMonitor::CAP_ENUM) {
+    netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
+    getGlobalIoService().run();
+    getGlobalIoService().reset();
   }
-
-  netmon.onEnumerationCompleted.connect([] { getGlobalIoService().stop(); });
-  getGlobalIoService().run();
-  getGlobalIoService().reset();
   return netmon.listNetworkInterfaces();
 }
 
 std::vector<shared_ptr<const NetworkInterface>>
 collectNetworkInterfaces(bool allowCached)
 {
-  using ndn::net::NetworkMonitor;
-
-  static std::vector<shared_ptr<const NetworkInterface>> cached;
-  // cached.empty() indicates there's no cached list of netifs.
-  // Although it could also mean a system without any network interface, this situation is rare
-  // because the loopback interface is present on almost all systems.
-
-  if (!allowCached || cached.empty()) {
+  static optional<std::vector<shared_ptr<const NetworkInterface>>> cached;
+  if (!allowCached || !cached) {
     NetworkMonitor netmon(getGlobalIoService());
     cached = enumerateNetworkInterfaces(netmon);
   }
-
-  return cached;
+  return *cached;
 }
 
 } // namespace tests
