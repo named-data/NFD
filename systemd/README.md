@@ -109,7 +109,7 @@ be exported into the `localhost_daemons_nfd.ndncert` file:
 Enable auto-start
 -----------------
 
-After copying the provided upstart script, auto-start of the `nfd` daemon can be enabled with:
+After copying the provided `nfd.service` file, auto-start can be enabled with:
 
     sudo systemctl enable nfd
 
@@ -124,7 +124,7 @@ To stop the `nfd` daemon, use the following command:
 
     sudo systemctl stop nfd
 
-To permanently stop the `nfd` daemon and disable it from being automatically started on reboot,
+To prevent it from being automatically started on reboot,
 disable the service:
 
     sudo systemctl disable nfd

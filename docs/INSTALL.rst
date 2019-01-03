@@ -7,11 +7,11 @@ Installing NFD from Binaries
 We provide NFD binaries for the supported platforms, which are the preferred installation
 method. In addition to simplifying installation, the binary release also includes automatic
 initial configuration and platform-specific tools to automatically start NFD and related
-daemons.  In particular, on macOS the binary release of NFD comes as part of `NDN Control
+daemons.  In particular, on macOS the binary release of NFD comes as part of the `NDN Control
 Center <https://named-data.net/codebase/applications/ndn-control-center/>`__ and provides a
-convenient way to configure and launch NFD daemon.  :ref:`PPA packages for Ubuntu <Install NFD
-Using the NDN PPA Repository on Ubuntu Linux>` include ``upstart`` and ``systemd``
-configuration to automatically start daemon after boot.
+convenient way to configure and launch the NFD daemon. :ref:`PPA packages for Ubuntu <Install
+NFD Using the NDN PPA Repository on Ubuntu Linux>` include ``systemd`` service files to
+automatically start the daemon after boot.
 
 Besides officially supported platforms, NFD is known to work on: Fedora 20+, CentOS 6+, Gentoo
 Linux, Raspberry Pi, OpenWRT, FreeBSD 10+, and several `other platforms
@@ -252,12 +252,12 @@ If you have installed NFD from source code, it is recommended to start NFD with 
     nfd-start
 
 On macOS it may ask for your keychain password or ask ``nfd wants to sign using key in
-your keychain.`` Enter your keychain password and click Always Allow.
+your keychain``. Enter your keychain password and click "Always Allow".
 
 Later, you can stop NFD with ``nfd-stop`` or by simply killing the ``nfd`` process.
 
-If you have installed NFD using a package manager, you can start and stop NFD service using the
-operating system's service manager (such as Upstart, systemd, or launchd) or using
+If you have installed NFD using a package manager, you can start and stop NFD using the
+operating system's service manager (such as systemd or launchd) or using
 "Automatically start NFD" option in NDN Control Center app.
 
 Connecting to remote NFDs
