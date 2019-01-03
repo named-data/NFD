@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,7 +34,9 @@ getGlobalRng()
   static boost::thread_specific_ptr<std::mt19937> rng;
   if (rng.get() == nullptr) {
     std::random_device rd;
-    rng.reset(new std::mt19937(rd()));
+    // seed with 256 bits of entropy
+    std::seed_seq seeds{rd(), rd(), rd(), rd(), rd(), rd(), rd(), rd()};
+    rng.reset(new std::mt19937(seeds));
   }
   return *rng;
 }
