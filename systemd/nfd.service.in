@@ -1,0 +1,63 @@
+# Copyright (c) 2015-2019, Regents of the University of California,
+#                          Arizona Board of Regents,
+#                          Colorado State University,
+#                          University Pierre & Marie Curie, Sorbonne University,
+#                          Washington University in St. Louis,
+#                          Beijing Institute of Technology,
+#                          The University of Memphis.
+#
+# This file is part of NFD (Named Data Networking Forwarding Daemon).
+# See AUTHORS.md for complete list of NFD authors and contributors.
+#
+# NFD is free software: you can redistribute it and/or modify it under the terms
+# of the GNU General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+
+[Unit]
+Description=NDN Forwarding Daemon
+Documentation=man:nfd(1) man:nfdc(1)
+After=network.target
+
+[Service]
+Environment=HOME=%S/ndn/nfd
+ExecStart=@BINDIR@/nfd
+ExecStartPost=/bin/sh -ec 'if [ -f @SYSCONFDIR@/ndn/nfd-init.sh ]; then . @SYSCONFDIR@/ndn/nfd-init.sh; fi'
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-abnormal
+RestartForceExitStatus=1
+Type=notify
+
+CapabilityBoundingSet=CAP_IPC_LOCK CAP_NET_ADMIN CAP_NET_BIND_SERVICE CAP_NET_BROADCAST CAP_NET_RAW CAP_SYS_ADMIN
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+# systemd older than v232 doesn't support a value of "strict" for ProtectSystem,
+# so it will ignore that line and use ProtectSystem=full; with newer systemd,
+# the latter assignment is recognized and takes precedence, resulting in an
+# effective setting of ProtectSystem=strict
+ProtectSystem=full
+ProtectSystem=strict
+ReadWritePaths=/var/run
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6 AF_PACKET
+RestrictNamespaces=yes
+RestrictRealtime=yes
+StateDirectory=ndn/nfd
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=~@aio @chown @clock @cpu-emulation @debug @keyring @module @mount @obsolete @raw-io @reboot @resources @setuid @swap
+
+[Install]
+WantedBy=multi-user.target

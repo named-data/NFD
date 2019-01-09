@@ -1,4 +1,4 @@
-# Copyright (c) 2015-2017, Regents of the University of California,
+# Copyright (c) 2015-2019, Regents of the University of California,
 #                          Arizona Board of Regents,
 #                          Colorado State University,
 #                          University Pierre & Marie Curie, Sorbonne University,
@@ -19,35 +19,44 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Author: Eric Newberry <enewberry@email.arizona.edu>
-# Author: Davide Pesavento <davide.pesavento@lip6.fr>
 
 [Unit]
-Description=NDN Forwarding Daemon
-Documentation=man:nfd(1) man:nfdc(1)
-Wants=network-online.target
-After=network-online.target
+Description=NDN Autoconfig Client
+Documentation=man:nfd-autoconfig(1)
+BindsTo=nfd.service
+After=nfd.service
 
 [Service]
-Type=notify
-Environment=HOME=/usr/local/var/lib/ndn/nfd
-ExecStart=/usr/local/bin/nfd --config /usr/local/etc/ndn/nfd.conf
-ExecStartPost=/bin/sh -ec 'if [ -f /usr/local/etc/ndn/nfd-init.sh ]; then . /usr/local/etc/ndn/nfd-init.sh; fi'
-ExecReload=/bin/kill -HUP $MAINPID
+Environment=HOME=%S/ndn/ndn-autoconfig
+ExecStart=@BINDIR@/ndn-autoconfig --daemon --config @SYSCONFDIR@/ndn/autoconfig.conf
 Restart=on-failure
-RestartPreventExitStatus=2 4
-PrivateTmp=yes
-PrivateDevices=yes
-ProtectSystem=full
-ProtectHome=yes
-ProtectKernelTunables=yes
-ProtectKernelModules=yes
-ProtectControlGroups=yes
-SystemCallFilter=~@clock @cpu-emulation @debug @keyring @module @mount @obsolete @raw-io @reboot @swap
-SystemCallArchitectures=native
+RestartPreventExitStatus=2
+User=ndn
+
+CapabilityBoundingSet=
+LockPersonality=yes
 MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+# systemd older than v232 doesn't support a value of "strict" for ProtectSystem,
+# so it will ignore that line and use ProtectSystem=full; with newer systemd,
+# the latter assignment is recognized and takes precedence, resulting in an
+# effective setting of ProtectSystem=strict
+ProtectSystem=full
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
 RestrictRealtime=yes
+StateDirectory=ndn/ndn-autoconfig
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=~@aio @chown @clock @cpu-emulation @debug @keyring @module @mount @obsolete @privileged @raw-io @reboot @resources @setuid @swap
 
 [Install]
 WantedBy=multi-user.target

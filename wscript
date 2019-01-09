@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2018,  Regents of the University of California,
+Copyright (c) 2014-2019,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -217,6 +217,15 @@ def build(bld):
         IF_HAVE_LIBPCAP='' if bld.env.HAVE_LIBPCAP else '; ',
         IF_HAVE_WEBSOCKET='' if bld.env.HAVE_WEBSOCKET else '; ')
 
+    bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
+
+    if Utils.unversioned_sys_platform() == 'linux':
+        systemd_units = bld.path.ant_glob('systemd/*.in')
+        bld(features='subst',
+            name='systemd-units',
+            source=systemd_units,
+            target=[u.change_ext('') for u in systemd_units])
+
     if bld.env.SPHINX_BUILD:
         bld(features='sphinx',
             name='manpages',
@@ -232,8 +241,6 @@ def build(bld):
         bld.symlink_as('${MANDIR}/man1/nfdc-unregister.1', 'nfdc-route.1')
         bld.symlink_as('${MANDIR}/man1/nfdc-set-strategy.1', 'nfdc-strategy.1')
         bld.symlink_as('${MANDIR}/man1/nfdc-unset-strategy.1', 'nfdc-strategy.1')
-
-    bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
 
 def docs(bld):
     from waflib import Options

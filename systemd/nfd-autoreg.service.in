@@ -1,0 +1,63 @@
+# Copyright (c) 2015-2019, Regents of the University of California,
+#                          Arizona Board of Regents,
+#                          Colorado State University,
+#                          University Pierre & Marie Curie, Sorbonne University,
+#                          Washington University in St. Louis,
+#                          Beijing Institute of Technology,
+#                          The University of Memphis.
+#
+# This file is part of NFD (Named Data Networking Forwarding Daemon).
+# See AUTHORS.md for complete list of NFD authors and contributors.
+#
+# NFD is free software: you can redistribute it and/or modify it under the terms
+# of the GNU General Public License as published by the Free Software Foundation,
+# either version 3 of the License, or (at your option) any later version.
+#
+# NFD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE.  See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
+
+[Unit]
+Description=NFD Automatic Prefix Registration
+Documentation=man:nfd-autoreg(1)
+BindsTo=nfd.service
+After=nfd.service
+
+[Service]
+Environment=HOME=%S/ndn/nfd-autoreg
+EnvironmentFile=-@SYSCONFDIR@/default/nfd-autoreg
+ExecStart=@BINDIR@/nfd-autoreg $BLACKLIST $WHITELIST $ON_DEMAND_FACES_PREFIXES $ALL_FACES_PREFIXES $FLAGS
+Restart=on-failure
+RestartPreventExitStatus=2
+User=ndn
+
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+PrivateTmp=yes
+PrivateUsers=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+# systemd older than v232 doesn't support a value of "strict" for ProtectSystem,
+# so it will ignore that line and use ProtectSystem=full; with newer systemd,
+# the latter assignment is recognized and takes precedence, resulting in an
+# effective setting of ProtectSystem=strict
+ProtectSystem=full
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+StateDirectory=ndn/nfd-autoreg
+SystemCallArchitectures=native
+SystemCallErrorNumber=EPERM
+SystemCallFilter=~@aio @chown @clock @cpu-emulation @debug @keyring @module @mount @obsolete @privileged @raw-io @reboot @resources @setuid @swap
+
+[Install]
+WantedBy=multi-user.target
