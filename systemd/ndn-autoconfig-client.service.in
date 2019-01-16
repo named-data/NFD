@@ -60,3 +60,4 @@ SystemCallFilter=~@aio @chown @clock @cpu-emulation @debug @keyring @module @mou
 
 [Install]
 WantedBy=multi-user.target
+WantedBy=nfd.service
