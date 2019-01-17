@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,7 +30,6 @@
 #include <boost/thread.hpp>
 
 namespace nfd {
-
 namespace scheduler {
 // defined in scheduler.cpp
 Scheduler&
@@ -39,58 +38,28 @@ getGlobalScheduler();
 
 namespace tests {
 
-using scheduler::EventId;
-using scheduler::ScopedEventId;
-
 BOOST_FIXTURE_TEST_SUITE(TestScheduler, BaseFixture)
 
-class SchedulerFixture : protected BaseFixture
+BOOST_AUTO_TEST_CASE(ScheduleCancel)
 {
-public:
-  SchedulerFixture()
-    : count1(0)
-    , count2(0)
-    , count3(0)
-  {
-  }
+  int count1 = 0, count2 = 0, count3 = 0;
 
-  void
-  event1()
-  {
+  scheduler::schedule(500_ms, [&] {
     BOOST_CHECK_EQUAL(count3, 1);
     ++count1;
-  }
+  });
 
-  void
-  event2()
-  {
-    ++count2;
-  }
+  scheduler::EventId eid = scheduler::schedule(1_s, [&] { ++count2; });
+  scheduler::cancel(eid);
 
-  void
-  event3()
-  {
+  scheduler::schedule(250_ms, [&] {
     BOOST_CHECK_EQUAL(count1, 0);
     ++count3;
-  }
+  });
 
-public:
-  int count1;
-  int count2;
-  int count3;
-};
-
-BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
-{
-  scheduler::schedule(time::milliseconds(500), bind(&SchedulerFixture::event1, this));
-
-  EventId i = scheduler::schedule(time::seconds(1), bind(&SchedulerFixture::event2, this));
-  scheduler::cancel(i);
-
-  scheduler::schedule(time::milliseconds(250), bind(&SchedulerFixture::event3, this));
-
-  i = scheduler::schedule(time::milliseconds(50), bind(&SchedulerFixture::event2, this));
-  scheduler::cancel(i);
+  {
+    scheduler::ScopedEventId se = scheduler::schedule(50_ms, [&] { ++count2; });
+  } // se goes out of scope, canceling the event
 
   g_io.run();
 
@@ -99,87 +68,11 @@ BOOST_FIXTURE_TEST_CASE(Events, SchedulerFixture)
   BOOST_CHECK_EQUAL(count3, 1);
 }
 
-BOOST_AUTO_TEST_CASE(CancelEmptyEvent)
-{
-  EventId i;
-  scheduler::cancel(i);
-
-  // Trivial check to avoid "test case did not check any assertions" message from Boost.Test
-  BOOST_CHECK(true);
-}
-
-class SelfCancelFixture : protected BaseFixture
-{
-public:
-  void
-  cancelSelf() const
-  {
-    scheduler::cancel(m_selfEventId);
-  }
-
-public:
-  EventId m_selfEventId;
-};
-
-BOOST_FIXTURE_TEST_CASE(SelfCancel, SelfCancelFixture)
-{
-  m_selfEventId = scheduler::schedule(time::milliseconds(100),
-                                      bind(&SelfCancelFixture::cancelSelf, this));
-
-  BOOST_REQUIRE_NO_THROW(g_io.run());
-}
-
-BOOST_FIXTURE_TEST_CASE(ScopedEventIdDestruct, UnitTestTimeFixture)
-{
-  int hit = 0;
-  {
-    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
-  } // se goes out of scope
-  this->advanceClocks(time::milliseconds(1), 15);
-  BOOST_CHECK_EQUAL(hit, 0);
-}
-
-BOOST_FIXTURE_TEST_CASE(ScopedEventIdAssign, UnitTestTimeFixture)
-{
-  int hit1 = 0, hit2 = 0;
-  ScopedEventId se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit1; });
-  se1 = scheduler::schedule(time::milliseconds(10), [&] { ++hit2; });
-  this->advanceClocks(time::milliseconds(1), 15);
-  BOOST_CHECK_EQUAL(hit1, 0);
-  BOOST_CHECK_EQUAL(hit2, 1);
-}
-
-BOOST_FIXTURE_TEST_CASE(ScopedEventIdRelease, UnitTestTimeFixture)
-{
-  int hit = 0;
-  {
-    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
-    se.release();
-  } // se goes out of scope
-  this->advanceClocks(time::milliseconds(1), 15);
-  BOOST_CHECK_EQUAL(hit, 1);
-}
-
-BOOST_FIXTURE_TEST_CASE(ScopedEventIdMove, UnitTestTimeFixture)
-{
-  int hit = 0;
-  unique_ptr<scheduler::ScopedEventId> se2;
-  {
-    ScopedEventId se = scheduler::schedule(time::milliseconds(10), [&] { ++hit; });
-    se2.reset(new ScopedEventId(std::move(se)));
-  } // se goes out of scope
-  this->advanceClocks(time::milliseconds(1), 15);
-  BOOST_CHECK_EQUAL(hit, 1);
-}
-
 BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
 {
   scheduler::Scheduler* s1 = &scheduler::getGlobalScheduler();
   scheduler::Scheduler* s2 = nullptr;
-  boost::thread t([&s2] {
-      s2 = &scheduler::getGlobalScheduler();
-    });
-
+  boost::thread t([&s2] { s2 = &scheduler::getGlobalScheduler(); });
   t.join();
 
   BOOST_CHECK(s1 != nullptr);

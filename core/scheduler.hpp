@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,13 +33,9 @@
 namespace nfd {
 namespace scheduler {
 
-using ndn::Scheduler;
-
-/** \class nfd::scheduler::EventId
- *  \brief Opaque handle for a scheduled event.
- */
-using ndn::EventId;
-
+using ndn::util::scheduler::Scheduler;
+using ndn::util::scheduler::EventId;
+using ndn::util::scheduler::ScopedEventId;
 using ndn::util::scheduler::EventCallback;
 
 /** \brief Schedule an event.
@@ -49,50 +45,11 @@ schedule(time::nanoseconds after, const EventCallback& event);
 
 /** \brief Cancel a scheduled event.
  */
-void
-cancel(const EventId& eventId);
-
-/** \brief Cancels an event automatically upon destruction.
- */
-class ScopedEventId : noncopyable
+inline void
+cancel(EventId eventId)
 {
-public:
-  ScopedEventId();
-
-  /** \brief Implicit constructor from EventId.
-   *  \param event the event to be cancelled upon destruction
-   */
-  ScopedEventId(const EventId& event);
-
-  /** \brief Move constructor.
-   */
-  ScopedEventId(ScopedEventId&& other);
-
-  /** \brief Assigns an event.
-   *
-   *  If a different event has been assigned to this instance previously,
-   *  that event will be cancelled immediately.
-   */
-  ScopedEventId&
-  operator=(const EventId& event);
-
-  /** \brief Cancels the event.
-   */
-  ~ScopedEventId();
-
-  /** \brief Cancels the event manually.
-   */
-  void
-  cancel();
-
-  /** \brief Releases the event so that it won't be cancelled when this ScopedEventId is destructed.
-   */
-  void
-  release();
-
-private:
-  EventId m_event;
-};
+  eventId.cancel();
+}
 
 } // namespace scheduler
 } // namespace nfd

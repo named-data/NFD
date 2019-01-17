@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix, scheduler);
+  ReadvertisedRoute rr(prefix);
   const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/register");
 
   dest.advertise(rr, successCallback, failureCallback);
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
 {
   Scenario scenario;
   Name prefix("/ndn/memphis/test");
-  ReadvertisedRoute rr(prefix, scheduler);
+  ReadvertisedRoute rr(prefix);
   const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/unregister");
 
   dest.withdraw(rr, successCallback, failureCallback);

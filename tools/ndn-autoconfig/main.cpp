@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,6 @@
 #include <boost/program_options/variables_map.hpp>
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
-#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
 #include <ndn-cxx/util/time.hpp>
 
 // suppress warning caused by boost::program_options::parse_config_file
@@ -88,7 +87,7 @@ runDaemon(Procedure& proc)
   });
 
   util::Scheduler sched(proc.getIoService());
-  util::scheduler::ScopedEventId runEvt(sched);
+  util::scheduler::ScopedEventId runEvt;
   auto scheduleRerun = [&] (time::nanoseconds delay) {
     runEvt = sched.scheduleEvent(delay, [&] { proc.runOnce(); });
   };

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@
 #include "core/common.hpp"
 
 #include <ndn-cxx/security/signing-info.hpp>
-#include <ndn-cxx/util/scheduler-scoped-event-id.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
 namespace rib {
@@ -39,11 +39,11 @@ namespace rib {
 class ReadvertisedRoute : noncopyable
 {
 public:
-  ReadvertisedRoute(const Name& prefix, ndn::util::Scheduler& scheduler)
+  explicit
+  ReadvertisedRoute(const Name& prefix)
     : prefix(prefix)
     , nRibRoutes(0)
     , retryDelay(0)
-    , retryEvt(scheduler)
   {
   }
 

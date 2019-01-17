@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,7 +75,7 @@ Readvertise::afterAddRoute(const RibRouteRef& ribRoute)
 
   ReadvertisedRouteContainer::iterator rrIt;
   bool isNew = false;
-  std::tie(rrIt, isNew) = m_rrs.emplace(action->prefix, m_scheduler);
+  std::tie(rrIt, isNew) = m_rrs.emplace(action->prefix);
 
   if (!isNew && rrIt->signer != action->signer) {
     NFD_LOG_WARN("add-route " << ribRoute.entry->getName() << '(' << ribRoute.route->faceId <<

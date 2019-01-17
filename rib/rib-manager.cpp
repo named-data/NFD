@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -59,7 +59,6 @@ RibManager::RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
   , m_localhostValidator(face)
   , m_localhopValidator(face)
   , m_isLocalhopEnabled(false)
-  , m_activeFaceFetchEvent(m_scheduler)
 {
   registerCommandHandler<ndn::nfd::RibRegisterCommand>("register",
     bind(&RibManager::registerEntry, this, _2, _3, _4, _5));
@@ -139,7 +138,7 @@ RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseco
 
   if (expires) {
     auto event = m_scheduler.scheduleEvent(*expires, [=] { m_rib.onRouteExpiration(name, route); });
-    route.setExpirationEvent(event, m_scheduler);
+    route.setExpirationEvent(event);
     NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
   }
 

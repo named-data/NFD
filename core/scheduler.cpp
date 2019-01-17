@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,57 +50,9 @@ schedule(time::nanoseconds after, const EventCallback& event)
 }
 
 void
-cancel(const EventId& eventId)
-{
-  getGlobalScheduler().cancelEvent(eventId);
-}
-
-void
 resetGlobalScheduler()
 {
   g_scheduler.reset();
-}
-
-ScopedEventId::ScopedEventId()
-{
-}
-
-ScopedEventId::ScopedEventId(const EventId& event)
-  : m_event(event)
-{
-}
-
-ScopedEventId::ScopedEventId(ScopedEventId&& other)
-  : m_event(other.m_event)
-{
-  other.release();
-}
-
-ScopedEventId&
-ScopedEventId::operator=(const EventId& event)
-{
-  if (m_event != event) {
-    scheduler::cancel(m_event);
-    m_event = event;
-  }
-  return *this;
-}
-
-ScopedEventId::~ScopedEventId()
-{
-  scheduler::cancel(m_event);
-}
-
-void
-ScopedEventId::cancel()
-{
-  scheduler::cancel(m_event);
-}
-
-void
-ScopedEventId::release()
-{
-  m_event.reset();
 }
 
 } // namespace scheduler

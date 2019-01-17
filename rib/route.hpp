@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,17 +60,15 @@ public:
   }
 
   void
-  setExpirationEvent(const ndn::util::scheduler::EventId& eid, ndn::util::Scheduler& scheduler)
+  setExpirationEvent(const ndn::util::scheduler::EventId& eid)
   {
     m_expirationEvent = eid;
-    m_scheduler = &scheduler;
   }
 
   void
-  cancelExpirationEvent() const
+  cancelExpirationEvent()
   {
-    if (m_scheduler)
-      m_scheduler->cancelEvent(m_expirationEvent);
+    m_expirationEvent.cancel();
   }
 
   std::underlying_type<ndn::nfd::RouteFlags>::type
@@ -104,7 +102,6 @@ public:
 
 private:
   ndn::util::scheduler::EventId m_expirationEvent;
-  ndn::util::Scheduler* m_scheduler;
 };
 
 bool
