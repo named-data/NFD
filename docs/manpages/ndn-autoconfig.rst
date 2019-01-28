@@ -45,7 +45,7 @@ NDN hub discovery procedure
 
 When an end host starts up, or detects a change in its network environment, it MAY use
 this procedure to discover a NDN router, in order to gain connectivity to
-`the NDN research testbed <https://named-data.net/ndn-testbed/>`_.
+`the NDN research testbed <https://named-data.net/ndn-testbed/>`__.
 This procedure can discover either an NDN router in the local network, or a NDN testbed
 gateway router (commonly known as a "hub").
 
@@ -110,7 +110,7 @@ to the `NDN-FCH README file <https://github.com/named-data/ndn-fch>`__.
 Request
 +++++++
 
-HTTP/1.0 request for the NDN-FCH server URI (`http://ndn-fch.named-data.net/`__ by default)
+HTTP/1.0 request for the NDN-FCH server URI (`<http://ndn-fch.named-data.net/>`__ by default)
 
 Response
 ++++++++
@@ -122,7 +122,7 @@ Stage 4: find home router
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This stage assumes that user has configured default certificate using
-`https://ndncert.named-data.net/`__ as described in `Certification Architecture
+`<https://ndncert.named-data.net/>`__ as described in `Certification Architecture
 <https://redmine.named-data.net/attachments/download/23/CertificationArchitecture.pptx>`__.
 
 Request

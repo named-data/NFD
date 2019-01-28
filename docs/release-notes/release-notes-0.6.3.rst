@@ -5,11 +5,6 @@ NFD version 0.6.3
 
 Release date: September 18, 2018
 
-Note that this is the last release that encodes to `NDN packet format version 0.2.1
-<https://named-data.net/doc/NDN-packet-spec/0.2.1/>`__. A future release will continue to
-decode v0.2.1 format, but will encode to `v0.3 format
-<https://named-data.net/doc/NDN-packet-spec/0.3/>`__.
-
 The build requirements have been upgraded to gcc >= 5.3 or clang >= 3.6, boost >= 1.58,
 openssl >= 1.0.2. This effectively drops support for all versions of Ubuntu older than 16.04
 that use distribution-provided compilers and packages.
