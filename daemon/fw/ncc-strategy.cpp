@@ -25,7 +25,8 @@
 
 #include "ncc-strategy.hpp"
 #include "algorithm.hpp"
-#include "core/random.hpp"
+
+#include <ndn-cxx/util/random.hpp>
 
 namespace nfd {
 namespace fw {
@@ -176,7 +177,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
 
   if (isForwarded) {
     std::uniform_int_distribution<time::nanoseconds::rep> dist(0, pitEntryInfo->maxInterval.count() - 1);
-    time::nanoseconds deferNext = time::nanoseconds(dist(getGlobalRng()));
+    time::nanoseconds deferNext(dist(ndn::random::getRandomNumberEngine()));
     pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
       bind(&NccStrategy::doPropagate, this, inFaceId, weak_ptr<pit::Entry>(pitEntry)));
   }

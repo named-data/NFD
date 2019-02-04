@@ -25,7 +25,8 @@
 
 #include "readvertise.hpp"
 #include "core/logger.hpp"
-#include "core/random.hpp"
+
+#include <ndn-cxx/util/random.hpp>
 
 namespace nfd {
 namespace rib {
@@ -38,8 +39,8 @@ const time::milliseconds Readvertise::RETRY_DELAY_MAX = 3600_s;
 static time::milliseconds
 randomizeTimer(time::milliseconds baseTimer)
 {
-  std::uniform_int_distribution<uint64_t> dist(-5, 5);
-  time::milliseconds newTime = baseTimer + time::milliseconds(dist(getGlobalRng()));
+  std::uniform_int_distribution<> dist(-5, 5);
+  auto newTime = baseTimer + time::milliseconds(dist(ndn::random::getRandomNumberEngine()));
   return std::max(newTime, 0_ms);
 }
 

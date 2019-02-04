@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "mgmt/face-manager.hpp"
-#include "core/random.hpp"
 #include "face/protocol-factory.hpp"
 
 #include "nfd-manager-common-fixture.hpp"
@@ -38,6 +37,7 @@
 #include <ndn-cxx/mgmt/nfd/face-query-filter.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/net/network-monitor-stub.hpp>
+#include <ndn-cxx/util/random.hpp>
 
 namespace nfd {
 namespace tests {
@@ -109,7 +109,7 @@ private:
   randomizeCounter(const T& counter)
   {
     static std::uniform_int_distribution<typename T::rep> dist;
-    const_cast<T&>(counter).set(dist(getGlobalRng()));
+    const_cast<T&>(counter).set(dist(ndn::random::getRandomNumberEngine()));
   }
 
 protected:
