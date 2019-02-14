@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,8 +24,8 @@
  */
 
 #include "rib-io-fixture.hpp"
-#include "core/extended-error-message.hpp"
-#include <iostream>
+
+#include <boost/exception/diagnostic_information.hpp>
 
 namespace nfd {
 namespace tests {
@@ -72,9 +72,9 @@ RibIoFixture::RibIoFixture()
         m_ribPollEndCv.notify_all();
       }
     }
-    catch (const std::exception& e) {
-      std::cerr << "Exception in RIB thread: " << getExtendedErrorMessage(e) << std::endl;
-      throw;
+    catch (...) {
+      BOOST_WARN_MESSAGE(false, boost::current_exception_diagnostic_information());
+      NDN_THROW_NESTED(std::runtime_error("Fatal exception in RIB thread"));
     }
   });
 

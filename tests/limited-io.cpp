@@ -24,9 +24,10 @@
  */
 
 #include "limited-io.hpp"
-#include "core/extended-error-message.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
+
+#include <boost/exception/diagnostic_information.hpp>
 
 namespace nfd {
 namespace tests {
@@ -72,7 +73,7 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
   catch (const StopException&) {
   }
   catch (const std::exception& ex) {
-    NFD_LOG_ERROR("g_io.run() exception: " << getExtendedErrorMessage(ex));
+    NFD_LOG_ERROR("LimitedIo::run: " << boost::diagnostic_information(ex));
     m_reason = EXCEPTION;
     m_lastException = std::current_exception();
   }

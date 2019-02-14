@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,7 +23,6 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/extended-error-message.hpp"
 #include "core/network.hpp"
 #include "core/version.hpp"
 
@@ -36,6 +35,7 @@
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/security/key-chain.hpp>
 
+#include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -277,7 +277,7 @@ public:
       startProcessing();
     }
     catch (const std::exception& e) {
-      std::cerr << "ERROR: " << ::nfd::getExtendedErrorMessage(e) << std::endl;
+      std::cerr << "ERROR: " << boost::diagnostic_information(e);
       return 1;
     }
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,6 @@
 #include "nfd.hpp"
 #include "rib/service.hpp"
 
-#include "core/extended-error-message.hpp"
 #include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/privilege-helper.hpp"
@@ -35,6 +34,7 @@
 #include <string.h> // for strsignal()
 
 #include <boost/config.hpp>
+#include <boost/exception/diagnostic_information.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -135,7 +135,7 @@ public:
           getGlobalIoService().run(); // ribIo is not thread-safe to use here
         }
         catch (const std::exception& e) {
-          NFD_LOG_FATAL(e.what());
+          NFD_LOG_FATAL(boost::diagnostic_information(e));
           retval = 1;
           mainIo->stop();
         }
@@ -158,7 +158,7 @@ public:
       mainIo->run();
     }
     catch (const std::exception& e) {
-      NFD_LOG_FATAL(getExtendedErrorMessage(e));
+      NFD_LOG_FATAL(boost::diagnostic_information(e));
       retval = 1;
     }
     catch (const PrivilegeHelper::Error& e) {
@@ -194,7 +194,7 @@ private:
     if (error)
       return;
 
-    NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', exiting...");
+    NFD_LOG_INFO("Caught signal " << signalNo << " (" << ::strsignal(signalNo) << "), exiting...");
 
     systemdNotify("STOPPING=1");
     getGlobalIoService().stop();
@@ -206,7 +206,7 @@ private:
     if (error)
       return;
 
-    NFD_LOG_INFO("Caught signal '" << ::strsignal(signalNo) << "', reloading...");
+    NFD_LOG_INFO("Caught signal " << signalNo << " (" << ::strsignal(signalNo) << "), reloading...");
 
     systemdNotify("RELOADING=1");
     m_nfd.reloadConfigFile();
@@ -321,18 +321,11 @@ main(int argc, char** argv)
     runner.initialize();
   }
   catch (const boost::filesystem::filesystem_error& e) {
-    if (e.code() == boost::system::errc::permission_denied) {
-      NFD_LOG_FATAL("Permission denied for " << e.path1() <<
-                    ". This program should be run as superuser");
-      return 4;
-    }
-    else {
-      NFD_LOG_FATAL(getExtendedErrorMessage(e));
-      return 1;
-    }
+    NFD_LOG_FATAL(boost::diagnostic_information(e));
+    return e.code() == boost::system::errc::permission_denied ? 4 : 1;
   }
   catch (const std::exception& e) {
-    NFD_LOG_FATAL(getExtendedErrorMessage(e));
+    NFD_LOG_FATAL(boost::diagnostic_information(e));
     return 1;
   }
   catch (const PrivilegeHelper::Error& e) {

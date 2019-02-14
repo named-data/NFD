@@ -23,11 +23,12 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/extended-error-message.hpp"
 #include "core/global-io.hpp"
 #include "face/face.hpp"
 #include "face/tcp-channel.hpp"
 #include "face/udp-channel.hpp"
+
+#include <boost/exception/diagnostic_information.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -44,12 +45,16 @@ class FaceBenchmark
 public:
   FaceBenchmark(const char* configFileName)
     : m_terminationSignalSet{getGlobalIoService()}
-    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false, bind([] { return ndn::nfd::FACE_SCOPE_NON_LOCAL; })}
+    , m_tcpChannel{tcp::Endpoint{boost::asio::ip::tcp::v4(), 6363}, false,
+                   bind([] { return ndn::nfd::FACE_SCOPE_NON_LOCAL; })}
     , m_udpChannel{udp::Endpoint{boost::asio::ip::udp::v4(), 6363}, time::minutes{10}, false}
   {
     m_terminationSignalSet.add(SIGINT);
     m_terminationSignalSet.add(SIGTERM);
-    m_terminationSignalSet.async_wait(bind(&FaceBenchmark::terminate, _1, _2));
+    m_terminationSignalSet.async_wait([] (const auto& error, int) {
+      if (!error)
+        getGlobalIoService().stop();
+    });
 
     parseConfig(configFileName);
 
@@ -63,14 +68,6 @@ public:
   }
 
 private:
-  static void
-  terminate(const boost::system::error_code& error, int signalNo)
-  {
-    if (error)
-      return;
-    getGlobalIoService().stop();
-  }
-
   void
   parseConfig(const char* configFileName)
   {
@@ -192,7 +189,7 @@ main(int argc, char** argv)
     nfd::getGlobalIoService().run();
   }
   catch (const std::exception& e) {
-    std::cerr << "FATAL: " << nfd::getExtendedErrorMessage(e) << std::endl;
+    std::cerr << "ERROR: " << boost::diagnostic_information(e);
     return 1;
   }
 

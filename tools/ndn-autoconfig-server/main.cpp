@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,11 +24,12 @@
  */
 
 #include "program.hpp"
-#include "core/extended-error-message.hpp"
 #include "core/version.hpp"
 
 #include <iostream>
 #include <unistd.h>
+
+#include <boost/exception/diagnostic_information.hpp>
 
 namespace ndn {
 namespace tools {
@@ -42,8 +43,8 @@ usage(const char* programName)
             << "Options:\n"
             << "  -h        - print usage and exit\n"
             << "  -V        - print version number and exit\n"
-            << "  -p prefix - a local prefix of the HUB\n"
-            << "  hub-face  - a FaceUri to reach the HUB\n";
+            << "  -p prefix - a local prefix of the hub\n"
+            << "  hub-face  - a FaceUri to reach the hub\n";
 }
 
 static int
@@ -75,7 +76,7 @@ main(int argc, char** argv)
   }
 
   if (!options.hubFaceUri.parse(argv[::optind])) {
-    std::cerr << "ERROR: cannot parse HUB FaceUri" << std::endl;
+    std::cerr << "ERROR: cannot parse hub FaceUri" << std::endl;
     return 2;
   }
 
@@ -86,7 +87,7 @@ main(int argc, char** argv)
     program.run();
   }
   catch (const std::exception& e) {
-    std::cerr << ::nfd::getExtendedErrorMessage(e) << std::endl;
+    std::cerr << "ERROR: " << boost::diagnostic_information(e);
     return 1;
   }
   return 0;

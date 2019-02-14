@@ -24,15 +24,17 @@
  */
 
 #include "procedure.hpp"
-#include "core/extended-error-message.hpp"
 #include "core/scheduler.hpp"
 #include "core/version.hpp"
 
 #include <signal.h>
 #include <string.h>
+
+#include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
+
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/time.hpp>
@@ -48,9 +50,9 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-static const time::nanoseconds DAEMON_INITIAL_DELAY = time::milliseconds(100);
-static const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = time::hours(1);
-static const time::nanoseconds NETMON_DAMPEN_PERIOD = time::seconds(5);
+static const time::nanoseconds DAEMON_INITIAL_DELAY = 100_ms;
+static const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = 1_h;
+static const time::nanoseconds NETMON_DAMPEN_PERIOD = 5_s;
 
 namespace po = boost::program_options;
 
@@ -181,7 +183,7 @@ main(int argc, char** argv)
     }
   }
   catch (const std::exception& e) {
-    std::cerr << ::nfd::getExtendedErrorMessage(e) << std::endl;
+    std::cerr << "ERROR: " << boost::diagnostic_information(e);
     return 1;
   }
 
