@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,25 +45,23 @@ onConfig(const ConfigSection& section, bool isDryRun, const std::string&)
     if (i.first == "user") {
       try {
         user = i.second.get_value<std::string>("user");
-
         if (user.empty()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\" in \"general\" section"));
+          NDN_THROW(ConfigFile::Error("Invalid value for 'user' in section 'general'"));
         }
       }
       catch (const boost::property_tree::ptree_error&) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"user\" in \"general\" section"));
+        NDN_THROW(ConfigFile::Error("Invalid value for 'user' in section 'general'"));
       }
     }
     else if (i.first == "group") {
       try {
         group = i.second.get_value<std::string>("group");
-
         if (group.empty()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\" in \"general\" section"));
+          NDN_THROW(ConfigFile::Error("Invalid value for 'group' in section 'general'"));
         }
       }
       catch (const boost::property_tree::ptree_error&) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid value for \"group\" in \"general\" section"));
+        NDN_THROW(ConfigFile::Error("Invalid value for 'group' in section 'general'"));
       }
     }
   }

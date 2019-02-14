@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -124,12 +124,12 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
         boost::system::error_code ec;
         mcastConfig.group.address(ip::address_v4::from_string(valueStr, ec));
         if (ec) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group: '" +
-                                valueStr + "' cannot be parsed as an IPv4 address"));
+          NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group: '" +
+                                      valueStr + "' cannot be parsed as an IPv4 address"));
         }
         else if (!mcastConfig.group.address().is_multicast()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group: '" +
-                                valueStr + "' is not a multicast address"));
+          NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group: '" +
+                                      valueStr + "' is not a multicast address"));
         }
       }
       else if (key == "mcast_port") {
@@ -140,12 +140,12 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
         boost::system::error_code ec;
         mcastConfig.groupV6.address(ip::address_v6::from_string(valueStr, ec));
         if (ec) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
-                                valueStr + "' cannot be parsed as an IPv6 address"));
+          NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
+                                      valueStr + "' cannot be parsed as an IPv6 address"));
         }
         else if (!mcastConfig.groupV6.address().is_multicast()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
-                                valueStr + "' is not a multicast address"));
+          NDN_THROW(ConfigFile::Error("face_system.udp.mcast_group_v6: '" +
+                                      valueStr + "' is not a multicast address"));
         }
       }
       else if (key == "mcast_port_v6") {
@@ -162,12 +162,12 @@ UdpFactory::doProcessConfig(OptionalConfigSection configSection,
         mcastConfig.netifPredicate.parseBlacklist(value);
       }
       else {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.udp." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.udp." + key));
       }
     }
 
     if (!enableV4 && !enableV6 && !mcastConfig.isEnabled) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
+      NDN_THROW(ConfigFile::Error(
         "IPv4 and IPv6 UDP channels and UDP multicast have been disabled. "
         "Remove face_system.udp section to disable UDP channels or enable at least one of them."));
     }
@@ -298,9 +298,8 @@ UdpFactory::createChannel(const udp::Endpoint& localEndpoint,
 
   // check if the endpoint is already used by a multicast face
   if (m_mcastFaces.find(localEndpoint) != m_mcastFaces.end()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create UDP channel on " +
-                                boost::lexical_cast<std::string>(localEndpoint) +
-                                ", endpoint already allocated for a UDP multicast face"));
+    NDN_THROW(Error("Cannot create UDP channel on " + boost::lexical_cast<std::string>(localEndpoint) +
+                    ", endpoint already allocated to a UDP multicast face"));
   }
 
   auto channel = std::make_shared<UdpChannel>(localEndpoint, idleTimeout, m_wantCongestionMarking);
@@ -338,16 +337,14 @@ UdpFactory::createMulticastFace(const shared_ptr<const net::NetworkInterface>& n
     if (it->second->getRemoteUri() == FaceUri(mcastEp))
       return it->second;
     else
-      BOOST_THROW_EXCEPTION(Error("Cannot create UDP multicast face on " +
-                                  boost::lexical_cast<std::string>(localEp) +
-                                  ", endpoint already allocated for a different UDP multicast face"));
+      NDN_THROW(Error("Cannot create UDP multicast face on " + boost::lexical_cast<std::string>(localEp) +
+                      ", endpoint already allocated to a different UDP multicast face"));
   }
 
   // check if the local endpoint is already used by a unicast channel
   if (m_channels.find(localEp) != m_channels.end()) {
-    BOOST_THROW_EXCEPTION(Error("Cannot create UDP multicast face on " +
-                                boost::lexical_cast<std::string>(localEp) +
-                                ", endpoint already allocated for a UDP channel"));
+    NDN_THROW(Error("Cannot create UDP multicast face on " + boost::lexical_cast<std::string>(localEp) +
+                    ", endpoint already allocated to a UDP channel"));
   }
 
   ip::udp::socket rxSock(getGlobalIoService());

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,8 +82,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     NFD_LOG_CHAN_TRACE("connect() on existing socket file returned: " << error.message());
     if (!error) {
       // someone answered, leave the socket alone
-      BOOST_THROW_EXCEPTION(Error("Socket file at " + m_endpoint.path()
-                                  + " belongs to another NFD process"));
+      NDN_THROW(Error("Socket file at " + m_endpoint.path() + " belongs to another NFD process"));
     }
     else if (error == boost::asio::error::connection_refused ||
              error == boost::asio::error::timed_out) {
@@ -94,7 +93,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
     }
   }
   else if (type != fs::file_not_found) {
-    BOOST_THROW_EXCEPTION(Error(m_endpoint.path() + " already exists and is not a socket file"));
+    NDN_THROW(Error(m_endpoint.path() + " already exists and is not a socket file"));
   }
 
   m_acceptor.open();
@@ -102,7 +101,7 @@ UnixStreamChannel::listen(const FaceCreatedCallback& onFaceCreated,
   m_acceptor.listen(backlog);
 
   if (::chmod(m_endpoint.path().data(), 0666) < 0) {
-    BOOST_THROW_EXCEPTION(Error("chmod(" + m_endpoint.path() + ") failed: " + std::strerror(errno)));
+    NDN_THROW_ERRNO(Error("Failed to chmod " + m_endpoint.path()));
   }
 
   accept(onFaceCreated, onAcceptFailed);

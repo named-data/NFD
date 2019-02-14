@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -144,7 +144,7 @@ MulticastEthernetTransport::joinMulticastGroup()
   NFD_LOG_FACE_WARN("ioctl(SIOCADDMULTI) failed: " << std::strerror(errno));
 #endif
 
-  BOOST_THROW_EXCEPTION(Error("Failed to join multicast group"));
+  NDN_THROW(Error("Failed to join multicast group"));
 }
 
 } // namespace face

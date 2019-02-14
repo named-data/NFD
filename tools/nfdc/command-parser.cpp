@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -119,7 +119,7 @@ CommandParser::parse(const std::vector<std::string>& tokens, ParseMode mode) con
 
   auto i = m_commands.find({noun, verb});
   if (i == m_commands.end() || (i->second->modes & static_cast<AvailableIn>(mode)) == 0) {
-    BOOST_THROW_EXCEPTION(NoSuchCommandError(noun, verb));
+    NDN_THROW(NoSuchCommandError(noun, verb));
   }
 
   const CommandDefinition& def = i->second->def;

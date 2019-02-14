@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -78,7 +78,7 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
 
   uint16_t ancount = queryAnswer.header.ancount;
   if (boost::endian::big_to_native(ancount) == 0) {
-    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed"));
+    NDN_THROW(DnsSrvError("SRV record cannot be parsed"));
   }
 
   const uint8_t* blob = queryAnswer.buf + NS_HFIXEDSZ;
@@ -91,7 +91,7 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                  srvName,                       // expanded server name
                                  NS_MAXDNAME);
   if (serverNameSize <= 0) {
-    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed (error decoding domain name)"));
+    NDN_THROW(DnsSrvError("SRV record cannot be parsed (error decoding domain name)"));
   }
 
   const srv_t* server = reinterpret_cast<const srv_t*>(&blob[sizeof(rechdr)]);
@@ -106,7 +106,7 @@ parseSrvRr(const QueryAnswer& queryAnswer, int answerSize)
                                hostName,                      // expanded host name
                                NS_MAXDNAME);
   if (hostNameSize <= 0) {
-    BOOST_THROW_EXCEPTION(DnsSrvError("SRV record cannot be parsed (error decoding host name)"));
+    NDN_THROW(DnsSrvError("SRV record cannot be parsed (error decoding host name)"));
   }
 
   return "udp://"s + hostName + ":" + to_string(port);
@@ -131,7 +131,7 @@ querySrvRr(const std::string& fqdn)
                              queryAnswer.buf,
                              sizeof(queryAnswer));
   if (answerSize == 0) {
-    BOOST_THROW_EXCEPTION(DnsSrvError("No DNS SRV records found for " + srvDomain));
+    NDN_THROW(DnsSrvError("No DNS SRV records found for " + srvDomain));
   }
   return parseSrvRr(queryAnswer, answerSize);
 }
@@ -159,7 +159,7 @@ querySrvRrSearch()
                               sizeof(queryAnswer));
 
   if (answerSize == 0) {
-    BOOST_THROW_EXCEPTION(DnsSrvError("No DNS SRV records found for _ndn._udp"));
+    NDN_THROW(DnsSrvError("No DNS SRV records found for _ndn._udp"));
   }
 
   return parseSrvRr(queryAnswer, answerSize);

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -75,13 +75,13 @@ WebSocketFactory::doProcessConfig(OptionalConfigSection configSection,
         enableV6 = ConfigFile::parseYesNo(pair, "face_system.websocket");
       }
       else {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.websocket." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.websocket." + key));
       }
     }
   }
 
   if (!enableV4 && !enableV6) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error(
+    NDN_THROW(ConfigFile::Error(
       "IPv4 and IPv6 WebSocket channels have been disabled. Remove face_system.websocket section "
       "to disable WebSocket channels or enable at least one channel type."));
   }

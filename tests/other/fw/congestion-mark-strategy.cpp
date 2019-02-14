@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,7 +41,7 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
   switch (parsed.parameters.size()) {
   case 2:
     if (parsed.parameters.at(1).toUri() != "true" && parsed.parameters.at(1).toUri() != "false") {
-      BOOST_THROW_EXCEPTION(std::invalid_argument(
+      NDN_THROW(std::invalid_argument(
         "Second parameter to CongestionMarkStrategy must be either 'true' or 'false'"));
     }
     m_shouldPreserveMark = parsed.parameters.at(1).toUri() == "true";
@@ -50,22 +50,22 @@ CongestionMarkStrategy::CongestionMarkStrategy(Forwarder& forwarder, const Name&
     try {
       auto s = parsed.parameters.at(0).toUri();
       if (!s.empty() && s[0] == '-')
-        BOOST_THROW_EXCEPTION(boost::bad_lexical_cast());
+        NDN_THROW(boost::bad_lexical_cast());
       m_congestionMark = boost::lexical_cast<uint64_t>(s);
     }
     catch (const boost::bad_lexical_cast&) {
-      BOOST_THROW_EXCEPTION(std::invalid_argument(
+      NDN_THROW(std::invalid_argument(
         "First parameter to CongestionMarkStrategy must be a non-negative integer"));
     }
     NDN_CXX_FALLTHROUGH;
   case 0:
     break;
   default:
-    BOOST_THROW_EXCEPTION(std::invalid_argument("CongestionMarkStrategy does not accept more than 2 parameters"));
+    NDN_THROW(std::invalid_argument("CongestionMarkStrategy does not accept more than 2 parameters"));
   }
 
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument(
+    NDN_THROW(std::invalid_argument(
       "CongestionMarkStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));

@@ -108,12 +108,12 @@ RibManager::enableLocalFields()
 {
   m_nfdController.start<ndn::nfd::FaceUpdateCommand>(
     ControlParameters().setFlagBit(ndn::nfd::BIT_LOCAL_FIELDS_ENABLED, true),
-    [] (const ControlParameters& res) {
+    [] (const ControlParameters&) {
       NFD_LOG_DEBUG("Local fields enabled");
     },
     [] (const ControlResponse& res) {
-      BOOST_THROW_EXCEPTION(Error("Couldn't enable local fields (" + to_string(res.getCode()) +
-                                  " " + res.getText() + ")"));
+      NDN_THROW(Error("Couldn't enable local fields (" + to_string(res.getCode()) +
+                      " " + res.getText() + ")"));
     });
 }
 
@@ -205,8 +205,8 @@ RibManager::registerTopPrefix(const Name& topPrefix)
       m_registeredFaces.insert(route.faceId);
     },
     [=] (const ControlResponse& res) {
-      BOOST_THROW_EXCEPTION(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
-                                  to_string(res.getCode()) + " " + res.getText() + ")"));
+      NDN_THROW(Error("Cannot add FIB entry " + topPrefix.toUri() + " (" +
+                      to_string(res.getCode()) + " " + res.getText() + ")"));
     });
 
   // add top prefix to the dispatcher without prefix registration

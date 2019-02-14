@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -52,7 +52,7 @@ AsfStrategy::AsfStrategy(Forwarder& forwarder, const Name& name)
   }
 
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument(
+    NDN_THROW(std::invalid_argument(
       "AsfStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
@@ -75,7 +75,7 @@ AsfStrategy::processParams(const PartialName& parsed)
     std::string parsedStr(reinterpret_cast<const char*>(component.value()), component.value_size());
     auto n = parsedStr.find("~");
     if (n == std::string::npos) {
-      BOOST_THROW_EXCEPTION(std::invalid_argument("Format is <parameter>~<value>"));
+      NDN_THROW(std::invalid_argument("Format is <parameter>~<value>"));
     }
 
     auto f = parsedStr.substr(0, n);
@@ -87,7 +87,7 @@ AsfStrategy::processParams(const PartialName& parsed)
       m_maxSilentTimeouts = getParamValue(f, s);
     }
     else {
-      BOOST_THROW_EXCEPTION(std::invalid_argument("Parameter should be probing-interval or n-silent-timeouts"));
+      NDN_THROW(std::invalid_argument("Parameter should be probing-interval or n-silent-timeouts"));
     }
   }
 }
@@ -97,12 +97,12 @@ AsfStrategy::getParamValue(const std::string& param, const std::string& value)
 {
   try {
     if (!value.empty() && value[0] == '-')
-      BOOST_THROW_EXCEPTION(boost::bad_lexical_cast());
+      NDN_THROW(boost::bad_lexical_cast());
 
     return boost::lexical_cast<uint64_t>(value);
   }
   catch (const boost::bad_lexical_cast&) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument("Value of " + param + " must be a non-negative integer"));
+    NDN_THROW(std::invalid_argument("Value of " + param + " must be a non-negative integer"));
   }
 }
 

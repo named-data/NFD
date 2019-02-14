@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -94,7 +94,7 @@ IdentityManagementFixture::getIdentityCertificateBase64(const Name& identity, bo
   }
   catch (const ndn::security::Pib::Error&) {
     if (!wantAdd) {
-      BOOST_THROW_EXCEPTION(std::runtime_error("identity does not exist"));
+      NDN_THROW_NESTED(std::runtime_error("Identity does not exist"));
     }
     cert = m_keyChain.createIdentity(identity).getDefaultKey().getDefaultCertificate();
   }

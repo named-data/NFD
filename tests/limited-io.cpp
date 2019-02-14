@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -98,7 +98,7 @@ LimitedIo::afterOp()
     m_reason = EXCEED_OPS;
     getGlobalIoService().stop();
     if (m_uttf != nullptr) {
-      BOOST_THROW_EXCEPTION(StopException());
+      NDN_THROW(StopException());
     }
   }
 }
@@ -109,7 +109,7 @@ LimitedIo::afterTimeout()
   m_reason = EXCEED_TIME;
   getGlobalIoService().stop();
   if (m_uttf != nullptr) {
-    BOOST_THROW_EXCEPTION(StopException());
+    NDN_THROW(StopException());
   }
 }
 

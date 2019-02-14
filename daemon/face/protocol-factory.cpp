@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -114,7 +114,7 @@ shared_ptr<Face>
 ProtocolFactory::doCreateNetdevBoundFace(const FaceUri&,
                                          const shared_ptr<const ndn::net::NetworkInterface>&)
 {
-  BOOST_THROW_EXCEPTION(Error("This protocol factory does not support netdev-bound faces"));
+  NDN_THROW(Error("This protocol factory does not support netdev-bound faces"));
 }
 
 std::vector<shared_ptr<const Channel>>

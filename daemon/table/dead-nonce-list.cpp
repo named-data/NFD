@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -51,7 +51,7 @@ DeadNonceList::DeadNonceList(const time::nanoseconds& lifetime)
   , m_adjustCapacityInterval(m_lifetime)
 {
   if (m_lifetime < MIN_LIFETIME) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument("lifetime is less than MIN_LIFETIME"));
+    NDN_THROW(std::invalid_argument("lifetime is less than MIN_LIFETIME"));
   }
 
   for (size_t i = 0; i < EXPECTED_MARK_COUNT; ++i) {

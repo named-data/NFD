@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "fw/forwarder.hpp"
 #include "table/strategy-choice.hpp"
+
 #include <boost/lexical_cast.hpp>
 
 namespace nfd {
@@ -54,7 +55,7 @@ choose(Forwarder& forwarder, const Name& prefix = "/",
   StrategyChoice& sc = forwarder.getStrategyChoice();
   auto insertRes = sc.insert(prefix, instanceName);
   if (!insertRes) {
-    BOOST_THROW_EXCEPTION(std::invalid_argument(boost::lexical_cast<std::string>(insertRes)));
+    NDN_THROW(std::invalid_argument(boost::lexical_cast<std::string>(insertRes)));
   }
   return dynamic_cast<S&>(sc.findEffectiveStrategy(prefix));
 }

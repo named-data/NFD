@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -124,8 +124,7 @@ bindToDevice(int fd, const std::string& ifname)
 #if defined(__linux__) && !defined(__ANDROID__)
   PrivilegeHelper::runElevated([=] {
     if (::setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname.data(), ifname.size() + 1) < 0) {
-      BOOST_THROW_EXCEPTION(MulticastUdpTransport::Error("Cannot bind multicast rx socket to " +
-                                                         ifname + ": " + std::strerror(errno)));
+      NDN_THROW_ERRNO(MulticastUdpTransport::Error("Cannot bind multicast rx socket to " + ifname));
     }
   });
 #endif

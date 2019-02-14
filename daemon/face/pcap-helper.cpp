@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,14 +41,14 @@ PcapHelper::PcapHelper(const std::string& interfaceName)
   char errbuf[PCAP_ERRBUF_SIZE] = {};
   m_pcap = pcap_create(interfaceName.data(), errbuf);
   if (!m_pcap)
-    BOOST_THROW_EXCEPTION(Error("pcap_create: " + std::string(errbuf)));
+    NDN_THROW(Error("pcap_create: " + std::string(errbuf)));
 
   // Enable "immediate mode", effectively disabling any read buffering in the kernel.
   // This corresponds to the BIOCIMMEDIATE ioctl on BSD-like systems (including macOS)
   // where libpcap uses a BPF device. On Linux this forces libpcap not to use TPACKET_V3,
   // even if the kernel supports it, thus preventing bug #1511.
   if (pcap_set_immediate_mode(m_pcap, 1) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_set_immediate_mode failed"));
+    NDN_THROW(Error("pcap_set_immediate_mode failed"));
 }
 
 PcapHelper::~PcapHelper()
@@ -61,13 +61,13 @@ PcapHelper::activate(int dlt)
 {
   int ret = pcap_activate(m_pcap);
   if (ret < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_activate: " + std::string(pcap_statustostr(ret))));
+    NDN_THROW(Error("pcap_activate: " + std::string(pcap_statustostr(ret))));
 
   if (pcap_set_datalink(m_pcap, dlt) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_set_datalink: " + getLastError()));
+    NDN_THROW(Error("pcap_set_datalink: " + getLastError()));
 
   if (pcap_setdirection(m_pcap, PCAP_D_IN) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_setdirection: " + getLastError()));
+    NDN_THROW(Error("pcap_setdirection: " + getLastError()));
 }
 
 void
@@ -84,7 +84,7 @@ PcapHelper::getFd() const
 {
   int fd = pcap_get_selectable_fd(m_pcap);
   if (fd < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_get_selectable_fd failed"));
+    NDN_THROW(Error("pcap_get_selectable_fd failed"));
 
   // we need to duplicate the fd, otherwise both pcap_close() and the
   // caller may attempt to close the same fd and one of them will fail
@@ -102,7 +102,7 @@ PcapHelper::getNDropped() const
 {
   pcap_stat ps{};
   if (pcap_stats(m_pcap, &ps) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_stats: " + getLastError()));
+    NDN_THROW(Error("pcap_stats: " + getLastError()));
 
   return ps.ps_drop;
 }
@@ -112,12 +112,12 @@ PcapHelper::setPacketFilter(const char* filter) const
 {
   bpf_program prog;
   if (pcap_compile(m_pcap, &prog, filter, 1, PCAP_NETMASK_UNKNOWN) < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_compile: " + getLastError()));
+    NDN_THROW(Error("pcap_compile: " + getLastError()));
 
   int ret = pcap_setfilter(m_pcap, &prog);
   pcap_freecode(&prog);
   if (ret < 0)
-    BOOST_THROW_EXCEPTION(Error("pcap_setfilter: " + getLastError()));
+    NDN_THROW(Error("pcap_setfilter: " + getLastError()));
 }
 
 std::tuple<const uint8_t*, size_t, std::string>

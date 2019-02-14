@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -55,7 +55,7 @@ EthernetTransport::EthernetTransport(const ndn::net::NetworkInterface& localEndp
     m_socket.assign(m_pcap.getFd());
   }
   catch (const PcapHelper::Error& e) {
-    BOOST_THROW_EXCEPTION(Error(e.what()));
+    NDN_THROW_NESTED(Error(e.what()));
   }
 
   m_netifStateConn = localEndpoint.onStateChanged.connect(

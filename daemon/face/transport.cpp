@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -201,7 +201,7 @@ Transport::setState(TransportState newState)
   }
 
   if (!isValid) {
-    BOOST_THROW_EXCEPTION(std::runtime_error("invalid state transition"));
+    NDN_THROW(std::runtime_error("Invalid state transition"));
   }
 
   NFD_LOG_FACE_INFO("setState " << m_state << " -> " << newState);

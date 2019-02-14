@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -60,11 +60,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
   explicit
@@ -115,8 +111,8 @@ public: // parse helpers
     if (value) {
       return *value;
     }
-    BOOST_THROW_EXCEPTION(Error("Invalid value \"" + node.get_value<std::string>() +
-                                "\" for option \"" + key + "\" in \"" + sectionName + "\" section"));
+    NDN_THROW(Error("Invalid value '" + node.get_value<std::string>() +
+                    "' for option '" + key + "' in section '" + sectionName + "'"));
   }
 
   template <typename T>

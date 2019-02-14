@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,7 +39,7 @@ parseReportFormat(const std::string& s)
   if (s == "text") {
     return ReportFormat::TEXT;
   }
-  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized ReportFormat '" + s + "'"));
+  NDN_THROW(std::invalid_argument("unrecognized ReportFormat '" + s + "'"));
 }
 
 std::ostream&
@@ -85,7 +85,7 @@ void
 StatusReport::formatXml(std::ostream& os) const
 {
   xml::printHeader(os);
-  for (const unique_ptr<Module>& module : sections) {
+  for (const auto& module : sections) {
     module->formatStatusXml(os);
   }
   xml::printFooter(os);
@@ -94,7 +94,7 @@ StatusReport::formatXml(std::ostream& os) const
 void
 StatusReport::formatText(std::ostream& os) const
 {
-  for (const unique_ptr<Module>& module : sections) {
+  for (const auto& module : sections) {
     module->formatStatusText(os);
   }
 }

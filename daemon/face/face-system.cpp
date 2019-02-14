@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -110,7 +110,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
         context.generalConfig.wantCongestionMarking = ConfigFile::parseYesNo(pair, "face_system.general");
       }
       else {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.general." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.general." + key));
       }
     }
   }
@@ -150,7 +150,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
     // const ConfigSection& subSection = pair.second;
 
     if (!seenSections.insert(sectionName).second) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Duplicate section face_system." + sectionName));
+      NDN_THROW(ConfigFile::Error("Duplicate section face_system." + sectionName));
     }
 
     if (sectionName == SECTION_GENERAL || sectionName == SECTION_NETDEVBOUND ||
@@ -158,7 +158,7 @@ FaceSystem::processConfig(const ConfigSection& configSection, bool isDryRun, con
       continue;
     }
 
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system." + sectionName));
+    NDN_THROW(ConfigFile::Error("Unrecognized option face_system." + sectionName));
   }
 }
 

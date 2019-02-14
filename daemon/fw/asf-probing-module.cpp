@@ -197,9 +197,8 @@ ProbingModule::setProbingInterval(size_t probingInterval)
     m_probingInterval = time::milliseconds(probingInterval);
   }
   else {
-    BOOST_THROW_EXCEPTION(std::invalid_argument("Probing interval should be >= "
-                                                + to_string(MIN_PROBING_INTERVAL.count())
-                                                + " milliseconds"));
+    NDN_THROW(std::invalid_argument("Probing interval should be >= " +
+                                    to_string(MIN_PROBING_INTERVAL.count()) + " milliseconds"));
   }
 }
 

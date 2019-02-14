@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -82,7 +82,7 @@ makeLocalNfdTransport(const ConfigSection& config)
     return make_shared<ndn::TcpTransport>("localhost", port);
   }
   else {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("No transport is available to communicate with NFD"));
+    NDN_THROW(ConfigFile::Error("No transport is available to communicate with NFD"));
   }
 }
 
@@ -114,10 +114,10 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
   , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler)
 {
   if (s_instance != nullptr) {
-    BOOST_THROW_EXCEPTION(std::logic_error("RIB service cannot be instantiated more than once"));
+    NDN_THROW(std::logic_error("RIB service cannot be instantiated more than once"));
   }
   if (&getGlobalIoService() != &getRibIoService()) {
-    BOOST_THROW_EXCEPTION(std::logic_error("RIB service must run on RIB thread"));
+    NDN_THROW(std::logic_error("RIB service must run on RIB thread"));
   }
   s_instance = this;
 
@@ -139,10 +139,10 @@ Service&
 Service::get()
 {
   if (s_instance == nullptr) {
-    BOOST_THROW_EXCEPTION(std::logic_error("RIB service is not instantiated"));
+    NDN_THROW(std::logic_error("RIB service is not instantiated"));
   }
   if (&getGlobalIoService() != &getRibIoService()) {
-    BOOST_THROW_EXCEPTION(std::logic_error("Must get RIB service on RIB thread"));
+    NDN_THROW(std::logic_error("Must get RIB service on RIB thread"));
   }
   return *s_instance;
 }
@@ -175,7 +175,7 @@ Service::checkConfig(const ConfigSection& section, const std::string& filename)
       ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
     }
     else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
     }
   }
 }
@@ -228,7 +228,7 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
       wantReadvertiseNlsr = ConfigFile::parseYesNo(item, CFG_SECTION + "." + CFG_READVERTISE_NLSR);
     }
     else {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
+      NDN_THROW(ConfigFile::Error("Unrecognized option " + CFG_SECTION + "." + key));
     }
   }
 

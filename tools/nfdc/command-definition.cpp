@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -146,7 +146,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
         NDN_LOG_TRACE(token << " is a no-param argument");
       }
       else if (i + 1 >= tokens.size()) {
-        BOOST_THROW_EXCEPTION(Error(arg.name + ": " + arg.metavar + " is missing"));
+        NDN_THROW(Error(arg.name + ": " + arg.metavar + " is missing"));
       }
       else {
         const std::string& valueToken = tokens[++i];
@@ -156,8 +156,8 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
         }
         catch (const std::exception& e) {
           NDN_LOG_TRACE(valueToken << " cannot be parsed as " << arg.valueType);
-          BOOST_THROW_EXCEPTION(Error(arg.name + ": cannot parse '" + valueToken + "' as " +
-                                      arg.metavar + " (" + e.what() + ")"));
+          NDN_THROW_NESTED(Error(arg.name + ": cannot parse '" + valueToken + "' as " +
+                                 arg.metavar + " (" + e.what() + ")"));
         }
         NDN_LOG_TRACE(valueToken << " is parsed as " << arg.valueType);
       }
@@ -188,8 +188,8 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
       catch (const std::exception& e) {
         if (arg.isRequired) { // the current token must be parsed as the value for arg
           NDN_LOG_TRACE(token << " cannot be parsed as value for " << arg.name);
-          BOOST_THROW_EXCEPTION(Error("cannot parse '" + token + "' as an argument name or as " +
-                                      arg.metavar + " for " + arg.name + " (" + e.what() + ")"));
+          NDN_THROW_NESTED(Error("cannot parse '" + token + "' as an argument name or as " +
+                                 arg.metavar + " for " + arg.name + " (" + e.what() + ")"));
         }
         else {
           // the current token may be a value for next positional argument
@@ -201,7 +201,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
     if (positionalArgIndex >= m_positionalArgs.size()) {
       // for loop has reached the end without finding a match,
       // which means token is not accepted as a value for positional argument
-      BOOST_THROW_EXCEPTION(Error("cannot parse '" + token + "' as an argument name"));
+      NDN_THROW(Error("cannot parse '" + token + "' as an argument name"));
     }
 
     // token is accepted; don't parse as the same positional argument again
@@ -210,7 +210,7 @@ CommandDefinition::parse(const std::vector<std::string>& tokens, size_t start) c
 
   for (const std::string& argName : m_requiredArgs) {
     if (ca.count(argName) == 0) {
-      BOOST_THROW_EXCEPTION(Error(argName + ": required argument is missing"));
+      NDN_THROW(Error(argName + ": required argument is missing"));
     }
   }
 
@@ -226,7 +226,7 @@ parseBoolean(const std::string& s)
   if (s == "off" || s == "false" || s == "disabled" || s == "no" || s == "0") {
     return false;
   }
-  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized boolean value '" + s + "'"));
+  NDN_THROW(std::invalid_argument("unrecognized boolean value '" + s + "'"));
 }
 
 static FacePersistency
@@ -238,7 +238,7 @@ parseFacePersistency(const std::string& s)
   if (s == "permanent") {
     return FacePersistency::FACE_PERSISTENCY_PERMANENT;
   }
-  BOOST_THROW_EXCEPTION(std::invalid_argument("unrecognized FacePersistency '" + s + "'"));
+  NDN_THROW(std::invalid_argument("unrecognized FacePersistency '" + s + "'"));
 }
 
 ndn::any
@@ -257,7 +257,7 @@ CommandDefinition::parseValue(ArgValueType valueType, const std::string& token) 
       // boost::lexical_cast<uint64_t> will accept negative number
       int64_t v = boost::lexical_cast<int64_t>(token);
       if (v < 0) {
-        BOOST_THROW_EXCEPTION(std::out_of_range("value '" + token + "' is negative"));
+        NDN_THROW(std::out_of_range("value '" + token + "' is negative"));
       }
       return static_cast<uint64_t>(v);
     }

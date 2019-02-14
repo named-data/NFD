@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -94,7 +94,7 @@ private:
     }
 
     if (m_faceUris.empty()) {
-      BOOST_THROW_EXCEPTION(std::runtime_error("No supported FaceUri pairs found in config file"));
+      NDN_THROW(std::runtime_error("No supported FaceUri pairs found in config file"));
     }
   }
 
@@ -159,7 +159,7 @@ private:
   static void
   onFaceCreationFailed(uint32_t status, const std::string& reason)
   {
-    BOOST_THROW_EXCEPTION(std::runtime_error("Failed to create face: " + to_string(status) + ": " + reason));
+    NDN_THROW(std::runtime_error("Failed to create face: [" + to_string(status) + "] " + reason));
   }
 
 private:

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,6 +65,7 @@
 #include <ndn-cxx/lp/nack.hpp>
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/backports.hpp>
+#include <ndn-cxx/util/exception.hpp>
 #include <ndn-cxx/util/signal.hpp>
 
 #include <boost/asio.hpp>
@@ -72,7 +73,6 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/throw_exception.hpp>
 
 namespace nfd {
 

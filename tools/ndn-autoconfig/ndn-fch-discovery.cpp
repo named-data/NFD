@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -154,15 +154,15 @@ NdnFchDiscovery::doStart()
 
     Url url(m_url);
     if (!url.isValid()) {
-      BOOST_THROW_EXCEPTION(HttpException("Invalid NDN-FCH URL: " + m_url));
+      NDN_THROW(HttpException("Invalid NDN-FCH URL: " + m_url));
     }
     if (!boost::iequals(url.getScheme(), "http")) {
-      BOOST_THROW_EXCEPTION(HttpException("Only http:// NDN-FCH URLs are supported"));
+      NDN_THROW(HttpException("Only http:// NDN-FCH URLs are supported"));
     }
 
     requestStream.connect(url.getHost(), url.getPort());
     if (!requestStream) {
-      BOOST_THROW_EXCEPTION(HttpException("HTTP connection error to " + m_url));
+      NDN_THROW(HttpException("HTTP connection error to " + m_url));
     }
 
     requestStream << "GET " << url.getPath() << " HTTP/1.0\r\n";
@@ -175,7 +175,7 @@ NdnFchDiscovery::doStart()
     std::string statusLine;
     std::getline(requestStream, statusLine);
     if (!requestStream) {
-      BOOST_THROW_EXCEPTION(HttpException("HTTP communication error"));
+      NDN_THROW(HttpException("HTTP communication error"));
     }
 
     std::stringstream responseStream(statusLine);
@@ -187,11 +187,11 @@ NdnFchDiscovery::doStart()
 
     std::getline(responseStream, statusMessage);
     if (!static_cast<bool>(requestStream) || httpVersion.substr(0, 5) != "HTTP/") {
-      BOOST_THROW_EXCEPTION(HttpException("HTTP communication error"));
+      NDN_THROW(HttpException("HTTP communication error"));
     }
     if (statusCode != 200) {
       boost::trim(statusMessage);
-      BOOST_THROW_EXCEPTION(HttpException("HTTP request failed: " + to_string(statusCode) + " " + statusMessage));
+      NDN_THROW(HttpException("HTTP request failed: " + to_string(statusCode) + " " + statusMessage));
     }
     std::string header;
     while (std::getline(requestStream, header) && header != "\r")
@@ -200,7 +200,7 @@ NdnFchDiscovery::doStart()
     std::string hubHost;
     requestStream >> hubHost;
     if (hubHost.empty()) {
-      BOOST_THROW_EXCEPTION(HttpException("NDN-FCH did not return hub host"));
+      NDN_THROW(HttpException("NDN-FCH did not return hub host"));
     }
 
     this->provideHubFaceUri("udp://" + hubHost);

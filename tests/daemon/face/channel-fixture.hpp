@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,16 +63,15 @@ protected:
   virtual unique_ptr<ChannelT>
   makeChannel()
   {
-    BOOST_THROW_EXCEPTION(std::logic_error("unimplemented"));
+    BOOST_FAIL("Unimplemented");
+    return nullptr;
   }
 
-  /**
-   * if port == 0, use the port number returned by getNextPort()
-   */
   virtual unique_ptr<ChannelT>
-  makeChannel(const boost::asio::ip::address& addr, uint16_t port = 0)
+  makeChannel(const boost::asio::ip::address&, uint16_t port = 0)
   {
-    BOOST_THROW_EXCEPTION(std::logic_error("unimplemented"));
+    BOOST_FAIL("Unimplemented");
+    return nullptr;
   }
 
   void
@@ -93,7 +92,7 @@ protected:
   virtual void
   connect(ChannelT&)
   {
-    BOOST_THROW_EXCEPTION(std::logic_error("unimplemented"));
+    BOOST_FAIL("Unimplemented");
   }
 
 protected:

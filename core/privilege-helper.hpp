@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,7 +38,7 @@ public:
   /** \brief represents a serious seteuid/gid failure
    *
    *  This should only be caught by main as part of a graceful program termination.
-   *  \note This is not an std::exception and BOOST_THROW_EXCEPTION should not be used.
+   *  \note This is not an std::exception and NDN_THROW should not be used.
    */
   class Error
   {

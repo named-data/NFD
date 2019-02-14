@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,8 +37,8 @@ parseLogLevel(const ConfigSection& item, const std::string& key)
   try {
     return ndn::util::parseLogLevel(item.get_value<std::string>());
   }
-  catch (const std::invalid_argument& e) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("Invalid setting for log." + key + ": " + e.what()));
+  catch (const std::invalid_argument&) {
+    NDN_THROW_NESTED(ConfigFile::Error("Invalid log level for '" + key + "' in section 'log'"));
   }
 }
 

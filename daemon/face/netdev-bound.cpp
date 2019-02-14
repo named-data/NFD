@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,8 +53,7 @@ NetdevBound::processConfig(OptionalConfigSection configSection,
         rules.push_back(parseRule(ruleIndex++, value));
       }
       else {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error(
-          "Unrecognized option face_system.netdev_bound." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.netdev_bound." + key));
       }
     }
   }
@@ -70,8 +69,8 @@ NetdevBound::processConfig(OptionalConfigSection configSection,
     for (const FaceUri& remote : rule.remotes) {
       std::string devScheme = remote.getScheme() + "+dev";
       if (!m_faceSystem.hasFactoryForScheme(devScheme)) {
-        BOOST_THROW_EXCEPTION(RuleParseError(
-          i, "scheme " + devScheme + " for " + remote.toString() + " is unavailable"));
+        NDN_THROW(RuleParseError(i, "scheme '" + devScheme + "' for " +
+                                 remote.toString() + " is unavailable"));
       }
     }
   }
@@ -102,44 +101,44 @@ NetdevBound::parseRule(int index, const ConfigSection& confRule) const
       try {
         rule.remotes.emplace_back(value.get_value<std::string>());
       }
-      catch (const FaceUri::Error& ex) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "invalid remote FaceUri", ex.what()));
+      catch (const FaceUri::Error&) {
+        NDN_THROW_NESTED(RuleParseError(index, "invalid remote FaceUri"));
       }
       if (!rule.remotes.back().isCanonical()) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "remote FaceUri is not canonical"));
+        NDN_THROW(RuleParseError(index, "remote FaceUri is not canonical"));
       }
     }
     else if (key == "whitelist") {
       if (hasWhitelist) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "duplicate whitelist"));
+        NDN_THROW(RuleParseError(index, "duplicate whitelist"));
       }
       try {
         rule.netifPredicate.parseWhitelist(value);
       }
-      catch (const ConfigFile::Error& ex) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "invalid whitelist", ex.what()));
+      catch (const ConfigFile::Error&) {
+        NDN_THROW_NESTED(RuleParseError(index, "invalid whitelist"));
       }
       hasWhitelist = true;
     }
     else if (key == "blacklist") {
       if (hasBlacklist) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "duplicate blacklist"));
+        NDN_THROW(RuleParseError(index, "duplicate blacklist"));
       }
       try {
         rule.netifPredicate.parseBlacklist(value);
       }
-      catch (const ConfigFile::Error& ex) {
-        BOOST_THROW_EXCEPTION(RuleParseError(index, "invalid blacklist", ex.what()));
+      catch (const ConfigFile::Error&) {
+        NDN_THROW_NESTED(RuleParseError(index, "invalid blacklist"));
       }
       hasBlacklist = true;
     }
     else {
-      BOOST_THROW_EXCEPTION(RuleParseError(index, "unrecognized option " + key));
+      NDN_THROW(RuleParseError(index, "unrecognized option " + key));
     }
   }
 
   if (rule.remotes.empty()) {
-    BOOST_THROW_EXCEPTION(RuleParseError(index, "remote FaceUri is missing"));
+    NDN_THROW(RuleParseError(index, "remote FaceUri is missing"));
   }
 
   ///\todo #3521 for each remote, check that there is a factory providing scheme+dev scheme

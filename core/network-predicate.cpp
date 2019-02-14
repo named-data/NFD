@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -47,7 +47,9 @@ NetworkPredicateBase::clear()
 }
 
 void
-NetworkPredicateBase::parseList(std::set<std::string>& set, const boost::property_tree::ptree& list, const std::string& section)
+NetworkPredicateBase::parseList(std::set<std::string>& set,
+                                const boost::property_tree::ptree& list,
+                                const std::string& section)
 {
   set.clear();
 
@@ -58,12 +60,14 @@ NetworkPredicateBase::parseList(std::set<std::string>& set, const boost::propert
     }
     else {
       if (!isRuleSupported(item.first)) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized rule \"" + item.first + "\" in \"" + section + "\" section"));
+        NDN_THROW(ConfigFile::Error("Unrecognized rule '" + item.first +
+                                    "' in section '" + section + "'"));
       }
 
       auto value = item.second.get_value<std::string>();
       if (!isRuleValid(item.first, value)) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Malformed " + item.first + " \"" + value + "\" in \"" + section + "\" section"));
+        NDN_THROW(ConfigFile::Error("Malformed " + item.first + " '" + value +
+                                    "' in section '" + section + "'"));
       }
       set.insert(value);
     }
@@ -71,7 +75,8 @@ NetworkPredicateBase::parseList(std::set<std::string>& set, const boost::propert
 }
 
 void
-NetworkPredicateBase::parseList(std::set<std::string>& set, std::initializer_list<std::pair<std::string, std::string>> list)
+NetworkPredicateBase::parseList(std::set<std::string>& set,
+                                std::initializer_list<std::pair<std::string, std::string>> list)
 {
   set.clear();
 
@@ -82,11 +87,11 @@ NetworkPredicateBase::parseList(std::set<std::string>& set, std::initializer_lis
     }
     else {
       if (!isRuleSupported(item.first)) {
-        BOOST_THROW_EXCEPTION(std::runtime_error("Unrecognized rule \"" + item.first + "\""));
+        NDN_THROW(std::runtime_error("Unrecognized rule '" + item.first + "'"));
       }
 
       if (!isRuleValid(item.first, item.second)) {
-        BOOST_THROW_EXCEPTION(std::runtime_error("Malformed " + item.first + " \"" + item.second + "\""));
+        NDN_THROW(std::runtime_error("Malformed " + item.first + " '" + item.second + "'"));
       }
       set.insert(item.second);
     }
@@ -135,7 +140,7 @@ NetworkInterfacePredicate::isRuleValid(const std::string& key, const std::string
     return Network::isValidCidr(value);
   }
   else {
-    BOOST_THROW_EXCEPTION(std::logic_error("Only supported rules are expected"));
+    NDN_THROW(std::logic_error("Only supported rules are expected"));
   }
 }
 
@@ -153,7 +158,7 @@ IpAddressPredicate::isRuleValid(const std::string& key, const std::string& value
     return Network::isValidCidr(value);
   }
   else {
-    BOOST_THROW_EXCEPTION(std::logic_error("Only supported rules are expected"));
+    NDN_THROW(std::logic_error("Only supported rules are expected"));
   }
 }
 

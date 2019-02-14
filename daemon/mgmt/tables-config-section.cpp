@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -72,8 +72,7 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     std::string policyName = csPolicyNode->get_value<std::string>();
     csPolicy = cs::Policy::create(policyName);
     if (csPolicy == nullptr) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Unknown cs_policy \"" + policyName + "\" in \"tables\" section"));
+      NDN_THROW(ConfigFile::Error("Unknown cs_policy '" + policyName + "' in section 'tables'"));
     }
   }
 
@@ -83,8 +82,7 @@ TablesConfigSection::processConfig(const ConfigSection& section, bool isDryRun)
     std::string policyName = unsolicitedDataPolicyNode->get_value<std::string>();
     unsolicitedDataPolicy = fw::UnsolicitedDataPolicy::create(policyName);
     if (unsolicitedDataPolicy == nullptr) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Unknown cs_unsolicited_policy \"" + policyName + "\" in \"tables\" section"));
+      NDN_THROW(ConfigFile::Error("Unknown cs_unsolicited_policy '" + policyName + "' in section 'tables'"));
     }
   }
   else {
@@ -127,15 +125,14 @@ TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, 
     Name strategy(prefixAndStrategy.second.get_value<std::string>());
 
     if (!Strategy::canCreate(strategy)) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Unknown strategy \"" + prefixAndStrategy.second.get_value<std::string>() +
-        "\" for prefix \"" + prefix.toUri() + "\" in \"strategy_choice\" section"));
+      NDN_THROW(ConfigFile::Error(
+        "Unknown strategy '" + prefixAndStrategy.second.get_value<std::string>() +
+        "' for prefix '" + prefix.toUri() + "' in section 'strategy_choice'"));
     }
 
     if (!choices.emplace(prefix, strategy).second) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Duplicate strategy choice for prefix \"" + prefix.toUri() +
-        "\" in \"strategy_choice\" section"));
+      NDN_THROW(ConfigFile::Error(
+        "Duplicate strategy choice for prefix '" + prefix.toUri() + "' in section 'strategy_choice'"));
     }
   }
 
@@ -146,9 +143,9 @@ TablesConfigSection::processStrategyChoiceSection(const ConfigSection& section, 
   StrategyChoice& sc = m_forwarder.getStrategyChoice();
   for (const auto& prefixAndStrategy : choices) {
     if (!sc.insert(prefixAndStrategy.first, prefixAndStrategy.second)) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "Failed to set strategy \"" + prefixAndStrategy.second.toUri() + "\" for "
-        "prefix \"" + prefixAndStrategy.first.toUri() + "\" in \"strategy_choicev\""));
+      NDN_THROW(ConfigFile::Error(
+        "Failed to set strategy '" + prefixAndStrategy.second.toUri() + "' for prefix '" +
+        prefixAndStrategy.first.toUri() + "' in section 'strategy_choice'"));
     }
   }
   ///\todo redesign so that strategy parameter errors can be catched during dry-run
@@ -161,11 +158,10 @@ TablesConfigSection::processNetworkRegionSection(const ConfigSection& section, b
     return;
   }
 
-  NetworkRegionTable& nrt = m_forwarder.getNetworkRegionTable();
+  auto& nrt = m_forwarder.getNetworkRegionTable();
   nrt.clear();
   for (const auto& pair : section) {
-    Name region(pair.first);
-    nrt.insert(region);
+    nrt.insert(Name(pair.first));
   }
 }
 

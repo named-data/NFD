@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -124,14 +124,13 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
   }
 
   if (section.empty()) {
-    BOOST_THROW_EXCEPTION(ConfigFile::Error("'authorize' is missing under 'authorizations'"));
+    NDN_THROW(ConfigFile::Error("'authorize' is missing under 'authorizations'"));
   }
 
   int authSectionIndex = 0;
   for (const auto& kv : section) {
     if (kv.first != "authorize") {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "'" + kv.first + "' section is not permitted under 'authorizations'"));
+      NDN_THROW(ConfigFile::Error("'" + kv.first + "' section is not permitted under 'authorizations'"));
     }
     const ConfigSection& authSection = kv.second;
 
@@ -140,8 +139,8 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       certfile = authSection.get<std::string>("certfile");
     }
     catch (const boost::property_tree::ptree_error&) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "'certfile' is missing under authorize[" + to_string(authSectionIndex) + "]"));
+      NDN_THROW(ConfigFile::Error("'certfile' is missing under authorize[" +
+                                  to_string(authSectionIndex) + "]"));
     }
 
     bool isAny = false;
@@ -156,9 +155,8 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       path certfilePath = absolute(certfile, path(filename).parent_path());
       cert = ndn::io::load<sec2::Certificate>(certfilePath.string());
       if (cert == nullptr) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error(
-          "cannot load certfile " + certfilePath.string() +
-          " for authorize[" + to_string(authSectionIndex) + "]"));
+        NDN_THROW(ConfigFile::Error("cannot load certfile " + certfilePath.string() +
+                                    " for authorize[" + to_string(authSectionIndex) + "]"));
       }
     }
 
@@ -167,8 +165,8 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       privSection = &authSection.get_child("privileges");
     }
     catch (const boost::property_tree::ptree_error&) {
-      BOOST_THROW_EXCEPTION(ConfigFile::Error(
-        "'privileges' is missing under authorize[" + to_string(authSectionIndex) + "]"));
+      NDN_THROW(ConfigFile::Error("'privileges' is missing under authorize[" +
+                                  to_string(authSectionIndex) + "]"));
     }
 
     if (privSection->empty()) {
@@ -178,8 +176,8 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
       const std::string& module = kv.first;
       auto found = m_validators.find(module);
       if (found == m_validators.end()) {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error(
-          "unknown module '" + module + "' under authorize[" + to_string(authSectionIndex) + "]"));
+        NDN_THROW(ConfigFile::Error("unknown module '" + module +
+                                    "' under authorize[" + to_string(authSectionIndex) + "]"));
       }
 
       if (isDryRun) {
@@ -195,8 +193,7 @@ CommandAuthenticator::processConfig(const ConfigSection& section, bool isDryRun,
         const Name& keyName = cert->getKeyName();
         sec2::Certificate certCopy = *cert;
         found->second->loadAnchor(certfile, std::move(certCopy));
-        NFD_LOG_INFO("authorize module=" << module << " signer=" << keyName <<
-                     " certfile=" << certfile);
+        NFD_LOG_INFO("authorize module=" << module << " signer=" << keyName << " certfile=" << certfile);
       }
     }
 

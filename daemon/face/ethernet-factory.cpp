@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -96,12 +96,12 @@ EthernetFactory::doProcessConfig(OptionalConfigSection configSection,
         const std::string& valueStr = value.get_value<std::string>();
         mcastConfig.group = ethernet::Address::fromString(valueStr);
         if (mcastConfig.group.isNull()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.ether.mcast_group: '" +
-                                valueStr + "' cannot be parsed as an Ethernet address"));
+          NDN_THROW(ConfigFile::Error("face_system.ether.mcast_group: '" +
+                                      valueStr + "' cannot be parsed as an Ethernet address"));
         }
         else if (!mcastConfig.group.isMulticast()) {
-          BOOST_THROW_EXCEPTION(ConfigFile::Error("face_system.ether.mcast_group: '" +
-                                valueStr + "' is not a multicast address"));
+          NDN_THROW(ConfigFile::Error("face_system.ether.mcast_group: '" +
+                                      valueStr + "' is not a multicast address"));
         }
       }
       else if (key == "mcast_ad_hoc") {
@@ -115,7 +115,7 @@ EthernetFactory::doProcessConfig(OptionalConfigSection configSection,
         mcastConfig.netifPredicate.parseBlacklist(value);
       }
       else {
-        BOOST_THROW_EXCEPTION(ConfigFile::Error("Unrecognized option face_system.ether." + key));
+        NDN_THROW(ConfigFile::Error("Unrecognized option face_system.ether." + key));
       }
     }
   }

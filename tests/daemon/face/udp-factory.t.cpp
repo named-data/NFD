@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -869,14 +869,14 @@ BOOST_FIXTURE_TEST_CASE(CreateChannel, UdpFactoryMcastFixture)
   SKIP_IF_NOT_SUPERUSER();
 #endif // __linux__
 
-  // createChannel with a local endpoint that has already been allocated for a UDP multicast face
+  // createChannel with a local endpoint that has already been allocated to a UDP multicast face
   if (!netifsV4.empty()) {
     auto mcastFace = createMulticastFace("127.0.0.1", "224.0.0.254", 20072);
     BOOST_CHECK_EXCEPTION(createChannel("127.0.0.1", 20072), UdpFactory::Error,
                           [] (const UdpFactory::Error& e) {
                             return strcmp(e.what(),
                                           "Cannot create UDP channel on 127.0.0.1:20072, "
-                                          "endpoint already allocated for a UDP multicast face") == 0;
+                                          "endpoint already allocated to a UDP multicast face") == 0;
                           });
   }
   if (!netifsV6.empty()) {
@@ -885,7 +885,7 @@ BOOST_FIXTURE_TEST_CASE(CreateChannel, UdpFactoryMcastFixture)
                           [] (const UdpFactory::Error& e) {
                             return strcmp(e.what(),
                                           "Cannot create UDP channel on [::1]:20072, "
-                                          "endpoint already allocated for a UDP multicast face") == 0;
+                                          "endpoint already allocated to a UDP multicast face") == 0;
                           });
   }
 }
@@ -917,7 +917,7 @@ BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV4, UdpFactoryMcastFixture)
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "Cannot create UDP multicast face on 127.0.0.1:20071, "
-                                        "endpoint already allocated for a UDP channel") == 0;
+                                        "endpoint already allocated to a UDP channel") == 0;
                         });
 
   // create with a local endpoint already used by a multicast face on a different multicast group
@@ -925,7 +925,7 @@ BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV4, UdpFactoryMcastFixture)
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "Cannot create UDP multicast face on 127.0.0.1:20070, "
-                                        "endpoint already allocated for a different UDP multicast face") == 0;
+                                        "endpoint already allocated to a different UDP multicast face") == 0;
                         });
 }
 
@@ -956,7 +956,7 @@ BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV6, UdpFactoryMcastFixture)
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "Cannot create UDP multicast face on [::1]:20071, "
-                                        "endpoint already allocated for a UDP channel") == 0;
+                                        "endpoint already allocated to a UDP channel") == 0;
                         });
 
   // create with a local endpoint already used by a multicast face on a different multicast group
@@ -964,7 +964,7 @@ BOOST_FIXTURE_TEST_CASE(CreateMulticastFaceV6, UdpFactoryMcastFixture)
                         [] (const UdpFactory::Error& e) {
                           return strcmp(e.what(),
                                         "Cannot create UDP multicast face on [::1]:20070, "
-                                        "endpoint already allocated for a different UDP multicast face") == 0;
+                                        "endpoint already allocated to a different UDP multicast face") == 0;
                         });
 }
 
