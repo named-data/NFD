@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -110,7 +110,7 @@ protected:
                const Interest& interest) override
   {
     sendInterestHistory.push_back({pitEntry->getInterest(), outFace.getId(), interest});
-    pitEntry->insertOrUpdateOutRecord(outFace, interest);
+    pitEntry->insertOrUpdateOutRecord(outFace, 0, interest);
     afterAction();
   }
 
@@ -126,7 +126,7 @@ protected:
            const lp::NackHeader& header) override
   {
     sendNackHistory.push_back({pitEntry->getInterest(), outFace.getId(), header});
-    pitEntry->deleteInRecord(outFace);
+    pitEntry->deleteInRecord(outFace, 0);
     afterAction();
   }
 

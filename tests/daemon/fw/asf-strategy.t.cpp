@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -273,7 +273,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       // Get pitEntry of node A
       shared_ptr<pit::Entry> pitEntry = topo.getForwarder(nodeA).getPit().find(*interest);
       //get outRecord associated with face towards B
-      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA));
+      pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkAB->getFace(nodeA), 0);
 
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
@@ -294,13 +294,13 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       pitEntry = topo.getForwarder(nodeB).getPit().find(*interest);
 
       // Get outRecord associated with face towards D.
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
+      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB), 0);
 
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
       // RTT between B and D
       this->advanceClocks(time::milliseconds(5), time::milliseconds(160));
-      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB));
+      outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB), 0);
 
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nInData, i);
 

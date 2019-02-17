@@ -114,7 +114,7 @@ void
 FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
 {
   // Calculate RTT
-  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(inFace);
+  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(inFace, 0);
 
   if (outRecord == pitEntry->out_end()) { // no out-record
     NFD_LOG_TRACE(pitEntry->getInterest() << " dataFrom inFace=" << inFace.getId() << " no-out-record");

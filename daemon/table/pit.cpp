@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -113,12 +113,11 @@ Pit::erase(Entry* entry, bool canDeleteNte)
 }
 
 void
-Pit::deleteInOutRecords(Entry* entry, const Face& face)
+Pit::deleteInOutRecordsByFace(Entry* entry, const Face& face)
 {
   BOOST_ASSERT(entry != nullptr);
 
-  entry->deleteInRecord(face);
-  entry->deleteOutRecord(face);
+  entry->deleteInOutRecordsByFace(face);
 
   /// \todo decide whether to delete PIT entry if there's no more in/out-record left
 }

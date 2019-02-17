@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -227,8 +227,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNack)
 
   face1->receiveInterest(*interest);
   auto entry = pit.find(*interest);
-  entry->insertOrUpdateOutRecord(*face2, *interest);
-  entry->insertOrUpdateOutRecord(*face3, *interest);
+  entry->insertOrUpdateOutRecord(*face2, 0, *interest);
+  entry->insertOrUpdateOutRecord(*face3, 0, *interest);
 
   this->advanceClocks(10_ms);
   face2->receiveNack(nack);
@@ -394,8 +394,8 @@ BOOST_AUTO_TEST_CASE(ReceiveNackAfterResetTimer)
 
   face1->receiveInterest(*interest);
   auto entry = pit.find(*interest);
-  entry->insertOrUpdateOutRecord(*face2, *interest);
-  entry->insertOrUpdateOutRecord(*face3, *interest);
+  entry->insertOrUpdateOutRecord(*face2, 0, *interest);
+  entry->insertOrUpdateOutRecord(*face3, 0, *interest);
 
   //pitEntry is not erased after receiving the first Nack
   this->advanceClocks(10_ms);

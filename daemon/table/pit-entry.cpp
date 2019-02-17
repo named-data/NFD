@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,21 +50,25 @@ Entry::canMatch(const Interest& interest, size_t nEqualNameComps) const
 }
 
 InRecordCollection::iterator
-Entry::getInRecord(const Face& face)
+Entry::getInRecord(const Face& face, uint64_t endpointId)
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+    [&face, endpointId] (const InRecord& inRecord) {
+      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
+    });
 }
 
 InRecordCollection::iterator
-Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
+Entry::insertOrUpdateInRecord(Face& face, uint64_t endpointId, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+    [&face, endpointId] (const InRecord& inRecord) {
+      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
+    });
   if (it == m_inRecords.end()) {
-    m_inRecords.emplace_front(face);
+    m_inRecords.emplace_front(face, endpointId);
     it = m_inRecords.begin();
   }
 
@@ -73,10 +77,12 @@ Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
 }
 
 void
-Entry::deleteInRecord(const Face& face)
+Entry::deleteInRecord(const Face& face, uint64_t endpointId)
 {
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
-    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+    [&face, endpointId] (const InRecord& inRecord) {
+      return &inRecord.getFace() == &face && inRecord.getEndpointId() == endpointId;
+    });
   if (it != m_inRecords.end()) {
     m_inRecords.erase(it);
   }
@@ -89,21 +95,25 @@ Entry::clearInRecords()
 }
 
 OutRecordCollection::iterator
-Entry::getOutRecord(const Face& face)
+Entry::getOutRecord(const Face& face, uint64_t endpointId)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+    [&face, endpointId] (const OutRecord& outRecord) {
+      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
+    });
 }
 
 OutRecordCollection::iterator
-Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
+Entry::insertOrUpdateOutRecord(Face& face, uint64_t endpointId, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+    [&face, endpointId] (const OutRecord& outRecord) {
+      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
+    });
   if (it == m_outRecords.end()) {
-    m_outRecords.emplace_front(face);
+    m_outRecords.emplace_front(face, endpointId);
     it = m_outRecords.begin();
   }
 
@@ -112,13 +122,26 @@ Entry::insertOrUpdateOutRecord(Face& face, const Interest& interest)
 }
 
 void
-Entry::deleteOutRecord(const Face& face)
+Entry::deleteOutRecord(const Face& face, uint64_t endpointId)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
-    [&face] (const OutRecord& outRecord) { return &outRecord.getFace() == &face; });
+    [&face, endpointId] (const OutRecord& outRecord) {
+      return &outRecord.getFace() == &face && outRecord.getEndpointId() == endpointId;
+    });
   if (it != m_outRecords.end()) {
     m_outRecords.erase(it);
   }
+}
+
+void
+Entry::deleteInOutRecordsByFace(const Face& face)
+{
+  m_inRecords.remove_if([&face] (const InRecord& inRecord) {
+    return &inRecord.getFace() == &face;
+  });
+  m_outRecords.remove_if([&face] (const OutRecord& outRecord) {
+    return &outRecord.getFace() == &face;
+  });
 }
 
 } // namespace pit

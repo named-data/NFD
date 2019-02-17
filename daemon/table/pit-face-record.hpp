@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,11 +40,13 @@ namespace pit {
 class FaceRecord : public StrategyInfoHost
 {
 public:
-  explicit
-  FaceRecord(Face& face);
+  FaceRecord(Face& face, uint64_t endpointId);
 
   Face&
   getFace() const;
+
+  uint64_t
+  getEndpointId() const;
 
   uint32_t
   getLastNonce() const;
@@ -65,6 +67,7 @@ public:
 
 private:
   Face& m_face;
+  uint64_t m_endpointId;
   uint32_t m_lastNonce;
   time::steady_clock::TimePoint m_lastRenewed;
   time::steady_clock::TimePoint m_expiry;
@@ -74,6 +77,12 @@ inline Face&
 FaceRecord::getFace() const
 {
   return m_face;
+}
+
+inline uint64_t
+FaceRecord::getEndpointId() const
+{
+  return m_endpointId;
 }
 
 inline uint32_t

@@ -103,12 +103,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(OneUpstream,
   shared_ptr<Interest> interest1 = makeInterest("/McQYjMbm", 992);
   shared_ptr<Interest> interest2 = makeInterest("/McQYjMbm", 114);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
-  pitEntry->insertOrUpdateInRecord(*this->face2, *interest2);
-  pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
+  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
+  pitEntry->insertOrUpdateInRecord(*this->face2, 0, *interest2);
+  pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
 
   lp::Nack nack3 = makeNack("/McQYjMbm", 992, lp::NackReason::CONGESTION);
-  pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*this->face3, 0)->setIncomingNack(nack3);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(*this->face3, nack3, pitEntry); },
@@ -137,18 +137,18 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(TwoUpstreams,
 
   shared_ptr<Interest> interest1 = makeInterest("/aS9FAyUV19", 286);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
-  pitEntry->insertOrUpdateOutRecord(*this->face4, *interest1);
+  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*this->face4, 0, *interest1);
 
   lp::Nack nack3 = makeNack("/aS9FAyUV19", 286, lp::NackReason::CONGESTION);
-  pitEntry->getOutRecord(*this->face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*this->face3, 0)->setIncomingNack(nack3);
   this->strategy.afterReceiveNack(*this->face3, nack3, pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0); // don't send Nack until all upstreams have Nacked
 
   lp::Nack nack4 = makeNack("/aS9FAyUV19", 286, lp::NackReason::CONGESTION);
-  pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveNack(*this->face4, nack4, pitEntry); },
     this->limitedIo));
@@ -171,18 +171,18 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
   shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
   interest1->setInterestLifetime(time::milliseconds(400));
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(*this->face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(*this->face3, *interest1);
+  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
 
   this->advanceClocks(time::milliseconds(300));
   shared_ptr<Interest> interest2 = makeInterest("/sIYw0TXWDj", 223);
-  pitEntry->insertOrUpdateInRecord(*this->face1, *interest2);
-  pitEntry->insertOrUpdateOutRecord(*this->face4, *interest2);
+  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest2);
+  pitEntry->insertOrUpdateOutRecord(*this->face4, 0, *interest2);
 
   this->advanceClocks(time::milliseconds(200)); // face3 has timed out
 
   lp::Nack nack4 = makeNack("/sIYw0TXWDj", 223, lp::NackReason::CONGESTION);
-  pitEntry->getOutRecord(*this->face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
   this->strategy.afterReceiveNack(*this->face4, nack4, pitEntry);
 
   BOOST_CHECK_EQUAL(this->strategy.sendNackHistory.size(), 0);
@@ -323,18 +323,18 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(CombineReasons, Combination, NackReasonCombinat
 
   shared_ptr<Interest> interest1 = makeInterest("/F6sEwB24I", 282);
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest1).first;
-  pitEntry->insertOrUpdateInRecord(*face1, *interest1);
-  pitEntry->insertOrUpdateOutRecord(*face3, *interest1);
-  pitEntry->insertOrUpdateOutRecord(*face4, *interest1);
+  pitEntry->insertOrUpdateInRecord(*face1, 0, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face3, 0, *interest1);
+  pitEntry->insertOrUpdateOutRecord(*face4, 0, *interest1);
 
   lp::Nack nack3 = makeNack(*interest1, Combination::getX());
-  pitEntry->getOutRecord(*face3)->setIncomingNack(nack3);
+  pitEntry->getOutRecord(*face3, 0)->setIncomingNack(nack3);
   strategy.afterReceiveNack(*face3, nack3, pitEntry);
 
   BOOST_CHECK_EQUAL(strategy.sendNackHistory.size(), 0);
 
   lp::Nack nack4 = makeNack(*interest1, Combination::getY());
-  pitEntry->getOutRecord(*face4)->setIncomingNack(nack4);
+  pitEntry->getOutRecord(*face4, 0)->setIncomingNack(nack4);
   strategy.afterReceiveNack(*face4, nack4, pitEntry);
 
   BOOST_REQUIRE_EQUAL(strategy.sendNackHistory.size(), 1);

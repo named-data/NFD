@@ -95,7 +95,7 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
                            << " pitEntry-to=" << outFace.getId());
 
     if (suppressResult == RetxSuppressionResult::FORWARD) {
-      m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace));
+      m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace, 0));
     }
     ++nEligibleNextHops;
   }

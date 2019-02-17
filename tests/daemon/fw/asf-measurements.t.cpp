@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -100,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, UnitTestTimeFixture)
   shared_ptr<pit::Entry> pitEntry = make_shared<pit::Entry>(*interest);
   std::shared_ptr<DummyFace> face = make_shared<DummyFace>();
 
-  pitEntry->insertOrUpdateOutRecord(*face, *interest);
+  pitEntry->insertOrUpdateOutRecord(*face, 0, *interest);
 
   RttEstimator::Duration rtt(50);
   this->advanceClocks(time::milliseconds(5), rtt);

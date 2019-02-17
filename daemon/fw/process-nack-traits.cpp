@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -56,7 +56,7 @@ ProcessNackTraitsBase::processNack(const Face& inFace, const lp::Nack& nack,
 
   if (nOutRecordsNotNacked == 1) {
     BOOST_ASSERT(lastFaceNotNacked != nullptr);
-    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked);
+    pit::InRecordCollection::iterator inR = pitEntry->getInRecord(*lastFaceNotNacked, 0);
     if (inR != pitEntry->in_end()) {
       // one out-record not Nacked, which is also a downstream
       NFD_LOG_DEBUG(nack.getInterest() << " nack-from=" << inFace.getId() <<

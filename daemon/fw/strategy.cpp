@@ -199,7 +199,7 @@ Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, con
 
   // delete the PIT entry's in-record based on outFace,
   // since Data is sent to outFace from which the Interest was received
-  pitEntry->deleteInRecord(outFace);
+  pitEntry->deleteInRecord(outFace, 0);
 
   m_forwarder.onOutgoingData(data, *const_pointer_cast<Face>(outFace.shared_from_this()));
 }

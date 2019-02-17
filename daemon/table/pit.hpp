@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -93,10 +93,10 @@ public:
     this->erase(entry, true);
   }
 
-  /** \brief deletes in-record and out-record for face
+  /** \brief deletes all in-records and out-records for \p face
    */
   void
-  deleteInOutRecords(Entry* entry, const Face& face);
+  deleteInOutRecordsByFace(Entry* entry, const Face& face);
 
 public: // enumeration
   typedef Iterator const_iterator;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,8 +28,9 @@
 namespace nfd {
 namespace pit {
 
-FaceRecord::FaceRecord(Face& face)
+FaceRecord::FaceRecord(Face& face, uint64_t endpointId)
   : m_face(face)
+  , m_endpointId(endpointId)
   , m_lastNonce(0)
   , m_lastRenewed(time::steady_clock::TimePoint::min())
   , m_expiry(time::steady_clock::TimePoint::min())

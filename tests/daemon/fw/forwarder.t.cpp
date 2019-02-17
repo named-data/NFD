@@ -137,13 +137,13 @@ BOOST_AUTO_TEST_CASE(OutgoingInterest)
   auto interestA1 = makeInterest("/A");
   interestA1->setNonce(8378);
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA1).first;
-  pitA->insertOrUpdateInRecord(*face1, *interestA1);
+  pitA->insertOrUpdateInRecord(*face1, 0, *interestA1);
 
   auto interestA2 = makeInterest("/A");
   interestA2->setNonce(1698);
   forwarder.onOutgoingInterest(pitA, *face2, *interestA2);
 
-  pit::OutRecordCollection::iterator outA2 = pitA->getOutRecord(*face2);
+  pit::OutRecordCollection::iterator outA2 = pitA->getOutRecord(*face2, 0);
   BOOST_REQUIRE(outA2 != pitA->out_end());
   BOOST_CHECK_EQUAL(outA2->getLastNonce(), 1698);
 
@@ -315,15 +315,15 @@ BOOST_AUTO_TEST_CASE(IncomingData)
   Pit& pit = forwarder.getPit();
   shared_ptr<Interest> interest0 = makeInterest("ndn:/");
   shared_ptr<pit::Entry> pit0 = pit.insert(*interest0).first;
-  pit0->insertOrUpdateInRecord(*face1, *interest0);
+  pit0->insertOrUpdateInRecord(*face1, 0, *interest0);
   shared_ptr<Interest> interestA = makeInterest("ndn:/A");
   shared_ptr<pit::Entry> pitA = pit.insert(*interestA).first;
-  pitA->insertOrUpdateInRecord(*face1, *interestA);
-  pitA->insertOrUpdateInRecord(*face2, *interestA);
+  pitA->insertOrUpdateInRecord(*face1, 0, *interestA);
+  pitA->insertOrUpdateInRecord(*face2, 0, *interestA);
   shared_ptr<Interest> interestC = makeInterest("ndn:/A/B/C");
   shared_ptr<pit::Entry> pitC = pit.insert(*interestC).first;
-  pitC->insertOrUpdateInRecord(*face3, *interestC);
-  pitC->insertOrUpdateInRecord(*face4, *interestC);
+  pitC->insertOrUpdateInRecord(*face3, 0, *interestC);
+  pitC->insertOrUpdateInRecord(*face4, 0, *interestC);
 
   shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
   forwarder.onIncomingData(*face3, *dataD);
@@ -356,10 +356,10 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   // dispatch to the correct strategy
   shared_ptr<Interest> interest1 = makeInterest("/A/AYJqayrzF", 562);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateOutRecord(*face1, *interest1);
+  pit1->insertOrUpdateOutRecord(*face1, 0, *interest1);
   shared_ptr<Interest> interest2 = makeInterest("/B/EVyP73ru", 221);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2).first;
-  pit2->insertOrUpdateOutRecord(*face1, *interest2);
+  pit2->insertOrUpdateOutRecord(*face1, 0, *interest2);
 
   lp::Nack nack1 = makeNack("/A/AYJqayrzF", 562, lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 1);
 
   // record Nack on PIT out-record
-  pit::OutRecordCollection::iterator outRecord1 = pit1->getOutRecord(*face1);
+  pit::OutRecordCollection::iterator outRecord1 = pit1->getOutRecord(*face1, 0);
   BOOST_REQUIRE(outRecord1 != pit1->out_end());
   BOOST_REQUIRE(outRecord1->getIncomingNack() != nullptr);
   BOOST_CHECK_EQUAL(outRecord1->getIncomingNack()->getReason(), lp::NackReason::CONGESTION);
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   // drop if no out-record
   shared_ptr<Interest> interest4 = makeInterest("/Etab4KpY", 157);
   shared_ptr<pit::Entry> pit4 = pit.insert(*interest4).first;
-  pit4->insertOrUpdateOutRecord(*face1, *interest4);
+  pit4->insertOrUpdateOutRecord(*face1, 0, *interest4);
 
   lp::Nack nack4a = makeNack("/Etab4KpY", 157, lp::NackReason::CONGESTION);
   strategyA.afterReceiveNack_count = 0;
@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_CASE(IncomingNack)
   BOOST_CHECK_EQUAL(strategyB.afterReceiveNack_count, 0);
 
   // drop if inFace is multi-access
-  pit4->insertOrUpdateOutRecord(*face3, *interest4);
+  pit4->insertOrUpdateOutRecord(*face3, 0, *interest4);
   strategyA.afterReceiveNack_count = 0;
   strategyB.afterReceiveNack_count = 0;
   forwarder.onIncomingNack(*face3, nack4a);
@@ -439,7 +439,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   // don't send Nack if there's no in-record
   shared_ptr<Interest> interest1 = makeInterest("/fM5IVEtC", 719);
   shared_ptr<pit::Entry> pit1 = pit.insert(*interest1).first;
-  pit1->insertOrUpdateInRecord(*face1, *interest1);
+  pit1->insertOrUpdateInRecord(*face1, 0, *interest1);
 
   face2->sentNacks.clear();
   forwarder.onOutgoingNack(pit1, *face2, nackHeader);
@@ -448,9 +448,9 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   // send Nack with correct Nonce
   shared_ptr<Interest> interest2a = makeInterest("/Vi8tRm9MG3", 152);
   shared_ptr<pit::Entry> pit2 = pit.insert(*interest2a).first;
-  pit2->insertOrUpdateInRecord(*face1, *interest2a);
+  pit2->insertOrUpdateInRecord(*face1, 0, *interest2a);
   shared_ptr<Interest> interest2b = makeInterest("/Vi8tRm9MG3", 808);
-  pit2->insertOrUpdateInRecord(*face2, *interest2b);
+  pit2->insertOrUpdateInRecord(*face2, 0, *interest2b);
 
   face1->sentNacks.clear();
   forwarder.onOutgoingNack(pit2, *face1, nackHeader);
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face1->sentNacks.back().getInterest().getNonce(), 152);
 
   // erase in-record
-  pit::InRecordCollection::iterator inRecord2a = pit2->getInRecord(*face1);
+  pit::InRecordCollection::iterator inRecord2a = pit2->getInRecord(*face1, 0);
   BOOST_CHECK(inRecord2a == pit2->in_end());
 
   // send Nack with correct Nonce
@@ -470,12 +470,12 @@ BOOST_AUTO_TEST_CASE(OutgoingNack)
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest().getNonce(), 808);
 
   // erase in-record
-  pit::InRecordCollection::iterator inRecord2b = pit2->getInRecord(*face1);
+  pit::InRecordCollection::iterator inRecord2b = pit2->getInRecord(*face1, 0);
   BOOST_CHECK(inRecord2b == pit2->in_end());
 
   // don't send Nack to multi-access face
   shared_ptr<Interest> interest2c = makeInterest("/Vi8tRm9MG3", 228);
-  pit2->insertOrUpdateInRecord(*face3, *interest2c);
+  pit2->insertOrUpdateInRecord(*face3, 0, *interest2c);
 
   face3->sentNacks.clear();
   forwarder.onOutgoingNack(pit1, *face3, nackHeader);

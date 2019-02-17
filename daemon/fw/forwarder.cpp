@@ -176,7 +176,7 @@ Forwarder::onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& 
   ++m_counters.nCsMisses;
 
   // insert in-record
-  pitEntry->insertOrUpdateInRecord(const_cast<Face&>(inFace), interest);
+  pitEntry->insertOrUpdateInRecord(const_cast<Face&>(inFace), 0, interest);
 
   // set PIT expiry timer to the time that the last PIT in-record expires
   auto lastExpiring = std::max_element(pitEntry->in_begin(), pitEntry->in_end(), &compare_InRecord_expiry);
@@ -230,7 +230,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outF
                 " interest=" << pitEntry->getName());
 
   // insert out-record
-  pitEntry->insertOrUpdateOutRecord(outFace, interest);
+  pitEntry->insertOrUpdateOutRecord(outFace, 0, interest);
 
   // send Interest
   outFace.sendInterest(interest);
@@ -309,7 +309,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
     this->insertDeadNonceList(*pitEntry, &inFace);
 
     // delete PIT entry's out-record
-    pitEntry->deleteOutRecord(inFace);
+    pitEntry->deleteOutRecord(inFace, 0);
   }
   // when more than one PIT entry is matched, trigger strategy: before satisfy Interest,
   // and send Data to all matched out faces
@@ -343,7 +343,7 @@ Forwarder::onIncomingData(Face& inFace, const Data& data)
 
       // clear PIT entry's in and out records
       pitEntry->clearInRecords();
-      pitEntry->deleteOutRecord(inFace);
+      pitEntry->deleteOutRecord(inFace, 0);
     }
 
     // foreach pending downstream
@@ -425,7 +425,7 @@ Forwarder::onIncomingNack(Face& inFace, const lp::Nack& nack)
   }
 
   // has out-record?
-  pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(inFace);
+  pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(inFace, 0);
   // if no out-record found, drop
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG("onIncomingNack face=" << inFace.getId() <<
@@ -472,7 +472,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& ou
   }
 
   // has in-record?
-  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(outFace);
+  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(outFace, 0);
 
   // if no in-record found, drop
   if (inRecord == pitEntry->in_end()) {
@@ -499,7 +499,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& ou
   nackPkt.setHeader(nack);
 
   // erase in-record
-  pitEntry->deleteInRecord(outFace);
+  pitEntry->deleteInRecord(outFace, 0);
 
   // send Nack on face
   const_cast<Face&>(outFace).sendNack(nackPkt);
@@ -548,7 +548,7 @@ Forwarder::insertDeadNonceList(pit::Entry& pitEntry, Face* upstream)
   }
   else {
     // insert outgoing Nonce of a specific face
-    auto outRecord = pitEntry.getOutRecord(*upstream);
+    auto outRecord = pitEntry.getOutRecord(*upstream, 0);
     if (outRecord != pitEntry.getOutRecords().end()) {
       m_deadNonceList.add(pitEntry.getName(), outRecord->getLastNonce());
     }

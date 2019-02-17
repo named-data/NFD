@@ -161,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,
 
   shared_ptr<Interest> interest = makeInterest(scenario.getInterestName());
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest).first;
-  pitEntry->insertOrUpdateInRecord(*this->face1, *interest);
+  pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
     [&] { this->strategy.afterReceiveInterest(*this->face1, *interest, pitEntry); },
