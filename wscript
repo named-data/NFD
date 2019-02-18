@@ -88,35 +88,30 @@ def configure(conf):
                'pch', 'boost', 'dependency-checker', 'websocket',
                'doxygen', 'sphinx_build'])
 
-    if conf.options.with_tests:
-        conf.env.WITH_TESTS = True
-        conf.define('WITH_TESTS', 1)
-    if conf.options.with_other_tests:
-        conf.env.WITH_OTHER_TESTS = True
-        conf.define('WITH_OTHER_TESTS', 1)
+    conf.env.WITH_TESTS = conf.options.with_tests
+    conf.env.WITH_OTHER_TESTS = conf.options.with_other_tests
 
     conf.find_program('bash', var='BASH')
 
     if 'PKG_CONFIG_PATH' not in os.environ:
         os.environ['PKG_CONFIG_PATH'] = Utils.subst_vars('${LIBDIR}/pkgconfig', conf.env)
-    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'],
-                   uselib_store='NDN_CXX', mandatory=True)
+    conf.check_cfg(package='libndn-cxx', args=['--cflags', '--libs'], uselib_store='NDN_CXX')
 
-    conf.check_cfg(package='libsystemd', args=['--cflags', '--libs'],
-                   uselib_store='SYSTEMD', mandatory=False)
+    if not conf.options.without_systemd:
+        conf.check_cfg(package='libsystemd', args=['--cflags', '--libs'],
+                       uselib_store='SYSTEMD', mandatory=False)
 
     conf.checkDependency(name='librt', lib='rt', mandatory=False)
     conf.checkDependency(name='libresolv', lib='resolv', mandatory=False)
 
-    if not conf.check_cxx(msg='Checking if privilege drop/elevation is supported', mandatory=False,
-                          define_name='HAVE_PRIVILEGE_DROP_AND_ELEVATE', fragment=PRIVILEGE_CHECK_CODE):
-        Logs.warn('Dropping privileges is not supported on this platform')
+    conf.check_cxx(msg='Checking if privilege drop/elevation is supported', mandatory=False,
+                   define_name='HAVE_PRIVILEGE_DROP_AND_ELEVATE', fragment=PRIVILEGE_CHECK_CODE)
 
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
-    boost_libs = 'system chrono program_options thread log log_setup'
-    if conf.options.with_tests or conf.options.with_other_tests:
-        boost_libs += ' unit_test_framework'
+    boost_libs = ['system', 'program_options', 'filesystem', 'thread']
+    if conf.env.WITH_TESTS or conf.env.WITH_OTHER_TESTS:
+        boost_libs.append('unit_test_framework')
 
     conf.check_boost(lib=boost_libs, mt=True)
     if conf.env.BOOST_VERSION_NUMBER < 105800:
@@ -127,11 +122,11 @@ def configure(conf):
     conf.load('unix-socket')
 
     if not conf.options.without_libpcap:
-        conf.checkDependency(name='libpcap', lib='pcap', mandatory=True,
+        conf.checkDependency(name='libpcap', lib='pcap',
                              errmsg='not found, but required for Ethernet face support. '
                                     'Specify --without-libpcap to disable Ethernet face support.')
 
-    conf.checkWebsocket(mandatory=True)
+    conf.checkWebsocket()
 
     conf.check_compiler_flags()
 
@@ -139,10 +134,13 @@ def configure(conf):
     conf.load('coverage')
     conf.load('sanitizers')
 
+    conf.define_cond('WITH_TESTS', conf.env.WITH_TESTS)
+    conf.define_cond('WITH_OTHER_TESTS', conf.env.WITH_OTHER_TESTS)
     conf.define('DEFAULT_CONFIG_FILE', '%s/ndn/nfd.conf' % conf.env.SYSCONFDIR)
-    # disable assertions in release builds
-    if not conf.options.debug:
-        conf.define('NDEBUG', 1)
+    # The config header will contain all defines that were added using conf.define()
+    # or conf.define_cond().  Everything that was added directly to conf.env.DEFINES
+    # will not appear in the config header, but will instead be passed directly to the
+    # compiler on the command line.
     conf.write_config_header('core/config.hpp')
 
 def build(bld):
@@ -219,7 +217,7 @@ def build(bld):
 
     bld.install_files('${SYSCONFDIR}/ndn', 'autoconfig.conf.sample')
 
-    if Utils.unversioned_sys_platform() == 'linux':
+    if bld.env.HAVE_SYSTEMD:
         systemd_units = bld.path.ant_glob('systemd/*.in')
         bld(features='subst',
             name='systemd-units',

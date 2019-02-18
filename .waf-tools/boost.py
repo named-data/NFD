@@ -56,6 +56,7 @@ from waflib.TaskGen import feature, after_method
 
 BOOST_LIBS = ['/usr/lib', '/usr/local/lib', '/opt/local/lib', '/sw/lib', '/lib']
 BOOST_INCLUDES = ['/usr/include', '/usr/local/include', '/opt/local/include', '/sw/include']
+
 BOOST_VERSION_FILE = 'boost/version.hpp'
 BOOST_VERSION_CODE = '''
 #include <iostream>
@@ -90,13 +91,18 @@ int main() { boost::thread t; }
 
 BOOST_LOG_CODE = '''
 #include <boost/log/trivial.hpp>
+int main() { BOOST_LOG_TRIVIAL(info) << "boost_log is working"; }
+'''
+
+BOOST_LOG_SETUP_CODE = '''
+#include <boost/log/trivial.hpp>
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 int main() {
 	using namespace boost::log;
 	add_common_attributes();
 	add_console_log(std::clog, keywords::format = "%Message%");
-	BOOST_LOG_TRIVIAL(debug) << "log is working" << std::endl;
+	BOOST_LOG_TRIVIAL(info) << "boost_log_setup is working";
 }
 '''
 
@@ -145,7 +151,7 @@ def options(opt):
 	opt.add_option('--boost-abi', type='string', default='', dest='boost_abi',
 				   help='''select libraries with tags (gd for debug, static is automatically added),
 				   see doc Boost, Getting Started, chapter 6.1''')
-	opt.add_option('--boost-linkage_autodetect', action="store_true", dest='boost_linkage_autodetect',
+	opt.add_option('--boost-linkage_autodetect', action='store_true', dest='boost_linkage_autodetect',
 				   help="auto-detect boost linkage options (don't get used to it / might break other stuff)")
 	opt.add_option('--boost-toolset', type='string',
 				   default='', dest='boost_toolset',
@@ -175,7 +181,7 @@ def boost_get_version(self, d):
 		try:
 			txt = node.read()
 		except EnvironmentError:
-			Logs.error("Could not read the file %r" % node.abspath())
+			Logs.error('Could not read the file %r' % node.abspath())
 		else:
 			re_but1 = re.compile('^#define\\s+BOOST_LIB_VERSION\\s+"(.+)"', re.M)
 			m1 = re_but1.search(txt)
@@ -183,7 +189,7 @@ def boost_get_version(self, d):
 			m2 = re_but2.search(txt)
 			if m1 and m2:
 				return (m1.group(1), m2.group(1))
-	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True).split(":")
+	return self.check_cxx(fragment=BOOST_VERSION_CODE, includes=[d], execute=True, define_ret=True).split(':')
 
 @conf
 def boost_get_includes(self, *k, **kw):
@@ -194,10 +200,10 @@ def boost_get_includes(self, *k, **kw):
 		if self.__boost_get_version_file(d):
 			return d
 	if includes:
-		self.end_msg('headers not found in %s' % includes)
+		self.end_msg('headers not found in %s' % includes, 'YELLOW')
 		self.fatal('The configuration failed')
 	else:
-		self.end_msg('headers not found, please provide a --boost-includes argument (see help)')
+		self.end_msg('headers not found, please provide a --boost-includes argument (see help)', 'YELLOW')
 		self.fatal('The configuration failed')
 
 
@@ -240,10 +246,10 @@ def __boost_get_libs_path(self, *k, **kw):
 					break
 	if not path:
 		if libs:
-			self.end_msg('libs not found in %s' % libs)
+			self.end_msg('libs not found in %s' % libs, 'YELLOW')
 			self.fatal('The configuration failed')
 		else:
-			self.end_msg('libs not found, please provide a --boost-libs argument (see help)')
+			self.end_msg('libs not found, please provide a --boost-libs argument (see help)', 'YELLOW')
 			self.fatal('The configuration failed')
 
 	self.to_log('Found the boost path in %r with the libraries:' % path)
@@ -313,7 +319,7 @@ def boost_get_libs(self, *k, **kw):
 					libs.append(format_lib_name(file.name))
 					break
 			else:
-				self.end_msg('lib %s not found in %s' % (lib, path.abspath()))
+				self.end_msg('lib %s not found in %s' % (lib, path.abspath()), 'YELLOW')
 				self.fatal('The configuration failed')
 		return libs
 
@@ -354,7 +360,7 @@ def _check_pthread_flag(self, *k, **kw):
 	#      ... -mt is also the pthreads flag for HP/aCC
 	# -lpthread: GNU Linux, etc.
 	# --thread-safe: KAI C++
-	if Utils.unversioned_sys_platform() == "sunos":
+	if Utils.unversioned_sys_platform() == 'sunos':
 		# On Solaris (at least, for some versions), libc contains stubbed
 		# (non-functional) versions of the pthreads routines, so link-based
 		# tests will erroneously succeed.  (We need to link with -pthreads/-mt/
@@ -362,23 +368,22 @@ def _check_pthread_flag(self, *k, **kw):
 		# a function called by this macro, so we could check for that, but
 		# who knows whether they'll stub that too in a future libc.)  So,
 		# we'll just look for -pthreads and -lpthread first:
-		boost_pthread_flags = ["-pthreads", "-lpthread", "-mt", "-pthread"]
+		boost_pthread_flags = ['-pthreads', '-lpthread', '-mt', '-pthread']
 	else:
-		boost_pthread_flags = ["", "-lpthreads", "-Kthread", "-kthread", "-llthread", "-pthread",
-							   "-pthreads", "-mthreads", "-lpthread", "--thread-safe", "-mt"]
+		boost_pthread_flags = ['', '-lpthreads', '-Kthread', '-kthread', '-llthread', '-pthread',
+							   '-pthreads', '-mthreads', '-lpthread', '--thread-safe', '-mt']
 
 	for boost_pthread_flag in boost_pthread_flags:
 		try:
 			self.env.stash()
 			self.env['CXXFLAGS_%s' % var] += [boost_pthread_flag]
 			self.env['LINKFLAGS_%s' % var] += [boost_pthread_flag]
-			self.check_cxx(code=PTHREAD_CODE, msg=None, use=var, execute=False)
-
+			self.check_cxx(code=PTHREAD_CODE, msg=None, use=var, execute=False, quiet=True)
 			self.end_msg(boost_pthread_flag)
 			return
 		except self.errors.ConfigurationError:
 			self.env.revert()
-	self.end_msg('None')
+	self.end_msg('none')
 
 @conf
 def check_boost(self, *k, **kw):
@@ -403,21 +408,24 @@ def check_boost(self, *k, **kw):
 
 	var = kw.get('uselib_store', 'BOOST')
 
-	self.find_program('dpkg-architecture', var='DPKG_ARCHITECTURE', mandatory=False)
-	if self.env.DPKG_ARCHITECTURE:
-		deb_host_multiarch = self.cmd_and_log([self.env.DPKG_ARCHITECTURE[0], '-qDEB_HOST_MULTIARCH'])
-		BOOST_LIBS.insert(0, '/usr/lib/%s' % deb_host_multiarch.strip())
+	if not self.env.DONE_FIND_BOOST_COMMON:
+		self.find_program('dpkg-architecture', var='DPKG_ARCHITECTURE', mandatory=False)
+		if self.env.DPKG_ARCHITECTURE:
+			deb_host_multiarch = self.cmd_and_log([self.env.DPKG_ARCHITECTURE[0], '-qDEB_HOST_MULTIARCH'])
+			BOOST_LIBS.insert(0, '/usr/lib/%s' % deb_host_multiarch.strip())
 
-	self.start_msg('Checking boost includes')
-	self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
-	versions = self.boost_get_version(inc)
-	self.env.BOOST_VERSION = versions[0]
-	self.env.BOOST_VERSION_NUMBER = int(versions[1])
-	self.end_msg("%d.%d.%d" % (int(versions[1]) / 100000,
-							   int(versions[1]) / 100 % 1000,
-							   int(versions[1]) % 100))
-	if Logs.verbose:
-		Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
+		self.start_msg('Checking boost includes')
+		self.env['INCLUDES_%s' % var] = inc = self.boost_get_includes(**params)
+		versions = self.boost_get_version(inc)
+		self.env.BOOST_VERSION = versions[0]
+		self.env.BOOST_VERSION_NUMBER = int(versions[1])
+		self.end_msg('%d.%d.%d' % (int(versions[1]) / 100000,
+								   int(versions[1]) / 100 % 1000,
+								   int(versions[1]) % 100))
+		if Logs.verbose:
+			Logs.pprint('CYAN', '	path : %s' % self.env['INCLUDES_%s' % var])
+
+		self.env.DONE_FIND_BOOST_COMMON = True
 
 	if not params['lib'] and not params['stlib']:
 		return
@@ -429,7 +437,7 @@ def check_boost(self, *k, **kw):
 	self.env['STLIBPATH_%s' % var] = [path]
 	self.env['LIB_%s' % var] = libs
 	self.env['STLIB_%s' % var] = stlibs
-	self.end_msg('ok')
+	self.end_msg(' '.join(libs + stlibs))
 	if Logs.verbose:
 		Logs.pprint('CYAN', '	path : %s' % path)
 		Logs.pprint('CYAN', '	shared libs : %s' % libs)
@@ -450,15 +458,18 @@ def check_boost(self, *k, **kw):
 			self.check_cxx(fragment=BOOST_ERROR_CODE, use=var, execute=False)
 		if has_lib('thread'):
 			self.check_cxx(fragment=BOOST_THREAD_CODE, use=var, execute=False)
-		if has_lib('log'):
+		if has_lib('log') or has_lib('log_setup'):
 			if not has_lib('thread'):
 				self.env['DEFINES_%s' % var] += ['BOOST_LOG_NO_THREADS']
-			if has_shlib('log'):
+			if has_shlib('log') or has_shlib('log_setup'):
 				self.env['DEFINES_%s' % var] += ['BOOST_LOG_DYN_LINK']
-			self.check_cxx(fragment=BOOST_LOG_CODE, use=var, execute=False)
+			if has_lib('log_setup'):
+				self.check_cxx(fragment=BOOST_LOG_SETUP_CODE, use=var, execute=False)
+			else:
+				self.check_cxx(fragment=BOOST_LOG_CODE, use=var, execute=False)
 
 	if params.get('linkage_autodetect', False):
-		self.start_msg("Attempting to detect boost linkage flags")
+		self.start_msg('Attempting to detect boost linkage flags')
 		toolset = self.boost_get_toolset(kw.get('toolset', ''))
 		if toolset in ('vc',):
 			# disable auto-linking feature, causing error LNK1181
@@ -480,10 +491,10 @@ def check_boost(self, *k, **kw):
 			# we attempt to play with some known-to-work CXXFLAGS combinations
 			for cxxflags in (['/MD', '/EHsc'], []):
 				self.env.stash()
-				self.env["CXXFLAGS_%s" % var] += cxxflags
+				self.env['CXXFLAGS_%s' % var] += cxxflags
 				try:
 					try_link()
-					self.end_msg("ok: winning cxxflags combination: %s" % (self.env["CXXFLAGS_%s" % var]))
+					self.end_msg('ok: winning cxxflags combination: %s' % (self.env['CXXFLAGS_%s' % var]))
 					exc = None
 					break
 				except Errors.ConfigurationError as e:
@@ -491,17 +502,17 @@ def check_boost(self, *k, **kw):
 					exc = e
 
 			if exc is not None:
-				self.end_msg("Could not auto-detect boost linking flags combination, you may report it to boost.py author", ex=exc)
+				self.end_msg('Could not auto-detect boost linking flags combination, you may report it to boost.py author', ex=exc)
 				self.fatal('The configuration failed')
 		else:
-			self.end_msg("Boost linkage flags auto-detection not implemented (needed ?) for this toolchain")
+			self.end_msg('Boost linkage flags auto-detection not implemented (needed ?) for this toolchain')
 			self.fatal('The configuration failed')
 	else:
 		self.start_msg('Checking for boost linkage')
 		try:
 			try_link()
 		except Errors.ConfigurationError as e:
-			self.end_msg("Could not link against boost libraries using supplied options")
+			self.end_msg('Could not link against boost libraries using supplied options', 'YELLOW')
 			self.fatal('The configuration failed')
 		self.end_msg('ok')
 
