@@ -26,20 +26,17 @@
 #include "scheduler.hpp"
 #include "global-io.hpp"
 
-#include <boost/thread/tss.hpp>
-
 namespace nfd {
 namespace scheduler {
 
-static boost::thread_specific_ptr<Scheduler> g_scheduler;
+static thread_local unique_ptr<Scheduler> g_scheduler;
 
 Scheduler&
 getGlobalScheduler()
 {
-  if (g_scheduler.get() == nullptr) {
-    g_scheduler.reset(new Scheduler(getGlobalIoService()));
+  if (g_scheduler == nullptr) {
+    g_scheduler = make_unique<Scheduler>(getGlobalIoService());
   }
-
   return *g_scheduler;
 }
 
@@ -49,11 +46,13 @@ schedule(time::nanoseconds after, const EventCallback& event)
   return getGlobalScheduler().scheduleEvent(after, event);
 }
 
+#ifdef WITH_TESTS
 void
 resetGlobalScheduler()
 {
   g_scheduler.reset();
 }
+#endif
 
 } // namespace scheduler
 } // namespace nfd

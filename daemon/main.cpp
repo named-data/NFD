@@ -39,14 +39,12 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
-// boost::thread is used instead of std::thread to guarantee proper cleanup of thread local storage,
-// see https://www.boost.org/doc/libs/1_58_0/doc/html/thread/thread_local_storage.html
-#include <boost/thread.hpp>
 #include <boost/version.hpp>
 
 #include <atomic>
 #include <condition_variable>
 #include <iostream>
+#include <thread>
 
 #include <ndn-cxx/util/logging.hpp>
 #include <ndn-cxx/version.hpp>
@@ -118,33 +116,32 @@ public:
     std::mutex m;
     std::condition_variable cv;
 
-    std::string configFile = this->m_configFile; // c++11 lambda cannot capture member variables
-    boost::thread ribThread([configFile, &retval, &ribIo, mainIo, &cv, &m] {
-        {
-          std::lock_guard<std::mutex> lock(m);
-          ribIo = &getGlobalIoService();
-          BOOST_ASSERT(ribIo != mainIo);
-          setRibIoService(ribIo);
-        }
-        cv.notify_all(); // notify that ribIo has been assigned
+    std::thread ribThread([configFile = m_configFile, &retval, &ribIo, mainIo, &cv, &m] {
+      {
+        std::lock_guard<std::mutex> lock(m);
+        ribIo = &getGlobalIoService();
+        BOOST_ASSERT(ribIo != mainIo);
+        setRibIoService(ribIo);
+      }
+      cv.notify_all(); // notify that ribIo has been assigned
 
-        try {
-          ndn::KeyChain ribKeyChain;
-          // must be created inside a separate thread
-          rib::Service ribService(configFile, ribKeyChain);
-          getGlobalIoService().run(); // ribIo is not thread-safe to use here
-        }
-        catch (const std::exception& e) {
-          NFD_LOG_FATAL(boost::diagnostic_information(e));
-          retval = 1;
-          mainIo->stop();
-        }
+      try {
+        ndn::KeyChain ribKeyChain;
+        // must be created inside a separate thread
+        rib::Service ribService(configFile, ribKeyChain);
+        getGlobalIoService().run(); // ribIo is not thread-safe to use here
+      }
+      catch (const std::exception& e) {
+        NFD_LOG_FATAL(boost::diagnostic_information(e));
+        retval = 1;
+        mainIo->stop();
+      }
 
-        {
-          std::lock_guard<std::mutex> lock(m);
-          ribIo = nullptr;
-        }
-      });
+      {
+        std::lock_guard<std::mutex> lock(m);
+        ribIo = nullptr;
+      }
+    });
 
     {
       // Wait to guarantee that ribIo is properly initialized, so it can be used to terminate

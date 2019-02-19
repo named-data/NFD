@@ -27,7 +27,7 @@
 
 #include "tests/test-common.hpp"
 
-#include <boost/thread.hpp>
+#include <thread>
 
 namespace nfd {
 namespace scheduler {
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
 {
   scheduler::Scheduler* s1 = &scheduler::getGlobalScheduler();
   scheduler::Scheduler* s2 = nullptr;
-  boost::thread t([&s2] { s2 = &scheduler::getGlobalScheduler(); });
+  std::thread t([&s2] { s2 = &scheduler::getGlobalScheduler(); });
   t.join();
 
   BOOST_CHECK(s1 != nullptr);

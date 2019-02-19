@@ -109,7 +109,7 @@ def configure(conf):
 
     conf.check_cxx(header_name='valgrind/valgrind.h', define_name='HAVE_VALGRIND', mandatory=False)
 
-    boost_libs = ['system', 'program_options', 'filesystem', 'thread']
+    boost_libs = ['system', 'program_options', 'filesystem']
     if conf.env.WITH_TESTS or conf.env.WITH_OTHER_TESTS:
         boost_libs.append('unit_test_framework')
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,28 +24,27 @@
  */
 
 #include "global-io.hpp"
-#include <boost/thread/tss.hpp>
 
 namespace nfd {
 
-namespace scheduler {
-// defined in scheduler.cpp
-void
-resetGlobalScheduler();
-} // namespace scheduler
-
-static boost::thread_specific_ptr<boost::asio::io_service> g_ioService;
+static thread_local unique_ptr<boost::asio::io_service> g_ioService;
 static boost::asio::io_service* g_mainIoService = nullptr;
 static boost::asio::io_service* g_ribIoService = nullptr;
 
 boost::asio::io_service&
 getGlobalIoService()
 {
-  if (g_ioService.get() == nullptr) {
-    g_ioService.reset(new boost::asio::io_service());
+  if (g_ioService == nullptr) {
+    g_ioService = make_unique<boost::asio::io_service>();
   }
   return *g_ioService;
 }
+
+#ifdef WITH_TESTS
+namespace scheduler {
+void
+resetGlobalScheduler(); // defined in scheduler.cpp
+} // namespace scheduler
 
 void
 resetGlobalIoService()
@@ -53,6 +52,7 @@ resetGlobalIoService()
   scheduler::resetGlobalScheduler();
   g_ioService.reset();
 }
+#endif
 
 void
 setMainIoService(boost::asio::io_service* mainIo)

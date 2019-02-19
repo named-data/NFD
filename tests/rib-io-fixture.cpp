@@ -38,7 +38,7 @@ RibIoFixture::RibIoFixture()
   g_mainIo = &getGlobalIoService();
   setMainIoService(g_mainIo);
 
-  g_ribThread = boost::thread([&] {
+  g_ribThread = std::thread([&] {
     {
       std::lock_guard<std::mutex> lock(m);
       g_ribIo = &getGlobalIoService();
