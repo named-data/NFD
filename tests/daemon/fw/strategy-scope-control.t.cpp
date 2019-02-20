@@ -125,7 +125,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocal,
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->localFace3, 0), *interest, pitEntry); },
     this->limitedIo));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 1);
@@ -144,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToNonLocal,
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->localFace3, 0), *interest, pitEntry); },
     this->limitedIo, 1 + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
@@ -167,7 +167,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostInterestToLocalAndNonLocal,
   pitEntry->insertOrUpdateInRecord(*this->localFace3, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->localFace3, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->localFace3, 0), *interest, pitEntry); },
     this->limitedIo));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendInterestHistory.size(), 1);
@@ -187,7 +187,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocal,
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->nonLocalFace1, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->nonLocalFace1, 0), *interest, pitEntry); },
     this->limitedIo, 1 + T::willSendNackNoRoute()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
@@ -210,7 +210,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopInterestToNonLocalAndLocal,
   pitEntry->insertOrUpdateInRecord(*this->nonLocalFace1, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->nonLocalFace1, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->nonLocalFace1, 0), *interest, pitEntry); },
     this->limitedIo));
 
   BOOST_REQUIRE_EQUAL(this->strategy.sendInterestHistory.size(), 1);
@@ -233,7 +233,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhostNackToNonLocal,
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, 0, *interest)->setIncomingNack(nack);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveNack(*this->localFace4, nack, pitEntry); },
+    [&] { this->strategy.afterReceiveNack(FaceEndpoint(*this->localFace4, 0), nack, pitEntry); },
     this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);
@@ -258,7 +258,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LocalhopNackToNonLocal,
   pitEntry->insertOrUpdateOutRecord(*this->localFace4, 0, *interest)->setIncomingNack(nack);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveNack(*this->localFace4, nack, pitEntry); },
+    [&] { this->strategy.afterReceiveNack(FaceEndpoint(*this->localFace4, 0), nack, pitEntry); },
     this->limitedIo, T::canProcessNack()));
 
   BOOST_CHECK_EQUAL(this->strategy.sendInterestHistory.size(), 0);

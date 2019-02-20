@@ -39,6 +39,8 @@ namespace fw {
  *  then unicasts subsequent Interests along the learned path
  *
  *  \see https://redmine.named-data.net/attachments/864/Self-learning-strategy-v1.pdf
+ *
+ *  \note This strategy is not EndpointId-aware
  */
 class SelfLearningStrategy : public Strategy
 {
@@ -79,15 +81,15 @@ public:
 
 public: // triggers
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                   const Face& inFace, const Data& data) override;
+                   const FaceEndpoint& ingress, const Data& data) override;
 
   void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 private: // operations

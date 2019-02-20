@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -43,6 +43,8 @@ namespace fw {
  *     the granularity of this knowledge is the parent of Data Name.
  *  3. Forward subsequent Interests to the last working nexthop.
  *     If it doesn't respond, multicast again.
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class AccessStrategy : public Strategy
 {
@@ -55,12 +57,12 @@ public:
 
 public: // triggers
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override;
+                        const FaceEndpoint& ingress, const Data& data) override;
 
 private: // StrategyInfo
   /** \brief StrategyInfo on PIT entry

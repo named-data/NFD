@@ -35,7 +35,7 @@ BestRouteStrategyBase::BestRouteStrategyBase(Forwarder& forwarder)
 }
 
 void
-BestRouteStrategyBase::afterReceiveInterest(const Face& inFace, const Interest& interest,
+BestRouteStrategyBase::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                             const shared_ptr<pit::Entry>& pitEntry)
 {
   if (hasPendingOutRecords(*pitEntry)) {
@@ -46,9 +46,9 @@ BestRouteStrategyBase::afterReceiveInterest(const Face& inFace, const Interest& 
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   for (const auto& nexthop : fibEntry.getNextHops()) {
     Face& outFace = nexthop.getFace();
-    if (!wouldViolateScope(inFace, interest, outFace) &&
+    if (!wouldViolateScope(ingress.face, interest, outFace) &&
         canForwardToLegacy(*pitEntry, outFace)) {
-      this->sendInterest(pitEntry, outFace, interest);
+      this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
       return;
     }
   }

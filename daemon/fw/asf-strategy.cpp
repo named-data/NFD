@@ -107,7 +107,7 @@ AsfStrategy::getParamValue(const std::string& param, const std::string& value)
 }
 
 void
-AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                   const shared_ptr<pit::Entry>& pitEntry)
 {
   // Should the Interest be suppressed?
@@ -118,7 +118,7 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   case RetxSuppressionResult::FORWARD:
     break;
   case RetxSuppressionResult::SUPPRESS:
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " suppressed");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " suppressed");
     return;
   }
 
@@ -126,15 +126,15 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
   if (nexthops.size() == 0) {
-    sendNoRouteNack(inFace, interest, pitEntry);
+    sendNoRouteNack(ingress, interest, pitEntry);
     this->rejectPendingInterest(pitEntry);
     return;
   }
 
-  Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, inFace);
+  Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, ingress.face);
 
   if (faceToUse == nullptr) {
-    sendNoRouteNack(inFace, interest, pitEntry);
+    sendNoRouteNack(ingress, interest, pitEntry);
     this->rejectPendingInterest(pitEntry);
     return;
   }
@@ -145,7 +145,7 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
 
   // If necessary, send probe
   if (m_probing.isProbingNeeded(fibEntry, interest)) {
-    Face* faceToProbe = m_probing.getFaceToProbe(inFace, interest, fibEntry, *faceToUse);
+    Face* faceToProbe = m_probing.getFaceToProbe(ingress.face, interest, fibEntry, *faceToUse);
 
     if (faceToProbe != nullptr) {
       bool wantNewNonce = true;
@@ -157,7 +157,7 @@ AsfStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
 
 void
 AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                                   const Face& inFace, const Data& data)
+                                   const FaceEndpoint& ingress, const Data& data)
 {
   NamespaceInfo* namespaceInfo = m_measurements.getNamespaceInfo(pitEntry->getName());
 
@@ -167,14 +167,14 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
   }
 
   // Record the RTT between the Interest out to Data in
-  FaceInfo* faceInfo = namespaceInfo->get(inFace.getId());
+  FaceInfo* faceInfo = namespaceInfo->get(ingress.face.getId());
   if (faceInfo == nullptr) {
     return;
   }
-  faceInfo->recordRtt(pitEntry, inFace);
+  faceInfo->recordRtt(pitEntry, ingress.face);
 
   // Extend lifetime for measurements associated with Face
-  namespaceInfo->extendFaceInfoLifetime(*faceInfo, inFace.getId());
+  namespaceInfo->extendFaceInfoLifetime(*faceInfo, ingress.face.getId());
 
   if (faceInfo->isTimeoutScheduled()) {
     faceInfo->cancelTimeoutEvent(data.getName());
@@ -182,11 +182,11 @@ AsfStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
 }
 
 void
-AsfStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+AsfStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                               const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("Nack for " << nack.getInterest() << " from=" << inFace.getId() << ": " << nack.getReason());
-  onTimeout(pitEntry->getName(), inFace.getId());
+  NFD_LOG_DEBUG("Nack for " << nack.getInterest() << " from=" << ingress << ": reason=" << nack.getReason());
+  onTimeout(pitEntry->getName(), ingress.face.getId());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -199,34 +199,35 @@ AsfStrategy::forwardInterest(const Interest& interest,
                              Face& outFace,
                              bool wantNewNonce)
 {
+  auto egress = FaceEndpoint(outFace, 0);
+
   if (wantNewNonce) {
     //Send probe: interest with new Nonce
     Interest probeInterest(interest);
     probeInterest.refreshNonce();
     NFD_LOG_TRACE("Sending probe for " << probeInterest << probeInterest.getNonce()
-                                       << " to FaceId: " << outFace.getId());
-    this->sendInterest(pitEntry, outFace, probeInterest);
+                  << " to: " << egress);
+    this->sendInterest(pitEntry, egress, probeInterest);
   }
   else {
-    this->sendInterest(pitEntry, outFace, interest);
+    this->sendInterest(pitEntry, egress, interest);
   }
 
-  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, outFace.getId());
+  FaceInfo& faceInfo = m_measurements.getOrCreateFaceInfo(fibEntry, interest, egress.face.getId());
 
   // Refresh measurements since Face is being used for forwarding
   NamespaceInfo& namespaceInfo = m_measurements.getOrCreateNamespaceInfo(fibEntry, interest);
-  namespaceInfo.extendFaceInfoLifetime(faceInfo, outFace.getId());
+  namespaceInfo.extendFaceInfoLifetime(faceInfo, egress.face.getId());
 
   if (!faceInfo.isTimeoutScheduled()) {
     // Estimate and schedule timeout
     RttEstimator::Duration timeout = faceInfo.computeRto();
 
-    NFD_LOG_TRACE("Scheduling timeout for " << fibEntry.getPrefix()
-                                            << " FaceId: " << outFace.getId()
-                                            << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
+    NFD_LOG_TRACE("Scheduling timeout for " << fibEntry.getPrefix() << " to: " << egress
+                  << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
 
     scheduler::EventId id = scheduler::schedule(timeout,
-        bind(&AsfStrategy::onTimeout, this, interest.getName(), outFace.getId()));
+        bind(&AsfStrategy::onTimeout, this, interest.getName(), egress.face.getId()));
 
     faceInfo.setTimeoutEvent(id, interest.getName());
   }
@@ -356,14 +357,14 @@ AsfStrategy::onTimeout(const Name& interestName, const face::FaceId faceId)
 }
 
 void
-AsfStrategy::sendNoRouteNack(const Face& inFace, const Interest& interest,
+AsfStrategy::sendNoRouteNack(const FaceEndpoint& ingress, const Interest& interest,
                              const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
+  NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop");
 
   lp::NackHeader nackHeader;
   nackHeader.setReason(lp::NackReason::NO_ROUTE);
-  this->sendNack(pitEntry, inFace, nackHeader);
+  this->sendNack(pitEntry, ingress, nackHeader);
 }
 
 } // namespace asf

@@ -106,11 +106,11 @@ public:
 
 protected:
   void
-  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
+  sendInterest(const shared_ptr<pit::Entry>& pitEntry, const FaceEndpoint& egress,
                const Interest& interest) override
   {
-    sendInterestHistory.push_back({pitEntry->getInterest(), outFace.getId(), interest});
-    pitEntry->insertOrUpdateOutRecord(outFace, 0, interest);
+    sendInterestHistory.push_back({pitEntry->getInterest(), egress.face.getId(), interest});
+    pitEntry->insertOrUpdateOutRecord(egress.face, egress.endpoint, interest);
     afterAction();
   }
 
@@ -122,11 +122,11 @@ protected:
   }
 
   void
-  sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
+  sendNack(const shared_ptr<pit::Entry>& pitEntry, const FaceEndpoint& egress,
            const lp::NackHeader& header) override
   {
-    sendNackHistory.push_back({pitEntry->getInterest(), outFace.getId(), header});
-    pitEntry->deleteInRecord(outFace, 0);
+    sendNackHistory.push_back({pitEntry->getInterest(), egress.face.getId(), header});
+    pitEntry->deleteInRecord(egress.face, egress.endpoint);
     afterAction();
   }
 

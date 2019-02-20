@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,7 +35,7 @@ class BestRouteStrategyBase : public Strategy
 {
 public:
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
 protected:
@@ -52,6 +52,8 @@ protected:
  *  \note This strategy is superceded by Best Route strategy version 2,
  *        which allows consumer retransmissions. This version is kept for
  *        comparison purposes and is not recommended for general usage.
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class BestRouteStrategy : public BestRouteStrategyBase
 {

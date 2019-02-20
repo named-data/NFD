@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
   forwarder.addFace(face1);
 
   shared_ptr<Data> data1 = makeData("/unsolicited-from-local");
-  forwarder.onIncomingData(*face1, *data1);
+  forwarder.onIncomingData(FaceEndpoint(*face1, 0), *data1);
   BOOST_CHECK_EQUAL(isInCs(*data1), T::ShouldAdmitLocal::value);
 
   auto face2 = make_shared<DummyFace>("dummy://", "dummy://",
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(FaceScopePolicy, T, FaceScopePolicyTests)
   forwarder.addFace(face2);
 
   shared_ptr<Data> data2 = makeData("/unsolicited-from-non-local");
-  forwarder.onIncomingData(*face2, *data2);
+  forwarder.onIncomingData(FaceEndpoint(*face2, 0), *data2);
   BOOST_CHECK_EQUAL(isInCs(*data2), T::ShouldAdmitNonLocal::value);
 }
 

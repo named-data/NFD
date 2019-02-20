@@ -63,7 +63,7 @@ MulticastStrategy::getStrategyName()
 }
 
 void
-MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+MulticastStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                         const shared_ptr<pit::Entry>& pitEntry)
 {
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
@@ -79,20 +79,18 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
     RetxSuppressionResult suppressResult = m_retxSuppression.decidePerUpstream(*pitEntry, outFace);
 
     if (suppressResult == RetxSuppressionResult::SUPPRESS) {
-      NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                    << "to=" << outFace.getId() << " suppressed");
+      NFD_LOG_DEBUG(interest << " from=" << ingress << " to=" << outFace.getId() << " suppressed");
       isSuppressed = true;
       continue;
     }
 
-    if ((outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
-        wouldViolateScope(inFace, interest, outFace)) {
+    if ((outFace.getId() == ingress.face.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
+        wouldViolateScope(ingress.face, interest, outFace)) {
       continue;
     }
 
-    this->sendInterest(pitEntry, outFace, interest);
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " pitEntry-to=" << outFace.getId());
+    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " pitEntry-to=" << outFace.getId());
 
     if (suppressResult == RetxSuppressionResult::FORWARD) {
       m_retxSuppression.incrementIntervalForOutRecord(*pitEntry->getOutRecord(outFace, 0));
@@ -101,21 +99,21 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
   }
 
   if (nEligibleNextHops == 0 && !isSuppressed) {
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop");
 
     lp::NackHeader nackHeader;
     nackHeader.setReason(lp::NackReason::NO_ROUTE);
-    this->sendNack(pitEntry, inFace, nackHeader);
+    this->sendNack(pitEntry, ingress, nackHeader);
 
     this->rejectPendingInterest(pitEntry);
   }
 }
 
 void
-MulticastStrategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+MulticastStrategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                                     const shared_ptr<pit::Entry>& pitEntry)
 {
-  this->processNack(inFace, nack, pitEntry);
+  this->processNack(ingress.face, nack, pitEntry);
 }
 
 } // namespace fw

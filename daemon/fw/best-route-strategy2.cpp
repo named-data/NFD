@@ -124,13 +124,12 @@ findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& int
 }
 
 void
-BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& interest,
+BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                          const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppressionResult suppression = m_retxSuppression.decidePerPitEntry(*pitEntry);
   if (suppression == RetxSuppressionResult::SUPPRESS) {
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " suppressed");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " suppressed");
     return;
   }
 
@@ -141,58 +140,55 @@ BestRouteStrategy2::afterReceiveInterest(const Face& inFace, const Interest& int
   if (suppression == RetxSuppressionResult::NEW) {
     // forward to nexthop with lowest cost except downstream
     it = std::find_if(nexthops.begin(), nexthops.end(), [&] (const auto& nexthop) {
-      return isNextHopEligible(inFace, interest, nexthop, pitEntry);
+      return isNextHopEligible(ingress.face, interest, nexthop, pitEntry);
     });
 
     if (it == nexthops.end()) {
-      NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " noNextHop");
+      NFD_LOG_DEBUG(interest << " from=" << ingress << " noNextHop");
 
       lp::NackHeader nackHeader;
       nackHeader.setReason(lp::NackReason::NO_ROUTE);
-      this->sendNack(pitEntry, inFace, nackHeader);
+      this->sendNack(pitEntry, ingress, nackHeader);
 
       this->rejectPendingInterest(pitEntry);
       return;
     }
 
-    Face& outFace = it->getFace();
-    this->sendInterest(pitEntry, outFace, interest);
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " newPitEntry-to=" << outFace.getId());
+    auto egress = FaceEndpoint(it->getFace(), 0);
+    this->sendInterest(pitEntry, egress, interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << egress);
     return;
   }
 
   // find an unused upstream with lowest cost except downstream
   it = std::find_if(nexthops.begin(), nexthops.end(), [&] (const auto& nexthop) {
-    return isNextHopEligible(inFace, interest, nexthop, pitEntry, true, time::steady_clock::now());
+    return isNextHopEligible(ingress.face, interest, nexthop, pitEntry, true, time::steady_clock::now());
   });
 
   if (it != nexthops.end()) {
-    Face& outFace = it->getFace();
-    this->sendInterest(pitEntry, outFace, interest);
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " retransmit-unused-to=" << outFace.getId());
+    auto egress = FaceEndpoint(it->getFace(), 0);
+    this->sendInterest(pitEntry, egress, interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-unused-to=" << egress);
     return;
   }
 
   // find an eligible upstream that is used earliest
-  it = findEligibleNextHopWithEarliestOutRecord(inFace, interest, nexthops, pitEntry);
+  it = findEligibleNextHopWithEarliestOutRecord(ingress.face, interest, nexthops, pitEntry);
   if (it == nexthops.end()) {
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId() << " retransmitNoNextHop");
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmitNoNextHop");
   }
   else {
-    Face& outFace = it->getFace();
-    this->sendInterest(pitEntry, outFace, interest);
-    NFD_LOG_DEBUG(interest << " from=" << inFace.getId()
-                           << " retransmit-retry-to=" << outFace.getId());
+    auto egress = FaceEndpoint(it->getFace(), 0);
+    this->sendInterest(pitEntry, egress, interest);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << egress);
   }
 }
 
 void
-BestRouteStrategy2::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+BestRouteStrategy2::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
-  this->processNack(inFace, nack, pitEntry);
+  this->processNack(ingress.face, nack, pitEntry);
 }
 
 } // namespace fw

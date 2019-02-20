@@ -62,10 +62,10 @@ public:
   }
 
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override
   {
-    DummyStrategy::afterReceiveInterest(inFace, interest, pitEntry);
+    DummyStrategy::afterReceiveInterest(ingress, interest, pitEntry);
 
     if (afterReceiveInterest_count <= 1) {
       setExpiryTimer(pitEntry, 190_ms);
@@ -74,9 +74,9 @@ public:
 
   void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override
+                        const FaceEndpoint& ingress, const Data& data) override
   {
-    DummyStrategy::beforeSatisfyInterest(pitEntry, inFace, data);
+    DummyStrategy::beforeSatisfyInterest(pitEntry, ingress, data);
 
     if (beforeSatisfyInterest_count <= 2) {
       setExpiryTimer(pitEntry, 190_ms);
@@ -85,18 +85,18 @@ public:
 
   void
   afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
-                       const Face& inFace, const Data& data) override
+                       const FaceEndpoint& ingress, const Data& data) override
   {
     if (afterContentStoreHit_count == 0) {
       setExpiryTimer(pitEntry, 190_ms);
     }
 
-    DummyStrategy::afterContentStoreHit(pitEntry, inFace, data);
+    DummyStrategy::afterContentStoreHit(pitEntry, ingress, data);
   }
 
   void
   afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                   const Face& inFace, const Data& data) override
+                   const FaceEndpoint& ingress, const Data& data) override
   {
     ++afterReceiveData_count;
 
@@ -104,14 +104,14 @@ public:
       setExpiryTimer(pitEntry, 290_ms);
     }
 
-    this->sendDataToAll(pitEntry, inFace, data);
+    this->sendDataToAll(pitEntry, ingress, data);
   }
 
   void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override
   {
-    DummyStrategy::afterReceiveNack(inFace, nack, pitEntry);
+    DummyStrategy::afterReceiveNack(ingress, nack, pitEntry);
 
     if (afterReceiveNack_count <= 1) {
       setExpiryTimer(pitEntry, 50_ms);

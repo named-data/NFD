@@ -79,17 +79,17 @@ CongestionMarkStrategy::getStrategyName()
 }
 
 void
-CongestionMarkStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+CongestionMarkStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                              const shared_ptr<pit::Entry>& pitEntry)
 {
   auto mark = interest.getCongestionMark();
   if (mark != m_congestionMark && (!m_shouldPreserveMark || mark == 0)) {
     Interest markedInterest(interest);
     markedInterest.setCongestionMark(m_congestionMark);
-    BestRouteStrategy2::afterReceiveInterest(inFace, markedInterest, pitEntry);
+    BestRouteStrategy2::afterReceiveInterest(ingress, markedInterest, pitEntry);
   }
   else {
-    BestRouteStrategy2::afterReceiveInterest(inFace, interest, pitEntry);
+    BestRouteStrategy2::afterReceiveInterest(ingress, interest, pitEntry);
   }
 }
 

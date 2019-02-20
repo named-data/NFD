@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,6 +40,8 @@ namespace asf {
  *  \see Vince Lehman, Ashlesh Gawande, Rodrigo Aldecoa, Dmitri Krioukov, Beichuan Zhang, Lixia Zhang, and Lan Wang,
  *       "An Experimental Investigation of Hyperbolic Routing with a Smart Forwarding Plane in NDN,"
  *       NDN Technical Report NDN-0042, 2016. http://named-data.net/techreports.html
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class AsfStrategy : public Strategy
 {
@@ -52,15 +54,15 @@ public:
 
 public: // triggers
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override;
+                        const FaceEndpoint& ingress, const Data& data) override;
 
   void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 private:
@@ -78,7 +80,7 @@ private:
   onTimeout(const Name& interestName, const FaceId faceId);
 
   void
-  sendNoRouteNack(const Face& inFace, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
+  sendNoRouteNack(const FaceEndpoint& ingress, const Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
 
   void
   processParams(const PartialName& parsed);

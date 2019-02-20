@@ -96,8 +96,8 @@ Strategy::create(const Name& instanceName, Forwarder& forwarder)
   }
 
   unique_ptr<Strategy> instance = found->second(forwarder, instanceName);
-  NFD_LOG_DEBUG("create " << instanceName << " found=" << found->first <<
-                " created=" << instance->getInstanceName());
+  NFD_LOG_DEBUG("create " << instanceName << " found=" << found->first
+                << " created=" << instance->getInstanceName());
   BOOST_ASSERT(!instance->getInstanceName().empty());
   return instance;
 }
@@ -150,100 +150,103 @@ Strategy::~Strategy() = default;
 
 void
 Strategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                                const Face& inFace, const Data& data)
+                                const FaceEndpoint& ingress, const Data& data)
 {
-  NFD_LOG_DEBUG("beforeSatisfyInterest pitEntry=" << pitEntry->getName() <<
-                " inFace=" << inFace.getId() << " data=" << data.getName());
+  NFD_LOG_DEBUG("beforeSatisfyInterest pitEntry=" << pitEntry->getName()
+                << " in=" << ingress << " data=" << data.getName());
 }
 
 void
 Strategy::afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
-                               const Face& inFace, const Data& data)
+                               const FaceEndpoint& ingress, const Data& data)
 {
-  NFD_LOG_DEBUG("afterContentStoreHit pitEntry=" << pitEntry->getName() <<
-                " inFace=" << inFace.getId() << " data=" << data.getName());
+  NFD_LOG_DEBUG("afterContentStoreHit pitEntry=" << pitEntry->getName()
+                << " in=" << ingress << " data=" << data.getName());
 
-  this->sendData(pitEntry, data, inFace);
+  this->sendData(pitEntry, data, ingress);
 }
 
 void
 Strategy::afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                           const Face& inFace, const Data& data)
+                           const FaceEndpoint& ingress, const Data& data)
 {
-  NFD_LOG_DEBUG("afterReceiveData pitEntry=" << pitEntry->getName() <<
-                " inFace=" << inFace.getId() << " data=" << data.getName());
+  NFD_LOG_DEBUG("afterReceiveData pitEntry=" << pitEntry->getName()
+                << " in=" << ingress << " data=" << data.getName());
 
-  this->beforeSatisfyInterest(pitEntry, inFace, data);
+  this->beforeSatisfyInterest(pitEntry, ingress, data);
 
-  this->sendDataToAll(pitEntry, inFace, data);
+  this->sendDataToAll(pitEntry, ingress, data);
 }
 
 void
-Strategy::afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+Strategy::afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                            const shared_ptr<pit::Entry>& pitEntry)
 {
-  NFD_LOG_DEBUG("afterReceiveNack inFace=" << inFace.getId() <<
-                " pitEntry=" << pitEntry->getName());
+  NFD_LOG_DEBUG("afterReceiveNack in=" << ingress << " pitEntry=" << pitEntry->getName());
 }
 
 void
-Strategy::onDroppedInterest(const Face& outFace, const Interest& interest)
+Strategy::onDroppedInterest(const FaceEndpoint& egress, const Interest& interest)
 {
-  NFD_LOG_DEBUG("onDroppedInterest outFace=" << outFace.getId() << " name=" << interest.getName());
+  NFD_LOG_DEBUG("onDroppedInterest out=" << egress << " name=" << interest.getName());
 }
 
 void
-Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace)
+Strategy::sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data,
+                   const FaceEndpoint& egress)
 {
   BOOST_ASSERT(pitEntry->getInterest().matchesData(data));
 
-  // delete the PIT entry's in-record based on outFace,
-  // since Data is sent to outFace from which the Interest was received
-  pitEntry->deleteInRecord(outFace, 0);
+  // delete the PIT entry's in-record based on egress,
+  // since Data is sent to face and endpoint from which the Interest was received
+  pitEntry->deleteInRecord(egress.face, egress.endpoint);
 
-  m_forwarder.onOutgoingData(data, *const_pointer_cast<Face>(outFace.shared_from_this()));
+  m_forwarder.onOutgoingData(data, egress);
 }
 
 void
-Strategy::sendDataToAll(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data)
+Strategy::sendDataToAll(const shared_ptr<pit::Entry>& pitEntry,
+                        const FaceEndpoint& ingress, const Data& data)
 {
-  std::set<Face*> pendingDownstreams;
+  std::set<std::pair<Face*, EndpointId>> pendingDownstreams;
   auto now = time::steady_clock::now();
 
   // remember pending downstreams
   for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
     if (inRecord.getExpiry() > now) {
-      if (inRecord.getFace().getId() == inFace.getId() &&
+      if (inRecord.getFace().getId() == ingress.face.getId() &&
+          inRecord.getEndpointId() == ingress.endpoint &&
           inRecord.getFace().getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) {
         continue;
       }
-      pendingDownstreams.insert(&inRecord.getFace());
+      pendingDownstreams.emplace(&inRecord.getFace(), inRecord.getEndpointId());
     }
   }
 
-  for (const Face* pendingDownstream : pendingDownstreams) {
-    this->sendData(pitEntry, data, *pendingDownstream);
+  for (const auto& pendingDownstream : pendingDownstreams) {
+    this->sendData(pitEntry, data, FaceEndpoint(*pendingDownstream.first, pendingDownstream.second));
   }
 }
 
 void
 Strategy::sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
-                    std::initializer_list<const Face*> exceptFaces)
+                    std::initializer_list<FaceEndpoint> exceptFaceEndpoints)
 {
   // populate downstreams with all downstreams faces
-  std::unordered_set<const Face*> downstreams;
+  std::set<std::pair<Face*, EndpointId>> downstreams;
   std::transform(pitEntry->in_begin(), pitEntry->in_end(), std::inserter(downstreams, downstreams.end()),
-                 [] (const pit::InRecord& inR) { return &inR.getFace(); });
+                 [] (const pit::InRecord& inR) {
+                  return std::make_pair(&inR.getFace(), inR.getEndpointId());
+                 });
 
   // delete excluded faces
-  // .erase in a loop is more efficient than std::set_difference because that requires sorted range
-  for (const Face* exceptFace : exceptFaces) {
-    downstreams.erase(exceptFace);
+  for (const auto& exceptFaceEndpoint : exceptFaceEndpoints) {
+    downstreams.erase({&exceptFaceEndpoint.face, exceptFaceEndpoint.endpoint});
   }
 
   // send Nacks
-  for (const Face* downstream : downstreams) {
-    this->sendNack(pitEntry, *downstream, header);
+  for (const auto& downstream : downstreams) {
+    this->sendNack(pitEntry, FaceEndpoint(*downstream.first, downstream.second), header);
   }
   // warning: don't loop on pitEntry->getInRecords(), because in-record is deleted when sending Nack
 }

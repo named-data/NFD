@@ -56,19 +56,19 @@ AccessStrategy::getStrategyName()
 }
 
 void
-AccessStrategy::afterReceiveInterest(const Face& inFace, const Interest& interest,
+AccessStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                      const shared_ptr<pit::Entry>& pitEntry)
 {
   RetxSuppressionResult suppressResult = m_retxSuppression.decidePerPitEntry(*pitEntry);
   switch (suppressResult) {
   case RetxSuppressionResult::NEW:
-    this->afterReceiveNewInterest(inFace, interest, pitEntry);
+    this->afterReceiveNewInterest(ingress.face, interest, pitEntry);
     break;
   case RetxSuppressionResult::FORWARD:
-    this->afterReceiveRetxInterest(inFace, interest, pitEntry);
+    this->afterReceiveRetxInterest(ingress.face, interest, pitEntry);
     break;
   case RetxSuppressionResult::SUPPRESS:
-    NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " retx-suppress");
+    NFD_LOG_DEBUG(interest << " interestFrom " << ingress << " retx-suppress");
     break;
   default:
     BOOST_ASSERT(false);
@@ -87,8 +87,7 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& inte
 
   // has measurements for Interest Name?
   if (mi != nullptr) {
-    NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() <<
-                  " new-interest mi=" << miName);
+    NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " new-interest mi=" << miName);
 
     // send to last working nexthop
     bool isSentToLastNexthop = this->sendToLastNexthop(inFace, interest, pitEntry, *mi, fibEntry);
@@ -98,8 +97,7 @@ AccessStrategy::afterReceiveNewInterest(const Face& inFace, const Interest& inte
     }
   }
   else {
-    NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() <<
-                  " new-interest no-mi");
+    NFD_LOG_DEBUG(interest << " interestFrom " << inFace.getId() << " new-interest no-mi");
   }
 
   // no measurements, or last working nexthop unavailable
@@ -148,10 +146,10 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const Interest& interest,
   }
 
   RttEstimator::Duration rto = mi.rtt.computeRto();
-  NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop <<
-                " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
+  NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << mi.lastNexthop
+                << " last-nexthop rto=" << time::duration_cast<time::microseconds>(rto).count());
 
-  this->sendInterest(pitEntry, *outFace, interest);
+  this->sendInterest(pitEntry, FaceEndpoint(*outFace, 0), interest);
 
   // schedule RTO timeout
   PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
@@ -171,8 +169,8 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, F
 
   Face* inFace = this->getFace(inFaceId);
   if (inFace == nullptr) {
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId <<
-                  " inFace-gone " << inFaceId);
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId
+                  << " inFace-gone " << inFaceId);
     return;
   }
 
@@ -185,8 +183,8 @@ AccessStrategy::afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, F
   const Interest& interest = inRecord->getInterest();
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
 
-  NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId <<
-                " multicast-except " << firstOutFaceId);
+  NFD_LOG_DEBUG(pitEntry->getInterest() << " timeoutFrom " << firstOutFaceId
+                << " multicast-except " << firstOutFaceId);
   this->multicast(*inFace, interest, pitEntry, fibEntry, firstOutFaceId);
 }
 
@@ -202,9 +200,8 @@ AccessStrategy::multicast(const Face& inFace, const Interest& interest,
         wouldViolateScope(inFace, interest, outFace)) {
       continue;
     }
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << outFace.getId() <<
-                  " multicast");
-    this->sendInterest(pitEntry, outFace, interest);
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " interestTo " << outFace.getId() << " multicast");
+    this->sendInterest(pitEntry, FaceEndpoint(outFace, 0), interest);
     ++nSent;
   }
   return nSent;
@@ -212,7 +209,7 @@ AccessStrategy::multicast(const Face& inFace, const Interest& interest,
 
 void
 AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                                      const Face& inFace, const Data& data)
+                                      const FaceEndpoint& ingress, const Data& data)
 {
   PitInfo* pi = pitEntry->getStrategyInfo<PitInfo>();
   if (pi != nullptr) {
@@ -220,22 +217,20 @@ AccessStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
   }
 
   if (!pitEntry->hasInRecords()) { // already satisfied by another upstream
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
-                  " not-fastest");
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << ingress << " not-fastest");
     return;
   }
 
-  auto outRecord = pitEntry->getOutRecord(inFace, 0);
+  auto outRecord = pitEntry->getOutRecord(ingress.face, 0);
   if (outRecord == pitEntry->out_end()) { // no out-record
-    NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
-                  " no-out-record");
+    NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << ingress << " no-out-record");
     return;
   }
 
   auto rtt = time::steady_clock::now() - outRecord->getLastRenewed();
-  NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << inFace.getId() <<
-                " rtt=" << time::duration_cast<time::microseconds>(rtt).count());
-  this->updateMeasurements(inFace, data, time::duration_cast<RttEstimator::Duration>(rtt));
+  NFD_LOG_DEBUG(pitEntry->getInterest() << " dataFrom " << ingress
+                << " rtt=" << time::duration_cast<time::microseconds>(rtt).count());
+  this->updateMeasurements(ingress.face, data, time::duration_cast<RttEstimator::Duration>(rtt));
 }
 
 void

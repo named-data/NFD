@@ -23,44 +23,35 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_OTHER_FW_CONGESTION_MARK_STRATEGY_HPP
-#define NFD_TESTS_OTHER_FW_CONGESTION_MARK_STRATEGY_HPP
+#ifndef NFD_DAEMON_FW_FACE_ENDPOINT_HPP
+#define NFD_DAEMON_FW_FACE_ENDPOINT_HPP
 
-#include "daemon/fw/best-route-strategy2.hpp"
+#include "face/face.hpp"
 
 namespace nfd {
-namespace fw {
 
-/** \brief Congestion Mark integration testing strategy version 1
- *
- *  This strategy adds a CongestionMark to each Interest it forwards. Otherwise, behaves like
- *  BestRouteStrategy2.
- *
- *  The value of the added CongestionMark can be specified through a strategy parameter (defaults
- *  to 1). In addition, an optional boolean parameter specifies whether the strategy will preserve
- *  existing CongestionMarks (default) or replace them.
- *
- *  \note This strategy is not EndpointId-aware.
+/** \brief Represents a face-endpoint pair in the forwarder
  */
-class CongestionMarkStrategy : public BestRouteStrategy2
+class FaceEndpoint
 {
 public:
-  explicit
-  CongestionMarkStrategy(Forwarder& forwarder, const Name& name = getStrategyName());
+  FaceEndpoint(const Face& face, EndpointId endpoint)
+    : face(const_cast<Face&>(face))
+    , endpoint(endpoint)
+  {
+  }
 
-  static const Name&
-  getStrategyName();
-
-  void
-  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
-                       const shared_ptr<pit::Entry>& pitEntry) override;
-
-private:
-  uint64_t m_congestionMark;
-  bool m_shouldPreserveMark;
+public:
+  Face& face;
+  const EndpointId endpoint;
 };
 
-} // namespace fw
+inline std::ostream&
+operator<<(std::ostream& os, const FaceEndpoint& fe)
+{
+  return os << "(" << fe.face.getId() << "," << fe.endpoint << ")";
+}
+
 } // namespace nfd
 
-#endif // NFD_TESTS_OTHER_FW_CONGESTION_MARK_STRATEGY_HPP
+#endif // NFD_DAEMON_FW_FACE_ENDPOINT_HPP

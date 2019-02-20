@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -34,6 +34,8 @@ namespace nfd {
 namespace fw {
 
 /** \brief a forwarding strategy that forwards Interest to all FIB nexthops
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class MulticastStrategy : public Strategy
                         , public ProcessNackTraits<MulticastStrategy>
@@ -46,11 +48,11 @@ public:
   getStrategyName();
 
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 private:

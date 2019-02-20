@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,6 +32,8 @@ namespace nfd {
 namespace fw {
 
 /** \brief a forwarding strategy similar to CCNx 0.7.2
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class NccStrategy : public Strategy
 {
@@ -42,13 +44,13 @@ public:
   static const Name&
   getStrategyName();
 
-  virtual void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  void
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
-  virtual void
+  void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override;
+                        const FaceEndpoint& ingress, const Data& data) override;
 
 PUBLIC_WITH_TESTS_ELSE_PROTECTED:
   /// StrategyInfo on measurements::Entry
@@ -104,7 +106,6 @@ PUBLIC_WITH_TESTS_ELSE_PROTECTED:
       return 1001;
     }
 
-    virtual
     ~PitEntryInfo() override;
 
   public:

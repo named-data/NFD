@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face3, 0, *interest);
 
-  strategy.afterReceiveInterest(*face3, *interest, pitEntry);
+  strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 0);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 2);
   std::set<FaceId> sentInterestFaceIds;
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(Forward2)
   std::function<void()> periodicalRetxFrom4; // let periodicalRetxFrom4 lambda capture itself
   periodicalRetxFrom4 = [&] {
     pitEntry->insertOrUpdateInRecord(*face3, 0, *interest);
-    strategy.afterReceiveInterest(*face3, *interest, pitEntry);
+    strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest, pitEntry);
 
     size_t nSent = strategy.sendInterestHistory.size();
     if (nSent > nSentLast) {
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(RejectLoopback)
   shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
 
-  strategy.afterReceiveInterest(*face1, *interest, pitEntry);
+  strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest, pitEntry);
   BOOST_CHECK_EQUAL(strategy.rejectPendingInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory.size(), 0);
 }

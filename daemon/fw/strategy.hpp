@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -138,7 +138,7 @@ public: // triggers
    *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
    */
   virtual void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) = 0;
 
   /** \brief trigger before PIT entry is satisfied
@@ -162,15 +162,15 @@ public: // triggers
    */
   virtual void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data);
+                        const FaceEndpoint& ingress, const Data& data);
 
   /** \brief trigger after a Data is matched in CS
    *
-   *  In the base class this method sends \p data to \p inFace
+   *  In the base class this method sends \p data to \p ingress
    */
   virtual void
   afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
-                       const Face& inFace, const Data& data);
+                       const FaceEndpoint& ingress, const Data& data);
 
   /** \brief trigger after Data is received
    *
@@ -197,7 +197,7 @@ public: // triggers
    */
   virtual void
   afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                   const Face& inFace, const Data& data);
+                   const FaceEndpoint& ingress, const Data& data);
 
   /** \brief trigger after Nack is received
    *
@@ -221,7 +221,7 @@ public: // triggers
    *           may occur. However, the strategy is allowed to store weak_ptr<pit::Entry>.
    */
   virtual void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief trigger after Interest dropped for exceeding allowed retransmissions
@@ -229,39 +229,40 @@ public: // triggers
    *  In the base class this method does nothing.
    */
   virtual void
-  onDroppedInterest(const Face& outFace, const Interest& interest);
+  onDroppedInterest(const FaceEndpoint& egress, const Interest& interest);
 
 protected: // actions
-  /** \brief send Interest to outFace
+  /** \brief send Interest to egress
    *  \param pitEntry PIT entry
-   *  \param outFace face through which to send out the Interest
+   *  \param egress face through which to send out the Interest and destination endpoint
    *  \param interest the Interest packet
    */
   VIRTUAL_WITH_TESTS void
-  sendInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace,
-               const Interest& interest)
+  sendInterest(const shared_ptr<pit::Entry>& pitEntry,
+               const FaceEndpoint& egress, const Interest& interest)
   {
-    m_forwarder.onOutgoingInterest(pitEntry, outFace, interest);
+    m_forwarder.onOutgoingInterest(pitEntry, egress, interest);
   }
 
-  /** \brief send \p data to \p outFace
+  /** \brief send \p data to \p egress
    *  \param pitEntry PIT entry
    *  \param data the Data packet
-   *  \param outFace face through which to send out the Data
+   *  \param egress face through which to send out the Data and destination endpoint
    */
   VIRTUAL_WITH_TESTS void
-  sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const Face& outFace);
+  sendData(const shared_ptr<pit::Entry>& pitEntry, const Data& data, const FaceEndpoint& egress);
 
-  /** \brief send \p data to all matched and qualified faces
+  /** \brief send \p data to all matched and qualified face-endpoint pairs
    *
-   *  A matched face is qualified if it is ad-hoc or it is NOT \p inFace
+   *  A matched face is qualified if it is ad-hoc or it is NOT \p ingress
    *
    *  \param pitEntry PIT entry
-   *  \param inFace face through which the Data comes from
+   *  \param ingress face through which the Data comes from and endpoint of the sender
    *  \param data the Data packet
    */
   VIRTUAL_WITH_TESTS void
-  sendDataToAll(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace, const Data& data);
+  sendDataToAll(const shared_ptr<pit::Entry>& pitEntry,
+                const FaceEndpoint& ingress, const Data& data);
 
   /** \brief schedule the PIT entry for immediate deletion
    *
@@ -275,30 +276,29 @@ protected: // actions
     this->setExpiryTimer(pitEntry, 0_ms);
   }
 
-  /** \brief send Nack to outFace
+  /** \brief send Nack to egress
    *  \param pitEntry PIT entry
-   *  \param outFace face through which to send out the Nack
+   *  \param egress face through which to send out the Nack and destination endpoint
    *  \param header Nack header
    *
-   *  The outFace must have a PIT in-record, otherwise this method has no effect.
+   *  The egress must have a PIT in-record, otherwise this method has no effect.
    */
   VIRTUAL_WITH_TESTS void
-  sendNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace,
-           const lp::NackHeader& header)
+  sendNack(const shared_ptr<pit::Entry>& pitEntry,
+           const FaceEndpoint& egress, const lp::NackHeader& header)
   {
-    m_forwarder.onOutgoingNack(pitEntry, outFace, header);
+    m_forwarder.onOutgoingNack(pitEntry, egress, header);
   }
 
-  /** \brief send Nack to every face that has an in-record,
-   *         except those in \p exceptFaces
+  /** \brief send Nack to every face-endpoint pair that has an in-record, except those in \p exceptFaceEndpoints
    *  \param pitEntry PIT entry
    *  \param header NACK header
-   *  \param exceptFaces list of faces that should be excluded from sending Nacks
+   *  \param exceptFaceEndpoints list of face-endpoint pairs that should be excluded from sending Nacks
    *  \note This is not an action, but a helper that invokes the sendNack action.
    */
   void
   sendNacks(const shared_ptr<pit::Entry>& pitEntry, const lp::NackHeader& header,
-            std::initializer_list<const Face*> exceptFaces = std::initializer_list<const Face*>());
+            std::initializer_list<FaceEndpoint> exceptFaceEndpoints = {});
 
   /** \brief Schedule the PIT entry to be erased after \p duration
    */

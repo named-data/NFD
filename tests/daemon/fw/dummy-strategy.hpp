@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,6 +37,8 @@ namespace tests {
  *
  *  DummyStrategy registers itself as /dummy-strategy/<max-version>, so that it can be instantiated
  *  with any version number. Aliases can be created with \p registerAs function.
+ *
+ *  \note This strategy is not EndpointId-aware.
  */
 class DummyStrategy : public fw::Strategy
 {
@@ -57,27 +59,27 @@ public:
 
   /** \brief after receive Interest trigger
    *
-   *  If \p interestOutFace is not null, Interest is forwarded to that face via send Interest action;
+   *  If \p interestOutFace is not null, Interest is forwarded to that face and endpoint via send Interest action;
    *  otherwise, reject pending Interest action is invoked.
    */
   void
-  afterReceiveInterest(const Face& inFace, const Interest& interest,
+  afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                        const shared_ptr<pit::Entry>& pitEntry) override;
 
   void
   beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
-                        const Face& inFace, const Data& data) override;
+                        const FaceEndpoint& ingress, const Data& data) override;
 
   void
   afterContentStoreHit(const shared_ptr<pit::Entry>& pitEntry,
-                       const Face& inFace, const Data& data) override;
+                       const FaceEndpoint& ingress, const Data& data) override;
 
   void
   afterReceiveData(const shared_ptr<pit::Entry>& pitEntry,
-                   const Face& inFace, const Data& data) override;
+                   const FaceEndpoint& ingress, const Data& data) override;
 
   void
-  afterReceiveNack(const Face& inFace, const lp::Nack& nack,
+  afterReceiveNack(const FaceEndpoint& ingress, const lp::Nack& nack,
                    const shared_ptr<pit::Entry>& pitEntry) override;
 
 protected:

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 #include "core/scheduler.hpp"
 #include "forwarder-counters.hpp"
 #include "face-table.hpp"
+#include "face-endpoint.hpp"
 #include "unsolicited-data-policy.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
@@ -105,33 +106,33 @@ public: // faces and policies
 
 public: // forwarding entrypoints and tables
   /** \brief start incoming Interest processing
-   *  \param face face on which Interest is received
+   *  \param ingress face on which Interest is received and endpoint of the sender
    *  \param interest the incoming Interest, must be well-formed and created with make_shared
    */
   void
-  startProcessInterest(Face& face, const Interest& interest)
+  startProcessInterest(const FaceEndpoint& ingress, const Interest& interest)
   {
-    this->onIncomingInterest(face, interest);
+    this->onIncomingInterest(ingress, interest);
   }
 
   /** \brief start incoming Data processing
-   *  \param face face on which Data is received
+   *  \param ingress face on which Data is received and endpoint of the sender
    *  \param data the incoming Data, must be well-formed and created with make_shared
    */
   void
-  startProcessData(Face& face, const Data& data)
+  startProcessData(const FaceEndpoint& ingress, const Data& data)
   {
-    this->onIncomingData(face, data);
+    this->onIncomingData(ingress, data);
   }
 
   /** \brief start incoming Nack processing
-   *  \param face face on which Nack is received
+   *  \param ingress face on which Nack is received and endpoint of the sender
    *  \param nack the incoming Nack, must be well-formed
    */
   void
-  startProcessNack(Face& face, const lp::Nack& nack)
+  startProcessNack(const FaceEndpoint& ingress, const lp::Nack& nack)
   {
-    this->onIncomingNack(face, nack);
+    this->onIncomingNack(ingress, nack);
   }
 
   NameTree&
@@ -186,28 +187,30 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onIncomingInterest(Face& inFace, const Interest& interest);
+  onIncomingInterest(const FaceEndpoint& ingress, const Interest& interest);
 
   /** \brief Interest loop pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onInterestLoop(Face& inFace, const Interest& interest);
+  onInterestLoop(const FaceEndpoint& ingress, const Interest& interest);
 
   /** \brief Content Store miss pipeline
   */
   VIRTUAL_WITH_TESTS void
-  onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry, const Interest& interest);
+  onContentStoreMiss(const FaceEndpoint& ingress,
+                     const shared_ptr<pit::Entry>& pitEntry, const Interest& interest);
 
   /** \brief Content Store hit pipeline
   */
   VIRTUAL_WITH_TESTS void
-  onContentStoreHit(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+  onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::Entry>& pitEntry,
                     const Interest& interest, const Data& data);
 
   /** \brief outgoing Interest pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry, Face& outFace, const Interest& interest);
+  onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
+                     const FaceEndpoint& egress, const Interest& interest);
 
   /** \brief Interest finalize pipeline
    */
@@ -217,30 +220,31 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief incoming Data pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onIncomingData(Face& inFace, const Data& data);
+  onIncomingData(const FaceEndpoint& ingress, const Data& data);
 
   /** \brief Data unsolicited pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onDataUnsolicited(Face& inFace, const Data& data);
+  onDataUnsolicited(const FaceEndpoint& ingress, const Data& data);
 
   /** \brief outgoing Data pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingData(const Data& data, Face& outFace);
+  onOutgoingData(const Data& data, FaceEndpoint egress);
 
   /** \brief incoming Nack pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onIncomingNack(Face& inFace, const lp::Nack& nack);
+  onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack);
 
   /** \brief outgoing Nack pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace, const lp::NackHeader& nack);
+  onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
+                 const FaceEndpoint& egress, const lp::NackHeader& nack);
 
   VIRTUAL_WITH_TESTS void
-  onDroppedInterest(Face& outFace, const Interest& interest);
+  onDroppedInterest(const FaceEndpoint& egress, const Interest& interest);
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   /** \brief set a new expiry timer (now + \p duration) on a PIT entry

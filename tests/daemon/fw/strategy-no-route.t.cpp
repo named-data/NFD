@@ -164,7 +164,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(IncomingInterest, T, Tests,
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest);
 
   BOOST_REQUIRE(this->strategy.waitForAction(
-    [&] { this->strategy.afterReceiveInterest(*this->face1, *interest, pitEntry); },
+    [&] { this->strategy.afterReceiveInterest(FaceEndpoint(*this->face1, 0), *interest, pitEntry); },
     this->limitedIo, 2));
 
   BOOST_REQUIRE_EQUAL(this->strategy.rejectPendingInterestHistory.size(), 1);
