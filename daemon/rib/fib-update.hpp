@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,55 +23,74 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_RIB_UPDATE_BATCH_HPP
-#define NFD_RIB_RIB_UPDATE_BATCH_HPP
+#ifndef NFD_DAEMON_RIB_FIB_UPDATE_HPP
+#define NFD_DAEMON_RIB_FIB_UPDATE_HPP
 
-#include "rib-update.hpp"
-
-#include <list>
+#include "core/common.hpp"
 
 namespace nfd {
 namespace rib {
 
-typedef std::list<RibUpdate> RibUpdateList;
-
-/** \brief Represents a collection of RibUpdates to be applied to a single FaceId.
+/** \class FibUpdate
+ *  \brief represents a FIB update
  */
-class RibUpdateBatch
+class FibUpdate
 {
 public:
-  typedef RibUpdateList::const_iterator const_iterator;
+  FibUpdate()
+    : faceId(0)
+    , cost(0)
+  {
+  }
 
-  explicit
-  RibUpdateBatch(uint64_t faceId);
+  bool
+  operator==(const FibUpdate& other) const
+  {
+    return (this->name == other.name &&
+            this->faceId == other.faceId &&
+            this->cost == other.cost &&
+            this->action == other.action);
+  }
 
-  uint64_t
-  getFaceId() const;
+  static FibUpdate
+  createAddUpdate(const Name& name, const uint64_t faceId, const uint64_t cost);
 
-  void
-  add(const RibUpdate& update);
+  static FibUpdate
+  createRemoveUpdate(const Name& name, const uint64_t faceId);
 
-  const_iterator
-  begin() const;
+  enum Action {
+    ADD_NEXTHOP    = 0,
+    REMOVE_NEXTHOP = 1
+  };
 
-  const_iterator
-  end() const;
-
-  size_t
-  size() const;
-
-private:
-  uint64_t m_faceId;
-  RibUpdateList m_updates;
+public:
+  Name name;
+  uint64_t faceId;
+  uint64_t cost;
+  Action action;
 };
 
-inline uint64_t
-RibUpdateBatch::getFaceId() const
+inline std::ostream&
+operator<<(std::ostream& os, const FibUpdate& update)
 {
-  return m_faceId;
+  os << "FibUpdate("
+     << " Name: " << update.name << ", "
+     << "faceId: " << update.faceId << ", ";
+
+  if (update.action == FibUpdate::ADD_NEXTHOP) {
+    os << "cost: " << update.cost << ", "
+       << "action: ADD_NEXTHOP";
+  }
+  else {
+    os << "action: REMOVE_NEXTHOP";
+  }
+
+  os << ")";
+
+  return os;
 }
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_RIB_UPDATE_BATCH_HPP
+#endif // NFD_DAEMON_RIB_FIB_UPDATE_HPP

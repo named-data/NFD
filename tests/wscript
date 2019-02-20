@@ -1,6 +1,6 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 """
-Copyright (c) 2014-2018,  Regents of the University of California,
+Copyright (c) 2014-2019,  Regents of the University of California,
                           Arizona Board of Regents,
                           Colorado State University,
                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,17 +39,18 @@ def build(bld):
             headers='../core/common.hpp boost-test.hpp',
             defines=[config_path])
 
-        for module, name in {"core": "Core Tests",
-                             "daemon": "Daemon Tests",
-                             "rib": "RIB Tests",
-                             "tools": "Tools Tests"}.items():
+        for module, name in {'core': 'Core Tests',
+                             'daemon': 'Daemon Tests',
+                             'rib': 'RIB Tests',
+                             'tools': 'Tools Tests'}.items():
             # main() for the module
             bld.objects(target='unit-tests-%s-main' % module,
                         source='main.cpp',
                         use='BOOST',
                         defines=['BOOST_TEST_MODULE=%s' % name])
 
-            node = bld.path.find_dir(module)
+            subdir = 'daemon/rib' if module == 'rib' else module
+            node = bld.path.find_dir(subdir)
             src = node.ant_glob('**/*.cpp', excl=['face/*ethernet*.cpp',
                                                   'face/pcap*.cpp',
                                                   'face/unix*.cpp',
@@ -62,21 +63,14 @@ def build(bld):
             if bld.env.HAVE_WEBSOCKET:
                 src += node.ant_glob('face/websocket*.cpp')
 
-            # unit-tests-%module
-            if module == "daemon":
-              bld.program(name='unit-tests-%s' % module,
-                          target='../unit-tests-%s' % module,
-                          source=src,
-                          use='%s-objects rib-objects unit-tests-base unit-tests-%s-main' % (module, module),
-                          defines=[config_path],
-                          install_path=None)
-            else:
-              bld.program(name='unit-tests-%s' % module,
-                          target='../unit-tests-%s' % module,
-                          source=src,
-                          use='%s-objects unit-tests-base unit-tests-%s-main' % (module, module),
-                          defines=[config_path],
-                          install_path=None)
+            objmod = 'daemon' if module == 'rib' else module
+            # unit-tests binary for the module
+            bld.program(name='unit-tests-%s' % module,
+                        target='../unit-tests-%s' % module,
+                        source=src,
+                        use='%s-objects unit-tests-base unit-tests-%s-main' % (objmod, module),
+                        defines=[config_path],
+                        install_path=None)
 
     # Other tests (e.g., stress tests and benchmarks that can be enabled even if unit tests are disabled)
     if bld.env.WITH_TESTS or bld.env.WITH_OTHER_TESTS:

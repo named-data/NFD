@@ -196,14 +196,10 @@ def build(bld):
     if bld.env.WITH_OTHER_TESTS:
         nfd_objects.source += bld.path.ant_glob('tests/other/fw/*.cpp')
 
-    bld.objects(target='rib-objects',
-                source=bld.path.ant_glob('rib/**/*.cpp'),
-                use='core-objects')
-
     bld.program(name='nfd',
                 target='bin/nfd',
                 source='daemon/main.cpp',
-                use='daemon-objects rib-objects SYSTEMD')
+                use='daemon-objects SYSTEMD')
 
     bld.recurse('tools')
     bld.recurse('tests')

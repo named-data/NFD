@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,32 +23,47 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_RIB_RIB_TEST_COMMON_HPP
-#define NFD_TESTS_RIB_RIB_TEST_COMMON_HPP
+#ifndef NFD_DAEMON_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#define NFD_DAEMON_RIB_READVERTISE_READVERTISED_ROUTE_HPP
 
-#include "rib/route.hpp"
+#include "core/common.hpp"
+
+#include <ndn-cxx/security/signing-info.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
 namespace rib {
-namespace tests {
 
-inline Route
-createRoute(uint64_t faceId,
-            std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
-            uint64_t cost = 0,
-            std::underlying_type<ndn::nfd::RouteFlags>::type flags = ndn::nfd::ROUTE_FLAGS_NONE)
+/** \brief state of a readvertised route
+ */
+class ReadvertisedRoute : noncopyable
 {
-  Route temp;
-  temp.faceId = faceId;
-  temp.origin = static_cast<ndn::nfd::RouteOrigin>(origin);
-  temp.cost = cost;
-  temp.flags = flags;
+public:
+  explicit
+  ReadvertisedRoute(const Name& prefix)
+    : prefix(prefix)
+    , nRibRoutes(0)
+    , retryDelay(0)
+  {
+  }
 
-  return temp;
+public:
+  Name prefix; ///< readvertised prefix
+  mutable ndn::security::SigningInfo signer; ///< signer for commands
+  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
+  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
+  mutable ndn::util::scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+};
+
+inline bool
+operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
+{
+  return lhs.prefix < rhs.prefix;
 }
 
-} // namespace tests
+using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
+
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_TESTS_RIB_RIB_TEST_COMMON_HPP
+#endif // NFD_DAEMON_RIB_READVERTISE_READVERTISED_ROUTE_HPP

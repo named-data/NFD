@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_FIB_UPDATER_HPP
-#define NFD_RIB_FIB_UPDATER_HPP
+#ifndef NFD_DAEMON_RIB_FIB_UPDATER_HPP
+#define NFD_DAEMON_RIB_FIB_UPDATER_HPP
 
 #include "core/common.hpp"
 #include "fib-update.hpp"
@@ -44,11 +44,7 @@ public:
   class Error : public std::runtime_error
   {
   public:
-    explicit
-    Error(const std::string& what)
-      : std::runtime_error(what)
-    {
-    }
+    using std::runtime_error::runtime_error;
   };
 
 public:
@@ -276,4 +272,4 @@ private:
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_FIB_UPDATER_HPP
+#endif // NFD_DAEMON_RIB_FIB_UPDATER_HPP

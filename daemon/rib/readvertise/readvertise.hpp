@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,13 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISE_HPP
-#define NFD_RIB_READVERTISE_READVERTISE_HPP
+#ifndef NFD_DAEMON_RIB_READVERTISE_READVERTISE_HPP
+#define NFD_DAEMON_RIB_READVERTISE_READVERTISE_HPP
 
 #include "readvertise-destination.hpp"
 #include "readvertise-policy.hpp"
 #include "readvertised-route.hpp"
-#include "../rib.hpp"
+#include "rib/rib.hpp"
 
 namespace nfd {
 namespace rib {
@@ -91,4 +91,4 @@ private:
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_READVERTISE_READVERTISE_HPP
+#endif // NFD_DAEMON_RIB_READVERTISE_READVERTISE_HPP

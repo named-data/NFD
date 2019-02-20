@@ -23,47 +23,38 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
-#define NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#ifndef NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP
+#define NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP
 
-#include "core/common.hpp"
+#include "readvertise-policy.hpp"
+#include "core/config-file.hpp"
 
-#include <ndn-cxx/security/signing-info.hpp>
-#include <ndn-cxx/util/scheduler.hpp>
+#include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 namespace rib {
 
-/** \brief state of a readvertised route
+/** \brief a policy to readvertise routes registered by local applications into remote gateway
  */
-class ReadvertisedRoute : noncopyable
+class HostToGatewayReadvertisePolicy : public ReadvertisePolicy
 {
 public:
-  explicit
-  ReadvertisedRoute(const Name& prefix)
-    : prefix(prefix)
-    , nRibRoutes(0)
-    , retryDelay(0)
-  {
-  }
+  HostToGatewayReadvertisePolicy(const ndn::KeyChain& keyChain,
+                                 const ConfigSection& section);
 
 public:
-  Name prefix; ///< readvertised prefix
-  mutable ndn::security::SigningInfo signer; ///< signer for commands
-  mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
-  mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable ndn::util::scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+  optional<ReadvertiseAction>
+  handleNewRoute(const RibRouteRef& ribRoute) const override;
+
+  time::milliseconds
+  getRefreshInterval() const override;
+
+private:
+  const ndn::KeyChain& m_keyChain;
+  time::seconds m_refreshInterval;
 };
-
-inline bool
-operator<(const ReadvertisedRoute& lhs, const ReadvertisedRoute& rhs)
-{
-  return lhs.prefix < rhs.prefix;
-}
-
-using ReadvertisedRouteContainer = std::set<ReadvertisedRoute>;
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_READVERTISE_READVERTISED_ROUTE_HPP
+#endif // NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP

@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_ROUTE_HPP
-#define NFD_RIB_ROUTE_HPP
+#ifndef NFD_DAEMON_RIB_ROUTE_HPP
+#define NFD_DAEMON_RIB_ROUTE_HPP
 
 #include "core/common.hpp"
 
@@ -71,7 +71,7 @@ public:
     m_expirationEvent.cancel();
   }
 
-  std::underlying_type<ndn::nfd::RouteFlags>::type
+  std::underlying_type_t<ndn::nfd::RouteFlags>
   getFlags() const
   {
     return flags;
@@ -81,7 +81,7 @@ public:
   uint64_t faceId = 0;
   ndn::nfd::RouteOrigin origin = ndn::nfd::ROUTE_ORIGIN_APP;
   uint64_t cost = 0;
-  std::underlying_type<ndn::nfd::RouteFlags>::type flags = ndn::nfd::ROUTE_FLAGS_NONE;
+  std::underlying_type_t<ndn::nfd::RouteFlags> flags = ndn::nfd::ROUTE_FLAGS_NONE;
   optional<time::steady_clock::TimePoint> expires;
 
   /** \brief The prefix announcement that caused the creation of this route.
@@ -131,4 +131,4 @@ operator<<(std::ostream& os, const Route& route);
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_ROUTE_HPP
+#endif // NFD_DAEMON_RIB_ROUTE_HPP

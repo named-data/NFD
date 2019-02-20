@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,43 +23,52 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP
-#define NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP
+#ifndef NFD_DAEMON_RIB_READVERTISE_READVERTISE_DESTINATION_HPP
+#define NFD_DAEMON_RIB_READVERTISE_READVERTISE_DESTINATION_HPP
 
-#include "../rib.hpp"
-#include <ndn-cxx/security/signing-info.hpp>
+#include "readvertised-route.hpp"
 
 namespace nfd {
 namespace rib {
 
-/** \brief a decision made by readvertise policy
+/** \brief a destination to readvertise into
  */
-struct ReadvertiseAction
-{
-  Name prefix; ///< the prefix that should be readvertised
-  ndn::security::SigningInfo signer; ///< credentials for command signing
-};
-
-/** \brief a policy to decide whether to readvertise a route, and what prefix to readvertise
- */
-class ReadvertisePolicy : noncopyable
+class ReadvertiseDestination : noncopyable
 {
 public:
   virtual
-  ~ReadvertisePolicy() = default;
+  ~ReadvertiseDestination() = default;
 
-  /** \brief decide whether to readvertise a route, and what prefix to readvertise
-   */
-  virtual optional<ReadvertiseAction>
-  handleNewRoute(const RibRouteRef& ribRoute) const = 0;
+  virtual void
+  advertise(const ReadvertisedRoute& rr,
+            std::function<void()> successCb,
+            std::function<void(const std::string&)> failureCb) = 0;
 
-  /** \return how often readvertisements made by this policy should be refreshed.
+  virtual void
+  withdraw(const ReadvertisedRoute& rr,
+           std::function<void()> successCb,
+           std::function<void(const std::string&)> failureCb) = 0;
+
+  bool
+  isAvailable() const
+  {
+    return m_isAvailable;
+  }
+
+protected:
+  void
+  setAvailability(bool isAvailable);
+
+public:
+  /** \brief signals when the destination becomes available or unavailable
    */
-  virtual time::milliseconds
-  getRefreshInterval() const = 0;
+  signal::Signal<ReadvertiseDestination, bool> afterAvailabilityChange;
+
+private:
+  bool m_isAvailable = false;
 };
 
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_RIB_READVERTISE_READVERTISE_POLICY_HPP
+#endif // NFD_DAEMON_RIB_READVERTISE_READVERTISE_DESTINATION_HPP

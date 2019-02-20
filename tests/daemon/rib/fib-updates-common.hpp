@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,13 +23,13 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
-#define NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
+#ifndef NFD_TESTS_DAEMON_RIB_FIB_UPDATES_COMMON_HPP
+#define NFD_TESTS_DAEMON_RIB_FIB_UPDATES_COMMON_HPP
 
 #include "rib/fib-updater.hpp"
 
-#include "rib-test-common.hpp"
 #include "tests/identity-management-fixture.hpp"
+#include "tests/daemon/rib/create-route.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -72,8 +72,9 @@ public:
 
   void
   insertRoute(const Name& name, uint64_t faceId,
-              std::underlying_type<ndn::nfd::RouteOrigin>::type origin,
-              uint64_t cost, std::underlying_type<ndn::nfd::RouteFlags>::type flags)
+              std::underlying_type_t<ndn::nfd::RouteOrigin> origin,
+              uint64_t cost,
+              std::underlying_type_t<ndn::nfd::RouteFlags> flags)
   {
     Route route = createRoute(faceId, origin, cost, flags);
 
@@ -88,7 +89,7 @@ public:
 
   void
   eraseRoute(const Name& name, uint64_t faceId,
-             std::underlying_type<ndn::nfd::RouteOrigin>::type origin)
+             std::underlying_type_t<ndn::nfd::RouteOrigin> origin)
   {
     Route route = createRoute(faceId, origin, 0, 0);
 
@@ -155,4 +156,4 @@ public:
 } // namespace rib
 } // namespace nfd
 
-#endif // NFD_TESTS_RIB_FIB_UPDATES_COMMON_HPP
+#endif // NFD_TESTS_DAEMON_RIB_FIB_UPDATES_COMMON_HPP
