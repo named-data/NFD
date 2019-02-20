@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,6 +36,10 @@ namespace face {
 
 class Face;
 class LinkService;
+
+/** \brief identifies an endpoint on the link
+ */
+typedef uint64_t EndpointId;
 
 /** \brief indicates the state of a transport
  */
@@ -113,10 +117,6 @@ const ssize_t QUEUE_ERROR = -2;
 class Transport : protected virtual TransportCounters, noncopyable
 {
 public:
-  /** \brief identifies an endpoint on the link
-   */
-  typedef uint64_t EndpointId;
-
   /** \brief stores a packet along with the remote endpoint
    */
   class Packet

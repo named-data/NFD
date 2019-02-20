@@ -35,7 +35,7 @@ Entry::Entry(const Name& prefix)
 }
 
 NextHopList::iterator
-Entry::findNextHop(const Face& face, uint64_t endpointId)
+Entry::findNextHop(const Face& face, EndpointId endpointId)
 {
   return std::find_if(m_nextHops.begin(), m_nextHops.end(),
                       [&face, endpointId] (const NextHop& nexthop) {
@@ -44,13 +44,13 @@ Entry::findNextHop(const Face& face, uint64_t endpointId)
 }
 
 bool
-Entry::hasNextHop(const Face& face, uint64_t endpointId) const
+Entry::hasNextHop(const Face& face, EndpointId endpointId) const
 {
   return const_cast<Entry*>(this)->findNextHop(face, endpointId) != m_nextHops.end();
 }
 
 void
-Entry::addOrUpdateNextHop(Face& face, uint64_t endpointId, uint64_t cost)
+Entry::addOrUpdateNextHop(Face& face, EndpointId endpointId, uint64_t cost)
 {
   auto it = this->findNextHop(face, endpointId);
   if (it == m_nextHops.end()) {
@@ -62,7 +62,7 @@ Entry::addOrUpdateNextHop(Face& face, uint64_t endpointId, uint64_t cost)
 }
 
 void
-Entry::removeNextHop(const Face& face, uint64_t endpointId)
+Entry::removeNextHop(const Face& face, EndpointId endpointId)
 {
   auto it = this->findNextHop(face, endpointId);
   if (it != m_nextHops.end()) {

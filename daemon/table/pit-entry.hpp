@@ -136,18 +136,18 @@ public: // in-record
    *  \return an iterator to the in-record, or .in_end() if it does not exist
    */
   InRecordCollection::iterator
-  getInRecord(const Face& face, uint64_t endpointId);
+  getInRecord(const Face& face, EndpointId endpointId);
 
   /** \brief insert or update an in-record
    *  \return an iterator to the new or updated in-record
    */
   InRecordCollection::iterator
-  insertOrUpdateInRecord(Face& face, uint64_t endpointId, const Interest& interest);
+  insertOrUpdateInRecord(Face& face, EndpointId endpointId, const Interest& interest);
 
   /** \brief delete the in-record for \p face and \p endpointId if it exists
    */
   void
-  deleteInRecord(const Face& face, uint64_t endpointId);
+  deleteInRecord(const Face& face, EndpointId endpointId);
 
   /** \brief delete all in-records
    */
@@ -203,18 +203,18 @@ public: // out-record
    *  \return an iterator to the out-record, or .out_end() if it does not exist
    */
   OutRecordCollection::iterator
-  getOutRecord(const Face& face, uint64_t endpointId);
+  getOutRecord(const Face& face, EndpointId endpointId);
 
   /** \brief insert or update an out-record
    *  \return an iterator to the new or updated out-record
    */
   OutRecordCollection::iterator
-  insertOrUpdateOutRecord(Face& face, uint64_t endpointId, const Interest& interest);
+  insertOrUpdateOutRecord(Face& face, EndpointId endpointId, const Interest& interest);
 
   /** \brief delete the out-record for \p face and \p endpointId if it exists
    */
   void
-  deleteOutRecord(const Face& face, uint64_t endpointId);
+  deleteOutRecord(const Face& face, EndpointId endpointId);
 
 public: // cleanup
   /** \brief delete all in-records and out-records for \p face if it exists

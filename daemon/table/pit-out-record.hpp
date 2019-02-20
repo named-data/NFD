@@ -36,7 +36,7 @@ namespace pit {
 class OutRecord : public FaceRecord
 {
 public:
-  OutRecord(Face& face, uint64_t endpointId);
+  OutRecord(Face& face, EndpointId endpointId);
 
   /** \return last NACK returned by \p getFace()
    *

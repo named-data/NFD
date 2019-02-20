@@ -191,7 +191,7 @@ MulticastUdpTransport::openTxSocket(protocol::socket& sock,
 }
 
 template<>
-Transport::EndpointId
+EndpointId
 DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep)
 {
   if (ep.address().is_v4()) {

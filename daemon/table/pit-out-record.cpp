@@ -28,7 +28,7 @@
 namespace nfd {
 namespace pit {
 
-OutRecord::OutRecord(Face& face, uint64_t endpointId)
+OutRecord::OutRecord(Face& face, EndpointId endpointId)
   : FaceRecord(face, endpointId)
 {
 }

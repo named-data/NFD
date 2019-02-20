@@ -28,7 +28,7 @@
 namespace nfd {
 namespace pit {
 
-FaceRecord::FaceRecord(Face& face, uint64_t endpointId)
+FaceRecord::FaceRecord(Face& face, EndpointId endpointId)
   : m_face(face)
   , m_endpointId(endpointId)
   , m_lastNonce(0)

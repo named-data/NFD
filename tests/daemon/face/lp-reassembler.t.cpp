@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -39,14 +39,14 @@ protected:
   LpReassemblerFixture()
   {
     reassembler.beforeTimeout.connect(
-      [this] (Transport::EndpointId remoteEp, size_t nDroppedFragments) {
+      [this] (EndpointId remoteEp, size_t nDroppedFragments) {
         timeoutHistory.push_back({remoteEp, nDroppedFragments});
       });
   }
 
 protected:
   LpReassembler reassembler{{}};
-  std::vector<std::pair<Transport::EndpointId, size_t>> timeoutHistory;
+  std::vector<std::pair<EndpointId, size_t>> timeoutHistory;
 
   static const uint8_t data[10];
 };
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(Timeout)
   received2.add<lp::FragCountField>(2);
   received2.add<lp::SequenceField>(1001);
 
-  const Transport::EndpointId REMOTE_EP = 11028;
+  const EndpointId REMOTE_EP = 11028;
   bool isComplete = false;
   std::tie(isComplete, std::ignore, std::ignore) = reassembler.receiveFragment(REMOTE_EP, received1);
   BOOST_REQUIRE(!isComplete);

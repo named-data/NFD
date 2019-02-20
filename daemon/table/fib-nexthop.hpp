@@ -39,7 +39,7 @@ class NextHop
 {
 public:
   explicit
-  NextHop(Face& face, uint64_t endpointId);
+  NextHop(Face& face, EndpointId endpointId);
 
   Face&
   getFace() const
@@ -47,7 +47,7 @@ public:
     return *m_face;
   }
 
-  uint64_t
+  EndpointId
   getEndpointId() const
   {
     return m_endpointId;
@@ -67,7 +67,7 @@ public:
 
 private:
   Face* m_face;
-  uint64_t m_endpointId;
+  EndpointId m_endpointId;
   uint64_t m_cost;
 };
 

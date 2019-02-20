@@ -77,7 +77,7 @@ public:
   /** \return whether there is a NextHop record for \p face with the given \p endpointId
    */
   bool
-  hasNextHop(const Face& face, uint64_t endpointId) const;
+  hasNextHop(const Face& face, EndpointId endpointId) const;
 
   /** \brief adds a NextHop record
    *
@@ -85,12 +85,12 @@ public:
    *  its cost is updated.
    */
   void
-  addOrUpdateNextHop(Face& face, uint64_t endpointId, uint64_t cost);
+  addOrUpdateNextHop(Face& face, EndpointId endpointId, uint64_t cost);
 
   /** \brief removes the NextHop record for \p face with the given \p endpointId
    */
   void
-  removeNextHop(const Face& face, uint64_t endpointId);
+  removeNextHop(const Face& face, EndpointId endpointId);
 
   /** \brief removes all NextHop records on \p face for any \p endpointId
    */
@@ -101,7 +101,7 @@ private:
   /** \note This method is non-const because mutable iterators are needed by callers.
    */
   NextHopList::iterator
-  findNextHop(const Face& face, uint64_t endpointId);
+  findNextHop(const Face& face, EndpointId endpointId);
 
   /** \brief sorts the nexthop list by cost
    */

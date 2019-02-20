@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,7 +83,7 @@ public:
    *  \throw tlv::Error packet is malformed
    */
   std::tuple<bool, Block, lp::Packet>
-  receiveFragment(Transport::EndpointId remoteEndpoint, const lp::Packet& packet);
+  receiveFragment(EndpointId remoteEndpoint, const lp::Packet& packet);
 
   /** \brief count of partial packets
    */
@@ -97,7 +97,7 @@ public:
    *  Before it's erased, this signal is emitted with the remote endpoint,
    *  and the number of fragments being dropped.
    */
-  signal::Signal<LpReassembler, Transport::EndpointId, size_t> beforeTimeout;
+  signal::Signal<LpReassembler, EndpointId, size_t> beforeTimeout;
 
 private:
   /** \brief holds all fragments of packet until reassembled
@@ -113,7 +113,7 @@ private:
   /** \brief index key for PartialPackets
    */
   typedef std::tuple<
-    Transport::EndpointId, // remoteEndpoint
+    EndpointId, // remoteEndpoint
     lp::Sequence // message identifier (sequence of the first fragment)
   > Key;
 

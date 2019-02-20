@@ -36,7 +36,7 @@ namespace pit {
 class InRecord : public FaceRecord
 {
 public:
-  InRecord(Face& face, uint64_t endpointId);
+  InRecord(Face& face, EndpointId endpointId);
 
   void
   update(const Interest& interest);

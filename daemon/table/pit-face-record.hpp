@@ -40,12 +40,12 @@ namespace pit {
 class FaceRecord : public StrategyInfoHost
 {
 public:
-  FaceRecord(Face& face, uint64_t endpointId);
+  FaceRecord(Face& face, EndpointId endpointId);
 
   Face&
   getFace() const;
 
-  uint64_t
+  EndpointId
   getEndpointId() const;
 
   uint32_t
@@ -67,7 +67,7 @@ public:
 
 private:
   Face& m_face;
-  uint64_t m_endpointId;
+  EndpointId m_endpointId;
   uint32_t m_lastNonce;
   time::steady_clock::TimePoint m_lastRenewed;
   time::steady_clock::TimePoint m_expiry;
@@ -79,7 +79,7 @@ FaceRecord::getFace() const
   return m_face;
 }
 
-inline uint64_t
+inline EndpointId
 FaceRecord::getEndpointId() const
 {
   return m_endpointId;

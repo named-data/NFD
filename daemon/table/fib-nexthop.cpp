@@ -28,7 +28,7 @@
 namespace nfd {
 namespace fib {
 
-NextHop::NextHop(Face& face, uint64_t endpointId)
+NextHop::NextHop(Face& face, EndpointId endpointId)
   : m_face(&face)
   , m_endpointId(endpointId)
   , m_cost(0)

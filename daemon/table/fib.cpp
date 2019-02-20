@@ -143,7 +143,7 @@ Fib::eraseIfEmpty(Entry& entry)
 }
 
 void
-Fib::removeNextHop(Entry& entry, const Face& face, uint64_t endpointId)
+Fib::removeNextHop(Entry& entry, const Face& face, EndpointId endpointId)
 {
   entry.removeNextHop(face, endpointId);
   this->eraseIfEmpty(entry);

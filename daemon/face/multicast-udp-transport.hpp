@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,7 +40,7 @@ NFD_LOG_MEMBER_DECL_SPECIALIZED((DatagramTransport<boost::asio::ip::udp, Multica
 // that would cause an implicit instantiation to take place, in every translation
 // unit in which such a use occurs".
 template<>
-Transport::EndpointId
+EndpointId
 DatagramTransport<boost::asio::ip::udp, Multicast>::makeEndpointId(const protocol::endpoint& ep);
 
 /**

@@ -108,7 +108,7 @@ public: // mutation
   /** \brief removes the NextHop record for \p face with a given \p endpointId
    */
   void
-  removeNextHop(Entry& entry, const Face& face, uint64_t endpointId);
+  removeNextHop(Entry& entry, const Face& face, EndpointId endpointId);
 
   /** \brief removes the NextHop record for \p face for any \p endpointId
    */

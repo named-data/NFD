@@ -50,7 +50,7 @@ Entry::canMatch(const Interest& interest, size_t nEqualNameComps) const
 }
 
 InRecordCollection::iterator
-Entry::getInRecord(const Face& face, uint64_t endpointId)
+Entry::getInRecord(const Face& face, EndpointId endpointId)
 {
   return std::find_if(m_inRecords.begin(), m_inRecords.end(),
     [&face, endpointId] (const InRecord& inRecord) {
@@ -59,7 +59,7 @@ Entry::getInRecord(const Face& face, uint64_t endpointId)
 }
 
 InRecordCollection::iterator
-Entry::insertOrUpdateInRecord(Face& face, uint64_t endpointId, const Interest& interest)
+Entry::insertOrUpdateInRecord(Face& face, EndpointId endpointId, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
@@ -77,7 +77,7 @@ Entry::insertOrUpdateInRecord(Face& face, uint64_t endpointId, const Interest& i
 }
 
 void
-Entry::deleteInRecord(const Face& face, uint64_t endpointId)
+Entry::deleteInRecord(const Face& face, EndpointId endpointId)
 {
   auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
     [&face, endpointId] (const InRecord& inRecord) {
@@ -95,7 +95,7 @@ Entry::clearInRecords()
 }
 
 OutRecordCollection::iterator
-Entry::getOutRecord(const Face& face, uint64_t endpointId)
+Entry::getOutRecord(const Face& face, EndpointId endpointId)
 {
   return std::find_if(m_outRecords.begin(), m_outRecords.end(),
     [&face, endpointId] (const OutRecord& outRecord) {
@@ -104,7 +104,7 @@ Entry::getOutRecord(const Face& face, uint64_t endpointId)
 }
 
 OutRecordCollection::iterator
-Entry::insertOrUpdateOutRecord(Face& face, uint64_t endpointId, const Interest& interest)
+Entry::insertOrUpdateOutRecord(Face& face, EndpointId endpointId, const Interest& interest)
 {
   BOOST_ASSERT(this->canMatch(interest));
 
@@ -122,7 +122,7 @@ Entry::insertOrUpdateOutRecord(Face& face, uint64_t endpointId, const Interest& 
 }
 
 void
-Entry::deleteOutRecord(const Face& face, uint64_t endpointId)
+Entry::deleteOutRecord(const Face& face, EndpointId endpointId)
 {
   auto it = std::find_if(m_outRecords.begin(), m_outRecords.end(),
     [&face, endpointId] (const OutRecord& outRecord) {
