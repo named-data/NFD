@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,7 +50,6 @@ nteHasStrategyChoiceEntry(const name_tree::Entry& nte)
 StrategyChoice::StrategyChoice(Forwarder& forwarder)
   : m_forwarder(forwarder)
   , m_nameTree(m_forwarder.getNameTree())
-  , m_nItems(0)
 {
 }
 
@@ -168,12 +167,12 @@ StrategyChoice::get(const Name& prefix) const
 {
   name_tree::Entry* nte = m_nameTree.findExactMatch(prefix);
   if (nte == nullptr) {
-    return {false, Name()};
+    return {false, {}};
   }
 
   Entry* entry = nte->getStrategyChoiceEntry();
   if (entry == nullptr) {
-    return {false, Name()};
+    return {false, {}};
   }
 
   return {true, entry->getStrategyInstanceName()};
@@ -211,12 +210,12 @@ clearStrategyInfo(const name_tree::Entry& nte)
 {
   NFD_LOG_TRACE("clearStrategyInfo " << nte.getName());
 
-  for (const shared_ptr<pit::Entry>& pitEntry : nte.getPitEntries()) {
+  for (const auto& pitEntry : nte.getPitEntries()) {
     pitEntry->clearStrategyInfo();
-    for (const pit::InRecord& inRecord : pitEntry->getInRecords()) {
+    for (const auto& inRecord : pitEntry->getInRecords()) {
       const_cast<pit::InRecord&>(inRecord).clearStrategyInfo();
     }
-    for (const pit::OutRecord& outRecord : pitEntry->getOutRecords()) {
+    for (const auto& outRecord : pitEntry->getOutRecords()) {
       const_cast<pit::OutRecord&>(outRecord).clearStrategyInfo();
     }
   }
@@ -233,8 +232,7 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
   if (Strategy::areSameType(oldInstanceName, newInstanceName)) {
     // same Strategy subclass type: no need to clear StrategyInfo
     NFD_LOG_INFO("changeStrategy(" << entry.getPrefix() << ") "
-                 << oldInstanceName << " -> " << newInstanceName
-                 << " same-type");
+                 << oldInstanceName << " -> " << newInstanceName << " same-type");
     return;
   }
 
@@ -245,7 +243,7 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
   // where entry's effective strategy is covered by the changing StrategyChoice entry
   const name_tree::Entry* rootNte = m_nameTree.getEntry(entry);
   BOOST_ASSERT(rootNte != nullptr);
-  auto&& ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
+  const auto& ntChanged = m_nameTree.partialEnumerate(entry.getPrefix(),
     [&rootNte] (const name_tree::Entry& nte) -> std::pair<bool, bool> {
       if (&nte == rootNte) {
         return {true, true};
@@ -255,7 +253,7 @@ StrategyChoice::changeStrategy(Entry& entry, Strategy& oldStrategy, Strategy& ne
       }
       return {true, true};
     });
-  for (const name_tree::Entry& nte : ntChanged) {
+  for (const auto& nte : ntChanged) {
     clearStrategyInfo(nte);
   }
 }

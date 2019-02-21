@@ -32,33 +32,51 @@
 namespace nfd {
 namespace pit {
 
-/** \brief contains information about an Interest
- *         on an incoming or outgoing face
+/** \brief Contains information about an Interest on an incoming or outgoing face
  *  \note This is an implementation detail to extract common functionality
  *        of InRecord and OutRecord
  */
 class FaceRecord : public StrategyInfoHost
 {
 public:
-  FaceRecord(Face& face, EndpointId endpointId);
+  FaceRecord(Face& face, EndpointId endpointId)
+    : m_face(face)
+    , m_endpointId(endpointId)
+  {
+  }
 
   Face&
-  getFace() const;
+  getFace() const
+  {
+    return m_face;
+  }
 
   EndpointId
-  getEndpointId() const;
+  getEndpointId() const
+  {
+    return m_endpointId;
+  }
 
   uint32_t
-  getLastNonce() const;
+  getLastNonce() const
+  {
+    return m_lastNonce;
+  }
 
   time::steady_clock::TimePoint
-  getLastRenewed() const;
+  getLastRenewed() const
+  {
+    return m_lastRenewed;
+  }
 
-  /** \brief gives the time point this record expires
+  /** \brief Returns the time point at which this record expires
    *  \return getLastRenewed() + InterestLifetime
    */
   time::steady_clock::TimePoint
-  getExpiry() const;
+  getExpiry() const
+  {
+    return m_expiry;
+  }
 
   /** \brief updates lastNonce, lastRenewed, expiry fields
    */
@@ -68,40 +86,10 @@ public:
 private:
   Face& m_face;
   EndpointId m_endpointId;
-  uint32_t m_lastNonce;
-  time::steady_clock::TimePoint m_lastRenewed;
-  time::steady_clock::TimePoint m_expiry;
+  uint32_t m_lastNonce = 0;
+  time::steady_clock::TimePoint m_lastRenewed = time::steady_clock::TimePoint::min();
+  time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
 };
-
-inline Face&
-FaceRecord::getFace() const
-{
-  return m_face;
-}
-
-inline EndpointId
-FaceRecord::getEndpointId() const
-{
-  return m_endpointId;
-}
-
-inline uint32_t
-FaceRecord::getLastNonce() const
-{
-  return m_lastNonce;
-}
-
-inline time::steady_clock::TimePoint
-FaceRecord::getLastRenewed() const
-{
-  return m_lastRenewed;
-}
-
-inline time::steady_clock::TimePoint
-FaceRecord::getExpiry() const
-{
-  return m_expiry;
-}
 
 } // namespace pit
 } // namespace nfd

@@ -44,7 +44,6 @@ nteHasFibEntry(const name_tree::Entry& nte)
 
 Fib::Fib(NameTree& nameTree)
   : m_nameTree(nameTree)
-  , m_nItems(0)
 {
 }
 

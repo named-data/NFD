@@ -24,16 +24,14 @@
  */
 
 #include "pit-entry.hpp"
+
 #include <algorithm>
 
 namespace nfd {
 namespace pit {
 
 Entry::Entry(const Interest& interest)
-  : isSatisfied(false)
-  , dataFreshnessPeriod(0_ms)
-  , m_interest(interest.shared_from_this())
-  , m_nameTreeEntry(nullptr)
+  : m_interest(interest.shared_from_this())
 {
 }
 

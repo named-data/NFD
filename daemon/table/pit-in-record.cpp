@@ -28,16 +28,11 @@
 namespace nfd {
 namespace pit {
 
-InRecord::InRecord(Face& face, EndpointId endpointId)
-  : FaceRecord(face, endpointId)
-{
-}
-
 void
 InRecord::update(const Interest& interest)
 {
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
+  FaceRecord::update(interest);
+  m_interest = interest.shared_from_this();
 }
 
 } // namespace pit

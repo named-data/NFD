@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,14 +27,15 @@
 #define NFD_DAEMON_TABLE_DEAD_NONCE_LIST_HPP
 
 #include "core/common.hpp"
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/sequenced_index.hpp>
-#include <boost/multi_index/hashed_index.hpp>
 #include "core/scheduler.hpp"
+
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/hashed_index.hpp>
+#include <boost/multi_index/sequenced_index.hpp>
 
 namespace nfd {
 
-/** \brief represents the Dead Nonce list
+/** \brief Represents the Dead Nonce List
  *
  *  The Dead Nonce List is a global table that supplements PIT for loop detection.
  *  When a Nonce is erased (dead) from PIT entry, the Nonce and the Interest Name is added to
@@ -54,7 +55,7 @@ namespace nfd {
 class DeadNonceList : noncopyable
 {
 public:
-  /** \brief constructs the Dead Nonce List
+  /** \brief Constructs the Dead Nonce List
    *  \param lifetime duration of the expected lifetime of each nonce,
    *         must be no less than MIN_LIFETIME.
    *         This should be set to the duration in which most loops would have occured.
@@ -62,17 +63,17 @@ public:
    *  \throw std::invalid_argument if lifetime is less than MIN_LIFETIME
    */
   explicit
-  DeadNonceList(const time::nanoseconds& lifetime = DEFAULT_LIFETIME);
+  DeadNonceList(time::nanoseconds lifetime = DEFAULT_LIFETIME);
 
   ~DeadNonceList();
 
-  /** \brief determines if name+nonce exists
+  /** \brief Determines if name+nonce exists
    *  \return true if name+nonce exists
    */
   bool
   has(const Name& name, uint32_t nonce) const;
 
-  /** \brief records name+nonce
+  /** \brief Records name+nonce
    */
   void
   add(const Name& name, uint32_t nonce);
@@ -85,8 +86,11 @@ public:
 
   /** \return expected lifetime
    */
-  const time::nanoseconds&
-  getLifetime() const;
+  time::nanoseconds
+  getLifetime() const
+  {
+    return m_lifetime;
+  }
 
 private: // Entry and Index
   typedef uint64_t Entry;
@@ -108,17 +112,17 @@ private: // Entry and Index
   typedef Index::nth_index<1>::type Hashtable;
 
 private: // actual lifetime estimation and capacity control
-  /** \return number of MARKs in the index
+  /** \brief Return the number of MARKs in the index
    */
   size_t
   countMarks() const;
 
-  /** \brief add a MARK, then record number of MARKs in m_actualMarkCounts
+  /** \brief Add a MARK, then record number of MARKs in m_actualMarkCounts
    */
   void
   mark();
 
-  /** \brief adjust capacity according to m_actualMarkCounts
+  /** \brief Adjust capacity according to m_actualMarkCounts
    *
    *  If all counts are above EXPECTED_MARK_COUNT, reduce capacity to m_capacity * CAPACITY_DOWN.
    *  If all counts are below EXPECTED_MARK_COUNT, increase capacity to m_capacity * CAPACITY_UP.
@@ -126,16 +130,15 @@ private: // actual lifetime estimation and capacity control
   void
   adjustCapacity();
 
-  /** \brief evict some entries if index is over capacity
+  /** \brief Evict some entries if index is over capacity
    */
   void
   evictEntries();
 
 public:
-  /// default entry lifetime
+  /// Default entry lifetime
   static const time::nanoseconds DEFAULT_LIFETIME;
-
-  /// minimum entry lifetime
+  /// Minimum entry lifetime
   static const time::nanoseconds MIN_LIFETIME;
 
 private:
@@ -148,7 +151,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity contr
 
   // ---- current capacity and hard limits
 
-  /** \brief current capacity of index
+  /** \brief Current capacity of index
    *
    *  The index size is maintained to be near this capacity.
    *
@@ -159,13 +162,13 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity contr
 
   static const size_t INITIAL_CAPACITY;
 
-  /** \brief minimum capacity
+  /** \brief Minimum capacity
    *
    *  This is to ensure correct algorithm operations.
    */
   static const size_t MIN_CAPACITY;
 
-  /** \brief maximum capacity
+  /** \brief Maximum capacity
    *
    *  This is to limit memory usage.
    */
@@ -173,7 +176,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity contr
 
   // ---- actual entry lifetime estimation
 
-  /** \brief the MARK for capacity
+  /** \brief The MARK for capacity
    *
    *  The MARK doesn't have a distinct type.
    *  Entry is a hash. The hash function should have non-invertible property,
@@ -181,41 +184,30 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // actual lifetime estimation and capacity contr
    */
   static const Entry MARK;
 
-  /** \brief expected number of MARKs in the index
+  /** \brief Expected number of MARKs in the index
    */
   static const size_t EXPECTED_MARK_COUNT;
 
-  /** \brief number of MARKs in the index after each MARK insertion
+  /** \brief Number of MARKs in the index after each MARK insertion
    *
-   *  adjustCapacity uses this to determine whether and how to adjust capcity,
+   *  adjustCapacity() uses this to determine whether and how to adjust capcity,
    *  and then clears this list.
    */
   std::multiset<size_t> m_actualMarkCounts;
 
   time::nanoseconds m_markInterval;
-
   scheduler::EventId m_markEvent;
 
   // ---- capacity adjustments
 
   static const double CAPACITY_UP;
-
   static const double CAPACITY_DOWN;
-
   time::nanoseconds m_adjustCapacityInterval;
-
   scheduler::EventId m_adjustCapacityEvent;
 
-  /** \brief maximum number of entries to evict at each operation if index is over capacity
-   */
+  /// Maximum number of entries to evict at each operation if index is over capacity
   static const size_t EVICT_LIMIT;
 };
-
-inline const time::nanoseconds&
-DeadNonceList::getLifetime() const
-{
-  return m_lifetime;
-}
 
 } // namespace nfd
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@
 namespace nfd {
 namespace name_tree {
 
-/** \brief a common index structure for FIB, PIT, StrategyChoice, and Measurements
+/** \brief A common index structure for FIB, PIT, StrategyChoice, and Measurements
  */
 class NameTree : noncopyable
 {
@@ -42,7 +42,7 @@ public:
   NameTree(size_t nBuckets = 1024);
 
 public: // information
-  /** \brief maximum depth of the name tree
+  /** \brief Maximum depth of the name tree
    *
    *  Calling \c NameTree::lookup with a name with many components would cause the creation of many
    *  NameTree entries, which could take very long time. This constant limits the maximum number of
@@ -82,7 +82,7 @@ public: // information
   }
 
 public: // mutation
-  /** \brief find or insert an entry by name
+  /** \brief Find or insert an entry by name
    *
    *  This method seeks a name tree entry of name \c name.getPrefix(prefixLen).
    *  If the entry does not exist, it is created along with all ancestors.
@@ -94,7 +94,7 @@ public: // mutation
   Entry&
   lookup(const Name& name, size_t prefixLen);
 
-  /** \brief equivalent to `lookup(name, name.size())`
+  /** \brief Equivalent to `lookup(name, name.size())`
    */
   Entry&
   lookup(const Name& name)
@@ -102,36 +102,35 @@ public: // mutation
     return this->lookup(name, name.size());
   }
 
-  /** \brief equivalent to `lookup(fibEntry.getPrefix())`
+  /** \brief Equivalent to `lookup(fibEntry.getPrefix())`
    *  \param fibEntry a FIB entry attached to this name tree, or \c Fib::s_emptyEntry
    *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const fib::Entry& fibEntry);
 
-  /** \brief equivalent to
-   *         `lookup(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
+  /** \brief Equivalent to `lookup(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
    *  \param pitEntry a PIT entry attached to this name tree
    *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const pit::Entry& pitEntry);
 
-  /** \brief equivalent to `lookup(measurementsEntry.getName())`
+  /** \brief Equivalent to `lookup(measurementsEntry.getName())`
    *  \param measurementsEntry a Measurements entry attached to this name tree
    *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const measurements::Entry& measurementsEntry);
 
-  /** \brief equivalent to `lookup(strategyChoiceEntry.getPrefix())`
+  /** \brief Equivalent to `lookup(strategyChoiceEntry.getPrefix())`
    *  \param strategyChoiceEntry a StrategyChoice entry attached to this name tree
    *  \note This overload is more efficient than `lookup(const Name&)` in common cases.
    */
   Entry&
   lookup(const strategy_choice::Entry& strategyChoiceEntry);
 
-  /** \brief delete the entry if it is empty
+  /** \brief Delete the entry if it is empty
    *  \param entry a valid entry
    *  \param canEraseAncestors whether ancestors should be deleted if they become empty
    *  \return number of deleted entries
@@ -145,13 +144,13 @@ public: // mutation
   eraseIfEmpty(Entry* entry, bool canEraseAncestors = true);
 
 public: // matching
-  /** \brief exact match lookup
+  /** \brief Exact match lookup
    *  \return entry with \c name.getPrefix(prefixLen), or nullptr if it does not exist
    */
   Entry*
   findExactMatch(const Name& name, size_t prefixLen = std::numeric_limits<size_t>::max()) const;
 
-  /** \brief longest prefix matching
+  /** \brief Longest prefix matching
    *  \return entry whose name is a prefix of \p name and passes \p entrySelector,
    *          where no other entry with a longer name satisfies those requirements;
    *          or nullptr if no entry satisfying those requirements exists
@@ -160,7 +159,7 @@ public: // matching
   findLongestPrefixMatch(const Name& name,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to `findLongestPrefixMatch(entry.getName(), entrySelector)`
+  /** \brief Equivalent to `findLongestPrefixMatch(entry.getName(), entrySelector)`
    *  \note This overload is more efficient than
    *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
    */
@@ -168,7 +167,7 @@ public: // matching
   findLongestPrefixMatch(const Entry& entry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief equivalent to `findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)`
+  /** \brief Equivalent to `findLongestPrefixMatch(getEntry(tableEntry)->getName(), entrySelector)`
    *  \tparam EntryT \c fib::Entry or \c measurements::Entry or \c strategy_choice::Entry
    *  \note This overload is more efficient than
    *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
@@ -184,7 +183,7 @@ public: // matching
     return this->findLongestPrefixMatch(*nte, entrySelector);
   }
 
-  /** \brief equivalent to `findLongestPrefixMatch(pitEntry.getName(), entrySelector)`
+  /** \brief Equivalent to `findLongestPrefixMatch(pitEntry.getName(), entrySelector)`
    *  \note This overload is more efficient than
    *        `findLongestPrefixMatch(const Name&, const EntrySelector&)` in common cases.
    *  \warning Undefined behavior may occur if \p pitEntry is not attached to this name tree.
@@ -193,7 +192,7 @@ public: // matching
   findLongestPrefixMatch(const pit::Entry& pitEntry,
                          const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief all-prefixes match lookup
+  /** \brief All-prefixes match lookup
    *  \return a range where every entry has a name that is a prefix of \p name ,
    *          and matches \p entrySelector.
    *
@@ -219,7 +218,7 @@ public: // matching
 public: // enumeration
   using const_iterator = Iterator;
 
-  /** \brief enumerate all entries
+  /** \brief Enumerate all entries
    *  \return a range where every entry matches \p entrySelector
    *
    *  Example:
@@ -236,7 +235,7 @@ public: // enumeration
   Range
   fullEnumerate(const EntrySelector& entrySelector = AnyEntry()) const;
 
-  /** \brief enumerate all entries under a prefix
+  /** \brief Enumerate all entries under a prefix
    *  \return a range where every entry has a name that starts with \p prefix,
    *          and matches \p entrySubTreeSelector.
    *

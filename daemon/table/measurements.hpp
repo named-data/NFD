@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -41,23 +41,23 @@ class Entry;
 
 namespace measurements {
 
-/** \brief a predicate that accepts or rejects an entry
+/** \brief A predicate that accepts or rejects an entry
  */
-typedef std::function<bool(const Entry&)> EntryPredicate;
+using EntryPredicate = std::function<bool(const Entry&)>;
 
-/** \brief an \c EntryPredicate that accepts any entry
+/** \brief An \c EntryPredicate that accepts any entry
  */
 class AnyEntry
 {
 public:
   bool
-  operator()(const Entry& entry) const
+  operator()(const Entry&) const
   {
     return true;
   }
 };
 
-/** \brief an \c EntryPredicate that accepts an entry if it has StrategyInfo of type T
+/** \brief An \c EntryPredicate that accepts an entry if it has StrategyInfo of type T
  */
 template<typename T>
 class EntryWithStrategyInfo
@@ -70,7 +70,7 @@ public:
   }
 };
 
-/** \brief the Measurements table
+/** \brief The Measurements table
  *
  *  The Measurements table is a data structure for forwarding strategies to store per name prefix
  *  measurements. A strategy can access this table via \c Strategy::getMeasurements(), and then
@@ -90,7 +90,7 @@ public:
     return NameTree::getMaxDepth();
   }
 
-  /** \brief find or insert an entry by name
+  /** \brief Find or insert an entry by name
    *
    *  An entry name can have at most \c getMaxDepth() components. If \p name exceeds this limit,
    *  it is truncated to the first \c getMaxDepth() components.
@@ -98,45 +98,47 @@ public:
   Entry&
   get(const Name& name);
 
-  /** \brief equivalent to `get(fibEntry.getPrefix())`
+  /** \brief Equivalent to `get(fibEntry.getPrefix())`
    */
   Entry&
   get(const fib::Entry& fibEntry);
 
-  /** \brief equivalent to
-   *         `get(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
+  /** \brief Equivalent to `get(pitEntry.getName(), std::min(pitEntry.getName().size(), getMaxDepth()))`
    */
   Entry&
   get(const pit::Entry& pitEntry);
 
-  /** \brief find or insert a parent entry
+  /** \brief Find or insert a parent entry
    *  \retval nullptr child is the root entry
    *  \return get(child.getName().getPrefix(-1))
    */
   Entry*
   getParent(const Entry& child);
 
-  /** \brief perform a longest prefix match for \p name
+  /** \brief Perform a longest prefix match for \p name
    */
   Entry*
   findLongestPrefixMatch(const Name& name,
                          const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief perform a longest prefix match for `pitEntry.getName()`
+  /** \brief Perform a longest prefix match for `pitEntry.getName()`
    */
   Entry*
   findLongestPrefixMatch(const pit::Entry& pitEntry,
                          const EntryPredicate& pred = AnyEntry()) const;
 
-  /** \brief perform an exact match
+  /** \brief Perform an exact match
    */
   Entry*
   findExactMatch(const Name& name) const;
 
   static time::nanoseconds
-  getInitialLifetime();
+  getInitialLifetime()
+  {
+    return 4_s;
+  }
 
-  /** \brief extend lifetime of an entry
+  /** \brief Extend lifetime of an entry
    *
    *  The entry will be kept until at least now()+lifetime.
    */
@@ -144,7 +146,10 @@ public:
   extendLifetime(Entry& entry, const time::nanoseconds& lifetime);
 
   size_t
-  size() const;
+  size() const
+  {
+    return m_nItems;
+  }
 
 private:
   void
@@ -161,20 +166,8 @@ private:
 
 private:
   NameTree& m_nameTree;
-  size_t m_nItems;
+  size_t m_nItems = 0;
 };
-
-inline time::nanoseconds
-Measurements::getInitialLifetime()
-{
-  return 4_s;
-}
-
-inline size_t
-Measurements::size() const
-{
-  return m_nItems;
-}
 
 } // namespace measurements
 

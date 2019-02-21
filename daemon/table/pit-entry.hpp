@@ -40,15 +40,15 @@ class Entry;
 
 namespace pit {
 
-/** \brief an unordered collection of in-records
+/** \brief An unordered collection of in-records
  */
 typedef std::list<InRecord> InRecordCollection;
 
-/** \brief an unordered collection of out-records
+/** \brief An unordered collection of out-records
  */
 typedef std::list<OutRecord> OutRecordCollection;
 
-/** \brief an Interest table entry
+/** \brief An Interest table entry
  *
  *  An Interest table entry represents either a pending Interest or a recently satisfied Interest.
  *  Each entry contains a collection of in-records, a collection of out-records,
@@ -133,7 +133,7 @@ public: // in-record
   }
 
   /** \brief get the in-record for \p face and \p endpointId
-   *  \return an iterator to the in-record, or .in_end() if it does not exist
+   *  \return an iterator to the in-record, or in_end() if it does not exist
    */
   InRecordCollection::iterator
   getInRecord(const Face& face, EndpointId endpointId);
@@ -200,7 +200,7 @@ public: // out-record
   }
 
   /** \brief get the out-record for \p face and \p endpointId
-   *  \return an iterator to the out-record, or .out_end() if it does not exist
+   *  \return an iterator to the out-record, or out_end() if it does not exist
    */
   OutRecordCollection::iterator
   getOutRecord(const Face& face, EndpointId endpointId);
@@ -223,27 +223,27 @@ public: // cleanup
   deleteInOutRecordsByFace(const Face& face);
 
 public:
-  /** \brief expiry timer
+  /** \brief Expiry timer
    *
    *  This timer is used in forwarding pipelines to delete the entry
    */
   scheduler::EventId expiryTimer;
 
-  /** \brief indicate if PIT entry is satisfied
+  /** \brief Indicates whether this PIT entry is satisfied
    */
-  bool isSatisfied;
+  bool isSatisfied = false;
 
   /** \brief Data freshness period
    *  \note This field is meaningful only if isSatisfied is true
    */
-  time::milliseconds dataFreshnessPeriod;
+  time::milliseconds dataFreshnessPeriod = 0_ms;
 
 private:
   shared_ptr<const Interest> m_interest;
   InRecordCollection m_inRecords;
   OutRecordCollection m_outRecords;
 
-  name_tree::Entry* m_nameTreeEntry;
+  name_tree::Entry* m_nameTreeEntry = nullptr;
 
   friend class name_tree::Entry;
 };

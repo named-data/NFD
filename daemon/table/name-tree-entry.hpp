@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -36,7 +36,7 @@ namespace name_tree {
 
 class Node;
 
-/** \brief an entry in the name tree
+/** \brief An entry in the name tree
  */
 class Entry : noncopyable
 {
@@ -58,7 +58,7 @@ public:
     return m_parent;
   }
 
-  /** \brief set parent of this entry
+  /** \brief Set parent of this entry
    *  \param entry entry of getName().getPrefix(-1)
    *  \pre getParent() == nullptr
    *  \post getParent() == &entry
@@ -67,20 +67,19 @@ public:
   void
   setParent(Entry& entry);
 
-  /** \brief unset parent of this entry
+  /** \brief Unset parent of this entry
    *  \post getParent() == nullptr
    *  \post parent.getChildren() does not contain this
    */
   void
   unsetParent();
 
-  /** \retval true this entry has at least one child
-   *  \retval false this entry has no children
+  /** \brief Check whether this entry has any children
    */
   bool
   hasChildren() const
   {
-    return !this->getChildren().empty();
+    return !m_children.empty();
   }
 
   /** \return children of this entry
@@ -167,7 +166,7 @@ public: // attached table entries
 private:
   Name m_name;
   Node* m_node;
-  Entry* m_parent;
+  Entry* m_parent = nullptr;
   std::vector<Entry*> m_children;
 
   unique_ptr<fib::Entry> m_fibEntry;
@@ -185,7 +184,7 @@ template<typename ENTRY>
 class GetTableEntry
 {
 public:
-  /** \brief a function pointer to the getter on Entry class that returns ENTRY
+  /** \brief A function pointer to the getter on Entry class that returns ENTRY
    */
   using Getter = ENTRY* (Entry::*)() const;
 

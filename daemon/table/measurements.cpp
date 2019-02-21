@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,6 @@ namespace measurements {
 
 Measurements::Measurements(NameTree& nameTree)
   : m_nameTree(nameTree)
-  , m_nItems(0)
 {
 }
 
@@ -128,7 +127,7 @@ Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
 {
   BOOST_ASSERT(m_nameTree.getEntry(entry) != nullptr);
 
-  time::steady_clock::TimePoint expiry = time::steady_clock::now() + lifetime;
+  auto expiry = time::steady_clock::now() + lifetime;
   if (entry.m_expiry >= expiry) {
     // has longer lifetime, not extending
     return;

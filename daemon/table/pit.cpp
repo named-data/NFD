@@ -36,7 +36,6 @@ nteHasPitEntries(const name_tree::Entry& nte)
 
 Pit::Pit(NameTree& nameTree)
   : m_nameTree(nameTree)
-  , m_nItems(0)
 {
 }
 
@@ -89,8 +88,8 @@ Pit::findAllDataMatches(const Data& data) const
   auto&& ntMatches = m_nameTree.findAllMatches(data.getName(), &nteHasPitEntries);
 
   DataMatchResult matches;
-  for (const name_tree::Entry& nte : ntMatches) {
-    for (const shared_ptr<Entry>& pitEntry : nte.getPitEntries()) {
+  for (const auto& nte : ntMatches) {
+    for (const auto& pitEntry : nte.getPitEntries()) {
       if (pitEntry->getInterest().matchesData(data))
         matches.emplace_back(pitEntry);
     }

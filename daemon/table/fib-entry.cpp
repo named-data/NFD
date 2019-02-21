@@ -30,7 +30,6 @@ namespace fib {
 
 Entry::Entry(const Name& prefix)
   : m_prefix(prefix)
-  , m_nameTreeEntry(nullptr)
 {
 }
 

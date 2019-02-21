@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,7 +32,6 @@ namespace name_tree {
 Entry::Entry(const Name& name, Node* node)
   : m_name(name)
   , m_node(node)
-  , m_parent(nullptr)
 {
   BOOST_ASSERT(node != nullptr);
   BOOST_ASSERT(name.size() <= NameTree::getMaxDepth());
@@ -46,7 +45,6 @@ Entry::setParent(Entry& entry)
   BOOST_ASSERT(entry.getName() == this->getName().getPrefix(-1));
 
   m_parent = &entry;
-
   m_parent->m_children.push_back(this);
 }
 
@@ -103,7 +101,7 @@ Entry::erasePitEntry(pit::Entry* pitEntry)
   BOOST_ASSERT(pitEntry->m_nameTreeEntry == this);
 
   auto it = std::find_if(m_pitEntries.begin(), m_pitEntries.end(),
-    [pitEntry] (const shared_ptr<pit::Entry>& pitEntry2) { return pitEntry2.get() == pitEntry; });
+                         [pitEntry] (const auto& pitEntry2) { return pitEntry2.get() == pitEntry; });
   BOOST_ASSERT(it != m_pitEntries.end());
 
   pitEntry->m_nameTreeEntry = nullptr; // must be done before pitEntry is deallocated

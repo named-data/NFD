@@ -28,28 +28,18 @@
 namespace nfd {
 namespace pit {
 
-FaceRecord::FaceRecord(Face& face, EndpointId endpointId)
-  : m_face(face)
-  , m_endpointId(endpointId)
-  , m_lastNonce(0)
-  , m_lastRenewed(time::steady_clock::TimePoint::min())
-  , m_expiry(time::steady_clock::TimePoint::min())
-{
-}
-
 void
 FaceRecord::update(const Interest& interest)
 {
   m_lastNonce = interest.getNonce();
   m_lastRenewed = time::steady_clock::now();
 
-  time::milliseconds lifetime = interest.getInterestLifetime();
-  if (lifetime < time::milliseconds::zero()) {
+  auto lifetime = interest.getInterestLifetime();
+  if (lifetime < 0_ms) {
     lifetime = ndn::DEFAULT_INTEREST_LIFETIME;
   }
   m_expiry = m_lastRenewed + lifetime;
 }
-
 
 } // namespace pit
 } // namespace nfd

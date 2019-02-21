@@ -33,16 +33,16 @@ NFD_LOG_INIT(DeadNonceList);
 
 const time::nanoseconds DeadNonceList::DEFAULT_LIFETIME = 6_s;
 const time::nanoseconds DeadNonceList::MIN_LIFETIME = 1_ms;
-const size_t DeadNonceList::INITIAL_CAPACITY = (1 << 7);
-const size_t DeadNonceList::MIN_CAPACITY = (1 << 3);
-const size_t DeadNonceList::MAX_CAPACITY = (1 << 24);
+const size_t DeadNonceList::INITIAL_CAPACITY = 1 << 7;
+const size_t DeadNonceList::MIN_CAPACITY = 1 << 3;
+const size_t DeadNonceList::MAX_CAPACITY = 1 << 24;
 const DeadNonceList::Entry DeadNonceList::MARK = 0;
 const size_t DeadNonceList::EXPECTED_MARK_COUNT = 5;
 const double DeadNonceList::CAPACITY_UP = 1.2;
 const double DeadNonceList::CAPACITY_DOWN = 0.9;
-const size_t DeadNonceList::EVICT_LIMIT = (1 << 6);
+const size_t DeadNonceList::EVICT_LIMIT = 1 << 6;
 
-DeadNonceList::DeadNonceList(const time::nanoseconds& lifetime)
+DeadNonceList::DeadNonceList(time::nanoseconds lifetime)
   : m_lifetime(lifetime)
   , m_queue(m_index.get<0>())
   , m_ht(m_index.get<1>())
@@ -133,14 +133,12 @@ DeadNonceList::adjustCapacity()
   auto equalRange = m_actualMarkCounts.equal_range(EXPECTED_MARK_COUNT);
   if (equalRange.second == m_actualMarkCounts.begin()) {
     // all counts are above expected count, adjust down
-    m_capacity = std::max(MIN_CAPACITY,
-                          static_cast<size_t>(m_capacity * CAPACITY_DOWN));
+    m_capacity = std::max(MIN_CAPACITY, static_cast<size_t>(m_capacity * CAPACITY_DOWN));
     NFD_LOG_TRACE("adjustCapacity DOWN capacity=" << m_capacity);
   }
   else if (equalRange.first == m_actualMarkCounts.end()) {
     // all counts are below expected count, adjust up
-    m_capacity = std::min(MAX_CAPACITY,
-                          static_cast<size_t>(m_capacity * CAPACITY_UP));
+    m_capacity = std::min(MAX_CAPACITY, static_cast<size_t>(m_capacity * CAPACITY_UP));
     NFD_LOG_TRACE("adjustCapacity UP capacity=" << m_capacity);
   }
 

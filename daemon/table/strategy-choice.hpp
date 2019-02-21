@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,7 +37,7 @@ class Forwarder;
 
 namespace strategy_choice {
 
-/** \brief represents the Strategy Choice table
+/** \brief Represents the Strategy Choice table
  *
  *  The Strategy Choice table maintains available Strategy types,
  *  and associates Name prefixes with Strategy types.
@@ -60,7 +60,7 @@ public:
     return m_nItems;
   }
 
-  /** \brief set the default strategy
+  /** \brief Set the default strategy
    *
    *  This must be called by forwarder constructor.
    */
@@ -83,7 +83,7 @@ public: // Strategy Choice table
       return m_status == OK || m_status == EXCEPTION;
     }
 
-    /** \brief get a status code for use in management command response
+    /** \brief Get a status code for use in management command response
      */
     int
     getStatusCode() const
@@ -110,7 +110,7 @@ public: // Strategy Choice table
     friend std::ostream& operator<<(std::ostream&, const InsertResult&);
   };
 
-  /** \brief set strategy of \p prefix to be \p strategyName
+  /** \brief Set strategy of \p prefix to be \p strategyName
    *  \param prefix the name prefix to change strategy
    *  \param strategyName strategy instance name, may contain version and parameters;
    *                      strategy must have been registered
@@ -119,35 +119,34 @@ public: // Strategy Choice table
   InsertResult
   insert(const Name& prefix, const Name& strategyName);
 
-  /** \brief make prefix to inherit strategy from its parent
-   *
-   *  not allowed for root prefix (ndn:/)
+  /** \brief Make prefix to inherit strategy from its parent
+   *  \note Not allowed for root prefix (ndn:/)
    */
   void
   erase(const Name& prefix);
 
-  /** \brief get strategy Name of prefix
+  /** \brief Get strategy Name of prefix
    *  \return true and strategyName at exact match, or false
    */
   std::pair<bool, Name>
   get(const Name& prefix) const;
 
 public: // effective strategy
-  /** \brief get effective strategy for prefix
+  /** \brief Get effective strategy for \p prefix
    */
   fw::Strategy&
   findEffectiveStrategy(const Name& prefix) const;
 
-  /** \brief get effective strategy for pitEntry
+  /** \brief Get effective strategy for \p pitEntry
    *
-   *  This is equivalent to .findEffectiveStrategy(pitEntry.getName())
+   *  This is equivalent to `findEffectiveStrategy(pitEntry.getName())`
    */
   fw::Strategy&
   findEffectiveStrategy(const pit::Entry& pitEntry) const;
 
-  /** \brief get effective strategy for measurementsEntry
+  /** \brief Get effective strategy for \p measurementsEntry
    *
-   *  This is equivalent to .findEffectiveStrategy(measurementsEntry.getName())
+   *  This is equivalent to `findEffectiveStrategy(measurementsEntry.getName())`
    */
   fw::Strategy&
   findEffectiveStrategy(const measurements::Entry& measurementsEntry) const;
@@ -194,7 +193,7 @@ private:
 private:
   Forwarder& m_forwarder;
   NameTree& m_nameTree;
-  size_t m_nItems;
+  size_t m_nItems = 0;
 };
 
 std::ostream&

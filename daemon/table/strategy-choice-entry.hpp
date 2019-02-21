@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -40,11 +40,12 @@ class Entry;
 
 namespace strategy_choice {
 
-/** \brief represents a Strategy Choice entry
+/** \brief Represents a Strategy Choice entry
  */
 class Entry : noncopyable
 {
 public:
+  explicit
   Entry(const Name& prefix);
 
   ~Entry();
@@ -78,7 +79,7 @@ private:
   Name m_prefix;
   unique_ptr<fw::Strategy> m_strategy;
 
-  name_tree::Entry* m_nameTreeEntry;
+  name_tree::Entry* m_nameTreeEntry = nullptr;
   friend class name_tree::Entry;
 };
 

@@ -32,14 +32,16 @@
 namespace nfd {
 namespace fib {
 
-/** \class NextHop
- *  \brief represents a nexthop record in FIB entry
+/** \brief Represents a nexthop record in a FIB entry
  */
 class NextHop
 {
 public:
-  explicit
-  NextHop(Face& face, EndpointId endpointId);
+  NextHop(Face& face, EndpointId endpointId)
+    : m_face(&face)
+    , m_endpointId(endpointId)
+  {
+  }
 
   Face&
   getFace() const
@@ -66,9 +68,9 @@ public:
   }
 
 private:
-  Face* m_face;
+  Face* m_face; // pointer instead of reference so that NextHop is movable
   EndpointId m_endpointId;
-  uint64_t m_cost;
+  uint64_t m_cost = 0;
 };
 
 } // namespace fib

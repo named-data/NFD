@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -91,9 +91,9 @@ NameTree::lookup(const pit::Entry& pitEntry)
   Entry* nte = this->getEntry(pitEntry);
   BOOST_ASSERT(nte != nullptr);
   BOOST_ASSERT(std::count_if(nte->getPitEntries().begin(), nte->getPitEntries().end(),
-    [&pitEntry] (const shared_ptr<pit::Entry>& pitEntry1) {
-      return pitEntry1.get() == &pitEntry;
-    }) == 1);
+                             [&pitEntry] (const auto& pitEntry1) {
+                               return pitEntry1.get() == &pitEntry;
+                             }) == 1);
   return *nte;
 }
 

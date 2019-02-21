@@ -42,7 +42,7 @@ namespace pit {
  */
 using DataMatchResult = std::vector<shared_ptr<Entry>>;
 
-/** \brief represents the Interest Table
+/** \brief Represents the Interest Table
  */
 class Pit : noncopyable
 {
@@ -58,7 +58,7 @@ public:
     return m_nItems;
   }
 
-  /** \brief finds a PIT entry for Interest
+  /** \brief Finds a PIT entry for \p interest
    *  \param interest the Interest
    *  \return an existing entry with same Name and Selectors; otherwise nullptr
    */
@@ -68,7 +68,7 @@ public:
     return const_cast<Pit*>(this)->findOrInsert(interest, false).first;
   }
 
-  /** \brief inserts a PIT entry for Interest
+  /** \brief Inserts a PIT entry for \p interest
    *  \param interest the Interest; must be created with make_shared
    *  \return a new or existing entry with same Name and Selectors,
    *          and true for new entry, false for existing entry
@@ -79,13 +79,13 @@ public:
     return this->findOrInsert(interest, true);
   }
 
-  /** \brief performs a Data match
-   *  \return an iterable of all PIT entries matching data
+  /** \brief Performs a Data match
+   *  \return an iterable of all PIT entries matching \p data
    */
   DataMatchResult
   findAllDataMatches(const Data& data) const;
 
-  /** \brief deletes an entry
+  /** \brief Deletes an entry
    */
   void
   erase(Entry* entry)
@@ -93,7 +93,7 @@ public:
     this->erase(entry, true);
   }
 
-  /** \brief deletes all in-records and out-records for \p face
+  /** \brief Deletes all in-records and out-records for \p face
    */
   void
   deleteInOutRecordsByFace(Entry* entry, const Face& face);
@@ -104,7 +104,7 @@ public: // enumeration
   /** \return an iterator to the beginning
    *  \note Iteration order is implementation-defined.
    *  \warning Undefined behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
-   *           is inserted or erased during enumeration.
+   *           is inserted or erased during iteration.
    */
   const_iterator
   begin() const;
@@ -122,20 +122,20 @@ private:
   void
   erase(Entry* pitEntry, bool canDeleteNte);
 
-  /** \brief finds or inserts a PIT entry for Interest
+  /** \brief Finds or inserts a PIT entry for \p interest
    *  \param interest the Interest; must be created with make_shared if allowInsert
-   *  \param allowInsert whether inserting new entry is allowed.
+   *  \param allowInsert whether inserting a new entry is allowed
    *  \return if allowInsert, a new or existing entry with same Name+Selectors,
    *          and true for new entry, false for existing entry;
    *          if not allowInsert, an existing entry with same Name+Selectors and false,
-   *          or {nullptr, true} if there's no existing entry
+   *          or `{nullptr, true}` if there's no existing entry
    */
   std::pair<shared_ptr<Entry>, bool>
   findOrInsert(const Interest& interest, bool allowInsert);
 
 private:
   NameTree& m_nameTree;
-  size_t m_nItems;
+  size_t m_nItems = 0;
 };
 
 } // namespace pit

@@ -31,12 +31,12 @@
 namespace nfd {
 namespace pit {
 
-/** \brief contains information about an Interest toward an outgoing face
+/** \brief Contains information about an Interest toward an outgoing face
  */
 class OutRecord : public FaceRecord
 {
 public:
-  OutRecord(Face& face, EndpointId endpointId);
+  using FaceRecord::FaceRecord;
 
   /** \return last NACK returned by \p getFace()
    *

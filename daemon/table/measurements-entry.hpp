@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,13 +37,16 @@ class Entry;
 
 namespace measurements {
 
-/** \brief represents a Measurements entry
+/** \brief Represents a Measurements entry
  */
 class Entry : public StrategyInfoHost, noncopyable
 {
 public:
   explicit
-  Entry(const Name& name);
+  Entry(const Name& name)
+    : m_name(name)
+  {
+  }
 
   const Name&
   getName() const
@@ -53,10 +56,10 @@ public:
 
 private:
   Name m_name;
-  time::steady_clock::TimePoint m_expiry;
+  time::steady_clock::TimePoint m_expiry = time::steady_clock::TimePoint::min();
   scheduler::EventId m_cleanup;
 
-  name_tree::Entry* m_nameTreeEntry;
+  name_tree::Entry* m_nameTreeEntry = nullptr;
 
   friend class Measurements;
   friend class name_tree::Entry;

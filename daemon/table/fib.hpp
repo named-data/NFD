@@ -44,7 +44,7 @@ class Entry;
 
 namespace fib {
 
-/** \brief represents the Forwarding Information Base (FIB)
+/** \brief Represents the Forwarding Information Base (FIB)
  */
 class Fib : noncopyable
 {
@@ -59,26 +59,26 @@ public:
   }
 
 public: // lookup
-  /** \brief performs a longest prefix match
+  /** \brief Performs a longest prefix match
    */
   const Entry&
   findLongestPrefixMatch(const Name& prefix) const;
 
-  /** \brief performs a longest prefix match
+  /** \brief Performs a longest prefix match
    *
-   *  This is equivalent to .findLongestPrefixMatch(pitEntry.getName())
+   *  This is equivalent to `findLongestPrefixMatch(pitEntry.getName())`
    */
   const Entry&
   findLongestPrefixMatch(const pit::Entry& pitEntry) const;
 
-  /** \brief performs a longest prefix match
+  /** \brief Performs a longest prefix match
    *
-   *  This is equivalent to .findLongestPrefixMatch(measurementsEntry.getName())
+   *  This is equivalent to `findLongestPrefixMatch(measurementsEntry.getName())`
    */
   const Entry&
   findLongestPrefixMatch(const measurements::Entry& measurementsEntry) const;
 
-  /** \brief performs an exact match lookup
+  /** \brief Performs an exact match lookup
    */
   Entry*
   findExactMatch(const Name& prefix);
@@ -92,8 +92,8 @@ public: // mutation
     return FIB_MAX_DEPTH;
   }
 
-  /** \brief find or insert a FIB entry
-   *  \param prefix FIB entry name; it must have no more than \c getMaxDepth() components.
+  /** \brief Find or insert a FIB entry
+   *  \param prefix FIB entry name; it must not have more than \c getMaxDepth() components.
    *  \return the entry, and true for new entry or false for existing entry
    */
   std::pair<Entry*, bool>
@@ -105,12 +105,12 @@ public: // mutation
   void
   erase(const Entry& entry);
 
-  /** \brief removes the NextHop record for \p face with a given \p endpointId
+  /** \brief Remove the NextHop record for the given \p face and \p endpointId
    */
   void
   removeNextHop(Entry& entry, const Face& face, EndpointId endpointId);
 
-  /** \brief removes the NextHop record for \p face for any \p endpointId
+  /** \brief Remove all NextHop records for \p face
    */
   void
   removeNextHopByFace(Entry& entry, const Face& face);
@@ -120,9 +120,9 @@ public: // enumeration
   typedef boost::range_iterator<Range>::type const_iterator;
 
   /** \return an iterator to the beginning
-   *  \note Iteration order is implementation-defined.
+   *  \note The iteration order is implementation-defined.
    *  \warning Undefined behavior may occur if a FIB/PIT/Measurements/StrategyChoice entry
-   *           is inserted or erased during enumeration.
+   *           is inserted or erased during iteration.
    */
   const_iterator
   begin() const
@@ -149,7 +149,7 @@ private:
   void
   erase(name_tree::Entry* nte, bool canDeleteNte = true);
 
-  /** \brief erase \p entry if it contains no nexthop record
+  /** \brief Erase \p entry if it contains no nexthop records
    */
   void
   eraseIfEmpty(Entry& entry);
@@ -159,9 +159,9 @@ private:
 
 private:
   NameTree& m_nameTree;
-  size_t m_nItems;
+  size_t m_nItems = 0;
 
-  /** \brief the empty FIB entry.
+  /** \brief The empty FIB entry.
    *
    *  This entry has no nexthops.
    *  It is returned by findLongestPrefixMatch if nothing is matched.

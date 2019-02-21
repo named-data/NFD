@@ -28,11 +28,6 @@
 namespace nfd {
 namespace pit {
 
-OutRecord::OutRecord(Face& face, EndpointId endpointId)
-  : FaceRecord(face, endpointId)
-{
-}
-
 bool
 OutRecord::setIncomingNack(const lp::Nack& nack)
 {
@@ -40,7 +35,7 @@ OutRecord::setIncomingNack(const lp::Nack& nack)
     return false;
   }
 
-  m_incomingNack.reset(new lp::NackHeader(nack.getHeader()));
+  m_incomingNack = make_unique<lp::NackHeader>(nack.getHeader());
   return true;
 }
 

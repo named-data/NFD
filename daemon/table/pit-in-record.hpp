@@ -31,29 +31,26 @@
 namespace nfd {
 namespace pit {
 
-/** \brief contains information about an Interest from an incoming face
+/** \brief Contains information about an Interest from an incoming face
  */
 class InRecord : public FaceRecord
 {
 public:
-  InRecord(Face& face, EndpointId endpointId);
+  using FaceRecord::FaceRecord;
+
+  const Interest&
+  getInterest() const
+  {
+    BOOST_ASSERT(m_interest != nullptr);
+    return *m_interest;
+  }
 
   void
   update(const Interest& interest);
 
-  const Interest&
-  getInterest() const;
-
 private:
   shared_ptr<const Interest> m_interest;
 };
-
-inline const Interest&
-InRecord::getInterest() const
-{
-  BOOST_ASSERT(static_cast<bool>(m_interest));
-  return *m_interest;
-}
 
 } // namespace pit
 } // namespace nfd

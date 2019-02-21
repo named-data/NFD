@@ -112,7 +112,7 @@ private:
   Name m_prefix;
   NextHopList m_nextHops;
 
-  name_tree::Entry* m_nameTreeEntry;
+  name_tree::Entry* m_nameTreeEntry = nullptr;
 
   friend class name_tree::Entry;
 };

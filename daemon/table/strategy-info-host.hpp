@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,12 +30,12 @@
 
 namespace nfd {
 
-/** \brief base class for an entity onto which StrategyInfo items may be placed
+/** \brief Base class for an entity onto which StrategyInfo items may be placed
  */
 class StrategyInfoHost
 {
 public:
-  /** \brief get a StrategyInfo item
+  /** \brief Get a StrategyInfo item
    *  \tparam T type of StrategyInfo, must be a subclass of fw::StrategyInfo
    *  \return an existing StrategyInfo item of type T, or nullptr if it does not exist
    */
@@ -53,7 +53,7 @@ public:
     return static_cast<T*>(it->second.get());
   }
 
-  /** \brief insert a StrategyInfo item
+  /** \brief Insert a StrategyInfo item
    *  \tparam T type of StrategyInfo, must be a subclass of fw::StrategyInfo
    *  \return a new or existing StrategyInfo item of type T,
    *          and true for new item, false for existing item
@@ -65,15 +65,15 @@ public:
     static_assert(std::is_base_of<fw::StrategyInfo, T>::value,
                   "T must inherit from StrategyInfo");
 
-    unique_ptr<fw::StrategyInfo>& item = m_items[T::getTypeId()];
-    bool isNew = (item == nullptr);
+    auto& item = m_items[T::getTypeId()];
+    bool isNew = item == nullptr;
     if (isNew) {
-      item.reset(new T(std::forward<A>(args)...));
+      item = make_unique<T>(std::forward<A>(args)...);
     }
     return {static_cast<T*>(item.get()), isNew};
   }
 
-  /** \brief erase a StrategyInfo item
+  /** \brief Erase a StrategyInfo item
    *  \tparam T type of StrategyInfo, must be a subclass of fw::StrategyInfo
    *  \return number of items erased
    */
@@ -87,10 +87,13 @@ public:
     return m_items.erase(T::getTypeId());
   }
 
-  /** \brief clear all StrategyInfo items
+  /** \brief Clear all StrategyInfo items
    */
   void
-  clearStrategyInfo();
+  clearStrategyInfo()
+  {
+    m_items.clear();
+  }
 
 private:
   std::unordered_map<int, unique_ptr<fw::StrategyInfo>> m_items;
