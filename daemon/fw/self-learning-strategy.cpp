@@ -227,7 +227,7 @@ SelfLearningStrategy::addRoute(const shared_ptr<pit::Entry>& pitEntry, const Fac
 {
   runOnRibIoService([pitEntryWeak = weak_ptr<pit::Entry>{pitEntry}, inFaceId = inFace.getId(), data, pa] {
     rib::Service::get().getRibManager().slAnnounce(pa, inFaceId, ROUTE_RENEW_LIFETIME,
-      [] (rib::RibManager::SlAnnounceResult res) {
+      [] (RibManager::SlAnnounceResult res) {
         NFD_LOG_DEBUG("Add route via PrefixAnnouncement with result=" << res);
       });
   });
@@ -239,7 +239,7 @@ SelfLearningStrategy::renewRoute(const Name& name, FaceId inFaceId, time::millis
   // renew route with PA or ignore PA (if route has no PA)
   runOnRibIoService([name, inFaceId, maxLifetime] {
     rib::Service::get().getRibManager().slRenew(name, inFaceId, maxLifetime,
-      [] (rib::RibManager::SlAnnounceResult res) {
+      [] (RibManager::SlAnnounceResult res) {
         NFD_LOG_DEBUG("Renew route with result=" << res);
       });
   });

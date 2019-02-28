@@ -36,7 +36,9 @@
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
 namespace nfd {
-namespace rib {
+
+using rib::RibUpdate;
+using rib::Route;
 
 NFD_LOG_INIT(RibManager);
 
@@ -46,7 +48,7 @@ static const time::seconds ACTIVE_FACE_FETCH_INTERVAL = 5_min;
 
 const Name RibManager::LOCALHOP_TOP_PREFIX = "/localhop/nfd";
 
-RibManager::RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
+RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
                        ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
                        ndn::util::Scheduler& scheduler)
   : ManagerBase(dispatcher, MGMT_MODULE_NAME)
@@ -267,7 +269,7 @@ RibManager::listEntries(const Name& topPrefix, const Interest& interest,
 {
   auto now = time::steady_clock::now();
   for (const auto& kv : m_rib) {
-    const RibEntry& entry = *kv.second;
+    const rib::RibEntry& entry = *kv.second;
     ndn::nfd::RibEntry item;
     item.setName(entry.getName());
     for (const Route& route : entry.getRoutes()) {
@@ -414,7 +416,7 @@ RibManager::slRenew(const Name& name, uint64_t faceId, time::milliseconds maxLif
 void
 RibManager::slFindAnn(const Name& name, const SlFindAnnCallback& cb) const
 {
-  shared_ptr<RibEntry> entry;
+  shared_ptr<rib::RibEntry> entry;
   auto exactMatch = m_rib.find(name);
   if (exactMatch != m_rib.end()) {
     entry = exactMatch->second;
@@ -496,5 +498,4 @@ RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
   }
 }
 
-} // namespace rib
 } // namespace nfd

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,21 +23,18 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rib/rib-manager.hpp"
+#include "mgmt/rib-manager.hpp"
 #include "core/fib-max-depth.hpp"
+#include "rib/fib-updater.hpp"
 
 #include "tests/manager-common-fixture.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
 namespace nfd {
-namespace rib {
 namespace tests {
-
-using namespace nfd::tests;
 
 struct ConfigurationStatus
 {
@@ -65,7 +62,7 @@ public:
     , m_fibUpdater(m_rib, m_nfdController)
     , m_manager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler)
   {
-    m_rib.mockFibResponse = [] (const RibUpdateBatch& batch) {
+    m_rib.mockFibResponse = [] (const rib::RibUpdateBatch& batch) {
       BOOST_CHECK(batch.begin() != batch.end());
       return true;
     };
@@ -93,7 +90,7 @@ private:
   registerWithNfd()
   {
     m_manager.registerWithNfd();
-    advanceClocks(time::milliseconds(1));
+    advanceClocks(1_ms);
 
     auto replyFibAddCommand = [this] (const Interest& interest) {
       nfd::ControlParameters params(interest.getName().get(-5).blockFromValue());
@@ -114,7 +111,7 @@ private:
     for (const auto& command : m_commands) {
       if (commandPrefix.isPrefixOf(command.getName())) {
         replyFibAddCommand(command);
-        advanceClocks(time::milliseconds(1));
+        advanceClocks(1_ms);
       }
     }
 
@@ -210,8 +207,8 @@ protected:
 
   ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
-  Rib m_rib;
-  FibUpdater m_fibUpdater;
+  rib::Rib m_rib;
+  rib::FibUpdater m_fibUpdater;
   RibManager m_manager;
 };
 
@@ -240,6 +237,7 @@ operator<<(std::ostream& os, RibManagerFixture::CheckCommandResult result)
   return os << static_cast<int>(result);
 }
 
+BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestRibManager)
 
 class AddTopPrefixFixture : public RibManagerFixture
@@ -389,20 +387,20 @@ BOOST_AUTO_TEST_CASE(SelfOperation)
 
 BOOST_AUTO_TEST_CASE(Expiration)
 {
-  auto paramsRegister = makeRegisterParameters("/test-expiry", 9527, time::milliseconds(50));
+  auto paramsRegister = makeRegisterParameters("/test-expiry", 9527, 50_ms);
   auto paramsUnregister = makeRegisterParameters("/test-expiry", 9527);
   receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
-  advanceClocks(time::milliseconds(55));
+  advanceClocks(55_ms);
   BOOST_REQUIRE_EQUAL(m_commands.size(), 2); // the registered route has expired
   BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
   BOOST_CHECK_EQUAL(checkCommand(1, "remove-nexthop", paramsUnregister), CheckCommandResult::OK);
 
   m_commands.clear();
-  paramsRegister.setExpirationPeriod(time::milliseconds(100));
+  paramsRegister.setExpirationPeriod(100_ms);
   receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", paramsRegister));
 
-  advanceClocks(time::milliseconds(55));
+  advanceClocks(55_ms);
   BOOST_REQUIRE_EQUAL(m_commands.size(), 1); // the registered route is still active
   BOOST_CHECK_EQUAL(checkCommand(0, "add-nexthop", paramsRegister), CheckCommandResult::OK);
 }
@@ -431,8 +429,8 @@ BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister
 BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 {
   uint64_t faceId = 0;
-  auto generateRoute = [&faceId] () -> Route {
-    Route route;
+  auto generateRoute = [&faceId] () -> rib::Route {
+    rib::Route route;
     route.faceId = ++faceId;
     route.cost = route.faceId * 10;
     route.expires = nullopt;
@@ -491,7 +489,7 @@ BOOST_AUTO_TEST_CASE(FetchActiveFacesEvent)
 {
   BOOST_CHECK_EQUAL(m_commands.size(), 0);
 
-  advanceClocks(time::seconds(301)); // RibManager::ACTIVE_FACE_FETCH_INTERVAL = 300s
+  advanceClocks(301_s); // RibManager::ACTIVE_FACE_FETCH_INTERVAL = 300s
   BOOST_REQUIRE_EQUAL(m_commands.size(), 2);
   BOOST_CHECK_EQUAL(m_commands[0].getName(), "/localhost/nfd/faces/events");
   BOOST_CHECK_EQUAL(m_commands[1].getName(), "/localhost/nfd/faces/list");
@@ -512,7 +510,7 @@ BOOST_AUTO_TEST_CASE(RemoveInvalidFaces)
   activeFaces.push_back(status);
 
   m_manager.removeInvalidFaces(activeFaces);
-  advanceClocks(time::milliseconds(100));
+  advanceClocks(100_ms);
   BOOST_REQUIRE_EQUAL(m_rib.size(), 1);
 
   auto it1 = m_rib.find("/test-remove-invalid-faces-1");
@@ -531,24 +529,23 @@ BOOST_AUTO_TEST_CASE(OnNotification)
   receiveInterest(makeControlCommandRequest("/localhost/nfd/rib/register", parameters2));
   BOOST_REQUIRE_EQUAL(m_rib.size(), 2);
 
-  auto makeNotification = [] (ndn::nfd::FaceEventKind eventKind, uint64_t faceId) -> ndn::nfd::FaceEventNotification {
-    ndn::nfd::FaceEventNotification notification;
-    notification.setKind(eventKind).setFaceId(faceId);
-    return notification;
+  auto makeNotification = [] (ndn::nfd::FaceEventKind kind, uint64_t faceId) {
+    return ndn::nfd::FaceEventNotification().setKind(kind).setFaceId(faceId);
   };
 
   m_manager.onNotification(makeNotification(ndn::nfd::FaceEventKind::FACE_EVENT_DESTROYED, 1));
-  advanceClocks(time::milliseconds(100));
+  advanceClocks(100_ms);
   BOOST_CHECK_EQUAL(m_rib.size(), 0);
 
   m_manager.onNotification(makeNotification(ndn::nfd::FaceEventKind::FACE_EVENT_CREATED, 2));
-  advanceClocks(time::milliseconds(100));
+  advanceClocks(100_ms);
   BOOST_CHECK_EQUAL(m_rib.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // FaceMonitor
+
 BOOST_AUTO_TEST_SUITE_END() // TestRibManager
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
-} // namespace rib
 } // namespace nfd

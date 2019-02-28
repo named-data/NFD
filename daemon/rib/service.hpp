@@ -26,9 +26,10 @@
 #ifndef NFD_DAEMON_RIB_SERVICE_HPP
 #define NFD_DAEMON_RIB_SERVICE_HPP
 
-#include "rib-manager.hpp"
-
 #include "core/config-file.hpp"
+#include "mgmt/rib-manager.hpp"
+#include "rib/fib-updater.hpp"
+#include "rib/rib.hpp"
 
 #include <ndn-cxx/face.hpp>
 #include <ndn-cxx/mgmt/dispatcher.hpp>

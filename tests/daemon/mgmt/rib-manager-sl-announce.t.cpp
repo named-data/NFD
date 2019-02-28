@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,17 +23,17 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rib/rib-manager.hpp"
+#include "mgmt/rib-manager.hpp"
+#include "rib/fib-updater.hpp"
 
 #include "tests/identity-management-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
-namespace rib {
 namespace tests {
 
-using namespace nfd::tests;
+using rib::Route;
 
 class RibManagerSlAnnounceFixture : public IdentityManagementTimeFixture
 {
@@ -49,7 +49,7 @@ public:
     , m_trustedSigner(m_keyChain.createIdentity("/trusted", ndn::RsaKeyParams()))
     , m_untrustedSigner(m_keyChain.createIdentity("/untrusted", ndn::RsaKeyParams()))
   {
-    rib.mockFibResponse = [] (const RibUpdateBatch&) { return true; };
+    rib.mockFibResponse = [] (const auto&) { return true; };
     rib.wantMockFibResponseOnce = false;
 
     // Face, Controller, Dispatcher are irrelevant to SlAnnounce functions but required by
@@ -62,16 +62,16 @@ public:
 
   template<typename ...T>
   ndn::PrefixAnnouncement
-  makeTrustedAnn(const T&... args)
+  makeTrustedAnn(T&&... args)
   {
-    return signPrefixAnn(makePrefixAnn(args...), m_keyChain, m_trustedSigner);
+    return signPrefixAnn(makePrefixAnn(std::forward<T>(args)...), m_keyChain, m_trustedSigner);
   }
 
   template<typename ...T>
   ndn::PrefixAnnouncement
-  makeUntrustedAnn(const T&... args)
+  makeUntrustedAnn(T&&... args)
   {
-    return signPrefixAnn(makePrefixAnn(args...), m_keyChain, m_untrustedSigner);
+    return signPrefixAnn(makePrefixAnn(std::forward<T>(args)...), m_keyChain, m_untrustedSigner);
   }
 
   /** \brief Invoke manager->slAnnounce and wait for result.
@@ -158,7 +158,7 @@ private:
   }
 
 public:
-  Rib rib;
+  rib::Rib rib;
   unique_ptr<RibManager> manager;
 
 private:
@@ -166,13 +166,15 @@ private:
   ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   ndn::mgmt::Dispatcher m_dispatcher;
-  FibUpdater m_fibUpdater;
+  rib::FibUpdater m_fibUpdater;
 
   ndn::security::SigningInfo m_trustedSigner;
   ndn::security::SigningInfo m_untrustedSigner;
 };
 
-BOOST_FIXTURE_TEST_SUITE(TestSlAnnounce, RibManagerSlAnnounceFixture)
+BOOST_AUTO_TEST_SUITE(Mgmt)
+BOOST_AUTO_TEST_SUITE(TestRibManager)
+BOOST_FIXTURE_TEST_SUITE(SlAnnounce, RibManagerSlAnnounceFixture)
 
 BOOST_AUTO_TEST_CASE(AnnounceUnconfigured)
 {
@@ -327,8 +329,9 @@ BOOST_AUTO_TEST_CASE(FindNone)
   BOOST_CHECK(!pa);
 }
 
-BOOST_AUTO_TEST_SUITE_END() // TestSlAnnounce
+BOOST_AUTO_TEST_SUITE_END() // SlAnnounce
+BOOST_AUTO_TEST_SUITE_END() // TestRibManager
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
-} // namespace rib
 } // namespace nfd

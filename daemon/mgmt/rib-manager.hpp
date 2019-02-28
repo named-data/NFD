@@ -23,28 +23,26 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_RIB_RIB_MANAGER_HPP
-#define NFD_DAEMON_RIB_RIB_MANAGER_HPP
-
-#include "fib-updater.hpp"
-#include "rib.hpp"
+#ifndef NFD_DAEMON_MGMT_RIB_MANAGER_HPP
+#define NFD_DAEMON_MGMT_RIB_MANAGER_HPP
 
 #include "core/config-file.hpp"
 #include "core/manager-base.hpp"
+#include "rib/rib.hpp"
 
-#include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
 #include <ndn-cxx/mgmt/nfd/face-monitor.hpp>
+#include <ndn-cxx/security/validator-config.hpp>
 #include <ndn-cxx/util/scheduler.hpp>
 
 namespace nfd {
-namespace rib {
 
 /**
- * @brief Serve commands and datasets in NFD RIB management protocol.
+ * @brief Serve commands and datasets of NFD RIB management protocol.
+ * @sa https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
  */
-class RibManager : public nfd::ManagerBase
+class RibManager : public ManagerBase
 {
 public:
   class Error : public std::runtime_error
@@ -53,8 +51,9 @@ public:
     using std::runtime_error::runtime_error;
   };
 
-  RibManager(Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain, ndn::nfd::Controller& nfdController,
-             Dispatcher& dispatcher, ndn::util::Scheduler& scheduler);
+  RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
+             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
+             ndn::util::Scheduler& scheduler);
 
   /**
    * @brief Apply localhost_security configuration.
@@ -174,7 +173,7 @@ private: // RIB and FibUpdater actions
    *  \param done completion callback
    */
   void
-  beginAddRoute(const Name& name, Route route, optional<time::nanoseconds> expires,
+  beginAddRoute(const Name& name, rib::Route route, optional<time::nanoseconds> expires,
                 const std::function<void(RibUpdateResult)>& done);
 
   /** \brief Start removing a route from RIB and FIB.
@@ -183,11 +182,12 @@ private: // RIB and FibUpdater actions
    *  \param done completion callback
    */
   void
-  beginRemoveRoute(const Name& name, const Route& route,
+  beginRemoveRoute(const Name& name, const rib::Route& route,
                    const std::function<void(RibUpdateResult)>& done);
 
   void
-  beginRibUpdate(const RibUpdate& update, const std::function<void(RibUpdateResult)>& done);
+  beginRibUpdate(const rib::RibUpdate& update,
+                 const std::function<void(RibUpdateResult)>& done);
 
 private: // management Dispatcher related
   void
@@ -243,7 +243,7 @@ public:
   static const Name LOCALHOP_TOP_PREFIX;
 
 private:
-  Rib& m_rib;
+  rib::Rib& m_rib;
   ndn::KeyChain& m_keyChain;
   ndn::nfd::Controller& m_nfdController;
   Dispatcher& m_dispatcher;
@@ -262,7 +262,6 @@ private:
 std::ostream&
 operator<<(std::ostream& os, RibManager::SlAnnounceResult res);
 
-} // namespace rib
 } // namespace nfd
 
-#endif // NFD_DAEMON_RIB_RIB_MANAGER_HPP
+#endif // NFD_DAEMON_MGMT_RIB_MANAGER_HPP
