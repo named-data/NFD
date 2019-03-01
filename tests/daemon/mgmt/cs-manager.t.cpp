@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,14 +25,14 @@
 
 #include "mgmt/cs-manager.hpp"
 
-#include "nfd-manager-common-fixture.hpp"
+#include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/mgmt/nfd/cs-info.hpp>
 
 namespace nfd {
 namespace tests {
 
-class CsManagerFixture : public NfdManagerCommonFixture
+class CsManagerFixture : public ManagerFixtureWithAuthenticator
 {
 public:
   CsManagerFixture()

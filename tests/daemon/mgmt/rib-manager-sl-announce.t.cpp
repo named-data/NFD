@@ -165,7 +165,7 @@ private:
   ndn::util::DummyClientFace m_face;
   ndn::util::Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
-  ndn::mgmt::Dispatcher m_dispatcher;
+  Dispatcher m_dispatcher;
   rib::FibUpdater m_fibUpdater;
 
   ndn::security::SigningInfo m_trustedSigner;

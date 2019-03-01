@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,19 +26,24 @@
 #ifndef NFD_DAEMON_MGMT_CS_MANAGER_HPP
 #define NFD_DAEMON_MGMT_CS_MANAGER_HPP
 
-#include "nfd-manager-base.hpp"
-#include "table/cs.hpp"
-#include "fw/forwarder-counters.hpp"
+#include "manager-base.hpp"
 
 namespace nfd {
 
-/** \brief Implement the CS Management of NFD Management Protocol.
- *  \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
+namespace cs {
+class Cs;
+} // namespace cs
+
+class ForwarderCounters;
+
+/**
+ * \brief Implements the CS Management of NFD Management Protocol.
+ * \sa https://redmine.named-data.net/projects/nfd/wiki/CsMgmt
  */
-class CsManager : public NfdManagerBase
+class CsManager : public ManagerBase
 {
 public:
-  CsManager(Cs& cs, const ForwarderCounters& fwCnt,
+  CsManager(cs::Cs& cs, const ForwarderCounters& fwCounters,
             Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
@@ -64,8 +69,8 @@ public:
   static constexpr size_t ERASE_LIMIT = 256;
 
 private:
-  Cs& m_cs;
-  const ForwarderCounters& m_fwCnt;
+  cs::Cs& m_cs;
+  const ForwarderCounters& m_fwCounters;
 };
 
 } // namespace nfd

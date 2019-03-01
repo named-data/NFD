@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@
 #include "mgmt/face-manager.hpp"
 #include "fw/face-table.hpp"
 
-#include "tests/manager-common-fixture.hpp"
+#include "manager-common-fixture.hpp"
 
 namespace nfd {
 namespace tests {
@@ -50,7 +50,7 @@ public:
 
 public:
   ndn::util::DummyClientFace face;
-  ndn::mgmt::Dispatcher dispatcher;
+  Dispatcher dispatcher;
   shared_ptr<CommandAuthenticator> authenticator;
 
   FaceTable faceTable;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,24 +26,25 @@
 #include "mgmt/forwarder-status-manager.hpp"
 #include "core/version.hpp"
 
-#include "nfd-manager-common-fixture.hpp"
+#include "manager-common-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
-class ForwarderStatusManagerFixture : public NfdManagerCommonFixture
+class ForwarderStatusManagerFixture : public ManagerCommonFixture
 {
 protected:
   ForwarderStatusManagerFixture()
-    : manager(m_forwarder, m_dispatcher)
-    , startTime(time::system_clock::now())
+    : m_manager(m_forwarder, m_dispatcher)
+    , m_startTime(time::system_clock::now())
   {
     setTopPrefix();
   }
 
 protected:
-  ForwarderStatusManager manager;
-  time::system_clock::TimePoint startTime;
+  Forwarder m_forwarder;
+  ForwarderStatusManager m_manager;
+  time::system_clock::TimePoint m_startTime;
 };
 
 BOOST_AUTO_TEST_SUITE(Mgmt)
@@ -78,11 +79,9 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
   BOOST_CHECK_EQUAL(m_forwarder.getCounters().nUnsatisfiedInterests, 1);
 
   // request
-  time::system_clock::TimePoint beforeRequest = time::system_clock::now();
-  Interest request("/localhost/nfd/status/general");
-  request.setMustBeFresh(true).setChildSelector(1);
-  this->receiveInterest(request);
-  time::system_clock::TimePoint afterRequest = time::system_clock::now();
+  auto beforeRequest = time::system_clock::now();
+  receiveInterest(Interest("/localhost/nfd/status/general").setCanBePrefix(true));
+  auto afterRequest = time::system_clock::now();
 
   // verify
   Block response = this->concatenateResponses(0, m_responses.size());
@@ -90,7 +89,7 @@ BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
   BOOST_REQUIRE_NO_THROW(status.wireDecode(response));
 
   BOOST_CHECK_EQUAL(status.getNfdVersion(), NFD_VERSION_BUILD_STRING);
-  BOOST_CHECK_EQUAL(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(startTime));
+  BOOST_CHECK_EQUAL(time::toUnixTimestamp(status.getStartTimestamp()), time::toUnixTimestamp(m_startTime));
   BOOST_CHECK_GE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(beforeRequest));
   BOOST_CHECK_LE(time::toUnixTimestamp(status.getCurrentTimestamp()), time::toUnixTimestamp(afterRequest));
 

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,8 @@
 #ifndef NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP
 #define NFD_DAEMON_MGMT_FORWARDER_STATUS_MANAGER_HPP
 
-#include "core/manager-base.hpp"
+#include "manager-base.hpp"
+
 #include <ndn-cxx/mgmt/nfd/forwarder-status.hpp>
 
 namespace nfd {
@@ -34,8 +35,8 @@ namespace nfd {
 class Forwarder;
 
 /**
- * @brief implement the Forwarder Status of NFD Management Protocol.
- * @sa http://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
+ * @brief Implements the Forwarder Status of NFD Management Protocol.
+ * @sa https://redmine.named-data.net/projects/nfd/wiki/ForwarderStatus
  */
 class ForwarderStatusManager : noncopyable
 {
@@ -53,7 +54,7 @@ private:
                     ndn::mgmt::StatusDatasetContext& context);
 
 private:
-  Forwarder&  m_forwarder;
+  Forwarder& m_forwarder;
   Dispatcher& m_dispatcher;
   time::system_clock::TimePoint m_startTimestamp;
 };

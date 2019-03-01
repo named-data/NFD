@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,12 +27,17 @@
 
 namespace nfd {
 
-using ndn::mgmt::ValidateParameters;
-using ndn::mgmt::Authorization;
+ManagerBase::ManagerBase(const std::string& module, Dispatcher& dispatcher)
+  : m_module(module)
+  , m_dispatcher(dispatcher)
+{
+}
 
-ManagerBase::ManagerBase(Dispatcher& dispatcher, const std::string& module)
-  : m_dispatcher(dispatcher)
-  , m_module(module)
+ManagerBase::ManagerBase(const std::string& module, Dispatcher& dispatcher,
+                         CommandAuthenticator& authenticator)
+  : m_module(module)
+  , m_dispatcher(dispatcher)
+  , m_authenticator(&authenticator)
 {
 }
 
@@ -73,8 +78,16 @@ ManagerBase::extractRequester(const Interest& interest,
   }
 }
 
+ndn::mgmt::Authorization
+ManagerBase::makeAuthorization(const std::string& verb)
+{
+  BOOST_ASSERT(m_authenticator != nullptr);
+  return m_authenticator->makeAuthorization(m_module, verb);
+}
+
 bool
-ManagerBase::validateParameters(const nfd::ControlCommand& command, const ndn::mgmt::ControlParameters& parameters)
+ManagerBase::validateParameters(const ControlCommand& command,
+                                const ndn::mgmt::ControlParameters& parameters)
 {
   BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&parameters) != nullptr);
 
@@ -88,13 +101,14 @@ ManagerBase::validateParameters(const nfd::ControlCommand& command, const ndn::m
 }
 
 void
-ManagerBase::handleCommand(shared_ptr<nfd::ControlCommand> command,
+ManagerBase::handleCommand(shared_ptr<ControlCommand> command,
                            const ControlCommandHandler& handler,
                            const Name& prefix, const Interest& interest,
                            const ndn::mgmt::ControlParameters& params,
                            ndn::mgmt::CommandContinuation done)
 {
   BOOST_ASSERT(dynamic_cast<const ControlParameters*>(&params) != nullptr);
+
   ControlParameters parameters = static_cast<const ControlParameters&>(params);
   command->applyDefaultsToRequest(parameters);
   handler(*command, prefix, interest, parameters, done);

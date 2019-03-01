@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_MGMT_STRATEGY_CHOICE_MANAGER_HPP
 #define NFD_DAEMON_MGMT_STRATEGY_CHOICE_MANAGER_HPP
 
-#include "nfd-manager-base.hpp"
+#include "manager-base.hpp"
 
 namespace nfd {
 
@@ -35,15 +35,14 @@ class StrategyChoice;
 } // namespace strategy_choice
 
 /**
- * @brief implement the Strategy Choice Management of NFD Management Protocol.
- * @sa http://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
+ * @brief Implements the Strategy Choice Management of NFD Management Protocol.
+ * @sa https://redmine.named-data.net/projects/nfd/wiki/StrategyChoice
  */
-class StrategyChoiceManager : public NfdManagerBase
+class StrategyChoiceManager : public ManagerBase
 {
 public:
   StrategyChoiceManager(strategy_choice::StrategyChoice& table,
-                        Dispatcher& dispatcher,
-                        CommandAuthenticator& authenticator);
+                        Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
   void

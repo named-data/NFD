@@ -26,8 +26,8 @@
 #include "mgmt/fib-manager.hpp"
 #include "table/fib-nexthop.hpp"
 
-#include "nfd-manager-common-fixture.hpp"
-#include "../face/dummy-face.hpp"
+#include "manager-common-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
@@ -35,7 +35,7 @@
 namespace nfd {
 namespace tests {
 
-class FibManagerFixture : public NfdManagerCommonFixture
+class FibManagerFixture : public ManagerFixtureWithAuthenticator
 {
 public:
   FibManagerFixture()

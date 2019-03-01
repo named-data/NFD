@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,25 +26,25 @@
 #ifndef NFD_DAEMON_MGMT_FIB_MANAGER_HPP
 #define NFD_DAEMON_MGMT_FIB_MANAGER_HPP
 
-#include "nfd-manager-base.hpp"
-#include "fw/forwarder.hpp"
-#include "table/fib.hpp"
+#include "manager-base.hpp"
 
 namespace nfd {
+
+namespace fib {
+class Fib;
+} // namespace fib
 
 class FaceTable;
 
 /**
- * @brief implement the FIB Management of NFD Management Protocol.
+ * @brief Implements the FIB Management of NFD Management Protocol.
  * @sa https://redmine.named-data.net/projects/nfd/wiki/FibMgmt
  */
-class FibManager : public NfdManagerBase
+class FibManager : public ManagerBase
 {
 public:
-  FibManager(Fib& fib,
-             const FaceTable& faceTable,
-             Dispatcher& dispatcher,
-             CommandAuthenticator& authenticator);
+  FibManager(fib::Fib& fib, const FaceTable& faceTable,
+             Dispatcher& dispatcher, CommandAuthenticator& authenticator);
 
 private:
   void
@@ -66,7 +66,7 @@ private:
   setFaceForSelfRegistration(const Interest& request, ControlParameters& parameters);
 
 private:
-  Fib& m_fib;
+  fib::Fib& m_fib;
   const FaceTable& m_faceTable;
 };
 

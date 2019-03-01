@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/manager-base.hpp"
-#include "tests/manager-common-fixture.hpp"
+#include "mgmt/manager-base.hpp"
 
-#include <ndn-cxx/mgmt/nfd/control-command.hpp>
+#include "manager-common-fixture.hpp"
+
 #include <ndn-cxx/security/key-chain.hpp>
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/key.hpp>
@@ -35,30 +35,35 @@
 namespace nfd {
 namespace tests {
 
-class TestCommandVoidParameters : public ndn::nfd::ControlCommand
+class TestCommandVoidParameters : public ControlCommand
 {
 public:
   TestCommandVoidParameters()
-    : ndn::nfd::ControlCommand("test-module", "test-void-parameters")
+    : ControlCommand("test-module", "test-void-parameters")
   {
   }
 };
 
-class TestCommandRequireName : public ndn::nfd::ControlCommand
+class TestCommandRequireName : public ControlCommand
 {
 public:
   TestCommandRequireName()
-    : ndn::nfd::ControlCommand("test-module", "test-require-name")
+    : ControlCommand("test-module", "test-require-name")
   {
     m_requestValidator.required(ndn::nfd::CONTROL_PARAMETER_NAME);
   }
 };
 
-class ManagerTester : public ManagerBase
+class DummyManager : public ManagerBase
 {
 public:
-  using ManagerBase::ManagerBase;
+  explicit
+  DummyManager(Dispatcher& dispatcher)
+    : ManagerBase("test-module", dispatcher)
+  {
+  }
 
+private:
   ndn::mgmt::Authorization
   makeAuthorization(const std::string& verb) override
   {
@@ -73,16 +78,11 @@ public:
 
 class ManagerBaseFixture : public ManagerCommonFixture
 {
-public:
-  ManagerBaseFixture()
-    : m_manager(m_dispatcher, "test-module")
-  {
-  }
-
 protected:
-  ManagerTester m_manager;
+  DummyManager m_manager{m_dispatcher};
 };
 
+BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_FIXTURE_TEST_SUITE(TestManagerBase, ManagerBaseFixture)
 
 BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(RegisterCommandHandler)
 
   m_manager.registerCommandHandler<TestCommandVoidParameters>("test-void", handler);
   m_manager.registerCommandHandler<TestCommandRequireName>("test-require-name", handler);
-  setTopPrefix("/localhost/nfd");
+  setTopPrefix();
 
   auto testRegisterCommandHandler = [&wasCommandHandlerCalled, this] (const Name& commandName) {
     wasCommandHandlerCalled = false;
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
   auto handler = bind([&] { isStatusDatasetCalled = true; });
 
   m_manager.registerStatusDatasetHandler("test-status", handler);
-  setTopPrefix("/localhost/nfd");
+  setTopPrefix();
 
   receiveInterest(Interest("/localhost/nfd/test-module/test-status"));
   BOOST_CHECK(isStatusDatasetCalled);
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(RegisterStatusDataset)
 BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
 {
   auto post = m_manager.registerNotificationStream("test-notification");
-  setTopPrefix("/localhost/nfd");
+  setTopPrefix();
 
   const uint8_t buf[] = {0x82, 0x01, 0x02};
   post(Block(buf, sizeof(buf)));
@@ -166,6 +166,7 @@ BOOST_AUTO_TEST_CASE(MakeRelPrefix)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestManagerBase
+BOOST_AUTO_TEST_SUITE_END() // Mgmt
 
 } // namespace tests
 } // namespace nfd

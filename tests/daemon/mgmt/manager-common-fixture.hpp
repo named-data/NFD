@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,21 +23,21 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP
-#define NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP
+#ifndef NFD_TESTS_DAEMON_MGMT_MANAGER_COMMON_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_MGMT_MANAGER_COMMON_FIXTURE_HPP
 
-#include "tests/test-common.hpp"
+#include "mgmt/manager-base.hpp"
+#include "fw/forwarder.hpp"
+
 #include "tests/identity-management-fixture.hpp"
-#include "core/manager-base.hpp"
 
-#include <ndn-cxx/mgmt/dispatcher.hpp>
 #include <ndn-cxx/security/command-interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
 namespace nfd {
 namespace tests {
 
-/** \brief a fixture that provides a CommandInterestSigner
+/** \brief A fixture that provides a CommandInterestSigner.
  */
 class CommandInterestSignerFixture : public IdentityManagementTimeFixture
 {
@@ -70,7 +70,7 @@ private:
 };
 
 /**
- * @brief a collection of common functions shared by all manager's testing fixtures.
+ * @brief A collection of common functions shared by all manager's test fixtures.
  */
 class ManagerCommonFixture : public CommandInterestSignerFixture
 {
@@ -78,14 +78,12 @@ public: // initialize
   ManagerCommonFixture();
 
   /**
-   * @brief set topPrefix to the dispatcher.
+   * @brief Add `/localhost/nfd` as a top prefix to the dispatcher.
    *
-   * after setting @param topPrefix, call advanceClocks to ensure all added filters take effects.
-   *
-   * @param topPrefix top prefix for the dispatcher
+   * Afterwards, advanceClocks() is called to ensure all added filters take effect.
    */
   void
-  setTopPrefix(const Name& topPrefix);
+  setTopPrefix();
 
 public: // test
   /**
@@ -101,8 +99,7 @@ public: // test
 
 public: // verify
   ControlResponse
-  makeResponse(uint32_t code, const std::string& text,
-               const ControlParameters& parameters);
+  makeResponse(uint32_t code, const std::string& text, const ControlParameters& parameters);
 
   enum class CheckResponseResult
   {
@@ -156,14 +153,52 @@ public: // verify
 
 protected:
   ndn::util::DummyClientFace m_face;
-  ndn::mgmt::Dispatcher m_dispatcher;
-  std::vector<Data>& m_responses; ///< a reference of m_face->sentData
+  Dispatcher m_dispatcher;
+  std::vector<Data>& m_responses; ///< a reference to m_face.sentData
 };
 
 std::ostream&
-operator<<(std::ostream& os, const ManagerCommonFixture::CheckResponseResult& result);
+operator<<(std::ostream& os, ManagerCommonFixture::CheckResponseResult result);
+
+class ManagerFixtureWithAuthenticator : public ManagerCommonFixture
+{
+public:
+  /** \brief grant m_identityName privilege to sign commands for the management module
+   */
+  void
+  setPrivilege(const std::string& privilege);
+
+protected:
+  Forwarder m_forwarder;
+  shared_ptr<CommandAuthenticator> m_authenticator = CommandAuthenticator::create();
+};
+
+class CommandSuccess
+{
+public:
+  static ControlResponse
+  getExpected()
+  {
+    return ControlResponse()
+        .setCode(200)
+        .setText("OK");
+  }
+};
+
+template<int CODE>
+class CommandFailure
+{
+public:
+  static ControlResponse
+  getExpected()
+  {
+    return ControlResponse()
+        .setCode(CODE);
+    // error description should not be checked
+  }
+};
 
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_MANAGER_COMMON_FIXTURE_HPP
+#endif // NFD_TESTS_DAEMON_MGMT_MANAGER_COMMON_FIXTURE_HPP

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,17 +24,20 @@
  */
 
 #include "cs-manager.hpp"
+#include "fw/forwarder-counters.hpp"
+#include "table/cs.hpp"
+
 #include <ndn-cxx/mgmt/nfd/cs-info.hpp>
 
 namespace nfd {
 
 constexpr size_t CsManager::ERASE_LIMIT;
 
-CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCnt,
+CsManager::CsManager(Cs& cs, const ForwarderCounters& fwCounters,
                      Dispatcher& dispatcher, CommandAuthenticator& authenticator)
-  : NfdManagerBase(dispatcher, authenticator, "cs")
+  : ManagerBase("cs", dispatcher, authenticator)
   , m_cs(cs)
-  , m_fwCnt(fwCnt)
+  , m_fwCounters(fwCounters)
 {
   registerCommandHandler<ndn::nfd::CsConfigCommand>("config",
     bind(&CsManager::changeConfig, this, _4, _5));
@@ -106,8 +109,8 @@ CsManager::serveInfo(const Name& topPrefix, const Interest& interest,
   info.setEnableAdmit(m_cs.shouldAdmit());
   info.setEnableServe(m_cs.shouldServe());
   info.setNEntries(m_cs.size());
-  info.setNHits(m_fwCnt.nCsHits);
-  info.setNMisses(m_fwCnt.nCsMisses);
+  info.setNHits(m_fwCounters.nCsHits);
+  info.setNMisses(m_fwCounters.nCsMisses);
 
   context.append(info.wireEncode());
   context.end();

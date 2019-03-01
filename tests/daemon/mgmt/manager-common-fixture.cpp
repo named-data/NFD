@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "manager-common-fixture.hpp"
+
 #include <ndn-cxx/security/signing-helpers.hpp>
 
 namespace nfd {
@@ -60,10 +61,10 @@ ManagerCommonFixture::ManagerCommonFixture()
 }
 
 void
-ManagerCommonFixture::setTopPrefix(const Name& topPrefix)
+ManagerCommonFixture::setTopPrefix()
 {
-  m_dispatcher.addTopPrefix(topPrefix); // so that all filters are added
-  advanceClocks(1_ms);
+  m_dispatcher.addTopPrefix("/localhost/nfd");
+  advanceClocks(1_ms); // so that all filters are added
 }
 
 void
@@ -167,7 +168,7 @@ ManagerCommonFixture::concatenateResponses(size_t startIndex, size_t nResponses)
 }
 
 std::ostream&
-operator<<(std::ostream& os, const ManagerCommonFixture::CheckResponseResult& result)
+operator<<(std::ostream& os, ManagerCommonFixture::CheckResponseResult result)
 {
   switch (result) {
     case ManagerCommonFixture::CheckResponseResult::OK:
@@ -190,6 +191,30 @@ operator<<(std::ostream& os, const ManagerCommonFixture::CheckResponseResult& re
       return os << "WRONG_BODY_VALUE";
   }
   return os << static_cast<int>(result);
+}
+
+void
+ManagerFixtureWithAuthenticator::setPrivilege(const std::string& privilege)
+{
+  saveIdentityCertificate(DEFAULT_COMMAND_SIGNER_IDENTITY, "ManagerCommonFixture.ndncert");
+
+  const std::string& config = R"CONFIG(
+    authorizations
+    {
+      authorize
+      {
+        certfile "ManagerCommonFixture.ndncert"
+        privileges
+        {
+          )CONFIG" + privilege + R"CONFIG(
+        }
+      }
+    }
+  )CONFIG";
+
+  ConfigFile cf;
+  m_authenticator->setConfigFile(cf);
+  cf.parse(config, false, "ManagerCommonFixture.authenticator.conf");
 }
 
 } // namespace tests

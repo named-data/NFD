@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,15 +26,15 @@
 #include "mgmt/strategy-choice-manager.hpp"
 #include "table/strategy-choice.hpp"
 
-#include "nfd-manager-common-fixture.hpp"
-#include "../fw/dummy-strategy.hpp"
+#include "manager-common-fixture.hpp"
+#include "tests/daemon/fw/dummy-strategy.hpp"
 
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>
 
 namespace nfd {
 namespace tests {
 
-class StrategyChoiceManagerFixture : public NfdManagerCommonFixture
+class StrategyChoiceManagerFixture : public ManagerFixtureWithAuthenticator
 {
 public:
   StrategyChoiceManagerFixture()

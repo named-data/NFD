@@ -27,11 +27,9 @@
 
 #include "core/fib-max-depth.hpp"
 #include "core/logger.hpp"
+#include "rib/rib.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
-#include <ndn-cxx/mgmt/nfd/control-command.hpp>
-#include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
-#include <ndn-cxx/mgmt/nfd/control-response.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
 #include <ndn-cxx/mgmt/nfd/rib-entry.hpp>
 
@@ -51,7 +49,7 @@ const Name RibManager::LOCALHOP_TOP_PREFIX = "/localhop/nfd";
 RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
                        ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
                        ndn::util::Scheduler& scheduler)
-  : ManagerBase(dispatcher, MGMT_MODULE_NAME)
+  : ManagerBase(MGMT_MODULE_NAME, dispatcher)
   , m_rib(rib)
   , m_keyChain(keyChain)
   , m_nfdController(nfdController)

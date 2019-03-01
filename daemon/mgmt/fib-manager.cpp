@@ -27,6 +27,7 @@
 
 #include "core/logger.hpp"
 #include "fw/face-table.hpp"
+#include "table/fib.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/fib-entry.hpp>
@@ -37,11 +38,9 @@ namespace nfd {
 
 NFD_LOG_INIT(FibManager);
 
-FibManager::FibManager(Fib& fib,
-                       const FaceTable& faceTable,
-                       Dispatcher& dispatcher,
-                       CommandAuthenticator& authenticator)
-  : NfdManagerBase(dispatcher, authenticator, "fib")
+FibManager::FibManager(Fib& fib, const FaceTable& faceTable,
+                       Dispatcher& dispatcher, CommandAuthenticator& authenticator)
+  : ManagerBase("fib", dispatcher, authenticator)
   , m_fib(fib)
   , m_faceTable(faceTable)
 {

@@ -26,9 +26,9 @@
 #include "mgmt/face-manager.hpp"
 #include "face/protocol-factory.hpp"
 
-#include "nfd-manager-common-fixture.hpp"
-#include "../face/dummy-face.hpp"
-#include "../face/dummy-transport.hpp"
+#include "manager-common-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
+#include "tests/daemon/face/dummy-transport.hpp"
 
 #include <ndn-cxx/encoding/tlv.hpp>
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
@@ -42,7 +42,7 @@
 namespace nfd {
 namespace tests {
 
-class FaceManagerFixture : public NfdManagerCommonFixture
+class FaceManagerFixture : public ManagerFixtureWithAuthenticator
 {
 public:
   FaceManagerFixture()

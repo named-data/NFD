@@ -26,9 +26,9 @@
 #ifndef NFD_DAEMON_MGMT_RIB_MANAGER_HPP
 #define NFD_DAEMON_MGMT_RIB_MANAGER_HPP
 
+#include "manager-base.hpp"
 #include "core/config-file.hpp"
-#include "core/manager-base.hpp"
-#include "rib/rib.hpp"
+#include "rib/route.hpp"
 
 #include <ndn-cxx/mgmt/nfd/controller.hpp>
 #include <ndn-cxx/mgmt/nfd/face-event-notification.hpp>
@@ -38,19 +38,18 @@
 
 namespace nfd {
 
+namespace rib {
+class Rib;
+class RibUpdate;
+} // namespace rib
+
 /**
- * @brief Serve commands and datasets of NFD RIB management protocol.
+ * @brief Implements the RIB Management of NFD Management Protocol.
  * @sa https://redmine.named-data.net/projects/nfd/wiki/RibMgmt
  */
 class RibManager : public ManagerBase
 {
 public:
-  class Error : public std::runtime_error
-  {
-  public:
-    using std::runtime_error::runtime_error;
-  };
-
   RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
              ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
              ndn::util::Scheduler& scheduler);

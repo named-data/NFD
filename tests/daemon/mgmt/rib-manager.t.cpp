@@ -27,7 +27,7 @@
 #include "core/fib-max-depth.hpp"
 #include "rib/fib-updater.hpp"
 
-#include "tests/manager-common-fixture.hpp"
+#include "manager-common-fixture.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
@@ -93,10 +93,10 @@ private:
     advanceClocks(1_ms);
 
     auto replyFibAddCommand = [this] (const Interest& interest) {
-      nfd::ControlParameters params(interest.getName().get(-5).blockFromValue());
+      ControlParameters params(interest.getName().get(-5).blockFromValue());
       BOOST_CHECK(params.getName() == "/localhost/nfd/rib" || params.getName() == "/localhop/nfd/rib");
       params.setFaceId(1).setCost(0);
-      nfd::ControlResponse resp;
+      ControlResponse resp;
 
       resp.setCode(200).setBody(params.wireEncode());
       shared_ptr<Data> data = make_shared<Data>(interest.getName());
