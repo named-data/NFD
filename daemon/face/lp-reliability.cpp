@@ -202,7 +202,7 @@ LpReliability::startIdleAckTimer()
 
   m_idleAckTimer = getScheduler().schedule(m_options.idleAckTimerPeriod, [this] {
     while (!m_ackQueue.empty()) {
-      m_linkService->requestIdlePacket();
+      m_linkService->requestIdlePacket(0);
     }
 
     m_isIdleAckTimerRunning = false;
@@ -302,7 +302,7 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq)
     deleteUnackedFrag(txSeqIt);
 
     // Retransmit fragment
-    m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt));
+    m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt), 0);
 
     // Start RTO timer for this sequence
     newTxFrag.rtoTimer = getScheduler().schedule(m_rto.computeRto(), [=] { onLpPacketLost(newTxSeq); });

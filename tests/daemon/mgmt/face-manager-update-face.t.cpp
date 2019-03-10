@@ -110,7 +110,7 @@ public:
         if (isForOnDemandFace) {
           auto face = target.faceTable.get(static_cast<FaceId>(this->faceId));
           // to force creation of on-demand face
-          face->sendInterest(*make_shared<Interest>("/hello/world"));
+          face->sendInterest(*make_shared<Interest>("/hello/world"), 0);
         }
       });
 

@@ -148,9 +148,15 @@ private:
   static void
   tieFaces(const shared_ptr<Face>& face1, const shared_ptr<Face>& face2)
   {
-    face1->afterReceiveInterest.connect([face2] (const Interest& interest) { face2->sendInterest(interest); });
-    face1->afterReceiveData.connect([face2] (const Data& data) { face2->sendData(data); });
-    face1->afterReceiveNack.connect([face2] (const ndn::lp::Nack& nack) { face2->sendNack(nack); });
+    face1->afterReceiveInterest.connect([face2] (const Interest& interest, const EndpointId&) {
+      face2->sendInterest(interest, 0);
+    });
+    face1->afterReceiveData.connect([face2] (const Data& data, const EndpointId&) {
+      face2->sendData(data, 0);
+    });
+    face1->afterReceiveNack.connect([face2] (const ndn::lp::Nack& nack, const EndpointId&) {
+      face2->sendNack(nack, 0);
+    });
   }
 
   static void

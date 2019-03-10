@@ -51,21 +51,21 @@ DummyFace::setState(FaceState state)
 }
 
 void
-DummyFace::receiveInterest(const Interest& interest)
+DummyFace::receiveInterest(const Interest& interest, const EndpointId& endpointId)
 {
-  getDummyLinkService()->receiveInterest(interest);
+  getDummyLinkService()->receiveInterest(interest, endpointId);
 }
 
 void
-DummyFace::receiveData(const Data& data)
+DummyFace::receiveData(const Data& data, const EndpointId& endpointId)
 {
-  getDummyLinkService()->receiveData(data);
+  getDummyLinkService()->receiveData(data, endpointId);
 }
 
 void
-DummyFace::receiveNack(const lp::Nack& nack)
+DummyFace::receiveNack(const lp::Nack& nack, const EndpointId& endpointId)
 {
-  getDummyLinkService()->receiveNack(nack);
+  getDummyLinkService()->receiveNack(nack, endpointId);
 }
 
 DummyLinkService*

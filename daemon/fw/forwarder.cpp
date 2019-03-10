@@ -53,16 +53,16 @@ Forwarder::Forwarder()
 {
   m_faceTable.afterAdd.connect([this] (Face& face) {
     face.afterReceiveInterest.connect(
-      [this, &face] (const Interest& interest) {
-        this->startProcessInterest(FaceEndpoint(face, 0), interest);
+      [this, &face] (const Interest& interest, const EndpointId& endpointId) {
+        this->startProcessInterest(FaceEndpoint(face, endpointId), interest);
       });
     face.afterReceiveData.connect(
-      [this, &face] (const Data& data) {
-        this->startProcessData(FaceEndpoint(face, 0), data);
+      [this, &face] (const Data& data, const EndpointId& endpointId) {
+        this->startProcessData(FaceEndpoint(face, endpointId), data);
       });
     face.afterReceiveNack.connect(
-      [this, &face] (const lp::Nack& nack) {
-        this->startProcessNack(FaceEndpoint(face, 0), nack);
+      [this, &face] (const lp::Nack& nack, const EndpointId& endpointId) {
+        this->startProcessNack(FaceEndpoint(face, endpointId), nack);
       });
     face.onDroppedInterest.connect(
       [this, &face] (const Interest& interest) {
@@ -157,7 +157,7 @@ Forwarder::onInterestLoop(const FaceEndpoint& ingress, const Interest& interest)
   // note: Don't enter outgoing Nack pipeline because it needs an in-record.
   lp::Nack nack(interest);
   nack.setReason(lp::NackReason::DUPLICATE);
-  ingress.face.sendNack(nack);
+  ingress.face.sendNack(nack, ingress.endpoint);
 }
 
 void
@@ -232,7 +232,7 @@ Forwarder::onOutgoingInterest(const shared_ptr<pit::Entry>& pitEntry,
   pitEntry->insertOrUpdateOutRecord(egress.face, egress.endpoint, interest);
 
   // send Interest
-  egress.face.sendInterest(interest);
+  egress.face.sendInterest(interest, egress.endpoint);
   ++m_counters.nOutInterests;
 }
 
@@ -371,7 +371,7 @@ Forwarder::onDataUnsolicited(const FaceEndpoint& ingress, const Data& data)
 }
 
 void
-Forwarder::onOutgoingData(const Data& data, FaceEndpoint egress)
+Forwarder::onOutgoingData(const Data& data, const FaceEndpoint& egress)
 {
   if (egress.face.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingData out=(invalid) data=" << data.getName());
@@ -391,7 +391,7 @@ Forwarder::onOutgoingData(const Data& data, FaceEndpoint egress)
   // TODO traffic manager
 
   // send Data
-  egress.face.sendData(data);
+  egress.face.sendData(data, egress.endpoint);
   ++m_counters.nOutData;
 }
 
@@ -493,7 +493,7 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   pitEntry->deleteInRecord(egress.face, egress.endpoint);
 
   // send Nack on face
-  egress.face.sendNack(nackPkt);
+  egress.face.sendNack(nackPkt, egress.endpoint);
   ++m_counters.nOutNacks;
 }
 

@@ -138,27 +138,27 @@ private:
   ///\todo #3941 call GenericLinkServiceCounters constructor in TopologyPcapLinkService constructor
 
   void
-  doSendInterest(const Interest& interest) override
+  doSendInterest(const Interest& interest, const EndpointId& endpointId) override
   {
     this->sentInterests.push_back(interest);
     this->sentInterests.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendInterest(interest);
+    this->GenericLinkService::doSendInterest(interest, endpointId);
   }
 
   void
-  doSendData(const Data& data) override
+  doSendData(const Data& data, const EndpointId& endpointId) override
   {
     this->sentData.push_back(data);
     this->sentData.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendData(data);
+    this->GenericLinkService::doSendData(data, endpointId);
   }
 
   void
-  doSendNack(const lp::Nack& nack) override
+  doSendNack(const lp::Nack& nack, const EndpointId& endpointId) override
   {
     this->sentNacks.push_back(nack);
     this->sentNacks.back().setTag(std::make_shared<TopologyPcapTimestamp>(time::steady_clock::now()));
-    this->GenericLinkService::doSendNack(nack);
+    this->GenericLinkService::doSendNack(nack, endpointId);
   }
 };
 

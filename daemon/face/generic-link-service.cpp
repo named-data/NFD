@@ -65,15 +65,15 @@ GenericLinkService::setOptions(const GenericLinkService::Options& options)
 }
 
 void
-GenericLinkService::requestIdlePacket()
+GenericLinkService::requestIdlePacket(const EndpointId& endpointId)
 {
   // No need to request Acks to attach to this packet from LpReliability, as they are already
   // attached in sendLpPacket
-  this->sendLpPacket({});
+  this->sendLpPacket({}, endpointId);
 }
 
 void
-GenericLinkService::sendLpPacket(lp::Packet&& pkt)
+GenericLinkService::sendLpPacket(lp::Packet&& pkt, const EndpointId& endpointId)
 {
   const ssize_t mtu = this->getTransport()->getMtu();
 
@@ -91,38 +91,38 @@ GenericLinkService::sendLpPacket(lp::Packet&& pkt)
     NFD_LOG_FACE_WARN("attempted to send packet over MTU limit");
     return;
   }
-  this->sendPacket(std::move(tp));
+  this->sendPacket(std::move(tp), endpointId);
 }
 
 void
-GenericLinkService::doSendInterest(const Interest& interest)
+GenericLinkService::doSendInterest(const Interest& interest, const EndpointId& endpointId)
 {
   lp::Packet lpPacket(interest.wireEncode());
 
   encodeLpFields(interest, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), true);
+  this->sendNetPacket(std::move(lpPacket), endpointId, true);
 }
 
 void
-GenericLinkService::doSendData(const Data& data)
+GenericLinkService::doSendData(const Data& data, const EndpointId& endpointId)
 {
   lp::Packet lpPacket(data.wireEncode());
 
   encodeLpFields(data, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), false);
+  this->sendNetPacket(std::move(lpPacket), endpointId, false);
 }
 
 void
-GenericLinkService::doSendNack(const lp::Nack& nack)
+GenericLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointId)
 {
   lp::Packet lpPacket(nack.getInterest().wireEncode());
   lpPacket.add<lp::NackField>(nack.getHeader());
 
   encodeLpFields(nack, lpPacket);
 
-  this->sendNetPacket(std::move(lpPacket), false);
+  this->sendNetPacket(std::move(lpPacket), endpointId, false);
 }
 
 void
@@ -154,7 +154,7 @@ GenericLinkService::encodeLpFields(const ndn::PacketBase& netPkt, lp::Packet& lp
 }
 
 void
-GenericLinkService::sendNetPacket(lp::Packet&& pkt, bool isInterest)
+GenericLinkService::sendNetPacket(lp::Packet&& pkt, const EndpointId& endpointId, bool isInterest)
 {
   std::vector<lp::Packet> frags;
   ssize_t mtu = this->getTransport()->getMtu();
@@ -206,7 +206,7 @@ GenericLinkService::sendNetPacket(lp::Packet&& pkt, bool isInterest)
   }
 
   for (lp::Packet& frag : frags) {
-    this->sendLpPacket(std::move(frag));
+    this->sendLpPacket(std::move(frag), endpointId);
   }
 }
 
@@ -302,7 +302,7 @@ GenericLinkService::doReceivePacket(Transport::Packet&& packet)
     std::tie(isReassembled, netPkt, firstPkt) = m_reassembler.receiveFragment(packet.remoteEndpoint,
                                                                               pkt);
     if (isReassembled) {
-      this->decodeNetPacket(netPkt, firstPkt);
+      this->decodeNetPacket(netPkt, firstPkt, packet.remoteEndpoint);
     }
   }
   catch (const tlv::Error& e) {
@@ -312,20 +312,21 @@ GenericLinkService::doReceivePacket(Transport::Packet&& packet)
 }
 
 void
-GenericLinkService::decodeNetPacket(const Block& netPkt, const lp::Packet& firstPkt)
+GenericLinkService::decodeNetPacket(const Block& netPkt, const lp::Packet& firstPkt,
+                                    const EndpointId& endpointId)
 {
   try {
     switch (netPkt.type()) {
       case tlv::Interest:
         if (firstPkt.has<lp::NackField>()) {
-          this->decodeNack(netPkt, firstPkt);
+          this->decodeNack(netPkt, firstPkt, endpointId);
         }
         else {
-          this->decodeInterest(netPkt, firstPkt);
+          this->decodeInterest(netPkt, firstPkt, endpointId);
         }
         break;
       case tlv::Data:
-        this->decodeData(netPkt, firstPkt);
+        this->decodeData(netPkt, firstPkt, endpointId);
         break;
       default:
         ++this->nInNetInvalid;
@@ -340,7 +341,8 @@ GenericLinkService::decodeNetPacket(const Block& netPkt, const lp::Packet& first
 }
 
 void
-GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstPkt)
+GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstPkt,
+                                   const EndpointId& endpointId)
 {
   BOOST_ASSERT(netPkt.type() == tlv::Interest);
   BOOST_ASSERT(!firstPkt.has<lp::NackField>());
@@ -387,11 +389,12 @@ GenericLinkService::decodeInterest(const Block& netPkt, const lp::Packet& firstP
     return;
   }
 
-  this->receiveInterest(*interest);
+  this->receiveInterest(*interest, endpointId);
 }
 
 void
-GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
+GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt,
+                               const EndpointId& endpointId)
 {
   BOOST_ASSERT(netPkt.type() == tlv::Data);
 
@@ -440,11 +443,12 @@ GenericLinkService::decodeData(const Block& netPkt, const lp::Packet& firstPkt)
     }
   }
 
-  this->receiveData(*data);
+  this->receiveData(*data, endpointId);
 }
 
 void
-GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt)
+GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt,
+                               const EndpointId& endpointId)
 {
   BOOST_ASSERT(netPkt.type() == tlv::Interest);
   BOOST_ASSERT(firstPkt.has<lp::NackField>());
@@ -484,7 +488,7 @@ GenericLinkService::decodeNack(const Block& netPkt, const lp::Packet& firstPkt)
     return;
   }
 
-  this->receiveNack(nack);
+  this->receiveNack(nack, endpointId);
 }
 
 } // namespace face

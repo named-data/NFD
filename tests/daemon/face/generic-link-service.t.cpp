@@ -75,11 +75,11 @@ protected:
     transport = static_cast<DummyTransport*>(face->getTransport());
 
     face->afterReceiveInterest.connect(
-      [this] (const Interest& interest) { receivedInterests.push_back(interest); });
+      [this] (const Interest& interest, const EndpointId&) { receivedInterests.push_back(interest); });
     face->afterReceiveData.connect(
-      [this] (const Data& data) { receivedData.push_back(data); });
+      [this] (const Data& data, const EndpointId&) { receivedData.push_back(data); });
     face->afterReceiveNack.connect(
-      [this] (const lp::Nack& nack) { receivedNacks.push_back(nack); });
+      [this] (const lp::Nack& nack, const EndpointId&) { receivedNacks.push_back(nack); });
   }
 
   lp::PrefixAnnouncementHeader
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(SendInterest)
 
   shared_ptr<Interest> interest1 = makeInterest("/localhost/test");
 
-  face->sendInterest(*interest1);
+  face->sendInterest(*interest1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutInterests, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(SendData)
 
   shared_ptr<Data> data1 = makeData("/localhost/test");
 
-  face->sendData(*data1);
+  face->sendData(*data1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutData, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(SendNack)
 
   lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
 
-  face->sendNack(nack1);
+  face->sendNack(nack1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutNacks, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(FragmentationDisabledExceedMtuDrop)
   transport->setMtu(55);
 
   shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
   BOOST_CHECK_EQUAL(service->getCounters().nOutOverMtu, 1);
@@ -303,7 +303,7 @@ BOOST_AUTO_TEST_CASE(FragmentationUnlimitedMtu)
   transport->setMtu(MTU_UNLIMITED);
 
   shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 1);
 }
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE(FragmentationUnderMtu)
   transport->setMtu(105);
 
   shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 1);
 }
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(FragmentationOverMtu)
   transport->setMtu(60);
 
   shared_ptr<Data> data = makeData("/test/data/123456789/987654321/123456789");
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_CHECK_GT(transport->sentPackets.size(), 1);
 }
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE(SendInterest)
 
   shared_ptr<Interest> interest1 = makeInterest("/localhost/test");
 
-  face->sendInterest(*interest1);
+  face->sendInterest(*interest1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutInterests, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(SendData)
 
   shared_ptr<Data> data1 = makeData("/localhost/test");
 
-  face->sendData(*data1);
+  face->sendData(*data1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutData, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(SendNack)
 
   lp::Nack nack1 = makeNack("/localhost/test", 323, lp::NackReason::NO_ROUTE);
 
-  face->sendNack(nack1);
+  face->sendNack(nack1, 0);
 
   BOOST_CHECK_EQUAL(service->getCounters().nOutNacks, 1);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -497,7 +497,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
 
   // no congestion
   transport->setSendQueueLength(0);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt1;
   BOOST_REQUIRE_NO_THROW(pkt1.wireDecode(transport->sentPackets.back().packet));
@@ -508,7 +508,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
 
   // no congestion
   transport->setSendQueueLength(32768);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 2);
   lp::Packet pkt2;
   BOOST_REQUIRE_NO_THROW(pkt2.wireDecode(transport->sentPackets.back().packet));
@@ -535,7 +535,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // first congested packet, will be marked
   transport->setSendQueueLength(32769);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt1;
   BOOST_REQUIRE_NO_THROW(pkt1.wireDecode(transport->sentPackets.back().packet));
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // second congested packet, but within marking interval, will not be marked
   transport->setSendQueueLength(33000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 2);
   lp::Packet pkt2;
   BOOST_REQUIRE_NO_THROW(pkt2.wireDecode(transport->sentPackets.back().packet));
@@ -568,7 +568,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // first congested packet after waiting marking interval, will be marked
   transport->setSendQueueLength(40000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 3);
   lp::Packet pkt3;
   BOOST_REQUIRE_NO_THROW(pkt3.wireDecode(transport->sentPackets.back().packet));
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // still congested, but within marking interval cycle
   transport->setSendQueueLength(38000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 4);
   lp::Packet pkt4;
   BOOST_REQUIRE_NO_THROW(pkt4.wireDecode(transport->sentPackets.back().packet));
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // still congested, after marking interval cycle
   transport->setSendQueueLength(39000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 5);
   lp::Packet pkt5;
   BOOST_REQUIRE_NO_THROW(pkt5.wireDecode(transport->sentPackets.back().packet));
@@ -624,7 +624,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // still congested, but within marking interval cycle
   transport->setSendQueueLength(38000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 6);
   lp::Packet pkt6;
   BOOST_REQUIRE_NO_THROW(pkt6.wireDecode(transport->sentPackets.back().packet));
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // still congested, after marking interval cycle
   transport->setSendQueueLength(34000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 7);
   lp::Packet pkt7;
   BOOST_REQUIRE_NO_THROW(pkt7.wireDecode(transport->sentPackets.back().packet));
@@ -656,7 +656,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // no more congestion
   transport->setSendQueueLength(30000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 8);
   lp::Packet pkt8;
   BOOST_REQUIRE_NO_THROW(pkt8.wireDecode(transport->sentPackets.back().packet));
@@ -670,7 +670,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // send queue congested again, but can't mark packet because within one full interval of last mark
   transport->setSendQueueLength(50000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 9);
   lp::Packet pkt9;
   BOOST_REQUIRE_NO_THROW(pkt9.wireDecode(transport->sentPackets.back().packet));
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   this->advanceClocks(51_ms);
 
   transport->setSendQueueLength(40000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 10);
   lp::Packet pkt10;
   BOOST_REQUIRE_NO_THROW(pkt10.wireDecode(transport->sentPackets.back().packet));
@@ -702,7 +702,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // not marked since within 100ms window before can mark again
   transport->setSendQueueLength(50000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 11);
   lp::Packet pkt11;
   BOOST_REQUIRE_NO_THROW(pkt11.wireDecode(transport->sentPackets.back().packet));
@@ -717,7 +717,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // markable packet, queue length still above threshold
   transport->setSendQueueLength(33000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 12);
   lp::Packet pkt12;
   BOOST_REQUIRE_NO_THROW(pkt12.wireDecode(transport->sentPackets.back().packet));
@@ -735,7 +735,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // no more congestion
   transport->setSendQueueLength(10000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 13);
   lp::Packet pkt13;
   BOOST_REQUIRE_NO_THROW(pkt13.wireDecode(transport->sentPackets.back().packet));
@@ -750,7 +750,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // start congestion again
   transport->setSendQueueLength(50000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 14);
   lp::Packet pkt14;
   BOOST_REQUIRE_NO_THROW(pkt14.wireDecode(transport->sentPackets.back().packet));
@@ -765,7 +765,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 
   // no more congestion, cancel marking interval
   transport->setSendQueueLength(5000);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 15);
   lp::Packet pkt15;
   BOOST_REQUIRE_NO_THROW(pkt15.wireDecode(transport->sentPackets.back().packet));
@@ -793,7 +793,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
 
   // no congestion
   transport->setSendQueueLength(0);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet pkt1;
   BOOST_REQUIRE_NO_THROW(pkt1.wireDecode(transport->sentPackets.back().packet));
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
 
   // no congestion
   transport->setSendQueueLength(65536);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 2);
   lp::Packet pkt2;
   BOOST_REQUIRE_NO_THROW(pkt2.wireDecode(transport->sentPackets.back().packet));
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
 
   // first congested (and marked) packet
   transport->setSendQueueLength(65537);
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 3);
   lp::Packet pkt3;
   BOOST_REQUIRE_NO_THROW(pkt3.wireDecode(transport->sentPackets.back().packet));
@@ -973,7 +973,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceId)
   shared_ptr<Interest> interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -991,7 +991,7 @@ BOOST_AUTO_TEST_CASE(SendIncomingFaceIdDisabled)
   shared_ptr<Interest> interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::IncomingFaceIdTag>(1000));
 
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1058,7 +1058,7 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkInterest)
   shared_ptr<Interest> interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::CongestionMarkTag>(1));
 
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1071,7 +1071,7 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkData)
   shared_ptr<Data> data = makeData("/12345678");
   data->setTag(make_shared<lp::CongestionMarkTag>(0));
 
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1084,7 +1084,7 @@ BOOST_AUTO_TEST_CASE(SendCongestionMarkNack)
   lp::Nack nack = makeNack("/localhost/test", 123, lp::NackReason::NO_ROUTE);
   nack.setTag(make_shared<lp::CongestionMarkTag>(std::numeric_limits<uint64_t>::max()));
 
-  face->sendNack(nack);
+  face->sendNack(nack, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1146,7 +1146,7 @@ BOOST_AUTO_TEST_CASE(SendNonDiscovery)
   shared_ptr<Interest> interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
 
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1162,7 +1162,7 @@ BOOST_AUTO_TEST_CASE(SendNonDiscoveryDisabled)
   shared_ptr<Interest> interest = makeInterest("/12345678");
   interest->setTag(make_shared<lp::NonDiscoveryTag>(lp::EmptyValue{}));
 
-  face->sendInterest(*interest);
+  face->sendInterest(*interest, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1250,7 +1250,7 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncement)
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);
@@ -1267,7 +1267,7 @@ BOOST_AUTO_TEST_CASE(SendPrefixAnnouncementDisabled)
   auto pah = makePrefixAnnHeader("/local/ndn/prefix");
   data->setTag(make_shared<lp::PrefixAnnouncementTag>(pah));
 
-  face->sendData(*data);
+  face->sendData(*data, 0);
 
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
   lp::Packet sent(transport->sentPackets.back().packet);

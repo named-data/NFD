@@ -30,7 +30,7 @@ namespace face {
 namespace tests {
 
 void
-DummyLinkService::doSendInterest(const Interest& interest)
+DummyLinkService::doSendInterest(const Interest& interest, const EndpointId& endpointId)
 {
   if (m_loggingFlags & LogSentInterests)
     sentInterests.push_back(interest);
@@ -39,7 +39,7 @@ DummyLinkService::doSendInterest(const Interest& interest)
 }
 
 void
-DummyLinkService::doSendData(const Data& data)
+DummyLinkService::doSendData(const Data& data, const EndpointId& endpointId)
 {
   if (m_loggingFlags & LogSentData)
     sentData.push_back(data);
@@ -48,7 +48,7 @@ DummyLinkService::doSendData(const Data& data)
 }
 
 void
-DummyLinkService::doSendNack(const lp::Nack& nack)
+DummyLinkService::doSendNack(const lp::Nack& nack, const EndpointId& endpointId)
 {
   if (m_loggingFlags & LogSentNacks)
     sentNacks.push_back(nack);

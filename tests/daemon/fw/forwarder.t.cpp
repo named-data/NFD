@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutInterests, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
-  face1->receiveInterest(*interestAB);
+  face1->receiveInterest(*interestAB, 0);
   this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), "/A/B");
@@ -73,7 +73,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
-  face2->receiveData(*dataABC);
+  face2->receiveData(*dataABC, 0);
   this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
   BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B/C");
@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
 
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
-  face1->receiveInterest(*interestA);
+  face1->receiveInterest(*interestA, 0);
   this->advanceClocks(1_ms, 5_ms);
   // Interest matching ContentStore should not be forwarded
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 0);
@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   shared_ptr<Interest> interest = makeInterest("/A/B");
   interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
 
-  face1->receiveInterest(*interest);
+  face1->receiveInterest(*interest, 0);
   this->advanceClocks(100_ms, 1_s);
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 0);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
@@ -501,19 +501,19 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   // receive Interest on face1
   face1->sentNacks.clear();
   shared_ptr<Interest> interest1a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
-  face1->receiveInterest(*interest1a);
+  face1->receiveInterest(*interest1a, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face1: legit retransmission
   face1->sentNacks.clear();
   shared_ptr<Interest> interest1b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
-  face1->receiveInterest(*interest1b);
+  face1->receiveInterest(*interest1b, 0);
   BOOST_CHECK(face1->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face2
   face2->sentNacks.clear();
   shared_ptr<Interest> interest2a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
-  face2->receiveInterest(*interest2a);
+  face2->receiveInterest(*interest2a, 0);
   BOOST_REQUIRE_EQUAL(face2->sentNacks.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getInterest(), *interest2a);
   BOOST_CHECK_EQUAL(face2->sentNacks.back().getReason(), lp::NackReason::DUPLICATE);
@@ -521,13 +521,13 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   // receive Interest with new Nonce on face2
   face2->sentNacks.clear();
   shared_ptr<Interest> interest2b = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 944);
-  face2->receiveInterest(*interest2b);
+  face2->receiveInterest(*interest2b, 0);
   BOOST_CHECK(face2->sentNacks.empty());
 
   // receive Interest with duplicate Nonce on face3, don't send Nack to multi-access face
   face3->sentNacks.clear();
   shared_ptr<Interest> interest3a = makeInterest("/zT4XwK0Hnx/28JBUvbEzc", 732);
-  face3->receiveInterest(*interest3a);
+  face3->receiveInterest(*interest3a, 0);
   BOOST_CHECK(face3->sentNacks.empty());
 }
 
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
   face2->afterSend.connect([face1, face2] (uint32_t pktType) {
     if (pktType == tlv::Interest) {
       auto interest = make_shared<Interest>(face2->sentInterests.back());
-      getScheduler().schedule(170_ms, [face1, interest] { face1->receiveInterest(*interest); });
+      getScheduler().schedule(170_ms, [face1, interest] { face1->receiveInterest(*interest, 0); });
     }
   });
 
@@ -554,7 +554,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
   shared_ptr<Interest> interest = makeInterest("ndn:/A/1");
   interest->setNonce(82101183);
   interest->setInterestLifetime(50_ms);
-  face1->receiveInterest(*interest);
+  face1->receiveInterest(*interest, 0);
 
   // interest should be forwarded only once, as long as Nonce is in Dead Nonce List
   BOOST_ASSERT(25_ms * 40 < forwarder.getDeadNonceList().getLifetime());

@@ -23,10 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_FW_FACE_ENDPOINT_HPP
-#define NFD_DAEMON_FW_FACE_ENDPOINT_HPP
+#ifndef NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
+#define NFD_DAEMON_FACE_FACE_ENDPOINT_HPP
 
-#include "face/face.hpp"
+#include "face.hpp"
 
 namespace nfd {
 
@@ -54,4 +54,4 @@ operator<<(std::ostream& os, const FaceEndpoint& fe)
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_FW_FACE_ENDPOINT_HPP
+#endif // NFD_DAEMON_FACE_FACE_ENDPOINT_HPP

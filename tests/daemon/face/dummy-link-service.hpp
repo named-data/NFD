@@ -67,13 +67,13 @@ public:
 
 private:
   void
-  doSendInterest(const Interest& interest) final;
+  doSendInterest(const Interest& interest, const EndpointId& endpointId) final;
 
   void
-  doSendData(const Data& data) final;
+  doSendData(const Data& data, const EndpointId& endpointId) final;
 
   void
-  doSendNack(const lp::Nack& nack) final;
+  doSendNack(const lp::Nack& nack, const EndpointId& endpointId) final;
 
   void
   doReceivePacket(Transport::Packet&& packet) final;

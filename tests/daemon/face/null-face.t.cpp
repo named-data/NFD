@@ -74,10 +74,10 @@ BOOST_AUTO_TEST_CASE(Send)
   auto face = makeNullFace();
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 
-  face->sendInterest(*makeInterest("/A"));
+  face->sendInterest(*makeInterest("/A"), 0);
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 
-  face->sendData(*makeData("/B"));
+  face->sendData(*makeData("/B"), 0);
   BOOST_CHECK_EQUAL(face->getState(), FaceState::UP);
 }
 

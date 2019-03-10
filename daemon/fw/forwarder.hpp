@@ -26,10 +26,10 @@
 #ifndef NFD_DAEMON_FW_FORWARDER_HPP
 #define NFD_DAEMON_FW_FORWARDER_HPP
 
-#include "face-endpoint.hpp"
 #include "face-table.hpp"
 #include "forwarder-counters.hpp"
 #include "unsolicited-data-policy.hpp"
+#include "face/face-endpoint.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
@@ -228,7 +228,7 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   /** \brief outgoing Data pipeline
    */
   VIRTUAL_WITH_TESTS void
-  onOutgoingData(const Data& data, FaceEndpoint egress);
+  onOutgoingData(const Data& data, const FaceEndpoint& egress);
 
   /** \brief incoming Nack pipeline
    */

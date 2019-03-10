@@ -45,11 +45,11 @@ public:
     std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);
 
     forwarderFace->afterReceiveInterest.connect(
-      [this] (const Interest& interest) { receivedInterests.push_back(interest); } );
+      [this] (const Interest& interest, const EndpointId&) { receivedInterests.push_back(interest); } );
     forwarderFace->afterReceiveData.connect(
-      [this] (const Data& data) { receivedData.push_back(data); } );
+      [this] (const Data& data, const EndpointId&) { receivedData.push_back(data); } );
     forwarderFace->afterReceiveNack.connect(
-      [this] (const lp::Nack& nack) { receivedNacks.push_back(nack); } );
+      [this] (const lp::Nack& nack, const EndpointId&) { receivedNacks.push_back(nack); } );
   }
 
 protected:
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/PQstEJGdL");
 
-  forwarderFace->sendData(*makeData("/PQstEJGdL/aI7oCrDXNX"));
+  forwarderFace->sendData(*makeData("/PQstEJGdL/aI7oCrDXNX"), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedData);
@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/1HrsRM1X");
 
-  forwarderFace->sendNack(makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE));
+  forwarderFace->sendNack(makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedNack);
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
       clientFace->put(*makeData("/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi"));
     });
 
-  forwarderFace->sendInterest(*makeInterest("/Wpc8TnEeoF/f6SzV8hD"));
+  forwarderFace->sendInterest(*makeInterest("/Wpc8TnEeoF/f6SzV8hD"), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
       clientFace->put(makeNack("/4YgJKWcXN/5oaTe05o", 191, lp::NackReason::NO_ROUTE));
     });
 
-  forwarderFace->sendInterest(*makeInterest("/4YgJKWcXN/5oaTe05o", 191));
+  forwarderFace->sendInterest(*makeInterest("/4YgJKWcXN/5oaTe05o", 191), 0);
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(CloseClientFace)
   g_io.poll(); // #3248 workaround
   clientFace.reset();
 
-  forwarderFace->sendInterest(*makeInterest("/aau42XQqb"));
+  forwarderFace->sendInterest(*makeInterest("/aau42XQqb"), 0);
   BOOST_CHECK_NO_THROW(this->advanceClocks(1_ms, 10));
 }
 
