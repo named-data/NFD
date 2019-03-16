@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,42 +26,40 @@
 #ifndef NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
 #define NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
 
-#include "core/common.hpp"
-
 #include "face/link-service.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-/** \brief a dummy LinkService that logs all received packets, for Transport testing
+/** \brief A dummy LinkService that logs all received packets, for Transport testing.
  *  \warning This LinkService does not allow sending.
  */
-class DummyReceiveLinkService : public LinkService
+class DummyReceiveLinkService final : public LinkService
 {
 private:
-  virtual void
-  doSendInterest(const Interest& interest) override
+  void
+  doSendInterest(const Interest&) final
   {
     BOOST_ASSERT(false);
   }
 
-  virtual void
-  doSendData(const Data& data) override
+  void
+  doSendData(const Data&) final
   {
     BOOST_ASSERT(false);
   }
 
-  virtual void
-  doSendNack(const lp::Nack& nack) override
+  void
+  doSendNack(const lp::Nack&) final
   {
     BOOST_ASSERT(false);
   }
 
-  virtual void
-  doReceivePacket(Transport::Packet&& packet) override
+  void
+  doReceivePacket(Transport::Packet&& packet) final
   {
-    receivedPackets.push_back(packet);
+    receivedPackets.push_back(std::move(packet));
   }
 
 public:
