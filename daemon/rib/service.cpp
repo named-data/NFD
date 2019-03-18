@@ -107,11 +107,10 @@ Service::Service(ndn::KeyChain& keyChain, shared_ptr<ndn::Transport> localNfdTra
                  const ConfigParseFunc& configParse)
   : m_keyChain(keyChain)
   , m_face(std::move(localNfdTransport), getGlobalIoService(), m_keyChain)
-  , m_scheduler(m_face.getIoService())
   , m_nfdController(m_face, m_keyChain)
   , m_fibUpdater(m_rib, m_nfdController)
   , m_dispatcher(m_face, m_keyChain)
-  , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler)
+  , m_ribManager(m_rib, m_face, m_keyChain, m_nfdController, m_dispatcher)
 {
   if (s_instance != nullptr) {
     NDN_THROW(std::logic_error("RIB service cannot be instantiated more than once"));
@@ -219,7 +218,6 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
 
         m_readvertisePropagation = make_unique<Readvertise>(
           m_rib,
-          m_scheduler,
           make_unique<HostToGatewayReadvertisePolicy>(m_keyChain, item.second),
           make_unique<NfdRibReadvertiseDestination>(m_nfdController, m_rib, options, parameters));
       }
@@ -242,7 +240,6 @@ Service::applyConfig(const ConfigSection& section, const std::string& filename)
     auto options = ndn::nfd::CommandOptions().setPrefix(READVERTISE_NLSR_PREFIX);
     m_readvertiseNlsr = make_unique<Readvertise>(
       m_rib,
-      m_scheduler,
       make_unique<ClientToNlsrReadvertisePolicy>(),
       make_unique<NfdRibReadvertiseDestination>(m_nfdController, m_rib, options));
   }

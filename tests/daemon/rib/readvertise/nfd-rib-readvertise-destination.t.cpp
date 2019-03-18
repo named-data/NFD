@@ -44,11 +44,10 @@ public:
     : nSuccessCallbacks(0)
     , nFailureCallbacks(0)
     , face(g_io, m_keyChain, {true, false})
-    , scheduler(g_io)
     , controller(face, m_keyChain)
     , dest(controller, rib, ndn::nfd::CommandOptions().setPrefix("/localhost/nlsr"))
     , successCallback([this] { nSuccessCallbacks++; })
-    , failureCallback([this] (const std::string& str) { nFailureCallbacks++; })
+    , failureCallback([this] (const std::string&) { nFailureCallbacks++; })
   {
   }
 
@@ -58,7 +57,6 @@ public:
 
 protected:
   ndn::util::DummyClientFace face;
-  Scheduler scheduler;
   ndn::nfd::Controller controller;
   Rib rib;
   NfdRibReadvertiseDestination dest;

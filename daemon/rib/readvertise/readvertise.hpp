@@ -43,9 +43,8 @@ namespace rib {
  */
 class Readvertise : noncopyable
 {
-
 public:
-  Readvertise(Rib& rib, Scheduler& scheduler,
+  Readvertise(Rib& rib,
               unique_ptr<ReadvertisePolicy> policy,
               unique_ptr<ReadvertiseDestination> destination);
 
@@ -76,7 +75,6 @@ private:
   static const time::milliseconds RETRY_DELAY_MIN;
   static const time::milliseconds RETRY_DELAY_MAX;
 
-  Scheduler& m_scheduler;
   unique_ptr<ReadvertisePolicy> m_policy;
   unique_ptr<ReadvertiseDestination> m_destination;
 

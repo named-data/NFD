@@ -51,7 +51,7 @@ class RibManager : public ManagerBase
 {
 public:
   RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
-             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher, Scheduler& scheduler);
+             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher);
 
   /**
    * @brief Apply localhost_security configuration.
@@ -245,7 +245,6 @@ private:
   ndn::KeyChain& m_keyChain;
   ndn::nfd::Controller& m_nfdController;
   Dispatcher& m_dispatcher;
-  Scheduler& m_scheduler;
 
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;

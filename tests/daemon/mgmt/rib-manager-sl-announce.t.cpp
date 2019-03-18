@@ -42,7 +42,6 @@ public:
 
   RibManagerSlAnnounceFixture()
     : m_face(g_io, m_keyChain)
-    , m_scheduler(g_io)
     , m_nfdController(m_face, m_keyChain)
     , m_dispatcher(m_face, m_keyChain)
     , m_fibUpdater(rib, m_nfdController)
@@ -55,7 +54,7 @@ public:
     // Face, Controller, Dispatcher are irrelevant to SlAnnounce functions but required by
     // RibManager construction, so they are private. RibManager is a pointer to avoid code style
     // rule 1.4 violation.
-    manager = make_unique<RibManager>(rib, m_face, m_keyChain, m_nfdController, m_dispatcher, m_scheduler);
+    manager = make_unique<RibManager>(rib, m_face, m_keyChain, m_nfdController, m_dispatcher);
 
     loadTrustSchema();
   }
@@ -163,7 +162,6 @@ public:
 
 private:
   ndn::util::DummyClientFace m_face;
-  Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   Dispatcher m_dispatcher;
   rib::FibUpdater m_fibUpdater;

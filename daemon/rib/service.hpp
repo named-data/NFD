@@ -111,7 +111,6 @@ private:
 
   ndn::KeyChain& m_keyChain;
   ndn::Face m_face;
-  Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
 
   Rib m_rib;

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -38,8 +38,9 @@ using namespace nfd::tests;
 class HostToGatewayReadvertisePolicyFixture : public IdentityManagementFixture
 {
 public:
-  RibRouteRef
-  makeNewRoute(const Name& prefix) {
+  static RibRouteRef
+  makeNewRoute(const Name& prefix)
+  {
     auto entry = make_shared<RibEntry>();
     entry->setName(prefix);
 
@@ -56,8 +57,7 @@ public:
 };
 
 BOOST_AUTO_TEST_SUITE(Readvertise)
-BOOST_FIXTURE_TEST_SUITE(TestHostToGatewayReadvertisePolicy,
-                         HostToGatewayReadvertisePolicyFixture)
+BOOST_FIXTURE_TEST_SUITE(TestHostToGatewayReadvertisePolicy, HostToGatewayReadvertisePolicyFixture)
 
 BOOST_AUTO_TEST_CASE(PrefixToAdvertise)
 {

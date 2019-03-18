@@ -41,7 +41,7 @@ class DummyReadvertisePolicy : public ReadvertisePolicy
 {
 public:
   optional<ReadvertiseAction>
-  handleNewRoute(const RibRouteRef& route) const override
+  handleNewRoute(const RibRouteRef&) const override
   {
     return this->decision;
   }
@@ -49,7 +49,7 @@ public:
   time::milliseconds
   getRefreshInterval() const override
   {
-    return time::seconds(60);
+    return 1_min;
   }
 
 public:
@@ -115,14 +115,12 @@ class ReadvertiseFixture : public IdentityManagementTimeFixture
 public:
   ReadvertiseFixture()
     : m_face(g_io, m_keyChain, {false, false})
-    , m_scheduler(g_io)
   {
-    auto policyUnique = make_unique<DummyReadvertisePolicy>();
-    policy = policyUnique.get();
-    auto destinationUnique = make_unique<DummyReadvertiseDestination>();
-    destination = destinationUnique.get();
-    readvertise = make_unique<Readvertise>(m_rib, m_scheduler,
-                                           std::move(policyUnique), std::move(destinationUnique));
+    auto policyPtr = make_unique<DummyReadvertisePolicy>();
+    policy = policyPtr.get();
+    auto destinationPtr = make_unique<DummyReadvertiseDestination>();
+    destination = destinationPtr.get();
+    readvertise = make_unique<Readvertise>(m_rib, std::move(policyPtr), std::move(destinationPtr));
   }
 
   void
@@ -159,7 +157,6 @@ protected:
 
 private:
   ndn::util::DummyClientFace m_face;
-  Scheduler m_scheduler;
   Rib m_rib;
 };
 
