@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,7 +28,7 @@
 
 #include "boost-test.hpp"
 
-#include "core/global-io.hpp"
+#include "core/common.hpp"
 
 #include <ndn-cxx/prefix-announcement.hpp>
 #include <ndn-cxx/util/time-unit-test-clock.hpp>
@@ -157,22 +157,22 @@ makeNack(const Name& name, uint32_t nonce, lp::NackReason reason);
  *  \param index name component index
  *  \param a arguments to name::Component constructor
  */
-template<typename...A>
+template<typename... A>
 void
-setNameComponent(Name& name, ssize_t index, const A& ...a)
+setNameComponent(Name& name, ssize_t index, A&&... a)
 {
   Name name2 = name.getPrefix(index);
-  name2.append(name::Component(a...));
+  name2.append(name::Component(std::forward<A>(a)...));
   name2.append(name.getSubName(name2.size()));
-  name = name2;
+  name = std::move(name2);
 }
 
-template<typename Packet, typename...A>
+template<typename Packet, typename... A>
 void
-setNameComponent(Packet& packet, ssize_t index, const A& ...a)
+setNameComponent(Packet& packet, ssize_t index, A&&... a)
 {
   Name name = packet.getName();
-  setNameComponent(name, index, a...);
+  setNameComponent(name, index, std::forward<A>(a)...);
   packet.setName(name);
 }
 

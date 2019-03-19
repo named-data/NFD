@@ -24,10 +24,11 @@
  */
 
 #include "fw/multicast-strategy.hpp"
-#include "strategy-tester.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
+#include "daemon/global.hpp"
 
+#include "tests/daemon/face/dummy-face.hpp"
 #include "tests/test-common.hpp"
+#include "strategy-tester.hpp"
 
 namespace nfd {
 namespace fw {
@@ -108,17 +109,17 @@ BOOST_AUTO_TEST_CASE(Forward2)
     if (nSent > nSentLast) {
       // Multicast strategy should multicast the interest to other two faces
       BOOST_CHECK_EQUAL(nSent - nSentLast, 2);
-      time::steady_clock::TimePoint timeSent = time::steady_clock::now();
+      auto timeSent = time::steady_clock::now();
       BOOST_CHECK_GE(timeSent - timeSentLast, TICK * 8);
       nSentLast = nSent;
       timeSentLast = timeSent;
     }
 
-    retxFrom4Evt = scheduler::schedule(TICK * 5, periodicalRetxFrom4);
+    retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
   this->advanceClocks(TICK, MulticastStrategy::RETX_SUPPRESSION_MAX * 16);
-  scheduler::cancel(retxFrom4Evt);
+  retxFrom4Evt.cancel();
 }
 
 BOOST_AUTO_TEST_CASE(RejectLoopback)

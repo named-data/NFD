@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,6 @@
 #define NFD_DAEMON_FACE_TCP_TRANSPORT_HPP
 
 #include "stream-transport.hpp"
-#include "core/scheduler.hpp"
 
 namespace nfd {
 namespace face {

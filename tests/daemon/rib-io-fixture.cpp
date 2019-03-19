@@ -24,6 +24,7 @@
  */
 
 #include "rib-io-fixture.hpp"
+#include "daemon/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 

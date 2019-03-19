@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -29,7 +29,7 @@
 #include "cs-policy.hpp"
 #include "cs-internal.hpp"
 #include "cs-entry-impl.hpp"
-#include <ndn-cxx/util/signal.hpp>
+
 #include <boost/iterator/transform_iterator.hpp>
 
 namespace nfd {
@@ -210,8 +210,8 @@ private:
   unique_ptr<Policy> m_policy;
   signal::ScopedConnection m_beforeEvictConnection;
 
-  bool m_shouldAdmit; ///< if false, no Data will be admitted
-  bool m_shouldServe; ///< if false, all lookups will miss
+  bool m_shouldAdmit = true; ///< if false, no Data will be admitted
+  bool m_shouldServe = true; ///< if false, all lookups will miss
 };
 
 } // namespace cs

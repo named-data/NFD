@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,7 @@
 
 #include "face-system-fixture.hpp"
 #include "factory-test-common.hpp"
-#include "tests/limited-io.hpp"
+#include "tests/daemon/limited-io.hpp"
 
 namespace nfd {
 namespace face {

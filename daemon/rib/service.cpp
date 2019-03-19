@@ -31,8 +31,8 @@
 #include "readvertise/nfd-rib-readvertise-destination.hpp"
 #include "readvertise/readvertise.hpp"
 
-#include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 #include <ndn-cxx/transport/tcp-transport.hpp>

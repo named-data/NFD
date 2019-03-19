@@ -52,7 +52,7 @@ public:
   mutable ndn::security::SigningInfo signer; ///< signer for commands
   mutable size_t nRibRoutes; ///< number of RIB routes that cause the readvertisement
   mutable time::milliseconds retryDelay; ///< retry interval (not used for refresh)
-  mutable ndn::util::scheduler::ScopedEventId retryEvt; ///< retry or refresh event
+  mutable scheduler::ScopedEventId retryEvt; ///< retry or refresh event
 };
 
 inline bool

@@ -27,7 +27,6 @@
 #define NFD_DAEMON_TABLE_MEASUREMENTS_ENTRY_HPP
 
 #include "strategy-info-host.hpp"
-#include "core/scheduler.hpp"
 
 namespace nfd {
 

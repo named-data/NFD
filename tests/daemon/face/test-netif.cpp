@@ -24,7 +24,7 @@
  */
 
 #include "test-netif.hpp"
-#include "core/global-io.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace face {

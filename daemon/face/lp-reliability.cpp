@@ -26,6 +26,7 @@
 #include "lp-reliability.hpp"
 #include "generic-link-service.hpp"
 #include "transport.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace face {
@@ -38,7 +39,6 @@ LpReliability::LpReliability(const LpReliability::Options& options, GenericLinkS
   , m_isIdleAckTimerRunning(false)
 {
   BOOST_ASSERT(m_linkService != nullptr);
-
   BOOST_ASSERT(m_options.idleAckTimerPeriod > 0_ns);
 }
 
@@ -81,7 +81,8 @@ LpReliability::handleOutgoing(std::vector<lp::Packet>& frags, lp::Packet&& pkt, 
                                                  std::forward_as_tuple(txSeq),
                                                  std::forward_as_tuple(frag));
     unackedFragsIt->second.sendTime = sendTime;
-    unackedFragsIt->second.rtoTimer = scheduler::schedule(m_rto.computeRto(), [=] { onLpPacketLost(txSeq); });
+    unackedFragsIt->second.rtoTimer = getScheduler().schedule(m_rto.computeRto(),
+                                                              [=] { onLpPacketLost(txSeq); });
     unackedFragsIt->second.netPkt = netPkt;
 
     if (m_unackedFrags.size() == 1) {
@@ -199,7 +200,7 @@ LpReliability::startIdleAckTimer()
   BOOST_ASSERT(!m_isIdleAckTimerRunning);
   m_isIdleAckTimerRunning = true;
 
-  m_idleAckTimer = scheduler::schedule(m_options.idleAckTimerPeriod, [this] {
+  m_idleAckTimer = getScheduler().schedule(m_options.idleAckTimerPeriod, [this] {
     while (!m_ackQueue.empty()) {
       m_linkService->requestIdlePacket();
     }
@@ -304,7 +305,7 @@ LpReliability::onLpPacketLost(lp::Sequence txSeq)
     m_linkService->sendLpPacket(lp::Packet(newTxFrag.pkt));
 
     // Start RTO timer for this sequence
-    newTxFrag.rtoTimer = scheduler::schedule(m_rto.computeRto(), [=] { onLpPacketLost(newTxSeq); });
+    newTxFrag.rtoTimer = getScheduler().schedule(m_rto.computeRto(), [=] { onLpPacketLost(newTxSeq); });
   }
 
   return removedThisTxSeq;

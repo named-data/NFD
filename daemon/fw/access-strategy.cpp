@@ -26,6 +26,7 @@
 #include "access-strategy.hpp"
 #include "algorithm.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace fw {
@@ -42,8 +43,7 @@ AccessStrategy::AccessStrategy(Forwarder& forwarder, const Name& name)
     NDN_THROW(std::invalid_argument("AccessStrategy does not accept parameters"));
   }
   if (parsed.version && *parsed.version != getStrategyName()[-1].toVersion()) {
-    NDN_THROW(std::invalid_argument(
-      "AccessStrategy does not support version " + to_string(*parsed.version)));
+    NDN_THROW(std::invalid_argument("AccessStrategy does not support version " + to_string(*parsed.version)));
   }
   this->setInstanceName(makeInstanceName(name, getStrategyName()));
 }
@@ -153,7 +153,7 @@ AccessStrategy::sendToLastNexthop(const Face& inFace, const Interest& interest,
 
   // schedule RTO timeout
   PitInfo* pi = pitEntry->insertStrategyInfo<PitInfo>().first;
-  pi->rtoTimer = scheduler::schedule(rto,
+  pi->rtoTimer = getScheduler().schedule(rto,
       bind(&AccessStrategy::afterRtoTimeout, this, weak_ptr<pit::Entry>(pitEntry),
            inFace.getId(), mi.lastNexthop));
 

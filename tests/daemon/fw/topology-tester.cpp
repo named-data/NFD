@@ -24,6 +24,7 @@
  */
 
 #include "topology-tester.hpp"
+#include "daemon/global.hpp"
 #include "face/generic-link-service.hpp"
 
 #include <ndn-cxx/encoding/encoding-buffer-fwd.hpp>
@@ -98,7 +99,7 @@ TopologyLink::transmit(TopologyNode i, const Block& packet)
 void
 TopologyLink::scheduleReceive(InternalTransportBase* recipient, const Block& packet)
 {
-  scheduler::schedule(m_delay, [packet, recipient] {
+  getScheduler().schedule(m_delay, [packet, recipient] {
     recipient->receiveFromLink(packet);
   });
 }
@@ -271,8 +272,9 @@ TopologyTester::addIntervalConsumer(ndn::Face& face, const Name& prefix,
   face.expressInterest(*interest, nullptr, nullptr, nullptr);
 
   if (n > 1) {
-    scheduler::schedule(interval,
-                        [=, &face] { addIntervalConsumer(face, prefix, interval, n - 1, seq); });
+    getScheduler().schedule(interval, [=, &face] {
+      addIntervalConsumer(face, prefix, interval, n - 1, seq);
+    });
   }
 }
 

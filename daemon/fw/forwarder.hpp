@@ -26,11 +26,9 @@
 #ifndef NFD_DAEMON_FW_FORWARDER_HPP
 #define NFD_DAEMON_FW_FORWARDER_HPP
 
-#include "core/common.hpp"
-#include "core/scheduler.hpp"
-#include "forwarder-counters.hpp"
-#include "face-table.hpp"
 #include "face-endpoint.hpp"
+#include "face-table.hpp"
+#include "forwarder-counters.hpp"
 #include "unsolicited-data-policy.hpp"
 #include "table/fib.hpp"
 #include "table/pit.hpp"
@@ -46,9 +44,9 @@ namespace fw {
 class Strategy;
 } // namespace fw
 
-/** \brief main class of NFD
+/** \brief Main class of NFD forwarding engine.
  *
- *  Forwarder owns all faces and tables, and implements forwarding pipelines.
+ *  Forwarder owns all faces and tables, and implements the forwarding pipelines.
  */
 class Forwarder
 {

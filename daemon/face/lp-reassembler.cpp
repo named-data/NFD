@@ -25,6 +25,7 @@
 
 #include "lp-reassembler.hpp"
 #include "link-service.hpp"
+#include "daemon/global.hpp"
 
 #include <numeric>
 
@@ -113,7 +114,7 @@ LpReassembler::receiveFragment(EndpointId remoteEndpoint, const lp::Packet& pack
   }
 
   // set drop timer
-  pp.dropTimer = scheduler::schedule(m_options.reassemblyTimeout, [=] { timeoutPartialPacket(key); });
+  pp.dropTimer = getScheduler().schedule(m_options.reassemblyTimeout, [=] { timeoutPartialPacket(key); });
 
   return FALSE_RETURN;
 }

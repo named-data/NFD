@@ -27,6 +27,7 @@
 #include "name-tree.hpp"
 #include "pit-entry.hpp"
 #include "fib-entry.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace measurements {
@@ -49,7 +50,7 @@ Measurements::get(name_tree::Entry& nte)
   entry = nte.getMeasurementsEntry();
 
   entry->m_expiry = time::steady_clock::now() + getInitialLifetime();
-  entry->m_cleanup = scheduler::schedule(getInitialLifetime(), [=] { cleanup(*entry); });
+  entry->m_cleanup = getScheduler().schedule(getInitialLifetime(), [=] { cleanup(*entry); });
 
   return *entry;
 }
@@ -133,9 +134,9 @@ Measurements::extendLifetime(Entry& entry, const time::nanoseconds& lifetime)
     return;
   }
 
-  scheduler::cancel(entry.m_cleanup);
+  entry.m_cleanup.cancel();
   entry.m_expiry = expiry;
-  entry.m_cleanup = scheduler::schedule(lifetime, [&] { cleanup(entry); });
+  entry.m_cleanup = getScheduler().schedule(lifetime, [&] { cleanup(entry); });
 }
 
 void

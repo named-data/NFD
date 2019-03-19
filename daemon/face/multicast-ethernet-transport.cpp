@@ -24,7 +24,7 @@
  */
 
 #include "multicast-ethernet-transport.hpp"
-#include "core/global-io.hpp"
+#include "daemon/global.hpp"
 
 #include <cerrno>         // for errno
 #include <cstring>        // for memcpy(), strerror(), strncpy()

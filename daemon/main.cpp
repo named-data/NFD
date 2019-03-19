@@ -26,10 +26,10 @@
 #include "nfd.hpp"
 #include "rib/service.hpp"
 
-#include "core/global-io.hpp"
 #include "core/logger.hpp"
 #include "core/privilege-helper.hpp"
 #include "core/version.hpp"
+#include "daemon/global.hpp"
 
 #include <string.h> // for strsignal()
 

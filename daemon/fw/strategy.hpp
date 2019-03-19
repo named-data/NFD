@@ -51,7 +51,9 @@ public: // registry
     BOOST_ASSERT(strategyName.at(-1).isVersion());
     Registry& registry = getRegistry();
     BOOST_ASSERT(registry.count(strategyName) == 0);
-    registry[strategyName] = &make_unique<S, Forwarder&, const Name&>;
+    registry[strategyName] = [] (auto&&... args) {
+      return make_unique<S>(std::forward<decltype(args)>(args)...);
+    };
   }
 
   /** \return whether a strategy instance can be created from \p instanceName
@@ -81,9 +83,9 @@ public: // registry
   listRegistered();
 
 public: // constructor, destructor, strategy name
-  /** \brief construct a strategy instance
+  /** \brief Construct a strategy instance.
    *  \param forwarder a reference to the forwarder, used to enable actions and accessors.
-   *  \note Strategy subclass constructor should not retain a reference to the forwarder.
+   *  \note Strategy subclass constructor must not retain a reference to \p forwarder.
    */
   explicit
   Strategy(Forwarder& forwarder);

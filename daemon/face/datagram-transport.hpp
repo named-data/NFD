@@ -28,7 +28,7 @@
 
 #include "transport.hpp"
 #include "socket-utils.hpp"
-#include "core/global-io.hpp"
+#include "daemon/global.hpp"
 
 #include <array>
 

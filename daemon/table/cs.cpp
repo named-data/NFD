@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,10 +44,8 @@ makeDefaultPolicy()
 }
 
 Cs::Cs(size_t nMaxPackets)
-  : m_shouldAdmit(true)
-  , m_shouldServe(true)
 {
-  this->setPolicyImpl(makeDefaultPolicy());
+  setPolicyImpl(makeDefaultPolicy());
   m_policy->setLimit(nMaxPackets);
 }
 

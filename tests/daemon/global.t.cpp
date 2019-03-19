@@ -23,27 +23,37 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/global-io.hpp"
-#include "core/scheduler.hpp"
+#include "daemon/global.hpp"
 
-#include "tests/rib-io-fixture.hpp"
 #include "tests/test-common.hpp"
+#include "tests/daemon/rib-io-fixture.hpp"
 
 #include <thread>
 
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestGlobalIo, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestGlobal, BaseFixture)
 
-BOOST_AUTO_TEST_CASE(ThreadLocalGlobalIoService)
+BOOST_AUTO_TEST_CASE(ThreadLocalIoService)
 {
   boost::asio::io_service* s1 = &getGlobalIoService();
   boost::asio::io_service* s2 = nullptr;
-  std::thread t([&s2] {
-    s2 = &getGlobalIoService();
-  });
 
+  std::thread t([&s2] { s2 = &getGlobalIoService(); });
+  t.join();
+
+  BOOST_CHECK(s1 != nullptr);
+  BOOST_CHECK(s2 != nullptr);
+  BOOST_CHECK(s1 != s2);
+}
+
+BOOST_AUTO_TEST_CASE(ThreadLocalScheduler)
+{
+  scheduler::Scheduler* s1 = &getScheduler();
+  scheduler::Scheduler* s2 = nullptr;
+
+  std::thread t([&s2] { s2 = &getScheduler(); });
   t.join();
 
   BOOST_CHECK(s1 != nullptr);
@@ -115,7 +125,7 @@ BOOST_FIXTURE_TEST_CASE(AdvanceClocks, RibIoTimeFixture)
 
   hasRibRun = false;
   bool hasMainRun = false;
-  scheduler::schedule(250_ms, [&] {
+  getScheduler().schedule(250_ms, [&] {
     hasMainRun = true;
     runOnRibIoService([&] { hasRibRun = true; });
   });
@@ -127,7 +137,7 @@ BOOST_FIXTURE_TEST_CASE(AdvanceClocks, RibIoTimeFixture)
   BOOST_CHECK_EQUAL(hasRibRun, true);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestGlobal
 
 } // namespace tests
 } // namespace nfd

@@ -29,6 +29,7 @@
 #include "best-route-strategy2.hpp"
 #include "strategy.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 #include "table/cleanup.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
@@ -44,7 +45,7 @@ getDefaultStrategyName()
 }
 
 Forwarder::Forwarder()
-  : m_unsolicitedDataPolicy(new fw::DefaultUnsolicitedDataPolicy())
+  : m_unsolicitedDataPolicy(make_unique<fw::DefaultUnsolicitedDataPolicy>())
   , m_fib(m_nameTree)
   , m_pit(m_nameTree)
   , m_measurements(m_nameTree)
@@ -241,7 +242,7 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
                 << (pitEntry->isSatisfied ? " satisfied" : " unsatisfied"));
 
   // Dead Nonce List insert if necessary
-  this->insertDeadNonceList(*pitEntry, 0);
+  this->insertDeadNonceList(*pitEntry, nullptr);
 
   // Increment satisfied/unsatisfied Interests counter
   if (pitEntry->isSatisfied) {
@@ -252,7 +253,7 @@ Forwarder::onInterestFinalize(const shared_ptr<pit::Entry>& pitEntry)
   }
 
   // PIT delete
-  scheduler::cancel(pitEntry->expiryTimer);
+  pitEntry->expiryTimer.cancel();
   m_pit.erase(pitEntry.get());
 }
 
@@ -507,9 +508,8 @@ Forwarder::setExpiryTimer(const shared_ptr<pit::Entry>& pitEntry, time::millisec
   BOOST_ASSERT(pitEntry);
   BOOST_ASSERT(duration >= 0_ms);
 
-  scheduler::cancel(pitEntry->expiryTimer);
-
-  pitEntry->expiryTimer = scheduler::schedule(duration, [=] { onInterestFinalize(pitEntry); });
+  pitEntry->expiryTimer.cancel();
+  pitEntry->expiryTimer = getScheduler().schedule(duration, [=] { onInterestFinalize(pitEntry); });
 }
 
 void

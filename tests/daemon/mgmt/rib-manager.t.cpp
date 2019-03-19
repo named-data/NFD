@@ -205,7 +205,7 @@ protected:
   std::vector<Interest>& m_commands;
   ConfigurationStatus m_status;
 
-  ndn::util::Scheduler m_scheduler;
+  Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   rib::Rib m_rib;
   rib::FibUpdater m_fibUpdater;

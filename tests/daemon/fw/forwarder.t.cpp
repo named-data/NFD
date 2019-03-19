@@ -24,6 +24,7 @@
  */
 
 #include "fw/forwarder.hpp"
+#include "daemon/global.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -545,7 +546,7 @@ BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // B
   face2->afterSend.connect([face1, face2] (uint32_t pktType) {
     if (pktType == tlv::Interest) {
       auto interest = make_shared<Interest>(face2->sentInterests.back());
-      scheduler::schedule(time::milliseconds(170), [face1, interest] { face1->receiveInterest(*interest); });
+      getScheduler().schedule(170_ms, [face1, interest] { face1->receiveInterest(*interest); });
     }
   });
 

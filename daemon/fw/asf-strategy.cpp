@@ -26,6 +26,7 @@
 #include "asf-strategy.hpp"
 #include "algorithm.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace fw {
@@ -226,9 +227,8 @@ AsfStrategy::forwardInterest(const Interest& interest,
     NFD_LOG_TRACE("Scheduling timeout for " << fibEntry.getPrefix() << " to: " << egress
                   << " in " << time::duration_cast<time::milliseconds>(timeout) << " ms");
 
-    scheduler::EventId id = scheduler::schedule(timeout,
-        bind(&AsfStrategy::onTimeout, this, interest.getName(), egress.face.getId()));
-
+    auto id = getScheduler().schedule(timeout, bind(&AsfStrategy::onTimeout, this,
+                                                    interest.getName(), egress.face.getId()));
     faceInfo.setTimeoutEvent(id, interest.getName());
   }
 }

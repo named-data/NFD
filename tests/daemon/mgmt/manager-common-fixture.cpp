@@ -54,7 +54,7 @@ CommandInterestSignerFixture::makeControlCommandRequest(Name commandName,
 }
 
 ManagerCommonFixture::ManagerCommonFixture()
-  : m_face(getGlobalIoService(), m_keyChain, {true, true})
+  : m_face(g_io, m_keyChain, {true, true})
   , m_dispatcher(m_face, m_keyChain, ndn::security::SigningInfo())
   , m_responses(m_face.sentData)
 {

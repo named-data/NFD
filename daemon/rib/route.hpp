@@ -53,14 +53,14 @@ public:
    */
   Route(const ndn::PrefixAnnouncement& ann, uint64_t faceId);
 
-  const ndn::util::scheduler::EventId&
+  const scheduler::EventId&
   getExpirationEvent() const
   {
     return m_expirationEvent;
   }
 
   void
-  setExpirationEvent(const ndn::util::scheduler::EventId& eid)
+  setExpirationEvent(const scheduler::EventId& eid)
   {
     m_expirationEvent = eid;
   }
@@ -101,7 +101,7 @@ public:
   time::steady_clock::TimePoint annExpires;
 
 private:
-  ndn::util::scheduler::EventId m_expirationEvent;
+  scheduler::EventId m_expirationEvent;
 };
 
 bool

@@ -24,6 +24,7 @@
  */
 
 #include "asf-measurements.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace fw {
@@ -73,7 +74,7 @@ FaceInfo::FaceInfo()
 FaceInfo::~FaceInfo()
 {
   cancelTimeoutEvent();
-  scheduler::cancel(m_measurementExpirationId);
+  m_measurementExpirationId.cancel();
 }
 
 void
@@ -92,7 +93,7 @@ FaceInfo::setTimeoutEvent(const scheduler::EventId& id, const Name& interestName
 void
 FaceInfo::cancelTimeoutEvent()
 {
-  scheduler::cancel(m_timeoutEventId);
+  m_timeoutEventId.cancel();
   m_isTimeoutScheduled = false;
 }
 
@@ -114,7 +115,7 @@ void
 FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
 {
   // Calculate RTT
-  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(inFace, 0);
+  auto outRecord = pitEntry->getOutRecord(inFace, 0);
 
   if (outRecord == pitEntry->out_end()) { // no out-record
     NFD_LOG_TRACE(pitEntry->getInterest() << " dataFrom inFace=" << inFace.getId() << " no-out-record");
@@ -122,7 +123,7 @@ FaceInfo::recordRtt(const shared_ptr<pit::Entry>& pitEntry, const Face& inFace)
   }
 
   time::steady_clock::Duration steadyRtt = time::steady_clock::now() - outRecord->getLastRenewed();
-  RttEstimator::Duration durationRtt = time::duration_cast<RttEstimator::Duration>(steadyRtt);
+  auto durationRtt = time::duration_cast<RttEstimator::Duration>(steadyRtt);
 
   m_rttStats.addRttMeasurement(durationRtt);
 
@@ -148,10 +149,9 @@ NamespaceInfo::NamespaceInfo()
 }
 
 FaceInfo*
-NamespaceInfo::getFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
+NamespaceInfo::getFaceInfo(const fib::Entry&, FaceId faceId)
 {
-  FaceInfoTable::iterator it = m_fit.find(faceId);
-
+  auto it = m_fit.find(faceId);
   if (it != m_fit.end()) {
     return &it->second;
   }
@@ -161,10 +161,9 @@ NamespaceInfo::getFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
 }
 
 FaceInfo&
-NamespaceInfo::getOrCreateFaceInfo(const fib::Entry& fibEntry, FaceId faceId)
+NamespaceInfo::getOrCreateFaceInfo(const fib::Entry&, FaceId faceId)
 {
-  FaceInfoTable::iterator it = m_fit.find(faceId);
-
+  auto it = m_fit.find(faceId);
   FaceInfo* info = nullptr;
 
   if (it == m_fit.end()) {
@@ -190,10 +189,11 @@ void
 NamespaceInfo::extendFaceInfoLifetime(FaceInfo& info, FaceId faceId)
 {
   // Cancel previous expiration
-  scheduler::cancel(info.getMeasurementExpirationEventId());
+  info.getMeasurementExpirationEventId().cancel();
 
   // Refresh measurement
-  auto id = scheduler::schedule(AsfMeasurements::MEASUREMENTS_LIFETIME, [=] { expireFaceInfo(faceId); });
+  auto id = getScheduler().schedule(AsfMeasurements::MEASUREMENTS_LIFETIME,
+                                    [=] { expireFaceInfo(faceId); });
   info.setMeasurementExpirationEventId(id);
 }
 

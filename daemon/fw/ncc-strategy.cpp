@@ -25,6 +25,7 @@
 
 #include "ncc-strategy.hpp"
 #include "algorithm.hpp"
+#include "daemon/global.hpp"
 
 #include <ndn-cxx/util/random.hpp>
 
@@ -90,8 +91,7 @@ NccStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
     deferRange = time::microseconds((deferFirst.count() + 1) / 2);
     --nUpstreams;
     this->sendInterest(pitEntry, FaceEndpoint(*bestFace, 0), interest);
-    pitEntryInfo->bestFaceTimeout = scheduler::schedule(
-      meInfo.prediction,
+    pitEntryInfo->bestFaceTimeout = getScheduler().schedule(meInfo.prediction,
       bind(&NccStrategy::timeoutOnBestFace, this, weak_ptr<pit::Entry>(pitEntry)));
   }
   else {
@@ -128,7 +128,7 @@ NccStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
     // this maxInterval would be used to determine when the next doPropagate would happen.
     pitEntryInfo->maxInterval = deferFirst;
   }
-  pitEntryInfo->propagateTimer = scheduler::schedule(deferFirst,
+  pitEntryInfo->propagateTimer = getScheduler().schedule(deferFirst,
     bind(&NccStrategy::doPropagate, this, ingress.face.getId(), weak_ptr<pit::Entry>(pitEntry)));
 }
 
@@ -178,7 +178,7 @@ NccStrategy::doPropagate(FaceId inFaceId, weak_ptr<pit::Entry> pitEntryWeak)
   if (isForwarded) {
     std::uniform_int_distribution<time::nanoseconds::rep> dist(0, pitEntryInfo->maxInterval.count() - 1);
     time::nanoseconds deferNext(dist(ndn::random::getRandomNumberEngine()));
-    pitEntryInfo->propagateTimer = scheduler::schedule(deferNext,
+    pitEntryInfo->propagateTimer = getScheduler().schedule(deferNext,
       bind(&NccStrategy::doPropagate, this, inFaceId, weak_ptr<pit::Entry>(pitEntry)));
   }
 }
@@ -233,14 +233,14 @@ NccStrategy::beforeSatisfyInterest(const shared_ptr<pit::Entry>& pitEntry,
 
   PitEntryInfo* pitEntryInfo = pitEntry->getStrategyInfo<PitEntryInfo>();
   if (pitEntryInfo != nullptr) {
-    scheduler::cancel(pitEntryInfo->propagateTimer);
+    pitEntryInfo->propagateTimer.cancel();
 
     // Verify that the best face satisfied the interest before canceling the timeout call
     MeasurementsEntryInfo& meInfo = this->getMeasurementsEntryInfo(pitEntry);
     shared_ptr<Face> bestFace = meInfo.getBestFace();
 
     if (bestFace.get() == &ingress.face)
-      scheduler::cancel(pitEntryInfo->bestFaceTimeout);
+      pitEntryInfo->bestFaceTimeout.cancel();
   }
 }
 
@@ -337,8 +337,8 @@ NccStrategy::MeasurementsEntryInfo::ageBestFace()
 
 NccStrategy::PitEntryInfo::~PitEntryInfo()
 {
-  scheduler::cancel(this->bestFaceTimeout);
-  scheduler::cancel(this->propagateTimer);
+  bestFaceTimeout.cancel();
+  propagateTimer.cancel();
 }
 
 } // namespace fw

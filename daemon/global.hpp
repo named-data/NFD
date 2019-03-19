@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018  Regents of the University of California,
+ * Copyright (c) 2014-2019  Regents of the University of California,
  *                          Arizona Board of Regents,
  *                          Colorado State University,
  *                          University Pierre & Marie Curie, Sorbonne University,
@@ -22,33 +22,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_CORE_GLOBAL_IO_HPP
-#define NFD_CORE_GLOBAL_IO_HPP
+#ifndef NFD_DAEMON_GLOBAL_HPP
+#define NFD_DAEMON_GLOBAL_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 
-/** \return the global io_service instance
+/** \brief Returns the global io_service instance for the calling thread.
  */
 boost::asio::io_service&
 getGlobalIoService();
 
-void
-setMainIoService(boost::asio::io_service* mainIo);
-
-void
-setRibIoService(boost::asio::io_service* ribIo);
-
-/** \brief run a function on the main io_service instance
+/** \brief Returns the global Scheduler instance for the calling thread.
  */
-void
-runOnMainIoService(const std::function<void()>& f);
-
-/** \brief run a function on the RIB io_service instance
- */
-void
-runOnRibIoService(const std::function<void()>& f);
+Scheduler&
+getScheduler();
 
 boost::asio::io_service&
 getMainIoService();
@@ -56,10 +45,26 @@ getMainIoService();
 boost::asio::io_service&
 getRibIoService();
 
+void
+setMainIoService(boost::asio::io_service* mainIo);
+
+void
+setRibIoService(boost::asio::io_service* ribIo);
+
+/** \brief Run a function on the main io_service instance.
+ */
+void
+runOnMainIoService(const std::function<void()>& f);
+
+/** \brief Run a function on the RIB io_service instance.
+ */
+void
+runOnRibIoService(const std::function<void()>& f);
+
 #ifdef WITH_TESTS
-/** \brief delete the global io_service instance
+/** \brief Destroy the global io_service instance.
  *
- *  It will be recreated at the next invocation of getGlobalIoService.
+ *  It will be recreated at the next invocation of getGlobalIoService().
  */
 void
 resetGlobalIoService();
@@ -67,4 +72,4 @@ resetGlobalIoService();
 
 } // namespace nfd
 
-#endif // NFD_CORE_GLOBAL_IO_HPP
+#endif // NFD_DAEMON_GLOBAL_HPP

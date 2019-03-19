@@ -26,6 +26,7 @@
 #include "dead-nonce-list.hpp"
 #include "core/city-hash.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 
@@ -58,14 +59,14 @@ DeadNonceList::DeadNonceList(time::nanoseconds lifetime)
     m_queue.push_back(MARK);
   }
 
-  m_markEvent = scheduler::schedule(m_markInterval, [this] { mark(); });
-  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
+  m_markEvent = getScheduler().schedule(m_markInterval, [this] { mark(); });
+  m_adjustCapacityEvent = getScheduler().schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
 }
 
 DeadNonceList::~DeadNonceList()
 {
-  scheduler::cancel(m_markEvent);
-  scheduler::cancel(m_adjustCapacityEvent);
+  m_markEvent.cancel();
+  m_adjustCapacityEvent.cancel();
 
   BOOST_ASSERT_MSG(DEFAULT_LIFETIME >= MIN_LIFETIME, "DEFAULT_LIFETIME is too small");
   static_assert(INITIAL_CAPACITY >= MIN_CAPACITY, "INITIAL_CAPACITY is too small");
@@ -124,7 +125,7 @@ DeadNonceList::mark()
 
   NFD_LOG_TRACE("mark nMarks=" << nMarks);
 
-  m_markEvent = scheduler::schedule(m_markInterval, [this] { mark(); });
+  m_markEvent = getScheduler().schedule(m_markInterval, [this] { mark(); });
 }
 
 void
@@ -145,7 +146,7 @@ DeadNonceList::adjustCapacity()
   m_actualMarkCounts.clear();
   this->evictEntries();
 
-  m_adjustCapacityEvent = scheduler::schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
+  m_adjustCapacityEvent = getScheduler().schedule(m_adjustCapacityInterval, [this] { adjustCapacity(); });
 }
 
 void

@@ -163,7 +163,7 @@ public:
 
 private:
   ndn::util::DummyClientFace m_face;
-  ndn::util::Scheduler m_scheduler;
+  Scheduler m_scheduler;
   ndn::nfd::Controller m_nfdController;
   Dispatcher m_dispatcher;
   rib::FibUpdater m_fibUpdater;

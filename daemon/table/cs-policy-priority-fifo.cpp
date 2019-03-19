@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,6 +25,7 @@
 
 #include "cs-policy-priority-fifo.hpp"
 #include "cs.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace cs {
@@ -117,8 +118,8 @@ PriorityFifoPolicy::attachQueue(iterator i)
   }
   else {
     entryInfo->queueType = QUEUE_FIFO;
-    entryInfo->moveStaleEventId = scheduler::schedule(i->getData().getFreshnessPeriod(),
-                                                      [=] { moveToStaleQueue(i); });
+    entryInfo->moveStaleEventId = getScheduler().schedule(i->getData().getFreshnessPeriod(),
+                                                          [=] { moveToStaleQueue(i); });
   }
 
   Queue& queue = m_queues[entryInfo->queueType];
@@ -133,7 +134,7 @@ PriorityFifoPolicy::detachQueue(iterator i)
 
   EntryInfo* entryInfo = m_entryInfoMap[i];
   if (entryInfo->queueType == QUEUE_FIFO) {
-    scheduler::cancel(entryInfo->moveStaleEventId);
+    entryInfo->moveStaleEventId.cancel();
   }
 
   m_queues[entryInfo->queueType].erase(entryInfo->queueIt);

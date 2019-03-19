@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,11 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_LIMITED_IO_HPP
-#define NFD_TESTS_LIMITED_IO_HPP
+#ifndef NFD_TESTS_DAEMON_LIMITED_IO_HPP
+#define NFD_TESTS_DAEMON_LIMITED_IO_HPP
 
-#include "test-common.hpp"
-#include "core/scheduler.hpp"
+#include "tests/test-common.hpp"
 
 #include <exception>
 
@@ -41,12 +40,10 @@ namespace tests {
 class LimitedIo : noncopyable
 {
 public:
-  /** \brief construct with UnitTestTimeFixture
-   */
   explicit
   LimitedIo(UnitTestTimeFixture* uttf = nullptr);
 
-  /// indicates why .run returns
+  /// indicates why run() returns
   enum StopReason {
     /// g_io.run() returns normally because there's no work to do
     NO_WORK,
@@ -105,13 +102,13 @@ public:
 private:
   UnitTestTimeFixture* m_uttf;
   StopReason m_reason;
-  int m_nOpsRemaining;
+  int m_nOpsRemaining = 0;
   scheduler::EventId m_timeout;
   std::exception_ptr m_lastException;
-  bool m_isRunning;
+  bool m_isRunning = false;
 };
 
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_LIMITED_IO_HPP
+#endif // NFD_TESTS_DAEMON_LIMITED_IO_HPP

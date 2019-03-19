@@ -24,12 +24,10 @@
  */
 
 #include "fw/ncc-strategy.hpp"
+
+#include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
-#include "tests/limited-io.hpp"
-
-#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace fw {

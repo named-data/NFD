@@ -47,8 +47,7 @@ static const time::seconds ACTIVE_FACE_FETCH_INTERVAL = 5_min;
 const Name RibManager::LOCALHOP_TOP_PREFIX = "/localhop/nfd";
 
 RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
-                       ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
-                       ndn::util::Scheduler& scheduler)
+                       ndn::nfd::Controller& nfdController, Dispatcher& dispatcher, Scheduler& scheduler)
   : ManagerBase(MGMT_MODULE_NAME, dispatcher)
   , m_rib(rib)
   , m_keyChain(keyChain)
@@ -137,7 +136,7 @@ RibManager::beginAddRoute(const Name& name, Route route, optional<time::nanoseco
                " origin=" << route.origin << " cost=" << route.cost);
 
   if (expires) {
-    auto event = m_scheduler.scheduleEvent(*expires, [=] { m_rib.onRouteExpiration(name, route); });
+    auto event = m_scheduler.schedule(*expires, [=] { m_rib.onRouteExpiration(name, route); });
     route.setExpirationEvent(event);
     NFD_LOG_TRACE("Scheduled unregistration at: " << *route.expires);
   }
@@ -459,7 +458,7 @@ RibManager::onFaceDestroyedEvent(uint64_t faceId)
 void
 RibManager::scheduleActiveFaceFetch(const time::seconds& timeToWait)
 {
-  m_activeFaceFetchEvent = m_scheduler.scheduleEvent(timeToWait, [this] { fetchActiveFaces(); });
+  m_activeFaceFetchEvent = m_scheduler.schedule(timeToWait, [this] { fetchActiveFaces(); });
 }
 
 void
@@ -477,7 +476,7 @@ RibManager::removeInvalidFaces(const std::vector<ndn::nfd::FaceStatus>& activeFa
   for (auto faceId : m_registeredFaces) {
     if (activeFaceIds.count(faceId) == 0) {
       NFD_LOG_DEBUG("Removing invalid face ID: " << faceId);
-      m_scheduler.scheduleEvent(0_ns, [this, faceId] { this->onFaceDestroyedEvent(faceId); });
+      m_scheduler.schedule(0_ns, [this, faceId] { this->onFaceDestroyedEvent(faceId); });
     }
   }
 
@@ -492,7 +491,7 @@ RibManager::onNotification(const ndn::nfd::FaceEventNotification& notification)
 
   if (notification.getKind() == ndn::nfd::FACE_EVENT_DESTROYED) {
     NFD_LOG_DEBUG("Received notification for destroyed faceId: " << notification.getFaceId());
-    m_scheduler.scheduleEvent(0_ns, [this, id = notification.getFaceId()] { onFaceDestroyedEvent(id); });
+    m_scheduler.schedule(0_ns, [this, id = notification.getFaceId()] { onFaceDestroyedEvent(id); });
   }
 }
 

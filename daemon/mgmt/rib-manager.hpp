@@ -51,8 +51,7 @@ class RibManager : public ManagerBase
 {
 public:
   RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
-             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher,
-             ndn::util::Scheduler& scheduler);
+             ndn::nfd::Controller& nfdController, Dispatcher& dispatcher, Scheduler& scheduler);
 
   /**
    * @brief Apply localhost_security configuration.
@@ -246,14 +245,14 @@ private:
   ndn::KeyChain& m_keyChain;
   ndn::nfd::Controller& m_nfdController;
   Dispatcher& m_dispatcher;
-  ndn::util::Scheduler& m_scheduler;
+  Scheduler& m_scheduler;
 
   ndn::nfd::FaceMonitor m_faceMonitor;
   ndn::ValidatorConfig m_localhostValidator;
   ndn::ValidatorConfig m_localhopValidator;
   bool m_isLocalhopEnabled;
 
-  ndn::util::scheduler::ScopedEventId m_activeFaceFetchEvent;
+  scheduler::ScopedEventId m_activeFaceFetchEvent;
   using FaceIdSet = std::set<uint64_t>;
   FaceIdSet m_registeredFaces; ///< contains FaceIds with one or more Routes in the RIB
 };

@@ -31,12 +31,11 @@
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 
-#include "tests/test-common.hpp"
-#include "tests/limited-io.hpp"
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {

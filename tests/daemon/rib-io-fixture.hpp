@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_RIB_IO_FIXTURE_HPP
-#define NFD_TESTS_RIB_IO_FIXTURE_HPP
+#ifndef NFD_TESTS_DAEMON_RIB_IO_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_RIB_IO_FIXTURE_HPP
 
 #include "tests/test-common.hpp"
 
@@ -102,4 +102,4 @@ protected:
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_RIB_IO_FIXTURE_HPP
+#endif // NFD_TESTS_DAEMON_RIB_IO_FIXTURE_HPP

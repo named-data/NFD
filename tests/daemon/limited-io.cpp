@@ -24,8 +24,8 @@
  */
 
 #include "limited-io.hpp"
-#include "core/global-io.hpp"
 #include "core/logger.hpp"
+#include "daemon/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 
@@ -39,8 +39,6 @@ const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
 LimitedIo::LimitedIo(UnitTestTimeFixture* uttf)
   : m_uttf(uttf)
-  , m_nOpsRemaining(0)
-  , m_isRunning(false)
 {
 }
 
@@ -58,7 +56,7 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
   m_reason = NO_WORK;
   m_nOpsRemaining = nOpsLimit;
   if (timeLimit >= 0_ns) {
-    m_timeout = scheduler::schedule(timeLimit, [this] { afterTimeout(); });
+    m_timeout = getScheduler().schedule(timeLimit, [this] { afterTimeout(); });
   }
 
   try {
@@ -79,7 +77,7 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
   }
 
   getGlobalIoService().reset();
-  scheduler::cancel(m_timeout);
+  m_timeout.cancel();
   m_isRunning = false;
 
   return m_reason;

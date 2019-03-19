@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/global-io.hpp"
+#include "daemon/global.hpp"
 #include "face/face.hpp"
 #include "face/tcp-channel.hpp"
 #include "face/udp-channel.hpp"

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,9 +24,9 @@
  */
 
 #include "tcp-channel.hpp"
-#include "core/global-io.hpp"
 #include "generic-link-service.hpp"
 #include "tcp-transport.hpp"
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace face {
@@ -84,7 +84,7 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
   }
 
   auto clientSocket = make_shared<ip::tcp::socket>(std::ref(getGlobalIoService()));
-  auto timeoutEvent = scheduler::schedule(timeout, [=] {
+  auto timeoutEvent = getScheduler().schedule(timeout, [=] {
     handleConnectTimeout(remoteEndpoint, clientSocket, onConnectFailed);
   });
 
@@ -187,7 +187,7 @@ TcpChannel::handleConnect(const boost::system::error_code& error,
                           const FaceCreatedCallback& onFaceCreated,
                           const FaceCreationFailedCallback& onConnectFailed)
 {
-  scheduler::cancel(connectTimeoutEvent);
+  connectTimeoutEvent.cancel();
 
   if (error) {
     if (error != boost::asio::error::operation_aborted) {

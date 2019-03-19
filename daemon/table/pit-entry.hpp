@@ -28,7 +28,6 @@
 
 #include "pit-in-record.hpp"
 #include "pit-out-record.hpp"
-#include "core/scheduler.hpp"
 
 #include <list>
 

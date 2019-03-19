@@ -23,35 +23,78 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_CORE_SCHEDULER_HPP
-#define NFD_CORE_SCHEDULER_HPP
-
-#include "common.hpp"
-
-#include <ndn-cxx/util/scheduler.hpp>
+#include "daemon/global.hpp"
 
 namespace nfd {
-namespace scheduler {
 
-using ndn::util::scheduler::Scheduler;
-using ndn::util::scheduler::EventId;
-using ndn::util::scheduler::ScopedEventId;
-using ndn::util::scheduler::EventCallback;
+static thread_local unique_ptr<boost::asio::io_service> g_ioService;
+static thread_local unique_ptr<Scheduler> g_scheduler;
+static boost::asio::io_service* g_mainIoService = nullptr;
+static boost::asio::io_service* g_ribIoService = nullptr;
 
-/** \brief Schedule an event.
- */
-EventId
-schedule(time::nanoseconds after, const EventCallback& event);
-
-/** \brief Cancel a scheduled event.
- */
-inline void
-cancel(EventId eventId)
+boost::asio::io_service&
+getGlobalIoService()
 {
-  eventId.cancel();
+  if (g_ioService == nullptr) {
+    g_ioService = make_unique<boost::asio::io_service>();
+  }
+  return *g_ioService;
 }
 
-} // namespace scheduler
-} // namespace nfd
+Scheduler&
+getScheduler()
+{
+  if (g_scheduler == nullptr) {
+    g_scheduler = make_unique<Scheduler>(getGlobalIoService());
+  }
+  return *g_scheduler;
+}
 
-#endif // NFD_CORE_SCHEDULER_HPP
+#ifdef WITH_TESTS
+void
+resetGlobalIoService()
+{
+  g_scheduler.reset();
+  g_ioService.reset();
+}
+#endif
+
+boost::asio::io_service&
+getMainIoService()
+{
+  BOOST_ASSERT(g_mainIoService != nullptr);
+  return *g_mainIoService;
+}
+
+boost::asio::io_service&
+getRibIoService()
+{
+  BOOST_ASSERT(g_ribIoService != nullptr);
+  return *g_ribIoService;
+}
+
+void
+setMainIoService(boost::asio::io_service* mainIo)
+{
+  g_mainIoService = mainIo;
+}
+
+void
+setRibIoService(boost::asio::io_service* ribIo)
+{
+  g_ribIoService = ribIo;
+}
+
+void
+runOnMainIoService(const std::function<void()>& f)
+{
+  getMainIoService().post(f);
+}
+
+void
+runOnRibIoService(const std::function<void()>& f)
+{
+  getRibIoService().post(f);
+}
+
+} // namespace nfd

@@ -24,7 +24,6 @@
  */
 
 #include "procedure.hpp"
-#include "core/scheduler.hpp"
 #include "core/version.hpp"
 
 #include <signal.h>
@@ -88,10 +87,10 @@ runDaemon(Procedure& proc)
     proc.getIoService().stop();
   });
 
-  util::Scheduler sched(proc.getIoService());
-  util::scheduler::ScopedEventId runEvt;
+  Scheduler sched(proc.getIoService());
+  scheduler::ScopedEventId runEvt;
   auto scheduleRerun = [&] (time::nanoseconds delay) {
-    runEvt = sched.scheduleEvent(delay, [&] { proc.runOnce(); });
+    runEvt = sched.schedule(delay, [&] { proc.runOnce(); });
   };
 
   proc.onComplete.connect([&] (bool isSuccess) {

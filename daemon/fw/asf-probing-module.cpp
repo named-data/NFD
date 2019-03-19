@@ -25,6 +25,7 @@
 
 #include "asf-probing-module.hpp"
 #include "algorithm.hpp"
+#include "daemon/global.hpp"
 
 #include <ndn-cxx/util/random.hpp>
 
@@ -50,7 +51,7 @@ ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::millisecond
   Name prefix = fibEntry.getPrefix();
 
   // Set the probing flag for the namespace to true after passed interval of time
-  scheduler::schedule(interval, [this, prefix] {
+  getScheduler().schedule(interval, [this, prefix] {
     NamespaceInfo* info = m_measurements.getNamespaceInfo(prefix);
 
     if (info == nullptr) {
@@ -65,10 +66,8 @@ ProbingModule::scheduleProbe(const fib::Entry& fibEntry, const time::millisecond
 }
 
 Face*
-ProbingModule::getFaceToProbe(const Face& inFace,
-                              const Interest& interest,
-                              const fib::Entry& fibEntry,
-                              const Face& faceUsed)
+ProbingModule::getFaceToProbe(const Face& inFace, const Interest& interest,
+                              const fib::Entry& fibEntry, const Face& faceUsed)
 {
   FaceInfoFacePairSet rankedFaces(
     [] (const auto& pairLhs, const auto& pairRhs) -> bool {
@@ -83,7 +82,7 @@ ProbingModule::getFaceToProbe(const Face& inFace,
 
   // Put eligible faces into rankedFaces. If a face does not have an RTT measurement,
   // immediately pick the face for probing
-  for (const fib::NextHop& hop : fibEntry.getNextHops()) {
+  for (const auto& hop : fibEntry.getNextHops()) {
     Face& hopFace = hop.getFace();
 
     // Don't send probe Interest back to the incoming face or use the same face

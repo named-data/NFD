@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "tcp-transport.hpp"
+#include "daemon/global.hpp"
 
 #if defined(__linux__)
 #include <linux/sockios.h>
@@ -39,7 +40,9 @@ time::milliseconds TcpTransport::s_initialReconnectWait = 1_s;
 time::milliseconds TcpTransport::s_maxReconnectWait = 5_min;
 float TcpTransport::s_reconnectWaitMultiplier = 2.0f;
 
-TcpTransport::TcpTransport(protocol::socket&& socket, ndn::nfd::FacePersistency persistency, ndn::nfd::FaceScope faceScope)
+TcpTransport::TcpTransport(protocol::socket&& socket,
+                           ndn::nfd::FacePersistency persistency,
+                           ndn::nfd::FaceScope faceScope)
   : StreamTransport(std::move(socket))
   , m_remoteEndpoint(m_socket.remote_endpoint())
   , m_nextReconnectWait(s_initialReconnectWait)
@@ -103,8 +106,8 @@ TcpTransport::handleError(const boost::system::error_code& error)
     this->setState(TransportState::DOWN);
 
     // cancel all outstanding operations
-    boost::system::error_code error;
-    m_socket.cancel(error);
+    boost::system::error_code ec;
+    m_socket.cancel(ec);
 
     // do this asynchronously because there could be some callbacks still pending
     getGlobalIoService().post([this] { reconnect(); });
@@ -134,7 +137,8 @@ TcpTransport::reconnect()
   this->resetReceiveBuffer();
   this->resetSendQueue();
 
-  m_reconnectEvent = scheduler::schedule(m_nextReconnectWait, [this] { this->handleReconnectTimeout(); });
+  m_reconnectEvent = getScheduler().schedule(m_nextReconnectWait,
+                                             [this] { this->handleReconnectTimeout(); });
   m_socket.async_connect(m_remoteEndpoint, [this] (const auto& e) { this->handleReconnect(e); });
 }
 

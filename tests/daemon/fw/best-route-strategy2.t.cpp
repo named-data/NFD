@@ -24,6 +24,7 @@
  */
 
 #include "fw/best-route-strategy2.hpp"
+#include "daemon/global.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
@@ -108,17 +109,17 @@ BOOST_AUTO_TEST_CASE(Forward)
     size_t nSent = strategy.sendInterestHistory.size();
     if (nSent > nSentLast) {
       BOOST_CHECK_EQUAL(nSent - nSentLast, 1);
-      time::steady_clock::TimePoint timeSent = time::steady_clock::now();
+      auto timeSent = time::steady_clock::now();
       BOOST_CHECK_GE(timeSent - timeSentLast, TICK * 8);
       nSentLast = nSent;
       timeSentLast = timeSent;
     }
 
-    retxFrom4Evt = scheduler::schedule(TICK * 5, periodicalRetxFrom4);
+    retxFrom4Evt = getScheduler().schedule(TICK * 5, periodicalRetxFrom4);
   };
   periodicalRetxFrom4();
   this->advanceClocks(TICK, BestRouteStrategy2::RETX_SUPPRESSION_MAX * 16);
-  scheduler::cancel(retxFrom4Evt);
+  retxFrom4Evt.cancel();
 
   // nexthops for accepted retransmissions: follow FIB cost,
   // later forward to an eligible upstream with earliest out-record

@@ -66,7 +66,9 @@
 #include <ndn-cxx/net/face-uri.hpp>
 #include <ndn-cxx/util/backports.hpp>
 #include <ndn-cxx/util/exception.hpp>
+#include <ndn-cxx/util/scheduler.hpp>
 #include <ndn-cxx/util/signal.hpp>
+#include <ndn-cxx/util/time.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/assert.hpp>
@@ -106,6 +108,7 @@ using ndn::FaceUri;
 using ndn::Interest;
 using ndn::Name;
 using ndn::PartialName;
+using ndn::Scheduler;
 
 // Not using a namespace alias (namespace tlv = ndn::tlv), because
 // it doesn't allow NFD to add other members to the namespace
@@ -115,6 +118,7 @@ using namespace ndn::tlv;
 
 namespace lp = ndn::lp;
 namespace name = ndn::name;
+namespace scheduler = ndn::scheduler;
 namespace signal = ndn::util::signal;
 namespace time = ndn::time;
 using namespace ndn::time_literals;

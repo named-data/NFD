@@ -27,7 +27,7 @@
 #include "algorithm.hpp"
 
 #include "core/logger.hpp"
-#include "core/global-io.hpp"
+#include "daemon/global.hpp"
 #include "rib/service.hpp"
 
 #include <ndn-cxx/lp/empty-value.hpp>

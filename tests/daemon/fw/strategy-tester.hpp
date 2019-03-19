@@ -27,7 +27,8 @@
 #define NFD_TESTS_DAEMON_FW_STRATEGY_TESTER_HPP
 
 #include "fw/strategy.hpp"
-#include "tests/limited-io.hpp"
+
+#include "tests/daemon/limited-io.hpp"
 
 namespace nfd {
 namespace fw {

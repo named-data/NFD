@@ -26,7 +26,6 @@
 #ifndef NFD_DAEMON_FACE_LP_REASSEMBLER_HPP
 #define NFD_DAEMON_FACE_LP_REASSEMBLER_HPP
 
-#include "core/scheduler.hpp"
 #include "face-log.hpp"
 #include "transport.hpp"
 
@@ -125,8 +124,8 @@ private:
 
 private:
   Options m_options;
-  std::map<Key, PartialPacket> m_partialPackets;
   const LinkService* m_linkService;
+  std::map<Key, PartialPacket> m_partialPackets;
 };
 
 std::ostream&

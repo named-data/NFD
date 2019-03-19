@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,6 +24,7 @@
  */
 
 #include "unicast-ethernet-transport.hpp"
+#include "daemon/global.hpp"
 
 #include <stdio.h>  // for snprintf()
 
@@ -95,7 +96,7 @@ UnicastEthernetTransport::afterChangePersistency(ndn::nfd::FacePersistency oldPe
 void
 UnicastEthernetTransport::scheduleClosureWhenIdle()
 {
-  m_closeIfIdleEvent = scheduler::schedule(m_idleTimeout, [this] {
+  m_closeIfIdleEvent = getScheduler().schedule(m_idleTimeout, [this] {
     if (!hasRecentlyReceived()) {
       NFD_LOG_FACE_INFO("Closing due to inactivity");
       this->close();

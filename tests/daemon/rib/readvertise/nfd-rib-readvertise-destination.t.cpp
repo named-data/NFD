@@ -58,7 +58,7 @@ public:
 
 protected:
   ndn::util::DummyClientFace face;
-  ndn::util::Scheduler scheduler;
+  Scheduler scheduler;
   ndn::nfd::Controller controller;
   Rib rib;
   NfdRibReadvertiseDestination dest;

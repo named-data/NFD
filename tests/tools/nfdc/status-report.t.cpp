@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,6 @@
  */
 
 #include "nfdc/status-report.hpp"
-#include "core/scheduler.hpp"
 
 #include "status-fixture.hpp"
 
@@ -49,9 +48,9 @@ module2
 class DummyModule : public Module
 {
 public:
-  explicit
-  DummyModule(const std::string& moduleName)
+  DummyModule(const std::string& moduleName, boost::asio::io_service& io)
     : m_moduleName(moduleName)
+    , m_scheduler(io)
     , m_res(0)
     , m_delay(time::milliseconds(1))
   {
@@ -70,13 +69,13 @@ public:
   }
 
   void
-  fetchStatus(Controller& controller,
+  fetchStatus(Controller&,
               const std::function<void()>& onSuccess,
               const Controller::DatasetFailCallback& onFailure,
-              const CommandOptions& options) final
+              const CommandOptions&) final
   {
     ++nFetchStatusCalls;
-    scheduler::schedule(m_delay, [=] {
+    m_scheduler.schedule(m_delay, [=] {
       if (m_res == 0) {
         onSuccess();
       }
@@ -103,6 +102,7 @@ public:
 
 private:
   std::string m_moduleName;
+  Scheduler m_scheduler;
   uint32_t m_res;
   time::nanoseconds m_delay;
 };
@@ -133,7 +133,7 @@ protected:
   DummyModule&
   addModule(const std::string& moduleName)
   {
-    report.sections.push_back(make_unique<DummyModule>(moduleName));
+    report.sections.push_back(make_unique<DummyModule>(moduleName, g_io));
     return static_cast<DummyModule&>(*report.sections.back());
   }
 

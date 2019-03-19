@@ -24,9 +24,8 @@
  */
 
 #include "nfd.hpp"
-
+#include "global.hpp"
 #include "core/config-file.hpp"
-#include "core/global-io.hpp"
 #include "core/log-config-section.hpp"
 #include "core/privilege-helper.hpp"
 #include "face/face-system.hpp"
@@ -89,7 +88,7 @@ Nfd::initialize()
   m_netmon->onNetworkStateChanged.connect([this] {
       // delay stages, so if multiple events are triggered in short sequence,
       // only one auto-detection procedure is triggered
-      m_reloadConfigEvent = scheduler::schedule(5_s,
+      m_reloadConfigEvent = getScheduler().schedule(5_s,
         [this] {
           NFD_LOG_INFO("Network change detected, reloading face section of the config file...");
           this->reloadConfigFileFaceSection();

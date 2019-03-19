@@ -27,7 +27,6 @@
 #define NFD_DAEMON_TABLE_DEAD_NONCE_LIST_HPP
 
 #include "core/common.hpp"
-#include "core/scheduler.hpp"
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>

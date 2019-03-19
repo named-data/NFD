@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,8 @@
 #include "transport-test-common.hpp"
 
 #include "ethernet-fixture.hpp"
+
+#include "daemon/global.hpp"
 
 namespace nfd {
 namespace face {
@@ -66,7 +68,7 @@ BOOST_AUTO_TEST_CASE(NetifStateChange)
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
 
   // simulate 'ip link set IFNAME down'
-  scheduler::schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::DOWN); });
+  getScheduler().schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::DOWN); });
   transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::UP);
     BOOST_CHECK_EQUAL(newState, TransportState::DOWN);
@@ -76,8 +78,8 @@ BOOST_AUTO_TEST_CASE(NetifStateChange)
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::DOWN);
 
   // simulate 'ip link set IFNAME up'
-  scheduler::schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::NO_CARRIER); });
-  scheduler::schedule(80_ms, [=] { netif->setState(ndn::net::InterfaceState::RUNNING); });
+  getScheduler().schedule(10_ms, [=] { netif->setState(ndn::net::InterfaceState::NO_CARRIER); });
+  getScheduler().schedule(80_ms, [=] { netif->setState(ndn::net::InterfaceState::RUNNING); });
   transport->afterStateChange.connectSingleShot([&] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::DOWN);
     BOOST_CHECK_EQUAL(newState, TransportState::UP);

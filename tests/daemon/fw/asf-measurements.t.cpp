@@ -24,6 +24,7 @@
  */
 
 #include "fw/asf-measurements.hpp"
+#include "daemon/global.hpp"
 
 #include "tests/daemon/face/dummy-face.hpp"
 #include "tests/test-common.hpp"
@@ -85,7 +86,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, UnitTestTimeFixture)
 {
   FaceInfo info;
 
-  scheduler::EventId id = scheduler::schedule(time::seconds(1), []{});
+  auto id = getScheduler().schedule(1_s, []{});
   ndn::Name interestName("/ndn/interest");
 
   // Receive Interest and forward to next hop; should update RTO information

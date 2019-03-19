@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,6 @@
 #define NFD_DAEMON_TABLE_CS_POLICY_PRIORITY_FIFO_HPP
 
 #include "cs-policy.hpp"
-#include "core/scheduler.hpp"
 
 #include <list>
 
@@ -80,8 +79,7 @@ class PriorityFifoPolicy : public Policy
 public:
   PriorityFifoPolicy();
 
-  virtual
-  ~PriorityFifoPolicy();
+  ~PriorityFifoPolicy() override;
 
 public:
   static const std::string POLICY_NAME;
