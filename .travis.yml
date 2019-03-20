@@ -1,6 +1,5 @@
 language: cpp
 dist: xenial
-sudo: required
 env:
   global:
     - JOB_NAME=limited-build
@@ -22,10 +21,6 @@ matrix:
     # Linux/clang
     # https://apt.llvm.org/
     - os: linux
-      env: COMPILER=clang++-3.6
-    - os: linux
-      env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
-    - os: linux
       env: COMPILER=clang++-3.8
     - os: linux
       env: COMPILER=clang++-3.9
@@ -35,19 +30,17 @@ matrix:
       env: COMPILER=clang++-5.0
     - os: linux
       env: COMPILER=clang++-6.0
+    # temporarily disable AddressSanitizer on clang-7 and later
+    # due to https://bugs.llvm.org/show_bug.cgi?id=40808
     - os: linux
-      env: COMPILER=clang++-7
+      env: COMPILER=clang++-7 DISABLE_ASAN=yes
     - os: linux
-      env: COMPILER=clang++-8
+      env: COMPILER=clang++-8 DISABLE_ASAN=yes
+    - os: linux
+      env: COMPILER=clang++-9 DISABLE_ASAN=yes
 
     # macOS/clang
-    # https://docs.travis-ci.com/user/reference/osx/#OS-X-Version
-    - os: osx
-      osx_image: xcode7.3
-      env: OSX_VERSION=10.11
-    - os: osx
-      osx_image: xcode8
-      env: OSX_VERSION=10.11
+    # https://docs.travis-ci.com/user/reference/osx/#macos-version
     - os: osx
       osx_image: xcode8.3
       env: OSX_VERSION=10.12
@@ -60,17 +53,20 @@ matrix:
     - os: osx
       osx_image: xcode10.1
       env: OSX_VERSION=10.13
+    - os: osx
+      osx_image: xcode10.2
+      env: OSX_VERSION=10.14
 
   allow_failures:
-    - env: COMPILER=clang++-3.6
-    - env: COMPILER=clang++-3.7 DISABLE_ASAN=yes
-    - env: COMPILER=clang++-8
+    - env: COMPILER=clang++-9 DISABLE_ASAN=yes
 
   fast_finish: true
 
 install: |
     case ${COMPILER} in
-      g++-[6789])
+      g++-5)
+        ;;
+      g++-*)
         travis_retry sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         travis_retry sudo apt-get -qq update
         travis_retry sudo apt-get -qy install "${COMPILER}"
@@ -79,7 +75,7 @@ install: |
         CLANG_VERSION=${COMPILER/clang++}
         if [[ ${CLANG_VERSION} != "-3."* ]]; then
           travis_retry wget -nv -O - "https://apt.llvm.org/llvm-snapshot.gpg.key" | sudo apt-key add -
-          travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial${CLANG_VERSION/-8} main"
+          travis_retry sudo add-apt-repository -y "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial${CLANG_VERSION/-9} main"
         fi
         travis_retry sudo apt-get -qq update
         travis_retry sudo apt-get -qy install "clang${CLANG_VERSION}"
@@ -89,13 +85,11 @@ install: |
 before_script:
   - if [[ ${TRAVIS_OS_NAME} == linux ]]; then export NODE_LABELS="Linux Ubuntu Ubuntu-16.04"; fi
   - if [[ ${TRAVIS_OS_NAME} == osx ]]; then export NODE_LABELS="OSX OSX-${OSX_VERSION}"; fi
-  - if [[ ${TRAVIS_OS_NAME} == osx ]]; then brew update; fi
+  - if [[ ${OSX_VERSION} == 10.12 ]]; then brew update; fi
   # workaround for https://github.com/Homebrew/homebrew-core/issues/26358
   - if [[ ${OSX_VERSION} == 10.12 ]]; then brew outdated python || brew upgrade python; fi
   # workaround for https://github.com/travis-ci/travis-ci/issues/6688
   - if [[ ${OSX_VERSION} == 10.12 ]]; then /usr/bin/yes | pip2 uninstall numpy || true; fi
-  # workaround for https://github.com/travis-ci/travis-ci/issues/8826
-  - if [[ ${TRAVIS_OS_NAME} == osx ]]; then brew cask uninstall --force oclint || true; fi
   - if [[ -n ${COMPILER} ]]; then export CXX=${COMPILER}; fi
   - ${CXX:-c++} --version
   - python --version
