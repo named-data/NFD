@@ -74,7 +74,7 @@ public:
     params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, enableReliability);
 
     if (!boost::logic::indeterminate(enableCongestionMarking)) {
-      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, enableCongestionMarking);
+      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, bool(enableCongestionMarking));
     }
 
     createFace(params);

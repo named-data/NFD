@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -65,10 +65,10 @@ CsModule::config(ExecuteContext& ctx)
     p.setCapacity(*capacity);
   }
   if (!indeterminate(enableAdmit)) {
-    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT, enableAdmit);
+    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_ADMIT, bool(enableAdmit));
   }
   if (!indeterminate(enableServe)) {
-    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE, enableServe);
+    p.setFlagBit(ndn::nfd::BIT_CS_ENABLE_SERVE, bool(enableServe));
   }
 
   ctx.controller.start<ndn::nfd::CsConfigCommand>(p,

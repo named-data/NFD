@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -203,7 +203,7 @@ FaceModule::create(ExecuteContext& ctx)
       ControlParameters params;
       params.setFaceId(respParams.getFaceId()).setFacePersistency(persistency);
       if (!boost::logic::indeterminate(lpReliability)) {
-        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
       }
       ctx.controller.start<ndn::nfd::FaceUpdateCommand>(
           params,
@@ -222,11 +222,11 @@ FaceModule::create(ExecuteContext& ctx)
 
       if (!boost::logic::indeterminate(lpReliability) &&
           lpReliability != respParams.getFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED)) {
-        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+        params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
       }
       if (!boost::logic::indeterminate(congestionMarking) &&
           congestionMarking != respParams.getFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED)) {
-        params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, congestionMarking);
+        params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, bool(congestionMarking));
       }
 
       if (baseCongestionMarkingIntervalMs) {
@@ -258,10 +258,10 @@ FaceModule::create(ExecuteContext& ctx)
     }
     params.setFacePersistency(persistency);
     if (!boost::logic::indeterminate(lpReliability)) {
-      params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, lpReliability);
+      params.setFlagBit(ndn::nfd::BIT_LP_RELIABILITY_ENABLED, bool(lpReliability));
     }
     if (!boost::logic::indeterminate(congestionMarking)) {
-      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, congestionMarking);
+      params.setFlagBit(ndn::nfd::BIT_CONGESTION_MARKING_ENABLED, bool(congestionMarking));
     }
     if (baseCongestionMarkingIntervalMs) {
       params.setBaseCongestionMarkingInterval(time::milliseconds(*baseCongestionMarkingIntervalMs));

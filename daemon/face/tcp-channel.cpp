@@ -113,7 +113,7 @@ TcpChannel::createFace(ip::tcp::socket&& socket,
       options.allowCongestionMarking = m_wantCongestionMarking;
     }
     else {
-      options.allowCongestionMarking = params.wantCongestionMarking;
+      options.allowCongestionMarking = bool(params.wantCongestionMarking);
     }
 
     if (params.baseCongestionMarkingInterval) {

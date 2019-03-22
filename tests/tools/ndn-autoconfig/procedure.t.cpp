@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "ndn-autoconfig/procedure.hpp"
 
 #include "../mock-nfd-mgmt-fixture.hpp"
+
 #include <boost/logic/tribool.hpp>
 
 namespace ndn {
@@ -51,12 +52,14 @@ public:
   runOnce()
   {
     BOOST_ASSERT(procedure != nullptr);
+
     boost::logic::tribool result;
-    procedure->onComplete.connectSingleShot([&] (bool result1) { result = result1; });
+    procedure->onComplete.connectSingleShot([&] (bool res) { result = res; });
     procedure->runOnce();
     face.processEvents();
-    BOOST_CHECK_MESSAGE(!boost::logic::indeterminate(result), "onComplete is not invoked");
-    return result;
+
+    BOOST_REQUIRE_MESSAGE(!boost::logic::indeterminate(result), "onComplete was not invoked");
+    return bool(result);
   }
 
 public:
@@ -71,7 +74,8 @@ public:
    *  \param result expected result, nullopt to cause a failued
    *  \param io io_service to asynchronously post the result
    */
-  DummyStage(const std::string& stageName, int* nCalls, const optional<FaceUri>& result, boost::asio::io_service& io)
+  DummyStage(const std::string& stageName, int* nCalls,
+             const optional<FaceUri>& result, boost::asio::io_service& io)
     : m_stageName(stageName)
     , m_nCalls(nCalls)
     , m_result(result)
