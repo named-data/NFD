@@ -28,7 +28,7 @@
 
 #include "rib/fib-updater.hpp"
 
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 #include "tests/daemon/rib/create-route.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
@@ -60,7 +60,7 @@ compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
   return false;
 }
 
-class FibUpdatesFixture : public nfd::tests::IdentityManagementFixture
+class FibUpdatesFixture : public nfd::tests::BaseFixture, public nfd::tests::KeyChainFixture
 {
 public:
   FibUpdatesFixture()

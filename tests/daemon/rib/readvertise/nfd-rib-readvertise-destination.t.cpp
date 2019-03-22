@@ -25,7 +25,7 @@
 
 #include "rib/readvertise/nfd-rib-readvertise-destination.hpp"
 
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 #include "tests/test-common.hpp"
 
 #include <ndn-cxx/security/signing-info.hpp>
@@ -37,7 +37,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class NfdRibReadvertiseDestinationFixture : public IdentityManagementTimeFixture
+class NfdRibReadvertiseDestinationFixture : public UnitTestTimeFixture, public KeyChainFixture
 {
 public:
   NfdRibReadvertiseDestinationFixture()

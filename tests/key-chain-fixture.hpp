@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,26 +23,21 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
-#define NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#ifndef NFD_TESTS_KEY_CHAIN_FIXTURE_HPP
+#define NFD_TESTS_KEY_CHAIN_FIXTURE_HPP
 
 #include "tests/test-common.hpp"
+
 #include <ndn-cxx/security/key-chain.hpp>
 
 namespace nfd {
 namespace tests {
 
-/** \brief a fixture providing an in-memory KeyChain
+/** \brief A fixture providing an in-memory KeyChain.
  */
-class IdentityManagementFixture : public virtual BaseFixture
+class KeyChainFixture
 {
 public:
-  IdentityManagementFixture();
-
-  /** \brief deletes saved certificate files
-   */
-  ~IdentityManagementFixture();
-
   /** \brief add identity
    *  \return whether successful
    */
@@ -52,20 +47,27 @@ public:
 
   /** \brief save identity certificate to a file
    *  \param identity identity name
-   *  \param filename file name, should be writable
-   *  \param wantAdd if true, add new identity when necessary
+   *  \param filename file name, must be writable
+   *  \param allowAdd if true, add new identity when necessary
    *  \return whether successful
    */
   bool
-  saveIdentityCertificate(const Name& identity, const std::string& filename, bool wantAdd = false);
+  saveIdentityCertificate(const Name& identity, const std::string& filename, bool allowAdd = false);
 
   /** \brief retrieve identity certificate as base64 string
    *  \param identity identity name
-   *  \param wantAdd if true, add new identity when necessary
-   *  \throw std::runtime_error identity does not exist and wantAdd is false
+   *  \param allowAdd if true, add new identity when necessary
+   *  \throw std::runtime_error identity does not exist and \p allowAdd is false
    */
   std::string
-  getIdentityCertificateBase64(const Name& identity, bool wantAdd = false);
+  getIdentityCertificateBase64(const Name& identity, bool allowAdd = false);
+
+protected:
+  KeyChainFixture();
+
+  /** \brief deletes saved certificate files
+   */
+  ~KeyChainFixture();
 
 protected:
   ndn::KeyChain m_keyChain;
@@ -74,15 +76,7 @@ private:
   std::vector<std::string> m_certFiles;
 };
 
-/** \brief convenience base class for inheriting from both UnitTestTimeFixture
- *         and IdentityManagementFixture
- */
-class IdentityManagementTimeFixture : public UnitTestTimeFixture
-                                    , public IdentityManagementFixture
-{
-};
-
 } // namespace tests
 } // namespace nfd
 
-#endif // NFD_TESTS_IDENTITY_MANAGEMENT_FIXTURE_HPP
+#endif // NFD_TESTS_KEY_CHAIN_FIXTURE_HPP

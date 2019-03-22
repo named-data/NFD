@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "ndn-autoconfig-server/program.hpp"
 
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 
 #include <ndn-cxx/encoding/buffer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
@@ -35,9 +35,7 @@ namespace tools {
 namespace autoconfig_server {
 namespace tests {
 
-using namespace ::nfd::tests;
-
-class AutoconfigServerFixture : public IdentityManagementFixture
+class AutoconfigServerFixture : public ::nfd::tests::KeyChainFixture
 {
 public:
   AutoconfigServerFixture()

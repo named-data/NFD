@@ -25,9 +25,10 @@
 
 #include "rib/readvertise/readvertise.hpp"
 
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
+
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
 
@@ -110,7 +111,7 @@ public:
   std::vector<HistoryEntry> withdrawHistory;
 };
 
-class ReadvertiseFixture : public IdentityManagementTimeFixture
+class ReadvertiseFixture : public UnitTestTimeFixture, public KeyChainFixture
 {
 public:
   ReadvertiseFixture()

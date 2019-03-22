@@ -23,25 +23,27 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
+
 #include <ndn-cxx/security/pib/identity.hpp>
 #include <ndn-cxx/security/pib/key.hpp>
 #include <ndn-cxx/security/pib/pib.hpp>
 #include <ndn-cxx/security/transform.hpp>
 #include <ndn-cxx/security/v2/certificate.hpp>
 #include <ndn-cxx/util/io.hpp>
+
 #include <boost/filesystem.hpp>
 
 namespace nfd {
 namespace tests {
 
-IdentityManagementFixture::IdentityManagementFixture()
+KeyChainFixture::KeyChainFixture()
   : m_keyChain("pib-memory:", "tpm-memory:")
 {
   m_keyChain.createIdentity("/DEFAULT");
 }
 
-IdentityManagementFixture::~IdentityManagementFixture()
+KeyChainFixture::~KeyChainFixture()
 {
   boost::system::error_code ec;
   for (const auto& certFile : m_certFiles) {
@@ -50,7 +52,7 @@ IdentityManagementFixture::~IdentityManagementFixture()
 }
 
 bool
-IdentityManagementFixture::addIdentity(const Name& identity, const ndn::KeyParams& params)
+KeyChainFixture::addIdentity(const Name& identity, const ndn::KeyParams& params)
 {
   try {
     m_keyChain.createIdentity(identity, params);
@@ -62,15 +64,15 @@ IdentityManagementFixture::addIdentity(const Name& identity, const ndn::KeyParam
 }
 
 bool
-IdentityManagementFixture::saveIdentityCertificate(const Name& identity, const std::string& filename, bool wantAdd)
+KeyChainFixture::saveIdentityCertificate(const Name& identity, const std::string& filename, bool allowAdd)
 {
   ndn::security::v2::Certificate cert;
   try {
     cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
   catch (const ndn::security::Pib::Error&) {
-    if (wantAdd && this->addIdentity(identity)) {
-      return this->saveIdentityCertificate(identity, filename, false);
+    if (allowAdd && addIdentity(identity)) {
+      return saveIdentityCertificate(identity, filename, false);
     }
     return false;
   }
@@ -86,24 +88,24 @@ IdentityManagementFixture::saveIdentityCertificate(const Name& identity, const s
 }
 
 std::string
-IdentityManagementFixture::getIdentityCertificateBase64(const Name& identity, bool wantAdd)
+KeyChainFixture::getIdentityCertificateBase64(const Name& identity, bool allowAdd)
 {
   ndn::security::v2::Certificate cert;
   try {
     cert = m_keyChain.getPib().getIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
   catch (const ndn::security::Pib::Error&) {
-    if (!wantAdd) {
+    if (!allowAdd) {
       NDN_THROW_NESTED(std::runtime_error("Identity does not exist"));
     }
     cert = m_keyChain.createIdentity(identity).getDefaultKey().getDefaultCertificate();
   }
 
-  Block wire = cert.wireEncode();
+  const auto& block = cert.wireEncode();
 
-  std::ostringstream oss;
   namespace tr = ndn::security::transform;
-  tr::bufferSource(wire.wire(), wire.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
+  std::ostringstream oss;
+  tr::bufferSource(block.wire(), block.size()) >> tr::base64Encode(false) >> tr::streamSink(oss);
   return oss.str();
 }
 

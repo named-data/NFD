@@ -26,7 +26,7 @@
 #include "mgmt/rib-manager.hpp"
 #include "rib/fib-updater.hpp"
 
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -35,7 +35,7 @@ namespace tests {
 
 using rib::Route;
 
-class RibManagerSlAnnounceFixture : public IdentityManagementTimeFixture
+class RibManagerSlAnnounceFixture : public UnitTestTimeFixture, public KeyChainFixture
 {
 public:
   using SlAnnounceResult = RibManager::SlAnnounceResult;

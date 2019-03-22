@@ -120,7 +120,7 @@ public:
   std::function<void()> processEventsFunc;
 };
 
-class StatusReportModulesFixture : public IdentityManagementTimeFixture
+class StatusReportModulesFixture : public UnitTestTimeFixture, public KeyChainFixture
 {
 protected:
   StatusReportModulesFixture()

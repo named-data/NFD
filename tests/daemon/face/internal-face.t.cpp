@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2015,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #include "face/internal-face.hpp"
 
 #include "transport-test-common.hpp"
-#include "tests/identity-management-fixture.hpp"
+#include "tests/key-chain-fixture.hpp"
 
 namespace nfd {
 namespace face {
@@ -36,8 +36,7 @@ using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
 
-class InternalFaceFixture : public UnitTestTimeFixture
-                          , public IdentityManagementFixture
+class InternalFaceFixture : public UnitTestTimeFixture, public KeyChainFixture
 {
 public:
   InternalFaceFixture()
