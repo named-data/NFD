@@ -91,11 +91,9 @@ private: // StrategyInfo
       return 1011;
     }
 
-    MtInfo();
-
   public:
-    FaceId lastNexthop;
-    RttEstimator rtt;
+    FaceId lastNexthop = face::INVALID_FACEID;
+    RttEstimator rtt{1, 1_ms, 0.1};
   };
 
   /** \brief find per-prefix measurements for Interest
@@ -111,13 +109,9 @@ private: // StrategyInfo
 
   /** \brief global per-face StrategyInfo
    */
-  class FaceInfo
+  struct FaceInfo
   {
-  public:
-    FaceInfo();
-
-  public:
-    RttEstimator rtt;
+    RttEstimator rtt{1, 1_ms, 0.1};
   };
 
   typedef std::unordered_map<FaceId, FaceInfo> FaceInfoTable;
@@ -127,29 +121,30 @@ private: // StrategyInfo
 
 private: // forwarding procedures
   void
-  afterReceiveNewInterest(const Face& inFace, const Interest& interest,
+  afterReceiveNewInterest(const FaceEndpoint& ingress, const Interest& interest,
                           const shared_ptr<pit::Entry>& pitEntry);
 
   void
-  afterReceiveRetxInterest(const Face& inFace, const Interest& interest,
+  afterReceiveRetxInterest(const FaceEndpoint& ingress, const Interest& interest,
                            const shared_ptr<pit::Entry>& pitEntry);
 
   /** \brief send to last working nexthop
    *  \return whether an Interest is sent
    */
   bool
-  sendToLastNexthop(const Face& inFace, const Interest& interest,
+  sendToLastNexthop(const FaceEndpoint& ingress, const Interest& interest,
                     const shared_ptr<pit::Entry>& pitEntry, MtInfo& mi,
                     const fib::Entry& fibEntry);
 
   void
-  afterRtoTimeout(weak_ptr<pit::Entry> pitWeak, FaceId inFaceId, FaceId firstOutFaceId);
+  afterRtoTimeout(const weak_ptr<pit::Entry>& pitWeak,
+                  FaceId inFaceId, EndpointId inEndpointId, FaceId firstOutFaceId);
 
   /** \brief multicast to all nexthops
    *  \param exceptFace don't forward to this face; also, inFace is always excluded
    *  \return how many Interests are sent
    */
-  int
+  size_t
   multicast(const Face& inFace, const Interest& interest,
             const shared_ptr<pit::Entry>& pitEntry, const fib::Entry& fibEntry,
             FaceId exceptFace = face::INVALID_FACEID);
