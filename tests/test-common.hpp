@@ -28,10 +28,9 @@
 
 #include "boost-test.hpp"
 
-#include "core/common.hpp"
+#include "tests/clock-fixture.hpp"
 
 #include <ndn-cxx/prefix-announcement.hpp>
-#include <ndn-cxx/util/time-unit-test-clock.hpp>
 
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
 #include <unistd.h>
@@ -70,42 +69,13 @@ protected:
 
 /** \brief a base test fixture that overrides steady clock and system clock
  */
-class UnitTestTimeFixture : public virtual BaseFixture
+class UnitTestTimeFixture : public virtual BaseFixture, public ClockFixture
 {
 protected:
-  UnitTestTimeFixture();
-
-  virtual
-  ~UnitTestTimeFixture();
-
-  /** \brief advance steady and system clocks
-   *
-   *  Clocks are advanced in increments of \p tick for \p nTicks ticks.
-   *  After each tick, global io_service is polled to process pending I/O events.
-   *
-   *  Exceptions thrown during I/O events are propagated to the caller.
-   *  Clock advancing would stop in case of an exception.
-   */
-  virtual void
-  advanceClocks(time::nanoseconds tick, size_t nTicks = 1);
-
-  /** \brief advance steady and system clocks
-   *
-   *  Clocks are advanced in increments of \p tick for \p total time.
-   *  The last increment might be shorter than \p tick.
-   *  After each tick, global io_service is polled to process pending I/O events.
-   *
-   *  Exceptions thrown during I/O events are propagated to the caller.
-   *  Clock advancing would stop in case of an exception.
-   */
-  virtual void
-  advanceClocks(time::nanoseconds tick, time::nanoseconds total);
-
-protected:
-  shared_ptr<time::UnitTestSteadyClock> steadyClock;
-  shared_ptr<time::UnitTestSystemClock> systemClock;
-
-  friend class LimitedIo;
+  UnitTestTimeFixture()
+    : ClockFixture(g_io)
+  {
+  }
 };
 
 /** \brief create an Interest

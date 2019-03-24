@@ -26,8 +26,9 @@
 #ifndef NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP
 #define NFD_TESTS_TOOLS_MOCK_NFD_MGMT_FIXTURE_HPP
 
-#include "tests/test-common.hpp"
+#include "tests/clock-fixture.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/test-common.hpp"
 
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 #include <ndn-cxx/mgmt/nfd/control-response.hpp>
@@ -40,26 +41,22 @@ namespace tests {
 using namespace nfd::tests;
 using ndn::nfd::ControlParameters;
 
-/** \brief fixture to emulate NFD management
+/** \brief Fixture to emulate NFD management.
  */
-class MockNfdMgmtFixture : public UnitTestTimeFixture, public KeyChainFixture
+class MockNfdMgmtFixture : public ClockFixture, public KeyChainFixture
 {
 protected:
   MockNfdMgmtFixture()
-    : face(g_io, m_keyChain,
+    : ClockFixture(m_io)
+    , face(m_io, m_keyChain,
            {true, false, bind(&MockNfdMgmtFixture::processEventsOverride, this, _1)})
   {
-    face.onSendInterest.connect([=] (const Interest& interest) {
-      g_io.post([=] {
-        if (processInterest != nullptr) {
-          processInterest(interest);
-        }
-      });
+    face.onSendInterest.connect([this] (const Interest& interest) {
+      if (processInterest) {
+        m_io.post([=] { processInterest(interest); });
+      }
     });
   }
-
-  virtual
-  ~MockNfdMgmtFixture() = default;
 
 protected: // ControlCommand
   /** \brief check the Interest is a command with specified prefix
@@ -205,6 +202,9 @@ private:
   {
     signData(data);
   }
+
+private:
+  boost::asio::io_service m_io;
 
 protected:
   ndn::util::DummyClientFace face;

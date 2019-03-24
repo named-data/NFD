@@ -35,7 +35,7 @@
 namespace nfd {
 namespace tests {
 
-/** \brief a base test fixture that provides both main and RIB io_service
+/** \brief A base test fixture that provides both main and RIB io_service.
  */
 class RibIoFixture : public virtual BaseFixture
 {
@@ -45,13 +45,13 @@ protected:
   ~RibIoFixture();
 
 protected:
-  /** \brief Poll main and RIB thread io_service to process all pending I/O events
+  /** \brief Poll main and RIB thread io_service to process all pending I/O events.
    *
    * This call will execute all pending I/O events, including events that are posted
    * inside the processing event, i.e., main and RIB thread io_service will be polled
    * repeatedly until all pending events are processed.
    *
-   *  \note Must be called from the main thread
+   * \warning Must be called from the main thread
    */
   void
   poll();
@@ -77,26 +77,13 @@ private:
   std::condition_variable m_ribPollEndCv;
 };
 
-/** \brief RibIoFixture that also overrides steady clock and system clock
+/** \brief RibIoFixture that also overrides steady clock and system clock.
  */
 class RibIoTimeFixture : public RibIoFixture, public UnitTestTimeFixture
 {
-protected:
-  using UnitTestTimeFixture::advanceClocks;
-
-  /** \brief advance steady and system clocks in the main and RIB threads
-   *
-   *  Clocks are advanced in increments of \p tick for \p total time.
-   *  The last increment might be shorter than \p tick.
-   *  After each tick, the main and RIB thread io_service is polled to process pending I/O events.
-   *
-   *  Exceptions thrown during I/O events are propagated to the caller.
-   *  Clock advancing would stop in case of an exception.
-   *
-   *  \note Must be called from the main thread
-   */
+private:
   void
-  advanceClocks(time::nanoseconds tick, time::nanoseconds total) override;
+  pollAfterClockTick() override;
 };
 
 } // namespace tests

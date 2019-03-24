@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "test-common.hpp"
+#include "tests/test-common.hpp"
 #include "daemon/global.hpp"
 
 #include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
@@ -39,49 +39,6 @@ BaseFixture::BaseFixture()
 BaseFixture::~BaseFixture()
 {
   resetGlobalIoService();
-}
-
-UnitTestTimeFixture::UnitTestTimeFixture()
-  : steadyClock(make_shared<time::UnitTestSteadyClock>())
-  , systemClock(make_shared<time::UnitTestSystemClock>())
-{
-  time::setCustomClocks(steadyClock, systemClock);
-}
-
-UnitTestTimeFixture::~UnitTestTimeFixture()
-{
-  time::setCustomClocks(nullptr, nullptr);
-}
-
-void
-UnitTestTimeFixture::advanceClocks(time::nanoseconds tick, size_t nTicks)
-{
-  advanceClocks(tick, tick * nTicks);
-}
-
-void
-UnitTestTimeFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
-{
-  BOOST_ASSERT(tick > time::nanoseconds::zero());
-  BOOST_ASSERT(total >= time::nanoseconds::zero());
-
-  time::nanoseconds remaining = total;
-  while (remaining > time::nanoseconds::zero()) {
-    if (remaining >= tick) {
-      steadyClock->advance(tick);
-      systemClock->advance(tick);
-      remaining -= tick;
-    }
-    else {
-      steadyClock->advance(remaining);
-      systemClock->advance(remaining);
-      remaining = time::nanoseconds::zero();
-    }
-
-    if (g_io.stopped())
-      g_io.reset();
-    g_io.poll();
-  }
 }
 
 shared_ptr<Interest>

@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "rib-io-fixture.hpp"
+#include "tests/daemon/rib-io-fixture.hpp"
 #include "daemon/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
@@ -122,26 +122,9 @@ RibIoFixture::poll()
 }
 
 void
-RibIoTimeFixture::advanceClocks(time::nanoseconds tick, time::nanoseconds total)
+RibIoTimeFixture::pollAfterClockTick()
 {
-  BOOST_ASSERT(tick > time::nanoseconds::zero());
-  BOOST_ASSERT(total >= time::nanoseconds::zero());
-
-  time::nanoseconds remaining = total;
-  while (remaining > time::nanoseconds::zero()) {
-    if (remaining >= tick) {
-      steadyClock->advance(tick);
-      systemClock->advance(tick);
-      remaining -= tick;
-    }
-    else {
-      steadyClock->advance(remaining);
-      systemClock->advance(remaining);
-      remaining = time::nanoseconds::zero();
-    }
-
-    poll();
-  }
+  poll();
 }
 
 } // namespace tests

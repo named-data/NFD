@@ -120,11 +120,12 @@ public:
   std::function<void()> processEventsFunc;
 };
 
-class StatusReportModulesFixture : public UnitTestTimeFixture, public KeyChainFixture
+class StatusReportModulesFixture : public ClockFixture, public KeyChainFixture
 {
 protected:
   StatusReportModulesFixture()
-    : face(g_io, m_keyChain)
+    : ClockFixture(m_io)
+    , face(m_io, m_keyChain)
     , controller(face, m_keyChain, validator)
     , res(0)
   {
@@ -133,7 +134,7 @@ protected:
   DummyModule&
   addModule(const std::string& moduleName)
   {
-    report.sections.push_back(make_unique<DummyModule>(moduleName, g_io));
+    report.sections.push_back(make_unique<DummyModule>(moduleName, m_io));
     return static_cast<DummyModule&>(*report.sections.back());
   }
 
@@ -153,6 +154,9 @@ protected:
     }
   }
 
+private:
+  boost::asio::io_service m_io;
+
 protected:
   ndn::util::DummyClientFace face;
   ValidatorNull validator;
@@ -163,7 +167,6 @@ protected:
   output_test_stream statusXml;
   output_test_stream statusText;
 };
-
 
 BOOST_AUTO_TEST_SUITE(Nfdc)
 BOOST_FIXTURE_TEST_SUITE(TestStatusReport, StatusReportModulesFixture)
