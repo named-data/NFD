@@ -29,8 +29,9 @@
 #include "face/websocket-transport.hpp"
 #include "face/face.hpp"
 
-#include "dummy-receive-link-service.hpp"
+#include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
+#include "dummy-receive-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -41,7 +42,7 @@ namespace ip = boost::asio::ip;
 
 /** \brief a fixture that accepts a single WebSocket connection from a client
  */
-class WebSocketTransportFixture : public BaseFixture
+class WebSocketTransportFixture : public GlobalIoFixture
 {
 protected:
   WebSocketTransportFixture()

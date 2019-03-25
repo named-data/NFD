@@ -25,7 +25,6 @@
 
 #include "fw/asf-strategy.hpp"
 
-#include "tests/test-common.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
@@ -41,9 +40,9 @@ typedef StrategyTester<AsfStrategy> AsfStrategyTester;
 NFD_REGISTER_STRATEGY(AsfStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, GlobalIoTimeFixture)
 
-class AsfGridFixture : public UnitTestTimeFixture
+class AsfGridFixture : public GlobalIoTimeFixture
 {
 protected:
   AsfGridFixture(Name parameters = AsfStrategy::getStrategyName())

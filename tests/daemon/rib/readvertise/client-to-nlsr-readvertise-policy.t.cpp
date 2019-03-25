@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "rib/readvertise/client-to-nlsr-readvertise-policy.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -34,7 +35,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Readvertise)
-BOOST_FIXTURE_TEST_SUITE(TestClientToNlsrReadvertisePolicy, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestClientToNlsrReadvertisePolicy, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(ReadvertiseClientRoute)
 {

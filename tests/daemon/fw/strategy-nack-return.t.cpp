@@ -47,7 +47,7 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Fw)
 
 template<typename S>
-class StrategyNackReturnFixture : public UnitTestTimeFixture
+class StrategyNackReturnFixture : public GlobalIoTimeFixture
 {
 public:
   StrategyNackReturnFixture()
@@ -189,7 +189,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
 
 // #3033 note-7
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(LiveDeadlock,
-                                 S, Strategies, UnitTestTimeFixture)
+                                 S, Strategies, GlobalIoTimeFixture)
 {
   /*
    *           /----------\

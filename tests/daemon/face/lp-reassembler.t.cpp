@@ -26,6 +26,7 @@
 #include "face/lp-reassembler.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace face {
@@ -33,7 +34,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class LpReassemblerFixture : public UnitTestTimeFixture
+class LpReassemblerFixture : public GlobalIoTimeFixture
 {
 protected:
   LpReassemblerFixture()

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,8 @@
 
 #include "ndn-autoconfig/multicast-discovery.hpp"
 
-#include "../mock-nfd-mgmt-fixture.hpp"
+#include "tests/tools/mock-nfd-mgmt-fixture.hpp"
+
 #include <ndn-cxx/encoding/block-helpers.hpp>
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
 

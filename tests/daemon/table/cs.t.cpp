@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "table/cs.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <cstring>
 
@@ -33,18 +34,18 @@
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/sha256.hpp>
 
-#define CHECK_CS_FIND(expected) find([&] (uint32_t found) { BOOST_CHECK_EQUAL(expected, found); });
-
 namespace nfd {
 namespace cs {
 namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestCs, BaseFixture)
+#define CHECK_CS_FIND(expected) find([&] (uint32_t found) { BOOST_CHECK_EQUAL(expected, found); });
 
-class FindFixture : public UnitTestTimeFixture
+BOOST_AUTO_TEST_SUITE(Table)
+BOOST_FIXTURE_TEST_SUITE(TestCs, GlobalIoFixture)
+
+class FindFixture : public GlobalIoTimeFixture
 {
 protected:
   Name

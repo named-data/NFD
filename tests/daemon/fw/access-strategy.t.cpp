@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,6 @@
 
 #include "fw/access-strategy.hpp"
 
-#include "tests/test-common.hpp"
 #include "strategy-tester.hpp"
 #include "topology-tester.hpp"
 
@@ -52,7 +51,7 @@ NFD_REGISTER_STRATEGY(AccessStrategyTester);
 // code style rule 3.25. This is necessary because some lines ends with '\' which
 // would cause "multi-line comment" compiler warning if '//' comments are used.
 
-class TwoLaptopsFixture : public UnitTestTimeFixture
+class TwoLaptopsFixture : public GlobalIoTimeFixture
 {
 protected:
   TwoLaptopsFixture()

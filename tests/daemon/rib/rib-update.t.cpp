@@ -27,13 +27,14 @@
 #include "rib/rib-update-batch.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib/create-route.hpp"
 
 namespace nfd {
 namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRibUpdate, nfd::tests::BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRibUpdate, nfd::tests::GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(BatchBasic)
 {

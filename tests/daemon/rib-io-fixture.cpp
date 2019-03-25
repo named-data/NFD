@@ -24,6 +24,7 @@
  */
 
 #include "tests/daemon/rib-io-fixture.hpp"
+#include "tests/test-common.hpp"
 #include "daemon/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
@@ -119,6 +120,11 @@ RibIoFixture::poll()
       m_ribPollEndCv.wait(lock, [this] { return !m_shouldPollRibIo; });
     }
   } while (nHandlersRun > 0);
+}
+
+RibIoTimeFixture::RibIoTimeFixture()
+  : ClockFixture(g_io)
+{
 }
 
 void

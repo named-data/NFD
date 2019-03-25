@@ -29,7 +29,9 @@
 #include "mgmt/manager-base.hpp"
 #include "fw/forwarder.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <ndn-cxx/security/command-interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
@@ -39,7 +41,7 @@ namespace tests {
 
 /** \brief A fixture that provides a CommandInterestSigner.
  */
-class CommandInterestSignerFixture : public UnitTestTimeFixture, public KeyChainFixture
+class CommandInterestSignerFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 protected:
   CommandInterestSignerFixture();

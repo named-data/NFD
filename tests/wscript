@@ -32,7 +32,7 @@ def build(bld):
 
         # common test objects
         bld.objects(
-            target='unit-tests-base',
+            target='tests-common',
             features='pch',
             source=bld.path.ant_glob('*.cpp', excl='main.cpp'),
             use='core-objects',
@@ -62,17 +62,17 @@ def build(bld):
                 src += node.ant_glob('face/unix*.cpp')
             if bld.env.HAVE_WEBSOCKET:
                 src += node.ant_glob('face/websocket*.cpp')
-            if module == 'core' or module == 'tools':
-                src += ['../daemon/global.cpp']
             if module == 'rib':
-                src += ['daemon/limited-io.cpp', 'daemon/rib-io-fixture.cpp']
+                src += ['daemon/global-io-fixture.cpp',
+                        'daemon/limited-io.cpp',
+                        'daemon/rib-io-fixture.cpp']
 
             objmod = 'daemon' if module == 'rib' else module
             # unit-tests binary for the module
             bld.program(name='unit-tests-%s' % module,
                         target='../unit-tests-%s' % module,
                         source=src,
-                        use='%s-objects unit-tests-base unit-tests-%s-main' % (objmod, module),
+                        use='%s-objects tests-common unit-tests-%s-main' % (objmod, module),
                         defines=[config_path],
                         install_path=None)
 

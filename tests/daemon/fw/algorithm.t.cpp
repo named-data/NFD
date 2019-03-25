@@ -26,6 +26,7 @@
 #include "fw/algorithm.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
@@ -35,9 +36,9 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestAlgorithm, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestAlgorithm, GlobalIoFixture)
 
-class ScopeControlFixture : public BaseFixture
+class ScopeControlFixture : public GlobalIoFixture
 {
 protected:
   ScopeControlFixture()
@@ -169,7 +170,7 @@ BOOST_AUTO_TEST_CASE(Nonce)
   BOOST_CHECK_EQUAL(findDuplicateNonce(entry5, 19004, *face2), DUPLICATE_NONCE_NONE);
 }
 
-BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, GlobalIoTimeFixture)
 {
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();
@@ -204,7 +205,7 @@ BOOST_FIXTURE_TEST_CASE(HasPendingOutRecords, UnitTestTimeFixture)
   BOOST_CHECK_EQUAL(hasPendingOutRecords(entry), false);
 }
 
-BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, GlobalIoTimeFixture)
 {
   auto face1 = make_shared<DummyFace>();
   auto face2 = make_shared<DummyFace>();

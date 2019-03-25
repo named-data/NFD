@@ -34,9 +34,10 @@
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 
+#include "tests/test-common.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 #include "choose-strategy.hpp"
 #include "strategy-tester.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
 #include <boost/mpl/copy_if.hpp>
 #include <boost/mpl/vector.hpp>
@@ -48,7 +49,7 @@ namespace tests {
 using namespace nfd::tests;
 
 template<typename S>
-class StrategyNoRouteFixture : public UnitTestTimeFixture
+class StrategyNoRouteFixture : public GlobalIoTimeFixture
 {
 public:
   StrategyNoRouteFixture()
@@ -76,7 +77,7 @@ public:
 };
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestStrategyNoRoute, BaseFixture)
+BOOST_AUTO_TEST_SUITE(TestStrategyNoRoute)
 
 template<typename S, typename C>
 class Test

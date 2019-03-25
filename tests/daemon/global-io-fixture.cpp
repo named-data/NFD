@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,44 +23,26 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// #include "unit-under-test.hpp"
-// The unit being tested MUST be included first, to ensure the header compiles on its own.
-// For further information about test naming conventions, see
-// https://redmine.named-data.net/projects/nfd/wiki/UnitTesting
+#include "tests/daemon/global-io-fixture.hpp"
+#include "daemon/global.hpp"
 
-#include "tests/test-common.hpp"
-
-// Unit tests SHOULD go inside nfd::tests namespace.
 namespace nfd {
 namespace tests {
 
-// Test suite SHOULD use BaseFixture or a subclass of it.
-BOOST_FIXTURE_TEST_SUITE(TestSkeleton, BaseFixture)
-
-BOOST_AUTO_TEST_CASE(Test1)
+GlobalIoFixture::GlobalIoFixture()
+  : g_io(getGlobalIoService())
 {
-  int i = 0;
-
-  // For reference of available Boost.Test macros, see
-  // https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/utf/testing-tools/reference.html
-
-  BOOST_CHECK_EQUAL(i, 0);
-  BOOST_CHECK_GT(++i, 0);
 }
 
-// Custom fixture SHOULD derive from BaseFixture.
-class Test2Fixture : protected BaseFixture
+GlobalIoFixture::~GlobalIoFixture()
 {
-};
-
-BOOST_FIXTURE_TEST_CASE(Test2, Test2Fixture)
-{
-  // g_io is a shorthand of getGlobalIoService().
-  // resetGlobalIoService() is automatically called after each test case.
-  g_io.run();
+  resetGlobalIoService();
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+GlobalIoTimeFixture::GlobalIoTimeFixture()
+  : ClockFixture(g_io)
+{
+}
 
 } // namespace tests
 } // namespace nfd

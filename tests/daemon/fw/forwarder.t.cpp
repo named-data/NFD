@@ -27,6 +27,7 @@
 #include "daemon/global.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 #include "choose-strategy.hpp"
 #include "dummy-strategy.hpp"
@@ -37,7 +38,7 @@ namespace nfd {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestForwarder, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestForwarder, GlobalIoTimeFixture)
 
 BOOST_AUTO_TEST_CASE(SimpleExchange)
 {
@@ -534,7 +535,7 @@ BOOST_AUTO_TEST_CASE(InterestLoopNack)
   BOOST_CHECK(face3->sentNacks.empty());
 }
 
-BOOST_FIXTURE_TEST_CASE(InterestLoopWithShortLifetime, UnitTestTimeFixture) // Bug 1953
+BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
 {
   Forwarder forwarder;
   auto face1 = make_shared<DummyFace>();
@@ -592,8 +593,8 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestForwarder
+BOOST_AUTO_TEST_SUITE_END() // Fw
 
 } // namespace tests
 } // namespace nfd

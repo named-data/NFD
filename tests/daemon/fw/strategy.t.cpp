@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,13 +24,15 @@
  */
 
 #include "fw/strategy.hpp"
-#include "dummy-strategy.hpp"
+
+#include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
+#include "dummy-strategy.hpp"
+
 #include <boost/range/adaptor/filtered.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/range/algorithm/copy.hpp>
-
-#include "tests/test-common.hpp"
 
 namespace nfd {
 namespace fw {
@@ -39,7 +41,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestStrategy, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestStrategy, GlobalIoFixture)
 
 // Strategy registry is tested in table/strategy-choice.t.cpp and strategy-instantiation.t.cpp
 

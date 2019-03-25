@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -30,6 +30,7 @@
 
 #include <ndn-cxx/net/ethernet.hpp>
 #include <ndn-cxx/net/network-monitor-stub.hpp>
+
 #include <boost/property_tree/info_parser.hpp>
 #include <sstream>
 
@@ -39,7 +40,7 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(TestNetworkPredicate)
 
 template<class T>
-class NetworkPredicateBaseFixture : public BaseFixture
+class NetworkPredicateBaseFixture
 {
 public:
   void

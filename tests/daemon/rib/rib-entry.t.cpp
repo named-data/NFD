@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,9 @@
  */
 
 #include "rib/rib-entry.hpp"
+
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -32,7 +34,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TestRibEntry, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRibEntry, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
@@ -74,7 +76,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK(entry.findRoute(route2) != entry.getRoutes().end());
 }
 
-BOOST_FIXTURE_TEST_SUITE(GetAnnouncement, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(GetAnnouncement, GlobalIoTimeFixture)
 
 static Route
 makeSimpleRoute(uint64_t faceId)

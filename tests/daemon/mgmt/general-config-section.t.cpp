@@ -28,6 +28,7 @@
 #include "core/privilege-helper.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <cstring>
 
@@ -37,7 +38,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class GeneralConfigSectionFixture : public BaseFixture
+class GeneralConfigSectionFixture : public GlobalIoFixture
 {
 public:
   GeneralConfigSectionFixture()

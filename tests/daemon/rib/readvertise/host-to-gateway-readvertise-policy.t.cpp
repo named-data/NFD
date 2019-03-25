@@ -25,7 +25,9 @@
 
 #include "rib/readvertise/host-to-gateway-readvertise-policy.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <ndn-cxx/security/signing-helpers.hpp>
 
@@ -35,7 +37,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class HostToGatewayReadvertisePolicyFixture : public BaseFixture, public KeyChainFixture
+class HostToGatewayReadvertisePolicyFixture : public GlobalIoFixture, public KeyChainFixture
 {
 public:
   static RibRouteRef

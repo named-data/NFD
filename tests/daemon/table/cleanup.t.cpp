@@ -27,15 +27,14 @@
 #include "fw/forwarder.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
 namespace tests {
 
-using namespace nfd::tests;
-
 BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestCleanup, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestCleanup, GlobalIoFixture)
 
 BOOST_AUTO_TEST_SUITE(FaceRemoval)
 

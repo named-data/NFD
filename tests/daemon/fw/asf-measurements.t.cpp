@@ -26,8 +26,9 @@
 #include "fw/asf-measurements.hpp"
 #include "daemon/global.hpp"
 
-#include "tests/daemon/face/dummy-face.hpp"
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
 namespace fw {
@@ -41,7 +42,7 @@ BOOST_AUTO_TEST_SUITE(TestAsfMeasurements)
 
 BOOST_AUTO_TEST_SUITE(TestRttStats)
 
-BOOST_FIXTURE_TEST_CASE(Basic, BaseFixture)
+BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoFixture)
 {
   RttStats stats;
 
@@ -82,7 +83,7 @@ BOOST_AUTO_TEST_SUITE_END() // TestRttStats
 
 BOOST_AUTO_TEST_SUITE(TestFaceInfo)
 
-BOOST_FIXTURE_TEST_CASE(Basic, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoTimeFixture)
 {
   FaceInfo info;
 

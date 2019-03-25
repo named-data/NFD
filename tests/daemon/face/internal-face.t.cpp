@@ -27,6 +27,7 @@
 
 #include "transport-test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace face {
@@ -36,7 +37,7 @@ using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
 
-class InternalFaceFixture : public UnitTestTimeFixture, public KeyChainFixture
+class InternalFaceFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 public:
   InternalFaceFixture()

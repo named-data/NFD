@@ -26,8 +26,8 @@
 #include "fw/multicast-strategy.hpp"
 #include "daemon/global.hpp"
 
-#include "tests/daemon/face/dummy-face.hpp"
 #include "tests/test-common.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 #include "strategy-tester.hpp"
 
 namespace nfd {
@@ -39,7 +39,7 @@ using namespace nfd::tests;
 typedef StrategyTester<MulticastStrategy> MulticastStrategyTester;
 NFD_REGISTER_STRATEGY(MulticastStrategyTester);
 
-class MulticastStrategyFixture : public UnitTestTimeFixture
+class MulticastStrategyFixture : public GlobalIoTimeFixture
 {
 protected:
   MulticastStrategyFixture()

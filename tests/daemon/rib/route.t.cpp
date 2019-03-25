@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,6 +26,7 @@
 #include "rib/route.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace rib {
@@ -33,9 +34,9 @@ namespace tests {
 
 using namespace nfd::tests;
 
-BOOST_FIXTURE_TEST_SUITE(TestRoute, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRoute, GlobalIoTimeFixture)
 
-BOOST_FIXTURE_TEST_SUITE(CreateFromAnnouncement, UnitTestTimeFixture)
+BOOST_AUTO_TEST_SUITE(CreateFromAnnouncement)
 
 BOOST_AUTO_TEST_CASE(NoValidity)
 {
@@ -124,7 +125,7 @@ BOOST_AUTO_TEST_CASE(Equality)
   BOOST_CHECK_EQUAL(a, b);
 }
 
-BOOST_FIXTURE_TEST_CASE(EqualityAnn, UnitTestTimeFixture)
+BOOST_AUTO_TEST_CASE(EqualityAnn)
 {
   auto ann1 = makePrefixAnn("/ann", 1_h);
   auto ann2 = makePrefixAnn("/ann", 2_h);
@@ -133,7 +134,7 @@ BOOST_FIXTURE_TEST_CASE(EqualityAnn, UnitTestTimeFixture)
   BOOST_CHECK_NE(Route(ann1, 7001), Route(ann2, 7001));
 }
 
-BOOST_FIXTURE_TEST_CASE(Output, UnitTestTimeFixture)
+BOOST_AUTO_TEST_CASE(Output)
 {
   Route r;
   BOOST_CHECK_EQUAL(boost::lexical_cast<std::string>(r),

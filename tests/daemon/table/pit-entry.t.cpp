@@ -24,9 +24,10 @@
  */
 
 #include "table/pit-entry.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
 namespace pit {
@@ -35,7 +36,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestPitEntry, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestPitEntry, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE_EXPECTED_FAILURES(CanMatch, 1)
 BOOST_AUTO_TEST_CASE(CanMatch)

@@ -26,9 +26,10 @@
 #include "face/generic-link-service.hpp"
 #include "face/face.hpp"
 
-#include "dummy-transport.hpp"
-#include "tests/key-chain-fixture.hpp"
 #include "tests/test-common.hpp"
+#include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "dummy-transport.hpp"
 
 #include <ndn-cxx/lp/empty-value.hpp>
 #include <ndn-cxx/lp/prefix-announcement-header.hpp>
@@ -45,7 +46,7 @@ BOOST_AUTO_TEST_SUITE(Face)
 
 using nfd::Face;
 
-class GenericLinkServiceFixture : public UnitTestTimeFixture, public KeyChainFixture
+class GenericLinkServiceFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 protected:
   GenericLinkServiceFixture()

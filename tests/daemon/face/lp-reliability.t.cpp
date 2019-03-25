@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 #include "face/generic-link-service.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "dummy-face.hpp"
 #include "dummy-transport.hpp"
 
@@ -91,7 +92,7 @@ private:
   }
 };
 
-class LpReliabilityFixture : public UnitTestTimeFixture
+class LpReliabilityFixture : public GlobalIoTimeFixture
 {
 public:
   LpReliabilityFixture()

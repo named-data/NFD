@@ -23,11 +23,11 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "dummy-strategy.hpp"
-#include "choose-strategy.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
-
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
+#include "choose-strategy.hpp"
+#include "dummy-strategy.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 
@@ -38,7 +38,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestPitExpiry, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestPitExpiry, GlobalIoTimeFixture)
 
 class PitExpiryTestStrategy : public DummyStrategy
 {

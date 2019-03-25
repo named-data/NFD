@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,14 +26,13 @@
 #include "table/strategy-choice.hpp"
 
 #include "tests/test-common.hpp"
-#include "../fw/dummy-strategy.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/fw/dummy-strategy.hpp"
 
 namespace nfd {
 namespace tests {
 
-using fw::Strategy;
-
-class StrategyChoiceFixture : public BaseFixture
+class StrategyChoiceFixture : public GlobalIoFixture
 {
 protected:
   StrategyChoiceFixture()
@@ -66,7 +65,7 @@ protected:
   bool
   isStrategyType(const Name& prefix)
   {
-    Strategy& effectiveStrategy = sc.findEffectiveStrategy(prefix);
+    auto& effectiveStrategy = sc.findEffectiveStrategy(prefix);
     return dynamic_cast<S*>(&effectiveStrategy) != nullptr;
   }
 

@@ -26,7 +26,7 @@
 #ifndef NFD_TESTS_DAEMON_RIB_IO_FIXTURE_HPP
 #define NFD_TESTS_DAEMON_RIB_IO_FIXTURE_HPP
 
-#include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <condition_variable>
 #include <mutex>
@@ -37,7 +37,7 @@ namespace tests {
 
 /** \brief A base test fixture that provides both main and RIB io_service.
  */
-class RibIoFixture : public virtual BaseFixture
+class RibIoFixture : public GlobalIoFixture
 {
 protected:
   RibIoFixture();
@@ -79,8 +79,11 @@ private:
 
 /** \brief RibIoFixture that also overrides steady clock and system clock.
  */
-class RibIoTimeFixture : public RibIoFixture, public UnitTestTimeFixture
+class RibIoTimeFixture : public RibIoFixture, public ClockFixture
 {
+protected:
+  RibIoTimeFixture();
+
 private:
   void
   pollAfterClockTick() override;

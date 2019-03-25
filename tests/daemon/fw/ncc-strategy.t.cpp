@@ -39,7 +39,7 @@ typedef StrategyTester<NccStrategy> NccStrategyTester;
 NFD_REGISTER_STRATEGY(NccStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestNccStrategy, GlobalIoTimeFixture)
 
 BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
 {

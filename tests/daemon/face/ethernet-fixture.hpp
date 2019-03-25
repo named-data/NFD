@@ -38,9 +38,9 @@ namespace tests {
 
 using namespace nfd::tests;
 
-/** \brief a fixture providing a list of EthernetTransport-capable network interfaces
+/** \brief Fixture providing a list of EthernetTransport-capable network interfaces.
  */
-class EthernetFixture : public virtual BaseFixture
+class EthernetFixture : public virtual GlobalIoFixture
 {
 protected:
   EthernetFixture()

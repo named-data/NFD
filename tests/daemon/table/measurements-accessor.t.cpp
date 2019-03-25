@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,8 +27,9 @@
 #include "fw/strategy.hpp"
 
 #include "tests/test-common.hpp"
-#include "../fw/dummy-strategy.hpp"
-#include "../fw/choose-strategy.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/fw/dummy-strategy.hpp"
+#include "tests/daemon/fw/choose-strategy.hpp"
 
 namespace nfd {
 namespace measurements {
@@ -57,7 +58,7 @@ public:
   }
 };
 
-class MeasurementsAccessorFixture : public BaseFixture
+class MeasurementsAccessorFixture : public GlobalIoFixture
 {
 protected:
   MeasurementsAccessorFixture()

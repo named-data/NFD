@@ -41,7 +41,7 @@ NFD_REGISTER_STRATEGY(BestRouteStrategy2Tester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
 
-class BestRouteStrategy2Fixture : public UnitTestTimeFixture
+class BestRouteStrategy2Fixture : public GlobalIoTimeFixture
 {
 protected:
   BestRouteStrategy2Fixture()

@@ -26,6 +26,7 @@
 #include "daemon/global.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/rib-io-fixture.hpp"
 
 #include <thread>
@@ -33,7 +34,7 @@
 namespace nfd {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestGlobal, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestGlobal, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(ThreadLocalIoService)
 {

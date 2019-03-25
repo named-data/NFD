@@ -26,9 +26,10 @@
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/measurements.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
 namespace fib {
@@ -37,7 +38,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestFib, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestFib, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(FibEntry)
 {

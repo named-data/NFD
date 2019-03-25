@@ -25,7 +25,9 @@
 
 #include "rib/readvertise/readvertise.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -111,7 +113,7 @@ public:
   std::vector<HistoryEntry> withdrawHistory;
 };
 
-class ReadvertiseFixture : public UnitTestTimeFixture, public KeyChainFixture
+class ReadvertiseFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 public:
   ReadvertiseFixture()

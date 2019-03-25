@@ -25,9 +25,11 @@
 
 #include "fw/unsolicited-data-policy.hpp"
 #include "fw/forwarder.hpp"
-#include "tests/daemon/face/dummy-face.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/face/dummy-face.hpp"
+
 #include <boost/logic/tribool.hpp>
 #include <boost/mpl/vector.hpp>
 
@@ -37,7 +39,7 @@ namespace tests {
 
 using namespace nfd::tests;
 
-class UnsolicitedDataPolicyFixture : public UnitTestTimeFixture
+class UnsolicitedDataPolicyFixture : public GlobalIoTimeFixture
 {
 protected:
   UnsolicitedDataPolicyFixture()

@@ -29,8 +29,9 @@
 #include "face/unix-stream-transport.hpp"
 #include "face/face.hpp"
 
-#include "dummy-receive-link-service.hpp"
+#include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
+#include "dummy-receive-link-service.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -76,7 +77,7 @@ public:
   }
 };
 
-class UnixStreamTransportFixture : public BaseFixture
+class UnixStreamTransportFixture : public GlobalIoFixture
 {
 protected:
   UnixStreamTransportFixture()

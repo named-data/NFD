@@ -25,6 +25,7 @@
 
 #include "ndn-autoconfig-server/program.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
 
 #include <ndn-cxx/encoding/buffer.hpp>

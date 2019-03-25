@@ -23,41 +23,41 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "table/network-region-table.hpp"
+#ifndef NFD_TESTS_DAEMON_GLOBAL_IO_FIXTURE_HPP
+#define NFD_TESTS_DAEMON_GLOBAL_IO_FIXTURE_HPP
 
-#include "tests/test-common.hpp"
-#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/clock-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
-BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestNetworkRegionTable, GlobalIoFixture)
-
-BOOST_AUTO_TEST_CASE(InProducerRegion)
+/** \brief A fixture providing proper setup and teardown of the global io_service.
+ *
+ *  Every daemon fixture or test case should inherit from this fixture,
+ *  to have per test case io_service initialization and cleanup.
+ */
+class GlobalIoFixture
 {
-  DelegationList fh{{10, "/telia/terabits"}, {20, "/ucla/cs"}};
+protected:
+  GlobalIoFixture();
 
-  NetworkRegionTable nrt1;
-  nrt1.insert("/verizon");
-  BOOST_CHECK_EQUAL(nrt1.isInProducerRegion(fh), false);
+  ~GlobalIoFixture();
 
-  NetworkRegionTable nrt2;
-  nrt2.insert("/ucla");
-  BOOST_CHECK_EQUAL(nrt2.isInProducerRegion(fh), false);
+protected:
+  /** \brief Reference to the global io_service instance.
+   */
+  boost::asio::io_service& g_io;
+};
 
-  NetworkRegionTable nrt3;
-  nrt3.insert("/ucla/cs");
-  BOOST_CHECK_EQUAL(nrt3.isInProducerRegion(fh), true);
-
-  NetworkRegionTable nrt4;
-  nrt4.insert("/ucla/cs/software");
-  nrt4.insert("/ucla/cs/irl");
-  BOOST_CHECK_EQUAL(nrt4.isInProducerRegion(fh), true);
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE_END()
+/** \brief GlobalIoFixture that also overrides steady clock and system clock.
+ */
+class GlobalIoTimeFixture : public GlobalIoFixture, public ClockFixture
+{
+protected:
+  GlobalIoTimeFixture();
+};
 
 } // namespace tests
 } // namespace nfd
+
+#endif // NFD_TESTS_DAEMON_GLOBAL_IO_FIXTURE_HPP

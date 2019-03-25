@@ -29,8 +29,9 @@
 #include "face/unicast-udp-transport.hpp"
 #include "face/face.hpp"
 
-#include "dummy-receive-link-service.hpp"
+#include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
+#include "dummy-receive-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -40,7 +41,7 @@ using namespace nfd::tests;
 namespace ip = boost::asio::ip;
 using ip::udp;
 
-class UnicastUdpTransportFixture : public BaseFixture
+class UnicastUdpTransportFixture : public GlobalIoFixture
 {
 protected:
   UnicastUdpTransportFixture()

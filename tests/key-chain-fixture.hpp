@@ -26,7 +26,7 @@
 #ifndef NFD_TESTS_KEY_CHAIN_FIXTURE_HPP
 #define NFD_TESTS_KEY_CHAIN_FIXTURE_HPP
 
-#include "tests/test-common.hpp"
+#include "core/common.hpp"
 
 #include <ndn-cxx/security/key-chain.hpp>
 

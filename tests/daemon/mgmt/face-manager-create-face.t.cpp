@@ -36,7 +36,7 @@ namespace tests {
 BOOST_AUTO_TEST_SUITE(Mgmt)
 BOOST_AUTO_TEST_SUITE(TestFaceManager)
 
-BOOST_FIXTURE_TEST_SUITE(CreateFace, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(CreateFace, GlobalIoFixture)
 
 class TcpFaceOnDemand
 {

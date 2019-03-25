@@ -26,7 +26,9 @@
 #include "mgmt/rib-manager.hpp"
 #include "rib/fib-updater.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/key-chain-fixture.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <ndn-cxx/util/dummy-client-face.hpp>
 
@@ -35,7 +37,7 @@ namespace tests {
 
 using rib::Route;
 
-class RibManagerSlAnnounceFixture : public UnitTestTimeFixture, public KeyChainFixture
+class RibManagerSlAnnounceFixture : public GlobalIoTimeFixture, public KeyChainFixture
 {
 public:
   using SlAnnounceResult = RibManager::SlAnnounceResult;

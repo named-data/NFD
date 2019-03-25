@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #include "table/cs.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace cs {
@@ -43,7 +44,7 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(policyNames.count("priority_fifo"), 1);
 }
 
-BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
 {
   Cs cs(3);
   cs.setPolicy(make_unique<PriorityFifoPolicy>());
@@ -96,7 +97,7 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, UnitTestTimeFixture)
           bind([] { BOOST_CHECK(true); }));
 }
 
-BOOST_FIXTURE_TEST_CASE(Refresh, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_CASE(Refresh, GlobalIoTimeFixture)
 {
   Cs cs(3);
   cs.setPolicy(make_unique<PriorityFifoPolicy>());

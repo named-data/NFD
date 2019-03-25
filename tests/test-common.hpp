@@ -26,9 +26,8 @@
 #ifndef NFD_TESTS_TEST_COMMON_HPP
 #define NFD_TESTS_TEST_COMMON_HPP
 
-#include "boost-test.hpp"
-
-#include "tests/clock-fixture.hpp"
+#include "core/common.hpp"
+#include "tests/boost-test.hpp"
 
 #include <ndn-cxx/prefix-announcement.hpp>
 
@@ -47,36 +46,6 @@
 
 namespace nfd {
 namespace tests {
-
-/** \brief base test fixture
- *
- *  Every test case should be based on this fixture,
- *  to have per test case io_service initialization.
- */
-class BaseFixture
-{
-protected:
-  BaseFixture();
-
-  virtual
-  ~BaseFixture();
-
-protected:
-  /** \brief reference to global io_service
-   */
-  boost::asio::io_service& g_io;
-};
-
-/** \brief a base test fixture that overrides steady clock and system clock
- */
-class UnitTestTimeFixture : public virtual BaseFixture, public ClockFixture
-{
-protected:
-  UnitTestTimeFixture()
-    : ClockFixture(g_io)
-  {
-  }
-};
 
 /** \brief create an Interest
  *  \param name Interest name

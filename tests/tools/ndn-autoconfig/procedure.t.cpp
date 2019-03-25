@@ -25,7 +25,7 @@
 
 #include "ndn-autoconfig/procedure.hpp"
 
-#include "../mock-nfd-mgmt-fixture.hpp"
+#include "tests/tools/mock-nfd-mgmt-fixture.hpp"
 
 #include <boost/logic/tribool.hpp>
 

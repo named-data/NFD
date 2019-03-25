@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "limited-io.hpp"
-#include "core/logger.hpp"
+#include "tests/daemon/limited-io.hpp"
+#include "tests/test-common.hpp"
 #include "daemon/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
@@ -32,18 +32,16 @@
 namespace nfd {
 namespace tests {
 
-NFD_LOG_INIT(tests.LimitedIo);
-
 const int LimitedIo::UNLIMITED_OPS = std::numeric_limits<int>::max();
 const time::nanoseconds LimitedIo::UNLIMITED_TIME = time::nanoseconds::min();
 
-LimitedIo::LimitedIo(UnitTestTimeFixture* uttf)
-  : m_uttf(uttf)
+LimitedIo::LimitedIo(GlobalIoTimeFixture* fixture)
+  : m_fixture(fixture)
 {
 }
 
 LimitedIo::StopReason
-LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::nanoseconds& tick)
+LimitedIo::run(int nOpsLimit, time::nanoseconds timeLimit, time::nanoseconds tick)
 {
   BOOST_ASSERT(!m_isRunning);
 
@@ -60,18 +58,18 @@ LimitedIo::run(int nOpsLimit, const time::nanoseconds& timeLimit, const time::na
   }
 
   try {
-    if (m_uttf == nullptr) {
+    if (m_fixture == nullptr) {
       getGlobalIoService().run();
     }
     else {
       // timeLimit is enforced by afterTimeout
-      m_uttf->advanceClocks(tick, time::nanoseconds::max());
+      m_fixture->advanceClocks(tick, time::nanoseconds::max());
     }
   }
   catch (const StopException&) {
   }
-  catch (const std::exception& ex) {
-    NFD_LOG_ERROR("LimitedIo::run: " << boost::diagnostic_information(ex));
+  catch (...) {
+    BOOST_WARN_MESSAGE(false, boost::current_exception_diagnostic_information());
     m_reason = EXCEPTION;
     m_lastException = std::current_exception();
   }
@@ -96,7 +94,7 @@ LimitedIo::afterOp()
   if (m_nOpsRemaining <= 0) {
     m_reason = EXCEED_OPS;
     getGlobalIoService().stop();
-    if (m_uttf != nullptr) {
+    if (m_fixture != nullptr) {
       NDN_THROW(StopException());
     }
   }
@@ -107,7 +105,7 @@ LimitedIo::afterTimeout()
 {
   m_reason = EXCEED_TIME;
   getGlobalIoService().stop();
-  if (m_uttf != nullptr) {
+  if (m_fixture != nullptr) {
     NDN_THROW(StopException());
   }
 }

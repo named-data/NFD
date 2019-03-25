@@ -24,22 +24,11 @@
  */
 
 #include "tests/test-common.hpp"
-#include "daemon/global.hpp"
 
 #include <ndn-cxx/security/signature-sha256-with-rsa.hpp>
 
 namespace nfd {
 namespace tests {
-
-BaseFixture::BaseFixture()
-  : g_io(getGlobalIoService())
-{
-}
-
-BaseFixture::~BaseFixture()
-{
-  resetGlobalIoService();
-}
 
 shared_ptr<Interest>
 makeInterest(const Name& name, uint32_t nonce)

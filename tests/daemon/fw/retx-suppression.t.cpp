@@ -28,6 +28,7 @@
 #include "fw/retx-suppression-exponential.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "tests/daemon/face/dummy-face.hpp"
 
 namespace nfd {
@@ -37,7 +38,7 @@ namespace tests {
 using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestRetxSuppression, UnitTestTimeFixture)
+BOOST_FIXTURE_TEST_SUITE(TestRetxSuppression, GlobalIoTimeFixture)
 
 BOOST_AUTO_TEST_CASE(Fixed)
 {

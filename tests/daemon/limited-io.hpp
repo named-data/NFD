@@ -26,14 +26,14 @@
 #ifndef NFD_TESTS_DAEMON_LIMITED_IO_HPP
 #define NFD_TESTS_DAEMON_LIMITED_IO_HPP
 
-#include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 #include <exception>
 
 namespace nfd {
 namespace tests {
 
-/** \brief provides IO operations limit and/or time limit for unit testing
+/** \brief Provides IO operations limit and/or time limit for unit testing.
  *
  *  \warning LimitedIo is incompatible with RibIoFixture
  */
@@ -41,7 +41,7 @@ class LimitedIo : noncopyable
 {
 public:
   explicit
-  LimitedIo(UnitTestTimeFixture* uttf = nullptr);
+  LimitedIo(GlobalIoTimeFixture* fixture = nullptr);
 
   /// indicates why run() returns
   enum StopReason {
@@ -58,12 +58,11 @@ public:
   /** \brief g_io.run() with operation count and/or time limit
    *  \param nOpsLimit operation count limit, pass UNLIMITED_OPS for no limit
    *  \param timeLimit time limit, pass UNLIMITED_TIME for no limit
-   *  \param tick if this LimitedIo is constructed with UnitTestTimeFixture,
+   *  \param tick if this LimitedIo is constructed with GlobalIoTimeFixture,
    *              this is passed to .advanceClocks(), otherwise ignored
    */
   StopReason
-  run(int nOpsLimit, const time::nanoseconds& timeLimit,
-      const time::nanoseconds& tick = time::milliseconds(1));
+  run(int nOpsLimit, time::nanoseconds timeLimit, time::nanoseconds tick = 1_ms);
 
   /// count an operation
   void
@@ -74,7 +73,7 @@ public:
    *  equivalent to .run(UNLIMITED_OPS, d)
    */
   void
-  defer(const time::nanoseconds& d)
+  defer(time::nanoseconds d)
   {
     this->run(UNLIMITED_OPS, d);
   }
@@ -100,7 +99,7 @@ public:
   static const time::nanoseconds UNLIMITED_TIME;
 
 private:
-  UnitTestTimeFixture* m_uttf;
+  GlobalIoTimeFixture* m_fixture;
   StopReason m_reason;
   int m_nOpsRemaining = 0;
   scheduler::EventId m_timeout;

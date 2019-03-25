@@ -28,6 +28,7 @@
 
 #include "face/channel.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
 
 #include <type_traits>
@@ -39,7 +40,7 @@ namespace tests {
 using namespace nfd::tests;
 
 template<class ChannelT, class EndpointT>
-class ChannelFixture : public BaseFixture
+class ChannelFixture : public GlobalIoFixture
 {
   static_assert(std::is_base_of<Channel, ChannelT>::value,
                 "ChannelFixture must be instantiated with a type derived from Channel");

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,8 +33,9 @@
 #include "fw/best-route-strategy2.hpp"
 #include "fw/multicast-strategy.hpp"
 
-#include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 #include "topology-tester.hpp"
+
 #include <boost/mpl/vector.hpp>
 
 namespace nfd {
@@ -44,7 +45,7 @@ namespace tests {
 using namespace nfd::tests;
 
 template<typename S>
-class AdHocForwardingFixture : public UnitTestTimeFixture
+class AdHocForwardingFixture : public GlobalIoTimeFixture
 {
 protected:
   AdHocForwardingFixture()
@@ -84,7 +85,7 @@ protected:
 };
 
 BOOST_AUTO_TEST_SUITE(Fw)
-BOOST_FIXTURE_TEST_SUITE(TestAdHocForwarding, BaseFixture)
+BOOST_AUTO_TEST_SUITE(TestAdHocForwarding)
 
 using Strategies = boost::mpl::vector<
   AsfStrategy,

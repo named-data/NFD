@@ -27,12 +27,13 @@
 #include "daemon/global.hpp"
 
 #include "tests/test-common.hpp"
+#include "tests/daemon/global-io-fixture.hpp"
 
 namespace nfd {
 namespace tests {
 
 BOOST_AUTO_TEST_SUITE(Table)
-BOOST_FIXTURE_TEST_SUITE(TestDeadNonceList, BaseFixture)
+BOOST_FIXTURE_TEST_SUITE(TestDeadNonceList, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {
@@ -58,7 +59,7 @@ BOOST_AUTO_TEST_CASE(MinLifetime)
 }
 
 /// A Fixture that periodically inserts Nonces
-class PeriodicalInsertionFixture : public UnitTestTimeFixture
+class PeriodicalInsertionFixture : public GlobalIoTimeFixture
 {
 protected:
   PeriodicalInsertionFixture()
@@ -108,6 +109,7 @@ protected:
   time::nanoseconds timeUnit;
   scheduler::ScopedEventId addNonceEvent;
 };
+
 const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = time::milliseconds(200);
 
 BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
