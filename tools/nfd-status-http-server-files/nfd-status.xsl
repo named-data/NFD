@@ -133,8 +133,8 @@
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nData"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:incomingPackets/nfd:nNacks"/></td>
         <td><xsl:value-of select="nfd:packetCounters/nfd:outgoingPackets/nfd:nNacks"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:nSatisfiedInterests"/></td>
-        <td><xsl:value-of select="nfd:packetCounters/nfd:nUnsatisfiedInterests"/></td>
+        <td><xsl:value-of select="nfd:nSatisfiedInterests"/></td>
+        <td><xsl:value-of select="nfd:nUnsatisfiedInterests"/></td>
       </tr>
     </tbody>
   </table>
