@@ -65,7 +65,7 @@ public: // for test
   {
     auto face = make_shared<DummyFace>();
     m_faceTable.add(face);
-    advanceClocks(time::milliseconds(1), 10);
+    advanceClocks(1_ms, 10);
     m_responses.clear(); // clear all event notifications, if any
     return face->getId();
   }

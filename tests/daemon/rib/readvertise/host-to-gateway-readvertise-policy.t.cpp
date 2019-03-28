@@ -96,16 +96,16 @@ BOOST_AUTO_TEST_CASE(DontReadvertise)
 BOOST_AUTO_TEST_CASE(LoadRefreshInterval)
 {
   auto policy = makePolicy();
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), time::seconds(25)); // default setting is 25
+  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 25_s); // default setting is 25
 
   ConfigSection section;
   section.put("refresh_interval_wrong", 10);
   policy = makePolicy(section);
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), time::seconds(25)); // wrong formate
+  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 25_s); // wrong formate
 
   section.put("refresh_interval", 10);
   policy = makePolicy(section);
-  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), time::seconds(10));
+  BOOST_CHECK_EQUAL(policy->getRefreshInterval(), 10_s);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestHostToGatewayReadvertisePolicy

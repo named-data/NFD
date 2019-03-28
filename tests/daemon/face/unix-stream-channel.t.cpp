@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   local::stream_protocol::socket client1(g_io);
   this->clientConnect(client1);
 
-  BOOST_CHECK_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 1);
 
   local::stream_protocol::socket client2(g_io);
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(MultipleAccepts)
   this->clientConnect(client2);
   this->clientConnect(client3);
 
-  BOOST_CHECK_EQUAL(limitedIo.run(4, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(limitedIo.run(4, 1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(listenerChannel->size(), 3);
   BOOST_CHECK_EQUAL(listenerFaces.size(), 3);
 

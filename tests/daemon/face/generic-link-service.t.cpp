@@ -485,7 +485,7 @@ BOOST_AUTO_TEST_CASE(NoCongestion)
 {
   GenericLinkService::Options options;
   options.allowCongestionMarking = true;
-  options.baseCongestionMarkingInterval = time::milliseconds(100);
+  options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, 65536);
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
@@ -522,7 +522,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
 {
   GenericLinkService::Options options;
   options.allowCongestionMarking = true;
-  options.baseCongestionMarkingInterval = time::milliseconds(100);
+  options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, 65536);
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
   BOOST_CHECK_EQUAL(service->m_lastMarkTime, time::steady_clock::TimePoint::min());
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_NO_THROW(pkt1.wireDecode(transport->sentPackets.back().packet));
   BOOST_REQUIRE_EQUAL(pkt1.count<lp::CongestionMarkField>(), 1);
   BOOST_CHECK_EQUAL(pkt1.get<lp::CongestionMarkField>(), 1);
-  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + time::milliseconds(100);
+  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
   time::steady_clock::TimePoint lastMarkTime = time::steady_clock::now();
   BOOST_CHECK_EQUAL(service->m_lastMarkTime, lastMarkTime);
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 1);
 
   // advance clock to half of marking interval cycle
-  advanceClocks(time::milliseconds(50));
+  advanceClocks(50_ms);
 
   // second congested packet, but within marking interval, will not be marked
   transport->setSendQueueLength(33000);
@@ -564,7 +564,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 1);
 
   // advance clocks past end of initial interval cycle
-  this->advanceClocks(time::milliseconds(51));
+  this->advanceClocks(51_ms);
 
   // first congested packet after waiting marking interval, will be marked
   transport->setSendQueueLength(40000);
@@ -585,7 +585,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 2);
 
   // advance clock partway through current marking interval
-  this->advanceClocks(markingInterval - time::milliseconds(10));
+  this->advanceClocks(markingInterval - 10_ms);
 
   // still congested, but within marking interval cycle
   transport->setSendQueueLength(38000);
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 2);
 
   // advance clocks past end of current marking interval cycle
-  this->advanceClocks(time::milliseconds(11));
+  this->advanceClocks(11_ms);
 
   // still congested, after marking interval cycle
   transport->setSendQueueLength(39000);
@@ -620,7 +620,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 3);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 3);
 
-  this->advanceClocks(time::milliseconds(1));
+  this->advanceClocks(1_ms);
 
   // still congested, but within marking interval cycle
   transport->setSendQueueLength(38000);
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 4);
 
-  this->advanceClocks(time::milliseconds(50));
+  this->advanceClocks(50_ms);
 
   // send queue congested again, but can't mark packet because within one full interval of last mark
   transport->setSendQueueLength(50000);
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 4);
 
   // advance clock past full 100ms interval since last mark
-  this->advanceClocks(time::milliseconds(51));
+  this->advanceClocks(51_ms);
 
   transport->setSendQueueLength(40000);
   face->sendInterest(*interest);
@@ -690,7 +690,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_NO_THROW(pkt10.wireDecode(transport->sentPackets.back().packet));
   BOOST_REQUIRE_EQUAL(pkt10.count<lp::CongestionMarkField>(), 1);
   BOOST_CHECK_EQUAL(pkt10.get<lp::CongestionMarkField>(), 1);
-  nextMarkTime = time::steady_clock::now() + time::milliseconds(100);
+  nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
   lastMarkTime = time::steady_clock::now();
   BOOST_CHECK_EQUAL(service->m_lastMarkTime, lastMarkTime);
@@ -698,7 +698,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 5);
 
   // advance clock partway through 100ms marking interval
-  this->advanceClocks(time::milliseconds(50));
+  this->advanceClocks(50_ms);
 
   // not marked since within 100ms window before can mark again
   transport->setSendQueueLength(50000);
@@ -713,7 +713,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 5);
 
   // advance clocks past m_nextMarkTime
-  this->advanceClocks(time::milliseconds(51));
+  this->advanceClocks(51_ms);
 
   // markable packet, queue length still above threshold
   transport->setSendQueueLength(33000);
@@ -746,7 +746,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 6);
 
   // advance clocks past one full interval since last mark
-  this->advanceClocks(time::milliseconds(101));
+  this->advanceClocks(101_ms);
 
   // start congestion again
   transport->setSendQueueLength(50000);
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(CongestionCoDel)
   BOOST_REQUIRE_NO_THROW(pkt14.wireDecode(transport->sentPackets.back().packet));
   BOOST_REQUIRE_EQUAL(pkt14.count<lp::CongestionMarkField>(), 1);
   BOOST_CHECK_EQUAL(pkt14.get<lp::CongestionMarkField>(), 1);
-  nextMarkTime = time::steady_clock::now() + time::milliseconds(100);
+  nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
   lastMarkTime = time::steady_clock::now();
   BOOST_CHECK_EQUAL(service->m_lastMarkTime, lastMarkTime);
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
 {
   GenericLinkService::Options options;
   options.allowCongestionMarking = true;
-  options.baseCongestionMarkingInterval = time::milliseconds(100);
+  options.baseCongestionMarkingInterval = 100_ms;
   initialize(options, MTU_UNLIMITED, QUEUE_UNSUPPORTED);
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, time::steady_clock::TimePoint::max());
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 0);
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(DefaultThreshold)
   BOOST_REQUIRE_NO_THROW(pkt3.wireDecode(transport->sentPackets.back().packet));
   BOOST_REQUIRE_EQUAL(pkt3.count<lp::CongestionMarkField>(), 1);
   BOOST_CHECK_EQUAL(pkt3.get<lp::CongestionMarkField>(), 1);
-  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + time::milliseconds(100);
+  time::steady_clock::TimePoint nextMarkTime = time::steady_clock::now() + 100_ms;
   BOOST_CHECK_EQUAL(service->m_nextMarkTime, nextMarkTime);
   BOOST_CHECK_EQUAL(service->m_nMarkedSinceInMarkingState, 1);
   BOOST_CHECK_EQUAL(service->getCounters().nCongestionMarked, 1);

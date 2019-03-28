@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
       limitedIo.afterOp();
     });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(8)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(2, 8_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(nStateChanges, 2);
 }
 
@@ -124,7 +124,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistenc
   remoteSocket.close();
   Transport::Packet pkt(ndn::encoding::makeStringBlock(300, "hello"));
   transport->send(std::move(pkt)); // trigger ICMP error
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::FAILED);
@@ -132,7 +132,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, Persistency, RemoteClosePersistenc
     this->limitedIo.afterOp();
   });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
@@ -146,7 +146,7 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
   BOOST_CHECK_EQUAL(transport->getCounters().nOutPackets, 1);
   BOOST_CHECK_EQUAL(transport->getCounters().nOutBytes, block1.size());
 
-  limitedIo.defer(time::seconds(1));
+  limitedIo.defer(1_s);
   BOOST_CHECK_EQUAL(transport->getState(), TransportState::UP);
 
   remoteConnect();
@@ -161,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE(RemoteClosePermanent, RemoteCloseFixture)
       BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
       limitedIo.afterOp();
     });
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.end(), block1.begin(), block1.end());
 

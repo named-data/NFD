@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(GetChannels)
   BOOST_CHECK_EQUAL(factory.getChannels().empty(), true);
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
-  factory.createChannel(netifs.front(), time::minutes(1));
+  factory.createChannel(netifs.front(), 1_min);
   checkChannelListEqual(factory, {FaceUri::fromDev(netifs.front()->getName()).toString()});
 }
 
@@ -444,14 +444,14 @@ BOOST_AUTO_TEST_CASE(CreateChannel)
 {
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
 
-  auto channel1 = factory.createChannel(netifs.front(), time::minutes(1));
-  auto channel1a = factory.createChannel(netifs.front(), time::minutes(5));
+  auto channel1 = factory.createChannel(netifs.front(), 1_min);
+  auto channel1a = factory.createChannel(netifs.front(), 5_min);
   BOOST_CHECK_EQUAL(channel1, channel1a);
   BOOST_CHECK_EQUAL(channel1->getUri().toString(), "dev://" + netifs.front()->getName());
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(2);
 
-  auto channel2 = factory.createChannel(netifs.back(), time::minutes(1));
+  auto channel2 = factory.createChannel(netifs.back(), 1_min);
   BOOST_CHECK_NE(channel1, channel2);
 }
 
@@ -464,7 +464,7 @@ BOOST_AUTO_TEST_CASE(CreateFace)
              {CreateFaceExpectedResult::FAILURE, 504, "No channels available to connect"});
 
   SKIP_IF_ETHERNET_NETIF_COUNT_LT(1);
-  auto localUri = factory.createChannel(netifs.front(), time::minutes(1))->getUri();
+  auto localUri = factory.createChannel(netifs.front(), 1_min)->getUri();
 
   createFace(factory,
              FaceUri("ether://[00:00:5e:00:53:5e]"),

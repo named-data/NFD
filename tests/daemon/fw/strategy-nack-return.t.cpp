@@ -42,8 +42,6 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
 BOOST_AUTO_TEST_SUITE(Fw)
 
 template<typename S>
@@ -168,17 +166,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Timeout,
   fibEntry.addOrUpdateNextHop(*this->face5, 0, 30);
 
   shared_ptr<Interest> interest1 = makeInterest("/sIYw0TXWDj", 115);
-  interest1->setInterestLifetime(time::milliseconds(400));
+  interest1->setInterestLifetime(400_ms);
   shared_ptr<pit::Entry> pitEntry = this->pit.insert(*interest1).first;
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest1);
   pitEntry->insertOrUpdateOutRecord(*this->face3, 0, *interest1);
 
-  this->advanceClocks(time::milliseconds(300));
+  this->advanceClocks(300_ms);
   shared_ptr<Interest> interest2 = makeInterest("/sIYw0TXWDj", 223);
   pitEntry->insertOrUpdateInRecord(*this->face1, 0, *interest2);
   pitEntry->insertOrUpdateOutRecord(*this->face4, 0, *interest2);
 
-  this->advanceClocks(time::milliseconds(200)); // face3 has timed out
+  this->advanceClocks(200_ms); // face3 has timed out
 
   lp::Nack nack4 = makeNack("/sIYw0TXWDj", 223, lp::NackReason::CONGESTION);
   pitEntry->getOutRecord(*this->face4, 0)->setIncomingNack(nack4);
@@ -257,12 +255,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(LiveDeadlock,
   ndn::Face& appD = topo.addAppFace("D", nodeD)->getClientFace();
 
   int nNacksA = 0, nNacksD = 0;
-  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA]{ ++nNacksA; }), nullptr);
-  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD]{ ++nNacksD; }), nullptr);
-  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
-  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA]{ ++nNacksA; }), nullptr);
-  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD]{ ++nNacksD; }), nullptr);
-  this->advanceClocks(time::milliseconds(1), time::milliseconds(100));
+  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
+  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  this->advanceClocks(1_ms, 5_ms);
+  appA.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksA] { ++nNacksA; }), nullptr);
+  appD.expressInterest(Interest("/P/1"), nullptr, bind([&nNacksD] { ++nNacksD; }), nullptr);
+  this->advanceClocks(1_ms, 100_ms);
 
   // As long as at least one Nack arrives at each client, strategy behavior is correct.
   // Whether both Interests are Nacked is a client face behavior, not strategy behavior.

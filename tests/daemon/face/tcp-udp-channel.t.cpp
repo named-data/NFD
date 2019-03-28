@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -83,7 +83,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::F
   auto ch1 = this->makeChannel(typename T::Address());
   this->connect(*ch1);
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 1);
   BOOST_CHECK_EQUAL(ch1->size(), 1);
@@ -94,7 +94,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::F
   this->connect(*ch2);
   this->connect(*ch3);
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(4, time::seconds(2)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->limitedIo.run(4, 2_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 3);
   BOOST_CHECK_EQUAL(ch1->size(), 1);
@@ -113,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(MultipleAccepts, T, FixtureAndAddressList, T::F
   // connect twice to the same endpoint
   this->connect(*ch3);
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 3);
   BOOST_CHECK_EQUAL(ch1->size(), 1);
@@ -132,14 +132,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(FaceClosure, T, FixtureAndAddressList, T::Fixtu
   auto clientChannel = this->makeChannel(typename T::Address());
   this->connect(*clientChannel);
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 1);
   BOOST_CHECK_EQUAL(clientChannel->size(), 1);
 
   this->clientFaces.at(0)->close();
 
-  BOOST_CHECK_EQUAL(this->limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  BOOST_CHECK_EQUAL(this->limitedIo.run(2, 5_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->listenerChannel->size(), 0);
   BOOST_CHECK_EQUAL(clientChannel->size(), 0);

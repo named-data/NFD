@@ -133,7 +133,7 @@ public:
     route.faceId = faceId;
     route.origin = origin;
     m_rib.insert(prefix, route);
-    this->advanceClocks(time::milliseconds(6));
+    this->advanceClocks(6_ms);
   }
 
   void
@@ -143,14 +143,14 @@ public:
     route.faceId = faceId;
     route.origin = origin;
     m_rib.erase(prefix, route);
-    this->advanceClocks(time::milliseconds(6));
+    this->advanceClocks(6_ms);
   }
 
   void
   setDestinationAvailability(bool isAvailable)
   {
     destination->setAvailability(isAvailable);
-    this->advanceClocks(time::milliseconds(6));
+    this->advanceClocks(6_ms);
   }
 
 protected:
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE(AddRemoveRoute)
 
   // refresh every 60 seconds
   destination->advertiseHistory.clear();
-  this->advanceClocks(time::seconds(61), 5);
+  this->advanceClocks(61_s, 5);
   BOOST_CHECK_EQUAL(destination->advertiseHistory.size(), 5);
 
   // /A is still needed by /A/2 route
@@ -244,7 +244,7 @@ BOOST_AUTO_TEST_CASE(AdvertiseRetryInterval)
   policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
 
-  this->advanceClocks(time::seconds(10), time::seconds(3600));
+  this->advanceClocks(10_s, 1_h);
   BOOST_REQUIRE_GT(destination->advertiseHistory.size(), 2);
 
   // destination->advertise keeps failing, so interval should increase
@@ -260,12 +260,12 @@ BOOST_AUTO_TEST_CASE(AdvertiseRetryInterval)
   }
 
   destination->shouldSucceed = true;
-  this->advanceClocks(time::seconds(3600));
+  this->advanceClocks(1_h);
   destination->advertiseHistory.clear();
 
   // destination->advertise has succeeded, retry interval should reset to initial
   destination->shouldSucceed = false;
-  this->advanceClocks(time::seconds(10), time::seconds(300));
+  this->advanceClocks(10_s, 300_s);
   BOOST_REQUIRE_GE(destination->advertiseHistory.size(), 2);
   FloatInterval restartInterval = destination->advertiseHistory[1].timestamp -
                                   destination->advertiseHistory[0].timestamp;
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
   destination->shouldSucceed = false;
   policy->decision = ReadvertiseAction{"/A", ndn::security::SigningInfo()};
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  this->advanceClocks(time::seconds(10), time::seconds(300));
+  this->advanceClocks(10_s, 300_s);
   BOOST_CHECK_GT(destination->advertiseHistory.size(), 0);
   BOOST_CHECK_EQUAL(destination->withdrawHistory.size(), 0);
 
@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
   destination->advertiseHistory.clear();
   destination->withdrawHistory.clear();
   this->eraseRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  this->advanceClocks(time::seconds(10), time::seconds(300));
+  this->advanceClocks(10_s, 300_s);
   BOOST_CHECK_EQUAL(destination->advertiseHistory.size(), 0); // don't try to advertise
   BOOST_CHECK_GT(destination->withdrawHistory.size(), 0); // try to withdraw
 
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE(ChangeDuringRetry)
   destination->advertiseHistory.clear();
   destination->withdrawHistory.clear();
   this->insertRoute("/A/1", 1, ndn::nfd::ROUTE_ORIGIN_CLIENT);
-  this->advanceClocks(time::seconds(10), time::seconds(300));
+  this->advanceClocks(10_s, 300_s);
   BOOST_CHECK_GT(destination->advertiseHistory.size(), 0); // try to advertise
   BOOST_CHECK_EQUAL(destination->withdrawHistory.size(), 0); // don't try to withdraw
 }

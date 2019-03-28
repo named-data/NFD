@@ -33,7 +33,9 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestService, nfd::tests::RibIoFixture)
+using namespace nfd::tests;
+
+BOOST_FIXTURE_TEST_SUITE(TestService, RibIoFixture)
 
 BOOST_AUTO_TEST_CASE(Basic)
 {

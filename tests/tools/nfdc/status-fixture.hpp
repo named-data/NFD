@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,6 +28,7 @@
 
 #include "mock-nfd-mgmt-fixture.hpp"
 #include "nfdc/module.hpp"
+
 #include <ndn-cxx/security/validator-null.hpp>
 
 namespace nfd {
@@ -87,7 +88,7 @@ protected: // status fetching
                          BOOST_FAIL("fetchStatus failure " << code << " " << reason);
                        },
                        CommandOptions());
-    this->advanceClocks(time::milliseconds(1));
+    this->advanceClocks(1_ms);
   }
 
   /** \brief prepare status output as XML and text
@@ -96,7 +97,7 @@ protected: // status fetching
   void
   prepareStatusOutput()
   {
-    this->advanceClocks(time::milliseconds(1));
+    this->advanceClocks(1_ms);
     BOOST_REQUIRE_EQUAL(nFetchStatusSuccess, 1);
 
     statusXml.str("");

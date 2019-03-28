@@ -32,10 +32,8 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
 // The tester is unused in this file, but it's used in various templated test suites.
-typedef StrategyTester<AccessStrategy> AccessStrategyTester;
+using AccessStrategyTester = StrategyTester<AccessStrategy>;
 NFD_REGISTER_STRATEGY(AccessStrategyTester);
 
 // This test suite tests AccessStrategy's behavior as a black box,
@@ -73,8 +71,8 @@ protected:
 
     topo.setStrategy<fw::AccessStrategy>(router);
 
-    linkA = topo.addLink("RA", time::milliseconds(10), {router, laptopA});
-    linkB = topo.addLink("RB", time::milliseconds(20), {router, laptopB});
+    linkA = topo.addLink("RA", 10_ms, {router, laptopA});
+    linkB = topo.addLink("RB", 20_ms, {router, laptopB});
   }
 
 protected:
@@ -124,10 +122,9 @@ BOOST_AUTO_TEST_CASE(OneProducer)
   topo.addEchoProducer(producer->getClientFace());
 
   shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
-  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/A",
-                           time::milliseconds(100), 100);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/A", 100_ms, 100);
 
-  this->advanceClocks(time::milliseconds(5), time::seconds(12));
+  this->advanceClocks(5_ms, 12_s);
 
   // most Interests should be satisfied, and few Interests can go to wrong laptop
   BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
@@ -171,10 +168,9 @@ BOOST_AUTO_TEST_CASE(FastSlowProducer)
   topo.addEchoProducer(producerB->getClientFace());
 
   shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
-  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/BOTH",
-                           time::milliseconds(100), 100);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/BOTH", 100_ms, 100);
 
-  this->advanceClocks(time::milliseconds(5), time::seconds(12));
+  this->advanceClocks(5_ms, 12_s);
 
   // most Interests should be satisfied, and few Interests can go to slower laptopB
   BOOST_CHECK_GE(consumer->getForwarderFace().getCounters().nOutData, 97);
@@ -218,12 +214,11 @@ BOOST_AUTO_TEST_CASE(ProducerMobility)
   topo.addEchoProducer(producerB->getClientFace());
 
   shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", router);
-  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/M",
-                           time::milliseconds(100), 100);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/laptops/M", 100_ms, 100);
 
   // producer is initially on laptopA
   producerB->fail();
-  this->advanceClocks(time::milliseconds(5), time::seconds(6));
+  this->advanceClocks(5_ms, 6_s);
 
   // few Interests can go to laptopB
   BOOST_CHECK_LE(linkB->getFace(router).getCounters().nOutInterests, 5);
@@ -232,7 +227,7 @@ BOOST_AUTO_TEST_CASE(ProducerMobility)
   producerA->fail();
   producerB->recover();
   PacketCounter::rep nInterestsToA_beforeMove = linkA->getFace(router).getCounters().nOutInterests;
-  this->advanceClocks(time::milliseconds(5), time::seconds(6));
+  this->advanceClocks(5_ms, 6_s);
 
   // few additional Interests can go to laptopA
   BOOST_CHECK_LE(linkA->getFace(router).getCounters().nOutInterests - nInterestsToA_beforeMove, 5);
@@ -274,13 +269,11 @@ BOOST_AUTO_TEST_CASE(Bidirectional)
   topo.addEchoProducer(producerB->getClientFace());
 
   shared_ptr<TopologyAppLink> consumerAB = topo.addAppFace("cAB", laptopA);
-  topo.addIntervalConsumer(consumerAB->getClientFace(), "ndn:/laptops/B",
-                           time::milliseconds(100), 100);
+  topo.addIntervalConsumer(consumerAB->getClientFace(), "ndn:/laptops/B", 100_ms, 100);
   shared_ptr<TopologyAppLink> consumerBA = topo.addAppFace("cBA", laptopB);
-  topo.addIntervalConsumer(consumerBA->getClientFace(), "ndn:/laptops/A",
-                           time::milliseconds(100), 100);
+  topo.addIntervalConsumer(consumerBA->getClientFace(), "ndn:/laptops/A", 100_ms, 100);
 
-  this->advanceClocks(time::milliseconds(5), time::seconds(12));
+  this->advanceClocks(5_ms, 12_s);
 
   // most Interests should be satisfied
   BOOST_CHECK_GE(consumerAB->getForwarderFace().getCounters().nOutData, 97);
@@ -324,7 +317,7 @@ BOOST_AUTO_TEST_CASE(PacketLoss)
   consumer->getClientFace().expressInterest(*interest1,
                                             bind([&hasData1] { hasData1 = true; }),
                                             nullptr, nullptr);
-  this->advanceClocks(time::milliseconds(5), time::seconds(1));
+  this->advanceClocks(5_ms, 1_s);
   BOOST_CHECK_EQUAL(hasData1, true);
 
   // Interest 2 experiences a packet loss on initial transmission
@@ -335,7 +328,7 @@ BOOST_AUTO_TEST_CASE(PacketLoss)
                                             nullptr,
                                             bind([&hasTimeout2a] { hasTimeout2a = true; }));
   producerA->fail();
-  this->advanceClocks(time::milliseconds(5), time::milliseconds(60));
+  this->advanceClocks(5_ms, 60_ms);
   BOOST_CHECK_EQUAL(hasData2a, false);
   BOOST_CHECK_EQUAL(hasTimeout2a, false);
 
@@ -346,7 +339,7 @@ BOOST_AUTO_TEST_CASE(PacketLoss)
                                             bind([&hasData2b] { hasData2b = true; }),
                                             nullptr, nullptr);
   producerA->recover();
-  this->advanceClocks(time::milliseconds(5), time::seconds(1));
+  this->advanceClocks(5_ms, 1_s);
   BOOST_CHECK_EQUAL(hasData2b, false);
 
   // Interest 2 retransmission gets through, and is answered
@@ -355,7 +348,7 @@ BOOST_AUTO_TEST_CASE(PacketLoss)
   consumer->getClientFace().expressInterest(*interest2c,
                                             bind([&hasData2c] { hasData2c = true; }),
                                             nullptr, nullptr);
-  this->advanceClocks(time::milliseconds(5), time::seconds(1));
+  this->advanceClocks(5_ms, 1_s);
   BOOST_CHECK_EQUAL(hasData2c, true);
 }
 
@@ -367,10 +360,9 @@ BOOST_AUTO_TEST_CASE(Bug2831)
 
   // send Interests from laptopA to router
   shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", laptopA);
-  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/net",
-                           time::milliseconds(100), 10);
+  topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/net", 100_ms, 10);
 
-  this->advanceClocks(time::milliseconds(5), time::seconds(2));
+  this->advanceClocks(5_ms, 2_s);
 
   // Interest shouldn't loop back from router
   BOOST_CHECK_EQUAL(linkA->getFace(router).getCounters().nOutInterests, 0);

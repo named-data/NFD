@@ -34,14 +34,16 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-/** \brief extends strategy S for unit testing
+using namespace nfd::tests;
+
+/** \brief Extends strategy S for unit testing.
  *
- *  Actions invoked by S are recorded but not passed to forwarder
+ *  Actions invoked by S are recorded but not passed to forwarder.
  *
  *  StrategyTester should be registered into the strategy registry prior to use.
  *  \code
  *  // appears in or included by every .cpp MyStrategyTester is used
- *  typedef StrategyTester<MyStrategy> MyStrategyTester;
+ *  using MyStrategyTester = StrategyTester<MyStrategy>;
  *
  *  // appears in only one .cpp
  *  NFD_REGISTER_STRATEGY(MyStrategyTester);
@@ -82,9 +84,9 @@ public:
    *  \note The actions may occur either during f() invocation or afterwards.
    *  \return whether expected number of actions have occurred
    */
+  template<typename F>
   bool
-  waitForAction(const std::function<void()>& f,
-                nfd::tests::LimitedIo& limitedIo, int nExpectedActions = 1)
+  waitForAction(F&& f, LimitedIo& limitedIo, int nExpectedActions = 1)
   {
     int nActions = 0;
 
@@ -99,8 +101,7 @@ public:
       // A correctly implemented strategy is required to invoke reject pending Interest action if it
       // decides to not forward an Interest. If a test case is stuck in the call below, check that
       // rejectPendingInterest is invoked under proper condition.
-      return limitedIo.run(nExpectedActions - nActions, nfd::tests::LimitedIo::UNLIMITED_TIME) ==
-             nfd::tests::LimitedIo::EXCEED_OPS;
+      return limitedIo.run(nExpectedActions - nActions, LimitedIo::UNLIMITED_TIME) == LimitedIo::EXCEED_OPS;
     }
     return nActions == nExpectedActions;
   }

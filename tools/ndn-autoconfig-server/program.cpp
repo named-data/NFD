@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -35,9 +35,9 @@ namespace ndn {
 namespace tools {
 namespace autoconfig_server {
 
-static const Name HUB_DATA_NAME("/localhop/ndn-autoconf/hub");
-static const Name ROUTABLE_PREFIXES_DATA_PREFIX("/localhop/nfd");
-static const PartialName ROUTABLE_PREFIXES_DATA_SUFFIX("rib/routable-prefixes");
+const Name HUB_DATA_NAME("/localhop/ndn-autoconf/hub");
+const Name ROUTABLE_PREFIXES_DATA_PREFIX("/localhop/nfd");
+const PartialName ROUTABLE_PREFIXES_DATA_SUFFIX("rib/routable-prefixes");
 
 Program::Program(const Options& options, Face& face, KeyChain& keyChain)
   : m_face(face)
@@ -56,7 +56,7 @@ Program::enableHubData(const FaceUri& hubFaceUri)
   std::string uri = hubFaceUri.toString();
 
   auto data = make_shared<Data>(Name(HUB_DATA_NAME).appendVersion());
-  data->setFreshnessPeriod(time::hours(1));
+  data->setFreshnessPeriod(1_h);
   data->setContent(makeBinaryBlock(tlv::nfd::Uri,
                                    reinterpret_cast<const uint8_t*>(uri.data()), uri.size()));
   m_keyChain.sign(*data);
@@ -75,7 +75,7 @@ Program::enableRoutablePrefixesDataset(const std::vector<Name>& routablePrefixes
 {
   m_dispatcher.addStatusDataset(ROUTABLE_PREFIXES_DATA_SUFFIX,
     mgmt::makeAcceptAllAuthorization(),
-    [=] (const Name& prefix, const Interest& interest, mgmt::StatusDatasetContext& context) {
+    [=] (const Name&, const Interest&, mgmt::StatusDatasetContext& context) {
       for (const Name& routablePrefix : routablePrefixes) {
         context.append(routablePrefix.wireEncode());
       }
@@ -84,8 +84,8 @@ Program::enableRoutablePrefixesDataset(const std::vector<Name>& routablePrefixes
   m_dispatcher.addTopPrefix(ROUTABLE_PREFIXES_DATA_PREFIX, false);
 
   m_face.registerPrefix(Name(ROUTABLE_PREFIXES_DATA_PREFIX).append(ROUTABLE_PREFIXES_DATA_SUFFIX),
-    nullptr,
-    bind(&Program::handlePrefixRegistrationFailure, this, _1, _2));
+                        nullptr,
+                        bind(&Program::handlePrefixRegistrationFailure, this, _1, _2));
 }
 
 void

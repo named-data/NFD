@@ -42,8 +42,6 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
 template<typename S>
 class AdHocForwardingFixture : public GlobalIoTimeFixture
 {
@@ -58,7 +56,7 @@ protected:
       topo.setStrategy<S>(node);
     }
 
-    auto wireless = topo.addLink("ABC", time::milliseconds(10), {nodeA, nodeB, nodeC},
+    auto wireless = topo.addLink("ABC", 10_ms, {nodeA, nodeB, nodeC},
                                  ndn::nfd::LINK_TYPE_AD_HOC);
     wireless->block(nodeA, nodeC);
     wireless->block(nodeC, nodeA);
@@ -103,8 +101,8 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SingleNexthop, S, Strategies,
   // B should relay Interest/Data between A and C.
 
   this->topo.registerPrefix(this->nodeB, *this->faceB, "/P");
-  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", time::milliseconds(100), 10);
-  this->advanceClocks(time::milliseconds(5), time::milliseconds(1200));
+  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", 100_ms, 10);
+  this->advanceClocks(5_ms, 1200_ms);
 
   // Consumer should receive Data, and B should be relaying.
   BOOST_CHECK_EQUAL(this->faceB->getCounters().nInInterests, 10);
@@ -127,17 +125,17 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(SecondNexthop, S, Strategies,
   // B's first nexthop is D, but B-D link has failed, so B should relay Interest/Data between A and C.
 
   TopologyNode nodeD = this->topo.addForwarder("D");
-  shared_ptr<TopologyLink> linkBD = this->topo.addLink("BD", time::milliseconds(5), {this->nodeB, nodeD});
+  shared_ptr<TopologyLink> linkBD = this->topo.addLink("BD", 5_ms, {this->nodeB, nodeD});
   this->topo.registerPrefix(this->nodeB, linkBD->getFace(this->nodeB), "/P", 5);
   linkBD->fail();
   this->topo.registerPrefix(this->nodeB, *this->faceB, "/P", 10);
 
   // Two interval consumers are expressing Interests with same name 40ms apart,
   // so that Interests from the second interval consumer are considered retransmission.
-  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", time::milliseconds(100), 50, 1);
-  this->advanceClocks(time::milliseconds(5), time::milliseconds(40));
-  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", time::milliseconds(100), 50, 1);
-  this->advanceClocks(time::milliseconds(5), time::milliseconds(5400));
+  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", 100_ms, 50, 1);
+  this->advanceClocks(5_ms, 40_ms);
+  this->topo.addIntervalConsumer(this->appA->getClientFace(), "/P", 100_ms, 50, 1);
+  this->advanceClocks(5_ms, 5400_ms);
 
   // Consumer should receive Data, and B should be relaying at least some Interest/Data.
   BOOST_CHECK_GE(this->faceB->getCounters().nInInterests, 50);

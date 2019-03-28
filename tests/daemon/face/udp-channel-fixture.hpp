@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -44,7 +44,7 @@ protected:
     if (port == 0)
       port = getNextPort();
 
-    return make_unique<UdpChannel>(udp::Endpoint(addr, port), time::seconds(2), false);
+    return make_unique<UdpChannel>(udp::Endpoint(addr, port), 2_s, false);
   }
 
   void

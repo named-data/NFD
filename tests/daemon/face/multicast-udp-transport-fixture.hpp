@@ -98,14 +98,14 @@ protected:
         }
         limitedIo.afterOp();
       });
-    BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+    BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
   }
 
   void
   remoteWrite(const std::vector<uint8_t>& buf, bool needToCheck = true)
   {
     sendToGroup(remoteSockTx, buf, needToCheck);
-    limitedIo.defer(time::seconds(1));
+    limitedIo.defer(1_s);
   }
 
   void

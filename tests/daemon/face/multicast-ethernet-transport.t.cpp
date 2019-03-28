@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(Close)
     limitedIo.afterOp();
   });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 BOOST_AUTO_TEST_CASE(SendQueueLength)

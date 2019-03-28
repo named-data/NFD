@@ -46,8 +46,6 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
 template<typename S>
 class StrategyNoRouteFixture : public GlobalIoTimeFixture
 {

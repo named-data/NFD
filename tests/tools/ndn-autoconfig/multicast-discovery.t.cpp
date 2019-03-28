@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(Normal)
   });
 
   stage.start();
-  face.processEvents(time::seconds(20));
+  face.processEvents(20_s);
   BOOST_CHECK(hasSuccess);
 }
 

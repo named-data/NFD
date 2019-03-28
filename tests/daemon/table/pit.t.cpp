@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(Insert)
 
   // A+InterestLifetime
   shared_ptr<Interest> interestK = make_shared<Interest>(*interestA);
-  interestK->setInterestLifetime(time::milliseconds(1000));
+  interestK->setInterestLifetime(1_s);
   insertResult = pit.insert(*interestK);
   BOOST_CHECK_EQUAL(insertResult.second, false); // only guiders differ
   BOOST_CHECK_EQUAL(pit.size(), 9);
@@ -391,8 +391,8 @@ BOOST_AUTO_TEST_CASE(Iterator)
   }
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestPit
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace pit

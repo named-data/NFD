@@ -53,7 +53,7 @@ BOOST_FIXTURE_TEST_SUITE(TestForwarderStatusManager, ForwarderStatusManagerFixtu
 BOOST_AUTO_TEST_CASE(GeneralStatusDataset)
 {
   // cause counters to be non-zero
-  this->advanceClocks(time::seconds(3600));
+  this->advanceClocks(1_h);
   m_forwarder.getFib().insert("ndn:/fib1");
   m_forwarder.getPit().insert(*makeInterest("ndn:/pit1"));
   m_forwarder.getPit().insert(*makeInterest("ndn:/pit2"));

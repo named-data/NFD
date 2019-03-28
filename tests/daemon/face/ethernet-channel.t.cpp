@@ -39,7 +39,7 @@ protected:
   makeChannel()
   {
     BOOST_ASSERT(netifs.size() > 0);
-    return make_unique<EthernetChannel>(netifs.front(), time::seconds(2));
+    return make_unique<EthernetChannel>(netifs.front(), 2_s);
   }
 };
 

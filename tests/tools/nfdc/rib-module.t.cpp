@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,7 +53,7 @@ protected:
                       .setOrigin(ndn::nfd::ROUTE_ORIGIN_CLIENT)
                       .setCost(2956)
                       .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE)
-                      .setExpirationPeriod(time::milliseconds(29950035)));
+                      .setExpirationPeriod(29950035_ms));
     entry1.addRoute(Route()
                       .setFaceId(6720)
                       .setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC)
@@ -248,10 +248,10 @@ BOOST_AUTO_TEST_CASE(NormalByFaceUri)
     BOOST_CHECK_EQUAL(req.getFlags(), ndn::nfd::ROUTE_FLAG_CHILD_INHERIT |
                                       ndn::nfd::ROUTE_FLAG_CAPTURE);
     BOOST_REQUIRE_EQUAL(req.hasExpirationPeriod(), true);
-    BOOST_REQUIRE_EQUAL(req.getExpirationPeriod(), time::milliseconds(727411987));
+    BOOST_REQUIRE_EQUAL(req.getExpirationPeriod(), 727411987_ms);
 
     ControlParameters resp = req;
-    resp.setExpirationPeriod(time::milliseconds(727411154)); // server side may change expiration
+    resp.setExpirationPeriod(727411154_ms); // server side may change expiration
     this->succeedCommand(interest, resp);
   };
 
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(Status)
                            .setOrigin(ndn::nfd::ROUTE_ORIGIN_STATIC)
                            .setCost(79)
                            .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
-                           .setExpirationPeriod(time::milliseconds(47292)));
+                           .setExpirationPeriod(47292_ms));
   RibEntry payload2;
   payload2.setName("/localhost/nfd")
           .addRoute(Route().setFaceId(258)

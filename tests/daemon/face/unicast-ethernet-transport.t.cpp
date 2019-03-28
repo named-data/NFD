@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(Close)
     limitedIo.afterOp();
   });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 BOOST_AUTO_TEST_CASE(IdleClose)
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(IdleClose)
       limitedIo.afterOp();
     });
 
-  BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(5)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(limitedIo.run(2, 5_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(nStateChanges, 2);
 }
 

@@ -50,25 +50,25 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
   cs.setPolicy(make_unique<PriorityFifoPolicy>());
 
   shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->setFreshnessPeriod(time::milliseconds(99999));
+  dataA->setFreshnessPeriod(99999_ms);
   dataA->wireEncode();
   cs.insert(*dataA);
 
   shared_ptr<Data> dataB = makeData("ndn:/B");
-  dataB->setFreshnessPeriod(time::milliseconds(10));
+  dataB->setFreshnessPeriod(10_ms);
   dataB->wireEncode();
   cs.insert(*dataB);
 
   shared_ptr<Data> dataC = makeData("ndn:/C");
-  dataC->setFreshnessPeriod(time::milliseconds(99999));
+  dataC->setFreshnessPeriod(99999_ms);
   dataC->wireEncode();
   cs.insert(*dataC, true);
 
-  this->advanceClocks(time::milliseconds(11));
+  this->advanceClocks(11_ms);
 
   // evict unsolicited
   shared_ptr<Data> dataD = makeData("ndn:/D");
-  dataD->setFreshnessPeriod(time::milliseconds(99999));
+  dataD->setFreshnessPeriod(99999_ms);
   dataD->wireEncode();
   cs.insert(*dataD);
   BOOST_CHECK_EQUAL(cs.size(), 3);
@@ -78,7 +78,7 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
 
   // evict stale
   shared_ptr<Data> dataE = makeData("ndn:/E");
-  dataE->setFreshnessPeriod(time::milliseconds(99999));
+  dataE->setFreshnessPeriod(99999_ms);
   dataE->wireEncode();
   cs.insert(*dataE);
   BOOST_CHECK_EQUAL(cs.size(), 3);
@@ -88,7 +88,7 @@ BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
 
   // evict fifo
   shared_ptr<Data> dataF = makeData("ndn:/F");
-  dataF->setFreshnessPeriod(time::milliseconds(99999));
+  dataF->setFreshnessPeriod(99999_ms);
   dataF->wireEncode();
   cs.insert(*dataF);
   BOOST_CHECK_EQUAL(cs.size(), 3);
@@ -103,21 +103,21 @@ BOOST_FIXTURE_TEST_CASE(Refresh, GlobalIoTimeFixture)
   cs.setPolicy(make_unique<PriorityFifoPolicy>());
 
   shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->setFreshnessPeriod(time::milliseconds(99999));
+  dataA->setFreshnessPeriod(99999_ms);
   dataA->wireEncode();
   cs.insert(*dataA);
 
   shared_ptr<Data> dataB = makeData("ndn:/B");
-  dataB->setFreshnessPeriod(time::milliseconds(10));
+  dataB->setFreshnessPeriod(10_ms);
   dataB->wireEncode();
   cs.insert(*dataB);
 
   shared_ptr<Data> dataC = makeData("ndn:/C");
-  dataC->setFreshnessPeriod(time::milliseconds(10));
+  dataC->setFreshnessPeriod(10_ms);
   dataC->wireEncode();
   cs.insert(*dataC);
 
-  this->advanceClocks(time::milliseconds(11));
+  this->advanceClocks(11_ms);
 
   // refresh dataB
   shared_ptr<Data> dataB2 = make_shared<Data>(*dataB);
@@ -138,7 +138,7 @@ BOOST_FIXTURE_TEST_CASE(Refresh, GlobalIoTimeFixture)
 
   // evict dataC stale
   shared_ptr<Data> dataD = makeData("ndn:/D");
-  dataD->setFreshnessPeriod(time::milliseconds(99999));
+  dataD->setFreshnessPeriod(99999_ms);
   dataD->wireEncode();
   cs.insert(*dataD);
   BOOST_CHECK_EQUAL(cs.size(), 3);

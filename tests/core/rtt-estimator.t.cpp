@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   RttEstimator rtt;
 
   for (int i = 0; i < 100; ++i) {
-    rtt.addMeasurement(time::seconds(5));
+    rtt.addMeasurement(5_s);
   }
   double rto1 = computeRtoAsFloatSeconds(rtt);
   BOOST_CHECK_CLOSE(rto1, 5.0, 0.1);
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   double rto3 = computeRtoAsFloatSeconds(rtt);
   BOOST_CHECK_CLOSE(rto3, 20.0, 0.1);
 
-  rtt.addMeasurement(time::seconds(5)); // reset multiplier
+  rtt.addMeasurement(5_s); // reset multiplier
   double rto4 = computeRtoAsFloatSeconds(rtt);
   BOOST_CHECK_CLOSE(rto4, 5.0, 0.1);
 
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   BOOST_CHECK_CLOSE(rto5, 10.0, 0.1);
 
   for (int i = 0; i < 5; ++i) {
-    rtt.addMeasurement(time::seconds(6));
+    rtt.addMeasurement(6_s);
   } // increased variance
   double rto6 = computeRtoAsFloatSeconds(rtt);
   BOOST_CHECK_GT(rto6, rto1);

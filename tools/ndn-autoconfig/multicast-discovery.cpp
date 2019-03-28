@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -24,7 +24,9 @@
  */
 
 #include "multicast-discovery.hpp"
+
 #include <boost/lexical_cast.hpp>
+
 #include <ndn-cxx/encoding/tlv-nfd.hpp>
 
 namespace ndn {
@@ -34,10 +36,10 @@ namespace autoconfig {
 using nfd::ControlParameters;
 using nfd::ControlResponse;
 
-static const Name HUB_DISCOVERY_PREFIX("/localhop/ndn-autoconf/hub");
-static const uint64_t HUB_DISCOVERY_ROUTE_COST(1);
-static const time::milliseconds HUB_DISCOVERY_ROUTE_EXPIRATION = time::seconds(30);
-static const time::milliseconds HUB_DISCOVERY_INTEREST_LIFETIME = time::seconds(4);
+const Name HUB_DISCOVERY_PREFIX("/localhop/ndn-autoconf/hub");
+const uint64_t HUB_DISCOVERY_ROUTE_COST(1);
+const time::milliseconds HUB_DISCOVERY_ROUTE_EXPIRATION = 30_s;
+const time::milliseconds HUB_DISCOVERY_INTEREST_LIFETIME = 4_s;
 
 MulticastDiscovery::MulticastDiscovery(Face& face, nfd::Controller& controller)
   : m_face(face)

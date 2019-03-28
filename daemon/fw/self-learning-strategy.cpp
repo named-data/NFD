@@ -42,7 +42,7 @@ namespace fw {
 NFD_LOG_INIT(SelfLearningStrategy);
 NFD_REGISTER_STRATEGY(SelfLearningStrategy);
 
-const time::milliseconds SelfLearningStrategy::ROUTE_RENEW_LIFETIME(600_s);
+const time::milliseconds SelfLearningStrategy::ROUTE_RENEW_LIFETIME(10_min);
 
 SelfLearningStrategy::SelfLearningStrategy(Forwarder& forwarder, const Name& name)
   : Strategy(forwarder)

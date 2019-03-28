@@ -216,7 +216,7 @@ BOOST_FIXTURE_TEST_CASE(GetLastOutgoing, GlobalIoTimeFixture)
   time::steady_clock::TimePoint before = time::steady_clock::now();
 
   entry.insertOrUpdateOutRecord(*face1, 0, *interest);
-  this->advanceClocks(time::milliseconds(1000));
+  this->advanceClocks(1_s);
 
   BOOST_CHECK_EQUAL(getLastOutgoing(entry), before);
 

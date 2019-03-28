@@ -38,30 +38,9 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
-inline bool
-compareNameFaceIdCostAction(const FibUpdate& lhs, const FibUpdate& rhs)
-{
-  if (lhs.name < rhs.name) {
-    return true;
-  }
-  else if (lhs.name == rhs.name) {
-    if (lhs.faceId < rhs.faceId) {
-      return true;
-    }
-    else if (lhs.faceId == rhs.faceId) {
-      if (lhs.cost < rhs.cost) {
-        return true;
-      }
-      else if (lhs.cost == rhs.cost) {
-        return lhs.action < rhs.action;
-      }
-    }
-  }
+using namespace nfd::tests;
 
-  return false;
-}
-
-class FibUpdatesFixture : public nfd::tests::GlobalIoFixture, public nfd::tests::KeyChainFixture
+class FibUpdatesFixture : public GlobalIoFixture, public KeyChainFixture
 {
 public:
   FibUpdatesFixture()
@@ -125,7 +104,10 @@ public:
   getSortedFibUpdates()
   {
     FibUpdater::FibUpdateList updates = getFibUpdates();
-    updates.sort(&compareNameFaceIdCostAction);
+    updates.sort([] (const auto& lhs, const auto& rhs) {
+      return std::tie(lhs.name, lhs.faceId, lhs.cost, lhs.action) <
+             std::tie(rhs.name, rhs.faceId, rhs.cost, rhs.action);
+    });
     return updates;
   }
 

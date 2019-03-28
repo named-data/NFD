@@ -110,7 +110,7 @@ protected:
   scheduler::ScopedEventId addNonceEvent;
 };
 
-const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = time::milliseconds(200);
+const time::nanoseconds PeriodicalInsertionFixture::LIFETIME = 200_ms;
 
 BOOST_FIXTURE_TEST_CASE(Lifetime, PeriodicalInsertionFixture)
 {

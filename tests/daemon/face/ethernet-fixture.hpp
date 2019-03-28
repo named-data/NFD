@@ -71,7 +71,7 @@ protected:
     BOOST_ASSERT(netif != nullptr);
     localEp = netif->getName();
     remoteEp = remoteAddr;
-    transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, time::seconds(2));
+    transport = make_unique<UnicastEthernetTransport>(*netif, remoteEp, persistency, 2_s);
   }
 
   /** \brief create a MulticastEthernetTransport

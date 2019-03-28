@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
   const Name RIB_REGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/register");
 
   dest.advertise(rr, successCallback, failureCallback);
-  advanceClocks(time::milliseconds(100));
+  advanceClocks(100_ms);
 
   // Retrieve the sent Interest to build the response
   BOOST_REQUIRE_EQUAL(face.sentInterests.size(), 1);
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Advertise, Scenario, AdvertiseScenarios)
   auto responseData = makeData(sentInterest.getName());
   responseData->setContent(responsePayload.wireEncode());
   face.receive(*responseData);
-  this->advanceClocks(time::milliseconds(10));
+  this->advanceClocks(10_ms);
 
   scenario.checkCommandOutcome(this);
 }
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   const Name RIB_UNREGISTER_COMMAND_PREFIX("/localhost/nlsr/rib/unregister");
 
   dest.withdraw(rr, successCallback, failureCallback);
-  this->advanceClocks(time::milliseconds(10));
+  this->advanceClocks(10_ms);
 
   // Retrieve the sent Interest to build the response
   BOOST_REQUIRE_EQUAL(face.sentInterests.size(), 1);
@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(Withdraw, Scenario, WithdrawScenarios)
   responseData->setContent(responsePayload.wireEncode());
 
   face.receive(*responseData);
-  this->advanceClocks(time::milliseconds(1));
+  this->advanceClocks(1_ms);
 
   scenario.checkCommandOutcome(this);
 }
@@ -236,13 +236,13 @@ BOOST_AUTO_TEST_CASE(DestinationAvailability)
   BOOST_CHECK_EQUAL(dest.isAvailable(), false);
 
   rib.insert(commandPrefix, route);
-  this->advanceClocks(time::milliseconds(100));
+  this->advanceClocks(100_ms);
   BOOST_CHECK_EQUAL(dest.isAvailable(), true);
   BOOST_REQUIRE_EQUAL(availabilityChangeHistory.size(), 1);
   BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), true);
 
   rib.erase(commandPrefix, route);
-  this->advanceClocks(time::milliseconds(100));
+  this->advanceClocks(100_ms);
   BOOST_CHECK_EQUAL(dest.isAvailable(), false);
   BOOST_REQUIRE_EQUAL(availabilityChangeHistory.size(), 2);
   BOOST_CHECK_EQUAL(availabilityChangeHistory.back(), false);

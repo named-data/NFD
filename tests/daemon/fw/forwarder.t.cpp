@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   Forwarder forwarder;
 
   shared_ptr<Interest> interestAB = makeInterest("/A/B");
-  interestAB->setInterestLifetime(time::seconds(4));
+  interestAB->setInterestLifetime(4_s);
   shared_ptr<Data> dataABC = makeData("/A/B/C");
 
   auto face1 = make_shared<DummyFace>();
@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
   face1->receiveInterest(*interestAB);
-  this->advanceClocks(time::milliseconds(100), time::seconds(1));
+  this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests[0].getName(), "/A/B");
   BOOST_REQUIRE(face2->sentInterests[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(SimpleExchange)
   BOOST_CHECK_EQUAL(forwarder.getCounters().nInData, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nOutData, 0);
   face2->receiveData(*dataABC);
-  this->advanceClocks(time::milliseconds(100), time::seconds(1));
+  this->advanceClocks(100_ms, 1_s);
   BOOST_REQUIRE_EQUAL(face1->sentData.size(), 1);
   BOOST_CHECK_EQUAL(face1->sentData[0].getName(), "/A/B/C");
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   forwarder.addFace(face3);
 
   shared_ptr<Interest> interestA = makeInterest("/A");
-  interestA->setInterestLifetime(time::seconds(4));
+  interestA->setInterestLifetime(4_s);
   shared_ptr<Data> dataA = makeData("/A");
   dataA->setTag(make_shared<lp::IncomingFaceIdTag>(face3->getId()));
 
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsMisses, 0);
   face1->receiveInterest(*interestA);
-  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
+  this->advanceClocks(1_ms, 5_ms);
   // Interest matching ContentStore should not be forwarded
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 0);
   BOOST_CHECK_EQUAL(forwarder.getCounters().nCsHits, 1);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(CsMatched)
   BOOST_REQUIRE(face1->sentData[0].getTag<lp::IncomingFaceIdTag>() != nullptr);
   BOOST_CHECK_EQUAL(*face1->sentData[0].getTag<lp::IncomingFaceIdTag>(), face::FACEID_CONTENT_STORE);
 
-  this->advanceClocks(time::milliseconds(100), time::milliseconds(500));
+  this->advanceClocks(100_ms, 500_ms);
   // PIT entry should not be left behind
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
   interest->setTag(make_shared<lp::NextHopFaceIdTag>(face2->getId()));
 
   face1->receiveInterest(*interest);
-  this->advanceClocks(time::milliseconds(100), time::seconds(1));
+  this->advanceClocks(100_ms, 1_s);
   BOOST_CHECK_EQUAL(face3->sentInterests.size(), 0);
   BOOST_REQUIRE_EQUAL(face2->sentInterests.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentInterests.front().getName(), "/A/B");
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest2);
   BOOST_CHECK_EQUAL(strategyB.afterReceiveInterest_count, 1);
 
-  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
+  this->advanceClocks(1_ms, 5_ms);
 
   shared_ptr<Data> data1 = makeData("ndn:/A/1/a");
   strategyA.beforeSatisfyInterest_count = 0;
@@ -295,10 +295,10 @@ BOOST_AUTO_TEST_CASE(IncomingInterestStrategyDispatch)
   BOOST_CHECK_EQUAL(strategyB.beforeSatisfyInterest_count, 1);
 
   shared_ptr<Interest> interest3 = makeInterest("ndn:/A/3");
-  interest3->setInterestLifetime(time::milliseconds(30));
+  interest3->setInterestLifetime(30_ms);
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest3);
   shared_ptr<Interest> interest4 = makeInterest("ndn:/B/4");
-  interest4->setInterestLifetime(time::milliseconds(5000));
+  interest4->setInterestLifetime(5_s);
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest4);
 }
 
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE(IncomingData)
 
   shared_ptr<Data> dataD = makeData("ndn:/A/B/C/D");
   forwarder.onIncomingData(FaceEndpoint(*face3, 0), *dataD);
-  this->advanceClocks(time::milliseconds(1), time::milliseconds(5));
+  this->advanceClocks(1_ms, 5_ms);
 
   BOOST_CHECK_EQUAL(face1->sentData.size(), 1);
   BOOST_CHECK_EQUAL(face2->sentData.size(), 1);
@@ -557,12 +557,12 @@ BOOST_AUTO_TEST_CASE(InterestLoopWithShortLifetime) // Bug 1953
   // receive an Interest
   shared_ptr<Interest> interest = makeInterest("ndn:/A/1");
   interest->setNonce(82101183);
-  interest->setInterestLifetime(time::milliseconds(50));
+  interest->setInterestLifetime(50_ms);
   face1->receiveInterest(*interest);
 
   // interest should be forwarded only once, as long as Nonce is in Dead Nonce List
-  BOOST_ASSERT(time::milliseconds(25) * 40 < forwarder.getDeadNonceList().getLifetime());
-  this->advanceClocks(time::milliseconds(25), 40);
+  BOOST_ASSERT(25_ms * 40 < forwarder.getDeadNonceList().getLifetime());
+  this->advanceClocks(25_ms, 40);
 
   BOOST_CHECK_EQUAL(face2->sentInterests.size(), 1);
 
@@ -581,7 +581,7 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
 
   shared_ptr<Interest> interest = makeInterest("ndn:/hcLSAsQ9A");
   interest->setNonce(61883075);
-  interest->setInterestLifetime(time::seconds(2));
+  interest->setInterestLifetime(2_s);
 
   DeadNonceList& dnl = forwarder.getDeadNonceList();
   dnl.add(interest->getName(), interest->getNonce());
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE(PitLeak) // Bug 3484
   BOOST_REQUIRE_EQUAL(pit.size(), 0);
 
   forwarder.startProcessInterest(FaceEndpoint(*face1, 0), *interest);
-  this->advanceClocks(time::milliseconds(100), time::seconds(20));
+  this->advanceClocks(100_ms, 20_s);
   BOOST_CHECK_EQUAL(pit.size(), 0);
 }
 

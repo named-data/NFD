@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -63,7 +63,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, StreamTransportFixtures, T)
       this->limitedIo.afterOp();
     });
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin(), readBuf.begin() + block1.size(), block1.begin(), block1.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(readBuf.begin() + block1.size(), readBuf.end(),   block2.begin(), block2.end());
@@ -189,7 +189,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Close, T, StreamTransportFixtures, T)
     this->limitedIo.afterOp();
   });
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, StreamTransportFixtures, T)
@@ -203,7 +203,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, StreamTransportFixtures, T)
   });
 
   this->remoteSocket.close();
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 
   this->transport->afterStateChange.connectSingleShot([this] (TransportState oldState, TransportState newState) {
     BOOST_CHECK_EQUAL(oldState, TransportState::CLOSING);
@@ -211,7 +211,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, StreamTransportFixtures, T)
     this->limitedIo.afterOp();
   });
 
-  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, time::seconds(1)), LimitedIo::EXCEED_OPS);
+  BOOST_REQUIRE_EQUAL(this->limitedIo.run(1, 1_s), LimitedIo::EXCEED_OPS);
 }
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(SendQueueLength, T, StreamTransportFixtures, T)

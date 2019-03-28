@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -32,10 +32,8 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
 // The tester is unused in this file, but it's used in various templated test suites.
-typedef StrategyTester<BestRouteStrategy> BestRouteStrategyTester;
+using BestRouteStrategyTester = StrategyTester<BestRouteStrategy>;
 NFD_REGISTER_STRATEGY(BestRouteStrategyTester);
 
 } // namespace tests

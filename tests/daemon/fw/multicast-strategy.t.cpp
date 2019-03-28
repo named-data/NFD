@@ -34,9 +34,7 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
-typedef StrategyTester<MulticastStrategy> MulticastStrategyTester;
+using MulticastStrategyTester = StrategyTester<MulticastStrategy>;
 NFD_REGISTER_STRATEGY(MulticastStrategyTester);
 
 class MulticastStrategyFixture : public GlobalIoTimeFixture

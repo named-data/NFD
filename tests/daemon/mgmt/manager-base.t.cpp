@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(RegisterNotificationStream)
 
   const uint8_t buf[] = {0x82, 0x01, 0x02};
   post(Block(buf, sizeof(buf)));
-  advanceClocks(time::milliseconds(1));
+  advanceClocks(1_ms);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
   BOOST_CHECK_EQUAL(m_responses[0].getName(),

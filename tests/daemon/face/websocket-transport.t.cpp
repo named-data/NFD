@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -92,10 +92,10 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(PingPong, T, WebSocketTransportFixtures, T)
 {
-  TRANSPORT_TEST_INIT(time::milliseconds(500), time::milliseconds(300));
+  TRANSPORT_TEST_INIT(500_ms, 300_ms);
 
   BOOST_CHECK_EQUAL(this->limitedIo.run(2, // clientHandlePing, serverHandlePong
-                    time::milliseconds(1500)), LimitedIo::EXCEED_OPS);
+                                        1500_ms), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPings, 1);
@@ -103,7 +103,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PingPong, T, WebSocketTransportFixtures, T)
 
   this->clientShouldPong = false;
   BOOST_CHECK_EQUAL(this->limitedIo.run(2, // clientHandlePing, serverHandlePongTimeout
-                    time::seconds(2)), LimitedIo::EXCEED_OPS);
+                                        2_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_MESSAGE(this->transport->getState() == TransportState::FAILED ||
                       this->transport->getState() == TransportState::CLOSED,
@@ -119,14 +119,14 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(Send, T, WebSocketTransportFixtures, T)
   auto block1 = ndn::encoding::makeStringBlock(300, "hello");
   this->transport->send(Transport::Packet{Block{block1}}); // make a copy of the block
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // clientHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPackets, 1);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutBytes, block1.size());
 
   auto block2 = ndn::encoding::makeStringBlock(301, "world");
   this->transport->send(Transport::Packet{Block{block2}}); // make a copy of the block
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // clientHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutPackets, 2);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nOutBytes, block1.size() + block2.size());
 
@@ -149,12 +149,12 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveNormal, T, WebSocketTransportFixtures, T
   Block pkt1 = ndn::encoding::makeStringBlock(300, "hello");
   this->client.send(this->clientHdl, pkt1.wire(), pkt1.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
 
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world!");
   this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 2);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, pkt1.size() + pkt2.size());
@@ -175,7 +175,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures
   this->client.send(this->clientHdl, pkt1.wire(), pkt1.size() - 1, // truncated
                     websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
 
   // bad packet is dropped
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
@@ -184,7 +184,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMalformed, T, WebSocketTransportFixtures
   Block pkt2 = ndn::encoding::makeStringBlock(301, "world!");
   this->client.send(this->clientHdl, pkt2.wire(), pkt2.size(), websocketpp::frame::opcode::binary);
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleMessage
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
 
   // next valid packet is still received normally
   BOOST_CHECK_EQUAL(this->transport->getState(), TransportState::UP);
@@ -242,7 +242,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(RemoteClose, T, WebSocketTransportFixtures, T)
 
   this->client.close(this->clientHdl, websocketpp::close::status::going_away, "");
   BOOST_CHECK_EQUAL(this->limitedIo.run(1, // serverHandleClose
-                    time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                        1_s), LimitedIo::EXCEED_OPS);
 
   BOOST_CHECK_EQUAL(nStateChanges, 2);
 }

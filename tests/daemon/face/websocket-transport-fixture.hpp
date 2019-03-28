@@ -56,7 +56,7 @@ protected:
    */
   void
   serverListen(const ip::tcp::endpoint& ep,
-               const time::milliseconds& pongTimeout = time::seconds(1))
+               const time::milliseconds& pongTimeout = 1_s)
   {
     server.clear_access_channels(websocketpp::log::alevel::all);
     server.clear_error_channels(websocketpp::log::elevel::all);
@@ -99,15 +99,15 @@ protected:
    */
   void
   initialize(ip::address address,
-             time::milliseconds pingInterval = time::seconds(10),
-             time::milliseconds pongTimeout = time::seconds(1))
+             time::milliseconds pingInterval = 10_s,
+             time::milliseconds pongTimeout = 1_s)
   {
     ip::tcp::endpoint ep(address, 20070);
     serverListen(ep, pongTimeout);
     clientConnect(FaceUri(ep, "ws").toString());
 
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, // serverHandleOpen, clientHandleOpen
-                        time::seconds(1)), LimitedIo::EXCEED_OPS);
+                                      1_s), LimitedIo::EXCEED_OPS);
 
     face = make_unique<Face>(
              make_unique<DummyReceiveLinkService>(),

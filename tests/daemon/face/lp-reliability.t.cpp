@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
 
   // T+500ms
   // 1024 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
-  advanceClocks(time::milliseconds(1), 500);
+  advanceClocks(1_ms, 500);
   linkService->sendLpPackets({pkt2});
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 2);
 
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   // T+1250ms
   // 1024 rto: 1000ms, txSeq: 4, started T+1000ms, retx 1
   // 3000 rto: 1000ms, txSeq: 3, started T+500ms, retx 0
-  advanceClocks(time::milliseconds(1), 750);
+  advanceClocks(1_ms, 750);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 2);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(firstTxSeq), 0);
@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   // T+2250ms
   // 1024 rto: 1000ms, txSeq: 6, started T+2000ms, retx 2
   // 3000 rto: 1000ms, txSeq: 5, started T+1500ms, retx 1
-  advanceClocks(time::milliseconds(1), 1000);
+  advanceClocks(1_ms, 1000);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 2);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(firstTxSeq + 1), 0);
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   // T+3250ms
   // 1024 rto: 1000ms, txSeq: 8, started T+3000ms, retx 3
   // 3000 rto: 1000ms, txSeq: 7, started T+2500ms, retx 2
-  advanceClocks(time::milliseconds(1), 1000);
+  advanceClocks(1_ms, 1000);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 2);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(firstTxSeq + 3), 0);
@@ -277,7 +277,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   // T+4250ms
   // 1024 rto: expired, removed
   // 3000 rto: 1000ms, txSeq: 9, started T+3500ms, retx 3
-  advanceClocks(time::milliseconds(1), 1000);
+  advanceClocks(1_ms, 1000);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 1);
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(firstTxSeq + 5), 0);
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(SendUnfragmentedRetx)
   // T+4750ms
   // 1024 rto: expired, removed
   // 3000 rto: expired, removed
-  advanceClocks(time::milliseconds(1), 1000);
+  advanceClocks(1_ms, 1000);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
   // 2049 rto: 1000ms, txSeq: 5, started T+250ms, retx 1
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
-  advanceClocks(time::milliseconds(1), 250);
+  advanceClocks(1_ms, 250);
   reliability->onLpPacketLost(3);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(2), 1);
@@ -401,7 +401,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
   // 2049 rto: 1000ms, txSeq: 6, started T+500ms, retx 2
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
-  advanceClocks(time::milliseconds(1), 250);
+  advanceClocks(1_ms, 250);
   reliability->onLpPacketLost(5);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.count(2), 1);
@@ -435,7 +435,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2048 rto: 1000ms, txSeq: 2, started T+0ms, retx 0
   // 2049 rto: 1000ms, txSeq: 7, started T+750ms, retx 3
   // 2050 rto: 1000ms, txSeq: 4, started T+0ms, retx 0
-  advanceClocks(time::milliseconds(1), 250);
+  advanceClocks(1_ms, 250);
   reliability->onLpPacketLost(6);
 
   BOOST_REQUIRE_EQUAL(reliability->m_unackedFrags.count(2), 1);
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(SendFragmentedRetx)
   // 2048 rto: expired, removed
   // 2049 rto: expired, removed
   // 2050 rto: expired, removed
-  advanceClocks(time::milliseconds(1), 100);
+  advanceClocks(1_ms, 100);
   reliability->onLpPacketLost(7);
 
   BOOST_CHECK_EQUAL(reliability->m_unackedFrags.size(), 0);
@@ -698,13 +698,13 @@ BOOST_AUTO_TEST_CASE(CancelLossNotificationOnAck)
 
   linkService->sendLpPackets({makeFrag(1, 50)});
 
-  advanceClocks(time::milliseconds(1), 500);
+  advanceClocks(1_ms, 500);
 
   lp::Packet ackPkt;
   ackPkt.add<lp::AckField>(1);
   reliability->processIncomingPacket(ackPkt);
 
-  advanceClocks(time::milliseconds(1), 1000);
+  advanceClocks(1_ms, 1000);
 
   BOOST_CHECK_EQUAL(linkService->getCounters().nAcknowledged, 1);
   BOOST_CHECK_EQUAL(linkService->getCounters().nRetransmitted, 0);
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(ProcessIncomingPacket)
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.back(), 234567);
 
   // T+5ms
-  advanceClocks(time::milliseconds(1), 5);
+  advanceClocks(1_ms, 5);
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
 }
 
@@ -827,7 +827,7 @@ BOOST_AUTO_TEST_CASE(StartIdleAckTimer)
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+1ms
-  advanceClocks(time::milliseconds(1), 1);
+  advanceClocks(1_ms, 1);
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   lp::Packet pkt2 = makeFrag(2, 100);
@@ -836,7 +836,7 @@ BOOST_AUTO_TEST_CASE(StartIdleAckTimer)
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+5ms
-  advanceClocks(time::milliseconds(1), 4);
+  advanceClocks(1_ms, 4);
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
 
   lp::Packet pkt3 = makeFrag(3, 100);
@@ -845,11 +845,11 @@ BOOST_AUTO_TEST_CASE(StartIdleAckTimer)
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+9ms
-  advanceClocks(time::milliseconds(1), 4);
+  advanceClocks(1_ms, 4);
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+10ms
-  advanceClocks(time::milliseconds(1), 1);
+  advanceClocks(1_ms, 1);
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
 }
 
@@ -866,7 +866,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimer)
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+4ms: idle ack timer has not yet expired, no IDLE packet generated
-  advanceClocks(time::milliseconds(1), 4);
+  advanceClocks(1_ms, 4);
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 500);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 1000);
@@ -874,7 +874,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimer)
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
 
   // T+5ms: idle ack timer expires, IDLE packet generated
-  advanceClocks(time::milliseconds(1), 1);
+  advanceClocks(1_ms, 1);
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
   BOOST_REQUIRE_EQUAL(transport->sentPackets.size(), 1);
@@ -902,7 +902,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
 
   // T+4ms: idle ack timer has not yet expired, no IDLE packet generated
-  advanceClocks(time::milliseconds(1), 4);
+  advanceClocks(1_ms, 4);
   BOOST_CHECK(reliability->m_isIdleAckTimerRunning);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 500);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.front(), 1000);
@@ -910,7 +910,7 @@ BOOST_AUTO_TEST_CASE(IdleAckTimerMtu)
   BOOST_CHECK_EQUAL(transport->sentPackets.size(), 0);
 
   // T+5ms: idle ack timer expires, IDLE packets generated
-  advanceClocks(time::milliseconds(1), 1);
+  advanceClocks(1_ms, 1);
   BOOST_CHECK(!reliability->m_isIdleAckTimerRunning);
   BOOST_CHECK_EQUAL(reliability->m_ackQueue.size(), 0);
 

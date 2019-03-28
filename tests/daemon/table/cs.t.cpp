@@ -272,28 +272,28 @@ BOOST_AUTO_TEST_CASE(MaxSuffixComponents)
 BOOST_AUTO_TEST_CASE(MustBeFresh)
 {
   insert(1, "/A/1"); // omitted FreshnessPeriod means FreshnessPeriod = 0 ms
-  insert(2, "/A/2", [] (Data& data) { data.setFreshnessPeriod(time::seconds(0)); });
-  insert(3, "/A/3", [] (Data& data) { data.setFreshnessPeriod(time::seconds(1)); });
-  insert(4, "/A/4", [] (Data& data) { data.setFreshnessPeriod(time::seconds(3600)); });
+  insert(2, "/A/2", [] (Data& data) { data.setFreshnessPeriod(0_s); });
+  insert(3, "/A/3", [] (Data& data) { data.setFreshnessPeriod(1_s); });
+  insert(4, "/A/4", [] (Data& data) { data.setFreshnessPeriod(1_h); });
 
   // lookup at exact same moment as insertion is not tested because this won't happen in reality
 
-  this->advanceClocks(time::milliseconds(500)); // @500ms
+  this->advanceClocks(500_ms); // @500ms
   startInterest("/A")
     .setMustBeFresh(true);
   CHECK_CS_FIND(3);
 
-  this->advanceClocks(time::milliseconds(1500)); // @2s
+  this->advanceClocks(1500_ms); // @2s
   startInterest("/A")
     .setMustBeFresh(true);
   CHECK_CS_FIND(4);
 
-  this->advanceClocks(time::seconds(3500)); // @3502s
+  this->advanceClocks(3500_s); // @3502s
   startInterest("/A")
     .setMustBeFresh(true);
   CHECK_CS_FIND(4);
 
-  this->advanceClocks(time::seconds(3500)); // @7002s
+  this->advanceClocks(3500_s); // @7002s
   startInterest("/A")
     .setMustBeFresh(true);
   CHECK_CS_FIND(0);

@@ -45,6 +45,7 @@ namespace face {
 namespace tests {
 
 namespace mpl = boost::mpl;
+using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestTransport)
@@ -211,7 +212,7 @@ BOOST_AUTO_TEST_CASE(NoExpirationTime)
   BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
 }
 
-class DummyTransportFixture : public nfd::tests::GlobalIoFixture
+class DummyTransportFixture : public GlobalIoFixture
 {
 protected:
   DummyTransportFixture()

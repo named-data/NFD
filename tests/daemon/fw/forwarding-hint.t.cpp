@@ -77,12 +77,12 @@ public:
     topo.getForwarder(nodeS).getNetworkRegionTable().insert("/ucla/cs/spurs");
     // NetworkRegionTable configuration is unnecessary on end hosts
 
-    linkAH = topo.addLink("AH", time::milliseconds(10), {nodeA, nodeH});
-    linkHT = topo.addLink("HT", time::milliseconds(10), {nodeH, nodeT});
-    linkTP = topo.addLink("TP", time::milliseconds(10), {nodeT, nodeP});
-    linkHC = topo.addLink("HC", time::milliseconds(10), {nodeH, nodeC});
-    linkCS = topo.addLink("CS", time::milliseconds(10), {nodeC, nodeS});
-    linkSQ = topo.addLink("SQ", time::milliseconds(10), {nodeS, nodeQ});
+    linkAH = topo.addLink("AH", 10_ms, {nodeA, nodeH});
+    linkHT = topo.addLink("HT", 10_ms, {nodeH, nodeT});
+    linkTP = topo.addLink("TP", 10_ms, {nodeT, nodeP});
+    linkHC = topo.addLink("HC", 10_ms, {nodeH, nodeC});
+    linkCS = topo.addLink("CS", 10_ms, {nodeC, nodeS});
+    linkSQ = topo.addLink("SQ", 10_ms, {nodeS, nodeQ});
     consumerA = topo.addAppFace("avenir", nodeA);
     producerP = topo.addAppFace("ndnsimP", nodeP, "/net/ndnsim");
     producerQ = topo.addAppFace("ndnsimQ", nodeQ, "/net/ndnsim");
@@ -123,7 +123,7 @@ BOOST_FIXTURE_TEST_SUITE(NdnsimTeliaUclaTopology, NdnsimTeliaUclaTopologyFixture
 BOOST_AUTO_TEST_CASE(FetchTelia)
 {
   this->consumerExpressInterest(1);
-  this->advanceClocks(time::milliseconds(11), 20);
+  this->advanceClocks(11_ms, 20);
 
   // A forwards Interest according to default route, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkAH->getFace(nodeA).getCounters().nOutInterests, 1);
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(FetchUcla)
   topo.getForwarder(nodeH).getFib().erase("/telia");
 
   this->consumerExpressInterest(1);
-  this->advanceClocks(time::milliseconds(11), 20);
+  this->advanceClocks(11_ms, 20);
 
   // A forwards Interest according to default route, no change to forwarding hint
   BOOST_CHECK_EQUAL(linkAH->getFace(nodeA).getCounters().nOutInterests, 1);

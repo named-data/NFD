@@ -86,7 +86,7 @@ protected:
       limitedIo.afterOp();
     });
 
-    BOOST_REQUIRE_EQUAL(limitedIo.run(2, time::seconds(1)), LimitedIo::EXCEED_OPS);
+    BOOST_REQUIRE_EQUAL(limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
     localEp = sock.local_endpoint();
 
@@ -115,7 +115,7 @@ protected:
           BOOST_REQUIRE_EQUAL(error, boost::system::errc::success);
         }
       });
-    limitedIo.defer(time::seconds(1));
+    limitedIo.defer(1_s);
   }
 
 protected:

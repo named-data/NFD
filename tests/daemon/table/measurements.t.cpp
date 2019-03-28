@@ -208,11 +208,11 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   Entry& entryC = measurements.get(nameC);
   BOOST_CHECK_EQUAL(measurements.size(), 3);
 
-  const time::nanoseconds EXTEND_A = time::seconds(2);
-  const time::nanoseconds CHECK1 = time::seconds(3);
-  const time::nanoseconds CHECK2 = time::seconds(5);
-  const time::nanoseconds EXTEND_C = time::seconds(6);
-  const time::nanoseconds CHECK3 = time::seconds(7);
+  const time::nanoseconds EXTEND_A = 2_s;
+  const time::nanoseconds CHECK1 = 3_s;
+  const time::nanoseconds CHECK2 = 5_s;
+  const time::nanoseconds EXTEND_C = 6_s;
+  const time::nanoseconds CHECK3 = 7_s;
   BOOST_ASSERT(EXTEND_A < CHECK1);
   BOOST_ASSERT(CHECK1 < Measurements::getInitialLifetime());
   BOOST_ASSERT(Measurements::getInitialLifetime() < CHECK2);
@@ -226,19 +226,19 @@ BOOST_AUTO_TEST_CASE(Lifetime)
   //   B = initial lifetime
   //   C = EXTEND_C
 
-  this->advanceClocks(time::milliseconds(100), CHECK1);
+  this->advanceClocks(100_ms, CHECK1);
   BOOST_CHECK(measurements.findExactMatch(nameA) != nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameB) != nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameC) != nullptr);
   BOOST_CHECK_EQUAL(measurements.size(), 3);
 
-  this->advanceClocks(time::milliseconds(100), CHECK2 - CHECK1);
+  this->advanceClocks(100_ms, CHECK2 - CHECK1);
   BOOST_CHECK(measurements.findExactMatch(nameA) == nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameB) == nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameC) != nullptr);
   BOOST_CHECK_EQUAL(measurements.size(), 1);
 
-  this->advanceClocks(time::milliseconds(100), CHECK3 - CHECK2);
+  this->advanceClocks(100_ms, CHECK3 - CHECK2);
   BOOST_CHECK(measurements.findExactMatch(nameA) == nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameB) == nullptr);
   BOOST_CHECK(measurements.findExactMatch(nameC) == nullptr);
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(EraseNameTreeEntry)
   measurements.get("/A");
   BOOST_CHECK_EQUAL(measurements.size(), 1);
 
-  this->advanceClocks(Measurements::getInitialLifetime() + time::milliseconds(10));
+  this->advanceClocks(Measurements::getInitialLifetime() + 10_ms);
   BOOST_CHECK_EQUAL(measurements.size(), 0);
   BOOST_CHECK_EQUAL(nameTree.size(), nNameTreeEntriesBefore);
 }

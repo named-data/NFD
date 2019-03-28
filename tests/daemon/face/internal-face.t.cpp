@@ -83,19 +83,19 @@ BOOST_AUTO_TEST_CASE(TransportStaticProperties)
 BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 {
   shared_ptr<Interest> interest = makeInterest("/TLETccRv");
-  interest->setInterestLifetime(time::milliseconds(100));
+  interest->setInterestLifetime(100_ms);
 
   bool hasTimeout = false;
   clientFace->expressInterest(*interest,
     bind([] { BOOST_ERROR("unexpected Data"); }),
     bind([] { BOOST_ERROR("unexpected Nack"); }),
     bind([&hasTimeout] { hasTimeout = true; }));
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/TLETccRv");
 
-  this->advanceClocks(time::milliseconds(1), 100);
+  this->advanceClocks(1_ms, 100);
 
   BOOST_CHECK(hasTimeout);
 }
@@ -112,14 +112,14 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
     },
     bind([] { BOOST_ERROR("unexpected Nack"); }),
     bind([] { BOOST_ERROR("unexpected timeout"); }));
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/PQstEJGdL");
 
   shared_ptr<Data> data = makeData("/PQstEJGdL/aI7oCrDXNX");
   forwarderFace->sendData(*data);
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedData);
 }
@@ -136,14 +136,14 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
       BOOST_CHECK_EQUAL(nack.getReason(), lp::NackReason::NO_ROUTE);
     },
     bind([] { BOOST_ERROR("unexpected timeout"); }));
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/1HrsRM1X");
 
   lp::Nack nack = makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE);
   forwarderFace->sendNack(nack);
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedNack);
 }
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
 
   shared_ptr<Interest> interest = makeInterest("/Wpc8TnEeoF/f6SzV8hD");
   forwarderFace->sendInterest(*interest);
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
   BOOST_REQUIRE_EQUAL(receivedData.size(), 1);
@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
 
   shared_ptr<Interest> interest = makeInterest("/4YgJKWcXN/5oaTe05o", 191);
   forwarderFace->sendInterest(*interest);
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
   BOOST_REQUIRE_EQUAL(receivedNacks.size(), 1);
@@ -193,19 +193,19 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
 BOOST_AUTO_TEST_CASE(CloseForwarderFace)
 {
   forwarderFace->close();
-  this->advanceClocks(time::milliseconds(1), 10);
+  this->advanceClocks(1_ms, 10);
   BOOST_CHECK_EQUAL(forwarderFace->getState(), FaceState::CLOSED);
   forwarderFace.reset();
 
   shared_ptr<Interest> interest = makeInterest("/zpHsVesu0B");
-  interest->setInterestLifetime(time::milliseconds(100));
+  interest->setInterestLifetime(100_ms);
 
   bool hasTimeout = false;
   clientFace->expressInterest(*interest,
     bind([] { BOOST_ERROR("unexpected Data"); }),
     bind([] { BOOST_ERROR("unexpected Nack"); }),
     bind([&hasTimeout] { hasTimeout = true; }));
-  BOOST_CHECK_NO_THROW(this->advanceClocks(time::milliseconds(1), 200));
+  BOOST_CHECK_NO_THROW(this->advanceClocks(1_ms, 200));
 
   BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
   BOOST_CHECK(hasTimeout);
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(CloseClientFace)
 
   shared_ptr<Interest> interest = makeInterest("/aau42XQqb");
   forwarderFace->sendInterest(*interest);
-  BOOST_CHECK_NO_THROW(this->advanceClocks(time::milliseconds(1), 10));
+  BOOST_CHECK_NO_THROW(this->advanceClocks(1_ms, 10));
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestInternalFace

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -98,7 +98,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(ReceiveMultipleRemoteEndpoints, T, MulticastUdp
 
   this->sendToGroup(remoteSockTx2, buf1);
   this->sendToGroup(remoteSockTx2, buf2);
-  this->limitedIo.defer(time::seconds(1));
+  this->limitedIo.defer(1_s);
 
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInPackets, 4);
   BOOST_CHECK_EQUAL(this->transport->getCounters().nInBytes, 2 * buf1.size() + 2 * buf2.size());

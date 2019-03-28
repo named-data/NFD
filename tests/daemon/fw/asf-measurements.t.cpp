@@ -50,7 +50,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoFixture)
   BOOST_CHECK_EQUAL(stats.getSrtt(), RttStats::RTT_NO_MEASUREMENT);
 
   // Receive Data back in 50ms
-  RttEstimator::Duration rtt(time::milliseconds(50));
+  RttEstimator::Duration rtt(50_ms);
   stats.addRttMeasurement(rtt);
 
   BOOST_CHECK_EQUAL(stats.getRtt(), rtt);
@@ -63,7 +63,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoFixture)
   BOOST_CHECK_EQUAL(stats.getSrtt(), rtt);
 
   // Receive Data back with a higher RTT
-  RttEstimator::Duration higherRtt(time::milliseconds(100));
+  RttEstimator::Duration higherRtt(100_ms);
   stats.addRttMeasurement(higherRtt);
 
   BOOST_CHECK_EQUAL(stats.getRtt(), higherRtt);
@@ -105,7 +105,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, GlobalIoTimeFixture)
   pitEntry->insertOrUpdateOutRecord(*face, 0, *interest);
 
   RttEstimator::Duration rtt(50);
-  this->advanceClocks(time::milliseconds(5), rtt);
+  this->advanceClocks(5_ms, rtt);
 
   info.recordRtt(pitEntry, *face);
   info.cancelTimeoutEvent(interestName);

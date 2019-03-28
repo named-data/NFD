@@ -56,8 +56,8 @@ BOOST_AUTO_TEST_CASE(InProducerRegion)
   BOOST_CHECK_EQUAL(nrt4.isInProducerRegion(fh), true);
 }
 
-BOOST_AUTO_TEST_SUITE_END()
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestNetworkRegionTable
+BOOST_AUTO_TEST_SUITE_END() // Table
 
 } // namespace tests
 } // namespace nfd

@@ -35,7 +35,7 @@ namespace rib {
 NFD_LOG_INIT(Readvertise);
 
 const time::milliseconds Readvertise::RETRY_DELAY_MIN = 50_s;
-const time::milliseconds Readvertise::RETRY_DELAY_MAX = 3600_s;
+const time::milliseconds Readvertise::RETRY_DELAY_MAX = 1_h;
 
 static time::milliseconds
 randomizeTimer(time::milliseconds baseTimer)

@@ -34,9 +34,7 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
-typedef StrategyTester<BestRouteStrategy2> BestRouteStrategy2Tester;
+using BestRouteStrategy2Tester = StrategyTester<BestRouteStrategy2>;
 NFD_REGISTER_STRATEGY(BestRouteStrategy2Tester);
 
 BOOST_AUTO_TEST_SUITE(Fw)

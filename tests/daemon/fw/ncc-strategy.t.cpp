@@ -33,9 +33,7 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using namespace nfd::tests;
-
-typedef StrategyTester<NccStrategy> NccStrategyTester;
+using NccStrategyTester = StrategyTester<NccStrategy>;
 NFD_REGISTER_STRATEGY(NccStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
@@ -69,7 +67,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   // first Interest: strategy knows nothing and follows routing
   shared_ptr<Interest> interest1p = makeInterest("ndn:/0Jm1ajrW/%00");
   Interest& interest1 = *interest1p;
-  interest1.setInterestLifetime(time::milliseconds(8000));
+  interest1.setInterestLifetime(8_s);
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(*face3, 0, interest1);
@@ -81,7 +79,7 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face1->getId());
 
   // forwards to face2 because face1 doesn't respond
-  limitedIo.run(1, time::milliseconds(500), time::milliseconds(10));
+  limitedIo.run(1, 500_ms, 10_ms);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 2);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[1].outFaceId, face2->getId());
 
@@ -89,19 +87,19 @@ BOOST_AUTO_TEST_CASE(FavorRespondingUpstream)
   shared_ptr<Data> data1p = makeData("ndn:/0Jm1ajrW/%00");
   Data& data1 = *data1p;
   strategy.beforeSatisfyInterest(pitEntry1, FaceEndpoint(*face2, 0), data1);
-  this->advanceClocks(time::milliseconds(10), time::milliseconds(500));
+  this->advanceClocks(10_ms, 500_ms);
 
   // second Interest: strategy knows face2 is best
   shared_ptr<Interest> interest2p = makeInterest("ndn:/0Jm1ajrW/%00%01");
   Interest& interest2 = *interest2p;
-  interest2.setInterestLifetime(time::milliseconds(8000));
+  interest2.setInterestLifetime(8_s);
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(*face3, 0, interest2);
   strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), interest2, pitEntry2);
 
   // forwards to face2 because it responds previously
-  this->advanceClocks(time::milliseconds(1));
+  this->advanceClocks(1_ms);
   BOOST_REQUIRE_GE(strategy.sendInterestHistory.size(), 3);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[2].outFaceId, face2->getId());
 }
@@ -126,25 +124,25 @@ BOOST_AUTO_TEST_CASE(Bug1853)
 
   // first Interest: strategy follows routing and forwards to face1
   shared_ptr<Interest> interest1 = makeInterest("ndn:/nztwIvHX/%00");
-  interest1->setInterestLifetime(time::milliseconds(8000));
+  interest1->setInterestLifetime(8_s);
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(*face3, 0, *interest1);
   strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest1, pitEntry1);
 
-  this->advanceClocks(time::milliseconds(1));
+  this->advanceClocks(1_ms);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face1->getId());
 
   // face1 responds
   shared_ptr<Data> data1 = makeData("ndn:/nztwIvHX/%00");
   strategy.beforeSatisfyInterest(pitEntry1, FaceEndpoint(*face1, 0), *data1);
-  this->advanceClocks(time::milliseconds(10), time::milliseconds(500));
+  this->advanceClocks(10_ms, 500_ms);
 
   // second Interest: bestFace is face1, nUpstreams becomes 0,
   // therefore pitEntryInfo->maxInterval cannot be calculated from deferRange and nUpstreams
   shared_ptr<Interest> interest2 = makeInterest("ndn:/nztwIvHX/%01");
-  interest2->setInterestLifetime(time::milliseconds(8000));
+  interest2->setInterestLifetime(8_s);
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(*face3, 0, *interest2);
@@ -152,7 +150,7 @@ BOOST_AUTO_TEST_CASE(Bug1853)
 
   // FIB entry is changed before doPropagate executes
   fibEntry.addOrUpdateNextHop(*face2, 0, 20);
-  this->advanceClocks(time::milliseconds(10), time::milliseconds(1000));// should not crash
+  this->advanceClocks(10_ms, 1_s);// should not crash
 }
 
 BOOST_AUTO_TEST_CASE(Bug1961)
@@ -178,13 +176,12 @@ BOOST_AUTO_TEST_CASE(Bug1961)
 
   // first Interest: strategy forwards to face1 and face2
   shared_ptr<Interest> interest1 = makeInterest("ndn:/seRMz5a6/%00");
-  interest1->setInterestLifetime(time::milliseconds(2000));
+  interest1->setInterestLifetime(2_s);
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(*face3, 0, *interest1);
   strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest1, pitEntry1);
-  limitedIo.run(2 - strategy.sendInterestHistory.size(),
-                time::milliseconds(2000), time::milliseconds(10));
+  limitedIo.run(2 - strategy.sendInterestHistory.size(), 2_s, 10_ms);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 2);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face1->getId());
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[1].outFaceId, face2->getId());
@@ -193,20 +190,19 @@ BOOST_AUTO_TEST_CASE(Bug1961)
   shared_ptr<Data> data1 = makeData("ndn:/seRMz5a6/%00");
   strategy.beforeSatisfyInterest(pitEntry1, FaceEndpoint(*face1, 0), *data1);
   pitEntry1->clearInRecords();
-  this->advanceClocks(time::milliseconds(10));
+  this->advanceClocks(10_ms);
   // face2 also responds
   strategy.beforeSatisfyInterest(pitEntry1, FaceEndpoint(*face2, 0), *data1);
-  this->advanceClocks(time::milliseconds(10));
+  this->advanceClocks(10_ms);
 
   // second Interest: bestFace should be face 1
   shared_ptr<Interest> interest2 = makeInterest("ndn:/seRMz5a6/%01");
-  interest2->setInterestLifetime(time::milliseconds(2000));
+  interest2->setInterestLifetime(2_s);
   shared_ptr<pit::Entry> pitEntry2 = pit.insert(*interest2).first;
 
   pitEntry2->insertOrUpdateInRecord(*face3, 0, *interest2);
   strategy.afterReceiveInterest(FaceEndpoint(*face3, 0), *interest2, pitEntry2);
-  limitedIo.run(3 - strategy.sendInterestHistory.size(),
-                time::milliseconds(2000), time::milliseconds(10));
+  limitedIo.run(3 - strategy.sendInterestHistory.size(), 2_s, 10_ms);
 
   BOOST_REQUIRE_GE(strategy.sendInterestHistory.size(), 3);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[2].outFaceId, face1->getId());
@@ -232,29 +228,27 @@ BOOST_AUTO_TEST_CASE(Bug1971)
 
   // first Interest: strategy forwards to face2
   shared_ptr<Interest> interest1 = makeInterest("ndn:/M4mBXCsd");
-  interest1->setInterestLifetime(time::milliseconds(2000));
+  interest1->setInterestLifetime(2_s);
   shared_ptr<pit::Entry> pitEntry1 = pit.insert(*interest1).first;
 
   pitEntry1->insertOrUpdateInRecord(*face1, 0, *interest1);
   strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest1, pitEntry1);
-  limitedIo.run(1 - strategy.sendInterestHistory.size(),
-                time::milliseconds(2000), time::milliseconds(10));
+  limitedIo.run(1 - strategy.sendInterestHistory.size(), 2_s, 10_ms);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 1);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[0].outFaceId, face2->getId());
 
   // face2 responds
   shared_ptr<Data> data1 = makeData("ndn:/M4mBXCsd");
-  data1->setFreshnessPeriod(time::milliseconds(5));
+  data1->setFreshnessPeriod(5_ms);
   strategy.beforeSatisfyInterest(pitEntry1, FaceEndpoint(*face2, 0), *data1);
   pitEntry1->deleteOutRecord(*face2, 0);
   pitEntry1->clearInRecords();
-  this->advanceClocks(time::milliseconds(10));
+  this->advanceClocks(10_ms);
 
   // similar Interest: strategy should still forward it
   pitEntry1->insertOrUpdateInRecord(*face1, 0, *interest1);
   strategy.afterReceiveInterest(FaceEndpoint(*face1, 0), *interest1, pitEntry1);
-  limitedIo.run(2 - strategy.sendInterestHistory.size(),
-                time::milliseconds(2000), time::milliseconds(10));
+  limitedIo.run(2 - strategy.sendInterestHistory.size(), 2_s, 10_ms);
   BOOST_REQUIRE_EQUAL(strategy.sendInterestHistory.size(), 2);
   BOOST_CHECK_EQUAL(strategy.sendInterestHistory[1].outFaceId, face2->getId());
 }
@@ -323,10 +317,10 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
     topo.setStrategy<NccStrategy>(node);
   }
 
-  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", time::milliseconds( 5), {nodeA, nodeB}),
-                           linkAC = topo.addLink("AC", time::milliseconds( 5), {nodeA, nodeC}),
-                           linkBD = topo.addLink("BD", time::milliseconds(15), {nodeB, nodeD}),
-                           linkCD = topo.addLink("CD", time::milliseconds(15), {nodeC, nodeD});
+  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", 5_ms, {nodeA, nodeB}),
+                           linkAC = topo.addLink("AC", 5_ms, {nodeA, nodeC}),
+                           linkBD = topo.addLink("BD", 15_ms, {nodeB, nodeD}),
+                           linkCD = topo.addLink("CD", 15_ms, {nodeC, nodeD});
 
   topo.registerPrefix(nodeA, linkAB->getFace(nodeA), "ndn:/P");
   topo.registerPrefix(nodeA, linkAC->getFace(nodeA), "ndn:/P");
@@ -338,7 +332,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
 
   shared_ptr<TopologyAppLink> consumer = topo.addAppFace("consumer", nodeA);
   topo.addIntervalConsumer(consumer->getClientFace(), "ndn:/P",
-                           time::milliseconds(100), 300);
+                           100_ms, 300);
 
   auto getMeInfo = [&] () -> NccStrategy::MeasurementsEntryInfo* {
     Measurements& measurements = topo.getForwarder(nodeA).getMeasurements();
@@ -353,7 +347,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
   bool isLastPredictionUnder = true;
   int nPredictionCrossings = 0;
   for (int i = 0; i < 10000; ++i) {
-    this->advanceClocks(time::milliseconds(5));
+    this->advanceClocks(5_ms);
     auto meInfo = getMeInfo();
     if (meInfo == nullptr) {
       continue;
@@ -369,7 +363,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
       }
     }
   }
-  BOOST_REQUIRE_MESSAGE(isExplorationFinished, "exploration does not finish in 50000ms");
+  BOOST_REQUIRE_MESSAGE(isExplorationFinished, "exploration did not finish within 50s");
 
   // NccStrategy has selected one path as the best.
   // When we reduce the RTT of the other path, ideally it should be selected as the best face.
@@ -377,10 +371,10 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
   // See https://redmine.named-data.net/issues/3411#note-4
   shared_ptr<Face> bestFace1 = getMeInfo()->bestFace.lock();
   if (bestFace1.get() == &linkAB->getFace(nodeA)) {
-    linkCD->setDelay(time::milliseconds(5));
+    linkCD->setDelay(5_ms);
   }
   else if (bestFace1.get() == &linkAC->getFace(nodeA)) {
-    linkBD->setDelay(time::milliseconds(5));
+    linkBD->setDelay(5_ms);
   }
   else {
     BOOST_FAIL("unexpected best face");
@@ -388,7 +382,7 @@ BOOST_AUTO_TEST_CASE(PredictionAdjustment) // Bug 3411
 
   bool isNewBestChosen = false;
   for (int i = 0; i < 10000; ++i) {
-    this->advanceClocks(time::milliseconds(5));
+    this->advanceClocks(5_ms);
     auto meInfo = getMeInfo();
     if (meInfo == nullptr) {
       continue;

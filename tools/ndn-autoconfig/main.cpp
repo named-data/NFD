@@ -49,11 +49,11 @@ namespace ndn {
 namespace tools {
 namespace autoconfig {
 
-static const time::nanoseconds DAEMON_INITIAL_DELAY = 100_ms;
-static const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = 1_h;
-static const time::nanoseconds NETMON_DAMPEN_PERIOD = 5_s;
-
 namespace po = boost::program_options;
+
+const time::nanoseconds DAEMON_INITIAL_DELAY = 100_ms;
+const time::nanoseconds DAEMON_UNCONDITIONAL_INTERVAL = 1_h;
+const time::nanoseconds NETMON_DAMPEN_PERIOD = 5_s;
 
 static void
 usage(std::ostream& os,

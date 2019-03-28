@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE(CanMatch)
   BOOST_CHECK_EQUAL(entry.canMatch(*interest2), true);
 
   shared_ptr<Interest> interest3 = makeInterest("/A");
-  interest3->setInterestLifetime(time::milliseconds(6210));
+  interest3->setInterestLifetime(6210_ms);
   BOOST_CHECK_EQUAL(entry.canMatch(*interest3), true);
 
   shared_ptr<Interest> interest4 = makeInterest("/A");
@@ -71,16 +71,16 @@ BOOST_AUTO_TEST_CASE(InOutRecords)
   Name name("ndn:/KuYfjtRq");
   shared_ptr<Interest> interest  = makeInterest(name);
   shared_ptr<Interest> interest1 = makeInterest(name);
-  interest1->setInterestLifetime(time::milliseconds(2528));
+  interest1->setInterestLifetime(2528_ms);
   interest1->setNonce(25559);
   shared_ptr<Interest> interest2 = makeInterest(name);
-  interest2->setInterestLifetime(time::milliseconds(6464));
+  interest2->setInterestLifetime(6464_ms);
   interest2->setNonce(19004);
   shared_ptr<Interest> interest3 = makeInterest(name);
-  interest3->setInterestLifetime(time::milliseconds(3585));
+  interest3->setInterestLifetime(3585_ms);
   interest3->setNonce(24216);
   shared_ptr<Interest> interest4 = makeInterest(name);
-  interest4->setInterestLifetime(time::milliseconds(8795));
+  interest4->setInterestLifetime(8795_ms);
   interest4->setNonce(17365);
 
   Entry entry(*interest);

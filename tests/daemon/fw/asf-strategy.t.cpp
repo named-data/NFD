@@ -36,7 +36,7 @@ namespace tests {
 using namespace nfd::fw::tests;
 
 // The tester is unused in this file, but it's used in various templated test suites.
-typedef StrategyTester<AsfStrategy> AsfStrategyTester;
+using AsfStrategyTester = StrategyTester<AsfStrategy>;
 NFD_REGISTER_STRATEGY(AsfStrategyTester);
 
 BOOST_AUTO_TEST_SUITE(Fw)
@@ -45,8 +45,9 @@ BOOST_FIXTURE_TEST_SUITE(TestAsfStrategy, GlobalIoTimeFixture)
 class AsfGridFixture : public GlobalIoTimeFixture
 {
 protected:
-  AsfGridFixture(Name parameters = AsfStrategy::getStrategyName())
-    : parameters(parameters)
+  explicit
+  AsfGridFixture(const Name& params = AsfStrategy::getStrategyName())
+    : parameters(params)
   {
     /*
      *                  +---------+
@@ -74,10 +75,10 @@ protected:
     topo.setStrategy<AsfStrategy>(nodeC, Name("ndn:/"), parameters);
     topo.setStrategy<AsfStrategy>(nodeD, Name("ndn:/"), parameters);
 
-    linkAB = topo.addLink("AB", time::milliseconds(10), {nodeA, nodeB});
-    linkAD = topo.addLink("AD", time::milliseconds(100), {nodeA, nodeD});
-    linkBC = topo.addLink("BC", time::milliseconds(10), {nodeB, nodeC});
-    linkCD = topo.addLink("CD", time::milliseconds(100), {nodeC, nodeD});
+    linkAB = topo.addLink("AB", 10_ms, {nodeA, nodeB});
+    linkAD = topo.addLink("AD", 100_ms, {nodeA, nodeD});
+    linkBC = topo.addLink("BC", 10_ms, {nodeB, nodeC});
+    linkCD = topo.addLink("CD", 100_ms, {nodeC, nodeD});
 
     consumer = topo.addAppFace("c", nodeA);
     producer = topo.addAppFace("p", nodeC, PRODUCER_PREFIX);
@@ -91,8 +92,8 @@ protected:
   void
   runConsumer(int numInterests = 30)
   {
-    topo.addIntervalConsumer(consumer->getClientFace(), PRODUCER_PREFIX, time::seconds(1), numInterests);
-    this->advanceClocks(time::milliseconds(10), time::seconds(numInterests));
+    topo.addIntervalConsumer(consumer->getClientFace(), PRODUCER_PREFIX, 1_s, numInterests);
+    this->advanceClocks(10_ms, time::seconds(numInterests));
   }
 
 protected:
@@ -160,7 +161,7 @@ BOOST_FIXTURE_TEST_CASE(Basic, AsfGridFixture)
   linkAB->recover();
 
   // Advance time to ensure probing is due
-  this->advanceClocks(time::milliseconds(10), time::seconds(10));
+  this->advanceClocks(10_ms, 10_s);
 
   runConsumer();
 
@@ -229,10 +230,10 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
     topo.setStrategy<AsfStrategy>(node);
   }
 
-  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", time::milliseconds(15), {nodeA, nodeB}),
-                           linkAC = topo.addLink("AC", time::milliseconds(14), {nodeA, nodeC}),
-                           linkBC = topo.addLink("BC", time::milliseconds(16), {nodeB, nodeC}),
-                           linkBD = topo.addLink("BD", time::milliseconds(80), {nodeB, nodeD});
+  shared_ptr<TopologyLink> linkAB = topo.addLink("AB", 15_ms, {nodeA, nodeB}),
+                           linkAC = topo.addLink("AC", 14_ms, {nodeA, nodeC}),
+                           linkBC = topo.addLink("BC", 16_ms, {nodeB, nodeC}),
+                           linkBD = topo.addLink("BD", 80_ms, {nodeB, nodeD});
 
   shared_ptr<TopologyAppLink> ping = topo.addAppFace("c", nodeA),
                         pingServer = topo.addAppFace("p", nodeD, PRODUCER_PREFIX);
@@ -257,14 +258,8 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
 
     // Don't know when the probe will be triggered since it is random between 0-5 seconds
     // or whether it will be triggered for this interest
-    int j = 1;
-    while (linkAB->getFace(nodeA).getCounters().nOutInterests != 1) {
-      this->advanceClocks(time::milliseconds(1));
-      ++j;
-      // Probe was not scheduled with this ping interest
-      if (j > 1000) {
-        break;
-      }
+    for (int j = 1; j <= 1000 && linkAB->getFace(nodeA).getCounters().nOutInterests != 1; ++j) {
+      this->advanceClocks(1_ms);
     }
 
     // Check if probe is sent to B else send another ping
@@ -286,7 +281,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nOutInterests, i - 1);
 
       // After 15ms, B should get the probe interest
-      this->advanceClocks(time::milliseconds(1), time::milliseconds(15));
+      this->advanceClocks(1_ms, 15_ms);
       BOOST_CHECK_EQUAL(linkAB->getFace(nodeB).getCounters().nInInterests, 1);
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nOutInterests, i);
 
@@ -298,7 +293,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       BOOST_CHECK(outRecord != pitEntry->out_end());
 
       // RTT between B and D
-      this->advanceClocks(time::milliseconds(5), time::milliseconds(160));
+      this->advanceClocks(5_ms, 160_ms);
       outRecord = pitEntry->getOutRecord(linkBD->getFace(nodeB), 0);
 
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nInData, i);
@@ -308,7 +303,7 @@ BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)
       // Data is returned for the ping after 15 ms - will result in false measurement
       // 14+16-15 = 15ms
       // Since outRecord == pitEntry->out_end()
-      this->advanceClocks(time::milliseconds(1), time::milliseconds(15));
+      this->advanceClocks(1_ms, 15_ms);
       BOOST_CHECK_EQUAL(linkBD->getFace(nodeB).getCounters().nInData, i+1);
 
       break;
@@ -352,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(ProbingInterval, AsfStrategyParametersGridFixture)
   // Send 6 interests let it change to use the 10 ms link
   runConsumer(6);
 
-  shared_ptr<TopologyLink> linkAC = topo.addLink("AC", time::milliseconds(5), {nodeA, nodeD});
+  shared_ptr<TopologyLink> linkAC = topo.addLink("AC", 5_ms, {nodeA, nodeD});
   topo.registerPrefix(nodeA, linkAC->getFace(nodeA), PRODUCER_PREFIX, 1);
 
   BOOST_CHECK_EQUAL(linkAC->getFace(nodeA).getCounters().nOutInterests, 0);

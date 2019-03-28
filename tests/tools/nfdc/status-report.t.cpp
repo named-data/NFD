@@ -52,7 +52,7 @@ public:
     : m_moduleName(moduleName)
     , m_scheduler(io)
     , m_res(0)
-    , m_delay(time::milliseconds(1))
+    , m_delay(1_ms)
   {
   }
 
@@ -174,11 +174,11 @@ BOOST_FIXTURE_TEST_SUITE(TestStatusReport, StatusReportModulesFixture)
 BOOST_AUTO_TEST_CASE(Normal)
 {
   DummyModule& m1 = addModule("module1");
-  m1.setResult(0, time::milliseconds(10));
+  m1.setResult(0, 10_ms);
   DummyModule& m2 = addModule("module2");
-  m2.setResult(0, time::milliseconds(20));
+  m2.setResult(0, 20_ms);
 
-  this->collect(time::milliseconds(5), 6);
+  this->collect(5_ms, 6);
 
   BOOST_CHECK_EQUAL(m1.nFetchStatusCalls, 1);
   BOOST_CHECK_EQUAL(m2.nFetchStatusCalls, 1);
@@ -191,11 +191,11 @@ BOOST_AUTO_TEST_CASE(Normal)
 BOOST_AUTO_TEST_CASE(Reorder)
 {
   DummyModule& m1 = addModule("module1");
-  m1.setResult(0, time::milliseconds(20));
+  m1.setResult(0, 20_ms);
   DummyModule& m2 = addModule("module2");
-  m2.setResult(0, time::milliseconds(10)); // module2 completes earlier than module1
+  m2.setResult(0, 10_ms); // module2 completes earlier than module1
 
-  this->collect(time::milliseconds(5), 6);
+  this->collect(5_ms, 6);
 
   BOOST_CHECK_EQUAL(res, 0);
   BOOST_CHECK(statusXml.is_equal(STATUS_XML)); // output is still in order
@@ -205,11 +205,11 @@ BOOST_AUTO_TEST_CASE(Reorder)
 BOOST_AUTO_TEST_CASE(Error)
 {
   DummyModule& m1 = addModule("module1");
-  m1.setResult(0, time::milliseconds(20));
+  m1.setResult(0, 20_ms);
   DummyModule& m2 = addModule("module2");
-  m2.setResult(500, time::milliseconds(10));
+  m2.setResult(500, 10_ms);
 
-  this->collect(time::milliseconds(5), 6);
+  this->collect(5_ms, 6);
 
   BOOST_CHECK_EQUAL(res, 1000500);
 }

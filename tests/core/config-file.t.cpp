@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(CoveredByPartialSubscribers)
   BOOST_CHECK(subB.allCallbacksFired());
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // TestConfigFile
 
 } // namespace tests
 } // namespace nfd

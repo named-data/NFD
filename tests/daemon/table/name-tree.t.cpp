@@ -668,7 +668,7 @@ BOOST_AUTO_TEST_CASE(Example)
     .end();
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // IteratorPartialEnumerate
 
 BOOST_FIXTURE_TEST_CASE(IteratorFindAllMatches, EnumerationFixture)
 {

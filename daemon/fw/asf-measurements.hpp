@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -316,7 +316,7 @@ private:
   extendLifetime(measurements::Entry& me);
 
 public:
-  static constexpr time::microseconds MEASUREMENTS_LIFETIME = 300_s;
+  static constexpr time::microseconds MEASUREMENTS_LIFETIME = 5_min;
 
 private:
   MeasurementsAccessor& m_measurements;

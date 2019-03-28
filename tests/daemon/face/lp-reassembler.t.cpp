@@ -312,7 +312,7 @@ BOOST_AUTO_TEST_CASE(Timeout)
   BOOST_CHECK_EQUAL(reassembler.size(), 1);
   BOOST_CHECK(timeoutHistory.empty());
 
-  advanceClocks(time::milliseconds(1), 600);
+  advanceClocks(1_ms, 600);
   BOOST_CHECK_EQUAL(reassembler.size(), 0);
   BOOST_REQUIRE_EQUAL(timeoutHistory.size(), 1);
   BOOST_CHECK_EQUAL(std::get<0>(timeoutHistory.back()), REMOTE_EP);
@@ -357,7 +357,7 @@ BOOST_AUTO_TEST_CASE(MissingSequence)
   std::tie(isComplete, std::ignore, std::ignore) = reassembler.receiveFragment(0, received3);
   BOOST_REQUIRE(!isComplete);
 
-  advanceClocks(time::milliseconds(1), 600);
+  advanceClocks(1_ms, 600);
 
   std::tie(isComplete, std::ignore, std::ignore) = reassembler.receiveFragment(0, received2);
   BOOST_REQUIRE(!isComplete);

@@ -33,7 +33,9 @@ namespace nfd {
 namespace rib {
 namespace tests {
 
-BOOST_FIXTURE_TEST_SUITE(TestRib, nfd::tests::GlobalIoFixture)
+using namespace nfd::tests;
+
+BOOST_FIXTURE_TEST_SUITE(TestRib, GlobalIoFixture)
 
 BOOST_AUTO_TEST_CASE(Parent)
 {
@@ -170,7 +172,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   route1.faceId = 1;
   route1.cost = 10;
   route1.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT | ndn::nfd::ROUTE_FLAG_CAPTURE;
-  route1.expires = time::steady_clock::now() + time::milliseconds(1500);
+  route1.expires = time::steady_clock::now() + 1500_ms;
 
   rib.insert(name1, route1);
   BOOST_CHECK_EQUAL(rib.size(), 1);
@@ -183,7 +185,7 @@ BOOST_AUTO_TEST_CASE(Basic)
   route2.faceId = 1;
   route2.cost = 100;
   route2.flags = ndn::nfd::ROUTE_FLAG_CHILD_INHERIT;
-  route2.expires = time::steady_clock::now() + time::seconds(0);
+  route2.expires = time::steady_clock::now() + 0_s;
 
   rib.insert(name2, route2);
   BOOST_CHECK_EQUAL(rib.size(), 1);

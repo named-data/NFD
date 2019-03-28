@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE(Exponential)
 {
   Forwarder forwarder;
   Pit& pit = forwarder.getPit();
-  RetxSuppressionExponential rs(time::milliseconds(10), 3.0, time::milliseconds(100));
+  RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -109,12 +109,12 @@ BOOST_AUTO_TEST_CASE(Exponential)
   pitEntry->insertOrUpdateOutRecord(*face2, 0, *interest);
   // suppression interval is 10ms, until 10ms
 
-  this->advanceClocks(time::milliseconds(5)); // @ 5ms
+  this->advanceClocks(5_ms); // @ 5ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::SUPPRESS);
   // suppression interval is 10ms, until 10ms
 
-  this->advanceClocks(time::milliseconds(6)); // @ 11ms
+  this->advanceClocks(6_ms); // @ 11ms
   // note: what happens at *exactly* 10ms does not matter so it's untested,
   // because in reality network timing won't be exact:
   // incoming Interest is processed either before or after 10ms point
@@ -123,34 +123,34 @@ BOOST_AUTO_TEST_CASE(Exponential)
   pitEntry->insertOrUpdateOutRecord(*face2, 0, *interest);
   // suppression interval is 30ms, until 41ms
 
-  this->advanceClocks(time::milliseconds(25)); // @ 36ms
+  this->advanceClocks(25_ms); // @ 36ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::SUPPRESS);
   // suppression interval is 30ms, until 41ms
 
-  this->advanceClocks(time::milliseconds(6)); // @ 42ms
+  this->advanceClocks(6_ms); // @ 42ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::FORWARD);
   // strategy decides not to forward, but suppression interval is increased nevertheless
   // suppression interval is 90ms, until 101ms
 
-  this->advanceClocks(time::milliseconds(58)); // @ 100ms
+  this->advanceClocks(58_ms); // @ 100ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::SUPPRESS);
   // suppression interval is 90ms, until 101ms
 
-  this->advanceClocks(time::milliseconds(3)); // @ 103ms
+  this->advanceClocks(3_ms); // @ 103ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::FORWARD);
   pitEntry->insertOrUpdateOutRecord(*face2, 0, *interest);
   // suppression interval is 100ms, until 203ms
 
-  this->advanceClocks(time::milliseconds(99)); // @ 202ms
+  this->advanceClocks(99_ms); // @ 202ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::SUPPRESS);
   // suppression interval is 100ms, until 203ms
 
-  this->advanceClocks(time::milliseconds(2)); // @ 204ms
+  this->advanceClocks(2_ms); // @ 204ms
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerPitEntry(*pitEntry) == RetxSuppressionResult::FORWARD);
   pitEntry->insertOrUpdateOutRecord(*face2, 0, *interest);
@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
 {
   Forwarder forwarder;
   Pit& pit = forwarder.getPit();
-  RetxSuppressionExponential rs(time::milliseconds(10), 3.0, time::milliseconds(100));
+  RetxSuppressionExponential rs(10_ms, 3.0, 100_ms);
 
   shared_ptr<DummyFace> face1 = make_shared<DummyFace>();
   shared_ptr<DummyFace> face2 = make_shared<DummyFace>();
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
 
   // Simluate forwarding an interest to face2
   pitEntry->insertOrUpdateOutRecord(*face2, 0, *interest);
-  this->advanceClocks(time::milliseconds(5)); // @ 5ms
+  this->advanceClocks(5_ms); // @ 5ms
 
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerUpstream(*pitEntry, *face2) == RetxSuppressionResult::SUPPRESS);
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(ExponentialPerUpstream)
   pitEntry->insertOrUpdateInRecord(*face2, 0, *interest);
   BOOST_CHECK(rs.decidePerUpstream(*pitEntry, *face1) == RetxSuppressionResult::NEW);
 
-  this->advanceClocks(time::milliseconds(6)); // @ 11ms
+  this->advanceClocks(6_ms); // @ 11ms
 
   pitEntry->insertOrUpdateInRecord(*face1, 0, *interest);
   BOOST_CHECK(rs.decidePerUpstream(*pitEntry, *face2) == RetxSuppressionResult::FORWARD);
