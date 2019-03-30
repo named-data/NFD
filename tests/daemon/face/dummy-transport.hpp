@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -28,47 +28,39 @@
 
 #include "core/common.hpp"
 
-#include "face/transport.hpp"
+#include "face/null-transport.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-/** \brief dummy Transport used in unit tests
+/** \brief Dummy Transport type used in unit tests.
+ *
+ *  All packets sent through this transport are stored in `sentPackets`.
+ *  Reception of a packet can be simulated by invoking `receivePacket()`.
+ *  All persistency changes are recorded in `persistencyHistory`.
  */
-class DummyTransport : public Transport
+template<bool CAN_CHANGE_PERSISTENCY>
+class DummyTransportBase : public NullTransport
 {
 public:
-  DummyTransport(const std::string& localUri = "dummy://",
-                 const std::string& remoteUri = "dummy://",
-                 ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                 ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
-                 ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT,
-                 ssize_t mtu = MTU_UNLIMITED,
-                 ssize_t sendQueueCapacity = QUEUE_UNSUPPORTED)
-    : isClosed(false)
-    , m_sendQueueLength(0)
+  explicit
+  DummyTransportBase(const std::string& localUri = "dummy://",
+                     const std::string& remoteUri = "dummy://",
+                     ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                     ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
+                     ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT,
+                     ssize_t mtu = MTU_UNLIMITED,
+                     ssize_t sendQueueCapacity = QUEUE_UNSUPPORTED)
+    : NullTransport(FaceUri(localUri), FaceUri(remoteUri), scope, persistency)
   {
-    this->setLocalUri(FaceUri(localUri));
-    this->setRemoteUri(FaceUri(remoteUri));
-    this->setScope(scope);
-    this->setPersistency(persistency);
     this->setLinkType(linkType);
     this->setMtu(mtu);
     this->setSendQueueCapacity(sendQueueCapacity);
   }
 
-  void
-  setMtu(ssize_t mtu)
-  {
-    this->Transport::setMtu(mtu);
-  }
-
-  void
-  setState(FaceState state)
-  {
-    this->Transport::setState(state);
-  }
+  using NullTransport::setMtu;
+  using NullTransport::setState;
 
   ssize_t
   getSendQueueLength() override
@@ -83,32 +75,25 @@ public:
   }
 
   void
-  receivePacket(Packet&& packet)
-  {
-    this->receive(std::move(packet));
-  }
-
-  void
   receivePacket(Block block)
   {
-    this->receive(Packet(std::move(block)));
+    receive(Packet(std::move(block)));
   }
 
 protected:
   bool
-  canChangePersistencyToImpl(ndn::nfd::FacePersistency newPersistency) const override
+  canChangePersistencyToImpl(ndn::nfd::FacePersistency) const override
   {
-    return true;
+    return CAN_CHANGE_PERSISTENCY;
+  }
+
+  void
+  afterChangePersistency(ndn::nfd::FacePersistency old) override
+  {
+    persistencyHistory.push_back(old);
   }
 
 private:
-  void
-  doClose() override
-  {
-    isClosed = true;
-    this->setState(TransportState::CLOSED);
-  }
-
   void
   doSend(Packet&& packet) override
   {
@@ -116,12 +101,14 @@ private:
   }
 
 public:
-  bool isClosed;
+  std::vector<ndn::nfd::FacePersistency> persistencyHistory;
   std::vector<Packet> sentPackets;
 
 private:
-  ssize_t m_sendQueueLength;
+  ssize_t m_sendQueueLength = 0;
 };
+
+using DummyTransport = DummyTransportBase<true>;
 
 } // namespace tests
 } // namespace face

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -54,29 +54,29 @@ public:
   signal::Signal<LinkService, uint32_t> afterSend;
 
 private:
-  virtual void
-  doSendInterest(const Interest& interest) override
+  void
+  doSendInterest(const Interest& interest) final
   {
     this->sentInterests.push_back(interest);
     this->afterSend(tlv::Interest);
   }
 
-  virtual void
-  doSendData(const Data& data) override
+  void
+  doSendData(const Data& data) final
   {
     this->sentData.push_back(data);
     this->afterSend(tlv::Data);
   }
 
-  virtual void
-  doSendNack(const lp::Nack& nack) override
+  void
+  doSendNack(const lp::Nack& nack) final
   {
     this->sentNacks.push_back(nack);
     this->afterSend(lp::tlv::Nack);
   }
 
-  virtual void
-  doReceivePacket(Transport::Packet&& packet) override
+  void
+  doReceivePacket(Transport::Packet&&) final
   {
     BOOST_ASSERT(false);
   }
@@ -102,7 +102,7 @@ DummyFace::DummyFace(const std::string& localUri, const std::string& remoteUri,
 void
 DummyFace::setState(FaceState state)
 {
-  this->getTransportInternal()->setState(state);
+  static_cast<DummyTransport*>(this->getTransport())->setState(state);
 }
 
 void
@@ -127,12 +127,6 @@ DummyFace::LinkService*
 DummyFace::getLinkServiceInternal()
 {
   return static_cast<LinkService*>(this->getLinkService());
-}
-
-DummyTransport*
-DummyFace::getTransportInternal()
-{
-  return static_cast<DummyTransport*>(this->getTransport());
 }
 
 } // namespace tests

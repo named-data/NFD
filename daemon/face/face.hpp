@@ -64,11 +64,7 @@ typedef TransportState FaceState;
  *  LinkService is the upper part, which translates between network-layer packets
  *  and TLV blocks, and may provide additional services such as fragmentation and reassembly.
  */
-class Face
-#ifndef WITH_TESTS
-final
-#endif
-  : public std::enable_shared_from_this<Face>, noncopyable
+class Face FINAL_UNLESS_WITH_TESTS : public std::enable_shared_from_this<Face>, noncopyable
 {
 public:
   Face(unique_ptr<LinkService> service, unique_ptr<Transport> transport);

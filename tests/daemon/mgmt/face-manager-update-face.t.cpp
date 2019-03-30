@@ -25,7 +25,9 @@
 
 #include "mgmt/face-manager.hpp"
 #include "face/generic-link-service.hpp"
+
 #include "face-manager-command-fixture.hpp"
+#include "tests/daemon/face/dummy-transport.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 
@@ -201,37 +203,10 @@ BOOST_AUTO_TEST_CASE(FaceDoesNotExist)
   });
 }
 
-template<bool CAN_CHANGE_PERSISTENCY>
-class UpdatePersistencyDummyTransport : public face::Transport
-{
-public:
-  UpdatePersistencyDummyTransport()
-  {
-    this->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
-  }
-
-protected:
-  bool
-  canChangePersistencyToImpl(ndn::nfd::FacePersistency) const final
-  {
-    return CAN_CHANGE_PERSISTENCY;
-  }
-
-  void
-  doClose() final
-  {
-  }
-
-private:
-  void
-  doSend(face::Transport::Packet&&) final
-  {
-  }
-};
-
+using nfd::face::tests::DummyTransportBase;
 using UpdatePersistencyTests = mpl::vector<
-  mpl::pair<UpdatePersistencyDummyTransport<true>, CommandSuccess>,
-  mpl::pair<UpdatePersistencyDummyTransport<false>, CommandFailure<409>>
+  mpl::pair<DummyTransportBase<true>, CommandSuccess>,
+  mpl::pair<DummyTransportBase<false>, CommandFailure<409>>
 >;
 
 BOOST_FIXTURE_TEST_CASE_TEMPLATE(UpdatePersistency, T, UpdatePersistencyTests, FaceManagerUpdateFixture)

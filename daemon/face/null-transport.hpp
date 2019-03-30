@@ -23,21 +23,40 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "null-face.hpp"
-#include "null-link-service.hpp"
-#include "null-transport.hpp"
+#ifndef NFD_DAEMON_FACE_NULL_TRANSPORT_HPP
+#define NFD_DAEMON_FACE_NULL_TRANSPORT_HPP
+
+#include "transport.hpp"
 
 namespace nfd {
 namespace face {
 
-shared_ptr<Face>
-makeNullFace(const FaceUri& uri)
+/** \brief A Transport that drops every packet.
+ */
+class NullTransport FINAL_UNLESS_WITH_TESTS : public Transport
 {
-  // FIB could restrict creating a nexthop record toward a non-local face in /localhost namespace.
-  // Therefore, NullFace has scope=local to enable creating a "blackhole" FIB entry under /localhost.
-  return make_shared<Face>(make_unique<NullLinkService>(),
-                           make_unique<NullTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
-}
+public:
+  explicit
+  NullTransport(const FaceUri& localUri = FaceUri("null://"),
+                const FaceUri& remoteUri = FaceUri("null://"),
+                ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
+                ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERMANENT);
+
+protected:
+  void
+  doClose() OVERRIDE_WITH_TESTS_ELSE_FINAL
+  {
+    setState(TransportState::CLOSED);
+  }
+
+private:
+  void
+  doSend(Packet&&) OVERRIDE_WITH_TESTS_ELSE_FINAL
+  {
+  }
+};
 
 } // namespace face
 } // namespace nfd
+
+#endif // NFD_DAEMON_FACE_NULL_TRANSPORT_HPP

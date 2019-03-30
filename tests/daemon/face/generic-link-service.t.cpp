@@ -1362,7 +1362,7 @@ BOOST_AUTO_TEST_CASE(WrongTlvType)
 
   Block packet = ndn::encoding::makeEmptyBlock(tlv::Name);
 
-  BOOST_CHECK_NO_THROW(transport->receivePacket(packet));
+  BOOST_CHECK_NO_THROW(transport->receivePacket(std::move(packet)));
 
   BOOST_CHECK_EQUAL(service->getCounters().nInLpInvalid, 1);
   BOOST_CHECK_EQUAL(receivedInterests.size(), 0);
@@ -1380,7 +1380,7 @@ BOOST_AUTO_TEST_CASE(Unparsable)
   Block packet = ndn::encoding::makeStringBlock(lp::tlv::LpPacket, "x");
   BOOST_CHECK_THROW(packet.parse(), tlv::Error);
 
-  BOOST_CHECK_NO_THROW(transport->receivePacket(packet));
+  BOOST_CHECK_NO_THROW(transport->receivePacket(std::move(packet)));
 
   BOOST_CHECK_EQUAL(service->getCounters().nInLpInvalid, 1);
   BOOST_CHECK_EQUAL(receivedInterests.size(), 0);

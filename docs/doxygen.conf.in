@@ -2061,6 +2061,7 @@ PREDEFINED             = DOXYGEN \
                          PUBLIC_WITH_TESTS_ELSE_PROTECTED=protected \
                          PUBLIC_WITH_TESTS_ELSE_PRIVATE=private \
                          PROTECTED_WITH_TESTS_ELSE_PRIVATE=private \
+                         OVERRIDE_WITH_TESTS_ELSE_FINAL=final \
                          FINAL_UNLESS_WITH_TESTS=final
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this

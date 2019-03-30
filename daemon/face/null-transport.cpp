@@ -23,20 +23,24 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "null-face.hpp"
-#include "null-link-service.hpp"
 #include "null-transport.hpp"
 
 namespace nfd {
 namespace face {
 
-shared_ptr<Face>
-makeNullFace(const FaceUri& uri)
+NFD_LOG_INIT(NullTransport);
+
+NullTransport::NullTransport(const FaceUri& localUri, const FaceUri& remoteUri,
+                             ndn::nfd::FaceScope scope, ndn::nfd::FacePersistency persistency)
 {
-  // FIB could restrict creating a nexthop record toward a non-local face in /localhost namespace.
-  // Therefore, NullFace has scope=local to enable creating a "blackhole" FIB entry under /localhost.
-  return make_shared<Face>(make_unique<NullLinkService>(),
-                           make_unique<NullTransport>(uri, uri, ndn::nfd::FACE_SCOPE_LOCAL));
+  this->setLocalUri(localUri);
+  this->setRemoteUri(remoteUri);
+  this->setScope(scope);
+  this->setPersistency(persistency);
+  this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
+  this->setMtu(MTU_UNLIMITED);
+
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 } // namespace face

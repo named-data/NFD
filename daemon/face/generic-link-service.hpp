@@ -89,8 +89,8 @@ public:
 /** \brief GenericLinkService is a LinkService that implements the NDNLPv2 protocol
  *  \sa https://redmine.named-data.net/projects/nfd/wiki/NDNLPv2
  */
-class GenericLinkService : public LinkService
-                         , protected virtual GenericLinkServiceCounters
+class GenericLinkService FINAL_UNLESS_WITH_TESTS : public LinkService
+                                                 , protected virtual GenericLinkServiceCounters
 {
 public:
   /** \brief Options that control the behavior of GenericLinkService
@@ -167,7 +167,7 @@ public:
   setOptions(const Options& options);
 
   const Counters&
-  getCounters() const override;
+  getCounters() const OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
 PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   /** \brief request an IDLE packet to transmit pending service fields
@@ -184,17 +184,17 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE: // send path
   /** \brief send Interest
    */
   void
-  doSendInterest(const Interest& interest) override;
+  doSendInterest(const Interest& interest) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
   /** \brief send Data
    */
   void
-  doSendData(const Data& data) override;
+  doSendData(const Data& data) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
   /** \brief send Nack
    */
   void
-  doSendNack(const ndn::lp::Nack& nack) override;
+  doSendNack(const ndn::lp::Nack& nack) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
 private: // send path
   /** \brief encode link protocol fields from tags onto an outgoing LpPacket
@@ -232,7 +232,7 @@ private: // receive path
   /** \brief receive Packet from Transport
    */
   void
-  doReceivePacket(Transport::Packet&& packet) override;
+  doReceivePacket(Transport::Packet&& packet) OVERRIDE_WITH_TESTS_ELSE_FINAL;
 
   /** \brief decode incoming network-layer packet
    *  \param netPkt reassembled network-layer packet

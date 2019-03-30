@@ -26,10 +26,10 @@
 #include "face/transport.hpp"
 #include "face/face.hpp"
 
+#include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
 #include "dummy-receive-link-service.hpp"
 #include "dummy-transport.hpp"
-#include "transport-test-common.hpp"
 
 #include <boost/mpl/fold.hpp>
 #include <boost/mpl/int.hpp>
@@ -50,37 +50,10 @@ using namespace nfd::tests;
 BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestTransport)
 
-BOOST_AUTO_TEST_CASE(DummyTransportStaticProperties)
-{
-  auto transport = make_unique<DummyTransport>();
-  checkStaticPropertiesInitialized(*transport);
-}
-
-class PersistencyTestTransport : public DummyTransport
-{
-public:
-  PersistencyTestTransport()
-    : DummyTransport("dummy://", "dummy://",
-                     ndn::nfd::FACE_SCOPE_NON_LOCAL,
-                     ndn::nfd::FACE_PERSISTENCY_ON_DEMAND)
-  {
-  }
-
-protected:
-  void
-  afterChangePersistency(ndn::nfd::FacePersistency oldPersistency) final
-  {
-    persistencyHistory.push_back(oldPersistency);
-  }
-
-public:
-  std::vector<ndn::nfd::FacePersistency> persistencyHistory;
-};
-
 BOOST_AUTO_TEST_CASE(PersistencyChange)
 {
-  auto transport = make_unique<PersistencyTestTransport>();
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  auto transport = make_unique<DummyTransport>();
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(transport->persistencyHistory.size(), 0);
 
   BOOST_CHECK_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_NONE), false);
@@ -88,13 +61,13 @@ BOOST_AUTO_TEST_CASE(PersistencyChange)
   BOOST_REQUIRE_EQUAL(transport->canChangePersistencyTo(ndn::nfd::FACE_PERSISTENCY_PERMANENT), true);
 
   transport->setPersistency(transport->getPersistency());
-  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
   BOOST_CHECK_EQUAL(transport->persistencyHistory.size(), 0);
 
   transport->setPersistency(ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_CHECK_EQUAL(transport->getPersistency(), ndn::nfd::FACE_PERSISTENCY_PERMANENT);
   BOOST_REQUIRE_EQUAL(transport->persistencyHistory.size(), 1);
-  BOOST_CHECK_EQUAL(transport->persistencyHistory.back(), ndn::nfd::FACE_PERSISTENCY_ON_DEMAND);
+  BOOST_CHECK_EQUAL(transport->persistencyHistory.back(), ndn::nfd::FACE_PERSISTENCY_PERSISTENT);
 }
 
 /** \brief a macro to declare a TransportState as a integral constant
@@ -205,13 +178,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(SetState, T, AllStateTransitions)
   }
 }
 
-BOOST_AUTO_TEST_CASE(NoExpirationTime)
-{
-  auto transport = make_unique<DummyTransport>();
-
-  BOOST_CHECK_EQUAL(transport->getExpirationTime(), time::steady_clock::TimePoint::max());
-}
-
 class DummyTransportFixture : public GlobalIoFixture
 {
 protected:
@@ -225,9 +191,9 @@ protected:
   }
 
   void
-  initialize(unique_ptr<DummyTransport> transport = make_unique<DummyTransport>())
+  initialize(unique_ptr<DummyTransport> t = make_unique<DummyTransport>())
   {
-    this->face = make_unique<nfd::Face>(make_unique<DummyReceiveLinkService>(), std::move(transport));
+    this->face = make_unique<nfd::Face>(make_unique<DummyReceiveLinkService>(), std::move(t));
     this->transport = static_cast<DummyTransport*>(face->getTransport());
     this->sentPackets = &this->transport->sentPackets;
     this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;

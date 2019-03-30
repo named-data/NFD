@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -31,8 +31,6 @@
 namespace nfd {
 namespace face {
 namespace tests {
-
-class DummyTransport;
 
 /** \brief a Face for unit testing
  *
@@ -87,9 +85,6 @@ private:
   LinkService*
   getLinkServiceInternal();
 
-  DummyTransport*
-  getTransportInternal();
-
 public:
   std::vector<Interest>& sentInterests;
   std::vector<Data>& sentData;
@@ -102,6 +97,7 @@ public:
 namespace tests {
 using nfd::face::tests::DummyFace;
 } // namespace tests
+
 } // namespace nfd
 
 #endif // NFD_TESTS_DAEMON_FACE_DUMMY_FACE_HPP
