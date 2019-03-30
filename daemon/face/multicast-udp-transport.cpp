@@ -68,7 +68,7 @@ MulticastUdpTransport::MulticastUdpTransport(const protocol::endpoint& multicast
     this->setSendQueueCapacity(sendBufferSizeOption.value());
   }
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 ssize_t

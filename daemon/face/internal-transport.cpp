@@ -42,7 +42,7 @@ InternalForwarderTransport::InternalForwarderTransport(const FaceUri& localUri, 
   this->setLinkType(linkType);
   this->setMtu(MTU_UNLIMITED);
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 void

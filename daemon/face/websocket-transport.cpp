@@ -74,7 +74,7 @@ WebSocketTransport::WebSocketTransport(websocketpp::connection_hdl hdl,
 
   this->schedulePing();
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 void

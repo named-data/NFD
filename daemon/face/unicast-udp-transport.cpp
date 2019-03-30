@@ -60,7 +60,7 @@ UnicastUdpTransport::UnicastUdpTransport(protocol::socket&& socket,
   }
   BOOST_ASSERT(this->getMtu() >= MIN_MTU);
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 
 #ifdef __linux__
   //

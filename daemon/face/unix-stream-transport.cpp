@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -45,7 +45,7 @@ UnixStreamTransport::UnixStreamTransport(protocol::socket&& socket)
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   this->setMtu(MTU_UNLIMITED);
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 } // namespace face

@@ -63,7 +63,7 @@ MulticastEthernetTransport::MulticastEthernetTransport(const ndn::net::NetworkIn
   this->setLinkType(linkType);
   this->setMtu(localEndpoint.getMtu());
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 
   char filter[110];
   // note #1: we cannot use std::snprintf because it's not available

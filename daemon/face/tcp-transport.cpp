@@ -54,7 +54,7 @@ TcpTransport::TcpTransport(protocol::socket&& socket,
   this->setLinkType(ndn::nfd::LINK_TYPE_POINT_TO_POINT);
   this->setMtu(MTU_UNLIMITED);
 
-  NFD_LOG_FACE_INFO("Creating transport");
+  NFD_LOG_FACE_DEBUG("Creating transport");
 }
 
 ssize_t
