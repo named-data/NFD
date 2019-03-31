@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -108,21 +108,48 @@ public:
 
 private:
   void
-  transmit(TopologyNode i, const Block& packet);
+  transmit(TopologyNode i, Block&& packet);
 
   void
-  scheduleReceive(face::InternalTransportBase* recipient, const Block& packet);
+  scheduleReceive(face::InternalTransportBase* recipient, Block&& packet);
 
 private:
-  bool m_isUp;
+  bool m_isUp = true;
   time::nanoseconds m_delay;
 
-  struct NodeTransport
+  class ReceiveProxy : public face::InternalTransportBase
   {
-    face::InternalTransportBase* transport;
+  public:
+    using Callback = std::function<void(Block&&)>;
+
+    explicit
+    ReceiveProxy(Callback cb)
+      : m_cb(std::move(cb))
+    {
+    }
+
+    void
+    receivePacket(Block&& packet) final
+    {
+      m_cb(std::move(packet));
+    }
+
+  private:
+    Callback m_cb;
+  };
+
+  class NodeTransport
+  {
+  public:
+    NodeTransport(shared_ptr<Face> face, ReceiveProxy::Callback receiveCallback);
+
+  public:
     shared_ptr<Face> face;
+    face::InternalForwarderTransport* transport;
+    ReceiveProxy proxy;
     std::set<TopologyNode> blockedDestinations;
   };
+
   std::unordered_map<TopologyNode, NodeTransport> m_transports;
 };
 

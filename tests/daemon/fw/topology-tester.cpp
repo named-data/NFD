@@ -24,6 +24,7 @@
  */
 
 #include "topology-tester.hpp"
+
 #include "daemon/global.hpp"
 #include "face/generic-link-service.hpp"
 
@@ -33,13 +34,19 @@ namespace nfd {
 namespace fw {
 namespace tests {
 
-using face::InternalTransportBase;
-using face::InternalForwarderTransport;
-using face::InternalClientTransport;
 using face::GenericLinkService;
+using face::InternalClientTransport;
+using face::InternalForwarderTransport;
+
+TopologyLink::NodeTransport::NodeTransport(shared_ptr<Face> f, ReceiveProxy::Callback cb)
+  : face(std::move(f))
+  , transport(dynamic_cast<InternalForwarderTransport*>(face->getTransport()))
+  , proxy(std::move(cb))
+{
+  BOOST_ASSERT(transport != nullptr);
+}
 
 TopologyLink::TopologyLink(time::nanoseconds delay)
-  : m_isUp(true)
 {
   this->setDelay(delay);
 }
@@ -66,19 +73,19 @@ TopologyLink::setDelay(time::nanoseconds delay)
 void
 TopologyLink::addFace(TopologyNode i, shared_ptr<Face> face)
 {
-  BOOST_ASSERT(m_transports.count(i) == 0);
-  auto& nodeTransport = m_transports[i];
+  auto receiveCb = [this, i] (Block&& pkt) { transmit(i, std::move(pkt)); };
 
-  nodeTransport.face = face;
+  auto ret = m_transports.emplace(std::piecewise_construct,
+                                  std::forward_as_tuple(i),
+                                  std::forward_as_tuple(std::move(face), std::move(receiveCb)));
+  BOOST_ASSERT(ret.second);
 
-  nodeTransport.transport = dynamic_cast<InternalTransportBase*>(face->getTransport());
-  BOOST_ASSERT(nodeTransport.transport != nullptr);
-  nodeTransport.transport->afterSend.connect(
-    [this, i] (const Block& packet) { this->transmit(i, packet); });
+  auto& node = ret.first->second;
+  node.transport->setPeer(&node.proxy);
 }
 
 void
-TopologyLink::transmit(TopologyNode i, const Block& packet)
+TopologyLink::transmit(TopologyNode i, Block&& packet)
 {
   if (!m_isUp) {
     return;
@@ -91,22 +98,21 @@ TopologyLink::transmit(TopologyNode i, const Block& packet)
       continue;
     }
 
-    InternalTransportBase* recipient = p.second.transport;
-    this->scheduleReceive(recipient, packet);
+    this->scheduleReceive(p.second.transport, Block{packet});
   }
 }
 
 void
-TopologyLink::scheduleReceive(InternalTransportBase* recipient, const Block& packet)
+TopologyLink::scheduleReceive(face::InternalTransportBase* recipient, Block&& packet)
 {
-  getScheduler().schedule(m_delay, [packet, recipient] {
-    recipient->receiveFromLink(packet);
+  getScheduler().schedule(m_delay, [=, pkt = std::move(packet)] () mutable {
+    recipient->receivePacket(std::move(pkt));
   });
 }
 
 TopologyAppLink::TopologyAppLink(shared_ptr<Face> forwarderFace)
-  : m_face(forwarderFace)
-  , m_forwarderTransport(static_cast<InternalForwarderTransport*>(forwarderFace->getTransport()))
+  : m_face(std::move(forwarderFace))
+  , m_forwarderTransport(static_cast<InternalForwarderTransport*>(m_face->getTransport()))
   , m_clientTransport(make_shared<InternalClientTransport>())
   , m_client(make_shared<ndn::Face>(m_clientTransport, getGlobalIoService()))
 {
@@ -190,7 +196,7 @@ TopologyTester::addLink(const std::string& label, time::nanoseconds delay,
     auto face = make_shared<Face>(std::move(service), std::move(transport));
 
     forwarder.addFace(face);
-    link->addFace(i, face);
+    link->addFace(i, std::move(face));
   }
 
   m_links.push_back(link); // keep a shared_ptr so callers don't have to
@@ -212,7 +218,7 @@ TopologyTester::addAppFace(const std::string& label, TopologyNode i)
 
   forwarder.addFace(face);
 
-  auto al = make_shared<TopologyAppLink>(face);
+  auto al = make_shared<TopologyAppLink>(std::move(face));
   m_appLinks.push_back(al); // keep a shared_ptr so callers don't have to
   return al;
 }

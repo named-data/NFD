@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,7 +33,7 @@
 namespace nfd {
 namespace face {
 
-/** \brief abstracts a transport that can be paired with another
+/** \brief Abstracts a transport that can be paired with another.
  */
 class InternalTransportBase
 {
@@ -41,49 +41,53 @@ public:
   virtual
   ~InternalTransportBase() = default;
 
-  /** \brief causes the transport to receive a link-layer packet
-   */
   virtual void
-  receiveFromLink(const Block& packet) = 0;
-
-  signal::Signal<InternalTransportBase, Block> afterSend;
-
-protected:
-  DECLARE_SIGNAL_EMIT(afterSend)
+  receivePacket(Block&& packet) = 0;
 };
 
-/** \brief implements a forwarder-side transport that can be paired with another
+/** \brief Implements a forwarder-side transport that can be paired with another transport.
  */
-class InternalForwarderTransport : public Transport, public InternalTransportBase
+class InternalForwarderTransport final : public Transport, public InternalTransportBase
 {
 public:
+  explicit
   InternalForwarderTransport(const FaceUri& localUri = FaceUri("internal://"),
                              const FaceUri& remoteUri = FaceUri("internal://"),
                              ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_LOCAL,
                              ndn::nfd::LinkType linkType = ndn::nfd::LINK_TYPE_POINT_TO_POINT);
 
   void
-  receiveFromLink(const Block& packet) override;
+  setPeer(InternalTransportBase* peer)
+  {
+    m_peer = peer;
+  }
+
+  void
+  receivePacket(Block&& packet) final;
 
 protected:
   void
-  doClose() override;
+  doClose() final;
 
 private:
   void
-  doSend(Packet&& packet) override;
+  doSend(Packet&& packet) final;
 
 private:
   NFD_LOG_MEMBER_DECL();
+
+  InternalTransportBase* m_peer = nullptr;
 };
 
-/** \brief implements a client-side transport that can be paired with another
+/** \brief Implements a client-side transport that can be paired with an InternalForwarderTransport.
  */
-class InternalClientTransport : public ndn::Transport, public InternalTransportBase
+class InternalClientTransport final : public ndn::Transport, public InternalTransportBase
 {
 public:
-  /** \brief connect to a forwarder-side transport
-   *  \param forwarderTransport the forwarder-side transport to connect to; may be nullptr
+  ~InternalClientTransport() final;
+
+  /** \brief Connect to a forwarder-side transport.
+   *  \param forwarder the forwarder-side transport to connect to; may be nullptr
    *
    *  The connected forwarder-side transport will be disconnected automatically if this method
    *  is called again, or if that transport is closed.
@@ -91,37 +95,36 @@ public:
    *  all sent packets would be lost, and nothing would be received.
    */
   void
-  connectToForwarder(InternalForwarderTransport* forwarderTransport);
+  connectToForwarder(InternalForwarderTransport* forwarder);
 
   void
-  receiveFromLink(const Block& packet) override;
+  receivePacket(Block&& packet) final;
 
   void
-  close() override
+  send(const Block& wire) final;
+
+  void
+  send(const Block& header, const Block& payload) final;
+
+  void
+  close() final
   {
   }
 
   void
-  pause() override
+  pause() final
   {
   }
 
   void
-  resume() override
+  resume() final
   {
   }
-
-  void
-  send(const Block& wire) override;
-
-  void
-  send(const Block& header, const Block& payload) override;
 
 private:
   NFD_LOG_MEMBER_DECL();
 
-  signal::ScopedConnection m_fwToClientTransmitConn;
-  signal::ScopedConnection m_clientToFwTransmitConn;
+  InternalForwarderTransport* m_forwarder = nullptr;
   signal::ScopedConnection m_fwTransportStateConn;
 };
 

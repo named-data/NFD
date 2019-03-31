@@ -42,7 +42,7 @@ class InternalFaceFixture : public GlobalIoTimeFixture, public KeyChainFixture
 public:
   InternalFaceFixture()
   {
-    std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);;
+    std::tie(forwarderFace, clientFace) = makeInternalFace(m_keyChain);
 
     forwarderFace->afterReceiveInterest.connect(
       [this] (const Interest& interest) { receivedInterests.push_back(interest); } );
@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE(TransportStaticProperties)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 {
-  shared_ptr<Interest> interest = makeInterest("/TLETccRv");
+  auto interest = makeInterest("/TLETccRv");
   interest->setInterestLifetime(100_ms);
 
   bool hasTimeout = false;
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestTimeout)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
 {
-  shared_ptr<Interest> interest = makeInterest("/PQstEJGdL");
+  auto interest = makeInterest("/PQstEJGdL");
 
   bool hasReceivedData = false;
   clientFace->expressInterest(*interest,
@@ -117,8 +117,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/PQstEJGdL");
 
-  shared_ptr<Data> data = makeData("/PQstEJGdL/aI7oCrDXNX");
-  forwarderFace->sendData(*data);
+  forwarderFace->sendData(*makeData("/PQstEJGdL/aI7oCrDXNX"));
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedData);
@@ -126,7 +125,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendData)
 
 BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
 {
-  shared_ptr<Interest> interest = makeInterest("/1HrsRM1X", 152);
+  auto interest = makeInterest("/1HrsRM1X", 152);
 
   bool hasReceivedNack = false;
   clientFace->expressInterest(*interest,
@@ -141,8 +140,7 @@ BOOST_AUTO_TEST_CASE(ReceiveInterestSendNack)
   BOOST_REQUIRE_EQUAL(receivedInterests.size(), 1);
   BOOST_CHECK_EQUAL(receivedInterests.back().getName(), "/1HrsRM1X");
 
-  lp::Nack nack = makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE);
-  forwarderFace->sendNack(nack);
+  forwarderFace->sendNack(makeNack("/1HrsRM1X", 152, lp::NackReason::NO_ROUTE));
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasReceivedNack);
@@ -156,12 +154,10 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveData)
       hasDeliveredInterest = true;
       BOOST_CHECK_EQUAL(interest.getName(), "/Wpc8TnEeoF/f6SzV8hD");
 
-      shared_ptr<Data> data = makeData("/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi");
-      clientFace->put(*data);
+      clientFace->put(*makeData("/Wpc8TnEeoF/f6SzV8hD/3uytUJCuIi"));
     });
 
-  shared_ptr<Interest> interest = makeInterest("/Wpc8TnEeoF/f6SzV8hD");
-  forwarderFace->sendInterest(*interest);
+  forwarderFace->sendInterest(*makeInterest("/Wpc8TnEeoF/f6SzV8hD"));
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
@@ -177,12 +173,10 @@ BOOST_AUTO_TEST_CASE(SendInterestReceiveNack)
       hasDeliveredInterest = true;
       BOOST_CHECK_EQUAL(interest.getName(), "/4YgJKWcXN/5oaTe05o");
 
-      lp::Nack nack = makeNack("/4YgJKWcXN/5oaTe05o", 191, lp::NackReason::NO_ROUTE);
-      clientFace->put(nack);
+      clientFace->put(makeNack("/4YgJKWcXN/5oaTe05o", 191, lp::NackReason::NO_ROUTE));
     });
 
-  shared_ptr<Interest> interest = makeInterest("/4YgJKWcXN/5oaTe05o", 191);
-  forwarderFace->sendInterest(*interest);
+  forwarderFace->sendInterest(*makeInterest("/4YgJKWcXN/5oaTe05o", 191));
   this->advanceClocks(1_ms, 10);
 
   BOOST_CHECK(hasDeliveredInterest);
@@ -197,7 +191,7 @@ BOOST_AUTO_TEST_CASE(CloseForwarderFace)
   BOOST_CHECK_EQUAL(forwarderFace->getState(), FaceState::CLOSED);
   forwarderFace.reset();
 
-  shared_ptr<Interest> interest = makeInterest("/zpHsVesu0B");
+  auto interest = makeInterest("/zpHsVesu0B");
   interest->setInterestLifetime(100_ms);
 
   bool hasTimeout = false;
@@ -216,8 +210,7 @@ BOOST_AUTO_TEST_CASE(CloseClientFace)
   g_io.poll(); // #3248 workaround
   clientFace.reset();
 
-  shared_ptr<Interest> interest = makeInterest("/aau42XQqb");
-  forwarderFace->sendInterest(*interest);
+  forwarderFace->sendInterest(*makeInterest("/aau42XQqb"));
   BOOST_CHECK_NO_THROW(this->advanceClocks(1_ms, 10));
 }
 
