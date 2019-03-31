@@ -24,109 +24,54 @@
  */
 
 #include "dummy-face.hpp"
+#include "dummy-link-service.hpp"
 #include "dummy-transport.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-class DummyFace::LinkService : public face::LinkService
-{
-public:
-  void
-  receiveInterest(const Interest& interest)
-  {
-    this->face::LinkService::receiveInterest(interest);
-  }
-
-  void
-  receiveData(const Data& data)
-  {
-    this->face::LinkService::receiveData(data);
-  }
-
-  void
-  receiveNack(const lp::Nack& nack)
-  {
-    this->face::LinkService::receiveNack(nack);
-  }
-
-  signal::Signal<LinkService, uint32_t> afterSend;
-
-private:
-  void
-  doSendInterest(const Interest& interest) final
-  {
-    this->sentInterests.push_back(interest);
-    this->afterSend(tlv::Interest);
-  }
-
-  void
-  doSendData(const Data& data) final
-  {
-    this->sentData.push_back(data);
-    this->afterSend(tlv::Data);
-  }
-
-  void
-  doSendNack(const lp::Nack& nack) final
-  {
-    this->sentNacks.push_back(nack);
-    this->afterSend(lp::tlv::Nack);
-  }
-
-  void
-  doReceivePacket(Transport::Packet&&) final
-  {
-    BOOST_ASSERT(false);
-  }
-
-public:
-  std::vector<Interest> sentInterests;
-  std::vector<Data> sentData;
-  std::vector<lp::Nack> sentNacks;
-};
-
 DummyFace::DummyFace(const std::string& localUri, const std::string& remoteUri,
                      ndn::nfd::FaceScope scope, ndn::nfd::FacePersistency persistency,
                      ndn::nfd::LinkType linkType)
-  : Face(make_unique<LinkService>(),
+  : Face(make_unique<DummyLinkService>(),
          make_unique<DummyTransport>(localUri, remoteUri, scope, persistency, linkType))
-  , afterSend(this->getLinkServiceInternal()->afterSend)
-  , sentInterests(this->getLinkServiceInternal()->sentInterests)
-  , sentData(this->getLinkServiceInternal()->sentData)
-  , sentNacks(this->getLinkServiceInternal()->sentNacks)
+  , afterSend(getDummyLinkService()->afterSend)
+  , sentInterests(getDummyLinkService()->sentInterests)
+  , sentData(getDummyLinkService()->sentData)
+  , sentNacks(getDummyLinkService()->sentNacks)
 {
+  getDummyLinkService()->setPacketLogging(LogSentPackets);
 }
 
 void
 DummyFace::setState(FaceState state)
 {
-  static_cast<DummyTransport*>(this->getTransport())->setState(state);
+  static_cast<DummyTransport*>(getTransport())->setState(state);
 }
 
 void
 DummyFace::receiveInterest(const Interest& interest)
 {
-  this->getLinkServiceInternal()->receiveInterest(interest);
+  getDummyLinkService()->receiveInterest(interest);
 }
 
 void
 DummyFace::receiveData(const Data& data)
 {
-  this->getLinkServiceInternal()->receiveData(data);
+  getDummyLinkService()->receiveData(data);
 }
 
 void
 DummyFace::receiveNack(const lp::Nack& nack)
 {
-  this->getLinkServiceInternal()->receiveNack(nack);
+  getDummyLinkService()->receiveNack(nack);
 }
 
-DummyFace::LinkService*
-DummyFace::getLinkServiceInternal()
+DummyLinkService*
+DummyFace::getDummyLinkService() const
 {
-  return static_cast<LinkService*>(this->getLinkService());
+  return static_cast<DummyLinkService*>(getLinkService());
 }
 
 } // namespace tests

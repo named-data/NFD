@@ -288,9 +288,6 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   lp::Sequence m_lastSeqNo;
 
 PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  /// CongestionMark TLV-TYPE (3 octets) + CongestionMark TLV-LENGTH (1 octet) + sizeof(uint64_t)
-  static constexpr size_t CONGESTION_MARK_SIZE = 3 + 1 + sizeof(uint64_t);
-
   /// Time to mark next packet due to send queue congestion
   time::steady_clock::TimePoint m_nextMarkTime;
   /// Time last packet was marked

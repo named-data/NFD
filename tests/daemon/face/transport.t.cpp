@@ -28,8 +28,8 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"
-#include "dummy-receive-link-service.hpp"
-#include "dummy-transport.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
+#include "tests/daemon/face/dummy-transport.hpp"
 
 #include <boost/mpl/fold.hpp>
 #include <boost/mpl/int.hpp>
@@ -193,10 +193,10 @@ protected:
   void
   initialize(unique_ptr<DummyTransport> t = make_unique<DummyTransport>())
   {
-    this->face = make_unique<nfd::Face>(make_unique<DummyReceiveLinkService>(), std::move(t));
+    this->face = make_unique<nfd::Face>(make_unique<DummyLinkService>(), std::move(t));
     this->transport = static_cast<DummyTransport*>(face->getTransport());
     this->sentPackets = &this->transport->sentPackets;
-    this->receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    this->receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
   }
 
 protected:

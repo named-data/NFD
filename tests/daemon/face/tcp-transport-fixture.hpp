@@ -31,7 +31,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
-#include "dummy-receive-link-service.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -98,10 +98,10 @@ protected:
       scope = ndn::nfd::FACE_SCOPE_NON_LOCAL;
     }
 
-    face = make_unique<Face>(make_unique<DummyReceiveLinkService>(),
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
                              make_unique<TcpTransport>(std::move(sock), persistency, scope));
     transport = static_cast<TcpTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }

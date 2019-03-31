@@ -31,7 +31,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
-#include "dummy-receive-link-service.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
 
 #include <boost/filesystem.hpp>
 
@@ -112,10 +112,10 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
     localEp = sock.local_endpoint();
-    face = make_unique<Face>(make_unique<DummyReceiveLinkService>(),
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
                              make_unique<UnixStreamTransport>(std::move(sock)));
     transport = static_cast<UnixStreamTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }

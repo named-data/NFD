@@ -31,7 +31,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
-#include "dummy-receive-link-service.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -78,12 +78,11 @@ protected:
     MulticastUdpTransport::openRxSocket(sockRx, remoteMcastEp, address);
     MulticastUdpTransport::openTxSocket(sockTx, udp::endpoint(address, txPort), nullptr, true);
 
-    face = make_unique<Face>(
-             make_unique<DummyReceiveLinkService>(),
-             make_unique<MulticastUdpTransport>(mcastEp, std::move(sockRx), std::move(sockTx),
-                                                ndn::nfd::LINK_TYPE_MULTI_ACCESS));
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
+                             make_unique<MulticastUdpTransport>(mcastEp, std::move(sockRx), std::move(sockTx),
+                                                                ndn::nfd::LINK_TYPE_MULTI_ACCESS));
     transport = static_cast<MulticastUdpTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }

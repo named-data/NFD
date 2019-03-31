@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -33,6 +33,10 @@ namespace nfd {
 namespace face {
 
 NFD_LOG_INIT(GenericLinkService);
+
+constexpr size_t CONGESTION_MARK_SIZE = tlv::sizeOfVarNumber(lp::tlv::CongestionMark) + // type
+                                        tlv::sizeOfVarNumber(sizeof(uint64_t)) +        // length
+                                        tlv::sizeOfNonNegativeInteger(UINT64_MAX);      // value
 
 constexpr uint32_t DEFAULT_CONGESTION_THRESHOLD_DIVISOR = 2;
 

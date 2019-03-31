@@ -32,7 +32,9 @@ namespace nfd {
 namespace face {
 namespace tests {
 
-/** \brief a Face for unit testing
+class DummyLinkService;
+
+/** \brief A Face for unit testing.
  *
  *  The DummyFace has no underlying transport, but allows observing outgoing packets
  *  and injecting incoming packets at network layer.
@@ -45,8 +47,7 @@ namespace tests {
 class DummyFace : public Face
 {
 public:
-  class LinkService;
-
+  explicit
   DummyFace(const std::string& localUri = "dummy://", const std::string& remoteUri = "dummy://",
             ndn::nfd::FaceScope scope = ndn::nfd::FACE_SCOPE_NON_LOCAL,
             ndn::nfd::FacePersistency persistency = ndn::nfd::FACE_PERSISTENCY_PERSISTENT,
@@ -73,17 +74,17 @@ public:
   void
   receiveNack(const lp::Nack& nack);
 
-  /** \brief signals after any network-layer packet is sent
+  /** \brief Emitted after a network-layer packet is sent.
    *
-   *  The network-layer packet type is indicated as an argument,
-   *  which is either of tlv::Interest, tlv::Data, or lp::tlv::Nack.
-   *  The callback may retrieve the packet from sentInterests.back(), sentData.back(), or sentNacks.back().
+   *  The packet type is reported via the argument, whose value will be one of
+   *  tlv::Interest, tlv::Data, or lp::tlv::Nack. Signal handlers may retrieve
+   *  the packet via `sentInterests.back()`, `sentData.back()`, or `sentNacks.back()`.
    */
-  signal::Signal<LinkService, uint32_t>& afterSend;
+  signal::Signal<DummyLinkService, uint32_t>& afterSend;
 
 private:
-  LinkService*
-  getLinkServiceInternal();
+  DummyLinkService*
+  getDummyLinkService() const;
 
 public:
   std::vector<Interest>& sentInterests;

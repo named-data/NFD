@@ -31,7 +31,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
-#include "dummy-receive-link-service.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -109,11 +109,10 @@ protected:
     BOOST_REQUIRE_EQUAL(limitedIo.run(2, // serverHandleOpen, clientHandleOpen
                                       1_s), LimitedIo::EXCEED_OPS);
 
-    face = make_unique<Face>(
-             make_unique<DummyReceiveLinkService>(),
-             make_unique<WebSocketTransport>(serverHdl, std::ref(server), pingInterval));
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
+                             make_unique<WebSocketTransport>(serverHdl, std::ref(server), pingInterval));
     transport = static_cast<WebSocketTransport*>(face->getTransport());
-    serverReceivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    serverReceivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }

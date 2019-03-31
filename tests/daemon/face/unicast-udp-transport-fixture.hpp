@@ -31,7 +31,7 @@
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/limited-io.hpp"
-#include "dummy-receive-link-service.hpp"
+#include "tests/daemon/face/dummy-link-service.hpp"
 
 namespace nfd {
 namespace face {
@@ -61,11 +61,10 @@ protected:
 
     remoteConnect(address);
 
-    face = make_unique<Face>(
-             make_unique<DummyReceiveLinkService>(),
-             make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
+    face = make_unique<Face>(make_unique<DummyLinkService>(),
+                             make_unique<UnicastUdpTransport>(std::move(sock), persistency, 3_s));
     transport = static_cast<UnicastUdpTransport*>(face->getTransport());
-    receivedPackets = &static_cast<DummyReceiveLinkService*>(face->getLinkService())->receivedPackets;
+    receivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 
     BOOST_REQUIRE_EQUAL(transport->getState(), TransportState::UP);
   }

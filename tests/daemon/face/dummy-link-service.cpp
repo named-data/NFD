@@ -23,51 +23,46 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
-#define NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
-
-#include "face/link-service.hpp"
+#include "dummy-link-service.hpp"
 
 namespace nfd {
 namespace face {
 namespace tests {
 
-/** \brief A dummy LinkService that logs all received packets, for Transport testing.
- *  \warning This LinkService does not allow sending.
- */
-class DummyReceiveLinkService final : public LinkService
+void
+DummyLinkService::doSendInterest(const Interest& interest)
 {
-private:
-  void
-  doSendInterest(const Interest&) final
-  {
-    BOOST_ASSERT(false);
-  }
+  if (m_loggingFlags & LogSentInterests)
+    sentInterests.push_back(interest);
 
-  void
-  doSendData(const Data&) final
-  {
-    BOOST_ASSERT(false);
-  }
+  afterSend(tlv::Interest);
+}
 
-  void
-  doSendNack(const lp::Nack&) final
-  {
-    BOOST_ASSERT(false);
-  }
+void
+DummyLinkService::doSendData(const Data& data)
+{
+  if (m_loggingFlags & LogSentData)
+    sentData.push_back(data);
 
-  void
-  doReceivePacket(Transport::Packet&& packet) final
-  {
+  afterSend(tlv::Data);
+}
+
+void
+DummyLinkService::doSendNack(const lp::Nack& nack)
+{
+  if (m_loggingFlags & LogSentNacks)
+    sentNacks.push_back(nack);
+
+  afterSend(lp::tlv::Nack);
+}
+
+void
+DummyLinkService::doReceivePacket(Transport::Packet&& packet)
+{
+  if (m_loggingFlags & LogReceivedPackets)
     receivedPackets.push_back(std::move(packet));
-  }
-
-public:
-  std::vector<Transport::Packet> receivedPackets;
-};
+}
 
 } // namespace tests
 } // namespace face
 } // namespace nfd
-
-#endif // NFD_TESTS_DAEMON_FACE_DUMMY_RECEIVE_LINK_SERVICE_HPP
