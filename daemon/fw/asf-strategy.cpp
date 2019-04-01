@@ -108,17 +108,24 @@ AsfStrategy::getParamValue(const std::string& param, const std::string& value)
 }
 
 void
+AsfStrategy::sendAsfProbe(const FaceEndpoint& ingress, const Interest& interest,
+                          const shared_ptr<pit::Entry>& pitEntry, const Face& faceToUse,
+                          const fib::Entry& fibEntry)
+{
+  Face* faceToProbe = m_probing.getFaceToProbe(ingress.face, interest, fibEntry, faceToUse);
+  if (faceToProbe != nullptr) {
+    forwardInterest(interest, fibEntry, pitEntry, *faceToProbe, true);
+    m_probing.afterForwardingProbe(fibEntry, interest);
+  }
+}
+
+void
 AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                   const shared_ptr<pit::Entry>& pitEntry)
 {
   // Should the Interest be suppressed?
   RetxSuppressionResult suppressResult = m_retxSuppression.decidePerPitEntry(*pitEntry);
-
-  switch (suppressResult) {
-  case RetxSuppressionResult::NEW:
-  case RetxSuppressionResult::FORWARD:
-    break;
-  case RetxSuppressionResult::SUPPRESS:
+  if (suppressResult == RetxSuppressionResult::SUPPRESS) {
     NFD_LOG_DEBUG(interest << " from=" << ingress << " suppressed");
     return;
   }
@@ -126,33 +133,52 @@ AsfStrategy::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& i
   const fib::Entry& fibEntry = this->lookupFib(*pitEntry);
   const fib::NextHopList& nexthops = fibEntry.getNextHops();
 
-  if (nexthops.size() == 0) {
-    sendNoRouteNack(ingress, interest, pitEntry);
-    this->rejectPendingInterest(pitEntry);
-    return;
-  }
-
-  Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, ingress.face);
-
-  if (faceToUse == nullptr) {
-    sendNoRouteNack(ingress, interest, pitEntry);
-    this->rejectPendingInterest(pitEntry);
-    return;
-  }
-
-  NFD_LOG_TRACE("Forwarding interest to face: " << faceToUse->getId());
-
-  forwardInterest(interest, fibEntry, pitEntry, *faceToUse);
-
-  // If necessary, send probe
-  if (m_probing.isProbingNeeded(fibEntry, interest)) {
-    Face* faceToProbe = m_probing.getFaceToProbe(ingress.face, interest, fibEntry, *faceToUse);
-
-    if (faceToProbe != nullptr) {
-      bool wantNewNonce = true;
-      forwardInterest(interest, fibEntry, pitEntry, *faceToProbe, wantNewNonce);
-      m_probing.afterForwardingProbe(fibEntry, interest);
+  if (suppressResult == RetxSuppressionResult::NEW) {
+    if (nexthops.size() == 0) {
+      // send noRouteNack if nexthop is not available
+      sendNoRouteNack(ingress, interest, pitEntry);
+      this->rejectPendingInterest(pitEntry);
+      return;
     }
+
+    Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, ingress.face, pitEntry);
+
+    if (faceToUse == nullptr) {
+      sendNoRouteNack(ingress, interest, pitEntry);
+      this->rejectPendingInterest(pitEntry);
+      return;
+    }
+
+    NFD_LOG_TRACE("Forwarding interest to face: " << faceToUse->getId());
+    forwardInterest(interest, fibEntry, pitEntry, *faceToUse);
+
+    // If necessary, send probe
+    if (m_probing.isProbingNeeded(fibEntry, interest)) {
+      sendAsfProbe(ingress, interest, pitEntry, *faceToUse, fibEntry);
+    }
+    return;
+  }
+
+  Face* faceToUse = getBestFaceForForwarding(fibEntry, interest, ingress.face, pitEntry, false);
+  // if unused face not found, select nexthop with earliest out record
+  if (faceToUse != nullptr) {
+
+    NFD_LOG_TRACE("Forwarding interest to face: " << faceToUse->getId());
+    forwardInterest(interest, fibEntry, pitEntry, *faceToUse);
+    // avoid probing in case of forwarding
+    return;
+  }
+
+  // find an eligible upstream that is used earliest
+  auto it = nexthops.end();
+  it = findEligibleNextHopWithEarliestOutRecord(ingress.face, interest, nexthops, pitEntry);
+  if (it == nexthops.end()) {
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmitNoNextHop");
+  }
+  else {
+    auto egress = FaceEndpoint(it->getFace(), 0);
+    NFD_LOG_DEBUG(interest << " from=" << ingress << " retransmit-retry-to=" << egress);
+    this->sendInterest(pitEntry, egress, interest);
   }
 }
 
@@ -201,7 +227,6 @@ AsfStrategy::forwardInterest(const Interest& interest,
                              bool wantNewNonce)
 {
   auto egress = FaceEndpoint(outFace, 0);
-
   if (wantNewNonce) {
     //Send probe: interest with new Nonce
     Interest probeInterest(interest);
@@ -262,7 +287,8 @@ getValueForSorting(const FaceStats& stats)
 
 Face*
 AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest,
-                                      const Face& inFace)
+                                      const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                                      bool isInterestNew)
 {
   NFD_LOG_TRACE("Looking for best face for " << fibEntry.getPrefix());
 
@@ -286,11 +312,11 @@ AsfStrategy::getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest
       }
   });
 
+  auto now = time::steady_clock::now();
   for (const fib::NextHop& hop : fibEntry.getNextHops()) {
     Face& hopFace = hop.getFace();
 
-    if ((hopFace.getId() == inFace.getId() && hopFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC) ||
-         wouldViolateScope(inFace, interest, hopFace)) {
+    if (!isNextHopEligible(inFace, interest, hop, pitEntry, !isInterestNew, now)) {
       continue;
     }
 

@@ -252,13 +252,23 @@ TopologyTester::registerPrefix(TopologyNode i, const Face& face, const Name& pre
 }
 
 void
-TopologyTester::addEchoProducer(ndn::Face& face, const Name& prefix)
+TopologyTester::addEchoProducer(ndn::Face& face, const Name& prefix, time::nanoseconds replyDelay)
 {
-  face.setInterestFilter(prefix,
-      [&face] (const auto&, const Interest& interest) {
-        auto data = makeData(interest.getName());
+  BOOST_ASSERT(replyDelay >= 0_ns);
+
+  face.setInterestFilter(prefix, [=, &face] (const auto&, const auto& interest) {
+    auto data = makeData(interest.getName());
+    if (replyDelay == 0_ns) {
+      // reply immediately
+      face.put(*data);
+    }
+    else {
+      // delay the reply
+      getScheduler().schedule(replyDelay, [&face, data = std::move(data)] {
         face.put(*data);
       });
+    }
+  });
 }
 
 void

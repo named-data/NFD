@@ -73,8 +73,15 @@ private:
                   Face& outFace,
                   bool wantNewNonce = false);
 
+  void
+  sendAsfProbe(const FaceEndpoint& ingress, const Interest& interest,
+               const shared_ptr<pit::Entry>& pitEntry, const Face& faceToUse,
+               const fib::Entry& fibEntry);
+
   Face*
-  getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest, const Face& inFace);
+  getBestFaceForForwarding(const fib::Entry& fibEntry, const Interest& interest,
+                           const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                           bool isNewInterest = true);
 
   void
   onTimeout(const Name& interestName, const FaceId faceId);

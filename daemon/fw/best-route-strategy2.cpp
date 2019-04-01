@@ -61,68 +61,6 @@ BestRouteStrategy2::getStrategyName()
   return strategyName;
 }
 
-/** \brief determines whether a NextHop is eligible
- *  \param inFace incoming face of current Interest
- *  \param interest incoming Interest
- *  \param nexthop next hop
- *  \param pitEntry PIT entry
- *  \param wantUnused if true, NextHop must not have unexpired out-record
- *  \param now time::steady_clock::now(), ignored if !wantUnused
- */
-static bool
-isNextHopEligible(const Face& inFace, const Interest& interest,
-                  const fib::NextHop& nexthop,
-                  const shared_ptr<pit::Entry>& pitEntry,
-                  bool wantUnused = false,
-                  time::steady_clock::TimePoint now = time::steady_clock::TimePoint::min())
-{
-  const Face& outFace = nexthop.getFace();
-
-  // do not forward back to the same face, unless it is ad hoc
-  if (outFace.getId() == inFace.getId() && outFace.getLinkType() != ndn::nfd::LINK_TYPE_AD_HOC)
-    return false;
-
-  // forwarding would violate scope
-  if (wouldViolateScope(inFace, interest, outFace))
-    return false;
-
-  if (wantUnused) {
-    // nexthop must not have unexpired out-record
-    auto outRecord = pitEntry->getOutRecord(outFace, 0);
-    if (outRecord != pitEntry->out_end() && outRecord->getExpiry() > now) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/** \brief pick an eligible NextHop with earliest out-record
- *  \note It is assumed that every nexthop has an out-record.
- */
-static fib::NextHopList::const_iterator
-findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& interest,
-                                         const fib::NextHopList& nexthops,
-                                         const shared_ptr<pit::Entry>& pitEntry)
-{
-  auto found = nexthops.end();
-  auto earliestRenewed = time::steady_clock::TimePoint::max();
-
-  for (auto it = nexthops.begin(); it != nexthops.end(); ++it) {
-    if (!isNextHopEligible(inFace, interest, *it, pitEntry))
-      continue;
-
-    auto outRecord = pitEntry->getOutRecord(it->getFace(), 0);
-    BOOST_ASSERT(outRecord != pitEntry->out_end());
-    if (outRecord->getLastRenewed() < earliestRenewed) {
-      found = it;
-      earliestRenewed = outRecord->getLastRenewed();
-    }
-  }
-
-  return found;
-}
-
 void
 BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Interest& interest,
                                          const shared_ptr<pit::Entry>& pitEntry)
@@ -155,8 +93,8 @@ BestRouteStrategy2::afterReceiveInterest(const FaceEndpoint& ingress, const Inte
     }
 
     auto egress = FaceEndpoint(it->getFace(), 0);
-    this->sendInterest(pitEntry, egress, interest);
     NFD_LOG_DEBUG(interest << " from=" << ingress << " newPitEntry-to=" << egress);
+    this->sendInterest(pitEntry, egress, interest);
     return;
   }
 

@@ -286,7 +286,7 @@ public:
   /** \brief creates a producer application that answers every Interest with Data of same Name
    */
   void
-  addEchoProducer(ndn::Face& face, const Name& prefix = "/");
+  addEchoProducer(ndn::Face& face, const Name& prefix = "/", time::nanoseconds replyDelay = 0_ns);
 
   /** \brief creates a consumer application that sends \p n Interests under \p prefix
    *         at \p interval fixed rate.

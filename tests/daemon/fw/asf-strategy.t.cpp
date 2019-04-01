@@ -46,7 +46,7 @@ class AsfGridFixture : public GlobalIoTimeFixture
 {
 protected:
   explicit
-  AsfGridFixture(const Name& params = AsfStrategy::getStrategyName())
+  AsfGridFixture(const Name& params = AsfStrategy::getStrategyName(), time::nanoseconds replyDelay = 0_ms)
     : parameters(params)
   {
     /*
@@ -82,7 +82,8 @@ protected:
 
     consumer = topo.addAppFace("c", nodeA);
     producer = topo.addAppFace("p", nodeC, PRODUCER_PREFIX);
-    topo.addEchoProducer(producer->getClientFace());
+
+    topo.addEchoProducer(producer->getClientFace(), PRODUCER_PREFIX, replyDelay);
 
     // Register producer prefix on consumer node
     topo.registerPrefix(nodeA, linkAB->getFace(nodeA), PRODUCER_PREFIX, 10);
@@ -197,6 +198,100 @@ BOOST_FIXTURE_TEST_CASE(Nack, AsfGridFixture)
   // nodeD should receive 2 Interests: one for the very first Interest and
   // another from a probe
   BOOST_CHECK_GE(linkAD->getFace(nodeA).getCounters().nOutInterests, 2);
+}
+
+class AsfStrategyDelayedDataFixture : public AsfGridFixture
+{
+protected:
+  AsfStrategyDelayedDataFixture()
+    : AsfGridFixture(Name(AsfStrategy::getStrategyName()), 400_ms)
+  {
+  }
+};
+
+BOOST_FIXTURE_TEST_CASE(InterestForwarding, AsfStrategyDelayedDataFixture)
+{
+
+  Name name(PRODUCER_PREFIX);
+  name.appendTimestamp();
+  shared_ptr<Interest> interest = makeInterest(name, true);
+
+  topo.registerPrefix(nodeB, linkBC->getFace(nodeB), PRODUCER_PREFIX);
+  topo.registerPrefix(nodeD, linkCD->getFace(nodeD), PRODUCER_PREFIX);
+
+  // The first interest should go via link AD
+  consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+  this->advanceClocks(10_ms, 100_ms);
+  BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nOutInterests, 1);
+
+  // Second interest should go via link AB
+  interest->refreshNonce();
+  consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+  this->advanceClocks(10_ms, 100_ms);
+  BOOST_CHECK_EQUAL(linkAB->getFace(nodeA).getCounters().nOutInterests, 1);
+
+  // The third interest should again go via AD, since both the face from A is already used
+  // and so asf should choose the earliest used face i.e. AD
+  interest->refreshNonce();
+  consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+  this->advanceClocks(10_ms, 100_ms);
+  BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nOutInterests, 2);
+
+  this->advanceClocks(time::milliseconds(500), time::seconds(5));
+  BOOST_CHECK_EQUAL(linkAD->getFace(nodeA).getCounters().nInData, 1);
+  BOOST_CHECK_EQUAL(linkAB->getFace(nodeA).getCounters().nInData, 1);
+  BOOST_CHECK_EQUAL(consumer->getForwarderFace().getCounters().nOutData, 1);
+
+}
+
+BOOST_AUTO_TEST_CASE(Retransmission)
+{
+  // This is a unit test written to recreate the following issue
+  // https://redmine.named-data.net/issues/4874
+  /*
+   *                  +---------+   10ms   +---------+
+   *                  |  nodeB  | ------>  |  nodeC  |
+   *                  +---------+          +---------+
+   */
+  // Avoid clearing pit entry for those incoming interest that have pit entry but no next hops
+
+  static const Name PRODUCER_PREFIX = "ndn:/pnr/C";
+  Name parameters = AsfStrategy::getStrategyName();
+  TopologyTester topo;
+
+  TopologyNode nodeB = topo.addForwarder("B"),
+               nodeC = topo.addForwarder("C");
+
+  topo.setStrategy<AsfStrategy>(nodeB, Name("ndn:/"), parameters);
+  topo.setStrategy<AsfStrategy>(nodeC, Name("ndn:/"), parameters);
+
+  shared_ptr<TopologyLink> linkBC = topo.addLink("BC", time::milliseconds(10), {nodeB, nodeC});
+
+  shared_ptr<TopologyAppLink> consumer = topo.addAppFace("c", nodeB),
+                              producer = topo.addAppFace("p", nodeC, PRODUCER_PREFIX);
+
+  topo.addEchoProducer(producer->getClientFace(), PRODUCER_PREFIX, 100_ms);
+
+  Name name(PRODUCER_PREFIX);
+  name.appendTimestamp();
+  auto interest = makeInterest(name, true);
+
+  nfd::pit::Pit& pit = topo.getForwarder(nodeB).getPit();
+  shared_ptr<pit::Entry> pitEntry = pit.insert(*interest).first;
+
+  topo.getForwarder(nodeB).onOutgoingInterest(pitEntry, FaceEndpoint(linkBC->getFace(nodeB), 0), *interest);
+  this->advanceClocks(time::milliseconds(100));
+
+  interest->refreshNonce();
+  consumer->getClientFace().expressInterest(*interest, nullptr, nullptr, nullptr);
+  this->advanceClocks(time::milliseconds(100));
+
+  pit::OutRecordCollection::const_iterator outRecord = pitEntry->getOutRecord(linkBC->getFace(nodeB), 0);
+  BOOST_CHECK(outRecord != pitEntry->out_end());
+
+  this->advanceClocks(time::milliseconds(100));
+  BOOST_CHECK_EQUAL(linkBC->getFace(nodeC).getCounters().nOutData, 1);
+  BOOST_CHECK_EQUAL(linkBC->getFace(nodeB).getCounters().nInData, 1);
 }
 
 BOOST_AUTO_TEST_CASE(NoPitOutRecordAndProbeInterestNewNonce)

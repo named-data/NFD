@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,6 +27,7 @@
 #define NFD_DAEMON_FW_PIT_ALGORITHM_HPP
 
 #include "core/scope-prefix.hpp"
+#include "table/fib.hpp"
 #include "table/pit-entry.hpp"
 
 /** \file
@@ -82,6 +83,29 @@ hasPendingOutRecords(const pit::Entry& pitEntry);
  */
 time::steady_clock::TimePoint
 getLastOutgoing(const pit::Entry& pitEntry);
+
+/** \brief pick an eligible NextHop with earliest out-record
+ *  \note It is assumed that every nexthop has an out-record.
+ */
+fib::NextHopList::const_iterator
+findEligibleNextHopWithEarliestOutRecord(const Face& inFace, const Interest& interest,
+                                         const fib::NextHopList& nexthops,
+                                         const shared_ptr<pit::Entry>& pitEntry);
+
+/** \brief determines whether a NextHop is eligible i.e. not the same inFace
+ *  \param inFace incoming face of current Interest
+ *  \param interest incoming Interest
+ *  \param nexthop next hop
+ *  \param pitEntry PIT entry
+ *  \param wantUnused if true, NextHop must not have unexpired out-record
+ *  \param now time::steady_clock::now(), ignored if !wantUnused
+ */
+bool
+isNextHopEligible(const Face& inFace, const Interest& interest,
+                  const fib::NextHop& nexthop,
+                  const shared_ptr<pit::Entry>& pitEntry,
+                  bool wantUnused = false,
+                  time::steady_clock::TimePoint now = time::steady_clock::TimePoint::min());
 
 } // namespace fw
 } // namespace nfd
