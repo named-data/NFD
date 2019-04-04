@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2016,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,49 +26,48 @@
 #ifndef NFD_CORE_VERSION_HPP
 #define NFD_CORE_VERSION_HPP
 
-namespace nfd {
-
-/** NFD version follows Semantic Versioning 2.0.0 specification
- *  http://semver.org/
- */
-
+// NFD version follows Semantic Versioning 2.0.0
+// https://semver.org/spec/v2.0.0.html
+//
 // To change version number, modify VERSION variable in top-level wscript.
 
-/** \brief NFD version represented as an integer
+/** \brief NFD version represented as an integer.
  *
- *  MAJOR*1000000 + MINOR*1000 + PATCH
+ *  Equivalent to: `#NFD_VERSION_MAJOR*1000000 + #NFD_VERSION_MINOR*1000 + #NFD_VERSION_PATCH`
  */
 #define NFD_VERSION @VERSION@
 
-/** \brief NFD version represented as a string
- *
- *  MAJOR.MINOR.PATCH
- */
-#define NFD_VERSION_STRING "@VERSION_STRING@"
-
-/** \brief NFD version string, including git commit information, if NFD is build from
- *         specific git commit
- *
- * NFD_VERSION_BUILD_STRING is obtained using the following command (`NFD-` prefix is
- * afterwards removed):
- *
- *    `git describe --match 'NFD-*'`
- *
- * When NFD is built not from git, NFD_VERSION_BUILD_STRING equals NFD_VERSION_STRING
- *
- * MAJOR.MINOR.PATCH(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
- *
- * Example, 0.1.0-rc1-1-g5c86570
- */
-#define NFD_VERSION_BUILD_STRING "@VERSION_BUILD@"
-
-/// MAJOR version
+/// The major version of NFD
 #define NFD_VERSION_MAJOR @VERSION_MAJOR@
-/// MINOR version
+/// The minor version of NFD
 #define NFD_VERSION_MINOR @VERSION_MINOR@
-/// PATCH version
+/// The patch version of NFD
 #define NFD_VERSION_PATCH @VERSION_PATCH@
 
-} // namespace nfd
+/** \brief NFD version represented as a string.
+ *
+ * Format:
+ * @code
+ * MAJOR.MINOR.PATCH
+ * @endcode
+ */
+extern const char NFD_VERSION_STRING[];
+
+/** \brief NFD version string, including git commit information, if NFD is build from
+ *         specific git commit.
+ *
+ * #NFD_VERSION_BUILD_STRING is obtained using the following command (`NFD-` prefix is
+ * afterwards removed): `git describe --match 'NFD-*'`
+ *
+ * When NFD is not built from git, #NFD_VERSION_BUILD_STRING equals #NFD_VERSION_STRING.
+ *
+ * Format:
+ * @code
+ * MAJOR.MINOR.PATCH(-release-candidate-tag)(-(number-of-commits-since-tag)-COMMIT-HASH)
+ * @endcode
+ *
+ * Example: 0.1.0-rc1-1-g5c86570
+ */
+extern const char NFD_VERSION_BUILD_STRING[];
 
 #endif // NFD_CORE_VERSION_HPP

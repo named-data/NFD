@@ -144,27 +144,21 @@ def configure(conf):
     conf.write_config_header('core/config.hpp')
 
 def build(bld):
-    version(bld)
+    versionhpp(bld)
 
     bld(features='subst',
-        name='version.hpp',
-        source='core/version.hpp.in',
-        target='core/version.hpp',
+        name='version.cpp',
+        source='core/version.cpp.in',
+        target='core/version.cpp',
         install_path=None,
         VERSION_STRING=VERSION_BASE,
-        VERSION_BUILD=VERSION,
-        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
-                int(VERSION_SPLIT[1]) * 1000 +
-                int(VERSION_SPLIT[2]),
-        VERSION_MAJOR=VERSION_SPLIT[0],
-        VERSION_MINOR=VERSION_SPLIT[1],
-        VERSION_PATCH=VERSION_SPLIT[2])
+        VERSION_BUILD=VERSION)
 
     bld.objects(
         target='core-objects',
         features='pch',
-        source=bld.path.ant_glob('core/**/*.cpp'),
-        use='version.hpp NDN_CXX BOOST LIBRT',
+        source=bld.path.find_node('core').ant_glob('*.cpp') + ['core/version.cpp'],
+        use='version.cpp version.hpp NDN_CXX BOOST LIBRT',
         includes='.',
         export_includes='.',
         headers='core/common.hpp')
@@ -236,12 +230,27 @@ def build(bld):
         bld.symlink_as('${MANDIR}/man1/nfdc-set-strategy.1', 'nfdc-strategy.1')
         bld.symlink_as('${MANDIR}/man1/nfdc-unset-strategy.1', 'nfdc-strategy.1')
 
+def versionhpp(bld):
+    version(bld)
+
+    bld(features='subst',
+        name='version.hpp',
+        source='core/version.hpp.in',
+        target='core/version.hpp',
+        install_path=None,
+        VERSION=int(VERSION_SPLIT[0]) * 1000000 +
+                int(VERSION_SPLIT[1]) * 1000 +
+                int(VERSION_SPLIT[2]),
+        VERSION_MAJOR=VERSION_SPLIT[0],
+        VERSION_MINOR=VERSION_SPLIT[1],
+        VERSION_PATCH=VERSION_SPLIT[2])
+
 def docs(bld):
     from waflib import Options
     Options.commands = ['doxygen', 'sphinx'] + Options.commands
 
 def doxygen(bld):
-    version(bld)
+    versionhpp(bld)
 
     if not bld.env.DOXYGEN:
         bld.fatal('Cannot build documentation ("doxygen" not found in PATH)')
@@ -260,7 +269,7 @@ def doxygen(bld):
 
     bld(features='doxygen',
         doxyfile='docs/doxygen.conf',
-        use='doxygen.conf')
+        use='doxygen.conf version.hpp')
 
 def sphinx(bld):
     version(bld)

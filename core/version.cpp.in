@@ -25,42 +25,5 @@
 
 #include "core/version.hpp"
 
-#include "tests/test-common.hpp"
-
-#include <stdio.h>
-
-namespace nfd {
-namespace tests {
-
-BOOST_AUTO_TEST_SUITE(TestVersion)
-
-BOOST_AUTO_TEST_CASE(VersionNumber)
-{
-  BOOST_TEST_MESSAGE("NFD_VERSION = " + to_string(NFD_VERSION));
-
-  BOOST_CHECK_EQUAL(NFD_VERSION, NFD_VERSION_MAJOR * 1000000 +
-                                 NFD_VERSION_MINOR * 1000 +
-                                 NFD_VERSION_PATCH);
-}
-
-BOOST_AUTO_TEST_CASE(VersionString)
-{
-  BOOST_TEST_MESSAGE("NFD_VERSION_STRING = " << NFD_VERSION_STRING);
-  BOOST_TEST_MESSAGE("NFD_VERSION_BUILD_STRING = " << NFD_VERSION_BUILD_STRING);
-
-  static_assert(NFD_VERSION_MAJOR < 1000, "");
-  static_assert(NFD_VERSION_MINOR < 1000, "");
-  static_assert(NFD_VERSION_PATCH < 1000, "");
-  char buf[12];
-  ::snprintf(buf, sizeof(buf), "%d.%d.%d", NFD_VERSION_MAJOR, NFD_VERSION_MINOR, NFD_VERSION_PATCH);
-
-  BOOST_CHECK_EQUAL(NFD_VERSION_STRING, buf);
-
-  std::string build(NFD_VERSION_BUILD_STRING);
-  BOOST_CHECK_EQUAL(build.substr(0, build.find_first_of('-')), NFD_VERSION_STRING);
-}
-
-BOOST_AUTO_TEST_SUITE_END() // TestVersion
-
-} // namespace tests
-} // namespace nfd
+const char NFD_VERSION_STRING[] = "@VERSION_STRING@";
+const char NFD_VERSION_BUILD_STRING[] = "@VERSION_BUILD@";
