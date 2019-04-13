@@ -2,20 +2,25 @@ Notes for NFD developers
 ========================
 
 If you are new to the NDN software community, please read the
-[Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md)
+[Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md).
 
-Requirements
-------------
+Code style
+----------
 
-Contributions to NFD must be licensed under GPL 3.0 or compatible license.  If you are
-choosing GPL 3.0, please use the following license boilerplate in all `.hpp` and `.cpp`
-files:
+NFD code is subject to [NFD code style](https://redmine.named-data.net/projects/nfd/wiki/CodeStyle).
+
+Licensing
+---------
+
+Contributions to NFD must be licensed under the GPL 3.0 or compatible license.  If you
+are choosing GPL 3.0, please use the following license boilerplate in all `.hpp` and
+`.cpp` files:
 
 Include the following license boilerplate into all `.hpp` and `.cpp` files:
 
     /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
     /*
-     * Copyright (c) [Year(s)],  [Copyright Holder(s)].
+     * Copyright (c) [Year(s)], [Copyright Holder(s)].
      *
      * This file is part of NFD (Named Data Networking Forwarding Daemon).
      * See AUTHORS.md for complete list of NFD authors and contributors.
@@ -35,32 +40,26 @@ Include the following license boilerplate into all `.hpp` and `.cpp` files:
 If you are affiliated to an NSF-supported NDN project institution, please use the [NDN Team License
 Boilerplate](https://redmine.named-data.net/projects/nfd/wiki/NDN_Team_License_Boilerplate_(NFD)).
 
-Recommendations
----------------
-
-NFD code is subject to NFD [code style](https://redmine.named-data.net/projects/nfd/wiki/CodeStyle).
-
-
-Running unit-tests
+Running unit tests
 ------------------
 
 To run unit tests, NFD needs to be configured and build with unit test support:
 
-    ./waf configure --with-tests
+    ./waf configure --with-tests # --debug is also strongly recommended while developing
     ./waf
 
-The simplest way to run tests, is just to run the compiled binary without any parameters:
+The simplest way to run the tests is to launch the compiled binary without any parameters:
 
     # Run core tests
     ./build/unit-tests-core
 
-    # Run  NFD daemon tests
+    # Run NFD daemon tests
     ./build/unit-tests-daemon
 
     # Run NFD RIB management tests
     ./build/unit-tests-rib
 
-However, [Boost.Test framework](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
+[Boost.Test framework](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
 is very flexible and allows a number of run-time customization of what tests should be run.
 For example, it is possible to choose to run only a specific test suite, only a specific
 test case within a suite, or specific test cases within specific test suites:
@@ -76,8 +75,8 @@ test case within a suite, or specific test cases within specific test suites:
 
 By default, Boost.Test framework will produce verbose output only when a test case fails.
 If it is desired to see verbose output (result of each test assertion), add `-l all`
-option to `./build/unit-tests` command.  To see test progress, you can use `-l test_suite`
-or `-p` to show progress bar:
+option to `./build/unit-tests` command.  To see test progress, you can use `-l test_suite`,
+or `-p` to show a progress bar:
 
     # Show report all log messages including the passed test notification
     ./build/unit-tests-daemon -l all
@@ -91,7 +90,7 @@ or `-p` to show progress bar:
     # Show progress bar
     ./build/unit-tests-core -p
 
-There are many more command line options available, information about
-which can be obtained either from the command line using `--help`
-switch, or online on [Boost.Test library](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
+There are many more command line options available, information about which can be obtained
+either from the command line using `--help` switch, or online on
+[Boost.Test library](https://www.boost.org/doc/libs/1_58_0/libs/test/doc/html/index.html)
 website.

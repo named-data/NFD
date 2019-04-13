@@ -220,9 +220,10 @@ def build(bld):
             builder='man',
             config='docs/conf.py',
             outdir='docs/manpages',
-            source=bld.path.ant_glob('docs/manpages/**/*.rst'),
+            source=bld.path.ant_glob('docs/manpages/*.rst'),
             install_path='${MANDIR}',
-            VERSION=VERSION)
+            version=VERSION_BASE,
+            release=VERSION)
         bld.symlink_as('${MANDIR}/man1/nfdc-channel.1', 'nfdc-face.1')
         bld.symlink_as('${MANDIR}/man1/nfdc-fib.1', 'nfdc-route.1')
         bld.symlink_as('${MANDIR}/man1/nfdc-register.1', 'nfdc-route.1')
@@ -281,7 +282,8 @@ def sphinx(bld):
         config='docs/conf.py',
         outdir='docs',
         source=bld.path.ant_glob('docs/**/*.rst'),
-        VERSION=VERSION)
+        version=VERSION_BASE,
+        release=VERSION)
 
 def version(ctx):
     # don't execute more than once

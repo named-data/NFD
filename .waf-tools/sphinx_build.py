@@ -44,28 +44,28 @@ def apply_sphinx(self):
     task.inputs.append(conf)
 
     confdir = conf.parent.abspath()
-    buildername = getattr(self, "builder", "html")
-    srcdir = getattr(self, "srcdir", confdir)
-    outdir = self.path.find_or_declare(getattr(self, "outdir", buildername)).get_bld()
-    doctreedir = getattr(self, "doctreedir", os.path.join(outdir.abspath(), ".doctrees"))
+    buildername = getattr(self, 'builder', 'html')
+    srcdir = getattr(self, 'srcdir', confdir)
+    outdir = self.path.find_or_declare(getattr(self, 'outdir', buildername)).get_bld()
+    doctreedir = getattr(self, 'doctreedir', os.path.join(outdir.abspath(), '.doctrees'))
 
     task.env['BUILDERNAME'] = buildername
     task.env['SRCDIR'] = srcdir
     task.env['DOCTREEDIR'] = doctreedir
     task.env['OUTDIR'] = outdir.abspath()
-    task.env['VERSION'] = "version=%s" % self.VERSION
-    task.env['RELEASE'] = "release=%s" % self.VERSION
+    task.env['VERSION'] = 'version=%s' % self.version
+    task.env['RELEASE'] = 'release=%s' % getattr(self, 'release', self.version)
 
     import imp
     confData = imp.load_source('sphinx_conf', conf.abspath())
 
-    if buildername == "man":
+    if buildername == 'man':
         for i in confData.man_pages:
             target = outdir.find_or_declare('%s.%d' % (i[1], i[4]))
             task.outputs.append(target)
 
             if self.install_path:
-                self.bld.install_files("%s/man%d/" % (self.install_path, i[4]), target)
+                self.bld.install_files('%s/man%d/' % (self.install_path, i[4]), target)
     else:
         task.outputs.append(outdir)
 
