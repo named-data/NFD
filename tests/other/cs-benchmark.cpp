@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -115,7 +115,9 @@ protected:
     std::vector<shared_ptr<Interest>> workload(count);
     for (size_t i = 0; i < count; ++i) {
       Name name = genName(i);
-      workload[i] = make_shared<Interest>(name);
+      auto interest = make_shared<Interest>(name);
+      interest->setCanBePrefix(false);
+      workload[i] = interest;
     }
     return workload;
   }
@@ -142,7 +144,7 @@ BOOST_FIXTURE_TEST_CASE(FindMissInsert, CsBenchmarkFixture)
   constexpr size_t N_WORKLOAD = CS_CAPACITY * 2;
   constexpr size_t REPEAT = 4;
 
-  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(N_WORKLOAD);
+  auto interestWorkload = makeInterestWorkload(N_WORKLOAD);
   std::vector<shared_ptr<Data>> dataWorkload[REPEAT];
   for (size_t j = 0; j < REPEAT; ++j) {
     dataWorkload[j] = makeDataWorkload(N_WORKLOAD);
@@ -184,8 +186,8 @@ BOOST_FIXTURE_TEST_CASE(InsertFindHit, CsBenchmarkFixture)
   std::cout << "insert-find(hit) " << (N_WORKLOAD * REPEAT) << ": " << d << std::endl;
 }
 
-// find(leftmost) hit
-BOOST_FIXTURE_TEST_CASE(Leftmost, CsBenchmarkFixture)
+// find(CanBePrefix) hit
+BOOST_FIXTURE_TEST_CASE(FindCanBePrefixHit, CsBenchmarkFixture)
 {
   constexpr size_t N_CHILDREN = 10;
   constexpr size_t N_INTERESTS = CS_CAPACITY / N_CHILDREN;
@@ -193,12 +195,11 @@ BOOST_FIXTURE_TEST_CASE(Leftmost, CsBenchmarkFixture)
 
   std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(N_INTERESTS);
   for (auto&& interest : interestWorkload) {
-    interest->setChildSelector(0);
+    interest->setCanBePrefix(true);
     for (size_t j = 0; j < N_CHILDREN; ++j) {
       Name name = interest->getName();
       name.appendNumber(j);
-      shared_ptr<Data> data = makeData(name);
-      cs.insert(*data, false);
+      cs.insert(*makeData(name), false);
     }
   }
   BOOST_REQUIRE(cs.size() == N_INTERESTS * N_CHILDREN);
@@ -211,37 +212,7 @@ BOOST_FIXTURE_TEST_CASE(Leftmost, CsBenchmarkFixture)
     }
   });
 
-  std::cout << "find(leftmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
-}
-
-// find(rightmost) hit
-BOOST_FIXTURE_TEST_CASE(Rightmost, CsBenchmarkFixture)
-{
-  constexpr size_t N_CHILDREN = 10;
-  constexpr size_t N_INTERESTS = CS_CAPACITY / N_CHILDREN;
-  constexpr size_t REPEAT = 4;
-
-  std::vector<shared_ptr<Interest>> interestWorkload = makeInterestWorkload(N_INTERESTS);
-  for (auto&& interest : interestWorkload) {
-    interest->setChildSelector(1);
-    for (size_t j = 0; j < N_CHILDREN; ++j) {
-      Name name = interest->getName();
-      name.appendNumber(j);
-      shared_ptr<Data> data = makeData(name);
-      cs.insert(*data, false);
-    }
-  }
-  BOOST_REQUIRE(cs.size() == N_INTERESTS * N_CHILDREN);
-
-  time::microseconds d = timedRun([&] {
-    for (size_t j = 0; j < REPEAT; ++j) {
-      for (const auto& interest : interestWorkload) {
-        find(*interest);
-      }
-    }
-  });
-
-  std::cout << "find(rightmost) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
+  std::cout << "find(CanBePrefix-hit) " << (N_INTERESTS * N_CHILDREN * REPEAT) << ": " << d << std::endl;
 }
 
 } // namespace tests

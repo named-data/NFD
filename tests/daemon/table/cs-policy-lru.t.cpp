@@ -24,16 +24,12 @@
  */
 
 #include "table/cs-policy-lru.hpp"
-#include "table/cs.hpp"
 
-#include "tests/test-common.hpp"
-#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/table/cs-fixture.hpp"
 
 namespace nfd {
 namespace cs {
 namespace tests {
-
-using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_AUTO_TEST_SUITE(TestCsLru)
@@ -44,51 +40,45 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(policyNames.count("lru"), 1);
 }
 
-BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
+BOOST_FIXTURE_TEST_CASE(EvictOne, CsFixture)
 {
-  Cs cs(3);
   cs.setPolicy(make_unique<LruPolicy>());
+  cs.setLimit(3);
 
-  cs.insert(*makeData("ndn:/A"));
-  cs.insert(*makeData("ndn:/B"));
-  cs.insert(*makeData("ndn:/C"));
+  insert(1, "/A");
+  insert(2, "/B");
+  insert(3, "/C");
   BOOST_CHECK_EQUAL(cs.size(), 3);
 
   // evict A
-  cs.insert(*makeData("ndn:/D"));
+  insert(4, "/D");
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/A"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/A");
+  CHECK_CS_FIND(0);
 
   // use C then B
-  cs.find(Interest("ndn:/C"),
-          bind([] { BOOST_CHECK(true); }),
-          bind([] { BOOST_CHECK(false); }));
-  cs.find(Interest("ndn:/B"),
-          bind([] { BOOST_CHECK(true); }),
-          bind([] { BOOST_CHECK(false); }));
+  startInterest("/C");
+  CHECK_CS_FIND(3);
+  startInterest("/B");
+  CHECK_CS_FIND(2);
 
   // evict D then C
-  cs.insert(*makeData("ndn:/E"));
+  insert(5, "/E");
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/D"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
-  cs.insert(*makeData("ndn:/F"));
+  startInterest("/D");
+  CHECK_CS_FIND(0);
+  insert(6, "/F");
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/C"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/C");
+  CHECK_CS_FIND(0);
 
   // refresh B
-  cs.insert(*makeData("ndn:/B"));
+  insert(12, "/B");
   // evict E
-  cs.insert(*makeData("ndn:/G"));
+  insert(7, "/G");
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/E"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/E");
+  CHECK_CS_FIND(0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestCsLru

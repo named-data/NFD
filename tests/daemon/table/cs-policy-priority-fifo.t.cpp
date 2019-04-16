@@ -24,16 +24,12 @@
  */
 
 #include "table/cs-policy-priority-fifo.hpp"
-#include "table/cs.hpp"
 
-#include "tests/test-common.hpp"
-#include "tests/daemon/global-io-fixture.hpp"
+#include "tests/daemon/table/cs-fixture.hpp"
 
 namespace nfd {
 namespace cs {
 namespace tests {
-
-using namespace nfd::tests;
 
 BOOST_AUTO_TEST_SUITE(Table)
 BOOST_AUTO_TEST_SUITE(TestCsPriorityFifo)
@@ -44,107 +40,60 @@ BOOST_AUTO_TEST_CASE(Registration)
   BOOST_CHECK_EQUAL(policyNames.count("priority_fifo"), 1);
 }
 
-BOOST_FIXTURE_TEST_CASE(EvictOne, GlobalIoTimeFixture)
+BOOST_FIXTURE_TEST_CASE(EvictOne, CsFixture)
 {
-  Cs cs(3);
   cs.setPolicy(make_unique<PriorityFifoPolicy>());
+  cs.setLimit(3);
 
-  shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->setFreshnessPeriod(99999_ms);
-  dataA->wireEncode();
-  cs.insert(*dataA);
+  insert(1, "/A", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
+  insert(2, "/B", [] (Data& data) { data.setFreshnessPeriod(10_ms); });
+  insert(3, "/C", [] (Data& data) { data.setFreshnessPeriod(99999_ms); }, true);
+  advanceClocks(11_ms);
 
-  shared_ptr<Data> dataB = makeData("ndn:/B");
-  dataB->setFreshnessPeriod(10_ms);
-  dataB->wireEncode();
-  cs.insert(*dataB);
-
-  shared_ptr<Data> dataC = makeData("ndn:/C");
-  dataC->setFreshnessPeriod(99999_ms);
-  dataC->wireEncode();
-  cs.insert(*dataC, true);
-
-  this->advanceClocks(11_ms);
-
-  // evict unsolicited
-  shared_ptr<Data> dataD = makeData("ndn:/D");
-  dataD->setFreshnessPeriod(99999_ms);
-  dataD->wireEncode();
-  cs.insert(*dataD);
+  // evict /C (unsolicited)
+  insert(4, "/D", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/C"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/C");
+  CHECK_CS_FIND(0);
 
-  // evict stale
-  shared_ptr<Data> dataE = makeData("ndn:/E");
-  dataE->setFreshnessPeriod(99999_ms);
-  dataE->wireEncode();
-  cs.insert(*dataE);
+  // evict /B (stale)
+  insert(5, "/E", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/B"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/B");
+  CHECK_CS_FIND(0);
 
-  // evict fifo
-  shared_ptr<Data> dataF = makeData("ndn:/F");
-  dataF->setFreshnessPeriod(99999_ms);
-  dataF->wireEncode();
-  cs.insert(*dataF);
+  // evict /F (fresh)
+  insert(6, "/F", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/A"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/A");
+  CHECK_CS_FIND(0);
 }
 
-BOOST_FIXTURE_TEST_CASE(Refresh, GlobalIoTimeFixture)
+BOOST_FIXTURE_TEST_CASE(Refresh, CsFixture)
 {
-  Cs cs(3);
   cs.setPolicy(make_unique<PriorityFifoPolicy>());
+  cs.setLimit(3);
 
-  shared_ptr<Data> dataA = makeData("ndn:/A");
-  dataA->setFreshnessPeriod(99999_ms);
-  dataA->wireEncode();
-  cs.insert(*dataA);
+  insert(1, "/A", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
+  insert(2, "/B", [] (Data& data) { data.setFreshnessPeriod(10_ms); });
+  insert(3, "/C", [] (Data& data) { data.setFreshnessPeriod(10_ms); });
+  advanceClocks(11_ms);
 
-  shared_ptr<Data> dataB = makeData("ndn:/B");
-  dataB->setFreshnessPeriod(10_ms);
-  dataB->wireEncode();
-  cs.insert(*dataB);
-
-  shared_ptr<Data> dataC = makeData("ndn:/C");
-  dataC->setFreshnessPeriod(10_ms);
-  dataC->wireEncode();
-  cs.insert(*dataC);
-
-  this->advanceClocks(11_ms);
-
-  // refresh dataB
-  shared_ptr<Data> dataB2 = make_shared<Data>(*dataB);
-  dataB2->wireEncode();
-  cs.insert(*dataB2);
+  // refresh /B
+  insert(12, "/B", [] (Data& data) { data.setFreshnessPeriod(0_ms); });
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/A"),
-          bind([] { BOOST_CHECK(true); }),
-          bind([] { BOOST_CHECK(false); }));
+  startInterest("/A");
+  CHECK_CS_FIND(1);
+  startInterest("/B");
+  CHECK_CS_FIND(12);
+  startInterest("/C");
+  CHECK_CS_FIND(3);
 
-  cs.find(Interest("ndn:/B"),
-          bind([] { BOOST_CHECK(true); }),
-          bind([] { BOOST_CHECK(false); }));
-
-  cs.find(Interest("ndn:/C"),
-          bind([] { BOOST_CHECK(true); }),
-          bind([] { BOOST_CHECK(false); }));
-
-  // evict dataC stale
-  shared_ptr<Data> dataD = makeData("ndn:/D");
-  dataD->setFreshnessPeriod(99999_ms);
-  dataD->wireEncode();
-  cs.insert(*dataD);
+  // evict /C from stale queue
+  insert(4, "/D", [] (Data& data) { data.setFreshnessPeriod(99999_ms); });
   BOOST_CHECK_EQUAL(cs.size(), 3);
-  cs.find(Interest("ndn:/C"),
-          bind([] { BOOST_CHECK(false); }),
-          bind([] { BOOST_CHECK(true); }));
+  startInterest("/C");
+  CHECK_CS_FIND(0);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // TestCsPriorityFifo
