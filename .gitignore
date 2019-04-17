@@ -26,5 +26,4 @@ __pycache__/
 *.py[cod]
 
 # Other
-/unit-tests.conf
 /VERSION

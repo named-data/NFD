@@ -1,16 +1,13 @@
-Notes for NFD developers
-========================
+# Notes for NFD developers
 
 If you are new to the NDN software community, please read the
 [Contributor's Guide](https://github.com/named-data/NFD/blob/master/CONTRIBUTING.md).
 
-Code style
-----------
+## Code style
 
 NFD code is subject to [NFD code style](https://redmine.named-data.net/projects/nfd/wiki/CodeStyle).
 
-Licensing
----------
+## Licensing
 
 Contributions to NFD must be licensed under the GPL 3.0 or compatible license.  If you
 are choosing GPL 3.0, please use the following license boilerplate in all `.hpp` and
@@ -40,8 +37,13 @@ Include the following license boilerplate into all `.hpp` and `.cpp` files:
 If you are affiliated to an NSF-supported NDN project institution, please use the [NDN Team License
 Boilerplate](https://redmine.named-data.net/projects/nfd/wiki/NDN_Team_License_Boilerplate_(NFD)).
 
-Running unit tests
-------------------
+## Logging
+
+Fine-grained per-module logging can be configured via the `NDN_LOG` environment variable.
+This is especially useful when running unit tests or tools such as `nfdc` that do not
+have a configuration file.  See `ndn-log(7)` manual page for syntax and examples.
+
+## Unit tests
 
 To run unit tests, NFD needs to be configured and build with unit test support:
 

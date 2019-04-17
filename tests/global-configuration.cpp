@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,9 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/config-file.hpp"
-#include "core/log-config-section.hpp"
+#include "core/common.hpp"
 
-#include "boost-test.hpp"
+#include "tests/boost-test.hpp"
 
 #include <boost/filesystem.hpp>
 #include <fstream>
@@ -44,26 +43,22 @@ public:
     if (envHome)
       m_home = envHome;
 
-    const std::string filename = "unit-tests.conf";
-    if (boost::filesystem::exists(filename)) {
-      ConfigFile config;
-      log::setConfigFile(config);
-      config.parse(filename, false);
-    }
+    auto testHome = boost::filesystem::path(UNIT_TEST_CONFIG_PATH) / "test-home";
+    if (::setenv("HOME", testHome.c_str(), 1) != 0)
+      NDN_THROW(std::runtime_error("setenv() failed"));
 
-    boost::filesystem::path dir{UNIT_TEST_CONFIG_PATH};
-    dir /= "test-home";
-    ::setenv("HOME", dir.c_str(), 1);
+    boost::filesystem::create_directories(testHome);
 
-    boost::filesystem::create_directories(dir);
-    std::ofstream clientConf((dir / ".ndn" / "client.conf").c_str());
+    std::ofstream clientConf((testHome / ".ndn" / "client.conf").c_str());
     clientConf << "pib=pib-sqlite3" << std::endl
                << "tpm=tpm-file" << std::endl;
   }
 
-  ~GlobalConfiguration()
+  ~GlobalConfiguration() noexcept
   {
-    if (!m_home.empty())
+    if (m_home.empty())
+      ::unsetenv("HOME");
+    else
       ::setenv("HOME", m_home.data(), 1);
   }
 
