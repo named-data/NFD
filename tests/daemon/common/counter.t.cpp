@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/counter.hpp"
+#include "common/counter.hpp"
 
 #include "tests/test-common.hpp"
 

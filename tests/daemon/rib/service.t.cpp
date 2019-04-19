@@ -24,7 +24,7 @@
  */
 
 #include "rib/service.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/rib-io-fixture.hpp"

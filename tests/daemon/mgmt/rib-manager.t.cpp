@@ -24,7 +24,6 @@
  */
 
 #include "mgmt/rib-manager.hpp"
-#include "core/fib-max-depth.hpp"
 #include "rib/fib-updater.hpp"
 
 #include "manager-common-fixture.hpp"
@@ -405,7 +404,7 @@ BOOST_AUTO_TEST_CASE(Expiration)
 BOOST_AUTO_TEST_CASE(NameTooLong)
 {
   Name prefix;
-  while (prefix.size() <= FIB_MAX_DEPTH) {
+  while (prefix.size() <= Fib::getMaxDepth()) {
     prefix.append("A");
   }
   auto params = makeRegisterParameters(prefix, 2899);
@@ -413,9 +412,9 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
   receiveInterest(command);
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 1);
-  BOOST_CHECK_EQUAL(checkResponse(0, command.getName(), ControlResponse(414,
-                      "Route prefix cannot exceed " + ndn::to_string(FIB_MAX_DEPTH) +
-                      " components")),
+  BOOST_CHECK_EQUAL(checkResponse(0, command.getName(),
+                                  ControlResponse(414, "Route prefix cannot exceed " +
+                                                  to_string(Fib::getMaxDepth()) + " components")),
                     CheckResponseResult::OK);
 
   BOOST_CHECK_EQUAL(m_commands.size(), 0);

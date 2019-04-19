@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/config-file.hpp"
+#include "common/config-file.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -146,7 +146,7 @@ BOOST_AUTO_TEST_CASE(ParseFromStream)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  std::ifstream input("tests/core/config_example.info");
+  std::ifstream input("tests/daemon/common/config_example.info");
   BOOST_REQUIRE(input.is_open());
 
   file.parse(input, false, "config_example.info");
@@ -169,10 +169,10 @@ BOOST_AUTO_TEST_CASE(ParseFromStreamDryRun)
   ConfigFile file;
   DummyAllSubscriber sub(file, true);
 
-  std::ifstream input("tests/core/config_example.info");
+  std::ifstream input("tests/daemon/common/config_example.info");
   BOOST_REQUIRE(input.is_open());
 
-  file.parse(input, true, "tests/core/config_example.info");
+  file.parse(input, true, "tests/daemon/common/config_example.info");
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(ParseFromFilename)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  file.parse("tests/core/config_example.info", false);
+  file.parse("tests/daemon/common/config_example.info", false);
   BOOST_CHECK(sub.allCallbacksFired());
 }
 
@@ -258,7 +258,7 @@ BOOST_AUTO_TEST_CASE(ParseFromFilenameMalformed)
   ConfigFile file;
   DummyAllSubscriber sub(file);
 
-  BOOST_CHECK_THROW(file.parse("tests/core/config_malformed.info", false), ConfigFile::Error);
+  BOOST_CHECK_THROW(file.parse("tests/daemon/common/config_malformed.info", false), ConfigFile::Error);
   BOOST_CHECK(sub.noCallbacksFired());
 }
 
@@ -267,7 +267,7 @@ BOOST_AUTO_TEST_CASE(ParseFromFilenameDryRun)
   ConfigFile file;
   DummyAllSubscriber sub(file, true);
 
-  file.parse("tests/core/config_example.info", true);
+  file.parse("tests/daemon/common/config_example.info", true);
   BOOST_CHECK(sub.allCallbacksFired());
 }
 

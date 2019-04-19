@@ -25,7 +25,7 @@
 
 #include "cs-policy-priority-fifo.hpp"
 #include "cs.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 namespace nfd {
 namespace cs {

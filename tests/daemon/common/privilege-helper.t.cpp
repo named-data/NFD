@@ -23,38 +23,51 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP
-#define NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP
+#include "common/privilege-helper.hpp"
 
-#include "readvertise-policy.hpp"
-#include "common/config-file.hpp"
-
-#include <ndn-cxx/security/key-chain.hpp>
+#include "tests/test-common.hpp"
 
 namespace nfd {
-namespace rib {
+namespace tests {
 
-/** \brief a policy to readvertise routes registered by local applications into remote gateway
- */
-class HostToGatewayReadvertisePolicy : public ReadvertisePolicy
+BOOST_AUTO_TEST_SUITE(TestPrivilegeHelper)
+
+BOOST_AUTO_TEST_CASE(DropRaise)
 {
-public:
-  HostToGatewayReadvertisePolicy(const ndn::KeyChain& keyChain,
-                                 const ConfigSection& section);
+#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
+  SKIP_IF_NOT_SUPERUSER();
 
-public:
-  optional<ReadvertiseAction>
-  handleNewRoute(const RibRouteRef& ribRoute) const override;
+  // The following assumes that daemon:daemon is present on the test system
+  PrivilegeHelper::initialize("daemon", "daemon");
+  BOOST_CHECK_EQUAL(::geteuid(), 0);
+  BOOST_CHECK_EQUAL(::getegid(), 0);
 
-  time::milliseconds
-  getRefreshInterval() const override;
+  PrivilegeHelper::drop();
+  BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
 
-private:
-  const ndn::KeyChain& m_keyChain;
-  time::seconds m_refreshInterval;
-};
+  PrivilegeHelper::runElevated([] {
+    BOOST_CHECK_EQUAL(::geteuid(), 0);
+    BOOST_CHECK_EQUAL(::getegid(), 0);
+  });
+  BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
 
-} // namespace rib
+  BOOST_CHECK_THROW(PrivilegeHelper::runElevated(std::function<void()>{}),
+                    std::bad_function_call);
+  BOOST_CHECK_NE(::geteuid(), 0);
+  BOOST_CHECK_NE(::getegid(), 0);
+
+  PrivilegeHelper::raise();
+  BOOST_CHECK_EQUAL(::geteuid(), 0);
+  BOOST_CHECK_EQUAL(::getegid(), 0);
+
+#else
+  BOOST_TEST_MESSAGE("Dropping/raising privileges not supported on this platform, skipping");
+#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
+}
+
+BOOST_AUTO_TEST_SUITE_END() // TestPrivilegeHelper
+
+} // namespace tests
 } // namespace nfd
-
-#endif // NFD_DAEMON_RIB_READVERTISE_HOST_TO_GATEWAY_READVERTISE_POLICY_HPP

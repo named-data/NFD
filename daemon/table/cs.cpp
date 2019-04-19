@@ -24,8 +24,8 @@
  */
 
 #include "cs.hpp"
+#include "common/logger.hpp"
 #include "core/algorithm.hpp"
-#include "core/logger.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/util/concepts.hpp>

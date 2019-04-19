@@ -26,8 +26,8 @@
 #ifndef NFD_DAEMON_FACE_TRANSPORT_HPP
 #define NFD_DAEMON_FACE_TRANSPORT_HPP
 
-#include "core/counter.hpp"
 #include "face-log.hpp"
+#include "common/counter.hpp"
 
 #include <ndn-cxx/encoding/nfd-constants.hpp>
 

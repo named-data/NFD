@@ -24,8 +24,8 @@
  */
 
 #include "readvertise.hpp"
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 
 #include <ndn-cxx/util/random.hpp>
 

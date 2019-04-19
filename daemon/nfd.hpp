@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_NFD_HPP
 #define NFD_DAEMON_NFD_HPP
 
-#include "core/config-file.hpp"
+#include "common/config-file.hpp"
 
 #include <ndn-cxx/net/network-monitor.hpp>
 #include <ndn-cxx/security/key-chain.hpp>

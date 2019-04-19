@@ -27,7 +27,7 @@
 #include "name-tree.hpp"
 #include "pit-entry.hpp"
 #include "fib-entry.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 namespace nfd {
 namespace measurements {

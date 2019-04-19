@@ -23,7 +23,7 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "config-file.hpp"
+#include "common/config-file.hpp"
 
 #include <boost/property_tree/info_parser.hpp>
 

@@ -23,10 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_CORE_CONFIG_FILE_HPP
-#define NFD_CORE_CONFIG_FILE_HPP
+#ifndef NFD_DAEMON_COMMON_CONFIG_FILE_HPP
+#define NFD_DAEMON_COMMON_CONFIG_FILE_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -177,4 +177,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_CORE_CONFIG_FILE_HPP
+#endif // NFD_DAEMON_COMMON_CONFIG_FILE_HPP

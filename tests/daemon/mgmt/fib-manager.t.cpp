@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(UnknownFaceId)
 BOOST_AUTO_TEST_CASE(NameTooLong)
 {
   Name prefix;
-  while (prefix.size() <= FIB_MAX_DEPTH) {
+  while (prefix.size() <= Fib::getMaxDepth()) {
     prefix.append("A");
   }
 

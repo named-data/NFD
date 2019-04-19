@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,13 +23,22 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "scope-prefix.hpp"
+#ifndef NFD_DAEMON_COMMON_LOGGER_HPP
+#define NFD_DAEMON_COMMON_LOGGER_HPP
 
-namespace nfd {
-namespace scope_prefix {
+#include <ndn-cxx/util/logger.hpp>
 
-const Name LOCALHOST("ndn:/localhost");
-const Name LOCALHOP("ndn:/localhop");
+#define NFD_LOG_INIT(name)                         NDN_LOG_INIT(nfd.name)
+#define NFD_LOG_MEMBER_DECL()                      NDN_LOG_MEMBER_DECL()
+#define NFD_LOG_MEMBER_DECL_SPECIALIZED(cls)       NDN_LOG_MEMBER_DECL_SPECIALIZED(cls)
+#define NFD_LOG_MEMBER_INIT(cls, name)             NDN_LOG_MEMBER_INIT(cls, nfd.name)
+#define NFD_LOG_MEMBER_INIT_SPECIALIZED(cls, name) NDN_LOG_MEMBER_INIT_SPECIALIZED(cls, nfd.name)
 
-} // namespace scope_prefix
-} // namespace nfd
+#define NFD_LOG_TRACE NDN_LOG_TRACE
+#define NFD_LOG_DEBUG NDN_LOG_DEBUG
+#define NFD_LOG_INFO  NDN_LOG_INFO
+#define NFD_LOG_WARN  NDN_LOG_WARN
+#define NFD_LOG_ERROR NDN_LOG_ERROR
+#define NFD_LOG_FATAL NDN_LOG_FATAL
+
+#endif // NFD_DAEMON_COMMON_LOGGER_HPP

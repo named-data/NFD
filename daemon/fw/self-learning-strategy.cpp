@@ -26,8 +26,8 @@
 #include "self-learning-strategy.hpp"
 #include "algorithm.hpp"
 
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 #include "rib/service.hpp"
 
 #include <ndn-cxx/lp/empty-value.hpp>

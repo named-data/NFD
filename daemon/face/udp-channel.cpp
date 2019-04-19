@@ -26,7 +26,7 @@
 #include "udp-channel.hpp"
 #include "generic-link-service.hpp"
 #include "unicast-udp-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 namespace nfd {
 namespace face {

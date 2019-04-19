@@ -24,9 +24,9 @@
  */
 
 #include "dead-nonce-list.hpp"
-#include "core/city-hash.hpp"
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/city-hash.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
 

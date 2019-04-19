@@ -27,7 +27,7 @@
 
 #include "ethernet-fixture.hpp"
 
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 namespace nfd {
 namespace face {

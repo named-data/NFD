@@ -28,8 +28,6 @@
 
 #include "name-tree-iterator.hpp"
 
-#include "core/fib-max-depth.hpp"
-
 namespace nfd {
 namespace name_tree {
 
@@ -52,7 +50,7 @@ public: // information
   static constexpr size_t
   getMaxDepth()
   {
-    return FIB_MAX_DEPTH;
+    return 32;
   }
 
   /** \return number of name tree entries

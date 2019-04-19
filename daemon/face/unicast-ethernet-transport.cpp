@@ -24,7 +24,7 @@
  */
 
 #include "unicast-ethernet-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <stdio.h>  // for snprintf()
 

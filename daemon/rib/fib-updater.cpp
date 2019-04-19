@@ -24,7 +24,7 @@
  */
 
 #include "fib-updater.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 #include <ndn-cxx/mgmt/nfd/control-parameters.hpp>
 

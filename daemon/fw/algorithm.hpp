@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FW_PIT_ALGORITHM_HPP
 #define NFD_DAEMON_FW_PIT_ALGORITHM_HPP
 
-#include "core/scope-prefix.hpp"
+#include "fw/scope-prefix.hpp"
 #include "table/fib.hpp"
 #include "table/pit-entry.hpp"
 

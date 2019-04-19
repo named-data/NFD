@@ -25,7 +25,7 @@
 
 #include "strategy-choice-manager.hpp"
 
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 #include "table/strategy-choice.hpp"
 
 #include <ndn-cxx/mgmt/nfd/strategy-choice.hpp>

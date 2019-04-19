@@ -22,8 +22,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
-#ifndef NFD_DAEMON_GLOBAL_HPP
-#define NFD_DAEMON_GLOBAL_HPP
+#ifndef NFD_DAEMON_COMMON_GLOBAL_HPP
+#define NFD_DAEMON_COMMON_GLOBAL_HPP
 
 #include "core/common.hpp"
 
@@ -72,4 +72,4 @@ resetGlobalIoService();
 
 } // namespace nfd
 
-#endif // NFD_DAEMON_GLOBAL_HPP
+#endif // NFD_DAEMON_COMMON_GLOBAL_HPP

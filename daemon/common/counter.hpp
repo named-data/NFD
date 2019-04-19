@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -23,10 +23,10 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_CORE_COUNTER_HPP
-#define NFD_CORE_COUNTER_HPP
+#ifndef NFD_DAEMON_COMMON_COUNTER_HPP
+#define NFD_DAEMON_COMMON_COUNTER_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
 namespace nfd {
 
@@ -35,25 +35,14 @@ namespace nfd {
  *  SimpleCounter is noncopyable, because increment should be called on the counter,
  *  not a copy of it; it's implicitly convertible to an integral type to be observed
  */
-class SimpleCounter
+class SimpleCounter : noncopyable
 {
 public:
   typedef uint64_t rep;
 
-  constexpr
-  SimpleCounter()
-    : m_value(0)
-  {
-  }
-
-  SimpleCounter(const SimpleCounter&) = delete;
-
-  SimpleCounter&
-  operator=(const SimpleCounter&) = delete;
-
   /** \brief observe the counter
    */
-  operator rep() const
+  operator rep() const noexcept
   {
     return m_value;
   }
@@ -61,13 +50,13 @@ public:
   /** \brief replace the counter value
    */
   void
-  set(rep value)
+  set(rep value) noexcept
   {
     m_value = value;
   }
 
 protected:
-  rep m_value;
+  rep m_value = 0;
 };
 
 /** \brief represents a counter of number of packets
@@ -80,7 +69,7 @@ public:
   /** \brief increment the counter by one
    */
   PacketCounter&
-  operator++()
+  operator++() noexcept
   {
     ++m_value;
     return *this;
@@ -98,7 +87,7 @@ public:
   /** \brief increase the counter
    */
   ByteCounter&
-  operator+=(rep n)
+  operator+=(rep n) noexcept
   {
     m_value += n;
     return *this;
@@ -111,24 +100,19 @@ public:
  *  if table not specified in constructor, it can be added later by invoking observe()
  */
 template<typename T>
-class SizeCounter
+class SizeCounter : noncopyable
 {
 public:
   typedef size_t Rep;
 
   explicit constexpr
-  SizeCounter(const T* table = nullptr)
+  SizeCounter(const T* table = nullptr) noexcept
     : m_table(table)
   {
   }
 
-  SizeCounter(const SizeCounter&) = delete;
-
-  SizeCounter&
-  operator=(const SizeCounter&) = delete;
-
   void
-  observe(const T* table)
+  observe(const T* table) noexcept
   {
     m_table = table;
   }
@@ -147,4 +131,4 @@ private:
 
 } // namespace nfd
 
-#endif // NFD_CORE_COUNTER_HPP
+#endif // NFD_DAEMON_COMMON_COUNTER_HPP

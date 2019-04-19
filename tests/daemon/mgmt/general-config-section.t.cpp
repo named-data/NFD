@@ -24,8 +24,8 @@
  */
 
 #include "mgmt/general-config-section.hpp"
-#include "core/config-file.hpp"
-#include "core/privilege-helper.hpp"
+#include "common/config-file.hpp"
+#include "common/privilege-helper.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"

@@ -25,7 +25,7 @@
 
 #include "multicast-strategy.hpp"
 #include "algorithm.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
 namespace fw {

@@ -27,7 +27,7 @@
 #include "socket-utils.hpp"
 #include "udp-protocol.hpp"
 
-#include "core/privilege-helper.hpp"
+#include "common/privilege-helper.hpp"
 
 #include <boost/functional/hash.hpp>
 

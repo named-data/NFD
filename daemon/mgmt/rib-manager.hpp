@@ -27,7 +27,6 @@
 #define NFD_DAEMON_MGMT_RIB_MANAGER_HPP
 
 #include "manager-base.hpp"
-#include "core/config-file.hpp"
 #include "rib/route.hpp"
 
 #include <ndn-cxx/mgmt/nfd/controller.hpp>

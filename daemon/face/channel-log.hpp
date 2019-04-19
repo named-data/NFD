@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -26,7 +26,7 @@
 #ifndef NFD_DAEMON_FACE_CHANNEL_LOG_HPP
 #define NFD_DAEMON_FACE_CHANNEL_LOG_HPP
 
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 /** \defgroup ChannelLogging Channel logging macros
  *

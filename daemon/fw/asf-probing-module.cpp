@@ -25,7 +25,7 @@
 
 #include "asf-probing-module.hpp"
 #include "algorithm.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <ndn-cxx/util/random.hpp>
 

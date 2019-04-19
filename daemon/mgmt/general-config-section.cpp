@@ -24,7 +24,7 @@
  */
 
 #include "general-config-section.hpp"
-#include "core/privilege-helper.hpp"
+#include "common/privilege-helper.hpp"
 
 namespace nfd {
 namespace general {

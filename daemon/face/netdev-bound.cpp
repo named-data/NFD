@@ -25,7 +25,7 @@
 
 #include "netdev-bound.hpp"
 #include "face-system.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
 namespace face {

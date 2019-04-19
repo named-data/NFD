@@ -26,7 +26,7 @@
 #include "udp-factory.hpp"
 #include "generic-link-service.hpp"
 #include "multicast-udp-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>

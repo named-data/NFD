@@ -25,7 +25,7 @@
 
 #include "unicast-udp-transport.hpp"
 #include "udp-protocol.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #ifdef __linux__
 #include <cerrno>       // for errno

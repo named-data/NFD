@@ -25,7 +25,7 @@
 
 #include "ethernet-transport.hpp"
 #include "ethernet-protocol.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <pcap/pcap.h>
 

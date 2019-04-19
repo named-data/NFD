@@ -24,7 +24,7 @@
  */
 
 #include "command-authenticator.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 #include <ndn-cxx/tag.hpp>
 #include <ndn-cxx/security/v2/certificate-fetcher-offline.hpp>

@@ -24,7 +24,7 @@
  */
 
 #include "host-to-gateway-readvertise-policy.hpp"
-#include "core/scope-prefix.hpp"
+#include "fw/scope-prefix.hpp"
 #include "mgmt/rib-manager.hpp"
 
 #include <ndn-cxx/security/pib/identity.hpp>

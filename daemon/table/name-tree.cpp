@@ -24,7 +24,7 @@
  */
 
 #include "name-tree.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 #include <boost/concept/assert.hpp>
 #include <boost/concept_check.hpp>

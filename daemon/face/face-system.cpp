@@ -26,7 +26,7 @@
 #include "face-system.hpp"
 #include "protocol-factory.hpp"
 #include "netdev-bound.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 #include "fw/face-table.hpp"
 
 namespace nfd {

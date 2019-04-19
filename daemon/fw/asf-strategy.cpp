@@ -25,8 +25,8 @@
 
 #include "asf-strategy.hpp"
 #include "algorithm.hpp"
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
 namespace fw {

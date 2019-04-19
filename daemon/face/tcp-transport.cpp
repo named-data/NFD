@@ -24,7 +24,7 @@
  */
 
 #include "tcp-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #if defined(__linux__)
 #include <linux/sockios.h>

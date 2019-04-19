@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/network-predicate.hpp"
-#include "core/config-file.hpp"
+#include "face/network-predicate.hpp"
+#include "common/config-file.hpp"
 
 #include "tests/test-common.hpp"
 
@@ -35,8 +35,10 @@
 #include <sstream>
 
 namespace nfd {
+namespace face {
 namespace tests {
 
+BOOST_AUTO_TEST_SUITE(Face)
 BOOST_AUTO_TEST_SUITE(TestNetworkPredicate)
 
 template<class T>
@@ -508,6 +510,8 @@ BOOST_AUTO_TEST_CASE(UnrecognizedKey)
 BOOST_AUTO_TEST_SUITE_END() // IpAddress
 
 BOOST_AUTO_TEST_SUITE_END() // TestNetworkPredicate
+BOOST_AUTO_TEST_SUITE_END() // Face
 
 } // namespace tests
+} // namespace face
 } // namespace nfd

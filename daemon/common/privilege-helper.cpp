@@ -23,8 +23,8 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "privilege-helper.hpp"
-#include "core/logger.hpp"
+#include "common/privilege-helper.hpp"
+#include "common/logger.hpp"
 
 #include <pwd.h>
 #include <grp.h>

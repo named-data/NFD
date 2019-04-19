@@ -24,7 +24,7 @@
  */
 
 #include "table/dead-nonce-list.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include "tests/test-common.hpp"
 #include "tests/daemon/global-io-fixture.hpp"

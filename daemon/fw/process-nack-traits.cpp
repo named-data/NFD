@@ -24,7 +24,7 @@
  */
 
 #include "process-nack-traits.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 namespace nfd {
 namespace fw {

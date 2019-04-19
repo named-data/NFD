@@ -24,13 +24,13 @@
  */
 
 #include "network-predicate.hpp"
-
-#include "config-file.hpp"
-#include "network.hpp"
+#include "common/config-file.hpp"
+#include "core/network.hpp"
 
 #include <fnmatch.h>
 
 namespace nfd {
+namespace face {
 
 NetworkPredicateBase::NetworkPredicateBase()
 {
@@ -223,4 +223,5 @@ IpAddressPredicate::operator()(const boost::asio::ip::address& address) const
          std::none_of(m_blacklist.begin(), m_blacklist.end(), bind(&doesAddressMatchRule, std::cref(address), _1));
 }
 
+} // namespace face
 } // namespace nfd

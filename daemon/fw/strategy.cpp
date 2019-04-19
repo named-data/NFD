@@ -25,7 +25,7 @@
 
 #include "strategy.hpp"
 #include "forwarder.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>

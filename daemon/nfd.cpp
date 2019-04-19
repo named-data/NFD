@@ -24,10 +24,9 @@
  */
 
 #include "nfd.hpp"
-#include "global.hpp"
-#include "core/config-file.hpp"
-#include "core/log-config-section.hpp"
-#include "core/privilege-helper.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
+#include "common/privilege-helper.hpp"
 #include "face/face-system.hpp"
 #include "face/internal-face.hpp"
 #include "face/null-face.hpp"
@@ -37,6 +36,7 @@
 #include "mgmt/fib-manager.hpp"
 #include "mgmt/forwarder-status-manager.hpp"
 #include "mgmt/general-config-section.hpp"
+#include "mgmt/log-config-section.hpp"
 #include "mgmt/strategy-choice-manager.hpp"
 #include "mgmt/tables-config-section.hpp"
 

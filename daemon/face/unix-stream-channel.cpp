@@ -26,7 +26,7 @@
 #include "unix-stream-channel.hpp"
 #include "generic-link-service.hpp"
 #include "unix-stream-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <boost/filesystem.hpp>
 #include <sys/stat.h> // for chmod()

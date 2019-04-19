@@ -25,7 +25,7 @@
 
 #include "fib-manager.hpp"
 
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 #include "fw/face-table.hpp"
 #include "table/fib.hpp"
 
@@ -66,7 +66,7 @@ FibManager::addNextHop(const Name& topPrefix, const Interest& interest,
     NFD_LOG_DEBUG("fib/add-nexthop(" << prefix << ',' << faceId << ',' << cost <<
                   "): FAIL prefix-too-long");
     return done(ControlResponse(414, "FIB entry prefix cannot exceed " +
-                                ndn::to_string(Fib::getMaxDepth()) + " components"));
+                                to_string(Fib::getMaxDepth()) + " components"));
   }
 
   Face* face = m_faceTable.get(faceId);

@@ -24,7 +24,7 @@
  */
 
 #include "face-manager-command-fixture.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <ndn-cxx/net/network-monitor-stub.hpp>
 

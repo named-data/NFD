@@ -28,7 +28,7 @@
 
 #include "transport.hpp"
 #include "socket-utils.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <queue>
 

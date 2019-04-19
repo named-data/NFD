@@ -29,8 +29,6 @@
 #include "fib-entry.hpp"
 #include "name-tree.hpp"
 
-#include "core/fib-max-depth.hpp"
-
 #include <boost/range/adaptor/transformed.hpp>
 
 namespace nfd {
@@ -89,7 +87,7 @@ public: // mutation
   static constexpr size_t
   getMaxDepth()
   {
-    return FIB_MAX_DEPTH;
+    return NameTree::getMaxDepth();
   }
 
   /** \brief Find or insert a FIB entry

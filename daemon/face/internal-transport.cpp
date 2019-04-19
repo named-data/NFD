@@ -24,7 +24,7 @@
  */
 
 #include "internal-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 namespace nfd {
 namespace face {

@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -27,7 +27,7 @@
 #define NFD_TESTS_DAEMON_FACE_TCP_CHANNEL_FIXTURE_HPP
 
 #include "face/tcp-channel.hpp"
-#include "core/network-predicate.hpp"
+#include "face/network-predicate.hpp"
 
 #include "channel-fixture.hpp"
 

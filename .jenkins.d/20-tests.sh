@@ -52,7 +52,7 @@ export BOOST_TEST_COLOR_OUTPUT=1
 
 # Then use sudo to run those tests that need superuser powers
 sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
-    ./build/unit-tests-core -t TestPrivilegeHelper $(ut_log_args core-privilege)
+    ./build/unit-tests-daemon -t TestPrivilegeHelper $(ut_log_args daemon-privilege-helper)
 sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \
     ./build/unit-tests-daemon -t Face/*Ethernet* $(ut_log_args daemon-ethernet)
 sudo_preserve_env ASAN_OPTIONS BOOST_TEST_COLOR_OUTPUT -- \

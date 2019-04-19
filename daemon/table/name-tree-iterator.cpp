@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -25,7 +25,7 @@
 
 #include "name-tree-iterator.hpp"
 #include "name-tree.hpp"
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 
 #include <boost/range/concepts.hpp>
 #include <ndn-cxx/util/concepts.hpp>

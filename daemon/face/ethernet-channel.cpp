@@ -27,7 +27,7 @@
 #include "ethernet-protocol.hpp"
 #include "generic-link-service.hpp"
 #include "unicast-ethernet-transport.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <boost/range/adaptor/map.hpp>
 #include <pcap/pcap.h>

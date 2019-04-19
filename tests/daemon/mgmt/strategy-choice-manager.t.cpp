@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(SetUnknownStrategy)
 BOOST_AUTO_TEST_CASE(SetNameTooLong)
 {
   Name prefix;
-  while (prefix.size() <= FIB_MAX_DEPTH) {
+  while (prefix.size() <= NameTree::getMaxDepth()) {
     prefix.append("A");
   }
   ControlParameters reqParams;

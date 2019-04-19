@@ -25,7 +25,7 @@
 
 #include "lp-reassembler.hpp"
 #include "link-service.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <numeric>
 

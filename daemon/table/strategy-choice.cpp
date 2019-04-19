@@ -24,10 +24,10 @@
  */
 
 #include "strategy-choice.hpp"
-
 #include "measurements-entry.hpp"
 #include "pit-entry.hpp"
-#include "core/logger.hpp"
+
+#include "common/logger.hpp"
 #include "fw/strategy.hpp"
 
 #include <ndn-cxx/util/concepts.hpp>

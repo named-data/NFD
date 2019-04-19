@@ -25,7 +25,7 @@
 
 #include "topology-tester.hpp"
 
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 #include "face/generic-link-service.hpp"
 
 #include <ndn-cxx/encoding/encoding-buffer-fwd.hpp>

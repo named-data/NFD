@@ -25,7 +25,7 @@
 
 #include "tests/daemon/rib-io-fixture.hpp"
 #include "tests/test-common.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
 
 #include <boost/exception/diagnostic_information.hpp>
 

@@ -23,77 +23,42 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef NFD_CORE_PRIVILEGE_HELPER_HPP
-#define NFD_CORE_PRIVILEGE_HELPER_HPP
+#ifndef NFD_DAEMON_FW_SCOPE_PREFIX_HPP
+#define NFD_DAEMON_FW_SCOPE_PREFIX_HPP
 
-#include "common.hpp"
+#include "core/common.hpp"
 
-#include <unistd.h>
-
+/** \brief contain name prefixes that affect namespace-based scope control
+ *  \sa https://redmine.named-data.net/projects/nfd/wiki/ScopeControl
+ */
 namespace nfd {
+namespace scope_prefix {
 
-class PrivilegeHelper
-{
-public:
-  /** \brief represents a serious seteuid/gid failure
-   *
-   *  This should only be caught by main as part of a graceful program termination.
-   *  \note This is not an std::exception and NDN_THROW should not be used.
-   */
-  class Error
-  {
-  public:
-    explicit
-    Error(const std::string& what)
-      : m_whatMessage(what)
-    {
-    }
+/** \brief ndn:/localhost
+ *
+ *  The localhost scope limits propagation to the applications on the originating host.
+ *
+ *  Interest and Data packets under prefix ndn:/localhost are restricted by these rules:
+ *  \li Interest can come from and go to local faces only.
+ *  \li Data can come from and go to local faces only.
+ */
+extern const Name LOCALHOST;
 
-    const char*
-    what() const
-    {
-      return m_whatMessage.data();
-    }
+/** \brief ndn:/localhop
+ *
+ *  The localhop scope limits propagation to no further than the next node.
+ *
+ *  Interest packets under prefix ndn:/localhop are restricted by these rules:
+ *  \li If an Interest is received from a local face, it can be forwarded to a non-local face.
+ *  \li If an Interest is received from a non-local face, it cannot be forwarded to a non-local face.
+ *  \li In either case the Interest can be forwarded to a local face.
+ *  \li PIT entry can be satisfied by Data from any source.
+ *
+ *  Data packets under prefix ndn:/localhop are unrestricted.
+ */
+extern const Name LOCALHOP;
 
-  private:
-    const std::string m_whatMessage;
-  };
-
-  static void
-  initialize(const std::string& userName, const std::string& groupName);
-
-  static void
-  drop();
-
-  template<class F>
-  static void
-  runElevated(F&& f)
-  {
-    raise();
-    try {
-      f();
-    }
-    catch (...) {
-      drop();
-      throw;
-    }
-    drop();
-  }
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-  static void
-  raise();
-
-PUBLIC_WITH_TESTS_ELSE_PRIVATE:
-#ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
-  static uid_t s_normalUid;
-  static gid_t s_normalGid;
-
-  static uid_t s_privilegedUid;
-  static gid_t s_privilegedGid;
-#endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
-};
-
+} // namespace scope_prefix
 } // namespace nfd
 
-#endif // NFD_CORE_PRIVILEGE_HELPER_HPP
+#endif // NFD_DAEMON_FW_SCOPE_PREFIX_HPP

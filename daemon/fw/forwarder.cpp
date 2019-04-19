@@ -28,8 +28,8 @@
 #include "algorithm.hpp"
 #include "best-route-strategy2.hpp"
 #include "strategy.hpp"
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 #include "table/cleanup.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>

@@ -23,51 +23,77 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core/privilege-helper.hpp"
+#ifndef NFD_DAEMON_COMMON_PRIVILEGE_HELPER_HPP
+#define NFD_DAEMON_COMMON_PRIVILEGE_HELPER_HPP
 
-#include "tests/test-common.hpp"
+#include "core/common.hpp"
+
+#include <unistd.h>
 
 namespace nfd {
-namespace tests {
 
-BOOST_AUTO_TEST_SUITE(TestPrivilegeHelper)
-
-BOOST_AUTO_TEST_CASE(DropRaise)
+class PrivilegeHelper
 {
+public:
+  /** \brief represents a serious seteuid/gid failure
+   *
+   *  This should only be caught by main as part of a graceful program termination.
+   *  \note This is not an std::exception and NDN_THROW should not be used.
+   */
+  class Error
+  {
+  public:
+    explicit
+    Error(const std::string& what)
+      : m_whatMessage(what)
+    {
+    }
+
+    const char*
+    what() const
+    {
+      return m_whatMessage.data();
+    }
+
+  private:
+    const std::string m_whatMessage;
+  };
+
+  static void
+  initialize(const std::string& userName, const std::string& groupName);
+
+  static void
+  drop();
+
+  template<class F>
+  static void
+  runElevated(F&& f)
+  {
+    raise();
+    try {
+      f();
+    }
+    catch (...) {
+      drop();
+      throw;
+    }
+    drop();
+  }
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
+  static void
+  raise();
+
+PUBLIC_WITH_TESTS_ELSE_PRIVATE:
 #ifdef HAVE_PRIVILEGE_DROP_AND_ELEVATE
-  SKIP_IF_NOT_SUPERUSER();
+  static uid_t s_normalUid;
+  static gid_t s_normalGid;
 
-  // The following assumes that daemon:daemon is present on the test system
-  PrivilegeHelper::initialize("daemon", "daemon");
-  BOOST_CHECK_EQUAL(::geteuid(), 0);
-  BOOST_CHECK_EQUAL(::getegid(), 0);
-
-  PrivilegeHelper::drop();
-  BOOST_CHECK_NE(::geteuid(), 0);
-  BOOST_CHECK_NE(::getegid(), 0);
-
-  PrivilegeHelper::runElevated([] {
-    BOOST_CHECK_EQUAL(::geteuid(), 0);
-    BOOST_CHECK_EQUAL(::getegid(), 0);
-  });
-  BOOST_CHECK_NE(::geteuid(), 0);
-  BOOST_CHECK_NE(::getegid(), 0);
-
-  BOOST_CHECK_THROW(PrivilegeHelper::runElevated(std::function<void()>{}),
-                    std::bad_function_call);
-  BOOST_CHECK_NE(::geteuid(), 0);
-  BOOST_CHECK_NE(::getegid(), 0);
-
-  PrivilegeHelper::raise();
-  BOOST_CHECK_EQUAL(::geteuid(), 0);
-  BOOST_CHECK_EQUAL(::getegid(), 0);
-
-#else
-  BOOST_TEST_MESSAGE("Dropping/raising privileges not supported on this platform, skipping");
+  static uid_t s_privilegedUid;
+  static gid_t s_privilegedGid;
 #endif // HAVE_PRIVILEGE_DROP_AND_ELEVATE
-}
+};
 
-BOOST_AUTO_TEST_SUITE_END() // TestPrivilegeHelper
-
-} // namespace tests
 } // namespace nfd
+
+#endif // NFD_DAEMON_COMMON_PRIVILEGE_HELPER_HPP

@@ -25,7 +25,7 @@
 
 #include "face-manager.hpp"
 
-#include "core/logger.hpp"
+#include "common/logger.hpp"
 #include "face/generic-link-service.hpp"
 #include "face/protocol-factory.hpp"
 #include "fw/face-table.hpp"

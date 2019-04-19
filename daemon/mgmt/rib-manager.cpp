@@ -25,10 +25,10 @@
 
 #include "rib-manager.hpp"
 
-#include "core/fib-max-depth.hpp"
-#include "core/logger.hpp"
-#include "daemon/global.hpp"
+#include "common/global.hpp"
+#include "common/logger.hpp"
 #include "rib/rib.hpp"
+#include "table/fib.hpp"
 
 #include <ndn-cxx/lp/tags.hpp>
 #include <ndn-cxx/mgmt/nfd/face-status.hpp>
@@ -217,8 +217,8 @@ RibManager::registerEntry(const Name& topPrefix, const Interest& interest,
                           ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
-  if (parameters.getName().size() > FIB_MAX_DEPTH) {
-    done(ControlResponse(414, "Route prefix cannot exceed " + ndn::to_string(FIB_MAX_DEPTH) +
+  if (parameters.getName().size() > Fib::getMaxDepth()) {
+    done(ControlResponse(414, "Route prefix cannot exceed " + to_string(Fib::getMaxDepth()) +
                               " components"));
     return;
   }
