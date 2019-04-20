@@ -41,9 +41,8 @@ if has CentOS $NODE_LABELS; then
                         devtoolset-7-liblsan-devel
     sudo yum -y groupinstall 'Development Tools'
 
-    svn checkout https://github.com/cmscaltech/sandie-ndn/trunk/packaging/RPMS/x86_64
-    sudo rpm -U --force x86_64/boost-license*
-    sudo rpm -U --force x86_64/boost-doc-html*
-    sudo rpm -U --force x86_64/libboost*
-    sudo rpm -U --force x86_64/boost-devel*
+    svn checkout https://github.com/cmscaltech/sandie-ndn/trunk/packaging/RPMS/x86_64/boost1_58_0
+    pushd boost1_58_0 >/dev/null
+    sudo rpm -Uv --replacepkgs --replacefiles boost-devel* boost-license* libboost_*
+    popd >/dev/null
 fi
