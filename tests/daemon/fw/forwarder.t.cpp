@@ -180,26 +180,22 @@ BOOST_AUTO_TEST_CASE(NextHopFaceId)
 class ScopeLocalhostIncomingTestForwarder : public Forwarder
 {
 public:
-  ScopeLocalhostIncomingTestForwarder()
-  {
-  }
-
   void
-  onDataUnsolicited(const FaceEndpoint& ingress, const Data& data) override
+  onDataUnsolicited(const FaceEndpoint&, const Data&) final
   {
     ++onDataUnsolicited_count;
   }
 
 protected:
   void
-  dispatchToStrategy(pit::Entry&, std::function<void(fw::Strategy&)>) override
+  dispatchToStrategy(pit::Entry&, std::function<void(fw::Strategy&)>) final
   {
     ++dispatchToStrategy_count;
   }
 
 public:
-  int dispatchToStrategy_count;
-  int onDataUnsolicited_count;
+  int dispatchToStrategy_count = 0;
+  int onDataUnsolicited_count = 0;
 };
 
 BOOST_AUTO_TEST_CASE(ScopeLocalhostIncoming)

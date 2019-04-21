@@ -160,12 +160,6 @@ Forwarder::onInterestLoop(const FaceEndpoint& ingress, const Interest& interest)
   ingress.face.sendNack(nack);
 }
 
-static inline bool
-compare_InRecord_expiry(const pit::InRecord& a, const pit::InRecord& b)
-{
-  return a.getExpiry() < b.getExpiry();
-}
-
 void
 Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
                               const shared_ptr<pit::Entry>& pitEntry, const Interest& interest)
@@ -174,20 +168,27 @@ Forwarder::onContentStoreMiss(const FaceEndpoint& ingress,
   ++m_counters.nCsMisses;
 
   // insert in-record
-  pitEntry->insertOrUpdateInRecord(ingress.face, ingress.endpoint, interest);
+  // FIXME Strategies are not prepared to handle non-zero EndpointIds, so always insert
+  //       the in-record with EndpointId=0 for now. Eventually, this pipeline will need
+  //       to be refactored so that strategies can control the in-record insertion.
+  pitEntry->insertOrUpdateInRecord(ingress.face, 0, interest);
 
   // set PIT expiry timer to the time that the last PIT in-record expires
-  auto lastExpiring = std::max_element(pitEntry->in_begin(), pitEntry->in_end(), &compare_InRecord_expiry);
+  auto lastExpiring = std::max_element(pitEntry->in_begin(), pitEntry->in_end(),
+                                       [] (const auto& a, const auto& b) {
+                                         return a.getExpiry() < b.getExpiry();
+                                       });
   auto lastExpiryFromNow = lastExpiring->getExpiry() - time::steady_clock::now();
   this->setExpiryTimer(pitEntry, time::duration_cast<time::milliseconds>(lastExpiryFromNow));
 
   // has NextHopFaceId?
-  shared_ptr<lp::NextHopFaceIdTag> nextHopTag = interest.getTag<lp::NextHopFaceIdTag>();
+  auto nextHopTag = interest.getTag<lp::NextHopFaceIdTag>();
   if (nextHopTag != nullptr) {
     // chosen NextHop face exists?
     Face* nextHopFace = m_faceTable.get(*nextHopTag);
     if (nextHopFace != nullptr) {
-      NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName() << " nexthop-faceid=" << nextHopFace->getId());
+      NFD_LOG_DEBUG("onContentStoreMiss interest=" << interest.getName()
+                    << " nexthop-faceid=" << nextHopFace->getId());
       // go to outgoing Interest pipeline
       // scope control is unnecessary, because privileged app explicitly wants to forward
       this->onOutgoingInterest(pitEntry, FaceEndpoint(*nextHopFace, 0), interest);
@@ -208,7 +209,7 @@ Forwarder::onContentStoreHit(const FaceEndpoint& ingress, const shared_ptr<pit::
   ++m_counters.nCsHits;
 
   data.setTag(make_shared<lp::IncomingFaceIdTag>(face::FACEID_CONTENT_STORE));
-  // XXX should we lookup PIT for other Interests that also match csMatch?
+  // FIXME Should we lookup PIT for other Interests that also match the data?
 
   pitEntry->isSatisfied = true;
   pitEntry->dataFreshnessPeriod = data.getFreshnessPeriod();
@@ -314,7 +315,7 @@ Forwarder::onIncomingData(const FaceEndpoint& ingress, const Data& data)
     std::set<std::pair<Face*, EndpointId>> pendingDownstreams;
     auto now = time::steady_clock::now();
 
-    for (const shared_ptr<pit::Entry>& pitEntry : pitMatches) {
+    for (const auto& pitEntry : pitMatches) {
       NFD_LOG_DEBUG("onIncomingData matching=" << pitEntry->getName());
 
       // remember pending downstreams
@@ -403,8 +404,9 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
 
   // if multi-access or ad hoc face, drop
   if (ingress.face.getLinkType() != ndn::nfd::LINK_TYPE_POINT_TO_POINT) {
-    NFD_LOG_DEBUG("onIncomingNack in=" << ingress << " nack=" << nack.getInterest().getName()
-                  << "~" << nack.getReason() << " face-is-multi-access");
+    NFD_LOG_DEBUG("onIncomingNack in=" << ingress
+                  << " nack=" << nack.getInterest().getName() << "~" << nack.getReason()
+                  << " link-type=" << ingress.face.getLinkType());
     return;
   }
 
@@ -418,7 +420,7 @@ Forwarder::onIncomingNack(const FaceEndpoint& ingress, const lp::Nack& nack)
   }
 
   // has out-record?
-  pit::OutRecordCollection::iterator outRecord = pitEntry->getOutRecord(ingress.face, ingress.endpoint);
+  auto outRecord = pitEntry->getOutRecord(ingress.face, ingress.endpoint);
   // if no out-record found, drop
   if (outRecord == pitEntry->out_end()) {
     NFD_LOG_DEBUG("onIncomingNack in=" << ingress << " nack=" << nack.getInterest().getName()
@@ -456,13 +458,12 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
 {
   if (egress.face.getId() == face::INVALID_FACEID) {
     NFD_LOG_WARN("onOutgoingNack out=(invalid)"
-                 << " nack=" << pitEntry->getInterest().getName()
-                 << "~" << nack.getReason() << " no-in-record");
+                 << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason());
     return;
   }
 
   // has in-record?
-  pit::InRecordCollection::iterator inRecord = pitEntry->getInRecord(egress.face, egress.endpoint);
+  auto inRecord = pitEntry->getInRecord(egress.face, egress.endpoint);
 
   // if no in-record found, drop
   if (inRecord == pitEntry->in_end()) {
@@ -475,8 +476,8 @@ Forwarder::onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry,
   // if multi-access or ad hoc face, drop
   if (egress.face.getLinkType() != ndn::nfd::LINK_TYPE_POINT_TO_POINT) {
     NFD_LOG_DEBUG("onOutgoingNack out=" << egress
-                  << " nack=" << pitEntry->getInterest().getName()
-                  << "~" << nack.getReason() << " face-is-multi-access");
+                  << " nack=" << pitEntry->getInterest().getName() << "~" << nack.getReason()
+                  << " link-type=" << egress.face.getLinkType());
     return;
   }
 
