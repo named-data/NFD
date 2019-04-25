@@ -1,1 +1,1 @@
-release-notes/release-notes-0.6.5.rst
+release-notes/release-notes-0.6.6.rst
