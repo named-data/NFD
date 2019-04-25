@@ -133,7 +133,13 @@ TcpTransport::reconnect()
   BOOST_ASSERT(getState() == TransportState::DOWN);
 
   // recreate the socket
-  m_socket = protocol::socket(m_socket.get_io_service());
+  m_socket = protocol::socket(
+#if BOOST_VERSION >= 107000
+                              m_socket.get_executor()
+#else
+                              m_socket.get_io_service()
+#endif // BOOST_VERSION >= 107000
+                              );
   this->resetReceiveBuffer();
   this->resetSendQueue();
 

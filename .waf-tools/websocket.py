@@ -65,7 +65,7 @@ def checkWebsocket(self, **kw):
             Logs.warn('    git submodule update --init')
             Logs.warn('Otherwise, manually download and extract the websocketpp library:')
             Logs.warn('    mkdir -p websocketpp')
-            Logs.warn('    curl -L https://github.com/zaphoyd/websocketpp/archive/0.8.1.tar.gz > websocketpp.tar.gz')
+            Logs.warn('    curl -L https://github.com/cawka/websocketpp/archive/0.8.1-hotfix.tar.gz > websocketpp.tar.gz')
             Logs.warn('    tar xf websocketpp.tar.gz -C websocketpp/ --strip 1')
             Logs.warn('Alternatively, WebSocket support can be disabled with --without-websocket')
             self.fatal('WebSocket++ not found')

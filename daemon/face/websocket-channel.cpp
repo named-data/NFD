@@ -123,7 +123,7 @@ WebSocketChannel::handleOpen(websocketpp::connection_hdl hdl)
   NFD_LOG_CHAN_TRACE("Incoming connection from " << m_server.get_con_from_hdl(hdl)->get_remote_endpoint());
 
   auto linkService = make_unique<GenericLinkService>();
-  auto transport = make_unique<WebSocketTransport>(hdl, std::ref(m_server), m_pingInterval);
+  auto transport = make_unique<WebSocketTransport>(hdl, m_server, m_pingInterval);
   auto face = make_shared<Face>(std::move(linkService), std::move(transport));
 
   BOOST_ASSERT(m_channelFaces.count(hdl) == 0);

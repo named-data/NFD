@@ -110,7 +110,7 @@ protected:
                                       1_s), LimitedIo::EXCEED_OPS);
 
     face = make_unique<Face>(make_unique<DummyLinkService>(),
-                             make_unique<WebSocketTransport>(serverHdl, std::ref(server), pingInterval));
+                             make_unique<WebSocketTransport>(serverHdl, server, pingInterval));
     transport = static_cast<WebSocketTransport*>(face->getTransport());
     serverReceivedPackets = &static_cast<DummyLinkService*>(face->getLinkService())->receivedPackets;
 

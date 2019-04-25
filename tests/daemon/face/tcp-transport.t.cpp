@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2018,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -177,7 +177,7 @@ BOOST_FIXTURE_TEST_CASE_TEMPLATE(PermanentReconnectWithExponentialBackoff, T, Tc
   BOOST_REQUIRE_EQUAL(this->limitedIo.run(2, 1_s), LimitedIo::EXCEED_OPS);
 
   auto transportObserver =
-    make_unique<PermanentTcpTransportReconnectObserver>(std::move(sock), std::ref(this->limitedIo));
+    make_unique<PermanentTcpTransportReconnectObserver>(std::move(sock), this->limitedIo);
   BOOST_REQUIRE_EQUAL(transportObserver->getState(), TransportState::UP);
 
   // break the TCP connection

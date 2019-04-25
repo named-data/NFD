@@ -83,7 +83,7 @@ TcpChannel::connect(const tcp::Endpoint& remoteEndpoint,
     return;
   }
 
-  auto clientSocket = make_shared<ip::tcp::socket>(std::ref(getGlobalIoService()));
+  auto clientSocket = make_shared<ip::tcp::socket>(getGlobalIoService());
   auto timeoutEvent = getScheduler().schedule(timeout, [=] {
     handleConnectTimeout(remoteEndpoint, clientSocket, onConnectFailed);
   });
