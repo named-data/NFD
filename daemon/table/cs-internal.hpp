@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2017,  Regents of the University of California,
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -37,8 +37,8 @@ namespace cs {
 
 class EntryImpl;
 
-typedef std::set<EntryImpl> Table;
-typedef Table::const_iterator iterator;
+using Table = std::set<EntryImpl>;
+using iterator = Table::const_iterator;
 
 } // namespace cs
 } // namespace nfd

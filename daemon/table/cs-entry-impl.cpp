@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
-/**
- * Copyright (c) 2014-2017,  Regents of the University of California,
+/*
+ * Copyright (c) 2014-2019,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -53,7 +53,7 @@ EntryImpl::unsetUnsolicited()
   this->setData(this->getData(), false);
 }
 
-int
+static int
 compareQueryWithData(const Name& queryName, const Data& data)
 {
   bool queryIsFullName = !queryName.empty() && queryName[-1].isImplicitSha256Digest();
@@ -74,7 +74,7 @@ compareQueryWithData(const Name& queryName, const Data& data)
   }
 }
 
-int
+static int
 compareDataWithData(const Data& lhs, const Data& rhs)
 {
   int cmp = lhs.getName().compare(rhs.getName());

@@ -56,31 +56,41 @@ public:
   void
   insert(const Data& data, bool isUnsolicited = false);
 
-  using AfterEraseCallback = std::function<void(size_t nErased)>;
-
   /** \brief asynchronously erases entries under \p prefix
+   *  \tparam AfterEraseCallback `void f(size_t nErased)`
    *  \param prefix name prefix of entries
    *  \param limit max number of entries to erase
-   *  \param cb callback to receive the actual number of erased entries; it may be empty;
+   *  \param cb callback to receive the actual number of erased entries; must not be empty;
    *            it may be invoked either before or after erase() returns
    */
+  template<typename AfterEraseCallback>
   void
-  erase(const Name& prefix, size_t limit, const AfterEraseCallback& cb);
-
-  using HitCallback = std::function<void(const Interest&, const Data&)>;
-  using MissCallback = std::function<void(const Interest&)>;
+  erase(const Name& prefix, size_t limit, AfterEraseCallback&& cb)
+  {
+    size_t nErased = eraseImpl(prefix, limit);
+    cb(nErased);
+  }
 
   /** \brief finds the best matching Data packet
+   *  \tparam HitCallback `void f(const Interest&, const Data&)`
+   *  \tparam MissCallback `void f(const Interest&)`
    *  \param interest the Interest for lookup
-   *  \param hitCallback a callback if a match is found; must not be empty
-   *  \param missCallback a callback if there's no match; must not be empty
+   *  \param hit a callback if a match is found; must not be empty
+   *  \param miss a callback if there's no match; must not be empty
    *  \note A lookup invokes either callback exactly once.
    *        The callback may be invoked either before or after find() returns
    */
+  template<typename HitCallback, typename MissCallback>
   void
-  find(const Interest& interest,
-       const HitCallback& hitCallback,
-       const MissCallback& missCallback) const;
+  find(const Interest& interest, HitCallback&& hit, MissCallback&& miss) const
+  {
+    iterator match = findImpl(interest);
+    if (match == m_table.end()) {
+      miss(interest);
+      return;
+    }
+    hit(interest, match->getData());
+  }
 
   /** \brief get number of stored packets
    */
@@ -152,8 +162,9 @@ public: // configuration
   enableServe(bool shouldServe);
 
 public: // enumeration
-  struct EntryFromEntryImpl
+  class EntryFromEntryImpl
   {
+  public:
     typedef const Entry& result_type;
 
     const Entry&
@@ -165,7 +176,7 @@ public: // enumeration
 
   /** \brief ContentStore iterator (public API)
    */
-  typedef boost::transform_iterator<EntryFromEntryImpl, iterator, const Entry&> const_iterator;
+  using const_iterator = boost::transform_iterator<EntryFromEntryImpl, iterator, const Entry&>;
 
   const_iterator
   begin() const
@@ -179,24 +190,15 @@ public: // enumeration
     return boost::make_transform_iterator(m_table.end(), EntryFromEntryImpl());
   }
 
-private: // find
-  /** \brief find leftmost match in [first,last)
-   *  \return the leftmost match, or last if not found
-   */
-  iterator
-  findLeftmost(const Interest& interest, iterator left, iterator right) const;
+private:
+  std::pair<iterator, iterator>
+  findPrefixRange(const Name& prefix) const;
 
-  /** \brief find rightmost match in [first,last)
-   *  \return the rightmost match, or last if not found
-   */
-  iterator
-  findRightmost(const Interest& interest, iterator first, iterator last) const;
+  size_t
+  eraseImpl(const Name& prefix, size_t limit);
 
-  /** \brief find rightmost match among entries with exact Names in [first,last)
-   *  \return the rightmost match, or last if not found
-   */
   iterator
-  findRightmostAmongExact(const Interest& interest, iterator first, iterator last) const;
+  findImpl(const Interest& interest) const;
 
   void
   setPolicyImpl(unique_ptr<Policy> policy);
